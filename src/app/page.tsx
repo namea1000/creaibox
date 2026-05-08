@@ -191,7 +191,7 @@ export default function MainLandingPage() {
       {/* --- 메인 콘텐츠 영역 --- */}
       <div className="flex-1 flex overflow-hidden">
         {isStudioActive ? (
-          <StudioLayout activeMenu={activeMenu} initialViewMode={studioViewMode} isDarkMode={isDarkMode}/>
+          <StudioLayout activeMenu={activeMenu} initialViewMode={studioViewMode} />
         ) : (
           <div className={`flex-1 overflow-y-auto custom-scrollbar relative ${isDarkMode ? 'bg-[#0a0c10]' : 'bg-zinc-50'}`}>
             {/* 배경 블러 효과 */}
