@@ -3,24 +3,34 @@
 import React, { useState, useEffect, useRef } from 'react';
 import WordPressContent from '@/components/writing/wordpress/WordPressCenter';
 import APIVaultContent from '@/components/vault/APIVaultContent'; 
-import MyPageContent from '@/components/mypage/MyPageContent'; // ✅ 마이페이지 임포트 추가
+import MyPageContent from '@/components/mypage/MyPageContent'; 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Menu, X, ChevronDown, User as UserIcon, Settings, LogOut, Key } from 'lucide-react';
+import { 
+  Menu, X, ChevronDown, User as UserIcon, Settings, LogOut, Key, 
+  ChevronLeft, ChevronRight, LayoutDashboard, ShoppingBag, Users, 
+  HelpCircle, MessageCircle, FileText, Newspaper, Share2, PenTool, 
+  Type, UserCircle, Search, Image as ImageIcon, Video, Music, Sparkles, 
+  Wand2, Mic2, BarChart3, Repeat
+} from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { User } from '@supabase/supabase-js';
 
-// ✅ [수정] MyPage 타입을 허용하도록 Props 명세 업데이트
 interface StudioLayoutProps {
   activeMenu: 'Writing' | 'Visuals' | 'Music' | 'Script' | 'Tools' | string;
   initialViewMode?: 'Studio' | 'Vault' | 'MyPage';
+  isDarkMode: boolean; // 🌟 이 줄을 추가하세요! (불리언 타입)
 }
 
 export default function StudioLayout({ 
   activeMenu, 
-  initialViewMode = 'Studio' 
+  initialViewMode = 'Studio',
+  isDarkMode
 }: StudioLayoutProps) {
   
-  // ✅ [원본 유지] 상태 관리 및 로직
+  // 🌟 [추가] 사이드바 상태 관리 (접힘 & 모바일 열림)
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  
   const [viewMode, setViewMode] = useState(initialViewMode);
   const [activeSubMenu, setActiveSubMenu] = useState('워드프레스 글쓰기');
   const [apiKey, setApiKey] = useState("");
@@ -32,8 +42,8 @@ export default function StudioLayout({
   const [length, setLength] = useState("보통 (약 1,500자): 표준 블로그형 (일반적인 정보성 포스팅)");
   const [user, setUser] = useState<any>(null);
   const supabase = createClient();
-// 🌟 [추가] 로그인한 유저 정보를 가져와서 user 상태에 담기
-useEffect(() => {
+
+  useEffect(() => {
     const fetchUser = async () => {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       setUser(currentUser);
@@ -41,18 +51,15 @@ useEffect(() => {
     fetchUser();
   }, []);
 
-  // ✅ [수정] 헤더 드롭다운(내 프로필/API 관리)과 실시간 동기화
   useEffect(() => {
     setViewMode(initialViewMode);
   }, [initialViewMode]);
 
-  // ✅ [원본 유지] 초기 로딩 (API키)
   useEffect(() => {
     const savedKey = localStorage.getItem("gemini_api_key");
     if (savedKey) setApiKey(savedKey);
   }, []);
 
-  // ✅ [원본 유지] AI 생성 로직 (핸들러 함수들)
   const handleGenerate = async () => {
     if (!apiKey) return alert("Gemini API 키를 입력해주세요!");
     if (!topic) return alert("작성할 주제를 입력해주세요!");
@@ -109,7 +116,22 @@ useEffect(() => {
     document.body.removeChild(element);
   };
 
-  // ✅ [원본 유지] 사이드바 데이터
+  const menuIcons: any = {
+    '워드프레스 글쓰기': FileText, '네이버 글쓰기': Newspaper, '뉴스 글쓰기': Newspaper, 'SNS 글쓰기': Share2,
+    '광고 카피라이팅': Sparkles, '텍스트 변형/확장': Type, 'AI 캐릭터 페르소나 설정기': UserCircle,
+    'SEO 최적화 메타 데이터': Search, '이미지 생성기': ImageIcon, '비디오 생성기': Video, '썸네일 생성기': Wand2,
+    'Suno 스타일 라이브러리': Music, 'Suno 작곡': Music, '가사 생성기(다국어)': Mic2,
+    '대본 생성기(대본/이미지/비디오)': FileText, 'AI 트렌드 대시보드': BarChart3, '다채널 리포퍼징': Repeat,
+    '키워드 분석': Search, '대시보드': LayoutDashboard, '마켓플레이스': ShoppingBag, '커뮤니티': Users,
+    'FAQ / Q&A': HelpCircle, 'AI 챗봇': MessageCircle, '내 프로필': UserIcon, 'API 키 관리': Key
+  };
+
+  // 🎨 테마별 스타일 정의 (사이드바 및 메인 배경)
+  const sidebarBg = isDarkMode ? "bg-[#0d1117] border-zinc-800/50" : "bg-white border-zinc-200";
+  const mainBg = isDarkMode ? "bg-[#0a0c10]" : "bg-zinc-50";
+  const textColor = isDarkMode ? "text-zinc-100" : "text-zinc-900";
+  const subTextColor = isDarkMode ? "text-zinc-500" : "text-zinc-400";
+
   const sidebarData: any = {
     Writing: ['워드프레스 글쓰기', '네이버 글쓰기', '뉴스 글쓰기', 'SNS 글쓰기', '광고 카피라이팅', '텍스트 변형/확장', 'AI 캐릭터 페르소나 설정기', 'SEO 최적화 메타 데이터'],
     Visuals: ['이미지 생성기', '비디오 생성기', '썸네일 생성기'],
@@ -124,69 +146,135 @@ useEffect(() => {
     }
   }, [activeMenu]);
 
-  return (
-    <div className="flex h-full w-full bg-black">
+return (
+    <div className={`relative flex h-full w-full transition-colors duration-500 overflow-hidden font-sans ${mainBg}`}>
       
-      {/* 1. 사이드바 영역 */}
-      <aside className="w-72 border-r border-zinc-800 bg-zinc-950 flex flex-col overflow-y-auto custom-scrollbar">
-        <div className="p-6">
-          <nav className="mb-10 mt-4">
-            <p className="text-[11px] font-black mb-5 uppercase tracking-[0.2em] text-blue-500/80 ml-2">
-              {activeMenu} Focus
-            </p>
-            <div className="space-y-1.5">
-              {sidebarData[activeMenu]?.map((item: string) => (
-                <div 
-                  key={item} 
-                  onClick={() => { setActiveSubMenu(item); setViewMode('Studio'); }}
-                  className={`px-4 py-3 text-[14px] font-bold rounded-xl cursor-pointer transition-all ${
-                    activeSubMenu === item && viewMode === 'Studio' 
-                    ? 'bg-blue-600/15 text-blue-400 border border-blue-600/20' 
-                    : 'hover:bg-zinc-800/50 text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  {item}
+      {/* 📱 모바일 상단 바 (테마 연동) */}
+      <div className={`lg:hidden fixed top-0 left-0 right-0 h-16 border-b z-[40] flex items-center justify-between px-5 transition-all ${
+        isDarkMode ? 'bg-[#0d1117] border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'
+      }`}>
+        <button onClick={() => setIsMobileOpen(true)} className={`${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
+          <Menu size={24} />
+        </button>
+        <h1 className={`font-black italic text-lg tracking-tighter ${isDarkMode ? 'text-yellow-400' : 'text-blue-600'}`}>CREAIBOX</h1>
+        <div className="w-10"></div>
+      </div>
+
+      {/* 🌑 모바일 사이드바 배경 어둡게 */}
+      {isMobileOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] lg:hidden transition-opacity duration-300"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      {/* 🌟 사이드바 영역 (테마 연동) */}
+      <aside 
+        className={`
+          fixed lg:relative flex flex-col border-r transition-all duration-300 ease-in-out z-[50] h-full
+          ${isCollapsed ? 'lg:w-20' : 'lg:w-72'}
+          ${isMobileOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0'}
+          ${sidebarBg}
+        `}
+      >
+        {/* 데스크톱 접기/펴기 버튼 */}
+        <button 
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className={`hidden lg:flex absolute -right-3 top-12 z-[60] h-6 w-6 items-center justify-center rounded-full border transition-all shadow-md active:scale-90 ${
+            isDarkMode ? 'bg-zinc-900 border-zinc-700 text-zinc-400' : 'bg-white border-zinc-200 text-zinc-600'
+          }`}
+        >
+          {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        </button>
+
+        <div className="flex-1 overflow-y-auto custom-scrollbar overflow-x-hidden">
+          <div className={`p-6 ${isCollapsed ? 'px-4' : ''}`}>
+            
+            {/* Focus 섹션 */}
+            <nav className="mb-10 mt-4">
+              <p className={`text-[10px] font-black mb-5 uppercase tracking-[0.2em] ml-2 transition-opacity duration-300 ${
+                isDarkMode ? 'text-blue-500/80' : 'text-blue-600'
+              } ${isCollapsed ? 'lg:opacity-0 lg:h-0 overflow-hidden' : 'opacity-100'}`}>
+                {activeMenu} Focus
+              </p>
+              <div className="space-y-1.5">
+                {sidebarData[activeMenu]?.map((item: string) => {
+                  const Icon = menuIcons[item] || PenTool;
+                  const isActive = activeSubMenu === item && viewMode === 'Studio';
+                  return (
+                    <div 
+                      key={item} 
+                      onClick={() => { setActiveSubMenu(item); setViewMode('Studio'); setIsMobileOpen(false); }}
+                      title={isCollapsed ? item : ""}
+                      className={`flex items-center px-4 py-3 text-[14px] font-bold rounded-xl cursor-pointer transition-all ${
+                        isActive 
+                          ? 'bg-blue-600/15 text-blue-500 border border-blue-500/20 shadow-sm' 
+                          : `${isDarkMode ? 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200' : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'}`
+                      } ${isCollapsed ? 'lg:justify-center lg:px-0' : 'gap-3'}`}
+                    >
+                      <Icon size={18} className="shrink-0" />
+                      <span className={`truncate transition-all duration-300 ${isCollapsed ? 'lg:hidden' : 'block'}`}>{item}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </nav>
+
+            {/* Management & Account 섹션 (공통 스타일 적용) */}
+            {[
+              { label: 'Management', items: ['대시보드', '마켓플레이스', '커뮤니티', 'FAQ / Q&A', 'AI 챗봇'] },
+              { label: 'Account', items: ['내 프로필', 'API 키 관리'] }
+            ].map((section) => (
+              <nav key={section.label} className="mb-8">
+                <p className={`text-[10px] font-black mb-4 uppercase tracking-[0.2em] ml-2 transition-opacity duration-300 ${subTextColor} ${isCollapsed ? 'lg:opacity-0 lg:h-0 overflow-hidden' : 'opacity-100'}`}>
+                  {section.label}
+                </p>
+                <div className="space-y-1">
+                  {section.items.map((item) => {
+                    const Icon = menuIcons[item] || LayoutDashboard;
+                    const isAccountItem = section.label === 'Account';
+                    const isItemActive = isAccountItem && ((item === '내 프로필' && viewMode === 'MyPage') || (item === 'API 키 관리' && viewMode === 'Vault'));
+                    
+                    return (
+                      <div 
+                        key={item} 
+                        onClick={() => {
+                          if (item === '내 프로필') setViewMode('MyPage');
+                          else if (item === 'API 키 관리') setViewMode('Vault');
+                          setIsMobileOpen(false);
+                        }}
+                        title={isCollapsed ? item : ""}
+                        className={`flex items-center px-4 py-2 text-[13px] font-bold cursor-pointer transition-all ${
+                          isItemActive 
+                            ? 'text-blue-500 bg-blue-500/10 rounded-lg' 
+                            : `${isDarkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-500 hover:text-zinc-900'}`
+                        } ${isCollapsed ? 'lg:justify-center lg:px-0' : 'gap-3'}`}
+                      >
+                        <Icon size={16} className="shrink-0" />
+                        {!isCollapsed && <span>{item}</span>}
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
-          </nav>
-
-          <nav className="mb-8">
-            <p className="text-[11px] font-black mb-4 uppercase tracking-[0.2em] text-zinc-600 ml-2">Management</p>
-            <div className="space-y-1">
-              {['대시보드', '마켓플레이스', '커뮤니티', 'FAQ / Q&A', 'AI 챗봇'].map((item) => (
-                <div key={item} className="px-4 py-2 text-[13px] font-bold text-zinc-500 hover:text-zinc-300 cursor-pointer transition-all">{item}</div>
-              ))}
-            </div>
-          </nav>
-
-          <nav className="mb-8">
-            <p className="text-[11px] font-black mb-4 uppercase tracking-[0.2em] text-zinc-600 ml-2">Account</p>
-            <div className="space-y-1">
-              {/* ✅ [수정] 사이드바 내 프로필 클릭 시 MyPage 전환 */}
-              <div 
-                onClick={() => setViewMode('MyPage')}
-                className={`px-4 py-2 text-[13px] font-bold cursor-pointer transition-all ${viewMode === 'MyPage' ? 'text-blue-500 bg-blue-500/10 rounded-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
-              >
-                내 프로필
-              </div>
-              <div 
-                onClick={() => setViewMode('Vault')} 
-                className={`px-4 py-2 text-[13px] font-bold cursor-pointer transition-all ${viewMode === 'Vault' ? 'text-blue-500 bg-blue-500/10 rounded-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
-              >
-                API 키 관리
-              </div>
-            </div>
-          </nav>
+              </nav>
+            ))}
+          </div>
         </div>
       </aside>
 
-      {/* 2. 메인 콘텐츠 영역 (조건부 렌더링 확장) */}
-      <main className="flex-1 overflow-y-auto p-4 lg:p-10 bg-transparent custom-scrollbar">
+      {/* 🎨 메인 콘텐츠 영역 (테마 연동) */}
+      <main 
+        className={`
+          flex-1 overflow-y-auto custom-scrollbar transition-all duration-300
+          ${isMobileOpen ? 'blur-sm pointer-events-none' : ''}
+          lg:p-10 p-5 pt-20 lg:pt-10
+        `}
+      >
         {viewMode === 'Studio' ? (
           activeMenu === 'Writing' && activeSubMenu === '워드프레스 글쓰기' ? (
             <WordPressContent 
-              isDark={true}
+              isDarkMode={isDarkMode} 
+              isDark={isDarkMode} // 호환성을 위해 유지
               topic={topic} setTopic={setTopic} 
               handleGenerate={handleGenerate} 
               loading={loading} 
@@ -199,14 +287,13 @@ useEffect(() => {
               user={user}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center h-full opacity-30 italic font-bold text-2xl">
+            <div className={`flex flex-col items-center justify-center h-full opacity-30 italic font-bold text-2xl ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>
               {activeSubMenu} 준비 중...
             </div>
           )
         ) : viewMode === 'Vault' ? (
           <APIVaultContent />
         ) : (
-          /* ✅ [추가] viewMode가 'MyPage'일 때 마이페이지 콘텐츠 렌더링 */
           <MyPageContent />
         )}
       </main>

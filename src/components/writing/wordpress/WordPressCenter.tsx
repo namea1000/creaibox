@@ -3,14 +3,15 @@
 import React, { useState } from 'react';
 import { PenLine, FileText, ImageIcon, ImagePlus, CalendarCheck, Settings2, Search, MessageSquare, ExternalLink } from 'lucide-react';
 import CreateTab from './tabs/CreateTab';
-import PostListTab from './tabs/PostListTab'; // 🌟 정확히 임포트 완료!
+import PostListTab from './tabs/PostListTab'; 
 import GoogleSearchTab from './tabs/GoogleSearchTab';
 import NaverSearchTab from './tabs/NaverSearchTab';
-import { MessageSquareText } from 'lucide-react'; // 아이콘 추가
+import { MessageSquareText } from 'lucide-react'; 
 import AIChatTab from './tabs/AIChatTab';
 
 export default function WordPressCenter(props: any) {
-  // props에는 topic, content, user, handleGenerate 등이 들어있습니다.
+  // 🌟 props에서 전달받은 isDarkMode를 사용합니다.
+  const { isDarkMode } = props;
   const [activeTab, setActiveTab] = useState('create');
 
   const tabs = [
@@ -25,25 +26,33 @@ export default function WordPressCenter(props: any) {
     { id: 'ai-chat', label: 'AI 채팅', icon: MessageSquareText },
   ];
 
+  // 🎨 테마별 스타일 정의 (다크 모드 가시성 대폭 강화)
+  const themeBg = isDarkMode ? "bg-[#0a0c10]" : "bg-white";
+  const headerBg = isDarkMode ? "bg-zinc-900/40 border-zinc-800/50" : "bg-zinc-50 border-zinc-200";
+  const textColor = isDarkMode ? "text-zinc-100" : "text-zinc-900"; // 🌟 다크 모드에서 선명한 화이트
+  const tabInactiveColor = isDarkMode ? "text-zinc-500 hover:text-white" : "text-zinc-400 hover:text-zinc-900";
+
   return (
-    <div className="flex h-full bg-[#05070a] overflow-hidden text-white font-sans">
+    <div className={`flex h-full transition-colors duration-500 overflow-hidden font-sans ${themeBg} ${textColor}`}>
       {/* --- 메인 작업 영역 --- */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* 상단 탭 네비게이션 (사장님 원본 스타일 반영) */}
-        <div className="flex items-center px-6 bg-zinc-900/30 border-b border-zinc-800/50 shrink-0">
-          <div className="flex">
+        {/* 상단 탭 네비게이션 */}
+        <div className={`flex items-center px-6 border-b shrink-0 transition-all ${headerBg}`}>
+          <div className="flex overflow-x-auto no-scrollbar">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-6 py-5 text-sm font-bold transition-all relative ${
-                  activeTab === tab.id ? 'text-blue-500' : 'text-zinc-500 hover:text-white'
+                className={`flex items-center gap-2 px-6 py-5 text-[13px] font-black uppercase tracking-tighter transition-all relative shrink-0 ${
+                  activeTab === tab.id 
+                    ? 'text-blue-500' 
+                    : tabInactiveColor
                 }`}
               >
-                <tab.icon size={16} />
+                <tab.icon size={15} />
                 {tab.label}
                 {activeTab === tab.id && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 shadow-[0_-4px_12px_rgba(59,130,246,0.5)]" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 shadow-[0_-2px_10px_rgba(59,130,246,0.6)]" />
                 )}
               </button>
             ))}
@@ -52,38 +61,40 @@ export default function WordPressCenter(props: any) {
 
         {/* 탭 콘텐츠 영역 */}
         <div className="flex-1 overflow-hidden">
-          {/* 🌟 기존 CreateTab 유지 */}
           {activeTab === 'create' && <CreateTab {...props} />}
+          {activeTab === 'manage' && <PostListTab {...props} />}
+          {activeTab === 'google-search' && <GoogleSearchTab />}
+          {activeTab === 'naver-search' && <NaverSearchTab />}
+          {activeTab === 'ai-chat' && <AIChatTab />}
           
-          {/* 2. 🌟 글 관리 탭: 여기가 문제입니다! 빈손으로 보내지 말고 보따리를 쥐여주세요. */}
-  {/* 수정 전: {activeTab === 'manage' && <PostListTab />} */}
-  {activeTab === 'manage' && <PostListTab {...props} />}
-  {activeTab === 'google-search' && <GoogleSearchTab />} {/* 🌟 구글 연결! */}
-  {activeTab === 'naver-search' && <NaverSearchTab />} {/* 🌟 네이버 탭 연결! */}
-  {activeTab === 'ai-chat' && <AIChatTab />}
-          {/* 🌟 나머지 기능들만 Coming Soon 유지 (id에서 manage 삭제) */}
           {['thumbnail', 'image-insert', 'publish', 'api-config'].includes(activeTab) && (
-            <div className="flex items-center justify-center h-full text-zinc-600 font-black italic uppercase tracking-widest">
-              {activeTab} Content Coming Soon...
+            <div className={`flex items-center justify-center h-full font-black italic uppercase tracking-[0.2em] opacity-20 text-2xl`}>
+              {activeTab} Content Ready
             </div>
           )}
         </div>
       </div>
 
       {/* --- 오른쪽 상시 고정 사이드바 --- */}
-      <div className="w-72 border-l border-zinc-800/50 bg-zinc-900/10 flex flex-col shrink-0">
-        <div className="p-5 border-b border-zinc-800/50">
+      <div className={`w-72 border-l flex flex-col shrink-0 transition-all ${
+        isDarkMode ? 'bg-zinc-900/10 border-zinc-800/50' : 'bg-zinc-100/50 border-zinc-200'
+      }`}>
+        <div className={`p-5 border-b ${isDarkMode ? 'border-zinc-800/50' : 'border-zinc-200'}`}>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
             <input 
               type="text" 
               placeholder="검색 하기" 
-              className="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-xl py-2.5 pl-9 pr-4 text-xs focus:outline-none focus:border-blue-500 transition-all text-zinc-300"
+              className={`w-full border rounded-xl py-2.5 pl-9 pr-4 text-xs focus:outline-none focus:border-blue-500 transition-all ${
+                isDarkMode 
+                ? 'bg-zinc-800/50 border-zinc-700/50 text-zinc-100 placeholder:text-zinc-600' 
+                : 'bg-white border-zinc-200 text-zinc-900 placeholder:text-zinc-400'
+              }`}
             />
           </div>
         </div>
         <div className="flex-1 p-5 flex flex-col gap-4">
-          <button className="flex items-center justify-center gap-3 px-4 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm rounded-2xl transition-all active:scale-[0.95]">
+          <button className="flex items-center justify-center gap-3 px-4 py-4 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm rounded-2xl transition-all shadow-lg shadow-blue-600/20 active:scale-[0.95] uppercase tracking-tighter">
             <MessageSquare size={18} /> AI CHATTING
           </button>
         </div>
