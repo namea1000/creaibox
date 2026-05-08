@@ -9,38 +9,55 @@ import { supabase } from '@/lib/supabase';
 export default function CreateTab({ 
   topic, setTopic, handleGenerate, loading, content, setContent,
   useSearch, setUseSearch, handleCopy, handleDownload,
-  tone, setTone, length, setLength
+  tone, setTone, length, setLength, user
 }: any) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // 🌟 [수정] DB에 저장하는 함수 (postType 등 변수 일치화)
-  const saveToSupabase = async (generatedContent: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        console.error("로그인 세션이 없습니다.");
-        return;
-      }
+const saveToSupabase = async (generatedContent: string) => {
+  try {
+    // 🌟 1. 유저 정보가 정말 있는지 콘솔에 찍어봅니다.
+    console.log("현재 로그인 유저:", user?.email);
+    
+    if (!user?.email) {
+      alert("로그인 정보가 없습니다. 새로고침 후 다시 시도해주세요.");
+      return;
+    }
 
-      const { error } = await supabase.from('posts').insert([
+    // 🌟 2. DB 저장 시도 (가장 말썽 없는 데이터만 전송)
+    const { data, error } = await supabase
+      .from('posts')
+      .insert([
         { 
           user_email: user.email, 
-          title: topic,
+          title: topic || '제목 없음',
           content: generatedContent,
-          post_type: postType, // 현재 선택된 글 유형
-          tone: tone,
-          size: length,
+          post_type: postType || '일반',
+          tone: tone || '기본',
+          size: length || '기본',
           status: '완료'
         }
-      ]);
+      ])
+      .select(); // 🌟 저장 후 데이터를 다시 불러오도록 설정 (확인용)
 
-      if (error) throw error;
-      console.log("DB 자동 저장 성공!");
-    } catch (err) {
-      console.error("DB 저장 실패:", err);
+    if (error) {
+      // 🌟 [중요] 여기서 또 42501이 뜨면 팝업에 '도움말'까지 나오게 했습니다.
+      console.error("Supabase 리턴 에러:", error);
+      alert(`[DB 에러] 
+메시지: ${error.message}
+코드: ${error.code}
+원인: RLS가 꺼져있는데도 이 에러가 난다면 Supabase 관리자 페이지에서 RLS가 OFF로 표시되는지 직접 확인이 필요합니다.`);
+      return;
     }
-  };
+
+    console.log("저장 성공 데이터:", data);
+    alert("✅ 드디어! 천신만고 끝에 저장에 성공했습니다!");
+
+  } catch (err: any) {
+    console.error("시스템 최종 에러:", err);
+    alert("시스템 에러: " + err.message);
+  }
+};
 
   // 🌟 [핵심] AI 생성이 끝났을 때(loading이 true -> false가 될 때) 자동으로 저장 실행
   useEffect(() => {
@@ -238,14 +255,15 @@ export default function CreateTab({
           
           <div className="flex gap-2 font-sans">
             {/* 🌟 새로 추가된 글 관리 저장 버튼 */}
-  <button 
-    onClick={() => saveToSupabase(content)} 
-    disabled={!content || loading}
-    className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[11px] font-black transition-all uppercase tracking-widest flex items-center gap-2 shadow-[0_0_15px_rgba(37,99,235,0.3)] disabled:opacity-50"
-  >
-    <FileText size={14} /> 글 관리 저장
-  </button>
-  
+ <button 
+  onClick={() => saveToSupabase(content)} 
+  // 🌟 이메일 정보가 없으면 버튼을 흐릿하게 만들고 클릭을 막습니다.
+  disabled={!content || loading} 
+  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[11px] font-black transition-all uppercase tracking-widest flex items-center gap-2 shadow-[0_0_15px_rgba(37,99,235,0.3)] disabled:opacity-30 disabled:cursor-not-allowed"
+>
+  <FileText size={14} /> 글 관리 저장
+</button>
+
             <button 
               onClick={() => setIsEditing(!isEditing)} 
               disabled={!content || loading}

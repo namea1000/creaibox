@@ -44,40 +44,50 @@ const initialPosts = [
   }
 ];
 
-export default function PostListTab() {
-  // 🌟 [복원 및 수정] posts 바구니 정의
-  const [posts, setPosts] = useState<any[]>(initialPosts); 
+// 🌟 props로 user를 직접 받도록 수정합니다.
+export default function PostListTab({ user: propUser }: any) { 
+  const [posts, setPosts] = useState<any[]>([]); // 🌟 초기값을 빈 배열로 시작 (혼동 방지)
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPost, setSelectedPost] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true); // 로딩 상태 추가
 
-  // 🌟 [핵심 수술] fetchPosts를 컴포넌트 내부로 넣어 setPosts 빨간줄 해결
-const fetchPosts = async () => {
-  try {
-    // 🌟 현재 로그인한 실제 사용자의 정보를 가져옵니다.
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      console.log("로그인이 필요합니다.");
-      return;
+  const fetchPosts = async () => {
+    try {
+      // 🌟 부모가 준 유저 정보가 있으면 그것을 쓰고, 없으면 직접 가져옵니다.
+      let currentUser = propUser;
+      if (!currentUser) {
+        const { data: { user } } = await supabase.auth.getUser();
+        currentUser = user;
+      }
+      
+      if (!currentUser) {
+        console.log("로그인이 필요합니다.");
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('user_email', currentUser.email) // 🌟 확실하게 currentUser.email 사용
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        setPosts(data);
+      } else if (error) {
+        throw error;
+      }
+    } catch (error) {
+      console.error("데이터 로드 실패:", error);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const { data, error } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('user_email', user.email) // 👈 고정된 메일 대신 user.email 사용!
-      .order('created_at', { ascending: false });
-
-    if (data) setPosts(data);
-  } catch (error) {
-    console.error("데이터 로드 실패:", error);
-  }
-};
-
-  // 화면 열릴 때 실행
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [propUser]); // 🌟 propUser가 바뀔 때마다 다시 가져오기
   
   // 삭제 기능 (기본 유지)
   const handleDelete = async (id: number) => {

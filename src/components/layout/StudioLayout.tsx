@@ -30,6 +30,16 @@ export default function StudioLayout({
   const [useSearch, setUseSearch] = useState(true);
   const [tone, setTone] = useState("전문적이고 분석적인 말투 (경제, 기술, 정보전달)");
   const [length, setLength] = useState("보통 (약 1,500자): 표준 블로그형 (일반적인 정보성 포스팅)");
+  const [user, setUser] = useState<any>(null);
+  const supabase = createClient();
+// 🌟 [추가] 로그인한 유저 정보를 가져와서 user 상태에 담기
+useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      setUser(currentUser);
+    };
+    fetchUser();
+  }, []);
 
   // ✅ [수정] 헤더 드롭다운(내 프로필/API 관리)과 실시간 동기화
   useEffect(() => {
@@ -186,6 +196,7 @@ export default function StudioLayout({
               handleDownload={handleDownload} 
               tone={tone} setTone={setTone} 
               length={length} setLength={setLength} 
+              user={user}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full opacity-30 italic font-bold text-2xl">

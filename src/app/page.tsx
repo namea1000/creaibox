@@ -98,21 +98,23 @@ export default function MainLandingPage() {
 
         <div className="absolute right-8 h-full flex items-center gap-4">
           {user ? (
-            <div className="relative" ref={dropdownRef}>
-              <button onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-zinc-800/50 transition-all group">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-500 to-emerald-500 flex items-center justify-center text-white text-xs font-bold shadow-lg group-hover:scale-110 transition-transform">
-                  {user.email?.[0].toUpperCase()}
-                </div>
-                <span className="text-base font-bold text-zinc-300 group-hover:text-white">{user.email?.split('@')[0]}</span>
-                <ChevronDown size={18} className={`text-zinc-500 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
-              </button>
-              
-              {isProfileOpen && (
-                <div className="absolute right-0 mt-2 w-60 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl py-2 overflow-hidden z-[110]">
-                  <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-950/50">
-                    <p className="text-[10px] text-zinc-500 font-bold mb-1 uppercase tracking-tighter">Member Identity</p>
-                    <p className="text-sm font-bold truncate text-white">{user.email?.split('@')[0]}</p>
-                  </div>
+<div className="relative" ref={dropdownRef}>
+  <button onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-zinc-800/50 transition-all group">
+    <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-500 to-emerald-500 flex items-center justify-center text-white text-xs font-bold shadow-lg group-hover:scale-110 transition-transform">
+      {user.email?.[0].toUpperCase()}
+    </div>
+    {/* 🌟 [수정 1] 아이디만 보여주던 split 부분을 지우고 이메일 전체 표시 */}
+    <span className="text-sm font-bold text-zinc-300 group-hover:text-white">{user.email}</span>
+    <ChevronDown size={18} className={`text-zinc-500 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
+  </button>
+  
+  {isProfileOpen && (
+    <div className="absolute right-0 mt-2 w-64 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl py-2 overflow-hidden z-[110]">
+      <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-950/50">
+        <p className="text-[10px] text-zinc-500 font-bold mb-1 uppercase tracking-tighter">Member Identity</p>
+        {/* 🌟 [수정 2] 드롭다운 안에서도 이메일 전체 표시 */}
+        <p className="text-xs font-bold truncate text-white">{user.email}</p>
+      </div>
                   
                   <button 
                     onClick={() => { 

@@ -6,7 +6,7 @@ import CreateTab from './tabs/CreateTab';
 import PostListTab from './tabs/PostListTab'; // 🌟 정확히 임포트 완료!
 
 export default function WordPressCenter(props: any) {
-  // props에는 topic, content, handleGenerate 등이 들어있습니다.
+  // props에는 topic, content, user, handleGenerate 등이 들어있습니다.
   const [activeTab, setActiveTab] = useState('create');
 
   const tabs = [
@@ -48,8 +48,9 @@ export default function WordPressCenter(props: any) {
           {/* 🌟 기존 CreateTab 유지 */}
           {activeTab === 'create' && <CreateTab {...props} />}
           
-          {/* 🌟 글 관리 탭 연결 (기존 Coming Soon에서 manage를 제외하고 실제 컴포넌트 연결) */}
-          {activeTab === 'manage' && <PostListTab />}
+          {/* 2. 🌟 글 관리 탭: 여기가 문제입니다! 빈손으로 보내지 말고 보따리를 쥐여주세요. */}
+  {/* 수정 전: {activeTab === 'manage' && <PostListTab />} */}
+  {activeTab === 'manage' && <PostListTab {...props} />}
           
           {/* 🌟 나머지 기능들만 Coming Soon 유지 (id에서 manage 삭제) */}
           {['thumbnail', 'image-insert', 'publish', 'api-config'].includes(activeTab) && (
