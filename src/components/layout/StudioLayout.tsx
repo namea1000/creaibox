@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import WordPressContent from '@/components/writing/wordpress/WordPressCenter';
 import APIVaultContent from '@/components/vault/APIVaultContent'; 
 import MyPageContent from '@/components/mypage/MyPageContent'; 
+import CommunityCenter from '@/components/community/CommunityCenter'; // 🌟 커뮤니티 컴포넌트 추가
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { 
   Menu, X, ChevronDown, User as UserIcon, Settings, LogOut, Key, 
@@ -17,8 +18,8 @@ import { User } from '@supabase/supabase-js';
 
 interface StudioLayoutProps {
   activeMenu: 'Writing' | 'Visuals' | 'Music' | 'Script' | 'Tools' | string;
-  initialViewMode?: 'Studio' | 'Vault' | 'MyPage';
-  isDarkMode: boolean; // 🌟 이 줄을 추가하세요! (불리언 타입)
+  initialViewMode?: 'Studio' | 'Vault' | 'MyPage' | 'Community'; // 🌟 Community 추가
+  isDarkMode: boolean;
 }
 
 export default function StudioLayout({ 
@@ -27,11 +28,10 @@ export default function StudioLayout({
   isDarkMode
 }: StudioLayoutProps) {
   
-  // 🌟 [추가] 사이드바 상태 관리 (접힘 & 모바일 열림)
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   
-  const [viewMode, setViewMode] = useState(initialViewMode);
+  const [viewMode, setViewMode] = useState<any>(initialViewMode);
   const [activeSubMenu, setActiveSubMenu] = useState('워드프레스 글쓰기');
   const [apiKey, setApiKey] = useState("");
   const [topic, setTopic] = useState("");
@@ -126,7 +126,6 @@ export default function StudioLayout({
     'FAQ / Q&A': HelpCircle, 'AI 챗봇': MessageCircle, '내 프로필': UserIcon, 'API 키 관리': Key
   };
 
-  // 🎨 테마별 스타일 정의 (사이드바 및 메인 배경)
   const sidebarBg = isDarkMode ? "bg-[#0d1117] border-zinc-800/50" : "bg-white border-zinc-200";
   const mainBg = isDarkMode ? "bg-[#0a0c10]" : "bg-zinc-50";
   const textColor = isDarkMode ? "text-zinc-100" : "text-zinc-900";
@@ -146,10 +145,9 @@ export default function StudioLayout({
     }
   }, [activeMenu]);
 
-return (
+  return (
     <div className={`relative flex h-full w-full transition-colors duration-500 overflow-hidden font-sans ${mainBg}`}>
       
-      {/* 📱 모바일 상단 바 (테마 연동) */}
       <div className={`lg:hidden fixed top-0 left-0 right-0 h-16 border-b z-[40] flex items-center justify-between px-5 transition-all ${
         isDarkMode ? 'bg-[#0d1117] border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'
       }`}>
@@ -160,7 +158,6 @@ return (
         <div className="w-10"></div>
       </div>
 
-      {/* 🌑 모바일 사이드바 배경 어둡게 */}
       {isMobileOpen && (
         <div 
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] lg:hidden transition-opacity duration-300"
@@ -168,7 +165,6 @@ return (
         />
       )}
 
-      {/* 🌟 사이드바 영역 (테마 연동) */}
       <aside 
         className={`
           fixed lg:relative flex flex-col border-r transition-all duration-300 ease-in-out z-[50] h-full
@@ -177,7 +173,6 @@ return (
           ${sidebarBg}
         `}
       >
-        {/* 데스크톱 접기/펴기 버튼 */}
         <button 
           onClick={() => setIsCollapsed(!isCollapsed)}
           className={`hidden lg:flex absolute -right-3 top-12 z-[60] h-6 w-6 items-center justify-center rounded-full border transition-all shadow-md active:scale-90 ${
@@ -190,7 +185,6 @@ return (
         <div className="flex-1 overflow-y-auto custom-scrollbar overflow-x-hidden">
           <div className={`p-6 ${isCollapsed ? 'px-4' : ''}`}>
             
-            {/* Focus 섹션 */}
             <nav className="mb-10 mt-4">
               <p className={`text-[10px] font-black mb-5 uppercase tracking-[0.2em] ml-2 transition-opacity duration-300 ${
                 isDarkMode ? 'text-blue-500/80' : 'text-blue-600'
@@ -220,7 +214,6 @@ return (
               </div>
             </nav>
 
-            {/* Management & Account 섹션 (공통 스타일 적용) */}
             {[
               { label: 'Management', items: ['대시보드', '마켓플레이스', '커뮤니티', 'FAQ / Q&A', 'AI 챗봇'] },
               { label: 'Account', items: ['내 프로필', 'API 키 관리'] }
@@ -233,7 +226,12 @@ return (
                   {section.items.map((item) => {
                     const Icon = menuIcons[item] || LayoutDashboard;
                     const isAccountItem = section.label === 'Account';
-                    const isItemActive = isAccountItem && ((item === '내 프로필' && viewMode === 'MyPage') || (item === 'API 키 관리' && viewMode === 'Vault'));
+                    
+                    // 🌟 활성화 상태 로직 고도화
+                    const isItemActive = 
+                      (item === '내 프로필' && viewMode === 'MyPage') || 
+                      (item === 'API 키 관리' && viewMode === 'Vault') ||
+                      (item === '커뮤니티' && viewMode === 'Community');
                     
                     return (
                       <div 
@@ -241,6 +239,11 @@ return (
                         onClick={() => {
                           if (item === '내 프로필') setViewMode('MyPage');
                           else if (item === 'API 키 관리') setViewMode('Vault');
+                          else if (item === '커뮤니티') setViewMode('Community'); // 🌟 커뮤니티 연결
+                          else {
+                            setActiveSubMenu(item);
+                            setViewMode('Studio');
+                          }
                           setIsMobileOpen(false);
                         }}
                         title={isCollapsed ? item : ""}
@@ -262,7 +265,6 @@ return (
         </div>
       </aside>
 
-      {/* 🎨 메인 콘텐츠 영역 (테마 연동) */}
       <main 
         className={`
           flex-1 overflow-y-auto custom-scrollbar transition-all duration-300
@@ -274,7 +276,7 @@ return (
           activeMenu === 'Writing' && activeSubMenu === '워드프레스 글쓰기' ? (
             <WordPressContent 
               isDarkMode={isDarkMode} 
-              isDark={isDarkMode} // 호환성을 위해 유지
+              isDark={isDarkMode} 
               topic={topic} setTopic={setTopic} 
               handleGenerate={handleGenerate} 
               loading={loading} 
@@ -293,8 +295,12 @@ return (
           )
         ) : viewMode === 'Vault' ? (
           <APIVaultContent />
-        ) : (
+        ) : viewMode === 'MyPage' ? (
           <MyPageContent />
+        ) : viewMode === 'Community' ? (
+          <CommunityCenter isDarkMode={isDarkMode} /> // 🌟 커뮤니티 화면 연결!
+        ) : (
+          <div className="flex items-center justify-center h-full opacity-20 font-black text-2xl">READY</div>
         )}
       </main>
     </div>

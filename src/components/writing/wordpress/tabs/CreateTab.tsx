@@ -93,9 +93,9 @@ export default function CreateTab({
 
   const [postType, setPostType] = useState('생활 정책 및 정부 지원금');
 
-  const topicPlaceholder = `원하시는 주제를 상세히 입력할수록 좋은 글이 생성됩니다.(아래 글쓰기 템플릿 참조)
+  const topicPlaceholder = `원하시는 주제를 상세히 입력할수록 좋은 글이 생성됩니다.
 
-- (예시1) 아이폰 17 프로와 갤럭시 S25 울트라의 카메라 성능 비교
+- (예시1) 아이폰 17 프로와 갤럭시 S26 울트라의 카메라 성능 비교
 - (예시1) 2026년 청년 버팀목 전세자금대출 조건 및 신청 방법 정리`;
 
   const templates = [
@@ -117,10 +117,25 @@ export default function CreateTab({
       {/* --- [왼쪽] 스튜디오 컨트롤 타워 --- */}
       <div className={`w-[45%] flex flex-col h-full transition-all ${themeBg}`}>
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-4 pb-32">
-          
           <section className={`${cardBg} rounded-2xl p-6 shadow-sm space-y-3`}>
+
+          <section className={`${cardBg} rounded-2xl p-5 shadow-sm flex items-center justify-between`}>
+            <span className={`text-[13px] font-black ${textColor}`}>최신 정보 팩트체크가 활성화 되어 있습니다. (실시간 정보 반영 중)</span>
+            <div className="flex items-center gap-3">
+              <span className={`text-[11px] font-bold ${subTextColor}`}>최신 정보 활성화</span>
+              <label className="relative flex items-center cursor-pointer">
+                <input type="checkbox" checked={useSearch} onChange={(e) => setUseSearch(e.target.checked)} className="sr-only peer" />
+                <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all shadow-inner ${
+                  isDarkMode ? 'border-zinc-700 peer-checked:bg-blue-600 peer-checked:border-blue-600' : 'border-zinc-300 peer-checked:bg-blue-600 peer-checked:border-blue-600'
+                }`}>
+                  <svg className={`w-4 h-4 text-white ${useSearch ? 'opacity-100' : 'opacity-0'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="4"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                </div>
+              </label>
+            </div>
+          </section>      
+
             <label className={`text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-2 ${subTextColor}`}>
-              <PenLine size={14} className="text-blue-500" /> Posting Topic / Keyword
+              <PenLine size={14} className="text-blue-500" /> 글쓰기 주제를 아래 칸에 입력해 주세요. Posting Topic & Keyword
             </label>
             <textarea
               value={topic}
@@ -135,28 +150,13 @@ export default function CreateTab({
             />
           </section>
 
-          <section className={`${cardBg} rounded-2xl p-5 shadow-sm flex items-center justify-between`}>
-            <span className={`text-[13px] font-black ${textColor}`}>최신 정보 팩트체크 활성화</span>
-            <div className="flex items-center gap-3">
-              <span className={`text-[11px] font-bold ${subTextColor}`}>최신 정보 활성화</span>
-              <label className="relative flex items-center cursor-pointer">
-                <input type="checkbox" checked={useSearch} onChange={(e) => setUseSearch(e.target.checked)} className="sr-only peer" />
-                <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all shadow-inner ${
-                  isDarkMode ? 'border-zinc-700 peer-checked:bg-blue-600 peer-checked:border-blue-600' : 'border-zinc-300 peer-checked:bg-blue-600 peer-checked:border-blue-600'
-                }`}>
-                  <svg className={`w-4 h-4 text-white ${useSearch ? 'opacity-100' : 'opacity-0'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="4"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                </div>
-              </label>
-            </div>
-          </section>
-
 {/* 🌟 1. 글 유형 섹션 (가로형) */}
 {/* 🌟 1. 글 유형 섹션 (가로형 - 선택박스 확장) */}
           <section className={`${cardBg} rounded-2xl p-4 shadow-sm transition-all`}>
             <div className="flex items-center justify-between gap-6 font-sans">
               {/* 라벨 영역: 최소한의 너비만 차지 */}
               <label className={`text-[14px] font-black shrink-0 min-w-[80px] ${textColor}`}>
-                글 유형
+                글 유형 (Type)
               </label>
               
               {/* 선택 박스 영역: 전체의 약 2/3 차지 */}
@@ -179,7 +179,7 @@ export default function CreateTab({
           <section className={`${cardBg} rounded-2xl p-4 shadow-sm transition-all`}>
             <div className="flex items-center justify-between gap-6 font-sans">
               <label className={`text-[14px] font-black shrink-0 min-w-[80px] ${textColor}`}>
-                말투
+                말투 (Tone)
               </label>
               <div className={`flex-[2] ${inputBg} border rounded-xl px-4 py-3 flex items-center justify-between ${borderColor} transition-all focus-within:border-blue-500`}>
                 <select 
@@ -203,7 +203,7 @@ export default function CreateTab({
           <section className={`${cardBg} rounded-2xl p-4 shadow-sm transition-all`}>
             <div className="flex items-center justify-between gap-6 font-sans">
               <label className={`text-[14px] font-black shrink-0 min-w-[80px] ${textColor}`}>
-                길이
+                길이 (Length)
               </label>
               <div className={`flex-[2] ${inputBg} border rounded-xl px-4 py-3 flex items-center justify-between ${borderColor} transition-all focus-within:border-blue-500`}>
                 <select 

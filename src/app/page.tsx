@@ -82,10 +82,10 @@ export default function MainLandingPage() {
             className="flex items-center gap-3 cursor-pointer group transition-all duration-500"
             onClick={() => { setIsStudioActive(false); setIsMobileMenuOpen(false); }}
           >
-            <div className="relative w-12 h-12 overflow-visible">
+            <div className="relative w-50 h-50 overflow-visible">
               <Image src="/logobg.webp" alt="Logo" fill className="object-contain relative z-10" priority />
             </div>
-            <span className={`text-xl font-black italic tracking-tighter ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>CREAIBOX</span>
+            <span className={`text-xl font-black italic tracking-tighter ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>AI Contents Studio</span>
           </div>
         </div>
         
