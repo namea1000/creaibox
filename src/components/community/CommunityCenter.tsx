@@ -55,7 +55,7 @@ export default function CommunityCenter(props: any) {
           {/* 🌟 [수정] 맥 패드 제스처 방지용 뒤로가기 버튼 추가 */}
           <div className="pr-4 mr-2 border-r border-zinc-800/50 py-4">
             <button 
-              onClick={() => router.back()}
+              onClick={() => router.push('/')}
               className={`
                 flex items-center gap-2 px-4 py-2 rounded-xl border transition-all active:scale-95 group
                 ${isDarkMode 
@@ -65,7 +65,7 @@ export default function CommunityCenter(props: any) {
               `}
             >
               <ArrowLeft size={16} className="text-blue-500 group-hover:-translate-x-1 transition-transform" />
-              <span className="text-[11px] font-black uppercase tracking-widest italic">Back</span>
+              <span className="text-[11px] font-black uppercase tracking-widest italic">Home</span>
             </button>
           </div>
 

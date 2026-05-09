@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Eye, X, PenLine, Sparkles, Loader2, Copy, FileText, Globe, MessageSquare, ListOrdered, MousePointer2, Zap, Plus, ChevronDown, Share2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { supabase } from '@/lib/supabase';
+// 🌟 [수정] 성공한 파일과 동일하게 클라이언트 생성 함수 임포트
+import { createClient } from '@/utils/supabase/client'; 
 
 export default function CreateTab({ 
   topic, setTopic, handleGenerate, loading, content, setContent,
@@ -13,35 +14,42 @@ export default function CreateTab({
   isDarkMode // 🌟 부모로부터 전달받은 테마 상태
 }: any) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  // 🌟 [수정] 성공한 파일(PostWriteTab)과 동일한 방식으로 클라이언트 생성
+  const supabase = createClient(); 
 
   // 🎨 테마별 스타일 변수 정의
   const themeBg = isDarkMode ? "bg-[#0a0c10]" : "bg-white";
   const cardBg = isDarkMode ? "bg-zinc-900/40 border-zinc-800" : "bg-white border-zinc-200 shadow-sm";
   const inputBg = isDarkMode ? "bg-zinc-950 border-zinc-800" : "bg-zinc-50 border-zinc-200";
-  const textColor = isDarkMode ? "text-zinc-100" : "text-zinc-900"; // 다크모드 글자 선명하게
+  const textColor = isDarkMode ? "text-zinc-100" : "text-zinc-900"; 
   const subTextColor = isDarkMode ? "text-zinc-400" : "text-zinc-500";
   const borderColor = isDarkMode ? "border-zinc-800/50" : "border-zinc-200";
 
-  // 🌟 [원본 보존] DB 저장 함수
+  // 🌟 [교체 완료] DB 저장 함수: writing_wordpress_posts 테이블만 사용
   const saveToSupabase = async (generatedContent: string) => {
     try {
-      console.log("현재 로그인 유저:", user?.email);
-      if (!user?.email) {
+      // 🌟 [추가] 성공 파일 로직 이식: 세션에서 유저 정보를 한 번 더 안전하게 가져옵니다.
+      const { data: { user: sessionUser } } = await supabase.auth.getUser();
+      const targetEmail = sessionUser?.email || user?.email;
+
+      console.log("저장 시도 이메일:", targetEmail);
+      
+      if (!targetEmail) {
         alert("로그인 정보가 없습니다. 새로고침 후 다시 시도해주세요.");
         return;
       }
 
+      // 🌟 타겟 테이블을 'writing_wordpress_posts'로 변경하고 컬럼을 테이블 구조에 맞게 매핑
       const { data, error } = await supabase
-        .from('posts')
+        .from('writing_wordpress_posts')
         .insert([
           { 
-            user_email: user.email, 
+            user_email: targetEmail, 
             title: topic || '제목 없음',
             content: generatedContent,
-            post_type: postType || '일반',
-            tone: tone || '기본',
-            size: length || '기본',
-            status: '완료'
+            status: 'draft', // 기본 상태는 임시저장(draft)
+            categories: [postType || '일반'], // 글 유형을 배열로 저장
+            tags: [tone || '기본'], // 말투를 태그 배열로 저장
           }
         ])
         .select();
@@ -51,8 +59,8 @@ export default function CreateTab({
         alert(`[DB 에러] 메시지: ${error.message}\n코드: ${error.code}`);
         return;
       }
-      console.log("저장 성공 데이터:", data);
-      alert("✅ 드디어! 천신만고 끝에 저장에 성공했습니다!");
+      console.log("워드프레스 테이블 저장 성공:", data);
+      alert("✅ 콘텐츠가 생성되어 '워드프레스 글 관리' 리스트에 안전하게 저장되었습니다!");
     } catch (err: any) {
       console.error("시스템 최종 에러:", err);
       alert("시스템 에러: " + err.message);
@@ -117,8 +125,7 @@ export default function CreateTab({
       {/* --- [왼쪽] 스튜디오 컨트롤 타워 --- */}
       <div className={`w-[45%] flex flex-col h-full transition-all ${themeBg}`}>
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-4 pb-32">
-          <section className={`${cardBg} rounded-2xl p-6 shadow-sm space-y-3`}>
-
+          
           <section className={`${cardBg} rounded-2xl p-5 shadow-sm flex items-center justify-between`}>
             <span className={`text-[13px] font-black ${textColor}`}>최신 정보 팩트체크가 활성화 되어 있습니다. (실시간 정보 반영 중)</span>
             <div className="flex items-center gap-3">
@@ -134,14 +141,14 @@ export default function CreateTab({
             </div>
           </section>      
 
+          <section className={`${cardBg} rounded-2xl p-6 shadow-sm space-y-3`}>
             <label className={`text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-2 ${subTextColor}`}>
-              <PenLine size={14} className="text-blue-500" /> 글쓰기 주제를 아래 칸에 입력해 주세요. Posting Topic & Keyword
+              <PenLine size={14} className="text-blue-500" /> Posting Topic & Keyword
             </label>
             <textarea
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               placeholder={topicPlaceholder}
-              // 🌟 다크모드 입력창 강조 테두리 적용
               className={`w-full h-32 rounded-xl p-4 text-sm font-bold focus:outline-none transition-all resize-none leading-relaxed border-2 ${
                 isDarkMode 
                 ? 'bg-zinc-950 border-zinc-800 text-zinc-100 focus:border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.1)] placeholder:text-zinc-800' 
@@ -150,16 +157,9 @@ export default function CreateTab({
             />
           </section>
 
-{/* 🌟 1. 글 유형 섹션 (가로형) */}
-{/* 🌟 1. 글 유형 섹션 (가로형 - 선택박스 확장) */}
           <section className={`${cardBg} rounded-2xl p-4 shadow-sm transition-all`}>
             <div className="flex items-center justify-between gap-6 font-sans">
-              {/* 라벨 영역: 최소한의 너비만 차지 */}
-              <label className={`text-[14px] font-black shrink-0 min-w-[80px] ${textColor}`}>
-                글 유형 (Type)
-              </label>
-              
-              {/* 선택 박스 영역: 전체의 약 2/3 차지 */}
+              <label className={`text-[14px] font-black shrink-0 min-w-[80px] ${textColor}`}>글 유형 (Type)</label>
               <div className={`flex-[2] ${inputBg} border rounded-xl px-4 py-3 flex items-center justify-between ${borderColor} transition-all focus-within:border-blue-500`}>
                 <select 
                   value={postType} 
@@ -175,12 +175,9 @@ export default function CreateTab({
             </div>
           </section>
 
-          {/* 🌟 2. 말투 섹션 (가로형 - 선택박스 확장) */}
           <section className={`${cardBg} rounded-2xl p-4 shadow-sm transition-all`}>
             <div className="flex items-center justify-between gap-6 font-sans">
-              <label className={`text-[14px] font-black shrink-0 min-w-[80px] ${textColor}`}>
-                말투 (Tone)
-              </label>
+              <label className={`text-[14px] font-black shrink-0 min-w-[80px] ${textColor}`}>말투 (Tone)</label>
               <div className={`flex-[2] ${inputBg} border rounded-xl px-4 py-3 flex items-center justify-between ${borderColor} transition-all focus-within:border-blue-500`}>
                 <select 
                   value={tone} 
@@ -199,12 +196,9 @@ export default function CreateTab({
             </div>
           </section>
 
-          {/* 🌟 3. 길이 섹션 (가로형 - 선택박스 확장) */}
           <section className={`${cardBg} rounded-2xl p-4 shadow-sm transition-all`}>
             <div className="flex items-center justify-between gap-6 font-sans">
-              <label className={`text-[14px] font-black shrink-0 min-w-[80px] ${textColor}`}>
-                길이 (Length)
-              </label>
+              <label className={`text-[14px] font-black shrink-0 min-w-[80px] ${textColor}`}>길이 (Length)</label>
               <div className={`flex-[2] ${inputBg} border rounded-xl px-4 py-3 flex items-center justify-between ${borderColor} transition-all focus-within:border-blue-500`}>
                 <select 
                   value={length} 
@@ -248,12 +242,8 @@ export default function CreateTab({
             </div>
           </button>
 
-          {/* [원본 보존] 템플릿 섹션 */}
           <section className="pt-6 space-y-4 font-sans">
-            <div className="flex flex-col gap-1 px-1 font-sans">
-              <p className={`text-[14px] font-black font-sans ${textColor}`}>글쓰기 템플릿</p>
-              <p className={`text-[11px] font-bold font-sans ${subTextColor}`}>- 클릭 시 주제(키워드)칸에 자동 입력됩니다.</p>
-            </div>
+            <p className={`text-[14px] font-black font-sans ${textColor}`}>글쓰기 템플릿 예시 (클릭 시 자동 입력)</p>
             <div className="grid grid-cols-1 gap-2 font-sans">
               {templates.map((text, idx) => (
                 <button
@@ -343,7 +333,7 @@ export default function CreateTab({
         </div>
       </div>
 
-      {/* [원본 보존] 미리보기 모달 */}
+      {/* 미리보기 모달 */}
       {isPreviewOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300 font-sans">
           <div className="bg-white text-zinc-900 w-full max-w-5xl max-h-[92vh] overflow-hidden rounded-[40px] shadow-2xl flex flex-col relative animate-in zoom-in duration-300 font-sans">
