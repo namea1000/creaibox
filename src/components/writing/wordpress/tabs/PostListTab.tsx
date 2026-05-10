@@ -91,7 +91,7 @@ export default function PostListTab({ user: propUser, isDarkMode }: any) {
   };
 
   // 🌟 [배포 에러 완벽 해결] PDF/TXT 다운로드 함수
-  const downloadFile = async (type: 'txt' | 'pdf') => {
+const downloadFile = async (type: 'txt' | 'pdf') => {
     if (!selectedPost) return;
     
     if (type === 'txt') {
@@ -106,7 +106,6 @@ export default function PostListTab({ user: propUser, isDarkMode }: any) {
       try {
         const html2pdf = (await import('html2pdf.js')).default;
         
-        // 🌟 [수정] ReactDOMServer 없이 수동으로 마크다운 표를 HTML 테이블로 변환
         const parseMarkdownForPdf = (text: string) => {
           return text
             .replace(/^\|(.+)\|$/gim, (match) => {
@@ -133,7 +132,7 @@ export default function PostListTab({ user: propUser, isDarkMode }: any) {
         const element = document.createElement('div');
         element.innerHTML = `
           <div style="padding: 40px; font-family: sans-serif; background: white;">
-            <h1 style="font-size: 30px; font-weight: 900; color: #000; border-bottom: 6px solid #f3e8ff; padding-bottom: 15px; margin-bottom: 30px; font-style: italic;">
+            <h1 style="font-size: 30px; font-weight: 900; color: #000; border-bottom: 8px solid #f3e8ff; padding-bottom: 15px; margin-bottom: 30px; font-style: italic;">
               ${selectedPost.title}
             </h1>
             <div style="line-height: 1.8; font-size: 14px; color: #333;">
@@ -148,12 +147,11 @@ export default function PostListTab({ user: propUser, isDarkMode }: any) {
           image: { type: 'jpeg', quality: 0.98 },
           html2canvas: { scale: 2, useCORS: true },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
+        } as const; // 🌟 이 부분이 핵심입니다!
 
         html2pdf().set(opt).from(element).save();
       } catch (err) {
         console.error("PDF 에러:", err);
-        alert("PDF 라이브러리를 로딩할 수 없습니다. 터미널에서 npm install html2pdf.js 를 실행했는지 확인해주세요.");
       }
     }
     setShowDownloadMenu(false);
