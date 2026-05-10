@@ -87,10 +87,10 @@ export default function PostListTab({ user: propUser, isDarkMode }: any) {
   const handleCopy = () => {
     if (!selectedPost) return;
     navigator.clipboard.writeText(selectedPost.content);
-    alert("콘텐츠가 클립보드에 복사되었습니다!");
+    alert("복사되었습니다!");
   };
 
-  // 🌟 고품질 PDF/TXT 다운로드 함수 (표 지원 및 에러 방지 버전)
+  // 🌟 [배포 에러 완벽 해결] PDF/TXT 다운로드 함수
   const downloadFile = async (type: 'txt' | 'pdf') => {
     if (!selectedPost) return;
     
@@ -106,8 +106,8 @@ export default function PostListTab({ user: propUser, isDarkMode }: any) {
       try {
         const html2pdf = (await import('html2pdf.js')).default;
         
-        // 마크다운 표 및 스타일 수동 파싱 (ReactDOMServer 없이 안전하게 실행)
-        const parseContent = (text: string) => {
+        // 🌟 [수정] ReactDOMServer 없이 수동으로 마크다운 표를 HTML 테이블로 변환
+        const parseMarkdownForPdf = (text: string) => {
           return text
             .replace(/^\|(.+)\|$/gim, (match) => {
               const rows = match.trim().split('\n');
@@ -132,12 +132,12 @@ export default function PostListTab({ user: propUser, isDarkMode }: any) {
 
         const element = document.createElement('div');
         element.innerHTML = `
-          <div style="padding: 40px; font-family: sans-serif; color: #18181b; background: white;">
-            <h1 style="font-size: 30px; font-weight: 900; color: #000; border-bottom: 8px solid #f3e8ff; padding-bottom: 15px; margin-bottom: 30px; font-style: italic;">
+          <div style="padding: 40px; font-family: sans-serif; background: white;">
+            <h1 style="font-size: 30px; font-weight: 900; color: #000; border-bottom: 6px solid #f3e8ff; padding-bottom: 15px; margin-bottom: 30px; font-style: italic;">
               ${selectedPost.title}
             </h1>
-            <div style="line-height: 1.8; font-size: 14px;">
-              ${parseContent(selectedPost.content)}
+            <div style="line-height: 1.8; font-size: 14px; color: #333;">
+              ${parseMarkdownForPdf(selectedPost.content)}
             </div>
           </div>
         `;
@@ -152,8 +152,8 @@ export default function PostListTab({ user: propUser, isDarkMode }: any) {
 
         html2pdf().set(opt).from(element).save();
       } catch (err) {
-        console.error("PDF 생성 에러:", err);
-        alert("라이브러리를 불러올 수 없습니다. 'npm install html2pdf.js'를 확인해주세요.");
+        console.error("PDF 에러:", err);
+        alert("PDF 라이브러리를 로딩할 수 없습니다. 터미널에서 npm install html2pdf.js 를 실행했는지 확인해주세요.");
       }
     }
     setShowDownloadMenu(false);
@@ -162,7 +162,7 @@ export default function PostListTab({ user: propUser, isDarkMode }: any) {
   const filteredPosts = posts.filter(post => post.title.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
-    <div className={`flex h-full border-l ${borderColor} divide-x ${borderColor} transition-colors duration-500 font-sans ${themeBg} ${textColor}`}>
+    <div className={`flex h-full border-l ${borderColor} divide-x ${borderColor} font-sans ${themeBg} ${textColor}`}>
       
       {/* --- [왼쪽] 리스트 영역 (35%) --- */}
       <div className={`w-[35%] flex flex-col border-r ${borderColor} ${selectedPost ? 'hidden lg:flex' : 'flex'}`}>
@@ -223,21 +223,18 @@ export default function PostListTab({ user: propUser, isDarkMode }: any) {
             </button>
             
             <div className="flex gap-2 relative">
-              {/* 1. EDIT POST (밝은 녹색 입힘) */}
               <button 
                 onClick={() => isEditing ? handleUpdate() : setIsEditing(true)}
-                className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg ${isEditing ? 'bg-emerald-600 text-white shadow-emerald-500/30' : 'bg-emerald-400 text-emerald-950 border border-emerald-500 hover:bg-emerald-500 hover:text-white'}`}
+                className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg ${isEditing ? 'bg-emerald-600 text-white' : 'bg-emerald-400 text-emerald-950 border border-emerald-500 hover:bg-emerald-500 hover:text-white'}`}
               >
                 {isEditing ? <Save size={14}/> : <Edit3 size={14}/>}
                 {isEditing ? 'Save Changes' : 'Edit Post'}
               </button>
 
-              {/* 2. COPY */}
               <button onClick={handleCopy} className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${isDarkMode ? 'bg-zinc-900 text-zinc-400 border border-zinc-800 hover:text-white' : 'bg-white border-zinc-200 text-zinc-600 shadow-sm'}`}>
                 <Copy size={14} /> Copy
               </button>
 
-              {/* 3. DOWNLOAD (메뉴 선택 기능 포함) */}
               <div className="relative">
                 <button onClick={() => setShowDownloadMenu(!showDownloadMenu)} className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${isDarkMode ? 'bg-zinc-900 text-zinc-400 border border-zinc-800 hover:text-white' : 'bg-white border-zinc-200 text-zinc-600 shadow-sm'}`}>
                   <FileDown size={14} /> Download
@@ -250,19 +247,17 @@ export default function PostListTab({ user: propUser, isDarkMode }: any) {
                 )}
               </div>
 
-              {/* 4. 삭제하기 */}
               <button onClick={() => handleDelete(selectedPost.id)} className="px-4 py-2 rounded-xl text-[11px] font-black bg-red-600/10 text-red-500 border border-red-500/30 flex items-center gap-2 hover:bg-red-600 hover:text-white transition-all">
                 <Trash2 size={14}/> 삭제하기
               </button>
 
-              {/* 5. WP Setting */}
               <button className="px-4 py-2 rounded-xl text-[11px] font-black bg-zinc-600/10 text-zinc-500 border border-zinc-500/30 flex items-center gap-2 hover:bg-zinc-800 hover:text-white transition-all">
                 <Settings size={14} /> WP Setting
               </button>
             </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-12 custom-scrollbar font-sans">
             <div className="grid grid-cols-4 gap-4 mb-10">
                <div className={`p-4 rounded-xl border ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800/50' : 'bg-zinc-50 border-zinc-200'}`}>
                   <p className="text-[8px] font-black text-zinc-500 uppercase mb-1">WP Category</p>
@@ -282,7 +277,7 @@ export default function PostListTab({ user: propUser, isDarkMode }: any) {
                </button>
             </div>
 
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-4xl mx-auto font-sans">
                {isEditing ? (
                  <input value={selectedPost.title} onChange={(e) => setSelectedPost({...selectedPost, title: e.target.value})} className={`w-full text-3xl font-black italic tracking-tighter leading-tight mb-8 bg-transparent border-none focus:outline-none ${textColor}`} />
                ) : (
@@ -300,27 +295,27 @@ export default function PostListTab({ user: propUser, isDarkMode }: any) {
         </div>
       )}
 
-      {/* Full Preview 모달 (유지) */}
+      {/* Full Preview 모달 */}
       {isPreviewOpen && selectedPost && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-white text-zinc-900 w-full max-w-6xl h-[90vh] overflow-hidden rounded-[40px] shadow-2xl flex flex-col relative animate-in zoom-in duration-300">
-            <div className="px-10 py-6 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/80">
-              <span className="text-[11px] font-black text-purple-600 uppercase tracking-widest flex items-center gap-2">
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md animate-in fade-in duration-300 font-sans">
+          <div className="bg-white text-zinc-900 w-full max-w-6xl h-[90vh] overflow-hidden rounded-[40px] shadow-2xl flex flex-col relative animate-in zoom-in duration-300 font-sans">
+            <div className="px-10 py-6 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/80 font-sans">
+              <span className="text-[11px] font-black text-purple-600 uppercase tracking-widest flex items-center gap-2 font-sans">
                 <Eye size={16}/> WordPress Live Preview Mode
               </span>
-              <button onClick={() => setIsPreviewOpen(false)} className="p-2 hover:bg-zinc-200 rounded-full transition-all active:scale-90"><X size={24} /></button>
+              <button onClick={() => setIsPreviewOpen(false)} className="p-2 hover:bg-zinc-200 rounded-full transition-all active:scale-90 font-sans"><X size={24} /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-12 lg:p-20 bg-white custom-scrollbar text-left font-sans">
               <article className="max-w-3xl mx-auto font-sans">
-                <h1 className="text-4xl font-black mb-12 leading-tight tracking-tighter italic border-b-8 border-purple-500/10 pb-8">{selectedPost.title}</h1>
-                <div className="markdown-content leading-[2.1] text-zinc-800 font-medium">
+                <h1 className="text-4xl font-black mb-12 leading-tight tracking-tighter italic border-b-8 border-purple-500/10 pb-8 font-sans">{selectedPost.title}</h1>
+                <div className="markdown-content leading-[2.1] text-zinc-800 font-medium font-sans">
                   <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
-                    table: ({...props}) => (<div className="my-8 w-full overflow-hidden rounded-xl border border-zinc-200 shadow-sm"><table className="w-full text-sm text-left border-collapse" {...props} /></div>),
-                    thead: ({...props}) => <thead className="bg-zinc-50 border-b border-zinc-200" {...props} />,
-                    th: ({...props}) => <th className="px-5 py-4 font-black text-zinc-700 border-r border-zinc-200 last:border-0" {...props} />,
-                    td: ({...props}) => <td className="px-5 py-4 border-t border-zinc-100 border-r border-zinc-200 last:border-0" {...props} />,
-                    h2: ({...props}) => <h2 className="border-l-8 border-purple-500 pl-6 text-2xl font-black mt-16 mb-8 uppercase italic" {...props} />,
-                    p: ({...props}) => <p className="mb-6" {...props} />,
+                    table: ({node, ...props}) => (<div className="my-8 w-full overflow-hidden rounded-xl border border-zinc-200 shadow-sm"><table className="w-full text-sm text-left border-collapse" {...props} /></div>),
+                    thead: ({node, ...props}) => <thead className="bg-zinc-50 border-b border-zinc-200" {...props} />,
+                    th: ({node, ...props}) => <th className="px-5 py-4 font-black text-zinc-700 border-r border-zinc-200 last:border-0" {...props} />,
+                    td: ({node, ...props}) => <td className="px-5 py-4 border-t border-zinc-100 border-r border-zinc-200 last:border-0" {...props} />,
+                    h2: ({node, ...props}) => <h2 className="border-l-8 border-purple-500 pl-6 text-2xl font-black mt-16 mb-8 uppercase italic font-sans" {...props} />,
+                    p: ({node, ...props}) => <p className="mb-6 font-sans" {...props} />,
                   }}>
                     {selectedPost.content}
                   </ReactMarkdown>
