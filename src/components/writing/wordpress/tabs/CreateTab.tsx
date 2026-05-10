@@ -256,9 +256,10 @@ export default function CreateTab({
         </div>
       </div>
 
-      {/* --- [오른쪽] 프리뷰 --- */}
+{/* --- [오른쪽] 프리뷰 (스크롤 제한 해제 & 실제 화면 렌더링) --- */}
       <div className={`w-[55%] flex flex-col transition-all ${isDarkMode ? 'bg-[#0a0c10]' : 'bg-zinc-50/50'}`}>
-        <div className="relative flex justify-between items-center px-10 py-6 border-b transition-all border-zinc-800/50 backdrop-blur-md z-10 shrink-0">
+        {/* 상단 헤더: 스크롤 시 상단에 고정되도록 sticky 적용 */}
+        <div className="sticky top-0 flex justify-between items-center px-10 py-6 border-b transition-all border-zinc-800/50 backdrop-blur-md z-30 shrink-0">
           
           {/* 🌟 3. 상단 라인 프로그레스 바 복구 */}
           {loading && (
@@ -286,7 +287,7 @@ export default function CreateTab({
             >
               <FileText size={14} /> {hasSaved ? '저장 완료' : '글 관리 저장'}
             </button>
-            {/* 🌟 4. EDIT 버튼 삭제 */}
+            {/* 🌟 4. EDIT 버튼 삭제됨 */}
             <button onClick={() => setIsPreviewOpen(true)} disabled={!content || loading} className={`px-5 py-2 border rounded-lg text-[11px] font-black transition-all uppercase tracking-widest ${
               isDarkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white' : 'bg-white border-zinc-200 text-zinc-600'
             }`}>PREVIEW</button>
@@ -296,16 +297,35 @@ export default function CreateTab({
           </div>
         </div>
 
-        <div className={`flex-1 overflow-y-auto p-12 custom-scrollbar transition-all ${isDarkMode ? 'bg-white/[0.01]' : 'bg-white'}`}>
+        {/* 🌟 핵심 수정: overflow-y-auto를 제거하여 전체 페이지 스크롤을 따르게 함 */}
+        <div className={`flex-1 p-12 transition-all ${isDarkMode ? 'bg-white/[0.01]' : 'bg-white'}`}>
           {!content && !loading ? (
-            <div className={`h-full flex flex-col items-center justify-center italic font-bold text-xl ${subTextColor}`}>
+            <div className={`h-[400px] flex flex-col items-center justify-center italic font-bold text-xl ${subTextColor}`}>
               Preview Engine Ready
             </div>
           ) : (
             <div className="max-w-3xl mx-auto animate-in fade-in duration-500 pb-20 font-sans">
-              <pre className={`font-mono text-[14px] leading-[2.2] whitespace-pre-wrap break-words ${isDarkMode ? 'text-zinc-200' : 'text-zinc-800'}`}>
-                {content}
-              </pre>
+              {/* 🌟 원본 소스 <pre> 대신 실제 화면을 렌더링합니다 */}
+              <div className={`markdown-content leading-[2.1] ${isDarkMode ? 'text-zinc-200' : 'text-zinc-800'}`}>
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    table: ({...props}) => (
+                      <div className="my-8 w-full overflow-hidden rounded-xl border border-zinc-200 shadow-sm">
+                        <table className="w-full text-sm text-left border-collapse" {...props} />
+                      </div>
+                    ),
+                    thead: ({...props}) => <thead className="bg-zinc-50 border-b border-zinc-200" {...props} />,
+                    th: ({...props}) => <th className="px-5 py-4 font-black text-zinc-700 border-r border-zinc-200 last:border-0" {...props} />,
+                    td: ({...props}) => <td className="px-5 py-4 border-t border-zinc-100 border-r border-zinc-200 last:border-0" {...props} />,
+                    h2: ({...props}) => <h2 className="border-l-8 border-purple-500 pl-6 text-2xl font-black mt-16 mb-8 uppercase italic text-zinc-900 dark:text-zinc-100" {...props} />,
+                    p: ({...props}) => <p className="mb-6" {...props} />,
+                    strong: ({...props}) => <strong className="font-black" {...props} />,
+                  }}
+                >
+                  {content}
+                </ReactMarkdown>
+              </div>
             </div>
           )}
         </div>
