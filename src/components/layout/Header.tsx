@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   ChevronDown, User as UserIcon, Settings, LogOut, 
-  Sun, Moon, Menu, X 
+  Sun, Moon, Menu, X, Key // 🌟 Key 아이콘 추가
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { User } from '@supabase/supabase-js';
@@ -14,9 +14,11 @@ interface HeaderProps {
   isDarkMode: boolean;
   toggleTheme: () => void;
   onMenuClick?: (menuValue: string) => void;
+  // 🌟 사이드바의 viewMode를 변경하기 위한 props 추가 (StudioLayout에서 전달받음)
+  setViewMode?: (mode: string) => void; 
 }
 
-export default function Header({ isDarkMode, toggleTheme, onMenuClick }: HeaderProps) {
+export default function Header({ isDarkMode, toggleTheme, onMenuClick, setViewMode }: HeaderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -40,15 +42,27 @@ export default function Header({ isDarkMode, toggleTheme, onMenuClick }: HeaderP
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 🚀 로고 클릭 시 확실하게 메인으로 보내는 함수
   const handleLogoClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    window.location.href = "/"; // 강제 새로고침 이동 (상태 꼬임 방지)
+    window.location.href = "/"; 
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.reload();
+  };
+
+  // 🌟 API 키 관리 클릭 시 실행될 함수
+  const handleVaultClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (setViewMode) {
+      setViewMode('Vault'); // 사이드바와 동일하게 'Vault' 모드로 전환
+      setIsProfileOpen(false);
+    } else {
+      // 만약 정석 라우팅(A방식) 폴더를 만드셨다면 아래 주소를 사용하세요
+      // window.location.href = "/vault"; 
+      console.error("setViewMode function is missing!");
+    }
   };
 
   const menuItems = [
@@ -64,25 +78,15 @@ export default function Header({ isDarkMode, toggleTheme, onMenuClick }: HeaderP
       isDarkMode ? 'bg-[#0a0c10]/80 backdrop-blur-md border-zinc-800/50' : 'bg-white/80 backdrop-blur-md border-zinc-200'
     }`}>
       
-      {/* 로고 영역 (수정완료) */}
+      {/* 로고 영역 */}
       <div className="flex items-center">
-        <a 
-          href="/" 
-          onClick={handleLogoClick}
-          className="flex items-center gap-3 cursor-pointer group transition-all duration-500"
-        >
+        <a href="/" onClick={handleLogoClick} className="flex items-center gap-3 cursor-pointer group transition-all duration-500">
           <div className="relative w-40 h-40 overflow-visible">
-            <Image 
-              src="/logobg.webp" 
-              alt="Logo" 
-              fill 
-              className="object-contain relative z-10" 
-              priority 
-            />
+            <Image src="/logobg.webp" alt="Logo" fill className="object-contain relative z-10" priority />
           </div>
           <span className={`text-xl font-black italic tracking-tighter transition-all ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
-      AI Contents <span className="text-blue-500 group-hover:text-blue-400 transition-colors">Studio</span>
-    </span>
+            AI Contents <span className="text-blue-500 group-hover:text-blue-400 transition-colors">Studio</span>
+          </span>
         </a>
       </div>
       
@@ -94,7 +98,7 @@ export default function Header({ isDarkMode, toggleTheme, onMenuClick }: HeaderP
               key={item.value} 
               onClick={() => onMenuClick?.(item.value)} 
               className={`text-[15px] font-black uppercase tracking-tight transition-all duration-300 relative py-1 ${
-                isDarkMode ? 'text-zinc-400 hover:text-white' : 'text-zinc-500 hover:text-zinc-900'
+                isDarkMode ? 'text-zinc-400 hover:text-white' : 'text-zinc-50 hover:text-zinc-900'
               }`}
             >
               {item.label}
@@ -130,13 +134,23 @@ export default function Header({ isDarkMode, toggleTheme, onMenuClick }: HeaderP
               <div className={`absolute right-0 mt-2 w-56 rounded-2xl shadow-2xl py-2 overflow-hidden z-[110] border ${
                 isDarkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'
               }`}>
-                <Link href="/mypage" className={`flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-all ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-700 hover:bg-zinc-100'}`}>
+                {/* 🌟 내 프로필: MyPage 모드로 전환하도록 수정 */}
+                <button 
+                  onClick={() => { setViewMode?.('MyPage'); setIsProfileOpen(false); }}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-all text-left ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-700 hover:bg-zinc-100'}`}
+                >
                   <UserIcon size={14} />내 프로필
-                </Link>
-                <Link href="/adm/apivault" className={`flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-all ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-700 hover:bg-zinc-100'}`}>
+                </button>
+
+                {/* 🌟 API 키 관리: Vault 모드로 전환 (수정완료) */}
+                <button 
+                  onClick={handleVaultClick}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-all text-left ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-700 hover:bg-zinc-100'}`}
+                >
                   <Settings size={14} />API 키 관리
-                </Link>
-                <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-red-500 hover:bg-red-500/5 transition-all border-t mt-1">
+                </button>
+
+                <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-red-500 hover:bg-red-500/5 transition-all border-t mt-1 text-left">
                   <LogOut size={14} />로그아웃
                 </button>
               </div>
