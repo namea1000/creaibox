@@ -2,24 +2,29 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url) // origin은 이제 필요 없으므로 제거해도 됩니다.
+  const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   
-  // 목적지 주소를 완전히 고정합니다.
-  const next = 'https://gentoolbox.vercel.app/onboarding'
+  // 로그인 성공 후 보낼 페이지 (온보딩)
+  // origin을 사용하면 localhost면 localhost로, 배포사이트면 배포사이트로 자동 대응합니다.
+  const next = `${origin}/onboarding`
 
   if (code) {
     const supabase = await createClient()
+    
+    // 이 단계에서 'code'를 실제 사용자 '세션'으로 교환합니다.
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error) {
-      // 🎯 origin 변수 대신 고정된 주소를 바로 사용합니다.
+      // 세션 교환 성공! 유연하게 리다이렉트
       return NextResponse.redirect(next)
     }
     
-    // 에러 발생 시에도 절대 주소를 사용하는 것이 안전합니다.
-    return NextResponse.redirect(`https://gentoolbox.vercel.app/login?error_msg=${encodeURIComponent(error.message)}`)
+    // 에러 발생 시 로그인 페이지로 에러 메시지와 함께 전송
+    console.error('Auth error:', error.message)
+    return NextResponse.redirect(`${origin}/login?error_msg=${encodeURIComponent(error.message)}`)
   }
 
-  return NextResponse.redirect(`https://gentoolbox.vercel.app/login?error_details=auth_failed`)
+  // 코드가 없는 경우 실패 처리
+  return NextResponse.redirect(`${origin}/login?error_details=auth_failed`)
 }

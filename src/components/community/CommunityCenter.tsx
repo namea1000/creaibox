@@ -65,7 +65,7 @@ export default function CommunityCenter(props: any) {
               `}
             >
               <ArrowLeft size={16} className="text-blue-500 group-hover:-translate-x-1 transition-transform" />
-              <span className="text-[11px] font-black uppercase tracking-widest italic">Home</span>
+              <span className="text-[11px] font-black uppercase tracking-widest italic">커뮤니티홈</span>
             </button>
           </div>
 

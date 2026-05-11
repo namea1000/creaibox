@@ -74,31 +74,6 @@ export default function WordPressCenter(props: any) {
           )}
         </div>
       </div>
-
-      {/* --- 오른쪽 상시 고정 사이드바 --- */}
-      <div className={`w-72 border-l flex flex-col shrink-0 transition-all ${
-        isDarkMode ? 'bg-zinc-900/10 border-zinc-800/50' : 'bg-zinc-100/50 border-zinc-200'
-      }`}>
-        <div className={`p-5 border-b ${isDarkMode ? 'border-zinc-800/50' : 'border-zinc-200'}`}>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
-            <input 
-              type="text" 
-              placeholder="검색 하기" 
-              className={`w-full border rounded-xl py-2.5 pl-9 pr-4 text-xs focus:outline-none focus:border-blue-500 transition-all ${
-                isDarkMode 
-                ? 'bg-zinc-800/50 border-zinc-700/50 text-zinc-100 placeholder:text-zinc-600' 
-                : 'bg-white border-zinc-200 text-zinc-900 placeholder:text-zinc-400'
-              }`}
-            />
-          </div>
-        </div>
-        <div className="flex-1 p-5 flex flex-col gap-4">
-          <button className="flex items-center justify-center gap-3 px-4 py-4 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm rounded-2xl transition-all shadow-lg shadow-blue-600/20 active:scale-[0.95] uppercase tracking-tighter">
-            <MessageSquare size={18} /> AI CHATTING
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
