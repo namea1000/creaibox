@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   ChevronDown, User as UserIcon, Settings, LogOut, 
-  Sun, Moon, Menu, X, Key // 🌟 Key 아이콘 추가
+  Sun, Moon, Menu, X, Key 
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { User } from '@supabase/supabase-js';
@@ -14,8 +14,7 @@ interface HeaderProps {
   isDarkMode: boolean;
   toggleTheme: () => void;
   onMenuClick?: (menuValue: string) => void;
-  // 🌟 사이드바의 viewMode를 변경하기 위한 props 추가 (StudioLayout에서 전달받음)
-  setViewMode?: (mode: string) => void; 
+  setViewMode?: (mode: string) => void; // 🌟 부모로부터 받는 화면 전환 함수
 }
 
 export default function Header({ isDarkMode, toggleTheme, onMenuClick, setViewMode }: HeaderProps) {
@@ -52,16 +51,14 @@ export default function Header({ isDarkMode, toggleTheme, onMenuClick, setViewMo
     window.location.reload();
   };
 
-  // 🌟 API 키 관리 클릭 시 실행될 함수
-  const handleVaultClick = (e: React.MouseEvent) => {
-    e.preventDefault();
+  // 🌟 [추가] 공통 화면 전환 핸들러
+  const handleViewChange = (mode: string) => {
     if (setViewMode) {
-      setViewMode('Vault'); // 사이드바와 동일하게 'Vault' 모드로 전환
-      setIsProfileOpen(false);
+      setViewMode(mode);
+      setIsProfileOpen(false); // 드롭다운 닫기
+      setIsMobileMenuOpen(false); // 모바일 메뉴 닫기
     } else {
-      // 만약 정석 라우팅(A방식) 폴더를 만드셨다면 아래 주소를 사용하세요
-      // window.location.href = "/vault"; 
-      console.error("setViewMode function is missing!");
+      console.warn("setViewMode function is not provided to Header!");
     }
   };
 
@@ -134,17 +131,17 @@ export default function Header({ isDarkMode, toggleTheme, onMenuClick, setViewMo
               <div className={`absolute right-0 mt-2 w-56 rounded-2xl shadow-2xl py-2 overflow-hidden z-[110] border ${
                 isDarkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'
               }`}>
-                {/* 🌟 내 프로필: MyPage 모드로 전환하도록 수정 */}
+                {/* 🌟 [수정] 내 프로필 클릭 시 MyPage 모드로 전환 */}
                 <button 
-                  onClick={() => { setViewMode?.('MyPage'); setIsProfileOpen(false); }}
+                  onClick={() => handleViewChange('MyPage')}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-all text-left ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-700 hover:bg-zinc-100'}`}
                 >
                   <UserIcon size={14} />내 프로필
                 </button>
 
-                {/* 🌟 API 키 관리: Vault 모드로 전환 (수정완료) */}
+                {/* 🌟 [수정] API 키 관리 클릭 시 Vault 모드로 전환 */}
                 <button 
-                  onClick={handleVaultClick}
+                  onClick={() => handleViewChange('Vault')}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-all text-left ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-700 hover:bg-zinc-100'}`}
                 >
                   <Settings size={14} />API 키 관리
