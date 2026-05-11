@@ -119,7 +119,7 @@ export default function CreateTab({
       <div className={`w-[45%] flex flex-col h-full transition-all ${themeBg}`}>
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-4 pb-32">
           
-          <section className={`${cardBg} rounded-2xl p-5 shadow-sm flex items-center justify-between`}>
+          <section className={`${cardBg} rounded2xl p-5 shadow-sm flex items-center justify-between`}>
             <span className={`text-[13px] font-black ${textColor}`}>최신 정보 팩트체크가 활성화 되어 있습니다. (실시간 정보 반영 중)</span>
             <div className="flex items-center gap-3">
               <span className={`text-[11px] font-bold ${subTextColor}`}>최신 정보 활성화</span>
@@ -367,6 +367,7 @@ export default function CreateTab({
             </div>
           </div>
         </div>
+        
       )}
     </div>
   );

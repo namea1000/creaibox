@@ -7,7 +7,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // 🌟 분리된 사이드바와 알맹이 컴포넌트들
 import Sidebar from '@/components/layout/Sidebar';
-import WordPressContent from '@/components/writing/wordpress/WordPressCenter';
+import WordPressContent from '@/components/layout/studios/writing/WordPressLayout';
 import APIVaultContent from '@/components/vault/APIVaultContent'; 
 import MyPageContent from '@/components/mypage/MyPageContent'; 
 import CommunityCenter from '@/components/community/CommunityCenter';

@@ -2,12 +2,12 @@
 
 import React, { useState } from 'react';
 import { PenLine, FileText, ImageIcon, ImagePlus, CalendarCheck, Settings2, Search, MessageSquare, ExternalLink } from 'lucide-react';
-import CreateTab from './tabs/CreateTab';
-import PostListTab from './tabs/PostListTab'; 
-import GoogleSearchTab from './tabs/GoogleSearchTab';
-import NaverSearchTab from './tabs/NaverSearchTab';
+import CreateTab from '@/components/writing/wordpress/tabs/CreateTab';
+import PostListTab from '@/components/writing/wordpress/tabs/PostListTab'; 
+import GoogleSearchTab from '@/components/writing/wordpress/tabs/GoogleSearchTab';
+import NaverSearchTab from '@/components/writing/wordpress/tabs/NaverSearchTab';
 import { MessageSquareText } from 'lucide-react'; 
-import AIChatTab from './tabs/AIChatTab';
+import AIChatTab from '@/components/writing/wordpress/tabs/AIChatTab';
 
 export default function WordPressCenter(props: any) {
   // 🌟 props에서 전달받은 isDarkMode를 사용합니다.

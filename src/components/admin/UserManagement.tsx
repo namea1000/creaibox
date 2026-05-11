@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { 
-  Users, UserShield, UserCheck, ShieldAlert, 
+  Users, ShieldCheck, UserCheck, ShieldAlert, 
   Search, Filter, MoreVertical, Ban, Key, 
   Settings, Crown, Clock, Mail, Briefcase, ChevronDown
 } from 'lucide-react';
@@ -37,7 +37,7 @@ export default function UserManagementAdmin() {
         <header className="mb-10 flex justify-between items-end">
           <div>
             <h1 className="text-4xl font-black italic tracking-tighter text-white flex items-center gap-3 uppercase">
-              <UserShield className="text-blue-500 w-10 h-10" /> 
+              <ShieldCheck className="text-blue-500 w-10 h-10" /> 
               Command <span className="text-blue-500">Center</span>
             </h1>
             <p className="text-zinc-500 font-bold mt-2 uppercase tracking-widest text-xs">

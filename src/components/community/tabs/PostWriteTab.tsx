@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { 
   Send, X, CheckCircle2, Loader2, ChevronLeft, ThumbsUp, 
-  MessageSquare, Image as ImageIcon, Paperclip, Smile, Eye
+  MessageSquare, Image as ImageIcon, Paperclip, Smile, Eye, Trash2, Edit3
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
@@ -20,16 +20,18 @@ export default function PostWriteTab({ isDarkMode, user, editingPost, onCancel, 
   const [likes, setLikes] = useState(editingPost?.like_count || 0);
   const [hasLiked, setHasLiked] = useState(false);
 
-  // 🌟 [상태 추가] 미리보기 모달 제어
-  const [showPreview, setShowPreview] = useState(false);
+  // 🌟 댓글 수정을 위한 상태 추가
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editCommentValue, setEditCommentValue] = useState("");
 
+  const [showPreview, setShowPreview] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [showEmoji, setShowEmoji] = useState<{target: string | null}>({target: null});
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   
   const supabase = createClient();
   const [activeUser, setActiveUser] = useState(user);
-  const isAuthor = !editingPost || activeUser?.email === editingPost?.user_email;
+  const isAuthor = editingPost && activeUser?.email === editingPost?.user_email;
 
   const emojis = ["😀", "😁", "😂", "🤣", "😃", "😄", "😅", "😆", "😉", "😊", "😋", "😎", "😍", "😘", "🥰", "😗", "😙", "😚", "☺️", "🙂", "🤗", "🤩", "🤔", "🤨", "😐", "😑", "😶", "🙄", "😏", "😣", "😥", "😮", "🤐", "😯", "😪", "😫", "🥱", "😴"];
 
@@ -64,6 +66,30 @@ export default function PostWriteTab({ isDarkMode, user, editingPost, onCancel, 
     if (!error && data) setComments(data);
   };
 
+  // 🌟 댓글 삭제 로직 추가
+  const handleCommentDelete = async (commentId: string) => {
+    if (!confirm("정말 이 댓글을 삭제하시겠습니까?")) return;
+    const { error } = await supabase.from('community_comments').delete().eq('id', commentId);
+    if (!error) {
+      fetchComments();
+    } else {
+      alert("댓글 삭제에 실패했습니다.");
+    }
+  };
+
+  // 🌟 댓글 수정 로직 추가
+  const handleCommentUpdate = async (commentId: string) => {
+    if (!editCommentValue.trim()) return;
+    const { error } = await supabase.from('community_comments').update({ content: editCommentValue }).eq('id', commentId);
+    if (!error) {
+      setEditingCommentId(null);
+      setEditCommentValue("");
+      fetchComments();
+    } else {
+      alert("댓글 수정에 실패했습니다.");
+    }
+  };
+
   const addEmoji = (emoji: string) => {
     if (showEmoji.target === 'title') setTitle(title + emoji);
     if (showEmoji.target === 'content') setContent(content + emoji);
@@ -73,16 +99,13 @@ export default function PostWriteTab({ isDarkMode, user, editingPost, onCancel, 
 
   const uploadAndInsertImage = async (file: File) => {
     if (!file.type.startsWith('image/')) return alert("이미지 파일만 본문 삽입이 가능합니다.");
-    
     setLoading(true);
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const { data, error } = await supabase.storage.from('community').upload(fileName, file);
-
       if (data) {
         const { data: { publicUrl } } = supabase.storage.from('community').getPublicUrl(fileName);
-        
         const textArea = textAreaRef.current;
         if (textArea) {
           const start = textArea.selectionStart;
@@ -102,9 +125,7 @@ export default function PostWriteTab({ isDarkMode, user, editingPost, onCancel, 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     const droppedFiles = Array.from(e.dataTransfer.files);
-    if (droppedFiles.length > 0) {
-      await uploadAndInsertImage(droppedFiles[0]);
-    }
+    if (droppedFiles.length > 0) await uploadAndInsertImage(droppedFiles[0]);
   };
 
   const handleDragOver = (e: React.DragEvent) => e.preventDefault();
@@ -151,7 +172,6 @@ export default function PostWriteTab({ isDarkMode, user, editingPost, onCancel, 
           uploadedUrls.push(publicUrl);
         }
       }
-
       if (editingPost) {
         const { error } = await supabase.from('community_posts').update({ 
           title, content, post_type: postType,
@@ -165,7 +185,6 @@ export default function PostWriteTab({ isDarkMode, user, editingPost, onCancel, 
         }]);
         if (error) throw error;
       }
-      
       setSaveStatus(true); 
       setTimeout(() => { setSaveStatus(false); if (onSuccess) onSuccess(); }, 2000); 
     } catch (error: any) { alert(`처리 실패: ${error.message}`); }
@@ -178,7 +197,7 @@ export default function PostWriteTab({ isDarkMode, user, editingPost, onCancel, 
   return (
     <div className={`max-w-4xl mx-auto rounded-3xl border p-8 relative ${cardBg}`}>
       
-      {/* 🌟 [미리보기 모달 추가] */}
+      {/* 미리보기 모달 */}
       {showPreview && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className={`w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-3xl border p-8 custom-scrollbar ${cardBg}`}>
@@ -191,13 +210,7 @@ export default function PostWriteTab({ isDarkMode, user, editingPost, onCancel, 
               </button>
             </div>
             <div className={`text-base leading-relaxed ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>
-              <ReactMarkdown 
-                components={{
-                  img: ({...props}) => (
-                    <img {...props} className="rounded-2xl border border-zinc-800 my-4 max-w-full h-auto shadow-2xl" alt="Preview" />
-                  )
-                }}
-              >
+              <ReactMarkdown components={{ img: ({...props}) => (<img {...props} className="rounded-2xl border border-zinc-800 my-4 max-w-full h-auto shadow-2xl" alt="Preview" />) }}>
                 {content || "작성된 내용이 없습니다."}
               </ReactMarkdown>
             </div>
@@ -205,11 +218,10 @@ export default function PostWriteTab({ isDarkMode, user, editingPost, onCancel, 
         </div>
       )}
 
+      {/* 이모티콘 선택기 */}
       {showEmoji.target && (
         <div className="absolute z-[100] bg-zinc-900 border border-zinc-700 p-4 rounded-2xl shadow-2xl grid grid-cols-6 gap-2 w-64 animate-in zoom-in-95 duration-200" style={{ top: '150px', right: '40px' }}>
-           {emojis.map(e => (
-             <button key={e} onClick={() => addEmoji(e)} className="text-xl hover:bg-zinc-800 p-1 rounded transition-all">{e}</button>
-           ))}
+           {emojis.map(e => (<button key={e} onClick={() => addEmoji(e)} className="text-xl hover:bg-zinc-800 p-1 rounded transition-all">{e}</button>))}
            <button onClick={() => setShowEmoji({target: null})} className="col-span-6 mt-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest border-t border-zinc-800 pt-2">Close</button>
         </div>
       )}
@@ -248,32 +260,25 @@ export default function PostWriteTab({ isDarkMode, user, editingPost, onCancel, 
       </div>
 
       <div className="space-y-6">
-        {!isAuthor && editingPost ? (
+        {/* 🌟 상세 보기 모드 (남의 글 + 내 글 모두 포함) */}
+        {editingPost && !loading && (
           <div className="animate-in fade-in duration-500">
-            <div className="mb-4"><span className="px-3 py-1 bg-blue-500/10 text-blue-500 text-[10px] font-black uppercase rounded-lg border border-blue-500/20">{postType}</span></div>
+            {/* 글 작성자에게만 수정 버튼 노출 (필요 시) */}
+            <div className="mb-4 flex justify-between items-center">
+              <span className="px-3 py-1 bg-blue-500/10 text-blue-500 text-[10px] font-black uppercase rounded-lg border border-blue-500/20">{postType}</span>
+            </div>
+            
             <h2 className="text-3xl font-black mb-6 tracking-tight">{title}</h2>
             
             <div className={`min-h-[300px] text-base leading-relaxed pb-12 border-b border-zinc-800/50 ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>
-              <ReactMarkdown 
-                components={{
-                  img: ({...props}) => (
-                    <img 
-                      {...props} 
-                      className="rounded-2xl border border-zinc-800 my-4 max-w-full h-auto shadow-2xl" 
-                      alt="본문 이미지" 
-                    />
-                  )
-                }}
-              >
+              <ReactMarkdown components={{ img: ({...props}) => (<img {...props} className="rounded-2xl border border-zinc-800 my-4 max-w-full h-auto shadow-2xl" alt="본문 이미지" />) }}>
                 {content}
               </ReactMarkdown>
             </div>
             
             {editingPost.image_urls && editingPost.image_urls.length > 0 && (
               <div className="grid grid-cols-1 gap-4 my-8">
-                {editingPost.image_urls.map((url: string, idx: number) => (
-                  <img key={idx} src={url} alt="attachment" className="rounded-2xl w-full border border-zinc-800" />
-                ))}
+                {editingPost.image_urls.map((url: string, idx: number) => (<img key={idx} src={url} alt="attachment" className="rounded-2xl w-full border border-zinc-800" />))}
               </div>
             )}
 
@@ -284,19 +289,61 @@ export default function PostWriteTab({ isDarkMode, user, editingPost, onCancel, 
                 </button>
               </div>
 
+              {/* 🌟 댓글 영역 */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-xs font-black uppercase text-zinc-500 tracking-widest"><MessageSquare size={14} /> Comments ({comments.length})</div>
                 {comments.map((comment) => (
                   <div key={comment.id} className={`p-4 rounded-xl border ${isDarkMode ? 'bg-zinc-800/20 border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`}>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-[10px] font-black text-blue-500 uppercase">{comment.user_email?.split('@')[0]}</span>
-                      <span className="text-[10px] text-zinc-600 font-bold">{new Date(comment.created_at).toLocaleDateString()}</span>
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black text-blue-500 uppercase">{comment.user_email?.split('@')[0]}</span>
+                        <span className="text-[10px] text-zinc-600 font-bold">{new Date(comment.created_at).toLocaleDateString()}</span>
+                      </div>
+                      
+                      {/* 🌟 댓글 수정/삭제 버튼 (본인 또는 게시글 작성자) */}
+                      <div className="flex items-center gap-2">
+                        {activeUser?.email === comment.user_email && (
+                          <button 
+                            onClick={() => { setEditingCommentId(comment.id); setEditCommentValue(comment.content); }}
+                            className="p-1.5 hover:bg-blue-500/10 text-zinc-500 hover:text-blue-500 transition-all rounded-lg"
+                            title="수정"
+                          >
+                            <Edit3 size={14} />
+                          </button>
+                        )}
+                        {(activeUser?.email === comment.user_email || isAuthor) && (
+                          <button 
+                            onClick={() => handleCommentDelete(comment.id)}
+                            className="p-1.5 hover:bg-red-500/10 text-zinc-500 hover:text-red-500 transition-all rounded-lg"
+                            title="삭제"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <p className={`text-sm font-medium ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>{comment.content}</p>
+
+                    {editingCommentId === comment.id ? (
+                      <div className="mt-2 space-y-2">
+                        <textarea 
+                          value={editCommentValue} 
+                          onChange={(e) => setEditCommentValue(e.target.value)}
+                          className={`w-full p-3 rounded-lg text-sm font-medium focus:outline-none border ${inputBg}`}
+                          rows={2}
+                        />
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => setEditingCommentId(null)} className="px-3 py-1.5 text-[10px] font-black uppercase text-zinc-500">Cancel</button>
+                          <button onClick={() => handleCommentUpdate(comment.id)} className="px-3 py-1.5 bg-blue-600 text-white text-[10px] font-black uppercase rounded-lg">Update</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className={`text-sm font-medium ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>{comment.content}</p>
+                    )}
                   </div>
                 ))}
               </div>
 
+              {/* 댓글 입력창 */}
               <div className={`rounded-2xl p-6 border ${isDarkMode ? 'bg-zinc-800/20 border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`}>
                 <div className="flex justify-end mb-2">
                   <button onClick={() => setShowEmoji({target: 'comment'})} className="flex items-center gap-1 text-[10px] font-bold text-zinc-500 hover:text-white"><Smile size={14} /> 이모티콘</button>
@@ -305,73 +352,71 @@ export default function PostWriteTab({ isDarkMode, user, editingPost, onCancel, 
                 <div className="flex justify-end mt-2"><button onClick={handleCommentSave} className="px-6 py-2.5 bg-blue-600 text-white text-[11px] font-black rounded-xl uppercase">Post Comment</button></div>
               </div>
             </div>
+            
+            {/* 🌟 내 글인 경우 수정 모드로 전환하는 버튼 추가 */}
+            {isAuthor && !loading && (
+              <div className="mt-10 flex gap-3 border-t border-zinc-800 pt-8">
+                <button onClick={() => onSuccess()} className="flex-1 py-4 rounded-2xl font-black text-sm border border-zinc-800 text-zinc-400">목록으로</button>
+                <button onClick={() => { /* 수정 모드 진입 로직은 이미 부모에서 처리됨 */ alert("이미 수정 권한이 있는 페이지입니다. 아래 폼을 이용하세요."); }} className="flex-[2] py-4 rounded-2xl font-black text-sm text-white bg-orange-600 hover:bg-orange-500">게시글 내용 수정하기</button>
+              </div>
+            )}
           </div>
-        ) : (
-          <>
-            <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1 mb-2 block">Category</label>
-              <div className="flex gap-2">
-                {['free', 'qna', 'tips', 'showcase', 'notice'].map((id) => (
-                  <button key={id} onClick={() => setPostType(id)} className={`px-4 py-2 rounded-xl text-xs font-bold border ${postType === id ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/20' : `${isDarkMode ? 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-zinc-200' : 'bg-white border-zinc-200 text-zinc-500 hover:bg-zinc-50'}`}`}>{id.toUpperCase()}</button>
-                ))}
-              </div>
-            </div>
+        )}
 
-            <div className="relative">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Title</label>
-                <button onClick={() => setShowEmoji({target: 'title'})} className="flex items-center gap-1 text-[10px] font-bold text-zinc-500 hover:text-white"><Smile size={14} /> 이모티콘</button>
-              </div>
-              <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="제목을 입력하세요" className={`w-full px-5 py-4 rounded-2xl border text-sm font-bold focus:outline-none focus:border-blue-500 ${inputBg}`} />
-            </div>
-
-            <div className="relative">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Content</label>
-                <button onClick={() => setShowEmoji({target: 'content'})} className="flex items-center gap-1 text-[10px] font-bold text-zinc-500 hover:text-white"><Smile size={14} /> 이모티콘</button>
-              </div>
-              
-              <textarea 
-                ref={textAreaRef}
-                value={content} 
-                onChange={(e) => setContent(e.target.value)} 
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                placeholder="내용을 입력하세요... (이미지를 이 상자로 드래그하면 글 사이에 삽입됩니다)" 
-                rows={12} 
-                className={`w-full px-5 py-5 rounded-2xl border text-sm font-medium focus:outline-none leading-relaxed resize-none custom-scrollbar ${inputBg}`} 
-              />
-              
-              <div className={`mt-4 p-4 rounded-2xl border flex items-center justify-between gap-4 ${isDarkMode ? 'bg-zinc-800/30 border-zinc-800' : 'bg-zinc-50 border-zinc-100'}`}>
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[11px] font-black rounded-lg cursor-pointer transition-all">
-                    <ImageIcon size={14} /> 이미지 추가 (인라인 삽입)
-                    <input type="file" hidden accept="image/*" onChange={(e) => e.target.files && uploadAndInsertImage(e.target.files[0])} />
-                  </label>
-                  <label className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[11px] font-black rounded-lg cursor-pointer transition-all">
-                    <Paperclip size={14} /> 파일 첨부 (PDF/TXT)
-                    <input type="file" hidden accept=".pdf, .txt" multiple onChange={handleFileChange} />
-                  </label>
-                  <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-tight">{files.length > 0 ? `${files.length}개 선택됨` : "최대 3개"}</span>
+        {/* 🌟 글쓰기 폼 (작성자일 때만 노출) */}
+        {(!editingPost || isAuthor) && (
+          <div className={editingPost ? "mt-20 pt-20 border-t-4 border-dashed border-zinc-800" : ""}>
+            {editingPost && <h4 className="text-orange-500 font-black italic mb-6">▼ 아래에서 내용을 수정할 수 있습니다</h4>}
+            <div className="space-y-6">
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1 mb-2 block">Category</label>
+                <div className="flex gap-2">
+                  {['free', 'qna', 'tips', 'showcase', 'notice'].map((id) => (
+                    <button key={id} onClick={() => setPostType(id)} className={`px-4 py-2 rounded-xl text-xs font-bold border ${postType === id ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/20' : `${isDarkMode ? 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-zinc-200' : 'bg-white border-zinc-200 text-zinc-500 hover:bg-zinc-50'}`}`}>{id.toUpperCase()}</button>
+                  ))}
                 </div>
+              </div>
 
-                {/* 🌟 [수정 부분] 우측 끝에 미리보기 버튼 추가 */}
-                <button 
-                  onClick={() => setShowPreview(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-500 text-[11px] font-black rounded-lg transition-all border border-blue-500/20"
-                >
-                  <Eye size={14} /> 삽입 이미지 미리보기
+              <div className="relative">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Title</label>
+                  <button onClick={() => setShowEmoji({target: 'title'})} className="flex items-center gap-1 text-[10px] font-bold text-zinc-500 hover:text-white"><Smile size={14} /> 이모티콘</button>
+                </div>
+                <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="제목을 입력하세요" className={`w-full px-5 py-4 rounded-2xl border text-sm font-bold focus:outline-none focus:border-blue-500 ${inputBg}`} />
+              </div>
+
+              <div className="relative">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Content</label>
+                  <button onClick={() => setShowEmoji({target: 'content'})} className="flex items-center gap-1 text-[10px] font-bold text-zinc-500 hover:text-white"><Smile size={14} /> 이모티콘</button>
+                </div>
+                <textarea ref={textAreaRef} value={content} onChange={(e) => setContent(e.target.value)} onDrop={handleDrop} onDragOver={handleDragOver} placeholder="내용을 입력하세요..." rows={12} className={`w-full px-5 py-5 rounded-2xl border text-sm font-medium focus:outline-none leading-relaxed resize-none custom-scrollbar ${inputBg}`} />
+                
+                <div className={`mt-4 p-4 rounded-2xl border flex items-center justify-between gap-4 ${isDarkMode ? 'bg-zinc-800/30 border-zinc-800' : 'bg-zinc-50 border-zinc-100'}`}>
+                  <div className="flex items-center gap-4">
+                    <label className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[11px] font-black rounded-lg cursor-pointer transition-all">
+                      <ImageIcon size={14} /> 이미지 추가
+                      <input type="file" hidden accept="image/*" onChange={(e) => e.target.files && uploadAndInsertImage(e.target.files[0])} />
+                    </label>
+                    <label className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[11px] font-black rounded-lg cursor-pointer transition-all">
+                      <Paperclip size={14} /> 파일 첨부
+                      <input type="file" hidden accept=".pdf, .txt" multiple onChange={handleFileChange} />
+                    </label>
+                  </div>
+                  <button onClick={() => setShowPreview(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600/10 text-blue-500 text-[11px] font-black rounded-lg transition-all border border-blue-500/20">
+                    <Eye size={14} /> 미리보기
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button onClick={onCancel} className={`flex-1 py-4 rounded-2xl font-black text-sm border ${isDarkMode ? 'border-zinc-800 text-zinc-400' : 'border-zinc-200 text-zinc-500 hover:bg-zinc-50'}`}>나가기</button>
+                <button onClick={handleSave} disabled={loading} className="flex-[2] py-4 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-500 flex items-center justify-center gap-2 transition-all">
+                  {loading ? <Loader2 className="animate-spin" size={18} /> : (editingPost ? "변동사항 저장" : "게시글 등록")}
                 </button>
               </div>
             </div>
-
-            <div className="flex gap-3 pt-4">
-              <button onClick={onCancel} className={`flex-1 py-4 rounded-2xl font-black text-sm border ${isDarkMode ? 'border-zinc-800 text-zinc-400' : 'border-zinc-200 text-zinc-500 hover:bg-zinc-50'}`}>글 목록으로 나가기</button>
-              <button onClick={handleSave} disabled={loading} className="flex-[2] py-4 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-500 flex items-center justify-center gap-2 transition-all shadow-xl shadow-blue-600/20">
-                {loading ? <Loader2 className="animate-spin" size={18} /> : (editingPost ? "변동사항 저장" : "게시글 등록")}
-              </button>
-            </div>
-          </>
+          </div>
         )}
       </div>
     </div>
