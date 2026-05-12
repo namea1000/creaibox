@@ -3,36 +3,35 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { 
-  MessageSquare, Eye, ThumbsUp, Clock, User as UserIcon, 
-  ChevronRight, ChevronLeft, Search, AlertCircle 
+  MessageSquare, User as UserIcon, 
+  AlertCircle 
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
-// 🌟 props에 onEdit를 추가로 받아야 CommunityCenter와 연결됩니다.
-export default function BoardListTab({ isDarkMode, activeTab, onEdit }: any) {
+export default function BoardListTab({ isDarkMode, activeTab = 'all' }: any) {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
+  const router = useRouter(); // 🌟 주소 이동을 위한 리모컨 준비
 
-  // 🌟 게시글 데이터 가져오기 (커뮤니티 포스트 테이블로 변경 확인)
+  // 데이터 가져오기 로직 (원본 보전)
   useEffect(() => {
     const fetchPosts = async () => {
       setLoading(true);
-      
-      let query = supabase
-        .from('community_posts')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        let query = supabase
+          .from('community_posts')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (activeTab !== 'all') {
-        query = query.eq('post_type', activeTab);
-      }
+        if (activeTab !== 'all') {
+          query = query.eq('post_type', activeTab);
+        }
 
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("데이터 로딩 에러:", error);
-      } else {
-        setPosts(data || []);
+        const { data, error } = await query;
+        if (!error) setPosts(data || []);
+      } catch (err) {
+        console.error("로딩 에러:", err);
       }
       setLoading(false);
     };
@@ -40,7 +39,7 @@ export default function BoardListTab({ isDarkMode, activeTab, onEdit }: any) {
     fetchPosts();
   }, [activeTab]);
 
-  // 🎨 테마별 스타일
+  // 테마별 스타일 (원본 보전)
   const listBg = isDarkMode ? "bg-zinc-900/20 border-zinc-800/50" : "bg-white border-zinc-200 shadow-sm";
   const itemHover = isDarkMode ? "hover:bg-zinc-800/30" : "hover:bg-zinc-50";
   const textColor = isDarkMode ? "text-zinc-100" : "text-zinc-900";
@@ -48,8 +47,8 @@ export default function BoardListTab({ isDarkMode, activeTab, onEdit }: any) {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 opacity-30 italic font-black uppercase tracking-widest">
-        <div className="animate-spin mb-4">⌛</div>
+      <div className="flex flex-col items-center justify-center h-64 opacity-30 italic font-black uppercase tracking-widest text-white">
+        <div className="animate-spin mb-4 text-2xl">⌛</div>
         Loading Feed...
       </div>
     );
@@ -62,21 +61,20 @@ export default function BoardListTab({ isDarkMode, activeTab, onEdit }: any) {
           <table className="w-full text-left border-collapse">
             <thead className={`text-[11px] font-black uppercase tracking-widest border-b ${isDarkMode ? 'bg-zinc-900/50 border-zinc-800/50 text-zinc-500' : 'bg-zinc-50 border-zinc-200 text-zinc-400'}`}>
               <tr>
-                <th className="px-6 py-4 font-black">분류</th>
-                <th className="px-6 py-4 font-black">제목</th>
-                <th className="px-6 py-4 font-black text-center">조회</th>
-                <th className="px-6 py-4 font-black text-center">추천</th>
-                <th className="px-6 py-4 font-black text-right">날짜</th>
+                <th className="px-6 py-4">분류</th>
+                <th className="px-6 py-4">제목</th>
+                <th className="px-6 py-4 text-center">조회</th>
+                <th className="px-6 py-4 text-center">추천</th>
+                <th className="px-6 py-4 text-right">날짜</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/30">
               {posts.map((post) => (
                 <tr 
                   key={post.id} 
-                  // ❌ 기존 오류: className={`... onClick={() => ...}`} (텍스트로 들어감)
-                  // ✅ 수정: onClick을 독립된 이벤트로 분리
+                  // 🌟 핵심: 이제 함수를 호출하는 게 아니라 게시글 상세 주소로 직접 이동합니다!
+                  onClick={() => router.push(`/infocenter/view/${post.id}`)} 
                   className={`group cursor-pointer transition-all ${itemHover}`}
-                  onClick={() => onEdit && onEdit(post)} 
                 >
                   <td className="px-6 py-5">
                     <span className={`text-[10px] font-black px-2 py-1 rounded-md uppercase ${
@@ -112,8 +110,6 @@ export default function BoardListTab({ isDarkMode, activeTab, onEdit }: any) {
           <p className="text-zinc-500 font-black italic uppercase tracking-tighter">No posts found in this category.</p>
         </div>
       )}
-
-      {/* 페이지네이션 생략 (기존 것 유지) */}
     </div>
   );
 }

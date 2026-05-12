@@ -1,7 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Eye, X, PenLine, Sparkles, Loader2, Copy, FileText, Globe, MessageSquare, ListOrdered, MousePointer2, Zap, Plus, ChevronDown, Share2 } from 'lucide-react';
+import { 
+  Eye, X, PenLine, Sparkles, Loader2, Copy, FileText, Globe, 
+  MessageSquare, ListOrdered, MousePointer2, Zap, Plus, 
+  ChevronDown, Share2 
+} from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { createClient } from '@/utils/supabase/client'; 
@@ -23,7 +27,7 @@ export default function CreateTab({
   const subTextColor = isDarkMode ? "text-zinc-400" : "text-zinc-500";
   const borderColor = isDarkMode ? "border-zinc-800/50" : "border-zinc-200";
 
-  // 🌟 [수정] 중복 저장 원천 봉쇄 (세션 스토리지 활용)
+  // 🌟 [보존] 중복 저장 원천 봉쇄 로직
   const saveToSupabase = async (generatedContent: string) => {
     const sessionKey = `saved_${topic.substring(0, 20)}`;
     if (hasSaved || sessionStorage.getItem(sessionKey)) return;
@@ -69,6 +73,7 @@ export default function CreateTab({
 
   const [progress, setProgress] = useState(0);
 
+  // 🌟 [보존] 프로그레스 바 애니메이션 로직
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (loading) {
@@ -87,9 +92,8 @@ export default function CreateTab({
       }
     }
     return () => clearInterval(interval);
-  }, [loading]);
+  }, [loading, content]);
 
-  // 🌟 1. 초기값 수정: AI 자동 포스팅
   const [postType, setPostType] = useState('AI 자동 포스팅');
 
   const topicPlaceholder = `원하시는 주제를 상세히 입력할수록 좋은 글이 생성됩니다.
@@ -112,14 +116,13 @@ export default function CreateTab({
   ];
 
   return (
-    // 🌟 2. 레이아웃 수정: 왼쪽 끝 선(border-l) 추가 및 전체 선 색상 통일
     <div className={`flex h-full border-l ${borderColor} divide-x ${borderColor} transition-colors duration-500 ${themeBg}`}>
       
       {/* --- [왼쪽] 스튜디오 컨트롤 타워 --- */}
       <div className={`w-[45%] flex flex-col h-full transition-all ${themeBg}`}>
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-4 pb-32">
           
-          <section className={`${cardBg} rounded2xl p-5 shadow-sm flex items-center justify-between`}>
+          <section className={`${cardBg} rounded-2xl p-5 shadow-sm flex items-center justify-between`}>
             <span className={`text-[13px] font-black ${textColor}`}>최신 정보 팩트체크가 활성화 되어 있습니다. (실시간 정보 반영 중)</span>
             <div className="flex items-center gap-3">
               <span className={`text-[11px] font-bold ${subTextColor}`}>최신 정보 활성화</span>
@@ -233,7 +236,6 @@ export default function CreateTab({
             </div>
           </button>
 
-          {/* 🌟 템플릿 섹션 복구 완료 */}
           <section className="pt-6 space-y-4 font-sans">
             <p className={`text-[14px] font-black font-sans ${textColor}`}>글쓰기 템플릿 예시 (클릭 시 자동 입력)</p>
             <div className="grid grid-cols-1 gap-2 font-sans">
@@ -256,12 +258,10 @@ export default function CreateTab({
         </div>
       </div>
 
-{/* --- [오른쪽] 프리뷰 (스크롤 제한 해제 & 실제 화면 렌더링) --- */}
+      {/* --- [오른쪽] 프리뷰 --- */}
       <div className={`w-[55%] flex flex-col transition-all ${isDarkMode ? 'bg-[#0a0c10]' : 'bg-zinc-50/50'}`}>
-        {/* 상단 헤더: 스크롤 시 상단에 고정되도록 sticky 적용 */}
         <div className="sticky top-0 flex justify-between items-center px-10 py-6 border-b transition-all border-zinc-800/50 backdrop-blur-md z-30 shrink-0">
           
-          {/* 🌟 3. 상단 라인 프로그레스 바 복구 */}
           {loading && (
             <div 
               className="absolute bottom-0 left-0 h-[2px] bg-emerald-400 transition-all duration-300 shadow-[0_0_10px_rgba(52,211,153,0.8)]"
@@ -287,7 +287,6 @@ export default function CreateTab({
             >
               <FileText size={14} /> {hasSaved ? '저장 완료' : '글 관리 저장'}
             </button>
-            {/* 🌟 4. EDIT 버튼 삭제됨 */}
             <button onClick={() => setIsPreviewOpen(true)} disabled={!content || loading} className={`px-5 py-2 border rounded-lg text-[11px] font-black transition-all uppercase tracking-widest ${
               isDarkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white' : 'bg-white border-zinc-200 text-zinc-600'
             }`}>PREVIEW</button>
@@ -297,7 +296,6 @@ export default function CreateTab({
           </div>
         </div>
 
-        {/* 🌟 핵심 수정: overflow-y-auto를 제거하여 전체 페이지 스크롤을 따르게 함 */}
         <div className={`flex-1 p-12 transition-all ${isDarkMode ? 'bg-white/[0.01]' : 'bg-white'}`}>
           {!content && !loading ? (
             <div className={`h-[400px] flex flex-col items-center justify-center italic font-bold text-xl ${subTextColor}`}>
@@ -305,7 +303,6 @@ export default function CreateTab({
             </div>
           ) : (
             <div className="max-w-3xl mx-auto animate-in fade-in duration-500 pb-20 font-sans">
-              {/* 🌟 원본 소스 <pre> 대신 실제 화면을 렌더링합니다 */}
               <div className={`markdown-content leading-[2.1] ${isDarkMode ? 'text-zinc-200' : 'text-zinc-800'}`}>
                 <ReactMarkdown 
                   remarkPlugins={[remarkGfm]}
@@ -349,12 +346,12 @@ export default function CreateTab({
                   <ReactMarkdown 
                     remarkPlugins={[remarkGfm]}
                     components={{
-                      table: ({node, ...props}) => (<div className="my-10 w-full overflow-hidden rounded-xl border border-zinc-200 shadow-sm font-sans"><table className="w-full text-sm text-left border-collapse font-sans" {...props} /></div>),
-                      thead: ({node, ...props}) => <thead className="bg-zinc-50 border-b border-zinc-200 font-sans" {...props} />,
-                      th: ({node, ...props}) => <th className="px-5 py-4 font-black text-zinc-700 border-r border-zinc-200 last:border-0 font-sans" {...props} />,
-                      td: ({node, ...props}) => <td className="px-5 py-4 border-t border-zinc-100 border-r border-zinc-200 last:border-0 font-sans" {...props} />,
-                      h2: ({node, ...props}) => <h2 className="border-l-8 border-blue-500 pl-6 text-2xl font-black tracking-tight mt-16 mb-8 text-black uppercase italic font-sans" {...props} />,
-                      p: ({node, ...props}) => <p className="mb-6 font-sans" {...props} />,
+                      table: ({...props}) => (<div className="my-10 w-full overflow-hidden rounded-xl border border-zinc-200 shadow-sm font-sans"><table className="w-full text-sm text-left border-collapse font-sans" {...props} /></div>),
+                      thead: ({...props}) => <thead className="bg-zinc-50 border-b border-zinc-200 font-sans" {...props} />,
+                      th: ({...props}) => <th className="px-5 py-4 font-black text-zinc-700 border-r border-zinc-200 last:border-0 font-sans" {...props} />,
+                      td: ({...props}) => <td className="px-5 py-4 border-t border-zinc-100 border-r border-zinc-200 last:border-0 font-sans" {...props} />,
+                      h2: ({...props}) => <h2 className="border-l-8 border-blue-500 pl-6 text-2xl font-black tracking-tight mt-16 mb-8 text-black uppercase italic font-sans" {...props} />,
+                      p: ({...props}) => <p className="mb-6 font-sans" {...props} />,
                     }}
                   >
                     {content}
@@ -367,7 +364,6 @@ export default function CreateTab({
             </div>
           </div>
         </div>
-        
       )}
     </div>
   );

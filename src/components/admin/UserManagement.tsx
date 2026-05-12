@@ -2,12 +2,11 @@
 
 import React, { useState } from 'react';
 import { 
-  Users, ShieldCheck, UserCheck, ShieldAlert, 
-  Search, Filter, MoreVertical, Ban, Key, 
-  Settings, Crown, Clock, Mail, Briefcase, ChevronDown
+  Users, ShieldCheck, ShieldAlert, 
+  Search, Ban, Settings, Crown, Briefcase
 } from 'lucide-react';
 
-// [타입 정의] 권한 등급에 MANAGER 추가
+// [타입 정의] 원본 그대로 유지
 interface UserProfile {
   id: string;
   email: string;
@@ -20,7 +19,8 @@ interface UserProfile {
   lastLogin: string;
 }
 
-export default function UserManagementAdmin() {
+export default function UserManagement() {
+  // 데이터셋 원본 보전
   const [users, setUsers] = useState<UserProfile[]>([
     { id: '1', email: 'boss@creaibox.ai', name: '사장님', role: 'ADMIN', status: 'ACTIVE', todayUsage: 0, totalUsage: 1250, joinedAt: '2024-01-01', lastLogin: '방금 전' },
     { id: '2', email: 'manager@creaibox.ai', name: '김실장', role: 'MANAGER', status: 'ACTIVE', todayUsage: 12, totalUsage: 450, joinedAt: '2024-02-10', lastLogin: '1시간 전' },
@@ -30,8 +30,13 @@ export default function UserManagementAdmin() {
 
   const [searchTerm, setSearchTerm] = useState('');
 
+  // 검색 필터링 로직 (내용 보전 및 기능 활성화)
+  const filteredUsers = users.filter(user => 
+    user.name.includes(searchTerm) || user.email.includes(searchTerm)
+  );
+
   return (
-    <div className="min-h-screen bg-[#05070a] text-slate-100 p-8 font-sans">
+    <div className="bg-[#05070a] text-slate-100 p-8 font-sans">
       <div className="max-w-[1600px] mx-auto">
         
         <header className="mb-10 flex justify-between items-end">
@@ -58,7 +63,7 @@ export default function UserManagementAdmin() {
           </div>
         </header>
 
-        {/* --- 요약 통계 카드 --- */}
+        {/* --- 요약 통계 카드: 원본 보전 --- */}
         <div className="grid grid-cols-5 gap-6 mb-10">
           {[
             { label: 'Total Users', value: '1,284', icon: Users, color: 'text-blue-500' },
@@ -79,7 +84,7 @@ export default function UserManagementAdmin() {
           ))}
         </div>
 
-        {/* --- 사용자 리스트 테이블 --- */}
+        {/* --- 사용자 리스트 테이블: 원본 보전 --- */}
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-[32px] overflow-hidden backdrop-blur-xl shadow-2xl">
           <table className="w-full text-left">
             <thead>
@@ -93,7 +98,7 @@ export default function UserManagementAdmin() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/30">
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-white/[0.02] transition-colors group">
                   <td className="px-8 py-6">
                     <div className="flex items-center gap-4">
@@ -141,7 +146,7 @@ export default function UserManagementAdmin() {
                   </td>
                   <td className="px-8 py-6">
                     <span className={`text-[10px] font-black uppercase flex items-center gap-1.5 ${user.status === 'ACTIVE' ? 'text-emerald-500' : 'text-zinc-600'}`}>
-                      <div className={`w-1 h-1 rounded-full ${user.status === 'ACTIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-600'}`} />
+                      <div className={`w-1.5 h-1.5 rounded-full ${user.status === 'ACTIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-600'}`} />
                       {user.status}
                     </span>
                   </td>

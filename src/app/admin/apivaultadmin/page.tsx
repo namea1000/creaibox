@@ -17,7 +17,7 @@ export default function APIVaultAdminPage() {
     const checkAdmin = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       // ⚠️ 사장님 이메일로 여기에 접근 권한을 락(Lock) 거세요!
-      if (user && user.email === '사장님@email.com') { 
+      if (user && user.email === 'jenam7720@email.com','namjjang7720@gmail.com') { 
         setIsAdmin(true);
       } else {
         alert("관리자만 접근 가능합니다.");

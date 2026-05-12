@@ -3,21 +3,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   ChevronDown, User as UserIcon, Settings, LogOut, 
-  Sun, Moon, Menu, X, Key 
+  Sun, Moon, Menu, X 
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { User } from '@supabase/supabase-js';
 import Link from 'next/link';
 import Image from 'next/image';
 
+// 🌟 쓰레기 Props(onMenuClick, setViewMode)를 제거했습니다.
 interface HeaderProps {
   isDarkMode: boolean;
   toggleTheme: () => void;
-  onMenuClick?: (menuValue: string) => void;
-  setViewMode?: (mode: string) => void; 
 }
 
-export default function Header({ isDarkMode, toggleTheme, onMenuClick, setViewMode }: HeaderProps) {
+export default function Header({ isDarkMode, toggleTheme }: HeaderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -41,54 +40,28 @@ export default function Header({ isDarkMode, toggleTheme, onMenuClick, setViewMo
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 🚀 [수정] 로고 클릭 시 새로고침 없이 메인(Landing)으로 전환
-  const handleLogoClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    // 새로고침 대신 상태를 관리하는 부모의 로직을 타게 하거나, 
-    // 단순히 메인 페이지 주소로 부드럽게 이동하게 합니다.
-    // 현재 구조에서는 Link처럼 작동하게 "/"로 보내주면 Next.js가 알아서 처리합니다.
-    window.history.pushState({}, '', '/'); 
-    window.dispatchEvent(new PopStateEvent('popstate')); // 뒤로가기 효과를 주어 메인 렌더링 유도
-    
-    // 만약 스튜디오 모드를 끄는 로직이 page.tsx에 있다면 
-    // window.location.reload() 대신 아래처럼 직접 이동하는 것이 좋습니다.
-    if (typeof window !== 'undefined') {
-      // 가장 깔끔한 방법은 <a> 태그 기능을 살리되 SPA 라우팅을 유지하는 것입니다.
-    }
-  };
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    window.location.reload();
+    window.location.href = '/';
   };
 
-  const handleViewChange = (mode: string) => {
-    if (setViewMode) {
-      setViewMode(mode);
-      setIsProfileOpen(false); 
-      setIsMobileMenuOpen(false); 
-    }
-  };
-
+  // 🌟 메뉴명 사장님 원본 그대로 유지! (이동 주소만 연결)
   const menuItems = [
-    { label: 'Writing Studio', value: 'Writing' },
-    { label: 'Visuals Studio', value: 'Visuals' },
-    { label: 'Music Studio', value: 'Music' },
-    { label: 'Script Studio', value: 'Script' },
-    { label: 'Tools', value: 'Tools' }
+    { label: 'Writing Studio', href: '/studio/writing/wp/create' },
+    { label: 'Visuals Studio', href: '/studio/visuals' },
+    { label: 'Music Studio', href: '/studio/music' },
+    { label: 'Script Studio', href: '/studio/script' },
+    { label: 'Tools', href: '/tools' }
   ];
 
   return (
-    <header className={`h-20 border-b flex items-center px-6 lg:px-12 z-[100] relative shrink-0 transition-all ${
+    <header className={`h-20 border-b flex items-center px-6 lg:px-12 z-[100] fixed top-0 left-0 right-0 transition-all ${
       isDarkMode ? 'bg-[#0a0c10]/80 backdrop-blur-md border-zinc-800/50' : 'bg-white/80 backdrop-blur-md border-zinc-200'
     }`}>
       
-      {/* 로고 영역 - Link 컴포넌트로 교체하여 새로고침 방지 */}
+      {/* 로고 영역 - 사장님 원본 이미지와 텍스트 그대로! */}
       <div className="flex items-center">
-        <Link 
-          href="/" 
-          className="flex items-center gap-3 cursor-pointer group transition-all duration-500"
-        >
+        <Link href="/" className="flex items-center gap-3 cursor-pointer group transition-all duration-500">
           <div className="relative w-40 h-40 overflow-visible">
             <Image 
               src="/logobg.webp" 
@@ -106,31 +79,28 @@ export default function Header({ isDarkMode, toggleTheme, onMenuClick, setViewMo
         </Link>
       </div>
       
-      {/* 중앙 메뉴 (데스크톱) */}
+      {/* 중앙 메뉴 (데스크톱) - 버튼 대신 Link로 교체하여 페이지 이동 구현 */}
       <div className="hidden lg:flex flex-1 justify-center items-center">
         <nav className="flex space-x-8">
           {menuItems.map((item) => (
-            <button 
-              key={item.value} 
-              onClick={() => onMenuClick?.(item.value)} 
+            <Link 
+              key={item.href} 
+              href={item.href}
               className={`text-[15px] font-black uppercase tracking-tight transition-all duration-300 relative py-1 ${
-                isDarkMode ? 'text-zinc-400 hover:text-white' : 'text-zinc-50 hover:text-zinc-900'
+                isDarkMode ? 'text-zinc-400 hover:text-white' : 'text-zinc-600 hover:text-zinc-900'
               }`}
             >
               {item.label}
-            </button>
+            </Link>
           ))}
         </nav>
       </div>
 
       {/* 우측 컨트롤 영역 */}
       <div className="flex items-center gap-3 ml-auto">
-        <button 
-          onClick={toggleTheme}
-          className={`p-2 rounded-xl border transition-all active:scale-90 ${
-            isDarkMode ? 'bg-zinc-900 border-zinc-800 text-yellow-400 hover:bg-zinc-800' : 'bg-white border-zinc-200 text-blue-600 hover:bg-zinc-100 shadow-sm'
-          }`}
-        >
+        <button onClick={toggleTheme} className={`p-2 rounded-xl border transition-all active:scale-90 ${
+            isDarkMode ? 'bg-zinc-900 border-zinc-800 text-yellow-400' : 'bg-white border-zinc-200 text-blue-600 shadow-sm'
+          }`}>
           {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
@@ -150,20 +120,13 @@ export default function Header({ isDarkMode, toggleTheme, onMenuClick, setViewMo
               <div className={`absolute right-0 mt-2 w-56 rounded-2xl shadow-2xl py-2 overflow-hidden z-[110] border ${
                 isDarkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'
               }`}>
-                <button 
-                  onClick={() => handleViewChange('MyPage')}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-all text-left ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-700 hover:bg-zinc-100'}`}
-                >
+                {/* 🌟 함수 호출 대신 진짜 페이지 주소로 이동 */}
+                <Link href="/adm/mypage" onClick={() => setIsProfileOpen(false)} className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-all text-left ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-700 hover:bg-zinc-100'}`}>
                   <UserIcon size={14} />내 프로필
-                </button>
-
-                <button 
-                  onClick={() => handleViewChange('Vault')}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-all text-left ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-700 hover:bg-zinc-100'}`}
-                >
+                </Link>
+                <Link href="/apivault" onClick={() => setIsProfileOpen(false)} className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-all text-left ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-700 hover:bg-zinc-100'}`}>
                   <Settings size={14} />API 키 관리
-                </button>
-
+                </Link>
                 <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-red-500 hover:bg-red-500/5 transition-all border-t mt-1 text-left">
                   <LogOut size={14} />로그아웃
                 </button>
@@ -184,17 +147,19 @@ export default function Header({ isDarkMode, toggleTheme, onMenuClick, setViewMo
         </button>
       </div>
 
+      {/* 모바일 메뉴 */}
       {isMobileMenuOpen && (
         <div className={`fixed inset-0 top-20 z-[120] p-6 lg:hidden ${isDarkMode ? 'bg-[#0a0c10]' : 'bg-white'}`}>
           <nav className="flex flex-col gap-4">
             {menuItems.map((item) => (
-              <button 
-                key={item.value} 
-                onClick={() => { onMenuClick?.(item.value); setIsMobileMenuOpen(false); }} 
+              <Link 
+                key={item.href} 
+                href={item.href}
+                onClick={() => setIsMobileMenuOpen(false)}
                 className={`text-2xl font-black text-left border-b border-zinc-800/30 py-4 uppercase italic ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}
               >
                 {item.label}
-              </button>
+              </Link>
             ))}
           </nav>
         </div>

@@ -3,10 +3,6 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-/* 🌟 에러 해결 핵심! 
-  에러가 났던 Github, Twitter, Youtube 대신 
-  어떤 버전에도 다 들어있는 표준 아이콘(Globe, MessageSquare, Video, Mail)으로 교체했습니다.
-*/
 import { Mail, Globe, MessageSquare, Video, ArrowUpRight } from 'lucide-react';
 
 interface FooterProps {
@@ -16,32 +12,33 @@ interface FooterProps {
 export default function Footer({ isDarkMode }: FooterProps) {
   const currentYear = new Date().getFullYear();
 
+  // 🌟 원본 레이블 유지 + 실제 이동할 주소(href) 매칭
   const footerSections = [
     {
       title: "Product",
       links: [
-        { label: "Writing Studio", href: "#" },
-        { label: "Visuals Studio", href: "#" },
-        { label: "Music Studio", href: "#" },
-        { label: "Marketplace", href: "#" },
+        { label: "Writing Studio", href: "/studio/writing" },
+        { label: "Visuals Studio", href: "/studio/visuals" },
+        { label: "Music Studio", href: "/studio/music" },
+        { label: "Marketplace", href: "/marketplace" },
       ]
     },
     {
       title: "Company",
       links: [
-        { label: "About Us", href: "#" },
-        { label: "Community", href: "#" },
-        { label: "Careers", href: "#" },
-        { label: "Blog", href: "#" },
+        { label: "About Us", href: "/about" },
+        { label: "Community", href: "/community" },
+        { label: "Careers", href: "/careers" },
+        { label: "Blog", href: "/blog" },
       ]
     },
     {
       title: "Support",
       links: [
-        { label: "Documentation", href: "#" },
-        { label: "API Reference", href: "#" },
-        { label: "Help Center", href: "#" },
-        { label: "Status", href: "#" },
+        { label: "Documentation", href: "/docs" },
+        { label: "API Reference", href: "/api-ref" },
+        { label: "Help Center", href: "/help" },
+        { label: "Status", href: "/status" },
       ]
     }
   ];
@@ -57,6 +54,7 @@ export default function Footer({ isDarkMode }: FooterProps) {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
           <div className="lg:col-span-2 space-y-6">
+            {/* 로고 영역 - 원본 디자인 그대로 유지 */}
             <Link href="/" className="flex items-center gap-3 group">
               <div className="relative w-8 h-8">
                 <Image src="/logobg.webp" alt="Footer Logo" fill className="object-contain" />
@@ -70,15 +68,16 @@ export default function Footer({ isDarkMode }: FooterProps) {
               최첨단 AI 기술을 활용한 통합 콘텐츠 제작 환경을 경험하세요.
             </p>
             <div className="flex gap-4">
-              {/* 안전하게 교체된 아이콘 리스트 */}
+              {/* 안전하게 교체된 아이콘 리스트 유지 */}
               {[Globe, MessageSquare, Video, Mail].map((Icon, idx) => (
-                <button key={idx} className={`p-2 rounded-lg border transition-all hover:text-blue-500 hover:border-blue-500/50 ${isDarkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`}>
+                <button key={idx} className={`p-2.5 rounded-xl border transition-all hover:text-blue-500 hover:border-blue-500/50 ${isDarkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-400' : 'bg-zinc-50 border-zinc-200 text-zinc-600'}`}>
                   <Icon size={18} />
                 </button>
               ))}
             </div>
           </div>
 
+          {/* 섹션 반복 렌더링 - 원본 구조 보존 */}
           {footerSections.map((section) => (
             <div key={section.title} className="space-y-6">
               <h4 className={`text-xs font-black uppercase tracking-[0.2em] ${titleColor}`}>
@@ -98,13 +97,14 @@ export default function Footer({ isDarkMode }: FooterProps) {
           ))}
         </div>
 
+        {/* 하단 카피라이트 및 법적 고지 - 원본 보존 */}
         <div className={`pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-6 ${borderColor}`}>
           <div className={`text-xs font-medium ${textColor}`}>
             © {currentYear} <span className="font-bold">AI Contents Studio</span>. All rights reserved.
           </div>
           <div className="flex gap-8">
-            <Link href="#" className={`text-xs font-bold transition-colors hover:text-blue-500 ${textColor}`}>Privacy Policy</Link>
-            <Link href="#" className={`text-xs font-bold transition-colors hover:text-blue-500 ${textColor}`}>Terms of Service</Link>
+            <Link href="/privacy" className={`text-xs font-bold transition-colors hover:text-blue-500 ${textColor}`}>Privacy Policy</Link>
+            <Link href="/terms" className={`text-xs font-bold transition-colors hover:text-blue-500 ${textColor}`}>Terms of Service</Link>
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import APIVaultContent from "../../../components/apivault/APIVaultContent";
+import APIVaultContent from "../../../components/apivault/APIVaultContent"; // 경로 확인!
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 
@@ -10,11 +10,10 @@ export default function APIVaultPage() {
 
   return (
     <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-[#05070a]' : 'bg-white'}`}>
+      {/* 🌟 수정 포인트: Header가 이제 페이지 전환 함수를 안 쓰므로 다 지워줍니다. */}
       <Header 
         isDarkMode={isDarkMode} 
         toggleTheme={() => setIsDarkMode(!isDarkMode)} 
-        onMenuClick={() => {}} 
-        setViewMode={() => {}} 
       />
       
       <main className="flex-1 pt-24">

@@ -1,144 +1,170 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import StudioLayout from '@/components/layout/StudioLayout';
+import React, { useState } from 'react';
 import Header from '@/components/layout/Header'; 
 import Footer from '@/components/layout/Footer'; 
-import { Sparkles, Zap, ArrowRight, MousePointer2 } from 'lucide-react';
-import Link from 'next/link';
+import { 
+  Sparkles, Zap, ArrowRight, Gift, Rocket, Key, PlayCircle, 
+  Star, MessageSquare, StickyNote, BookOpen, Newspaper, Construction
+} from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation'; // 🌟 이동을 위한 로직 추가
 
 export default function MainLandingPage() {
-  const [isStudioActive, setIsStudioActive] = useState(false);
-  const [activeMenu, setActiveMenu] = useState('Writing');
-  
-  // 🌟 화면 전환 상태를 하나로 통합하여 관리합니다.
-  const [studioViewMode, setStudioViewMode] = useState<'Studio' | 'Vault' | 'MyPage' | 'Community'>('Studio');
+  const router = useRouter(); // 🌟 주소 이동 리모컨 가동
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
-  useEffect(() => {
-    // 초기 테마 설정 불러오기
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light') setIsDarkMode(false);
-  }, []);
+  const themeClasses = isDarkMode ? "bg-[#05070a] text-white" : "bg-white text-zinc-900";
 
-  // 테마 변경 로직
-  const toggleTheme = () => {
-    const newMode = !isDarkMode;
-    setIsDarkMode(newMode);
-    localStorage.setItem('theme', newMode ? 'dark' : 'light');
-  };
-
-  // 헤더 메뉴 클릭 시 스튜디오 활성화 로직
-  const handleMenuClick = (menuValue: string) => {
-    setActiveMenu(menuValue);
-    setStudioViewMode('Studio'); // 메뉴 클릭 시 기본 스튜디오 화면으로 리셋
-    setIsStudioActive(true);
-  };
-
-  const menuItems = [
-    { label: 'Writing Studio', value: 'Writing', desc: 'AI 글쓰기 & SEO 최적화 전문 엔진' },
-    { label: 'Visuals Studio', value: 'Visuals', desc: '고퀄리티 이미지 및 비디오 생성' },
-    { label: 'Music Studio', value: 'Music', desc: '텍스트 기반 AI 작곡 및 사운드 디자인' },
-    { label: 'Script Studio', value: 'Script', desc: '유튜브, 광고, 시나리오 대본' },
-    { label: 'Tools', value: 'Tools', desc: '크리에이터 마케팅 분석 도구' }
+  const studioItems = [
+    { title: 'Writing', icon: <Zap size={18}/>, color: 'text-blue-400', border: 'hover:border-blue-500/50', bg: 'group-hover:bg-blue-600' },
+    { title: 'Visuals', icon: <Star size={18}/>, color: 'text-purple-400', border: 'hover:border-purple-500/50', bg: 'group-hover:bg-purple-600' },
+    { title: 'Music', icon: <Rocket size={18}/>, color: 'text-rose-400', border: 'hover:border-rose-500/50', bg: 'group-hover:bg-rose-600' },
+    { title: 'AI Chating', icon: <MessageSquare size={18}/>, color: 'text-emerald-400', border: 'hover:border-emerald-500/50', bg: 'group-hover:bg-emerald-600' },
+    { title: 'Cre Note', icon: <StickyNote size={18}/>, color: 'text-amber-400', border: 'hover:border-amber-500/50', bg: 'group-hover:bg-amber-600' },
+    { title: 'Cre Blog', icon: <BookOpen size={18}/>, color: 'text-indigo-400', border: 'hover:border-indigo-500/50', bg: 'group-hover:bg-indigo-600' },
+    { title: 'Reporter', icon: <Newspaper size={18}/>, color: 'text-orange-400', border: 'hover:border-orange-500/50', bg: 'group-hover:bg-orange-600' }
   ];
 
-  const themeClasses = isDarkMode 
-    ? "bg-[#0a0c10] text-zinc-100" 
-    : "bg-zinc-50 text-zinc-900";
-
   return (
-    <div className={`min-h-screen flex flex-col font-sans overflow-hidden transition-colors duration-500 ${themeClasses}`}>
+    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-500 ${themeClasses}`}>
       
-      {/* --- 전역 헤더 --- */}
-      <Header 
-        isDarkMode={isDarkMode} 
-        toggleTheme={toggleTheme} 
-        onMenuClick={handleMenuClick} 
-        // 🌟 Header 내부의 '내 프로필', 'API 관리' 버튼이 이 함수를 호출하여 스튜디오 화면을 바꿉니다.
-        setViewMode={setStudioViewMode as any} 
-      />
+      {/* 🌟 빨간줄 해결: Header에서 안쓰는 Props 걷어내기 */}
+      <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
 
-      {/* --- 메인 콘텐츠 영역 --- */}
-      <div className="flex-1 flex overflow-hidden">
-        {isStudioActive ? (
-          <StudioLayout 
-            activeMenu={activeMenu} 
-            initialViewMode={studioViewMode} 
-            isDarkMode={isDarkMode} 
-            // 🌟 StudioLayout 내부(사이드바)에서도 화면을 바꿀 수 있도록 리모컨을 전달합니다.
-            setViewMode={setStudioViewMode as any}
-          />
-        ) : (
-          <div className={`flex-1 overflow-y-auto custom-scrollbar relative ${isDarkMode ? 'bg-[#0a0c10]' : 'bg-zinc-50'}`}>
-            {/* 배경 블러 효과 */}
-            <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] rounded-full blur-[160px] pointer-events-none opacity-20 ${
-              isDarkMode ? 'bg-blue-600' : 'bg-blue-400'
-            }`} />
+      <main className="flex-1 overflow-y-auto pt-24 pb-20">
+        
+        {/* 1. 히어로 섹션 */}
+        <section className="relative max-w-7xl mx-auto px-6 pt-6 pb-12 flex flex-col items-center text-center">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-[400px] bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
 
-            <div className="max-w-6xl mx-auto px-8 pt-16 pb-24 flex flex-col items-center relative z-10">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[10px] font-black mb-8 uppercase tracking-widest">
-                <Sparkles size={12} /> AI Creative Platform
-              </div>
+          <div className="relative z-10 space-y-6 w-full max-w-5xl">
+            <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/40 text-amber-400 text-[15px] font-black uppercase tracking-widest shadow-lg shadow-amber-500/5">
+              <Gift size={18} /> Beta Version: Unlimited Free Access
+            </div>
 
-              <div className="relative mb-10 group">
-                <Image 
-                  src="/logobg.webp" 
-                  alt="Hero Logo" 
-                  width={600} 
-                  height={220} 
-                  className="object-contain drop-shadow-2xl cursor-pointer" 
-                  priority 
-                  onClick={() => setIsStudioActive(false)}
-                />
-              </div>
+            <h1 className="text-4xl md:text-6xl lg:text-[68px] font-black italic uppercase tracking-tighter leading-[1.15] px-6 break-keep">
+              차세대 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400">AI 콘텐츠 스튜디오</span>
+            </h1>
 
-              <p className={`text-center max-w-2xl leading-relaxed mb-10 text-lg font-medium opacity-70 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                최첨단 AI 모델로 상상하는 모든 것을 생성하세요. <br />
-                단 한 곳에서 제어하는 완벽한 크리에이티브 환경.
-              </p>
+            <p className="max-w-3xl mx-auto text-lg font-medium opacity-75 leading-relaxed break-keep px-6">
+              구글 제미나이, 쳇 GPT, 클로드, SUNO AI 를 모두 품은 <br className="hidden md:block" />
+              하나의 플랫폼에서 펼쳐지는 무한한 창작의 가능성. <br />
+              CreAibox가 당신의 상상력에 엔진을 달아드립니다.
+            </p>
+          </div>
 
-              <div className="flex gap-4 mb-16">
-                <button onClick={() => handleMenuClick('Writing')} className="px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl transition-all shadow-xl shadow-blue-600/20 flex items-center gap-3 group active:scale-95">
-                  Start Creating <ArrowRight size={18} />
-                </button>
-                <button className={`px-8 py-3.5 border font-black rounded-xl transition-all active:scale-95 ${
-                  isDarkMode ? 'bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800' : 'bg-white border-zinc-200 text-zinc-900 hover:bg-zinc-100'
-                }`}>
-                  Explore Tools
-                </button>
-              </div>
+          <div className="mt-10 relative group">
+            <Image 
+              src="/logobg.webp" 
+              alt="Creaibox Hero" 
+              width={540} 
+              height={200} 
+              className="relative object-contain drop-shadow-[0_0_50px_rgba(37,99,235,0.25)]" 
+            />
+          </div>
+        </section>
 
-              <div className="w-full">
-                <h3 className="text-xl font-black italic uppercase tracking-tighter flex items-center gap-3 mb-8">
-                   <MousePointer2 size={20} className="text-blue-500" /> POPULAR STUDIOS
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {menuItems.map((item, idx) => (
-                    <div 
-                      key={idx}
-                      onClick={() => handleMenuClick(item.value)}
-                      className={`group p-8 rounded-[24px] border transition-all cursor-pointer relative overflow-hidden ${
-                        isDarkMode ? 'bg-zinc-900/40 border-zinc-800 hover:border-blue-500/50' : 'bg-white border-zinc-200 hover:border-blue-500 shadow-sm'
-                      }`}
-                    >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-5 ${isDarkMode ? 'bg-zinc-800' : 'bg-zinc-100'}`}>
-                        <Zap size={20} className="text-blue-500" />
-                      </div>
-                      <h4 className="text-lg font-black mb-2 uppercase italic tracking-tight">{item.label}</h4>
-                      <p className="text-sm leading-relaxed font-medium opacity-60">{item.desc}</p>
-                    </div>
-                  ))}
+        {/* 2. 핵심 선택 박스 */}
+        <section className="max-w-6xl mx-auto px-6 pb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* 🌟 API 연결하기 (admin/apivault 이동) */}
+            <div 
+              onClick={() => router.push('/admin/apivault')}
+              className="group p-10 bg-gradient-to-br from-indigo-600/25 to-blue-600/20 border-2 border-indigo-500/40 rounded-[40px] hover:scale-[1.02] transition-all shadow-2xl cursor-pointer"
+            >
+              <div className="space-y-5">
+                <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-600/30">
+                  <Key className="text-white" size={28} />
+                </div>
+                <h3 className="text-3xl font-black italic uppercase tracking-tight">나의 API 연결하기</h3>
+                <p className="text-zinc-400 text-sm font-semibold leading-relaxed break-keep">
+                  제미나이, 쳇 GPT, 클로드, Suno 등 <br />
+                  개인 API 키를 활용한 고성능 맞춤형 제작 모드
+                </p>
+                <div className="flex items-center gap-2 text-indigo-400 font-black uppercase text-xs tracking-widest group-hover:translate-x-2 transition-transform">
+                  API 금고 관리하기 <ArrowRight size={18} />
                 </div>
               </div>
             </div>
 
-            <Footer isDarkMode={isDarkMode} />
+            {/* 🌟 체험 API로 맛보기 (studio/writing/wp/create 이동) */}
+            <div 
+              onClick={() => router.push('/studio/writing/wp/create')}
+              className="group p-10 bg-gradient-to-br from-emerald-600/20 to-teal-600/15 border-2 border-emerald-500/30 rounded-[40px] hover:scale-[1.02] transition-all shadow-2xl cursor-pointer"
+            >
+              <div className="space-y-5">
+                <div className="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-xl shadow-emerald-500/30">
+                  <PlayCircle className="text-white" size={28} />
+                </div>
+                <h3 className="text-3xl font-black italic uppercase tracking-tight">체험 API로 맛보기</h3>
+                <p className="text-zinc-400 text-sm font-semibold leading-relaxed break-keep">
+                  설정 없이 즉시 시작하는 <br />
+                  크리에이박스 기본 체험 모드
+                </p>
+                <div className="flex items-center gap-2 text-emerald-400 font-black uppercase text-xs tracking-widest group-hover:translate-x-2 transition-transform">
+                  스튜디오 즉시 시작 <ArrowRight size={18} />
+                </div>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+
+          {/* 공지사항 섹션 */}
+          <div className="mt-10 p-8 bg-gradient-to-r from-blue-600/20 via-blue-600/10 to-blue-600/20 border-2 border-blue-500/30 rounded-[24px] text-center shadow-lg">
+             <p className="text-xl md:text-2xl font-black text-white tracking-tight">
+               <span className="text-blue-400 mr-3 underline decoration-blue-500 underline-offset-8 uppercase italic">Notice:</span> 
+               베타 서비스 기간 동안 모든 스튜디오 기능을 <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400 underline decoration-orange-500">무제한 무료</span>로 이용하실 수 있습니다.
+             </p>
+          </div>
+        </section>
+
+        {/* 3. 스튜디오 라인업 */}
+        <section className="py-16">
+          <div className="max-w-6xl mx-auto px-6 text-center">
+            <h2 className="text-3xl font-black italic uppercase tracking-tighter mb-12 text-transparent bg-clip-text bg-gradient-to-r from-zinc-200 to-zinc-500 flex items-center justify-center gap-4">
+               <Construction className="text-blue-500" size={24} />
+               CreAibox AI Studio Line-up 
+               <span className="text-blue-500 animate-pulse text-sm ml-2 font-black">(실시간 개발 중!)</span>
+            </h2>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-5">
+              {studioItems.map((item, idx) => (
+                <div 
+                  key={idx} 
+                  onClick={() => router.push('/studio/writing/wp/create')} // 🌟 편의상 모든 스튜디오 클릭 시 워드프레스 생성으로 일단 연결
+                  className={`group flex flex-col items-center p-6 bg-zinc-900/60 border-2 border-zinc-800 rounded-[28px] transition-all cursor-pointer ${item.border} hover:-translate-y-2`}
+                >
+                  <div className={`w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center ${item.color} mb-4 transition-all duration-300 ${item.bg} group-hover:text-white group-hover:shadow-lg`}>
+                    {item.icon}
+                  </div>
+                  <h4 className="text-[12px] font-black uppercase tracking-tight text-zinc-300 group-hover:text-white">{item.title}</h4>
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-20 p-10 bg-gradient-to-b from-zinc-900/50 to-black border-2 border-zinc-800/80 rounded-[32px] shadow-2xl relative overflow-hidden group hover:border-blue-500/30 transition-all">
+                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <Sparkles size={150} />
+                </div>
+                
+                <h2 className="text-2xl md:text-4xl font-black italic uppercase tracking-tighter leading-snug">
+                    All Your <span className="text-blue-500">Creative AI Tools</span> in One Workspace, <br />
+                    The Creator’s <span className="text-emerald-400">Ai Toolbox</span>
+                </h2>
+                
+                <div className="mt-6 flex justify-center items-center gap-4">
+                    <div className="h-[1px] w-12 bg-zinc-800" />
+                    <p className="text-zinc-500 font-black uppercase tracking-[0.3em] text-xs">CreAibox Philosophy</p>
+                    <div className="h-[1px] w-12 bg-zinc-800" />
+                </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      <Footer isDarkMode={isDarkMode} />
     </div>
   );
 }
