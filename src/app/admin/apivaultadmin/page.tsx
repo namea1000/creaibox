@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import APIVaultAdmin from "../../../components/apivault/APIVaultAdmin";
+import APIVaultAdmin from "@/components/apivault/APIVaultAdmin";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useRouter } from 'next/navigation';
