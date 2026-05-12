@@ -118,7 +118,7 @@ export default function MyPageContent() {
               </div>
 
               {/* 닉네임 */}
-{/* 닉네임 섹션 (가장 중요) */}
+{/* 닉네임 섹션 */}
 <div className="space-y-2">
   <label className="text-xs font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
     <Sparkles size={14} /> 활동 닉네임 (필수)
