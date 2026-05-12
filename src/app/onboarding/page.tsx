@@ -8,8 +8,10 @@ import {
   Star, MessageSquare, StickyNote, BookOpen, Newspaper, Construction
 } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation'; // 🌟 이동을 위한 로직 추가
 
 export default function MainLandingPage() {
+  const router = useRouter(); // 🌟 주소 이동 리모컨 가동
   const [isDarkMode, setIsDarkMode] = useState(true);
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
@@ -28,9 +30,10 @@ export default function MainLandingPage() {
   return (
     <div className={`min-h-screen flex flex-col font-sans transition-colors duration-500 ${themeClasses}`}>
       
-      <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} onMenuClick={() => {}} setViewMode={() => {}} />
+      {/* 🌟 빨간줄 해결: Header에서 안쓰는 Props 걷어내기 */}
+      <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
 
-      <main className="flex-1 overflow-y-auto pt-12 pb-20">
+      <main className="flex-1 overflow-y-auto pt-24 pb-20">
         
         {/* 1. 히어로 섹션 */}
         <section className="relative max-w-7xl mx-auto px-6 pt-6 pb-12 flex flex-col items-center text-center">
@@ -66,7 +69,11 @@ export default function MainLandingPage() {
         {/* 2. 핵심 선택 박스 */}
         <section className="max-w-6xl mx-auto px-6 pb-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="group p-10 bg-gradient-to-br from-indigo-600/25 to-blue-600/20 border-2 border-indigo-500/40 rounded-[40px] hover:scale-[1.02] transition-all shadow-2xl cursor-pointer">
+            {/* 🌟 API 연결하기 (admin/apivault 이동) */}
+            <div 
+              onClick={() => router.push('/admin/apivault')}
+              className="group p-10 bg-gradient-to-br from-indigo-600/25 to-blue-600/20 border-2 border-indigo-500/40 rounded-[40px] hover:scale-[1.02] transition-all shadow-2xl cursor-pointer"
+            >
               <div className="space-y-5">
                 <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-600/30">
                   <Key className="text-white" size={28} />
@@ -76,13 +83,17 @@ export default function MainLandingPage() {
                   제미나이, 쳇 GPT, 클로드, Suno 등 <br />
                   개인 API 키를 활용한 고성능 맞춤형 제작 모드
                 </p>
-                <div className="flex items-center gap-2 text-indigo-400 font-black uppercase text-xs tracking-widest">
-                  API 연결 가이드 보기 <ArrowRight size={18} />
+                <div className="flex items-center gap-2 text-indigo-400 font-black uppercase text-xs tracking-widest group-hover:translate-x-2 transition-transform">
+                  API 금고 관리하기 <ArrowRight size={18} />
                 </div>
               </div>
             </div>
 
-            <div className="group p-10 bg-gradient-to-br from-emerald-600/20 to-teal-600/15 border-2 border-emerald-500/30 rounded-[40px] hover:scale-[1.02] transition-all shadow-2xl cursor-pointer">
+            {/* 🌟 체험 API로 맛보기 (studio/writing/wp/create 이동) */}
+            <div 
+              onClick={() => router.push('/studio/writing/wp/create')}
+              className="group p-10 bg-gradient-to-br from-emerald-600/20 to-teal-600/15 border-2 border-emerald-500/30 rounded-[40px] hover:scale-[1.02] transition-all shadow-2xl cursor-pointer"
+            >
               <div className="space-y-5">
                 <div className="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-xl shadow-emerald-500/30">
                   <PlayCircle className="text-white" size={28} />
@@ -92,14 +103,14 @@ export default function MainLandingPage() {
                   설정 없이 즉시 시작하는 <br />
                   크리에이박스 기본 체험 모드
                 </p>
-                <div className="flex items-center gap-2 text-emerald-400 font-black uppercase text-xs tracking-widest">
+                <div className="flex items-center gap-2 text-emerald-400 font-black uppercase text-xs tracking-widest group-hover:translate-x-2 transition-transform">
                   스튜디오 즉시 시작 <ArrowRight size={18} />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* 공지사항 섹션 (Notice) */}
+          {/* 공지사항 섹션 */}
           <div className="mt-10 p-8 bg-gradient-to-r from-blue-600/20 via-blue-600/10 to-blue-600/20 border-2 border-blue-500/30 rounded-[24px] text-center shadow-lg">
              <p className="text-xl md:text-2xl font-black text-white tracking-tight">
                <span className="text-blue-400 mr-3 underline decoration-blue-500 underline-offset-8 uppercase italic">Notice:</span> 
@@ -119,7 +130,11 @@ export default function MainLandingPage() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-5">
               {studioItems.map((item, idx) => (
-                <div key={idx} className={`group flex flex-col items-center p-6 bg-zinc-900/60 border-2 border-zinc-800 rounded-[28px] transition-all cursor-pointer ${item.border} hover:-translate-y-2`}>
+                <div 
+                  key={idx} 
+                  onClick={() => router.push('/studio/writing/wp/create')} // 🌟 편의상 모든 스튜디오 클릭 시 워드프레스 생성으로 일단 연결
+                  className={`group flex flex-col items-center p-6 bg-zinc-900/60 border-2 border-zinc-800 rounded-[28px] transition-all cursor-pointer ${item.border} hover:-translate-y-2`}
+                >
                   <div className={`w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center ${item.color} mb-4 transition-all duration-300 ${item.bg} group-hover:text-white group-hover:shadow-lg`}>
                     {item.icon}
                   </div>
@@ -128,9 +143,7 @@ export default function MainLandingPage() {
               ))}
             </div>
             
-            {/* --- 슬로건 박스 강화 (사장님 요청 사항) --- */}
             <div className="mt-20 p-10 bg-gradient-to-b from-zinc-900/50 to-black border-2 border-zinc-800/80 rounded-[32px] shadow-2xl relative overflow-hidden group hover:border-blue-500/30 transition-all">
-                {/* 배경 장식 */}
                 <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                     <Sparkles size={150} />
                 </div>

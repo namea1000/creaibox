@@ -1,19 +1,26 @@
-"use client";
+'use client';
 
-import React from 'react';
-import UserManagement from "../../../components/admin/UserManagement";
-import Header from "../../../components/layout/Header";
-import Footer from "../../../components/layout/Footer";
+import React, { useState } from 'react';
+import Header from "@/components/layout/Header"; 
+import Footer from "@/components/layout/Footer";
+import AdminUserManagement from "@/components/admin/UserManagement"; // 🌟 위에서 만든 알맹이 호출
 
 export default function AdminUsersPage() {
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  const toggleTheme = () => setIsDarkMode(!isDarkMode);
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#05070a]">
-      <Header />
-      <main className="flex-1 pt-24 pb-20">
-        {/* 관리자 페이지는 넓게 쓰는 게 좋으니 1600px급으로 배치 */}
-        <UserManagement />
+    <div className={`min-h-screen flex flex-col transition-colors duration-500 ${isDarkMode ? 'bg-[#05070a]' : 'bg-white'}`}>
+      {/* 지붕 */}
+      <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+
+      {/* 몸통 */}
+      <main className="flex-1 pt-32 pb-20 px-8">
+        <AdminUserManagement isDarkMode={isDarkMode} />
       </main>
-      <Footer />
+
+      {/* 바닥 */}
+      <Footer isDarkMode={isDarkMode} />
     </div>
   );
 }

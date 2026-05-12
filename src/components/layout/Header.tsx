@@ -121,10 +121,10 @@ export default function Header({ isDarkMode, toggleTheme }: HeaderProps) {
                 isDarkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'
               }`}>
                 {/* 🌟 함수 호출 대신 진짜 페이지 주소로 이동 */}
-                <Link href="/adm/mypage" onClick={() => setIsProfileOpen(false)} className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-all text-left ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-700 hover:bg-zinc-100'}`}>
+                <Link href="/admin/mypage" onClick={() => setIsProfileOpen(false)} className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-all text-left ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-700 hover:bg-zinc-100'}`}>
                   <UserIcon size={14} />내 프로필
                 </Link>
-                <Link href="/apivault" onClick={() => setIsProfileOpen(false)} className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-all text-left ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-700 hover:bg-zinc-100'}`}>
+                <Link href="/admin/apivault" onClick={() => setIsProfileOpen(false)} className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-all text-left ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-700 hover:bg-zinc-100'}`}>
                   <Settings size={14} />API 키 관리
                 </Link>
                 <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-red-500 hover:bg-red-500/5 transition-all border-t mt-1 text-left">

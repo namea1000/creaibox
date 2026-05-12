@@ -1,43 +1,27 @@
 "use client";
 
 import React, { useState } from 'react';
-// 🌟 상대 경로로 직접 지정하여 Vercel 빌드 에러를 방지합니다.
 import MyPageContent from "../../../components/mypage/MyPageContent";
 import Header from "../../../components/layout/Header";
 import Footer from "../../../components/layout/Footer";
 
 export default function MyPage() {
+  // 🌟 [추가] 헤더와 푸터의 빨간 줄을 없애기 위한 테마 상태
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
   return (
-    <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-[#05070a]' : 'bg-white'}`}>
-      {/* 헤더: 여기서 닉네임 유무에 따라 표시 로직이 들어갑니다 */}
-      <Header 
-        isDarkMode={isDarkMode} 
-        toggleTheme={() => setIsDarkMode(!isDarkMode)} 
-        onMenuClick={() => {}} 
-        setViewMode={() => {}} 
-      />
+    <div className={`min-h-screen flex flex-col transition-colors duration-500 ${isDarkMode ? 'bg-[#05070a]' : 'bg-white'}`}>
       
-      <main className="flex-1 pt-24 pb-20">
-        {/* 마이페이지 타이틀 섹션 */}
-        <div className="max-w-7xl mx-auto px-6 mb-10">
-          <div className="border-l-4 border-blue-600 pl-6">
-            <h1 className="text-4xl font-black text-white uppercase italic tracking-tighter">
-              User <span className="text-blue-600">Profile</span>
-            </h1>
-            <p className="text-zinc-500 text-sm font-bold uppercase tracking-widest mt-1">
-              커뮤니티 활동을 위한 프로필 및 닉네임 설정
-            </p>
-          </div>
-        </div>
-
-        {/* 실제 마이페이지 컨텐츠 컴포넌트 */}
-        <div className="max-w-7xl mx-auto px-6">
-          <MyPageContent />
-        </div>
+      {/* 🌟 1. 공통 헤더: 이제 다크모드 리모컨을 넘겨주어 빨간 줄이 사라집니다. */}
+      <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+      
+      {/* 🌟 2. 메인 영역: pt-32를 주어 헤더 밑으로 콘텐츠가 숨지 않게 합니다. */}
+      <main className="flex-1 pt-32 pb-20">
+        <MyPageContent isDarkMode={isDarkMode} />
       </main>
 
+      {/* 🌟 3. 공통 푸터 */}
       <Footer isDarkMode={isDarkMode} />
     </div>
   );

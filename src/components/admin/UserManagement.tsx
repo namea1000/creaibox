@@ -36,7 +36,7 @@ export default function UserManagement() {
   );
 
   return (
-    <div className="bg-[#05070a] text-slate-100 p-8 font-sans">
+    <div className="bg-[#05070a] text-slate-100 p-8 pt-24 font-sans min-h-screen">
       <div className="max-w-[1600px] mx-auto">
         
         <header className="mb-10 flex justify-between items-end">
