@@ -8,31 +8,37 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 // 🌟 분리된 사이드바와 알맹이 컴포넌트들
 import Sidebar from '@/components/layout/Sidebar';
 import WordPressContent from '@/components/layout/studios/writing/WordPressLayout';
-import APIVaultContent from '@/components/vault/APIVaultContent'; 
+import APIVaultContent from '@/components/apivault/APIVaultContent'; 
 import MyPageContent from '@/components/mypage/MyPageContent'; 
 import CommunityCenter from '@/components/community/CommunityCenter';
 import Aside from '@/components/layout/Aside';
-import Footer from '@/components/layout/Footer'; // 🌟 분리한 푸터 컴포넌트 불러오기
+import Footer from '@/components/layout/Footer'; 
 
+// 🌟 [핵심 수정] Props 인터페이스에 setViewMode를 추가해야 page.tsx의 빨간 줄이 사라집니다.
 interface StudioLayoutProps {
   activeMenu: string;
   initialViewMode?: 'Studio' | 'Vault' | 'MyPage' | 'Community';
   isDarkMode: boolean;
+  // 🌟 이 부분을 추가하여 부모(page.tsx)로부터 함수를 받을 준비를 합니다.
+  setViewMode: (mode: 'Studio' | 'Vault' | 'MyPage' | 'Community') => void;
 }
 
 export default function StudioLayout({ 
   activeMenu, 
   initialViewMode = 'Studio',
-  isDarkMode
+  isDarkMode,
+  setViewMode // 🌟 여기서 리모컨을 받습니다.
 }: StudioLayoutProps) {
   
-  // --- 상태 관리 (사이드바 제어 및 뷰 모드) ---
+  // --- 상태 관리 ---
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<any>(initialViewMode);
+  
+  // 🌟 내부 viewMode 상태를 부모에서 내려준 initialViewMode와 일치시킵니다.
+  const viewMode = initialViewMode;
   const [activeSubMenu, setActiveSubMenu] = useState('워드프레스 글쓰기');
 
-  // --- 글쓰기 관련 상태 및 로직 (알맹이 데이터) ---
+  // --- 글쓰기 관련 상태 및 로직 (기존 로직 보존) ---
   const [apiKey, setApiKey] = useState("");
   const [topic, setTopic] = useState("");
   const [content, setContent] = useState("");
@@ -55,11 +61,7 @@ export default function StudioLayout({
     if (savedKey) setApiKey(savedKey);
   }, []);
 
-  useEffect(() => {
-    setViewMode(initialViewMode);
-  }, [initialViewMode]);
-
-  // AI 생성 및 핸들러 로직 (WordPressContent 전달용)
+  // AI 생성 로직 (WordPressContent 전달용)
   const handleGenerate = async () => {
     if (!apiKey) return alert("Gemini API 키를 입력해주세요!");
     if (!topic) return alert("작성할 주제를 입력해주세요!");
@@ -70,7 +72,7 @@ export default function StudioLayout({
       const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
       const dateString = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
 
-      const prompt = `[SYSTEM: PROFESSIONAL CONTENT CREATOR] 오늘 날짜는 ${dateString}입니다. 주제: "${topic}" 말투: "${tone}" 길이: "${length}"...`;
+      const prompt = `[SYSTEM: PROFESSIONAL CONTENT CREATOR] 오늘 날짜는 ${dateString}입니다. 주제: "${topic}"...`;
 
       const result = await model.generateContent({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -119,7 +121,7 @@ export default function StudioLayout({
         <div className="w-10"></div>
       </div>
 
-      {/* 🌟 1. 분리된 사이드바 컴포넌트 조립 */}
+      {/* 🌟 1. 사이드바 조립 (setViewMode 전달) */}
       <Sidebar 
         activeMenu={activeMenu}
         activeSubMenu={activeSubMenu}

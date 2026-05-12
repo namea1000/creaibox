@@ -14,7 +14,7 @@ interface HeaderProps {
   isDarkMode: boolean;
   toggleTheme: () => void;
   onMenuClick?: (menuValue: string) => void;
-  setViewMode?: (mode: string) => void; // 🌟 부모로부터 받는 화면 전환 함수
+  setViewMode?: (mode: string) => void; 
 }
 
 export default function Header({ isDarkMode, toggleTheme, onMenuClick, setViewMode }: HeaderProps) {
@@ -41,9 +41,20 @@ export default function Header({ isDarkMode, toggleTheme, onMenuClick, setViewMo
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // 🚀 [수정] 로고 클릭 시 새로고침 없이 메인(Landing)으로 전환
   const handleLogoClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    window.location.href = "/"; 
+    // 새로고침 대신 상태를 관리하는 부모의 로직을 타게 하거나, 
+    // 단순히 메인 페이지 주소로 부드럽게 이동하게 합니다.
+    // 현재 구조에서는 Link처럼 작동하게 "/"로 보내주면 Next.js가 알아서 처리합니다.
+    window.history.pushState({}, '', '/'); 
+    window.dispatchEvent(new PopStateEvent('popstate')); // 뒤로가기 효과를 주어 메인 렌더링 유도
+    
+    // 만약 스튜디오 모드를 끄는 로직이 page.tsx에 있다면 
+    // window.location.reload() 대신 아래처럼 직접 이동하는 것이 좋습니다.
+    if (typeof window !== 'undefined') {
+      // 가장 깔끔한 방법은 <a> 태그 기능을 살리되 SPA 라우팅을 유지하는 것입니다.
+    }
   };
 
   const handleLogout = async () => {
@@ -51,14 +62,11 @@ export default function Header({ isDarkMode, toggleTheme, onMenuClick, setViewMo
     window.location.reload();
   };
 
-  // 🌟 [추가] 공통 화면 전환 핸들러
   const handleViewChange = (mode: string) => {
     if (setViewMode) {
       setViewMode(mode);
-      setIsProfileOpen(false); // 드롭다운 닫기
-      setIsMobileMenuOpen(false); // 모바일 메뉴 닫기
-    } else {
-      console.warn("setViewMode function is not provided to Header!");
+      setIsProfileOpen(false); 
+      setIsMobileMenuOpen(false); 
     }
   };
 
@@ -75,16 +83,27 @@ export default function Header({ isDarkMode, toggleTheme, onMenuClick, setViewMo
       isDarkMode ? 'bg-[#0a0c10]/80 backdrop-blur-md border-zinc-800/50' : 'bg-white/80 backdrop-blur-md border-zinc-200'
     }`}>
       
-      {/* 로고 영역 */}
+      {/* 로고 영역 - Link 컴포넌트로 교체하여 새로고침 방지 */}
       <div className="flex items-center">
-        <a href="/" onClick={handleLogoClick} className="flex items-center gap-3 cursor-pointer group transition-all duration-500">
+        <Link 
+          href="/" 
+          className="flex items-center gap-3 cursor-pointer group transition-all duration-500"
+        >
           <div className="relative w-40 h-40 overflow-visible">
-            <Image src="/logobg.webp" alt="Logo" fill className="object-contain relative z-10" priority />
+            <Image 
+              src="/logobg.webp" 
+              alt="Logo" 
+              fill 
+              sizes="160px"
+              style={{ objectFit: 'contain' }}
+              className="relative z-10" 
+              priority 
+            />
           </div>
           <span className={`text-xl font-black italic tracking-tighter transition-all ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
             AI Contents <span className="text-blue-500 group-hover:text-blue-400 transition-colors">Studio</span>
           </span>
-        </a>
+        </Link>
       </div>
       
       {/* 중앙 메뉴 (데스크톱) */}
@@ -131,7 +150,6 @@ export default function Header({ isDarkMode, toggleTheme, onMenuClick, setViewMo
               <div className={`absolute right-0 mt-2 w-56 rounded-2xl shadow-2xl py-2 overflow-hidden z-[110] border ${
                 isDarkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'
               }`}>
-                {/* 🌟 [수정] 내 프로필 클릭 시 MyPage 모드로 전환 */}
                 <button 
                   onClick={() => handleViewChange('MyPage')}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-all text-left ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-700 hover:bg-zinc-100'}`}
@@ -139,7 +157,6 @@ export default function Header({ isDarkMode, toggleTheme, onMenuClick, setViewMo
                   <UserIcon size={14} />내 프로필
                 </button>
 
-                {/* 🌟 [수정] API 키 관리 클릭 시 Vault 모드로 전환 */}
                 <button 
                   onClick={() => handleViewChange('Vault')}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-all text-left ${isDarkMode ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-700 hover:bg-zinc-100'}`}

@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import StudioLayout from '@/components/layout/StudioLayout';
-import Header from '@/components/layout/Header'; // 🌟 분리한 헤더 컴포넌트 불러오기
-import Footer from '@/components/layout/Footer'; // 🌟 분리한 푸터 컴포넌트 불러오기
+import Header from '@/components/layout/Header'; 
+import Footer from '@/components/layout/Footer'; 
 import { Sparkles, Zap, ArrowRight, MousePointer2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -11,6 +11,8 @@ import Image from 'next/image';
 export default function MainLandingPage() {
   const [isStudioActive, setIsStudioActive] = useState(false);
   const [activeMenu, setActiveMenu] = useState('Writing');
+  
+  // 🌟 화면 전환 상태를 하나로 통합하여 관리합니다.
   const [studioViewMode, setStudioViewMode] = useState<'Studio' | 'Vault' | 'MyPage' | 'Community'>('Studio');
   const [isDarkMode, setIsDarkMode] = useState(true);
 
@@ -20,7 +22,7 @@ export default function MainLandingPage() {
     if (savedTheme === 'light') setIsDarkMode(false);
   }, []);
 
-  // 테마 변경 로직 (헤더에 전달용)
+  // 테마 변경 로직
   const toggleTheme = () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
@@ -30,6 +32,7 @@ export default function MainLandingPage() {
   // 헤더 메뉴 클릭 시 스튜디오 활성화 로직
   const handleMenuClick = (menuValue: string) => {
     setActiveMenu(menuValue);
+    setStudioViewMode('Studio'); // 메뉴 클릭 시 기본 스튜디오 화면으로 리셋
     setIsStudioActive(true);
   };
 
@@ -53,6 +56,8 @@ export default function MainLandingPage() {
         isDarkMode={isDarkMode} 
         toggleTheme={toggleTheme} 
         onMenuClick={handleMenuClick} 
+        // 🌟 Header 내부의 '내 프로필', 'API 관리' 버튼이 이 함수를 호출하여 스튜디오 화면을 바꿉니다.
+        setViewMode={setStudioViewMode as any} 
       />
 
       {/* --- 메인 콘텐츠 영역 --- */}
@@ -62,6 +67,8 @@ export default function MainLandingPage() {
             activeMenu={activeMenu} 
             initialViewMode={studioViewMode} 
             isDarkMode={isDarkMode} 
+            // 🌟 StudioLayout 내부(사이드바)에서도 화면을 바꿀 수 있도록 리모컨을 전달합니다.
+            setViewMode={setStudioViewMode as any}
           />
         ) : (
           <div className={`flex-1 overflow-y-auto custom-scrollbar relative ${isDarkMode ? 'bg-[#0a0c10]' : 'bg-zinc-50'}`}>
@@ -81,7 +88,7 @@ export default function MainLandingPage() {
                   alt="Hero Logo" 
                   width={600} 
                   height={220} 
-                  className="object-contain drop-shadow-2xl" 
+                  className="object-contain drop-shadow-2xl cursor-pointer" 
                   priority 
                   onClick={() => setIsStudioActive(false)}
                 />
@@ -128,7 +135,6 @@ export default function MainLandingPage() {
               </div>
             </div>
 
-            {/* 🌟 수술 완료: 메인 콘텐츠가 끝나는 지점에 푸터 삽입 */}
             <Footer isDarkMode={isDarkMode} />
           </div>
         )}
