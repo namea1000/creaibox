@@ -29,9 +29,9 @@ export default function LoginPage() {
   }
 
   // 2. 소셜 로그인 통합 핸들러
-const handleSocialLogin = async (provider: Provider) => {
+  const handleSocialLogin = async (provider: Provider) => {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider, // 👈 이제 여기서 빨간 줄이 사라집니다!
+      provider,
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
       },
@@ -56,7 +56,7 @@ const handleSocialLogin = async (provider: Provider) => {
           </p>
         </div>
 
-        {/* 4대 소셜 로그인 버튼 그리드 (스포티파이+애플 스타일) */}
+        {/* 소셜 로그인 버튼 그리드 (네이버 제거됨) */}
         <div className="grid grid-cols-1 gap-3 pt-2">
           {/* 구글 */}
           <button 
@@ -74,15 +74,6 @@ const handleSocialLogin = async (provider: Provider) => {
           >
             <MessageCircle size={18} fill="black" />
             카카오톡으로 시작하기
-          </button>
-
-          {/* 네이버 */}
-          <button 
-            onClick={() => handleSocialLogin('naver')}
-            className="w-full flex items-center justify-center gap-3 bg-[#03C75A] hover:bg-[#02b351] text-white py-3 rounded-full font-bold text-sm transition-all"
-          >
-            <span className="font-black text-lg">N</span>
-            네이버로 시작하기
           </button>
 
           {/* 애플 */}
