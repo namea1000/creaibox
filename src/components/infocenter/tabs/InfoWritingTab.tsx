@@ -2,231 +2,338 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { 
-  Send, X, CheckCircle2, Loader2, ChevronLeft, ThumbsUp, 
-  MessageSquare, Image as ImageIcon, Paperclip, Smile, Eye, Trash2, Edit3 
+import {
+  Send, X, CheckCircle2, Loader2, ChevronLeft, ThumbsUp,
+  MessageSquare, Image as ImageIcon, Paperclip, Smile, Eye, Trash2, Edit3
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
-// 🌟 [배포 에러 방지] Props 의존성을 최소화하고 주소 이동(router) 방식을 도입했습니다.
-export default function PostWriteTab({ isDarkMode, editingPostId }: { isDarkMode: boolean, editingPostId?: string }) {
+export default function PostWriteTab() {
   const router = useRouter();
-  const supabase = createClient();
+  const searchParams = useSearchParams();
+  const editingId = searchParams.get('id');
 
+  const [editingPost, setEditingPost] = useState<any>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [postType, setPostType] = useState("free");
   const [loading, setLoading] = useState(false);
-  const [saveStatus, setSaveStatus] = useState(false); 
-  const [user, setUser] = useState<any>(null);
-  const [postData, setPostData] = useState<any>(null);
-  
+  const [saveStatus, setSaveStatus] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
   const [likes, setLikes] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
+  const [userNickname, setUserNickname] = useState("");
 
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editCommentValue, setEditCommentValue] = useState("");
+
   const [showPreview, setShowPreview] = useState(false);
-  const [showEmoji, setShowEmoji] = useState<{target: string | null}>({target: null});
+  const [files, setFiles] = useState<File[]>([]); // 🌟 파일 첨부 기능 복구
+  const [showEmoji, setShowEmoji] = useState<{ target: string | null }>({ target: null });
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const supabase = createClient();
+  const [activeUser, setActiveUser] = useState<any>(null);
 
-  const emojis = ["😀", "😁", "😂", "🤣", "😃", "😄", "😅", "😆", "😉", "😊", "😋", "😎", "😍", "😘", "🥰", "🤩", "🤔", "🤨", "😐", "😑", "😶", "🙄", "😏", "😣", "😥", "😮", "🤐", "😯", "😪", "😫", "🥱", "😴"];
+  const emojis = ["😀", "😁", "😂", "🤣", "😃", "😄", "😅", "😆", "😉", "😊", "😋", "😎", "😍", "😘", "🥰", "😗", "😙", "😚", "☺️", "🙂", "🤗", "🤩", "🤔", "🤨", "😐", "😑", "😶", "🙄", "😏", "😣", "😥", "😮", "🤐", "😯", "😪", "😫", "🥱", "😴"];
 
-  // 🌟 [독립 로직] 페이지 접속 시 데이터 로딩
   useEffect(() => {
     const initData = async () => {
       const { data: { user: sessionUser } } = await supabase.auth.getUser();
-      setUser(sessionUser);
+      if (sessionUser) {
+        setActiveUser(sessionUser);
+        const { data: profile } = await supabase.from('profiles').select('nickname').eq('id', sessionUser.id).single();
+        if (profile?.nickname) setUserNickname(profile.nickname);
+      }
 
-      if (editingPostId) {
+      if (editingId) {
         setLoading(true);
-        const { data: post } = await supabase.from('community_posts').select('*').eq('id', editingPostId).single();
+        const { data: post } = await supabase.from('community_posts').select('*').eq('id', editingId).single();
         if (post) {
-          setPostData(post);
+          setEditingPost(post);
           setTitle(post.title);
           setContent(post.content);
           setPostType(post.post_type);
           setLikes(post.like_count || 0);
-          
-          // 조회수 증가 (작성자 본인 제외)
-          if (sessionUser?.email !== post.user_email) {
-            await supabase.rpc('increment_view_count', { row_id: editingPostId });
-          }
-          fetchComments();
-          checkLikeStatus(sessionUser?.email || '');
+          fetchComments(post.id);
+          if (sessionUser) checkLikeStatus(post.id, sessionUser.email);
         }
         setLoading(false);
       }
     };
     initData();
-  }, [editingPostId]);
+  }, [editingId]);
 
-  const fetchComments = async () => {
-    const { data } = await supabase.from('community_comments').select('*').eq('post_id', editingPostId).order('created_at', { ascending: true });
+  const checkLikeStatus = async (postId: string, email?: string) => {
+    if (!postId || !email) return;
+    const { data } = await supabase.from('community_likes').select('*').eq('post_id', postId).eq('user_email', email).maybeSingle();
+    if (data) setHasLiked(true);
+  };
+
+  const fetchComments = async (postId: string) => {
+    const { data } = await supabase.from('community_comments').select('*').eq('post_id', postId).order('created_at', { ascending: true });
     if (data) setComments(data);
   };
 
-  const checkLikeStatus = async (email: string) => {
-    if (!editingPostId || !email) return;
-    const { data } = await supabase.from('community_likes').select('*').eq('post_id', editingPostId).eq('user_email', email).maybeSingle();
-    if (data) setHasLiked(true);
+  const handleCommentDelete = async (commentId: string) => {
+    if (!confirm("정말 삭제할까요?")) return;
+    const { error } = await supabase.from('community_comments').delete().eq('id', commentId);
+    if (!error) fetchComments(editingPost.id);
+  };
+
+  const handleCommentUpdate = async (commentId: string) => {
+    if (!editCommentValue.trim()) return;
+    const { error } = await supabase.from('community_comments').update({ content: editCommentValue }).eq('id', commentId);
+    if (!error) {
+      setEditingCommentId(null);
+      fetchComments(editingPost.id);
+    }
   };
 
   const addEmoji = (emoji: string) => {
     if (showEmoji.target === 'title') setTitle(title + emoji);
     if (showEmoji.target === 'content') setContent(content + emoji);
     if (showEmoji.target === 'comment') setNewComment(newComment + emoji);
-    setShowEmoji({target: null});
+    setShowEmoji({ target: null });
   };
 
-  const handleSave = async () => {
-    if (!title.trim() || !content.trim()) return alert("제목과 내용을 입력해주세요!");
-    if (!user) return alert("로그인이 필요합니다.");
-
+  const uploadAndInsertImage = async (file: File) => {
+    if (!file.type.startsWith('image/')) return alert("이미지만 가능합니다.");
     setLoading(true);
     try {
-      if (editingPostId && postData?.user_email === user.email) {
-        // 수정 모드
-        await supabase.from('community_posts').update({ title, content, post_type: postType }).eq('id', editingPostId);
-      } else {
-        // 새 글 등록
-        await supabase.from('community_posts').insert([{ title, content, post_type: postType, user_email: user.email, status: 'published' }]);
+      const fileName = `${Math.random()}.${file.name.split('.').pop()}`;
+      const { data } = await supabase.storage.from('community').upload(fileName, file);
+      if (data) {
+        const { data: { publicUrl } } = supabase.storage.from('community').getPublicUrl(fileName);
+        const newMarkdown = `\n![image](${publicUrl})\n`;
+        setContent(prev => prev + newMarkdown);
       }
-      setSaveStatus(true);
-      setTimeout(() => router.push('/infocenter/list'), 1500);
-    } catch (err) { alert("저장 실패"); }
+    } catch (err) {
+      alert("이미지 업로드 실패");
+    }
     setLoading(false);
   };
 
-  const handleCommentSave = async () => {
-    if (!newComment.trim() || !user) return;
-    const { error } = await supabase.from('community_comments').insert([{ post_id: editingPostId, user_email: user.email, content: newComment }]);
-    if (!error) { setNewComment(""); fetchComments(); }
-  };
-
   const handleLike = async () => {
-    if (!user || hasLiked) return;
-    const { error } = await supabase.from('community_likes').insert([{ post_id: editingPostId, user_email: user.email }]);
+    if (!activeUser) return alert("로그인이 필요합니다.");
+    if (hasLiked) return alert("이미 추천하셨습니다.");
+    const { error } = await supabase.from('community_likes').insert([{ post_id: editingPost.id, user_email: activeUser.email }]);
     if (!error) {
-      await supabase.from('community_posts').update({ like_count: likes + 1 }).eq('id', editingPostId);
-      setLikes(likes + 1);
+      await supabase.from('community_posts').update({ like_count: likes + 1 }).eq('id', editingPost.id);
+      setLikes(prev => prev + 1);
       setHasLiked(true);
     }
   };
 
-  const isAuthor = user?.email === postData?.user_email;
-  const cardBg = isDarkMode ? "bg-zinc-900/40 border-zinc-800" : "bg-white border-zinc-200 shadow-xl";
-  const inputBg = isDarkMode ? "bg-zinc-800/50 border-zinc-700 text-white" : "bg-zinc-50 border-zinc-200 text-zinc-900";
+  const handleCommentSave = async () => {
+    if (!newComment.trim() || !activeUser) return;
+    const { error } = await supabase.from('community_comments').insert([{ 
+      post_id: editingPost.id, 
+      user_email: activeUser.email, 
+      user_nickname: userNickname, 
+      content: newComment 
+    }]);
+    if (!error) { setNewComment(""); fetchComments(editingPost.id); }
+  };
+
+  const handleSave = async () => {
+    if (!title.trim() || !content.trim()) return alert("제목과 내용을 모두 입력해주세요!");
+    
+    // 🌟 저장 전 세션 최종 확인
+    const { data: { user: sessionUser } } = await supabase.auth.getUser();
+    if (!sessionUser) return alert("로그인이 필요합니다.");
+
+    setLoading(true);
+    try {
+      // 🌟 파일 첨부 업로드 로직 복구
+      let uploadedUrls: string[] = [];
+      for (const file of files) {
+        const fileName = `${Math.random()}.${file.name.split('.').pop()}`;
+        const { data } = await supabase.storage.from('community').upload(fileName, file);
+        if (data) {
+          const { data: { publicUrl } } = supabase.storage.from('community').getPublicUrl(fileName);
+          uploadedUrls.push(publicUrl);
+        }
+      }
+
+      const postData = {
+        title,
+        content,
+        post_type: postType,
+        user_email: sessionUser.email,
+        user_nickname: userNickname,
+        status: 'published',
+        image_urls: uploadedUrls.length > 0 ? uploadedUrls : (editingPost?.image_urls || [])
+      };
+
+      let error;
+      if (editingId) {
+        const { error: updateError } = await supabase.from('community_posts').update(postData).eq('id', editingId);
+        error = updateError;
+      } else {
+        const { error: insertError } = await supabase.from('community_posts').insert([postData]);
+        error = insertError;
+      }
+
+      if (error) throw error;
+      
+      setSaveStatus(true);
+      setTimeout(() => router.push('/infocenter/list/all'), 1500);
+    } catch (err: any) {
+      alert(`처리 실패: ${err.message}`);
+    }
+    setLoading(false);
+  };
+
+  const cardBg = "bg-zinc-900/40 border-zinc-800";
+  const inputBg = "bg-zinc-800/50 border-zinc-700 text-white";
 
   return (
     <div className={`max-w-4xl mx-auto rounded-3xl border p-8 relative ${cardBg}`}>
-      
-      {/* 미리보기 모달 (원본 보전) */}
+      {/* 미리보기 모달 */}
       {showPreview && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className={`w-full max-w-3xl max-h-[80vh] overflow-y-auto rounded-3xl p-8 ${cardBg}`}>
-            <div className="flex justify-between items-center mb-6 border-b border-zinc-800/50 pb-4">
-              <h4 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-white">
-                <Eye size={16} className="text-blue-500" /> Preview
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className={`w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-3xl border p-8 custom-scrollbar ${cardBg}`}>
+            <div className="flex justify-between items-center mb-6 border-b border-zinc-800/50 pb-4 text-white">
+              <h4 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                <Eye size={16} className="text-blue-500" /> Preview Content
               </h4>
-              <button onClick={() => setShowPreview(false)} className="text-white"><X size={20} /></button>
+              <button onClick={() => setShowPreview(false)} className="p-2 hover:bg-zinc-800 rounded-full transition-colors"><X size={20} /></button>
             </div>
-            <div className={`prose prose-invert max-w-none ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>
-              <ReactMarkdown>{content}</ReactMarkdown>
+            <div className="text-base leading-relaxed text-zinc-300">
+              <ReactMarkdown components={{ img: ({...props}) => (<img {...props} className="rounded-2xl border border-zinc-800 my-4 max-w-full h-auto shadow-2xl" alt="Preview" />) }}>
+                {content || "작성된 내용이 없습니다."}
+              </ReactMarkdown>
             </div>
           </div>
         </div>
       )}
 
-      {/* 헤더 섹션 (디자인 보전) */}
+      {/* 이모티콘 선택기 */}
+      {showEmoji.target && (
+        <div className="absolute z-[100] bg-zinc-900 border border-zinc-700 p-4 rounded-2xl shadow-2xl grid grid-cols-6 gap-2 w-64 animate-in zoom-in-95 duration-200" style={{ top: '150px', right: '40px' }}>
+          {emojis.map(e => (<button key={e} onClick={() => addEmoji(e)} className="text-xl hover:bg-zinc-800 p-1 rounded transition-all">{e}</button>))}
+          <button onClick={() => setShowEmoji({ target: null })} className="col-span-6 mt-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest border-t border-zinc-800 pt-2">Close</button>
+        </div>
+      )}
+
+      {saveStatus && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-2 rounded-full shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-300 z-50">
+          <CheckCircle2 size={16} />
+          <span className="text-[10px] font-black uppercase tracking-widest">Saved Successfully!</span>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-8 pb-4 border-b border-zinc-800/30">
-        <button onClick={() => router.push('/infocenter/list')} className="flex items-center gap-2 text-zinc-500 hover:text-blue-500 transition-colors">
-          <ChevronLeft size={20} />
-          <span className="text-xs font-black uppercase tracking-tighter italic">Back to List</span>
-        </button>
-        {saveStatus && <span className="text-blue-500 text-[10px] font-black animate-pulse uppercase">Saved Successfully!</span>}
+        <Link href="/infocenter/list/all" className="flex items-center gap-2 text-zinc-500 hover:text-blue-500 transition-colors group">
+          <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+          <span className="text-xs font-black uppercase tracking-tighter italic">Back to Post List</span>
+        </Link>
+        <div className="flex items-center gap-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">
+          {editingPost && (
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1"><ThumbsUp size={12} /> {likes}</span>
+              <span className="flex items-center gap-1"><MessageSquare size={12} /> {comments.length}</span>
+            </div>
+          )}
+          Status: <span className={editingPost ? "text-orange-500" : "text-green-500"}>{editingPost ? "Viewing/Editing" : "Drafting"}</span>
+        </div>
       </div>
 
-      {/* 상세보기 모드 */}
-      {editingPostId && postData && (
-        <div className="space-y-8 animate-in fade-in duration-500">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="px-3 py-1 bg-blue-500/10 text-blue-500 text-[10px] font-black uppercase rounded-lg border border-blue-500/20">{postType}</span>
-              <h2 className="text-3xl font-black mt-4 text-white">{title}</h2>
+      {/* 상세보기 (수정모드용 상단 프리뷰) */}
+      {editingPost && (
+        <div className="mb-12 border-b border-zinc-800/50 pb-12">
+            <div className="mb-4 flex justify-between items-center">
+                <span className="px-3 py-1 bg-blue-500/10 text-blue-500 text-[10px] font-black uppercase rounded-lg border border-blue-500/20">{postType}</span>
+                <span className="text-xs font-bold text-zinc-500 italic">By {editingPost.user_nickname || editingPost.user_email?.split('@')[0]}</span>
             </div>
-            <div className="flex gap-4 text-zinc-500 font-bold text-xs">
-              <span className="flex items-center gap-1"><ThumbsUp size={14}/> {likes}</span>
-              <span className="flex items-center gap-1"><MessageSquare size={14}/> {comments.length}</span>
+            <h2 className="text-3xl font-black mb-6 tracking-tight text-white">{title}</h2>
+            <div className="min-h-[150px] text-base leading-relaxed text-zinc-300">
+                <ReactMarkdown components={{ img: ({...props}) => (<img {...props} className="rounded-2xl border border-zinc-800 my-4 max-w-full h-auto shadow-2xl" alt="Content" />) }}>
+                    {content}
+                </ReactMarkdown>
             </div>
-          </div>
+            
+            {/* 댓글 관리 기능 (수정모드) */}
+            <div className="mt-8 space-y-4">
+                <div className="flex items-center gap-2 text-xs font-black uppercase text-zinc-500"><MessageSquare size={14}/> Comments ({comments.length})</div>
+                {comments.map(c => (
+                    <div key={c.id} className="p-4 rounded-xl border border-zinc-800 bg-zinc-800/20 flex justify-between items-center">
+                        <p className="text-sm text-zinc-300">{c.content}</p>
+                        {activeUser?.email === c.user_email && <button onClick={() => handleCommentDelete(c.id)} className="text-zinc-500 hover:text-red-500"><Trash2 size={14}/></button>}
+                    </div>
+                ))}
+            </div>
+        </div>
+      )}
 
-          <article className={`min-h-[200px] leading-relaxed pb-12 border-b border-zinc-800/50 ${isDarkMode ? 'text-zinc-300' : 'text-zinc-700'}`}>
-            <ReactMarkdown>{content}</ReactMarkdown>
-          </article>
-
-          {/* 추천 버튼 (원본 디자인 보전) */}
-          <div className="flex justify-center py-6">
-            <button onClick={handleLike} disabled={hasLiked} className={`flex items-center gap-2 px-10 py-4 font-black text-sm rounded-full transition-all border ${hasLiked ? 'bg-zinc-800/20 text-zinc-600' : 'bg-zinc-800/50 text-zinc-400 hover:text-pink-500'}`}>
-              <ThumbsUp size={20} /> {hasLiked ? "추천 완료" : `추천하기 ${likes}`}
-            </button>
-          </div>
-
-          {/* 댓글 섹션 (원본 로직 보전) */}
-          <div className="space-y-4">
-            <h4 className="text-xs font-black uppercase text-zinc-500 tracking-widest flex items-center gap-2">
-              <MessageSquare size={14} /> Comments ({comments.length})
-            </h4>
-            {comments.map((comment) => (
-              <div key={comment.id} className="p-4 rounded-xl border border-zinc-800 bg-zinc-900/20">
-                <div className="flex justify-between mb-2">
-                  <span className="text-[10px] font-black text-blue-500 uppercase">{comment.user_email?.split('@')[0]}</span>
-                  {user?.email === comment.user_email && (
-                    <button onClick={async () => {
-                      if(confirm("삭제하시겠습니까?")) {
-                        await supabase.from('community_comments').delete().eq('id', comment.id);
-                        fetchComments();
-                      }
-                    }} className="text-red-500 opacity-50 hover:opacity-100"><Trash2 size={14}/></button>
-                  )}
-                </div>
-                <p className="text-sm text-zinc-300">{comment.content}</p>
-              </div>
+      {/* 🌟 원본 글쓰기 폼 UI (이미지 추가, 파일 첨부 리스트 완벽 복구) */}
+      <div className="space-y-6 text-left">
+        <div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">Category</label>
+          <div className="flex gap-2 flex-wrap">
+            {['notice', 'free', 'qna', 'tips', 'showcase'].map((id) => (
+              <button key={id} onClick={() => setPostType(id)} className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${postType === id ? 'bg-blue-600 border-blue-500 text-white shadow-lg' : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-zinc-200'}`}>{id.toUpperCase()}</button>
             ))}
-            <div className="pt-4">
-              <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="댓글을 남겨보세요..." className={`w-full p-4 rounded-2xl text-sm border-none focus:ring-0 ${inputBg} resize-none`} rows={3} />
-              <div className="flex justify-end mt-2">
-                <button onClick={handleCommentSave} className="px-6 py-2 bg-blue-600 text-white text-xs font-black rounded-xl uppercase">Post</button>
-              </div>
-            </div>
           </div>
         </div>
-      )}
 
-      {/* 글쓰기/수정 폼 (사장님이 직접 작성할 때만 노출) */}
-      {(!editingPostId || isAuthor) && (
-        <div className={`space-y-6 ${editingPostId ? 'mt-20 pt-20 border-t-4 border-dashed border-zinc-800' : ''}`}>
-          <div className="flex flex-col gap-6">
-            <h3 className="text-xl font-black italic text-white uppercase">{editingPostId ? "Edit Post" : "New Post"}</h3>
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {['free', 'qna', 'tips', 'showcase', 'notice'].map((id) => (
-                <button key={id} onClick={() => setPostType(id)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase border transition-all ${postType === id ? 'bg-blue-600 border-blue-500 text-white' : 'bg-zinc-800 border-zinc-700 text-zinc-500'}`}>{id}</button>
-              ))}
+        <div className="relative">
+          <div className="flex justify-between items-center mb-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Title</label>
+            <button onClick={() => setShowEmoji({ target: 'title' })} className="text-[10px] text-zinc-500 flex items-center gap-1 font-bold"><Smile size={14} /> Emoji</button>
+          </div>
+          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="제목을 입력하세요" className={`w-full px-5 py-4 rounded-2xl border text-sm font-bold focus:outline-none focus:border-blue-500 ${inputBg}`} />
+        </div>
+
+        <div className="relative">
+          <div className="flex justify-between items-center mb-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Content</label>
+            <button onClick={() => setShowEmoji({ target: 'content' })} className="text-[10px] text-zinc-500 flex items-center gap-1 font-bold"><Smile size={14} /> Emoji</button>
+          </div>
+          <textarea ref={textAreaRef} value={content} onChange={(e) => setContent(e.target.value)} onDrop={(e) => { e.preventDefault(); uploadAndInsertImage(e.dataTransfer.files[0]); }} onDragOver={(e) => e.preventDefault()} placeholder="내용을 입력하세요... 이미지를 드래그해서 넣을 수 있습니다." rows={12} className={`w-full px-5 py-5 rounded-2xl border text-sm font-medium focus:outline-none leading-relaxed resize-none custom-scrollbar ${inputBg}`} />
+          
+          {/* 🌟 파일 첨부 및 리스트 관리 UI 복구 */}
+          <div className="mt-4 p-4 rounded-2xl border bg-zinc-800/30 border-zinc-800 space-y-4">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[11px] font-black rounded-lg cursor-pointer transition-all">
+                    <ImageIcon size={14} /> 이미지 추가
+                    <input type="file" hidden accept="image/*" onChange={(e) => e.target.files && uploadAndInsertImage(e.target.files[0])} />
+                  </label>
+                  <label className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[11px] font-black rounded-lg cursor-pointer transition-all">
+                    <Paperclip size={14} /> 파일 첨부
+                    <input type="file" hidden multiple onChange={(e) => e.target.files && setFiles([...files, ...Array.from(e.target.files)])} />
+                  </label>
+                </div>
+                <button onClick={() => setShowPreview(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600/10 text-blue-500 text-[11px] font-black rounded-lg border border-blue-500/20">
+                  <Eye size={14} /> 미리보기
+                </button>
             </div>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="제목을 입력하세요" className={`w-full px-5 py-4 rounded-2xl border text-sm font-bold outline-none focus:border-blue-500 ${inputBg}`} />
-            <textarea ref={textAreaRef} value={content} onChange={(e) => setContent(e.target.value)} placeholder="마크다운 형식을 지원합니다..." rows={12} className={`w-full px-5 py-5 rounded-2xl border text-sm font-medium outline-none focus:border-blue-500 leading-relaxed resize-none custom-scrollbar ${inputBg}`} />
-            <div className="flex gap-3">
-               <button onClick={() => setShowPreview(true)} className="flex-1 py-4 bg-zinc-800 text-white rounded-2xl font-black text-xs uppercase flex items-center justify-center gap-2"><Eye size={16}/> Preview</button>
-               <button onClick={handleSave} disabled={loading} className="flex-[2] py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-xs uppercase flex items-center justify-center gap-2">
-                 {loading ? <Loader2 className="animate-spin" /> : "Publish Post"}
-               </button>
-            </div>
+            
+            {/* 🌟 첨부된 파일 리스트 UI 복구 */}
+            {files.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-2">
+                    {files.map((file, idx) => (
+                        <div key={idx} className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] font-bold text-zinc-400">
+                            <span className="truncate max-w-[100px]">{file.name}</span>
+                            <button onClick={() => setFiles(files.filter((_, i) => i !== idx))} className="text-zinc-600 hover:text-red-500"><X size={12}/></button>
+                        </div>
+                    ))}
+                </div>
+            )}
           </div>
         </div>
-      )}
+
+        <div className="flex gap-3 pt-4">
+          <button onClick={() => router.back()} className="flex-1 py-4 rounded-2xl font-black text-sm border border-zinc-800 text-zinc-400 hover:bg-zinc-800">나가기</button>
+          <button onClick={handleSave} disabled={loading} className="flex-[2] py-4 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-500 flex items-center justify-center gap-2 transition-all shadow-xl shadow-blue-600/20">
+            {loading ? <Loader2 className="animate-spin" size={18} /> : (editingId ? "변동사항 저장" : "게시글 등록")}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

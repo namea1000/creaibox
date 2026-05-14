@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { MessageCircle, Apple, Mail, Lock } from 'lucide-react'
+import { Provider } from '@supabase/supabase-js'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -28,9 +29,9 @@ export default function LoginPage() {
   }
 
   // 2. 소셜 로그인 통합 핸들러
-  const handleSocialLogin = async (provider: 'google' | 'kakao' | 'naver' | 'apple') => {
+const handleSocialLogin = async (provider: Provider) => {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider,
+      provider, // 👈 이제 여기서 빨간 줄이 사라집니다!
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
       },

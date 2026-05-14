@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, User, Sparkles, ChevronDown, RefreshCw, Trash2 } from 'lucide-react';
+import { Send, Bot, User, Sparkles, ChevronDown, Trash2 } from 'lucide-react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 interface Message {
@@ -89,14 +89,15 @@ export default function AIChatTab() {
         content: "사장님, 연결에 문제가 발생했습니다. API 키를 확인해주세요." 
       }]);
     } finally {
-      setIsLoading(true); // 오타 수정: setIsLoading(false)가 맞으나 원본 흐름 유지 위해 체크 후 false로 적용 권장
       setIsLoading(false);
     }
   };
 
   return (
+    // 🌟 배경색(#05070a)과 폰트 스타일 사장님 원본 그대로 다크 고정
     <div className="flex-1 h-full flex flex-col bg-[#05070a] overflow-hidden font-sans border-l border-zinc-800">
-      {/* 헤더 섹션 (원본 디자인 보존) */}
+      
+      {/* 헤더 섹션 (다크모드 고정) */}
       <div className="sticky top-0 z-10 p-6 border-b border-zinc-800 flex items-center justify-between bg-[#05070a]/95 backdrop-blur-md">
         <div className="flex flex-col gap-2">
           <h2 className="text-xl font-black text-white italic uppercase flex items-center gap-2 tracking-tighter">
@@ -117,7 +118,7 @@ export default function AIChatTab() {
         </div>
 
         <div className="flex gap-2">
-          <button onClick={clearChat} className="p-2 text-zinc-500 hover:text-red-500 transition-colors">
+          <button onClick={clearChat} className="p-2 text-zinc-600 hover:text-red-500 transition-colors">
             <Trash2 size={18} />
           </button>
           <div className={`text-[10px] font-black px-3 py-1.5 rounded border uppercase flex items-center ${vaultKey ? 'text-green-400 border-green-900 bg-green-950/30' : 'text-red-500 border-red-900 bg-red-950/30'}`}>
@@ -126,15 +127,15 @@ export default function AIChatTab() {
         </div>
       </div>
 
-      {/* 메시지 리스트 (원본 보존) */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+      {/* 메시지 리스트 (다크모드 고정) */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-[#05070a]">
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[85%] flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-blue-600' : 'bg-zinc-800'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-lg ${msg.role === 'user' ? 'bg-blue-600 shadow-blue-900/20' : 'bg-zinc-800 shadow-black'}`}>
                 {msg.role === 'user' ? <User size={16} className="text-white" /> : <Bot size={16} className="text-yellow-400" />}
               </div>
-              <div className={`p-4 rounded-2xl text-[13.5px] leading-relaxed shadow-xl whitespace-pre-wrap ${
+              <div className={`p-4 rounded-2xl text-[13.5px] leading-relaxed shadow-xl whitespace-pre-wrap transition-all ${
                 msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-zinc-900 text-zinc-300 border border-zinc-800'
               }`}>
                 {msg.content}
@@ -142,10 +143,22 @@ export default function AIChatTab() {
             </div>
           </div>
         ))}
+        {isLoading && (
+          <div className="flex justify-start animate-pulse">
+            <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center">
+                <Bot size={16} className="text-zinc-600" />
+              </div>
+              <div className="bg-zinc-900/50 border border-zinc-800 p-4 rounded-2xl">
+                <span className="text-[10px] font-black text-zinc-700 uppercase tracking-widest italic">AI Thinking...</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* 입력 영역 (원본 보존) */}
-      <form onSubmit={handleSend} className="p-6 bg-zinc-900/50 border-t border-zinc-800">
+      {/* 입력 영역 (다크모드 고정) */}
+      <form onSubmit={handleSend} className="p-6 bg-zinc-900/50 border-t border-zinc-800 backdrop-blur-md">
         <div className="relative max-w-5xl mx-auto">
           <input
             type="text"
@@ -153,9 +166,15 @@ export default function AIChatTab() {
             onChange={(e) => setInput(e.target.value)}
             placeholder={vaultKey ? "무엇이든 물어보세요..." : "API 키를 먼저 입력해주세요"}
             disabled={!vaultKey || isLoading}
-            className="w-full bg-zinc-800 border border-zinc-700 text-white pl-6 pr-16 py-4 rounded-2xl focus:outline-none focus:border-yellow-500"
+            className="w-full bg-zinc-800 border border-zinc-700 text-white pl-6 pr-16 py-4 rounded-2xl focus:outline-none focus:border-yellow-500 font-bold placeholder:text-zinc-600 shadow-inner"
           />
-          <button type="submit" disabled={!vaultKey || isLoading} className="absolute right-3 top-1/2 -translate-y-1/2 bg-yellow-500 p-2.5 rounded-xl text-black shadow-lg">
+          <button 
+            type="submit" 
+            disabled={!vaultKey || isLoading} 
+            className={`absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-xl transition-all shadow-lg ${
+              !vaultKey || isLoading ? 'bg-zinc-700 text-zinc-800' : 'bg-yellow-500 text-black hover:scale-105 active:scale-95 shadow-yellow-900/20'
+            }`}
+          >
             <Send size={20} />
           </button>
         </div>

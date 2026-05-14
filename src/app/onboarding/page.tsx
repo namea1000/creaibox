@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import Header from '@/components/layout/Header'; 
 import Footer from '@/components/layout/Footer'; 
 import { 
@@ -8,14 +8,13 @@ import {
   Star, MessageSquare, StickyNote, BookOpen, Newspaper, Construction
 } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation'; // 🌟 이동을 위한 로직 추가
+import { useRouter } from 'next/navigation';
 
 export default function MainLandingPage() {
-  const router = useRouter(); // 🌟 주소 이동 리모컨 가동
-  const [isDarkMode, setIsDarkMode] = useState(true);
-  const toggleTheme = () => setIsDarkMode(!isDarkMode);
+  const router = useRouter();
 
-  const themeClasses = isDarkMode ? "bg-[#05070a] text-white" : "bg-white text-zinc-900";
+  // 🌟 [전등 스위치 철거] 테마 상태(State)와 토글 함수를 삭제하고 다크 컬러로 고정했습니다.
+  const themeClasses = "bg-[#05070a] text-white";
 
   const studioItems = [
     { title: 'Writing', icon: <Zap size={18}/>, color: 'text-blue-400', border: 'hover:border-blue-500/50', bg: 'group-hover:bg-blue-600' },
@@ -30,9 +29,10 @@ export default function MainLandingPage() {
   return (
     <div className={`min-h-screen flex flex-col font-sans transition-colors duration-500 ${themeClasses}`}>
       
-      {/* 🌟 빨간줄 해결: Header에서 안쓰는 Props 걷어내기 */}
-      <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+      {/* 🌟 리모컨(isDarkMode) 없이 깔끔하게 호출되는 헤더 */}
+      <Header />
 
+      {/* 🌟 사장님의 여백(pt-24) 그대로 보전 */}
       <main className="flex-1 overflow-y-auto pt-24 pb-20">
         
         {/* 1. 히어로 섹션 */}
@@ -48,7 +48,7 @@ export default function MainLandingPage() {
               차세대 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400">AI 콘텐츠 스튜디오</span>
             </h1>
 
-            <p className="max-w-3xl mx-auto text-lg font-medium opacity-75 leading-relaxed break-keep px-6">
+            <p className="max-w-3xl mx-auto text-lg font-medium opacity-75 leading-relaxed break-keep px-6 text-zinc-300">
               구글 제미나이, 쳇 GPT, 클로드, SUNO AI 를 모두 품은 <br className="hidden md:block" />
               하나의 플랫폼에서 펼쳐지는 무한한 창작의 가능성. <br />
               CreAibox가 당신의 상상력에 엔진을 달아드립니다.
@@ -62,6 +62,7 @@ export default function MainLandingPage() {
               width={540} 
               height={200} 
               className="relative object-contain drop-shadow-[0_0_50px_rgba(37,99,235,0.25)]" 
+              priority
             />
           </div>
         </section>
@@ -69,16 +70,15 @@ export default function MainLandingPage() {
         {/* 2. 핵심 선택 박스 */}
         <section className="max-w-6xl mx-auto px-6 pb-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* 🌟 API 연결하기 (admin/apivault 이동) */}
             <div 
-              onClick={() => router.push('/admin/apivault')}
+              onClick={() => router.push('/apivault')}
               className="group p-10 bg-gradient-to-br from-indigo-600/25 to-blue-600/20 border-2 border-indigo-500/40 rounded-[40px] hover:scale-[1.02] transition-all shadow-2xl cursor-pointer"
             >
               <div className="space-y-5">
                 <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-600/30">
                   <Key className="text-white" size={28} />
                 </div>
-                <h3 className="text-3xl font-black italic uppercase tracking-tight">나의 API 연결하기</h3>
+                <h3 className="text-3xl font-black italic uppercase tracking-tight text-white">나의 API 연결하기</h3>
                 <p className="text-zinc-400 text-sm font-semibold leading-relaxed break-keep">
                   제미나이, 쳇 GPT, 클로드, Suno 등 <br />
                   개인 API 키를 활용한 고성능 맞춤형 제작 모드
@@ -89,7 +89,6 @@ export default function MainLandingPage() {
               </div>
             </div>
 
-            {/* 🌟 체험 API로 맛보기 (studio/writing/wp/create 이동) */}
             <div 
               onClick={() => router.push('/studio/writing/wp/create')}
               className="group p-10 bg-gradient-to-br from-emerald-600/20 to-teal-600/15 border-2 border-emerald-500/30 rounded-[40px] hover:scale-[1.02] transition-all shadow-2xl cursor-pointer"
@@ -98,7 +97,7 @@ export default function MainLandingPage() {
                 <div className="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-xl shadow-emerald-500/30">
                   <PlayCircle className="text-white" size={28} />
                 </div>
-                <h3 className="text-3xl font-black italic uppercase tracking-tight">체험 API로 맛보기</h3>
+                <h3 className="text-3xl font-black italic uppercase tracking-tight text-white">체험 API로 맛보기</h3>
                 <p className="text-zinc-400 text-sm font-semibold leading-relaxed break-keep">
                   설정 없이 즉시 시작하는 <br />
                   크리에이박스 기본 체험 모드
@@ -110,7 +109,6 @@ export default function MainLandingPage() {
             </div>
           </div>
 
-          {/* 공지사항 섹션 */}
           <div className="mt-10 p-8 bg-gradient-to-r from-blue-600/20 via-blue-600/10 to-blue-600/20 border-2 border-blue-500/30 rounded-[24px] text-center shadow-lg">
              <p className="text-xl md:text-2xl font-black text-white tracking-tight">
                <span className="text-blue-400 mr-3 underline decoration-blue-500 underline-offset-8 uppercase italic">Notice:</span> 
@@ -132,7 +130,7 @@ export default function MainLandingPage() {
               {studioItems.map((item, idx) => (
                 <div 
                   key={idx} 
-                  onClick={() => router.push('/studio/writing/wp/create')} // 🌟 편의상 모든 스튜디오 클릭 시 워드프레스 생성으로 일단 연결
+                  onClick={() => router.push('/studio/writing/wp/create')}
                   className={`group flex flex-col items-center p-6 bg-zinc-900/60 border-2 border-zinc-800 rounded-[28px] transition-all cursor-pointer ${item.border} hover:-translate-y-2`}
                 >
                   <div className={`w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center ${item.color} mb-4 transition-all duration-300 ${item.bg} group-hover:text-white group-hover:shadow-lg`}>
@@ -144,11 +142,11 @@ export default function MainLandingPage() {
             </div>
             
             <div className="mt-20 p-10 bg-gradient-to-b from-zinc-900/50 to-black border-2 border-zinc-800/80 rounded-[32px] shadow-2xl relative overflow-hidden group hover:border-blue-500/30 transition-all">
-                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity text-white">
                     <Sparkles size={150} />
                 </div>
                 
-                <h2 className="text-2xl md:text-4xl font-black italic uppercase tracking-tighter leading-snug">
+                <h2 className="text-2xl md:text-4xl font-black italic uppercase tracking-tighter leading-snug text-white">
                     All Your <span className="text-blue-500">Creative AI Tools</span> in One Workspace, <br />
                     The Creator’s <span className="text-emerald-400">Ai Toolbox</span>
                 </h2>
@@ -164,7 +162,7 @@ export default function MainLandingPage() {
 
       </main>
 
-      <Footer isDarkMode={isDarkMode} />
+      <Footer />
     </div>
   );
 }

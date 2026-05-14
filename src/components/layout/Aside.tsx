@@ -7,15 +7,12 @@ import {
   BellRing, AlertTriangle, ArrowRight, MessageCircle 
 } from 'lucide-react';
 
-// 🌟 배포 에러 방지를 위해 독립적인 Props 구조로 유지합니다.
-interface AsideProps {
-  isDarkMode: boolean;
-}
-
-export default function Aside({ isDarkMode }: AsideProps) {
-  const asideBg = isDarkMode ? "bg-[#0d1117] border-zinc-800/50" : "bg-white border-zinc-200";
-  const textColor = isDarkMode ? "text-zinc-100" : "text-zinc-900";
-  const subTextColor = isDarkMode ? "text-zinc-500" : "text-zinc-400";
+// 🌟 스위치를 떼버렸으므로 Props 구조에서 isDarkMode를 제거했습니다.
+export default function Aside() {
+  // 🌟 다크모드 전용 컬러로 고정
+  const asideBg = "bg-[#0d1117] border-zinc-800/50";
+  const textColor = "text-zinc-100";
+  const subTextColor = "text-zinc-500";
 
   return (
     <aside className={`w-72 border-l flex flex-col transition-all duration-300 shrink-0 hidden xl:flex ${asideBg}`}>
@@ -23,12 +20,12 @@ export default function Aside({ isDarkMode }: AsideProps) {
         
         {/* 1. 비즈니스 제안 섹션 - 디자인 100% 보존 */}
         <section className="space-y-4">
-          <p className={`text-[10px] font-black uppercase tracking-[0.2em] ml-1 ${isDarkMode ? 'text-blue-500' : 'text-blue-600'}`}>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] ml-1 text-blue-500">
             Business Hub
           </p>
           
           <div className="space-y-3">
-            {/* 협업/광고 제안: Link로 감싸서 실제 페이지 이동 준비 */}
+            {/* 협업/광고 제안 */}
             <Link href="/business/ads" className="w-full group flex items-center justify-between p-4 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/20 hover:scale-[1.02] transition-all">
               <div className="flex items-center gap-3">
                 <Handshake size={20} />
@@ -38,7 +35,7 @@ export default function Aside({ isDarkMode }: AsideProps) {
             </Link>
 
             {/* 기업형 맞춤 제작 */}
-            <Link href="/business/enterprise" className={`w-full group flex items-center justify-between p-4 rounded-2xl border transition-all hover:border-blue-500/50 ${isDarkMode ? 'bg-zinc-900/50 border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`}>
+            <Link href="/business/enterprise" className="w-full group flex items-center justify-between p-4 rounded-2xl border border-zinc-800 bg-zinc-900/50 transition-all hover:border-blue-500/50">
               <div className="flex items-center gap-3">
                 <Building2 size={20} className="text-blue-500" />
                 <span className={`text-sm font-bold ${textColor}`}>기업형 맞춤 제작</span>
@@ -47,7 +44,7 @@ export default function Aside({ isDarkMode }: AsideProps) {
             </Link>
 
             {/* 홈페이지 제작 */}
-            <Link href="/business/web-dev" className={`w-full group flex items-center justify-between p-4 rounded-2xl border transition-all hover:border-blue-500/50 ${isDarkMode ? 'bg-zinc-900/50 border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`}>
+            <Link href="/business/web-dev" className="w-full group flex items-center justify-between p-4 rounded-2xl border border-zinc-800 bg-zinc-900/50 transition-all hover:border-blue-500/50">
               <div className="flex items-center gap-3">
                 <LayoutTemplate size={20} className="text-emerald-500" />
                 <span className={`text-sm font-bold ${textColor}`}>홈페이지 제작</span>
@@ -62,7 +59,7 @@ export default function Aside({ isDarkMode }: AsideProps) {
           <p className={`text-[10px] font-black uppercase tracking-[0.2em] ml-1 ${subTextColor}`}>
             Real-time Support
           </p>
-          <div className={`p-4 rounded-2xl border border-dashed ${isDarkMode ? 'border-zinc-800 bg-zinc-900/30' : 'border-zinc-200 bg-zinc-50/50'}`}>
+          <div className="p-4 rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/30">
             <div className="flex items-center gap-2 mb-2">
               <MessageCircle size={16} className="text-blue-500" />
               <span className={`text-xs font-bold ${textColor}`}>AI 실시간 채팅</span>
@@ -81,17 +78,13 @@ export default function Aside({ isDarkMode }: AsideProps) {
           <div className="space-y-3">
             <div className="flex items-center gap-2 ml-1">
               <BellRing size={16} className="text-yellow-500" />
-              <span className={`text-xs font-bold ${textColor}`}>AI 트렌드 뉴스레터</span>
+              <span className={`text-xs font-black ${textColor}`}>AI 트렌드 뉴스레터</span>
             </div>
             <form onSubmit={(e) => e.preventDefault()} className="relative">
               <input 
                 type="email" 
                 placeholder="email@example.com"
-                className={`w-full px-4 py-3 rounded-xl text-xs outline-none border transition-all ${
-                  isDarkMode 
-                  ? 'bg-zinc-900 border-zinc-800 focus:border-blue-500 text-white' 
-                  : 'bg-white border-zinc-200 focus:border-blue-500 text-black'
-                }`}
+                className="w-full px-4 py-3 rounded-xl text-xs outline-none border border-zinc-800 bg-zinc-900 focus:border-blue-500 text-white transition-all"
               />
               <button type="submit" className="absolute right-2 top-1.5 p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-all">
                 <Send size={14} />
@@ -107,7 +100,7 @@ export default function Aside({ isDarkMode }: AsideProps) {
       </div>
 
       {/* 푸터 정보 - 보존 */}
-      <div className={`p-6 border-t ${isDarkMode ? 'border-zinc-800/50' : 'border-zinc-200'}`}>
+      <div className="p-6 border-t border-zinc-800/50">
         <p className={`text-[10px] text-center ${subTextColor} font-bold`}>
           © CreAIbox - AI Contents Studio <br />
           <span className="opacity-50">v1.0.4 - Premium Support</span>
