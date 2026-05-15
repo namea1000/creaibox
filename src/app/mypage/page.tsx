@@ -3,27 +3,26 @@
 import React, { useState, useEffect } from 'react';
 import { 
   User, Shield, CreditCard, Trash2, Globe, 
-  Save, Plus, Trash, Sparkles
+  Save, Plus, Trash, Sparkles, Key, CheckCircle, Mail, LogIn, RefreshCw
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
-// 🌟 필요한 모든 전역 레이아웃 부품 로드
-import Header from '@/components/layout/Header';
+// 전역 레이아웃 부품
 import Footer from '@/components/layout/Footer';
 import Sidebar from '@/components/layout/Sidebar';
 import Aside from '@/components/layout/Aside';
 
 export default function MyPage() {
-  const [loading, setLoading] = useState(true);
+  const [isDataLoading, setIsDataLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [wpSites, setWpSites] = useState<any[]>([]); 
-  const [isCollapsed, setIsCollapsed] = useState(false); // 사이드바 상태
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
   const [profile, setProfile] = useState<any>({
     nickname: '',
-    system_id: '',   
-    brand_id: '',    
-    blog_title: '',
-    blog_description: '',
+    brand_id: '',
     membership_level: 'free'
   });
 
@@ -32,27 +31,26 @@ export default function MyPage() {
   useEffect(() => {
     const fetchInitialData = async () => {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
-      setUser(currentUser);
       if (currentUser) {
+        setUser(currentUser);
         const { data } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', currentUser.id)
-          .single();
+          .maybeSingle();
+
         if (data) {
           setProfile(data);
           setWpSites(data.extra_configs?.wp_sites || []);
         }
       }
-      setLoading(false);
+      setIsDataLoading(false);
     };
     fetchInitialData();
   }, []);
 
-  const checkDuplicate = async (field: 'nickname' | 'brand_id', value: string) => {
-    if (field === 'brand_id') return; 
+  const checkDuplicate = async (field: 'nickname', value: string) => {
     if (!value || value.length < 2) return alert("2자 이상 입력해주세요.");
-    
     const { data, error } = await supabase
       .from('profiles')
       .select(field)
@@ -72,17 +70,13 @@ export default function MyPage() {
     setWpSites(newSites);
   };
 
-  // 🌟 [추가] 사이드바가 모바일에서 열렸는지 닫혔는지 관리하는 상태가 필요합니다!
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
-  
   const handleSave = async () => {
     if (!user) return alert("로그인이 필요합니다.");
+    setIsSaving(true);
     const { error } = await supabase
       .from('profiles')
       .update({
         nickname: profile.nickname,
-        blog_title: profile.blog_title,
-        blog_description: profile.blog_description,
         extra_configs: { ...profile.extra_configs, wp_sites: wpSites },
         updated_at: new Date().toISOString(),
       })
@@ -90,23 +84,14 @@ export default function MyPage() {
 
     if (error) alert("저장 실패: " + error.message);
     else alert("프로필 설정이 안전하게 업데이트되었습니다.");
+    setIsSaving(false);
   };
-
-  if (loading) return (
-    <div className="h-screen bg-[#05070a] flex items-center justify-center">
-      <div className="text-zinc-600 italic font-black tracking-widest animate-pulse uppercase">CreAibox Loading...</div>
-    </div>
-  );
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#05070a] text-zinc-100 font-sans">
-      
-      {/* 1. 고정 헤더 */}
-      <Header />
-
       <div className="flex flex-1 pt-20 overflow-hidden">
         
-        {/* 2. 좌측 사이드바 (기본 사이드바 사용) */}
+        {/* 1. 좌측 사이드바 */}
         <Sidebar 
           activeMenu="MyPage" 
           isCollapsed={isCollapsed} 
@@ -115,124 +100,204 @@ export default function MyPage() {
           setIsMobileOpen={setIsMobileOpen}
         />
 
-        {/* 3. 중앙 본문 스크롤 영역 */}
-        <main className="flex-1 overflow-y-auto custom-scrollbar transition-all duration-300 p-8 lg:p-12">
-          
-          <div className="max-w-5xl mx-auto space-y-8 pb-32">
-            {/* 상단 타이틀 */}
-            <div className="text-center space-y-2 mb-10">
-              <h1 className="text-4xl font-black italic uppercase tracking-tighter text-white">
-                My <span className="text-blue-500">Profile</span> Settings
-              </h1>
-              <p className="text-zinc-500 text-xs font-black uppercase tracking-widest">개인 설정 및 콘텐츠 배포 환경 통합 관리</p>
-            </div>
+        {/* 2. 중앙 본문 영역 */}
+        <main className="flex-1 overflow-y-auto custom-scrollbar transition-all duration-300">
+          <div className="p-6 lg:p-12 pt-4 lg:pt-10 max-w-[1400px] mx-auto pb-48">
+            
+            {/* 🌟 헤더 섹션: 우측에 저장 버튼 배치 */}
+            <header className="mb-12 border-b border-zinc-800 pb-10 text-left flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+              <div className="space-y-2">
+                <h1 className="text-5xl font-black italic uppercase tracking-tighter text-white leading-none">
+                  My <span className="text-blue-500">Profile</span> Settings
+                </h1>
+                <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em] mt-3 pl-1 italic">
+                  Strategic Personal Environment & Identity Management
+                </p>
+              </div>
+              
+              {/* 🌟 상단 우측 저장 버튼 (fixed 제거하고 흐름에 맞게 배치) */}
+              <button 
+                onClick={handleSave} 
+                disabled={isSaving}
+                className="flex items-center gap-3 px-10 py-5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-black italic rounded-2xl shadow-[0_10px_30px_rgba(37,99,235,0.3)] transition-all border border-blue-400/30 uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed group"
+              >
+                {isSaving ? <RefreshCw size={18} className="animate-spin text-white" /> : <Save size={18} className="group-hover:scale-110 transition-transform" />}
+                Sync & Save All Settings
+              </button>
+            </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* 프로필 섹션 */}
-              <section className="bg-zinc-900/40 border border-zinc-800 rounded-[32px] p-8 space-y-6 shadow-2xl">
-                <div className="flex items-center gap-3 border-b border-zinc-800 pb-4">
-                  <User className="text-blue-500" size={20} />
-                  <h2 className="text-xl font-black italic uppercase tracking-tight text-white">Profile Identity</h2>
+              
+              {/* [좌측 섹션] 프로필 정보 Identity */}
+              <section className="bg-zinc-900/40 border border-zinc-800 rounded-[40px] p-10 space-y-8 shadow-2xl text-left hover:border-zinc-700 transition-all">
+                <div className="flex items-center gap-3 border-b border-zinc-800/50 pb-6">
+                  <User className="text-blue-500" size={24} />
+                  <h2 className="text-2xl font-black italic uppercase text-white tracking-tight">Identity</h2>
                 </div>
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">System ID</label>
-                    <div className="bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-500 font-mono tracking-tighter">
-                      {profile.system_id || 'Generating...'}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-blue-500 uppercase tracking-widest flex items-center gap-2">
-                      <Sparkles size={12} /> Display Nickname
+                
+                <div className="space-y-8">
+                  <div className="space-y-4">
+                    <label className="text-[11px] font-black text-blue-500 uppercase tracking-widest pl-1 flex items-center gap-2">
+                      <Sparkles size={14} /> 활동 닉네임 브랜딩
                     </label>
                     <div className="flex gap-2">
                       <input 
-                        type="text" value={profile.nickname}
+                        type="text" value={profile.nickname || ''}
                         onChange={(e)=>setProfile({...profile, nickname: e.target.value})}
-                        className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none transition-all font-bold placeholder:text-zinc-700"
-                        placeholder="닉네임 입력"
+                        className="flex-1 bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-5 text-sm text-white focus:border-blue-500 outline-none transition-all font-bold placeholder:text-zinc-800 shadow-inner"
+                        placeholder="나만의 닉네임을 입력하세요"
                       />
-                      <button onClick={()=>checkDuplicate('nickname', profile.nickname)} className="px-5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-[11px] font-black transition-all border border-zinc-700 whitespace-nowrap uppercase italic">Check</button>
+                      <button onClick={()=>checkDuplicate('nickname', profile.nickname)} className="px-6 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-2xl text-[11px] font-black transition-all border border-zinc-700 uppercase italic tracking-tighter">Check</button>
+                    </div>
+                    
+                    <div className="bg-blue-600/5 border border-blue-500/10 rounded-2xl p-5 space-y-3">
+                      <p className="text-xs text-blue-400 font-black leading-relaxed flex items-center gap-2">
+                        <CheckCircle size={14} /> 닉네임 설정 가이드
+                      </p>
+                      <p className="text-[11px] text-zinc-500 font-bold leading-relaxed">
+                        현재 할당된 닉네임은 계정 생성을 위한 <span className="text-zinc-300">임시 아이디(이메일 조합)</span>입니다. 
+                        커뮤니티 활동을 위해 나만의 고유한 닉네임으로 자유롭게 변경해 주세요!
+                      </p>
                     </div>
                   </div>
-                  <button onClick={handleSave} className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl transition-all shadow-xl flex items-center justify-center gap-2 italic uppercase tracking-widest active:scale-95">
-                    <Save size={18} /> Update Profile
-                  </button>
+
+                  <div className="space-y-3 opacity-40 grayscale">
+                    <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest pl-1">Brand ID (Domain Reservation)</label>
+                    <div className="flex gap-2">
+                        <div className="flex-1 flex items-center bg-black/40 border border-zinc-800 rounded-2xl px-6 py-4">
+                            <span className="text-zinc-600 text-sm font-black italic uppercase">Coming Soon</span>
+                            <span className="ml-auto text-zinc-800 text-xs font-black">.creaibox.com</span>
+                        </div>
+                    </div>
+                    <p className="text-[9px] text-zinc-800 italic pl-1 uppercase font-black">Status: Service Under Development</p>
+                  </div>
                 </div>
               </section>
 
-              {/* 멤버십 섹션 */}
-              <section className="bg-zinc-900/40 border border-zinc-800 rounded-[32px] p-8 space-y-6 h-fit shadow-2xl">
-                <div className="flex items-center gap-3 border-b border-zinc-800 pb-4">
-                  <Shield className="text-emerald-500" size={20} />
-                  <h2 className="text-xl font-black italic uppercase tracking-tight text-white">Membership Status</h2>
+              {/* [우측 섹션] 계정 상태 정보 Status */}
+              <section className="bg-zinc-900/40 border border-zinc-800 rounded-[40px] p-10 space-y-8 h-fit shadow-2xl">
+                <div className="flex items-center gap-3 border-b border-zinc-800/50 pb-6">
+                  <Shield className="text-emerald-500" size={24} />
+                  <h2 className="text-2xl font-black italic uppercase text-white tracking-tight">Security</h2>
                 </div>
-                <div className="space-y-5">
-                  <div className="flex justify-between items-center border-b border-zinc-800/50 pb-3">
-                    <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Registered Email</span>
-                    <span className="text-sm font-black italic text-zinc-200">{user?.email}</span>
+                <div className="space-y-7">
+                  <div className="flex justify-between items-center py-2 border-b border-zinc-800/30">
+                    <span className="text-[11px] font-black text-zinc-600 uppercase tracking-widest pl-1 flex items-center gap-2">
+                      <Mail size={14} className="text-zinc-700" /> Account ID
+                    </span>
+                    <span className="text-sm font-black italic text-zinc-300 font-mono tracking-tighter">{user?.email}</span>
                   </div>
-                  <div className="flex justify-between items-center pb-3">
-                    <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Access Level</span>
-                    <span className="text-sm font-black italic text-blue-500">{profile.membership_level?.toUpperCase() || 'FREE'}</span>
+
+                  <div className="flex justify-between items-center py-2 border-b border-zinc-800/30">
+                    <span className="text-[11px] font-black text-zinc-600 uppercase tracking-widest pl-1 flex items-center gap-2">
+                      <LogIn size={14} className="text-zinc-700" /> Auth Provider
+                    </span>
+                    <span className="flex items-center gap-2 text-[10px] font-black text-emerald-500 bg-emerald-500/5 px-4 py-2 rounded-xl border border-emerald-500/10 italic uppercase tracking-widest">
+                      {user?.app_metadata?.provider === 'google' && (
+                        <img src="https://www.google.com/favicon.ico" className="w-3 h-3 grayscale opacity-70" alt="G" />
+                      )}
+                      {user?.app_metadata?.provider || 'EMAIL'} AUTHENTICATED
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center py-2 border-b border-zinc-800/30">
+                    <span className="text-[11px] font-black text-zinc-600 uppercase tracking-widest pl-1">Creation Date</span>
+                    <span className="text-sm font-black italic text-zinc-400">{user?.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}</span>
+                  </div>
+
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-[11px] font-black text-zinc-600 uppercase tracking-widest pl-1">Plan Level</span>
+                    <span className="text-sm font-black italic text-blue-500 bg-blue-500/10 px-6 py-2 rounded-full border border-blue-500/20 uppercase tracking-widest">
+                        {profile.membership_level || 'Free'}
+                    </span>
                   </div>
                 </div>
               </section>
 
-              {/* 워드프레스 채널 섹션 */}
-              <section className="lg:col-span-2 bg-zinc-900/40 border border-zinc-800 rounded-[32px] p-8 space-y-6 shadow-2xl">
-                <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
-                  <div className="flex items-center gap-3">
-                    <Globe className="text-blue-500" size={20} />
-                    <h2 className="text-xl font-black italic uppercase tracking-tight text-white">Distribution Channels</h2>
+              {/* [하단 섹션] 워드프레스 배포 채널 */}
+              <section className="lg:col-span-2 bg-zinc-900/40 border border-zinc-800 rounded-[40px] p-10 space-y-10 shadow-2xl">
+                <div className="flex items-center justify-between border-b border-zinc-800/50 pb-8">
+                  <div className="flex items-center gap-4 text-left">
+                    <div className="p-3 bg-zinc-950 rounded-2xl border border-zinc-800 shadow-inner">
+                      <Globe className="text-blue-500" size={24} />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-black italic uppercase text-white tracking-tight">WP Distribution Center</h2>
+                      <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mt-1 italic">Multi-Site Connectivity Hub</p>
+                    </div>
                   </div>
-                  <button onClick={addWpSite} className="flex items-center gap-2 px-5 py-2 bg-emerald-600/10 text-emerald-500 text-[11px] font-black rounded-xl border border-emerald-600/20 hover:bg-emerald-600/20 transition-all uppercase italic">
-                    <Plus size={14} /> Add Channel
+                  <button onClick={addWpSite} className="px-8 py-3 bg-blue-600/10 hover:bg-blue-600 text-blue-500 hover:text-white text-[11px] font-black rounded-xl border border-blue-500/20 transition-all uppercase italic tracking-widest shadow-lg shadow-blue-900/10">
+                    + Register Site
                   </button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {wpSites.map((site, index) => (
-                    <div key={index} className="p-6 bg-black/40 border border-zinc-800 rounded-2xl space-y-4 group transition-all hover:border-zinc-700 shadow-inner">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest italic text-blue-400">Channel {index + 1}</span>
-                        <button onClick={() => removeWpSite(index)} className="text-zinc-600 hover:text-red-500 transition-colors"><Trash size={16} /></button>
-                      </div>
-                      <input type="text" placeholder="Site Name" value={site.siteName} onChange={(e) => updateWpSite(index, 'siteName', e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-xs text-zinc-200 focus:border-blue-500 outline-none font-bold" />
-                      <input type="text" placeholder="WordPress URL" value={site.url} onChange={(e) => updateWpSite(index, 'url', e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-xs text-zinc-200 focus:border-blue-500 outline-none font-bold" />
-                      <div className="flex gap-2">
-                        <input type="text" placeholder="User ID" value={site.userId} onChange={(e) => updateWpSite(index, 'userId', e.target.value)} className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-xs text-zinc-200 focus:border-blue-500 outline-none font-bold" />
-                        <input type="password" placeholder="App Password" value={site.appPassword} onChange={(e) => updateWpSite(index, 'appPassword', e.target.value)} className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-xs text-zinc-200 focus:border-blue-500 outline-none font-bold" />
-                      </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  <div className="space-y-6">
+                    <h3 className="text-xs font-black text-emerald-500 uppercase italic px-2 tracking-widest flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" /> Active Multi-Sites
+                    </h3>
+                    {wpSites.length === 0 && <p className="text-xs text-zinc-700 italic px-6 py-10 border border-dashed border-zinc-800 rounded-[32px] text-center">No active channels found.</p>}
+                    <div className="space-y-4">
+                      {wpSites.map((site, index) => (
+                        <div key={index} className="p-10 bg-black/40 border border-zinc-800 rounded-[32px] space-y-6 relative group hover:border-blue-900/50 transition-all shadow-inner">
+                          <button onClick={() => removeWpSite(index)} className="absolute top-8 right-8 text-zinc-800 hover:text-red-500 transition-colors p-2 hover:bg-red-500/10 rounded-xl"><Trash2 size={20} /></button>
+                          <div className="space-y-4 pt-4">
+                            <input type="text" placeholder="Site Name" value={site.siteName} onChange={(e) => updateWpSite(index, 'siteName', e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-4 text-xs font-bold text-zinc-400 focus:border-blue-500 outline-none shadow-sm" />
+                            <input type="text" placeholder="URL (https://...)" value={site.url} onChange={(e) => updateWpSite(index, 'url', e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-4 text-xs font-bold text-zinc-400 focus:border-blue-500 outline-none shadow-sm" />
+                            <div className="grid grid-cols-2 gap-4">
+                              <input type="text" placeholder="User ID" value={site.userId} onChange={(e) => updateWpSite(index, 'userId', e.target.value)} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 text-xs font-bold text-zinc-400 focus:border-blue-500 outline-none shadow-sm" />
+                              <input type="password" placeholder="Pass" value={site.appPassword} onChange={(e) => updateWpSite(index, 'appPassword', e.target.value)} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 text-xs font-bold text-zinc-400 focus:border-blue-500 outline-none shadow-sm" />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+
+                  <div className="p-12 bg-zinc-900/20 border border-zinc-800 rounded-[40px] space-y-8 h-fit opacity-60 border-dashed relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                      <Globe size={120} />
+                    </div>
+                    <h3 className="text-xs font-black text-zinc-500 uppercase italic tracking-widest flex items-center gap-2">
+                      <Sparkles size={14} /> Personal Blog Status
+                    </h3>
+                    <div className="flex items-center gap-3 font-black text-zinc-600 bg-black/60 p-6 rounded-3xl border border-zinc-800/50 shadow-inner relative z-10">
+                        <CheckCircle size={20} className="text-zinc-800" />
+                        <span className="tracking-tighter uppercase italic">Ready to Launch</span>
+                        <span className="ml-auto opacity-20 text-[10px] font-mono">.creaibox.com</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-600 font-bold uppercase tracking-widest leading-relaxed relative z-10 italic pl-1">
+                      ✨ 사장님만의 전용 서브도메인이 할당될 준비가 되었습니다. 고유 브랜드 ID 정책 수립 후 공식 오픈 예정입니다.
+                    </p>
+                  </div>
                 </div>
               </section>
 
               {/* Danger Zone */}
-              <section className="lg:col-span-2 bg-red-950/10 border border-red-900/20 rounded-[32px] p-8 flex items-center justify-between shadow-lg shadow-red-900/5">
-                <div className="space-y-1">
-                  <h3 className="text-lg font-black italic uppercase text-red-500 flex items-center gap-2"><Trash2 size={20} /> Danger Zone</h3>
-                  <p className="text-[11px] font-bold text-zinc-600 uppercase tracking-widest">회원 탈퇴 시 모든 데이터가 즉시 삭제됩니다.</p>
+              <section className="lg:col-span-2 bg-red-950/5 border border-red-900/20 rounded-[40px] p-10 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl">
+                <div className="space-y-2 text-center md:text-left">
+                  <h3 className="text-xl font-black italic uppercase text-red-600 flex items-center justify-center md:justify-start gap-3"><Trash2 size={26} /> Danger Zone</h3>
+                  <p className="text-[10px] font-black text-zinc-700 uppercase tracking-widest pl-1 leading-relaxed">
+                    회원 탈퇴 시 모든 워드프레스 연결 정보 및 개인 프로필 데이터가 <span className="text-red-900 underline underline-offset-2">즉시 영구 삭제</span>됩니다.
+                  </p>
                 </div>
-                <button className="px-6 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 text-[11px] font-black rounded-xl border border-red-500/20 uppercase italic tracking-widest transition-all active:scale-95">Terminate Account</button>
+                <button className="px-10 py-4 bg-red-950/20 hover:bg-red-600 text-red-700 hover:text-white text-[10px] font-black rounded-2xl border border-red-900/30 uppercase italic transition-all active:scale-95 tracking-[0.2em] shadow-lg shadow-red-950/50">
+                  Terminate Account
+                </button>
               </section>
             </div>
+
+            <footer className="text-center text-zinc-800 text-[10px] mt-24 font-black tracking-[0.5em] uppercase italic opacity-30">
+              Creaibox Strategic Studio — All Rights Reserved
+            </footer>
           </div>
 
           <Footer />
         </main>
 
-        {/* 4. 우측 Aside */}
-        <div className="hidden xl:flex shrink-0">
+        <div className="hidden xl:flex shrink-0 border-l border-zinc-800/50 bg-[#05070a]">
           <Aside />
         </div>
-      </div>
-
-      {/* 하단 플로팅 저장 버튼 */}
-      <div className="fixed bottom-10 left-0 right-0 flex justify-center pointer-events-none z-50">
-        <button onClick={handleSave} className="pointer-events-auto flex items-center gap-3 px-14 py-5 bg-blue-600 hover:bg-blue-500 text-white text-lg font-black italic rounded-2xl shadow-2xl transition-all border border-blue-400/30 uppercase tracking-tighter active:scale-95">
-          <Save size={24} /> Sync & Save All Settings
-        </button>
       </div>
     </div>
   );

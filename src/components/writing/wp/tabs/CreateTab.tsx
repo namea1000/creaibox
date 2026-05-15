@@ -322,8 +322,6 @@ export default function CreateTab({
                 </ReactMarkdown>
               </div>
             </div>
-
-            
           )}
         </div>
       </div>

@@ -15,33 +15,56 @@ export default function BoardListTab({ activeTab = 'all' }: { activeTab?: string
   const supabase = createClient();
   const router = useRouter();
 
-  // 🌟 [DB 통신 수정] 닉네임 필드까지 고려하여 데이터 가져오기
-  useEffect(() => {
-    const fetchPosts = async () => {
-      setLoading(true);
-      try {
-        let query = supabase
-          .from('community_posts')
-          .select('*') // 🌟 user_nickname 필드가 포함된 전체 데이터를 가져옵니다.
-          .order('created_at', { ascending: false });
+  const fetchPosts = async () => {
+    // 🌟 로딩 상태를 true로 유지하면서 데이터를 다시 가져옵니다.
+    try {
+      // [중요] community_comments 테이블에서 개수를 세어올 수 있도록 쿼리를 보강하거나 
+      // community_posts 테이블의 comment_count 필드가 최신인지 확인해야 합니다.
+      let query = supabase
+        .from('community_posts')
+        .select(`
+          *,
+          community_comments(count)
+        `) // 🌟 댓글 개수를 실시간으로 같이 긁어옵니다.
+        .order('created_at', { ascending: false });
 
-        if (activeTab !== 'all') {
-          query = query.eq('post_type', activeTab);
-        }
-
-        const { data, error } = await query;
-        if (!error) {
-          setPosts(data || []);
-        } else {
-          console.error("DB 쿼리 에러:", error.message);
-        }
-      } catch (err) {
-        console.error("로딩 에러:", err);
+      if (activeTab !== 'all') {
+        query = query.eq('post_type', activeTab);
       }
-      setLoading(false);
-    };
 
+      const { data, error } = await query;
+      
+      if (!error && data) {
+        // Supabase select count의 결과 형식을 가공합니다.
+        const formattedData = data.map(post => ({
+          ...post,
+          comment_count: post.community_comments?.[0]?.count || 0
+        }));
+        setPosts(formattedData);
+      }
+    } catch (err) {
+      console.error("데이터 로드 실패:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchPosts();
+
+    // 🌟 [추가] 실시간 구독 로직: DB에 변화가 생기면 즉시 리스트 갱신
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'community_posts' },
+        () => fetchPosts()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [activeTab, supabase]);
 
   // 스타일 고정 (원본 보전)
@@ -60,9 +83,7 @@ export default function BoardListTab({ activeTab = 'all' }: { activeTab?: string
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      
-      {/* 상단 헤더 & 글쓰기 버튼 섹션 (원본 보전) */}
+    <div className="flex flex-col gap-4 text-left">
       <div className="flex justify-between items-end mb-4 px-2">
         <div className="flex flex-col">
           <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter flex items-center gap-2">
@@ -79,8 +100,8 @@ export default function BoardListTab({ activeTab = 'all' }: { activeTab?: string
         </div>
 
         <Link 
-          href="/infocenter/write" 
-          className="group relative inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all duration-300 shadow-lg shadow-blue-900/20 active:scale-95 overflow-hidden"
+          href={`/infocenter/writing?category=${activeTab === 'all' ? 'free' : activeTab}`} 
+          className="group relative inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all duration-300 shadow-lg shadow-blue-900/20 active:scale-95 overflow-hidden font-sans"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
           <PenTool size={16} className="group-hover:rotate-12 transition-transform" />
@@ -104,8 +125,7 @@ export default function BoardListTab({ activeTab = 'all' }: { activeTab?: string
               {posts.map((post) => (
                 <tr 
                   key={post.id} 
-                  /* 🌟 상세 보기 페이지로 이동할 때 ID를 넘겨줍니다. */
-                  onClick={() => router.push(`/infocenter/view?id=${post.id}`)} 
+                  onClick={() => router.push(`/infocenter/view/${post.id}`)} 
                   className={`group cursor-pointer transition-all ${itemHover}`}
                 >
                   <td className="px-6 py-5">
@@ -121,13 +141,12 @@ export default function BoardListTab({ activeTab = 'all' }: { activeTab?: string
                         {post.title}
                       </span>
                       <div className="flex items-center gap-3 text-[11px] font-medium text-zinc-500">
-                        {/* 🌟 [핵심 수정] 닉네임이 있으면 닉네임을, 없으면 이메일 앞자리를 보여줍니다. */}
                         <span className="flex items-center gap-1">
                           <UserIcon size={12} /> 
                           {post.user_nickname || post.user_email?.split('@')[0] || "Unknown"}
                         </span>
                         <span className="flex items-center gap-1">
-                          <MessageSquare size={12} /> {post.comment_count || 0}
+                          <MessageSquare size={12} /> {post.comment_count}
                         </span>
                       </div>
                     </div>

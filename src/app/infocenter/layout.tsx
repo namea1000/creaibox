@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { 
-  Megaphone, MessageSquare, HelpCircle, Lightbulb, 
+  Megaphone, MessageSquare, HelpCircle, BookOpenCheck, Lightbulb, 
   Users, Hash, Search, TrendingUp 
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -22,6 +22,7 @@ export default function InfoCenterIntegratedLayout({ children }: { children: Rea
     { id: 'notice', label: '공지사항', icon: Megaphone, href: '/infocenter/list/notice' },
     { id: 'free', label: '자유게시판', icon: MessageSquare, href: '/infocenter/list/free' },
     { id: 'qna', label: 'Q&A 질문', icon: HelpCircle, href: '/infocenter/list/qna' },
+    { id: 'faq', label: 'FAQ', icon: BookOpenCheck, href: '/infocenter/list/faq' },
     { id: 'tips', label: '꿀팁/노하우', icon: Lightbulb, href: '/infocenter/list/tips' },
     { id: 'showcase', label: '작품공유', icon: Users, href: '/infocenter/list/showcase' },
   ];

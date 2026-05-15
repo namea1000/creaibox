@@ -9,56 +9,71 @@ import { createClient } from '@/utils/supabase/client';
 import { User } from '@supabase/supabase-js';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation'; // 🌟 router 추가
+import { useRouter } from 'next/navigation';
 
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
   const [nickname, setNickname] = useState<string>(""); 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // 🌟 로딩 상태 추가
+  const [isLoading, setIsLoading] = useState(true);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
-  const router = useRouter(); // 🌟 router 선언
+  const router = useRouter();
 
-  // 🌟 닉네임 가져오기 최적화 (useCallback으로 메모리 낭비 방지)
   const fetchNickname = useCallback(async (userId: string) => {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('nickname')
-      .eq('id', userId)
-      .single();
-    
-    if (profile?.nickname) {
-      setNickname(profile.nickname);
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('nickname')
+        .eq('id', userId)
+        .single();
+      
+      if (profile?.nickname) {
+        setNickname(profile.nickname);
+      }
+    } catch (err) {
+      console.error("닉네임 로드 실패:", err);
+    } finally {
+      // 닉네임까지 다 가져오면 로딩 끝!
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, [supabase]);
 
   useEffect(() => {
     let mounted = true;
 
     const initHeader = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user && mounted) {
-        setUser(user);
-        await fetchNickname(user.id);
-      } else {
+      // 🌟 [핵심] 세션 체크 속도를 위해 getSession 사용
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user && mounted) {
+        setUser(session.user);
+        await fetchNickname(session.user.id);
+      } else if (mounted) {
         setIsLoading(false);
       }
     };
 
     initHeader();
 
+    // 🌟 [강력 보강] 브라우저 탭을 이동하거나 다시 돌아올 때도 세션 유지 확인
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user && mounted) {
+      if (!mounted) return;
+
+      if (session?.user) {
         setUser(session.user);
         await fetchNickname(session.user.id);
-      } else if (mounted) {
+      } else {
         setUser(null);
         setNickname("");
         setIsLoading(false);
+      }
+      
+      // 상태 변화가 확실할 때만 리프레시
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        router.refresh();
       }
     });
 
@@ -74,21 +89,26 @@ export default function Header() {
       document.removeEventListener("mousedown", handleClickOutside);
       subscription.unsubscribe();
     };
-  }, [fetchNickname, supabase.auth]);
+  }, [fetchNickname, supabase.auth, router]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    // 🌟 전체 새로고침 대신 홈으로 이동 후 리프레시 (세션 정리용)
+    setIsProfileOpen(false);
     router.push('/');
     router.refresh();
   };
 
   const menuItems = [
-    { label: 'Writing Studio', href: '/studio/writing/wp/create' },
-    { label: 'Visuals Studio', href: '/studio/visuals' },
-    { label: 'Music Studio', href: '/studio/music' },
-    { label: 'Script Studio', href: '/studio/script' },
-    { label: 'Tools', href: '/tools' }
+    { label: '콘텐츠 기획', href: '/studio/planning' },
+    { label: '글쓰기', href: '/studio/writing' },
+    { label: '블로그', href: '/studio/blog' },
+    { label: '이미지', href: '/studio/image' },
+    { label: '비디오', href: '/studio/video' },
+    { label: '뮤직', href: '/studio/music' },
+    { label: '키워드 트랜드', href: '/studio/keyword' },
+    { label: '유튜브 트랜드', href: '/studio/youtube' },
+    { label: '리포트', href: '/studio/report' },
+    { label: 'Tools', href: '/studio/tools' }
   ];
 
   return (
@@ -127,17 +147,17 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-3 ml-auto">
-        {/* 🌟 로딩 중일 때는 빈 공간 대신 최소한의 틀 유지 (깜빡임 방지) */}
+        {/* 🌟 로딩 중일 때는 아무것도 안 보여주다가, 체크 끝나면 바로 등장 */}
         {!isLoading && (
           user ? (
             <div className="relative hidden lg:block" ref={dropdownRef}>
               <button onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all group border border-transparent hover:bg-zinc-800">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-emerald-500 flex items-center justify-center text-white text-[10px] font-bold">
-                  {nickname ? nickname[0].toUpperCase() : "U"}
+                  {nickname ? nickname[0].toUpperCase() : (user.email ? user.email[0].toUpperCase() : "U")}
                 </div>
                 <div className="flex items-center gap-2 leading-tight">
                   <span className="text-[14px] font-bold text-zinc-200 group-hover:text-white">
-                    {nickname || "User"}
+                    {nickname || user.email?.split('@')[0] || "User"}
                   </span>
                 </div>
                 <ChevronDown size={14} className={`transition-transform text-zinc-500 ${isProfileOpen ? 'rotate-180' : ''}`} />

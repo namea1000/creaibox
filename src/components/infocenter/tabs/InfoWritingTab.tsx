@@ -14,11 +14,15 @@ export default function PostWriteTab() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editingId = searchParams.get('id');
+  // 🌟 [추가] 주소창의 ?category= 값을 가져옵니다.
+  const categoryParam = searchParams.get('category');
 
   const [editingPost, setEditingPost] = useState<any>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [postType, setPostType] = useState("free");
+  // 🌟 [수정] 초기값을 categoryParam이 있으면 그것으로, 없으면 "free"로 설정합니다.
+  const [postType, setPostType] = useState(categoryParam || "free");
+  
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
@@ -31,7 +35,7 @@ export default function PostWriteTab() {
   const [editCommentValue, setEditCommentValue] = useState("");
 
   const [showPreview, setShowPreview] = useState(false);
-  const [files, setFiles] = useState<File[]>([]); // 🌟 파일 첨부 기능 복구
+  const [files, setFiles] = useState<File[]>([]); 
   const [showEmoji, setShowEmoji] = useState<{ target: string | null }>({ target: null });
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const supabase = createClient();
@@ -48,6 +52,7 @@ export default function PostWriteTab() {
         if (profile?.nickname) setUserNickname(profile.nickname);
       }
 
+      // 🌟 [수정 로직]
       if (editingId) {
         setLoading(true);
         const { data: post } = await supabase.from('community_posts').select('*').eq('id', editingId).single();
@@ -55,16 +60,19 @@ export default function PostWriteTab() {
           setEditingPost(post);
           setTitle(post.title);
           setContent(post.content);
-          setPostType(post.post_type);
+          setPostType(post.post_type); // 수정 시엔 기존 데이터의 카테고리 유지
           setLikes(post.like_count || 0);
           fetchComments(post.id);
           if (sessionUser) checkLikeStatus(post.id, sessionUser.email);
         }
         setLoading(false);
+      } else if (categoryParam) {
+        // 🌟 수정 모드가 아닐 때, 주소창에 카테고리가 넘어왔다면 즉시 반영
+        setPostType(categoryParam);
       }
     };
     initData();
-  }, [editingId]);
+  }, [editingId, categoryParam, supabase]); // 🌟 categoryParam을 감시 대상에 추가
 
   const checkLikeStatus = async (postId: string, email?: string) => {
     if (!postId || !email) return;
@@ -104,13 +112,15 @@ export default function PostWriteTab() {
     setLoading(true);
     try {
       const fileName = `${Math.random()}.${file.name.split('.').pop()}`;
-      const { data } = await supabase.storage.from('community').upload(fileName, file);
+      const { data, error: uploadError } = await supabase.storage.from('community').upload(fileName, file);
+      if (uploadError) throw uploadError;
       if (data) {
         const { data: { publicUrl } } = supabase.storage.from('community').getPublicUrl(fileName);
         const newMarkdown = `\n![image](${publicUrl})\n`;
         setContent(prev => prev + newMarkdown);
       }
     } catch (err) {
+      console.error(err);
       alert("이미지 업로드 실패");
     }
     setLoading(false);
@@ -141,48 +151,59 @@ export default function PostWriteTab() {
   const handleSave = async () => {
     if (!title.trim() || !content.trim()) return alert("제목과 내용을 모두 입력해주세요!");
     
-    // 🌟 저장 전 세션 최종 확인
-    const { data: { user: sessionUser } } = await supabase.auth.getUser();
-    if (!sessionUser) return alert("로그인이 필요합니다.");
-
     setLoading(true);
     try {
-      // 🌟 파일 첨부 업로드 로직 복구
+      const { data: { user: sessionUser } } = await supabase.auth.getUser();
+      if (!sessionUser) {
+        alert("로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
+        setLoading(false);
+        return;
+      }
+
+      // 🌟 파일 첨부 업로드 로직 복구 및 에러 핸들링
       let uploadedUrls: string[] = [];
       for (const file of files) {
         const fileName = `${Math.random()}.${file.name.split('.').pop()}`;
-        const { data } = await supabase.storage.from('community').upload(fileName, file);
-        if (data) {
+        const { data, error: uploadError } = await supabase.storage.from('community').upload(fileName, file);
+        if (!uploadError && data) {
           const { data: { publicUrl } } = supabase.storage.from('community').getPublicUrl(fileName);
           uploadedUrls.push(publicUrl);
         }
       }
 
-      const postData = {
+      const postData: any = {
         title,
         content,
         post_type: postType,
         user_email: sessionUser.email,
-        user_nickname: userNickname,
+        user_nickname: userNickname || sessionUser.email?.split('@')[0],
         status: 'published',
-        image_urls: uploadedUrls.length > 0 ? uploadedUrls : (editingPost?.image_urls || [])
       };
 
-      let error;
+      // 이미지 URL이 있을 때만 추가
+      const finalImageUrls = uploadedUrls.length > 0 ? uploadedUrls : (editingPost?.image_urls || []);
+      if (finalImageUrls.length > 0) postData.image_urls = finalImageUrls;
+
+      let resultError;
       if (editingId) {
         const { error: updateError } = await supabase.from('community_posts').update(postData).eq('id', editingId);
-        error = updateError;
+        resultError = updateError;
       } else {
         const { error: insertError } = await supabase.from('community_posts').insert([postData]);
-        error = insertError;
+        resultError = insertError;
       }
 
-      if (error) throw error;
+      if (resultError) throw resultError;
       
       setSaveStatus(true);
-      setTimeout(() => router.push('/infocenter/list/all'), 1500);
+      // 🌟 404 방지: replace를 사용하여 히스토리를 깔끔하게 정리하고 이동
+      setTimeout(() => {
+        router.replace('/infocenter/list/all');
+      }, 1000);
+      
     } catch (err: any) {
-      alert(`처리 실패: ${err.message}`);
+      console.error("저장 에러 상세:", err);
+      alert(`저장 실패: ${err.message || '알 수 없는 오류가 발생했습니다.'}`);
     }
     setLoading(false);
   };
@@ -194,7 +215,7 @@ export default function PostWriteTab() {
     <div className={`max-w-4xl mx-auto rounded-3xl border p-8 relative ${cardBg}`}>
       {/* 미리보기 모달 */}
       {showPreview && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 text-left">
           <div className={`w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-3xl border p-8 custom-scrollbar ${cardBg}`}>
             <div className="flex justify-between items-center mb-6 border-b border-zinc-800/50 pb-4 text-white">
               <h4 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
@@ -242,9 +263,8 @@ export default function PostWriteTab() {
         </div>
       </div>
 
-      {/* 상세보기 (수정모드용 상단 프리뷰) */}
       {editingPost && (
-        <div className="mb-12 border-b border-zinc-800/50 pb-12">
+        <div className="mb-12 border-b border-zinc-800/50 pb-12 text-left">
             <div className="mb-4 flex justify-between items-center">
                 <span className="px-3 py-1 bg-blue-500/10 text-blue-500 text-[10px] font-black uppercase rounded-lg border border-blue-500/20">{postType}</span>
                 <span className="text-xs font-bold text-zinc-500 italic">By {editingPost.user_nickname || editingPost.user_email?.split('@')[0]}</span>
@@ -255,8 +275,6 @@ export default function PostWriteTab() {
                     {content}
                 </ReactMarkdown>
             </div>
-            
-            {/* 댓글 관리 기능 (수정모드) */}
             <div className="mt-8 space-y-4">
                 <div className="flex items-center gap-2 text-xs font-black uppercase text-zinc-500"><MessageSquare size={14}/> Comments ({comments.length})</div>
                 {comments.map(c => (
@@ -269,12 +287,11 @@ export default function PostWriteTab() {
         </div>
       )}
 
-      {/* 🌟 원본 글쓰기 폼 UI (이미지 추가, 파일 첨부 리스트 완벽 복구) */}
       <div className="space-y-6 text-left">
         <div>
           <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">Category</label>
           <div className="flex gap-2 flex-wrap">
-            {['notice', 'free', 'qna', 'tips', 'showcase'].map((id) => (
+            {['notice', 'free', 'qna', 'faq', 'tips', 'showcase'].map((id) => (
               <button key={id} onClick={() => setPostType(id)} className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${postType === id ? 'bg-blue-600 border-blue-500 text-white shadow-lg' : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-zinc-200'}`}>{id.toUpperCase()}</button>
             ))}
           </div>
@@ -295,7 +312,6 @@ export default function PostWriteTab() {
           </div>
           <textarea ref={textAreaRef} value={content} onChange={(e) => setContent(e.target.value)} onDrop={(e) => { e.preventDefault(); uploadAndInsertImage(e.dataTransfer.files[0]); }} onDragOver={(e) => e.preventDefault()} placeholder="내용을 입력하세요... 이미지를 드래그해서 넣을 수 있습니다." rows={12} className={`w-full px-5 py-5 rounded-2xl border text-sm font-medium focus:outline-none leading-relaxed resize-none custom-scrollbar ${inputBg}`} />
           
-          {/* 🌟 파일 첨부 및 리스트 관리 UI 복구 */}
           <div className="mt-4 p-4 rounded-2xl border bg-zinc-800/30 border-zinc-800 space-y-4">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -313,7 +329,6 @@ export default function PostWriteTab() {
                 </button>
             </div>
             
-            {/* 🌟 첨부된 파일 리스트 UI 복구 */}
             {files.length > 0 && (
                 <div className="flex flex-wrap gap-2 pt-2">
                     {files.map((file, idx) => (
