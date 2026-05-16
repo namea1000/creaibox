@@ -5,7 +5,8 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Building2, Globe, Landmark, Scale, Monitor, 
-  HeartPulse, Tv, Compass, MessageSquareText, TrendingUp 
+  HeartPulse, Tv, Compass, MessageSquareText, TrendingUp,
+  LayoutGrid // 🌟 뉴스 홈을 위한 아이콘 추가
 } from 'lucide-react';
 
 // 공통 부품들 불러오기
@@ -18,9 +19,10 @@ export default function NewsLayout({ children }: { children: React.ReactNode }) 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // 🌟 네이버 뉴스 핵심 10개 카테고리 메뉴
+  // 🌟 맨 앞에 '뉴스 홈(/news)'을 추가한 럭셔리 탭 네비게이션 배열
   const tabs = [
-    { id: 'press', label: '언론사별', icon: Building2, href: '/news/press' },
+    { id: 'news-home', label: '뉴스 홈', icon: LayoutGrid, href: '/news' }, // 🚀 1순위 홈 버튼 배치!
+    { id: 'headline', label: '헤드라인', icon: Building2, href: '/news/headline' },
     { id: 'politics', label: '정치', icon: Landmark, href: '/news/politics' },
     { id: 'economy', label: '경제', icon: TrendingUp, href: '/news/economy' },
     { id: 'society', label: '사회', icon: Scale, href: '/news/society' },
@@ -42,16 +44,17 @@ export default function NewsLayout({ children }: { children: React.ReactNode }) 
           isCollapsed={isCollapsed} 
           setIsCollapsed={setIsCollapsed} 
           isMobileOpen={isMobileOpen}
-          setIsMobileOpen={setIsMobileOpen}
+          setIsMobileOpen={setIsMobileOpen} // 필요시 기존 Sidebar 스펙에 맞춰 유지
         />
 
         {/* 중앙 작업 영역 */}
         <main className="flex-1 flex flex-col min-w-0 border-l border-zinc-800/50 bg-[#05070a] overflow-y-auto custom-scrollbar">
           
-          {/* 🌟 네이버 뉴스 스타일 탭 네비게이션 */}
+          {/* 네이버 뉴스 스타일 탭 네비게이션 */}
           <div className="sticky top-0 z-20 flex items-center px-6 border-b shrink-0 bg-[#05070a]/90 backdrop-blur-md border-zinc-800/50">
             <div className="flex overflow-x-auto no-scrollbar">
               {tabs.map((tab) => {
+                // 🌟 현재 주소와 정확히 일치할 때 활성화 불빛이 들어옵니다.
                 const isActive = pathname === tab.href;
                 return (
                   <Link

@@ -18,6 +18,9 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
+  // 🌟 [미스매치 차단 핵심] 컴포넌트가 브라우저에 마운트 완료되었는지 판단하는 플래그 추가
+  const [isMounted, setIsMounted] = useState(false);
+  
   const dropdownRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
   const router = useRouter();
@@ -42,6 +45,8 @@ export default function Header() {
   }, [supabase]);
 
   useEffect(() => {
+    // 🌟 브라우저에 마운트되는 즉시 true로 변경하여 클라이언트 사이드 렌더링 시작
+    setIsMounted(true);
     let mounted = true;
 
     const initHeader = async () => {
@@ -114,17 +119,18 @@ export default function Header() {
   return (
     <header className="h-20 border-b flex items-center px-6 lg:px-12 z-[100] fixed top-0 left-0 right-0 transition-all bg-[#0a0c10]/80 backdrop-blur-md border-zinc-800/50">
       
-      <div className="flex items-center">
+      {/* 좌측 로고 영역: 레이아웃 시프트 방지를 위해 폭 고정(shrink-0) */}
+      <div className="flex items-center w-[260px] shrink-0">
         <Link href="/" className="flex items-center gap-3 cursor-pointer group transition-all duration-500 z-[110]">
-          <div className="relative w-10 h-10 flex items-center justify-center">
+          <div className="relative w-40 h-40 flex items-center justify-center">
             <Image 
-              src="/logobg.webp" 
-              alt="Logo" 
-              width={40}
-              height={40}
-              className="relative z-10 object-contain" 
-              priority 
-            />
+  src="/logobg.webp" 
+  alt="Logo" 
+  width={40}
+  height={40}
+  className="relative z-10 object-contain h-auto w-auto" // 🌟 h-auto w-auto를 추가해 비율 유지 경고 해결!
+  priority 
+/>
           </div>
           <span className="text-xl font-black italic tracking-tighter transition-all text-white">
             AI Contents <span className="text-blue-500 group-hover:text-blue-400 transition-colors">Studio</span>
@@ -146,9 +152,12 @@ export default function Header() {
         </nav>
       </div>
 
-      <div className="flex items-center gap-3 ml-auto">
-        {/* 🌟 로딩 중일 때는 아무것도 안 보여주다가, 체크 끝나면 바로 등장 */}
-        {!isLoading && (
+      {/* 우측 유저 컨트롤 영역 */}
+      {/* 🌟 [레이아웃 밀림 해결] w-[160px] lg:w-[180px] 와 shrink-0을 가두어 내부 컨텐츠 크기 변화가 중앙 메뉴를 침범하지 못하도록 차단 */}
+      <div className="flex items-center justify-end gap-3 ml-auto w-[160px] lg:w-[180px] shrink-0">
+        
+        {/* 🌟 [하이드레이션 오류 해결] 완전히 마운트되기 전(서버사이드 상태)에는 레이아웃 공간만 예약해두고 내부 UI 렌더링을 일시 정지 */}
+        {isMounted && !isLoading && (
           user ? (
             <div className="relative hidden lg:block" ref={dropdownRef}>
               <button onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all group border border-transparent hover:bg-zinc-800">
@@ -156,7 +165,7 @@ export default function Header() {
                   {nickname ? nickname[0].toUpperCase() : (user.email ? user.email[0].toUpperCase() : "U")}
                 </div>
                 <div className="flex items-center gap-2 leading-tight">
-                  <span className="text-[14px] font-bold text-zinc-200 group-hover:text-white">
+                  <span className="text-[14px] font-bold text-zinc-200 group-hover:text-white truncate max-w-[80px]">
                     {nickname || user.email?.split('@')[0] || "User"}
                   </span>
                 </div>
@@ -181,7 +190,7 @@ export default function Header() {
             <div className="hidden lg:flex items-center gap-4">
               <Link href="/login" className="text-base font-bold text-zinc-200 hover:text-white transition-colors">로그인</Link>
               <Link href="/signup">
-                <button className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-base font-black rounded-lg shadow-lg active:scale-95 transition-all">회원가입</button>
+                <button className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-base font-black rounded-lg shadow-lg active:scale-95 transition-all whitespace-nowrap">회원가입</button>
               </Link>
             </div>
           )
