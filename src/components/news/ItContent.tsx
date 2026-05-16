@@ -12,6 +12,7 @@ interface NewsItem {
   pubDate: string;
   source: string;
   imageUrl: string;
+  description: string;
 }
 
 export default function ItContent() {
@@ -146,80 +147,83 @@ export default function ItContent() {
         ))}
       </div>
 
-      {/* 🌟 [네이버 스타일] 초호화 인페이지 슬라이드 뷰어 모달 */}
-      {selectedIndex !== null && (
-        <div 
-          className="fixed inset-0 z-[150] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 lg:p-10 animate-in fade-in duration-200"
-          onClick={() => setSelectedIndex(null)} // 여백 클릭 시 모달 닫기
+{/* 🌟 [최종 단계] 실제 사진 + 실제 본문 연동 인앱 매거진 뷰어 모달 */}
+{selectedIndex !== null && (
+  <div 
+    className="fixed inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 lg:p-10 animate-in fade-in duration-200"
+    onClick={() => setSelectedIndex(null)}
+  >
+    {/* 왼쪽 화살표 버튼 */}
+    <button 
+      onClick={goPrev} 
+      disabled={selectedIndex === 0} 
+      className={`absolute left-4 lg:left-8 p-3 bg-zinc-900/80 border border-zinc-800 text-white rounded-full transition-all z-20 ${selectedIndex === 0 ? 'opacity-20 cursor-not-allowed' : 'hover:bg-cyan-600 hover:border-cyan-500'}`}
+    >
+      <ChevronLeft size={28} />
+    </button>
+
+    {/* 메인 팝업 카드 */}
+    <div 
+      className="w-full max-w-[700px] bg-[#090d14] rounded-[32px] overflow-hidden border border-zinc-800/80 shadow-2xl flex flex-col relative p-8 space-y-6 animate-in zoom-in-95 duration-200"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* 상단 바 */}
+      <div className="flex justify-between items-center border-b border-zinc-800/60 pb-4">
+        <span className="px-3 py-1 bg-cyan-500/10 text-cyan-400 text-xs font-black rounded-lg border border-cyan-500/20">
+          {news[selectedIndex].source}
+        </span>
+        <button onClick={() => setSelectedIndex(null)} className="p-1.5 hover:bg-zinc-800 rounded-xl text-zinc-400 hover:text-white transition-all">
+          <X size={20} />
+        </button>
+      </div>
+
+      {/* 📸 실제 기사의 현장 고화질 썸네일 액자 */}
+      <div className="w-full h-64 bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 relative shadow-inner">
+        <img 
+          src={news[selectedIndex].imageUrl} 
+          alt="real news cover" 
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.currentTarget.src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=500';
+          }}
+        />
+      </div>
+
+      {/* 뉴스 기사 제목 */}
+      <h2 className="text-xl lg:text-2xl font-black text-zinc-100 leading-snug tracking-tight">
+        {news[selectedIndex].title}
+      </h2>
+
+      {/* 📝 [대망의 본문 출력 영역] 모달을 이탈하지 않고 바로 읽는 가독성 극대화 공간 */}
+      <div className="bg-zinc-900/40 border border-zinc-800/60 rounded-2xl p-5 max-h-48 overflow-y-auto custom-scrollbar">
+        <p className="text-sm text-zinc-300 leading-relaxed tracking-normal font-medium">
+          {news[selectedIndex].description || '본 기사의 상세 요약본을 구성 중입니다.'}
+        </p>
+      </div>
+
+      {/* 원문 언론사 페이지 링크 액션 버튼 */}
+      <div className="pt-2">
+        <a 
+          href={news[selectedIndex].link} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="w-full py-4 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black text-center font-black rounded-2xl flex items-center justify-center gap-2 text-base shadow-xl transition-all transform hover:-translate-y-0.5"
         >
-          {/* 왼쪽 화살표 버튼 */}
-          <button 
-            onClick={goPrev}
-            disabled={selectedIndex === 0}
-            className={`absolute left-4 lg:left-8 p-3 bg-zinc-900/80 border border-zinc-800 text-white rounded-full transition-all z-20 ${
-              selectedIndex === 0 ? 'opacity-20 cursor-not-allowed' : 'hover:bg-emerald-600 hover:border-emerald-500'
-            }`}
-          >
-            <ChevronLeft size={28} />
-          </button>
+          언론사 원문 페이지로 직접 이동 <ExternalLink size={18} />
+        </a>
+      </div>
+    </div>
 
-          {/* 메인 뉴스 브라우저 창 */}
-          <div 
-            className="w-full max-w-[1100px] h-[85vh] bg-[#05070a] rounded-[32px] overflow-hidden border border-zinc-800/80 shadow-2xl flex flex-col relative animate-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()} // 모달 내부 클릭 시 닫힘 방지
-          >
-            {/* 상단 뷰어 미니 바 */}
-            <div className="h-14 bg-zinc-900/50 border-b border-zinc-800/80 px-6 flex items-center justify-between">
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="px-2.5 py-0.5 bg-emerald-500 text-black text-[10px] font-black rounded-md shrink-0">
-                  {news[selectedIndex].source}
-                </span>
-                <span className="text-zinc-400 text-xs font-bold truncate max-w-[300px] lg:max-w-[600px]">
-                  {news[selectedIndex].title}
-                </span>
-              </div>
-              
-              <div className="flex items-center gap-4 shrink-0">
-                <a 
-                  href={news[selectedIndex].link} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-xs font-bold text-zinc-400 hover:text-white transition-colors bg-zinc-800 px-3 py-1.5 rounded-xl border border-zinc-700/50"
-                >
-                  원문 새창보기 <ExternalLink size={12} />
-                </a>
-                <button 
-                  onClick={() => setSelectedIndex(null)}
-                  className="p-1.5 hover:bg-zinc-800 rounded-xl text-zinc-400 hover:text-white transition-all"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
-
-            {/* 실제 뉴스 본문 iframe 삽입 영역 */}
-            <div className="flex-1 bg-white relative">
-              <iframe 
-                src={news[selectedIndex].link} 
-                className="w-full h-full border-0"
-                title="news-viewer"
-                sandbox="allow-same-origin allow-scripts allow-popups allow-forms" // 보안 규격 추가
-              />
-            </div>
-          </div>
-
-          {/* 오른쪽 화살표 버튼 */}
-          <button 
-            onClick={goNext}
-            disabled={selectedIndex === news.length - 1}
-            className={`absolute right-4 lg:right-8 p-3 bg-zinc-900/80 border border-zinc-800 text-white rounded-full transition-all z-20 ${
-              selectedIndex === news.length - 1 ? 'opacity-20 cursor-not-allowed' : 'hover:bg-emerald-600 hover:border-emerald-500'
-            }`}
-          >
-            <ChevronRight size={28} />
-          </button>
-        </div>
-      )}
+    {/* 오른쪽 화살표 버튼 */}
+    <button 
+      onClick={goNext} 
+      disabled={selectedIndex === news.length - 1} 
+      className={`absolute right-4 lg:right-8 p-3 bg-zinc-900/80 border border-zinc-800 text-white rounded-full transition-all z-20 ${selectedIndex === news.length - 1 ? 'opacity-20 cursor-not-allowed' : 'hover:bg-cyan-600 hover:border-cyan-500'}`}
+    >
+      <ChevronRight size={28} />
+    </button>
+  </div>
+)}
 
     </div>
   );
