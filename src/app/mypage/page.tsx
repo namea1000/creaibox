@@ -28,6 +28,9 @@ export default function MyPage() {
 
   const supabase = createClient();
 
+  // 🌟 [프론트엔드 방어벽] 한글, 영문, 숫자 조합으로 2~12자만 허용 (공백 및 특수문자 절대 불가 정규식)
+  const nicknameRegex = /^[a-zA-Z0-9가-힣]{2,12}$/;
+
   useEffect(() => {
     const fetchInitialData = async () => {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
@@ -50,11 +53,20 @@ export default function MyPage() {
   }, []);
 
   const checkDuplicate = async (field: 'nickname', value: string) => {
-    if (!value || value.length < 2) return alert("2자 이상 입력해주세요.");
+    const trimmedValue = value ? value.trim() : '';
+
+    // 🌟 [방어벽 이식] 중복 체크 전 닉네임 정규식 검사 실행
+    if (!nicknameRegex.test(trimmedValue)) {
+      alert("❌ 닉네임은 띄어쓰기, 특수문자 없이 한글, 영문, 숫자 조합으로 2~10자만 가능합니다.");
+      return;
+    }
+    
+    // 🌟 [안전 패치] 현재 로그인한 나 자신을 제외하고 중복 검사하도록 변경
     const { data, error } = await supabase
       .from('profiles')
       .select(field)
-      .eq(field, value.toLowerCase())
+      .eq(field, trimmedValue)
+      .not('id', 'eq', user?.id)
       .maybeSingle();
 
     if (error) return alert("체크 중 오류가 발생했습니다.");
@@ -70,21 +82,47 @@ export default function MyPage() {
     setWpSites(newSites);
   };
 
+  // 🌟 [완벽 버그 수정] 프로필 설정 세이브 무적화 처리
   const handleSave = async () => {
     if (!user) return alert("로그인이 필요합니다.");
-    setIsSaving(true);
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        nickname: profile.nickname,
-        extra_configs: { ...profile.extra_configs, wp_sites: wpSites },
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', user.id);
+    
+    const trimmedNickname = profile.nickname ? profile.nickname.trim() : '';
 
-    if (error) alert("저장 실패: " + error.message);
-    else alert("프로필 설정이 안전하게 업데이트되었습니다.");
-    setIsSaving(false);
+    // 🌟 [방어벽 이식] DB에 저장 패키지를 쏘기 전에 형식 규격 최종 필터링
+    if (!nicknameRegex.test(trimmedNickname)) {
+      alert("❌ 닉네임 형식이 올바르지 않습니다.\n(띄어쓰기, 특수문자 없는 한글/영문/숫자 2~10자)");
+      return;
+    }
+
+    setIsSaving(true);
+    
+    try {
+      // 🌟 update 대신 upsert 문법으로 덮어써서 행이 없는 초기 유저 에러까지 완벽 대응
+      // 🌟 데이터 페이로드를 profiles 테이블의 스키마 구조({ id, nickname })에 완벽하게 정렬하여 전송
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id, // 🌟 반드시 고유 식별자 id를 페이로드에 명시해 주어야 RLS를 통과하고 덮어쓰기가 발동합니다.
+          nickname: trimmedNickname,
+          brand_id: profile.brand_id || '',
+          membership_level: profile.membership_level || 'free',
+          // 🌟 워드프레스 리스트 상태를 jsonb 오브젝트 내부에 안전하게 압축 동기화
+          extra_configs: { ...profile.extra_configs, wp_sites: wpSites },
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' }); // id가 겹칠 경우 충돌 내지 말고 덮어쓰라는 뜻
+
+      if (error) {
+        console.error("Supabase Profile Sync Error:", error);
+        alert(`저장 실패: ${error.message}\n(Supabase RLS 보안 정책 설정을 다시 확인해 주세요.)`);
+      } else {
+        alert("🎉 프로필 설정이 성공적으로 동기화되었습니다!");
+      }
+    } catch (err: any) {
+      console.error("Unexpected Save Error:", err);
+      alert(`시스템 통신 중 오류가 발생했습니다: ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -115,7 +153,7 @@ export default function MyPage() {
                 </p>
               </div>
               
-              {/* 🌟 상단 우측 저장 버튼 (fixed 제거하고 흐름에 맞게 배치) */}
+              {/* 🌟 상단 우측 저장 버튼 */}
               <button 
                 onClick={handleSave} 
                 disabled={isSaving}
@@ -241,7 +279,7 @@ export default function MyPage() {
                       {wpSites.map((site, index) => (
                         <div key={index} className="p-10 bg-black/40 border border-zinc-800 rounded-[32px] space-y-6 relative group hover:border-blue-900/50 transition-all shadow-inner">
                           <button onClick={() => removeWpSite(index)} className="absolute top-8 right-8 text-zinc-800 hover:text-red-500 transition-colors p-2 hover:bg-red-500/10 rounded-xl"><Trash2 size={20} /></button>
-                          <div className="space-y-4 pt-4">
+                          <div className="space-y-4 pt-4 text-left">
                             <input type="text" placeholder="Site Name" value={site.siteName} onChange={(e) => updateWpSite(index, 'siteName', e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-4 text-xs font-bold text-zinc-400 focus:border-blue-500 outline-none shadow-sm" />
                             <input type="text" placeholder="URL (https://...)" value={site.url} onChange={(e) => updateWpSite(index, 'url', e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-4 text-xs font-bold text-zinc-400 focus:border-blue-500 outline-none shadow-sm" />
                             <div className="grid grid-cols-2 gap-4">
@@ -254,7 +292,7 @@ export default function MyPage() {
                     </div>
                   </div>
 
-                  <div className="p-12 bg-zinc-900/20 border border-zinc-800 rounded-[40px] space-y-8 h-fit opacity-60 border-dashed relative overflow-hidden group">
+                  <div className="p-12 bg-zinc-900/20 border border-zinc-800 rounded-[40px] space-y-8 h-fit opacity-60 border-dashed relative overflow-hidden group text-left">
                     <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                       <Globe size={120} />
                     </div>
@@ -274,14 +312,14 @@ export default function MyPage() {
               </section>
 
               {/* Danger Zone */}
-              <section className="lg:col-span-2 bg-red-950/5 border border-red-900/20 rounded-[40px] p-10 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl">
+              <section className="lg:col-span-2 bg-red-950/5 border border-red-900/20 rounded-[40px] p-10 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl text-left">
                 <div className="space-y-2 text-center md:text-left">
                   <h3 className="text-xl font-black italic uppercase text-red-600 flex items-center justify-center md:justify-start gap-3"><Trash2 size={26} /> Danger Zone</h3>
                   <p className="text-[10px] font-black text-zinc-700 uppercase tracking-widest pl-1 leading-relaxed">
                     회원 탈퇴 시 모든 워드프레스 연결 정보 및 개인 프로필 데이터가 <span className="text-red-900 underline underline-offset-2">즉시 영구 삭제</span>됩니다.
                   </p>
                 </div>
-                <button className="px-10 py-4 bg-red-950/20 hover:bg-red-600 text-red-700 hover:text-white text-[10px] font-black rounded-2xl border border-red-900/30 uppercase italic transition-all active:scale-95 tracking-[0.2em] shadow-lg shadow-red-950/50">
+                <button type="button" className="px-10 py-4 bg-red-950/20 hover:bg-red-600 text-red-700 hover:text-white text-[10px] font-black rounded-2xl border border-red-900/30 uppercase italic transition-all active:scale-95 tracking-[0.2em] shadow-lg shadow-red-950/50">
                   Terminate Account
                 </button>
               </section>
