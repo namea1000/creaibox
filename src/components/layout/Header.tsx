@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   ChevronDown, User as UserIcon, Settings, LogOut, 
   Menu, X 
@@ -13,70 +13,36 @@ import { useRouter } from 'next/navigation';
 
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
-  const [nickname, setNickname] = useState<string>(""); 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   
-  // 🌟 [미스매치 차단 핵심] 컴포넌트가 브라우저에 마운트 완료되었는지 판단하는 플래그 추가
+  // 🌟 하이드레이션 미스매치 방지용 플래그
   const [isMounted, setIsMounted] = useState(false);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
   const router = useRouter();
 
-  const fetchNickname = useCallback(async (userId: string) => {
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('nickname')
-        .eq('id', userId)
-        .single();
-      
-      if (profile?.nickname) {
-        setNickname(profile.nickname);
-      }
-    } catch (err) {
-      console.error("닉네임 로드 실패:", err);
-    } finally {
-      // 닉네임까지 다 가져오면 로딩 끝!
-      setIsLoading(false);
-    }
-  }, [supabase]);
-
   useEffect(() => {
-    // 🌟 브라우저에 마운트되는 즉시 true로 변경하여 클라이언트 사이드 렌더링 시작
     setIsMounted(true);
-    let mounted = true;
 
-    const initHeader = async () => {
-      // 🌟 [핵심] 세션 체크 속도를 위해 getSession 사용
+    // 🌟 [최적화] 페이지 이동 시 깜빡임 없이 세션을 가장 빠르게 가져오는 방식
+    const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user && mounted) {
-        setUser(session.user);
-        await fetchNickname(session.user.id);
-      } else if (mounted) {
-        setIsLoading(false);
-      }
-    };
-
-    initHeader();
-
-    // 🌟 [강력 보강] 브라우저 탭을 이동하거나 다시 돌아올 때도 세션 유지 확인
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
-
       if (session?.user) {
         setUser(session.user);
-        await fetchNickname(session.user.id);
+      }
+    };
+    checkUser();
+
+    // 로그인, 로그아웃 등 실시간 상태 변화 감지
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setUser(session.user);
       } else {
         setUser(null);
-        setNickname("");
-        setIsLoading(false);
       }
       
-      // 상태 변화가 확실할 때만 리프레시
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
         router.refresh();
       }
@@ -90,15 +56,15 @@ export default function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     
     return () => {
-      mounted = false;
       document.removeEventListener("mousedown", handleClickOutside);
       subscription.unsubscribe();
     };
-  }, [fetchNickname, supabase.auth, router]);
+  }, [supabase.auth, router]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setIsProfileOpen(false);
+    setUser(null);
     router.push('/');
     router.refresh();
   };
@@ -116,28 +82,28 @@ export default function Header() {
     { label: 'Tools', href: '/studio/tools' }
   ];
 
+  // 스포티파이처럼 이메일 앞 글자 한 글자 따오기 (예: admin@test.com -> A)
+  const userInitial = user?.email ? user.email[0].toUpperCase() : "U";
+
   return (
     <header className="h-20 border-b flex items-center px-6 lg:px-12 z-[100] fixed top-0 left-0 right-0 transition-all bg-[#0a0c10]/80 backdrop-blur-md border-zinc-800/50">
       
-      {/* 좌측 로고 영역: 레이아웃 시프트 방지를 위해 폭 고정(shrink-0) */}
-      <div className="flex items-center w-[260px] shrink-0">
-        <Link href="/" className="flex items-center gap-3 cursor-pointer group transition-all duration-500 z-[110]">
-          <div className="relative w-40 h-40 flex items-center justify-center">
-            <Image 
-  src="/logobg.webp" 
-  alt="Logo" 
-  width={40}
-  height={40}
-  className="relative z-10 object-contain h-auto w-auto" // 🌟 h-auto w-auto를 추가해 비율 유지 경고 해결!
-  priority 
-/>
-          </div>
-          <span className="text-xl font-black italic tracking-tighter transition-all text-white">
-            AI Contents <span className="text-blue-500 group-hover:text-blue-400 transition-colors">Studio</span>
-          </span>
-        </Link>
-      </div>
+{/* 좌측 로고 영역: 이미지 하나로 통째로 처리할 때 */}
+<div className="flex items-center w-[240px] shrink-0">
+  <Link href="/" className="cursor-pointer z-[110] block">
+    {/* 🌟 메인 로고 파일의 가로세로 비율(예: 가로 150px, 세로 36px)을 그대로 헤더에 안착 */}
+    <Image 
+      src="/logobg.webp"  // 메인화면에서 쓰시는 그 이미지 경로 그대로 사용
+      alt="CreAIbox Logo" 
+      width={200}        // 헤더 높이에 맞게 가로폭 확보
+      height={30}        // h-20(80px) 헤더 안에서 가장 예쁘게 배치되는 높이
+      className="object-contain object-left" 
+      priority 
+    />
+  </Link>
+</div>
       
+      {/* 중앙 메뉴 영역 */}
       <div className="hidden lg:flex flex-1 justify-center items-center">
         <nav className="flex space-x-8">
           {menuItems.map((item) => (
@@ -152,28 +118,30 @@ export default function Header() {
         </nav>
       </div>
 
-      {/* 우측 유저 컨트롤 영역 */}
-      {/* 🌟 [레이아웃 밀림 해결] w-[160px] lg:w-[180px] 와 shrink-0을 가두어 내부 컨텐츠 크기 변화가 중앙 메뉴를 침범하지 못하도록 차단 */}
+      {/* 우측 유저 컨트롤 영역 (고정 폭 확보로 메뉴 밀림 현상 영구 차단) */}
       <div className="flex items-center justify-end gap-3 ml-auto w-[160px] lg:w-[180px] shrink-0">
         
-        {/* 🌟 [하이드레이션 오류 해결] 완전히 마운트되기 전(서버사이드 상태)에는 레이아웃 공간만 예약해두고 내부 UI 렌더링을 일시 정지 */}
-        {isMounted && !isLoading && (
+        {isMounted && (
           user ? (
+            /* 🌟 스포티파이 스타일 유저 프로필 아바타 버튼 (글자 노출 제거) */
             <div className="relative hidden lg:block" ref={dropdownRef}>
-              <button onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all group border border-transparent hover:bg-zinc-800">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-emerald-500 flex items-center justify-center text-white text-[10px] font-bold">
-                  {nickname ? nickname[0].toUpperCase() : (user.email ? user.email[0].toUpperCase() : "U")}
+              <button 
+                onClick={() => setIsProfileOpen(!isProfileOpen)} 
+                className="flex items-center gap-1.5 p-1 rounded-full transition-all border border-zinc-700 bg-zinc-900/50 hover:bg-zinc-800"
+              >
+                {/* 동그란 아바타 영역 (스포티파이의 M과 일치) */}
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-sm font-black tracking-wider">
+                  {userInitial}
                 </div>
-                <div className="flex items-center gap-2 leading-tight">
-                  <span className="text-[14px] font-bold text-zinc-200 group-hover:text-white truncate max-w-[80px]">
-                    {nickname || user.email?.split('@')[0] || "User"}
-                  </span>
-                </div>
-                <ChevronDown size={14} className={`transition-transform text-zinc-500 ${isProfileOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={14} className={`mr-1 transition-transform text-zinc-400 ${isProfileOpen ? 'rotate-180' : ''}`} />
               </button>
               
               {isProfileOpen && (
                 <div className="absolute right-0 mt-2 w-56 rounded-2xl shadow-2xl py-2 overflow-hidden z-[110] border bg-zinc-900 border-zinc-800 animate-in fade-in zoom-in duration-200">
+                  <div className="px-4 py-2 border-b border-zinc-800 mb-1">
+                    <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider">Logged in as</p>
+                    <p className="text-xs font-bold text-zinc-300 truncate">{user.email}</p>
+                  </div>
                   <Link href="/mypage" onClick={() => setIsProfileOpen(false)} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-all text-left text-zinc-300 hover:bg-zinc-800">
                     <UserIcon size={14} />내 프로필
                   </Link>
@@ -187,6 +155,7 @@ export default function Header() {
               )}
             </div>
           ) : (
+            /* 비로그인 상태 */
             <div className="hidden lg:flex items-center gap-4">
               <Link href="/login" className="text-base font-bold text-zinc-200 hover:text-white transition-colors">로그인</Link>
               <Link href="/signup">
