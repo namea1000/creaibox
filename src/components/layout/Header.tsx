@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   ChevronDown, User as UserIcon, Settings, LogOut, 
   Menu, X 
@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
+  const [nickname, setNickname] = useState<string>(""); 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
@@ -23,24 +24,42 @@ export default function Header() {
   const supabase = createClient();
   const router = useRouter();
 
+  // 🌟 프로필 테이블에서 닉네임 가져오는 최적화 함수
+  const fetchNickname = useCallback(async (userId: string) => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('nickname')
+        .eq('id', userId)
+        .single();
+      
+      if (profile?.nickname) {
+        setNickname(profile.nickname);
+      }
+    } catch (err) {
+      console.error("닉네임 로드 실패:", err);
+    }
+  }, [supabase]);
+
   useEffect(() => {
     setIsMounted(true);
 
-    // 🌟 [최적화] 페이지 이동 시 깜빡임 없이 세션을 가장 빠르게 가져오는 방식
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
+        await fetchNickname(session.user.id); // 🌟 로그인 유저 확인 즉시 닉네임 비동기 로드
       }
     };
     checkUser();
 
-    // 로그인, 로그아웃 등 실시간 상태 변화 감지
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setUser(session.user);
+        await fetchNickname(session.user.id);
       } else {
         setUser(null);
+        setNickname("");
       }
       
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
@@ -59,12 +78,13 @@ export default function Header() {
       document.removeEventListener("mousedown", handleClickOutside);
       subscription.unsubscribe();
     };
-  }, [supabase.auth, router]);
+  }, [supabase.auth, router, fetchNickname]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setIsProfileOpen(false);
     setUser(null);
+    setNickname("");
     router.push('/');
     router.refresh();
   };
@@ -82,13 +102,13 @@ export default function Header() {
     { label: 'Tools', href: '/studio/tools' }
   ];
 
-  // 스포티파이처럼 이메일 앞 글자 한 글자 따오기 (예: admin@test.com -> A)
+  // 🌟 이메일 기반 이니셜 생성 (닉네임 데이터가 오기 전 백업용으로 상주)
   const userInitial = user?.email ? user.email[0].toUpperCase() : "U";
 
   return (
-    <header className="h-20 border-b flex items-center px-6 lg:px-12 z-[100] fixed top-0 left-0 right-0 transition-all bg-[#0a0c10]/80 backdrop-blur-md border-zinc-800/50">
-      
-{/* 좌측 로고 영역: 이미지 하나로 통째로 처리할 때 */}
+    <header className="h-20 border-b flex items-center px-6 lg:px-12 z-[100] fixed top-0 left-0 right-0 transition-all bg-[#0a0c10]/80 backdrop-blur-md border-zinc-800/50">     
+
+      {/* 좌측 로고 영역: 이미지 하나로 통째로 처리할 때 */}
 <div className="flex items-center w-[240px] shrink-0">
   <Link href="/" className="cursor-pointer z-[110] block">
     {/* 🌟 메인 로고 파일의 가로세로 비율(예: 가로 150px, 세로 36px)을 그대로 헤더에 안착 */}
@@ -96,13 +116,14 @@ export default function Header() {
       src="/logobg.webp"  // 메인화면에서 쓰시는 그 이미지 경로 그대로 사용
       alt="CreAIbox Logo" 
       width={200}        // 헤더 높이에 맞게 가로폭 확보
-      height={30}        // h-20(80px) 헤더 안에서 가장 예쁘게 배치되는 높이
+      height={36}        // h-20(80px) 헤더 안에서 가장 예쁘게 배치되는 높이
       className="object-contain object-left" 
       priority 
     />
   </Link>
 </div>
-      
+
+
       {/* 중앙 메뉴 영역 */}
       <div className="hidden lg:flex flex-1 justify-center items-center">
         <nav className="flex space-x-8">
@@ -118,18 +139,16 @@ export default function Header() {
         </nav>
       </div>
 
-      {/* 우측 유저 컨트롤 영역 (고정 폭 확보로 메뉴 밀림 현상 영구 차단) */}
+      {/* 우측 유저 컨트롤 영역 */}
       <div className="flex items-center justify-end gap-3 ml-auto w-[160px] lg:w-[180px] shrink-0">
         
         {isMounted && (
           user ? (
-            /* 🌟 스포티파이 스타일 유저 프로필 아바타 버튼 (글자 노출 제거) */
             <div className="relative hidden lg:block" ref={dropdownRef}>
               <button 
                 onClick={() => setIsProfileOpen(!isProfileOpen)} 
                 className="flex items-center gap-1.5 p-1 rounded-full transition-all border border-zinc-700 bg-zinc-900/50 hover:bg-zinc-800"
               >
-                {/* 동그란 아바타 영역 (스포티파이의 M과 일치) */}
                 <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-sm font-black tracking-wider">
                   {userInitial}
                 </div>
@@ -138,10 +157,20 @@ export default function Header() {
               
               {isProfileOpen && (
                 <div className="absolute right-0 mt-2 w-56 rounded-2xl shadow-2xl py-2 overflow-hidden z-[110] border bg-zinc-900 border-zinc-800 animate-in fade-in zoom-in duration-200">
-                  <div className="px-4 py-2 border-b border-zinc-800 mb-1">
-                    <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider">Logged in as</p>
-                    <p className="text-xs font-bold text-zinc-300 truncate">{user.email}</p>
+                  
+                  {/* 🌟 [수정 포인트] 이메일 밑에 닉네임 레이아웃 추가 */}
+                  <div className="px-4 py-2.5 border-b border-zinc-800/60 mb-1 bg-zinc-950/40">
+                    <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Logged in as</p>
+                    <p className="text-xs font-bold text-zinc-200 truncate mt-0.5">{user.email}</p>
+                    {/* 닉네임이 존재할 때만 하단에 엣지있게 노출 */}
+                    {nickname && (
+                      <div className="mt-1.5 pt-1.5 border-t border-zinc-850 flex items-center gap-1.5">
+                        <span className="text-[9px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded-md font-bold">NICK</span>
+                        <span className="text-xs font-black text-emerald-400 truncate">{nickname}</span>
+                      </div>
+                    )}
                   </div>
+
                   <Link href="/mypage" onClick={() => setIsProfileOpen(false)} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold transition-all text-left text-zinc-300 hover:bg-zinc-800">
                     <UserIcon size={14} />내 프로필
                   </Link>
@@ -155,7 +184,6 @@ export default function Header() {
               )}
             </div>
           ) : (
-            /* 비로그인 상태 */
             <div className="hidden lg:flex items-center gap-4">
               <Link href="/login" className="text-base font-bold text-zinc-200 hover:text-white transition-colors">로그인</Link>
               <Link href="/signup">
