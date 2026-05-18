@@ -13,10 +13,27 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Creaibox | AI Contents Studio",
-  description: "가장 스마트한 AI 콘텐츠 제작 스튜디오, Creaibox",
+export const metadata = {
+  title: "크리에이아이박스 (CreAIbox) | 올인원 AI 콘텐츠 스튜디오",
+  description: "글쓰기, 이미지, 비디오, 뮤직 생성부터 트렌드 분석까지. 상상력을 현실로 만드는 가장 똑똑한 AI 상자, CreAIbox를 경험해 보세요.",
+  openGraph: {
+    title: "크리에이아이박스 (CreAIbox)",
+    description: "상상력을 현실로 만드는 가장 똑똑한 올인원 AI 콘텐츠 플랫폼",
+    url: "https://creaibox.com",
+    siteName: "CreAIbox",
+    images: [
+      {
+        url: "https://creaibox.com/logobg.webp", // 🌟 카톡창에 보여줄 로고 이미지 경로!
+        width: 1200,
+        height: 630,
+        alt: "CreAIbox 메인 로고",
+      },
+    ],
+    locale: "ko_KR",
+    type: "website",
+  },
 };
+
 
 export default function RootLayout({
   children,
