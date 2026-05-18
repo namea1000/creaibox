@@ -85,14 +85,6 @@ const handleSocialLogin = async (provider: Provider) => {
             네이버로 시작하기
           </button>
 
-          {/* 애플 */}
-          <button 
-            onClick={() => handleSocialLogin('apple')}
-            className="w-full flex items-center justify-center gap-3 bg-zinc-900 hover:bg-zinc-800 text-white py-3 rounded-full font-bold text-sm transition-all border border-zinc-700"
-          >
-            <Apple size={18} fill="white" />
-            Apple로 계속하기
-          </button>
         </div>
 
         {/* 구분선 */}

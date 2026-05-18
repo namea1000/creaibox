@@ -5,42 +5,43 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Mail, Globe, MessageSquare, Video, ArrowUpRight } from 'lucide-react';
 
-// 🌟 스위치를 떼버렸으므로 Props(FooterProps)를 제거했습니다.
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
-  // 🌟 원본 레이블 및 주소 유지
+  // 🌟 헤더 파일의 menuItems 명칭과 href 주소를 완벽하게 참조하여 3대 섹션으로 재배치했습니다.
   const footerSections = [
     {
-      title: "Product",
+      title: "Core Studio",
       links: [
-        { label: "Writing Studio", href: "/studio/writing" },
-        { label: "Visuals Studio", href: "/studio/visuals" },
-        { label: "Music Studio", href: "/studio/music" },
-        { label: "Marketplace", href: "/marketplace" },
+        { label: "콘텐츠 기획", href: "/studio/planning" },
+        { label: "글쓰기", href: "/studio/writing" },
+        { label: "이미지", href: "/studio/image" },
+        { label: "비디오", href: "/studio/video" },
+        { label: "뮤직", href: "/studio/music" },
       ]
     },
     {
-      title: "Company",
+      title: "Trends & Tools",
+      links: [
+        { label: "블로그", href: "/studio/blog" },
+        { label: "키워드 트랜드", href: "/studio/keyword" }, // 헤더 원본 오타(트랜드) 일치화
+        { label: "유튜브 트랜드", href: "/studio/youtube" }, // 헤더 원본 오타(트랜드) 일치화
+        { label: "리포트", href: "/studio/report" },
+        { label: "Tools", href: "/studio/tools" },
+      ]
+    },
+    {
+      title: "Company & Support",
       links: [
         { label: "About Us", href: "/about" },
-        { label: "Community", href: "/community" },
-        { label: "Careers", href: "/careers" },
-        { label: "Blog", href: "/blog" },
-      ]
-    },
-    {
-      title: "Support",
-      links: [
-        { label: "Documentation", href: "/docs" },
-        { label: "API Reference", href: "/api-ref" },
+        { label: "인포센터", href: "/infocenter" },
         { label: "Help Center", href: "/help" },
-        { label: "Status", href: "/status" },
+        { label: "Privacy Policy", href: "/privacy" },
+        { label: "Terms of Service", href: "/terms" },
       ]
     }
   ];
 
-  // 🌟 다크모드 전용 컬러로 고정
   const bgColor = "bg-[#0a0c10]";
   const borderColor = "border-zinc-800/50";
   const textColor = "text-zinc-400";
@@ -52,21 +53,20 @@ export default function Footer() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
           <div className="lg:col-span-2 space-y-6">
-            {/* 로고 영역 - 다크모드 텍스트 고정 */}
+            {/* 로고 영역 - 사장님의 메인 브랜드명 'CreAIbox' 반영 */}
             <Link href="/" className="flex items-center gap-3 group">
               <div className="relative w-8 h-8">
                 <Image src="/logobg.webp" alt="Footer Logo" fill className="object-contain" />
               </div>
               <span className={`text-xl font-black italic tracking-tighter ${titleColor}`}>
-                AI Contents <span className="text-blue-500">Studio</span>
+                CreAI<span className="text-blue-500">box</span>
               </span>
             </Link>
             <p className={`text-sm leading-relaxed max-w-sm ${textColor}`}>
-              상상력을 현실로 만드는 가장 빠른 방법. <br />
-              최첨단 AI 기술을 활용한 통합 콘텐츠 제작 환경을 경험하세요.
+              상상력을 현실로 만드는 가장 똑똑한 방법. <br />
+              올인원 AI 콘텐츠 생성 플랫폼, 크리에이아이박스입니다.
             </p>
             <div className="flex gap-4">
-              {/* 아이콘 버튼 스타일 다크모드 고정 */}
               {[Globe, MessageSquare, Video, Mail].map((Icon, idx) => (
                 <button 
                   key={idx} 
@@ -78,7 +78,7 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* 섹션 반복 렌더링 - 원본 구조 보존 */}
+          {/* 섹션 반복 렌더링 - 헤더 참조 데이터 기반 구조화 */}
           {footerSections.map((section) => (
             <div key={section.title} className="space-y-6">
               <h4 className={`text-xs font-black uppercase tracking-[0.2em] ${titleColor}`}>
@@ -98,10 +98,10 @@ export default function Footer() {
           ))}
         </div>
 
-        {/* 하단 카피라이트 및 법적 고지 - 보더 색상 고정 */}
+        {/* 하단 카피라이트 및 법적 고지 - 회사 공식 이름인 'CreAI Labs' 반영 */}
         <div className={`pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-6 ${borderColor}`}>
           <div className={`text-xs font-medium ${textColor}`}>
-            © {currentYear} <span className="font-bold">AI Contents Studio</span>. All rights reserved.
+            © {currentYear} <span className="font-bold">CreAI Labs</span>. All rights reserved.
           </div>
           <div className="flex gap-8">
             <Link href="/privacy" className={`text-xs font-bold transition-colors hover:text-blue-500 ${textColor}`}>Privacy Policy</Link>
