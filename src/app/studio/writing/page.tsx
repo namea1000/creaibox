@@ -23,10 +23,11 @@ export default function WritingStudioPage() {
     },
     {
       id: 'blog',
-      title: '블로그 글쓰기',
+      title: '네이버 블로그 글쓰기',
       description: '네이버, 티스토리 등 외부 블로그를 위한 SEO 기반 맞춤형 원고 생성.',
       icon: <BookOpen className="text-emerald-500" size={32} />,
       color: 'group-hover:border-emerald-500/50',
+      link: '/studio/writing/naver/home', // 🌟 이동할 경로 추가
       tag: 'External'
     },
     {
