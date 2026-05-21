@@ -18,7 +18,7 @@ export const metadata = {
   description: "글쓰기, 이미지, 비디오, 뮤직 생성부터 트렌드 분석까지. 상상력을 현실로 만드는 가장 똑똑한 AI 상자, CreAIbox를 경험해 보세요.",
   openGraph: {
     title: "크리에이아이박스 (CreAIbox)",
-    description: "상상력을 현실로 만드는 가장 똑똑한 올인원 AI 콘텐츠 플랫폼",
+    description: "상상력을 현실로 만드는 가장 똑똑한 올인원 AI 콘텐츠 플랫폼 | 올인원 AI 콘텐츠 스튜디오 ",
     url: "https://creaibox.com",
     siteName: "CreAIbox",
     images: [
