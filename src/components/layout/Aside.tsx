@@ -2,19 +2,10 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Script from 'next/script';
 import { 
   Handshake, Building2, LayoutTemplate, Send, 
   BellRing, AlertTriangle, ArrowRight, MessageCircle 
 } from 'lucide-react';
-
-// 🌟 [빨간 줄 파괴 광선] window 객체에 Kakao가 존재함을 타입스크립트에게 강제로 인지시킵니다.
-declare global {
-  interface Window {
-    Kakao?: any;
-    kakaoAsyncInit?: () => void;
-  }
-}
 
 export default function Aside() {
   const asideBg = "bg-[#0d1117] border-zinc-800/50";
@@ -24,21 +15,6 @@ export default function Aside() {
   return (
     <aside className={`w-72 border-l flex flex-col transition-all duration-300 shrink-0 hidden xl:flex ${asideBg}`}>
       
-      {/* 📡 카카오톡 채널 SDK 안전 비동기 로딩 파이프라인 */}
-      <Script
-        id="kakao-js-sdk"
-        src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.channel.min.js"
-        integrity="sha384-8oNFBbAHWVovcMLgR+mLbxqwoucixezSAzniBcjnEoumhfIbMIg4DrVsoiPEtlnt"
-        crossOrigin="anonymous"
-        onLoad={() => {
-          if (window.Kakao) {
-            window.Kakao.Channel.createAddChannelButton({
-              container: '#kakao-talk-channel-add-button',
-            });
-          }
-        }}
-      />
-
       <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
         
         {/* 1. 비즈니스 제안 섹션 */}
@@ -118,28 +94,24 @@ export default function Aside() {
           </Link>
         </section>
 
-{/* 🌟 [최종 완공] 렉 없고 크기 조절 자유로운 직격 링크 카카오 배너 */}
+        {/* [해결 완료] 카카오톡 채널 직격 링크 배너 (SDK 오류 원천 차단) */}
         <section className="pt-5 border-t border-zinc-800/40 flex flex-col items-center justify-center gap-3">
-          <p className={`text-[14px] font-black uppercase tracking-[0.2em] ${subTextColor}`}>
-            CreAIbox 카카오톡 채널
+          <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${subTextColor}`}>
+            CreAIbox Kakao Channel
           </p>
           
-          {/* 사장님 채널 링크 주소 장착 / 클릭 시 새 창으로 직격 이동 */}
           <a 
             href="http://pf.kakao.com/_RxdxmsX" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="w-full max-w-[90%] flex items-center justify-center gap-2.5 py-3 px-4 bg-[#FEE500] text-[#191919] text-sm font-black rounded-xl shadow-lg shadow-yellow-500/5 hover:scale-[1.03] active:scale-[0.98] transition-all text-center"
+            className="w-full flex items-center justify-center gap-2.5 py-3.5 px-4 bg-[#FEE500] text-[#191919] text-sm font-black rounded-xl shadow-lg shadow-yellow-900/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
-            {/* 카카오 심볼 역할을 해줄 말풍선 아이콘 (lucide-react 기본 장착 활용) */}
-            <MessageCircle size={16} className="fill-[#191919] text-[#191919]" />
-            <span>CreAIbox 채널 추가하기</span>
+            <MessageCircle size={16} className="fill-[#191919]" />
+            <span>카카오톡 채널 추가하기</span>
           </a>
         </section>
-
       </div>
 
-      {/* 푸터 정보 */}
       <div className="p-6 border-t border-zinc-800/50">
         <p className={`text-[10px] text-center ${subTextColor} font-bold`}>
           © CreAIbox - AI Contents Studio <br />

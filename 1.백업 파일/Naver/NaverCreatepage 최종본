@@ -1,32 +1,12 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import NaverCreateTab from "@/components/writing/naver/tabs/NaverCreateTab";
 import { createClient } from '@/utils/supabase/client';
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import type { User } from '@supabase/supabase-js';
-
-const AUTH_RETRY_DELAY_MS = 700;
-const AUTH_RETRY_ATTEMPTS = 3;
 
 export default function NaverCreatePage() {
-  const supabase = useMemo(() => createClient(), []);
-
-  const resolveAuthUser = async (): Promise<User | null> => {
-    for (let attempt = 0; attempt < AUTH_RETRY_ATTEMPTS; attempt += 1) {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) return session.user;
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) return user;
-
-      if (attempt < AUTH_RETRY_ATTEMPTS - 1) {
-        await new Promise((resolve) => setTimeout(resolve, AUTH_RETRY_DELAY_MS));
-      }
-    }
-
-    return null;
-  };
+  const supabase = createClient();
 
   // 📊 새 장부(create) 테이블 매칭 핵심 상태 변수
   const [targetKeyword, setTargetKeyword] = useState("");
@@ -39,13 +19,11 @@ export default function NaverCreatePage() {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [useSearch, setUseSearch] = useState(true);
   const [userNickname, setUserNickname] = useState<string>("");
-  const [activeUser, setActiveUser] = useState<User | null>(null);
 
   useEffect(() => {
     const getProfile = async () => {
-      const user = await resolveAuthUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        setActiveUser(user);
         const { data: prof } = await supabase.from('profiles').select('nickname').eq('id', user.id).single();
         if (prof?.nickname) setUserNickname(prof.nickname);
       }
@@ -65,21 +43,11 @@ export default function NaverCreatePage() {
 
   // 💾 [부모 총괄] 무한 루프 렉 파괴형 실시간 직격 저장 엔진
   const saveToSupabase = async (currentContent: string, currentTitle: string, isManual: boolean = false) => {
-    if (!currentContent || currentContent.length < 10) {
-      alert("❌ 저장할 본문이 아직 충분히 생성되지 않았습니다.");
-      return;
-    }
+    if (!currentContent || currentContent.length < 10) return;
 
     try {
-      const user = activeUser || await resolveAuthUser();
-      if (!user) {
-        alert("❌ 로그인 세션을 확인하지 못해 저장을 진행하지 못했습니다. 다시 로그인했는지 확인해 주세요.");
-        return;
-      }
-
-      if (!activeUser) {
-        setActiveUser(user);
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
       const finalAuthor = userNickname || user.email?.split('@')[0] || "Unknown";
 
@@ -90,16 +58,9 @@ export default function NaverCreatePage() {
         title: currentTitle || title || '제목 없음',
         content: currentContent,
         status: 'saved',
-        categories: [postType || 'AI 자동 포스팅'],
-        tags: [selectedTone || '기본 말투'],
-        post_type: 'create',
-        target_keyword: targetKeyword || null,
-        selected_tone: selectedTone || null,
-        word_count_goal: Number(wordCountGoal) || null,
-        source_mode: null,
-        source_url: null,
-        source_text: null,
-        rewrite_strategy: null
+        categories: [postType || 'AI 자동 포스팅'], 
+        tags: [selectedTone || '기본 말투'],         
+        post_type: 'create'
       };
 
       const { error } = await supabase.from('writing_naver_posts').insert([payload]).select();
@@ -188,4 +149,3 @@ export default function NaverCreatePage() {
       />
     </div>
   );
-}

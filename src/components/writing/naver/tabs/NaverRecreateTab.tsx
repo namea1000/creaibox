@@ -1,303 +1,428 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { createClient } from '@/utils/supabase/client';
-import NaverEditorCanvas from "@/components/writing/naver/NaverEditorCanvas";
+import React, { useMemo, useState } from 'react';
+import Link from 'next/link';
+import ReactMarkdown, { type Components } from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import NaverAnalysisTower from "@/components/writing/naver/NaverAnalysisTower";
-import { Cpu, Link2, FileText, Zap, RefreshCw, Sparkles } from 'lucide-react';
+import { Cpu, Link2, FileText, Zap, RefreshCw, Sparkles, ChevronDown, Copy, Download, ExternalLink, Eye, FileText as FileTextIcon } from 'lucide-react';
 
-interface ImageBlock { id: string; url: string; caption: string; }
 interface KeywordFrequency { word: string; count: number; density: number; status: 'good' | 'warning' | 'danger'; }
+interface SourceAnalysisResult { keywords: string[]; topic: string; summaryPoints: string[]; }
 
 interface NaverRecreateTabProps {
-  targetKeyword: string; setTargetKeyword: (v: string) => void;
-  title: string; setTitle: (v: string) => void;
-  content: string; setContent: (v: string) => void;
-  isAiLoading: boolean; handleAiRecreate: () => void;
-  sourceMode: 'url' | 'text'; setSourceMode: (v: 'url' | 'text') => void;
-  sourceUrl: string; setSourceUrl: (v: string) => void;
-  sourceText: string; setSourceText: (v: string) => void;
+targetKeyword: string; setTargetKeyword: (v: string) => void;
+title: string; setTitle: (v: string) => void;
+content: string; setContent: (v: string) => void;
+isAiLoading: boolean; handleAiRecreate: () => void;
+sourceMode: 'url' | 'text'; setSourceMode: (v: 'url' | 'text') => void;
+sourceUrl: string; setSourceUrl: (v: string) => void;
+sourceText: string; setSourceText: (v: string) => void;
+selectedTone: string; setSelectedTone: (v: string) => void;
+wordCountGoal: string; setWordCountGoal: (v: string) => void;
+handleSavePostToSupabase: () => Promise<boolean | void>;
+sourceAnalysis: SourceAnalysisResult;
 }
 
 export default function NaverRecreateTab({
-  targetKeyword, setTargetKeyword, title, setTitle, content, setContent,
-  isAiLoading, handleAiRecreate, sourceMode, setSourceMode, sourceUrl, setSourceUrl, sourceText, setSourceText
+targetKeyword, setTargetKeyword, title, content,
+isAiLoading, handleAiRecreate, sourceMode, setSourceMode, sourceUrl, setSourceUrl, sourceText, setSourceText,
+selectedTone, setSelectedTone, wordCountGoal, setWordCountGoal, handleSavePostToSupabase, sourceAnalysis
 }: NaverRecreateTabProps) {
-  
-  const supabase = createClient();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const [currentPostId, setCurrentPostId] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [images, setImages] = useState<ImageBlock[]>([]);
-  const [isEnhancing, setIsEnhancing] = useState(false);
+const [isSaving, setIsSaving] = useState(false);
+const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+const charCount = content.length;
 
-  const [similarityScore, setSimilarityScore] = useState(100);
-  const [seoScore, setSeoScore] = useState(0);
-  const [seoChecks, setSeoChecks] = useState({ titleKeyword: false, contentDensity: false, duplicateSafe: false, structureCheck: false });
-  const [isDensitySafe, setIsDensitySafe] = useState(true); 
-  const [nounRatio, setNounRatio] = useState(0);
-  const [frequencies, setFrequencies] = useState<KeywordFrequency[]>([]);
-  const [naverBotScore, setNaverBotScore] = useState(0);
+const analysisMetrics = useMemo(() => {
+if (title === "" && content === "") {
+return {
+similarityScore: 100,
+seoScore: 0,
+seoChecks: { titleKeyword: false, contentDensity: false, duplicateSafe: false, structureCheck: false },
+isDensitySafe: true,
+nounRatio: 0,
+frequencies: [] as KeywordFrequency[],
+naverBotScore: 0
+};
+}
 
-  const charCount = content.length + images.reduce((acc, img) => acc + img.caption.length, 0);
+const hasTitleKeyword = targetKeyword ? title.toLowerCase().includes(targetKeyword.toLowerCase()) : false;
+const count = targetKeyword ? (content.match(new RegExp(targetKeyword, 'gi')) || []).length : 0;
+const hasGoodDensity = count >= 3 && count <= 7;
+const hasSubHeadings = content.includes('##') || content.includes('###');
+const similarityScore = Math.max(12, 95 - Math.floor(content.length / 25));
+const duplicateSafe = similarityScore < 45;
 
-  // 📡 실시간 원고 세션 복원 (DB 규격 매칭 적용)
-  useEffect(() => {
-    async function fetchLatestRecreateDraft() {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+let seoScore = 10;
+if (hasTitleKeyword) seoScore += 30;
+if (hasGoodDensity) seoScore += 25;
+if (duplicateSafe) seoScore += 25;
+if (hasSubHeadings) seoScore += 10;
 
-        const { data, error } = await supabase
-          .from('writing_naver_posts')
-          .select('*')
-          .eq('tab_type', 'create') // DB 제약 조건 일치화
-          .eq('user_id', user.id)
-          .order('updated_at', { ascending: false });
+const activeKeyword = targetKeyword || "추출 단어";
+const frequencies: KeywordFrequency[] = [
+{ word: activeKeyword, count, density: Math.min(100, count * 6.5), status: count >= 3 && count <= 5 ? 'good' : count > 5 ? 'danger' : 'warning' },
+{ word: "재창조", count: content.includes("재창조") ? 3 : 0, density: content.includes("재창조") ? 3.5 : 0, status: 'good' },
+{ word: "알고리즘", count: content.includes("알고리즘") ? 2 : 0, density: content.includes("알고리즘") ? 2.5 : 0, status: 'good' },
+{ word: "문맥", count: content.includes("문맥") ? 2 : 0, density: content.includes("문맥") ? 2.1 : 0, status: 'good' }
+];
 
-        if (!error && data && data.length > 0) {
-          // meta_data 속에 수집된 재창조 서랍 원고만 매칭 복원
-          const recreateDraft = data.find(item => item.meta_data?.sub_type === 'recreate');
-          if (recreateDraft) {
-            setCurrentPostId(String(recreateDraft.id));
-            setTitle(recreateDraft.title || "");
-            setContent(recreateDraft.content || "");
-            if (recreateDraft.meta_data) {
-              setTargetKeyword(recreateDraft.meta_data.target_keyword || "");
-              setSourceMode(recreateDraft.meta_data.source_mode || "url");
-              setSourceUrl(recreateDraft.meta_data.source_url || "");
-              setSourceText(recreateDraft.meta_data.source_text || "");
-            }
-          }
-        }
-      } catch (err) {
-        console.log("세션 복원 스캔 대기");
-      }
-    }
-    fetchLatestRecreateDraft();
-  }, []);
+const nounRatio = Math.min(65, 52 + (content.length % 11));
+let naverBotScore = 15;
+if (count >= 3 && count <= 5) naverBotScore += 35;
+if (nounRatio >= 55 && nounRatio <= 65) naverBotScore += 25;
+if (hasSubHeadings) naverBotScore += 25;
 
-  // 🤖 5단 철통 연산 싱크로 가동
-  useEffect(() => {
-    if (title === "" && content === "") {
-      setSeoScore(0); setSimilarityScore(100);
-      setSeoChecks({ titleKeyword: false, contentDensity: false, duplicateSafe: false, structureCheck: false });
-      setFrequencies([]); setNounRatio(0); setNaverBotScore(0); setIsDensitySafe(true);
-      return;
-    }
+return {
+similarityScore,
+seoScore,
+seoChecks: {
+titleKeyword: hasTitleKeyword,
+contentDensity: hasGoodDensity,
+duplicateSafe,
+structureCheck: hasSubHeadings
+},
+isDensitySafe: count <= 5,
+nounRatio,
+frequencies,
+naverBotScore
+};
+}, [content, targetKeyword, title]);
 
-    const hasTitleKeyword = targetKeyword ? title.toLowerCase().includes(targetKeyword.toLowerCase()) : false;
-    const count = targetKeyword ? (content.match(new RegExp(targetKeyword, 'gi')) || []).length : 0;
-    const hasGoodDensity = count >= 3 && count <= 7;
-    const hasSubHeadings = content.includes('##') || content.includes('###');
-    
-    const calculatedSimilarity = Math.max(12, 95 - Math.floor(content.length / 25));
-    const isSafeFromDuplicate = calculatedSimilarity < 45; 
-    
-    setSimilarityScore(calculatedSimilarity);
-    setSeoChecks({
-      titleKeyword: hasTitleKeyword,
-      contentDensity: hasGoodDensity,
-      duplicateSafe: isSafeFromDuplicate,
-      structureCheck: hasSubHeadings
-    });
+const posRatio = useMemo(() => {
+const noun = analysisMetrics.nounRatio;
+const verb = noun > 0 ? Math.max(15, 32 - (content.length % 4)) : 0;
 
-    let score = 10;
-    if (hasTitleKeyword) score += 30;
-    if (hasGoodDensity) score += 25;
-    if (isSafeFromDuplicate) score += 25;
-    if (hasSubHeadings) score += 10;
-    setSeoScore(score);
+return {
+noun,
+verb,
+other: noun === 0 ? 0 : 100 - noun - verb
+};
+}, [analysisMetrics.nounRatio, content.length]);
 
-    setIsDensitySafe(count <= 5); 
-    const activeKeyword = targetKeyword || "추출 단어";
-    setFrequencies([
-      { word: activeKeyword, count: count, density: Math.min(100, count * 6.5), status: count >= 3 && count <= 5 ? 'good' : count > 5 ? 'danger' : 'warning' },
-      { word: "재창조", count: content.includes("재창조") ? 3 : 0, density: content.includes("재창조") ? 3.5 : 0, status: 'good' },
-      { word: "알고리즘", count: content.includes("알고리즘") ? 2 : 0, density: content.includes("알고리즘") ? 2.5 : 0, status: 'good' },
-      { word: "문맥", count: content.includes("문맥") ? 2 : 0, density: content.includes("문맥") ? 2.1 : 0, status: 'good' }
-    ]);
+const normalizedKeywords = Array.from(
+new Set(sourceAnalysis.keywords.map(keyword => keyword.trim()).filter(Boolean))
+).slice(0, 8);
 
-    const calculatedNoun = Math.min(65, 52 + (content.length % 11));
-    setNounRatio(calculatedNoun);
+const normalizedSummaryPoints = sourceAnalysis.summaryPoints
+.map(point => point.trim())
+.filter(Boolean)
+.slice(0, 4);
 
-    let naverScore = 15;
-    if (count >= 3 && count <= 5) naverScore += 35;
-    if (calculatedNoun >= 55 && calculatedNoun <= 65) naverScore += 25;
-    if (hasSubHeadings) naverScore += 25;
-    setNaverBotScore(naverScore);
-
-  }, [title, content, targetKeyword, images]);
-
-  const posRatio = {
-    noun: nounRatio,
-    verb: nounRatio > 0 ? Math.max(15, 32 - (content.length % 4)) : 0,
-    get other() { return this.noun === 0 ? 0 : 100 - this.noun - this.verb; }
-  };
-
-  // 💾 [DB 하이패스 개조] 코어 세이브 트랜잭션 함수
-  const saveToSupabaseEngine = async (forcedTitle?: string, forcedContent?: string) => {
-    const activeTitle = forcedTitle || title || '재창조 원고';
-    const activeContent = forcedContent || content;
-    
-    if (!activeTitle.trim() && !activeContent.trim()) return null;
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-
-      const payload = {
-  user_id: user.id,
-  title: title || '재창조 완공 제목',
-  content: content,
-  post_type: 'recreate', // 🌟 재창조 글쓰기 서랍 지정
-  status: 'completed',
-  updated_at: new Date().toISOString()
+const customMarkdownComponents: Components = {
+h1: ({ children }) => (
+<h2 className="text-[24px] font-black text-[#111111] mt-12 mb-2.5 font-sans tracking-tight border-b-2 border-[#00c73c] pb-3 flex items-center gap-2">
+<span>📌</span> {children}
+</h2>
+),
+h2: ({ children }) => (
+<h3 className="text-[20px] font-extrabold text-[#000000] mt-10 mb-2.5 font-sans tracking-tight flex items-center gap-2">
+<span className="w-[5px] h-[22px] bg-[#00c73c] rounded-full inline-block"></span>
+{children}
+</h3>
+),
+h3: ({ children }) => (
+<h4 className="text-[17px] font-bold text-[#1a1a1a] mt-8 mb-2 font-sans tracking-tight flex items-center">
+{children}
+</h4>
+),
+p: ({ children }) => {
+if (!children || children === "\n") return <div className="h-6" />;
+return (
+<p className="text-[16px] leading-[2.2] text-[#2c2c2c] mb-6 font-sans font-normal tracking-wide whitespace-pre-line">
+{children}
+</p>
+);
+},
+blockquote: ({ children }) => (
+<div className="my-8 p-6 bg-[#f9f9f9] border-l-[5px] border-[#00c73c] rounded-r-2xl relative shadow-inner overflow-hidden">
+<span className="absolute -top-1 left-2 text-[52px] text-[#00c73c]/15 font-serif select-none">“</span>
+<div className="pl-6 text-[15px] font-semibold text-[#444444] leading-[1.9] font-sans italic">
+{children}
+</div>
+<span className="absolute -bottom-8 right-4 text-[52px] text-[#00c73c]/15 font-serif select-none">”</span>
+</div>
+),
+hr: () => (
+<div className="naver-divider flex items-center justify-center my-10 gap-4">
+<div className="h-[1px] bg-zinc-200 flex-1"></div>
+<span className="text-base select-none tracking-widest text-[#00c73c] font-black">🍀✨🍀</span>
+<div className="h-[1px] bg-zinc-200 flex-1"></div>
+</div>
+),
+ul: ({ children }) => (
+<ul className="list-disc pl-6 my-6 space-y-3.5 text-[15px] text-[#333333] font-sans">
+{children}
+</ul>
+),
+ol: ({ children }) => (
+<ol className="list-decimal pl-6 my-6 space-y-3.5 text-[15px] text-[#333333] font-sans">
+{children}
+</ol>
+),
+li: ({ children }) => (
+<li className="leading-relaxed font-medium tracking-wide">{children}</li>
+),
+strong: ({ children }) => (
+<strong className="font-extrabold text-[#000000] bg-[#eefcf2] px-1 rounded-sm border-b border-[#00c73c]/30">
+{children}
+</strong>
+)
 };
 
-      const { data, error } = await supabase
-        .from('writing_naver_posts')
-        .insert([payload])
-        .select();
-        
-      if (error) throw error;
-      if (data && data[0]) {
-        return String(data[0].id);
-      }
-    } catch (err) {
-      console.error("데이터 저장 차단 로그 원인:", err);
-      return null;
-    }
-    return null;
-  };
+const handleManualSave = async () => {
+setIsSaving(true);
+try {
+await handleSavePostToSupabase();
+} catch {
+alert("저장 중 세션 에러 발생");
+} finally {
+setIsSaving(false);
+}
+};
 
-  // 📡 AI 생성 완료 감지 실시간 자동 임시저장 리스너
-  useEffect(() => {
-    if (!isAiLoading && content && content.length > 10) {
-      console.log("📡 AI 재창조 원고 완공 확인! DB 우회 하이패스 저장 트랙 가동...");
-      saveToSupabaseEngine(title, content).then((resId) => {
-        if (resId) {
-          alert("✅ AI 재창조 원고 빌드 완료! 중복 유사도 필터를 분쇄한 새 문서가 장부에 자동으로 안전 적재되었습니다!");
-        }
-      });
-    }
-  }, [isAiLoading]);
+const handleCopy = async () => {
+if (!content) {
+alert("복사할 재창조 결과 원고가 아직 없습니다.");
+return;
+}
 
-  const handleManualSave = async () => {
-    setIsSaving(true);
-    try {
-      await saveToSupabaseEngine(title, content);
-      alert(`🎉 네이버 재창조 장부가 수동으로 완벽 적재 보존되었습니다!`);
-    } catch (e) {
-      alert("저장 중 세션 에러 발생");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+await navigator.clipboard.writeText(`제목: ${title}\n\n${content}`);
+alert("📋 재창조 결과 원고가 복사되었습니다!");
+};
 
-  const handleEnhanceContent = (type: 'expand' | 'tone' | 'correct') => {
-    if (!content) return alert("교정할 본문 내용을 먼저 입력해 주세요!");
-    setIsEnhancing(true);
-    setTimeout(() => {
-      if (type === 'expand') setContent(content + `\n\n[AI 문장 확장] 본 시스템이 가동하는 알고리즘 패턴은 독창적인 서사를 추가 부여합니다.`);
-      else if (type === 'tone') setContent(content + `\n\n[AI 톤 변환] 인플루언서 전문 에디션 문체로 변환되었습니다.`);
-      else if (type === 'correct') alert("맞춤법 교정 완료!");
-      setIsEnhancing(false);
-    }, 1000);
-  };
+const downloadTxt = () => {
+const element = document.createElement("a");
+const file = new Blob([`제목: ${title}\n\n${content}`], { type: 'text/plain;charset=utf-8' });
+element.href = URL.createObjectURL(file);
+element.download = `${targetKeyword || 'recreated_post'}.txt`;
+document.body.appendChild(element);
+element.click();
+document.body.removeChild(element);
+};
 
-  return (
-    <div className="w-full min-h-screen bg-[#0a0c10] text-zinc-100 pt-4 overflow-y-auto relative">
-      <div className="max-w-[1700px] mx-auto px-4 py-4 h-auto min-h-[calc(100vh-100px)] overflow-visible grid grid-cols-1 lg:grid-cols-12 gap-4 relative z-10">
-        
-        {/* 1면: 믹서 컨트롤 타워 */}
-        <div className="lg:col-span-3 flex flex-col gap-4 h-fit">
-          <div className="p-5 rounded-2xl border border-zinc-800 bg-zinc-900/30 backdrop-blur-md space-y-4">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-blue-400 flex items-center gap-1.5">
-              <Cpu size={14} /> AI Recreate Control
-            </h3>
-            
-            <div className="grid grid-cols-2 gap-1.5 p-1 bg-zinc-950 rounded-xl border border-zinc-850">
-              <button type="button" onClick={() => setSourceMode('url')} className={`py-2 text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${sourceMode === 'url' ? 'bg-zinc-800 text-emerald-400 border border-zinc-700/60' : 'text-zinc-500 hover:text-zinc-300'}`}>
-                <Link2 size={13} /> URL 주소 추출
-              </button>
-              <button type="button" onClick={() => setSourceMode('text')} className={`py-2 text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${sourceMode === 'text' ? 'bg-zinc-800 text-blue-400 border border-zinc-700/60' : 'text-zinc-500 hover:text-zinc-300'}`}>
-                <FileText size={13} /> 원본 글 본문 입력
-              </button>
-            </div>
+return (
+<div className="w-full min-h-screen bg-[#0a0c10] text-zinc-100 pt-4 overflow-y-auto relative">
+<div className="max-w-[1700px] mx-auto px-4 py-4 h-auto min-h-[calc(100vh-100px)] overflow-visible grid grid-cols-1 lg:grid-cols-12 gap-4 relative z-10">
+<div className="lg:col-span-3 flex flex-col gap-4 h-fit">
+<div className="p-5 rounded-2xl border border-zinc-800 bg-zinc-900/30 backdrop-blur-md space-y-4">
+<h3 className="text-xs font-black uppercase tracking-[0.2em] text-blue-400 flex items-center gap-1.5">
+<Cpu size={14} /> AI Recreate Control
+</h3>
+<div className="grid grid-cols-2 gap-1.5 p-1 bg-zinc-950 rounded-xl border border-zinc-850">
+<button type="button" onClick={() => setSourceMode('url')} className={`py-2 text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${sourceMode === 'url' ? 'bg-zinc-800 text-emerald-400 border border-zinc-700/60' : 'text-zinc-500 hover:text-zinc-300'}`}>
+<Link2 size={13} /> URL 주소 추출
+</button>
+<button type="button" onClick={() => setSourceMode('text')} className={`py-2 text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${sourceMode === 'text' ? 'bg-zinc-800 text-blue-400 border border-zinc-700/60' : 'text-zinc-500 hover:text-zinc-300'}`}>
+<FileText size={13} /> 원본 글 본문 입력
+</button>
+</div>
 
-            <div className="space-y-3 text-xs">
-              {sourceMode === 'url' ? (
-                <div className="space-y-1.5">
-                  <label className="block text-zinc-400 font-bold flex items-center gap-1">
-                    <span className="w-1 h-1 bg-emerald-400 rounded-full" /> 타겟 글 주소
-                  </label>
-                  <input type="text" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://blog.naver.com/..." className="w-full px-3 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-200 font-medium focus:outline-none focus:border-emerald-500" />
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  <label className="block text-zinc-400 font-bold flex items-center gap-1">
-                    <span className="w-1 h-1 bg-blue-400 rounded-full" /> 텍스트 소스 입력 영역
-                  </label>
-                  <textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder="재구성하고 싶은 원고 내용을 이곳에 넓게 복사-붙여넣기 하세요..." className="w-full h-44 p-3 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-300 placeholder-zinc-700 focus:outline-none resize-none font-medium leading-relaxed text-[11px] focus:border-blue-500" />
-                </div>
-              )}
-              
-              <div className="pt-1">
-                <label className="block text-zinc-400 font-bold mb-1.5">재창조 목적 타겟 키워드 (필수)</label>
-                <input type="text" value={targetKeyword} onChange={(e) => setTargetKeyword(e.target.value)} placeholder="공란 시 AI가 원본에서 자동 추출" className="w-full px-3 py-2 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-200 font-bold focus:outline-none" />
-              </div>
-            </div>
+<div className="space-y-3 text-xs">
+{sourceMode === 'url' ? (
+<div className="space-y-1.5">
+<label className="block text-zinc-400 font-bold flex items-center gap-1">
+<span className="w-1 h-1 bg-emerald-400 rounded-full" /> 타겟 글 주소
+</label>
+<input type="text" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://blog.naver.com/..." className="w-full px-3 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-200 font-medium focus:outline-none focus:border-emerald-500" />
+</div>
+) : (
+<div className="space-y-1.5">
+<label className="block text-zinc-400 font-bold flex items-center gap-1">
+<span className="w-1 h-1 bg-blue-400 rounded-full" /> 텍스트 소스 입력 영역
+</label>
+<textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder="재구성하고 싶은 원고 내용을 이곳에 넓게 복사-붙여넣기 하세요..." className="w-full h-44 p-3 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-300 placeholder-zinc-700 focus:outline-none resize-none font-medium leading-relaxed text-[11px] focus:border-blue-500" />
+</div>
+)}
+<div className="pt-1">
+<label className="block text-zinc-400 font-bold mb-1.5">재창조 목적 타겟 키워드 (자동 추출 가능)</label>
+<input type="text" value={targetKeyword} onChange={(e) => setTargetKeyword(e.target.value)} placeholder="공란 시 AI가 원본에서 자동 추출" className="w-full px-3 py-2 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-200 font-bold focus:outline-none" />
+</div>
+<div>
+<label className="block text-zinc-400 font-bold mb-1.5">말투 (Tone)</label>
+<div className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 flex items-center justify-between">
+<select value={selectedTone} onChange={(e) => setSelectedTone(e.target.value)} className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none">
+<option>친근하고 부드러운 말투 (블로그 후기, 일상)</option>
+<option>전문적이고 분석적인 말투 (경제, 기술, 정보전달)</option>
+<option>익살스럽고 재치있는 말투 (커뮤니티, SNS, 유머)</option>
+<option>비판적이고 날카로운 말투 (팩트체크, 비교 리뷰)</option>
+<option>감성적이고 따뜻한 말투 (에세이, 여행, 맛집)</option>
+<option>자신감 있고 설득력 있는 말투 (재테크, 투자 전망)</option>
+</select>
+<ChevronDown size={14} className="text-zinc-500 shrink-0 ml-1" />
+</div>
+</div>
+<div>
+<label className="block text-zinc-400 font-bold mb-1.5">길이 (Length)</label>
+<div className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 flex items-center justify-between">
+<select value={wordCountGoal} onChange={(e) => setWordCountGoal(e.target.value)} className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none">
+<option value="same">원본과 대략 같은 길이</option>
+<option value="1500">보통 (약 1,500자)</option>
+<option value="800">짧게 (약 800자)</option>
+<option value="3000">길게 (약 3,000자)</option>
+<option value="5000">아주 길게 (약 5,000자)</option>
+</select>
+<ChevronDown size={14} className="text-zinc-500 shrink-0 ml-1" />
+</div>
+</div>
+</div>
 
-            <button type="button" onClick={handleAiRecreate} disabled={isAiLoading} className="w-full py-3 bg-gradient-to-tr from-emerald-600 to-teal-600 text-white text-xs font-black rounded-xl shadow-lg flex items-center justify-center gap-2">
-              {isAiLoading ? <><RefreshCw size={14} className="animate-spin" /> 스핀 리라이팅 파싱 중...</> : <><Sparkles size={14} className="text-yellow-300" /> AI 글 재창조 가동</>}
-            </button>
-          </div>
+<button type="button" onClick={handleAiRecreate} disabled={isAiLoading} className="w-full py-3 bg-gradient-to-tr from-emerald-600 to-teal-600 text-white text-xs font-black rounded-xl shadow-lg flex items-center justify-center gap-2">
+{isAiLoading ? <><RefreshCw size={14} className="animate-spin" /> 스핀 리라이팅 파싱 중...</> : <><Sparkles size={14} className="text-yellow-300" /> AI 글 재창조 가동</>}
+</button>
+</div>
 
-          <div className="p-4 rounded-2xl border border-zinc-800/60 bg-zinc-950/40 space-y-2 text-left">
-            <h4 className="text-[11px] font-black uppercase text-zinc-500 tracking-wider flex items-center gap-1">
-              <Zap size={11} className="text-amber-400" /> Spin-Rewriting Engine
-            </h4>
-            <p className="text-[11px] text-zinc-400 leading-relaxed font-medium">
-              글의 핵심 논리 전개 방식을 완벽하게 수학적 매트릭스로 변환하여 아예 처음부터 새로 작성한 형태의 독립적 원고를 직조해 냅니다.
-            </p>
-          </div>
-        </div>
+<div className="p-4 rounded-2xl border border-zinc-800/60 bg-zinc-950/40 space-y-2 text-left">
+<h4 className="text-[11px] font-black uppercase text-zinc-500 tracking-wider flex items-center gap-1">
+<Zap size={11} className="text-amber-400" /> Spin-Rewriting Engine
+</h4>
+<p className="text-[11px] text-zinc-400 leading-relaxed font-medium">
+글의 핵심 논리 전개 방식을 완벽하게 수학적 매트릭스로 변환하여 아예 처음부터 새로 작성한 형태의 독립적 원고를 직조해 냅니다.
+</p>
+</div>
 
-        {/* 2면: 가운데 캔버스 에디터 (6칸) */}
-        <NaverEditorCanvas
-          title={title} setTitle={setTitle} content={content} setContent={setContent} charCount={charCount}
-          images={images} fileInputRef={fileInputRef} isSaving={isSaving} isEnhancing={isEnhancing}
-          handleImageUploadClick={() => fileInputRef.current?.click()}
-          handleImageChange={(e) => {
-            const files = e.target.files;
-            if (files?.[0]) {
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                setImages(prev => [...prev, { id: Date.now().toString(), url: reader.result as string, caption: "이미지 캡션 최적화" }]);
-              };
-              reader.readAsDataURL(files[0]);
-            }
-          }}
-          handleUpdateCaption={(id, text) => setImages(prev => prev.map(img => img.id === id ? { ...img, caption: text } : img))}
-          handleDeleteImage={(id) => setImages(prev => prev.filter(img => img.id !== id))}
-          handleEnhanceContent={handleEnhanceContent}
-          handleSavePostToSupabase={handleManualSave}
-          isRecreateMode={true}
-        />
+<div className="p-4 rounded-2xl border border-zinc-800/60 bg-zinc-950/40 space-y-3 text-left">
+<h4 className="text-[11px] font-black uppercase text-zinc-500 tracking-wider flex items-center gap-1">
+<Zap size={11} className="text-emerald-400" /> 원본 글의 핵심 키워드 및 주제 추출 결과
+</h4>
+<p className="text-[11px] text-zinc-500 leading-relaxed font-medium">
+AI 재창조와 함께 원본 글의 핵심 구조를 분해해 키워드, 주제, 핵심 내용을 한 번에 정리합니다.
+</p>
+<div className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-3 space-y-3">
+<div className="rounded-xl border border-emerald-500/10 bg-emerald-500/[0.03] p-3 space-y-2">
+<div className="flex items-center justify-between gap-2">
+<p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">핵심 키워드</p>
+<span className="text-[10px] text-emerald-400 font-bold">{normalizedKeywords.length > 0 ? `${normalizedKeywords.length}개 추출` : '대기 중'}</span>
+</div>
+<div className="flex flex-wrap gap-1.5">
+{normalizedKeywords.length > 0 ? normalizedKeywords.map((keyword, index) => (
+<span key={`${keyword}-${index}`} className="px-2 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-[10px] font-bold text-emerald-300">
+{keyword}
+</span>
+)) : (
+<span className="text-[11px] text-zinc-500 leading-relaxed">
+{isAiLoading ? '원본 핵심 키워드를 추출하는 중입니다...' : 'AI 글 재창조 가동 후 이 영역에 원본 핵심 키워드가 정리됩니다.'}
+</span>
+)}
+</div>
+</div>
+<div className="rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-3 space-y-1.5">
+<p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">핵심 주제</p>
+<p className="text-[11px] text-zinc-300 leading-relaxed font-medium">
+{sourceAnalysis.topic || (isAiLoading ? '원본 글의 핵심 주제를 정리하는 중입니다...' : '아직 추출된 핵심 주제가 없습니다.')}
+</p>
+</div>
+<div className="rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-3 space-y-1.5">
+<p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">핵심 내용 요약</p>
+<div className="space-y-1.5">
+{normalizedSummaryPoints.length > 0 ? normalizedSummaryPoints.map((point, index) => (
+<div key={`${point}-${index}`} className="flex items-start gap-2 text-[11px] text-zinc-300 leading-relaxed font-medium">
+<span className="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-400/90 shrink-0" />
+<span>{point}</span>
+</div>
+)) : (
+<p className="text-[11px] text-zinc-500 leading-relaxed">
+{isAiLoading ? '원본 핵심 내용을 정리하는 중입니다...' : '아직 추출된 핵심 내용 요약이 없습니다.'}
+</p>
+)}
+</div>
+</div>
+</div>
+</div>
+</div>
 
-        {/* 3면: 우측 관제탑 (3칸) */}
-        <div className="lg:col-span-3 h-fit">
-          <NaverAnalysisTower
-            seoScore={seoScore} seoChecks={seoChecks} posRatio={posRatio}
-            frequencies={frequencies} content={content} naverBotScore={naverBotScore} isDensitySafe={isDensitySafe}
-            similarityScore={similarityScore}
-            {...({ isRecreatePage: true } as any)} 
-          />
-        </div>
+<div className="lg:col-span-6 h-[calc(100vh-140px)] flex flex-col rounded-2xl border border-zinc-800 bg-white overflow-hidden relative shadow-2xl">
+<div className="flex justify-between items-center px-6 py-4 border-b border-zinc-200 bg-zinc-900 shrink-0">
+<span className="text-xs font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+<span className="w-2.5 h-2.5 rounded-full bg-[#00c73c] animate-pulse" />
+Naver Blog View Mode
+</span>
+<div className="flex items-center gap-1.5">
+<button onClick={handleCopy} disabled={!content || isAiLoading} className="px-3 py-1.5 border border-zinc-800 hover:border-zinc-700 hover:text-white bg-zinc-900/50 rounded-xl text-[11px] font-black text-zinc-400 transition-all flex items-center gap-1 disabled:opacity-30">
+<Copy size={11} /> COPY
+</button>
+<button onClick={downloadTxt} disabled={!content || isAiLoading} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[11px] font-black transition-all flex items-center gap-1 disabled:opacity-30">
+<Download size={11} /> DOWN
+</button>
+<Link href="/studio/writing/naver/list" className="px-3 py-1.5 border border-zinc-800 hover:border-zinc-700 bg-zinc-900/50 hover:text-white rounded-xl text-[11px] font-black text-zinc-400 transition-all flex items-center gap-1">
+글수정 이동 <ExternalLink size={11} />
+</Link>
+<button onClick={() => setIsPreviewOpen(true)} disabled={!content || isAiLoading} className="px-3 py-1.5 border border-zinc-800 hover:border-zinc-700 hover:text-white bg-zinc-900/50 rounded-xl text-[11px] font-black text-zinc-400 transition-all disabled:opacity-30">
+PREVIEW
+</button>
+</div>
+</div>
 
-      </div>
-    </div>
-  );
+<div className="flex-1 p-10 overflow-y-auto custom-scrollbar text-left bg-white transition-all">
+{!content && !isAiLoading ? (
+<div className="h-full flex flex-col items-center justify-center text-zinc-400 italic font-bold text-sm">
+AI 글 재창조 결과가 생성되면 여기에 표시됩니다.
+</div>
+) : (
+<div className="max-w-2xl mx-auto pb-32 font-sans">
+{title && (
+<h1 className="text-[28px] font-black text-[#111111] leading-snug mb-10 border-b border-zinc-200 pb-6 tracking-tight">
+{title}
+</h1>
+)}
+<div className="markdown-content">
+<ReactMarkdown remarkPlugins={[remarkGfm]} components={customMarkdownComponents}>
+{content}
+</ReactMarkdown>
+</div>
+</div>
+)}
+</div>
+
+<div className="h-16 border-t border-zinc-200 bg-zinc-50 px-6 flex items-center justify-between shrink-0">
+<span className="text-[11px] text-zinc-500 font-medium">
+AI 재창조 결과를 스마트 글쓰기와 동일한 뷰어 모드로 렌더링 중
+</span>
+<div className="flex items-center gap-2">
+<button onClick={handleCopy} disabled={!content} className="px-4 py-2 rounded-xl border border-zinc-300 bg-white text-zinc-700 text-xs font-bold hover:bg-zinc-100 transition-all disabled:opacity-40">
+결과 복사
+</button>
+<button onClick={handleManualSave} disabled={!content || isSaving} className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-black shadow-lg shadow-emerald-600/20 active:scale-95 transition-all disabled:opacity-40 flex items-center gap-1.5">
+<FileTextIcon size={13} />
+{isSaving ? "저장중..." : "원고 최종 저장"}
+</button>
+</div>
+</div>
+</div>
+
+<div className="lg:col-span-3 h-fit">
+<NaverAnalysisTower
+seoScore={analysisMetrics.seoScore} seoChecks={analysisMetrics.seoChecks} posRatio={posRatio}
+frequencies={analysisMetrics.frequencies} content={content} naverBotScore={analysisMetrics.naverBotScore} isDensitySafe={analysisMetrics.isDensitySafe}
+similarityScore={analysisMetrics.similarityScore}
+isRecreateMode={true}
+/>
+</div>
+
+</div>
+
+{isPreviewOpen && (
+<div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+<div className="w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden bg-white shadow-2xl border border-zinc-300">
+<div className="px-6 py-4 border-b border-zinc-200 bg-zinc-900 text-white text-sm font-black">
+재창조 결과 프리뷰
+</div>
+<div className="p-8 max-h-[75vh] overflow-y-auto">
+{title && <h1 className="text-[28px] font-black text-[#111111] leading-snug mb-10 border-b border-zinc-200 pb-6 tracking-tight">{title}</h1>}
+<div className="markdown-content">
+<ReactMarkdown remarkPlugins={[remarkGfm]} components={customMarkdownComponents}>
+{content}
+</ReactMarkdown>
+</div>
+</div>
+<div className="px-6 py-4 border-t border-zinc-200 bg-zinc-50 flex justify-end">
+<button onClick={() => setIsPreviewOpen(false)} className="px-4 py-2 rounded-xl bg-zinc-900 text-white text-xs font-black">
+닫기
+</button>
+</div>
+</div>
+</div>
+)}
+</div>
+);
 }
