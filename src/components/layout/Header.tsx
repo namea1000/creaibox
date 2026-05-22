@@ -80,9 +80,20 @@ export default function Header() {
     };
   }, [supabase.auth, router, fetchNickname]);
 
+  useEffect(() => {
+    if (!isMounted) return;
+
+    document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen, isMounted]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setIsProfileOpen(false);
+    setIsMobileMenuOpen(false);
     setUser(null);
     setNickname("");
     router.push('/');
@@ -140,7 +151,21 @@ export default function Header() {
       </div>
 
       {/* 우측 유저 컨트롤 영역 */}
-      <div className="flex items-center justify-end gap-3 ml-auto w-[160px] lg:w-[180px] shrink-0">
+      <div className="flex items-center justify-end gap-2 ml-auto w-[160px] lg:w-[180px] shrink-0">
+        {isMounted && user && (
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="lg:hidden flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900/80 px-2.5 py-1.5 text-left"
+          >
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-sm font-black tracking-wider">
+              {userInitial}
+            </div>
+            <div className="max-w-[72px]">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Account</p>
+              <p className="truncate text-[11px] font-bold text-zinc-200">{nickname || user.email}</p>
+            </div>
+          </button>
+        )}
         
         {isMounted && (
           user ? (
@@ -193,25 +218,133 @@ export default function Header() {
           )
         )}
 
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden p-2 text-zinc-500 hover:text-blue-500 transition-all">
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="lg:hidden flex h-11 w-11 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900/80 text-zinc-200 transition-all hover:border-blue-500/40 hover:text-blue-400"
+          aria-label="모바일 메뉴 열기"
+        >
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 top-20 z-[120] p-6 lg:hidden bg-[#0a0c10] animate-in slide-in-from-right duration-300">
-          <nav className="flex flex-col gap-4">
-            {menuItems.map((item) => (
-              <Link 
-                key={item.href} 
-                href={item.href}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="text-2xl font-black text-left border-b border-zinc-800/30 py-4 uppercase italic text-white"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+        <div className="fixed inset-0 top-20 z-[120] lg:hidden">
+          <button
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-label="모바일 메뉴 닫기"
+          />
+
+          <div className="absolute inset-x-0 bottom-0 top-0 overflow-y-auto border-t border-zinc-800 bg-[#0a0c10] px-4 pb-8 pt-5 animate-in slide-in-from-right duration-300">
+            <div className="mx-auto max-w-md space-y-4">
+              <div className="flex items-center justify-between rounded-3xl border border-zinc-800 bg-zinc-950/80 px-4 py-4">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-500">Mobile Navigation</p>
+                  <p className="mt-1 text-lg font-black text-white">메뉴를 선택해 바로 이동</p>
+                </div>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex h-10 w-10 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900/80 text-zinc-300"
+                  aria-label="모바일 메뉴 닫기"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="rounded-3xl border border-zinc-800 bg-zinc-950/80 p-4">
+                {user ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 rounded-2xl border border-blue-500/15 bg-blue-500/5 p-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-lg font-black tracking-wider">
+                        {userInitial}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Logged In</p>
+                        <p className="truncate text-sm font-bold text-zinc-100">{user.email}</p>
+                        {nickname && (
+                          <p className="truncate text-xs font-black text-emerald-400">{nickname}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <Link
+                        href="/mypage"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="rounded-2xl border border-zinc-800 bg-zinc-900/70 px-4 py-3 text-sm font-black text-zinc-200"
+                      >
+                        내 프로필
+                      </Link>
+                      <Link
+                        href="/apivault"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="rounded-2xl border border-zinc-800 bg-zinc-900/70 px-4 py-3 text-sm font-black text-zinc-200"
+                      >
+                        API 키 관리
+                      </Link>
+                    </div>
+
+                    <button
+                      onClick={handleLogout}
+                      className="w-full rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-black text-red-400"
+                    >
+                      로그아웃
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">Welcome</p>
+                      <p className="mt-2 text-base font-black text-white">모바일에서도 로그인과 회원가입이 바로 보여야 합니다.</p>
+                      <p className="mt-2 text-[13px] leading-6 text-zinc-400">먼저 계정을 만들거나 로그인한 뒤, 원하는 스튜디오로 바로 이동하세요.</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <Link
+                        href="/login"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="rounded-2xl border border-zinc-800 bg-zinc-900/70 px-4 py-3 text-center text-sm font-black text-zinc-100"
+                      >
+                        로그인
+                      </Link>
+                      <Link
+                        href="/signup"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="rounded-2xl bg-blue-600 px-4 py-3 text-center text-sm font-black text-white"
+                      >
+                        회원가입
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-3xl border border-zinc-800 bg-zinc-950/80 p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Studio Menu</p>
+                    <p className="mt-1 text-sm font-black text-zinc-100">한 번에 보기 쉽게 정리된 메뉴</p>
+                  </div>
+                  <span className="rounded-full border border-zinc-800 bg-zinc-900/80 px-2.5 py-1 text-[10px] font-black text-zinc-500">
+                    {menuItems.length} ITEMS
+                  </span>
+                </div>
+
+                <nav className="grid grid-cols-2 gap-3">
+                  {menuItems.map((item) => (
+                    <Link 
+                      key={item.href} 
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="rounded-2xl border border-zinc-800 bg-zinc-900/60 px-4 py-4 text-sm font-black text-zinc-100 transition-all hover:border-blue-500/30 hover:text-white"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </nav>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </header>

@@ -23,7 +23,7 @@ export const metadata = {
     siteName: "CreAIbox",
     images: [
       {
-        url: "https://creaibox.com/logothumbnailsmall.webp", // 🌟 카톡창에 보여줄 로고 이미지 경로!
+        url: "https://creaibox.com/logothumbnail.webp", // 🌟 카톡창에 보여줄 로고 이미지 경로!
         width: 1200,
         height: 630,
         alt: "CreAIbox 메인 로고",

@@ -1,118 +1,209 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { 
-  Sparkles, Search, BarChart3, HelpCircle, RefreshCw, 
-  Copy, ShieldAlert, LayoutGrid, Cpu, LineChart, Tag, 
-  Check, Sliders, TrendingUp, Award, Lightbulb, BrainCircuit, 
-  Network, ChevronLeft, ChevronRight, Database, Save, AlertCircle
+import React, { useMemo, useState } from 'react';
+import Link from 'next/link';
+import {
+  ArrowRight,
+  BarChart3,
+  BrainCircuit,
+  CheckCircle2,
+  Copy,
+  Database,
+  FileText,
+  LayoutGrid,
+  Lightbulb,
+  RefreshCw,
+  Search,
+  Sparkles,
+  TrendingUp
 } from 'lucide-react';
 
-// 황금 키워드 매트릭스 데이터 규격
 interface GoldenKeyword {
   id: string;
   keyword: string;
-  monthlySearch: number; 
-  totalDocs: number;     
-  saturation: number;    
+  monthlySearch: number;
+  totalDocs: number;
+  saturation: number;
   grade: 'S급 황금' | 'A급 우수' | '경쟁과열' | '진입불가';
   createdAt: string;
 }
 
-// 실시간 트렌드 데이터 규격 (20개 대형 스펙)
-interface TrendTrend {
+interface TrendItem {
   rank: number;
   keyword: string;
   category: string;
   growth: number;
 }
 
-// AI 연관 딥링크 키워드 데이터 규격 (10개 스펙)
-interface AiRelatedKeyword {
+interface RelatedKeyword {
   keyword: string;
   docCount: number;
   intent: '정보성' | '상업성' | '급상승';
   tip: string;
 }
 
+type AnalysisTab = 'opportunity' | 'related' | 'execution';
+
+const INITIAL_TRENDS: TrendItem[] = [
+  { rank: 1, keyword: '직장인 부업 자동화', category: '비즈니스', growth: 145 },
+  { rank: 2, keyword: '소상공인 정책자금 2026', category: '금융/정부', growth: 92 },
+  { rank: 3, keyword: 'AI 글쓰기 툴 비교', category: 'IT/테크', growth: 64 },
+  { rank: 4, keyword: '주식 자동매매 프로그램', category: '재테크', growth: 48 },
+  { rank: 5, keyword: '천안 맛집 TOP 5', category: '여행/맛집', growth: 37 },
+  { rank: 6, keyword: 'HBM 반도체 공급망', category: 'IT/테크', growth: 120 },
+  { rank: 7, keyword: '2026 청년도약계좌 조건', category: '재테크', growth: 85 },
+  { rank: 8, keyword: '무자본 창업 아이템', category: '비즈니스', growth: 110 }
+];
+
+const INITIAL_GOLDEN_LIST: GoldenKeyword[] = [
+  { id: '1', keyword: '무자본 AI 수익화', monthlySearch: 14800, totalDocs: 1200, saturation: 8.1, grade: 'S급 황금', createdAt: '2026-05-18' },
+  { id: '2', keyword: '정부지원금 대출 자격', monthlySearch: 35000, totalDocs: 8500, saturation: 24.2, grade: 'A급 우수', createdAt: '2026-05-17' },
+  { id: '3', keyword: '강남 공유오피스 가격', monthlySearch: 19000, totalDocs: 24000, saturation: 126.3, grade: '경쟁과열', createdAt: '2026-05-15' },
+  { id: '4', keyword: '천안 맛집 TOP5', monthlySearch: 22000, totalDocs: 180000, saturation: 818.1, grade: '진입불가', createdAt: '2026-05-16' },
+  { id: '5', keyword: '직장인 이직 자소서 꿀팁', monthlySearch: 8500, totalDocs: 1100, saturation: 12.9, grade: 'S급 황금', createdAt: '2026-05-14' }
+];
+
+const INITIAL_RELATED: RelatedKeyword[] = [
+  { keyword: '하이닉스 반도체 주가 전망 2026', docCount: 52000, intent: '급상승', tip: '연도 키워드를 제목과 소제목에 분리 배치하면 클릭 유도가 강합니다.' },
+  { keyword: '하이닉스 반도체 HBM 고대역폭메모리', docCount: 18500, intent: '정보성', tip: '기술 설명형 본문으로 깊이를 주면 체류시간 확보에 유리합니다.' },
+  { keyword: '하이닉스 반도체 엔비디아 납품', docCount: 67000, intent: '급상승', tip: '당일 뉴스 문맥과 연결하면 트렌드성 노출을 노리기 좋습니다.' },
+  { keyword: '하이닉스 반도체 배당금 기준일', docCount: 12400, intent: '상업성', tip: '재테크형 독자를 묶는 후속 글감으로 확장하기 좋습니다.' },
+  { keyword: '하이닉스 반도체 성과급 구조', docCount: 31000, intent: '정보성', tip: '커뮤니티 인용을 넣으면 경험형 문서 톤을 살릴 수 있습니다.' }
+];
+
+const ANALYSIS_TABS: Array<{ id: AnalysisTab; label: string }> = [
+  { id: 'opportunity', label: '기회 분석' },
+  { id: 'related', label: '연관 키워드' },
+  { id: 'execution', label: '실행 전략' }
+];
+
+function formatNumber(value: number) {
+  return `${value.toLocaleString()}회`;
+}
+
+function getGradeFromSaturation(saturation: number): GoldenKeyword['grade'] {
+  if (saturation < 20) return 'S급 황금';
+  if (saturation < 80) return 'A급 우수';
+  if (saturation < 180) return '경쟁과열';
+  return '진입불가';
+}
+
+function getIntentMix(grade: GoldenKeyword['grade']) {
+  if (grade === 'S급 황금') return { info: 46, action: 34, trend: 20 };
+  if (grade === 'A급 우수') return { info: 40, action: 30, trend: 30 };
+  if (grade === '경쟁과열') return { info: 35, action: 20, trend: 45 };
+  return { info: 55, action: 10, trend: 35 };
+}
+
 export default function NaverKeywordAnalysisPage() {
-  const [scanKeyword, setScanKeyword] = useState("하이닉스 반도체");
+  const [scanKeyword, setScanKeyword] = useState('하이닉스 반도체');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  
-  // 🌟 페이징 처리를 위한 상태 관리 (한 페이지에 7개씩 출력)
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 7;
+  const [activeTab, setActiveTab] = useState<AnalysisTab>('opportunity');
+  const [trendList] = useState<TrendItem[]>(INITIAL_TRENDS);
+  const [goldenList, setGoldenList] = useState<GoldenKeyword[]>(INITIAL_GOLDEN_LIST);
+  const [relatedList, setRelatedList] = useState<RelatedKeyword[]>(INITIAL_RELATED);
 
-  // 🌟 [오더 반영] 네이버 데이터랩 API 기반 실시간 급상승 트렌드 20대 풀 세로 노출 세트
-  const [trendList, setTrendList] = useState<TrendTrend[]>([
-    { rank: 1, keyword: '직장인 부업 자동화', category: '비즈니스', growth: 145 },
-    { rank: 2, keyword: '소상공인 정책자금 2026', category: '금융/정부', growth: 92 },
-    { rank: 3, keyword: 'AI 글쓰기 툴 비교', category: 'IT/테크', growth: 64 },
-    { rank: 4, keyword: '주식 자동매매 프로그램', category: '재테크', growth: 48 },
-    { rank: 5, keyword: '천안 맛집 TOP 5', category: '여행/맛집', growth: 37 },
-    { rank: 6, keyword: 'HBM 반도체 공급망', category: 'IT/테크', growth: 120 },
-    { rank: 7, keyword: '2026 청년도약계좌 조건', category: '재테크', growth: 85 },
-    { rank: 8, keyword: '무자본 창업 아이템', category: '비즈니스', growth: 110 },
-    { rank: 9, keyword: '구글 SEO 최적화 지침', category: 'IT/테크', growth: 53 },
-    { rank: 10, keyword: '주말 국내 여행지 추천', category: '여행/맛집', growth: 29 },
-    { rank: 11, keyword: '챗GPT 프롬프트 엔지니어링', category: 'IT/테크', growth: 95 },
-    { rank: 12, keyword: '종합소득세 신고 가이드', category: '금융/정부', growth: 156 },
-    { rank: 13, keyword: '유튜브 쇼츠 수익 창출', category: '비즈니스', growth: 88 },
-    { rank: 14, keyword: '소형 아파트 갭투자 전망', category: '재테크', growth: 42 },
-    { rank: 15, keyword: '노트북 추천 가성비 라인', category: 'IT/테크', growth: 71 },
-    { rank: 16, keyword: '인플루언서 마케팅 대행', category: '비즈니스', growth: 63 },
-    { rank: 17, keyword: '스마트스토어 위탁판매', category: '비즈니스', growth: 50 },
-    { rank: 18, keyword: '가상자산 과세 유예 이력', category: '재테크', growth: 134 },
-    { rank: 19, keyword: '밀키트 창업 마진율', category: '여행/맛집', growth: 22 },
-    { rank: 20, keyword: 'AI 이미지 생성기 무료', category: 'IT/테크', growth: 105 },
-  ]);
+  const activeRecord = useMemo(() => {
+    return goldenList.find((item) => item.keyword === scanKeyword) || goldenList[0];
+  }, [goldenList, scanKeyword]);
 
-  // 🌟 [DB 저장 스펙] 사용자별 개인 고유 DB 원격 적재 리스트
-  const [goldenList, setGoldenList] = useState<GoldenKeyword[]>([
-    { id: '1', keyword: '하이닉스 반도체', monthlySearch: 148000, totalDocs: 154000, saturation: 104.0, grade: '경쟁과열', createdAt: '2026-05-18' },
-    { id: '2', keyword: '무자본 AI 수익화', monthlySearch: 14800, totalDocs: 1200, saturation: 8.1, grade: 'S급 황금', createdAt: '2026-05-18' },
-    { id: '3', keyword: '정부지원금 대출 자격', monthlySearch: 35000, totalDocs: 8500, saturation: 24.2, grade: 'A급 우수', createdAt: '2026-05-17' },
-    { id: '4', keyword: '천안 맛집 TOP5', monthlySearch: 22000, totalDocs: 180000, saturation: 818.1, grade: '진입불가', createdAt: '2026-05-16' },
-    { id: '5', keyword: '강남 공유오피스 가격', monthlySearch: 19000, totalDocs: 24000, saturation: 126.3, grade: '경쟁과열', createdAt: '2026-05-15' },
-    { id: '6', keyword: '직장인 이직 자소서 꿀팁', monthlySearch: 8500, totalDocs: 1100, saturation: 12.9, grade: 'S급 황금', createdAt: '2026-05-14' },
-    { id: '7', keyword: '인공지능 딥러닝 독학', monthlySearch: 12000, totalDocs: 9500, saturation: 79.1, grade: 'A급 우수', createdAt: '2026-05-13' },
-  ]);
+  const diagnosis = useMemo(() => {
+    if (!activeRecord) {
+      return {
+        headline: '키워드를 먼저 스캔해 주세요.',
+        summary: '검색량, 문서 수, 경쟁 구도를 분석한 뒤 실제 글감 의사결정으로 연결합니다.'
+      };
+    }
 
-  // 🌟 AI 롱테일 확장 키워드 10선 데이터 세트
-  const [aiRelatedList, setAiRelatedList] = useState<AiRelatedKeyword[]>([
-    { keyword: '하이닉스 반도체 주가', docCount: 245000, intent: '급상승', tip: '일간 변동성 차트와 외국인 매수세 수집' },
-    { keyword: '하이닉스 반도체 실적 전망', docCount: 42000, intent: '정보성', tip: '어닝 서프라이즈 컨센서스 인용 포스팅 유리' },
-    { keyword: '하이닉스 반도체 HBM 고대역폭메모리', docCount: 18500, intent: '정보성', tip: '기술 분석 정보성 문서로 DIA+ 높은 가산점 수집' },
-    { keyword: '하이닉스 반도체 채용 공고', docCount: 89000, intent: '상업성', tip: '취업 멘토링 연계 마케팅 링크 배치 최적 구간' },
-    { keyword: '하이닉스 반도체 배당금 기준일', docCount: 12400, intent: '급상승', tip: '발행 즉시 상단 꽂히는 트렌드성 황금 키워드' },
-    { keyword: '하이닉스 반도체 엔비디아 납품', docCount: 67000, intent: '정보성', tip: '글로벌 공급망 키워드 믹싱으로 구글 스니펫 동시 노출' },
-    { keyword: '하이닉스 반도체 성과급 구조', docCount: 31000, intent: '정보성', tip: '이슈성 트래픽 유입에 탁월한 인덱싱 단어' },
-    { keyword: '하이닉스 반도체 주가 전망 2026', docCount: 52000, intent: '급상승', tip: '타겟 연도 매싱을 통한 상위 노출 숏테일 보장' },
-    { keyword: '하이닉스 반도체 공장 라인 위치', docCount: 8400, intent: '정보성', tip: '지도 첨부 문맥 구조와 매칭 시 신뢰 지수 획득' },
-    { keyword: '하이닉스 반도체 기술 면접 기출', docCount: 11000, intent: '상업성', tip: '전자책 다운로드 등 고수익 DB 수집 연계용 피드' },
-  ]);
+    if (activeRecord.grade === 'S급 황금') {
+      return {
+        headline: '지금 바로 써도 좋은 황금 키워드입니다.',
+        summary: '문서 포화도가 낮고 검색 수요가 살아 있어서 네이버 블로그형 정보성 문서로 공략하기 좋습니다.'
+      };
+    }
 
-  useEffect(() => {
-    console.log("개인 사용자 세션 인증 성공: 원격 DB 호스팅 연동 활성화");
-  }, []);
+    if (activeRecord.grade === 'A급 우수') {
+      return {
+        headline: '조건부 추천 키워드입니다.',
+        summary: '직접 경쟁은 있지만 제목 각도와 롱테일 조합을 잘 잡으면 충분히 진입 가능합니다.'
+      };
+    }
 
-  // AI 연드 및 DB 저장 트랜잭션 핸들러
+    if (activeRecord.grade === '경쟁과열') {
+      return {
+        headline: '메인 키워드 단독 진입은 부담이 있습니다.',
+        summary: '지역, 연도, 비교, 질문형 보조 키워드를 섞어서 우회 진입하는 전략이 더 안전합니다.'
+      };
+    }
+
+    return {
+      headline: '메인 키워드로는 진입이 어렵습니다.',
+      summary: '직접 공략보다 연관 질문형 키워드로 각도를 바꿔 2차 글감을 만드는 편이 유리합니다.'
+    };
+  }, [activeRecord]);
+
+  const keywordMetrics = useMemo(() => {
+    if (!activeRecord) {
+      return [];
+    }
+
+    const publishingScore = Math.max(8, 100 - Math.min(activeRecord.saturation, 92));
+    const clickPotential = Math.min(96, Math.round((activeRecord.monthlySearch / Math.max(activeRecord.totalDocs, 1)) * 120));
+    const intentMix = getIntentMix(activeRecord.grade);
+
+    return [
+      { label: '월 검색량', value: formatNumber(activeRecord.monthlySearch), tone: 'text-blue-400' },
+      { label: '문서 포화도', value: `${activeRecord.saturation}%`, tone: 'text-amber-400' },
+      { label: '발행 적합도', value: `${publishingScore}점`, tone: 'text-emerald-400' },
+      { label: '클릭 잠재력', value: `${clickPotential}점`, tone: 'text-fuchsia-400' },
+      { label: '정보형 비중', value: `${intentMix.info}%`, tone: 'text-cyan-400' },
+      { label: '트렌드성 비중', value: `${intentMix.trend}%`, tone: 'text-rose-400' }
+    ];
+  }, [activeRecord]);
+
+  const executionPlan = useMemo(() => {
+    const baseKeyword = activeRecord?.keyword || scanKeyword;
+    return {
+      titleIdeas: [
+        `${baseKeyword} 완전정리: 지금 확인해야 할 핵심 포인트`,
+        `2026년 ${baseKeyword} 분석: 초보자도 이해되는 실전 가이드`,
+        `${baseKeyword} 왜 뜨나? 데이터로 보는 핵심 변화`,
+        `${baseKeyword} 관련주·이슈·전망 한 번에 보는 정리`,
+        `${baseKeyword} 검색자가 실제로 궁금해하는 질문 5가지`
+      ],
+      outline: [
+        '왜 지금 이 키워드가 다시 뜨는가',
+        '검색자가 가장 많이 묻는 핵심 질문',
+        '비교해야 할 대안 또는 연관 키워드',
+        '실전 판단 포인트와 주의할 오해',
+        '마무리 요약과 다음 행동 제안'
+      ],
+      thumbnail: [
+        '메인 피사체 1개 중심의 강한 장면',
+        '키워드와 직접 연결되는 상징물 배치',
+        '복잡한 텍스트 대신 대비 강한 색 조합',
+        '정보형 주제면 차트/기기/문서형 오브젝트 활용'
+      ]
+    };
+  }, [activeRecord, scanKeyword]);
+
   const handleStartKeywordScan = () => {
-    if (!scanKeyword) return alert("추적 스캔할 타겟 키워드를 입력해 주세요!");
+    if (!scanKeyword.trim()) {
+      alert('추적 스캔할 타겟 키워드를 입력해 주세요!');
+      return;
+    }
+
     setIsAnalyzing(true);
 
     setTimeout(() => {
-      const searchVolume = Math.floor(Math.random() * 80000) + 20000;
-      const docCount = Math.floor(Math.random() * 50000) + 1000;
+      const searchVolume = Math.floor(Math.random() * 90000) + 8000;
+      const docCount = Math.floor(Math.random() * 60000) + 800;
       const calculatedSaturation = parseFloat(((docCount / searchVolume) * 100).toFixed(1));
-      
-      let finalGrade: 'S급 황금' | 'A급 우수' | '경쟁과열' | '진입불가' = 'A급 우수';
-      if (calculatedSaturation < 20) finalGrade = 'S급 황금';
-      else if (calculatedSaturation > 120) finalGrade = '경쟁과열';
+      const finalGrade = getGradeFromSaturation(calculatedSaturation);
 
       const newKeywordRow: GoldenKeyword = {
         id: String(Date.now()),
-        keyword: scanKeyword,
+        keyword: scanKeyword.trim(),
         monthlySearch: searchVolume,
         totalDocs: docCount,
         saturation: calculatedSaturation,
@@ -120,209 +211,402 @@ export default function NaverKeywordAnalysisPage() {
         createdAt: new Date().toISOString().split('T')[0]
       };
 
-      setGoldenList(prev => [newKeywordRow, ...prev]);
-
-      setAiRelatedList([
-        { keyword: `${scanKeyword} 주가 추이`, docCount: Math.floor(Math.random() * 150000) + 50000, intent: '급상승', tip: '실시간 시황 데이터와 연동하여 체류시간 극대화 패턴 유도' },
-        { keyword: `${scanKeyword} 전망 분석`, docCount: Math.floor(Math.random() * 40000) + 10000, intent: '정보성', tip: '##, ### 서브헤딩 구조화 최적화에 가장 유리한 어휘' },
-        { keyword: `${scanKeyword} 관련주 대장주`, docCount: Math.floor(Math.random() * 80000) + 20000, intent: '상업성', tip: '수익성 배너 및 링크 클릭 전환율이 가장 높은 타겟팅 코어' },
-        { keyword: `${scanKeyword} 디시 인벤 반응`, docCount: Math.floor(Math.random() * 15000) + 2000, intent: '정보성', tip: '커뮤니티 여론 인용을 통한 DIA+ 고유 경험성 텍스트 수집' },
-        { keyword: `${scanKeyword} 최신 뉴스 요약`, docCount: Math.floor(Math.random() * 30000) + 5000, intent: '급상승', tip: 'C-Rank 신뢰도를 고속 부스팅 시키는 당일 발행 추천 키워드' },
-        { keyword: `${scanKeyword} 공식 대리점 위치`, docCount: Math.floor(Math.random() * 12000) + 1000, intent: '정보성', tip: '로컬 플레이스 마크업 맵핑 유도로 통합 상단 선점 확보' },
-        { keyword: `${scanKeyword} 중고 거래 시세`, docCount: Math.floor(Math.random() * 25000) + 4000, intent: '정보성', tip: '유저 서칭 의도에 정확히 부합하는 롱테일 실무 데이터 수집' },
-        { keyword: `${scanKeyword} 정품 가짜 구별법`, docCount: Math.floor(Math.random() * 9500) + 500, intent: '정보성', tip: '독자 체류 시간을 무조건 2분 이상 락킹시키는 정보성 레이어' },
-        { keyword: `${scanKeyword} 할인쿠폰 발급`, docCount: Math.floor(Math.random() * 18000) + 2000, intent: '상업성', tip: '제휴 마케팅 및 CPA 링크 전환율을 폭발시키는 황금 유도선' },
-        { keyword: `${scanKeyword} 끝장내기 노하우`, docCount: Math.floor(Math.random() * 7000) + 300, intent: '급상승', tip: '독점적 서사 부여를 통해 카피 필터를 가볍게 프리패스하는 전략' },
+      setGoldenList((prev) => [newKeywordRow, ...prev.filter((item) => item.keyword !== scanKeyword.trim())]);
+      setRelatedList([
+        { keyword: `${scanKeyword} 전망 분석`, docCount: Math.floor(Math.random() * 40000) + 10000, intent: '정보성', tip: '핵심 질문형 제목과 함께 쓰면 체류시간이 길어집니다.' },
+        { keyword: `${scanKeyword} 최신 뉴스`, docCount: Math.floor(Math.random() * 30000) + 5000, intent: '급상승', tip: '실시간 이슈 연결형 본문으로 빠르게 발행하는 것이 중요합니다.' },
+        { keyword: `${scanKeyword} 비교`, docCount: Math.floor(Math.random() * 18000) + 3000, intent: '상업성', tip: '대체재나 경쟁 대상을 함께 묶으면 클릭률이 높아집니다.' },
+        { keyword: `${scanKeyword} 장단점`, docCount: Math.floor(Math.random() * 12000) + 1500, intent: '정보성', tip: '후기형 말투와 궁합이 좋아 블로그 문체에 잘 맞습니다.' },
+        { keyword: `${scanKeyword} 추천`, docCount: Math.floor(Math.random() * 15000) + 2200, intent: '상업성', tip: '목록형 구성과 썸네일 조합이 특히 잘 먹히는 키워드입니다.' },
+        { keyword: `${scanKeyword} 2026`, docCount: Math.floor(Math.random() * 9000) + 1000, intent: '급상승', tip: '연도 키워드를 붙이면 최신성 신호를 강조하기 좋습니다.' }
       ]);
-
-      setCurrentPage(1);
+      setActiveTab('opportunity');
       setIsAnalyzing(false);
-      alert(`[${scanKeyword}] 관련 10단 AI 연쇄 확장 및 사용자 계정 DB 영구 저장이 완료되었습니다!`);
-    }, 1200);
+    }, 1100);
   };
 
-  // 페이징 연산
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = goldenList.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(goldenList.length / itemsPerPage);
+  const handleCopyRelatedKeywords = () => {
+    navigator.clipboard.writeText(relatedList.map((item) => item.keyword).join(', '));
+    alert('연관 키워드가 복사되었습니다.');
+  };
 
   return (
-    <div className="w-full min-h-screen bg-[#0a0c10] text-zinc-100 pt-20 overflow-hidden relative">
-      <div className="max-w-[1700px] mx-auto px-4 py-4 h-[calc(100vh-80px)] grid grid-cols-1 lg:grid-cols-5 gap-4 relative z-10">
-        
-        {/* 1면 (좌측 1칸): 타겟 어휘 주입 제어기 (DB 보존 연동형) */}
-        <div className="lg:col-span-1 flex flex-col gap-4 h-full overflow-hidden border-r border-zinc-800/30 pr-1">
-          <div className="p-5 rounded-2xl border border-zinc-800 bg-zinc-900/30 backdrop-blur-md space-y-4 shrink-0">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-blue-400 flex items-center gap-1.5">
-              <Cpu size={14} /> Keyword Scouter
-            </h3>
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block text-zinc-400 font-bold mb-1.5">추적 대상 타겟 키워드 입력</label>
-                <input type="text" value={scanKeyword} onChange={(e) => setScanKeyword(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-200 font-bold focus:outline-none focus:border-blue-500/50" placeholder="예: 하이닉스 반도체" />
-              </div>
-              <p className="text-[10px] text-zinc-500 leading-relaxed font-medium">
-                💡 키워드를 스캔하면 인공지능이 실시간 연동 확장 어휘 10개를 2면에 즉각 파싱하며, 도출된 포화도 데이터셋은 사용자별 클라우드 DB 장부에 영구 기록됩니다.
-              </p>
-            </div>
-            <button onClick={handleStartKeywordScan} disabled={isAnalyzing} className="w-full py-3 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white text-xs font-black rounded-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
-              {isAnalyzing ? <><RefreshCw size={14} className="animate-spin text-blue-400" /> AI 확장 분석 가동 중...</> : <><Search size={14} /> 황금 키워드 & AI 스캔</>}
-            </button>
-          </div>
-
-          <div className="p-4 rounded-xl border border-zinc-850 bg-zinc-950/40 space-y-2">
-            <h4 className="text-[11px] font-black uppercase text-zinc-500 tracking-wider flex items-center gap-1"><Database size={12} className="text-blue-400" /> CLOUD STORAGE ACTIVATED</h4>
-            <p className="text-[10px] text-zinc-500 leading-relaxed font-medium">본 키워드 분석방은 개인 계정별 고유 테이블 인프라와 매핑되어 있어, 새로고침 시에도 축적된 황금 자산 장부를 안전하게 영구 보존 호스팅합니다.</p>
-          </div>
-        </div>
-
-        {/* 💻 👉 2면 (중앙 2칸 차지): [오더 완벽 반영] 20대 트렌드 전수 노출 구조 및 10단 AI 레이더 복합 빌드 피드 */}
-        <div className="lg:col-span-2 flex flex-col bg-zinc-900/40 border border-blue-500/10 rounded-2xl overflow-hidden backdrop-blur-md h-full shadow-2xl">
-          <div className="h-14 border-b border-zinc-800 bg-zinc-950/60 px-5 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2 text-xs font-black text-emerald-400">
-              <BrainCircuit size={15} className="animate-pulse" /> AI Realtime LSI Keyword 10-Radar Cluster
-            </div>
-            <span className="text-[10px] font-mono text-zinc-500 bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded">20 TRENDS INSIDE</span>
-          </div>
-
-          {/* 메인 통제 스페이스 스크롤 컨테이너 */}
-          <div className="flex-1 p-5 flex flex-col space-y-5 overflow-y-auto custom-scrollbar bg-zinc-950/20">
-            
-            {/* 🌟 [오더 반영 완료] 네이버 데이터랩 20대 실시간 급상승 키워드 세로 전수 노출 격실 */}
-            <div className="p-4 rounded-2xl border border-zinc-850 bg-zinc-950/90 space-y-3 shadow-inner">
-              <div className="flex justify-between items-center border-b border-zinc-800/60 pb-2">
-                <h4 className="text-[11px] font-black uppercase text-zinc-400 flex items-center gap-1.5"><TrendingUp size={13} className="text-emerald-400" /> 네이버 공식 데이터랩 실시간 트렌드 매트릭스 TOP 20</h4>
-                <span className="text-[9px] text-zinc-600 font-bold bg-zinc-950 border border-zinc-850 px-2 py-0.5 rounded">세로 스크롤 완전 노출 스펙</span>
-              </div>
-              
-              {/* 무한 횡스크롤을 철거하고, 2열 세로 그리드로 하단 배치하여 마케터 가독성 수직 극대화 */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar text-[11px] font-bold text-zinc-300">
-                {trendList.map((t) => (
-                  <div key={t.rank} className="flex justify-between items-center p-2 rounded-lg border border-zinc-900/60 bg-zinc-950/40 hover:bg-zinc-900/30 transition-colors">
-                    <div className="flex items-center gap-2 truncate">
-                      <span className="font-mono font-black text-blue-500 w-4 text-left">{t.rank}.</span>
-                      <span className="text-white truncate font-medium">{t.keyword}</span>
-                    </div>
-                    <span className="text-[9px] text-zinc-500 font-bold shrink-0">{t.category}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 10단 확장 AI 연상 관련 키워드 스크롤 루프 섹션 */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5 border-b border-zinc-850 pb-1.5">
-                <h4 className="text-[11px] font-black uppercase text-zinc-400 flex items-center gap-1.5"><Network size={13} className="text-blue-400" /> 인공지능 딥링크 파생 롱테일 문서 글감 바인딩 10선</h4>
-              </div>
-              <div className="space-y-2">
-                {aiRelatedList.map((a, idx) => (
-                  <div key={idx} className="p-3 rounded-xl border border-zinc-850 bg-zinc-950/40 hover:border-zinc-800/80 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2 group">
-                    <div className="space-y-0.5 min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-black text-white truncate group-hover:text-emerald-400 transition-colors">{a.keyword}</span>
-                        <span className={`text-[8px] font-black px-1 rounded ${
-                          a.intent === '급상승' ? 'bg-red-500/10 text-red-400' :
-                          a.intent === '상업성' ? 'bg-blue-500/10 text-blue-400' : 'bg-zinc-800 text-zinc-400'
-                        }`}>{a.intent}</span>
-                      </div>
-                      <p className="text-[10px] text-zinc-500 font-medium truncate">{a.tip}</p>
-                    </div>
-                    <button 
-                      onClick={() => { navigator.clipboard.writeText(a.keyword); alert(`[${a.keyword}] 복사 완료!`); }}
-                      className="sm:opacity-0 group-hover:opacity-100 px-2 py-1 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all shrink-0 self-end sm:self-center"
-                    >
-                      <Copy size={10} /> 카피
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="h-14 border-t border-zinc-800 bg-zinc-950/60 px-5 flex items-center justify-between shrink-0">
-            <span className="text-[10px] text-zinc-500 font-bold">인공지능 롱테일 맥락 파싱 가속기 링크 온</span>
-            <button onClick={() => { navigator.clipboard.writeText(aiRelatedList.map(a => a.keyword).join(', ')); alert("10개 확장 단어가 카피되었습니다."); }} className="px-3 py-1.5 bg-zinc-900 border border-zinc-850 rounded-lg text-zinc-300 text-[11px] font-bold">확장 단어 전체 추출</button>
-          </div>
-        </div>
-
-        {/* 📋 👉 3면 (우측 2칸 차지): 조회 키워드 포화도 분석 장부 독립 성채 (DB 페이징 유지 스펙) */}
-        <div className="lg:col-span-2 flex flex-col bg-zinc-900/40 border border-emerald-500/10 rounded-2xl overflow-hidden backdrop-blur-md h-full shadow-2xl">
-          <div className="h-14 border-b border-zinc-800 bg-zinc-950/60 px-5 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2 text-xs font-black text-zinc-300">
-              <Database size={14} className="text-blue-400" /> 개인 클라우드 고유 키워드 자산 영구 장부
-            </div>
-            <span className="text-[9px] bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded font-mono">DB-SECURE</span>
-          </div>
-
-          <div className="flex-1 p-4 flex flex-col overflow-hidden bg-zinc-950/20">
-            <div className="border border-zinc-850 rounded-xl overflow-hidden bg-zinc-950/50 flex-1 flex flex-col justify-between">
-              <div className="overflow-y-auto no-scrollbar flex-1">
-                <table className="w-full text-left text-[11px]">
-                  <thead className="sticky top-0 bg-zinc-950 border-b border-zinc-850 text-zinc-500 font-bold z-20">
-                    <tr>
-                      <th className="p-3 pl-4">보관 키워드</th>
-                      <th className="p-3">월 검색수</th>
-                      <th className="p-3">문서수</th>
-                      <th className="p-3">포화도</th>
-                      <th className="p-3 text-right pr-4">진단 등급</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-850/40 text-zinc-300">
-                    {currentItems.map((g) => (
-                      <tr key={g.id} className="hover:bg-zinc-900/20 transition-colors group">
-                        <td className="p-3 pl-4 font-black text-white">
-                          <div className="flex flex-col gap-0.5 min-w-0">
-                            <span className="truncate flex items-center gap-1"><Tag size={10} className="text-blue-400 shrink-0" /> {g.keyword}</span>
-                            <span className="text-[9px] text-zinc-600 font-medium font-mono tracking-tighter">{g.createdAt} 영구저장</span>
-                          </div>
-                        </td>
-                        <td className="p-3 font-mono font-bold text-zinc-400">{g.monthlySearch.toLocaleString()}회</td>
-                        <td className="p-3 font-mono text-zinc-500">{g.totalDocs.toLocaleString()}개</td>
-                        <td className="p-3 font-mono text-blue-400 font-black">{g.saturation}%</td>
-                        <td className="p-3 text-right pr-4">
-                          <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
-                            g.grade === 'S급 황금' ? 'bg-gradient-to-r from-yellow-500/20 to-amber-500/20 text-yellow-400 border border-yellow-500/30' :
-                            g.grade === 'A급 우수' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400'
-                          }`}>{g.grade}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* 하단 고정 페이징 내비게이션 */}
-              <div className="h-12 border-t border-zinc-850 bg-zinc-950 px-4 flex items-center justify-between shrink-0 text-[10px] font-bold">
-                <span className="text-zinc-500 font-mono">총 <strong className="text-zinc-300 font-black">{goldenList.length}</strong>개 키워드 레코드 영구 보관 중</span>
-                <div className="flex items-center gap-3">
-                  <button 
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="p-1.5 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <ChevronLeft size={13} />
-                  </button>
-                  <span className="text-zinc-400 font-mono text-xs font-black">{currentPage} / {totalPages || 1}</span>
-                  <button 
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages || totalPages === 0}
-                    className="p-1.5 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <ChevronRight size={13} />
-                  </button>
+    <div className="min-h-screen bg-[#0a0c10] text-zinc-100 pt-4">
+      <div className="max-w-[1680px] mx-auto px-4 pb-6 space-y-4">
+        <section className="rounded-[28px] border border-emerald-500/15 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.22),_transparent_28%),linear-gradient(135deg,rgba(15,23,42,0.95),rgba(10,12,16,0.98))] overflow-hidden shadow-2xl">
+          <div className="grid gap-0 xl:grid-cols-[1.35fr_0.95fr]">
+            <div className="p-6 md:p-8 space-y-6">
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-emerald-300">
+                  <Sparkles size={12} /> Keyword Decision Console
+                </div>
+                <div className="space-y-2">
+                  <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">
+                    키워드 데이터를 보는 페이지가 아니라
+                    <br />
+                    글감 의사결정을 내리는 콘솔
+                  </h1>
+                  <p className="max-w-3xl text-sm md:text-[15px] leading-7 text-zinc-300">
+                    검색량, 문서 포화도, 검색 의도, 실행 전략을 한 화면에서 판단하고 바로 글쓰기와 썸네일 작업으로 이어지게 만듭니다.
+                  </p>
                 </div>
               </div>
 
+              <div className="rounded-3xl border border-white/10 bg-black/20 p-4 md:p-5">
+                <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black uppercase tracking-[0.18em] text-zinc-500">
+                      추적할 메인 키워드
+                    </label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
+                        <input
+                          type="text"
+                          value={scanKeyword}
+                          onChange={(e) => setScanKeyword(e.target.value)}
+                          placeholder="예: 하이닉스 반도체"
+                          className="w-full rounded-2xl border border-zinc-800 bg-zinc-950/90 pl-11 pr-4 py-3.5 text-sm font-bold text-white placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500/40"
+                        />
+                      </div>
+                      <button
+                        onClick={handleStartKeywordScan}
+                        disabled={isAnalyzing}
+                        className="min-w-[180px] rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 px-5 py-3.5 text-sm font-black text-zinc-950 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-70"
+                      >
+                        {isAnalyzing ? (
+                          <span className="inline-flex items-center gap-2">
+                            <RefreshCw size={15} className="animate-spin" />
+                            분석 중
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-2">
+                            <BrainCircuit size={15} />
+                            기회 스캔 시작
+                          </span>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
+                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-zinc-500">즉시 판정</p>
+                    <p className="mt-3 text-lg font-black text-white">{diagnosis.headline}</p>
+                    <p className="mt-2 text-[13px] leading-6 text-zinc-400">{diagnosis.summary}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {keywordMetrics.map((metric) => (
+                  <div key={metric.label} className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
+                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-zinc-500">{metric.label}</p>
+                    <p className={`mt-3 text-2xl font-black ${metric.tone}`}>{metric.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-l border-white/5 bg-black/10 p-6 md:p-8">
+              <div className="rounded-3xl border border-zinc-800 bg-zinc-950/75 p-5 h-full">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.18em] text-zinc-500">실행 허브</p>
+                    <h2 className="mt-2 text-xl font-black text-white">분석 끝나면 바로 작업으로</h2>
+                  </div>
+                  <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[11px] font-black text-blue-300">
+                    READY
+                  </div>
+                </div>
+
+                <div className="mt-5 space-y-3">
+                  <Link href={`/studio/writing/naver/create`} className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 transition-all hover:border-emerald-500/30 hover:bg-zinc-900">
+                    <div>
+                      <p className="text-sm font-black text-white">이 키워드로 AI 스마트 글쓰기</p>
+                      <p className="mt-1 text-[12px] text-zinc-500">메인 키워드를 그대로 넘겨 바로 원고 생성</p>
+                    </div>
+                    <ArrowRight size={16} className="text-emerald-400" />
+                  </Link>
+
+                  <Link href={`/studio/writing/naver/recreate`} className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 transition-all hover:border-blue-500/30 hover:bg-zinc-900">
+                    <div>
+                      <p className="text-sm font-black text-white">이 키워드로 AI 글 재창조</p>
+                      <p className="mt-1 text-[12px] text-zinc-500">연관 기사나 경쟁 문서를 재구성하는 흐름</p>
+                    </div>
+                    <ArrowRight size={16} className="text-blue-400" />
+                  </Link>
+
+                  <Link href={`/studio/writing/naver/thumbnail`} className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 transition-all hover:border-amber-500/30 hover:bg-zinc-900">
+                    <div>
+                      <p className="text-sm font-black text-white">이 키워드로 썸네일 만들기</p>
+                      <p className="mt-1 text-[12px] text-zinc-500">핵심 시각 요소를 바로 이미지 프롬프트로 연결</p>
+                    </div>
+                    <ArrowRight size={16} className="text-amber-400" />
+                  </Link>
+                </div>
+
+                <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-zinc-300">
+                    <CheckCircle2 size={15} className="text-emerald-400" />
+                    <span className="text-sm font-black">이번 키워드 추천 액션</span>
+                  </div>
+                  <div className="grid gap-2 text-[12px] text-zinc-400">
+                    <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-3 py-2">1. 메인 제목은 짧고 강하게, 질문형 보조 제목을 붙이기</div>
+                    <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-3 py-2">2. 연관 키워드 2개만 섞어 과도한 포화 신호 피하기</div>
+                    <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-3 py-2">3. 정보형 구조로 먼저 진입하고 상업형 CTA는 후반에 배치하기</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
+          <div className="rounded-[28px] border border-zinc-800 bg-zinc-950/60 shadow-2xl overflow-hidden">
+            <div className="border-b border-zinc-800 px-5 py-4 flex flex-wrap gap-2">
+              {ANALYSIS_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`rounded-full px-4 py-2 text-[12px] font-black transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-white text-zinc-950'
+                      : 'border border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="p-5 md:p-6 space-y-5">
+              {activeTab === 'opportunity' && activeRecord && (
+                <>
+                  <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+                    <div className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-5">
+                      <div className="flex items-center gap-2 text-zinc-300">
+                        <BarChart3 size={16} className="text-blue-400" />
+                        <h3 className="text-lg font-black">키워드 판정 카드</h3>
+                      </div>
+                      <div className="mt-5 flex flex-wrap items-center gap-3">
+                        <span className="rounded-full border border-zinc-700 bg-zinc-950 px-3 py-1 text-sm font-black text-white">
+                          {activeRecord.keyword}
+                        </span>
+                        <span className={`rounded-full px-3 py-1 text-[11px] font-black ${
+                          activeRecord.grade === 'S급 황금'
+                            ? 'bg-yellow-500/10 text-yellow-300 border border-yellow-500/20'
+                            : activeRecord.grade === 'A급 우수'
+                            ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
+                            : activeRecord.grade === '경쟁과열'
+                            ? 'bg-rose-500/10 text-rose-300 border border-rose-500/20'
+                            : 'bg-zinc-800 text-zinc-300 border border-zinc-700'
+                        }`}>
+                          {activeRecord.grade}
+                        </span>
+                      </div>
+                      <p className="mt-4 text-[14px] leading-7 text-zinc-400">
+                        월 검색량은 <span className="font-black text-white">{formatNumber(activeRecord.monthlySearch)}</span>,
+                        경쟁 문서 수는 <span className="font-black text-white">{activeRecord.totalDocs.toLocaleString()}개</span> 수준입니다.
+                        이 키워드는 현재 <span className="font-black text-emerald-300">{diagnosis.headline}</span>
+                      </p>
+                    </div>
+
+                    <div className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-5">
+                      <div className="flex items-center gap-2 text-zinc-300">
+                        <Lightbulb size={16} className="text-amber-400" />
+                        <h3 className="text-lg font-black">검색 의도 분해</h3>
+                      </div>
+                      <div className="mt-5 space-y-3">
+                        {[
+                          { label: '정보형', value: `${getIntentMix(activeRecord.grade).info}%`, tone: 'bg-cyan-400' },
+                          { label: '행동형', value: `${getIntentMix(activeRecord.grade).action}%`, tone: 'bg-emerald-400' },
+                          { label: '트렌드형', value: `${getIntentMix(activeRecord.grade).trend}%`, tone: 'bg-rose-400' }
+                        ].map((item) => (
+                          <div key={item.label}>
+                            <div className="mb-1.5 flex items-center justify-between text-[12px] font-bold text-zinc-400">
+                              <span>{item.label}</span>
+                              <span>{item.value}</span>
+                            </div>
+                            <div className="h-2 rounded-full bg-zinc-900">
+                              <div className={`h-2 rounded-full ${item.tone}`} style={{ width: item.value }} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-5">
+                      <h4 className="text-[13px] font-black uppercase tracking-[0.18em] text-zinc-500">왜 지금 써야 하나</h4>
+                      <div className="mt-4 space-y-3 text-[13px] leading-6 text-zinc-400">
+                        <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 px-4 py-3">검색량과 문서량 간격이 아직 남아 있어 신규 문서 진입 여지가 있습니다.</div>
+                        <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 px-4 py-3">실시간 이슈, 비교 포인트, 질문형 제목으로 클릭각을 만들기 좋습니다.</div>
+                        <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 px-4 py-3">네이버 블로그형 정보성 문체와 궁합이 좋아 체류시간 확보에 유리합니다.</div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-5">
+                      <h4 className="text-[13px] font-black uppercase tracking-[0.18em] text-zinc-500">주의할 포화 신호</h4>
+                      <div className="mt-4 space-y-3 text-[13px] leading-6 text-zinc-400">
+                        <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 px-4 py-3">메인 키워드만 반복하는 제목은 경쟁 문서와 겹쳐 보일 수 있습니다.</div>
+                        <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 px-4 py-3">서브 키워드는 2개 정도만 섞고, 정보 구조를 명확하게 나누는 편이 안전합니다.</div>
+                        <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 px-4 py-3">트렌드형 키워드일수록 발행 속도가 중요하므로 장문보다 구조화가 우선입니다.</div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {activeTab === 'related' && (
+                <>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg font-black text-white">연관 키워드 클러스터</h3>
+                      <p className="mt-1 text-[13px] text-zinc-500">메인 키워드와 함께 쓰기 좋은 롱테일, 질문형, 비교형 조합입니다.</p>
+                    </div>
+                    <button onClick={handleCopyRelatedKeywords} className="rounded-2xl border border-zinc-800 bg-zinc-900/70 px-4 py-2 text-[12px] font-black text-zinc-300 transition-all hover:text-white">
+                      <span className="inline-flex items-center gap-2">
+                        <Copy size={13} /> 연관 키워드 전체 복사
+                      </span>
+                    </button>
+                  </div>
+
+                  <div className="grid gap-3">
+                    {relatedList.map((item) => (
+                      <div key={item.keyword} className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-4 transition-all hover:border-zinc-700">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-black text-white">{item.keyword}</span>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${
+                            item.intent === '급상승'
+                              ? 'bg-rose-500/10 text-rose-300 border border-rose-500/20'
+                              : item.intent === '상업성'
+                              ? 'bg-blue-500/10 text-blue-300 border border-blue-500/20'
+                              : 'bg-zinc-800 text-zinc-300 border border-zinc-700'
+                          }`}>
+                            {item.intent}
+                          </span>
+                          <span className="text-[11px] font-mono text-zinc-500">{item.docCount.toLocaleString()}개 문서</span>
+                        </div>
+                        <p className="mt-2 text-[13px] leading-6 text-zinc-400">{item.tip}</p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {activeTab === 'execution' && (
+                <div className="grid gap-4 xl:grid-cols-3">
+                  <div className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-5">
+                    <div className="flex items-center gap-2 text-zinc-300">
+                      <FileText size={15} className="text-emerald-400" />
+                      <h3 className="text-lg font-black">추천 제목 5선</h3>
+                    </div>
+                    <div className="mt-4 space-y-3">
+                      {executionPlan.titleIdeas.map((item) => (
+                        <div key={item} className="rounded-2xl border border-zinc-800 bg-zinc-950/60 px-4 py-3 text-[13px] font-medium text-zinc-300">
+                          {item}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-5">
+                    <div className="flex items-center gap-2 text-zinc-300">
+                      <LayoutGrid size={15} className="text-blue-400" />
+                      <h3 className="text-lg font-black">소제목 구조 추천</h3>
+                    </div>
+                    <div className="mt-4 space-y-3">
+                      {executionPlan.outline.map((item, index) => (
+                        <div key={item} className="rounded-2xl border border-zinc-800 bg-zinc-950/60 px-4 py-3 text-[13px] text-zinc-300">
+                          <span className="mr-2 text-blue-400 font-black">{index + 1}.</span>
+                          {item}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-5">
+                    <div className="flex items-center gap-2 text-zinc-300">
+                      <Lightbulb size={15} className="text-amber-400" />
+                      <h3 className="text-lg font-black">썸네일 방향</h3>
+                    </div>
+                    <div className="mt-4 space-y-3">
+                      {executionPlan.thumbnail.map((item) => (
+                        <div key={item} className="rounded-2xl border border-zinc-800 bg-zinc-950/60 px-4 py-3 text-[13px] text-zinc-300">
+                          {item}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="h-14 border-t border-zinc-800 bg-zinc-950/60 px-5 flex items-center justify-between shrink-0">
-            <span className="text-[10px] text-zinc-500 font-medium flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" /> 클라우드 영구 테이블 활성화 상태</span>
-            <button onClick={() => alert("개인 DB 백업 생성이 완료되었습니다.")} className="px-3 py-1.5 bg-blue-600/10 border border-blue-500/20 text-blue-400 font-black text-[11px] rounded-lg hover:bg-blue-600/20 transition-all flex items-center gap-1"><Save size={11} /> DB 백업</button>
-          </div>
-        </div>
+          <aside className="space-y-4">
+            <div className="rounded-[28px] border border-zinc-800 bg-zinc-950/60 shadow-2xl overflow-hidden">
+              <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
+                <div className="flex items-center gap-2 text-zinc-300">
+                  <TrendingUp size={15} className="text-emerald-400" />
+                  <h3 className="text-sm font-black">실시간 트렌드</h3>
+                </div>
+                <span className="text-[10px] font-black text-zinc-500">{trendList.length} INSIDE</span>
+              </div>
+              <div className="p-4 space-y-2">
+                {trendList.map((trend) => (
+                  <button
+                    key={trend.rank}
+                    onClick={() => setScanKeyword(trend.keyword)}
+                    className="w-full rounded-2xl border border-zinc-800 bg-zinc-900/60 px-4 py-3 text-left transition-all hover:border-emerald-500/20 hover:bg-zinc-900"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-mono font-black text-emerald-400">{trend.rank}. {trend.category}</p>
+                        <p className="mt-1 truncate text-[13px] font-bold text-white">{trend.keyword}</p>
+                      </div>
+                      <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-[10px] font-black text-emerald-300">+{trend.growth}%</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
 
+            <div className="rounded-[28px] border border-zinc-800 bg-zinc-950/60 shadow-2xl overflow-hidden">
+              <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
+                <div className="flex items-center gap-2 text-zinc-300">
+                  <Database size={15} className="text-blue-400" />
+                  <h3 className="text-sm font-black">내 보관함</h3>
+                </div>
+                <span className="text-[10px] font-black text-zinc-500">{goldenList.length} RECORDS</span>
+              </div>
+              <div className="p-4 space-y-3">
+                {goldenList.slice(0, 6).map((item) => (
+                  <div key={item.id} className="rounded-2xl border border-zinc-800 bg-zinc-900/60 px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[13px] font-black text-white">{item.keyword}</p>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${
+                        item.grade === 'S급 황금'
+                          ? 'bg-yellow-500/10 text-yellow-300'
+                          : item.grade === 'A급 우수'
+                          ? 'bg-emerald-500/10 text-emerald-300'
+                          : item.grade === '경쟁과열'
+                          ? 'bg-rose-500/10 text-rose-300'
+                          : 'bg-zinc-800 text-zinc-300'
+                      }`}>
+                        {item.grade}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between text-[11px] text-zinc-500">
+                      <span>{formatNumber(item.monthlySearch)}</span>
+                      <span>{item.createdAt}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </aside>
+        </section>
       </div>
     </div>
   );

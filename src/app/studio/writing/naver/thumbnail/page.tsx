@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { 
   ImageIcon, Sparkles, ImagePlus, Layers, Search, 
   Copy, RefreshCw, Wand2, Grid, HelpCircle,
   Eye, CheckCircle2, ArrowDownToLine, Sliders, Globe, Tag,
   FileText, ArrowRightLeft, LayoutGrid, Check, Trash2
 } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
 
 // 인터페이스 규격 완전 보존
 interface GeneratedImage {
@@ -22,9 +23,32 @@ interface MockPost {
   title: string;
   keyword: string;
   content: string;
+  type: 'create' | 'recreate';
 }
 
+interface WritingNaverPostRecord {
+  id: string | number;
+  title?: string | null;
+  content?: string | null;
+  post_type?: string | null;
+  target_keyword?: string | null;
+  categories?: string[] | null;
+  tags?: string[] | null;
+}
+
+const SESSION_TIMEOUT_MS = 4000;
+const AUTH_RETRY_DELAY_MS = 700;
+const AUTH_RETRY_ATTEMPTS = 3;
+const STYLE_PROMPT_MAP: Record<string, string> = {
+  "하이퍼 리얼리즘 실사": "hyper realistic photo",
+  "하이퍼 리얼리즘 실사 (Photo)": "hyper realistic photo",
+  "재패니즈 애니메이션 (Anime)": "japanese anime illustration",
+  "네이버 블로그용 일러스트 (Vector)": "clean vector illustration",
+  "웅장한 3D 입체 팝아트 (3D)": "bold 3d pop art"
+};
+
 export default function NaverThumbnailPage() {
+  const supabase = useMemo(() => createClient(), []);
   const [imagePrompt, setImagePrompt] = useState("");
   const [selectedStyle, setSelectedStyle] = useState("하이퍼 리얼리즘 실사");
   const [generateCount, setGenerateCount] = useState("1");
@@ -33,20 +57,23 @@ export default function NaverThumbnailPage() {
   const [isStockLoading, setIsStockLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState("tech");
   const [isSyncLoading, setIsSyncLoading] = useState(false);
-  const [selectedPostId, setSelectedPostId] = useState("1");
+  const [selectedPostId, setSelectedPostId] = useState("");
+  const [isPostListLoading, setIsPostListLoading] = useState(true);
 
-  // 🌟 1단 원고 리스트 데이터 (보존)
+  // 🌟 1단 원고 리스트 데이터 (실DB 연동)
   const [posts, setPosts] = useState<MockPost[]>([
-    { id: '1', title: 'AI 자동화 수익화의 비밀', keyword: 'AI 자동화', content: 'AI 자동화를 통한 수익 시스템은 노동의 한계를 뛰어넘습니다...' },
-    { id: '2', title: '천안 맛집 TOP 5 추천', keyword: '천안 맛집', content: '제주도 바다 배경의 횟집 테이블 위...' },
-    { id: '3', title: '2026 정부지원금 가이드', keyword: '정부지원금', content: '2026년 소상공인 대상 대규모 지원 정책...' },
-    { id: '4', title: 'Next.js 15 성능 분석', keyword: 'Next.js', content: '양자 컴퓨터 코어 내부에서 빛의 입자들이...' }
+    { id: '1', title: 'AI 자동화 수익화의 비밀', keyword: 'AI 자동화', content: 'AI 자동화를 통한 수익 시스템은 노동의 한계를 뛰어넘습니다...', type: 'create' },
+    { id: '2', title: '천안 맛집 TOP 5 추천', keyword: '천안 맛집', content: '제주도 바다 배경의 횟집 테이블 위...', type: 'recreate' },
+    { id: '3', title: '2026 정부지원금 가이드', keyword: '정부지원금', content: '2026년 소상공인 대상 대규모 지원 정책...', type: 'create' },
+    { id: '4', title: 'Next.js 15 성능 분석', keyword: 'Next.js', content: '양자 컴퓨터 코어 내부에서 빛의 입자들이...', type: 'create' }
   ]);
   
   // 🌟 갤러리 피드 데이터 (보존)
   const [gallery, setGallery] = useState<GeneratedImage[]>([
     { id: '1', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80', style: '하이퍼 리얼리즘 실사', prompt: '테크 기업 사무실에서 회의하는 프로 마케터들의 모습', type: 'ai' }
   ]);
+
+  const selectedPost = posts.find((post) => post.id === selectedPostId) || null;
 
   // 🌟 [보존] 10개 테마 100선 마스터 템플릿 데이터셋
   const promptTemplates: Record<string, { categoryLabel: string; items: string[] }> = {
@@ -67,24 +94,148 @@ export default function NaverThumbnailPage() {
     setSelectedPostId(post.id);
     setIsSyncLoading(true);
     setTimeout(() => {
-      const aiAnalyzedVisualPrompt = `[🔗 원고 연동 비주얼 템플릿] ${post.keyword} 주제에 매칭되는 세련된 배경 디자인, 화려한 그라데이션 조명 효과, 4K 고해상도 그래픽`;
+      const contentSnippet = post.content.replace(/\s+/g, ' ').trim().slice(0, 140);
+      const aiAnalyzedVisualPrompt = [
+        `[원고 제목] ${post.title}`,
+        `[핵심 키워드] ${post.keyword}`,
+        `[본문 요약] ${contentSnippet}`,
+        `[시각 목표] 네이버 블로그 썸네일에 적합한 강한 주제 전달력, 선명한 피사체, 클릭을 유도하는 구도, 텍스트 오버레이 없이 이미지 자체만 생성`
+      ].join('\n');
       setImagePrompt(aiAnalyzedVisualPrompt);
       setStockSearchQuery(post.keyword);
       setIsSyncLoading(false);
     }, 400);
   };
 
+  const buildImagePrompt = (basePrompt: string, style: string, post: MockPost | null) => {
+    const postContext = post
+      ? `주제는 "${post.title}" 이고 핵심 키워드는 "${post.keyword}" 이다. 본문 맥락과 일치하는 대표 장면을 썸네일용으로 구성하라.`
+      : '네이버 블로그 썸네일에 적합한 대표 장면을 구성하라.';
+
+    return [
+      postContext,
+      `스타일은 "${style}" 기반으로 유지하라.`,
+      '고해상도, 선명한 메인 피사체, 강한 대비, 블로그 썸네일 친화적 구도, 텍스트 없는 이미지.',
+      basePrompt
+    ].join(' ');
+  };
+
+  const buildImageRequestPrompt = (style: string, post: MockPost | null) => {
+    const styleDescriptor = STYLE_PROMPT_MAP[style] || "clean blog thumbnail illustration";
+    const keyword = post?.keyword || "blog topic";
+    const title = post?.title || "naver blog thumbnail";
+
+    return [
+      `${keyword}, ${title}`,
+      styleDescriptor,
+      "single strong subject",
+      "clean composition",
+      "vivid lighting",
+      "thumbnail design",
+      "no text",
+      "high detail"
+    ].join(", ");
+  };
+
+  const resolveUserId = useCallback(async () => {
+    for (let attempt = 0; attempt < AUTH_RETRY_ATTEMPTS; attempt += 1) {
+      const timeout = new Promise<null>((resolve) => {
+        setTimeout(() => resolve(null), SESSION_TIMEOUT_MS);
+      });
+
+      const sessionUserIdPromise = supabase.auth.getSession()
+        .then(({ data: { session } }) => session?.user?.id || null)
+        .catch(() => null);
+
+      const sessionUserId = await Promise.race([sessionUserIdPromise, timeout]);
+      if (sessionUserId) return sessionUserId;
+
+      const userPromise = supabase.auth.getUser()
+        .then(({ data: { user } }) => user?.id || null)
+        .catch(() => null);
+
+      const userId = await Promise.race([userPromise, timeout]);
+      if (userId) return userId;
+
+      if (attempt < AUTH_RETRY_ATTEMPTS - 1) {
+        await new Promise((resolve) => setTimeout(resolve, AUTH_RETRY_DELAY_MS));
+      }
+    }
+
+    return null;
+  }, [supabase]);
+
+  useEffect(() => {
+    const loadPosts = async () => {
+      setIsPostListLoading(true);
+
+      try {
+        const userId = await resolveUserId();
+        if (!userId) {
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('writing_naver_posts')
+          .select('*')
+          .eq('user_id', userId)
+          .order('updated_at', { ascending: false });
+
+        if (error) {
+          throw error;
+        }
+
+        const formattedPosts = ((data || []) as WritingNaverPostRecord[]).map((item) => {
+          const fallbackKeyword = (item.categories && item.categories[0]) || (item.tags && item.tags[0]) || '일반 원고';
+          const normalizedType: 'create' | 'recreate' = item.post_type === 'recreate' ? 'recreate' : 'create';
+
+          return {
+            id: String(item.id),
+            title: item.title || '제목 없음',
+            keyword: item.target_keyword || fallbackKeyword,
+            content: item.content || '',
+            type: normalizedType
+          };
+        });
+
+        if (formattedPosts.length > 0) {
+          setPosts(formattedPosts);
+
+          const preferredPost = formattedPosts[0];
+          setSelectedPostId(preferredPost.id);
+          setImagePrompt(`[🔗 원고 연동 비주얼 템플릿] ${preferredPost.keyword} 주제에 매칭되는 세련된 배경 디자인, 화려한 그라데이션 조명 효과, 4K 고해상도 그래픽`);
+          setStockSearchQuery(preferredPost.keyword);
+        } else {
+          setPosts([]);
+          setSelectedPostId("");
+        }
+      } catch (error) {
+        console.error("썸네일 원고 목록 로드 실패:", error);
+      } finally {
+        setIsPostListLoading(false);
+      }
+    };
+
+    void loadPosts();
+  }, [resolveUserId, supabase]);
+
   const handleAiGenerateImage = (count: number) => {
     if (!imagePrompt) return alert("프롬프트를 입력해 주세요!");
     setIsGenerating(true);
     setTimeout(() => {
-      const newImages: GeneratedImage[] = Array.from({ length: count }).map((_, i) => ({
+      const newImages: GeneratedImage[] = Array.from({ length: count }).map((_, i) => {
+        const finalPrompt = buildImagePrompt(imagePrompt, selectedStyle, selectedPost);
+        const requestPrompt = `${buildImageRequestPrompt(selectedStyle, selectedPost)} variation ${i + 1}`;
+        const seed = Date.now() + i;
+
+        return {
         id: `ai-${Date.now()}-${i}`,
-        url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80', 
+        url: `https://image.pollinations.ai/prompt/${encodeURIComponent(requestPrompt)}?width=768&height=768&seed=${seed}&nologo=true`,
         style: selectedStyle,
-        prompt: imagePrompt,
-        type: 'ai'
-      }));
+        prompt: finalPrompt,
+      type: 'ai'
+      };
+      });
       setGallery(prev => [...newImages, ...prev]);
       setIsGenerating(false);
     }, 1500);
@@ -109,7 +260,11 @@ export default function NaverThumbnailPage() {
           <FileText size={13} /> Manuscript Inventory
         </h3>
         <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-0.5">
-          {posts.map((post) => (
+          {isPostListLoading ? (
+            <div className="h-full flex items-center justify-center text-[11px] text-zinc-500 font-bold">
+              원고 목록 불러오는 중...
+            </div>
+          ) : posts.length > 0 ? posts.map((post) => (
             <div
               key={post.id}
               onClick={() => handleSelectPostLink(post)}
@@ -121,9 +276,22 @@ export default function NaverThumbnailPage() {
                 <span className={`text-[11px] font-black leading-tight ${selectedPostId === post.id ? 'text-emerald-400' : 'text-zinc-200'}`}>{post.title}</span>
                 {selectedPostId === post.id && <Check size={12} className="text-emerald-400 shrink-0" />}
               </div>
-              <p className="text-[10px] text-zinc-500 font-medium mt-1">#{post.keyword}</p>
+              <div className="mt-1 flex items-center gap-1.5">
+                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md border ${
+                  post.type === 'recreate'
+                    ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                }`}>
+                  {post.type === 'recreate' ? 'RECREATE' : 'CREATE'}
+                </span>
+                <p className="text-[10px] text-zinc-500 font-medium">#{post.keyword}</p>
+              </div>
             </div>
-          ))}
+          )) : (
+            <div className="h-full flex items-center justify-center text-[11px] text-zinc-500 font-bold text-center px-3">
+              썸네일에 연결할 저장 원고가 아직 없습니다.
+            </div>
+          )}
         </div>
       </div>
 
