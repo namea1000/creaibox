@@ -43,7 +43,7 @@ export default function Sidebar({
   const sidebarData: any = {
     Writing: [
       { name: '워드프레스 글쓰기', href: '/studio/writing/wp/create' },
-      { name: '네이버 글쓰기', href: '/studio/writing/naver' },
+      { name: '네이버 글쓰기', href: '/studio/writing/naver/create' },
       { name: '뉴스 글쓰기', href: '/studio/writing/news' },
       { name: 'SNS 글쓰기', href: '/studio/writing/sns' },
       { name: '광고 카피라이팅', href: '/studio/writing/copy' },

@@ -135,7 +135,7 @@ export default function NaverRecreatePage() {
       const resolvedWordCountGoal = overrides?.wordCountGoal || wordCountGoal;
       const finalAuthor = userNickname || user.email?.split('@')[0] || "Unknown";
 
-      const payload = {
+      const basePayload = {
         user_id: user.id,
         user_email: user.email,
         user_nicename: finalAuthor,
@@ -145,7 +145,10 @@ export default function NaverRecreatePage() {
         categories: [resolvedSourceMode === 'url' ? 'URL 재창조' : '텍스트 재창조'],
         tags: [resolvedTone || '기본 말투'],
         post_type: 'recreate',
-        target_keyword: currentKeyword || targetKeyword || null,
+        target_keyword: currentKeyword || targetKeyword || null
+      };
+
+      const detailPayload = {
         source_mode: resolvedSourceMode,
         source_url: resolvedSourceMode === 'url' ? resolvedSourceUrl || null : null,
         source_text: resolvedSourceMode === 'text' ? resolvedSourceText || null : null,
@@ -154,17 +157,28 @@ export default function NaverRecreatePage() {
         rewrite_strategy: 'original-restructure'
       };
 
-      const { error } = await supabase.from('writing_naver_posts').insert([payload]).select();
+      const { data: insertedRow, error } = await supabase
+        .from('writing_naver_posts')
+        .insert([basePayload])
+        .select('id')
+        .single();
 
-      if (!error) {
+      if (!error && insertedRow?.id) {
+        void supabase
+          .from('writing_naver_posts')
+          .update(detailPayload)
+          .eq('id', insertedRow.id)
+          .eq('user_id', user.id);
+
         if (isManual) {
           alert("🎉 재창조 원고가 '네이버 발행 원고 관리' 장부에 즉시 수동 적재되었습니다!");
         } else {
           alert("✅ AI 글 재창조 결과가 생성과 동시에 '네이버 발행 원고 관리' 장부에 자동 저장되었습니다!");
         }
       } else {
-        console.error("DB 저장 에러:", error.message);
-        alert(`❌ DB 저장 실패: ${error.message}`);
+        const errorMessage = error?.message || '알 수 없는 저장 오류가 발생했습니다.';
+        console.error("DB 저장 에러:", errorMessage);
+        alert(`❌ DB 저장 실패: ${errorMessage}`);
       }
     } catch (error: unknown) {
       alert(`❌ 시스템 오류: ${getErrorMessage(error)}`);
