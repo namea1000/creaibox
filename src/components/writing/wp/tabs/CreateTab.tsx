@@ -228,10 +228,11 @@ export default function CreateTab({
               <label className={`text-[14px] font-black shrink-0 min-w-[80px] ${textColor}`}>길이 (Length)</label>
               <div className={`flex-[2] ${inputBg} border rounded-xl px-4 py-3 flex items-center justify-between ${borderColor} transition-all focus-within:border-blue-500`}>
                 <select value={length} onChange={(e) => setLength(e.target.value)} className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer appearance-none text-zinc-200">
-                  <option>보통 (약 1,500자): 표준 블로그형 (일반 정보성)</option>
-                  <option>짧게 (약 800자): 핵심 요약형 (뉴스, 정보 전달)</option>
-                  <option>길게 (약 3,000자): SEO 상위 노출 공략용 (심층 분석)</option>
-                  <option>아주 길게 (약 5,000자): 가이드북/칼럼형 (주제 완벽 정복)</option>
+                  <option>📰 짧게 (약 800자): 뉴스형 / 핵심 정보 빠른 전달</option>
+                  <option>✍️ 보통 (약 1,500자): 일반 정보성 블로그형</option>
+                  <option>🚀 길게 (약 3,000자): SEO 최적화형 / 상위 노출 공략</option>
+                  <option>📚 아주 길게 (약 5,000자): 전문 가이드형 / 심층 분석 콘텐츠</option>
+                  <option>💰 초장문 (약 8,000자): 애드센스 수익형 / 체류시간 극대화</option>
                 </select>
                 <ChevronDown size={16} className={`${subTextColor} ml-2`} />
               </div>

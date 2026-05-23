@@ -27,7 +27,7 @@ export default function WritingStudioPage() {
       description: '네이버, 티스토리 등 외부 블로그를 위한 SEO 기반 맞춤형 원고 생성.',
       icon: <BookOpen className="text-emerald-500" size={32} />,
       color: 'group-hover:border-emerald-500/50',
-      link: '/studio/writing/naver/home', // 🌟 이동할 경로 추가
+      link: '/studio/writing/naver', // 🌟 이동할 경로 추가
       tag: 'External'
     },
     {
@@ -36,6 +36,7 @@ export default function WritingStudioPage() {
       description: 'Creaibox 전용 도메인 블로그에 즉시 기록하고 관리하는 전용 에디터.',
       icon: <Sparkles className="text-purple-500" size={32} />,
       color: 'group-hover:border-purple-500/50',
+      link: '/studio/writing/creaibox', // 🌟 이동할 경로 추가
       tag: 'Premium'
     },
     {

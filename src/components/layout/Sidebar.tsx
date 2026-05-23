@@ -42,6 +42,7 @@ export default function Sidebar({
 
   const sidebarData: any = {
     Writing: [
+      { name: 'CreAIbox 블로그 글쓰기', href: '/studio/writing/creaibox/create' },
       { name: '워드프레스 글쓰기', href: '/studio/writing/wp/create' },
       { name: '네이버 글쓰기', href: '/studio/writing/naver/create' },
       { name: '뉴스 글쓰기', href: '/studio/writing/news' },

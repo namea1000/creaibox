@@ -20,7 +20,7 @@ export default function NaverWritingLayout({ children }: { children: React.React
 
   // 🌟 홈 화면과 완전 싱크되는 컬러 아이콘 세트
   const tabs = [
-    { id: 'home', label: '네이버 글쓰기 홈', icon: Home, color: 'text-emerald-400', href: '/studio/writing/naver/home' },
+    { id: 'home', label: '네이버 글쓰기 홈', icon: Home, color: 'text-emerald-400', href: '/studio/writing/naver' },
     { id: 'create', label: 'AI 스마트 글쓰기', icon: PenLine, color: 'text-emerald-300', href: '/studio/writing/naver/create' },
     { id: 'recreate', label: 'AI 글 재창조', icon: RefreshCw, color: 'text-blue-400', href: '/studio/writing/naver/recreate' },
     { id: 'list', label: '발행 원고 관리', icon: FileText, color: 'text-purple-400', href: '/studio/writing/naver/list' },
