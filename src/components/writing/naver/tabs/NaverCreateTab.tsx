@@ -32,13 +32,14 @@ interface NaverCreateTabProps {
   setUseSearch: React.Dispatch<React.SetStateAction<boolean>>;
   handleAiGenerateLive: () => Promise<void>;
   handleSavePostToSupabase: () => Promise<void>;
+  editLink?: string;
 }
 
 export default function NaverCreateTab({
   targetKeyword, setTargetKeyword, title, content,
   selectedTone, setSelectedTone, wordCountGoal, setWordCountGoal,
   postType, setPostType, isAiLoading, useSearch, setUseSearch,
-  handleAiGenerateLive
+  handleAiGenerateLive, editLink
 }: NaverCreateTabProps) {
   
   const supabase = useMemo(() => createClient(), []);
@@ -560,12 +561,22 @@ export default function NaverCreateTab({
               </div>
 
               {/* 글수정 이동 */}
-              <Link 
-                href="/studio/writing/naver/manage"
-                className="px-3 py-1.5 border border-zinc-800 hover:border-zinc-700 bg-zinc-900/50 hover:text-white rounded-xl text-[11px] font-black text-zinc-400 transition-all flex items-center gap-1"
-              >
-                글수정 이동 <ExternalLink size={11} />
-              </Link>
+              {editLink ? (
+                <Link 
+                  href={editLink}
+                  className="px-3 py-1.5 border border-zinc-800 hover:border-zinc-700 bg-zinc-900/50 hover:text-white rounded-xl text-[11px] font-black text-zinc-400 transition-all flex items-center gap-1"
+                >
+                  글수정 이동 <ExternalLink size={11} />
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="px-3 py-1.5 border border-zinc-800 bg-zinc-900/30 rounded-xl text-[11px] font-black text-zinc-600 transition-all flex items-center gap-1 cursor-not-allowed"
+                >
+                  글수정 이동 <ExternalLink size={11} />
+                </button>
+              )}
 
               {/* Preview */}
               <button 

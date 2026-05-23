@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   ImageIcon, Heading1, Heading2, Bold, Italic, Link2,
   Type, Wand2, Copy, Save, Cpu, Trash2, Send, RefreshCw
@@ -27,7 +27,7 @@ interface NaverEditorCanvasProps {
   handleUpdateCaption: (id: string, text: string) => void;
   handleDeleteImage: (id: string) => void;
   handleEnhanceContent: (type: 'expand' | 'tone' | 'correct') => void;
-  handleSavePostToSupabase: (status?: any) => void;
+  handleSavePostToSupabase: (status?: any) => Promise<boolean | void>;
   handleCopy?: () => void;
   handleFormDelete?: () => void;
   isRecreateMode?: boolean;
@@ -43,12 +43,31 @@ export default function NaverEditorCanvas({
   handleSavePostToSupabase, handleCopy, handleFormDelete,
   isRecreateMode = false, isDetailMode = false, targetKeyword = "AI 글쓰기", isLoading = false
 }: NaverEditorCanvasProps) {
+  const [saveFeedback, setSaveFeedback] = useState<'idle' | 'saved'>('idle');
+
+  useEffect(() => {
+    if (saveFeedback !== 'saved') return;
+
+    const timer = setTimeout(() => {
+      setSaveFeedback('idle');
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [saveFeedback]);
+
+  const handleSaveClick = async (status?: any) => {
+    const result = await handleSavePostToSupabase(status);
+    if (result !== false) {
+      setSaveFeedback('saved');
+    }
+  };
+
   return (
     /* 🌟 [수술 핵심] 우측 관제탑 길이에 밀리지 않도록 에디터 박스 자체의 최소 높이를 min-h-[750px]로 고정 적출 */
-    <div className="lg:col-span-6 flex flex-col bg-zinc-900/40 border border-emerald-500/20 rounded-2xl overflow-hidden backdrop-blur-md h-full min-h-[750px] shadow-2xl">
+    <div className="lg:col-span-6 flex flex-col bg-[#0a0c10] overflow-hidden h-full min-h-[750px]">
       
       {/* 최상단 에디터 포맷터 핫 버튼 제어반 */}
-      <div className="h-14 border-b border-zinc-800 bg-zinc-950/80 px-4 flex items-center justify-between overflow-x-auto shrink-0 shadow-md">
+      <div className="h-14 border-b border-zinc-800 bg-[#0b0d12] px-4 flex items-center justify-between overflow-x-auto shrink-0">
         <div className="flex items-center gap-1.5 text-zinc-400 shrink-0">
           <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
           <button onClick={handleImageUploadClick} className="p-2 hover:bg-emerald-500/10 hover:text-emerald-400 rounded-xl transition-all text-xs font-bold border border-zinc-800 bg-zinc-900/50 flex items-center gap-1"><ImageIcon size={14} /> 사진 추가</button>
@@ -75,26 +94,26 @@ export default function NaverEditorCanvas({
             <Copy size={13} /> 전체 복사
           </button>
           <button 
-            onClick={() => handleSavePostToSupabase(isDetailMode ? 'completed' : undefined)} 
+            onClick={() => handleSaveClick(isDetailMode ? 'completed' : undefined)} 
             disabled={isSaving}
             className={isDetailMode ? "px-2.5 py-1.5 rounded-xl bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-200 text-xs font-black active:scale-95 transition-all flex items-center gap-1" : "px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black shadow-lg shadow-blue-600/20 active:scale-95 transition-all flex items-center gap-1"}
           >
-            <Save size={13} /> {isSaving ? "저장중..." : "원고 저장"}
+            <Save size={13} /> {isSaving ? "저장중..." : saveFeedback === 'saved' ? "저장완료" : "원고 저장"}
           </button>
         </div>
       </div>
 
       {/* 에디터 인풋 메인 프레임 격실 */}
-      <div className="flex-1 p-5 md:p-6 flex flex-col space-y-5 overflow-y-auto custom-scrollbar bg-zinc-950/40">
+      <div className="flex-1 px-5 pb-5 pt-4 md:px-6 md:pb-6 md:pt-5 flex flex-col space-y-5 overflow-y-auto custom-scrollbar bg-white">
         {isLoading ? (
           <div className="h-full w-full flex items-center justify-center text-xs font-mono text-zinc-500 gap-1.5">
             <RefreshCw size={14} className="animate-spin text-emerald-400" /> Supabase 원고 복원 데이터 바인딩 중...
           </div>
         ) : (
           <>
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-              <input type="text" placeholder={isRecreateMode ? "AI 글 재창조를 가동하시면 중복 필터를 완전히 회피하는 제목이 빌드됩니다." : "제목을 입력하세요..."} value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-transparent text-xl font-black text-white placeholder-zinc-700 focus:outline-none tracking-tight" />
-              <span className="text-[10px] font-mono text-zinc-500 shrink-0 bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded">Chars: <strong className="text-emerald-400">{charCount}</strong></span>
+            <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
+              <input type="text" placeholder={isRecreateMode ? "AI 글 재창조를 가동하시면 중복 필터를 완전히 회피하는 제목이 빌드됩니다." : "제목을 입력하세요..."} value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-transparent text-xl font-black text-zinc-900 placeholder-zinc-400 focus:outline-none tracking-tight" />
+              <span className="text-[10px] font-mono text-zinc-500 shrink-0 bg-zinc-100 border border-zinc-200 px-2 py-0.5 rounded">Chars: <strong className="text-emerald-500">{charCount}</strong></span>
             </div>
             
             {images && images.length > 0 && (
@@ -111,13 +130,13 @@ export default function NaverEditorCanvas({
               </div>
             )}
             {/* 🌟 [수술 핵심] 텍스트 입력창 자체도 최소 min-h-[550px]를 먹여서 본문이 비어있어도 아래로 훤하게 열려있게 만듭니다. */}
-            <textarea placeholder={isRecreateMode ? "재창조 본문 결과 영역..." : "내용을 채워주세요..."} value={content} onChange={(e) => setContent(e.target.value)} className="w-full flex-1 bg-transparent text-sm text-zinc-300 placeholder-zinc-700 focus:outline-none resize-none leading-relaxed font-medium pt-1 min-h-[550px]" />
+            <textarea placeholder={isRecreateMode ? "재창조 본문 결과 영역..." : "내용을 채워주세요..."} value={content} onChange={(e) => setContent(e.target.value)} className="w-full flex-1 bg-transparent text-sm text-zinc-800 placeholder-zinc-400 focus:outline-none resize-none leading-relaxed font-medium pt-1 min-h-[550px]" />
           </>
         )}
       </div>
 
       {/* 에디터 최하단 마감 마스터 필터 */}
-      <div className="h-16 border-t border-zinc-800 bg-zinc-950/60 px-6 flex items-center justify-between shrink-0">
+      <div className="h-16 border-t border-zinc-800 bg-[#0b0d12] px-6 flex items-center justify-between shrink-0">
         {isDetailMode ? (
           <div className="text-[10px] text-zinc-500 font-bold flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> 세션 완공 동기화 모드 : #{targetKeyword}</div>
         ) : (

@@ -211,7 +211,7 @@ return (
 </h3>
 <div className="grid grid-cols-2 gap-1.5 p-1 bg-zinc-950 rounded-xl border border-zinc-850">
 <button type="button" onClick={() => setSourceMode('url')} className={`py-2 text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${sourceMode === 'url' ? 'bg-zinc-800 text-emerald-400 border border-zinc-700/60' : 'text-zinc-500 hover:text-zinc-300'}`}>
-<Link2 size={13} /> URL 주소 추출
+<Link2 size={13} /> URL 주소 재창조
 </button>
 <button type="button" onClick={() => setSourceMode('text')} className={`py-2 text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${sourceMode === 'text' ? 'bg-zinc-800 text-blue-400 border border-zinc-700/60' : 'text-zinc-500 hover:text-zinc-300'}`}>
 <FileText size={13} /> 원본 글 본문 입력

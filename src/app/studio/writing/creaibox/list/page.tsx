@@ -10,13 +10,14 @@ import {
 import { createClient } from '@/utils/supabase/client';
 import type { Session } from '@supabase/supabase-js';
 
-const MANUSCRIPT_CACHE_KEY = 'naver-manuscript-list-cache-v2';
+const MANUSCRIPT_CACHE_KEY = 'creaibox-manuscript-list-cache-v1';
 const SESSION_TIMEOUT_MS = 4000;
 const AUTH_RETRY_DELAY_MS = 700;
 const AUTH_RETRY_ATTEMPTS = 3;
 
 interface ManuscriptListType {
   id: string;
+  displayId: number;
   title: string;
   keyword: string;
   type: 'create' | 'recreate';
@@ -27,19 +28,17 @@ interface ManuscriptListType {
   updatedAt: string;
 }
 
-interface WritingNaverPostRecord {
+interface WritingCreaiboxPostRecord {
   id: string | number;
+  display_id?: number | null;
+  created_at?: string | null;
   title?: string | null;
   content?: string | null;
   post_type?: string | null;
-  source_mode?: string | null;
   status?: string | null;
-  updated_at?: string | null;
   target_keyword?: string | null;
   selected_tone?: string | null;
-  word_count_goal?: number | null;
-  categories?: string[] | null;
-  tags?: string[] | null;
+  word_count_goal?: string | null;
 }
 
 const STATUS_TABS: Array<{ key: 'all' | 'draft' | 'saved' | 'published'; label: string }> = [
@@ -53,7 +52,7 @@ function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
 }
 
-export default function NaverManuscriptListPage() {
+export default function CreaiboxManuscriptListPage() {
   const router = useRouter();
   const pathname = usePathname();
   const supabase = useMemo(() => createClient(), []);
@@ -141,7 +140,7 @@ export default function NaverManuscriptListPage() {
   }, [supabase]);
 
   // 🌟 Supabase에서 실시간 유저 원고 로딩 (탭 이동 시의 즉각적인 수동/자동 반영 구조 완비)
-  const loadManuscripts = useCallback(async (targetUserId?: string, options?: { background?: boolean; preserveOnAuthMiss?: boolean }) => {
+  const loadManuscripts = useCallback(async (_targetUserId?: string, options?: { background?: boolean; preserveOnAuthMiss?: boolean }) => {
     const shouldKeepCurrentList = options?.background && manuscripts.length > 0;
     if (shouldKeepCurrentList) {
       setIsRefreshing(true);
@@ -149,10 +148,7 @@ export default function NaverManuscriptListPage() {
       setIsLoading(true);
     }
     try {
-      let userId: string | null | undefined = targetUserId;
-      if (!userId) {
-        userId = await resolveUserId();
-      }
+      const userId = await resolveUserId();
 
       if (!userId) {
         console.log("로그인 세션 확인이 지연되어 기존 원고 목록을 유지합니다.");
@@ -163,39 +159,30 @@ export default function NaverManuscriptListPage() {
       }
 
       const { data, error } = await supabase
-        .from('writing_naver_posts')
+        .from('writing_creaibox_posts')
         .select('*')
-        .eq('user_id', userId)
-        .order('updated_at', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const formatted: ManuscriptListType[] = (data as WritingNaverPostRecord[]).map((item) => {
+        const formatted: ManuscriptListType[] = (data as WritingCreaiboxPostRecord[]).map((item) => {
           const charCount = item.content ? item.content.length : 0;
-          
-          // keyword fallback 연동 (categories 배열 또는 tags 배열에서 우선 추출)
-          const fallbackKeyword = (item.categories && item.categories[0]) || (item.tags && item.tags[0]) || '일반 원고';
-          const normalizedType = item.post_type === 'recreate' ? 'recreate' : 'create';
-          const sourceModeLabel = item.post_type === 'recreate'
-            ? item.source_mode === 'url'
-              ? 'URL 재창조'
-              : item.source_mode === 'text'
-                ? '텍스트 재창조'
-                : '글 재창조'
-            : 'AI 스마트 글쓰기';
-          const rawTone = item.selected_tone || (item.tags && item.tags[0]) || '친근하고 부드러운 말투';
+          const normalizedType = item.post_type === 'AI 인사이트 포스팅' ? 'create' : 'create';
+          const sourceModeLabel = 'AI 인사이트 포스팅';
+          const rawTone = item.selected_tone || '전문적이고 통찰력 있는 분석';
           
           return {
             id: String(item.id),
+            displayId: item.display_id || 0,
             title: item.title || '제목 없음',
-            keyword: item.target_keyword || fallbackKeyword,
+            keyword: item.target_keyword || '일반 원고',
             type: normalizedType,
             detailLabel: sourceModeLabel,
             selectedTone: rawTone,
             status: item.status === 'published' ? 'published' : item.status === 'saved' ? 'saved' : 'draft',
             wordCount: charCount,
-            updatedAt: item.updated_at ? item.updated_at.replace('T', ' ').substring(0, 16) : '2026-05-19 00:00'
+            updatedAt: item.created_at ? item.created_at.replace('T', ' ').substring(0, 16) : '2026-05-19 00:00'
           };
         });
         setManuscripts(formatted);
@@ -224,7 +211,7 @@ export default function NaverManuscriptListPage() {
     // 🌟 [빨간줄 원천 해결] Supabase 공식 메서드명인 'onAuthStateChange'로 정확하게 수정 완료!
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session: Session | null) => {
       if (session?.user) {
-        loadManuscripts(session.user.id, { background: true, preserveOnAuthMiss: true });
+        loadManuscripts(undefined, { background: true, preserveOnAuthMiss: true });
       } else {
         clearManuscripts();
       }
@@ -238,7 +225,7 @@ export default function NaverManuscriptListPage() {
   }, [clearManuscripts, loadCachedManuscripts, loadManuscripts, supabase]);
 
   useEffect(() => {
-    if (pathname === '/studio/writing/naver/list') {
+    if (pathname === '/studio/writing/creaibox/list') {
       const cacheTimer = setTimeout(() => {
         loadCachedManuscripts();
       }, 0);
@@ -255,13 +242,13 @@ export default function NaverManuscriptListPage() {
 
   useEffect(() => {
     const handleWindowFocus = () => {
-      if (pathname === '/studio/writing/naver/list') {
+      if (pathname === '/studio/writing/creaibox/list') {
         loadManuscripts(undefined, { background: true, preserveOnAuthMiss: true });
       }
     };
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && pathname === '/studio/writing/naver/list') {
+      if (document.visibilityState === 'visible' && pathname === '/studio/writing/creaibox/list') {
         loadManuscripts(undefined, { background: true, preserveOnAuthMiss: true });
       }
     };
@@ -287,7 +274,7 @@ export default function NaverManuscriptListPage() {
       onConfirm: async () => {
         try {
           const { error } = await supabase
-            .from('writing_naver_posts')
+            .from('writing_creaibox_posts')
             .delete()
             .eq('id', id);
           if (error) throw error;
@@ -317,8 +304,8 @@ export default function NaverManuscriptListPage() {
       onConfirm: async () => {
         try {
           const { error } = await supabase
-            .from('writing_naver_posts')
-            .update({ status: 'published', updated_at: new Date().toISOString() })
+            .from('writing_creaibox_posts')
+            .update({ status: 'published' })
             .eq('id', id);
           
           if (error) throw error;
@@ -399,7 +386,7 @@ export default function NaverManuscriptListPage() {
         <div>
           <h1 className="text-xl font-black tracking-tight flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-[#00c73c] inline-block animate-pulse" />
-            네이버 발행 원고 관리
+            Creaibox 발행 원고 관리
           </h1>
           <p className="text-[13px] text-zinc-500 font-bold mt-0.5 leading-relaxed">
             AI로 제작된 원고의 장부를 관리합니다. 각 원고 행을 클릭하시면 실시간 수정/발행이 가능한 전용 스튜디오로 이동합니다.
@@ -527,7 +514,7 @@ export default function NaverManuscriptListPage() {
                   <td colSpan={7} className="py-24 text-center">
                     <div className="flex flex-col items-center justify-center text-zinc-500 gap-3">
                       <AlertCircle size={24} className="text-zinc-700" />
-                      <span className="font-bold text-[15px]">보관 중인 네이버 포스팅 원고가 존재하지 않습니다.</span>
+                      <span className="font-bold text-[15px]">보관 중인 Creaibox 포스팅 원고가 존재하지 않습니다.</span>
                     </div>
                   </td>
                 </tr>
@@ -538,7 +525,7 @@ export default function NaverManuscriptListPage() {
                   return (
                     <tr 
                       key={item.id}
-                      onClick={() => router.push(`/studio/writing/naver/list/${item.id}`)}
+                      onClick={() => router.push(`/studio/writing/creaibox/list/${item.displayId}`)}
                       className="hover:bg-zinc-900/30 transition-all duration-150 cursor-pointer group h-[68px]"
                     >
                       {/* 1. 번호 (No.) */}
@@ -594,7 +581,7 @@ export default function NaverManuscriptListPage() {
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
-                              router.push(`/studio/writing/naver/list/${item.id}`);
+                              router.push(`/studio/writing/creaibox/list/${item.displayId}`);
                             }}
                             className="p-1.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-lg text-zinc-400 hover:text-white transition-all shadow"
                             title="상세 수정하기"

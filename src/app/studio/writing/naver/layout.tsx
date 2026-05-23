@@ -50,34 +50,31 @@ export default function NaverWritingLayout({ children }: { children: React.React
         {/* 중앙 작업 영역: 독립 스크롤 적용 */}
         <main className="flex-1 flex flex-col min-w-0 border-l border-zinc-800/50 bg-[#05070a] overflow-y-auto custom-scrollbar">
           
-          {/* 🌟 [오더 200% 폭격 반영] 유저가 기절할 네이버 오리지널 시그니처 그린 풀 도배 탭 바 */}
-          <div className="sticky top-0 z-20 flex items-center px-4 border-b shrink-0 bg-[#03cf5d] border-[#02b34f] shadow-[0_4px_25px_rgba(3,207,93,0.3)]">
-            <div className="flex overflow-x-auto no-scrollbar py-2 w-full">
+          <div className="sticky top-0 z-20 flex items-center px-4 border-b shrink-0 bg-[#04b85a] border-[#03964a] shadow-[0_8px_24px_rgba(4,184,90,0.22)]">
+            <div className="flex overflow-x-auto no-scrollbar py-1.5 w-full gap-2">
               {tabs.map((tab) => {
                 const isActive = pathname === tab.href;
                 return (
                   <Link
                     key={tab.id}
                     href={tab.href}
-                    className={`flex items-center gap-2.5 px-5 py-3 text-[15px] font-black uppercase tracking-tight transition-all relative shrink-0 rounded-xl my-1 border ${
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-bold tracking-tight transition-all relative shrink-0 rounded-xl my-1 border ${
                       isActive 
-                        ? 'text-[#03cf5d] bg-white border-white shadow-[0_4px_15px_rgba(0,0,0,0.15)] scale-105' 
-                        : 'text-white/80 hover:text-white hover:bg-white/10 border-transparent'
+                        ? 'text-[#04b85a] bg-white border-white shadow-[0_4px_15px_rgba(0,0,0,0.14)]' 
+                        : 'text-white/92 hover:text-white hover:bg-white/10 border-transparent'
                     }`}
                   >
-                    {/* 🌟 선택됐을 때는 네이버 연록색, 아닐때는 고유 아이콘 컬러로 예쁘게 연사 */}
                     <tab.icon 
-                      size={20} 
+                      size={18} 
                       className={`shrink-0 transition-transform ${
-                        isActive ? 'text-[#03cf5d] scale-110' : `${tab.color} drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]`
+                        isActive ? 'text-[#04b85a]' : `${tab.color} drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]`
                       }`} 
                     />
                     
-                    <span className={isActive ? 'font-black' : 'font-bold'}>
+                    <span className={isActive ? 'font-black' : 'font-semibold'}>
                       {tab.label}
                     </span>
 
-                    {/* 선택 시 하단에 더 선명하게 박히는 락킹 임베드 인덱스 */}
                     {isActive && (
                       <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white rotate-45 border-r border-b border-zinc-200/20" />
                     )}

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Search } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
-import NaverEditorCanvas from "@/components/writing/naver/NaverEditorCanvas";
+import NaverEditorCanvas from "@/components/writing/naver/BlogEditorCanvas";
 import NaverAnalysisTower from "@/components/writing/naver/NaverAnalysisTower";
 
 interface ImageBlock {
@@ -235,7 +235,7 @@ export default function NaverManuscriptDetailPage() {
   }, [loadCachedSideList, manuscriptId, resolveUserId, supabase]);
 
   const handleSavePostToSupabase = useCallback(async (nextStatus?: 'completed' | 'published') => {
-    if (!data.id) return;
+    if (!data.id) return false;
 
     setIsSaving(true);
     try {
@@ -255,8 +255,10 @@ export default function NaverManuscriptDetailPage() {
       const normalizedStatus = nextStatus === 'published' ? 'published' : 'saved';
       setData((prev) => ({ ...prev, status: normalizedStatus }));
       setSideList((prev) => prev.map((item) => item.id === data.id ? { ...item, title: data.title, content: data.content, keyword: data.keyword, status: normalizedStatus } : item));
+      return true;
     } catch (error: unknown) {
       console.error("상세 원고 저장 실패:", getErrorMessage(error));
+      return false;
     } finally {
       setIsSaving(false);
     }

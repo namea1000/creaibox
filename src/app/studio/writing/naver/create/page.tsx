@@ -75,6 +75,7 @@ export default function NaverCreatePage() {
   const [useSearch, setUseSearch] = useState(true);
   const [userNickname, setUserNickname] = useState<string>("");
   const [activeUser, setActiveUser] = useState<User | null>(null);
+  const [editLink, setEditLink] = useState<string>("");
 
   useEffect(() => {
     const getProfile = async () => {
@@ -137,9 +138,16 @@ export default function NaverCreatePage() {
         rewrite_strategy: null
       };
 
-      const { error } = await supabase.from('writing_naver_posts').insert([payload]).select();
+      const { data: insertedRow, error } = await supabase
+        .from('writing_naver_posts')
+        .insert([payload])
+        .select('id')
+        .single();
 
       if (!error) {
+        if (insertedRow?.id) {
+          setEditLink(`/studio/writing/naver/list/${insertedRow.id}`);
+        }
         if (isManual) {
           alert("🎉 에디터의 새 원고가 '네이버 발행 원고 관리' 장부에 즉시 수동 적재되었습니다!");
         } else {
@@ -228,6 +236,7 @@ export default function NaverCreatePage() {
         useSearch={useSearch} setUseSearch={setUseSearch}
         handleAiGenerateLive={handleAiGenerateLive}
         handleSavePostToSupabase={() => saveToSupabase(content, title, true)} // 수동 원고 저장 버튼 1:1 결합
+        editLink={editLink}
       />
     </div>
   );

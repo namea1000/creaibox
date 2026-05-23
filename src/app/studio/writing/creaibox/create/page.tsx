@@ -8,6 +8,7 @@ import type { User } from '@supabase/supabase-js';
 
 const AUTH_RETRY_DELAY_MS = 700;
 const AUTH_RETRY_ATTEMPTS = 3;
+const SESSION_TIMEOUT_MS = 4000;
 
 function getLengthPrompt(wordCountGoal: string) {
   switch (wordCountGoal) {
@@ -44,15 +45,111 @@ function getLengthPrompt(wordCountGoal: string) {
   }
 }
 
+function sanitizeGeneratedTitle(rawTitle: string, fallbackKeyword: string) {
+  const cleaned = rawTitle
+    .replace(/\[(.*?)AI(.*?)\]/gi, '[$1$2]')
+    .replace(/\[\s*Creaibox\s+Insight\s*\]/gi, '[Creaibox Insight]')
+    .replace(/\[\s*Creaibox\s+AI\s+Insight\s*\]/gi, '[Creaibox Insight]')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  return cleaned || `[Creaibox Insight] ${fallbackKeyword} 핵심 분석`;
+}
+
+function stripHorizontalRules(markdown: string) {
+  return markdown
+    .replace(/^\s*---+\s*$/gm, '')
+    .replace(/^\s*\*\*\*+\s*$/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function normalizeFocusKeyword(rawValue: string | undefined, fallbackKeyword: string, fallbackTitle: string) {
+  const cleaned = (rawValue || '')
+    .replace(/[\[\]#*]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (cleaned.length >= 2) return cleaned;
+  if (fallbackKeyword.trim().length >= 2) return fallbackKeyword.trim();
+
+  return fallbackTitle
+    .replace(/\[[^\]]+\]/g, ' ')
+    .split(/[\s,:·|/]+/)
+    .filter((token) => token.trim().length >= 2)
+    .slice(0, 2)
+    .join(' ')
+    .trim();
+}
+
+function normalizeSeoTags(rawTags: unknown, focusKeyword: string) {
+  const parsedTags = Array.isArray(rawTags)
+    ? rawTags
+    : typeof rawTags === 'string'
+      ? rawTags.split(',')
+      : [];
+
+  const cleaned = parsedTags
+    .map((tag) => String(tag).replace(/[#\[\]]/g, ' ').replace(/\s+/g, ' ').trim())
+    .filter((tag) => tag.length >= 2);
+
+  const fallback = focusKeyword
+    ? [
+        focusKeyword,
+        `${focusKeyword} 전망`,
+        `${focusKeyword} 분석`,
+        `${focusKeyword} 수혜주`,
+        `${focusKeyword} 투자 포인트`
+      ]
+    : [];
+
+  return [...new Set(cleaned.length > 0 ? cleaned : fallback)].slice(0, 5);
+}
+
+function buildSeoSlug(title: string, focusKeyword: string) {
+  const titleTokens = title
+    .replace(/\[[^\]]+\]/g, ' ')
+    .replace(/[^a-zA-Z0-9가-힣\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter(Boolean);
+
+  const focusTokens = focusKeyword
+    .replace(/[^a-zA-Z0-9가-힣\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter(Boolean);
+
+  return [...new Set([...focusTokens, ...titleTokens])]
+    .slice(0, 6)
+    .join('-')
+    .toLowerCase()
+    .slice(0, 60);
+}
+
 export default function CreaiboxEditorPage() {
   const supabase = useMemo(() => createClient(), []);
 
   const resolveAuthUser = async (): Promise<User | null> => {
     for (let attempt = 0; attempt < AUTH_RETRY_ATTEMPTS; attempt += 1) {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) return session.user;
+      const timeout = new Promise<null>((resolve) => {
+        setTimeout(() => resolve(null), SESSION_TIMEOUT_MS);
+      });
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const sessionPromise = supabase.auth.getSession()
+        .then(({ data: { session } }) => session?.user || null)
+        .catch(() => null);
+
+      const sessionUser = await Promise.race([sessionPromise, timeout]);
+      if (sessionUser) return sessionUser;
+
+      const userPromise = supabase.auth.getUser()
+        .then(({ data: { user } }) => user || null)
+        .catch(() => null);
+
+      const user = await Promise.race([userPromise, timeout]);
       if (user) return user;
 
       if (attempt < AUTH_RETRY_ATTEMPTS - 1) {
@@ -79,6 +176,7 @@ export default function CreaiboxEditorPage() {
   const [useSearch, setUseSearch] = useState(true);
   const [userNickname, setUserNickname] = useState<string>("");
   const [activeUser, setActiveUser] = useState<User | null>(null);
+  const [editLink, setEditLink] = useState("");
 
   useEffect(() => {
     const getProfile = async () => {
@@ -90,7 +188,7 @@ export default function CreaiboxEditorPage() {
       }
     };
     getProfile();
-  }, []);
+  }, [supabase]);
 
   const getApiKey = async () => {
     const localKey = localStorage.getItem('gemini_api_key');
@@ -101,7 +199,18 @@ export default function CreaiboxEditorPage() {
     return atob(vaultKeys[0].key);
   };
 
-  const saveToSupabase = async (currentContent: string, currentTitle: string, isManual: boolean = false) => {
+  const saveToSupabase = async (
+    currentContent: string,
+    currentTitle: string,
+    isManual: boolean = false,
+    overrides?: {
+      focusKeyword?: string;
+      seoTags?: string[];
+      slug?: string;
+      metaDescription?: string;
+      canonicalUrl?: string;
+    }
+  ) => {
     if (!currentContent || currentContent.length < 50) {
       alert("콘텐츠 내용을 더 작성해 주세요.");
       return;
@@ -109,7 +218,27 @@ export default function CreaiboxEditorPage() {
 
     try {
       const user = activeUser || await resolveAuthUser();
-      if (!user) return;
+      if (!user) {
+        alert("로그인 세션을 확인하지 못해 저장을 진행하지 못했습니다. 다시 로그인 상태를 확인해 주세요.");
+        return;
+      }
+
+      if (!activeUser) {
+        setActiveUser(user);
+      }
+
+      const derivedFocusKeyword = (overrides?.focusKeyword || focusKeyword || targetKeyword).trim() || null;
+      const derivedSeoTags = (overrides?.seoTags && overrides.seoTags.length > 0 ? overrides.seoTags : seoTags).length > 0
+        ? (overrides?.seoTags && overrides.seoTags.length > 0 ? overrides.seoTags : seoTags)
+        : derivedFocusKeyword
+        ? [
+            derivedFocusKeyword,
+            `${derivedFocusKeyword} 전망`,
+            `${derivedFocusKeyword} 분석`,
+            `${derivedFocusKeyword} 핵심 정리`,
+            `${derivedFocusKeyword} 투자 포인트`
+          ].slice(0, 5)
+        : null;
 
       const payload = {
         user_id: user.id,
@@ -120,18 +249,25 @@ export default function CreaiboxEditorPage() {
         post_type: postType || 'AI 인사이트 포스팅',
         target_keyword: targetKeyword || null,
         selected_tone: selectedTone || null,
-        slug: slug || null,
-        meta_description: metaDescription || null,
-        focus_keyword: focusKeyword || targetKeyword || null,
-        canonical_url: canonicalUrl || null,
-        seo_tags: seoTags.length > 0 ? seoTags : null,
+        slug: overrides?.slug || slug || null,
+        meta_description: overrides?.metaDescription || metaDescription || null,
+        focus_keyword: derivedFocusKeyword,
+        canonical_url: overrides?.canonicalUrl || canonicalUrl || null,
+        seo_tags: derivedSeoTags,
         word_count_goal: wordCountGoal,
         use_search: useSearch
       };
 
-      const { error } = await supabase.from('writing_creaibox_posts').insert([payload]);
+      const { data: insertedRow, error } = await supabase
+        .from('writing_creaibox_posts')
+        .insert([payload])
+        .select('display_id')
+        .single();
 
       if (!error) {
+        if (insertedRow?.display_id) {
+          setEditLink(`/studio/writing/creaibox/list/${insertedRow.display_id}`);
+        }
         alert(isManual ? "원고가 아카이브에 저장되었습니다." : "AI 생성이 완료되어 아카이브에 자동 저장되었습니다.");
       } else {
         throw error;
@@ -152,7 +288,11 @@ export default function CreaiboxEditorPage() {
       const lengthPrompt = getLengthPrompt(wordCountGoal);
       const apiKey = await getApiKey();
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" }); 
+      const modelOptions: any = { model: "gemini-3-flash-preview" };
+      if (useSearch) {
+        modelOptions.tools = [{ googleSearch: {} }];
+      }
+      const model = genAI.getGenerativeModel(modelOptions); 
 
       const prompt = `
         당신은 Creaibox의 전문 블로그 콘텐츠 에디터입니다. 
@@ -162,25 +302,91 @@ export default function CreaiboxEditorPage() {
         - 길이 규격: ${lengthPrompt.label}
         - 목표 분량: 약 ${wordCountGoal}자
         - 길이 작성 지침: ${lengthPrompt.instruction}
-        - 2026년 최신 기술 트렌드와 인사이트를 반영하여 작성하십시오.
+        - ${useSearch ? 'Google Search를 활용해' : '내부 지식과 논리 전개를 활용해'} 2026년 최신 기술 트렌드와 인사이트를 반영하여 작성하십시오.
         - 제목은 클릭하고 싶게 만들되 과장하지 말고, 첫 문단에서 글의 핵심 가치를 빠르게 전달하십시오.
         - 본문은 마크다운 형식으로 작성하고, 길이 규격에 맞게 문단 수와 정보 밀도를 조절하십시오.
         - 짧은 글은 압축적으로, 긴 글은 소제목/사례/FAQ/실행 팁을 충분히 포함해 깊이 있게 작성하십시오.
-        - JSON 형식으로만 반환하십시오: { "title": "제목", "content": "마크다운 본문" }
+        - 제목에는 "[Creaibox AI Insight]" 같은 AI 표기를 넣지 말고, 본문에도 가로 구분선(---, ***)을 넣지 마십시오.
+        - SEO 최적화 관점에서 이 글의 핵심 Focus Keyword 1개를 뽑으십시오.
+        - SEO Tags 는 Focus Keyword를 중심으로 한 롱테일 검색어 5개를 생성하십시오.
+        - Meta Description 은 정확히 160자에 가깝게 작성하고, 문장 끝은 "알아보겠습니다", "확인해보겠습니다", "분석해보겠습니다"처럼 마무리되는 자연스러운 안내형 문장으로 끝내십시오.
+        - Slug 는 Focus Keyword가 반드시 포함되도록 너무 길지 않게 SEO 친화적으로 작성하십시오.
+        - JSON 형식으로만 반환하십시오:
+          {
+            "title": "제목",
+            "content": "마크다운 본문",
+            "focusKeyword": "핵심 키워드",
+            "seoTags": ["롱테일1", "롱테일2", "롱테일3", "롱테일4", "롱테일5"],
+            "metaDescription": "160자 설명",
+            "slug": "seo-friendly-slug"
+          }
       `;
 
       const result = await model.generateContent(prompt);
       const text = result.response.text().replace(/```json|```/g, '').trim();
-      const { title, content } = JSON.parse(text);
+      const parsed = JSON.parse(text);
         
-      setTitle(title);
-      setContent(content);
+      const finalTitle = sanitizeGeneratedTitle(parsed.title || "", targetKeyword);
+      const finalContent = stripHorizontalRules(parsed.content || "");
+      const nextFocusKeyword = normalizeFocusKeyword(parsed.focusKeyword, targetKeyword, finalTitle);
+      const nextSeoTags = normalizeSeoTags(parsed.seoTags, nextFocusKeyword);
+      const nextSlug = buildSeoSlug(parsed.slug || finalTitle, nextFocusKeyword);
+      const nextMetaDescription = (parsed.metaDescription || '').trim();
+
+      setTitle(finalTitle);
+      setContent(finalContent);
+      setFocusKeyword(nextFocusKeyword);
+      setSeoTags(nextSeoTags);
+      setSlug(nextSlug);
+      setCanonicalUrl(`https://creaibox.blog/${nextSlug}`);
+      if (nextMetaDescription) {
+        setMetaDescription(nextMetaDescription);
+      }
       setIsAiLoading(false);
-      await saveToSupabase(content, title, false);
+
+      setTimeout(() => {
+        void saveToSupabase(finalContent, finalTitle, false, {
+          focusKeyword: nextFocusKeyword,
+          seoTags: nextSeoTags,
+          slug: nextSlug,
+          metaDescription: nextMetaDescription,
+          canonicalUrl: `https://creaibox.blog/${nextSlug}`
+        });
+      }, 100);
     } catch (error: any) {
       alert(`AI 생성 실패: ${error.message}`);
       setIsAiLoading(false);
     }
+  };
+
+  const handleResetGeneratedContent = () => {
+    const hasGeneratedData = Boolean(
+      title.trim() ||
+      content.trim() ||
+      slug.trim() ||
+      metaDescription.trim() ||
+      focusKeyword.trim() ||
+      canonicalUrl.trim() ||
+      seoTags.length > 0
+    );
+
+    if (!hasGeneratedData) {
+      alert("삭제할 생성 결과가 없습니다.");
+      return;
+    }
+
+    const shouldReset = window.confirm("현재 생성된 본문과 SEO 정보를 모두 삭제하고 화면을 새로고침할까요?");
+    if (!shouldReset) return;
+
+    setTitle("");
+    setContent("");
+    setSlug("");
+    setMetaDescription("");
+    setFocusKeyword("");
+    setCanonicalUrl("");
+    setSeoTags([]);
+
+    window.location.reload();
   };
 
   return (
@@ -201,6 +407,8 @@ export default function CreaiboxEditorPage() {
         useSearch={useSearch} setUseSearch={setUseSearch}
         handleAiGenerateLive={handleAiGenerateLive}
         handleSavePostToSupabase={() => saveToSupabase(content, title, true)}
+        handleResetGeneratedContent={handleResetGeneratedContent}
+        editLink={editLink}
       />
     </div>
   );

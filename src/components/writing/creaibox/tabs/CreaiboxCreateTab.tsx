@@ -7,7 +7,7 @@ import remarkGfm from 'remark-gfm';
 import CreaiboxAnalysisTower from "@/components/writing/creaibox/tabs/CreaiboxAnalysisTower";
 import { createClient } from '@/utils/supabase/client';
 import { 
-  Loader2, PenLine, ChevronDown, Zap, Copy, Download, ExternalLink, Eye, X, FileText 
+  Loader2, PenLine, ChevronDown, Zap, Copy, Download, ExternalLink, Eye, X, FileText, Trash2 
 } from 'lucide-react';
 
 interface KeywordFrequency { word: string; count: number; density: number; status: 'good' | 'warning' | 'danger'; }
@@ -42,6 +42,8 @@ interface CreaiboxCreateTabProps {
   setUseSearch: React.Dispatch<React.SetStateAction<boolean>>;
   handleAiGenerateLive: () => Promise<void>;
   handleSavePostToSupabase: () => Promise<void>;
+  handleResetGeneratedContent: () => void;
+  editLink?: string;
 }
 
 export default function CreaiboxCreateTab({
@@ -49,7 +51,7 @@ export default function CreaiboxCreateTab({
   slug, setSlug, metaDescription, setMetaDescription, focusKeyword, setFocusKeyword, canonicalUrl, setCanonicalUrl, seoTags, setSeoTags,
   selectedTone, setSelectedTone, wordCountGoal, setWordCountGoal,
   postType, setPostType, isAiLoading, useSearch, setUseSearch,
-  handleAiGenerateLive, handleSavePostToSupabase
+  handleAiGenerateLive, handleSavePostToSupabase, handleResetGeneratedContent, editLink
 }: CreaiboxCreateTabProps) {
   
   const supabase = useMemo(() => createClient(), []);
@@ -67,43 +69,98 @@ export default function CreaiboxCreateTab({
       ? '준비 완료'
       : '보완 필요';
 
+  const stripMarkdown = (value: string) =>
+    value
+      .replace(/```[\s\S]*?```/g, ' ')
+      .replace(/[#>*_\-\[\]\(\)`]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  const sanitizeInsightPrefix = (value: string) =>
+    value
+      .replace(/\[\s*Creaibox\s+AI\s+Insight\s*\]/gi, '[Creaibox Insight]')
+      .replace(/\[\s*Creaibox\s+Insight\s*\]/gi, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+
+  const buildSlug = (value: string) => {
+    const normalized = sanitizeInsightPrefix(value)
+      .toLowerCase()
+      .replace(/[^a-z0-9가-힣\s-]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const tokens = normalized.split(' ').filter(Boolean).slice(0, 6);
+    return tokens.join('-').slice(0, 48);
+  };
+
+  const finalizeToExactLength = (value: string, targetLength: number, ending: string) => {
+    const normalized = value.replace(/\s+/g, ' ').trim();
+    const endingWithSpace = ` ${ending}`;
+
+    if (!normalized) return ending.slice(0, targetLength);
+
+    if (normalized.length >= targetLength) {
+      const base = normalized.slice(0, Math.max(0, targetLength - endingWithSpace.length)).trim();
+      return `${base}${endingWithSpace}`.slice(0, targetLength);
+    }
+
+    const base = normalized.slice(0, Math.max(0, targetLength - endingWithSpace.length)).trim();
+    const padded = `${base}${endingWithSpace}`;
+    return padded.length >= targetLength
+      ? padded.slice(0, targetLength)
+      : `${padded}${'.'.repeat(targetLength - padded.length)}`;
+  };
+
+  const buildMetaDescription = (rawContent: string, rawTitle: string) => {
+    const source = sanitizeInsightPrefix(stripMarkdown(rawContent || rawTitle));
+    const ending = '지금 핵심 포인트를 확인해보겠습니다.';
+    return finalizeToExactLength(source, 160, ending);
+  };
+
+  const buildFocusKeyword = () => {
+    if (targetKeyword.trim()) return targetKeyword.trim();
+    const baseTitle = sanitizeInsightPrefix(title);
+    const tokens = baseTitle.split(/[\s,:·|/]+/).filter((token) => token.length > 1);
+    return tokens.slice(0, 2).join(' ').trim();
+  };
+
+  const buildSeoTags = (baseKeyword: string, baseTitle: string) => {
+    const seed = baseKeyword || sanitizeInsightPrefix(baseTitle) || targetKeyword;
+    if (!seed) return [];
+
+    const cleanedSeed = seed.trim();
+    return [
+      cleanedSeed,
+      `${cleanedSeed} 전망`,
+      `${cleanedSeed} 분석`,
+      `${cleanedSeed} 핵심 정리`,
+      `${cleanedSeed} 투자 포인트`
+    ].slice(0, 5);
+  };
+
   useEffect(() => {
-    const stripMarkdown = (value: string) =>
-      value
-        .replace(/```[\s\S]*?```/g, ' ')
-        .replace(/[#>*_\-\[\]\(\)`]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+    const nextFocusKeyword = buildFocusKeyword();
 
-    const buildSlug = (value: string) =>
-      value
-        .toLowerCase()
-        .replace(/[^a-z0-9가-힣\s-]/g, '')
-        .trim()
-        .replace(/\s+/g, '-')
-        .slice(0, 80);
-
-    if (title && !slug) {
+    if (title && (!slug || slug.trim() === '')) {
       setSlug(buildSlug(title));
     }
 
-    if (title && !canonicalUrl) {
+    if (title && (!canonicalUrl || canonicalUrl.trim() === '')) {
       setCanonicalUrl(`https://creaibox.blog/${buildSlug(title)}`);
     }
 
-    if (targetKeyword && !focusKeyword) {
-      setFocusKeyword(targetKeyword);
+    if (nextFocusKeyword && (!focusKeyword || focusKeyword.trim() === '')) {
+      setFocusKeyword(nextFocusKeyword);
     }
 
-    if (content && !metaDescription) {
-      const summary = stripMarkdown(content).slice(0, 140);
-      if (summary) {
-        setMetaDescription(summary);
-      }
+    if ((content || title) && (!metaDescription || metaDescription.trim() === '')) {
+      const summary = buildMetaDescription(content, title);
+      if (summary) setMetaDescription(summary);
     }
 
-    if (seoTags.length === 0 && targetKeyword) {
-      setSeoTags([targetKeyword, postType, 'creaibox']);
+    if (seoTags.length === 0 && nextFocusKeyword) {
+      setSeoTags(buildSeoTags(nextFocusKeyword, title));
     }
   }, [
     canonicalUrl,
@@ -401,60 +458,51 @@ export default function CreaiboxCreateTab({
   // 🎨 Creaibox 블로그 프리뷰용 마크다운 스타일 가이드 맵
   const customMarkdownComponents: Components = {
     h1: ({ children }) => (
-      <h2 className="text-[24px] font-black text-[#111111] mt-12 mb-2.5 font-sans tracking-tight border-b-2 border-[#00c73c] pb-3 flex items-center gap-2">
-        <span>📌</span> {children}
+      <h2 className="text-[25px] font-black text-[#111111] mt-12 mb-4 font-sans tracking-tight border-b border-zinc-200 pb-4 leading-[1.45]">
+        {children}
       </h2>
     ),
     h2: ({ children }) => (
-      <h3 className="text-[20px] font-extrabold text-[#000000] mt-10 mb-2.5 font-sans tracking-tight flex items-center gap-2">
-        <span className="w-[5px] h-[22px] bg-[#00c73c] rounded-full inline-block"></span>
+      <h3 className="text-[22px] font-black text-[#111111] mt-12 mb-4 font-sans tracking-tight leading-[1.5]">
         {children}
       </h3>
     ),
     h3: ({ children }) => (
-      <h4 className="text-[17px] font-bold text-[#1a1a1a] mt-8 mb-2 font-sans tracking-tight flex items-center">
+      <h4 className="text-[18px] font-bold text-[#1f1f1f] mt-9 mb-3 font-sans tracking-tight leading-[1.5]">
         {children}
       </h4>
     ),
     p: ({ children }) => {
-      if (!children || children === "\n") return <div className="h-6" />;
+      if (!children || children === "\n") return <div className="h-5" />;
       return (
-        <p className="text-[16px] leading-[2.2] text-[#2c2c2c] mb-6 font-sans font-normal tracking-wide whitespace-pre-line">
+        <p className="text-[17px] leading-[2.05] text-[#2a2a2a] mb-7 font-sans font-normal whitespace-pre-line break-keep">
           {children}
         </p>
       );
     },
     blockquote: ({ children }) => (
-      <div className="my-8 p-6 bg-[#f9f9f9] border-l-[5px] border-[#00c73c] rounded-r-2xl relative shadow-inner overflow-hidden">
-        <span className="absolute -top-1 left-2 text-[52px] text-[#00c73c]/15 font-serif select-none">“</span>
-        <div className="pl-6 text-[15px] font-semibold text-[#444444] leading-[1.9] font-sans italic">
+      <div className="my-8 rounded-2xl border border-zinc-200 bg-[#f7f7f7] px-6 py-5">
+        <div className="text-[15px] font-medium text-[#4a4a4a] leading-[1.95] font-sans italic">
           {children}
         </div>
-        <span className="absolute -bottom-8 right-4 text-[52px] text-[#00c73c]/15 font-serif select-none">”</span>
       </div>
     ),
-    hr: () => (
-      <div className="naver-divider flex items-center justify-center my-10 gap-4">
-        <div className="h-[1px] bg-zinc-200 flex-1"></div>
-        <span className="text-base select-none tracking-widest text-[#00c73c] font-black">🍀✨🍀</span>
-        <div className="h-[1px] bg-zinc-200 flex-1"></div>
-      </div>
-    ),
+    hr: () => null,
     ul: ({ children }) => (
-      <ul className="list-disc pl-6 my-6 space-y-3.5 text-[15px] text-[#333333] font-sans">
+      <ul className="list-disc pl-6 my-6 space-y-3 text-[16px] leading-[1.95] text-[#333333] font-sans">
         {children}
       </ul>
     ),
     ol: ({ children }) => (
-      <ol className="list-decimal pl-6 my-6 space-y-3.5 text-[15px] text-[#333333] font-sans">
+      <ol className="list-decimal pl-6 my-6 space-y-3 text-[16px] leading-[1.95] text-[#333333] font-sans">
         {children}
       </ol>
     ),
     li: ({ children }) => (
-      <li className="leading-relaxed font-medium tracking-wide">{children}</li>
+      <li className="leading-[1.95] font-medium break-keep">{children}</li>
     ),
     strong: ({ children }) => (
-      <strong className="font-extrabold text-[#000000] bg-[#eefcf2] px-1 rounded-sm border-b border-[#00c73c]/30">
+      <strong className="font-extrabold text-[#111111] bg-[#eefcf2] px-1 rounded-sm border-b border-[#00c73c]/25">
         {children}
       </strong>
     )
@@ -615,6 +663,15 @@ export default function CreaiboxCreateTab({
 
             {/* 사장님 탑 메뉴 액션 그룹 */}
             <div className="flex items-center gap-1.5 relative">
+              <button
+                type="button"
+                onClick={handleResetGeneratedContent}
+                disabled={(!title && !content && !slug && !metaDescription && !focusKeyword && seoTags.length === 0) || isAiLoading}
+                className="px-3 py-1.5 border border-red-900/60 hover:border-red-500 hover:text-white bg-zinc-900/50 rounded-xl text-[11px] font-black text-red-300 transition-all flex items-center gap-1 disabled:opacity-30"
+              >
+                <Trash2 size={11} /> DELETE
+              </button>
+
               {/* COPY */}
               <button 
                 onClick={handleCopy}
@@ -646,12 +703,22 @@ export default function CreaiboxCreateTab({
               </div>
 
               {/* 글수정 이동 */}
-              <Link 
-                href="/studio/writing/creaibox/editor"
-                className="px-3 py-1.5 border border-zinc-800 hover:border-zinc-700 bg-zinc-900/50 hover:text-white rounded-xl text-[11px] font-black text-zinc-400 transition-all flex items-center gap-1"
-              >
-                글수정 이동 <ExternalLink size={11} />
-              </Link>
+              {editLink ? (
+                <Link 
+                  href={editLink}
+                  className="px-3 py-1.5 border border-zinc-800 hover:border-zinc-700 bg-zinc-900/50 hover:text-white rounded-xl text-[11px] font-black text-zinc-400 transition-all flex items-center gap-1"
+                >
+                  글수정 이동 <ExternalLink size={11} />
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="px-3 py-1.5 border border-zinc-800 bg-zinc-900/30 rounded-xl text-[11px] font-black text-zinc-600 transition-all flex items-center gap-1 cursor-not-allowed"
+                >
+                  글수정 이동 <ExternalLink size={11} />
+                </button>
+              )}
 
               {/* Preview */}
               <button 
@@ -671,7 +738,7 @@ export default function CreaiboxCreateTab({
                 AI 콘텐츠가 생성되면 여기에 표시됩니다.
               </div>
             ) : (
-              <div className="max-w-2xl mx-auto pb-32 font-sans">
+              <div className="max-w-[820px] mx-auto pb-32 font-sans">
                 {title && (
                   <h1 className="text-[28px] font-black text-[#111111] leading-snug mb-10 border-b border-zinc-200 pb-6 tracking-tight">
                     {title}
