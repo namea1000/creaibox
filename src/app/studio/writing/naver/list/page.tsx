@@ -20,7 +20,7 @@ interface ManuscriptListType {
   title: string;
   keyword: string;
   type: 'create' | 'recreate';
-  categoryName: string; // 🌟 글 유형 (Type) 명칭 저장소
+  detailLabel: string;
   selectedTone: string; // 🌟 말투 (Tone) 명칭 저장소
   status: 'draft' | 'saved' | 'published';
   wordCount: number;
@@ -32,6 +32,7 @@ interface WritingNaverPostRecord {
   title?: string | null;
   content?: string | null;
   post_type?: string | null;
+  source_mode?: string | null;
   status?: string | null;
   updated_at?: string | null;
   target_keyword?: string | null;
@@ -81,6 +82,13 @@ export default function NaverManuscriptListPage() {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
+
+  const clearManuscripts = useCallback(() => {
+    setManuscripts([]);
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.removeItem(MANUSCRIPT_CACHE_KEY);
+    }
+  }, []);
 
   const loadCachedManuscripts = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -133,7 +141,7 @@ export default function NaverManuscriptListPage() {
   }, [supabase]);
 
   // 🌟 Supabase에서 실시간 유저 원고 로딩 (탭 이동 시의 즉각적인 수동/자동 반영 구조 완비)
-  const loadManuscripts = useCallback(async (targetUserId?: string, options?: { background?: boolean }) => {
+  const loadManuscripts = useCallback(async (targetUserId?: string, options?: { background?: boolean; preserveOnAuthMiss?: boolean }) => {
     const shouldKeepCurrentList = options?.background && manuscripts.length > 0;
     if (shouldKeepCurrentList) {
       setIsRefreshing(true);
@@ -147,9 +155,10 @@ export default function NaverManuscriptListPage() {
       }
 
       if (!userId) {
-        console.log("로그인 세션을 확인하지 못해 실제 원고 목록을 비웁니다.");
-        setManuscripts([]);
-        persistManuscripts([]);
+        console.log("로그인 세션 확인이 지연되어 기존 원고 목록을 유지합니다.");
+        if (!options?.preserveOnAuthMiss && !shouldKeepCurrentList) {
+          clearManuscripts();
+        }
         return;
       }
 
@@ -168,7 +177,13 @@ export default function NaverManuscriptListPage() {
           // keyword fallback 연동 (categories 배열 또는 tags 배열에서 우선 추출)
           const fallbackKeyword = (item.categories && item.categories[0]) || (item.tags && item.tags[0]) || '일반 원고';
           const normalizedType = item.post_type === 'recreate' ? 'recreate' : 'create';
-          const rawCategory = (item.categories && item.categories[0]) || (normalizedType === 'recreate' ? '원고재생' : 'AI 자동 포스팅');
+          const sourceModeLabel = item.post_type === 'recreate'
+            ? item.source_mode === 'url'
+              ? 'URL 재창조'
+              : item.source_mode === 'text'
+                ? '텍스트 재창조'
+                : '글 재창조'
+            : 'AI 스마트 글쓰기';
           const rawTone = item.selected_tone || (item.tags && item.tags[0]) || '친근하고 부드러운 말투';
           
           return {
@@ -176,7 +191,7 @@ export default function NaverManuscriptListPage() {
             title: item.title || '제목 없음',
             keyword: item.target_keyword || fallbackKeyword,
             type: normalizedType,
-            categoryName: rawCategory,
+            detailLabel: sourceModeLabel,
             selectedTone: rawTone,
             status: item.status === 'published' ? 'published' : item.status === 'saved' ? 'saved' : 'draft',
             wordCount: charCount,
@@ -186,8 +201,7 @@ export default function NaverManuscriptListPage() {
         setManuscripts(formatted);
         persistManuscripts(formatted);
       } else {
-        setManuscripts([]);
-        persistManuscripts([]);
+        clearManuscripts();
       }
     } catch (error: unknown) {
       console.error("Supabase 원고 리스트 로드 오류:", getErrorMessage(error));
@@ -196,7 +210,7 @@ export default function NaverManuscriptListPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [manuscripts.length, persistManuscripts, resolveUserId, supabase]);
+  }, [clearManuscripts, manuscripts.length, persistManuscripts, resolveUserId, supabase]);
 
   // 🌟 다른 탭에서 돌아왔을 때 완벽한 무새로고침 즉각 반영 메커니즘 가동
   useEffect(() => {
@@ -210,9 +224,9 @@ export default function NaverManuscriptListPage() {
     // 🌟 [빨간줄 원천 해결] Supabase 공식 메서드명인 'onAuthStateChange'로 정확하게 수정 완료!
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session: Session | null) => {
       if (session?.user) {
-        loadManuscripts(session.user.id, { background: true });
+        loadManuscripts(session.user.id, { background: true, preserveOnAuthMiss: true });
       } else {
-        loadManuscripts(undefined, { background: true });
+        clearManuscripts();
       }
     });
 
@@ -221,7 +235,7 @@ export default function NaverManuscriptListPage() {
       clearTimeout(loadTimer);
       subscription?.unsubscribe();
     };
-  }, [loadCachedManuscripts, loadManuscripts, supabase]);
+  }, [clearManuscripts, loadCachedManuscripts, loadManuscripts, supabase]);
 
   useEffect(() => {
     if (pathname === '/studio/writing/naver/list') {
@@ -229,7 +243,7 @@ export default function NaverManuscriptListPage() {
         loadCachedManuscripts();
       }, 0);
       const loadTimer = setTimeout(() => {
-        loadManuscripts(undefined, { background: true });
+        loadManuscripts(undefined, { background: true, preserveOnAuthMiss: true });
       }, 0);
 
       return () => {
@@ -242,13 +256,13 @@ export default function NaverManuscriptListPage() {
   useEffect(() => {
     const handleWindowFocus = () => {
       if (pathname === '/studio/writing/naver/list') {
-        loadManuscripts(undefined, { background: true });
+        loadManuscripts(undefined, { background: true, preserveOnAuthMiss: true });
       }
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && pathname === '/studio/writing/naver/list') {
-        loadManuscripts(undefined, { background: true });
+        loadManuscripts(undefined, { background: true, preserveOnAuthMiss: true });
       }
     };
 
@@ -468,10 +482,9 @@ export default function NaverManuscriptListPage() {
               <tr className="bg-[#0f111a] border-b border-zinc-800 text-zinc-500 text-[13px] font-black uppercase tracking-wider select-none">
                 <th className="py-3 px-4 bg-[#0f111a] text-center w-[5%]">번호</th>
                 <th className="py-3 px-4 bg-[#0f111a] w-[38%]">포스팅 제목</th>
-                <th className="py-3 px-4 bg-[#0f111a] w-[22%]">글 유형(Type)</th>
+                <th className="py-3 px-4 bg-[#0f111a] w-[22%]">작성 방식</th>
                 <th className="py-3 px-4 bg-[#0f111a] w-[12%]">말투(Tone)</th>
                 <th className="py-3 px-4 text-center bg-[#0f111a] w-[7%]">글자 수</th>
-                <th className="py-3 px-4 text-center bg-[#0f111a] w-[6%]">상태</th>
                 <th className="py-3 px-4 text-center bg-[#0f111a] w-[10%]">업데이트 일시</th>
                 <th className="py-3 px-4 text-right pr-6 bg-[#0f111a] w-[10%]">관리 제어</th>
               </tr>
@@ -500,9 +513,6 @@ export default function NaverManuscriptListPage() {
                       <div className="h-3.5 w-12 bg-zinc-800/40 rounded mx-auto"></div>
                     </td>
                     <td className="py-2.5 px-4">
-                      <div className="h-4 w-16 bg-zinc-800/50 rounded-full mx-auto"></div>
-                    </td>
-                    <td className="py-2.5 px-4">
                       <div className="h-3.5 w-28 bg-zinc-800/30 rounded mx-auto"></div>
                     </td>
                     <td className="py-2.5 px-4 text-right pr-6">
@@ -513,7 +523,7 @@ export default function NaverManuscriptListPage() {
               ) : filteredList.length === 0 ? (
                 /* 로딩이 끝났는데 데이터가 없을 때의 피팅 행 */
                 <tr className="h-full">
-                  <td colSpan={8} className="py-24 text-center">
+                  <td colSpan={7} className="py-24 text-center">
                     <div className="flex flex-col items-center justify-center text-zinc-500 gap-3">
                       <AlertCircle size={24} className="text-zinc-700" />
                       <span className="font-bold text-[15px]">보관 중인 네이버 포스팅 원고가 존재하지 않습니다.</span>
@@ -551,13 +561,11 @@ export default function NaverManuscriptListPage() {
                               : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
                           }`}>
                             <Hash size={9} />
-                            {item.categoryName}
+                            {item.type === 'recreate' ? '글 재창조' : '스마트 글쓰기'}
                           </span>
-                          {item.keyword && (
-                            <span className="text-[11px] text-zinc-500 font-bold flex items-center gap-0.5">
-                              <span className="text-[#00c73c]">🔑</span> {item.keyword}
-                            </span>
-                          )}
+                          <span className="text-[11px] text-zinc-500 font-bold">
+                            {item.detailLabel}
+                          </span>
                         </div>
                       </td>
 
@@ -571,25 +579,12 @@ export default function NaverManuscriptListPage() {
                         {item.wordCount.toLocaleString()} 자
                       </td>
 
-                      {/* 6. 상태 */}
-                      <td className="py-2 px-4 text-center w-[6%]">
-                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
-                          item.status === 'published' 
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                            : item.status === 'saved'
-                            ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                            : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                        }`}>
-                          {item.status === 'published' ? '발행완료' : item.status === 'saved' ? '저장완료' : '임시저장'}
-                        </span>
-                      </td>
-
-                      {/* 7. 업데이트 일시 */}
+                      {/* 6. 업데이트 일시 */}
                       <td className="py-2 px-4 text-center text-zinc-500 font-black font-mono text-[13px] w-[10%]">
                         {item.updatedAt}
                       </td>
 
-                      {/* 8. 관리 제어 */}
+                      {/* 7. 관리 제어 */}
                       <td className="py-2 px-4 text-right pr-6 w-[10%]">
                         <div className="flex items-center justify-end gap-1.5">
                           {/* 상세 수정 이동 */}
