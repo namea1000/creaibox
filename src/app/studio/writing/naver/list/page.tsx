@@ -386,7 +386,8 @@ export default function NaverManuscriptListPage() {
                 /* 🌟 [수술 부위 완료] 15단 높이 균등 배분(h-[calc(100%/15)]) 공식을 주입하여 여백 배제 */
                 paginatedList.map((item, idx) => {
                   const displayIndex = (currentPage - 1) * itemsPerPage + idx + 1;
-                  const safeWordCount = item.wordCount ?? item.content?.length ?? 0;
+                  const safeWordCount = Number(item.wordCount ?? item.content?.length ?? 0) || 0;
+                  const safeUpdatedAt = item.updatedAt || '-';
                   return (
                     <tr 
                       key={item.id}
@@ -436,7 +437,7 @@ export default function NaverManuscriptListPage() {
 
                       {/* 6. 업데이트 일시 */}
                       <td className="py-2 px-4 text-center text-zinc-500 font-black font-mono text-[13px] w-[10%] align-middle">
-                        {item.updatedAt}
+                        {safeUpdatedAt}
                       </td>
 
                       {/* 7. 관리 제어 */}

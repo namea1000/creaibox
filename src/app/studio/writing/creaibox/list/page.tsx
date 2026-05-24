@@ -384,11 +384,13 @@ export default function CreaiboxManuscriptListPage() {
                 /* 🌟 [수술 부위 완료] 15단 높이 균등 배분(h-[calc(100%/15)]) 공식을 주입하여 여백 배제 */
                 paginatedList.map((item, idx) => {
                   const displayIndex = (currentPage - 1) * itemsPerPage + idx + 1;
-                  const safeWordCount = item.wordCount ?? item.content?.length ?? 0;
+                  const safeWordCount = Number(item.wordCount ?? item.content?.length ?? 0) || 0;
+                  const safeUpdatedAt = item.updatedAt || '-';
+                  const safeDisplayId = item.displayId || 0;
                   return (
                     <tr 
                       key={item.id}
-                      onClick={() => router.push(`/studio/writing/creaibox/list/${item.displayId}`)}
+                      onClick={() => router.push(`/studio/writing/creaibox/list/${safeDisplayId}`)}
                       className="hover:bg-zinc-900/30 transition-all duration-150 cursor-pointer group h-[68px]"
                     >
                       {/* 1. 번호 (No.) */}
@@ -434,7 +436,7 @@ export default function CreaiboxManuscriptListPage() {
 
                       {/* 6. 업데이트 일시 */}
                       <td className="py-2 px-4 text-center text-zinc-500 font-black font-mono text-[13px] w-[10%] align-middle">
-                        {item.updatedAt}
+                        {safeUpdatedAt}
                       </td>
 
                       {/* 7. 관리 제어 */}
@@ -444,7 +446,7 @@ export default function CreaiboxManuscriptListPage() {
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
-                              router.push(`/studio/writing/creaibox/list/${item.displayId}`);
+                              router.push(`/studio/writing/creaibox/list/${safeDisplayId}`);
                             }}
                             className="p-1.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-lg text-zinc-400 hover:text-white transition-all shadow"
                             title="상세 수정하기"

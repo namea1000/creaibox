@@ -49,41 +49,148 @@ function applyInlineMarkdown(value: string) {
     .replace(/\*(.+?)\*/g, '<em>$1</em>');
 }
 
-function markdownToEditableHtml(markdown: string) {
-  const blocks = markdown
-    .replace(/\r\n/g, '\n')
+function isMarkdownTableSeparator(line: string) {
+  return /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(line.trim());
+}
+
+function parseMarkdownTableRow(line: string) {
+  return line
     .trim()
-    .split(/\n\s*\n/);
+    .replace(/^\|/, '')
+    .replace(/\|$/, '')
+    .split('|')
+    .map((cell) => cell.trim());
+}
 
-  if (!markdown.trim()) return '';
+function markdownToEditableHtml(markdown: string) {
+  const normalized = markdown.replace(/\r\n/g, '\n').trim();
+  if (!normalized) return '';
 
-  return blocks
-    .map((block) => {
-      const trimmed = block.trim();
-      const lines = trimmed.split('\n').map((line) => line.trimEnd());
+  const lines = normalized.split('\n');
+  const blocks: string[] = [];
+  let paragraphBuffer: string[] = [];
 
-      if (/^###\s+/.test(trimmed)) {
-        return `<h3>${applyInlineMarkdown(trimmed.replace(/^###\s+/, ''))}</h3>`;
+  const flushParagraph = () => {
+    const cleaned = paragraphBuffer.map((line) => line.trimEnd()).filter(Boolean);
+    if (cleaned.length > 0) {
+      blocks.push(`<p>${cleaned.map((line) => applyInlineMarkdown(line)).join('<br />')}</p>`);
+    }
+    paragraphBuffer = [];
+  };
+
+  let index = 0;
+  while (index < lines.length) {
+    const rawLine = lines[index];
+    const line = rawLine.trim();
+
+    if (!line) {
+      flushParagraph();
+      index += 1;
+      continue;
+    }
+
+    if (/^####\s+/.test(line)) {
+      flushParagraph();
+      blocks.push(`<h4>${applyInlineMarkdown(line.replace(/^####\s+/, ''))}</h4>`);
+      index += 1;
+      continue;
+    }
+
+    if (/^###\s+/.test(line)) {
+      flushParagraph();
+      blocks.push(`<h3>${applyInlineMarkdown(line.replace(/^###\s+/, ''))}</h3>`);
+      index += 1;
+      continue;
+    }
+
+    if (/^##\s+/.test(line)) {
+      flushParagraph();
+      blocks.push(`<h2>${applyInlineMarkdown(line.replace(/^##\s+/, ''))}</h2>`);
+      index += 1;
+      continue;
+    }
+
+    if (/^#\s+/.test(line)) {
+      flushParagraph();
+      blocks.push(`<h1>${applyInlineMarkdown(line.replace(/^#\s+/, ''))}</h1>`);
+      index += 1;
+      continue;
+    }
+
+    if (/^[-*]\s+/.test(line)) {
+      flushParagraph();
+      const items: string[] = [];
+      while (index < lines.length && /^[-*]\s+/.test(lines[index].trim())) {
+        items.push(`<li>${applyInlineMarkdown(lines[index].trim().replace(/^[-*]\s+/, ''))}</li>`);
+        index += 1;
       }
-      if (/^##\s+/.test(trimmed)) {
-        return `<h2>${applyInlineMarkdown(trimmed.replace(/^##\s+/, ''))}</h2>`;
+      blocks.push(`<ul>${items.join('')}</ul>`);
+      continue;
+    }
+
+    if (/^\d+\.\s+/.test(line)) {
+      flushParagraph();
+      const items: string[] = [];
+      while (index < lines.length && /^\d+\.\s+/.test(lines[index].trim())) {
+        items.push(`<li>${applyInlineMarkdown(lines[index].trim().replace(/^\d+\.\s+/, ''))}</li>`);
+        index += 1;
       }
-      if (/^#\s+/.test(trimmed)) {
-        return `<h1>${applyInlineMarkdown(trimmed.replace(/^#\s+/, ''))}</h1>`;
+      blocks.push(`<ol>${items.join('')}</ol>`);
+      continue;
+    }
+
+    if (/^>\s?/.test(line)) {
+      flushParagraph();
+      const quoteLines: string[] = [];
+      while (index < lines.length && /^>\s?/.test(lines[index].trim())) {
+        quoteLines.push(applyInlineMarkdown(lines[index].trim().replace(/^>\s?/, '')));
+        index += 1;
       }
-      if (lines.every((line) => /^[-*]\s+/.test(line))) {
-        return `<ul>${lines.map((line) => `<li>${applyInlineMarkdown(line.replace(/^[-*]\s+/, ''))}</li>`).join('')}</ul>`;
-      }
-      if (lines.every((line) => /^\d+\.\s+/.test(line))) {
-        return `<ol>${lines.map((line) => `<li>${applyInlineMarkdown(line.replace(/^\d+\.\s+/, ''))}</li>`).join('')}</ol>`;
-      }
-      if (/^>\s+/.test(trimmed)) {
-        return `<blockquote>${lines.map((line) => applyInlineMarkdown(line.replace(/^>\s?/, ''))).join('<br />')}</blockquote>`;
+      blocks.push(`<blockquote>${quoteLines.join('<br />')}</blockquote>`);
+      continue;
+    }
+
+    if (
+      line.includes('|') &&
+      index + 1 < lines.length &&
+      isMarkdownTableSeparator(lines[index + 1])
+    ) {
+      flushParagraph();
+      const headerCells = parseMarkdownTableRow(line);
+      index += 2;
+
+      const bodyRows: string[][] = [];
+      while (index < lines.length) {
+        const tableLine = lines[index].trim();
+        if (!tableLine || !tableLine.includes('|')) break;
+        bodyRows.push(parseMarkdownTableRow(tableLine));
+        index += 1;
       }
 
-      return `<p>${lines.map((line) => applyInlineMarkdown(line)).join('<br />')}</p>`;
-    })
-    .join('');
+      const headerHtml = headerCells
+        .map((cell) => `<th>${applyInlineMarkdown(cell)}</th>`)
+        .join('');
+      const bodyHtml = bodyRows
+        .map(
+          (row) =>
+            `<tr>${row
+              .map((cell) => `<td>${applyInlineMarkdown(cell)}</td>`)
+              .join('')}</tr>`
+        )
+        .join('');
+
+      blocks.push(
+        `<div class="cb-table-wrap"><table><thead><tr>${headerHtml}</tr></thead><tbody>${bodyHtml}</tbody></table></div>`
+      );
+      continue;
+    }
+
+    paragraphBuffer.push(rawLine);
+    index += 1;
+  }
+
+  flushParagraph();
+  return blocks.join('');
 }
 
 function editableSurfaceToMarkdown(root: HTMLDivElement) {
@@ -127,6 +234,10 @@ function editableSurfaceToMarkdown(root: HTMLDivElement) {
       blocks.push(`### ${element.innerText.trim()}`);
       return;
     }
+    if (tag === 'H4') {
+      blocks.push(`#### ${element.innerText.trim()}`);
+      return;
+    }
     if (tag === 'UL') {
       const items = Array.from(element.querySelectorAll(':scope > li'))
         .map((li) => `- ${Array.from(li.childNodes).map(stringifyNode).join('').trim()}`)
@@ -151,6 +262,27 @@ function editableSurfaceToMarkdown(root: HTMLDivElement) {
       blocks.push(lines);
       return;
     }
+    if (tag === 'DIV' && element.classList.contains('cb-table-wrap')) {
+      const table = element.querySelector('table');
+      if (!table) return;
+
+      const rows = Array.from(table.querySelectorAll('tr')).map((row) =>
+        Array.from(row.children).map((cell) =>
+          Array.from(cell.childNodes).map(stringifyNode).join('').trim()
+        )
+      );
+
+      if (rows.length > 0) {
+        const header = `| ${rows[0].join(' | ')} |`;
+        const separator = `| ${rows[0].map(() => '---').join(' | ')} |`;
+        const body = rows
+          .slice(1)
+          .map((row) => `| ${row.join(' | ')} |`)
+          .join('\n');
+        blocks.push([header, separator, body].filter(Boolean).join('\n'));
+      }
+      return;
+    }
 
     const text = Array.from(element.childNodes).map(stringifyNode).join('').trim();
     if (text) {
@@ -170,7 +302,7 @@ export default function NaverEditorCanvas({
 }: NaverEditorCanvasProps) {
   const [saveFeedback, setSaveFeedback] = useState<'idle' | 'saved'>('idle');
   const contentEditableRef = useRef<HTMLDivElement | null>(null);
-  const lastSyncedContentRef = useRef(content);
+  const [isBodyEditing, setIsBodyEditing] = useState(false);
 
   useEffect(() => {
     if (saveFeedback !== 'saved') return;
@@ -190,31 +322,42 @@ export default function NaverEditorCanvas({
   };
 
   useEffect(() => {
-    if (!contentEditableRef.current) return;
+    if (!contentEditableRef.current || isBodyEditing) return;
 
-    const normalizedDom = editableSurfaceToMarkdown(contentEditableRef.current).replace(/\r\n/g, '\n').trim();
-    const normalizedState = content.replace(/\r\n/g, '\n').trim();
-
-    if (document.activeElement === contentEditableRef.current) return;
-
-    if (normalizedDom !== normalizedState) {
-      contentEditableRef.current.innerHTML = markdownToEditableHtml(content);
+    const nextHtml = markdownToEditableHtml(content);
+    if (contentEditableRef.current.innerHTML !== nextHtml) {
+      contentEditableRef.current.innerHTML = nextHtml;
     }
-    lastSyncedContentRef.current = content;
-  }, [content]);
+  }, [content, isBodyEditing]);
 
   const handleInlineContentInput = () => {
     if (!contentEditableRef.current) return;
     const nextValue = editableSurfaceToMarkdown(contentEditableRef.current)
       .replace(/\u00a0/g, ' ')
       .replace(/\r\n/g, '\n');
-    lastSyncedContentRef.current = nextValue;
     setContent(nextValue);
   };
 
   const focusEditableSurface = () => {
     if (!contentEditableRef.current) return;
     contentEditableRef.current.focus();
+  };
+
+  const handleBodyFocus = () => {
+    setIsBodyEditing(true);
+  };
+
+  const handleBodyBlur = () => {
+    if (!contentEditableRef.current) {
+      setIsBodyEditing(false);
+      return;
+    }
+
+    const nextValue = editableSurfaceToMarkdown(contentEditableRef.current)
+      .replace(/\u00a0/g, ' ')
+      .replace(/\r\n/g, '\n');
+    setContent(nextValue);
+    setIsBodyEditing(false);
   };
 
   const handleDownload = () => {
@@ -380,13 +523,15 @@ export default function NaverEditorCanvas({
                 contentEditable
                 suppressContentEditableWarning
                 onInput={handleInlineContentInput}
+                onFocus={handleBodyFocus}
+                onBlur={handleBodyBlur}
                 onClick={focusEditableSurface}
                 tabIndex={0}
                 role="textbox"
                 aria-multiline="true"
                 spellCheck={false}
                 data-placeholder={isRecreateMode ? "재창조 본문 결과 영역..." : "내용을 채워주세요..."}
-                className="min-h-[760px] w-full flex-1 cursor-text rounded-[10px] bg-transparent px-1 py-1 text-zinc-800 caret-zinc-950 outline-none transition-colors before:pointer-events-none before:absolute before:text-zinc-400 empty:before:content-[attr(data-placeholder)] focus:bg-zinc-50/70 [&_h1]:mb-6 [&_h1]:border-b [&_h1]:border-zinc-200 [&_h1]:pb-4 [&_h1]:text-[2.05rem] [&_h1]:font-black [&_h1]:leading-[1.25] [&_h1]:tracking-[-0.03em] [&_h2]:mt-12 [&_h2]:mb-5 [&_h2]:text-[1.72rem] [&_h2]:font-black [&_h2]:leading-[1.34] [&_h2]:tracking-[-0.02em] [&_h3]:mt-10 [&_h3]:mb-4 [&_h3]:text-[1.35rem] [&_h3]:font-black [&_h3]:leading-[1.42] [&_p]:mb-6 [&_p]:text-[1.18rem] [&_p]:leading-[2.05] [&_p]:tracking-[-0.012em] [&_ul]:mb-8 [&_ul]:ml-6 [&_ul]:list-disc [&_ul]:space-y-3 [&_ul]:text-[1.12rem] [&_ul]:leading-[1.95] [&_ol]:mb-8 [&_ol]:ml-6 [&_ol]:list-decimal [&_ol]:space-y-3 [&_ol]:text-[1.12rem] [&_ol]:leading-[1.95] [&_blockquote]:my-8 [&_blockquote]:rounded-[22px] [&_blockquote]:border [&_blockquote]:border-zinc-200 [&_blockquote]:bg-zinc-50 [&_blockquote]:px-6 [&_blockquote]:py-5 [&_blockquote]:text-[1.02rem] [&_blockquote]:font-medium [&_blockquote]:leading-[1.9] [&_blockquote]:text-zinc-600"
+                className="min-h-[760px] w-full flex-1 cursor-text rounded-[10px] bg-transparent px-1 py-1 text-zinc-800 caret-zinc-950 outline-none transition-colors before:pointer-events-none before:absolute before:text-zinc-400 empty:before:content-[attr(data-placeholder)] focus:bg-zinc-50/70 [&_.cb-table-wrap]:my-8 [&_.cb-table-wrap]:overflow-x-auto [&_table]:w-full [&_table]:border-collapse [&_thead]:bg-zinc-100 [&_th]:border [&_th]:border-zinc-300 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-[1rem] [&_th]:font-black [&_td]:border [&_td]:border-zinc-200 [&_td]:px-4 [&_td]:py-3 [&_td]:align-top [&_td]:text-[1rem] [&_td]:leading-[1.8] [&_h1]:mb-6 [&_h1]:border-b [&_h1]:border-zinc-200 [&_h1]:pb-4 [&_h1]:text-[2.05rem] [&_h1]:font-black [&_h1]:leading-[1.25] [&_h1]:tracking-[-0.03em] [&_h2]:mt-12 [&_h2]:mb-5 [&_h2]:text-[1.72rem] [&_h2]:font-black [&_h2]:leading-[1.34] [&_h2]:tracking-[-0.02em] [&_h3]:mt-10 [&_h3]:mb-4 [&_h3]:text-[1.35rem] [&_h3]:font-black [&_h3]:leading-[1.42] [&_h4]:mt-8 [&_h4]:mb-3 [&_h4]:text-[1.18rem] [&_h4]:font-black [&_h4]:leading-[1.5] [&_p]:mb-6 [&_p]:text-[1.18rem] [&_p]:leading-[2.05] [&_p]:tracking-[-0.012em] [&_ul]:mb-8 [&_ul]:ml-6 [&_ul]:list-disc [&_ul]:space-y-3 [&_ul]:text-[1.12rem] [&_ul]:leading-[1.95] [&_ol]:mb-8 [&_ol]:ml-6 [&_ol]:list-decimal [&_ol]:space-y-3 [&_ol]:text-[1.12rem] [&_ol]:leading-[1.95] [&_blockquote]:my-8 [&_blockquote]:rounded-[22px] [&_blockquote]:border [&_blockquote]:border-zinc-200 [&_blockquote]:bg-zinc-50 [&_blockquote]:px-6 [&_blockquote]:py-5 [&_blockquote]:text-[1.02rem] [&_blockquote]:font-medium [&_blockquote]:leading-[1.9] [&_blockquote]:text-zinc-600"
               />
             </div>
           </div>
