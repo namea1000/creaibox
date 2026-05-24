@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
   Search, AlertCircle, RefreshCw, 
@@ -8,16 +8,12 @@ import {
 } from 'lucide-react';
 // 📡 Supabase 통신 커넥터 연결
 import { createClient } from '@/utils/supabase/client';
-import type { Session } from '@supabase/supabase-js';
-
-const MANUSCRIPT_CACHE_KEY = 'naver-manuscript-list-cache-v2';
-const SESSION_TIMEOUT_MS = 4000;
-const AUTH_RETRY_DELAY_MS = 700;
-const AUTH_RETRY_ATTEMPTS = 3;
+import { naverManuscriptStore } from '@/lib/stores/manuscripts';
 
 interface ManuscriptListType {
   id: string;
   title: string;
+  content: string;
   keyword: string;
   type: 'create' | 'recreate';
   detailLabel: string;
@@ -57,11 +53,13 @@ export default function NaverManuscriptListPage() {
   const router = useRouter();
   const pathname = usePathname();
   const supabase = useMemo(() => createClient(), []);
+  const manuscriptStoreState = useSyncExternalStore(
+    naverManuscriptStore.subscribe,
+    naverManuscriptStore.getSnapshot,
+    naverManuscriptStore.getSnapshot
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatusTab, setSelectedStatusTab] = useState<'all' | 'draft' | 'saved' | 'published'>('all');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [manuscripts, setManuscripts] = useState<ManuscriptListType[]>([]);
   
   // 🌟 [오더 반영] 페이지네이션 상태 (한 페이지에 15개 표시로 증가)
   const [currentPage, setCurrentPage] = useState(1);
@@ -82,187 +80,38 @@ export default function NaverManuscriptListPage() {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
-
-  const clearManuscripts = useCallback(() => {
-    setManuscripts([]);
-    if (typeof window !== 'undefined') {
-      window.sessionStorage.removeItem(MANUSCRIPT_CACHE_KEY);
-    }
-  }, []);
-
-  const loadCachedManuscripts = useCallback(() => {
-    if (typeof window === 'undefined') return;
-    const rawCache = window.sessionStorage.getItem(MANUSCRIPT_CACHE_KEY);
-    if (!rawCache) return;
-
-    try {
-      const parsed = JSON.parse(rawCache) as ManuscriptListType[];
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        setManuscripts(parsed);
-        setIsLoading(false);
-      }
-    } catch (error) {
-      console.error("원고 캐시 복원 실패:", error);
-      window.sessionStorage.removeItem(MANUSCRIPT_CACHE_KEY);
-    }
-  }, []);
-
-  const persistManuscripts = useCallback((nextManuscripts: ManuscriptListType[]) => {
-    if (typeof window === 'undefined') return;
-    window.sessionStorage.setItem(MANUSCRIPT_CACHE_KEY, JSON.stringify(nextManuscripts));
-  }, []);
-
-  const resolveUserId = useCallback(async () => {
-    for (let attempt = 0; attempt < AUTH_RETRY_ATTEMPTS; attempt += 1) {
-      const timeout = new Promise<null>((resolve) => {
-        setTimeout(() => resolve(null), SESSION_TIMEOUT_MS);
-      });
-
-      const sessionUserIdPromise = supabase.auth.getSession()
-        .then(({ data: { session } }) => session?.user?.id || null)
-        .catch(() => null);
-
-      const sessionUserId = await Promise.race([sessionUserIdPromise, timeout]);
-      if (sessionUserId) return sessionUserId;
-
-      const userPromise = supabase.auth.getUser()
-        .then(({ data: { user } }) => user?.id || null)
-        .catch(() => null);
-
-      const userId = await Promise.race([userPromise, timeout]);
-      if (userId) return userId;
-
-      if (attempt < AUTH_RETRY_ATTEMPTS - 1) {
-        await new Promise((resolve) => setTimeout(resolve, AUTH_RETRY_DELAY_MS));
-      }
-    }
-
-    return null;
-  }, [supabase]);
+  const manuscripts = manuscriptStoreState.list as ManuscriptListType[];
+  const isLoading = manuscriptStoreState.listLoading;
+  const isRefreshing = manuscriptStoreState.listRefreshing;
 
   // 🌟 Supabase에서 실시간 유저 원고 로딩 (탭 이동 시의 즉각적인 수동/자동 반영 구조 완비)
-  const loadManuscripts = useCallback(async (targetUserId?: string, options?: { background?: boolean; preserveOnAuthMiss?: boolean }) => {
-    const shouldKeepCurrentList = options?.background && manuscripts.length > 0;
-    if (shouldKeepCurrentList) {
-      setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
-    }
+  const loadManuscripts = useCallback(async (options?: { background?: boolean; preserveOnAuthMiss?: boolean }) => {
     try {
-      let userId: string | null | undefined = targetUserId;
-      if (!userId) {
-        userId = await resolveUserId();
-      }
-
-      if (!userId) {
-        console.log("로그인 세션 확인이 지연되어 기존 원고 목록을 유지합니다.");
-        if (!options?.preserveOnAuthMiss && !shouldKeepCurrentList) {
-          clearManuscripts();
-        }
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('writing_naver_posts')
-        .select('*')
-        .eq('user_id', userId)
-        .order('updated_at', { ascending: false });
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        const formatted: ManuscriptListType[] = (data as WritingNaverPostRecord[]).map((item) => {
-          const charCount = item.content ? item.content.length : 0;
-          
-          // keyword fallback 연동 (categories 배열 또는 tags 배열에서 우선 추출)
-          const fallbackKeyword = (item.categories && item.categories[0]) || (item.tags && item.tags[0]) || '일반 원고';
-          const normalizedType = item.post_type === 'recreate' ? 'recreate' : 'create';
-          const sourceModeLabel = item.post_type === 'recreate'
-            ? item.source_mode === 'url'
-              ? 'URL 재창조'
-              : item.source_mode === 'text'
-                ? '텍스트 재창조'
-                : '글 재창조'
-            : 'AI 스마트 글쓰기';
-          const rawTone = item.selected_tone || (item.tags && item.tags[0]) || '친근하고 부드러운 말투';
-          
-          return {
-            id: String(item.id),
-            title: item.title || '제목 없음',
-            keyword: item.target_keyword || fallbackKeyword,
-            type: normalizedType,
-            detailLabel: sourceModeLabel,
-            selectedTone: rawTone,
-            status: item.status === 'published' ? 'published' : item.status === 'saved' ? 'saved' : 'draft',
-            wordCount: charCount,
-            updatedAt: item.updated_at ? item.updated_at.replace('T', ' ').substring(0, 16) : '2026-05-19 00:00'
-          };
-        });
-        setManuscripts(formatted);
-        persistManuscripts(formatted);
-      } else {
-        clearManuscripts();
-      }
+      await naverManuscriptStore.ensureList(options);
     } catch (error: unknown) {
       console.error("Supabase 원고 리스트 로드 오류:", getErrorMessage(error));
       showToast("원고 목록을 불러오는 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.", 'error');
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
     }
-  }, [clearManuscripts, manuscripts.length, persistManuscripts, resolveUserId, supabase]);
+  }, []);
 
   // 🌟 다른 탭에서 돌아왔을 때 완벽한 무새로고침 즉각 반영 메커니즘 가동
   useEffect(() => {
-    const cacheTimer = setTimeout(() => {
-      loadCachedManuscripts();
-    }, 0);
-    const loadTimer = setTimeout(() => {
-      loadManuscripts(undefined, { background: true });
-    }, 0);
-
-    // 🌟 [빨간줄 원천 해결] Supabase 공식 메서드명인 'onAuthStateChange'로 정확하게 수정 완료!
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session: Session | null) => {
-      if (session?.user) {
-        loadManuscripts(session.user.id, { background: true, preserveOnAuthMiss: true });
-      } else {
-        clearManuscripts();
-      }
-    });
-
-    return () => {
-      clearTimeout(cacheTimer);
-      clearTimeout(loadTimer);
-      subscription?.unsubscribe();
-    };
-  }, [clearManuscripts, loadCachedManuscripts, loadManuscripts, supabase]);
-
-  useEffect(() => {
+    naverManuscriptStore.hydrate();
     if (pathname === '/studio/writing/naver/list') {
-      const cacheTimer = setTimeout(() => {
-        loadCachedManuscripts();
-      }, 0);
-      const loadTimer = setTimeout(() => {
-        loadManuscripts(undefined, { background: true, preserveOnAuthMiss: true });
-      }, 0);
-
-      return () => {
-        clearTimeout(cacheTimer);
-        clearTimeout(loadTimer);
-      };
+      void loadManuscripts({ background: true, preserveOnAuthMiss: true });
     }
-  }, [loadCachedManuscripts, loadManuscripts, pathname]);
+  }, [loadManuscripts, pathname]);
 
   useEffect(() => {
     const handleWindowFocus = () => {
       if (pathname === '/studio/writing/naver/list') {
-        loadManuscripts(undefined, { background: true, preserveOnAuthMiss: true });
+        void loadManuscripts({ background: true, preserveOnAuthMiss: true });
       }
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && pathname === '/studio/writing/naver/list') {
-        loadManuscripts(undefined, { background: true, preserveOnAuthMiss: true });
+        void loadManuscripts({ background: true, preserveOnAuthMiss: true });
       }
     };
 
@@ -291,8 +140,7 @@ export default function NaverManuscriptListPage() {
             .delete()
             .eq('id', id);
           if (error) throw error;
-          
-          setManuscripts(prev => prev.filter(m => m.id !== id));
+          naverManuscriptStore.removeByIdentity(id);
           showToast("🗑️ 선택하신 원고가 Supabase DB에서 삭제되었습니다.");
         } catch (error: unknown) {
           const message = getErrorMessage(error);
@@ -324,7 +172,10 @@ export default function NaverManuscriptListPage() {
           if (error) throw error;
           
           showToast("🚀 원고의 발행 상태 업데이트가 완료되었습니다!");
-          setManuscripts(prev => prev.map(m => m.id === id ? { ...m, status: 'published' } : m));
+          const target = manuscripts.find((m) => m.id === id);
+          if (target) {
+            naverManuscriptStore.upsert({ ...target, status: 'published' } as any);
+          }
         } catch (error: unknown) {
           const message = getErrorMessage(error);
           console.error("발행 업데이트 실패:", message);
@@ -431,7 +282,7 @@ export default function NaverManuscriptListPage() {
           <span>원고 장부가 실시간으로 동기화됩니다. 다른 탭 복귀 시 자동으로 갱신을 시작합니다.</span>
         </div>
         <button
-          onClick={() => loadManuscripts(undefined, { background: manuscripts.length > 0 })}
+          onClick={() => loadManuscripts({ background: manuscripts.length > 0 })}
           disabled={isLoading || isRefreshing}
           className="px-4 py-1 bg-zinc-900 hover:bg-zinc-800/80 border border-zinc-800 hover:border-[#00c73c]/50 rounded-lg text-[13px] font-black text-zinc-200 hover:text-white transition-all flex items-center justify-center gap-2 shadow-md active:scale-95 disabled:opacity-50"
         >
@@ -535,6 +386,7 @@ export default function NaverManuscriptListPage() {
                 /* 🌟 [수술 부위 완료] 15단 높이 균등 배분(h-[calc(100%/15)]) 공식을 주입하여 여백 배제 */
                 paginatedList.map((item, idx) => {
                   const displayIndex = (currentPage - 1) * itemsPerPage + idx + 1;
+                  const safeWordCount = item.wordCount ?? item.content?.length ?? 0;
                   return (
                     <tr 
                       key={item.id}
@@ -579,7 +431,7 @@ export default function NaverManuscriptListPage() {
 
                       {/* 5. 글자 수 */}
                       <td className="py-2 px-4 text-center text-zinc-400 font-black text-[14px] w-[7%] align-middle">
-                        {item.wordCount.toLocaleString()} 자
+                        {safeWordCount.toLocaleString()} 자
                       </td>
 
                       {/* 6. 업데이트 일시 */}

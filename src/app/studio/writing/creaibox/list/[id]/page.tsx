@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, useSyncExternalStore } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Search } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import NaverEditorCanvas from "@/components/writing/naver/BlogEditorCanvas";
 import CreaiboxAnalysisTower from "@/components/writing/creaibox/tabs/CreaiboxAnalysisTower";
+import { creaiboxManuscriptStore } from '@/lib/stores/manuscripts';
 
 interface ImageBlock {
   id: string;
@@ -52,17 +53,6 @@ interface WritingCreaiboxPostRecord {
   seo_tags?: string[] | null;
 }
 
-interface CachedManuscriptListItem {
-  id: string;
-  displayId?: number;
-  title?: string;
-  keyword?: string;
-  type?: 'create' | 'recreate';
-  status?: 'draft' | 'saved' | 'published';
-}
-
-const MANUSCRIPT_CACHE_KEY = 'creaibox-manuscript-list-cache-v1';
-
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
 }
@@ -95,33 +85,35 @@ function mapPostToManuscript(post: WritingCreaiboxPostRecord): Manuscript {
   };
 }
 
-function mapCachedItemToSideManuscript(item: CachedManuscriptListItem): Manuscript {
-  return {
-    id: String(item.id),
-    displayId: item.displayId || 0,
-    title: item.title || '제목 없음',
-    content: '',
-    keyword: item.keyword || '일반 원고',
-    type: item.type === 'recreate' ? 'recreate' : 'create',
-    status: item.status === 'published' ? 'published' : item.status === 'saved' ? 'saved' : 'draft',
-    slug: '',
-    metaDescription: '',
-    focusKeyword: '',
-    canonicalUrl: '',
-    seoTags: [],
-    images: []
-  };
-}
+function buildPublicBlogSlug(title: string, focusKeyword: string, targetKeyword: string) {
+  const source = `${focusKeyword || targetKeyword || ''} ${title || ''}`
+    .replace(/\[[^\]]+\]/g, ' ')
+    .replace(/[^a-zA-Z0-9가-힣\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
+  const tokens = source.split(' ').filter((token) => token.length >= 2);
+  return [...new Set(tokens)].slice(0, 7).join('-').toLowerCase().slice(0, 72);
+}
 export default function CreaiboxManuscriptDetailPage() {
   const params = useParams();
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
+  const manuscriptStoreState = useSyncExternalStore(
+    creaiboxManuscriptStore.subscribe,
+    creaiboxManuscriptStore.getSnapshot,
+    creaiboxManuscriptStore.getSnapshot
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const manuscriptId = useMemo(() => {
     const rawId = params?.id;
     return Array.isArray(rawId) ? rawId[0] : rawId || '';
   }, [params]);
+  const sideList = manuscriptStoreState.list as Manuscript[];
+  const selectedFromStore = useMemo(
+    () => creaiboxManuscriptStore.findByRouteKey(manuscriptId),
+    [manuscriptId, manuscriptStoreState.list]
+  );
 
   const [data, setData] = useState<Manuscript>({
     id: '',
@@ -138,100 +130,68 @@ export default function CreaiboxManuscriptDetailPage() {
     seoTags: [],
     images: []
   });
-  const [sideList, setSideList] = useState<Manuscript[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [isSeoSaving, setIsSeoSaving] = useState(false);
   const [seoSaveFeedback, setSeoSaveFeedback] = useState<'idle' | 'saved'>('idle');
   const [searchTerm, setSearchTerm] = useState("");
-
-  const loadCachedSideList = useCallback(() => {
-    if (typeof window === 'undefined') return;
-
-    const rawCache = window.sessionStorage.getItem(MANUSCRIPT_CACHE_KEY);
-    if (!rawCache) return;
-
-    try {
-      const parsed = JSON.parse(rawCache) as CachedManuscriptListItem[];
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const normalizedCachedList = parsed.map(mapCachedItemToSideManuscript);
-        setSideList(normalizedCachedList);
-      }
-    } catch (error) {
-      console.error("상세 좌측 목록 캐시 복원 실패:", error);
-    }
+  useEffect(() => {
+    creaiboxManuscriptStore.hydrate();
+    void creaiboxManuscriptStore.ensureList({ background: true, preserveOnAuthMiss: true });
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
-
-    async function loadData() {
-      if (!manuscriptId) {
-        if (isMounted) setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
-
-      try {
-        const displayId = Number(manuscriptId);
-        const { data: post, error: postError } = await supabase
-          .from('writing_creaibox_posts')
-          .select('*')
-          .eq('display_id', displayId)
-          .single();
-
-        if (postError) throw postError;
-
-        if (!isMounted) return;
-
-        if (post) {
-          const normalizedPost = mapPostToManuscript(post as WritingCreaiboxPostRecord);
-          setData(normalizedPost);
-          setSideList((prev) => {
-            if (prev.some((item) => item.id === normalizedPost.id)) {
-              return prev.map((item) => item.id === normalizedPost.id ? normalizedPost : item);
-            }
-            return [normalizedPost, ...prev];
-          });
-        }
-
-        setIsLoading(false);
-
-        const { data: list, error: listError } = await supabase
-          .from('writing_creaibox_posts')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (listError) throw listError;
-
-        if (!isMounted) return;
-
-        if (Array.isArray(list)) {
-          setSideList((list as WritingCreaiboxPostRecord[]).map(mapPostToManuscript));
-        }
-      } catch (error: unknown) {
-        console.error("상세 원고 로딩 실패:", getErrorMessage(error));
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
+    if (!manuscriptId) {
+      setIsLoading(false);
+      return;
     }
 
-    const cacheTimer = setTimeout(() => {
-      loadCachedSideList();
-    }, 0);
-    const loadTimer = setTimeout(() => {
-      loadData();
-    }, 0);
+    if (selectedFromStore) {
+      setData((prev) => {
+        if (
+          prev.id === selectedFromStore.id &&
+          prev.title &&
+          prev.content &&
+          prev.keyword &&
+          prev.slug === (selectedFromStore.slug || prev.slug) &&
+          prev.metaDescription === (selectedFromStore.metaDescription || prev.metaDescription)
+        ) {
+          return prev;
+        }
+        return {
+          ...prev,
+          ...selectedFromStore,
+          content: selectedFromStore.content || prev.content,
+          slug: selectedFromStore.slug || prev.slug,
+          metaDescription: selectedFromStore.metaDescription || prev.metaDescription,
+          focusKeyword: selectedFromStore.focusKeyword || prev.focusKeyword,
+          canonicalUrl: selectedFromStore.canonicalUrl || prev.canonicalUrl,
+          seoTags: selectedFromStore.seoTags && selectedFromStore.seoTags.length > 0 ? selectedFromStore.seoTags : prev.seoTags
+        };
+      });
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
+
+    let cancelled = false;
+    void creaiboxManuscriptStore.ensureDetail(manuscriptId).then((detail) => {
+      if (cancelled) return;
+      if (detail) {
+        setData((prev) => ({
+          ...prev,
+          ...detail,
+          content: detail.content || prev.content
+        }));
+      }
+      setIsLoading(false);
+    });
 
     return () => {
-      isMounted = false;
-      clearTimeout(cacheTimer);
-      clearTimeout(loadTimer);
+      cancelled = true;
     };
-  }, [loadCachedSideList, manuscriptId, supabase]);
+  }, [manuscriptId, selectedFromStore]);
 
   const handleSavePostToSupabase = useCallback(async (nextStatus?: 'completed' | 'published') => {
     if (!data.id) return false;
@@ -255,9 +215,10 @@ export default function CreaiboxManuscriptDetailPage() {
 
       if (error) throw error;
 
-      const normalizedStatus = nextStatus === 'published' ? 'published' : 'saved';
-      setData((prev) => ({ ...prev, status: normalizedStatus }));
-      setSideList((prev) => prev.map((item) => item.id === data.id ? { ...item, title: data.title, content: data.content, keyword: data.keyword, status: normalizedStatus } : item));
+      const normalizedStatus: Manuscript['status'] = nextStatus === 'published' ? 'published' : 'saved';
+      const nextData: Manuscript = { ...data, status: normalizedStatus };
+      setData(nextData);
+      creaiboxManuscriptStore.upsert(nextData);
       return true;
     } catch (error: unknown) {
       console.error("상세 원고 저장 실패:", getErrorMessage(error));
@@ -285,6 +246,62 @@ export default function CreaiboxManuscriptDetailPage() {
       setIsSeoSaving(false);
     }
   }, [data.id, handleSavePostToSupabase]);
+
+  const handlePublishBlog = useCallback(async () => {
+    if (!data.id || !data.title.trim() || !data.content.trim()) {
+      alert("발행하려면 제목과 본문이 필요합니다.");
+      return;
+    }
+
+    const finalSlug = buildPublicBlogSlug(data.title, data.focusKeyword, data.keyword);
+    if (!finalSlug) {
+      alert("발행용 슬러그를 만들 수 없습니다. 제목이나 핵심 키워드를 확인해 주세요.");
+      return;
+    }
+
+    const finalCanonicalUrl = `https://creaibox.com/blog/${finalSlug}`;
+
+    setIsPublishing(true);
+    try {
+      const { error } = await supabase
+        .from('writing_creaibox_posts')
+        .update({
+          title: data.title,
+          content: data.content,
+          status: 'published',
+          target_keyword: data.keyword,
+          slug: finalSlug,
+          meta_description: data.metaDescription,
+          focus_keyword: data.focusKeyword,
+          canonical_url: finalCanonicalUrl,
+          seo_tags: data.seoTags
+        })
+        .eq('id', data.id);
+
+      if (error) throw error;
+
+      setData((prev) => ({
+        ...prev,
+        status: 'published',
+        slug: finalSlug,
+        canonicalUrl: finalCanonicalUrl
+      }));
+      const nextPublishedData: Manuscript = {
+        ...data,
+        status: 'published',
+        slug: finalSlug,
+        canonicalUrl: finalCanonicalUrl
+      };
+      creaiboxManuscriptStore.upsert(nextPublishedData);
+
+      router.push(`/blog/${finalSlug}`);
+    } catch (error: unknown) {
+      console.error("블로그 발행 실패:", getErrorMessage(error));
+      alert("블로그 발행 중 오류가 발생했습니다. 다시 시도해 주세요.");
+    } finally {
+      setIsPublishing(false);
+    }
+  }, [data, router, supabase]);
 
   const filteredSideList = sideList.filter((manuscript) => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -405,9 +422,11 @@ export default function CreaiboxManuscriptDetailPage() {
             <div className="h-14 border-b border-zinc-800 bg-[#0b0d12] px-4 flex items-center justify-end rounded-t-2xl">
               <button
                 type="button"
+                onClick={handlePublishBlog}
+                disabled={isPublishing || isSaving || !data.title.trim() || !data.content.trim()}
                 className="inline-flex items-center rounded-xl bg-[linear-gradient(135deg,#2563eb_0%,#7c3aed_55%,#ec4899_100%)] px-4 py-2 text-sm font-black text-white shadow-[0_10px_24px_rgba(124,58,237,0.28)] transition-all hover:scale-[1.01] hover:shadow-[0_14px_30px_rgba(124,58,237,0.34)] active:scale-[0.99]"
               >
-                블로그 발행
+                {isPublishing ? '발행중...' : '블로그 발행'}
               </button>
             </div>
             <div className="p-5 rounded-2xl border border-zinc-800 bg-[#0d0e12]/80 backdrop-blur-md space-y-4 shadow-2xl">

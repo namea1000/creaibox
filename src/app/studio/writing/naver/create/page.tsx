@@ -5,6 +5,7 @@ import NaverCreateTab from "@/components/writing/naver/tabs/NaverCreateTab";
 import { createClient } from '@/utils/supabase/client';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { User } from '@supabase/supabase-js';
+import { naverManuscriptStore } from '@/lib/stores/manuscripts';
 
 const AUTH_RETRY_DELAY_MS = 700;
 const AUTH_RETRY_ATTEMPTS = 3;
@@ -141,12 +142,27 @@ export default function NaverCreatePage() {
       const { data: insertedRow, error } = await supabase
         .from('writing_naver_posts')
         .insert([payload])
-        .select('id')
+        .select('id, updated_at')
         .single();
 
       if (!error) {
         if (insertedRow?.id) {
           setEditLink(`/studio/writing/naver/list/${insertedRow.id}`);
+          naverManuscriptStore.upsert({
+            id: String(insertedRow.id),
+            title: currentTitle || title || '제목 없음',
+            content: currentContent,
+            keyword: targetKeyword || postType || '일반 원고',
+            type: 'create',
+            detailLabel: 'AI 스마트 글쓰기',
+            selectedTone: selectedTone || '친근하고 부드러운 말투',
+            status: 'saved',
+            wordCount: currentContent.length,
+            updatedAt: insertedRow.updated_at
+              ? insertedRow.updated_at.replace('T', ' ').substring(0, 16)
+              : '',
+            images: [],
+          });
         }
         if (isManual) {
           alert("🎉 에디터의 새 원고가 '네이버 발행 원고 관리' 장부에 즉시 수동 적재되었습니다!");

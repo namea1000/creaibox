@@ -5,6 +5,7 @@ import CreaiboxCreateTab from "@/components/writing/creaibox/tabs/CreaiboxCreate
 import { createClient } from '@/utils/supabase/client';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { User } from '@supabase/supabase-js';
+import { creaiboxManuscriptStore } from '@/lib/stores/manuscripts';
 
 const AUTH_RETRY_DELAY_MS = 700;
 const AUTH_RETRY_ATTEMPTS = 3;
@@ -261,13 +262,38 @@ export default function CreaiboxEditorPage() {
       const { data: insertedRow, error } = await supabase
         .from('writing_creaibox_posts')
         .insert([payload])
-        .select('display_id')
+        .select('id, display_id, created_at')
         .single();
 
       if (!error) {
         if (insertedRow?.display_id) {
           setEditLink(`/studio/writing/creaibox/list/${insertedRow.display_id}`);
         }
+
+        if (insertedRow?.id) {
+          creaiboxManuscriptStore.upsert({
+            id: String(insertedRow.id),
+            displayId: insertedRow.display_id || 0,
+            title: currentTitle || title || '제목 없음',
+            content: currentContent,
+            keyword: targetKeyword || '일반 원고',
+            type: 'create',
+            detailLabel: 'AI 인사이트 포스팅',
+            selectedTone: selectedTone || '전문적이고 통찰력 있는 분석',
+            status: 'saved',
+            wordCount: currentContent.length,
+            updatedAt: insertedRow.created_at
+              ? insertedRow.created_at.replace('T', ' ').substring(0, 16)
+              : '',
+            slug: payload.slug || '',
+            metaDescription: payload.meta_description || '',
+            focusKeyword: derivedFocusKeyword || '',
+            canonicalUrl: payload.canonical_url || '',
+            seoTags: derivedSeoTags || [],
+            images: [],
+          });
+        }
+
         alert(isManual ? "원고가 아카이브에 저장되었습니다." : "AI 생성이 완료되어 아카이브에 자동 저장되었습니다.");
       } else {
         throw error;

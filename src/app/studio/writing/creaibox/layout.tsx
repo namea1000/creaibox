@@ -23,7 +23,7 @@ export default function CreaiboxBlogLayout({ children }: { children: React.React
     { id: 'create', label: 'AI 포스팅 글쓰기', icon: FileEdit, color: 'text-indigo-400', href: '/studio/writing/creaibox/create' },
     { id: 'editor', label: 'AI 포스팅 에디터', icon: FileEdit, color: 'text-indigo-400', href: '/studio/writing/creaibox/editor' },
     { id: 'archive', label: '발행 콘텐츠 아카이브', icon: History, color: 'text-purple-400', href: '/studio/writing/creaibox/list' },
-    { id: 'smart-gen', label: '아이디어 제너레이터', icon: Zap, color: 'text-yellow-400', href: '/studio/writing/creaibox/ideation' },
+    { id: 'smart-gen', label: '아이디어 제너레이터', icon: Zap, color: 'text-yellow-400', href: '/studio/writing/creaibox/ideagenerator' },
     { id: 'analytics', label: '트렌드 대시보드', icon: BarChart3, color: 'text-emerald-400', href: '/studio/writing/creaibox/analytics' },
     { id: 'media', label: 'AI 이미지 워크샵', icon: Image, color: 'text-pink-400', href: '/studio/writing/creaibox/media' },
     { id: 'knowledge', label: '지식 베이스', icon: Database, color: 'text-cyan-400', href: '/studio/writing/creaibox/knowledge' },

@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, useSyncExternalStore } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Search } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import NaverEditorCanvas from "@/components/writing/naver/BlogEditorCanvas";
 import NaverAnalysisTower from "@/components/writing/naver/NaverAnalysisTower";
+import { naverManuscriptStore } from '@/lib/stores/manuscripts';
 
 interface ImageBlock {
   id: string;
@@ -42,19 +43,6 @@ interface WritingNaverPostRecord {
   tags?: string[] | null;
 }
 
-interface CachedManuscriptListItem {
-  id: string;
-  title?: string;
-  keyword?: string;
-  type?: 'create' | 'recreate';
-  status?: 'draft' | 'saved' | 'published';
-}
-
-const SESSION_TIMEOUT_MS = 4000;
-const MANUSCRIPT_CACHE_KEY = 'naver-manuscript-list-cache-v2';
-const AUTH_RETRY_DELAY_MS = 700;
-const AUTH_RETRY_ATTEMPTS = 3;
-
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
 }
@@ -83,27 +71,25 @@ function mapPostToManuscript(post: WritingNaverPostRecord): Manuscript {
   };
 }
 
-function mapCachedItemToSideManuscript(item: CachedManuscriptListItem): Manuscript {
-  return {
-    id: String(item.id),
-    title: item.title || '제목 없음',
-    content: '',
-    keyword: item.keyword || '일반 원고',
-    type: item.type === 'recreate' ? 'recreate' : 'create',
-    status: item.status === 'published' ? 'published' : item.status === 'saved' ? 'saved' : 'draft',
-    images: []
-  };
-}
-
 export default function NaverManuscriptDetailPage() {
   const params = useParams();
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
+  const manuscriptStoreState = useSyncExternalStore(
+    naverManuscriptStore.subscribe,
+    naverManuscriptStore.getSnapshot,
+    naverManuscriptStore.getSnapshot
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const manuscriptId = useMemo(() => {
     const rawId = params?.id;
     return Array.isArray(rawId) ? rawId[0] : rawId || '';
   }, [params]);
+  const sideList = manuscriptStoreState.list as Manuscript[];
+  const selectedFromStore = useMemo(
+    () => naverManuscriptStore.findByRouteKey(manuscriptId),
+    [manuscriptId, manuscriptStoreState.list]
+  );
 
   const [data, setData] = useState<Manuscript>({
     id: '',
@@ -114,125 +100,49 @@ export default function NaverManuscriptDetailPage() {
     status: 'draft',
     images: []
   });
-  const [sideList, setSideList] = useState<Manuscript[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const loadCachedSideList = useCallback(() => {
-    if (typeof window === 'undefined') return;
-
-    const rawCache = window.sessionStorage.getItem(MANUSCRIPT_CACHE_KEY);
-    if (!rawCache) return;
-
-    try {
-      const parsed = JSON.parse(rawCache) as CachedManuscriptListItem[];
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const normalizedCachedList = parsed.map(mapCachedItemToSideManuscript);
-        setSideList(normalizedCachedList);
-      }
-    } catch (error) {
-      console.error("상세 좌측 목록 캐시 복원 실패:", error);
-    }
+  useEffect(() => {
+    naverManuscriptStore.hydrate();
+    void naverManuscriptStore.ensureList({ background: true, preserveOnAuthMiss: true });
   }, []);
 
-  const resolveUserId = useCallback(async () => {
-    for (let attempt = 0; attempt < AUTH_RETRY_ATTEMPTS; attempt += 1) {
-      const timeout = new Promise<null>((resolve) => {
-        setTimeout(() => resolve(null), SESSION_TIMEOUT_MS);
-      });
-
-      const sessionUserIdPromise = supabase.auth.getSession()
-        .then(({ data: { session } }) => session?.user?.id || null)
-        .catch(() => null);
-
-      const sessionUserId = await Promise.race([sessionUserIdPromise, timeout]);
-      if (sessionUserId) return sessionUserId;
-
-      const userPromise = supabase.auth.getUser()
-        .then(({ data: { user } }) => user?.id || null)
-        .catch(() => null);
-
-      const userId = await Promise.race([userPromise, timeout]);
-      if (userId) return userId;
-
-      if (attempt < AUTH_RETRY_ATTEMPTS - 1) {
-        await new Promise((resolve) => setTimeout(resolve, AUTH_RETRY_DELAY_MS));
-      }
-    }
-
-    return null;
-  }, [supabase]);
-
   useEffect(() => {
-    let isMounted = true;
-
-    async function loadData() {
-      if (!manuscriptId) {
-        if (isMounted) setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
-
-      try {
-        const userIdPromise = resolveUserId();
-        const postPromise = supabase.from('writing_naver_posts').select('*').eq('id', manuscriptId).single();
-
-        const [{ data: post, error: postError }, userId] = await Promise.all([postPromise, userIdPromise]);
-
-        if (postError) throw postError;
-
-        if (!isMounted) return;
-
-        if (post) {
-          const normalizedPost = mapPostToManuscript(post as WritingNaverPostRecord);
-          setData(normalizedPost);
-          setSideList((prev) => {
-            if (prev.some((item) => item.id === normalizedPost.id)) {
-              return prev.map((item) => item.id === normalizedPost.id ? normalizedPost : item);
-            }
-            return [normalizedPost, ...prev];
-          });
-        }
-
-        if (userId) {
-          const { data: list, error: listError } = await supabase
-            .from('writing_naver_posts')
-            .select('*')
-            .eq('user_id', userId)
-            .order('updated_at', { ascending: false });
-
-          if (listError) throw listError;
-
-          if (!isMounted) return;
-
-          if (Array.isArray(list)) {
-            setSideList((list as WritingNaverPostRecord[]).map(mapPostToManuscript));
-          }
-        }
-      } catch (error: unknown) {
-        console.error("상세 원고 로딩 실패:", getErrorMessage(error));
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
+    if (!manuscriptId) {
+      setIsLoading(false);
+      return;
     }
 
-    const cacheTimer = setTimeout(() => {
-      loadCachedSideList();
-    }, 0);
-    const loadTimer = setTimeout(() => {
-      loadData();
-    }, 0);
+    if (selectedFromStore) {
+      setData((prev) => ({
+        ...prev,
+        ...selectedFromStore,
+        content: selectedFromStore.content || prev.content
+      }));
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
+
+    let cancelled = false;
+    void naverManuscriptStore.ensureDetail(manuscriptId).then((detail) => {
+      if (cancelled) return;
+      if (detail) {
+        setData((prev) => ({
+          ...prev,
+          ...detail,
+          content: detail.content || prev.content
+        }));
+      }
+      setIsLoading(false);
+    });
 
     return () => {
-      isMounted = false;
-      clearTimeout(cacheTimer);
-      clearTimeout(loadTimer);
+      cancelled = true;
     };
-  }, [loadCachedSideList, manuscriptId, resolveUserId, supabase]);
+  }, [manuscriptId, selectedFromStore]);
 
   const handleSavePostToSupabase = useCallback(async (nextStatus?: 'completed' | 'published') => {
     if (!data.id) return false;
@@ -253,8 +163,9 @@ export default function NaverManuscriptDetailPage() {
       if (error) throw error;
 
       const normalizedStatus = nextStatus === 'published' ? 'published' : 'saved';
-      setData((prev) => ({ ...prev, status: normalizedStatus }));
-      setSideList((prev) => prev.map((item) => item.id === data.id ? { ...item, title: data.title, content: data.content, keyword: data.keyword, status: normalizedStatus } : item));
+      const nextData: Manuscript = { ...data, status: normalizedStatus };
+      setData(nextData);
+      naverManuscriptStore.upsert(nextData);
       return true;
     } catch (error: unknown) {
       console.error("상세 원고 저장 실패:", getErrorMessage(error));
@@ -306,7 +217,17 @@ export default function NaverManuscriptDetailPage() {
             {filteredSideList.map((manuscript) => (
               <div
                 key={manuscript.id}
-                onClick={() => router.push(`/studio/writing/naver/list/${manuscript.id}`)}
+                onClick={() => {
+                  if (manuscript.content || manuscript.title) {
+                    setData((prev) => ({
+                      ...prev,
+                      ...manuscript,
+                      content: manuscript.content || prev.content
+                    }));
+                    setIsLoading(false);
+                  }
+                  router.push(`/studio/writing/naver/list/${manuscript.id}`);
+                }}
                 className={`p-3 rounded-lg border cursor-pointer transition-all ${data.id === manuscript.id ? 'bg-zinc-800 border-emerald-500' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'}`}
               >
                 <div className="mb-2 flex items-center justify-between gap-2">

@@ -5,6 +5,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from '@/utils/supabase/client';
 import NaverRecreateTab from "@/components/writing/naver/tabs/NaverRecreateTab";
 import type { User } from '@supabase/supabase-js';
+import { naverManuscriptStore } from '@/lib/stores/manuscripts';
 
 interface SourceAnalysisResult {
   keywords: string[];
@@ -160,7 +161,7 @@ export default function NaverRecreatePage() {
       const { data: insertedRow, error } = await supabase
         .from('writing_naver_posts')
         .insert([basePayload])
-        .select('id')
+        .select('id, updated_at')
         .single();
 
       if (!error && insertedRow?.id) {
@@ -169,6 +170,27 @@ export default function NaverRecreatePage() {
           .update(detailPayload)
           .eq('id', insertedRow.id)
           .eq('user_id', user.id);
+
+        naverManuscriptStore.upsert({
+          id: String(insertedRow.id),
+          title: currentTitle || title || '재창조 원고',
+          content: currentContent,
+          keyword: currentKeyword || targetKeyword || '일반 원고',
+          type: 'recreate',
+          detailLabel:
+            resolvedSourceMode === 'url'
+              ? 'URL 재창조'
+              : resolvedSourceMode === 'text'
+              ? '텍스트 재창조'
+              : '글 재창조',
+          selectedTone: resolvedTone || '전문적이고 분석적인 말투',
+          status: 'saved',
+          wordCount: currentContent.length,
+          updatedAt: insertedRow.updated_at
+            ? insertedRow.updated_at.replace('T', ' ').substring(0, 16)
+            : '',
+          images: [],
+        });
 
         if (isManual) {
           alert("🎉 재창조 원고가 '네이버 발행 원고 관리' 장부에 즉시 수동 적재되었습니다!");

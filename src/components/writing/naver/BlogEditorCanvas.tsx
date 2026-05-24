@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   ImageIcon, Heading1, Heading2, Bold, Italic, Link2,
-  Type, Wand2, Copy, Save, Cpu, Trash2, Send, RefreshCw
+  Type, Wand2, Copy, Save, Cpu, Trash2, Send, RefreshCw, Download, Eye
 } from 'lucide-react';
 
 interface ImageBlock {
@@ -36,6 +36,131 @@ interface NaverEditorCanvasProps {
   isLoading?: boolean;
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function applyInlineMarkdown(value: string) {
+  return escapeHtml(value)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>');
+}
+
+function markdownToEditableHtml(markdown: string) {
+  const blocks = markdown
+    .replace(/\r\n/g, '\n')
+    .trim()
+    .split(/\n\s*\n/);
+
+  if (!markdown.trim()) return '';
+
+  return blocks
+    .map((block) => {
+      const trimmed = block.trim();
+      const lines = trimmed.split('\n').map((line) => line.trimEnd());
+
+      if (/^###\s+/.test(trimmed)) {
+        return `<h3>${applyInlineMarkdown(trimmed.replace(/^###\s+/, ''))}</h3>`;
+      }
+      if (/^##\s+/.test(trimmed)) {
+        return `<h2>${applyInlineMarkdown(trimmed.replace(/^##\s+/, ''))}</h2>`;
+      }
+      if (/^#\s+/.test(trimmed)) {
+        return `<h1>${applyInlineMarkdown(trimmed.replace(/^#\s+/, ''))}</h1>`;
+      }
+      if (lines.every((line) => /^[-*]\s+/.test(line))) {
+        return `<ul>${lines.map((line) => `<li>${applyInlineMarkdown(line.replace(/^[-*]\s+/, ''))}</li>`).join('')}</ul>`;
+      }
+      if (lines.every((line) => /^\d+\.\s+/.test(line))) {
+        return `<ol>${lines.map((line) => `<li>${applyInlineMarkdown(line.replace(/^\d+\.\s+/, ''))}</li>`).join('')}</ol>`;
+      }
+      if (/^>\s+/.test(trimmed)) {
+        return `<blockquote>${lines.map((line) => applyInlineMarkdown(line.replace(/^>\s?/, ''))).join('<br />')}</blockquote>`;
+      }
+
+      return `<p>${lines.map((line) => applyInlineMarkdown(line)).join('<br />')}</p>`;
+    })
+    .join('');
+}
+
+function editableSurfaceToMarkdown(root: HTMLDivElement) {
+  const blocks: string[] = [];
+
+  const stringifyNode = (node: ChildNode): string => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return node.textContent ?? '';
+    }
+    if (!(node instanceof HTMLElement)) return '';
+
+    if (node.tagName === 'BR') return '\n';
+
+    const childText = Array.from(node.childNodes).map(stringifyNode).join('');
+
+    switch (node.tagName) {
+      case 'STRONG':
+      case 'B':
+        return `**${childText}**`;
+      case 'EM':
+      case 'I':
+        return `*${childText}*`;
+      default:
+        return childText;
+    }
+  };
+
+  Array.from(root.children).forEach((element) => {
+    if (!(element instanceof HTMLElement)) return;
+    const tag = element.tagName;
+
+    if (tag === 'H1') {
+      blocks.push(`# ${element.innerText.trim()}`);
+      return;
+    }
+    if (tag === 'H2') {
+      blocks.push(`## ${element.innerText.trim()}`);
+      return;
+    }
+    if (tag === 'H3') {
+      blocks.push(`### ${element.innerText.trim()}`);
+      return;
+    }
+    if (tag === 'UL') {
+      const items = Array.from(element.querySelectorAll(':scope > li'))
+        .map((li) => `- ${Array.from(li.childNodes).map(stringifyNode).join('').trim()}`)
+        .join('\n');
+      blocks.push(items);
+      return;
+    }
+    if (tag === 'OL') {
+      const items = Array.from(element.querySelectorAll(':scope > li'))
+        .map((li, index) => `${index + 1}. ${Array.from(li.childNodes).map(stringifyNode).join('').trim()}`)
+        .join('\n');
+      blocks.push(items);
+      return;
+    }
+    if (tag === 'BLOCKQUOTE') {
+      const lines = element.innerText
+        .split('\n')
+        .map((line: string) => line.trim())
+        .filter(Boolean)
+        .map((line: string) => `> ${line}`)
+        .join('\n');
+      blocks.push(lines);
+      return;
+    }
+
+    const text = Array.from(element.childNodes).map(stringifyNode).join('').trim();
+    if (text) {
+      blocks.push(text);
+    }
+  });
+
+  return blocks.join('\n\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
 export default function NaverEditorCanvas({
   title, setTitle, content, setContent, charCount, images, fileInputRef,
   isSaving, isEnhancing, handleImageUploadClick, handleImageChange,
@@ -44,6 +169,8 @@ export default function NaverEditorCanvas({
   isRecreateMode = false, isDetailMode = false, targetKeyword = "AI 글쓰기", isLoading = false
 }: NaverEditorCanvasProps) {
   const [saveFeedback, setSaveFeedback] = useState<'idle' | 'saved'>('idle');
+  const contentEditableRef = useRef<HTMLDivElement | null>(null);
+  const lastSyncedContentRef = useRef(content);
 
   useEffect(() => {
     if (saveFeedback !== 'saved') return;
@@ -62,12 +189,131 @@ export default function NaverEditorCanvas({
     }
   };
 
+  useEffect(() => {
+    if (!contentEditableRef.current) return;
+
+    const normalizedDom = editableSurfaceToMarkdown(contentEditableRef.current).replace(/\r\n/g, '\n').trim();
+    const normalizedState = content.replace(/\r\n/g, '\n').trim();
+
+    if (document.activeElement === contentEditableRef.current) return;
+
+    if (normalizedDom !== normalizedState) {
+      contentEditableRef.current.innerHTML = markdownToEditableHtml(content);
+    }
+    lastSyncedContentRef.current = content;
+  }, [content]);
+
+  const handleInlineContentInput = () => {
+    if (!contentEditableRef.current) return;
+    const nextValue = editableSurfaceToMarkdown(contentEditableRef.current)
+      .replace(/\u00a0/g, ' ')
+      .replace(/\r\n/g, '\n');
+    lastSyncedContentRef.current = nextValue;
+    setContent(nextValue);
+  };
+
+  const focusEditableSurface = () => {
+    if (!contentEditableRef.current) return;
+    contentEditableRef.current.focus();
+  };
+
+  const handleDownload = () => {
+    const fileContent = `# ${title}\n\n${content}`;
+    const blob = new Blob([fileContent], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${(title || targetKeyword || 'blog-post').slice(0, 40).replace(/[\\\\/:*?"<>|]/g, '').trim() || 'blog-post'}.md`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const handlePreview = () => {
+    const previewWindow = window.open('', '_blank', 'noopener,noreferrer');
+    if (!previewWindow) return;
+
+    const previewHtml = `
+      <!doctype html>
+      <html lang="ko">
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>${escapeHtml(title || '미리보기')}</title>
+          <style>
+            body { margin: 0; padding: 48px 24px; background: #f5f5f4; color: #18181b; font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", sans-serif; }
+            .sheet { max-width: 920px; margin: 0 auto; background: white; padding: 56px 64px; box-shadow: 0 20px 60px rgba(0,0,0,0.08); border-radius: 24px; }
+            h1 { margin: 0 0 24px; font-size: 2.25rem; line-height: 1.2; font-weight: 900; }
+            h2 { margin: 48px 0 18px; font-size: 1.7rem; line-height: 1.35; font-weight: 900; }
+            h3 { margin: 40px 0 16px; font-size: 1.35rem; line-height: 1.45; font-weight: 800; }
+            p, li { font-size: 1.08rem; line-height: 2; }
+            ul, ol { margin: 0 0 28px 24px; }
+            blockquote { margin: 32px 0; padding: 20px 24px; background: #f4f4f5; border-radius: 18px; color: #52525b; }
+          </style>
+        </head>
+        <body>
+          <article class="sheet">
+            <h1>${escapeHtml(title || '제목 없음')}</h1>
+            ${markdownToEditableHtml(content)}
+          </article>
+        </body>
+      </html>
+    `;
+
+    previewWindow.document.open();
+    previewWindow.document.write(previewHtml);
+    previewWindow.document.close();
+  };
+
   return (
     /* 🌟 [수술 핵심] 우측 관제탑 길이에 밀리지 않도록 에디터 박스 자체의 최소 높이를 min-h-[750px]로 고정 적출 */
     <div className="lg:col-span-6 flex flex-col bg-[#0a0c10] overflow-hidden h-full min-h-[750px]">
+      <div className="h-14 border-b border-zinc-800 bg-gradient-to-r from-[#131722] via-[#141926] to-[#10141f] px-4 flex items-center justify-between gap-3 shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+          </div>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]" />
+            <span className="truncate text-[0.78rem] font-black tracking-[0.24em] text-zinc-300 uppercase">
+              Creaibox Blog Edit Mode
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+        <button
+          onClick={handleCopy ? handleCopy : () => { navigator.clipboard.writeText(`제목: ${title}\n\n${content}`); }}
+          className="px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:bg-zinc-800 active:scale-95 transition-all flex items-center gap-1.5"
+        >
+          <Copy size={13} /> 전체 복사
+        </button>
+        <button
+          onClick={handleDownload}
+          className="px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:bg-zinc-800 active:scale-95 transition-all flex items-center gap-1.5"
+        >
+          <Download size={13} /> 다운로드
+        </button>
+        <button
+          onClick={handlePreview}
+          className="px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:bg-zinc-800 active:scale-95 transition-all flex items-center gap-1.5"
+        >
+          <Eye size={13} /> 미리보기
+        </button>
+        <button 
+          onClick={() => handleSaveClick(isDetailMode ? 'completed' : undefined)} 
+          disabled={isSaving}
+          className="px-3 py-1.5 rounded-xl bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-200 text-xs font-black active:scale-95 transition-all flex items-center gap-1.5"
+        >
+          <Save size={13} /> {isSaving ? "저장중..." : saveFeedback === 'saved' ? "저장완료" : "원고 저장"}
+        </button>
+        </div>
+      </div>
       
       {/* 최상단 에디터 포맷터 핫 버튼 제어반 */}
-      <div className="h-14 border-b border-zinc-800 bg-[#0b0d12] px-4 flex items-center justify-between overflow-x-auto shrink-0">
+      <div className="h-14 border-b border-zinc-800 bg-[#0b0d12] px-4 flex items-center justify-start overflow-x-auto shrink-0">
         <div className="flex items-center gap-1.5 text-zinc-400 shrink-0">
           <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
           <button onClick={handleImageUploadClick} className="p-2 hover:bg-emerald-500/10 hover:text-emerald-400 rounded-xl transition-all text-xs font-bold border border-zinc-800 bg-zinc-900/50 flex items-center gap-1"><ImageIcon size={14} /> 사진 추가</button>
@@ -86,52 +332,64 @@ export default function NaverEditorCanvas({
           <button onClick={() => handleEnhanceContent('expand')} disabled={isEnhancing} className="p-2 hover:bg-emerald-500/10 hover:text-emerald-400 rounded-xl text-xs font-black text-emerald-400 flex items-center gap-1"><Wand2 size={14} /> AI 보강</button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={handleCopy ? handleCopy : () => { navigator.clipboard.writeText(`제목: ${title}\n\n${content}`); alert(isDetailMode ? "📋 수정실 내 원고 전체가 복사되었습니다!" : "📋 원고 전체가 클립보드에 복사되었습니다!"); }} 
-            className="px-2.5 py-1.5 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:bg-zinc-800 active:scale-95 transition-all flex items-center gap-1"
-          >
-            <Copy size={13} /> 전체 복사
-          </button>
-          <button 
-            onClick={() => handleSaveClick(isDetailMode ? 'completed' : undefined)} 
-            disabled={isSaving}
-            className={isDetailMode ? "px-2.5 py-1.5 rounded-xl bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-200 text-xs font-black active:scale-95 transition-all flex items-center gap-1" : "px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black shadow-lg shadow-blue-600/20 active:scale-95 transition-all flex items-center gap-1"}
-          >
-            <Save size={13} /> {isSaving ? "저장중..." : saveFeedback === 'saved' ? "저장완료" : "원고 저장"}
-          </button>
-        </div>
       </div>
 
       {/* 에디터 인풋 메인 프레임 격실 */}
-      <div className="flex-1 px-5 pb-5 pt-4 md:px-6 md:pb-6 md:pt-5 flex flex-col space-y-5 overflow-y-auto custom-scrollbar bg-white">
+      <div className="flex-1 overflow-y-auto bg-white custom-scrollbar">
         {isLoading ? (
-          <div className="h-full w-full flex items-center justify-center text-xs font-mono text-zinc-500 gap-1.5">
+          <div className="flex h-full w-full items-center justify-center gap-1.5 text-xs font-mono text-zinc-500">
             <RefreshCw size={14} className="animate-spin text-emerald-400" /> Supabase 원고 복원 데이터 바인딩 중...
           </div>
         ) : (
-          <>
-            <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
-              <input type="text" placeholder={isRecreateMode ? "AI 글 재창조를 가동하시면 중복 필터를 완전히 회피하는 제목이 빌드됩니다." : "제목을 입력하세요..."} value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-transparent text-xl font-black text-zinc-900 placeholder-zinc-400 focus:outline-none tracking-tight" />
-              <span className="text-[10px] font-mono text-zinc-500 shrink-0 bg-zinc-100 border border-zinc-200 px-2 py-0.5 rounded">Chars: <strong className="text-emerald-500">{charCount}</strong></span>
-            </div>
-            
-            {images && images.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-b border-zinc-800/50 pb-3">
-                {images.map((img) => (
-                  <div key={img.id} className="group relative rounded-xl border border-zinc-800 bg-zinc-950 p-2 space-y-2 overflow-hidden shadow-md">
-                    <div className="relative w-full h-24 rounded-lg overflow-hidden bg-zinc-900">
-                      <img src={img.url} alt="Uploaded Block" className="w-full h-full object-cover" />
-                      <button onClick={() => handleDeleteImage(img.id)} className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={12} /></button>
-                    </div>
-                    <input type="text" value={img.caption} onChange={(e) => handleUpdateCaption(img.id, e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-[10px] text-zinc-400 focus:outline-none" />
-                  </div>
-                ))}
+          <div className="mx-auto flex min-h-full w-full max-w-[920px] flex-col px-8 pb-12 pt-8 md:px-10">
+            <div className="flex min-h-[760px] flex-col">
+              <div className="mb-6 flex items-start justify-between gap-4 border-b border-zinc-200 pb-4">
+                <input
+                  type="text"
+                  placeholder={isRecreateMode ? "AI 글 재창조를 가동하시면 중복 필터를 완전히 회피하는 제목이 빌드됩니다." : "제목을 입력하세요..."}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full bg-transparent text-[2.05rem] font-black leading-[1.28] tracking-[-0.03em] text-zinc-950 placeholder-zinc-400 focus:outline-none"
+                />
+                <span className="shrink-0 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[10px] font-mono text-zinc-500">
+                  Chars: <strong className="text-emerald-500">{charCount}</strong>
+                </span>
               </div>
-            )}
-            {/* 🌟 [수술 핵심] 텍스트 입력창 자체도 최소 min-h-[550px]를 먹여서 본문이 비어있어도 아래로 훤하게 열려있게 만듭니다. */}
-            <textarea placeholder={isRecreateMode ? "재창조 본문 결과 영역..." : "내용을 채워주세요..."} value={content} onChange={(e) => setContent(e.target.value)} className="w-full flex-1 bg-transparent text-sm text-zinc-800 placeholder-zinc-400 focus:outline-none resize-none leading-relaxed font-medium pt-1 min-h-[550px]" />
-          </>
+
+              {images && images.length > 0 && (
+                <div className="mb-6 grid grid-cols-1 gap-3 border-b border-zinc-200 pb-5 sm:grid-cols-2">
+                  {images.map((img) => (
+                    <div key={img.id} className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 p-3 shadow-sm">
+                      <div className="relative h-32 w-full overflow-hidden rounded-xl bg-zinc-100">
+                        <img src={img.url} alt="Uploaded Block" className="h-full w-full object-cover" />
+                        <button onClick={() => handleDeleteImage(img.id)} className="absolute top-2 right-2 rounded-md bg-red-600 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"><Trash2 size={12} /></button>
+                      </div>
+                      <input
+                        type="text"
+                        value={img.caption}
+                        onChange={(e) => handleUpdateCaption(img.id, e.target.value)}
+                        className="mt-3 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 focus:outline-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div
+                ref={contentEditableRef}
+                contentEditable
+                suppressContentEditableWarning
+                onInput={handleInlineContentInput}
+                onClick={focusEditableSurface}
+                tabIndex={0}
+                role="textbox"
+                aria-multiline="true"
+                spellCheck={false}
+                data-placeholder={isRecreateMode ? "재창조 본문 결과 영역..." : "내용을 채워주세요..."}
+                className="min-h-[760px] w-full flex-1 cursor-text rounded-[10px] bg-transparent px-1 py-1 text-zinc-800 caret-zinc-950 outline-none transition-colors before:pointer-events-none before:absolute before:text-zinc-400 empty:before:content-[attr(data-placeholder)] focus:bg-zinc-50/70 [&_h1]:mb-6 [&_h1]:border-b [&_h1]:border-zinc-200 [&_h1]:pb-4 [&_h1]:text-[2.05rem] [&_h1]:font-black [&_h1]:leading-[1.25] [&_h1]:tracking-[-0.03em] [&_h2]:mt-12 [&_h2]:mb-5 [&_h2]:text-[1.72rem] [&_h2]:font-black [&_h2]:leading-[1.34] [&_h2]:tracking-[-0.02em] [&_h3]:mt-10 [&_h3]:mb-4 [&_h3]:text-[1.35rem] [&_h3]:font-black [&_h3]:leading-[1.42] [&_p]:mb-6 [&_p]:text-[1.18rem] [&_p]:leading-[2.05] [&_p]:tracking-[-0.012em] [&_ul]:mb-8 [&_ul]:ml-6 [&_ul]:list-disc [&_ul]:space-y-3 [&_ul]:text-[1.12rem] [&_ul]:leading-[1.95] [&_ol]:mb-8 [&_ol]:ml-6 [&_ol]:list-decimal [&_ol]:space-y-3 [&_ol]:text-[1.12rem] [&_ol]:leading-[1.95] [&_blockquote]:my-8 [&_blockquote]:rounded-[22px] [&_blockquote]:border [&_blockquote]:border-zinc-200 [&_blockquote]:bg-zinc-50 [&_blockquote]:px-6 [&_blockquote]:py-5 [&_blockquote]:text-[1.02rem] [&_blockquote]:font-medium [&_blockquote]:leading-[1.9] [&_blockquote]:text-zinc-600"
+              />
+            </div>
+          </div>
         )}
       </div>
 

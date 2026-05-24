@@ -7,6 +7,10 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+import Sidebar from '@/components/layout/Sidebar';
+import Aside from '@/components/layout/Aside';
+import Footer from '@/components/layout/Footer';
+
 export default function BlogStudioPage() {
   const router = useRouter();
 
