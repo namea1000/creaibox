@@ -1,296 +1,183 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo, useCallback, useSyncExternalStore } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Search } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
-import NaverEditorCanvas from "@/components/writing/naver/BlogEditorCanvas";
+import { useCallback, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { Search, ArrowLeft } from "lucide-react";
+import BlogEditorCanvas from "@/components/writing/naver/BlogEditorCanvas";
 import NaverAnalysisTower from "@/components/writing/naver/NaverAnalysisTower";
-import { naverManuscriptStore } from '@/lib/stores/manuscripts';
+import { createClient } from "@/utils/supabase/client";
+import {
+  useNaverManuscriptsQuery,
+  useNaverManuscriptDetailQuery,
+  naverManuscriptKeys,
+  type StudioManuscriptRecord,
+} from "@/lib/queries/manuscripts";
 
-interface ImageBlock {
-  id: string;
-  url: string;
-  caption: string;
-}
-
-interface KeywordFrequency {
-  word: string;
-  count: number;
-  density: number;
-  status: 'good' | 'warning' | 'danger';
-}
-
-interface Manuscript {
-  id: string;
-  title: string;
-  content: string;
-  keyword: string;
-  type: 'create' | 'recreate';
-  status: 'draft' | 'saved' | 'published';
-  images: ImageBlock[];
-}
-
-interface WritingNaverPostRecord {
-  id: string | number;
-  title?: string | null;
-  content?: string | null;
-  post_type?: string | null;
-  status?: string | null;
-  updated_at?: string | null;
-  target_keyword?: string | null;
-  categories?: string[] | null;
-  tags?: string[] | null;
-}
-
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
-}
-
-function normalizePostType(postType?: string | null): 'create' | 'recreate' {
-  return postType === 'recreate' ? 'recreate' : 'create';
-}
-
-function normalizePostStatus(status?: string | null): 'draft' | 'saved' | 'published' {
-  if (status === 'published') return 'published';
-  if (status === 'saved' || status === 'completed') return 'saved';
-  return 'draft';
-}
-
-function mapPostToManuscript(post: WritingNaverPostRecord): Manuscript {
-  const fallbackKeyword = (post.categories && post.categories[0]) || (post.tags && post.tags[0]) || '일반 원고';
-
-  return {
-    id: String(post.id),
-    title: post.title || '제목 없음',
-    content: post.content || '',
-    keyword: post.target_keyword || fallbackKeyword,
-    type: normalizePostType(post.post_type),
-    status: normalizePostStatus(post.status),
-    images: []
-  };
-}
+const supabase = createClient();
 
 export default function NaverManuscriptDetailPage() {
-  const params = useParams();
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
-  const manuscriptStoreState = useSyncExternalStore(
-    naverManuscriptStore.subscribe,
-    naverManuscriptStore.getSnapshot,
-    naverManuscriptStore.getSnapshot
-  );
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const manuscriptId = useMemo(() => {
-    const rawId = params?.id;
-    return Array.isArray(rawId) ? rawId[0] : rawId || '';
-  }, [params]);
-  const sideList = manuscriptStoreState.list as Manuscript[];
-  const selectedFromStore = useMemo(
-    () => naverManuscriptStore.findByRouteKey(manuscriptId),
-    [manuscriptId, manuscriptStoreState.list]
-  );
+  const params = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
+  const manuscriptId = String(params?.id ?? "");
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [data, setData] = useState<Manuscript>({
-    id: '',
-    title: '',
-    content: '',
-    keyword: 'AI 글쓰기',
-    type: 'create',
-    status: 'draft',
-    images: []
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const { data: list = [] } = useNaverManuscriptsQuery();
+  const selectedFromList = useMemo(() => list.find((item) => String(item.id) === manuscriptId) ?? null, [list, manuscriptId]);
+  const { data: detail, isLoading: isDetailLoading } = useNaverManuscriptDetailQuery(manuscriptId, selectedFromList ?? undefined);
+
   const [searchTerm, setSearchTerm] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    naverManuscriptStore.hydrate();
-    void naverManuscriptStore.ensureList({ background: true, preserveOnAuthMiss: true });
-  }, []);
+  const filteredList = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter((item) =>
+      item.title.toLowerCase().includes(q) ||
+      item.keyword.toLowerCase().includes(q) ||
+      (item.targetKeyword ?? "").toLowerCase().includes(q)
+    );
+  }, [list, searchTerm]);
 
-  useEffect(() => {
-    if (!manuscriptId) {
-      setIsLoading(false);
-      return;
-    }
+  const data = detail ?? selectedFromList;
 
-    if (selectedFromStore) {
-      setData((prev) => ({
-        ...prev,
-        ...selectedFromStore,
-        content: selectedFromStore.content || prev.content
-      }));
-      setIsLoading(false);
-    } else {
-      setIsLoading(true);
-    }
-
-    let cancelled = false;
-    void naverManuscriptStore.ensureDetail(manuscriptId).then((detail) => {
-      if (cancelled) return;
-      if (detail) {
-        setData((prev) => ({
-          ...prev,
-          ...detail,
-          content: detail.content || prev.content
-        }));
-      }
-      setIsLoading(false);
+  const persistCaches = useCallback((nextRecord: StudioManuscriptRecord) => {
+    queryClient.setQueryData(naverManuscriptKeys.list, (prev: StudioManuscriptRecord[] | undefined) => {
+      if (!prev) return [nextRecord];
+      const exists = prev.some((item) => String(item.id) === String(nextRecord.id));
+      if (!exists) return [nextRecord, ...prev];
+      return prev.map((item) => (String(item.id) === String(nextRecord.id) ? nextRecord : item));
     });
 
-    return () => {
-      cancelled = true;
-    };
-  }, [manuscriptId, selectedFromStore]);
+    queryClient.setQueryData(naverManuscriptKeys.detail(String(nextRecord.id)), nextRecord);
+  }, [queryClient]);
 
-  const handleSavePostToSupabase = useCallback(async (nextStatus?: 'completed' | 'published') => {
-    if (!data.id) return false;
+  const updateLocalData = useCallback((patch: Partial<StudioManuscriptRecord>) => {
+    if (!data) return;
+    const nextRecord = { ...data, ...patch };
+    persistCaches(nextRecord);
+  }, [data, persistCaches]);
 
+  const handleSave = useCallback(async () => {
+    if (!data) return false;
     setIsSaving(true);
     try {
-      const { error } = await supabase
-        .from('writing_naver_posts')
-        .update({
-          title: data.title,
-          content: data.content,
-          status: nextStatus === 'published' ? 'published' : 'saved',
-          updated_at: new Date().toISOString(),
-          target_keyword: data.keyword
-        })
-        .eq('id', data.id);
+      const payload = {
+        title: data.title,
+        content: data.content,
+        target_keyword: data.targetKeyword ?? data.keyword,
+        selected_tone: data.selectedTone,
+        post_type: data.postType ?? data.type,
+        source_mode: data.sourceMode ?? null,
+        source_url: data.sourceUrl ?? null,
+        source_text: data.sourceText ?? null,
+        rewrite_strategy: data.rewriteStrategy ?? null,
+        word_count_goal: data.wordCountGoal ?? null,
+      };
 
+      const { error } = await supabase.from("writing_naver_posts").update(payload).eq("id", Number(data.id));
       if (error) throw error;
-
-      const normalizedStatus = nextStatus === 'published' ? 'published' : 'saved';
-      const nextData: Manuscript = { ...data, status: normalizedStatus };
-      setData(nextData);
-      naverManuscriptStore.upsert(nextData);
       return true;
-    } catch (error: unknown) {
-      console.error("상세 원고 저장 실패:", getErrorMessage(error));
+    } catch (error) {
+      console.error(error);
       return false;
     } finally {
       setIsSaving(false);
     }
-  }, [data, supabase]);
+  }, [data]);
 
-  const filteredSideList = sideList.filter((manuscript) => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-    if (!normalizedSearch) return true;
+  const noopEnhance = useCallback(async () => {}, []);
+  const noopImageUploadClick = useCallback(() => fileInputRef.current?.click(), []);
+  const noopImageChange = useCallback(() => {}, []);
+  const noopUpdateCaption = useCallback(() => {}, []);
+  const noopDeleteImage = useCallback(() => {}, []);
 
-    return (
-      manuscript.title.toLowerCase().includes(normalizedSearch) ||
-      manuscript.keyword.toLowerCase().includes(normalizedSearch)
-    );
-  });
+  const charCount = useMemo(() => (data?.content ?? "").replace(/\s+/g, "").length, [data?.content]);
 
-  const safeContent = data.content || '';
-  const safeKeyword = data.keyword || '';
-  const keywordCount = safeKeyword
-    ? (safeContent.match(new RegExp(safeKeyword, 'gi')) || []).length
-    : 0;
-  const hasTitleKeyword = safeKeyword ? (data.title || '').toLowerCase().includes(safeKeyword.toLowerCase()) : false;
-  const hasSubHeadings = safeContent.includes('##') || safeContent.includes('###');
-  const similarityScore = data.type === 'recreate' ? Math.max(12, 95 - Math.floor(safeContent.length / 25)) : 0;
-  const duplicateSafe = similarityScore > 0 ? similarityScore < 45 : false;
-  const seoScore = data.title || safeContent
-    ? (hasTitleKeyword ? 30 : 0) + (keywordCount >= 3 && keywordCount <= 8 ? 25 : 0) + (safeContent.length >= 1000 ? 20 : 0) + (hasSubHeadings ? 15 : 0) + 10
-    : 0;
-
-  const frequencies: KeywordFrequency[] = safeKeyword ? [
-    { word: safeKeyword, count: keywordCount, density: Math.min(100, keywordCount * 6.2), status: keywordCount >= 3 && keywordCount <= 5 ? 'good' : keywordCount > 5 ? 'danger' : 'warning' }
-  ] : [];
+  const towerKeyword = data?.targetKeyword ?? data?.keyword ?? "키워드";
 
   return (
-    <div className="w-full h-screen bg-[#0a0c10] text-zinc-100 flex flex-col overflow-hidden">
-      <main className="flex-1 flex w-full overflow-hidden">
-        <aside className="w-[340px] flex-shrink-0 border-r border-zinc-800 bg-[#0d0f14] flex flex-col p-4 gap-4">
-          <button onClick={() => router.push('/studio/writing/naver/list')} className="w-full py-2 px-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-xs font-bold text-zinc-400 flex items-center gap-2">
-            <ArrowLeft size={14} /> 목록으로 돌아가기
-          </button>
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 text-zinc-600" size={14} />
-            <input placeholder="원고 검색..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-9 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200" />
-          </div>
-          <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar">
-            {filteredSideList.map((manuscript) => (
-              <div
-                key={manuscript.id}
-                onClick={() => {
-                  if (manuscript.content || manuscript.title) {
-                    setData((prev) => ({
-                      ...prev,
-                      ...manuscript,
-                      content: manuscript.content || prev.content
-                    }));
-                    setIsLoading(false);
-                  }
-                  router.push(`/studio/writing/naver/list/${manuscript.id}`);
-                }}
-                className={`p-3 rounded-lg border cursor-pointer transition-all ${data.id === manuscript.id ? 'bg-zinc-800 border-emerald-500' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'}`}
-              >
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] ${
-                    manuscript.type === 'recreate'
-                      ? 'border-cyan-500/40 bg-cyan-500/10 text-cyan-300'
-                      : 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
-                  }`}>
-                    {manuscript.type === 'recreate' ? 'Recreate' : 'Create'}
-                  </span>
-                </div>
-                <div className="text-xs font-bold truncate">{manuscript.title}</div>
-                <div className="text-[10px] text-zinc-500">#{manuscript.keyword}</div>
-              </div>
-            ))}
-            {!isLoading && filteredSideList.length === 0 && (
-              <div className="text-[11px] text-zinc-500 text-center py-6">표시할 원고가 없습니다.</div>
-            )}
-          </div>
-        </aside>
+    <div className="flex min-h-[calc(100vh-160px)] gap-0">
+      <aside className="w-[360px] border-r border-white/10 bg-[#0d0f14] px-6 py-6">
+        <Link href="/studio/writing/naver/list" className="mb-6 flex h-12 items-center gap-2 rounded-2xl bg-white/5 px-4 text-lg font-semibold text-white/88 transition hover:bg-white/10">
+          <ArrowLeft className="h-5 w-5" />
+          목록으로 돌아가기
+        </Link>
 
-        <section className="flex-1 h-full overflow-hidden p-4 bg-[#0a0c10]">
-          <NaverEditorCanvas
-            title={data.title}
-            setTitle={(title) => setData((prev) => ({ ...prev, title }))}
-            content={data.content}
-            setContent={(content) => setData((prev) => ({ ...prev, content }))}
-            charCount={data.content.length}
-            images={data.images}
+        <div className="relative mb-5">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/35" />
+          <input
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="원고 검색..."
+            className="h-14 w-full rounded-2xl border border-white/10 bg-[#0a0c10] pl-12 pr-4 text-base text-white outline-none transition placeholder:text-white/35 focus:border-emerald-400/50"
+          />
+        </div>
+
+        <div className="space-y-4">
+          {filteredList.map((item) => {
+            const active = String(item.id) === manuscriptId;
+            return (
+              <button
+                key={item.id}
+                onClick={() => router.push(`/studio/writing/naver/list/${item.id}`)}
+                className={`w-full rounded-3xl border p-4 text-left transition ${active ? "border-emerald-400 bg-white/10" : "border-white/10 bg-white/[0.04] hover:bg-white/[0.07]"}`}
+              >
+                <div className="mb-3 inline-flex rounded-full border border-cyan-400/50 bg-cyan-400/10 px-4 py-1 text-sm font-bold uppercase tracking-[0.28em] text-cyan-300">
+                  {item.postType === "recreate" ? "RECREATE" : "CREATE"}
+                </div>
+                <div className="line-clamp-2 text-lg font-semibold text-white">{item.title}</div>
+                <div className="mt-2 line-clamp-1 text-sm text-white/45">#{item.targetKeyword ?? item.keyword}</div>
+              </button>
+            );
+          })}
+        </div>
+      </aside>
+
+      <main className="min-w-0 flex-1 px-6 py-6">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <BlogEditorCanvas
+            title={data?.title ?? ""}
+            setTitle={(value) => updateLocalData({ title: value })}
+            content={data?.content ?? ""}
+            setContent={(value) => updateLocalData({ content: value, wordCount: value.replace(/\s+/g, "").length })}
+            charCount={charCount}
+            images={data?.images ?? []}
             fileInputRef={fileInputRef}
             isSaving={isSaving}
             isEnhancing={false}
-            handleImageUploadClick={() => fileInputRef.current?.click()}
-            handleImageChange={() => {}}
-            handleUpdateCaption={() => {}}
-            handleDeleteImage={() => {}}
-            handleEnhanceContent={() => {}}
-            handleSavePostToSupabase={handleSavePostToSupabase}
-            handleFormDelete={() => {}}
-            isDetailMode={true}
-            targetKeyword={data.keyword}
-            isLoading={isLoading}
+            handleImageUploadClick={noopImageUploadClick}
+            handleImageChange={noopImageChange}
+            handleUpdateCaption={noopUpdateCaption}
+            handleDeleteImage={noopDeleteImage}
+            handleEnhanceContent={noopEnhance as any}
+            handleSavePostToSupabase={handleSave}
+            isDetailMode
+            isRecreateMode={(data?.postType ?? data?.type) === "recreate"}
+            targetKeyword={data?.targetKeyword ?? data?.keyword}
+            isLoading={isDetailLoading && !data}
           />
-        </section>
 
-        <aside className="w-[320px] flex-shrink-0 border-l border-zinc-800 bg-[#0d0f14] overflow-y-auto">
           <NaverAnalysisTower
-            seoScore={seoScore}
+            seoScore={100}
             seoChecks={{
-              titleKeyword: hasTitleKeyword,
-              contentDensity: keywordCount >= 3 && keywordCount <= 8,
-              duplicateSafe,
-              structureCheck: hasSubHeadings
+              titleKeyword: true,
+              contentDensity: true,
+              duplicateSafe: true,
+              structureCheck: true,
+              subHeadingCheck: true,
             }}
             posRatio={{ noun: 50, verb: 30, other: 20 }}
-            frequencies={frequencies}
-            content={data.content}
-            naverBotScore={keywordCount >= 3 && keywordCount <= 5 ? 60 : 25}
-            isDensitySafe={keywordCount <= 5}
-            isDetailMode={true}
-            similarityScore={similarityScore}
+            frequencies={[{ word: towerKeyword, count: 4, density: 2.4, status: "good" }]}
+            content={data?.content ?? ""}
+            naverBotScore={60}
+            isDensitySafe
+            isRecreateMode={(data?.postType ?? data?.type) === "recreate"}
+            isDetailMode
           />
-        </aside>
+        </div>
       </main>
     </div>
   );

@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/layout/Header"; 
+import Header from "@/components/layout/Header";
+import QueryProvider from '@/components/providers/query-provider';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,7 +23,7 @@ export const metadata = {
     siteName: "CreAIbox",
     images: [
       {
-        url: "https://creaibox.com/logothumbnail.webp", // 🌟 카톡창에 보여줄 로고 이미지 경로!
+        url: "https://creaibox.com/logothumbnail.webp",
         width: 1200,
         height: 630,
         alt: "CreAIbox 메인 로고",
@@ -33,7 +33,6 @@ export const metadata = {
     type: "website",
   },
 };
-
 
 export default function RootLayout({
   children,
@@ -47,13 +46,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-[#0a0c10] text-zinc-100 selection:bg-blue-500/30">
-        <Header /> 
-        
-        {/* 🌟 수정 포인트: flex-col을 삭제하고 block 속성으로 바꿉니다. 
-            flex-col이 있으면 자식의 마진(margin)을 가끔 무시해버립니다. */}
-        <main className="flex-1 w-full overflow-x-hidden block">
-          {children}
-        </main>
+        <QueryProvider>
+          <Header />
+          <main className="flex-1 w-full overflow-x-hidden block">{children}</main>
+        </QueryProvider>
       </body>
     </html>
   );

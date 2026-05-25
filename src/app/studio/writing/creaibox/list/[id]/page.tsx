@@ -1,575 +1,276 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo, useCallback, useSyncExternalStore } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Search } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/utils/supabase/client';
-import NaverEditorCanvas from "@/components/writing/naver/BlogEditorCanvas";
+import BlogEditorCanvas from "@/components/writing/naver/BlogEditorCanvas";
 import CreaiboxAnalysisTower from "@/components/writing/creaibox/tabs/CreaiboxAnalysisTower";
-import { creaiboxManuscriptStore } from '@/lib/stores/manuscripts';
-
-interface ImageBlock {
-  id: string;
-  url: string;
-  caption: string;
-}
-
-interface KeywordFrequency {
-  word: string;
-  count: number;
-  density: number;
-  status: 'good' | 'warning' | 'danger';
-}
-
-interface Manuscript {
-  id: string;
-  displayId: number;
-  title: string;
-  content: string;
-  keyword: string;
-  type: 'create' | 'recreate';
-  status: 'draft' | 'saved' | 'published';
-  slug: string;
-  metaDescription: string;
-  focusKeyword: string;
-  canonicalUrl: string;
-  seoTags: string[];
-  images: ImageBlock[];
-}
-
-interface WritingCreaiboxPostRecord {
-  id: string | number;
-  display_id?: number | null;
-  created_at?: string | null;
-  title?: string | null;
-  content?: string | null;
-  post_type?: string | null;
-  status?: string | null;
-  target_keyword?: string | null;
-  slug?: string | null;
-  meta_description?: string | null;
-  focus_keyword?: string | null;
-  canonical_url?: string | null;
-  seo_tags?: string[] | null;
-}
-
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
-}
-
-function normalizePostType(postType?: string | null): 'create' | 'recreate' {
-  return postType === 'recreate' ? 'recreate' : 'create';
-}
-
-function normalizePostStatus(status?: string | null): 'draft' | 'saved' | 'published' {
-  if (status === 'published') return 'published';
-  if (status === 'saved' || status === 'completed') return 'saved';
-  return 'draft';
-}
-
-function mapPostToManuscript(post: WritingCreaiboxPostRecord): Manuscript {
-  return {
-    id: String(post.id),
-    displayId: post.display_id || 0,
-    title: post.title || '제목 없음',
-    content: post.content || '',
-    keyword: post.target_keyword || '일반 원고',
-    type: normalizePostType(post.post_type),
-    status: normalizePostStatus(post.status),
-    slug: post.slug || '',
-    metaDescription: post.meta_description || '',
-    focusKeyword: post.focus_keyword || '',
-    canonicalUrl: post.canonical_url || '',
-    seoTags: post.seo_tags || [],
-    images: []
-  };
-}
+import { useCreaiboxManuscriptsQuery, useCreaiboxManuscriptDetailQuery, creaiboxManuscriptKeys, type StudioManuscriptRecord } from '@/lib/queries/manuscripts';
 
 function buildPublicBlogSlug(title: string, focusKeyword: string, targetKeyword: string) {
-  const source = `${focusKeyword || targetKeyword || ''} ${title || ''}`
-    .replace(/\[[^\]]+\]/g, ' ')
-    .replace(/[^a-zA-Z0-9가-힣\s-]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  const base = (focusKeyword || targetKeyword || title || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9가-힣\s-]/g, ' ')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .slice(0, 80)
+    .replace(/-$/, '');
 
-  const tokens = source.split(' ').filter((token) => token.length >= 2);
-  return [...new Set(tokens)].slice(0, 7).join('-').toLowerCase().slice(0, 72);
+  return base || `creaibox-post-${Date.now()}`;
 }
-export default function CreaiboxManuscriptDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
-  const manuscriptStoreState = useSyncExternalStore(
-    creaiboxManuscriptStore.subscribe,
-    creaiboxManuscriptStore.getSnapshot,
-    creaiboxManuscriptStore.getSnapshot
-  );
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const manuscriptId = useMemo(() => {
-    const rawId = params?.id;
-    return Array.isArray(rawId) ? rawId[0] : rawId || '';
-  }, [params]);
-  const sideList = manuscriptStoreState.list as Manuscript[];
-  const selectedFromStore = useMemo(
-    () => creaiboxManuscriptStore.findByRouteKey(manuscriptId),
-    [manuscriptId, manuscriptStoreState.list]
-  );
 
-  const [data, setData] = useState<Manuscript>({
-    id: '',
-    displayId: 0,
-    title: '',
-    content: '',
-    keyword: 'AI 글쓰기',
-    type: 'create',
-    status: 'draft',
-    slug: '',
-    metaDescription: '',
-    focusKeyword: '',
-    canonicalUrl: '',
-    seoTags: [],
-    images: []
-  });
-  const [isLoading, setIsLoading] = useState(true);
+function buildCanonicalUrl(slug: string) {
+  return `https://creaibox.com/blog/${slug}`;
+}
+
+function toTagList(value?: string[] | null) {
+  return Array.isArray(value) ? value.filter(Boolean) : [];
+}
+
+export default function CreaiboxManuscriptDetailPage() {
+  const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const supabase = useMemo(() => createClient(), []);
+  const queryClient = useQueryClient();
+  const manuscriptId = Number(params?.id || 0);
+
+  const { data: list = [] } = useCreaiboxManuscriptsQuery();
+  const selectedFromList = useMemo(() => list.find((item) => Number(item.displayId) === manuscriptId) ?? null, [list, manuscriptId]);
+  const { data: detail, isLoading: isDetailLoading } = useCreaiboxManuscriptDetailQuery(manuscriptId, selectedFromList);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [hasLocalEdits, setHasLocalEdits] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isPublishing, setIsPublishing] = useState(false);
-  const [isSeoSaving, setIsSeoSaving] = useState(false);
-  const [seoSaveFeedback, setSeoSaveFeedback] = useState<'idle' | 'saved'>('idle');
-  const [searchTerm, setSearchTerm] = useState("");
+  const saveFeedbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [data, setData] = useState<StudioManuscriptRecord | null>(selectedFromList);
+
   useEffect(() => {
-    creaiboxManuscriptStore.hydrate();
-    void creaiboxManuscriptStore.ensureList({ background: true, preserveOnAuthMiss: true });
+    if (!detail) return;
+    if (!hasLocalEdits || detail.id !== data?.id) {
+      setData(detail);
+      setHasLocalEdits(false);
+    }
+  }, [detail, hasLocalEdits, data?.id]);
+
+  useEffect(() => () => {
+    if (saveFeedbackTimeoutRef.current) clearTimeout(saveFeedbackTimeoutRef.current);
   }, []);
 
-  useEffect(() => {
-    if (!manuscriptId) {
-      setIsLoading(false);
-      return;
-    }
-
-    if (selectedFromStore) {
-      setData((prev) => {
-        if (
-          prev.id === selectedFromStore.id &&
-          prev.title &&
-          prev.content &&
-          prev.keyword &&
-          prev.slug === (selectedFromStore.slug || prev.slug) &&
-          prev.metaDescription === (selectedFromStore.metaDescription || prev.metaDescription)
-        ) {
-          return prev;
-        }
-        return {
-          ...prev,
-          ...selectedFromStore,
-          content: selectedFromStore.content || prev.content,
-          slug: selectedFromStore.slug || prev.slug,
-          metaDescription: selectedFromStore.metaDescription || prev.metaDescription,
-          focusKeyword: selectedFromStore.focusKeyword || prev.focusKeyword,
-          canonicalUrl: selectedFromStore.canonicalUrl || prev.canonicalUrl,
-          seoTags: selectedFromStore.seoTags && selectedFromStore.seoTags.length > 0 ? selectedFromStore.seoTags : prev.seoTags
-        };
-      });
-      setIsLoading(false);
-    } else {
-      setIsLoading(true);
-    }
-
-    let cancelled = false;
-    void creaiboxManuscriptStore.ensureDetail(manuscriptId).then((detail) => {
-      if (cancelled) return;
-      if (detail) {
-        setData((prev) => ({
-          ...prev,
-          ...detail,
-          content: detail.content || prev.content
-        }));
-      }
-      setIsLoading(false);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [manuscriptId, selectedFromStore]);
-
-  const handleSavePostToSupabase = useCallback(async (nextStatus?: 'completed' | 'published') => {
-    if (!data.id) return false;
-
-    setIsSaving(true);
-    try {
-      const { error } = await supabase
-        .from('writing_creaibox_posts')
-        .update({
-          title: data.title,
-          content: data.content,
-          status: nextStatus === 'published' ? 'published' : 'saved',
-          target_keyword: data.keyword,
-          slug: data.slug,
-          meta_description: data.metaDescription,
-          focus_keyword: data.focusKeyword,
-          canonical_url: data.canonicalUrl,
-          seo_tags: data.seoTags
-        })
-        .eq('id', data.id);
-
-      if (error) throw error;
-
-      const normalizedStatus: Manuscript['status'] = nextStatus === 'published' ? 'published' : 'saved';
-      const nextData: Manuscript = { ...data, status: normalizedStatus };
-      setData(nextData);
-      creaiboxManuscriptStore.upsert(nextData);
-      return true;
-    } catch (error: unknown) {
-      console.error("상세 원고 저장 실패:", getErrorMessage(error));
-      return false;
-    } finally {
-      setIsSaving(false);
-    }
-  }, [data, supabase]);
-
-  useEffect(() => {
-    if (seoSaveFeedback !== 'saved') return;
-    const timer = setTimeout(() => setSeoSaveFeedback('idle'), 3000);
-    return () => clearTimeout(timer);
-  }, [seoSaveFeedback]);
-
-  const handleSeoSave = useCallback(async () => {
-    if (!data.id) return;
-    setIsSeoSaving(true);
-    try {
-      const result = await handleSavePostToSupabase();
-      if (result !== false) {
-        setSeoSaveFeedback('saved');
-      }
-    } finally {
-      setIsSeoSaving(false);
-    }
-  }, [data.id, handleSavePostToSupabase]);
-
-  const handlePublishBlog = useCallback(async () => {
-    if (!data.id || !data.title.trim() || !data.content.trim()) {
-      alert("발행하려면 제목과 본문이 필요합니다.");
-      return;
-    }
-
-    const finalSlug = buildPublicBlogSlug(data.title, data.focusKeyword, data.keyword);
-    if (!finalSlug) {
-      alert("발행용 슬러그를 만들 수 없습니다. 제목이나 핵심 키워드를 확인해 주세요.");
-      return;
-    }
-
-    const finalCanonicalUrl = `https://creaibox.com/blog/${finalSlug}`;
-
-    setIsPublishing(true);
-    try {
-      const { error } = await supabase
-        .from('writing_creaibox_posts')
-        .update({
-          title: data.title,
-          content: data.content,
-          status: 'published',
-          target_keyword: data.keyword,
-          slug: finalSlug,
-          meta_description: data.metaDescription,
-          focus_keyword: data.focusKeyword,
-          canonical_url: finalCanonicalUrl,
-          seo_tags: data.seoTags
-        })
-        .eq('id', data.id);
-
-      if (error) throw error;
-
-      setData((prev) => ({
-        ...prev,
-        status: 'published',
-        slug: finalSlug,
-        canonicalUrl: finalCanonicalUrl
-      }));
-      const nextPublishedData: Manuscript = {
-        ...data,
-        status: 'published',
-        slug: finalSlug,
-        canonicalUrl: finalCanonicalUrl
-      };
-      creaiboxManuscriptStore.upsert(nextPublishedData);
-
-      router.push(`/blog/${finalSlug}`);
-    } catch (error: unknown) {
-      console.error("블로그 발행 실패:", getErrorMessage(error));
-      alert("블로그 발행 중 오류가 발생했습니다. 다시 시도해 주세요.");
-    } finally {
-      setIsPublishing(false);
-    }
-  }, [data, router, supabase]);
-
-  const filteredSideList = sideList.filter((manuscript) => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-    if (!normalizedSearch) return true;
-
-    return (
-      manuscript.title.toLowerCase().includes(normalizedSearch) ||
-      manuscript.keyword.toLowerCase().includes(normalizedSearch)
+  const filteredManuscripts = useMemo(() => {
+    const lower = searchTerm.trim().toLowerCase();
+    if (!lower) return list;
+    return list.filter((item) =>
+      item.title.toLowerCase().includes(lower) || item.targetKeyword.toLowerCase().includes(lower)
     );
-  });
+  }, [list, searchTerm]);
 
-  const safeContent = data.content || '';
-  const safeKeyword = data.keyword || '';
-  const keywordCount = safeKeyword
-    ? (safeContent.match(new RegExp(safeKeyword, 'gi')) || []).length
-    : 0;
-  const hasTitleKeyword = safeKeyword ? (data.title || '').toLowerCase().includes(safeKeyword.toLowerCase()) : false;
-  const hasSubHeadings = safeContent.includes('##') || safeContent.includes('###');
-  const similarityScore = data.type === 'recreate' ? Math.max(12, 95 - Math.floor(safeContent.length / 25)) : 0;
-  const duplicateSafe = similarityScore > 0 ? similarityScore < 45 : false;
-  const seoScore = data.title || safeContent
-    ? (hasTitleKeyword ? 30 : 0) + (keywordCount >= 3 && keywordCount <= 8 ? 25 : 0) + (safeContent.length >= 1000 ? 20 : 0) + (hasSubHeadings ? 15 : 0) + 10
-    : 0;
+  const updateLocalData = useCallback((patch: Partial<StudioManuscriptRecord>) => {
+    setData((prev) => (prev ? { ...prev, ...patch } : prev));
+    setHasLocalEdits(true);
+  }, []);
 
-  const frequencies: KeywordFrequency[] = safeKeyword ? [
-    { word: safeKeyword, count: keywordCount, density: Math.min(100, keywordCount * 6.2), status: keywordCount >= 3 && keywordCount <= 5 ? 'good' : keywordCount > 5 ? 'danger' : 'warning' }
-  ] : [];
-  const metaDescriptionLength = data.metaDescription.trim().length;
-  const slugLength = data.slug.trim().length;
-  const shouldShowEditorLoading = isLoading && !data.title && !data.content;
-  const seoHealthLabel = !data.title || !data.content
-    ? '대기 중'
-    : metaDescriptionLength >= 90 && metaDescriptionLength <= 155 && data.focusKeyword
-      ? '준비 완료'
-      : '보완 필요';
-
-  const handleSideManuscriptClick = useCallback((manuscript: Manuscript) => {
-    if (manuscript.content || manuscript.title) {
-      setData((prev) => ({
-        ...prev,
-        ...manuscript,
-        content: manuscript.content || prev.content,
-        slug: manuscript.slug || prev.slug,
-        metaDescription: manuscript.metaDescription || prev.metaDescription,
-        focusKeyword: manuscript.focusKeyword || prev.focusKeyword,
-        canonicalUrl: manuscript.canonicalUrl || prev.canonicalUrl,
-        seoTags: manuscript.seoTags.length > 0 ? manuscript.seoTags : prev.seoTags
-      }));
-      setIsLoading(false);
-    }
-
+  const handleOpenManuscript = useCallback((manuscript: StudioManuscriptRecord) => {
+    setData(manuscript);
+    setHasLocalEdits(false);
     router.push(`/studio/writing/creaibox/list/${manuscript.displayId}`);
   }, [router]);
 
-  return (
-    <div className="w-full h-screen bg-[#0a0c10] text-zinc-100 flex flex-col overflow-hidden">
-      <main className="flex-1 flex w-full overflow-hidden">
-        <aside className="w-[330px] flex-shrink-0 border-r border-zinc-800 bg-[#0d0f14] flex flex-col px-4 pb-4 pt-2 gap-4">
-          <button onClick={() => router.push('/studio/writing/creaibox/list')} className="w-full py-2 px-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-xs font-bold text-zinc-400 flex items-center gap-2">
-            <ArrowLeft size={14} /> 목록으로 돌아가기
-          </button>
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 text-zinc-600" size={14} />
-            <input placeholder="원고 검색..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-9 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200" />
+  const persistCaches = useCallback((nextRecord: StudioManuscriptRecord) => {
+    queryClient.setQueryData<StudioManuscriptRecord | null>(creaiboxManuscriptKeys.detail(Number(nextRecord.displayId)), nextRecord);
+    queryClient.setQueryData<StudioManuscriptRecord[]>(creaiboxManuscriptKeys.list, (prev = []) =>
+      prev.map((item) => item.id === nextRecord.id ? nextRecord : item)
+    );
+  }, [queryClient]);
+
+  const handleSave = useCallback(async () => {
+    if (!data) return false;
+    setIsSaving(true);
+
+    const slug = buildPublicBlogSlug(data.title, data.focusKeyword, data.targetKeyword);
+    const canonicalUrl = buildCanonicalUrl(slug);
+    const now = new Date().toISOString();
+
+    const updatePayload = {
+      title: data.title,
+      content: data.content,
+      target_keyword: data.targetKeyword,
+      selected_tone: data.selectedTone,
+      status: data.status,
+      slug,
+      meta_description: data.metaDescription,
+      focus_keyword: data.focusKeyword,
+      canonical_url: canonicalUrl,
+      seo_tags: toTagList(data.seoTags),
+      word_count_goal: data.wordCountGoal,
+      use_search: data.useSearch,
+    };
+
+    const { error } = await supabase.from('writing_creaibox_posts').update(updatePayload).eq('id', data.id);
+    setIsSaving(false);
+
+    if (error) {
+      window.alert(`저장 실패: ${error.message}`);
+      return false;
+    }
+
+    const nextRecord: StudioManuscriptRecord = {
+      ...data,
+      slug,
+      canonicalUrl,
+      updatedAt: now,
+      displayId: data.displayId,
+      wordCount: data.content.replace(/\s+/g, '').length,
+    };
+
+    setData(nextRecord);
+    setHasLocalEdits(false);
+    persistCaches(nextRecord);
+    return true;
+  }, [data, persistCaches, supabase]);
+
+  const seoStatus = useMemo(() => {
+    if (!data) return '대기 중';
+    const ok = Boolean(data.slug && data.metaDescription && data.focusKeyword && (data.seoTags?.length ?? 0) > 0);
+    return ok ? '준비 완료' : '보완 필요';
+  }, [data]);
+
+  if (!data && isDetailLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a0d12] text-white">
+        <div className="mx-auto grid max-w-[1880px] grid-cols-[360px_minmax(0,1.2fr)_420px] gap-0 px-0">
+          <aside className="min-h-screen border-r border-white/10 bg-[#0b0f15] p-4" />
+          <div className="relative min-h-screen bg-white">
+            <div className="absolute inset-0 flex items-center justify-center text-gray-500">Supabase 원고 복원 데이터 바인딩 중...</div>
           </div>
-          <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar">
-            {filteredSideList.map((manuscript) => (
-              <div
-                key={manuscript.id}
-                onClick={() => handleSideManuscriptClick(manuscript)}
-                className={`p-3 rounded-lg border cursor-pointer transition-all ${data.id === manuscript.id ? 'bg-zinc-800 border-emerald-500' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'}`}
-              >
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] ${
-                    manuscript.type === 'recreate'
-                      ? 'border-cyan-500/40 bg-cyan-500/10 text-cyan-300'
-                      : 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
-                  }`}>
-                    {manuscript.type === 'recreate' ? 'Recreate' : 'Create'}
-                  </span>
-                </div>
-                <div className="text-xs font-bold truncate">{manuscript.title}</div>
-                <div className="text-[10px] text-zinc-500">#{manuscript.keyword}</div>
-              </div>
-            ))}
-            {!isLoading && filteredSideList.length === 0 && (
-              <div className="text-[11px] text-zinc-500 text-center py-6">표시할 원고가 없습니다.</div>
-            )}
+          <aside className="min-h-screen border-l border-white/10 bg-[#0b0f15] p-6" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  return (
+    <div className="min-h-screen bg-[#0a0d12] text-white">
+      <div className="mx-auto grid max-w-[1880px] grid-cols-[390px_minmax(0,1fr)_470px] gap-0">
+        <aside className="min-h-screen border-r border-white/10 bg-[#0b0f15] p-4">
+          <button onClick={() => router.push('/studio/writing/creaibox/list')} className="mb-5 flex w-full items-center gap-3 rounded-2xl bg-white/5 px-4 py-4 text-left text-lg font-semibold text-white/85 hover:bg-white/10">
+            <ArrowLeft className="h-5 w-5" /> 목록으로 돌아가기
+          </button>
+          <div className="relative mb-5">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/35" />
+            <input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="원고 검색..." className="w-full rounded-2xl border border-white/10 bg-[#0f141b] py-4 pl-12 pr-4 text-white outline-none placeholder:text-white/30" />
+          </div>
+          <div className="space-y-4">
+            {filteredManuscripts.map((manuscript) => {
+              const active = manuscript.id === data.id;
+              return (
+                <button key={manuscript.id} onClick={() => handleOpenManuscript(manuscript)} className={`w-full rounded-3xl border p-4 text-left transition ${active ? 'border-emerald-400 bg-[#24272d]' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.05]'}`}>
+                  <div className="mb-3 inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-sm font-bold uppercase tracking-[0.24em] text-emerald-300">
+                    {manuscript.postType === 'recreate' ? 'RECREATE' : 'CREATE'}
+                  </div>
+                  <div className="line-clamp-2 text-[1.15rem] font-bold leading-snug text-white">{manuscript.title}</div>
+                  <div className="mt-2 line-clamp-1 text-sm text-white/35">#{manuscript.targetKeyword || '키워드 없음'}</div>
+                </button>
+              );
+            })}
           </div>
         </aside>
 
-        <section className="flex-[0_0_56%] h-full overflow-hidden px-3 pb-3 pt-2 bg-[#0a0c10]">
-          <NaverEditorCanvas
+        <main className="min-h-screen bg-[#ffffff]">
+          <BlogEditorCanvas
             title={data.title}
-            setTitle={(title) => setData((prev) => ({ ...prev, title }))}
             content={data.content}
-            setContent={(content) => setData((prev) => ({ ...prev, content }))}
-            charCount={data.content.length}
-            images={data.images}
-            fileInputRef={fileInputRef}
+            onTitleChange={(value) => updateLocalData({ title: value })}
+            onContentChange={(value) => updateLocalData({ content: value, wordCount: value.replace(/\s+/g, '').length })}
+            handleSavePostToSupabase={handleSave}
             isSaving={isSaving}
-            isEnhancing={false}
-            handleImageUploadClick={() => fileInputRef.current?.click()}
-            handleImageChange={() => {}}
-            handleUpdateCaption={() => {}}
-            handleDeleteImage={() => {}}
-            handleEnhanceContent={() => {}}
-            handleSavePostToSupabase={handleSavePostToSupabase}
-            handleFormDelete={() => {}}
-            isDetailMode={true}
-            targetKeyword={data.keyword}
-            isLoading={shouldShowEditorLoading}
+            saveButtonLabel="원고 저장"
+            modeLabel="CREAIBOX BLOG EDIT MODE"
           />
-        </section>
+        </main>
 
-        <aside className="w-[420px] flex-shrink-0 border-l border-zinc-800 bg-[#0d0f14] overflow-y-auto px-4 pb-4 pt-2">
-          <div className="flex flex-col gap-4 h-full overflow-y-auto pl-0.5 custom-scrollbar">
-            <div className="h-14 border-b border-zinc-800 bg-[#0b0d12] px-4 flex items-center justify-end rounded-t-2xl">
-              <button
-                type="button"
-                onClick={handlePublishBlog}
-                disabled={isPublishing || isSaving || !data.title.trim() || !data.content.trim()}
-                className="inline-flex items-center rounded-xl bg-[linear-gradient(135deg,#2563eb_0%,#7c3aed_55%,#ec4899_100%)] px-4 py-2 text-sm font-black text-white shadow-[0_10px_24px_rgba(124,58,237,0.28)] transition-all hover:scale-[1.01] hover:shadow-[0_14px_30px_rgba(124,58,237,0.34)] active:scale-[0.99]"
-              >
-                {isPublishing ? '발행중...' : '블로그 발행'}
-              </button>
+        <aside className="min-h-screen border-l border-white/10 bg-[#0b0f15] p-6">
+          <div className="mb-4 flex min-h-[74px] items-center justify-end border-b border-white/10 pb-4">
+            <button className="rounded-2xl bg-gradient-to-r from-[#4f46e5] via-[#7c3aed] to-[#ec4899] px-6 py-3 text-sm font-bold text-white shadow-[0_12px_30px_rgba(124,58,237,0.28)]">블로그 발행</button>
+          </div>
+
+          <div className="rounded-[32px] border border-white/10 bg-[#111317] p-6 text-white">
+            <div className="mb-5 flex items-start justify-between gap-4 border-b border-white/10 pb-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/40">SEO & Publishing</p>
+                <h2 className="mt-2 text-[2rem] font-black leading-tight">생성과 함께 채워지는 발행 정보</h2>
+              </div>
+              <span className={`inline-flex rounded-full px-4 py-2 text-sm font-semibold ${seoStatus === '준비 완료' ? 'bg-emerald-500/10 text-emerald-300' : 'bg-amber-500/10 text-amber-300'}`}>{seoStatus}</span>
             </div>
-            <div className="p-5 rounded-2xl border border-zinc-800 bg-[#0d0e12]/80 backdrop-blur-md space-y-4 shadow-2xl">
-              <div className="flex items-start justify-between gap-3 border-b border-zinc-800/80 pb-3">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500">SEO & Publishing</p>
-                  <h3 className="mt-1 text-xl font-black text-white leading-tight">생성과 함께 채워지는 발행 정보</h3>
-                </div>
-                <span className={`rounded-full px-3 py-1 text-[11px] font-black ${
-                  seoHealthLabel === '준비 완료'
-                    ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-                    : seoHealthLabel === '보완 필요'
-                      ? 'border border-amber-500/30 bg-amber-500/10 text-amber-400'
-                      : 'border border-zinc-700 bg-zinc-900 text-zinc-400'
-                }`}>
-                  {seoHealthLabel}
-                </span>
+
+            <button onClick={() => void handleSave()} className="mb-6 w-full rounded-2xl bg-white/10 px-5 py-4 text-lg font-bold text-white hover:bg-white/15">저장하기</button>
+
+            <div className="mb-6 grid grid-cols-3 gap-4 text-center">
+              <div className="rounded-3xl border border-white/10 bg-[#0f1217] px-4 py-5">
+                <div className="text-xs font-semibold uppercase tracking-[0.3em] text-white/38">Meta Length</div>
+                <div className="mt-4 text-[3.25rem] font-black leading-none text-emerald-400">{(data.metaDescription || '').length}</div>
+                <div className="mt-3 text-sm text-white/38 whitespace-nowrap">권장 90-155자</div>
               </div>
-
-              <button
-                type="button"
-                onClick={handleSeoSave}
-                disabled={isSeoSaving || isSaving}
-                className="w-full rounded-xl bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-100 px-4 py-2.5 text-sm font-black transition-all disabled:opacity-40"
-              >
-                {isSeoSaving || isSaving ? '저장중...' : seoSaveFeedback === 'saved' ? '저장완료' : '저장하기'}
-              </button>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4">
-                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500 whitespace-nowrap">Meta Length</div>
-                  <div className={`mt-3 text-4xl font-black ${
-                    metaDescriptionLength >= 90 && metaDescriptionLength <= 155 ? 'text-emerald-400' : 'text-amber-400'
-                  }`}>
-                    {metaDescriptionLength}
-                  </div>
-                  <div className="mt-2 text-[11px] font-bold text-zinc-500 whitespace-nowrap">권장 90-155자</div>
-                </div>
-                <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4">
-                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500 whitespace-nowrap">Slug Size</div>
-                  <div className={`mt-3 text-4xl font-black ${
-                    slugLength > 0 && slugLength <= 80 ? 'text-blue-400' : 'text-amber-400'
-                  }`}>
-                    {slugLength}
-                  </div>
-                  <div className="mt-2 text-[11px] font-bold text-zinc-500 whitespace-nowrap">권장 80자 이하</div>
-                </div>
-                <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4">
-                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500 whitespace-nowrap">Tag Count</div>
-                  <div className="mt-3 text-4xl font-black text-fuchsia-400">
-                    {data.seoTags.length}
-                  </div>
-                  <div className="mt-2 text-[11px] font-bold text-zinc-500 whitespace-nowrap">SEO 태그 개수</div>
-                </div>
+              <div className="rounded-3xl border border-white/10 bg-[#0f1217] px-4 py-5">
+                <div className="text-xs font-semibold uppercase tracking-[0.3em] text-white/38">Slug Size</div>
+                <div className="mt-4 text-[3.25rem] font-black leading-none text-sky-400">{(data.slug || '').length}</div>
+                <div className="mt-3 text-sm text-white/38 whitespace-nowrap">권장 80자 이하</div>
               </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-400">슬러그 (Slug)</label>
-                  <input
-                    value={data.slug}
-                    onChange={(e) => setData((prev) => ({ ...prev, slug: e.target.value }))}
-                    className="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-bold text-zinc-700 focus:outline-none"
-                    placeholder="아직 생성되지 않았습니다"
-                  />
-                </div>
-                <div>
-                  <div className="mb-2 flex items-center justify-between">
-                    <label className="block text-sm font-bold text-zinc-400">Meta Description</label>
-                    <span className={`text-xs font-black ${
-                      metaDescriptionLength >= 90 && metaDescriptionLength <= 155 ? 'text-emerald-400' : 'text-zinc-500'
-                    }`}>
-                      {metaDescriptionLength}/155
-                    </span>
-                  </div>
-                  <textarea
-                    value={data.metaDescription}
-                    onChange={(e) => setData((prev) => ({ ...prev, metaDescription: e.target.value }))}
-                    className="min-h-[96px] w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-bold leading-relaxed text-zinc-700 focus:outline-none resize-none"
-                    placeholder="아직 생성되지 않았습니다"
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-400">Focus Keyword</label>
-                  <input
-                    value={data.focusKeyword}
-                    onChange={(e) => setData((prev) => ({ ...prev, focusKeyword: e.target.value }))}
-                    className="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-bold text-zinc-700 focus:outline-none"
-                    placeholder="아직 생성되지 않았습니다"
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-400">Canonical URL</label>
-                  <input
-                    value={data.canonicalUrl}
-                    onChange={(e) => setData((prev) => ({ ...prev, canonicalUrl: e.target.value }))}
-                    className="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-bold break-all text-zinc-700 focus:outline-none"
-                    placeholder="아직 생성되지 않았습니다"
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-zinc-400">SEO Tags</label>
-                  <textarea
-                    value={data.seoTags.join(', ')}
-                    onChange={(e) => setData((prev) => ({
-                      ...prev,
-                      seoTags: e.target.value.split(',').map((tag) => tag.trim()).filter(Boolean).slice(0, 10)
-                    }))}
-                    className="min-h-[72px] w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-bold text-zinc-700 focus:outline-none resize-none"
-                    placeholder="아직 생성되지 않았습니다"
-                  />
-                  {data.seoTags.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {data.seoTags.map((tag) => (
-                        <span key={tag} className="rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs font-black text-blue-300">
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
+              <div className="rounded-3xl border border-white/10 bg-[#0f1217] px-4 py-5">
+                <div className="text-xs font-semibold uppercase tracking-[0.3em] text-white/38">Tag Count</div>
+                <div className="mt-4 text-[3.25rem] font-black leading-none text-fuchsia-400">{toTagList(data.seoTags).length}</div>
+                <div className="mt-3 text-sm text-white/38 whitespace-nowrap">SEO 태그 개수</div>
               </div>
             </div>
 
+            <div className="space-y-5">
+              <label className="block">
+                <div className="mb-2 text-lg font-semibold text-white/75">슬러그 (Slug)</div>
+                <input value={data.slug || ''} onChange={(event) => updateLocalData({ slug: event.target.value })} className="w-full rounded-3xl border border-transparent bg-white px-6 py-4 text-xl font-semibold text-[#111111] outline-none" />
+              </label>
+              <label className="block">
+                <div className="mb-2 flex items-center justify-between text-lg font-semibold text-white/75"><span>Meta Description</span><span className="text-base font-medium text-white/45">{(data.metaDescription || '').length}/155</span></div>
+                <textarea value={data.metaDescription || ''} onChange={(event) => updateLocalData({ metaDescription: event.target.value })} className="min-h-[140px] w-full resize-none rounded-3xl border border-transparent bg-white px-6 py-5 text-lg leading-relaxed text-[#111111] outline-none" />
+              </label>
+              <label className="block">
+                <div className="mb-2 text-lg font-semibold text-white/75">Focus Keyword</div>
+                <input value={data.focusKeyword || ''} onChange={(event) => updateLocalData({ focusKeyword: event.target.value })} className="w-full rounded-3xl border border-transparent bg-white px-6 py-4 text-xl font-semibold text-[#111111] outline-none" />
+              </label>
+              <label className="block">
+                <div className="mb-2 text-lg font-semibold text-white/75">Canonical URL</div>
+                <input value={data.canonicalUrl || ''} onChange={(event) => updateLocalData({ canonicalUrl: event.target.value })} className="w-full rounded-3xl border border-transparent bg-white px-6 py-4 text-lg text-[#111111] outline-none" />
+              </label>
+              <label className="block">
+                <div className="mb-2 text-lg font-semibold text-white/75">SEO Tags</div>
+                <textarea value={toTagList(data.seoTags).join(', ')} onChange={(event) => updateLocalData({ seoTags: event.target.value.split(',').map((item) => item.trim()).filter(Boolean) })} className="min-h-[110px] w-full resize-none rounded-3xl border border-transparent bg-white px-6 py-5 text-lg leading-relaxed text-[#111111] outline-none" />
+              </label>
+              <div className="flex flex-wrap gap-3">
+                {toTagList(data.seoTags).map((tag) => (
+                  <span key={tag} className="rounded-full border border-sky-400/30 bg-sky-500/10 px-4 py-2 text-sm font-semibold text-sky-200">#{tag}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6">
             <CreaiboxAnalysisTower
-              seoScore={seoScore}
-              seoChecks={{
-                titleKeyword: hasTitleKeyword,
-                contentDensity: keywordCount >= 3 && keywordCount <= 8,
-                duplicateSafe,
-                structureCheck: hasSubHeadings
-              }}
-              posRatio={{ noun: 50, verb: 30, other: 20 }}
-              frequencies={frequencies}
-              content={data.content}
-              crawlabilityScore={keywordCount >= 3 && keywordCount <= 5 ? 60 : 25}
-              isDensitySafe={keywordCount <= 5}
-              isDetailMode={true}
-              similarityScore={similarityScore}
+              seoScore={0}
+              antiAbuseScore={0}
+              contentIntegrityScore={0}
+              readabilityScore={0}
+              naturalnessScore={0}
+              keywordDensityScore={0}
+              uniquenessScore={0}
+              crawlabilityScore={0}
             />
           </div>
         </aside>
-      </main>
+      </div>
     </div>
   );
 }

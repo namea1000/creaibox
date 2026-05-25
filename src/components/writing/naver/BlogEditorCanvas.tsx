@@ -49,17 +49,52 @@ function applyInlineMarkdown(value: string) {
     .replace(/\*(.+?)\*/g, '<em>$1</em>');
 }
 
+function normalizeMarkdownLine(value: string) {
+  return value
+    .replace(/\u00a0/g, ' ')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .trim();
+}
+
 function isMarkdownTableSeparator(line: string) {
-  return /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(line.trim());
+  return /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(normalizeMarkdownLine(line));
 }
 
 function parseMarkdownTableRow(line: string) {
-  return line
-    .trim()
+  return normalizeMarkdownLine(line)
     .replace(/^\|/, '')
     .replace(/\|$/, '')
     .split('|')
     .map((cell) => cell.trim());
+}
+
+function isMarkdownTableLike(line: string) {
+  const trimmed = normalizeMarkdownLine(line);
+  if (!trimmed.includes('|')) return false;
+  const cells = parseMarkdownTableRow(trimmed);
+  return cells.length >= 2 && cells.some((cell) => cell.length > 0);
+}
+
+function parseMarkdownHeading(line: string) {
+  const normalizedLine = normalizeMarkdownLine(line);
+  const match = normalizedLine.match(/^(#{1,6})\s*(.+)$/);
+  if (!match) return null;
+
+  return {
+    level: Math.min(match[1].length, 6),
+    text: match[2].trim(),
+  };
+}
+
+function getNextNonEmptyLine(lines: string[], startIndex: number) {
+  let cursor = startIndex;
+  while (cursor < lines.length && !normalizeMarkdownLine(lines[cursor])) {
+    cursor += 1;
+  }
+  return {
+    index: cursor,
+    line: cursor < lines.length ? normalizeMarkdownLine(lines[cursor]) : '',
+  };
 }
 
 function markdownToEditableHtml(markdown: string) {
@@ -81,7 +116,7 @@ function markdownToEditableHtml(markdown: string) {
   let index = 0;
   while (index < lines.length) {
     const rawLine = lines[index];
-    const line = rawLine.trim();
+    const line = normalizeMarkdownLine(rawLine);
 
     if (!line) {
       flushParagraph();
@@ -89,30 +124,28 @@ function markdownToEditableHtml(markdown: string) {
       continue;
     }
 
-    if (/^####\s+/.test(line)) {
+    const heading = parseMarkdownHeading(line);
+    if (heading?.level === 1) {
       flushParagraph();
-      blocks.push(`<h4>${applyInlineMarkdown(line.replace(/^####\s+/, ''))}</h4>`);
+      blocks.push(`<h1>${applyInlineMarkdown(heading.text)}</h1>`);
       index += 1;
       continue;
     }
-
-    if (/^###\s+/.test(line)) {
+    if (heading?.level === 2) {
       flushParagraph();
-      blocks.push(`<h3>${applyInlineMarkdown(line.replace(/^###\s+/, ''))}</h3>`);
+      blocks.push(`<h2>${applyInlineMarkdown(heading.text)}</h2>`);
       index += 1;
       continue;
     }
-
-    if (/^##\s+/.test(line)) {
+    if (heading?.level === 3) {
       flushParagraph();
-      blocks.push(`<h2>${applyInlineMarkdown(line.replace(/^##\s+/, ''))}</h2>`);
+      blocks.push(`<h3>${applyInlineMarkdown(heading.text)}</h3>`);
       index += 1;
       continue;
     }
-
-    if (/^#\s+/.test(line)) {
+    if (heading && heading.level >= 4) {
       flushParagraph();
-      blocks.push(`<h1>${applyInlineMarkdown(line.replace(/^#\s+/, ''))}</h1>`);
+      blocks.push(`<h4>${applyInlineMarkdown(heading.text)}</h4>`);
       index += 1;
       continue;
     }
@@ -150,22 +183,31 @@ function markdownToEditableHtml(markdown: string) {
       continue;
     }
 
-    if (
-      line.includes('|') &&
-      index + 1 < lines.length &&
-      isMarkdownTableSeparator(lines[index + 1])
-    ) {
+    const nextNonEmpty = getNextNonEmptyLine(lines, index + 1);
+    if (isMarkdownTableLike(line) && isMarkdownTableSeparator(nextNonEmpty.line)) {
       flushParagraph();
-      const headerCells = parseMarkdownTableRow(line);
-      index += 2;
+      const tableLines: string[] = [line, nextNonEmpty.line];
+      let scanIndex = nextNonEmpty.index + 1;
 
-      const bodyRows: string[][] = [];
-      while (index < lines.length) {
-        const tableLine = lines[index].trim();
-        if (!tableLine || !tableLine.includes('|')) break;
-        bodyRows.push(parseMarkdownTableRow(tableLine));
-        index += 1;
+      while (scanIndex < lines.length) {
+        const candidate = normalizeMarkdownLine(lines[scanIndex]);
+        if (!candidate) {
+          scanIndex += 1;
+          continue;
+        }
+        if (!isMarkdownTableLike(candidate)) break;
+        tableLines.push(candidate);
+        scanIndex += 1;
       }
+
+      index = scanIndex;
+
+      const headerCells = parseMarkdownTableRow(tableLines[0]);
+      const bodyLines = tableLines.slice(2);
+
+      const bodyRows = bodyLines
+        .filter((tableLine) => isMarkdownTableLike(tableLine))
+        .map((tableLine) => parseMarkdownTableRow(tableLine));
 
       const headerHtml = headerCells
         .map((cell) => `<th>${applyInlineMarkdown(cell)}</th>`)

@@ -86,7 +86,7 @@ export default function MainLandingPage() {
             </div>
 
             <div 
-              onClick={() => router.push('/studio/writing/wp/create')}
+              onClick={() => router.push('/studio/writing/creaibox/create')}
               className="group p-10 bg-gradient-to-br from-emerald-600/20 to-teal-600/15 border-2 border-emerald-500/30 rounded-[40px] hover:scale-[1.02] transition-all shadow-2xl cursor-pointer"
             >
               <div className="space-y-5">
