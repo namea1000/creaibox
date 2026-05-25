@@ -1,0 +1,8 @@
+{
+  "css.validate": false,
+  "scss.validate": false,
+  "less.validate": false
+  "tailwindCSS.lint.suggestCanonicalClasses": "ignore",
+  "tailwindCSS.lint.invalidApply": "ignore",
+  "tailwindCSS.lint.recommendedVariantOrder": "ignore"
+}

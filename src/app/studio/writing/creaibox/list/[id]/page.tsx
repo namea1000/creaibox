@@ -39,7 +39,7 @@ export default function CreaiboxManuscriptDetailPage() {
 
   const { data: list = [] } = useCreaiboxManuscriptsQuery();
   const selectedFromList = useMemo(() => list.find((item) => Number(item.displayId) === manuscriptId) ?? null, [list, manuscriptId]);
-  const { data: detail, isLoading: isDetailLoading } = useCreaiboxManuscriptDetailQuery(manuscriptId, selectedFromList);
+  const { data: detail, isLoading: isDetailLoading } = useCreaiboxManuscriptDetailQuery(manuscriptId, selectedFromList ?? undefined);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [hasLocalEdits, setHasLocalEdits] = useState(false);
