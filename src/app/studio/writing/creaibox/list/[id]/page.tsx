@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Search } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -8,10 +8,10 @@ import { createClient } from "@/utils/supabase/client";
 import BlogEditorCanvas from "@/components/writing/naver/BlogEditorCanvas";
 import CreaiboxAnalysisTower from "@/components/writing/creaibox/tabs/CreaiboxAnalysisTower";
 import {
-  useCreaiboxManuscriptsQuery,
-  useCreaiboxManuscriptDetailQuery,
   creaiboxManuscriptKeys,
   type StudioManuscriptRecord,
+  useCreaiboxManuscriptDetailQuery,
+  useCreaiboxManuscriptsQuery,
 } from "@/lib/queries/manuscripts";
 
 type StudioManuscriptRecordWithOptionalFields = StudioManuscriptRecord & {
@@ -44,7 +44,11 @@ export default function CreaiboxManuscriptDetailPage() {
   const params = useParams<{ id: string }>();
   const supabase = useMemo(() => createClient(), []);
   const queryClient = useQueryClient();
+
   const manuscriptId = Number(params?.id || 0);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const saveFeedbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: list = [] } = useCreaiboxManuscriptsQuery();
 
@@ -61,8 +65,6 @@ export default function CreaiboxManuscriptDetailPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [hasLocalEdits, setHasLocalEdits] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const saveFeedbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
   const [data, setData] = useState<StudioManuscriptRecord | null>(selectedFromList ?? null);
 
   useEffect(() => {
@@ -90,10 +92,7 @@ export default function CreaiboxManuscriptDetailPage() {
       const title = item.title ?? "";
       const targetKeyword = item.targetKeyword ?? "";
 
-      return (
-        title.toLowerCase().includes(lower) ||
-        targetKeyword.toLowerCase().includes(lower)
-      );
+      return title.toLowerCase().includes(lower) || targetKeyword.toLowerCase().includes(lower);
     });
   }, [list, searchTerm]);
 
@@ -126,73 +125,74 @@ export default function CreaiboxManuscriptDetailPage() {
     [queryClient]
   );
 
-  const handleSave = useCallback(async () => {
-    if (!data) return false;
+  const handleSave = useCallback(
+    async (status?: any) => {
+      if (!data) return false;
 
-    setIsSaving(true);
+      setIsSaving(true);
 
-    const safeData = data as StudioManuscriptRecordWithOptionalFields;
+      const safeData = data as StudioManuscriptRecordWithOptionalFields;
 
-    const slug = buildPublicBlogSlug(
-      safeData.title,
-      safeData.focusKeyword,
-      safeData.targetKeyword
-    );
+      const slug = buildPublicBlogSlug(
+        safeData.title,
+        safeData.focusKeyword,
+        safeData.targetKeyword
+      );
 
-    const canonicalUrl = buildCanonicalUrl(slug);
-    const now = new Date().toISOString();
+      const canonicalUrl = buildCanonicalUrl(slug);
+      const now = new Date().toISOString();
 
-    const updatePayload = {
-      title: safeData.title ?? "",
-      content: safeData.content ?? "",
-      target_keyword: safeData.targetKeyword ?? "",
-      selected_tone: safeData.selectedTone ?? "",
-      status: safeData.status ?? "draft",
-      slug,
-      meta_description: safeData.metaDescription ?? "",
-      focus_keyword: safeData.focusKeyword ?? "",
-      canonical_url: canonicalUrl,
-      seo_tags: toTagList(safeData.seoTags),
-      word_count_goal: safeData.wordCountGoal ?? null,
-      use_search: safeData.useSearch ?? false,
-    };
+      const updatePayload = {
+        title: safeData.title ?? "",
+        content: safeData.content ?? "",
+        target_keyword: safeData.targetKeyword ?? "",
+        selected_tone: safeData.selectedTone ?? "",
+        status: status ?? safeData.status ?? "draft",
+        slug,
+        meta_description: safeData.metaDescription ?? "",
+        focus_keyword: safeData.focusKeyword ?? "",
+        canonical_url: canonicalUrl,
+        seo_tags: toTagList(safeData.seoTags),
+        word_count_goal: safeData.wordCountGoal ?? null,
+        use_search: safeData.useSearch ?? false,
+      };
 
-    const { error } = await supabase
-      .from("writing_creaibox_posts")
-      .update(updatePayload)
-      .eq("id", safeData.id);
+      const { error } = await supabase
+        .from("writing_creaibox_posts")
+        .update(updatePayload)
+        .eq("id", safeData.id);
 
-    setIsSaving(false);
+      setIsSaving(false);
 
-    if (error) {
-      window.alert(`저장 실패: ${error.message}`);
-      return false;
-    }
+      if (error) {
+        window.alert(`저장 실패: ${error.message}`);
+        return false;
+      }
 
-    const nextRecord: StudioManuscriptRecord = {
-      ...safeData,
-      slug,
-      canonicalUrl,
-      updatedAt: now,
-      displayId: safeData.displayId,
-      wordCount: (safeData.content ?? "").replace(/\s+/g, "").length,
-    };
+      const nextRecord: StudioManuscriptRecord = {
+        ...safeData,
+        slug,
+        canonicalUrl,
+        status: status ?? safeData.status,
+        updatedAt: now,
+        displayId: safeData.displayId,
+        wordCount: (safeData.content ?? "").replace(/\s+/g, "").length,
+      };
 
-    setData(nextRecord);
-    setHasLocalEdits(false);
-    persistCaches(nextRecord);
+      setData(nextRecord);
+      setHasLocalEdits(false);
+      persistCaches(nextRecord);
 
-    return true;
-  }, [data, persistCaches, supabase]);
+      return true;
+    },
+    [data, persistCaches, supabase]
+  );
 
   const seoStatus = useMemo(() => {
     if (!data) return "대기 중";
 
     const ok = Boolean(
-      data.slug &&
-      data.metaDescription &&
-      data.focusKeyword &&
-      (data.seoTags?.length ?? 0) > 0
+      data.slug && data.metaDescription && data.focusKeyword && (data.seoTags?.length ?? 0) > 0
     );
 
     return ok ? "준비 완료" : "보완 필요";
@@ -215,32 +215,6 @@ export default function CreaiboxManuscriptDetailPage() {
   }
 
   if (!data) return null;
-
-  const editorCanvasProps = {
-    title: data.title ?? "",
-    content: data.content ?? "",
-    onTitleChange: (value: string) => updateLocalData({ title: value }),
-    onContentChange: (value: string) =>
-      updateLocalData({
-        content: value,
-        wordCount: value.replace(/\s+/g, "").length,
-      }),
-    handleSavePostToSupabase: handleSave,
-    isSaving,
-    saveButtonLabel: "원고 저장",
-    modeLabel: "CREAIBOX BLOG EDIT MODE",
-  } as unknown as React.ComponentProps<typeof BlogEditorCanvas>;
-
-  const analysisTowerProps = {
-    seoScore: 0,
-    antiAbuseScore: 0,
-    contentIntegrityScore: 0,
-    readabilityScore: 0,
-    naturalnessScore: 0,
-    keywordDensityScore: 0,
-    uniquenessScore: 0,
-    crawlabilityScore: 0,
-  } as unknown as React.ComponentProps<typeof CreaiboxAnalysisTower>;
 
   return (
     <div className="min-h-screen bg-[#0a0d12] text-white">
@@ -292,8 +266,31 @@ export default function CreaiboxManuscriptDetailPage() {
           </div>
         </aside>
 
-        <main className="min-h-screen bg-[#ffffff]">
-          <BlogEditorCanvas {...editorCanvasProps} />
+        <main className="min-h-screen bg-white">
+          <BlogEditorCanvas
+            title={data.title ?? ""}
+            setTitle={(value) => updateLocalData({ title: value })}
+            content={data.content ?? ""}
+            setContent={(value) =>
+              updateLocalData({
+                content: value,
+                wordCount: value.replace(/\s+/g, "").length,
+              })
+            }
+            charCount={(data.content ?? "").length}
+            images={[]}
+            fileInputRef={fileInputRef}
+            isSaving={isSaving}
+            isEnhancing={false}
+            handleImageUploadClick={() => { }}
+            handleImageChange={() => { }}
+            handleUpdateCaption={() => { }}
+            handleDeleteImage={() => { }}
+            handleEnhanceContent={() => { }}
+            handleSavePostToSupabase={handleSave}
+            isDetailMode
+            targetKeyword={data.targetKeyword ?? ""}
+          />
         </main>
 
         <aside className="min-h-screen border-l border-white/10 bg-[#0b0f15] p-6">
@@ -440,7 +437,27 @@ export default function CreaiboxManuscriptDetailPage() {
           </div>
 
           <div className="mt-6">
-            <CreaiboxAnalysisTower {...analysisTowerProps} />
+            <CreaiboxAnalysisTower
+              seoScore={0}
+              seoChecks={{
+                titleKeyword: false,
+                contentDensity: false,
+                duplicateSafe: true,
+                lengthCheck: false,
+                structureCheck: false,
+                subHeadingCheck: false,
+              }}
+              posRatio={{
+                noun: 0,
+                verb: 0,
+                other: 0,
+              }}
+              frequencies={[]}
+              content={data.content ?? ""}
+              crawlabilityScore={0}
+              isDensitySafe={true}
+              isDetailMode
+            />
           </div>
         </aside>
       </div>
