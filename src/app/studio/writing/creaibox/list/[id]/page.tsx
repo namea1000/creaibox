@@ -38,15 +38,21 @@ export default function CreaiboxManuscriptDetailPage() {
   const manuscriptId = Number(params?.id || 0);
 
   const { data: list = [] } = useCreaiboxManuscriptsQuery();
-  const selectedFromList = useMemo(() => list.find((item) => Number(item.displayId) === manuscriptId) ?? null, [list, manuscriptId]);
-  const { data: detail, isLoading: isDetailLoading } = useCreaiboxManuscriptDetailQuery(manuscriptId, selectedFromList ?? undefined);
+  const selectedFromList = useMemo(
+    () => list.find((item) => Number(item.displayId) === manuscriptId),
+    [list, manuscriptId]
+  );
+  const { data: detail, isLoading: isDetailLoading } = useCreaiboxManuscriptDetailQuery(
+    manuscriptId,
+    selectedFromList
+  );
 
   const [searchTerm, setSearchTerm] = useState('');
   const [hasLocalEdits, setHasLocalEdits] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const saveFeedbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [data, setData] = useState<StudioManuscriptRecord | null>(selectedFromList);
+  const [data, setData] = useState<StudioManuscriptRecord | null>(selectedFromList ?? null);
 
   useEffect(() => {
     if (!detail) return;

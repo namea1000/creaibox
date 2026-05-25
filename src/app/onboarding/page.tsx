@@ -1,7 +1,6 @@
 "use client";
 
 import React from 'react';
-import Header from '@/components/layout/Header'; 
 import Footer from '@/components/layout/Footer'; 
 import { 
   Sparkles, Zap, ArrowRight, Gift, Rocket, Key, PlayCircle, 
@@ -28,9 +27,6 @@ export default function MainLandingPage() {
 
   return (
     <div className={`min-h-screen flex flex-col font-sans transition-colors duration-500 ${themeClasses}`}>
-      
-      {/* 🌟 리모컨(isDarkMode) 없이 깔끔하게 호출되는 헤더 */}
-      <Header />
 
       {/* 🌟 사장님의 여백(pt-24) 그대로 보전 */}
       <main className="flex-1 overflow-y-auto pt-24 pb-20">

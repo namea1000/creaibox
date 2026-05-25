@@ -25,7 +25,7 @@ export default function NewsHomePage() {
     try {
       const response = await fetch('/api/news?keyword=' + encodeURIComponent('주요뉴스 속보'));
       const data = await response.json();
-      
+
       if (data && data.length > 0) {
         setNews(data); // 전체 데이터 보관
         setHeadline(data[0]); // 메인 헤드라인

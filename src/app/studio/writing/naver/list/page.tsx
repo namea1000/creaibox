@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useCallback, useEffect } from 'react';
+import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Search, AlertCircle, RefreshCw, Trash2, Globe, Edit3 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -28,6 +28,7 @@ export default function NaverManuscriptListPage() {
   const pathname = usePathname();
   const supabase = useMemo(() => createClient(), []);
   const queryClient = useQueryClient();
+  const [authBootstrapped, setAuthBootstrapped] = useState(false);
 
   const currentPage = useManuscriptUiStore((state) => state.naverCurrentPage);
   const setCurrentPage = useManuscriptUiStore((state) => state.setNaverCurrentPage);
@@ -37,16 +38,34 @@ export default function NaverManuscriptListPage() {
   const setSearchTerm = useManuscriptUiStore((state) => state.setNaverSearchTerm);
 
   const { data: manuscripts = [], isLoading, isFetching, refetch } = useNaverManuscriptsQuery();
-  const isInitialLoading = isLoading && manuscripts.length === 0;
+  const isInitialLoading = ((!authBootstrapped || isLoading || isFetching) && manuscripts.length === 0);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const bootstrap = async () => {
+      await supabase.auth.getSession();
+      await supabase.auth.getUser();
+
+      if (!cancelled) {
+        setAuthBootstrapped(true);
+        void refetch();
+      }
+    };
+
+    void bootstrap();
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(() => {
-      void refetch();
+      if (!cancelled) {
+        setAuthBootstrapped(true);
+        void refetch();
+      }
     });
 
     return () => {
+      cancelled = true;
       subscription.unsubscribe();
     };
   }, [supabase, refetch]);

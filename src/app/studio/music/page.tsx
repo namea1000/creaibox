@@ -1,9 +1,9 @@
 "use client";
 
 import React from 'react';
-import { 
-  Music, Music2, Languages, Video, 
-  Clock, PlayCircle, Sparkles, 
+import {
+  Music, Music2, Languages, Video,
+  Clock, PlayCircle, Sparkles,
   ChevronRight, ListMusic
 } from 'lucide-react'; // 🌟 Youtube를 Video로 교체했습니다.
 import { useRouter } from 'next/navigation';
@@ -50,7 +50,7 @@ export default function MusicStudioPage() {
   return (
     <div className="min-h-screen bg-[#05070a] text-zinc-100 font-sans">
       <div className="max-w-[1400px] mx-auto p-6 lg:p-12 pt-24 lg:pt-32 pb-48">
-        
+
         {/* 상단 헤더 섹션 */}
         <header className="mb-16 space-y-4 text-left border-b border-zinc-800 pb-12 relative overflow-hidden">
           <div className="flex items-center gap-3 mb-2">
@@ -63,8 +63,8 @@ export default function MusicStudioPage() {
             Music <span className="text-indigo-500">Studio</span>
           </h1>
           <p className="text-zinc-500 text-sm lg:text-base font-medium max-w-2xl leading-relaxed italic pl-1">
-            멜로디에 담긴 당신의 이야기. 가사 생성부터 풀 파이프라인 작곡까지, 
-            MEXNI 시스템의 강력함을 넘어선 Creaibox만의 올인원 오디오 워크스테이션입니다.
+            멜로디에 담긴 당신의 이야기. 가사 생성부터 풀 파이프라인 작곡까지,
+            Creaibox만의 올인원 오디오 워크스테이션입니다.
           </p>
         </header>
 
@@ -84,11 +84,11 @@ export default function MusicStudioPage() {
                       Auto <span className="text-indigo-500">Composition</span> Station
                     </h2>
                     <p className="text-zinc-400 text-lg font-medium leading-relaxed italic">
-                      가사, 제목, 번역, YouTube 최적화까지 한 번에. <br/>
+                      가사, 제목, 번역, YouTube 최적화까지 한 번에. <br />
                       생성할 곡의 개수와 스타일 포맷을 설정하고 사장님만의 음원을 광속으로 생산하세요.
                     </p>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4">
                     {["City Pop", "K-Pop", "Lo-fi", "Cinematic"].map((style) => (
                       <div key={style} className="bg-black/40 border border-zinc-800 rounded-xl p-3 text-center text-[11px] font-black text-zinc-500 uppercase tracking-tighter hover:border-indigo-500/50 transition-colors cursor-pointer">
@@ -103,23 +103,23 @@ export default function MusicStudioPage() {
                 </div>
 
                 <div className="flex-1 w-full bg-black/60 rounded-[32px] border border-zinc-800 p-8 space-y-6 shadow-inner relative overflow-hidden">
-                    <div className="flex justify-between items-center mb-4">
-                        <ListMusic size={20} className="text-indigo-500" />
-                        <div className="flex gap-1">
-                            {[...Array(5)].map((_, i) => <div key={i} className="w-1 h-3 bg-indigo-500/30 rounded-full animate-pulse" />)}
-                        </div>
+                  <div className="flex justify-between items-center mb-4">
+                    <ListMusic size={20} className="text-indigo-500" />
+                    <div className="flex gap-1">
+                      {[...Array(5)].map((_, i) => <div key={i} className="w-1 h-3 bg-indigo-500/30 rounded-full animate-pulse" />)}
                     </div>
-                    <div className="space-y-4">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                                <div className={`h-full bg-indigo-500/50 rounded-full w-[${30 + i * 20}%]`} />
-                            </div>
-                        ))}
-                    </div>
-                    <div className="mt-8 flex justify-between text-[10px] font-black text-zinc-700 uppercase tracking-widest">
-                        <span>Lyrics Ready</span>
-                        <span>Suno V5.5 Sync</span>
-                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                        <div className={`h-full bg-indigo-500/50 rounded-full w-[${30 + i * 20}%]`} />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-8 flex justify-between text-[10px] font-black text-zinc-700 uppercase tracking-widest">
+                    <span>Lyrics Ready</span>
+                    <span>Suno V5.5 Sync</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -129,7 +129,7 @@ export default function MusicStudioPage() {
         {/* 하단 도구 그리드 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {musicTools.map((tool) => (
-            <div 
+            <div
               key={tool.id}
               className={`group bg-zinc-900/20 border border-zinc-800 rounded-[32px] p-8 transition-all duration-500 hover:bg-zinc-900/40 hover:-translate-y-2 border-dashed ${tool.color} cursor-pointer text-left`}
             >
@@ -160,9 +160,9 @@ export default function MusicStudioPage() {
         </div>
 
         <footer className="mt-12 text-center">
-            <div className="text-[10px] font-black text-zinc-900 uppercase tracking-[0.5em] italic">
-                Creaibox Music Studio Identity System v1.0
-            </div>
+          <div className="text-[10px] font-black text-zinc-900 uppercase tracking-[0.5em] italic">
+            Creaibox Music Studio Identity System v1.0
+          </div>
         </footer>
       </div>
     </div>

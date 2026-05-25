@@ -5,6 +5,8 @@ import { createClient } from '@/utils/supabase/client';
 
 const AUTH_RETRY_ATTEMPTS = 4;
 const AUTH_RETRY_DELAY_MS = 350;
+const NaverListCacheKey = 'naver-manuscripts-query-cache-v1';
+const NaverDetailCachePrefix = 'naver-manuscript-detail-cache-v1:';
 
 export type ManuscriptStatus = 'draft' | 'saved' | 'published';
 export type ManuscriptType = 'create' | 'recreate';
@@ -91,6 +93,41 @@ export const naverManuscriptKeys = {
   list: ['naver-manuscripts', 'list'] as const,
   detail: (id: string | number) => ['naver-manuscripts', 'detail', String(id)] as const,
 };
+
+function readCachedList(cacheKey: string): StudioManuscriptRecord[] | undefined {
+  if (typeof window === 'undefined') return undefined;
+  const raw = window.sessionStorage.getItem(cacheKey);
+  if (!raw) return undefined;
+
+  try {
+    const parsed = JSON.parse(raw) as StudioManuscriptRecord[];
+    return Array.isArray(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function writeCachedList(cacheKey: string, records: StudioManuscriptRecord[]) {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.setItem(cacheKey, JSON.stringify(records));
+}
+
+function readCachedDetail(id: string | number): StudioManuscriptRecord | undefined {
+  if (typeof window === 'undefined') return undefined;
+  const raw = window.sessionStorage.getItem(`${NaverDetailCachePrefix}${String(id)}`);
+  if (!raw) return undefined;
+
+  try {
+    return JSON.parse(raw) as StudioManuscriptRecord;
+  } catch {
+    return undefined;
+  }
+}
+
+function writeCachedDetail(id: string | number, record: StudioManuscriptRecord) {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.setItem(`${NaverDetailCachePrefix}${String(id)}`, JSON.stringify(record));
+}
 
 export function normalizePostStatus(status?: string | null): ManuscriptStatus {
   if (status === 'published') return 'published';
@@ -268,20 +305,47 @@ async function fetchCreaiboxManuscriptDetail(displayId: string | number) {
 }
 
 async function fetchNaverManuscripts() {
-  const { supabase, userId } = await waitForAuthenticatedUser();
-  if (!userId) return [];
+  let { supabase, userId } = await waitForAuthenticatedUser();
+  if (!userId) {
+    const cached = readCachedList(NaverListCacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    ({ supabase, userId } = await waitForAuthenticatedUser());
+
+    if (!userId) {
+      return [];
+    }
+  }
   const { data, error } = await supabase
     .from('writing_naver_posts')
     .select('*')
     .order('updated_at', { ascending: false });
 
   if (error) throw error;
-  return ((data || []) as WritingNaverPostRecord[]).map(mapNaverRecord);
+  const records = ((data || []) as WritingNaverPostRecord[]).map(mapNaverRecord);
+  writeCachedList(NaverListCacheKey, records);
+  records.forEach((record) => writeCachedDetail(record.id, record));
+  return records;
 }
 
 async function fetchNaverManuscriptDetail(id: string | number) {
-  const { supabase, userId } = await waitForAuthenticatedUser();
-  if (!userId) return null;
+  let { supabase, userId } = await waitForAuthenticatedUser();
+  if (!userId) {
+    const cached = readCachedDetail(id) ?? null;
+    if (cached) {
+      return cached;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    ({ supabase, userId } = await waitForAuthenticatedUser());
+
+    if (!userId) {
+      return null;
+    }
+  }
   const { data, error } = await supabase
     .from('writing_naver_posts')
     .select('*')
@@ -290,7 +354,9 @@ async function fetchNaverManuscriptDetail(id: string | number) {
 
   if (error) throw error;
   const row = (data || [])[0] as WritingNaverPostRecord | undefined;
-  return row ? mapNaverRecord(row) : null;
+  const record = row ? mapNaverRecord(row) : null;
+  if (record) writeCachedDetail(id, record);
+  return record;
 }
 
 export function useCreaiboxManuscriptsQuery() {
@@ -316,7 +382,9 @@ export function useNaverManuscriptsQuery() {
   return useQuery({
     queryKey: naverManuscriptKeys.list,
     queryFn: fetchNaverManuscripts,
-    placeholderData: (previousData) => previousData,
+    initialData: () => readCachedList(NaverListCacheKey),
+    placeholderData: (previousData) => previousData ?? readCachedList(NaverListCacheKey),
+    staleTime: 30_000,
     refetchOnMount: "always",
   });
 }
@@ -326,7 +394,9 @@ export function useNaverManuscriptDetailQuery(id: string | number, placeholder?:
     queryKey: naverManuscriptKeys.detail(id),
     queryFn: () => fetchNaverManuscriptDetail(id),
     enabled: Boolean(id),
-    placeholderData: placeholder,
+    initialData: () => placeholder ?? readCachedDetail(id),
+    placeholderData: placeholder ?? readCachedDetail(id),
+    staleTime: 30_000,
     refetchOnMount: "always",
   });
 }

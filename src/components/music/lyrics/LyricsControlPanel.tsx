@@ -23,7 +23,7 @@ export default function LyricsControlPanel({
 }) {
   return (
     <div className="space-y-6">
-              <div className="rounded-3xl border border-zinc-800 bg-[#101014] p-6">
+      <div className="rounded-3xl border border-zinc-800 bg-[#101014] p-6">
         <h3 className="mb-3 text-lg font-black text-white">생성 실행</h3>
 
         <div className="mb-4">
@@ -68,10 +68,10 @@ export default function LyricsControlPanel({
             type="button"
             onClick={onGenerate}
             disabled={isAiLoading || !hasResult}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 px-5 py-4 text-sm font-bold text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-zinc-700 bg-amber-300 px-5 py-4 text-sm font-bold text-black hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <RefreshCw size={17} />
-            다시 생성
+            가사 & Suno 프롬프트 다시 생성
           </button>
         </div>
       </div>

@@ -42,7 +42,7 @@ export default function CategoryNewsPage() {
     case 'opinion':
       return <OpinionContent />;
     default:
-      // 잘못된 주소로 들어오면 가장 기본인 주요뉴스(Press)나 빈 화면 렌더링
+      // 잘못된 주소로 들어오면 가장 기본인 주요뉴스(Headline)나 빈 화면 렌더링
       return <HeadlineContent />;
   }
 }

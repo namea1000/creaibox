@@ -1,8 +1,29 @@
 {
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+
   "css.validate": false,
   "scss.validate": false,
-  "less.validate": false
+  "less.validate": false,
+
   "tailwindCSS.lint.suggestCanonicalClasses": "ignore",
   "tailwindCSS.lint.invalidApply": "ignore",
-  "tailwindCSS.lint.recommendedVariantOrder": "ignore"
+  "tailwindCSS.lint.recommendedVariantOrder": "ignore",
+
+  "js/ts.implicitProjectConfig.checkJs": false,
+  "js/ts.validate.enable": true,
+
+  "files.autoSave": "afterDelay",
+  "editor.formatOnSave": true,
+  "editor.inlineSuggest.enabled": true,
+  "editor.tabSize": 2,
+  "emmet.triggerExpansionOnTab": true,
+
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ]
 }

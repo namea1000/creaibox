@@ -67,7 +67,7 @@ function DashboardView() {
         ))}
       </div>
 
-      <div className="p-6 bg-gray-800 rounded-xl border border-gray-700 h-64 flex items-center justify-center border-dashed border-gray-600">
+      <div className="p-6 bg-gray-800 rounded-xl border border-gray-700 h-64 flex items-center justify-center border-dashed">
         <p className="text-gray-500">이곳에 차트 라이브러리(Recharts 등)를 연동하세요.</p>
       </div>
     </div>

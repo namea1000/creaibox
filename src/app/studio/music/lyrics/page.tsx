@@ -529,18 +529,18 @@ export default function MusicLyricsPage() {
 
       const songs: SongItem[] = Array.isArray(parsed.songs)
         ? parsed.songs.slice(0, safeCount).map((song: any, index: number) => ({
-            title: song.title || `Untitled Song ${index + 1}`,
-            conceptDescription: song.conceptDescription || autoTheme,
-            sunoPrompt: song.sunoPrompt || fallbackSunoPrompt,
-            lyrics: song.lyrics || "",
-            visualDescription: song.visualDescription || "",
-            videoDescription: song.videoDescription || "",
-            youtubeTitles: Array.isArray(song.youtubeTitles)
-              ? song.youtubeTitles
-              : [],
-            youtubeDescription: song.youtubeDescription || "",
-            hashtags: Array.isArray(song.hashtags) ? song.hashtags : [],
-          }))
+          title: song.title || `Untitled Song ${index + 1}`,
+          conceptDescription: song.conceptDescription || autoTheme,
+          sunoPrompt: song.sunoPrompt || fallbackSunoPrompt,
+          lyrics: song.lyrics || "",
+          visualDescription: song.visualDescription || "",
+          videoDescription: song.videoDescription || "",
+          youtubeTitles: Array.isArray(song.youtubeTitles)
+            ? song.youtubeTitles
+            : [],
+          youtubeDescription: song.youtubeDescription || "",
+          hashtags: Array.isArray(song.hashtags) ? song.hashtags : [],
+        }))
         : [];
 
       if (songs.length === 0) {
@@ -590,34 +590,34 @@ export default function MusicLyricsPage() {
           </div>
 
           <h1 className="text-3xl font-black text-white md:text-4xl">
-            가사 생성 & Suno 스타일 프롬프트
+            가사 생성 & Suno 스타일 프롬프트, 이미지, 영상 프롬프트, 유튜브 제목까지!
           </h1>
 
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-zinc-400">
-            1곡부터 최대 10곡까지 생성하고, 생성 묶음과 개별 곡을 Supabase에 저장합니다.
+          <p className="mt-3 max-w-3xl text-lg leading-7 text-zinc-400">
+            1곡부터 최대 10곡까지 생성하고, 생성 묶음과 개별 곡을 라리브러리 DB에 자동 저장합니다.
           </p>
         </div>
 
-<div className="rounded-3xl border border-zinc-800 bg-[#101014] p-4">
-  <div className="mb-3">
-    <h3 className="text-lg font-black text-white">
-      다음 작업 (생성 결과를 다음 제작 단계로 연결합니다.)
-    </h3>
-  </div>
+        <div className="rounded-3xl border border-zinc-800 bg-[#101014] p-4">
+          <div className="mb-3">
+            <h3 className="text-lg font-black text-white">
+              다음 작업 (생성 결과를 다음 제작 단계로 연결합니다.)
+            </h3>
+          </div>
 
-  <div className="grid grid-cols-2 gap-2">
-    {[
-      ["커버 이미지(Cover)"],
-      ["번역(Translate)"],
-      ["영상 프롬프트(Video)"],
-      ["유튜브 패키지(YouTube)"],
-      ["앨범 아트(Artwork)"],
-      ["Shorts 제작(Shorts)"],
-    ].map(([title, desc]) => (
-     <button
-  key={title}
-  type="button"
-  className="
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              ["커버 이미지(Cover)"],
+              ["번역(Translate)"],
+              ["영상 프롬프트(Video)"],
+              ["유튜브 패키지(YouTube)"],
+              ["앨범 아트(Artwork)"],
+              ["Shorts 제작(Shorts)"],
+            ].map(([title, desc]) => (
+              <button
+                key={title}
+                type="button"
+                className="
     h-[40px]
     rounded-md
     border
@@ -636,26 +636,26 @@ export default function MusicLyricsPage() {
     hover:to-orange-500/10
     hover:shadow-[0_0_20px_rgba(251,191,36,0.12)]
   "
->
-        <div
-          className="
+              >
+                <div
+                  className="
             truncate
             whitespace-nowrap
             text-[15px]
             font-black
             text-white
           "
-        >
-          {title}
-        </div>
+                >
+                  {title}
+                </div>
 
-        <div className="text-[15px] font-semibold text-zinc-100">
-          {desc}
+                <div className="text-[15px] font-semibold text-zinc-100">
+                  {desc}
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
-      </button>
-    ))}
-  </div>
-</div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1.35fr)_380px_minmax(420px,0.9fr)]">
