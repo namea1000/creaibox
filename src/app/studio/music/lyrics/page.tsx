@@ -48,6 +48,23 @@ const initialResult: MusicResultState = {
   songs: [],
 };
 
+function extractJson(text: string) {
+  const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const firstBrace = cleaned.indexOf("{");
+    const lastBrace = cleaned.lastIndexOf("}");
+
+    if (firstBrace >= 0 && lastBrace > firstBrace) {
+      return JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
+    }
+
+    throw new Error("AI 응답을 JSON으로 변환하지 못했습니다.");
+  }
+}
+
 export default function MusicLyricsPage() {
   const supabase = useMemo(() => createClient(), []);
 
@@ -226,6 +243,7 @@ export default function MusicLyricsPage() {
       .single();
 
     if (error || !data?.id) {
+      console.error("batch 저장 실패:", error);
       throw new Error(error?.message || "생성 묶음 저장 실패");
     }
 
@@ -247,7 +265,7 @@ export default function MusicLyricsPage() {
 
     if (songs.length === 0) {
       alert("❌ 저장할 가사가 아직 충분하지 않습니다.");
-      return;
+      return false;
     }
 
     try {
@@ -257,7 +275,7 @@ export default function MusicLyricsPage() {
 
       if (!user) {
         alert("❌ 로그인 세션을 확인하지 못했습니다.");
-        return;
+        return false;
       }
 
       if (!activeUser) setActiveUser(user);
@@ -318,6 +336,7 @@ export default function MusicLyricsPage() {
         .select("id, song_index");
 
       if (songsError) {
+        console.error("곡 저장 실패:", songsError);
         throw new Error(songsError.message);
       }
 
@@ -329,11 +348,14 @@ export default function MusicLyricsPage() {
 
       alert(
         isManual
-          ? `✅ ${songs.length}곡이 수동 저장되었습니다.`
-          : `✅ ${songs.length}곡 생성 완료! DB에 자동 저장되었습니다.`
+          ? `✅ ${songs.length}곡이 라이브러리에 저장되었습니다.`
+          : `✅ ${songs.length}곡이 자동 저장되었습니다.`
       );
+
+      return true;
     } catch (err: any) {
       alert(`❌ 저장 오류: ${err.message}`);
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -342,7 +364,7 @@ export default function MusicLyricsPage() {
   const saveSingleSongToSupabase = async (song: SongItem, songIndex: number) => {
     if (!song.lyrics || song.lyrics.length < 10) {
       alert("❌ 저장할 가사가 아직 충분하지 않습니다.");
-      return;
+      return false;
     }
 
     try {
@@ -352,7 +374,7 @@ export default function MusicLyricsPage() {
 
       if (!user) {
         alert("❌ 로그인 세션을 확인하지 못했습니다.");
-        return;
+        return false;
       }
 
       if (!activeUser) setActiveUser(user);
@@ -415,6 +437,7 @@ export default function MusicLyricsPage() {
         .single();
 
       if (songError) {
+        console.error("선택 곡 저장 실패:", songError);
         throw new Error(songError.message);
       }
 
@@ -424,9 +447,12 @@ export default function MusicLyricsPage() {
         batchId,
       }));
 
-      alert("✅ 선택한 곡이 저장되었습니다.");
+      alert("✅ 선택한 곡이 라이브러리에 저장되었습니다.");
+
+      return true;
     } catch (err: any) {
       alert(`❌ 저장 오류: ${err.message}`);
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -438,10 +464,14 @@ export default function MusicLyricsPage() {
       10
     );
 
+    const finalTheme =
+      form.theme.trim() ||
+      `${form.mood} 감성의 ${form.genre} 곡. ${form.vocal} 보컬이 ${form.instrument} 중심 사운드 위에서 부르는 감성적인 노래`;
+
     if (!form.theme.trim()) {
       setForm((prev: MusicFormState) => ({
         ...prev,
-        theme: autoTheme,
+        theme: finalTheme,
       }));
     }
 
@@ -464,7 +494,7 @@ export default function MusicLyricsPage() {
 
 [사용자 선택값]
 - 생성 곡 수: ${safeCount}곡
-- 곡 주제/상황: ${autoTheme}
+- 곡 주제/상황: ${finalTheme}
 - 장르: ${form.genre}
 - 분위기/감성: ${form.mood}
 - 보컬/창법: ${form.vocal}
@@ -520,17 +550,12 @@ export default function MusicLyricsPage() {
       const response = await apiResult.response;
       const text = response.text();
 
-      const cleanJsonText = text
-        .replace(/```json/g, "")
-        .replace(/```/g, "")
-        .trim();
-
-      const parsed = JSON.parse(cleanJsonText);
+      const parsed = extractJson(text);
 
       const songs: SongItem[] = Array.isArray(parsed.songs)
         ? parsed.songs.slice(0, safeCount).map((song: any, index: number) => ({
           title: song.title || `Untitled Song ${index + 1}`,
-          conceptDescription: song.conceptDescription || autoTheme,
+          conceptDescription: song.conceptDescription || finalTheme,
           sunoPrompt: song.sunoPrompt || fallbackSunoPrompt,
           lyrics: song.lyrics || "",
           visualDescription: song.visualDescription || "",
@@ -594,63 +619,52 @@ export default function MusicLyricsPage() {
           </h1>
 
           <p className="mt-3 max-w-3xl text-lg leading-7 text-zinc-400">
-            1곡부터 최대 10곡까지 생성하고, 생성 묶음과 개별 곡을 라리브러리 DB에 자동 저장합니다.
+            1곡부터 최대 10곡까지 생성하고, 생성 묶음과 개별 곡을 라이브러리 DB에 자동 저장합니다.
           </p>
         </div>
 
         <div className="rounded-3xl border border-zinc-800 bg-[#101014] p-4">
           <div className="mb-3">
-            <h3 className="text-lg font-black text-white">
-              다음 작업 (생성 결과를 다음 제작 단계로 연결합니다.)
-            </h3>
+            <h3 className="text-lg font-black text-white">다음 작업</h3>
+            <p className="mt-1 text-[11px] leading-4 text-zinc-500">
+              생성 결과를 다음 제작 단계로 연결합니다.
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             {[
-              ["커버 이미지(Cover)"],
-              ["번역(Translate)"],
-              ["영상 프롬프트(Video)"],
-              ["유튜브 패키지(YouTube)"],
-              ["앨범 아트(Artwork)"],
-              ["Shorts 제작(Shorts)"],
-            ].map(([title, desc]) => (
+              ["커버 이미지(Cover)", "Cover"],
+              ["번역(Translate)", "Translate"],
+              ["영상 프롬프트(Video)", "Video"],
+              ["유튜브 패키지(YouTube)", "YouTube"],
+              ["앨범 아트(Artwork)", "Artwork"],
+              ["Shorts 제작(Shorts)", "Shorts"],
+            ].map(([title]) => (
               <button
                 key={title}
                 type="button"
                 className="
-    h-[40px]
-    rounded-md
-    border
-    border-zinc-700/80
-    bg-gradient-to-br
-    from-zinc-900/90
-    to-black/80
-    px-4
-    py-2
-    text-left
-    backdrop-blur-sm
-    transition-all
-    duration-200
-    hover:border-amber-400
-    hover:from-amber-500/15
-    hover:to-orange-500/10
-    hover:shadow-[0_0_20px_rgba(251,191,36,0.12)]
-  "
+                  h-[40px]
+                  rounded-md
+                  border
+                  border-zinc-700/80
+                  bg-gradient-to-br
+                  from-zinc-900/90
+                  to-black/80
+                  px-4
+                  py-2
+                  text-left
+                  backdrop-blur-sm
+                  transition-all
+                  duration-200
+                  hover:border-amber-400
+                  hover:from-amber-500/15
+                  hover:to-orange-500/10
+                  hover:shadow-[0_0_20px_rgba(251,191,36,0.12)]
+                "
               >
-                <div
-                  className="
-            truncate
-            whitespace-nowrap
-            text-[15px]
-            font-black
-            text-white
-          "
-                >
+                <div className="truncate whitespace-nowrap text-[15px] font-black text-white">
                   {title}
-                </div>
-
-                <div className="text-[15px] font-semibold text-zinc-100">
-                  {desc}
                 </div>
               </button>
             ))}
@@ -667,7 +681,6 @@ export default function MusicLyricsPage() {
             setForm={setForm}
             previewPrompt={result.sunoPrompt || fallbackSunoPrompt}
             isAiLoading={isAiLoading}
-            hasResult={Boolean(result.lyrics || result.sunoPrompt)}
             onGenerate={handleAiGenerate}
             onCopy={copyText}
           />

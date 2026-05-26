@@ -1,22 +1,22 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Copy, Save, Download } from "lucide-react";
 import type { MusicResultState, SongItem } from "./types";
 
 function makeDownloadText(song: SongItem) {
   return `
 제목
-${song.title}
+${song.title || ""}
 
 곡의 소재 설명
 ${song.conceptDescription || ""}
 
 Suno 스타일 프롬프트
-${song.sunoPrompt}
+${song.sunoPrompt || ""}
 
 가사
-${song.lyrics}
+${song.lyrics || ""}
 
 Visual Description / Image Prompt
 ${song.visualDescription || ""}
@@ -35,6 +35,20 @@ ${(song.hashtags || []).join(" ")}
 `.trim();
 }
 
+function makeAllDownloadText(songs: SongItem[]) {
+  return songs
+    .map(
+      (song, index) => `
+==============================
+${index + 1}번째 곡
+==============================
+
+${makeDownloadText(song)}
+`.trim()
+    )
+    .join("\n\n\n");
+}
+
 function makeSafeFilename(title: string) {
   return (title || "music-result")
     .replace(/[\\/:*?"<>|]/g, "")
@@ -42,11 +56,23 @@ function makeSafeFilename(title: string) {
     .slice(0, 80);
 }
 
+function downloadTextFile(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
 function createFallbackSong(result: MusicResultState): SongItem {
   return {
-    title: result.title,
-    lyrics: result.lyrics,
-    sunoPrompt: result.sunoPrompt,
+    title: result.title || "",
+    lyrics: result.lyrics || "",
+    sunoPrompt: result.sunoPrompt || "",
     youtubeTitles: result.youtubeTitles || [],
     youtubeDescription: result.youtubeDescription || "",
     hashtags: result.hashtags || [],
@@ -66,14 +92,18 @@ export default function LyricsResultPanel({
   result: MusicResultState;
   setResult: React.Dispatch<React.SetStateAction<MusicResultState>>;
   isSaving: boolean;
-  onSaveSong: (song: SongItem, songIndex: number) => void;
+  onSaveSong: (song: SongItem, songIndex: number) => Promise<boolean>;
   onCopy: (value: string) => void;
 }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [savedSongIndexes, setSavedSongIndexes] = useState<number[]>([]);
+  const manualSaveInProgressRef = useRef(false);
 
   const songs = useMemo<SongItem[]>(() => {
-    if (result.songs.length > 0) return result.songs;
-    if (result.lyrics || result.sunoPrompt) return [createFallbackSong(result)];
+    if (result.songs && result.songs.length > 0) return result.songs;
+    if (result.lyrics || result.sunoPrompt || result.title) {
+      return [createFallbackSong(result)];
+    }
     return [];
   }, [result]);
 
@@ -83,14 +113,30 @@ export default function LyricsResultPanel({
     }
   }, [songs.length, selectedIndex]);
 
+  useEffect(() => {
+    if (songs.length === 0) {
+      setSavedSongIndexes([]);
+      return;
+    }
+
+    if (manualSaveInProgressRef.current) return;
+
+    if (result.batchId || result.savedId) {
+      setSavedSongIndexes(Array.from({ length: songs.length }, (_, i) => i));
+    }
+  }, [result.batchId, result.savedId, songs.length]);
+
   const selectedSong = songs[selectedIndex];
+  const isSelectedSaved = savedSongIndexes.includes(selectedIndex);
 
   const updateSelectedSong = (patch: Partial<SongItem>) => {
     if (!selectedSong) return;
 
     setResult((prev: MusicResultState) => {
       const baseSongs =
-        prev.songs.length > 0 ? [...prev.songs] : [createFallbackSong(prev)];
+        prev.songs && prev.songs.length > 0
+          ? [...prev.songs]
+          : [createFallbackSong(prev)];
 
       const currentSong = baseSongs[selectedIndex] || createFallbackSong(prev);
 
@@ -104,9 +150,9 @@ export default function LyricsResultPanel({
       return {
         ...prev,
         songs: baseSongs,
-        title: first.title,
-        lyrics: first.lyrics,
-        sunoPrompt: first.sunoPrompt,
+        title: first.title || "",
+        lyrics: first.lyrics || "",
+        sunoPrompt: first.sunoPrompt || "",
         youtubeTitles: first.youtubeTitles || [],
         youtubeDescription: first.youtubeDescription || "",
         hashtags: first.hashtags || [],
@@ -117,20 +163,48 @@ export default function LyricsResultPanel({
     });
   };
 
-  const handleDownload = () => {
+  const handleDownloadSelected = () => {
     if (!selectedSong) return;
 
-    const text = makeDownloadText(selectedSong);
-    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${makeSafeFilename(selectedSong.title)}.txt`;
-    a.click();
-
-    URL.revokeObjectURL(url);
+    downloadTextFile(
+      `${makeSafeFilename(selectedSong.title)}.txt`,
+      makeDownloadText(selectedSong)
+    );
   };
+
+  const handleDownloadAll = () => {
+    if (!songs || songs.length === 0) return;
+
+    downloadTextFile(
+      `creaibox_music_songs_${songs.length}곡.txt`,
+      makeAllDownloadText(songs)
+    );
+  };
+
+  const handleLibrarySave = async () => {
+    if (!selectedSong) return;
+
+    if (isSelectedSaved) return;
+
+    manualSaveInProgressRef.current = true;
+
+    try {
+      const success = await onSaveSong(selectedSong, selectedIndex + 1);
+
+      if (!success) return;
+
+      setSavedSongIndexes((prev) => {
+        if (prev.includes(selectedIndex)) return prev;
+        return [...prev, selectedIndex];
+      });
+    } finally {
+      setTimeout(() => {
+        manualSaveInProgressRef.current = false;
+      }, 0);
+    }
+  };
+
+  const hasSelectedSong = Boolean(selectedSong);
 
   return (
     <div className="space-y-6">
@@ -146,36 +220,33 @@ export default function LyricsResultPanel({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() =>
-                selectedSong && onSaveSong(selectedSong, selectedIndex + 1)
-              }
-              disabled={isSaving || !selectedSong}
-              className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-black text-black hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={handleLibrarySave}
+              disabled={isSaving || !hasSelectedSong || isSelectedSaved}
+              className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-black text-black hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-70"
             >
               <Save size={14} />
-              선택 곡 DB에 저장
+              {isSelectedSaved ? "저장완료 ✓" : "라이브러리 저장"}
             </button>
 
             <button
               type="button"
-              onClick={handleDownload}
-              disabled={!selectedSong}
+              onClick={handleDownloadSelected}
+              disabled={!hasSelectedSong}
               className="flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-xs font-bold text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Download size={14} />
               선택 곡 PC 다운로드
             </button>
 
-                        <button
+            <button
               type="button"
-              onClick={handleDownload}
-              disabled={!selectedSong}
+              onClick={handleDownloadAll}
+              disabled={!songs || songs.length === 0}
               className="flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-xs font-bold text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Download size={14} />
               곡 전체 다운로드
             </button>
-
           </div>
         </div>
 
@@ -183,14 +254,13 @@ export default function LyricsResultPanel({
           <div className="mb-5 flex gap-2 overflow-x-auto pb-2">
             {songs.map((song, index) => (
               <button
-                key={`${song.title}-${index}`}
+                key={`${song.title || "song"}-${index}`}
                 type="button"
                 onClick={() => setSelectedIndex(index)}
-                className={`shrink-0 rounded-full border px-4 py-2 text-xs font-black transition ${
-                  selectedIndex === index
-                    ? "border-amber-400 bg-amber-400 text-black"
-                    : "border-zinc-800 bg-black/40 text-zinc-400 hover:border-amber-400 hover:text-white"
-                }`}
+                className={`shrink-0 rounded-full border px-4 py-2 text-xs font-black transition ${selectedIndex === index
+                  ? "border-amber-400 bg-amber-400 text-black"
+                  : "border-zinc-800 bg-black/40 text-zinc-400 hover:border-amber-400 hover:text-white"
+                  }`}
               >
                 {index + 1}번째 곡
               </button>
@@ -205,7 +275,7 @@ export default function LyricsResultPanel({
         ) : (
           <div className="space-y-5">
             <input
-              value={selectedSong.title}
+              value={selectedSong.title || ""}
               onChange={(e) => updateSelectedSong({ title: e.target.value })}
               placeholder="곡 제목"
               className="w-full rounded-2xl border border-zinc-800 bg-black/40 p-4 text-sm text-white outline-none focus:border-amber-400"
@@ -232,7 +302,7 @@ export default function LyricsResultPanel({
                 </label>
                 <button
                   type="button"
-                  onClick={() => onCopy(selectedSong.sunoPrompt)}
+                  onClick={() => onCopy(selectedSong.sunoPrompt || "")}
                   className="flex items-center gap-1 text-xs font-bold text-amber-400"
                 >
                   <Copy size={13} /> 복사
@@ -240,7 +310,7 @@ export default function LyricsResultPanel({
               </div>
 
               <textarea
-                value={selectedSong.sunoPrompt}
+                value={selectedSong.sunoPrompt || ""}
                 onChange={(e) =>
                   updateSelectedSong({ sunoPrompt: e.target.value })
                 }
@@ -255,7 +325,7 @@ export default function LyricsResultPanel({
                 </label>
                 <button
                   type="button"
-                  onClick={() => onCopy(selectedSong.lyrics)}
+                  onClick={() => onCopy(selectedSong.lyrics || "")}
                   className="flex items-center gap-1 text-xs font-bold text-amber-400"
                 >
                   <Copy size={13} /> 복사
@@ -263,7 +333,7 @@ export default function LyricsResultPanel({
               </div>
 
               <textarea
-                value={selectedSong.lyrics}
+                value={selectedSong.lyrics || ""}
                 onChange={(e) => updateSelectedSong({ lyrics: e.target.value })}
                 className="min-h-[360px] w-full rounded-2xl border border-zinc-800 bg-black/40 p-4 text-sm leading-7 text-white outline-none focus:border-amber-400"
               />

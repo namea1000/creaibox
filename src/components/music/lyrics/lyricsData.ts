@@ -67,18 +67,32 @@ export const instruments: Option[] = [
 ];
 
 export const songStructures = [
-  { label: "[일반적인 노래, 약 3분] Intro - Verse 1 - Pre-Chorus - Chorus - Verse 2 - Pre-Chorus - Chorus - Bridge - Final Chorus - Outro",
-    value: "[일반적인 노래, 약 3분] Intro - Verse 1 - Pre-Chorus - Chorus - Verse 2 - Pre-Chorus - Chorus - Bridge - Final Chorus - Outro",},
-  { label: "[풍부한 팝송, 약 4분] Intro - Verse 1 - Pre-Chorus - Chorus - Post-Chorus Hook - Verse 2 - Pre-Chorus - Chorus - Bridge - Final Chorus - Outro",
-    value: "[풍부한 팝송, 약 4분] Intro - Verse 1 - Pre-Chorus - Chorus - Post-Chorus Hook - Verse 2 - Pre-Chorus - Chorus - Bridge - Final Chorus - Outro",},
-  { label: "[[중독성 후크형, 약 3분 30초] Intro - Verse 1 - Hook - Pre-Chorus - Chorus - Verse 2 - Hook - Chorus - Bridge - Final Chorus - Outro",
-    value: "[중독성 후크형, 약 3분 30초] Intro - Verse 1 - Hook - Pre-Chorus - Chorus - Verse 2 - Hook - Chorus - Bridge - Final Chorus - Outro",},
-  { label: "[발라드 감성형, 약 4분] Piano Intro - Verse 1 - Pre-Chorus - Chorus - Verse 2 - Pre-Chorus - Chorus - Emotional Bridge - Key Change Final Chorus - Outro",
-    value: "[발라드 감성형, 약 4분] Piano Intro - Verse 1 - Pre-Chorus - Chorus - Verse 2 - Pre-Chorus - Chorus - Emotional Bridge - Key Change Final Chorus - Outro",},
-  { label: "[EDM 드롭형, 약 3분 30초] Intro - Verse 1 - Build Up - Drop Chorus - Verse 2 - Build Up - Drop Chorus - Bridge - Final Drop - Outro",
-    value: "[EDM 드롭형, 약 3분 30초] Intro - Verse 1 - Build Up - Drop Chorus - Verse 2 - Build Up - Drop Chorus - Bridge - Final Drop - Outro",},
-  { label: "[K-pop 풀버전, 약 4분] Intro - Verse 1 - Pre-Chorus - Chorus - Post-Chorus - Verse 2 - Rap or Bridge - Pre-Chorus - Chorus - Dance Break - Final Chorus - Outro",
-    value: "[K-pop 풀버전, 약 4분] Intro - Verse 1 - Pre-Chorus - Chorus - Post-Chorus - Verse 2 - Rap or Bridge - Pre-Chorus - Chorus - Dance Break - Final Chorus - Outro",},
-  { label: "[긴 서사형, 약 5분] Intro - Verse 1 - Pre-Chorus - Chorus - Verse 2 - Pre-Chorus - Chorus - Bridge - Verse 3 - Final Chorus - Outro",
-    value: "[긴 서사형, 약 5분] Intro - Verse 1 - Pre-Chorus - Chorus - Verse 2 - Pre-Chorus - Chorus - Bridge - Verse 3 - Final Chorus - Outro",},
+  {
+    label: "[일반적인 노래, 약 3분] Intro - Verse 1 - Pre-Chorus - Chorus - Verse 2 - Pre-Chorus - Chorus - Bridge - Final Chorus - Outro",
+    value: "[일반적인 노래, 약 3분] Intro - Verse 1 - Pre-Chorus - Chorus - Verse 2 - Pre-Chorus - Chorus - Bridge - Final Chorus - Outro",
+  },
+  {
+    label: "[풍부한 팝송, 약 4분] Intro - Verse 1 - Pre-Chorus - Chorus - Post-Chorus Hook - Verse 2 - Pre-Chorus - Chorus - Bridge - Final Chorus - Outro",
+    value: "[풍부한 팝송, 약 4분] Intro - Verse 1 - Pre-Chorus - Chorus - Post-Chorus Hook - Verse 2 - Pre-Chorus - Chorus - Bridge - Final Chorus - Outro",
+  },
+  {
+    label: "[중독성 후크형, 약 3분 30초] Intro - Verse 1 - Hook - Pre-Chorus - Chorus - Verse 2 - Hook - Chorus - Bridge - Final Chorus - Outro",
+    value: "[중독성 후크형, 약 3분 30초] Intro - Verse 1 - Hook - Pre-Chorus - Chorus - Verse 2 - Hook - Chorus - Bridge - Final Chorus - Outro",
+  },
+  {
+    label: "[발라드 감성형, 약 4분] Piano Intro - Verse 1 - Pre-Chorus - Chorus - Verse 2 - Pre-Chorus - Chorus - Emotional Bridge - Key Change Final Chorus - Outro",
+    value: "[발라드 감성형, 약 4분] Piano Intro - Verse 1 - Pre-Chorus - Chorus - Verse 2 - Pre-Chorus - Chorus - Emotional Bridge - Key Change Final Chorus - Outro",
+  },
+  {
+    label: "[EDM 드롭형, 약 3분 30초] Intro - Verse 1 - Build Up - Drop Chorus - Verse 2 - Build Up - Drop Chorus - Bridge - Final Drop - Outro",
+    value: "[EDM 드롭형, 약 3분 30초] Intro - Verse 1 - Build Up - Drop Chorus - Verse 2 - Build Up - Drop Chorus - Bridge - Final Drop - Outro",
+  },
+  {
+    label: "[K-pop 풀버전, 약 4분] Intro - Verse 1 - Pre-Chorus - Chorus - Post-Chorus - Verse 2 - Rap or Bridge - Pre-Chorus - Chorus - Dance Break - Final Chorus - Outro",
+    value: "[K-pop 풀버전, 약 4분] Intro - Verse 1 - Pre-Chorus - Chorus - Post-Chorus - Verse 2 - Rap or Bridge - Pre-Chorus - Chorus - Dance Break - Final Chorus - Outro",
+  },
+  {
+    label: "[긴 서사형, 약 5분] Intro - Verse 1 - Pre-Chorus - Chorus - Verse 2 - Pre-Chorus - Chorus - Bridge - Verse 3 - Final Chorus - Outro",
+    value: "[긴 서사형, 약 5분] Intro - Verse 1 - Pre-Chorus - Chorus - Verse 2 - Pre-Chorus - Chorus - Bridge - Verse 3 - Final Chorus - Outro",
+  },
 ];
