@@ -27,11 +27,10 @@ function SelectChip({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition-all ${
-        active
+      className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition-all ${active
           ? "border-amber-400 bg-amber-400/10 text-white shadow-[0_0_20px_rgba(245,158,11,0.16)]"
           : "border-zinc-800 bg-zinc-950/70 text-zinc-400 hover:border-zinc-600 hover:text-zinc-100"
-      }`}
+        }`}
     >
       <span className="mr-2">{item.icon}</span>
       {item.label}
@@ -126,37 +125,37 @@ export default function LyricsInputPanel({
         </div>
       </SectionCard>
 
-      <SectionCard number="6" icon={<FileText size={20} />} title="가서 언어 및 노래 구조 (Song Structure/Composition Flow)" desc="가사 언어와 노래 구조를 선택합니다.">
+      <SectionCard number="6" icon={<FileText size={20} />} title="가사 언어 및 노래 구조 (Song Structure/Composition Flow)" desc="가사 언어와 노래 구조를 선택합니다.">
         <div className="space-y-4">
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
- <select
-      value={form.language}
-      onChange={(e) => updateForm("language", e.target.value)}
-      className="w-full rounded-2xl border border-zinc-800 bg-black/40 p-4 text-sm text-white outline-none focus:border-amber-400"
-    >
-      <option value="Korean">한국어</option>
-      <option value="English">영어</option>
-      <option value="Japanese">일본어</option>
-      <option value="Korean + English">한국어 + 영어</option>
-    </select>
-  </div>
+            <select
+              value={form.language}
+              onChange={(e) => updateForm("language", e.target.value)}
+              className="w-full rounded-2xl border border-zinc-800 bg-black/40 p-4 text-sm text-white outline-none focus:border-amber-400"
+            >
+              <option value="Korean">한국어</option>
+              <option value="English">영어</option>
+              <option value="Japanese">일본어</option>
+              <option value="Korean + English">한국어 + 영어</option>
+            </select>
+          </div>
 
-  <div>
-    <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-zinc-500">
-      노래 구성
-    </label>
-    <select
-      value={form.structure}
-      onChange={(e) => updateForm("structure", e.target.value)}
-      className="w-full rounded-2xl border border-zinc-800 bg-black/40 p-4 text-sm text-white outline-none focus:border-amber-400"
-    >
-      {songStructures.map((item) => (
-        <option key={item.value} value={item.value}>
-          {item.value}
-        </option>
-      ))}
-    </select>
+          <div>
+            <label className="mb-2 block text-xs font-bold uppercase tracking-widest text-zinc-500">
+              노래 구성
+            </label>
+            <select
+              value={form.structure}
+              onChange={(e) => updateForm("structure", e.target.value)}
+              className="w-full rounded-2xl border border-zinc-800 bg-black/40 p-4 text-sm text-white outline-none focus:border-amber-400"
+            >
+              {songStructures.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.value}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </SectionCard>
