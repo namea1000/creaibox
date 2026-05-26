@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Search, ArrowLeft } from "lucide-react";
-import BlogEditorCanvas from "@/components/writing/naver/BlogEditorCanvas";
+import UniversalBlogEditor from "@/components/writing/editor/UniversalBlogEditor";
 import NaverAnalysisTower from "@/components/writing/naver/NaverAnalysisTower";
 import { createClient } from "@/utils/supabase/client";
 import {
@@ -88,11 +88,11 @@ export default function NaverManuscriptDetailPage() {
     }
   }, [data]);
 
-  const noopEnhance = useCallback(async () => {}, []);
+  const noopEnhance = useCallback(async () => { }, []);
   const noopImageUploadClick = useCallback(() => fileInputRef.current?.click(), []);
-  const noopImageChange = useCallback(() => {}, []);
-  const noopUpdateCaption = useCallback(() => {}, []);
-  const noopDeleteImage = useCallback(() => {}, []);
+  const noopImageChange = useCallback(() => { }, []);
+  const noopUpdateCaption = useCallback(() => { }, []);
+  const noopDeleteImage = useCallback(() => { }, []);
 
   const charCount = useMemo(() => (data?.content ?? "").replace(/\s+/g, "").length, [data?.content]);
 
@@ -138,7 +138,7 @@ export default function NaverManuscriptDetailPage() {
 
       <main className="min-w-0 flex-1 px-6 py-6">
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <BlogEditorCanvas
+          <UniversalBlogEditor
             title={data?.title ?? ""}
             setTitle={(value) => updateLocalData({ title: value })}
             content={data?.content ?? ""}

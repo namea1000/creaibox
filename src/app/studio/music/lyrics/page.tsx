@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { User } from "@supabase/supabase-js";
@@ -17,6 +17,14 @@ import type {
 
 const AUTH_RETRY_DELAY_MS = 700;
 const AUTH_RETRY_ATTEMPTS = 3;
+const AI_RETRY_ATTEMPTS = 3;
+const AI_RETRY_DELAY_MS = 1200;
+
+const GEMINI_MODEL_FALLBACKS = [
+  "gemini-3-flash-preview",
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+];
 
 const DEFAULT_STRUCTURE =
   "[일반적인 노래, 약 3분] Intro - Verse 1 - Pre-Chorus - Chorus - Verse 2 - Pre-Chorus - Chorus - Bridge - Final Chorus - Outro";
@@ -48,6 +56,29 @@ const initialResult: MusicResultState = {
   songs: [],
 };
 
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isHighDemandError(error: any) {
+  const message = String(error?.message || error || "").toLowerCase();
+
+  return (
+    message.includes("503") ||
+    message.includes("high demand") ||
+    message.includes("overloaded") ||
+    message.includes("try again later")
+  );
+}
+
+function getFriendlyAiErrorMessage(error: any) {
+  if (isHighDemandError(error)) {
+    return "AI 서버가 현재 혼잡합니다. 잠시 후 다시 시도해주세요. 문제가 계속되면 자동으로 다른 모델을 시도합니다.";
+  }
+
+  return "AI 생성 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
+}
+
 function extractJson(text: string) {
   const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
 
@@ -67,6 +98,7 @@ function extractJson(text: string) {
 
 export default function MusicLyricsPage() {
   const supabase = useMemo(() => createClient(), []);
+  const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [activeUser, setActiveUser] = useState<User | null>(null);
   const [userNickname, setUserNickname] = useState("");
@@ -75,12 +107,44 @@ export default function MusicLyricsPage() {
   const [rawResult, setRawResult] = useState<any>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [generationStatusMessage, setGenerationStatusMessage] = useState("");
+  const [generationErrorMessage, setGenerationErrorMessage] = useState("");
 
   const autoTheme =
     form.theme.trim() ||
     `${form.mood} 감성의 ${form.genre} 곡. ${form.vocal} 보컬이 ${form.instrument} 중심 사운드 위에서 부르는 감성적인 노래`;
 
   const fallbackSunoPrompt = `${form.vocal}, ${form.genre}, ${form.instrument} driven, ${form.mood}, ${form.tempo}, emotional melody, polished production, clear vocal mix, cinematic atmosphere, ${form.language} lyrics`;
+
+  useEffect(() => {
+    return () => {
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+      }
+    };
+  }, []);
+
+  const startProgressTimer = () => {
+    if (progressTimerRef.current) {
+      clearInterval(progressTimerRef.current);
+    }
+
+    progressTimerRef.current = setInterval(() => {
+      setGenerationProgress((prev) => {
+        if (prev >= 88) return prev;
+        const next = prev + Math.floor(Math.random() * 5) + 2;
+        return Math.min(next, 88);
+      });
+    }, 900);
+  };
+
+  const stopProgressTimer = () => {
+    if (progressTimerRef.current) {
+      clearInterval(progressTimerRef.current);
+      progressTimerRef.current = null;
+    }
+  };
 
   const resolveAuthUser = async (): Promise<User | null> => {
     for (let attempt = 0; attempt < AUTH_RETRY_ATTEMPTS; attempt += 1) {
@@ -97,7 +161,7 @@ export default function MusicLyricsPage() {
       if (user) return user;
 
       if (attempt < AUTH_RETRY_ATTEMPTS - 1) {
-        await new Promise((resolve) => setTimeout(resolve, AUTH_RETRY_DELAY_MS));
+        await wait(AUTH_RETRY_DELAY_MS);
       }
     }
 
@@ -121,8 +185,8 @@ export default function MusicLyricsPage() {
       }
     };
 
-    loadUser();
-  }, []);
+    void loadUser();
+  }, [supabase]);
 
   const getApiKey = async () => {
     const localKey = localStorage.getItem("gemini_api_key");
@@ -137,8 +201,7 @@ export default function MusicLyricsPage() {
       throw new Error("사용 가능한 Gemini API 키가 없습니다.");
     }
 
-    const selectedKey =
-      vaultKeys[Math.floor(Math.random() * vaultKeys.length)].key;
+    const selectedKey = vaultKeys[Math.floor(Math.random() * vaultKeys.length)].key;
 
     try {
       return atob(selectedKey);
@@ -212,7 +275,6 @@ export default function MusicLyricsPage() {
       user_id: user.id,
       user_email: user.email,
       user_nicename: finalAuthor,
-
       theme: autoTheme,
       genre: form.genre,
       mood: form.mood,
@@ -221,9 +283,8 @@ export default function MusicLyricsPage() {
       instrument: form.instrument,
       language: form.language,
       structure: form.structure,
-
       generation_count: generationCount,
-      model_name: "gemini-3-flash-preview",
+      model_name: "gemini-fallback-chain",
       status: "saved",
       raw_request: {
         form: {
@@ -292,17 +353,14 @@ export default function MusicLyricsPage() {
       const songsPayload = songs.map((song, index) => ({
         batch_id: batchId,
         song_index: index + 1,
-
         user_id: user.id,
         user_email: user.email,
         user_nicename: finalAuthor,
-
         title: song.title || `Untitled Song ${index + 1}`,
         theme: autoTheme,
         lyrics: song.lyrics,
         suno_prompt: song.sunoPrompt || fallbackSunoPrompt,
         status: "saved",
-
         genre: form.genre,
         mood: form.mood,
         vocal: form.vocal,
@@ -310,22 +368,18 @@ export default function MusicLyricsPage() {
         instrument: form.instrument,
         language: form.language,
         structure: form.structure,
-
         youtube_titles: song.youtubeTitles || [],
         youtube_description: song.youtubeDescription || "",
         hashtags: song.hashtags || [],
-
         concept_description: song.conceptDescription || "",
         cover_prompt: song.visualDescription || "",
         video_prompt: song.videoDescription || "",
-
         raw_result: {
           song,
           concept_description: song.conceptDescription || "",
           original_raw_result: finalRawResult,
         },
-
-        model_name: "gemini-3-flash-preview",
+        model_name: "gemini-fallback-chain",
         source_mode: "lyrics_suno",
         is_favorite: false,
       }));
@@ -392,17 +446,14 @@ export default function MusicLyricsPage() {
       const songPayload = {
         batch_id: batchId,
         song_index: songIndex,
-
         user_id: user.id,
         user_email: user.email,
         user_nicename: finalAuthor,
-
         title: song.title || `Untitled Song ${songIndex}`,
         theme: autoTheme,
         lyrics: song.lyrics,
         suno_prompt: song.sunoPrompt || fallbackSunoPrompt,
         status: "saved",
-
         genre: form.genre,
         mood: form.mood,
         vocal: form.vocal,
@@ -410,22 +461,18 @@ export default function MusicLyricsPage() {
         instrument: form.instrument,
         language: form.language,
         structure: form.structure,
-
         youtube_titles: song.youtubeTitles || [],
         youtube_description: song.youtubeDescription || "",
         hashtags: song.hashtags || [],
-
         concept_description: song.conceptDescription || "",
         cover_prompt: song.visualDescription || "",
         video_prompt: song.videoDescription || "",
-
         raw_result: {
           song,
           concept_description: song.conceptDescription || "",
           original_raw_result: rawResult,
         },
-
-        model_name: "gemini-3-flash-preview",
+        model_name: "gemini-fallback-chain",
         source_mode: "lyrics_suno",
         is_favorite: false,
       };
@@ -459,10 +506,7 @@ export default function MusicLyricsPage() {
   };
 
   const handleAiGenerate = async () => {
-    const safeCount = Math.min(
-      Math.max(Number(form.generationCount) || 1, 1),
-      10
-    );
+    const safeCount = Math.min(Math.max(Number(form.generationCount) || 1, 1), 10);
 
     const finalTheme =
       form.theme.trim() ||
@@ -476,16 +520,16 @@ export default function MusicLyricsPage() {
     }
 
     setIsAiLoading(true);
+    setGenerationProgress(5);
+    setGenerationStatusMessage("AI 생성 준비 중입니다...");
+    setGenerationErrorMessage("");
     setResult(initialResult);
     setRawResult(null);
+    startProgressTimer();
 
     try {
       const apiKey = await getApiKey();
       const genAI = new GoogleGenerativeAI(apiKey);
-
-      const model = genAI.getGenerativeModel({
-        model: "gemini-3-flash-preview",
-      } as any);
 
       const prompt = `
 너는 AI 음악 제작 스튜디오의 전문 작곡가, 작사가, Suno 프롬프트 엔지니어다.
@@ -546,10 +590,54 @@ export default function MusicLyricsPage() {
 }
       `;
 
-      const apiResult = await model.generateContent(prompt);
-      const response = await apiResult.response;
-      const text = response.text();
+      let text = "";
+      let lastError: any = null;
 
+      for (const modelName of GEMINI_MODEL_FALLBACKS) {
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+        } as any);
+
+        for (let attempt = 1; attempt <= AI_RETRY_ATTEMPTS; attempt += 1) {
+          try {
+            setGenerationStatusMessage(
+              attempt === 1
+                ? `${modelName} 모델로 생성 중입니다...`
+                : `${modelName} 모델 재시도 중입니다. (${attempt}/${AI_RETRY_ATTEMPTS})`
+            );
+
+            const apiResult = await model.generateContent(prompt);
+            const response = await apiResult.response;
+            text = response.text();
+
+            setGenerationProgress(92);
+            setGenerationStatusMessage("AI 응답을 정리하는 중입니다...");
+            lastError = null;
+            break;
+          } catch (error: any) {
+            lastError = error;
+            console.warn(`[Gemini 생성 실패] model=${modelName}, attempt=${attempt}`, error);
+
+            if (attempt < AI_RETRY_ATTEMPTS && isHighDemandError(error)) {
+              setGenerationStatusMessage(
+                "AI 서버가 혼잡하여 자동으로 다시 시도하고 있습니다..."
+              );
+              await wait(AI_RETRY_DELAY_MS * attempt);
+              continue;
+            }
+
+            break;
+          }
+        }
+
+        if (text) break;
+      }
+
+      if (!text) {
+        throw lastError || new Error("AI 응답을 받지 못했습니다.");
+      }
+
+      setGenerationProgress(95);
       const parsed = extractJson(text);
 
       const songs: SongItem[] = Array.isArray(parsed.songs)
@@ -560,9 +648,7 @@ export default function MusicLyricsPage() {
           lyrics: song.lyrics || "",
           visualDescription: song.visualDescription || "",
           videoDescription: song.videoDescription || "",
-          youtubeTitles: Array.isArray(song.youtubeTitles)
-            ? song.youtubeTitles
-            : [],
+          youtubeTitles: Array.isArray(song.youtubeTitles) ? song.youtubeTitles : [],
           youtubeDescription: song.youtubeDescription || "",
           hashtags: Array.isArray(song.hashtags) ? song.hashtags : [],
         }))
@@ -591,6 +677,9 @@ export default function MusicLyricsPage() {
 
       setResult(nextResult);
       setRawResult(parsed);
+      stopProgressTimer();
+      setGenerationProgress(100);
+      setGenerationStatusMessage("생성이 완료되었습니다. 라이브러리에 자동 저장 중입니다...");
       setIsAiLoading(false);
 
       await saveToSupabase({
@@ -598,10 +687,20 @@ export default function MusicLyricsPage() {
         finalRawResult: parsed,
         isManual: false,
       });
+
+      setGenerationStatusMessage("생성과 저장이 완료되었습니다.");
     } catch (err: any) {
       console.error(err);
-      alert(`AI 생성 실패: ${err.message}`);
+      stopProgressTimer();
+
+      const friendlyMessage = getFriendlyAiErrorMessage(err);
+
+      setGenerationErrorMessage(friendlyMessage);
+      setGenerationStatusMessage("");
+      setGenerationProgress(0);
       setIsAiLoading(false);
+
+      alert(friendlyMessage);
     }
   };
 
@@ -611,7 +710,7 @@ export default function MusicLyricsPage() {
         <div className="rounded-3xl border border-zinc-800 bg-gradient-to-br from-zinc-950 via-zinc-900 to-black p-8">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs font-bold uppercase tracking-widest text-amber-300">
             <Sparkles size={14} />
-            Gemini 3 Flash Preview Connected
+            Gemini Auto Fallback Connected
           </div>
 
           <h1 className="text-3xl font-black text-white md:text-4xl">
@@ -643,25 +742,7 @@ export default function MusicLyricsPage() {
               <button
                 key={title}
                 type="button"
-                className="
-                  h-[40px]
-                  rounded-md
-                  border
-                  border-zinc-700/80
-                  bg-gradient-to-br
-                  from-zinc-900/90
-                  to-black/80
-                  px-4
-                  py-2
-                  text-left
-                  backdrop-blur-sm
-                  transition-all
-                  duration-200
-                  hover:border-amber-400
-                  hover:from-amber-500/15
-                  hover:to-orange-500/10
-                  hover:shadow-[0_0_20px_rgba(251,191,36,0.12)]
-                "
+                className="h-[40px] rounded-md border border-zinc-700/80 bg-gradient-to-br from-zinc-900/90 to-black/80 px-4 py-2 text-left backdrop-blur-sm transition-all duration-200 hover:border-amber-400 hover:from-amber-500/15 hover:to-orange-500/10 hover:shadow-[0_0_20px_rgba(251,191,36,0.12)]"
               >
                 <div className="truncate whitespace-nowrap text-[15px] font-black text-white">
                   {title}
@@ -676,11 +757,19 @@ export default function MusicLyricsPage() {
         <LyricsInputPanel form={form} setForm={setForm} />
 
         <div className="2xl:sticky 2xl:top-24 2xl:self-start">
+          {generationErrorMessage && !isAiLoading && (
+            <div className="mb-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-200">
+              {generationErrorMessage}
+            </div>
+          )}
+
           <LyricsControlPanel
             form={form}
             setForm={setForm}
             previewPrompt={result.sunoPrompt || fallbackSunoPrompt}
             isAiLoading={isAiLoading}
+            generationProgress={generationProgress}
+            generationStatusMessage={generationStatusMessage}
             onGenerate={handleAiGenerate}
             onCopy={copyText}
           />

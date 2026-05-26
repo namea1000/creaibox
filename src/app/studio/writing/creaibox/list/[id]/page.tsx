@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Search } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/utils/supabase/client";
-import BlogEditorCanvas from "@/components/writing/naver/BlogEditorCanvas";
+import UniversalBlogEditor from "@/components/writing/editor/UniversalBlogEditor";
 import CreaiboxAnalysisTower from "@/components/writing/creaibox/tabs/CreaiboxAnalysisTower";
 import {
   creaiboxManuscriptKeys,
@@ -13,6 +13,8 @@ import {
   useCreaiboxManuscriptDetailQuery,
   useCreaiboxManuscriptsQuery,
 } from "@/lib/queries/manuscripts";
+
+const CREAIBOX_LIST_CACHE_KEY = "creaibox:manuscripts:list:v1";
 
 type StudioManuscriptRecordWithOptionalFields = StudioManuscriptRecord & {
   useSearch?: boolean;
@@ -39,6 +41,55 @@ function toTagList(value?: string[] | null) {
   return Array.isArray(value) ? value.filter(Boolean) : [];
 }
 
+function readCachedList(): StudioManuscriptRecord[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const raw = window.sessionStorage.getItem(CREAIBOX_LIST_CACHE_KEY);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeCachedList(records: StudioManuscriptRecord[]) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.sessionStorage.setItem(CREAIBOX_LIST_CACHE_KEY, JSON.stringify(records));
+  } catch {
+    // 캐시 저장 실패는 화면 동작을 막지 않음
+  }
+}
+
+function normalizeCreaiboxRecord(row: any): StudioManuscriptRecord {
+  const content = row.content ?? "";
+
+  return {
+    id: row.id,
+    displayId: row.display_id ?? row.displayId ?? row.id,
+    title: row.title ?? "제목 없음",
+    content,
+    targetKeyword: row.target_keyword ?? row.targetKeyword ?? "",
+    selectedTone: row.selected_tone ?? row.selectedTone ?? "",
+    status: row.status ?? "draft",
+    postType: row.post_type ?? row.postType ?? "create",
+    sourceMode: row.source_mode ?? row.sourceMode ?? "",
+    createdAt: row.created_at ?? row.createdAt ?? null,
+    updatedAt: row.updated_at ?? row.updatedAt ?? null,
+    slug: row.slug ?? "",
+    metaDescription: row.meta_description ?? row.metaDescription ?? "",
+    focusKeyword: row.focus_keyword ?? row.focusKeyword ?? "",
+    canonicalUrl: row.canonical_url ?? row.canonicalUrl ?? "",
+    seoTags: Array.isArray(row.seo_tags) ? row.seo_tags : [],
+    wordCount: row.word_count ?? row.wordCount ?? content.replace(/\s+/g, "").length,
+    wordCountGoal: row.word_count_goal ?? row.wordCountGoal ?? null,
+  } as StudioManuscriptRecord;
+}
+
 export default function CreaiboxManuscriptDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -50,22 +101,66 @@ export default function CreaiboxManuscriptDetailPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const saveFeedbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { data: list = [] } = useCreaiboxManuscriptsQuery();
+  const { data: queryList = [], refetch: refetchList } = useCreaiboxManuscriptsQuery();
 
-  const selectedFromList = useMemo(
-    () => list.find((item) => Number(item.displayId) === manuscriptId),
-    [list, manuscriptId]
-  );
-
-  const { data: detail, isLoading: isDetailLoading } = useCreaiboxManuscriptDetailQuery(
-    manuscriptId,
-    selectedFromList
-  );
-
+  const [cachedList, setCachedList] = useState<StudioManuscriptRecord[]>(() => readCachedList());
   const [searchTerm, setSearchTerm] = useState("");
   const [hasLocalEdits, setHasLocalEdits] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [data, setData] = useState<StudioManuscriptRecord | null>(selectedFromList ?? null);
+  const [isDirectLoading, setIsDirectLoading] = useState(false);
+
+  const sidebarList = useMemo(() => {
+    if (queryList.length > 0) return queryList;
+    return cachedList;
+  }, [cachedList, queryList]);
+
+  const selectedFromList = useMemo(
+    () => sidebarList.find((item) => Number(item.displayId) === manuscriptId || Number(item.id) === manuscriptId),
+    [sidebarList, manuscriptId]
+  );
+
+  const cachedDetail = useMemo(() => {
+    const cachedFromQuery = queryClient.getQueryData<StudioManuscriptRecord | null>(
+      creaiboxManuscriptKeys.detail(manuscriptId)
+    );
+
+    if (cachedFromQuery) return cachedFromQuery;
+    if (selectedFromList) return selectedFromList;
+
+    return cachedList.find(
+      (item) => Number(item.displayId) === manuscriptId || Number(item.id) === manuscriptId
+    );
+  }, [cachedList, manuscriptId, queryClient, selectedFromList]);
+
+  const { data: detail, isLoading: isDetailLoading } = useCreaiboxManuscriptDetailQuery(
+    manuscriptId,
+    cachedDetail ?? selectedFromList
+  );
+
+  const [data, setData] = useState<StudioManuscriptRecord | null>(() => cachedDetail ?? null);
+
+  useEffect(() => {
+    const cached = readCachedList();
+    if (cached.length > 0) {
+      setCachedList(cached);
+      queryClient.setQueryData(creaiboxManuscriptKeys.list, cached);
+    }
+  }, [queryClient]);
+
+  useEffect(() => {
+    if (queryList.length > 0) {
+      setCachedList(queryList);
+      writeCachedList(queryList);
+    }
+  }, [queryList]);
+
+  useEffect(() => {
+    if (!cachedDetail) return;
+
+    if (!data || Number(data.displayId) !== manuscriptId) {
+      setData(cachedDetail);
+    }
+  }, [cachedDetail, data, manuscriptId]);
 
   useEffect(() => {
     if (!detail) return;
@@ -73,8 +168,55 @@ export default function CreaiboxManuscriptDetailPage() {
     if (!hasLocalEdits || detail.id !== data?.id) {
       setData(detail);
       setHasLocalEdits(false);
+
+      queryClient.setQueryData(creaiboxManuscriptKeys.detail(manuscriptId), detail);
     }
-  }, [detail, hasLocalEdits, data?.id]);
+  }, [data?.id, detail, hasLocalEdits, manuscriptId, queryClient]);
+
+  const fetchDirectDetail = useCallback(async () => {
+    if (!manuscriptId || data || isDirectLoading) return;
+
+    setIsDirectLoading(true);
+
+    const { data: row, error } = await supabase
+      .from("writing_creaibox_posts")
+      .select("*")
+      .eq("id", manuscriptId)
+      .maybeSingle();
+
+    setIsDirectLoading(false);
+
+    if (error || !row) return;
+
+    const normalized = normalizeCreaiboxRecord(row);
+
+    setData(normalized);
+    setHasLocalEdits(false);
+
+    queryClient.setQueryData(creaiboxManuscriptKeys.detail(manuscriptId), normalized);
+
+    const nextList = (() => {
+      const exists = sidebarList.some((item) => item.id === normalized.id);
+      if (exists) {
+        return sidebarList.map((item) => (item.id === normalized.id ? normalized : item));
+      }
+      return [normalized, ...sidebarList];
+    })();
+
+    setCachedList(nextList);
+    writeCachedList(nextList);
+    queryClient.setQueryData(creaiboxManuscriptKeys.list, nextList);
+  }, [data, isDirectLoading, manuscriptId, queryClient, sidebarList, supabase]);
+
+  useEffect(() => {
+    if (!data && !isDetailLoading) {
+      void fetchDirectDetail();
+    }
+  }, [data, fetchDirectDetail, isDetailLoading]);
+
+  useEffect(() => {
+    void refetchList();
+  }, [refetchList]);
 
   useEffect(() => {
     return () => {
@@ -86,15 +228,15 @@ export default function CreaiboxManuscriptDetailPage() {
 
   const filteredManuscripts = useMemo(() => {
     const lower = searchTerm.trim().toLowerCase();
-    if (!lower) return list;
+    if (!lower) return sidebarList;
 
-    return list.filter((item) => {
+    return sidebarList.filter((item) => {
       const title = item.title ?? "";
       const targetKeyword = item.targetKeyword ?? "";
 
       return title.toLowerCase().includes(lower) || targetKeyword.toLowerCase().includes(lower);
     });
-  }, [list, searchTerm]);
+  }, [sidebarList, searchTerm]);
 
   const updateLocalData = useCallback((patch: Partial<StudioManuscriptRecord>) => {
     setData((prev) => (prev ? { ...prev, ...patch } : prev));
@@ -105,28 +247,44 @@ export default function CreaiboxManuscriptDetailPage() {
     (manuscript: StudioManuscriptRecord) => {
       setData(manuscript);
       setHasLocalEdits(false);
-      router.push(`/studio/writing/creaibox/list/${manuscript.displayId}`);
+
+      const displayId = Number(manuscript.displayId ?? manuscript.id);
+      queryClient.setQueryData(creaiboxManuscriptKeys.detail(displayId), manuscript);
+
+      router.push(`/studio/writing/creaibox/list/${displayId}`);
     },
-    [router]
+    [queryClient, router]
   );
 
   const persistCaches = useCallback(
     (nextRecord: StudioManuscriptRecord) => {
+      const displayId = Number(nextRecord.displayId ?? nextRecord.id);
+
       queryClient.setQueryData<StudioManuscriptRecord | null>(
-        creaiboxManuscriptKeys.detail(Number(nextRecord.displayId)),
+        creaiboxManuscriptKeys.detail(displayId),
         nextRecord
       );
 
       queryClient.setQueryData<StudioManuscriptRecord[]>(
         creaiboxManuscriptKeys.list,
-        (prev = []) => prev.map((item) => (item.id === nextRecord.id ? nextRecord : item))
+        (prev = []) => {
+          const exists = prev.some((item) => item.id === nextRecord.id);
+          const nextList = exists
+            ? prev.map((item) => (item.id === nextRecord.id ? nextRecord : item))
+            : [nextRecord, ...prev];
+
+          writeCachedList(nextList);
+          setCachedList(nextList);
+
+          return nextList;
+        }
       );
     },
     [queryClient]
   );
 
   const handleSave = useCallback(
-    async (status?: any) => {
+    async (status?: StudioManuscriptRecord["status"]) => {
       if (!data) return false;
 
       setIsSaving(true);
@@ -141,13 +299,14 @@ export default function CreaiboxManuscriptDetailPage() {
 
       const canonicalUrl = buildCanonicalUrl(slug);
       const now = new Date().toISOString();
+      const nextStatus = (status ?? safeData.status ?? "draft") as StudioManuscriptRecord["status"];
 
       const updatePayload = {
         title: safeData.title ?? "",
         content: safeData.content ?? "",
         target_keyword: safeData.targetKeyword ?? "",
         selected_tone: safeData.selectedTone ?? "",
-        status: status ?? safeData.status ?? "draft",
+        status: nextStatus,
         slug,
         meta_description: safeData.metaDescription ?? "",
         focus_keyword: safeData.focusKeyword ?? "",
@@ -173,7 +332,7 @@ export default function CreaiboxManuscriptDetailPage() {
         ...safeData,
         slug,
         canonicalUrl,
-        status: status ?? safeData.status,
+        status: nextStatus,
         updatedAt: now,
         displayId: safeData.displayId,
         wordCount: (safeData.content ?? "").replace(/\s+/g, "").length,
@@ -198,14 +357,14 @@ export default function CreaiboxManuscriptDetailPage() {
     return ok ? "준비 완료" : "보완 필요";
   }, [data]);
 
-  if (!data && isDetailLoading) {
+  if (!data && (isDetailLoading || isDirectLoading)) {
     return (
       <div className="min-h-screen bg-[#0a0d12] text-white">
         <div className="mx-auto grid max-w-[1880px] grid-cols-[360px_minmax(0,1.2fr)_420px] gap-0 px-0">
           <aside className="min-h-screen border-r border-white/10 bg-[#0b0f15] p-4" />
           <div className="relative min-h-screen bg-white">
             <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-              Supabase 원고 복원 데이터 바인딩 중...
+              원고 데이터를 불러오는 중입니다...
             </div>
           </div>
           <aside className="min-h-screen border-l border-white/10 bg-[#0b0f15] p-6" />
@@ -214,7 +373,21 @@ export default function CreaiboxManuscriptDetailPage() {
     );
   }
 
-  if (!data) return null;
+  if (!data) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0d12] text-white">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
+          <p className="text-xl font-bold">원고를 찾지 못했습니다.</p>
+          <button
+            onClick={() => router.push("/studio/writing/creaibox/list")}
+            className="mt-5 rounded-2xl bg-white px-5 py-3 font-bold text-black"
+          >
+            목록으로 돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0d12] text-white">
@@ -267,7 +440,7 @@ export default function CreaiboxManuscriptDetailPage() {
         </aside>
 
         <main className="min-h-screen bg-white">
-          <BlogEditorCanvas
+          <UniversalBlogEditor
             title={data.title ?? ""}
             setTitle={(value) => updateLocalData({ title: value })}
             content={data.content ?? ""}

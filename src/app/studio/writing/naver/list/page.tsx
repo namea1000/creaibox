@@ -28,7 +28,6 @@ export default function NaverManuscriptListPage() {
   const pathname = usePathname();
   const supabase = useMemo(() => createClient(), []);
   const queryClient = useQueryClient();
-  const [authBootstrapped, setAuthBootstrapped] = useState(false);
 
   const currentPage = useManuscriptUiStore((state) => state.naverCurrentPage);
   const setCurrentPage = useManuscriptUiStore((state) => state.setNaverCurrentPage);
@@ -38,37 +37,7 @@ export default function NaverManuscriptListPage() {
   const setSearchTerm = useManuscriptUiStore((state) => state.setNaverSearchTerm);
 
   const { data: manuscripts = [], isLoading, isFetching, refetch } = useNaverManuscriptsQuery();
-  const isInitialLoading = ((!authBootstrapped || isLoading || isFetching) && manuscripts.length === 0);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const bootstrap = async () => {
-      await supabase.auth.getSession();
-      await supabase.auth.getUser();
-
-      if (!cancelled) {
-        setAuthBootstrapped(true);
-        void refetch();
-      }
-    };
-
-    void bootstrap();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
-      if (!cancelled) {
-        setAuthBootstrapped(true);
-        void refetch();
-      }
-    });
-
-    return () => {
-      cancelled = true;
-      subscription.unsubscribe();
-    };
-  }, [supabase, refetch]);
+  const isInitialLoading = isLoading && manuscripts.length === 0;
 
   const filteredManuscripts = useMemo(() => {
     const lowerSearch = searchTerm.trim().toLowerCase();

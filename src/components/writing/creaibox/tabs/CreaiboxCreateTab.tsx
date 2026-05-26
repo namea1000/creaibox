@@ -6,8 +6,8 @@ import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CreaiboxAnalysisTower from "@/components/writing/creaibox/tabs/CreaiboxAnalysisTower";
 import { createClient } from '@/utils/supabase/client';
-import { 
-  Loader2, PenLine, ChevronDown, Zap, Copy, Download, ExternalLink, Eye, X, FileText, Trash2 
+import {
+  Loader2, PenLine, ChevronDown, Zap, Copy, Download, ExternalLink, Eye, X, FileText, Trash2
 } from 'lucide-react';
 
 interface KeywordFrequency { word: string; count: number; density: number; status: 'good' | 'warning' | 'danger'; }
@@ -44,6 +44,8 @@ interface CreaiboxCreateTabProps {
   handleSavePostToSupabase: () => Promise<void>;
   handleResetGeneratedContent: () => void;
   editLink?: string;
+  generationStatusMessage?: string;
+  generationErrorMessage?: string;
 }
 
 export default function CreaiboxCreateTab({
@@ -51,9 +53,14 @@ export default function CreaiboxCreateTab({
   slug, setSlug, metaDescription, setMetaDescription, focusKeyword, setFocusKeyword, canonicalUrl, setCanonicalUrl, seoTags, setSeoTags,
   selectedTone, setSelectedTone, wordCountGoal, setWordCountGoal,
   postType, setPostType, isAiLoading, useSearch, setUseSearch,
-  handleAiGenerateLive, handleSavePostToSupabase, handleResetGeneratedContent, editLink
+  handleAiGenerateLive,
+  handleSavePostToSupabase,
+  handleResetGeneratedContent,
+  editLink,
+  generationStatusMessage,
+  generationErrorMessage
 }: CreaiboxCreateTabProps) {
-  
+
   const supabase = useMemo(() => createClient(), []);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSaveDropdownOpen, setIsSaveDropdownOpen] = useState(false);
@@ -289,8 +296,8 @@ export default function CreaiboxCreateTab({
     tempDiv.style.left = '-9999px';
     tempDiv.style.top = '-9999px';
     tempDiv.style.whiteSpace = 'pre-wrap';
-    tempDiv.style.backgroundColor = '#ffffff'; 
-    tempDiv.style.color = '#333333'; 
+    tempDiv.style.backgroundColor = '#ffffff';
+    tempDiv.style.color = '#333333';
 
     // 프리뷰 DOM 클론 복제
     const clone = previewEl.cloneNode(true) as HTMLElement;
@@ -337,7 +344,7 @@ export default function CreaiboxCreateTab({
         } else if (tagName === 'p') {
           // 가독성이 확보된 본문 줄 간격
           inlineStyle = "font-size: 15px; line-height: 1.8; color: #333333; margin-top: 0px; margin-bottom: 12px; font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; word-break: break-all; background-color: #ffffff;";
-        } else if (className.includes('bg-[#f9f9f9]') || node.style.backgroundColor === 'rgb(249, 249, 249)' || tagName === 'blockquote') { 
+        } else if (className.includes('bg-[#f9f9f9]') || node.style.backgroundColor === 'rgb(249, 249, 249)' || tagName === 'blockquote') {
           // 인용구 외곽 박스 (자체 배경색 적용)
           inlineStyle = "margin: 25px 0; padding: 20px; background-color: #f9f9f9; border-left: 5px solid #00c73c; border-radius: 0 12px 12px 0; font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; position: relative; color: #333333;";
         } else if (className.includes('text-[#444444]') || className.includes('italic')) {
@@ -374,7 +381,7 @@ export default function CreaiboxCreateTab({
       if (el.tagName.toLowerCase() === 'p' && (el.innerHTML.trim() === '' || el.innerHTML.includes('br') || el.textContent?.includes('🍀'))) {
         return;
       }
-      
+
       const spacer = document.createElement('p');
       spacer.setAttribute('style', "margin: 0; padding: 0; height: 18px; line-height: 1.8; background-color: #ffffff; font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; display: block;");
       spacer.innerHTML = '<br>';
@@ -387,7 +394,7 @@ export default function CreaiboxCreateTab({
       titleHeader.innerText = title;
       titleHeader.setAttribute('style', "font-size: 26px; font-weight: bold; color: #111111; line-height: 1.4; margin-bottom: 24px; border-bottom: 1px solid #eeeeee; padding-bottom: 15px; font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background-color: #ffffff;");
       clone.insertBefore(titleHeader, clone.firstChild);
-      
+
       // 제목 바로 아래에는 띄어쓰기 단락 한 칸 확실히 부여
       const titleSpacer = document.createElement('p');
       titleSpacer.setAttribute('style', "margin: 0; padding: 0; height: 20px; background-color: #ffffff;");
@@ -525,11 +532,11 @@ export default function CreaiboxCreateTab({
   return (
     <div className="w-full min-h-screen bg-[#0a0c10] text-zinc-100 pt-4 overflow-y-auto relative text-[16px]">
       <div className="max-w-[1700px] mx-auto px-4 py-2 h-auto grid grid-cols-1 lg:grid-cols-12 gap-4 relative z-10">
-        
+
         {/* [1단] 좌측 컨트롤 보드 (lg:col-span-3) */}
         <div className="lg:col-span-3 flex flex-col gap-4 h-[calc(100vh-140px)] overflow-y-auto pr-1 custom-scrollbar text-left">
           <div className="p-5 rounded-2xl border border-zinc-800 bg-zinc-900/40 backdrop-blur-md space-y-4">
-            
+
             <div className="p-4 bg-zinc-950/40 border border-zinc-800 rounded-xl space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[13px] font-black text-zinc-300">최신 정보 팩트체크 엔진 (Google Search)</span>
@@ -547,12 +554,12 @@ export default function CreaiboxCreateTab({
                 <label className="text-[12px] font-black text-zinc-400 flex items-center gap-1.5 mb-1.5">
                   <PenLine size={13} className="text-blue-500" /> 1. 타겟 키워드 및 주제
                 </label>
-                <input 
-                  type="text" 
-                  value={targetKeyword} 
-                  onChange={(e) => setTargetKeyword(e.target.value)} 
+                <input
+                  type="text"
+                  value={targetKeyword}
+                  onChange={(e) => setTargetKeyword(e.target.value)}
                   placeholder="원하시는 주제를 입력해 주세요."
-                  className="w-full px-3 py-2.5 text-[16px] rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-200 font-bold focus:outline-none focus:border-blue-500" 
+                  className="w-full px-3 py-2.5 text-[16px] rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-200 font-bold focus:outline-none focus:border-blue-500"
                 />
               </div>
 
@@ -616,7 +623,7 @@ export default function CreaiboxCreateTab({
               className="w-full h-16 bg-blue-600 hover:bg-blue-500 rounded-2xl relative overflow-hidden transition-all shadow-xl shadow-blue-900/40 active:scale-[0.98] disabled:opacity-80"
             >
               {isAiLoading && (
-                <div 
+                <div
                   className="absolute left-0 top-0 h-full bg-emerald-400/40 transition-all duration-300 ease-out z-0 border-r-2 border-emerald-300 shadow-[2px_0_10px_rgba(52,211,153,0.5)]"
                   style={{ width: `${progress}%` }}
                 />
@@ -637,6 +644,21 @@ export default function CreaiboxCreateTab({
               </div>
             </button>
 
+            {generationStatusMessage && isAiLoading && (
+              <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-amber-200">
+                  <Loader2 size={16} className="animate-spin" />
+                  {generationStatusMessage}
+                </div>
+              </div>
+            )}
+
+            {generationErrorMessage && !isAiLoading && (
+              <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-200">
+                {generationErrorMessage}
+              </div>
+            )}
+
             <div className="pt-4 space-y-2 border-t border-zinc-800/60">
               <p className="text-[14px] font-black text-zinc-400">글쓰기 템플릿 예시</p>
               <div className="space-y-1.5">
@@ -653,7 +675,7 @@ export default function CreaiboxCreateTab({
 
         {/* [2단] 중앙 순수 뷰어 보드 (lg:col-span-6) */}
         <div className="lg:col-span-6 h-[calc(100vh-140px)] flex flex-col rounded-2xl border border-zinc-800 bg-white overflow-hidden relative shadow-2xl">
-          
+
           {/* 상단 툴바 메뉴 구역 (배경은 다크 톤으로 헤더 영역을 세련되게 분리) */}
           <div className="flex justify-between items-center px-6 py-4 border-b border-zinc-200 bg-zinc-900 shrink-0">
             <span className="text-xs font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
@@ -673,7 +695,7 @@ export default function CreaiboxCreateTab({
               </button>
 
               {/* COPY */}
-              <button 
+              <button
                 onClick={handleCopy}
                 disabled={!content || isAiLoading}
                 className="px-3 py-1.5 border border-zinc-800 hover:border-zinc-700 hover:text-white bg-zinc-900/50 rounded-xl text-[11px] font-black text-zinc-400 transition-all flex items-center gap-1 disabled:opacity-30"
@@ -683,7 +705,7 @@ export default function CreaiboxCreateTab({
 
               {/* SAVE (dropdown) */}
               <div className="relative">
-                <button 
+                <button
                   onClick={() => setIsSaveDropdownOpen(!isSaveDropdownOpen)}
                   disabled={!content || isAiLoading}
                   className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[11px] font-black transition-all flex items-center gap-1 disabled:opacity-30"
@@ -704,7 +726,7 @@ export default function CreaiboxCreateTab({
 
               {/* 글수정 이동 */}
               {editLink ? (
-                <Link 
+                <Link
                   href={editLink}
                   className="px-3 py-1.5 border border-zinc-800 hover:border-zinc-700 bg-zinc-900/50 hover:text-white rounded-xl text-[11px] font-black text-zinc-400 transition-all flex items-center gap-1"
                 >
@@ -721,7 +743,7 @@ export default function CreaiboxCreateTab({
               )}
 
               {/* Preview */}
-              <button 
+              <button
                 onClick={() => setIsPreviewOpen(true)}
                 disabled={!content || isAiLoading}
                 className="px-3 py-1.5 border border-zinc-800 hover:border-zinc-700 hover:text-white bg-zinc-900/50 rounded-xl text-[11px] font-black text-zinc-400 transition-all disabled:opacity-30"
@@ -744,10 +766,10 @@ export default function CreaiboxCreateTab({
                     {title}
                   </h1>
                 )}
-                
+
                 {/* Creaibox 블로그용 커스텀 마크다운 렌더링 세션 */}
                 <div className="markdown-content">
-                  <ReactMarkdown 
+                  <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={customMarkdownComponents}
                   >
@@ -767,13 +789,12 @@ export default function CreaiboxCreateTab({
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">SEO & Publishing</p>
                 <h3 className="mt-1 text-base font-black text-zinc-100">생성과 함께 채워지는 발행 정보</h3>
               </div>
-              <span className={`rounded-full px-2.5 py-1 text-[10px] font-black border ${
-                seoHealthLabel === '준비 완료'
-                  ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
-                  : seoHealthLabel === '보완 필요'
-                    ? 'border-amber-500/20 bg-amber-500/10 text-amber-300'
-                    : 'border-zinc-700 bg-zinc-800/80 text-zinc-400'
-              }`}>
+              <span className={`rounded-full px-2.5 py-1 text-[10px] font-black border ${seoHealthLabel === '준비 완료'
+                ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
+                : seoHealthLabel === '보완 필요'
+                  ? 'border-amber-500/20 bg-amber-500/10 text-amber-300'
+                  : 'border-zinc-700 bg-zinc-800/80 text-zinc-400'
+                }`}>
                 {seoHealthLabel}
               </span>
             </div>
@@ -781,9 +802,8 @@ export default function CreaiboxCreateTab({
             <div className="mt-4 grid grid-cols-3 gap-3">
               <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3">
                 <p className="text-[10px] font-black uppercase tracking-[0.16em] text-zinc-500">META LENGTH</p>
-                <p className={`mt-2 text-lg font-black ${
-                  metaDescriptionLength >= 90 && metaDescriptionLength <= 155 ? 'text-emerald-400' : 'text-amber-400'
-                }`}>
+                <p className={`mt-2 text-lg font-black ${metaDescriptionLength >= 90 && metaDescriptionLength <= 155 ? 'text-emerald-400' : 'text-amber-400'
+                  }`}>
                   {metaDescriptionLength}
                 </p>
                 <p className="mt-1 text-[11px] text-zinc-500">권장 90-155자</p>
@@ -791,9 +811,8 @@ export default function CreaiboxCreateTab({
 
               <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3">
                 <p className="text-[10px] font-black uppercase tracking-[0.16em] text-zinc-500">SLUG SIZE</p>
-                <p className={`mt-2 text-lg font-black ${
-                  slugLength > 0 && slugLength <= 80 ? 'text-blue-400' : 'text-amber-400'
-                }`}>
+                <p className={`mt-2 text-lg font-black ${slugLength > 0 && slugLength <= 80 ? 'text-blue-400' : 'text-amber-400'
+                  }`}>
                   {slugLength}
                 </p>
                 <p className="mt-1 text-[11px] text-zinc-500">권장 80자 이하</p>
@@ -823,9 +842,8 @@ export default function CreaiboxCreateTab({
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
                   <label className="block text-zinc-400 font-bold text-[12px]">Meta Description</label>
-                  <span className={`text-[11px] font-black ${
-                    metaDescriptionLength >= 90 && metaDescriptionLength <= 155 ? 'text-emerald-400' : 'text-zinc-500'
-                  }`}>
+                  <span className={`text-[11px] font-black ${metaDescriptionLength >= 90 && metaDescriptionLength <= 155 ? 'text-emerald-400' : 'text-zinc-500'
+                    }`}>
                     {metaDescriptionLength}/155
                   </span>
                 </div>
@@ -897,7 +915,7 @@ export default function CreaiboxCreateTab({
       {isPreviewOpen && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
           <div className="bg-zinc-950 border border-zinc-800 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[85vh] relative text-left animate-fade-in">
-            
+
             {/* 헤더 */}
             <div className="bg-[#00c73c] px-6 py-4 flex justify-between items-center text-white shrink-0">
               <div className="flex items-center gap-2">
@@ -927,10 +945,10 @@ export default function CreaiboxCreateTab({
                     {title}
                   </h2>
                 )}
-                
+
                 {/* 모바일 뷰에서도 정밀 스타일 동기화 */}
                 <div className="markdown-content">
-                  <ReactMarkdown 
+                  <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={customMarkdownComponents}
                   >
@@ -942,8 +960,8 @@ export default function CreaiboxCreateTab({
 
             {/* 하단 제어 */}
             <div className="p-4 border-t border-zinc-800 bg-zinc-950 flex justify-end shrink-0">
-              <button 
-                onClick={() => setIsPreviewOpen(false)} 
+              <button
+                onClick={() => setIsPreviewOpen(false)}
                 className="px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-[11px] font-black text-zinc-300 hover:text-white transition-all"
               >
                 미리보기 닫기
