@@ -239,8 +239,8 @@ function ServiceCard({
 
         <span
           className={`shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-black uppercase tracking-tighter ${apiKey
-              ? "border-green-900 bg-green-950/30 text-green-400"
-              : "border-slate-600 bg-slate-700 text-white"
+            ? "border-green-900 bg-green-950/30 text-green-400"
+            : "border-slate-600 bg-slate-700 text-white"
             }`}
         >
           {apiKey ? "Connected" : "Pending"}

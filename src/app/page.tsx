@@ -1,161 +1,346 @@
 "use client";
 
-import React from 'react';
-import Footer from '@/components/layout/Footer'; 
-import { 
-  Sparkles, Zap, ArrowRight, Gift, Rocket, Key, PlayCircle, 
-  Star, MessageSquare, StickyNote, BookOpen, Newspaper, Construction
-} from 'lucide-react';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import React from "react";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import {
+  ArrowRight,
+  Sparkles,
+  PenLine,
+  ImageIcon,
+  Music,
+  Video,
+  Newspaper,
+  TrendingUp,
+  CheckCircle2,
+  PlayCircle,
+  Layers,
+  Wand2,
+  Rocket,
+  ShieldCheck,
+  LayoutDashboard,
+} from "lucide-react";
 
 export default function MainLandingPage() {
   const router = useRouter();
 
-  // 🌟 [전등 스위치 철거] 테마 상태(State)와 토글 함수를 삭제하고 다크 컬러로 고정했습니다.
-  const themeClasses = "bg-[#05070a] text-white";
+  const features = [
+    {
+      title: "AI 글쓰기",
+      desc: "블로그, 네이버 글쓰기, 워드프레스 글 발행까지 한 번에 준비하세요.",
+      icon: <PenLine size={24} />,
+    },
+    {
+      title: "이미지 & 썸네일",
+      desc: "콘텐츠에 어울리는 이미지 아이디어와 썸네일 제작 흐름을 지원합니다.",
+      icon: <ImageIcon size={24} />,
+    },
+    {
+      title: "음악 / 가사 생성",
+      desc: "Suno 스타일의 음악 기획, 제목, 가사, 프롬프트를 빠르게 만듭니다.",
+      icon: <Music size={24} />,
+    },
+    {
+      title: "영상 제작 도구",
+      desc: "쇼츠, 영상 기획, 프롬프트, 장면 구성까지 크리에이터 작업을 돕습니다.",
+      icon: <Video size={24} />,
+    },
+    {
+      title: "뉴스 & 리포터",
+      desc: "뉴스형 콘텐츠와 이슈 정리를 빠르게 콘텐츠화할 수 있습니다.",
+      icon: <Newspaper size={24} />,
+    },
+    {
+      title: "트렌드 분석",
+      desc: "키워드, 유튜브, 블로그 주제를 분석해 콘텐츠 방향을 잡아줍니다.",
+      icon: <TrendingUp size={24} />,
+    },
+  ];
 
-  const studioItems = [
-    { title: 'Writing', icon: <Zap size={18}/>, color: 'text-blue-400', border: 'hover:border-blue-500/50', bg: 'group-hover:bg-blue-600' },
-    { title: 'Visuals', icon: <Star size={18}/>, color: 'text-purple-400', border: 'hover:border-purple-500/50', bg: 'group-hover:bg-purple-600' },
-    { title: 'Music', icon: <Rocket size={18}/>, color: 'text-rose-400', border: 'hover:border-rose-500/50', bg: 'group-hover:bg-rose-600' },
-    { title: 'AI Chating', icon: <MessageSquare size={18}/>, color: 'text-emerald-400', border: 'hover:border-emerald-500/50', bg: 'group-hover:bg-emerald-600' },
-    { title: 'Cre Note', icon: <StickyNote size={18}/>, color: 'text-amber-400', border: 'hover:border-amber-500/50', bg: 'group-hover:bg-amber-600' },
-    { title: 'Cre Blog', icon: <BookOpen size={18}/>, color: 'text-indigo-400', border: 'hover:border-indigo-500/50', bg: 'group-hover:bg-indigo-600' },
-    { title: 'Reporter', icon: <Newspaper size={18}/>, color: 'text-orange-400', border: 'hover:border-orange-500/50', bg: 'group-hover:bg-orange-600' }
+  const steps = [
+    "주제 또는 키워드 입력",
+    "AI가 콘텐츠 구조 생성",
+    "글 / 이미지 / 음악 / 영상으로 확장",
+    "라이브러리 저장 및 발행 준비",
+  ];
+
+  const studioCards = [
+    "블로그 글쓰기",
+    "네이버 글쓰기",
+    "워드프레스 글쓰기",
+    "음악 / 가사",
+    "이미지 제작",
+    "뉴스 콘텐츠",
+    "키워드 분석",
+    "유튜브 트렌드",
   ];
 
   return (
-    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-500 ${themeClasses}`}>
+    <div className="min-h-screen bg-white text-slate-900">
+      <Header />
+      <main className="pt-20">
+        {/* Hero */}
+        <section className="relative overflow-hidden bg-gradient-to-b from-violet-50 via-white to-white">
+          <div className="absolute left-1/2 top-10 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-violet-300/30 blur-3xl" />
+          <div className="absolute right-0 top-32 h-[420px] w-[420px] rounded-full bg-blue-300/20 blur-3xl" />
 
-      {/* 🌟 사장님의 여백(pt-24) 그대로 보전 */}
-      <main className="flex-1 overflow-y-auto pt-24 pb-20">
-        
-        {/* 1. 히어로 섹션 */}
-        <section className="relative max-w-7xl mx-auto px-6 pt-6 pb-12 flex flex-col items-center text-center">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-[400px] bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
+          <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-6 py-20 lg:grid-cols-2 lg:px-8 lg:py-28">
+            <div>
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-white/80 px-4 py-2 text-sm font-black text-violet-700 shadow-sm">
+                <Sparkles size={16} />
+                Beta Version · 무료 체험 가능
+              </div>
 
-          <div className="relative z-10 space-y-6 w-full max-w-5xl">
-            <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/40 text-amber-400 text-[15px] font-black uppercase tracking-widest shadow-lg shadow-amber-500/5">
-              <Gift size={18} /> Beta Version: Unlimited Free Access
+              <h1 className="break-keep text-4xl font-black leading-tight tracking-tight text-slate-950 md:text-6xl">
+                AI 콘텐츠 제작을
+                <br />
+                하나의 스튜디오에서
+                <span className="block bg-gradient-to-r from-violet-600 to-blue-500 bg-clip-text text-transparent">
+                  빠르게 완성하세요
+                </span>
+              </h1>
+
+              <p className="mt-6 max-w-xl break-keep text-lg font-medium leading-relaxed text-slate-600">
+                CreAIbox는 글쓰기, 이미지, 음악, 영상, 뉴스, 트렌드 분석까지
+                크리에이터에게 필요한 AI 제작 도구를 한 곳에 모은 올인원 콘텐츠
+                스튜디오입니다.
+              </p>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <button
+                  onClick={() => router.push("/signup")}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 px-7 py-4 text-base font-black text-white shadow-xl shadow-violet-500/20 transition hover:scale-[1.02]"
+                >
+                  무료로 시작하기
+                  <ArrowRight size={18} />
+                </button>
+
+                <button
+                  onClick={() => router.push("/studio")}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-7 py-4 text-base font-black text-slate-700 shadow-sm transition hover:border-violet-200 hover:bg-violet-50"
+                >
+                  <LayoutDashboard size={18} />
+                  스튜디오 둘러보기
+                </button>
+              </div>
+
+              <div className="mt-8 flex flex-wrap gap-3 text-sm font-bold text-slate-500">
+                <span className="inline-flex items-center gap-1">
+                  <CheckCircle2 size={16} className="text-violet-500" />
+                  설치 없이 웹에서 사용
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <CheckCircle2 size={16} className="text-violet-500" />
+                  콘텐츠 제작 통합 관리
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <CheckCircle2 size={16} className="text-violet-500" />
+                  크리에이터 맞춤형
+                </span>
+              </div>
             </div>
 
-            <h1 className="text-4xl md:text-6xl lg:text-[68px] font-black italic uppercase tracking-tighter leading-[1.15] px-6 break-keep">
-              차세대 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400">AI 콘텐츠 스튜디오</span>
-            </h1>
+            <div className="relative">
+              <div className="rounded-[36px] border border-slate-200 bg-white/80 p-4 shadow-2xl shadow-violet-200/60 backdrop-blur-xl">
+                <div className="rounded-[28px] bg-slate-950 p-5 text-white">
+                  <div className="mb-5 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-widest text-violet-300">
+                        CreAIbox Studio
+                      </p>
+                      <h3 className="mt-1 text-xl font-black">
+                        콘텐츠 작업실
+                      </h3>
+                    </div>
+                    <div className="rounded-2xl bg-violet-500 px-3 py-2 text-xs font-black">
+                      LIVE
+                    </div>
+                  </div>
 
-            <p className="max-w-3xl mx-auto text-lg font-medium opacity-75 leading-relaxed break-keep px-6 text-zinc-300">
-              구글 제미나이, 쳇 GPT, 클로드, SUNO AI 를 모두 품은 <br className="hidden md:block" />
-              하나의 플랫폼에서 펼쳐지는 무한한 창작의 가능성. <br />
-              CreAibox가 당신의 상상력에 엔진을 달아드립니다.
+                  <div className="grid grid-cols-2 gap-3">
+                    {studioCards.map((item) => (
+                      <div
+                        key={item}
+                        className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                      >
+                        <div className="mb-3 h-8 w-8 rounded-xl bg-gradient-to-r from-violet-500 to-blue-500" />
+                        <p className="text-sm font-black">{item}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="absolute -bottom-8 -left-6 hidden rounded-3xl border border-slate-200 bg-white p-5 shadow-xl md:block">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
+                    <Rocket size={22} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-slate-900">
+                      빠른 콘텐츠 제작
+                    </p>
+                    <p className="text-xs font-bold text-slate-500">
+                      기획부터 결과물까지 한 번에
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Features */}
+        <section id="features" className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-sm font-black uppercase tracking-widest text-violet-600">
+              Features
+            </p>
+            <h2 className="mt-3 break-keep text-3xl font-black tracking-tight text-slate-950 md:text-5xl">
+              콘텐츠 제작에 필요한 기능을 한 곳에
+            </h2>
+            <p className="mt-5 break-keep text-lg font-medium text-slate-600">
+              여러 AI 서비스와 작업 도구를 오가며 낭비하던 시간을 줄이고,
+              CreAIbox 안에서 기획, 생성, 저장, 발행 준비까지 이어갈 수 있습니다.
             </p>
           </div>
 
-          <div className="mt-10 relative group">
-            <Image 
-              src="/logobg.webp" 
-              alt="Creaibox Hero" 
-              width={540} 
-              height={200} 
-              className="relative object-contain drop-shadow-[0_0_50px_rgba(37,99,235,0.25)]" 
-              priority
-            />
+          <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {features.map((feature) => (
+              <div
+                key={feature.title}
+                className="group rounded-[28px] border border-slate-200 bg-white p-8 shadow-sm transition hover:-translate-y-1 hover:border-violet-200 hover:shadow-xl"
+              >
+                <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-50 text-violet-600 transition group-hover:bg-violet-600 group-hover:text-white">
+                  {feature.icon}
+                </div>
+                <h3 className="text-xl font-black text-slate-950">
+                  {feature.title}
+                </h3>
+                <p className="mt-3 break-keep text-sm font-medium leading-relaxed text-slate-600">
+                  {feature.desc}
+                </p>
+              </div>
+            ))}
           </div>
         </section>
 
-        {/* 2. 핵심 선택 박스 */}
-        <section className="max-w-6xl mx-auto px-6 pb-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div 
-              onClick={() => router.push('/apivault')}
-              className="group p-10 bg-gradient-to-br from-indigo-600/25 to-blue-600/20 border-2 border-indigo-500/40 rounded-[40px] hover:scale-[1.02] transition-all shadow-2xl cursor-pointer"
-            >
-              <div className="space-y-5">
-                <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-600/30">
-                  <Key className="text-white" size={28} />
-                </div>
-                <h3 className="text-3xl font-black italic uppercase tracking-tight text-white">나의 API 연결하기</h3>
-                <p className="text-zinc-400 text-sm font-semibold leading-relaxed break-keep">
-                  제미나이, 쳇 GPT, 클로드, Suno 등 <br />
-                  개인 API 키를 활용한 고성능 맞춤형 제작 모드
+        {/* How it works */}
+        <section
+          id="how-it-works"
+          className="bg-gradient-to-b from-slate-50 to-white py-24"
+        >
+          <div className="mx-auto max-w-7xl px-6 lg:px-8">
+            <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+              <div>
+                <p className="text-sm font-black uppercase tracking-widest text-blue-600">
+                  How it works
                 </p>
-                <div className="flex items-center gap-2 text-indigo-400 font-black uppercase text-xs tracking-widest group-hover:translate-x-2 transition-transform">
-                  API 금고 관리하기 <ArrowRight size={18} />
-                </div>
-              </div>
-            </div>
-
-            <div 
-              onClick={() => router.push('/studio/writing/creaibox/create')}
-              className="group p-10 bg-gradient-to-br from-emerald-600/20 to-teal-600/15 border-2 border-emerald-500/30 rounded-[40px] hover:scale-[1.02] transition-all shadow-2xl cursor-pointer"
-            >
-              <div className="space-y-5">
-                <div className="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-xl shadow-emerald-500/30">
-                  <PlayCircle className="text-white" size={28} />
-                </div>
-                <h3 className="text-3xl font-black italic uppercase tracking-tight text-white">체험 API로 맛보기</h3>
-                <p className="text-zinc-400 text-sm font-semibold leading-relaxed break-keep">
-                  설정 없이 즉시 시작하는 <br />
-                  크리에이박스 기본 체험 모드
-                </p>
-                <div className="flex items-center gap-2 text-emerald-400 font-black uppercase text-xs tracking-widest group-hover:translate-x-2 transition-transform">
-                  스튜디오 즉시 시작 <ArrowRight size={18} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-10 p-8 bg-gradient-to-r from-blue-600/20 via-blue-600/10 to-blue-600/20 border-2 border-blue-500/30 rounded-[24px] text-center shadow-lg">
-             <p className="text-xl md:text-2xl font-black text-white tracking-tight">
-               <span className="text-blue-400 mr-3 underline decoration-blue-500 underline-offset-8 uppercase italic">Notice:</span> 
-               베타 서비스 기간 동안 모든 스튜디오 기능을 <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400 underline decoration-orange-500">무제한 무료</span>로 이용하실 수 있습니다.
-             </p>
-          </div>
-        </section>
-
-        {/* 3. 스튜디오 라인업 */}
-        <section className="py-16">
-          <div className="max-w-6xl mx-auto px-6 text-center">
-            <h2 className="text-3xl font-black italic uppercase tracking-tighter mb-12 text-transparent bg-clip-text bg-gradient-to-r from-zinc-200 to-zinc-500 flex items-center justify-center gap-4">
-               <Construction className="text-blue-500" size={24} />
-               CreAibox AI Studio Line-up 
-               <span className="text-blue-500 animate-pulse text-sm ml-2 font-black">(실시간 개발 중!)</span>
-            </h2>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-5">
-              {studioItems.map((item, idx) => (
-                <div 
-                  key={idx} 
-                  onClick={() => router.push('/studio/writing/wp/create')}
-                  className={`group flex flex-col items-center p-6 bg-zinc-900/60 border-2 border-zinc-800 rounded-[28px] transition-all cursor-pointer ${item.border} hover:-translate-y-2`}
-                >
-                  <div className={`w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center ${item.color} mb-4 transition-all duration-300 ${item.bg} group-hover:text-white group-hover:shadow-lg`}>
-                    {item.icon}
-                  </div>
-                  <h4 className="text-[12px] font-black uppercase tracking-tight text-zinc-300 group-hover:text-white">{item.title}</h4>
-                </div>
-              ))}
-            </div>
-            
-            <div className="mt-20 p-10 bg-gradient-to-b from-zinc-900/50 to-black border-2 border-zinc-800/80 rounded-[32px] shadow-2xl relative overflow-hidden group hover:border-blue-500/30 transition-all">
-                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity text-white">
-                    <Sparkles size={150} />
-                </div>
-                
-                <h2 className="text-2xl md:text-4xl font-black italic uppercase tracking-tighter leading-snug text-white">
-                    All Your <span className="text-blue-500">Creative AI Tools</span> in One Workspace, <br />
-                    The Creator’s <span className="text-emerald-400">Ai Toolbox</span>
+                <h2 className="mt-3 break-keep text-3xl font-black tracking-tight text-slate-950 md:text-5xl">
+                  복잡한 제작 과정을
+                  <br />
+                  4단계로 단순하게
                 </h2>
-                
-                <div className="mt-6 flex justify-center items-center gap-4">
-                    <div className="h-[1px] w-12 bg-zinc-800" />
-                    <p className="text-zinc-500 font-black uppercase tracking-[0.3em] text-xs">CreAibox Philosophy</p>
-                    <div className="h-[1px] w-12 bg-zinc-800" />
-                </div>
+                <p className="mt-5 break-keep text-lg font-medium leading-relaxed text-slate-600">
+                  아이디어가 떠오르면 바로 입력하고, AI가 콘텐츠 구조를 잡고,
+                  필요한 형식으로 확장한 뒤 라이브러리에 저장할 수 있습니다.
+                </p>
+
+                <button
+                  onClick={() => router.push("/studio")}
+                  className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-6 py-4 text-sm font-black text-white transition hover:bg-violet-600"
+                >
+                  스튜디오 시작하기
+                  <ArrowRight size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {steps.map((step, index) => (
+                  <div
+                    key={step}
+                    className="flex items-center gap-5 rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm"
+                  >
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 text-lg font-black text-white">
+                      {index + 1}
+                    </div>
+                    <p className="text-lg font-black text-slate-800">{step}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
 
+        {/* API / Studio */}
+        <section className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="rounded-[34px] border border-violet-200 bg-gradient-to-br from-violet-50 to-blue-50 p-9">
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-600 text-white">
+                <ShieldCheck size={24} />
+              </div>
+              <h3 className="break-keep text-3xl font-black text-slate-950">
+                나의 API 연결하기
+              </h3>
+              <p className="mt-4 break-keep text-base font-medium leading-relaxed text-slate-600">
+                개인 API 키를 연결해 더 자유로운 제작 환경을 구성할 수 있습니다.
+                API 키는 별도 관리 페이지에서 등록하고 관리합니다.
+              </p>
+              <button
+                onClick={() => router.push("/apivault")}
+                className="mt-7 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 text-sm font-black text-violet-700 shadow-sm transition hover:bg-violet-600 hover:text-white"
+              >
+                API 키 관리하기
+                <ArrowRight size={17} />
+              </button>
+            </div>
+
+            <div className="rounded-[34px] border border-slate-200 bg-slate-950 p-9 text-white">
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500 text-white">
+                <PlayCircle size={24} />
+              </div>
+              <h3 className="break-keep text-3xl font-black">
+                바로 스튜디오 시작
+              </h3>
+              <p className="mt-4 break-keep text-base font-medium leading-relaxed text-slate-300">
+                설정이 끝나지 않아도 먼저 콘텐츠 작업실을 둘러보고,
+                CreAIbox의 제작 흐름을 확인할 수 있습니다.
+              </p>
+              <button
+                onClick={() => router.push("/studio")}
+                className="mt-7 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 py-3 text-sm font-black text-white transition hover:scale-[1.02]"
+              >
+                스튜디오로 이동
+                <ArrowRight size={17} />
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="px-6 pb-24 lg:px-8">
+          <div className="mx-auto max-w-7xl overflow-hidden rounded-[40px] bg-gradient-to-r from-violet-600 to-blue-500 p-10 text-center text-white shadow-2xl shadow-violet-300/40 md:p-16">
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-white/20">
+              <Wand2 size={30} />
+            </div>
+            <h2 className="break-keep text-3xl font-black tracking-tight md:text-5xl">
+              아이디어를 콘텐츠로 바꾸는 가장 빠른 방법
+            </h2>
+            <p className="mx-auto mt-5 max-w-2xl break-keep text-lg font-medium text-white/80">
+              CreAIbox에서 글쓰기, 이미지, 음악, 영상, 트렌드 분석을 하나의
+              작업 흐름으로 연결해보세요.
+            </p>
+            <button
+              onClick={() => router.push("/signup")}
+              className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-white px-7 py-4 text-base font-black text-violet-700 transition hover:scale-[1.02]"
+            >
+              무료로 시작하기
+              <ArrowRight size={18} />
+            </button>
+          </div>
+        </section>
       </main>
 
       <Footer />
