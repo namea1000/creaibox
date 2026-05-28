@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { createClient } from '@/utils/supabase/client';
+import { createClient } from "@/utils/supabase/client";
 import NaverRecreateTab from "@/components/writing/naver/tabs/NaverRecreateTab";
-import type { User } from '@supabase/supabase-js';
-import { naverManuscriptStore } from '@/lib/stores/manuscripts';
+import type { User } from "@supabase/supabase-js";
+import { naverManuscriptStore } from "@/lib/stores/manuscripts";
 
 interface SourceAnalysisResult {
   keywords: string[];
@@ -30,43 +30,104 @@ interface RecreateAiResponse {
   };
 }
 
+const AUTH_RETRY_DELAY_MS = 700;
+const AUTH_RETRY_ATTEMPTS = 3;
+
+const AI_RETRY_ATTEMPTS = 3;
+const AI_RETRY_DELAY_MS = 1200;
+
+const GEMINI_MODEL_FALLBACKS = [
+  "gemini-3-flash-preview",
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+];
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "알 수 없는 에러가 발생했습니다.";
 }
 
-const AUTH_RETRY_DELAY_MS = 700;
-const AUTH_RETRY_ATTEMPTS = 3;
+function isHighDemandError(error: any) {
+  const message = String(error?.message || error || "").toLowerCase();
+
+  return (
+    message.includes("503") ||
+    message.includes("high demand") ||
+    message.includes("overloaded") ||
+    message.includes("try again later")
+  );
+}
+
+function getFriendlyAiErrorMessage(error: any) {
+  if (isHighDemandError(error)) {
+    return "AI 서버가 현재 혼잡합니다. 잠시 후 다시 시도해주세요. 문제가 계속되면 자동으로 다른 모델을 시도합니다.";
+  }
+
+  return "AI 재창조 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
+}
+
+function parseGeminiJson(text: string) {
+  const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const firstBrace = cleaned.indexOf("{");
+    const lastBrace = cleaned.lastIndexOf("}");
+
+    if (firstBrace >= 0 && lastBrace > firstBrace) {
+      return JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
+    }
+
+    throw new Error("AI 응답을 JSON으로 변환하지 못했습니다.");
+  }
+}
 
 export default function NaverRecreatePage() {
-  const [sourceMode, setSourceMode] = useState<'url' | 'text'>('url');
+  const [sourceMode, setSourceMode] = useState<"url" | "text">("url");
   const [sourceUrl, setSourceUrl] = useState("");
   const [sourceText, setSourceText] = useState("");
   const [targetKeyword, setTargetKeyword] = useState("");
-  const [selectedTone, setSelectedTone] = useState("전문적이고 분석적인 말투 (경제, 기술, 정보전달)");
+  const [selectedTone, setSelectedTone] = useState(
+    "전문적이고 분석적인 말투 (경제, 기술, 정보전달)"
+  );
   const [wordCountGoal, setWordCountGoal] = useState("same");
-  
+
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [sourceAnalysis, setSourceAnalysis] = useState<SourceAnalysisResult>({
     keywords: [],
     topic: "",
-    summaryPoints: []
+    summaryPoints: [],
   });
+
   const [userNickname, setUserNickname] = useState<string>("");
   const [activeUser, setActiveUser] = useState<User | null>(null);
+  const [generationStatusMessage, setGenerationStatusMessage] = useState("");
+  const [generationErrorMessage, setGenerationErrorMessage] = useState("");
+
   const supabase = useMemo(() => createClient(), []);
 
   const resolveAuthUser = async (): Promise<User | null> => {
     for (let attempt = 0; attempt < AUTH_RETRY_ATTEMPTS; attempt += 1) {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (session?.user) return session.user;
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (user) return user;
 
       if (attempt < AUTH_RETRY_ATTEMPTS - 1) {
-        await new Promise((resolve) => setTimeout(resolve, AUTH_RETRY_DELAY_MS));
+        await wait(AUTH_RETRY_DELAY_MS);
       }
     }
 
@@ -76,28 +137,43 @@ export default function NaverRecreatePage() {
   useEffect(() => {
     const getProfile = async () => {
       const user = await resolveAuthUser();
+
       if (user) {
         setActiveUser(user);
-        const { data: prof } = await supabase.from('profiles').select('nickname').eq('id', user.id).single();
+
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("nickname")
+          .eq("id", user.id)
+          .single();
+
         if (prof?.nickname) setUserNickname(prof.nickname);
       }
     };
 
-    getProfile();
-  }, []);
+    void getProfile();
+  }, [supabase]);
 
   const getApiKey = async () => {
-    const localKey = localStorage.getItem('gemini_api_key');
+    const localKey = localStorage.getItem("gemini_api_key");
     if (localKey && localKey.trim()) return localKey;
 
     const { data: vaultKeys } = await supabase
-      .from('admin_api_vault')
-      .select('key')
-      .eq('status', 'active');
+      .from("admin_api_vault")
+      .select("key")
+      .eq("status", "active");
 
-    if (!vaultKeys || vaultKeys.length === 0) throw new Error("사용 가능한 API 키가 없습니다.");
+    if (!vaultKeys || vaultKeys.length === 0) {
+      throw new Error("사용 가능한 API 키가 없습니다.");
+    }
+
     const selectedKey = vaultKeys[Math.floor(Math.random() * vaultKeys.length)].key;
-    try { return atob(selectedKey); } catch { return selectedKey; }
+
+    try {
+      return atob(selectedKey);
+    } catch {
+      return selectedKey;
+    }
   };
 
   const saveToSupabase = async (
@@ -106,7 +182,7 @@ export default function NaverRecreatePage() {
     isManual: boolean = false,
     currentKeyword?: string,
     overrides?: {
-      sourceMode?: 'url' | 'text';
+      sourceMode?: "url" | "text";
       sourceUrl?: string;
       sourceText?: string;
       selectedTone?: string;
@@ -119,128 +195,145 @@ export default function NaverRecreatePage() {
     }
 
     try {
-      const user = activeUser || await resolveAuthUser();
+      const user = activeUser || (await resolveAuthUser());
+
       if (!user) {
-        alert("❌ 로그인 세션을 확인하지 못해 저장을 진행하지 못했습니다. 다시 로그인했는지 확인해 주세요.");
+        alert("❌ 로그인 세션을 확인하지 못해 저장을 진행하지 못했습니다.");
         return;
       }
 
-      if (!activeUser) {
-        setActiveUser(user);
-      }
+      if (!activeUser) setActiveUser(user);
 
       const resolvedSourceMode = overrides?.sourceMode || sourceMode;
       const resolvedSourceUrl = overrides?.sourceUrl || sourceUrl;
       const resolvedSourceText = overrides?.sourceText || sourceText;
       const resolvedTone = overrides?.selectedTone || selectedTone;
       const resolvedWordCountGoal = overrides?.wordCountGoal || wordCountGoal;
-      const finalAuthor = userNickname || user.email?.split('@')[0] || "Unknown";
+      const finalAuthor = userNickname || user.email?.split("@")[0] || "Unknown";
 
       const basePayload = {
         user_id: user.id,
         user_email: user.email,
         user_nicename: finalAuthor,
-        title: currentTitle || title || '재창조 원고',
+        title: currentTitle || title || "재창조 원고",
         content: currentContent,
-        status: 'saved',
-        categories: [resolvedSourceMode === 'url' ? 'URL 재창조' : '텍스트 재창조'],
-        tags: [resolvedTone || '기본 말투'],
-        post_type: 'recreate',
-        target_keyword: currentKeyword || targetKeyword || null
+        status: "saved",
+        categories: [resolvedSourceMode === "url" ? "URL 재창조" : "텍스트 재창조"],
+        tags: [resolvedTone || "기본 말투"],
+        post_type: "recreate",
+        target_keyword: currentKeyword || targetKeyword || null,
       };
 
       const detailPayload = {
         source_mode: resolvedSourceMode,
-        source_url: resolvedSourceMode === 'url' ? resolvedSourceUrl || null : null,
-        source_text: resolvedSourceMode === 'text' ? resolvedSourceText || null : null,
+        source_url: resolvedSourceMode === "url" ? resolvedSourceUrl || null : null,
+        source_text: resolvedSourceMode === "text" ? resolvedSourceText || null : null,
         selected_tone: resolvedTone || null,
-        word_count_goal: resolvedWordCountGoal === 'same' ? null : Number(resolvedWordCountGoal) || null,
-        rewrite_strategy: 'original-restructure'
+        word_count_goal:
+          resolvedWordCountGoal === "same" ? null : Number(resolvedWordCountGoal) || null,
+        rewrite_strategy: "original-restructure",
       };
 
       const { data: insertedRow, error } = await supabase
-        .from('writing_naver_posts')
+        .from("writing_naver_posts")
         .insert([basePayload])
-        .select('id, updated_at')
+        .select("id, created_at")
         .single();
 
-      if (!error && insertedRow?.id) {
-        void supabase
-          .from('writing_naver_posts')
-          .update(detailPayload)
-          .eq('id', insertedRow.id)
-          .eq('user_id', user.id);
-
-        naverManuscriptStore.upsert({
-          id: String(insertedRow.id),
-          title: currentTitle || title || '재창조 원고',
-          content: currentContent,
-          keyword: currentKeyword || targetKeyword || '일반 원고',
-          type: 'recreate',
-          detailLabel:
-            resolvedSourceMode === 'url'
-              ? 'URL 재창조'
-              : resolvedSourceMode === 'text'
-              ? '텍스트 재창조'
-              : '글 재창조',
-          selectedTone: resolvedTone || '전문적이고 분석적인 말투',
-          status: 'saved',
-          wordCount: currentContent.length,
-          updatedAt: insertedRow.updated_at
-            ? insertedRow.updated_at.replace('T', ' ').substring(0, 16)
-            : '',
-          images: [],
-        });
-
-        if (isManual) {
-          alert("🎉 재창조 원고가 '네이버 발행 원고 관리' 장부에 즉시 수동 적재되었습니다!");
-        } else {
-          alert("✅ AI 글 재창조 결과가 생성과 동시에 '네이버 발행 원고 관리' 장부에 자동 저장되었습니다!");
-        }
-      } else {
-        const errorMessage = error?.message || '알 수 없는 저장 오류가 발생했습니다.';
+      if (error || !insertedRow?.id) {
+        const errorMessage = error?.message || "알 수 없는 저장 오류가 발생했습니다.";
         console.error("DB 저장 에러:", errorMessage);
         alert(`❌ DB 저장 실패: ${errorMessage}`);
+        return;
       }
+
+      void supabase
+        .from("writing_naver_posts")
+        .update(detailPayload)
+        .eq("id", insertedRow.id)
+        .eq("user_id", user.id);
+
+      naverManuscriptStore.upsert({
+        id: String(insertedRow.id),
+        title: currentTitle || title || "재창조 원고",
+        content: currentContent,
+        keyword: currentKeyword || targetKeyword || "일반 원고",
+        type: "recreate",
+        detailLabel:
+          resolvedSourceMode === "url"
+            ? "URL 재창조"
+            : resolvedSourceMode === "text"
+              ? "텍스트 재창조"
+              : "글 재창조",
+        selectedTone: resolvedTone || "전문적이고 분석적인 말투",
+        status: "saved",
+        wordCount: currentContent.length,
+        updatedAt: insertedRow.created_at
+          ? insertedRow.created_at.replace("T", " ").substring(0, 16)
+          : "",
+        images: [],
+      });
+
+      alert(
+        isManual
+          ? "🎉 재창조 원고가 '네이버 발행 원고 관리' 장부에 즉시 수동 적재되었습니다!"
+          : "✅ AI 글 재창조 결과가 생성과 동시에 '네이버 발행 원고 관리' 장부에 자동 저장되었습니다!"
+      );
     } catch (error: unknown) {
       alert(`❌ 시스템 오류: ${getErrorMessage(error)}`);
     }
   };
 
   const handleAiRecreate = async () => {
-    if (sourceMode === 'url' && !sourceUrl.trim()) return alert("분석 가동할 네이버 블로그 글 주소를 입력해 주세요 사장님!");
-    if (sourceMode === 'text' && !sourceText.trim()) return alert("재창조할 소스 텍스트 원본 본문을 입력해 주세요 사장님!");
+    if (sourceMode === "url" && !sourceUrl.trim()) {
+      alert("분석 가동할 네이버 블로그 글 주소를 입력해 주세요 사장님!");
+      return;
+    }
+
+    if (sourceMode === "text" && !sourceText.trim()) {
+      alert("재창조할 소스 텍스트 원본 본문을 입력해 주세요 사장님!");
+      return;
+    }
 
     setIsAiLoading(true);
     setTitle("");
     setContent("");
+    setGenerationStatusMessage("AI 재창조 준비 중입니다...");
+    setGenerationErrorMessage("");
     setSourceAnalysis({ keywords: [], topic: "", summaryPoints: [] });
 
     try {
       const apiKey = await getApiKey();
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+
       const keywordInstruction = targetKeyword.trim()
         ? `새로 탄생할 원고의 집중 공략 타겟 키워드는 '${targetKeyword.trim()}'이며, 반드시 이 키워드를 중심으로 최적화하라.`
         : `원본 글을 분석해 검색성과 문맥 적합성이 가장 높은 대표 타겟 키워드 1개를 스스로 선정하고, 그 키워드로 최적화하라.`;
-      const lengthInstruction = wordCountGoal === 'same'
-        ? `본문 길이는 원본과 대략 같은 길이로 맞추되, 정보량과 문단 구조는 유지하라.`
-        : `본문 길이는 공백 포함 약 ${wordCountGoal}자 수준으로 충분히 길고 풍부하게 작성하라.`;
+
+      const lengthInstruction =
+        wordCountGoal === "same"
+          ? `본문 길이는 원본과 대략 같은 길이로 맞추되, 정보량과 문단 구조는 유지하라.`
+          : `본문 길이는 공백 포함 약 ${wordCountGoal}자 수준으로 충분히 길고 풍부하게 작성하라.`;
 
       let rawInputContext = `[입력된 본문]: ${sourceText}`;
 
-      if (sourceMode === 'url') {
-        const extractResponse = await fetch(`/api/naver-extract?url=${encodeURIComponent(sourceUrl)}`);
+      if (sourceMode === "url") {
+        setGenerationStatusMessage("원본 블로그 본문을 추출하는 중입니다...");
+
+        const extractResponse = await fetch(
+          `/api/naver-extract?url=${encodeURIComponent(sourceUrl)}`
+        );
         const extractedResult = await extractResponse.json();
 
         if (!extractResponse.ok) {
-          throw new Error(extractedResult?.error || '네이버 블로그 본문 추출에 실패했습니다.');
+          throw new Error(extractedResult?.error || "네이버 블로그 본문 추출에 실패했습니다.");
         }
 
         const extractedDocument = extractedResult as ExtractedSourceDocument;
+
         rawInputContext = `
         [실제 수집된 대상 URL]: ${extractedDocument.canonicalUrl || sourceUrl}
-        [실제 추출된 원본 제목]: ${extractedDocument.title || '제목 추출 실패'}
+        [실제 추출된 원본 제목]: ${extractedDocument.title || "제목 추출 실패"}
         [실제 추출된 원본 본문]
         ${extractedDocument.content}
         `;
@@ -266,66 +359,125 @@ export default function NaverRecreatePage() {
         { "targetKeyword": "최종 선정된 대표 타겟 키워드 1개", "title": "유사도를 회피하고 시선을 강탈하는 고품질 새 제목", "content": "새로 전면 재창조된 풍부한 내용의 마크다운 본문", "sourceAnalysis": { "keywords": ["원본 핵심 키워드1", "원본 핵심 키워드2", "원본 핵심 키워드3"], "topic": "원본 글의 핵심 주제를 한 문장으로 정리한 결과", "summaryPoints": ["원본 핵심 내용 요약 1", "원본 핵심 내용 요약 2", "원본 핵심 내용 요약 3"] } }
       `;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      let text = "";
+      let lastError: any = null;
 
-      if (text) {
-        const cleanJsonText = text.replace(/```json|```/g, '').trim();
-        const parsedData = JSON.parse(cleanJsonText) as RecreateAiResponse;
-        const resolvedKeyword = parsedData.targetKeyword?.trim()
-          || parsedData.sourceAnalysis?.keywords?.find((keyword) => typeof keyword === 'string' && keyword.trim())?.trim()
-          || targetKeyword.trim();
+      for (const modelName of GEMINI_MODEL_FALLBACKS) {
+        for (let attempt = 1; attempt <= AI_RETRY_ATTEMPTS; attempt += 1) {
+          try {
+            setGenerationStatusMessage(
+              attempt === 1
+                ? `${modelName} 모델로 원고를 재창조하고 있습니다...`
+                : `${modelName} 모델 재시도 중입니다. (${attempt}/${AI_RETRY_ATTEMPTS})`
+            );
 
-        const finalTitle = parsedData.title || `[오리지널] ${resolvedKeyword || '핵심 키워드'} 최적화 보고서`;
-        const finalContent = parsedData.content || "";
-        const finalKeyword = resolvedKeyword || "";
+            const model = genAI.getGenerativeModel({ model: modelName } as any);
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            text = response.text();
 
-        if (finalKeyword) {
-          setTargetKeyword(finalKeyword);
+            lastError = null;
+            setGenerationStatusMessage("AI 응답을 정리하는 중입니다...");
+            break;
+          } catch (error: any) {
+            lastError = error;
+            console.warn(`[Naver Recreate Gemini 실패] model=${modelName}, attempt=${attempt}`, error);
+
+            if (attempt < AI_RETRY_ATTEMPTS && isHighDemandError(error)) {
+              setGenerationStatusMessage(
+                "AI 서버가 혼잡하여 자동으로 다시 시도하고 있습니다..."
+              );
+              await wait(AI_RETRY_DELAY_MS * attempt);
+              continue;
+            }
+
+            break;
+          }
         }
 
-        setTitle(finalTitle);
-        setContent(finalContent);
-        setSourceAnalysis({
-          keywords: Array.isArray(parsedData.sourceAnalysis?.keywords) ? parsedData.sourceAnalysis.keywords.filter(Boolean) : [],
-          topic: parsedData.sourceAnalysis?.topic || "",
-          summaryPoints: Array.isArray(parsedData.sourceAnalysis?.summaryPoints) ? parsedData.sourceAnalysis.summaryPoints.filter(Boolean) : []
-        });
-
-        setIsAiLoading(false);
-        setTimeout(() => {
-          void saveToSupabase(finalContent, finalTitle, false, finalKeyword, {
-            sourceMode,
-            sourceUrl,
-            sourceText,
-            selectedTone,
-            wordCountGoal
-          });
-        }, 100);
-        return;
+        if (text) break;
       }
-    } catch (error: unknown) {
-      alert(`AI 재창조 직조 실패: ${getErrorMessage(error)}`);
-    } finally {
+
+      if (!text) {
+        throw lastError || new Error("AI 응답을 받지 못했습니다.");
+      }
+
+      const parsedData = parseGeminiJson(text) as RecreateAiResponse;
+
+      const resolvedKeyword =
+        parsedData.targetKeyword?.trim() ||
+        parsedData.sourceAnalysis?.keywords
+          ?.find((keyword) => typeof keyword === "string" && keyword.trim())
+          ?.trim() ||
+        targetKeyword.trim();
+
+      const finalTitle =
+        parsedData.title || `[오리지널] ${resolvedKeyword || "핵심 키워드"} 최적화 보고서`;
+      const finalContent = parsedData.content || "";
+      const finalKeyword = resolvedKeyword || "";
+
+      if (finalKeyword) setTargetKeyword(finalKeyword);
+
+      setTitle(finalTitle);
+      setContent(finalContent);
+      setSourceAnalysis({
+        keywords: Array.isArray(parsedData.sourceAnalysis?.keywords)
+          ? parsedData.sourceAnalysis.keywords.filter(Boolean)
+          : [],
+        topic: parsedData.sourceAnalysis?.topic || "",
+        summaryPoints: Array.isArray(parsedData.sourceAnalysis?.summaryPoints)
+          ? parsedData.sourceAnalysis.summaryPoints.filter(Boolean)
+          : [],
+      });
+
+      setGenerationStatusMessage("재창조가 완료되었습니다. 네이버 원고 장부에 자동 저장 중입니다...");
       setIsAiLoading(false);
+
+      setTimeout(() => {
+        void saveToSupabase(finalContent, finalTitle, false, finalKeyword, {
+          sourceMode,
+          sourceUrl,
+          sourceText,
+          selectedTone,
+          wordCountGoal,
+        });
+      }, 100);
+    } catch (error: unknown) {
+      const friendlyMessage = getFriendlyAiErrorMessage(error);
+
+      console.error(error);
+      setGenerationErrorMessage(friendlyMessage);
+      setGenerationStatusMessage("");
+      setIsAiLoading(false);
+      alert(friendlyMessage);
     }
   };
 
   return (
     <div className="h-full">
       <NaverRecreateTab
-        targetKeyword={targetKeyword} setTargetKeyword={setTargetKeyword}
-        title={title} setTitle={setTitle}
-        content={content} setContent={setContent}
-        isAiLoading={isAiLoading} handleAiRecreate={handleAiRecreate}
-        sourceMode={sourceMode} setSourceMode={setSourceMode}
-        sourceUrl={sourceUrl} setSourceUrl={setSourceUrl}
-        sourceText={sourceText} setSourceText={setSourceText}
-        selectedTone={selectedTone} setSelectedTone={setSelectedTone}
-        wordCountGoal={wordCountGoal} setWordCountGoal={setWordCountGoal}
+        targetKeyword={targetKeyword}
+        setTargetKeyword={setTargetKeyword}
+        title={title}
+        setTitle={setTitle}
+        content={content}
+        setContent={setContent}
+        isAiLoading={isAiLoading}
+        handleAiRecreate={handleAiRecreate}
+        sourceMode={sourceMode}
+        setSourceMode={setSourceMode}
+        sourceUrl={sourceUrl}
+        setSourceUrl={setSourceUrl}
+        sourceText={sourceText}
+        setSourceText={setSourceText}
+        selectedTone={selectedTone}
+        setSelectedTone={setSelectedTone}
+        wordCountGoal={wordCountGoal}
+        setWordCountGoal={setWordCountGoal}
         handleSavePostToSupabase={() => saveToSupabase(content, title, true, targetKeyword)}
         sourceAnalysis={sourceAnalysis}
+        generationStatusMessage={generationStatusMessage}
+        generationErrorMessage={generationErrorMessage}
       />
     </div>
   );

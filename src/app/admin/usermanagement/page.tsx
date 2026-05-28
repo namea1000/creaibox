@@ -1,205 +1,463 @@
 "use client";
 
-import React, { useState } from 'react';
-import { 
-  Users, ShieldCheck, ShieldAlert, 
-  Search, Ban, Settings, Crown, Briefcase
-} from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Users,
+  ShieldCheck,
+  ShieldAlert,
+  Search,
+  Ban,
+  Settings,
+  Crown,
+  Briefcase,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
 
-// 🌟 레이아웃 필수 부품들 로드
-import Footer from '@/components/layout/Footer';
-import Sidebar from '@/components/layout/Sidebar';
-import Aside from '@/components/layout/Aside';
+import Footer from "@/components/layout/Footer";
+import Sidebar from "@/components/layout/Sidebar";
+import Aside from "@/components/layout/Aside";
 
-// [타입 정의] 사장님 원본 그대로 유지
+const ADMIN_EMAILS = ["jenam7720@gmail.com", "namjjang7720@gmail.com"];
+
+type UserRole = "ADMIN" | "MANAGER" | "PAID" | "FREE";
+type UserStatus = "ACTIVE" | "BANNED";
+
 interface UserProfile {
   id: string;
   email: string;
   name: string;
-  role: 'ADMIN' | 'MANAGER' | 'PAID' | 'FREE'; 
-  status: 'ACTIVE' | 'BANNED';
+  role: UserRole;
+  status: UserStatus;
   todayUsage: number;
   totalUsage: number;
   joinedAt: string;
-  lastLogin: string;
+  lastLogin: string | null;
 }
 
 export default function UserManagementPage() {
-  const [isCollapsed, setIsCollapsed] = useState(false); // 사이드바 제어용
+  const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
 
-  // 데이터셋 원본 보전
-  const [users, setUsers] = useState<UserProfile[]>([
-    { id: '1', email: 'boss@creaibox.ai', name: '사장님', role: 'ADMIN', status: 'ACTIVE', todayUsage: 0, totalUsage: 1250, joinedAt: '2024-01-01', lastLogin: '방금 전' },
-    { id: '2', email: 'manager@creaibox.ai', name: '김실장', role: 'MANAGER', status: 'ACTIVE', todayUsage: 12, totalUsage: 450, joinedAt: '2024-02-10', lastLogin: '1시간 전' },
-    { id: '3', email: 'user1@gmail.com', name: '홍길동', role: 'FREE', status: 'ACTIVE', todayUsage: 3, totalUsage: 45, joinedAt: '2024-05-01', lastLogin: '2시간 전' },
-    { id: '4', email: 'power@naver.com', name: '김철수', role: 'PAID', status: 'ACTIVE', todayUsage: 55, totalUsage: 890, joinedAt: '2024-03-15', lastLogin: '어제' },
-  ]);
-
-  const [searchTerm, setSearchTerm] = useState('');
-
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [savingId, setSavingId] = useState<string | null>(null);
 
-  // 검색 필터링 로직
-  const filteredUsers = users.filter(user => 
-    user.name.includes(searchTerm) || user.email.includes(searchTerm)
+  const fetchUsers = useCallback(
+    async (email?: string) => {
+      try {
+        setLoading(true);
+
+        const targetEmail = email || adminEmail;
+        if (!targetEmail) throw new Error("관리자 이메일 확인 실패");
+
+        const res = await fetch("/api/admin/users", {
+          headers: {
+            "x-admin-email": targetEmail,
+          },
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "사용자 목록 로드 실패");
+        }
+
+        setUsers(data || []);
+      } catch (err: any) {
+        alert(err.message);
+        setUsers([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [adminEmail]
   );
 
+  useEffect(() => {
+    let mounted = true;
+
+    const checkAdmin = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!mounted) return;
+
+      if (!user || !ADMIN_EMAILS.includes(user.email || "")) {
+        alert("⚠️ 슈퍼 어드민 전용 구역입니다.");
+        router.replace("/");
+        return;
+      }
+
+      const email = user.email || "";
+      setAdminEmail(email);
+      await fetchUsers(email);
+    };
+
+    void checkAdmin();
+
+    return () => {
+      mounted = false;
+    };
+  }, [supabase, router, fetchUsers]);
+
+  const filteredUsers = useMemo(() => {
+    const keyword = searchTerm.trim().toLowerCase();
+
+    if (!keyword) return users;
+
+    return users.filter(
+      (user) =>
+        user.name.toLowerCase().includes(keyword) ||
+        user.email.toLowerCase().includes(keyword) ||
+        user.role.toLowerCase().includes(keyword)
+    );
+  }, [users, searchTerm]);
+
+  const stats = useMemo(() => {
+    return {
+      total: users.length,
+      admin: users.filter((u) => u.role === "ADMIN").length,
+      manager: users.filter((u) => u.role === "MANAGER").length,
+      premium: users.filter((u) => u.role === "PAID").length,
+      banned: users.filter((u) => u.status === "BANNED").length,
+    };
+  }, [users]);
+
+  const updateUser = async (
+    userId: string,
+    patch: Partial<Pick<UserProfile, "role" | "status">>
+  ) => {
+    const target = users.find((u) => u.id === userId);
+    if (!target) return;
+
+    const nextRole = patch.role || target.role;
+    const nextStatus = patch.status || target.status;
+
+    setSavingId(userId);
+
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-email": adminEmail,
+        },
+        body: JSON.stringify({
+          id: userId,
+          role: nextRole,
+          status: nextStatus,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "사용자 정보 수정 실패");
+      }
+
+      setUsers((prev) =>
+        prev.map((user) =>
+          user.id === userId
+            ? { ...user, role: nextRole, status: nextStatus }
+            : user
+        )
+      );
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const formatDate = (value?: string | null) => {
+    if (!value) return "-";
+    return new Date(value).toLocaleString("ko-KR");
+  };
+
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#05070a] text-slate-100 font-sans">
-    
-      <div className="flex flex-1 pt-20 overflow-hidden">
-        
-        {/* 2. 좌측 커맨드 사이드바 */}
-        <Sidebar 
-          activeMenu="Admin" 
-          isCollapsed={isCollapsed} 
-          setIsCollapsed={setIsCollapsed} 
+    <div className="flex h-screen w-full overflow-hidden bg-[#05070a] font-sans text-slate-100">
+      <div className="flex flex-1 overflow-hidden pt-20">
+        <Sidebar
+          activeMenu="Admin"
+          isCollapsed={isCollapsed}
+          setIsCollapsed={setIsCollapsed}
           isMobileOpen={isMobileOpen}
           setIsMobileOpen={setIsMobileOpen}
         />
 
-        {/* 3. 중앙 통제 본문 영역 */}
-        <main className="flex-1 overflow-y-auto custom-scrollbar transition-all duration-300">
-          <div className="p-8 lg:p-12 max-w-[1600px] mx-auto pb-32">
-            
-            {/* 상단 헤더 섹션 (원본 디자인 보전) */}
-            <header className="mb-10 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
+        <main className="custom-scrollbar flex-1 overflow-y-auto transition-all duration-300">
+          <div className="mx-auto max-w-[1600px] p-8 pb-32 lg:p-12">
+            <header className="mb-10 flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-end">
               <div>
-                <h1 className="text-4xl font-black italic tracking-tighter text-white flex items-center gap-3 uppercase">
-                  <ShieldCheck className="text-blue-500 w-10 h-10" /> 
+                <h1 className="flex items-center gap-3 text-4xl font-black uppercase italic tracking-tighter text-white">
+                  <ShieldCheck className="h-10 w-10 text-blue-500" />
                   Command <span className="text-blue-500">Center</span>
                 </h1>
-                <p className="text-zinc-500 font-bold mt-2 uppercase tracking-widest text-[10px]">
-                  최고 관리자 & 매니저 통합 권한 통제 시스템
+                <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+                  사용자 권한 · 무료 체험 사용량 · 계정 상태 통합 관리
                 </p>
               </div>
 
-              <div className="flex gap-4 w-full lg:w-auto">
+              <div className="flex w-full gap-3 lg:w-auto">
                 <div className="relative w-full lg:w-auto">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
-                  <input 
-                    type="text" 
-                    placeholder="사용자 검색..." 
-                    className="bg-zinc-900 border border-zinc-800 rounded-2xl pl-12 pr-6 py-3 text-sm text-white focus:outline-none focus:border-blue-500 w-full lg:w-[300px] transition-all placeholder:text-zinc-700 font-bold"
+                  <Search
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
+                    size={18}
+                  />
+                  <input
+                    type="text"
+                    placeholder="사용자 검색..."
+                    className="w-full rounded-2xl border border-zinc-800 bg-zinc-900 py-3 pl-12 pr-6 text-sm font-bold text-white placeholder:text-zinc-700 focus:border-blue-500 focus:outline-none lg:w-[300px]"
+                    value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => fetchUsers()}
+                  className="rounded-2xl border border-zinc-800 bg-zinc-900 px-4 text-zinc-400 hover:text-white"
+                >
+                  <RefreshCw
+                    size={18}
+                    className={loading ? "animate-spin" : ""}
+                  />
+                </button>
               </div>
             </header>
 
-            {/* --- 🌟 요약 통계 카드: 사장님의 5열 레이아웃 그대로! --- */}
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-10">
+            <div className="mb-10 grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-5">
               {[
-                { label: 'Total Users', value: '1,284', icon: Users, color: 'text-blue-500' },
-                { label: 'Admin', value: '1', icon: ShieldAlert, color: 'text-red-500' },
-                { label: 'Manager', value: '3', icon: Briefcase, color: 'text-purple-500' },
-                { label: 'Premium', value: '156', icon: Crown, color: 'text-yellow-500' },
-                { label: 'Banned', value: '12', icon: Ban, color: 'text-zinc-600' },
-              ].map((stat, i) => (
-                <div key={i} className="bg-zinc-900/40 border border-zinc-800 p-6 rounded-[24px] flex flex-col gap-4 shadow-xl">
-                  <div className={`w-10 h-10 rounded-xl bg-zinc-800/80 flex items-center justify-center ${stat.color}`}>
+                {
+                  label: "Total Users",
+                  value: stats.total,
+                  icon: Users,
+                  color: "text-blue-500",
+                },
+                {
+                  label: "Admin",
+                  value: stats.admin,
+                  icon: ShieldAlert,
+                  color: "text-red-500",
+                },
+                {
+                  label: "Manager",
+                  value: stats.manager,
+                  icon: Briefcase,
+                  color: "text-purple-500",
+                },
+                {
+                  label: "Premium",
+                  value: stats.premium,
+                  icon: Crown,
+                  color: "text-yellow-500",
+                },
+                {
+                  label: "Banned",
+                  value: stats.banned,
+                  icon: Ban,
+                  color: "text-zinc-600",
+                },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className="flex flex-col gap-4 rounded-[24px] border border-zinc-800 bg-zinc-900/40 p-6 shadow-xl"
+                >
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-800/80 ${stat.color}`}
+                  >
                     <stat.icon size={20} />
                   </div>
                   <div>
-                    <p className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.2em]">{stat.label}</p>
-                    <p className="text-2xl font-black text-white mt-1 italic tracking-tighter">{stat.value}</p>
+                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600">
+                      {stat.label}
+                    </p>
+                    <p className="mt-1 text-2xl font-black italic tracking-tighter text-white">
+                      {stat.value}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* --- 사용자 리스트 테이블 섹션 --- */}
-            <div className="bg-zinc-900/40 border border-zinc-800 rounded-[32px] overflow-hidden backdrop-blur-xl shadow-2xl">
+            <div className="overflow-hidden rounded-[32px] border border-zinc-800 bg-zinc-900/40 shadow-2xl backdrop-blur-xl">
               <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="text-[10px] text-zinc-500 uppercase font-black tracking-widest border-b border-zinc-800/50 bg-zinc-900/30">
-                      <th className="px-8 py-5">Identity</th>
-                      <th className="px-8 py-5">Access Level</th>
-                      <th className="px-8 py-5">Trial Usage</th>
-                      <th className="px-8 py-5">Status</th>
-                      <th className="px-8 py-5">Connection</th>
-                      <th className="px-8 py-5 text-right">Settings</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-800/30">
-                    {filteredUsers.map((user) => (
-                      <tr key={user.id} className="hover:bg-white/[0.02] transition-colors group">
-                        <td className="px-8 py-6">
-                          <div className="flex items-center gap-4">
-                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-xs ${
-                              user.role === 'ADMIN' ? 'bg-red-500/20 text-red-500' :
-                              user.role === 'MANAGER' ? 'bg-purple-500/20 text-purple-500' :
-                              'bg-zinc-800 text-zinc-500'
-                            }`}>
-                              {user.name[0]}
-                            </div>
-                            <div>
-                              <p className="font-black text-sm text-zinc-200 flex items-center gap-2 italic">
-                                {user.name}
-                              </p>
-                              <p className="text-[11px] text-zinc-600 font-medium tracking-tight">{user.email}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <div className="flex items-center gap-2">
-                             <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
-                              user.role === 'ADMIN' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
-                              user.role === 'MANAGER' ? 'bg-purple-500/10 border-purple-500/20 text-purple-500' :
-                              user.role === 'PAID' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500' :
-                              'bg-zinc-800/50 border-zinc-700 text-zinc-500'
-                            }`}>
-                              {user.role}
-                            </span>
-                            {user.role === 'ADMIN' && <Crown size={12} className="text-red-500" />}
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <div className="flex flex-col gap-1.5">
-                            <div className="flex justify-between w-28 text-[9px] font-black text-zinc-600 uppercase italic">
-                              <span>{user.todayUsage} Units</span>
-                              <span>{user.role === 'FREE' ? 'Max 3' : '∞'}</span>
-                            </div>
-                            <div className="w-28 h-1 bg-zinc-800 rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full ${user.todayUsage >= 3 && user.role === 'FREE' ? 'bg-red-500 shadow-[0_0_8px_#ef4444]' : 'bg-blue-500 shadow-[0_0_8px_#3b82f6]'}`} 
-                                style={{ width: `${Math.min((user.todayUsage / 3) * 100, 100)}%` }} 
-                              />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <span className={`text-[10px] font-black uppercase flex items-center gap-1.5 ${user.status === 'ACTIVE' ? 'text-emerald-500' : 'text-zinc-600'}`}>
-                            <div className={`w-1.5 h-1.5 rounded-full ${user.status === 'ACTIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-600'}`} />
-                            {user.status}
-                          </span>
-                        </td>
-                        <td className="px-8 py-6 font-bold text-[11px] text-zinc-500 italic">
-                          {user.lastLogin}
-                        </td>
-                        <td className="px-8 py-6 text-right">
-                          <button className="p-2.5 bg-zinc-800/50 rounded-xl hover:bg-zinc-700 hover:text-blue-500 transition-all text-zinc-400 active:scale-90">
-                            <Settings size={16} />
-                          </button>
-                        </td>
+                {loading ? (
+                  <div className="flex min-h-[360px] items-center justify-center">
+                    <Loader2 className="animate-spin text-blue-500" size={42} />
+                  </div>
+                ) : (
+                  <table className="w-full min-w-[1200px] text-left">
+                    <thead>
+                      <tr className="border-b border-zinc-800/50 bg-zinc-900/30 text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                        <th className="px-8 py-5">Identity</th>
+                        <th className="px-8 py-5">Access Level</th>
+                        <th className="px-8 py-5">Trial Usage</th>
+                        <th className="px-8 py-5">Status</th>
+                        <th className="px-8 py-5">Joined</th>
+                        <th className="px-8 py-5">Last Login</th>
+                        <th className="px-8 py-5 text-right">Settings</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+
+                    <tbody className="divide-y divide-zinc-800/30">
+                      {filteredUsers.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={7}
+                            className="px-8 py-20 text-center text-xs font-black uppercase tracking-widest text-zinc-600"
+                          >
+                            No users found.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredUsers.map((user) => (
+                          <tr
+                            key={user.id}
+                            className="group transition-colors hover:bg-white/[0.02]"
+                          >
+                            <td className="px-8 py-6">
+                              <div className="flex items-center gap-4">
+                                <div
+                                  className={`flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-black ${user.role === "ADMIN"
+                                      ? "bg-red-500/20 text-red-500"
+                                      : user.role === "MANAGER"
+                                        ? "bg-purple-500/20 text-purple-500"
+                                        : user.role === "PAID"
+                                          ? "bg-yellow-500/20 text-yellow-500"
+                                          : "bg-zinc-800 text-zinc-500"
+                                    }`}
+                                >
+                                  {user.name[0]?.toUpperCase() || "U"}
+                                </div>
+                                <div>
+                                  <p className="flex items-center gap-2 text-sm font-black italic text-zinc-200">
+                                    {user.name}
+                                  </p>
+                                  <p className="text-[11px] font-medium tracking-tight text-zinc-600">
+                                    {user.email}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="px-8 py-6">
+                              <select
+                                value={user.role}
+                                disabled={savingId === user.id}
+                                onChange={(e) =>
+                                  updateUser(user.id, {
+                                    role: e.target.value as UserRole,
+                                  })
+                                }
+                                className={`rounded-lg border px-3 py-2 text-[10px] font-black uppercase tracking-widest outline-none ${user.role === "ADMIN"
+                                    ? "border-red-500/20 bg-red-500/10 text-red-400"
+                                    : user.role === "MANAGER"
+                                      ? "border-purple-500/20 bg-purple-500/10 text-purple-400"
+                                      : user.role === "PAID"
+                                        ? "border-yellow-500/20 bg-yellow-500/10 text-yellow-400"
+                                        : "border-zinc-700 bg-zinc-800/50 text-zinc-400"
+                                  }`}
+                              >
+                                <option value="ADMIN">ADMIN</option>
+                                <option value="MANAGER">MANAGER</option>
+                                <option value="PAID">PAID</option>
+                                <option value="FREE">FREE</option>
+                              </select>
+                            </td>
+
+                            <td className="px-8 py-6">
+                              <div className="flex flex-col gap-1.5">
+                                <div className="flex w-32 justify-between text-[9px] font-black uppercase italic text-zinc-600">
+                                  <span>{user.todayUsage} Units</span>
+                                  <span>{user.role === "FREE" ? "Max 3" : "∞"}</span>
+                                </div>
+                                <div className="h-1 w-32 overflow-hidden rounded-full bg-zinc-800">
+                                  <div
+                                    className={`h-full ${user.todayUsage >= 3 && user.role === "FREE"
+                                        ? "bg-red-500 shadow-[0_0_8px_#ef4444]"
+                                        : "bg-blue-500 shadow-[0_0_8px_#3b82f6]"
+                                      }`}
+                                    style={{
+                                      width: `${user.role === "FREE"
+                                          ? Math.min((user.todayUsage / 3) * 100, 100)
+                                          : Math.min((user.todayUsage / 100) * 100, 100)
+                                        }%`,
+                                    }}
+                                  />
+                                </div>
+                                <p className="text-[9px] font-bold text-zinc-700">
+                                  Total {user.totalUsage}
+                                </p>
+                              </div>
+                            </td>
+
+                            <td className="px-8 py-6">
+                              <select
+                                value={user.status}
+                                disabled={savingId === user.id}
+                                onChange={(e) =>
+                                  updateUser(user.id, {
+                                    status: e.target.value as UserStatus,
+                                  })
+                                }
+                                className={`rounded-lg border px-3 py-2 text-[10px] font-black uppercase outline-none ${user.status === "ACTIVE"
+                                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                                    : "border-red-500/20 bg-red-500/10 text-red-400"
+                                  }`}
+                              >
+                                <option value="ACTIVE">ACTIVE</option>
+                                <option value="BANNED">BANNED</option>
+                              </select>
+                            </td>
+
+                            <td className="px-8 py-6 text-[11px] font-bold italic text-zinc-500">
+                              {formatDate(user.joinedAt)}
+                            </td>
+
+                            <td className="px-8 py-6 text-[11px] font-bold italic text-zinc-500">
+                              {formatDate(user.lastLogin)}
+                            </td>
+
+                            <td className="px-8 py-6 text-right">
+                              <button
+                                type="button"
+                                disabled={savingId === user.id}
+                                className="rounded-xl bg-zinc-800/50 p-2.5 text-zinc-400 transition-all hover:bg-zinc-700 hover:text-blue-500 active:scale-90 disabled:opacity-50"
+                              >
+                                {savingId === user.id ? (
+                                  <Loader2 size={16} className="animate-spin" />
+                                ) : (
+                                  <Settings size={16} />
+                                )}
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
 
-            <footer className="mt-16 text-center text-zinc-800 text-[10px] font-black uppercase tracking-[0.4em] pb-10 italic">
+            <footer className="mt-16 pb-10 text-center text-[10px] font-black uppercase italic tracking-[0.4em] text-zinc-800">
               Strategic Hierarchy Management — Core System Admin
             </footer>
           </div>
-          
+
           <Footer />
         </main>
 
-        {/* 4. 우측 Aside 정보창 */}
-        <div className="hidden xl:flex shrink-0">
+        <div className="hidden shrink-0 xl:flex">
           <Aside />
         </div>
       </div>
