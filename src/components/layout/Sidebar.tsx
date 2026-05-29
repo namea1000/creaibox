@@ -20,8 +20,6 @@ import {
   Music,
   Mic2,
   BarChart3,
-  Key,
-  User as UserIcon,
   PenTool,
   Info,
   Layers,
@@ -55,6 +53,9 @@ import {
   Rss,
   Megaphone,
   Building2,
+  Bell,
+  MessageSquare,
+  Share2,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -102,11 +103,43 @@ export default function Sidebar({
         color: "text-blue-400",
       },
       {
+        key: "dashboard",
+        name: "관리 대시보드",
+        href: "/studio/dashboard",
+        icon: LayoutDashboard,
+        color: "text-blue-400",
+      },
+      {
         key: "library",
         name: "콘텐츠 라이브러리",
         href: "/studio/library",
         icon: Library,
         color: "text-sky-400",
+        children: [
+          { name: "라이브러리 홈", href: "/studio/library", icon: Home },
+          { name: "전체 콘텐츠", href: "/studio/library/all", icon: Library },
+
+          { name: "크리아이박스 콘텐츠", href: "/studio/library/creaibox", icon: PenTool },
+          { name: "네이버 콘텐츠", href: "/studio/library/naver", icon: Newspaper },
+          { name: "뉴스 콘텐츠", href: "/studio/library/news", icon: Rss },
+
+          { name: "음악 / 가사 콘텐츠", href: "/studio/library/music", icon: Music },
+          { name: "이미지 콘텐츠", href: "/studio/library/image", icon: ImageIcon },
+          { name: "비디오 콘텐츠", href: "/studio/library/video", icon: Video },
+
+          { name: "프롬프트 보관함", href: "/studio/library/prompts", icon: Sparkles },
+          { name: "템플릿 라이브러리", href: "/studio/library/templates", icon: Layers },
+
+          { name: "즐겨찾기", href: "/studio/library/favorites", icon: BadgeDollarSign },
+          { name: "최근 작업물", href: "/studio/library/recent", icon: Clock },
+          { name: "임시저장", href: "/studio/library/drafts", icon: Save },
+          { name: "발행 완료", href: "/studio/library/published", icon: Archive },
+
+          { name: "AI 생성 이력", href: "/studio/library/history", icon: Bot },
+          { name: "사용량 통계", href: "/studio/library/analytics", icon: BarChart3 },
+
+          { name: "휴지통", href: "/studio/library/trash", icon: FileArchive },
+        ],
       },
       {
         key: "creaibox-writing",
@@ -289,23 +322,71 @@ export default function Sidebar({
         href: "/studio/tools",
         icon: Wand2,
         color: "text-amber-400",
+        children: [
+          { name: "스튜디오 Tools 홈", href: "/studio/tools", icon: Home },
+          { name: "AI 누끼 제거", href: "/studio/tools/bg-remover", icon: Wand2 },
+          { name: "PDF 문서 분석", href: "/studio/tools/pdf-analyzer", icon: FileText },
+          { name: "AI OCR 문자 추출", href: "/studio/tools/ocr", icon: Eye },
+          { name: "AI 프롬프트 개선기", href: "/studio/tools/prompt-enhancer", icon: Sparkles },
+          { name: "AI 프롬프트 번역기", href: "/studio/tools/prompt-translator", icon: Languages },
+          { name: "해시태그 생성기", href: "/studio/tools/hashtag", icon: Tags },
+          { name: "유튜브 썸네일 다운로더", href: "/studio/tools/youtube-thumbnail", icon: PlayCircle },
+          { name: "색상 추출기", href: "/studio/tools/color-picker", icon: Palette },
+          { name: "QR 생성기", href: "/studio/tools/qr", icon: CircleHelp },
+          { name: "포맷 변환기", href: "/studio/tools/converter", icon: RefreshCw },
+          { name: "메타데이터 추출기", href: "/studio/tools/metadata", icon: Database },
+          { name: "코드 뷰티파이어", href: "/studio/tools/code-beautifier", icon: FileText },
+        ],
+      },
+      {
+        key: "community",
+        name: "커뮤니티",
+        href: "/studio/community",
+        icon: Users,
+        color: "text-pink-400",
+        children: [
+          { name: "커뮤니티 홈", href: "/studio/community", icon: Home },
+          { name: "실시간 채팅", href: "/studio/community/chat", icon: MessageCircle },
+          { name: "크리아이박스 글쓰기", href: "/studio/community/writing", icon: PenTool },
+          { name: "네이버 블로그", href: "/studio/community/naver", icon: Newspaper },
+          { name: "뮤직 스튜디오", href: "/studio/community/music", icon: Music },
+          { name: "이미지 스튜디오", href: "/studio/community/image", icon: ImageIcon },
+          { name: "비디오 스튜디오", href: "/studio/community/video", icon: Video },
+          { name: "유튜브 연구소", href: "/studio/community/youtube", icon: PlayCircle },
+          { name: "AI 트렌드 토론방", href: "/studio/community/ai-trend", icon: Bot },
+          { name: "협업 프로젝트", href: "/studio/community/collab", icon: Share2 },
+          { name: "수익화 연구소", href: "/studio/community/money", icon: BadgeDollarSign },
+        ],
+      },
+      {
+        key: "infocenter",
+        name: "인포센터",
+        href: "/studio/infocenter",
+        icon: Info,
+        color: "text-amber-400",
+        children: [
+          { name: "공지사항", href: "/studio/infocenter", icon: Home },
+          { name: "공지사항", href: "/studio/infocenter/list/notices", icon: Bell },
+          { name: "자유게시판", href: "/studio/infocenter/list/freeboard", icon: MessageSquare },
+          { name: "꿀팁 / 노하우", href: "/studio/infocenter/list/tips", icon: Lightbulb },
+          { name: "작품공유", href: "/studio/infocenter/list/showcase", icon: Share2 },
+          { name: "FAQ", href: "/studio/infocenter/list/faq", icon: HelpCircle },
+          { name: "Q&A", href: "/studio/infocenter/list/qna", icon: MessageCircle },
+        ],
       },
     ],
     []
   );
-
-  const accountMenus: MenuItem[] = [
-    { name: "API 키 관리", href: "/apivault", icon: Key },
-    { name: "내 프로필", href: "/mypage", icon: UserIcon },
-  ];
 
   const isPathActive = (href: string) => {
     if (href === "/studio") return pathname === "/studio";
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
+  const allGroups = useMemo(() => menuGroups, [menuGroups]);
+
   const getMatchedGroup = () =>
-    [...menuGroups]
+    [...allGroups]
       .filter((group) => isPathActive(group.href))
       .sort((a, b) => b.href.length - a.href.length)[0];
 
@@ -333,10 +414,7 @@ export default function Sidebar({
     );
   };
 
-  const renderSimpleMenu = (
-    item: MenuItem,
-    color: string = "text-blue-400"
-  ) => {
+  const renderSimpleMenu = (item: MenuItem, color = "text-blue-400") => {
     const Icon = item.icon || PenTool;
     const isActive = isPathActive(item.href);
 
@@ -355,10 +433,7 @@ export default function Sidebar({
           ${isCollapsed ? "lg:justify-center lg:px-0" : "gap-2.5"}
         `}
       >
-        <Icon
-          size={16}
-          className={`shrink-0 ${isActive ? "text-blue-300" : color}`}
-        />
+        <Icon size={16} className={`shrink-0 ${isActive ? "text-blue-300" : color}`} />
         {!isCollapsed && <span className="truncate">{item.name}</span>}
       </Link>
     );
@@ -393,10 +468,7 @@ export default function Sidebar({
             }
           `}
         >
-          <Icon
-            size={16}
-            className={`shrink-0 ${isActive ? "text-blue-300" : group.color}`}
-          />
+          <Icon size={16} className={`shrink-0 ${isActive ? "text-blue-300" : group.color}`} />
           <span className="ml-2.5 min-w-0 flex-1 truncate">{group.name}</span>
 
           <button
@@ -433,8 +505,7 @@ export default function Sidebar({
                 >
                   <ChildIcon
                     size={14}
-                    className={`shrink-0 ${childActive ? "text-blue-300" : group.color
-                      }`}
+                    className={`shrink-0 ${childActive ? "text-blue-300" : group.color}`}
                   />
                   <span className="truncate">{child.name}</span>
                 </Link>
@@ -459,10 +530,7 @@ export default function Sidebar({
         fixed left-0 top-0 z-[70] flex h-screen flex-col border-r border-zinc-800/80
         bg-[#090e15] transition-all duration-300 ease-in-out lg:sticky
         ${isCollapsed ? "lg:w-14" : "lg:w-60"}
-        ${isMobileOpen
-          ? "translate-x-0 w-72"
-          : "-translate-x-full lg:translate-x-0"
-        }
+        ${isMobileOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"}
       `}
     >
       <div className="flex h-20 items-center border-b border-zinc-800/80 px-3">
@@ -491,28 +559,17 @@ export default function Sidebar({
             className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-300 transition hover:border-blue-500/50 hover:bg-zinc-800 hover:text-white lg:flex"
             title={isCollapsed ? "사이드바 펼치기" : "사이드바 접기"}
           >
-            {isCollapsed ? (
-              <PanelLeftOpen size={15} />
-            ) : (
-              <PanelLeftClose size={15} />
-            )}
+            {isCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
           </button>
         </div>
 
         <nav className="space-y-1">{menuGroups.map(renderGroup)}</nav>
       </div>
 
-      <div className="shrink-0 border-t border-zinc-800/80 px-2.5 py-3">
-        <nav className="space-y-1">
-          {sectionTitle("Account")}
-          {accountMenus.map((item) => renderSimpleMenu(item, "text-violet-400"))}
-        </nav>
-      </div>
-
       {!isCollapsed && (
         <div className="shrink-0 border-t border-zinc-800/80 px-3 py-2.5">
-          <p className="text-center text-[8px] font-bold leading-relaxed text-zinc-500">
-            © CreAIbox Studio
+          <p className="text-center text-[12px] font-bold leading-relaxed text-zinc-500">
+            © Creaibox AI Studio
             <br />
             <span className="uppercase tracking-widest text-zinc-600">
               Strategic Systems

@@ -23,10 +23,6 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import Sidebar from "@/components/layout/Sidebar";
-
 const ADMIN_EMAILS = ["jenam7720@gmail.com", "namjjang7720@gmail.com"];
 
 const PROVIDER_TYPE_OPTIONS = [
@@ -387,17 +383,7 @@ export default function APIVaultAdminPage() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#020406] font-sans text-slate-100">
-      <Header />
-
       <div className="flex flex-1 overflow-hidden pt-20 text-left">
-        <Sidebar
-          activeMenu="Admin"
-          isCollapsed={isCollapsed}
-          setIsCollapsed={setIsCollapsed}
-          isMobileOpen={isMobileOpen}
-          setIsMobileOpen={setIsMobileOpen}
-        />
-
         <main className="custom-scrollbar flex-1 overflow-y-auto">
           <div className="mx-auto max-w-[1800px] p-8 pb-32 lg:p-12">
             <header className="mb-10">
@@ -438,8 +424,8 @@ export default function APIVaultAdminPage() {
                     type="button"
                     onClick={() => setActiveType(type.value)}
                     className={`flex items-center gap-2 rounded-2xl border px-5 py-3 text-xs font-black uppercase transition-all ${activeType === type.value
-                        ? "border-blue-400 bg-blue-600 text-white shadow-lg shadow-blue-900/30"
-                        : "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-blue-500/40 hover:text-white"
+                      ? "border-blue-400 bg-blue-600 text-white shadow-lg shadow-blue-900/30"
+                      : "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-blue-500/40 hover:text-white"
                       }`}
                   >
                     <Icon size={16} />
@@ -583,8 +569,6 @@ export default function APIVaultAdminPage() {
               </div>
             </div>
           </div>
-
-          <Footer />
         </main>
       </div>
 
@@ -768,8 +752,8 @@ function ToggleBox({ label, checked, onClick }: { label: string; checked: boolea
       type="button"
       onClick={onClick}
       className={`rounded-2xl border px-4 py-3 text-xs font-black uppercase transition-all ${checked
-          ? "border-blue-500/40 bg-blue-500/10 text-blue-300"
-          : "border-zinc-800 bg-zinc-950 text-zinc-600"
+        ? "border-blue-500/40 bg-blue-500/10 text-blue-300"
+        : "border-zinc-800 bg-zinc-950 text-zinc-600"
         }`}
     >
       {checked ? "ON" : "OFF"} · {label}

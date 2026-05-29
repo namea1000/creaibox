@@ -16,7 +16,6 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
-import Footer from "@/components/layout/Footer";
 import Sidebar from "@/components/layout/Sidebar";
 import Aside from "@/components/layout/Aside";
 
@@ -457,7 +456,6 @@ export default function MyPage() {
             </div>
           </div>
 
-          <Footer />
         </main>
 
         <div className="hidden shrink-0 border-l border-zinc-800/50 bg-[#05070a] xl:flex">

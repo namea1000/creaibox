@@ -14,9 +14,9 @@ import {
   Settings2,
 } from "lucide-react";
 
-import Footer from "@/components/layout/Footer";
 import Sidebar from "@/components/layout/Sidebar";
 import Aside from "@/components/layout/Aside";
+import StudioTopbar from "@/components/studio/StudioTopbar";
 
 type ModelOption = {
   value: string;
@@ -373,7 +373,8 @@ export default function APIVaultPage() {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#05070a] font-sans text-slate-100">
+    <div className="min-h-screen bg-[#06080d] text-zinc-100">
+      <StudioTopbar setIsMobileOpen={setIsMobileOpen} />
       <div className="flex flex-1 overflow-hidden pt-20">
         <Sidebar
           activeMenu="APIVault"
@@ -382,7 +383,6 @@ export default function APIVaultPage() {
           isMobileOpen={isMobileOpen}
           setIsMobileOpen={setIsMobileOpen}
         />
-
         <main className="custom-scrollbar flex-1 overflow-y-auto transition-all duration-300">
           <div className="mx-auto max-w-[1400px] p-6 pb-32 lg:p-12">
             <header className="mb-8 border-b border-slate-800/80 pb-6">
@@ -521,8 +521,6 @@ export default function APIVaultPage() {
               Creaibox.com — AI Contents Studio
             </footer>
           </div>
-
-          <Footer />
         </main>
 
         <div className="hidden shrink-0 xl:flex">

@@ -1,169 +1,332 @@
 "use client";
 
-import React from 'react';
+import React from "react";
+import Link from "next/link";
 import {
-  Music, Music2, Languages, Video,
-  Clock, PlayCircle, Sparkles,
-  ChevronRight, ListMusic
-} from 'lucide-react'; // 🌟 Youtube를 Video로 교체했습니다.
-import { useRouter } from 'next/navigation';
+  Music,
+  Sparkles,
+  Mic2,
+  Palette,
+  Image as ImageIcon,
+  Video,
+  Languages,
+  PlayCircle,
+  Tags,
+  Library,
+  Save,
+  Folder,
+  Clock,
+  Settings,
+  ArrowRight,
+  Plus,
+  Headphones,
+  Disc3,
+  Circle,
+  Wand2,
+  FileText,
+} from "lucide-react";
 
-export default function MusicStudioPage() {
-  const router = useRouter();
+export default function MusicStudioHomePage() {
+  const stats = [
+    { label: "음악 프로젝트", value: "0", icon: Music },
+    { label: "가사 생성", value: "0", icon: Mic2 },
+    { label: "커버 이미지", value: "0", icon: ImageIcon },
+    { label: "저장된 곡", value: "0", icon: Save },
+  ];
 
-  const musicTools = [
+  const menus = [
     {
-      id: 'lyrics-gen',
-      title: 'AI 가사 생성 & 번역',
-      description: '주제만 입력하면 완벽한 라임의 가사 생성. 글로벌 진출을 위한 다국어 번역 지원.',
-      icon: <Languages className="text-indigo-400" size={32} />,
-      color: 'hover:border-indigo-500/50',
-      tag: 'Writing'
+      title: "곡 기획",
+      desc: "장르, 분위기, 콘셉트, 앨범 방향성을 설계합니다.",
+      href: "/studio/music/planning",
+      icon: Sparkles,
+      color: "from-violet-600 to-purple-600",
     },
     {
-      id: 'suno-v5',
-      title: 'Suno V5.5 Studio',
-      description: '최신 V5.5 엔진 연동. 텍스트로 만드는 고화질 오디오 및 완성곡 생성.',
-      icon: <Music2 className="text-cyan-400" size={32} />,
-      color: 'hover:border-cyan-500/50',
-      tag: 'Composition'
+      title: "가사 & SUNO",
+      desc: "가사 생성, SUNO 프롬프트, 곡 설명을 한 번에 구성합니다.",
+      href: "/studio/music/lyrics",
+      icon: Mic2,
+      color: "from-rose-600 to-pink-600",
     },
     {
-      id: 'youtube-opt',
-      title: 'YouTube 최적화 패키지',
-      description: '곡 제목, 설명, 고정 댓글 자동 생성 및 음원 배포용 메타데이터 최적화.',
-      // 🌟 Youtube 대신 Video 아이콘을 사용하여 에러를 해결했습니다.
-      icon: <Video className="text-red-500" size={32} />,
-      color: 'hover:border-red-500/50',
-      tag: 'Distribution'
+      title: "스타일 포맷",
+      desc: "EDM, Pop, Lo-fi, Ambient 등 스타일 프롬프트를 정리합니다.",
+      href: "/studio/music/style-format",
+      icon: Palette,
+      color: "from-amber-500 to-orange-600",
     },
     {
-      id: 'timeline',
-      title: '음원 타임라인 편집',
-      description: '생성된 음원의 섹션별 구성 및 타임라인 정밀 조정 유틸리티.',
-      icon: <Clock className="text-emerald-400" size={32} />,
-      color: 'hover:border-emerald-500/50',
-      tag: 'Editing'
-    }
+      title: "커버 이미지",
+      desc: "앨범 커버, 유튜브 커버, 플레이리스트 이미지를 제작합니다.",
+      href: "/studio/music/cover-image",
+      icon: ImageIcon,
+      color: "from-purple-600 to-fuchsia-600",
+    },
+    {
+      title: "영상 프롬프트",
+      desc: "음악 영상, 루프 영상, 비주얼라이저 프롬프트를 만듭니다.",
+      href: "/studio/music/video-prompt",
+      icon: Video,
+      color: "from-cyan-600 to-blue-600",
+    },
+    {
+      title: "번역",
+      desc: "가사, 제목, 설명문을 다국어로 번역합니다.",
+      href: "/studio/music/translate",
+      icon: Languages,
+      color: "from-emerald-600 to-teal-600",
+    },
+    {
+      title: "유튜브 최적화",
+      desc: "제목, 설명문, 태그, SEO 문구를 생성합니다.",
+      href: "/studio/music/youtube-seo",
+      icon: PlayCircle,
+      color: "from-red-600 to-orange-600",
+    },
+    {
+      title: "태그 관리",
+      desc: "장르, 분위기, 유튜브 태그, 검색 키워드를 관리합니다.",
+      href: "/studio/music/tags",
+      icon: Tags,
+      color: "from-yellow-500 to-amber-600",
+    },
+    {
+      title: "플레이리스트",
+      desc: "앨범, 믹스, 채널별 플레이리스트를 구성합니다.",
+      href: "/studio/music/playlist",
+      icon: Library,
+      color: "from-blue-600 to-indigo-600",
+    },
+    {
+      title: "저장 관리",
+      desc: "가사, 프롬프트, 커버, 설명문 저장 내역을 관리합니다.",
+      href: "/studio/music/storage",
+      icon: Save,
+      color: "from-green-600 to-emerald-600",
+    },
+    {
+      title: "프로젝트",
+      desc: "앨범 단위, 채널 단위, 곡 단위 프로젝트를 관리합니다.",
+      href: "/studio/music/projects",
+      icon: Folder,
+      color: "from-sky-600 to-blue-600",
+    },
+    {
+      title: "작업 내역",
+      desc: "최근 생성, 수정, 저장한 음악 작업 기록을 확인합니다.",
+      href: "/studio/music/history",
+      icon: Clock,
+      color: "from-slate-600 to-zinc-700",
+    },
+    {
+      title: "설정",
+      desc: "기본 장르, 언어, 프롬프트 형식, 저장 옵션을 설정합니다.",
+      href: "/studio/music/settings",
+      icon: Settings,
+      color: "from-zinc-600 to-slate-700",
+    },
+  ];
+
+  const quickActions = [
+    "Suno 곡 만들기",
+    "가사 생성",
+    "앨범 커버",
+    "유튜브 설명문",
+    "플레이리스트",
+    "영상 프롬프트",
   ];
 
   return (
-    <div className="min-h-screen bg-[#05070a] text-zinc-100 font-sans">
-      <div className="max-w-[1400px] mx-auto p-6 lg:p-12 pt-24 lg:pt-32 pb-48">
+    <div className="min-h-full bg-[#06080d] px-5 py-8 text-zinc-100 lg:px-8">
+      <div className="mx-auto max-w-7xl space-y-8">
+        <section className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-[#1a0712] p-7 shadow-2xl">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-rose-400">
+                <Music size={15} />
+                Music Studio
+              </div>
 
-        {/* 상단 헤더 섹션 */}
-        <header className="mb-16 space-y-4 text-left border-b border-zinc-800 pb-12 relative overflow-hidden">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-indigo-600/10 rounded-lg border border-indigo-500/20">
-              <Music className="text-indigo-500" size={24} />
+              <h1 className="text-3xl font-black md:text-5xl">
+                뮤직 스튜디오
+              </h1>
+
+              <p className="mt-4 max-w-3xl text-sm leading-relaxed text-zinc-400 md:text-base">
+                곡 기획, 가사 생성, SUNO 프롬프트, 앨범 커버, 영상 프롬프트,
+                유튜브 최적화까지 음악 콘텐츠 제작 흐름을 한 곳에서 관리합니다.
+              </p>
             </div>
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-500 italic">Sonic Intelligence</span>
+
+            <div className="flex gap-2">
+              <Link
+                href="/studio/music/projects"
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-sm font-black text-zinc-200 hover:border-rose-500/50"
+              >
+                <Folder size={17} />
+                프로젝트 보기
+              </Link>
+
+              <Link
+                href="/studio/music/lyrics"
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-rose-600 px-4 text-sm font-black text-white hover:bg-rose-500"
+              >
+                <Plus size={17} />
+                새 곡 만들기
+              </Link>
+            </div>
           </div>
-          <h1 className="text-5xl lg:text-7xl font-black italic uppercase tracking-tighter text-white leading-none">
-            Music <span className="text-indigo-500">Studio</span>
-          </h1>
-          <p className="text-zinc-500 text-sm lg:text-base font-medium max-w-2xl leading-relaxed italic pl-1">
-            멜로디에 담긴 당신의 이야기. 가사 생성부터 풀 파이프라인 작곡까지,
-            Creaibox만의 올인원 오디오 워크스테이션입니다.
-          </p>
-        </header>
+        </section>
 
-        {/* 핵심 구역: 자동 생성 설정 스테이션 */}
-        <section className="mb-20">
-          <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-[48px] blur opacity-10 group-hover:opacity-25 transition duration-1000"></div>
-            <div className="relative bg-zinc-900/40 border border-zinc-800 rounded-[48px] p-8 lg:p-16 overflow-hidden">
-              <div className="flex flex-col lg:flex-row items-center gap-12 relative z-10">
-                <div className="flex-1 space-y-8 text-left">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-indigo-400">
-                    <Sparkles size={14} className="animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-widest italic">One-Stop Creation</span>
-                  </div>
-                  <div className="space-y-4">
-                    <h2 className="text-4xl lg:text-5xl font-black italic uppercase text-white leading-tight">
-                      Auto <span className="text-indigo-500">Composition</span> Station
-                    </h2>
-                    <p className="text-zinc-400 text-lg font-medium leading-relaxed italic">
-                      가사, 제목, 번역, YouTube 최적화까지 한 번에. <br />
-                      생성할 곡의 개수와 스타일 포맷을 설정하고 사장님만의 음원을 광속으로 생산하세요.
-                    </p>
-                  </div>
+        <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {stats.map((item) => {
+            const Icon = item.icon;
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4">
-                    {["City Pop", "K-Pop", "Lo-fi", "Cinematic"].map((style) => (
-                      <div key={style} className="bg-black/40 border border-zinc-800 rounded-xl p-3 text-center text-[11px] font-black text-zinc-500 uppercase tracking-tighter hover:border-indigo-500/50 transition-colors cursor-pointer">
-                        {style}
-                      </div>
-                    ))}
-                  </div>
-
-                  <button className="flex items-center gap-4 px-10 py-5 bg-indigo-600 text-white font-black italic rounded-2xl hover:bg-indigo-500 transition-all shadow-2xl uppercase tracking-tighter group/btn">
-                    Launch Auto Station <PlayCircle size={20} className="group-hover/btn:scale-110 transition-transform" />
-                  </button>
+            return (
+              <div
+                key={item.label}
+                className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5"
+              >
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400">
+                  <Icon size={20} />
                 </div>
 
-                <div className="flex-1 w-full bg-black/60 rounded-[32px] border border-zinc-800 p-8 space-y-6 shadow-inner relative overflow-hidden">
-                  <div className="flex justify-between items-center mb-4">
-                    <ListMusic size={20} className="text-indigo-500" />
-                    <div className="flex gap-1">
-                      {[...Array(5)].map((_, i) => <div key={i} className="w-1 h-3 bg-indigo-500/30 rounded-full animate-pulse" />)}
+                <p className="text-2xl font-black">{item.value}</p>
+
+                <p className="mt-1 text-xs font-bold text-zinc-500">
+                  {item.label}
+                </p>
+              </div>
+            );
+          })}
+        </section>
+
+        <section>
+          <div className="mb-4">
+            <h2 className="text-xl font-black">음악 제작 도구</h2>
+            <p className="mt-1 text-sm text-zinc-500">
+              곡 아이디어부터 업로드용 메타데이터까지 순서대로 제작하세요.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {menus.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="group rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5 transition hover:-translate-y-1 hover:border-rose-500/40"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex gap-4">
+                      <div
+                        className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${item.color}`}
+                      >
+                        <Icon size={22} />
+                      </div>
+
+                      <div>
+                        <h3 className="font-black">{item.title}</h3>
+                        <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                          {item.desc}
+                        </p>
+                      </div>
                     </div>
+
+                    <ArrowRight
+                      size={18}
+                      className="text-zinc-600 transition group-hover:translate-x-1 group-hover:text-rose-400"
+                    />
                   </div>
-                  <div className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                        <div className={`h-full bg-indigo-500/50 rounded-full w-[${30 + i * 20}%]`} />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-8 flex justify-between text-[10px] font-black text-zinc-700 uppercase tracking-widest">
-                    <span>Lyrics Ready</span>
-                    <span>Suno V5.5 Sync</span>
-                  </div>
-                </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="grid gap-4 lg:grid-cols-3">
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+            <div className="flex items-center gap-3">
+              <Headphones className="text-rose-400" size={20} />
+              <h2 className="text-lg font-black">빠른 시작</h2>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {quickActions.map((item) => (
+                <button
+                  key={item}
+                  className="rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs font-bold text-zinc-300 hover:border-rose-500/40 hover:text-rose-400"
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+            <div className="flex items-center gap-3">
+              <Clock className="text-blue-400" size={20} />
+              <h2 className="text-lg font-black">최근 작업</h2>
+            </div>
+
+            <p className="mt-3 text-sm text-zinc-500">
+              최근 생성한 가사, SUNO 프롬프트, 커버 이미지가 여기에 표시됩니다.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+            <div className="flex items-center gap-3">
+              <Disc3 className="text-emerald-400" size={20} />
+              <h2 className="text-lg font-black">추천 워크플로우</h2>
+            </div>
+
+            <div className="mt-3 space-y-2 text-sm text-zinc-400">
+              <div className="flex items-center gap-2">
+                <Sparkles size={15} />
+                곡 콘셉트 기획
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Mic2 size={15} />
+                가사 & SUNO 프롬프트 생성
+              </div>
+
+              <div className="flex items-center gap-2">
+                <ImageIcon size={15} />
+                커버 이미지 제작
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Circle size={15} />
+                유튜브 제목 / 설명문 최적화
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Video size={15} />
+                영상 프롬프트 제작
               </div>
             </div>
           </div>
         </section>
 
-        {/* 하단 도구 그리드 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {musicTools.map((tool) => (
-            <div
-              key={tool.id}
-              className={`group bg-zinc-900/20 border border-zinc-800 rounded-[32px] p-8 transition-all duration-500 hover:bg-zinc-900/40 hover:-translate-y-2 border-dashed ${tool.color} cursor-pointer text-left`}
-            >
-              <div className="p-4 bg-black/40 w-fit rounded-2xl border border-zinc-800 group-hover:scale-110 transition-transform mb-6">
-                {tool.icon}
-              </div>
-              <div className="space-y-3">
-                <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600 border border-zinc-800/50 px-2 py-0.5 rounded-full">{tool.tag}</span>
-                <h3 className="text-xl font-black text-white italic uppercase tracking-tight group-hover:text-indigo-400 transition-colors">{tool.title}</h3>
-                <p className="text-zinc-500 text-xs font-bold leading-relaxed">{tool.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* 피날레 문구 */}
-        <div className="mt-32 py-20 border-t border-zinc-900 flex flex-col items-center justify-center space-y-6 text-center">
-          <div className="flex items-center gap-4">
-            <div className="h-[1px] w-12 bg-gradient-to-r from-transparent to-indigo-500" />
-            <h2 className="text-3xl lg:text-5xl font-black italic uppercase tracking-[0.2em] text-zinc-800">
-              Harmonizing <span className="text-indigo-950/20">Future</span>
-            </h2>
-            <div className="h-[1px] w-12 bg-gradient-to-l from-transparent to-indigo-500" />
+        <section className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-6">
+          <div className="flex items-center gap-3">
+            <Wand2 className="text-rose-400" size={20} />
+            <h2 className="text-lg font-black text-white">제작 팁</h2>
           </div>
-          <p className="text-indigo-500/40 text-sm lg:text-lg font-black uppercase tracking-[0.5em] animate-pulse italic">
-            현재 개발 진행 중입니다. 곧 오픈 예정입니다.
+
+          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+            음악 콘텐츠는 곡 제목, SUNO 프롬프트, 커버 이미지, 유튜브 설명문,
+            영상 프롬프트를 하나의 프로젝트로 묶어 관리하면 반복 제작 속도가 훨씬 빨라집니다.
           </p>
-        </div>
 
-        <footer className="mt-12 text-center">
-          <div className="text-[10px] font-black text-zinc-900 uppercase tracking-[0.5em] italic">
-            Creaibox Music Studio Identity System v1.0
+          <div className="mt-4 flex items-center gap-2 text-xs font-bold text-zinc-500">
+            <FileText size={14} />
+            다음 단계에서는 곡 프로젝트 DB와 라이브러리 저장 구조를 연결하면 됩니다.
           </div>
-        </footer>
+        </section>
       </div>
     </div>
   );

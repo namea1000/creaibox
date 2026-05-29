@@ -1,188 +1,282 @@
 "use client";
 
-import React, { useState } from 'react';
-import { 
-  Search, Play, TrendingUp, Users, BarChart3, 
-  Video, Globe, ChevronRight, ArrowUpRight, 
-  Filter, Sparkles, Database
-} from 'lucide-react'; // 🌟 Youtube를 Play로 교체했습니다.
-import { useRouter } from 'next/navigation';
+import React from "react";
+import Link from "next/link";
+import {
+  PlayCircle,
+  Users,
+  TrendingUp,
+  BarChart3,
+  Database,
+  Search,
+  Video,
+  Image as ImageIcon,
+  Sparkles,
+  FileText,
+  Bot,
+  LayoutDashboard,
+  ArrowRight,
+  Plus,
+  Clock,
+  Flame,
+  Eye,
+  MousePointerClick,
+} from "lucide-react";
 
-export default function YoutubeAnalyticsPage() {
-  const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery) return alert("채널명 또는 영상 URL을 입력해주세요!");
-    alert(`'${searchQuery}' 데이터 분석을 시작합니다.`);
-  };
-
+export default function YoutubeTrendHomePage() {
   const stats = [
-    { label: "Analyzed Channels", value: "1.2M+", icon: <Users size={16} /> },
-    { label: "Daily Video Track", value: "450K+", icon: <Video size={16} /> },
-    { label: "Trend Accuracy", value: "98.2%", icon: <TrendingUp size={16} /> },
+    { label: "분석 채널", value: "0", icon: Users },
+    { label: "급상승 영상", value: "0", icon: TrendingUp },
+    { label: "SEO 분석", value: "0", icon: Search },
+    { label: "전략 리포트", value: "0", icon: FileText },
   ];
 
-  const analysisTools = [
+  const youtubeMenus = [
     {
-      id: 'channel-search',
-      title: '채널 상세 분석',
-      description: '구독자 추이, 예상 수익, 시청자 성별/연령대 등 채널의 모든 지표 분석.',
-      icon: <Users className="text-red-500" size={32} />,
-      tag: 'Insight'
+      title: "채널 상세 분석",
+      desc: "채널 성장률, 영상 업로드 패턴, 조회수 흐름을 분석합니다.",
+      href: "/studio/youtube/channel",
+      icon: Users,
+      color: "from-red-600 to-orange-600",
     },
     {
-      id: 'video-trend',
-      title: '급상승 영상 트렌드',
-      description: '지금 이 시간 가장 빠르게 조회수가 오르는 영상과 키워드 실시간 추적.',
-      icon: <TrendingUp className="text-emerald-500" size={32} />,
-      tag: 'Real-time'
+      title: "급상승 영상 트렌드",
+      desc: "실시간 인기 영상과 카테고리별 상승 콘텐츠를 추적합니다.",
+      href: "/studio/youtube/rising",
+      icon: TrendingUp,
+      color: "from-orange-600 to-amber-600",
     },
     {
-      id: 'competitor',
-      title: '경쟁 채널 비교',
-      description: '내 채널과 경쟁 채널의 성장 지표를 1:1로 정밀 비교 분석.',
-      icon: <BarChart3 className="text-blue-500" size={32} />,
-      tag: 'Strategy'
+      title: "경쟁 채널 비교",
+      desc: "비슷한 주제의 채널을 비교하고 성장 포인트를 찾습니다.",
+      href: "/studio/youtube/compare",
+      icon: BarChart3,
+      color: "from-blue-600 to-cyan-600",
     },
     {
-      id: 'ad-calculator',
-      title: '광고 단가 계산기',
-      description: '채널 영향력을 기반으로 한 적정 광고 단가 및 마케팅 효율 산출.',
-      icon: <Database className="text-purple-500" size={32} />,
-      tag: 'Marketing'
-    }
+      title: "광고 단가 계산기",
+      desc: "예상 CPM, RPM, 조회수 기반 수익을 계산합니다.",
+      href: "/studio/youtube/cpm",
+      icon: Database,
+      color: "from-violet-600 to-purple-600",
+    },
+    {
+      title: "유튜브 SEO 분석",
+      desc: "제목, 설명, 태그, 키워드 최적화 상태를 점검합니다.",
+      href: "/studio/youtube/seo",
+      icon: Search,
+      color: "from-emerald-600 to-teal-600",
+    },
+    {
+      title: "쇼츠 바이럴 분석",
+      desc: "Shorts 조회수 패턴, 반복 시청, 후킹 요소를 분석합니다.",
+      href: "/studio/youtube/shorts",
+      icon: Video,
+      color: "from-pink-600 to-rose-600",
+    },
+    {
+      title: "썸네일 CTR 연구소",
+      desc: "썸네일 구성, 문구, 색감, 클릭률 개선 포인트를 연구합니다.",
+      href: "/studio/youtube/thumbnail",
+      icon: ImageIcon,
+      color: "from-amber-600 to-orange-600",
+    },
+    {
+      title: "AI 제목 생성기",
+      desc: "키워드 기반으로 클릭을 유도하는 제목 후보를 생성합니다.",
+      href: "/studio/youtube/title",
+      icon: Sparkles,
+      color: "from-yellow-500 to-amber-600",
+    },
+    {
+      title: "콘텐츠 전략 리포트",
+      desc: "채널 방향성, 콘텐츠 시리즈, 업로드 전략을 리포트로 정리합니다.",
+      href: "/studio/youtube/report",
+      icon: FileText,
+      color: "from-indigo-600 to-violet-600",
+    },
+    {
+      title: "유튜브 자동 제작 연결",
+      desc: "제목, 대본, 썸네일, 영상 제작 흐름을 자동화합니다.",
+      href: "/studio/youtube/workflow",
+      icon: Bot,
+      color: "from-cyan-600 to-blue-600",
+    },
+  ];
+
+  const quickTopics = [
+    "쇼츠 알고리즘",
+    "썸네일 CTR",
+    "유튜브 SEO",
+    "수익화 전략",
+    "AI 음악 채널",
+    "뉴스 쇼츠",
   ];
 
   return (
-    <div className="min-h-screen bg-[#05070a] text-zinc-100 font-sans">
-      <div className="max-w-[1400px] mx-auto p-6 lg:p-12 pt-24 lg:pt-32 pb-48">
-        
-        {/* 상단 헤더 섹션 */}
-        <header className="mb-16 space-y-4 text-left border-b border-zinc-800 pb-12">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-red-600/10 rounded-lg border border-red-500/20">
-              <Play className="text-red-500" size={24} fill="currentColor" />
-            </div>
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-red-500 italic">Data Intelligence</span>
-          </div>
-          <h1 className="text-5xl lg:text-7xl font-black italic uppercase tracking-tighter text-white leading-none">
-            YouTube <span className="text-red-600">Analytics</span>
-          </h1>
-          <p className="text-zinc-500 text-sm lg:text-base font-medium max-w-2xl leading-relaxed italic pl-1">
-            데이터로 읽는 알고리즘의 법칙. Vling 그 이상의 정밀한 분석을 통해 
-            당신의 채널 성장을 위한 가장 과학적인 로드맵을 제시합니다.
-          </p>
-        </header>
-
-        {/* 1. 메인 검색 스테이션 */}
-        <section className="mb-24 relative">
-          <div className="absolute -inset-1 bg-gradient-to-r from-red-600/20 to-zinc-900/0 rounded-[40px] blur-xl opacity-30" />
-          <div className="relative bg-zinc-900/40 border border-zinc-800 rounded-[40px] p-8 lg:p-12 shadow-2xl">
-            <form onSubmit={handleSearch} className="space-y-8">
-              <div className="flex flex-col lg:flex-row gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
-                  <input 
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="채널명 또는 영상 URL을 입력하여 데이터 추적 시작"
-                    className="w-full bg-black/60 border border-zinc-800 rounded-2xl py-6 pl-16 pr-6 text-lg font-bold text-white focus:border-red-500 outline-none transition-all placeholder:text-zinc-700"
-                  />
-                </div>
-                <button className="px-12 py-6 bg-red-600 hover:bg-red-500 text-white font-black italic rounded-2xl transition-all shadow-xl shadow-red-900/20 flex items-center justify-center gap-3 uppercase tracking-tighter">
-                  Analyze Data <ArrowUpRight size={20} />
-                </button>
+    <div className="min-h-full w-full bg-[#06080d] px-5 py-8 text-zinc-100 lg:px-8">
+      <div className="mx-auto max-w-7xl space-y-8">
+        <section className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-[#1a0909] p-7 shadow-2xl">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-red-400">
+                <PlayCircle size={15} />
+                YouTube Trend Studio
               </div>
 
-              <div className="flex flex-wrap gap-8 pt-4 border-t border-zinc-800/50">
-                {stats.map((stat, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="p-2 bg-zinc-800 rounded-lg text-red-500">{stat.icon}</div>
-                    <div>
-                      <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{stat.label}</p>
-                      <p className="text-lg font-black text-zinc-200">{stat.value}</p>
+              <h1 className="text-3xl font-black tracking-tight text-white md:text-5xl">
+                유튜브 트렌드 분석
+              </h1>
+
+              <p className="mt-4 max-w-2xl text-sm font-medium leading-relaxed text-zinc-400 md:text-base">
+                채널 분석, 급상승 영상, 경쟁 채널 비교, SEO, 쇼츠 바이럴,
+                썸네일 CTR, 제목 생성까지 유튜브 성장 전략을 한 곳에서 분석합니다.
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <Link
+                href="/studio/youtube/rising"
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-sm font-black text-zinc-200 transition hover:border-red-500/50 hover:text-white"
+              >
+                <Flame size={17} />
+                급상승 보기
+              </Link>
+
+              <Link
+                href="/studio/youtube/channel"
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-black text-white transition hover:bg-red-500"
+              >
+                <Plus size={17} />
+                채널 분석
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {stats.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <div
+                key={item.label}
+                className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5"
+              >
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 text-red-400">
+                  <Icon size={20} />
+                </div>
+                <p className="text-2xl font-black text-white">{item.value}</p>
+                <p className="mt-1 text-xs font-bold text-zinc-500">
+                  {item.label}
+                </p>
+              </div>
+            );
+          })}
+        </section>
+
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-black text-white">분석 메뉴</h2>
+              <p className="mt-1 text-sm font-medium text-zinc-500">
+                유튜브 채널과 콘텐츠 성장에 필요한 핵심 분석 도구입니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {youtubeMenus.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="group rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5 transition hover:-translate-y-0.5 hover:border-red-500/40 hover:bg-zinc-900"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex min-w-0 gap-4">
+                      <div
+                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${item.color} text-white shadow-lg`}
+                      >
+                        <Icon size={22} />
+                      </div>
+
+                      <div className="min-w-0">
+                        <h3 className="truncate text-base font-black text-white">
+                          {item.title}
+                        </h3>
+                        <p className="mt-1 line-clamp-2 text-xs font-medium leading-relaxed text-zinc-500">
+                          {item.desc}
+                        </p>
+                      </div>
                     </div>
+
+                    <ArrowRight
+                      size={18}
+                      className="shrink-0 text-zinc-600 transition group-hover:translate-x-1 group-hover:text-red-400"
+                    />
                   </div>
-                ))}
-              </div>
-            </form>
+                </Link>
+              );
+            })}
           </div>
         </section>
 
-        {/* 2. 분석 도구 그리드 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-32">
-          {analysisTools.map((tool) => (
-            <div 
-              key={tool.id}
-              className="group bg-zinc-900/20 border border-zinc-800 rounded-[32px] p-8 transition-all duration-500 hover:bg-zinc-900/40 hover:-translate-y-2 cursor-pointer flex flex-col justify-between"
-            >
-              <div className="space-y-6">
-                <div className="p-4 bg-black/40 w-fit rounded-2xl border border-zinc-800 group-hover:scale-110 transition-transform">
-                  {tool.icon}
-                </div>
-                <div className="space-y-2">
-                  <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600 bg-zinc-800/50 px-2 py-0.5 rounded">{tool.tag}</span>
-                  <h3 className="text-xl font-black text-white italic uppercase tracking-tight group-hover:text-red-500 transition-colors">{tool.title}</h3>
-                  <p className="text-zinc-500 text-xs font-bold leading-relaxed">{tool.description}</p>
-                </div>
+        <section className="grid gap-4 lg:grid-cols-3">
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+            <div className="flex items-center gap-3">
+              <Sparkles className="text-yellow-400" size={20} />
+              <h2 className="text-lg font-black text-white">빠른 분석 주제</h2>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {quickTopics.map((topic) => (
+                <Link
+                  key={topic}
+                  href={`/studio/youtube/report?topic=${encodeURIComponent(topic)}`}
+                  className="rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs font-bold text-zinc-300 transition hover:border-red-500/40 hover:text-red-400"
+                >
+                  {topic}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+            <div className="flex items-center gap-3">
+              <Clock className="text-blue-400" size={20} />
+              <h2 className="text-lg font-black text-white">최근 분석</h2>
+            </div>
+
+            <p className="mt-3 text-sm leading-relaxed text-zinc-500">
+              아직 분석한 채널이나 영상이 없습니다. 채널 URL을 입력하면 분석 기록이 이곳에 표시됩니다.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+            <div className="flex items-center gap-3">
+              <MousePointerClick className="text-emerald-400" size={20} />
+              <h2 className="text-lg font-black text-white">핵심 체크 포인트</h2>
+            </div>
+
+            <div className="mt-3 space-y-2 text-sm text-zinc-400">
+              <div className="flex items-center gap-2">
+                <Eye size={15} className="text-red-400" />
+                조회수 흐름
               </div>
-              <div className="mt-8 flex justify-end">
-                <ChevronRight size={20} className="text-zinc-800 group-hover:text-red-500 transition-colors" />
+              <div className="flex items-center gap-2">
+                <ImageIcon size={15} className="text-amber-400" />
+                썸네일 CTR
+              </div>
+              <div className="flex items-center gap-2">
+                <Search size={15} className="text-emerald-400" />
+                검색 키워드
               </div>
             </div>
-          ))}
-        </div>
-
-        {/* 3. 하단 트렌드 랭킹 맛보기 */}
-        <section className="bg-zinc-900/10 border border-zinc-900 rounded-[40px] p-8 lg:p-12 mb-32">
-          <div className="flex justify-between items-center mb-10">
-            <h2 className="text-2xl font-black italic uppercase text-white flex items-center gap-3">
-              <TrendingUp className="text-red-500" size={24} /> Top Rising Creators
-            </h2>
-            <button className="text-[10px] font-black text-zinc-600 hover:text-red-500 transition-colors uppercase tracking-[0.2em]">View Full Ranking</button>
-          </div>
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-6 p-4 rounded-2xl hover:bg-zinc-900/40 transition-all cursor-pointer border border-transparent hover:border-zinc-800">
-                <span className="text-2xl font-black italic text-zinc-800 w-8">0{i}</span>
-                <div className="w-12 h-12 bg-zinc-800 rounded-full shrink-0 overflow-hidden">
-                  <div className="w-full h-full bg-gradient-to-br from-red-500/20 to-zinc-700" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-sm font-black text-zinc-200">데이터분석 크리에이터 {i}</h4>
-                  <p className="text-[10px] font-bold text-zinc-600">IT / Technology</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs font-black text-emerald-500">▲ 24.5%</p>
-                  <p className="text-[10px] font-bold text-zinc-600 uppercase">Weekly Growth</p>
-                </div>
-              </div>
-            ))}
           </div>
         </section>
-
-        {/* 4. 피날레 문구 */}
-        <div className="py-20 border-t border-zinc-900 flex flex-col items-center justify-center space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="h-[1px] w-12 bg-gradient-to-r from-transparent to-red-500" />
-            <h2 className="text-3xl lg:text-5xl font-black italic uppercase tracking-[0.2em] text-zinc-800">
-              Tracking <span className="text-red-950/20">Growth</span>
-            </h2>
-            <div className="h-[1px] w-12 bg-gradient-to-l from-transparent to-red-500" />
-          </div>
-          <p className="text-red-500/40 text-sm lg:text-lg font-black uppercase tracking-[0.5em] animate-pulse italic pl-2">
-            현재 유튜브 데이터 엔진 동기화 중입니다. 곧 오픈 예정입니다.
-          </p>
-        </div>
-
-        <footer className="mt-12 text-center">
-            <div className="text-[10px] font-black text-zinc-900 uppercase tracking-[0.5em] italic">
-                Creaibox Youtube Intelligence v1.0
-            </div>
-        </footer>
       </div>
     </div>
   );

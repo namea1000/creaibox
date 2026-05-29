@@ -16,10 +16,6 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
-import Footer from "@/components/layout/Footer";
-import Sidebar from "@/components/layout/Sidebar";
-import Aside from "@/components/layout/Aside";
-
 const ADMIN_EMAILS = ["jenam7720@gmail.com", "namjjang7720@gmail.com"];
 
 type UserRole = "ADMIN" | "MANAGER" | "PAID" | "FREE";
@@ -185,13 +181,6 @@ export default function UserManagementPage() {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#05070a] font-sans text-slate-100">
       <div className="flex flex-1 overflow-hidden pt-20">
-        <Sidebar
-          activeMenu="Admin"
-          isCollapsed={isCollapsed}
-          setIsCollapsed={setIsCollapsed}
-          isMobileOpen={isMobileOpen}
-          setIsMobileOpen={setIsMobileOpen}
-        />
 
         <main className="custom-scrollbar flex-1 overflow-y-auto transition-all duration-300">
           <div className="mx-auto max-w-[1600px] p-8 pb-32 lg:p-12">
@@ -328,12 +317,12 @@ export default function UserManagementPage() {
                               <div className="flex items-center gap-4">
                                 <div
                                   className={`flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-black ${user.role === "ADMIN"
-                                      ? "bg-red-500/20 text-red-500"
-                                      : user.role === "MANAGER"
-                                        ? "bg-purple-500/20 text-purple-500"
-                                        : user.role === "PAID"
-                                          ? "bg-yellow-500/20 text-yellow-500"
-                                          : "bg-zinc-800 text-zinc-500"
+                                    ? "bg-red-500/20 text-red-500"
+                                    : user.role === "MANAGER"
+                                      ? "bg-purple-500/20 text-purple-500"
+                                      : user.role === "PAID"
+                                        ? "bg-yellow-500/20 text-yellow-500"
+                                        : "bg-zinc-800 text-zinc-500"
                                     }`}
                                 >
                                   {user.name[0]?.toUpperCase() || "U"}
@@ -359,12 +348,12 @@ export default function UserManagementPage() {
                                   })
                                 }
                                 className={`rounded-lg border px-3 py-2 text-[10px] font-black uppercase tracking-widest outline-none ${user.role === "ADMIN"
-                                    ? "border-red-500/20 bg-red-500/10 text-red-400"
-                                    : user.role === "MANAGER"
-                                      ? "border-purple-500/20 bg-purple-500/10 text-purple-400"
-                                      : user.role === "PAID"
-                                        ? "border-yellow-500/20 bg-yellow-500/10 text-yellow-400"
-                                        : "border-zinc-700 bg-zinc-800/50 text-zinc-400"
+                                  ? "border-red-500/20 bg-red-500/10 text-red-400"
+                                  : user.role === "MANAGER"
+                                    ? "border-purple-500/20 bg-purple-500/10 text-purple-400"
+                                    : user.role === "PAID"
+                                      ? "border-yellow-500/20 bg-yellow-500/10 text-yellow-400"
+                                      : "border-zinc-700 bg-zinc-800/50 text-zinc-400"
                                   }`}
                               >
                                 <option value="ADMIN">ADMIN</option>
@@ -383,13 +372,13 @@ export default function UserManagementPage() {
                                 <div className="h-1 w-32 overflow-hidden rounded-full bg-zinc-800">
                                   <div
                                     className={`h-full ${user.todayUsage >= 3 && user.role === "FREE"
-                                        ? "bg-red-500 shadow-[0_0_8px_#ef4444]"
-                                        : "bg-blue-500 shadow-[0_0_8px_#3b82f6]"
+                                      ? "bg-red-500 shadow-[0_0_8px_#ef4444]"
+                                      : "bg-blue-500 shadow-[0_0_8px_#3b82f6]"
                                       }`}
                                     style={{
                                       width: `${user.role === "FREE"
-                                          ? Math.min((user.todayUsage / 3) * 100, 100)
-                                          : Math.min((user.todayUsage / 100) * 100, 100)
+                                        ? Math.min((user.todayUsage / 3) * 100, 100)
+                                        : Math.min((user.todayUsage / 100) * 100, 100)
                                         }%`,
                                     }}
                                   />
@@ -410,8 +399,8 @@ export default function UserManagementPage() {
                                   })
                                 }
                                 className={`rounded-lg border px-3 py-2 text-[10px] font-black uppercase outline-none ${user.status === "ACTIVE"
-                                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
-                                    : "border-red-500/20 bg-red-500/10 text-red-400"
+                                  ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                                  : "border-red-500/20 bg-red-500/10 text-red-400"
                                   }`}
                               >
                                 <option value="ACTIVE">ACTIVE</option>
@@ -454,12 +443,7 @@ export default function UserManagementPage() {
             </footer>
           </div>
 
-          <Footer />
         </main>
-
-        <div className="hidden shrink-0 xl:flex">
-          <Aside />
-        </div>
       </div>
     </div>
   );

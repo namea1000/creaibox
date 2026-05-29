@@ -19,6 +19,9 @@ import {
   LogOut,
   LogIn,
   UserPlus,
+  Sparkles,
+  CreditCard,
+  HelpCircle,
 } from "lucide-react";
 
 interface StudioTopbarProps {
@@ -33,9 +36,32 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
   const [prompt, setPrompt] = useState("");
   const [user, setUser] = useState<User | null>(null);
   const [nickname, setNickname] = useState("");
+  const [planName] = useState("Plus");
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const getDisplayName = useCallback(() => {
+    if (nickname.trim()) return nickname.trim();
+    if (user?.email) return user.email.split("@")[0];
+    return "User";
+  }, [nickname, user]);
+
+  const getInitials = useCallback(() => {
+    const name = getDisplayName().trim();
+
+    if (/[가-힣]/.test(name)) {
+      return name.replace(/\s/g, "").slice(0, 2);
+    }
+
+    const parts = name.split(/[\s._-]+/).filter(Boolean);
+
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+
+    return name.slice(0, 2).toUpperCase();
+  }, [getDisplayName]);
 
   const fetchNickname = useCallback(
     async (userId: string) => {
@@ -142,7 +168,8 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
     }
   };
 
-  const userInitial = user?.email?.[0]?.toUpperCase() ?? "U";
+  const displayName = getDisplayName();
+  const initials = getInitials();
 
   return (
     <div className="sticky top-0 z-40 h-20 border-b border-zinc-800/70 bg-[#06080d]/95 px-5 backdrop-blur-xl lg:px-8">
@@ -199,7 +226,7 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
           <Bell size={20} />
         </button>
 
-        <div className="hidden min-w-[88px] justify-end md:flex">
+        <div className="hidden min-w-[190px] justify-end md:flex">
           {!isAuthReady ? (
             <div className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900 px-1.5 py-1.5">
               <div className="h-10 w-10 animate-pulse rounded-full bg-zinc-800" />
@@ -209,56 +236,94 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsProfileOpen((prev) => !prev)}
-                className="flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900 px-1.5 py-1.5 transition hover:border-blue-500/40"
+                className="flex h-14 min-w-[190px] items-center gap-3 rounded-2xl border border-zinc-700 bg-zinc-900 px-3 transition hover:border-blue-500/40 hover:bg-zinc-800/80"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-sm font-black text-white">
-                  {userInitial}
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-xs font-black text-white">
+                  {initials}
                 </div>
+
+                <div className="min-w-0 flex-1 text-left">
+                  <p className="truncate text-sm font-black leading-tight text-zinc-100">
+                    {displayName}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs font-bold leading-tight text-zinc-500">
+                    {planName}
+                  </p>
+                </div>
+
                 <ChevronDown
                   size={15}
-                  className={`mr-1 text-zinc-400 transition ${isProfileOpen ? "rotate-180" : ""
+                  className={`shrink-0 text-zinc-400 transition ${isProfileOpen ? "rotate-180" : ""
                     }`}
                 />
               </button>
 
               {isProfileOpen && (
-                <div className="absolute right-0 mt-3 w-80 overflow-hidden rounded-[22px] border border-zinc-800 bg-[#18181b] shadow-2xl">
+                <div className="absolute right-0 mt-3 w-60 overflow-hidden rounded-[22px] border border-zinc-800 bg-[#18181b] shadow-2xl">
                   <div className="border-b border-zinc-800 px-5 py-5">
-                    <p className="text-[11px] font-black uppercase tracking-[0.25em] text-zinc-500">
-                      Logged in as
-                    </p>
-                    <p className="mt-2 truncate text-base font-bold text-zinc-100">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-sm font-black text-white">
+                        {initials}
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="truncate text-lg font-black text-zinc-100">
+                          {displayName}
+                        </p>
+                        <p className="mt-0.5 text-sm font-bold text-zinc-400">
+                          {planName}
+                        </p>
+                      </div>
+                    </div>
+
+                    <p className="mt-4 truncate border-t border-zinc-800 pt-4 text-xs font-bold text-zinc-500">
                       {user.email}
                     </p>
-
-                    {nickname && (
-                      <div className="mt-4 flex items-center gap-3 border-t border-zinc-800 pt-4">
-                        <span className="rounded-lg bg-blue-500/10 px-3 py-1 text-xs font-black text-blue-400">
-                          NICK
-                        </span>
-                        <span className="truncate text-base font-black text-emerald-400">
-                          {nickname}
-                        </span>
-                      </div>
-                    )}
                   </div>
+
+                  <Link
+                    href="/pricing"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="flex items-center gap-4 px-5 py-2.5 text-base font-black text-zinc-300 transition hover:bg-zinc-800"
+                  >
+                    <Sparkles size={20} />
+                    요금제 업그레이드
+                  </Link>
+
+                  <Link
+                    href="/pricing"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="flex items-center gap-4 px-5 py-2.5 text-base font-black text-zinc-300 transition hover:bg-zinc-800"
+                  >
+                    <CreditCard size={20} />
+                    요금제 관리
+                  </Link>
 
                   <Link
                     href="/mypage"
                     onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-4 px-5 py-4 text-base font-black text-zinc-300 transition hover:bg-zinc-800"
+                    className="flex items-center gap-4 px-5 py-2.5 text-base font-black text-zinc-300 transition hover:bg-zinc-800"
                   >
                     <UserIcon size={20} />
-                    내 프로필
+                    프로필
                   </Link>
 
                   <Link
                     href="/apivault"
                     onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-4 px-5 py-4 text-base font-black text-zinc-300 transition hover:bg-zinc-800"
+                    className="flex items-center gap-4 px-5 py-2.5 text-base font-black text-zinc-300 transition hover:bg-zinc-800"
                   >
                     <Settings size={20} />
-                    API 키 관리
+                    설정 / API 키 관리
+                  </Link>
+
+                  <Link
+                    href="/help"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="flex items-center gap-4 border-t border-zinc-800 px-5 py-4 text-base font-black text-zinc-300 transition hover:bg-zinc-800"
+                  >
+                    <HelpCircle size={20} />
+                    도움말
                   </Link>
 
                   <button

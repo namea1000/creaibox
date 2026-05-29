@@ -18,10 +18,6 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
-import Footer from "@/components/layout/Footer";
-import Sidebar from "@/components/layout/Sidebar";
-import Aside from "@/components/layout/Aside";
-
 type DashboardStats = {
   creaiboxPosts: number;
   naverPosts: number;
@@ -215,14 +211,6 @@ export default function UserDashboardPage() {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#05070a] font-sans text-zinc-100">
       <div className="flex flex-1 overflow-hidden pt-20">
-        <Sidebar
-          activeMenu="Dashboard"
-          isCollapsed={isCollapsed}
-          setIsCollapsed={setIsCollapsed}
-          isMobileOpen={isMobileOpen}
-          setIsMobileOpen={setIsMobileOpen}
-        />
-
         <main className="custom-scrollbar flex-1 overflow-y-auto">
           <div className="mx-auto max-w-[1500px] p-8 pb-32 lg:p-12">
             <header className="mb-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
@@ -315,18 +303,11 @@ export default function UserDashboardPage() {
                 </div>
               )}
             </section>
-
             <footer className="mt-16 pb-10 text-center text-[10px] font-black uppercase italic tracking-[0.4em] text-zinc-800">
               Creaibox Personal AI Workspace Dashboard
             </footer>
           </div>
-
-          <Footer />
         </main>
-
-        <div className="hidden shrink-0 xl:flex">
-          <Aside />
-        </div>
       </div>
     </div>
   );
