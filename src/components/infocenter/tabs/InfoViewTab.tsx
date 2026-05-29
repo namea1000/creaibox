@@ -162,8 +162,8 @@ export default function InfoViewTab({ postId }: InfoViewTabProps) {
     if (!error) fetchComments();
   };
 
-  if (loading) return <div className="p-20 text-center animate-pulse text-zinc-500 font-black italic text-left uppercase">Loading...</div>;
-  if (!postData) return <div className="p-20 text-center text-red-500 font-black italic text-left uppercase">Post not found.</div>;
+  if (loading) return <div className="p-20 text-center animate-pulse text-zinc-500 font-black italic uppercase">Loading...</div>;
+  if (!postData) return <div className="p-20 text-center text-red-500 font-black italic uppercase">Post not found.</div>;
 
   const isAuthor = user?.email === postData.user_email;
   const inputBg = "bg-zinc-800/50 border-zinc-700 text-white";

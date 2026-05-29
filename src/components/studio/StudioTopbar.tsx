@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
+import { StickyNote } from "lucide-react";
 import {
   Menu,
   Plus,
@@ -224,6 +225,16 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
 
         <button className="hidden h-12 w-12 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-400 transition hover:text-white md:flex">
           <Bell size={20} />
+        </button>
+
+        <button
+          onClick={() => window.dispatchEvent(new Event("open-cre-note"))}
+          className="flex items-center gap-2 rounded-xl border border-white/10 bg-purple-700 px-4 h-12 text-zinc-300 hover:bg-emerald-500/15 hover:text-emerald-400"
+        >
+          <StickyNote size={20} />
+          <span className="text-sm font-medium">
+            Cre Note
+          </span>
         </button>
 
         <div className="hidden min-w-[190px] justify-end md:flex">
