@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { User } from "@supabase/supabase-js";
@@ -37,54 +37,60 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (cancelled) return;
-
-      const nextUser = session?.user ?? null;
-      setUser(nextUser);
-
-      if (nextUser?.id) {
+  const fetchNickname = useCallback(
+    async (userId: string) => {
+      try {
         const { data } = await supabase
           .from("profiles")
           .select("nickname")
-          .eq("id", nextUser.id)
+          .eq("id", userId)
           .maybeSingle();
 
-        if (!cancelled) setNickname(data?.nickname ?? "");
+        return data?.nickname ?? "";
+      } catch {
+        return "";
+      }
+    },
+    [supabase]
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const applyUser = async (nextUser: User | null) => {
+      if (cancelled) return;
+
+      setUser(nextUser);
+
+      if (nextUser?.id) {
+        const nextNickname = await fetchNickname(nextUser.id);
+        if (!cancelled) setNickname(nextNickname);
+      } else {
+        setNickname("");
+        setIsProfileOpen(false);
       }
 
-      setIsAuthReady(true);
+      if (!cancelled) setIsAuthReady(true);
+    };
+
+    const loadUser = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        await applyUser(session?.user ?? null);
+      } catch {
+        await applyUser(null);
+      }
     };
 
     void loadUser();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const nextUser = session?.user ?? null;
-
-      setUser(nextUser);
-      setIsAuthReady(true);
-
-      if (nextUser?.id) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("nickname")
-          .eq("id", nextUser.id)
-          .maybeSingle();
-
-        setNickname(data?.nickname ?? "");
-      } else {
-        setNickname("");
-        setIsProfileOpen(false);
-      }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      void applyUser(session?.user ?? null);
     });
 
     const handleClickOutside = (event: MouseEvent) => {
@@ -103,7 +109,7 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
       subscription.unsubscribe();
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [supabase]);
+  }, [fetchNickname, supabase]);
 
   const handlePromptSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,7 +136,6 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
       setUser(null);
       setNickname("");
 
-      router.replace("/login");
       router.refresh();
     } finally {
       setIsLoggingOut(false);
@@ -194,9 +199,14 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
           <Bell size={20} />
         </button>
 
-        {isAuthReady && (
-          user ? (
-            <div className="relative hidden md:block" ref={dropdownRef}>
+        <div className="hidden min-w-[88px] justify-end md:flex">
+          {!isAuthReady ? (
+            <div className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900 px-1.5 py-1.5">
+              <div className="h-10 w-10 animate-pulse rounded-full bg-zinc-800" />
+              <div className="mr-1 h-4 w-4 animate-pulse rounded bg-zinc-800" />
+            </div>
+          ) : user ? (
+            <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsProfileOpen((prev) => !prev)}
                 className="flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900 px-1.5 py-1.5 transition hover:border-blue-500/40"
@@ -263,7 +273,7 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
               )}
             </div>
           ) : (
-            <div className="hidden items-center gap-2 md:flex">
+            <div className="flex items-center gap-2">
               <Link
                 href="/login"
                 className="inline-flex h-12 items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 px-4 text-sm font-black text-zinc-300 transition hover:border-blue-500/40 hover:text-white"
@@ -280,8 +290,8 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
                 회원가입
               </Link>
             </div>
-          )
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

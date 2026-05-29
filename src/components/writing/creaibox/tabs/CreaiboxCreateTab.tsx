@@ -530,11 +530,11 @@ export default function CreaiboxCreateTab({
   ];
 
   return (
-    <div className="w-full min-h-screen bg-[#0a0c10] text-zinc-100 pt-4 overflow-y-auto relative text-[16px]">
-      <div className="max-w-[1700px] mx-auto px-4 py-2 h-auto grid grid-cols-1 lg:grid-cols-12 gap-4 relative z-10">
+    <div className="w-full max-w-full bg-transparent text-zinc-100 relative text-[16px] overflow-x-hidden">
+      <div className="mx-auto w-full max-w-[1500px] grid grid-cols-1 gap-4 lg:grid-cols-12 relative z-10">
 
         {/* [1단] 좌측 컨트롤 보드 (lg:col-span-3) */}
-        <div className="lg:col-span-3 flex flex-col gap-4 h-[calc(100vh-140px)] overflow-y-auto pr-1 custom-scrollbar text-left">
+        <div className="lg:col-span-3 flex flex-col gap-4 h-[calc(100vh-180px)] overflow-y-auto pr-1 custom-scrollbar text-left">
           <div className="p-5 rounded-2xl border border-zinc-800 bg-zinc-900/40 backdrop-blur-md space-y-4">
 
             <div className="p-4 bg-zinc-950/40 border border-zinc-800 rounded-xl space-y-2">
@@ -674,7 +674,7 @@ export default function CreaiboxCreateTab({
         </div>
 
         {/* [2단] 중앙 순수 뷰어 보드 (lg:col-span-6) */}
-        <div className="lg:col-span-6 h-[calc(100vh-140px)] flex flex-col rounded-2xl border border-zinc-800 bg-white overflow-hidden relative shadow-2xl">
+        <div className="lg:col-span-6 h-[calc(100vh-180px)] flex flex-col rounded-2xl border border-zinc-800 bg-white overflow-hidden relative shadow-2xl">
 
           {/* 상단 툴바 메뉴 구역 (배경은 다크 톤으로 헤더 영역을 세련되게 분리) */}
           <div className="flex justify-between items-center px-6 py-4 border-b border-zinc-200 bg-zinc-900 shrink-0">
@@ -782,7 +782,7 @@ export default function CreaiboxCreateTab({
         </div>
 
         {/* [3단] 우측 SEO 결과 카드 + 분석 관제탑 */}
-        <div className="lg:col-span-3 h-[calc(100vh-140px)] overflow-y-auto custom-scrollbar flex flex-col gap-4">
+        <div className="lg:col-span-3 h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar flex flex-col gap-4">
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 backdrop-blur-md p-5 shadow-2xl">
             <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
               <div>

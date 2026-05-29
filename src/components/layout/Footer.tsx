@@ -53,10 +53,10 @@ export default function Footer() {
         <div className="mb-14 grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-5">
           <div className="space-y-6 lg:col-span-2">
             <Link href="/" className="flex items-center gap-3">
-              <div className="relative h-10 w-40">
+              <div className="relative h-20 w-60">
                 <Image
                   src="/logobg.webp"
-                  alt="CreAIbox Logo"
+                  alt="Creaibox Logo"
                   fill
                   className="object-contain object-left"
                 />

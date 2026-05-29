@@ -3,10 +3,6 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import Sidebar from "@/components/layout/Sidebar";
-import Aside from "@/components/layout/Aside";
-import StudioTopbar from "@/components/studio/StudioTopbar";
-
 import {
   PenLine,
   ImageIcon,
@@ -132,13 +128,6 @@ export default function StudioPage() {
   return (
     <div className="min-h-screen bg-[#06080d] text-zinc-100">
       <div className="flex min-h-screen">
-        <Sidebar
-          activeMenu={activeMenu}
-          isCollapsed={isCollapsed}
-          setIsCollapsed={setIsCollapsed}
-          isMobileOpen={isMobileOpen}
-          setIsMobileOpen={setIsMobileOpen}
-        />
 
         {isMobileOpen && (
           <button
@@ -149,7 +138,6 @@ export default function StudioPage() {
         )}
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <StudioTopbar setIsMobileOpen={setIsMobileOpen} />
 
           <div className="flex min-h-0 flex-1">
             <main className="min-w-0 flex-1">
@@ -369,7 +357,6 @@ export default function StudioPage() {
               </div>
             </main>
 
-            <Aside />
           </div>
         </div>
       </div>
