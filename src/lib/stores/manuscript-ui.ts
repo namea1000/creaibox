@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ManuscriptStatusTab = 'all' | 'draft' | 'saved' | 'published';
+export type ManuscriptStatusTab = 'all' | 'draft' | 'saved' | 'published' | 'trash';
 
 interface ManuscriptUiState {
   creaiboxSearchTerm: string;

@@ -15,7 +15,7 @@ const NAVER_DETAIL_CACHE_PREFIX = "naver:manuscripts:detail:v1:";
 const QUERY_STALE_TIME = 1000 * 60 * 10;
 const QUERY_GC_TIME = 1000 * 60 * 30;
 
-export type ManuscriptStatus = "draft" | "saved" | "published";
+export type ManuscriptStatus = "draft" | "saved" | "published" | "trash";
 export type ManuscriptType = "create" | "recreate";
 
 export interface StudioImageBlock {
@@ -163,6 +163,7 @@ function safeWriteDetail(
 export function normalizePostStatus(status?: string | null): ManuscriptStatus {
   if (status === "published") return "published";
   if (status === "saved" || status === "completed") return "saved";
+  if (status === "trash") return "trash";
   return "draft";
 }
 
