@@ -10,6 +10,8 @@ import {
   X,
   Sparkles,
   LayoutDashboard,
+  CreditCard,
+  HelpCircle,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { User } from "@supabase/supabase-js";
@@ -22,9 +24,9 @@ export default function Header() {
   const [nickname, setNickname] = useState("");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [planName] = useState("Plus");
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const supabase = useMemo(() => createClient(), []);
@@ -49,7 +51,6 @@ export default function Header() {
 
   useEffect(() => {
     let cancelled = false;
-    setIsMounted(true);
 
     const applyUser = async (nextUser: User | null) => {
       if (cancelled) return;
@@ -147,7 +148,30 @@ export default function Header() {
     { label: "고객지원", href: "/help" },
   ];
 
-  const userInitial = user?.email?.[0]?.toUpperCase() ?? "U";
+  const getDisplayName = () => {
+    if (nickname.trim()) return nickname.trim();
+    if (user?.email) return user.email.split("@")[0];
+    return "User";
+  };
+
+  const getInitials = () => {
+    const name = getDisplayName().trim();
+
+    if (/[가-힣]/.test(name)) {
+      return name.replace(/\s/g, "").slice(0, 2);
+    }
+
+    const parts = name.split(/[\s._-]+/).filter(Boolean);
+
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+
+    return name.slice(0, 2).toUpperCase();
+  };
+
+  const displayName = getDisplayName();
+  const initials = getInitials();
 
   return (
     <header className="fixed left-0 right-0 top-0 z-[100] border-b border-slate-200/70 bg-white/80 backdrop-blur-xl">
@@ -177,8 +201,8 @@ export default function Header() {
           ))}
         </nav>
 
-        <div className="hidden w-[300px] shrink-0 items-center justify-end gap-3 lg:flex">
-          {!isMounted || !isAuthReady ? (
+        <div className="hidden w-[390px] shrink-0 items-center justify-end gap-3 lg:flex">
+          {!isAuthReady ? (
             <div className="flex items-center gap-3">
               <div className="h-10 w-36 animate-pulse rounded-xl bg-slate-100" />
               <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2 py-1.5 shadow-sm">
@@ -199,64 +223,111 @@ export default function Header() {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsProfileOpen((prev) => !prev)}
-                  className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2 py-1.5 shadow-sm transition hover:border-violet-200 hover:bg-violet-50"
+                  className="flex h-14 min-w-[172px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 shadow-sm transition hover:border-violet-200 hover:bg-violet-50"
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-sm font-black text-white">
-                    {userInitial}
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-xs font-black text-white">
+                    {initials}
+                  </div>
+
+                  <div className="min-w-0 flex-1 text-left">
+                    <p className="truncate text-sm font-black leading-tight text-slate-800">
+                      {displayName}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs font-bold leading-tight text-slate-400">
+                      {planName}
+                    </p>
                   </div>
 
                   <ChevronDown
                     size={15}
-                    className={`text-slate-400 transition-transform ${isProfileOpen ? "rotate-180" : ""
+                    className={`shrink-0 text-slate-400 transition-transform ${isProfileOpen ? "rotate-180" : ""
                       }`}
                   />
                 </button>
 
                 {isProfileOpen && (
-                  <div className="absolute right-0 mt-3 w-64 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
-                    <div className="border-b border-slate-100 bg-slate-50 px-4 py-4">
-                      <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">
-                        Logged in as
-                      </p>
+                  <div className="absolute right-0 mt-3 w-72 overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-2xl">
+                    <div className="border-b border-slate-100 bg-slate-50 px-5 py-5">
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-sm font-black text-white">
+                          {initials}
+                        </div>
 
-                      <p className="mt-1 truncate text-sm font-bold text-slate-700">
-                        {nickname || user.email}
+                        <div className="min-w-0">
+                          <p className="truncate text-lg font-black text-slate-800">
+                            {displayName}
+                          </p>
+                          <p className="mt-0.5 text-sm font-bold text-slate-500">
+                            {planName}
+                          </p>
+                        </div>
+                      </div>
+
+                      <p className="mt-4 truncate border-t border-slate-200 pt-4 text-xs font-bold text-slate-400">
+                        {user.email}
                       </p>
                     </div>
 
                     <Link
                       href="/studio"
                       onClick={() => setIsProfileOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-violet-50"
+                      className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
                     >
-                      <LayoutDashboard size={16} />
+                      <LayoutDashboard size={18} />
                       스튜디오로 이동
+                    </Link>
+
+                    <Link
+                      href="/pricing"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
+                    >
+                      <Sparkles size={18} />
+                      요금제 업그레이드
+                    </Link>
+
+                    <Link
+                      href="/pricing"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
+                    >
+                      <CreditCard size={18} />
+                      요금제 관리
                     </Link>
 
                     <Link
                       href="/mypage"
                       onClick={() => setIsProfileOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-violet-50"
+                      className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
                     >
-                      <UserIcon size={16} />
-                      내 프로필
+                      <UserIcon size={18} />
+                      프로필
                     </Link>
 
                     <Link
                       href="/apivault"
                       onClick={() => setIsProfileOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-violet-50"
+                      className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
                     >
-                      <Settings size={16} />
-                      API 키 관리
+                      <Settings size={18} />
+                      설정 / API 키 관리
+                    </Link>
+
+                    <Link
+                      href="/help"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-4 border-t border-slate-100 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
+                    >
+                      <HelpCircle size={18} />
+                      도움말
                     </Link>
 
                     <button
                       onClick={handleLogout}
                       disabled={isLoggingOut}
-                      className="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3 text-left text-sm font-bold text-red-500 hover:bg-red-50 disabled:opacity-50"
+                      className="flex w-full items-center gap-4 border-t border-slate-100 px-5 py-3 text-left text-sm font-black text-red-500 transition hover:bg-red-50 disabled:opacity-50"
                     >
-                      <LogOut size={16} />
+                      <LogOut size={18} />
                       {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
                     </button>
                   </div>

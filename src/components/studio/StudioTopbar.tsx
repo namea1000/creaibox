@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
@@ -23,14 +23,16 @@ import {
   Sparkles,
   CreditCard,
   HelpCircle,
+  Home,
+  ChevronRight,
 } from "lucide-react";
-
 interface StudioTopbarProps {
   setIsMobileOpen: (open: boolean) => void;
 }
 
 export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const supabase = useMemo(() => createClient(), []);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -182,8 +184,36 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
           <Menu size={22} />
         </button>
 
-        <form onSubmit={handlePromptSubmit} className="relative flex-1">
-          <div className="flex h-14 items-center rounded-xl border border-zinc-800 bg-zinc-900/90 shadow-2xl shadow-black/20 transition focus-within:border-blue-500/50">
+        <div className="hidden min-w-[260px] items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/80 pl-2 pr-3 py-2 text-sm font-bold text-zinc-300 xl:flex">
+          <Link
+            href="/"
+            className="-ml-1 flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-white"
+          >
+            <Home size={16} />
+          </Link>
+
+          <ChevronRight size={14} className="text-zinc-600" />
+
+          <Link
+            href="/studio"
+            className="text-zinc-300 hover:text-blue-400"
+          >
+            Studio
+          </Link>
+
+          {pathname !== "/studio" && (
+            <>
+              <ChevronRight size={14} className="text-zinc-600" />
+
+              <span className="capitalize text-blue-400">
+                {pathname.replace("/studio/", "").split("/")[0]}
+              </span>
+            </>
+          )}
+        </div>
+
+        <form onSubmit={handlePromptSubmit} className="relative min-w-0 flex-1">
+          <div className="flex h-12 items-center rounded-xl border border-zinc-800 bg-zinc-900/90 shadow-2xl shadow-black/20 transition focus-within:border-blue-500/50">
             <button
               type="button"
               onClick={() => router.push("/studio/writing/creaibox/create")}
@@ -229,31 +259,31 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
 
         <button
           onClick={() => window.dispatchEvent(new Event("open-cre-note"))}
-          className="flex items-center gap-2 rounded-xl border border-white/10 bg-purple-700 px-4 h-12 text-zinc-300 hover:bg-emerald-500/15 hover:text-emerald-400"
+          className="hidden h-12 items-center gap-2 rounded-xl border border-white/10 bg-purple-700 px-4 text-zinc-300 hover:bg-emerald-500/15 hover:text-emerald-400 md:flex"
         >
           <StickyNote size={20} />
-          <span className="text-sm font-medium">
+          <span className="text-sm font-black text-zinc-100">
             Cre Note
           </span>
         </button>
 
-        <div className="hidden min-w-[190px] justify-end md:flex">
+        <div className="flex shrink-0 justify-end md:min-w-[190px]">
           {!isAuthReady ? (
             <div className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900 px-1.5 py-1.5">
               <div className="h-10 w-10 animate-pulse rounded-full bg-zinc-800" />
-              <div className="mr-1 h-4 w-4 animate-pulse rounded bg-zinc-800" />
+              <div className="mr-1 hidden h-4 w-4 animate-pulse rounded bg-zinc-800 md:block" />
             </div>
           ) : user ? (
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsProfileOpen((prev) => !prev)}
-                className="flex h-14 min-w-[190px] items-center gap-3 rounded-2xl border border-zinc-700 bg-zinc-900 px-3 transition hover:border-blue-500/40 hover:bg-zinc-800/80"
+                className="flex h-12 w-12 items-center justify-center rounded-2xl border border-zinc-700 bg-zinc-900 transition hover:border-blue-500/40 hover:bg-zinc-800/80 md:w-auto md:min-w-[190px] md:justify-start md:gap-3 md:px-3"
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-xs font-black text-white">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-xs font-black text-white md:h-10 md:w-10">
                   {initials}
                 </div>
 
-                <div className="min-w-0 flex-1 text-left">
+                <div className="hidden min-w-0 flex-1 text-left md:block">
                   <p className="truncate text-sm font-black leading-tight text-zinc-100">
                     {displayName}
                   </p>
@@ -264,7 +294,7 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
 
                 <ChevronDown
                   size={15}
-                  className={`shrink-0 text-zinc-400 transition ${isProfileOpen ? "rotate-180" : ""
+                  className={`hidden shrink-0 text-zinc-400 transition md:block ${isProfileOpen ? "rotate-180" : ""
                     }`}
                 />
               </button>

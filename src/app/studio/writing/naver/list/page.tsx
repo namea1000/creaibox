@@ -9,6 +9,59 @@ import { useNaverManuscriptsQuery, naverManuscriptKeys, type StudioManuscriptRec
 import { useManuscriptUiStore } from '@/lib/stores/manuscript-ui';
 
 const PAGE_SIZE = 15;
+const NAVER_LIST_CACHE_KEY = "naver:manuscripts:list:v1";
+
+function safeText(value?: string | null) {
+  return value ?? "";
+}
+
+function readCachedList(): StudioManuscriptRecord[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const raw = window.sessionStorage.getItem(NAVER_LIST_CACHE_KEY);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeCachedList(records: StudioManuscriptRecord[]) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.sessionStorage.setItem(NAVER_LIST_CACHE_KEY, JSON.stringify(records));
+  } catch { }
+}
+
+function normalizeNaverRecord(row: any, index: number): StudioManuscriptRecord {
+  const id = row.id;
+  const content = row.content ?? "";
+
+  return {
+    id,
+    displayId: row.display_id ?? row.displayId ?? id ?? index + 1,
+    title: row.title ?? "제목 없음",
+    content,
+    targetKeyword: row.target_keyword ?? row.targetKeyword ?? "",
+    selectedTone: row.selected_tone ?? row.selectedTone ?? "",
+    status: row.status ?? "saved",
+    postType: row.post_type ?? row.postType ?? "create",
+    sourceMode: row.source_mode ?? row.sourceMode ?? "",
+    createdAt: row.created_at ?? row.createdAt ?? null,
+    updatedAt: row.updated_at ?? row.updatedAt ?? row.created_at ?? null,
+    slug: row.slug ?? "",
+    metaDescription: row.meta_description ?? row.metaDescription ?? "",
+    focusKeyword: row.focus_keyword ?? row.focusKeyword ?? "",
+    canonicalUrl: row.canonical_url ?? row.canonicalUrl ?? "",
+    seoTags: Array.isArray(row.seo_tags) ? row.seo_tags : [],
+    wordCount: row.word_count ?? row.wordCount ?? getWordCount(null, content),
+    wordCountGoal: row.word_count_goal ?? row.wordCountGoal ?? null,
+  } as StudioManuscriptRecord;
+}
 
 function formatDisplayDate(value?: string | null) {
   if (!value) return '-';
@@ -36,8 +89,114 @@ export default function NaverManuscriptListPage() {
   const searchTerm = useManuscriptUiStore((state) => state.naverSearchTerm);
   const setSearchTerm = useManuscriptUiStore((state) => state.setNaverSearchTerm);
 
-  const { data: manuscripts = [], isLoading, isFetching, refetch } = useNaverManuscriptsQuery();
-  const isInitialLoading = isLoading && manuscripts.length === 0;
+  const {
+    data: queryManuscripts = [],
+    isLoading,
+    isFetching,
+    refetch,
+  } = useNaverManuscriptsQuery();
+
+  const [cachedManuscripts, setCachedManuscripts] = useState<StudioManuscriptRecord[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
+  const [fallbackManuscripts, setFallbackManuscripts] = useState<StudioManuscriptRecord[]>([]);
+  const [isFallbackLoading, setIsFallbackLoading] = useState(false);
+  const [fallbackError, setFallbackError] = useState<string | null>(null);
+
+  const manuscripts = useMemo(() => {
+    if (!isMounted) return [];
+
+    if (queryManuscripts.length > 0) return queryManuscripts;
+    if (fallbackManuscripts.length > 0) return fallbackManuscripts;
+    return cachedManuscripts;
+  }, [cachedManuscripts, fallbackManuscripts, isMounted, queryManuscripts]);
+
+  const isInitialLoading =
+    !isMounted || (manuscripts.length === 0 && (isLoading || isFetching || isFallbackLoading));
+
+  const fetchDirectlyFromSupabase = useCallback(async () => {
+    setIsFallbackLoading(true);
+    setFallbackError(null);
+
+    const { data, error } = await supabase
+      .from("writing_naver_posts")
+      .select("*")
+      .order("updated_at", { ascending: false });
+
+    setIsFallbackLoading(false);
+
+    if (error) {
+      setFallbackError(error.message);
+      return;
+    }
+
+    const normalized = (data ?? []).map((row, index) =>
+      normalizeNaverRecord(row, index)
+    );
+
+    setFallbackManuscripts(normalized);
+    setCachedManuscripts(normalized);
+    writeCachedList(normalized);
+    queryClient.setQueryData(naverManuscriptKeys.list, normalized);
+  }, [queryClient, supabase]);
+
+  useEffect(() => {
+    const cached = readCachedList();
+    if (cached.length > 0) {
+      setCachedManuscripts(cached);
+      queryClient.setQueryData(naverManuscriptKeys.list, cached);
+    }
+  }, [queryClient]);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (queryManuscripts.length > 0) {
+      setFallbackError(null);
+      setCachedManuscripts(queryManuscripts);
+      writeCachedList(queryManuscripts);
+    }
+  }, [queryManuscripts]);
+
+  useEffect(() => {
+    const hasQueryData = queryManuscripts.length > 0;
+    const hasCache = cachedManuscripts.length > 0;
+
+    if (!isLoading && !isFetching && !hasQueryData && !hasCache) {
+      void fetchDirectlyFromSupabase();
+    }
+  }, [
+    cachedManuscripts.length,
+    fetchDirectlyFromSupabase,
+    isFetching,
+    isLoading,
+    queryManuscripts.length,
+  ]);
+
+  useEffect(() => {
+    void refetch();
+
+    const handleFocus = () => {
+      void refetch();
+      void fetchDirectlyFromSupabase();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void refetch();
+        void fetchDirectlyFromSupabase();
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [fetchDirectlyFromSupabase, refetch]);
 
   const filteredManuscripts = useMemo(() => {
     const lowerSearch = searchTerm.trim().toLowerCase();
@@ -45,9 +204,9 @@ export default function NaverManuscriptListPage() {
       const matchesStatus = statusTab === 'all' || manuscript.status === statusTab;
       const matchesSearch =
         !lowerSearch ||
-        manuscript.title.toLowerCase().includes(lowerSearch) ||
-        manuscript.targetKeyword.toLowerCase().includes(lowerSearch) ||
-        manuscript.selectedTone.toLowerCase().includes(lowerSearch);
+        safeText(manuscript.title).toLowerCase().includes(lowerSearch) ||
+        safeText(manuscript.targetKeyword).toLowerCase().includes(lowerSearch) ||
+        safeText(manuscript.selectedTone).toLowerCase().includes(lowerSearch);
       return matchesStatus && matchesSearch;
     });
   }, [manuscripts, searchTerm, statusTab]);
@@ -136,7 +295,10 @@ export default function NaverManuscriptListPage() {
           <span>원고 장부가 실시간으로 동기화됩니다. 다른 탭 복귀 시 자동으로 갱신을 시작합니다.</span>
         </div>
         <button
-          onClick={() => void refetch()}
+          onClick={async () => {
+            await refetch();
+            await fetchDirectlyFromSupabase();
+          }}
           className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/80 hover:bg-white/10"
         >
           <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
@@ -248,7 +410,14 @@ export default function NaverManuscriptListPage() {
         </div>
       )}
 
-      {!isInitialLoading && manuscripts.length === 0 && (
+      {fallbackError && manuscripts.length === 0 && (
+        <div className="mt-6 rounded-2xl border border-rose-500/20 bg-rose-500/5 px-5 py-4 text-rose-200/80 flex items-center gap-3">
+          <AlertCircle className="h-5 w-5" />
+          원고 목록을 불러오지 못했습니다: {fallbackError}
+        </div>
+      )}
+
+      {isMounted && !isInitialLoading && manuscripts.length === 0 && (
         <div className="mt-6 rounded-2xl border border-white/10 bg-[#10141c] px-5 py-6 text-white/60">
           현재 계정에 저장된 네이버 원고가 없습니다.
         </div>

@@ -530,23 +530,33 @@ export default function CreaiboxCreateTab({
   ];
 
   return (
-    <div className="w-full max-w-full bg-transparent text-zinc-100 relative text-[16px] overflow-x-hidden">
-      <div className="mx-auto w-full max-w-[1500px] grid grid-cols-1 gap-4 lg:grid-cols-12 relative z-10">
+    <div className="h-full w-full overflow-hidden bg-[#0b0b0d] text-zinc-100 relative text-[16px]">
+      <div className="h-full w-full grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)_380px] relative z-10">
 
-        {/* [1단] 좌측 컨트롤 보드 (lg:col-span-3) */}
-        <div className="lg:col-span-3 flex flex-col gap-4 h-[calc(100vh-180px)] overflow-y-auto pr-1 custom-scrollbar text-left">
-          <div className="p-5 rounded-2xl border border-zinc-800 bg-zinc-900/40 backdrop-blur-md space-y-4">
+        {/* 좌측 생성 패널 */}
+        <div className="h-full overflow-y-auto custom-scrollbar border-r border-zinc-800/80 bg-[#111216] text-left">
+          <div className="p-5 space-y-4">
 
-            <div className="p-4 bg-zinc-950/40 border border-zinc-800 rounded-xl space-y-2">
+            <div className="p-4 bg-zinc-950/60 border border-zinc-800 rounded-xl space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[13px] font-black text-zinc-300">최신 정보 팩트체크 엔진 (Google Search)</span>
+                <span className="text-[13px] font-black text-zinc-300">
+                  최신 정보 팩트체크 엔진
+                </span>
                 <label className="relative flex items-center cursor-pointer">
-                  <input type="checkbox" checked={useSearch} onChange={(e) => setUseSearch(e.target.checked)} className="sr-only peer" />
+                  <input
+                    type="checkbox"
+                    checked={useSearch}
+                    onChange={(e) => setUseSearch(e.target.checked)}
+                    className="sr-only peer"
+                  />
                   <div className="w-5 h-5 rounded border border-zinc-700 peer-checked:bg-blue-600 flex items-center justify-center transition-all">
                     {useSearch && <span className="text-white text-[10px] font-black">✓</span>}
                   </div>
                 </label>
               </div>
+              <p className="text-[11px] font-bold text-zinc-500">
+                Google Search 기반 최신 정보 반영
+              </p>
             </div>
 
             <div className="space-y-3 text-xs">
@@ -564,9 +574,13 @@ export default function CreaiboxCreateTab({
               </div>
 
               <div>
-                <label className="block text-zinc-400 font-bold mb-1.5">2. 글 유형 (Type)</label>
+                <label className="block text-zinc-400 font-bold mb-1.5">2. 글 유형</label>
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 flex items-center justify-between">
-                  <select value={postType} onChange={(e) => setPostType(e.target.value)} className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none">
+                  <select
+                    value={postType}
+                    onChange={(e) => setPostType(e.target.value)}
+                    className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none"
+                  >
                     <optgroup label="1️⃣ 인사이트 & 트렌드">
                       <option>AI 인사이트 포스팅</option>
                       <option>트렌드 브리프</option>
@@ -588,9 +602,13 @@ export default function CreaiboxCreateTab({
               </div>
 
               <div>
-                <label className="block text-zinc-400 font-bold mb-1.5">3. 말투 (Tone)</label>
+                <label className="block text-zinc-400 font-bold mb-1.5">3. 말투</label>
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 flex items-center justify-between">
-                  <select value={selectedTone} onChange={(e) => setSelectedTone(e.target.value)} className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none">
+                  <select
+                    value={selectedTone}
+                    onChange={(e) => setSelectedTone(e.target.value)}
+                    className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none"
+                  >
                     <option>전문적이고 통찰력 있는 분석 (기술 블로그)</option>
                     <option>친근하고 명확한 실무 설명 (가이드형 포스팅)</option>
                     <option>브랜드 중심의 신뢰형 설명 (서비스 소개형)</option>
@@ -602,19 +620,22 @@ export default function CreaiboxCreateTab({
               </div>
 
               <div>
-                <label className="block text-zinc-400 font-bold mb-1.5">4. 길이 (Length)</label>
+                <label className="block text-zinc-400 font-bold mb-1.5">4. 길이</label>
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 flex items-center justify-between">
-                  <select value={wordCountGoal} onChange={(e) => setWordCountGoal(e.target.value)} className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none">
-                    <option value="800">📰 짧게 (약 800자): 뉴스형 / 핵심 정보 빠른 전달</option>
-                    <option value="1500">✍️ 보통 (약 1,500자): 일반 정보성 블로그형</option>
-                    <option value="3000">🚀 길게 (약 3,000자): SEO 최적화형 / 상위 노출 공략</option>
-                    <option value="5000">📚 아주 길게 (약 5,000자): 전문 가이드형 / 심층 분석 콘텐츠</option>
-                    <option value="8000">💰 초장문 (약 8,000자): 애드센스 수익형 / 체류시간 극대화</option>
+                  <select
+                    value={wordCountGoal}
+                    onChange={(e) => setWordCountGoal(e.target.value)}
+                    className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none"
+                  >
+                    <option value="800">📰 짧게 (약 800자)</option>
+                    <option value="1500">✍️ 보통 (약 1,500자)</option>
+                    <option value="3000">🚀 길게 (약 3,000자)</option>
+                    <option value="5000">📚 아주 길게 (약 5,000자)</option>
+                    <option value="8000">💰 초장문 (약 8,000자)</option>
                   </select>
                   <ChevronDown size={14} className="text-zinc-500 shrink-0 ml-1" />
                 </div>
               </div>
-
             </div>
 
             <button
@@ -624,11 +645,10 @@ export default function CreaiboxCreateTab({
             >
               {isAiLoading && (
                 <div
-                  className="absolute left-0 top-0 h-full bg-emerald-400/40 transition-all duration-300 ease-out z-0 border-r-2 border-emerald-300 shadow-[2px_0_10px_rgba(52,211,153,0.5)]"
+                  className="absolute left-0 top-0 h-full bg-emerald-400/40 transition-all duration-300 ease-out z-0 border-r-2 border-emerald-300"
                   style={{ width: `${progress}%` }}
                 />
               )}
-
               <div className="relative z-10 flex items-center justify-center gap-3 text-white text-lg font-black">
                 {isAiLoading ? (
                   <>
@@ -645,7 +665,7 @@ export default function CreaiboxCreateTab({
             </button>
 
             {generationStatusMessage && isAiLoading && (
-              <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3">
+              <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3">
                 <div className="flex items-center gap-2 text-sm font-bold text-amber-200">
                   <Loader2 size={16} className="animate-spin" />
                   {generationStatusMessage}
@@ -654,7 +674,7 @@ export default function CreaiboxCreateTab({
             )}
 
             {generationErrorMessage && !isAiLoading && (
-              <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-200">
+              <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-200">
                 {generationErrorMessage}
               </div>
             )}
@@ -663,27 +683,27 @@ export default function CreaiboxCreateTab({
               <p className="text-[14px] font-black text-zinc-400">글쓰기 템플릿 예시</p>
               <div className="space-y-1.5">
                 {templates.map((text, idx) => (
-                  <button key={idx} onClick={() => setTargetKeyword(text)} className="w-full text-left px-4 py-3 border rounded-xl text-[12px] font-bold transition-all bg-zinc-900/40 border-zinc-800 hover:border-blue-500/50 hover:bg-zinc-800/60 text-zinc-400 truncate">
+                  <button
+                    key={idx}
+                    onClick={() => setTargetKeyword(text)}
+                    className="w-full text-left px-4 py-3 border rounded-xl text-[12px] font-bold transition-all bg-zinc-950/50 border-zinc-800 hover:border-blue-500/50 hover:bg-zinc-800/60 text-zinc-400 truncate"
+                  >
                     {text}
                   </button>
                 ))}
               </div>
             </div>
-
           </div>
         </div>
 
-        {/* [2단] 중앙 순수 뷰어 보드 (lg:col-span-6) */}
-        <div className="lg:col-span-6 h-[calc(100vh-180px)] flex flex-col rounded-2xl border border-zinc-800 bg-white overflow-hidden relative shadow-2xl">
-
-          {/* 상단 툴바 메뉴 구역 (배경은 다크 톤으로 헤더 영역을 세련되게 분리) */}
+        {/* 중앙 뷰어 */}
+        <div className="h-full min-w-0 flex flex-col bg-white overflow-hidden relative">
           <div className="flex justify-between items-center px-6 py-4 border-b border-zinc-200 bg-zinc-900 shrink-0">
             <span className="text-xs font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#00c73c] animate-pulse" />
               Creaibox Blog View Mode
             </span>
 
-            {/* 사장님 탑 메뉴 액션 그룹 */}
             <div className="flex items-center gap-1.5 relative">
               <button
                 type="button"
@@ -694,7 +714,6 @@ export default function CreaiboxCreateTab({
                 <Trash2 size={11} /> DELETE
               </button>
 
-              {/* COPY */}
               <button
                 onClick={handleCopy}
                 disabled={!content || isAiLoading}
@@ -703,7 +722,6 @@ export default function CreaiboxCreateTab({
                 <Copy size={11} /> COPY
               </button>
 
-              {/* SAVE (dropdown) */}
               <div className="relative">
                 <button
                   onClick={() => setIsSaveDropdownOpen(!isSaveDropdownOpen)}
@@ -712,6 +730,7 @@ export default function CreaiboxCreateTab({
                 >
                   <Download size={11} /> DOWN
                 </button>
+
                 {isSaveDropdownOpen && (
                   <div className="absolute right-0 mt-1.5 w-36 bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl z-50 overflow-hidden text-left divide-y divide-zinc-800/40">
                     <button onClick={downloadTxt} className="w-full px-3 py-2 text-[10px] font-black text-zinc-300 hover:bg-zinc-900 hover:text-white flex items-center gap-1.5">
@@ -724,7 +743,6 @@ export default function CreaiboxCreateTab({
                 )}
               </div>
 
-              {/* 글수정 이동 */}
               {editLink ? (
                 <Link
                   href={editLink}
@@ -742,7 +760,6 @@ export default function CreaiboxCreateTab({
                 </button>
               )}
 
-              {/* Preview */}
               <button
                 onClick={() => setIsPreviewOpen(true)}
                 disabled={!content || isAiLoading}
@@ -753,21 +770,19 @@ export default function CreaiboxCreateTab({
             </div>
           </div>
 
-          {/* Creaibox 블로그형 마크다운 뷰어 영역 */}
           <div className="flex-1 p-10 overflow-y-auto custom-scrollbar text-left bg-white transition-all">
             {!content && !isAiLoading ? (
               <div className="h-full flex flex-col items-center justify-center text-zinc-400 italic font-bold text-sm">
                 AI 콘텐츠가 생성되면 여기에 표시됩니다.
               </div>
             ) : (
-              <div className="max-w-[820px] mx-auto pb-32 font-sans">
+              <div className="max-w-[860px] mx-auto pb-32 font-sans">
                 {title && (
                   <h1 className="text-[28px] font-black text-[#111111] leading-snug mb-10 border-b border-zinc-200 pb-6 tracking-tight">
                     {title}
                   </h1>
                 )}
 
-                {/* Creaibox 블로그용 커스텀 마크다운 렌더링 세션 */}
                 <div className="markdown-content">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
@@ -781,19 +796,23 @@ export default function CreaiboxCreateTab({
           </div>
         </div>
 
-        {/* [3단] 우측 SEO 결과 카드 + 분석 관제탑 */}
-        <div className="lg:col-span-3 h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar flex flex-col gap-4">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 backdrop-blur-md p-5 shadow-2xl">
+        {/* 우측 SEO 타워 */}
+        <div className="h-full overflow-y-auto custom-scrollbar flex flex-col gap-4 border-l border-zinc-800/80 bg-[#111216] p-4">
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/40 p-5">
             <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">SEO & Publishing</p>
-                <h3 className="mt-1 text-base font-black text-zinc-100">생성과 함께 채워지는 발행 정보</h3>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">
+                  SEO & Publishing
+                </p>
+                <h3 className="mt-1 text-base font-black text-zinc-100">
+                  발행 정보
+                </h3>
               </div>
               <span className={`rounded-full px-2.5 py-1 text-[10px] font-black border ${seoHealthLabel === '준비 완료'
-                ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
-                : seoHealthLabel === '보완 필요'
-                  ? 'border-amber-500/20 bg-amber-500/10 text-amber-300'
-                  : 'border-zinc-700 bg-zinc-800/80 text-zinc-400'
+                  ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
+                  : seoHealthLabel === '보완 필요'
+                    ? 'border-amber-500/20 bg-amber-500/10 text-amber-300'
+                    : 'border-zinc-700 bg-zinc-800/80 text-zinc-400'
                 }`}>
                 {seoHealthLabel}
               </span>
@@ -801,82 +820,36 @@ export default function CreaiboxCreateTab({
 
             <div className="mt-4 grid grid-cols-3 gap-3">
               <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-zinc-500">META LENGTH</p>
-                <p className={`mt-2 text-lg font-black ${metaDescriptionLength >= 90 && metaDescriptionLength <= 155 ? 'text-emerald-400' : 'text-amber-400'
-                  }`}>
-                  {metaDescriptionLength}
-                </p>
-                <p className="mt-1 text-[11px] text-zinc-500">권장 90-155자</p>
+                <p className="text-[10px] font-black uppercase text-zinc-500">META</p>
+                <p className="mt-2 text-lg font-black text-amber-400">{metaDescriptionLength}</p>
               </div>
-
               <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-zinc-500">SLUG SIZE</p>
-                <p className={`mt-2 text-lg font-black ${slugLength > 0 && slugLength <= 80 ? 'text-blue-400' : 'text-amber-400'
-                  }`}>
-                  {slugLength}
-                </p>
-                <p className="mt-1 text-[11px] text-zinc-500">권장 80자 이하</p>
+                <p className="text-[10px] font-black uppercase text-zinc-500">SLUG</p>
+                <p className="mt-2 text-lg font-black text-blue-400">{slugLength}</p>
               </div>
-
               <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-zinc-500">TAG COUNT</p>
-                <p className="mt-2 text-lg font-black text-fuchsia-400">
-                  {seoTags.length}
-                </p>
-                <p className="mt-1 text-[11px] text-zinc-500">SEO 태그 개수</p>
+                <p className="text-[10px] font-black uppercase text-zinc-500">TAG</p>
+                <p className="mt-2 text-lg font-black text-fuchsia-400">{seoTags.length}</p>
               </div>
             </div>
 
             <div className="mt-4 space-y-3">
-              <div>
-                <label className="block text-zinc-400 font-bold mb-1.5 text-[12px]">슬러그 (Slug)</label>
-                <input
-                  type="text"
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
-                  placeholder="예: ai-content-strategy-2026"
-                  className="w-full px-3 py-2.5 text-[14px] rounded-xl border border-zinc-200 bg-white text-zinc-900 font-bold focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
+              <SeoInput label="슬러그" value={slug} onChange={setSlug} placeholder="ai-content-strategy-2026" />
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
                   <label className="block text-zinc-400 font-bold text-[12px]">Meta Description</label>
-                  <span className={`text-[11px] font-black ${metaDescriptionLength >= 90 && metaDescriptionLength <= 155 ? 'text-emerald-400' : 'text-zinc-500'
-                    }`}>
-                    {metaDescriptionLength}/155
-                  </span>
+                  <span className="text-[11px] font-black text-zinc-500">{metaDescriptionLength}/155</span>
                 </div>
                 <textarea
                   value={metaDescription}
                   onChange={(e) => setMetaDescription(e.target.value)}
                   placeholder="검색 결과에 보여줄 요약 설명"
                   rows={3}
-                  className="w-full px-3 py-2.5 text-[14px] rounded-xl border border-zinc-200 bg-white text-zinc-900 font-bold focus:outline-none focus:border-blue-500 resize-none"
+                  className="w-full px-3 py-2.5 text-[14px] rounded-xl border border-zinc-700 bg-zinc-950 text-zinc-100 font-bold focus:outline-none focus:border-blue-500 resize-none"
                 />
               </div>
-
-              <div>
-                <label className="block text-zinc-400 font-bold mb-1.5 text-[12px]">Focus Keyword</label>
-                <input
-                  type="text"
-                  value={focusKeyword}
-                  onChange={(e) => setFocusKeyword(e.target.value)}
-                  placeholder="핵심 포커스 키워드"
-                  className="w-full px-3 py-2.5 text-[14px] rounded-xl border border-zinc-200 bg-white text-zinc-900 font-bold focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-zinc-400 font-bold mb-1.5 text-[12px]">Canonical URL</label>
-                <input
-                  type="text"
-                  value={canonicalUrl}
-                  onChange={(e) => setCanonicalUrl(e.target.value)}
-                  placeholder="https://creaibox.blog/..."
-                  className="w-full px-3 py-2.5 text-[14px] rounded-xl border border-zinc-200 bg-white text-zinc-900 font-bold focus:outline-none focus:border-blue-500"
-                />
-              </div>
+              <SeoInput label="Focus Keyword" value={focusKeyword} onChange={setFocusKeyword} placeholder="핵심 포커스 키워드" />
+              <SeoInput label="Canonical URL" value={canonicalUrl} onChange={setCanonicalUrl} placeholder="https://creaibox.blog/..." />
 
               <div>
                 <label className="block text-zinc-400 font-bold mb-1.5 text-[12px]">SEO Tags</label>
@@ -885,38 +858,27 @@ export default function CreaiboxCreateTab({
                   value={seoTags.join(', ')}
                   onChange={(e) => setSeoTags(e.target.value.split(',').map((tag) => tag.trim()).filter(Boolean))}
                   placeholder="ai, seo, content, blog"
-                  className="w-full px-3 py-2.5 text-[14px] rounded-xl border border-zinc-200 bg-white text-zinc-900 font-bold focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2.5 text-[14px] rounded-xl border border-zinc-700 bg-zinc-950 text-zinc-100 font-bold focus:outline-none focus:border-blue-500"
                 />
-                {seoTags.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {seoTags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-1 text-[11px] font-black text-blue-300"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           </div>
 
           <CreaiboxAnalysisTower
-            seoScore={analysisMetrics.seoScore} seoChecks={analysisMetrics.seoChecks} posRatio={posRatio}
-            frequencies={analysisMetrics.frequencies} content={content} crawlabilityScore={analysisMetrics.crawlabilityScore} isDensitySafe={analysisMetrics.isDensitySafe}
+            seoScore={analysisMetrics.seoScore}
+            seoChecks={analysisMetrics.seoChecks}
+            posRatio={posRatio}
+            frequencies={analysisMetrics.frequencies}
+            content={content}
+            crawlabilityScore={analysisMetrics.crawlabilityScore}
+            isDensitySafe={analysisMetrics.isDensitySafe}
           />
         </div>
-
       </div>
 
-      {/* [Creaibox 모바일 블로그 프리뷰 모달] */}
       {isPreviewOpen && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
           <div className="bg-zinc-950 border border-zinc-800 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[85vh] relative text-left animate-fade-in">
-
-            {/* 헤더 */}
             <div className="bg-[#00c73c] px-6 py-4 flex justify-between items-center text-white shrink-0">
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-sm tracking-tight bg-white text-[#00c73c] px-2 py-0.5 rounded-md">C</span>
@@ -927,7 +889,6 @@ export default function CreaiboxCreateTab({
               </button>
             </div>
 
-            {/* Creaibox 모바일 프레임 미리보기 */}
             <div className="flex-1 overflow-y-auto custom-scrollbar bg-white p-6 text-zinc-900 font-sans">
               <div className="flex items-center gap-3 border-b border-zinc-100 pb-4 mb-6">
                 <div className="w-10 h-10 rounded-full bg-[#00c73c]/10 text-[#00c73c] flex items-center justify-center font-black text-xs shrink-0 border border-[#00c73c]/20">
@@ -946,7 +907,6 @@ export default function CreaiboxCreateTab({
                   </h2>
                 )}
 
-                {/* 모바일 뷰에서도 정밀 스타일 동기화 */}
                 <div className="markdown-content">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
@@ -958,7 +918,6 @@ export default function CreaiboxCreateTab({
               </div>
             </div>
 
-            {/* 하단 제어 */}
             <div className="p-4 border-t border-zinc-800 bg-zinc-950 flex justify-end shrink-0">
               <button
                 onClick={() => setIsPreviewOpen(false)}
@@ -970,7 +929,31 @@ export default function CreaiboxCreateTab({
           </div>
         </div>
       )}
+    </div>
+  );
+}
 
+function SeoInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <div>
+      <label className="block text-zinc-400 font-bold mb-1.5 text-[12px]">{label}</label>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full px-3 py-2.5 text-[14px] rounded-xl border border-zinc-700 bg-zinc-950 text-zinc-100 font-bold focus:outline-none focus:border-blue-500"
+      />
     </div>
   );
 }

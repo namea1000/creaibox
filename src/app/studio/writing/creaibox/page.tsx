@@ -50,21 +50,21 @@ export default function CreaiboxWritingHomePage() {
     {
       title: "발행 콘텐츠 아카이브",
       desc: "저장된 원고, 발행 콘텐츠, 작성 이력을 관리합니다.",
-      href: "/studio/writing/creaibox/archive",
+      href: "/studio/writing/creaibox/list",
       icon: Archive,
       color: "from-blue-600 to-cyan-600",
     },
     {
       title: "아이디어 제너레이터",
       desc: "블로그 주제, 제목, 소제목, 콘텐츠 방향을 제안합니다.",
-      href: "/studio/writing/creaibox/idea",
+      href: "/studio/writing/creaibox/ideagenerator",
       icon: Lightbulb,
       color: "from-yellow-500 to-amber-600",
     },
     {
       title: "트렌드 대시보드",
       desc: "키워드, 검색 흐름, 콘텐츠 트렌드를 확인합니다.",
-      href: "/studio/writing/creaibox/trend",
+      href: "/studio/writing/creaibox/analytics",
       icon: BarChart3,
       color: "from-emerald-600 to-teal-600",
     },
@@ -123,7 +123,7 @@ export default function CreaiboxWritingHomePage() {
 
             <div className="flex gap-2">
               <Link
-                href="/studio/writing/creaibox/archive"
+                href="/studio/writing/creaibox/list"
                 className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-sm font-black text-zinc-200 hover:border-violet-500/50"
               >
                 <Archive size={17} />

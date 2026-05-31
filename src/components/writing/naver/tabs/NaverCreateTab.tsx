@@ -405,16 +405,18 @@ export default function NaverCreateTab({
   ];
 
   return (
-    <div className="w-full min-h-screen bg-[#0a0c10] text-zinc-100 pt-4 overflow-y-auto relative text-[16px]">
-      <div className="max-w-[1700px] mx-auto px-4 py-2 h-auto grid grid-cols-1 lg:grid-cols-12 gap-4 relative z-10">
+    <div className="h-full w-full overflow-hidden bg-[#0b0b0d] text-zinc-100 relative text-[16px]">
+      <div className="h-full w-full grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)_360px] relative z-10">
 
-        {/* [1단] 좌측 컨트롤 보드 (lg:col-span-3) */}
-        <div className="lg:col-span-3 flex flex-col gap-4 h-[calc(100vh-140px)] overflow-y-auto pr-1 custom-scrollbar text-left">
-          <div className="p-5 rounded-2xl border border-zinc-800 bg-zinc-900/40 backdrop-blur-md space-y-4">
+        {/* 좌측 생성 패널 */}
+        <div className="h-full overflow-y-auto custom-scrollbar border-r border-zinc-800/80 bg-[#111216] text-left">
+          <div className="p-5 space-y-4">
 
-            <div className="p-4 bg-zinc-950/40 border border-zinc-800 rounded-xl space-y-2">
+            <div className="p-4 bg-zinc-950/60 border border-zinc-800 rounded-xl space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[13px] font-black text-zinc-300">최신 정보 팩트체크 엔진 (Google Search)</span>
+                <span className="text-[13px] font-black text-zinc-300">
+                  최신 정보 팩트체크 엔진
+                </span>
                 <label className="relative flex items-center cursor-pointer">
                   <input type="checkbox" checked={useSearch} onChange={(e) => setUseSearch(e.target.checked)} className="sr-only peer" />
                   <div className="w-5 h-5 rounded border border-zinc-700 peer-checked:bg-blue-600 flex items-center justify-center transition-all">
@@ -422,6 +424,9 @@ export default function NaverCreateTab({
                   </div>
                 </label>
               </div>
+              <p className="text-[11px] font-bold text-zinc-500">
+                Google Search 기반 최신 정보 반영
+              </p>
             </div>
 
             <div className="space-y-3 text-xs">
@@ -439,19 +444,33 @@ export default function NaverCreateTab({
               </div>
 
               <div>
-                <label className="block text-zinc-400 font-bold mb-1.5">2. 글 유형 (Type)</label>
+                <label className="block text-zinc-400 font-bold mb-1.5">2. 글 유형</label>
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 flex items-center justify-between">
                   <select value={postType} onChange={(e) => setPostType(e.target.value)} className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none">
-                    <optgroup label="1️⃣ 기본 및 도구"><option>AI 자동 포스팅</option><option>AI 툴 및 웹 서비스 가이드</option><option>유틸리티 (설치/방법)</option><option>일반 정보성 포스팅</option></optgroup>
-                    <optgroup label="2️⃣ 수익형 핵심"><option>생활 정책 및 정부 지원금</option><option>금융 및 재테크</option><option>기업 정보 및 주식 정보</option><option>건강 정보 및 영양제 분석</option></optgroup>
-                    <optgroup label="3️⃣ 리뷰 및 라이프 스타일"><option>일반 제품 리뷰</option><option>자동차 모델 리뷰</option><option>게임 리뷰 및 공략법</option></optgroup>
+                    <optgroup label="1️⃣ 기본 및 도구">
+                      <option>AI 자동 포스팅</option>
+                      <option>AI 툴 및 웹 서비스 가이드</option>
+                      <option>유틸리티 (설치/방법)</option>
+                      <option>일반 정보성 포스팅</option>
+                    </optgroup>
+                    <optgroup label="2️⃣ 수익형 핵심">
+                      <option>생활 정책 및 정부 지원금</option>
+                      <option>금융 및 재테크</option>
+                      <option>기업 정보 및 주식 정보</option>
+                      <option>건강 정보 및 영양제 분석</option>
+                    </optgroup>
+                    <optgroup label="3️⃣ 리뷰 및 라이프 스타일">
+                      <option>일반 제품 리뷰</option>
+                      <option>자동차 모델 리뷰</option>
+                      <option>게임 리뷰 및 공략법</option>
+                    </optgroup>
                   </select>
                   <ChevronDown size={14} className="text-zinc-500 shrink-0 ml-1" />
                 </div>
               </div>
 
               <div>
-                <label className="block text-zinc-400 font-bold mb-1.5">3. 말투 (Tone)</label>
+                <label className="block text-zinc-400 font-bold mb-1.5">3. 말투</label>
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 flex items-center justify-between">
                   <select value={selectedTone} onChange={(e) => setSelectedTone(e.target.value)} className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none">
                     <option>친근하고 부드러운 말투 (블로그 후기, 일상)</option>
@@ -466,14 +485,14 @@ export default function NaverCreateTab({
               </div>
 
               <div>
-                <label className="block text-zinc-400 font-bold mb-1.5">4. 길이 (Length)</label>
+                <label className="block text-zinc-400 font-bold mb-1.5">4. 길이</label>
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 flex items-center justify-between">
                   <select value={wordCountGoal} onChange={(e) => setWordCountGoal(e.target.value)} className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none">
-                    <option value="800">📰 짧게 (약 800자): 뉴스형 / 핵심 정보 빠른 전달</option>
-                    <option value="1500">✍️ 보통 (약 1,500자): 일반 정보성 블로그형</option>
-                    <option value="3000">🚀 길게 (약 3,000자): SEO 최적화형 / 상위 노출 공략</option>
-                    <option value="5000">📚 아주 길게 (약 5,000자): 전문 가이드형 / 심층 분석 콘텐츠</option>
-                    <option value="8000">💰 초장문 (약 8,000자): 애드센스 수익형 / 체류시간 극대화</option>
+                    <option value="800">📰 짧게 (약 800자)</option>
+                    <option value="1500">✍️ 보통 (약 1,500자)</option>
+                    <option value="3000">🚀 길게 (약 3,000자)</option>
+                    <option value="5000">📚 아주 길게 (약 5,000자)</option>
+                    <option value="8000">💰 초장문 (약 8,000자)</option>
                   </select>
                   <ChevronDown size={14} className="text-zinc-500 shrink-0 ml-1" />
                 </div>
@@ -487,7 +506,7 @@ export default function NaverCreateTab({
             >
               {isAiLoading && (
                 <div
-                  className="absolute left-0 top-0 h-full bg-emerald-400/40 transition-all duration-300 ease-out z-0 border-r-2 border-emerald-300 shadow-[2px_0_10px_rgba(52,211,153,0.5)]"
+                  className="absolute left-0 top-0 h-full bg-emerald-400/40 transition-all duration-300 ease-out z-0 border-r-2 border-emerald-300"
                   style={{ width: `${progress}%` }}
                 />
               )}
@@ -506,22 +525,24 @@ export default function NaverCreateTab({
                 )}
               </div>
             </button>
+
             {generationStatusMessage && isAiLoading && (
-              <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm font-bold text-amber-200">
+              <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm font-bold text-amber-200">
                 {generationStatusMessage}
               </div>
             )}
 
             {generationErrorMessage && !isAiLoading && (
-              <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-200">
+              <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-200">
                 {generationErrorMessage}
               </div>
             )}
+
             <div className="pt-4 space-y-2 border-t border-zinc-800/60">
               <p className="text-[14px] font-black text-zinc-400">글쓰기 템플릿 예시</p>
               <div className="space-y-1.5">
                 {templates.map((text, idx) => (
-                  <button key={idx} onClick={() => setTargetKeyword(text)} className="w-full text-left px-4 py-3 border rounded-xl text-[12px] font-bold transition-all bg-zinc-900/40 border-zinc-800 hover:border-blue-500/50 hover:bg-zinc-800/60 text-zinc-400 truncate">
+                  <button key={idx} onClick={() => setTargetKeyword(text)} className="w-full text-left px-4 py-3 border rounded-xl text-[12px] font-bold transition-all bg-zinc-950/50 border-zinc-800 hover:border-blue-500/50 hover:bg-zinc-800/60 text-zinc-400 truncate">
                     {text}
                   </button>
                 ))}
@@ -531,19 +552,15 @@ export default function NaverCreateTab({
           </div>
         </div>
 
-        {/* [2단] 중앙 순수 뷰어 보드 (lg:col-span-6) */}
-        <div className="lg:col-span-6 h-[calc(100vh-140px)] flex flex-col rounded-2xl border border-zinc-800 bg-white overflow-hidden relative shadow-2xl">
-
-          {/* 상단 툴바 메뉴 구역 (배경은 다크 톤으로 헤더 영역을 세련되게 분리) */}
+        {/* 중앙 뷰어 */}
+        <div className="h-full min-w-0 flex flex-col bg-white overflow-hidden relative">
           <div className="flex justify-between items-center px-6 py-4 border-b border-zinc-200 bg-zinc-900 shrink-0">
             <span className="text-xs font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#00c73c] animate-pulse" />
               Naver Blog View Mode
             </span>
 
-            {/* 사장님 탑 메뉴 액션 그룹 */}
             <div className="flex items-center gap-1.5 relative">
-              {/* COPY */}
               <button
                 onClick={handleCopy}
                 disabled={!content || isAiLoading}
@@ -552,7 +569,6 @@ export default function NaverCreateTab({
                 <Copy size={11} /> COPY
               </button>
 
-              {/* SAVE (dropdown) */}
               <div className="relative">
                 <button
                   onClick={() => setIsSaveDropdownOpen(!isSaveDropdownOpen)}
@@ -573,25 +589,16 @@ export default function NaverCreateTab({
                 )}
               </div>
 
-              {/* 글수정 이동 */}
               {editLink ? (
-                <Link
-                  href={editLink}
-                  className="px-3 py-1.5 border border-zinc-800 hover:border-zinc-700 bg-zinc-900/50 hover:text-white rounded-xl text-[11px] font-black text-zinc-400 transition-all flex items-center gap-1"
-                >
+                <Link href={editLink} className="px-3 py-1.5 border border-zinc-800 hover:border-zinc-700 bg-zinc-900/50 hover:text-white rounded-xl text-[11px] font-black text-zinc-400 transition-all flex items-center gap-1">
                   글수정 이동 <ExternalLink size={11} />
                 </Link>
               ) : (
-                <button
-                  type="button"
-                  disabled
-                  className="px-3 py-1.5 border border-zinc-800 bg-zinc-900/30 rounded-xl text-[11px] font-black text-zinc-600 transition-all flex items-center gap-1 cursor-not-allowed"
-                >
+                <button type="button" disabled className="px-3 py-1.5 border border-zinc-800 bg-zinc-900/30 rounded-xl text-[11px] font-black text-zinc-600 transition-all flex items-center gap-1 cursor-not-allowed">
                   글수정 이동 <ExternalLink size={11} />
                 </button>
               )}
 
-              {/* Preview */}
               <button
                 onClick={() => setIsPreviewOpen(true)}
                 disabled={!content || isAiLoading}
@@ -602,26 +609,21 @@ export default function NaverCreateTab({
             </div>
           </div>
 
-          {/* [개선 완료] 네이버 블로그형 순수 미백 마크다운 뷰어 영역 */}
           <div className="flex-1 p-10 overflow-y-auto custom-scrollbar text-left bg-white transition-all">
             {!content && !isAiLoading ? (
               <div className="h-full flex flex-col items-center justify-center text-zinc-400 italic font-bold text-sm">
                 AI 콘텐츠가 생성되면 여기에 표시됩니다.
               </div>
             ) : (
-              <div className="max-w-2xl mx-auto pb-32 font-sans">
+              <div className="max-w-[760px] mx-auto pb-32 font-sans">
                 {title && (
                   <h1 className="text-[28px] font-black text-[#111111] leading-snug mb-10 border-b border-zinc-200 pb-6 tracking-tight">
                     {title}
                   </h1>
                 )}
 
-                {/* 네이버 블로그용 커스텀 마크다운 렌더링 세션 */}
                 <div className="markdown-content">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={customMarkdownComponents}
-                  >
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={customMarkdownComponents}>
                     {content}
                   </ReactMarkdown>
                 </div>
@@ -630,22 +632,24 @@ export default function NaverCreateTab({
           </div>
         </div>
 
-        {/* [3단] 우측 분석 관제탑 (lg:col-span-3) */}
-        <div className="lg:col-span-3 h-[calc(100vh-140px)] overflow-y-auto custom-scrollbar">
+        {/* 우측 분석 타워 */}
+        <div className="h-full overflow-y-auto custom-scrollbar border-l border-zinc-800/80 bg-[#111216] p-4">
           <NaverAnalysisTower
-            seoScore={analysisMetrics.seoScore} seoChecks={analysisMetrics.seoChecks} posRatio={posRatio}
-            frequencies={analysisMetrics.frequencies} content={content} naverBotScore={analysisMetrics.naverBotScore} isDensitySafe={analysisMetrics.isDensitySafe}
+            seoScore={analysisMetrics.seoScore}
+            seoChecks={analysisMetrics.seoChecks}
+            posRatio={posRatio}
+            frequencies={analysisMetrics.frequencies}
+            content={content}
+            naverBotScore={analysisMetrics.naverBotScore}
+            isDensitySafe={analysisMetrics.isDensitySafe}
           />
         </div>
 
       </div>
 
-      {/* [네이버 모바일 블로그 정품 실물 Mockup 뷰어 모달] */}
       {isPreviewOpen && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
           <div className="bg-zinc-950 border border-zinc-800 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[85vh] relative text-left animate-fade-in">
-
-            {/* 헤더 */}
             <div className="bg-[#00c73c] px-6 py-4 flex justify-between items-center text-white shrink-0">
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-sm tracking-tight bg-white text-[#00c73c] px-2 py-0.5 rounded-md">N</span>
@@ -656,7 +660,6 @@ export default function NaverCreateTab({
               </button>
             </div>
 
-            {/* 네이버 실물 모바일 프레임 모형 */}
             <div className="flex-1 overflow-y-auto custom-scrollbar bg-white p-6 text-zinc-900 font-sans">
               <div className="flex items-center gap-3 border-b border-zinc-100 pb-4 mb-6">
                 <div className="w-10 h-10 rounded-full bg-[#00c73c]/10 text-[#00c73c] flex items-center justify-center font-black text-xs shrink-0 border border-[#00c73c]/20">
@@ -675,19 +678,14 @@ export default function NaverCreateTab({
                   </h2>
                 )}
 
-                {/* 모바일 뷰에서도 정밀 스타일 동기화 */}
                 <div className="markdown-content">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={customMarkdownComponents}
-                  >
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={customMarkdownComponents}>
                     {content}
                   </ReactMarkdown>
                 </div>
               </div>
             </div>
 
-            {/* 하단 제어 */}
             <div className="p-4 border-t border-zinc-800 bg-zinc-950 flex justify-end shrink-0">
               <button
                 onClick={() => setIsPreviewOpen(false)}

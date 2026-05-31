@@ -205,162 +205,234 @@ export default function NaverRecreateTab({
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#0a0c10] text-zinc-100 pt-4 overflow-y-auto relative">
-      <div className="max-w-[1700px] mx-auto px-4 py-4 h-auto min-h-[calc(100vh-100px)] overflow-visible grid grid-cols-1 lg:grid-cols-12 gap-4 relative z-10">
-        <div className="lg:col-span-3 flex flex-col gap-4 h-fit">
-          <div className="p-5 rounded-2xl border border-zinc-800 bg-zinc-900/30 backdrop-blur-md space-y-4">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-blue-400 flex items-center gap-1.5">
-              <Cpu size={14} /> AI Recreate Control
-            </h3>
-            <div className="grid grid-cols-2 gap-1.5 p-1 bg-zinc-950 rounded-xl border border-zinc-850">
-              <button type="button" onClick={() => setSourceMode('url')} className={`py-2 text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${sourceMode === 'url' ? 'bg-zinc-800 text-emerald-400 border border-zinc-700/60' : 'text-zinc-500 hover:text-zinc-300'}`}>
-                <Link2 size={13} /> URL 주소 재창조
-              </button>
-              <button type="button" onClick={() => setSourceMode('text')} className={`py-2 text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${sourceMode === 'text' ? 'bg-zinc-800 text-blue-400 border border-zinc-700/60' : 'text-zinc-500 hover:text-zinc-300'}`}>
-                <FileText size={13} /> 원본 글 본문 입력
-              </button>
-            </div>
+    <div className="h-full w-full overflow-hidden bg-[#0b0b0d] text-zinc-100 relative">
+      <div className="h-full w-full grid grid-cols-1 lg:grid-cols-[380px_minmax(0,1fr)_360px] relative z-10">
 
-            <div className="space-y-3 text-xs">
-              {sourceMode === 'url' ? (
-                <div className="space-y-1.5">
-                  <label className="text-zinc-400 font-bold flex items-center gap-1">
-                    <span className="w-1 h-1 bg-emerald-400 rounded-full" /> 타겟 글 주소
+        {/* 좌측 재창조 컨트롤 패널 */}
+        <div className="h-full overflow-y-auto custom-scrollbar border-r border-zinc-800/80 bg-[#111216] text-left">
+          <div className="p-5 space-y-4">
+            <div className="p-5 rounded-2xl border border-zinc-800 bg-zinc-950/40 space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-blue-400 flex items-center gap-1.5">
+                <Cpu size={14} /> AI Recreate Control
+              </h3>
+
+              <div className="grid grid-cols-2 gap-1.5 p-1 bg-zinc-950 rounded-xl border border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setSourceMode("url")}
+                  className={`py-2 text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${sourceMode === "url"
+                      ? "bg-zinc-800 text-emerald-400 border border-zinc-700/60"
+                      : "text-zinc-500 hover:text-zinc-300"
+                    }`}
+                >
+                  <Link2 size={13} /> URL 재창조
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSourceMode("text")}
+                  className={`py-2 text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${sourceMode === "text"
+                      ? "bg-zinc-800 text-blue-400 border border-zinc-700/60"
+                      : "text-zinc-500 hover:text-zinc-300"
+                    }`}
+                >
+                  <FileText size={13} /> 본문 입력
+                </button>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                {sourceMode === "url" ? (
+                  <div className="space-y-1.5">
+                    <label className="text-zinc-400 font-bold flex items-center gap-1">
+                      <span className="w-1 h-1 bg-emerald-400 rounded-full" /> 타겟 글 주소
+                    </label>
+                    <input
+                      type="text"
+                      value={sourceUrl}
+                      onChange={(e) => setSourceUrl(e.target.value)}
+                      placeholder="https://blog.naver.com/..."
+                      className="w-full px-3 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-200 font-medium focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <label className="text-zinc-400 font-bold flex items-center gap-1">
+                      <span className="w-1 h-1 bg-blue-400 rounded-full" /> 텍스트 소스 입력
+                    </label>
+                    <textarea
+                      value={sourceText}
+                      onChange={(e) => setSourceText(e.target.value)}
+                      placeholder="재구성하고 싶은 원고 내용을 이곳에 붙여넣기 하세요..."
+                      className="w-full h-44 p-3 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-300 placeholder-zinc-700 focus:outline-none resize-none font-medium leading-relaxed text-[11px] focus:border-blue-500"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-zinc-400 font-bold mb-1.5">
+                    재창조 목적 타겟 키워드
                   </label>
-                  <input type="text" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://blog.naver.com/..." className="w-full px-3 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-200 font-medium focus:outline-none focus:border-emerald-500" />
+                  <input
+                    type="text"
+                    value={targetKeyword}
+                    onChange={(e) => setTargetKeyword(e.target.value)}
+                    placeholder="공란 시 AI가 원본에서 자동 추출"
+                    className="w-full px-3 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-200 font-bold focus:outline-none focus:border-blue-500"
+                  />
                 </div>
-              ) : (
-                <div className="space-y-1.5">
-                  <label className=" text-zinc-400 font-bold flex items-center gap-1">
-                    <span className="w-1 h-1 bg-blue-400 rounded-full" /> 텍스트 소스 입력 영역
-                  </label>
-                  <textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder="재구성하고 싶은 원고 내용을 이곳에 넓게 복사-붙여넣기 하세요..." className="w-full h-44 p-3 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-300 placeholder-zinc-700 focus:outline-none resize-none font-medium leading-relaxed text-[11px] focus:border-blue-500" />
+
+                <div>
+                  <label className="block text-zinc-400 font-bold mb-1.5">말투</label>
+                  <div className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 flex items-center justify-between">
+                    <select
+                      value={selectedTone}
+                      onChange={(e) => setSelectedTone(e.target.value)}
+                      className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none"
+                    >
+                      <option>친근하고 부드러운 말투 (블로그 후기, 일상)</option>
+                      <option>전문적이고 분석적인 말투 (경제, 기술, 정보전달)</option>
+                      <option>익살스럽고 재치있는 말투 (커뮤니티, SNS, 유머)</option>
+                      <option>비판적이고 날카로운 말투 (팩트체크, 비교 리뷰)</option>
+                      <option>감성적이고 따뜻한 말투 (에세이, 여행, 맛집)</option>
+                      <option>자신감 있고 설득력 있는 말투 (재테크, 투자 전망)</option>
+                    </select>
+                    <ChevronDown size={14} className="text-zinc-500 shrink-0 ml-1" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-zinc-400 font-bold mb-1.5">길이</label>
+                  <div className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 flex items-center justify-between">
+                    <select
+                      value={wordCountGoal}
+                      onChange={(e) => setWordCountGoal(e.target.value)}
+                      className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none"
+                    >
+                      <option value="same">원본과 대략 같은 길이</option>
+                      <option value="800">짧게 (약 800자)</option>
+                      <option value="1500">보통 (약 1,500자)</option>
+                      <option value="3000">길게 (약 3,000자)</option>
+                      <option value="5000">아주 길게 (약 5,000자)</option>
+                    </select>
+                    <ChevronDown size={14} className="text-zinc-500 shrink-0 ml-1" />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleAiRecreate}
+                disabled={isAiLoading}
+                className="w-full h-14 bg-gradient-to-tr from-emerald-600 to-teal-600 text-white text-xs font-black rounded-2xl shadow-lg flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-70"
+              >
+                {isAiLoading ? (
+                  <>
+                    <RefreshCw size={14} className="animate-spin" /> 재창조 중...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={14} className="text-yellow-300" /> AI 글 재창조 가동
+                  </>
+                )}
+              </button>
+
+              {generationStatusMessage && isAiLoading && (
+                <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm font-bold text-amber-200">
+                  {generationStatusMessage}
                 </div>
               )}
-              <div className="pt-1">
-                <label className=" text-zinc-400 font-bold mb-1.5">재창조 목적 타겟 키워드 (자동 추출 가능)</label>
-                <input type="text" value={targetKeyword} onChange={(e) => setTargetKeyword(e.target.value)} placeholder="공란 시 AI가 원본에서 자동 추출" className="w-full px-3 py-2 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-200 font-bold focus:outline-none" />
-              </div>
-              <div>
-                <label className="block text-zinc-400 font-bold mb-1.5">말투 (Tone)</label>
-                <div className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 flex items-center justify-between">
-                  <select value={selectedTone} onChange={(e) => setSelectedTone(e.target.value)} className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none">
-                    <option>친근하고 부드러운 말투 (블로그 후기, 일상)</option>
-                    <option>전문적이고 분석적인 말투 (경제, 기술, 정보전달)</option>
-                    <option>익살스럽고 재치있는 말투 (커뮤니티, SNS, 유머)</option>
-                    <option>비판적이고 날카로운 말투 (팩트체크, 비교 리뷰)</option>
-                    <option>감성적이고 따뜻한 말투 (에세이, 여행, 맛집)</option>
-                    <option>자신감 있고 설득력 있는 말투 (재테크, 투자 전망)</option>
-                  </select>
-                  <ChevronDown size={14} className="text-zinc-500 shrink-0 ml-1" />
+
+              {generationErrorMessage && !isAiLoading && (
+                <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-200">
+                  {generationErrorMessage}
                 </div>
-              </div>
-              <div>
-                <label className="block text-zinc-400 font-bold mb-1.5">길이 (Length)</label>
-                <div className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 flex items-center justify-between">
-                  <select value={wordCountGoal} onChange={(e) => setWordCountGoal(e.target.value)} className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none">
-                    <option value="same">원본과 대략 같은 길이</option>
-                    <option value="1500">보통 (약 1,500자)</option>
-                    <option value="800">짧게 (약 800자)</option>
-                    <option value="3000">길게 (약 3,000자)</option>
-                    <option value="5000">아주 길게 (약 5,000자)</option>
-                  </select>
-                  <ChevronDown size={14} className="text-zinc-500 shrink-0 ml-1" />
-                </div>
-              </div>
+              )}
             </div>
 
-            <button type="button" onClick={handleAiRecreate} disabled={isAiLoading} className="w-full py-3 bg-gradient-to-tr from-emerald-600 to-teal-600 text-white text-xs font-black rounded-xl shadow-lg flex items-center justify-center gap-2">
-              {isAiLoading ? <><RefreshCw size={14} className="animate-spin" /> 스핀 리라이팅 파싱 중...</> : <><Sparkles size={14} className="text-yellow-300" /> AI 글 재창조 가동</>}
-            </button>
-            {generationStatusMessage && isAiLoading && (
-              <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm font-bold text-amber-200">
-                {generationStatusMessage}
-              </div>
-            )}
+            <div className="p-4 rounded-2xl border border-zinc-800/60 bg-zinc-950/40 space-y-2">
+              <h4 className="text-[11px] font-black uppercase text-zinc-500 tracking-wider flex items-center gap-1">
+                <Zap size={11} className="text-amber-400" /> Spin-Rewriting Engine
+              </h4>
+              <p className="text-[11px] text-zinc-400 leading-relaxed font-medium">
+                원본의 핵심 정보는 유지하면서 문장 구조와 흐름을 새롭게 재구성합니다.
+              </p>
+            </div>
 
-            {generationErrorMessage && !isAiLoading && (
-              <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-200">
-                {generationErrorMessage}
-              </div>
-            )}
-          </div>
+            <div className="p-4 rounded-2xl border border-zinc-800/60 bg-zinc-950/40 space-y-3">
+              <h4 className="text-[11px] font-black uppercase text-zinc-500 tracking-wider flex items-center gap-1">
+                <Zap size={11} className="text-emerald-400" /> 원본 분석 결과
+              </h4>
 
-          <div className="p-4 rounded-2xl border border-zinc-800/60 bg-zinc-950/40 space-y-2 text-left">
-            <h4 className="text-[11px] font-black uppercase text-zinc-500 tracking-wider flex items-center gap-1">
-              <Zap size={11} className="text-amber-400" /> Spin-Rewriting Engine
-            </h4>
-            <p className="text-[11px] text-zinc-400 leading-relaxed font-medium">
-              글의 핵심 논리 전개 방식을 완벽하게 수학적 매트릭스로 변환하여 아예 처음부터 새로 작성한 형태의 독립적 원고를 직조해 냅니다.
-            </p>
-          </div>
-
-          <div className="p-4 rounded-2xl border border-zinc-800/60 bg-zinc-950/40 space-y-3 text-left">
-            <h4 className="text-[11px] font-black uppercase text-zinc-500 tracking-wider flex items-center gap-1">
-              <Zap size={11} className="text-emerald-400" /> 원본 글의 핵심 키워드 및 주제 추출 결과
-            </h4>
-            <p className="text-[11px] text-zinc-500 leading-relaxed font-medium">
-              AI 재창조와 함께 원본 글의 핵심 구조를 분해해 키워드, 주제, 핵심 내용을 한 번에 정리합니다.
-            </p>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-3 space-y-3">
-              <div className="rounded-xl border border-emerald-500/10 bg-emerald-500/[0.03] p-3 space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">핵심 키워드</p>
-                  <span className="text-[10px] text-emerald-400 font-bold">{normalizedKeywords.length > 0 ? `${normalizedKeywords.length}개 추출` : '대기 중'}</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {normalizedKeywords.length > 0 ? normalizedKeywords.map((keyword, index) => (
-                    <span key={`${keyword}-${index}`} className="px-2 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-[10px] font-bold text-emerald-300">
-                      {keyword}
+              <div className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-3 space-y-3">
+                <div className="rounded-xl border border-emerald-500/10 bg-emerald-500/[0.03] p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">핵심 키워드</p>
+                    <span className="text-[10px] text-emerald-400 font-bold">
+                      {normalizedKeywords.length > 0 ? `${normalizedKeywords.length}개 추출` : "대기 중"}
                     </span>
-                  )) : (
-                    <span className="text-[11px] text-zinc-500 leading-relaxed">
-                      {isAiLoading ? '원본 핵심 키워드를 추출하는 중입니다...' : 'AI 글 재창조 가동 후 이 영역에 원본 핵심 키워드가 정리됩니다.'}
-                    </span>
-                  )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5">
+                    {normalizedKeywords.length > 0 ? normalizedKeywords.map((keyword, index) => (
+                      <span key={`${keyword}-${index}`} className="px-2 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-[10px] font-bold text-emerald-300">
+                        {keyword}
+                      </span>
+                    )) : (
+                      <span className="text-[11px] text-zinc-500 leading-relaxed">
+                        {isAiLoading ? "원본 핵심 키워드를 추출하는 중입니다..." : "재창조 후 핵심 키워드가 정리됩니다."}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-3 space-y-1.5">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">핵심 주제</p>
-                <p className="text-[11px] text-zinc-300 leading-relaxed font-medium">
-                  {sourceAnalysis.topic || (isAiLoading ? '원본 글의 핵심 주제를 정리하는 중입니다...' : '아직 추출된 핵심 주제가 없습니다.')}
-                </p>
-              </div>
-              <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-3 space-y-1.5">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">핵심 내용 요약</p>
-                <div className="space-y-1.5">
-                  {normalizedSummaryPoints.length > 0 ? normalizedSummaryPoints.map((point, index) => (
-                    <div key={`${point}-${index}`} className="flex items-start gap-2 text-[11px] text-zinc-300 leading-relaxed font-medium">
-                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-400/90 shrink-0" />
-                      <span>{point}</span>
-                    </div>
-                  )) : (
-                    <p className="text-[11px] text-zinc-500 leading-relaxed">
-                      {isAiLoading ? '원본 핵심 내용을 정리하는 중입니다...' : '아직 추출된 핵심 내용 요약이 없습니다.'}
-                    </p>
-                  )}
+
+                <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-3 space-y-1.5">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">핵심 주제</p>
+                  <p className="text-[11px] text-zinc-300 leading-relaxed font-medium">
+                    {sourceAnalysis.topic || (isAiLoading ? "원본 글의 핵심 주제를 정리하는 중입니다..." : "아직 추출된 핵심 주제가 없습니다.")}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-3 space-y-1.5">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">핵심 내용 요약</p>
+                  <div className="space-y-1.5">
+                    {normalizedSummaryPoints.length > 0 ? normalizedSummaryPoints.map((point, index) => (
+                      <div key={`${point}-${index}`} className="flex items-start gap-2 text-[11px] text-zinc-300 leading-relaxed font-medium">
+                        <span className="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-400/90 shrink-0" />
+                        <span>{point}</span>
+                      </div>
+                    )) : (
+                      <p className="text-[11px] text-zinc-500 leading-relaxed">
+                        {isAiLoading ? "원본 핵심 내용을 정리하는 중입니다..." : "아직 추출된 핵심 내용 요약이 없습니다."}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="lg:col-span-6 h-[calc(100vh-140px)] flex flex-col rounded-2xl border border-zinc-800 bg-white overflow-hidden relative shadow-2xl">
+        {/* 중앙 뷰어 */}
+        <div className="h-full min-w-0 flex flex-col bg-white overflow-hidden relative">
           <div className="flex justify-between items-center px-6 py-4 border-b border-zinc-200 bg-zinc-900 shrink-0">
             <span className="text-xs font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#00c73c] animate-pulse" />
-              Naver Blog View Mode
+              Naver Recreate View Mode
             </span>
+
             <div className="flex items-center gap-1.5">
               <button onClick={handleCopy} disabled={!content || isAiLoading} className="px-3 py-1.5 border border-zinc-800 hover:border-zinc-700 hover:text-white bg-zinc-900/50 rounded-xl text-[11px] font-black text-zinc-400 transition-all flex items-center gap-1 disabled:opacity-30">
                 <Copy size={11} /> COPY
               </button>
+
               <button onClick={downloadTxt} disabled={!content || isAiLoading} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[11px] font-black transition-all flex items-center gap-1 disabled:opacity-30">
                 <Download size={11} /> DOWN
               </button>
+
               <Link href="/studio/writing/naver/list" className="px-3 py-1.5 border border-zinc-800 hover:border-zinc-700 bg-zinc-900/50 hover:text-white rounded-xl text-[11px] font-black text-zinc-400 transition-all flex items-center gap-1">
                 글수정 이동 <ExternalLink size={11} />
               </Link>
+
               <button onClick={() => setIsPreviewOpen(true)} disabled={!content || isAiLoading} className="px-3 py-1.5 border border-zinc-800 hover:border-zinc-700 hover:text-white bg-zinc-900/50 rounded-xl text-[11px] font-black text-zinc-400 transition-all disabled:opacity-30">
                 PREVIEW
               </button>
@@ -373,7 +445,7 @@ export default function NaverRecreateTab({
                 AI 글 재창조 결과가 생성되면 여기에 표시됩니다.
               </div>
             ) : (
-              <div className="max-w-2xl mx-auto pb-32 font-sans">
+              <div className="max-w-[760px] mx-auto pb-32 font-sans">
                 {title && (
                   <h1 className="text-[28px] font-black text-[#111111] leading-snug mb-10 border-b border-zinc-200 pb-6 tracking-tight">
                     {title}
@@ -390,7 +462,7 @@ export default function NaverRecreateTab({
 
           <div className="h-16 border-t border-zinc-200 bg-zinc-50 px-6 flex items-center justify-between shrink-0">
             <span className="text-[11px] text-zinc-500 font-medium">
-              AI 재창조 결과를 스마트 글쓰기와 동일한 뷰어 모드로 렌더링 중
+              AI 재창조 결과를 네이버 블로그 뷰어 모드로 렌더링 중
             </span>
             <div className="flex items-center gap-2">
               <button onClick={handleCopy} disabled={!content} className="px-4 py-2 rounded-xl border border-zinc-300 bg-white text-zinc-700 text-xs font-bold hover:bg-zinc-100 transition-all disabled:opacity-40">
@@ -404,15 +476,20 @@ export default function NaverRecreateTab({
           </div>
         </div>
 
-        <div className="lg:col-span-3 h-fit">
+        {/* 우측 분석 타워 */}
+        <div className="h-full overflow-y-auto custom-scrollbar border-l border-zinc-800/80 bg-[#111216] p-4">
           <NaverAnalysisTower
-            seoScore={analysisMetrics.seoScore} seoChecks={analysisMetrics.seoChecks} posRatio={posRatio}
-            frequencies={analysisMetrics.frequencies} content={content} naverBotScore={analysisMetrics.naverBotScore} isDensitySafe={analysisMetrics.isDensitySafe}
+            seoScore={analysisMetrics.seoScore}
+            seoChecks={analysisMetrics.seoChecks}
+            posRatio={posRatio}
+            frequencies={analysisMetrics.frequencies}
+            content={content}
+            naverBotScore={analysisMetrics.naverBotScore}
+            isDensitySafe={analysisMetrics.isDensitySafe}
             similarityScore={analysisMetrics.similarityScore}
             isRecreateMode={true}
           />
         </div>
-
       </div>
 
       {isPreviewOpen && (
@@ -421,14 +498,20 @@ export default function NaverRecreateTab({
             <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-900 text-white text-sm font-black">
               재창조 결과 프리뷰
             </div>
+
             <div className="p-8 max-h-[75vh] overflow-y-auto">
-              {title && <h1 className="text-[28px] font-black text-[#111111] leading-snug mb-10 border-b border-zinc-200 pb-6 tracking-tight">{title}</h1>}
+              {title && (
+                <h1 className="text-[28px] font-black text-[#111111] leading-snug mb-10 border-b border-zinc-200 pb-6 tracking-tight">
+                  {title}
+                </h1>
+              )}
               <div className="markdown-content">
                 <ReactMarkdown remarkPlugins={[remarkGfm]} components={customMarkdownComponents}>
                   {content}
                 </ReactMarkdown>
               </div>
             </div>
+
             <div className="px-6 py-4 border-t border-zinc-200 bg-zinc-50 flex justify-end">
               <button onClick={() => setIsPreviewOpen(false)} className="px-4 py-2 rounded-xl bg-zinc-900 text-white text-xs font-black">
                 닫기

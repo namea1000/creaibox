@@ -99,50 +99,69 @@ export default function NaverManuscriptDetailPage() {
   const towerKeyword = data?.targetKeyword ?? data?.keyword ?? "키워드";
 
   return (
-    <div className="flex min-h-[calc(100vh-160px)] gap-0">
-      <aside className="w-[360px] border-r border-white/10 bg-[#0d0f14] px-6 py-6">
-        <Link href="/studio/writing/naver/list" className="mb-6 flex h-12 items-center gap-2 rounded-2xl bg-white/5 px-4 text-lg font-semibold text-white/88 transition hover:bg-white/10">
-          <ArrowLeft className="h-5 w-5" />
-          목록으로 돌아가기
-        </Link>
+    <div className="h-full w-full overflow-hidden bg-[#0a0d12] text-white">
+      <div className="grid h-full w-full grid-cols-[360px_minmax(0,1fr)_380px]">
 
-        <div className="relative mb-5">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/35" />
-          <input
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="원고 검색..."
-            className="h-14 w-full rounded-2xl border border-white/10 bg-[#0a0c10] pl-12 pr-4 text-base text-white outline-none transition placeholder:text-white/35 focus:border-emerald-400/50"
-          />
-        </div>
+        {/* 왼쪽 글 목록 */}
+        <aside className="h-full overflow-y-auto custom-scrollbar border-r border-white/10 bg-[#0d0f14] px-5 py-5">
+          <Link
+            href="/studio/writing/naver/list"
+            className="mb-5 flex h-12 items-center gap-2 rounded-2xl bg-white/5 px-4 text-base font-semibold text-white/88 transition hover:bg-white/10"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            목록으로 돌아가기
+          </Link>
 
-        <div className="space-y-4">
-          {filteredList.map((item) => {
-            const active = String(item.id) === manuscriptId;
-            return (
-              <button
-                key={item.id}
-                onClick={() => router.push(`/studio/writing/naver/list/${item.id}`)}
-                className={`w-full rounded-3xl border p-4 text-left transition ${active ? "border-emerald-400 bg-white/10" : "border-white/10 bg-white/[0.04] hover:bg-white/[0.07]"}`}
-              >
-                <div className="mb-3 inline-flex rounded-full border border-cyan-400/50 bg-cyan-400/10 px-4 py-1 text-sm font-bold uppercase tracking-[0.28em] text-cyan-300">
-                  {item.postType === "recreate" ? "RECREATE" : "CREATE"}
-                </div>
-                <div className="line-clamp-2 text-lg font-semibold text-white">{item.title}</div>
-                <div className="mt-2 line-clamp-1 text-sm text-white/45">#{item.targetKeyword ?? item.keyword}</div>
-              </button>
-            );
-          })}
-        </div>
-      </aside>
+          <div className="relative mb-5">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/35" />
+            <input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="원고 검색..."
+              className="h-14 w-full rounded-2xl border border-white/10 bg-[#0a0c10] pl-12 pr-4 text-base text-white outline-none transition placeholder:text-white/35 focus:border-emerald-400/50"
+            />
+          </div>
 
-      <main className="min-w-0 flex-1 px-6 py-6">
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="space-y-4">
+            {filteredList.map((item) => {
+              const active = String(item.id) === manuscriptId;
+
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => router.push(`/studio/writing/naver/list/${item.id}`)}
+                  className={`w-full rounded-3xl border p-4 text-left transition ${active
+                      ? "border-emerald-400 bg-white/10"
+                      : "border-white/10 bg-white/[0.04] hover:bg-white/[0.07]"
+                    }`}
+                >
+                  <div className="mb-3 inline-flex rounded-full border border-cyan-400/50 bg-cyan-400/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+                    {item.postType === "recreate" ? "RECREATE" : "CREATE"}
+                  </div>
+                  <div className="line-clamp-2 text-base font-semibold text-white">
+                    {item.title}
+                  </div>
+                  <div className="mt-2 line-clamp-1 text-sm text-white/45">
+                    #{item.targetKeyword ?? item.keyword}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+
+        {/* 가운데 에디터 */}
+        <main className="h-full min-w-0 overflow-hidden bg-white">
           <UniversalBlogEditor
             title={data?.title ?? ""}
             setTitle={(value) => updateLocalData({ title: value })}
             content={data?.content ?? ""}
-            setContent={(value) => updateLocalData({ content: value, wordCount: value.replace(/\s+/g, "").length })}
+            setContent={(value) =>
+              updateLocalData({
+                content: value,
+                wordCount: value.replace(/\s+/g, "").length,
+              })
+            }
             charCount={charCount}
             images={data?.images ?? []}
             fileInputRef={fileInputRef}
@@ -159,7 +178,10 @@ export default function NaverManuscriptDetailPage() {
             targetKeyword={data?.targetKeyword ?? data?.keyword}
             isLoading={isDetailLoading && !data}
           />
+        </main>
 
+        {/* 오른쪽 관제탑 */}
+        <aside className="h-full overflow-y-auto custom-scrollbar border-l border-white/10 bg-[#0d0f14] p-4">
           <NaverAnalysisTower
             seoScore={100}
             seoChecks={{
@@ -170,15 +192,22 @@ export default function NaverManuscriptDetailPage() {
               subHeadingCheck: true,
             }}
             posRatio={{ noun: 50, verb: 30, other: 20 }}
-            frequencies={[{ word: towerKeyword, count: 4, density: 2.4, status: "good" }]}
+            frequencies={[
+              {
+                word: towerKeyword,
+                count: 4,
+                density: 2.4,
+                status: "good",
+              },
+            ]}
             content={data?.content ?? ""}
             naverBotScore={60}
             isDensitySafe
             isRecreateMode={(data?.postType ?? data?.type) === "recreate"}
             isDetailMode
           />
-        </div>
-      </main>
+        </aside>
+      </div>
     </div>
   );
 }

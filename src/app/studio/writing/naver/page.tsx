@@ -16,7 +16,6 @@ import {
   CircleHelp,
   Settings,
   Archive,
-  BarChart3,
   Sparkles,
   ArrowRight,
   Plus,
@@ -35,6 +34,21 @@ interface KeywordRecord {
   competition: "높음" | "중간" | "낮음";
   created_at: string;
 }
+
+type NaverKeywordRow = {
+  id: string | number;
+  title?: string | null;
+  meta_data?: {
+    category?: string | null;
+    volume?: string | null;
+    competition?: string | null;
+  } | null;
+  created_at?: string | null;
+};
+
+type SupabaseInsertResult = {
+  data?: Array<{ id: string | number }>;
+};
 
 export default function NaverWritingHomePage() {
   const supabase = useMemo(() => createClient(), []);
@@ -96,16 +110,23 @@ export default function NaverWritingHomePage() {
           .order("created_at", { ascending: false });
 
         if (!error && data && data.length > 0) {
-          const formattedData: KeywordRecord[] = data.map((item: any) => ({
-            id: String(item.id),
-            word: item.title,
-            type: item.meta_data?.category || "📂 일반 분석",
-            volume: item.meta_data?.volume || "0회",
-            competition: item.meta_data?.competition || "중간",
-            created_at: item.created_at
-              ? item.created_at.split("T")[0]
-              : "2026-05-19",
-          }));
+          const formattedData: KeywordRecord[] = (data as NaverKeywordRow[]).map((item) => {
+            const competition = item.meta_data?.competition;
+
+            return {
+              id: String(item.id),
+              word: item.title || "제목 없음",
+              type: item.meta_data?.category || "📂 일반 분석",
+              volume: item.meta_data?.volume || "0회",
+              competition:
+                competition === "높음" || competition === "중간" || competition === "낮음"
+                  ? competition
+                  : "중간",
+              created_at: item.created_at
+                ? item.created_at.split("T")[0]
+                : "2026-05-19",
+            };
+          });
 
           setHotKeywords(formattedData);
         }
@@ -230,10 +251,10 @@ export default function NaverWritingHomePage() {
         setTimeout(() => reject(new Error("Timeout")), 2500)
       );
 
-      const result: any = await Promise.race([
+      const result = await Promise.race([
         supabasePromise,
         timeoutPromise,
-      ]);
+      ]) as SupabaseInsertResult;
 
       if (result?.data?.[0]) {
         newKeywordRow.id = String(result.data[0].id);
@@ -274,14 +295,14 @@ export default function NaverWritingHomePage() {
     {
       title: "AI 글 재창조",
       desc: "기존 글을 새롭게 재작성하고 확장합니다.",
-      href: "/studio/writing/naver/rewrite",
+      href: "/studio/writing/naver/recreate",
       icon: RefreshCw,
       color: "from-sky-600 to-blue-600",
     },
     {
       title: "발행 원고 관리",
       desc: "저장 원고와 발행 콘텐츠를 관리합니다.",
-      href: "/studio/writing/naver/archive",
+      href: "/studio/writing/naver/list",
       icon: FileArchive,
       color: "from-purple-600 to-violet-600",
     },
@@ -302,21 +323,21 @@ export default function NaverWritingHomePage() {
     {
       title: "실시간 노출 진단",
       desc: "블로그 노출 상태와 개선 포인트를 확인합니다.",
-      href: "/studio/writing/naver/exposure",
+      href: "/studio/writing/naver/diagnosis",
       icon: Eye,
       color: "from-red-600 to-rose-600",
     },
     {
       title: "C-Rank 가이드",
       desc: "네이버 블로그 품질 지수와 성장 전략을 정리합니다.",
-      href: "/studio/writing/naver/c-rank",
+      href: "/studio/writing/naver/guide",
       icon: CircleHelp,
       color: "from-yellow-500 to-amber-600",
     },
     {
       title: "엔진 최적화 세팅",
       desc: "문체, 글 길이, 키워드 전략, 저장 옵션을 설정합니다.",
-      href: "/studio/writing/naver/settings",
+      href: "/studio/writing/naver/api",
       icon: Settings,
       color: "from-zinc-600 to-slate-700",
     },
@@ -354,7 +375,7 @@ export default function NaverWritingHomePage() {
 
             <div className="flex gap-2">
               <Link
-                href="/studio/writing/naver/archive"
+                href="/studio/writing/naver/list"
                 className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-sm font-black text-zinc-200 hover:border-emerald-500/50"
               >
                 <Archive size={17} />

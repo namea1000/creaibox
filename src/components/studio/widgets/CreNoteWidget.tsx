@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  X,
   StickyNote,
   Save,
   Plus,
@@ -18,7 +17,6 @@ import {
   Folder as FolderIcon,
   Pencil,
   RotateCcw,
-  Eraser,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -71,6 +69,7 @@ export default function CreNoteWidget() {
 
   const [panelWidth, setPanelWidth] = useState(560);
   const [minimized, setMinimized] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
   const resizingRef = useRef(false);
   const saveTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -114,6 +113,7 @@ export default function CreNoteWidget() {
   useEffect(() => {
     function handleMouseMove(e: MouseEvent) {
       if (!resizingRef.current) return;
+      e.preventDefault();
       const nextWidth = window.innerWidth - e.clientX;
       const clampedWidth = Math.min(Math.max(nextWidth, 420), 900);
       setPanelWidth(clampedWidth);
@@ -122,6 +122,7 @@ export default function CreNoteWidget() {
     async function handleMouseUp() {
       if (!resizingRef.current) return;
       resizingRef.current = false;
+      setIsResizing(false);
 
       if (!userId) return;
 
@@ -147,6 +148,21 @@ export default function CreNoteWidget() {
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [userId, panelWidth, minimized, supabase]);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const previousCursor = document.body.style.cursor;
+    const previousUserSelect = document.body.style.userSelect;
+
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    return () => {
+      document.body.style.cursor = previousCursor;
+      document.body.style.userSelect = previousUserSelect;
+    };
+  }, [isResizing]);
 
   useEffect(() => {
     const handler = () => openWidget();
@@ -1006,6 +1022,9 @@ export default function CreNoteWidget() {
       .sort(sortNotes);
   }, [notes, openSpecialSection, keyword]);
 
+  const toolbarButtonClass =
+    "flex h-9 shrink-0 items-center gap-1 rounded-[6px] border border-white/10 bg-[#151a1d] px-3 text-[12px] font-bold text-zinc-300 whitespace-nowrap transition hover:border-emerald-500/35 hover:bg-emerald-500/10 hover:text-emerald-300";
+
   if (!open) return null;
 
   return (
@@ -1013,10 +1032,15 @@ export default function CreNoteWidget() {
       style={{ width: minimized ? 72 : panelWidth }}
       className="fixed right-0 top-0 z-[9999] h-screen border-l border-white/10 bg-[#080d10] shadow-2xl"
     >
+      {isResizing && (
+        <div className="fixed inset-0 z-[-1] cursor-col-resize select-none" />
+      )}
+
       {!minimized && (
         <div
           onMouseDown={() => {
             resizingRef.current = true;
+            setIsResizing(true);
           }}
           className="group absolute left-0 top-0 h-full w-4 cursor-col-resize"
         >
@@ -1026,60 +1050,16 @@ export default function CreNoteWidget() {
             </div>
           </div>
 
-          <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-white/10 transition group-hover:w-[2px] group-hover:bg-emerald-500/70" />
+          <div className="absolute left-1/2 top-0 h-full w-[2px] -translate-x-1/2 bg-transparent transition group-hover:bg-emerald-500/70" />
         </div>
       )}
 
-      <div className="flex h-14 items-center justify-between border-b border-white/10 px-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400">
-            <StickyNote size={18} />
-          </div>
-
-          <div>
-            <div className="text-sm font-bold text-white">Cre Note</div>
-            <div className="text-xs text-zinc-500">Global Quick Note</div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <button
-            onClick={async () => {
-              const next = !minimized;
-              setMinimized(next);
-
-              if (userId) {
-                await supabase
-                  .from("studio_widgets")
-                  .update({
-                    position: {
-                      side: "right",
-                      width: panelWidth,
-                      minimized: next,
-                    },
-                    updated_at: new Date().toISOString(),
-                  })
-                  .eq("user_id", userId)
-                  .eq("widget_type", "cre_note");
-              }
-            }}
-            className="rounded-lg p-2 text-zinc-400 hover:bg-white/10 hover:text-white"
-            title="최소화"
-          >
-            －
-          </button>
-
-          <button
-            onClick={closeWidget}
-            className="rounded-lg p-2 text-zinc-400 hover:bg-white/10 hover:text-white"
-          >
-            <X size={18} />
-          </button>
-        </div>
-      </div>
-
-      {minimized ? (
-        <div className="flex h-[calc(100vh-56px)] flex-col items-center pt-4">
+      <div
+        className={`flex h-14 items-center border-b border-white/10 ${
+          minimized ? "justify-center px-0" : "justify-between px-4"
+        }`}
+      >
+        {minimized ? (
           <button
             onClick={async () => {
               setMinimized(false);
@@ -1099,12 +1079,64 @@ export default function CreNoteWidget() {
                   .eq("widget_type", "cre_note");
               }
             }}
-            className="rounded-xl bg-emerald-500/15 p-3 text-emerald-400 hover:bg-emerald-500/25"
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
             title="Cre Note 펼치기"
           >
-            <StickyNote size={22} />
+            <StickyNote size={20} />
           </button>
-        </div>
+        ) : (
+          <>
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400">
+                <StickyNote size={18} />
+              </div>
+
+              <div className="min-w-0">
+                <div className="truncate text-sm font-bold text-white">Cre Note</div>
+                <div className="truncate text-xs text-zinc-500">Global Quick Note</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  setMinimized(true);
+
+                  if (userId) {
+                    await supabase
+                      .from("studio_widgets")
+                      .update({
+                        position: {
+                          side: "right",
+                          width: panelWidth,
+                          minimized: true,
+                        },
+                        updated_at: new Date().toISOString(),
+                      })
+                      .eq("user_id", userId)
+                      .eq("widget_type", "cre_note");
+                  }
+                }}
+                className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-black text-zinc-300 transition hover:bg-white/10 hover:text-white"
+                title="Cre Note 축소"
+              >
+                축소
+              </button>
+
+              <button
+                onClick={closeWidget}
+                className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-black text-zinc-300 transition hover:bg-white/10 hover:text-white"
+                title="Cre Note 닫기"
+              >
+                닫기
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+
+      {minimized ? (
+        <div className="h-[calc(100vh-56px)]" />
       ) : (
         <div className="grid h-[calc(100vh-56px)] grid-cols-[230px_1fr]">
           <section className="border-r border-white/10 bg-black/20">
@@ -1312,6 +1344,10 @@ export default function CreNoteWidget() {
             {activeNote ? (
               <>
                 <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
+                  <span className="shrink-0 text-sm font-black text-zinc-300">
+                    제목 :
+                  </span>
+
                   <input
                     value={title}
                     onChange={(e) => handleTitleChange(e.target.value)}
@@ -1319,14 +1355,16 @@ export default function CreNoteWidget() {
                     className="min-w-0 flex-1 bg-transparent text-lg font-bold text-white outline-none placeholder:text-zinc-600"
                     disabled={activeNote.is_deleted}
                   />
+                </div>
 
+                <div className="flex flex-wrap items-center gap-2 border-b border-white/10 px-4 py-2">
                   {!activeNote.is_deleted && (
                     <select
                       value={activeNote.folder_id ?? ""}
                       onChange={(e) =>
                         moveNoteToFolder(activeNote, e.target.value || null)
                       }
-                      className="h-8 max-w-[150px] rounded-lg border border-white/10 bg-black/40 px-2 text-xs text-zinc-300 outline-none"
+                      className="h-9 max-w-[170px] rounded-[6px] border border-emerald-500/55 bg-black/40 px-3 text-xs font-black text-emerald-100 outline-none transition focus:border-emerald-400"
                       title="폴더 이동"
                     >
                       {folders.map((folder) => (
@@ -1397,10 +1435,10 @@ export default function CreNoteWidget() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 border-b border-white/10 px-4 py-2">
+                <div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-white/10 px-4 py-2">
                   <button
                     onClick={insertCheckbox}
-                    className="rounded-md border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-300 hover:bg-emerald-500/10 hover:text-emerald-400"
+                    className={toolbarButtonClass}
                     title="체크박스 삽입"
                   >
                     ⬜ 체크박스
@@ -1408,7 +1446,7 @@ export default function CreNoteWidget() {
 
                   <button
                     onClick={toggleCheckboxOnCurrentLine}
-                    className="rounded-md border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-300 hover:bg-emerald-500/10 hover:text-emerald-400"
+                    className={toolbarButtonClass}
                     title="현재 줄 체크/해제"
                   >
                     ✅ 완료
@@ -1416,7 +1454,7 @@ export default function CreNoteWidget() {
 
                   <button
                     onClick={moveCompletedTodosToBottom}
-                    className="rounded-md border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-300 hover:bg-emerald-500/10 hover:text-emerald-400"
+                    className={toolbarButtonClass}
                     title="완료 아래로"
                   >
                     ↓ 완료 아래로
@@ -1424,28 +1462,28 @@ export default function CreNoteWidget() {
 
                   <button
                     onClick={insertDate}
-                    className="rounded-md border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-300 hover:bg-emerald-500/10 hover:text-emerald-400"
+                    className={toolbarButtonClass}
                   >
                     📅 날짜
                   </button>
 
                   <button
                     onClick={insertDivider}
-                    className="rounded-md border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-300 hover:bg-emerald-500/10 hover:text-emerald-400"
+                    className={toolbarButtonClass}
                   >
                     ➖ 구분선
                   </button>
 
                   <button
                     onClick={insertNumberList}
-                    className="rounded-md border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-300 hover:bg-emerald-500/10 hover:text-emerald-400"
+                    className={toolbarButtonClass}
                   >
                     번호추가 1.
                   </button>
 
                   <button
                     onClick={insertBullet}
-                    className="rounded-md border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-300 hover:bg-emerald-500/10 hover:text-emerald-400"
+                    className={toolbarButtonClass}
                   >
                     항목추가 •
                   </button>

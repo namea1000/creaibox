@@ -454,7 +454,7 @@ export default function NaverRecreatePage() {
   };
 
   return (
-    <div className="h-full">
+    <div className="h-full w-full overflow-hidden bg-[#0b0b0d]">
       <NaverRecreateTab
         targetKeyword={targetKeyword}
         setTargetKeyword={setTargetKeyword}

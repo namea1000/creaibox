@@ -38,7 +38,7 @@ export default function MusicStudioHomePage() {
     {
       title: "곡 기획",
       desc: "장르, 분위기, 콘셉트, 앨범 방향성을 설계합니다.",
-      href: "/studio/music/planning",
+      href: "/studio/planning",
       icon: Sparkles,
       color: "from-violet-600 to-purple-600",
     },

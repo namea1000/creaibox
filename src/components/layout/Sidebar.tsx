@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   PanelLeftClose,
@@ -24,10 +25,8 @@ import {
   Info,
   Layers,
   Library,
-  Store,
   Users,
   Folder,
-  Home,
   Edit3,
   Archive,
   Lightbulb,
@@ -56,6 +55,7 @@ import {
   Bell,
   MessageSquare,
   Share2,
+  type LucideIcon,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -69,19 +69,21 @@ interface SidebarProps {
 type MenuItem = {
   name: string;
   href: string;
-  icon?: any;
+  icon?: SidebarIcon;
 };
 
 type MenuGroup = {
   key: string;
   name: string;
   href: string;
-  icon: any;
+  icon: SidebarIcon;
   color: string;
   children?: MenuItem[];
 };
 
-function PieIcon(props: any) {
+type SidebarIcon = React.ComponentType<React.ComponentProps<LucideIcon>>;
+
+function PieIcon(props: React.ComponentProps<LucideIcon>) {
   return <BarChart3 {...props} />;
 }
 
@@ -116,7 +118,6 @@ export default function Sidebar({
         icon: Library,
         color: "text-sky-400",
         children: [
-          { name: "라이브러리 홈", href: "/studio/library", icon: Home },
           { name: "전체 콘텐츠", href: "/studio/library/all", icon: Library },
 
           { name: "크리아이박스 콘텐츠", href: "/studio/library/creaibox", icon: PenTool },
@@ -148,12 +149,11 @@ export default function Sidebar({
         icon: PenTool,
         color: "text-violet-400",
         children: [
-          { name: "크리아이박스 글쓰기 홈", href: "/studio/writing/creaibox", icon: Home },
           { name: "AI 포스팅 글쓰기", href: "/studio/writing/creaibox/create", icon: Edit3 },
           { name: "AI 포스팅 에디터", href: "/studio/writing/creaibox/editor", icon: FileText },
-          { name: "발행 콘텐츠 아카이브", href: "/studio/writing/creaibox/archive", icon: Archive },
-          { name: "아이디어 제너레이터", href: "/studio/writing/creaibox/idea", icon: Lightbulb },
-          { name: "트렌드 대시보드", href: "/studio/writing/creaibox/trend", icon: BarChart3 },
+          { name: "발행 콘텐츠 아카이브", href: "/studio/writing/creaibox/list", icon: Archive },
+          { name: "아이디어 제너레이터", href: "/studio/writing/creaibox/ideagenerator", icon: Lightbulb },
+          { name: "트렌드 대시보드", href: "/studio/writing/creaibox/analytics", icon: BarChart3 },
           { name: "AI 이미지 워크샵", href: "/studio/writing/creaibox/image", icon: ImageIcon },
           { name: "지식 베이스", href: "/studio/writing/creaibox/knowledge", icon: Database },
           { name: "엔진 커스텀 세팅", href: "/studio/writing/creaibox/settings", icon: Settings },
@@ -166,15 +166,14 @@ export default function Sidebar({
         icon: Newspaper,
         color: "text-emerald-400",
         children: [
-          { name: "네이버 글쓰기 홈", href: "/studio/writing/naver", icon: Home },
           { name: "AI 스마트 글쓰기", href: "/studio/writing/naver/create", icon: Edit3 },
-          { name: "AI 글 재창조", href: "/studio/writing/naver/rewrite", icon: RefreshCw },
-          { name: "발행 원고 관리", href: "/studio/writing/naver/archive", icon: FileArchive },
+          { name: "AI 글 재창조", href: "/studio/writing/naver/recreate", icon: RefreshCw },
+          { name: "발행 원고 관리", href: "/studio/writing/naver/list", icon: FileArchive },
           { name: "네이버용 썸네일", href: "/studio/writing/naver/thumbnail", icon: ImageIcon },
           { name: "네이버 키워드 분석", href: "/studio/writing/naver/keyword", icon: Search },
-          { name: "실시간 노출 진단", href: "/studio/writing/naver/exposure", icon: Eye },
-          { name: "C-Rank 가이드", href: "/studio/writing/naver/c-rank", icon: CircleHelp },
-          { name: "엔진 최적화 세팅", href: "/studio/writing/naver/settings", icon: Settings },
+          { name: "실시간 노출 진단", href: "/studio/writing/naver/diagnosis", icon: Eye },
+          { name: "C-Rank 가이드", href: "/studio/writing/naver/guide", icon: CircleHelp },
+          { name: "엔진 최적화 세팅", href: "/studio/writing/naver/api", icon: Settings },
         ],
       },
       {
@@ -184,8 +183,7 @@ export default function Sidebar({
         icon: Music,
         color: "text-rose-400",
         children: [
-          { name: "뮤직 홈", href: "/studio/music", icon: Home },
-          { name: "곡 기획", href: "/studio/music/planning", icon: Sparkles },
+          { name: "곡 기획", href: "/studio/planning", icon: Sparkles },
           { name: "가사 & SUNO", href: "/studio/music/lyrics", icon: Mic2 },
           { name: "스타일 포맷", href: "/studio/music/style-format", icon: Palette },
           { name: "커버 이미지", href: "/studio/music/cover-image", icon: ImageIcon },
@@ -207,7 +205,6 @@ export default function Sidebar({
         icon: ImageIcon,
         color: "text-purple-400",
         children: [
-          { name: "이미지 스튜디오 홈", href: "/studio/image", icon: Home },
           { name: "프롬프트 라이브러리", href: "/studio/image/prompts", icon: Library },
           { name: "썸네일 메이커", href: "/studio/image/thumbnail", icon: ImageIcon },
           { name: "포스터 & 전단지", href: "/studio/image/poster", icon: FileText },
@@ -224,7 +221,6 @@ export default function Sidebar({
         icon: Video,
         color: "text-teal-400",
         children: [
-          { name: "비디오 스튜디오 홈", href: "/studio/video", icon: Home },
           { name: "영상 편집기", href: "/studio/video/editor", icon: Video },
           { name: "쇼츠 & 릴스 제작", href: "/studio/video/shorts", icon: PlayCircle },
           { name: "영상 프롬프트", href: "/studio/video/prompts", icon: Sparkles },
@@ -243,7 +239,6 @@ export default function Sidebar({
         icon: Search,
         color: "text-cyan-400",
         children: [
-          { name: "키워드 트렌드 홈", href: "/studio/keyword", icon: Home },
           { name: "키워드 대량 조회", href: "/studio/keyword/bulk", icon: Database },
           { name: "연관 키워드 발굴", href: "/studio/keyword/related", icon: Layers },
           { name: "형태소 분석기", href: "/studio/keyword/morphology", icon: PieIcon },
@@ -263,7 +258,6 @@ export default function Sidebar({
         icon: PlayCircle,
         color: "text-red-400",
         children: [
-          { name: "유튜브 트렌드 홈", href: "/studio/youtube", icon: Home },
           { name: "채널 상세 분석", href: "/studio/youtube/channel", icon: Users },
           { name: "급상승 영상 트렌드", href: "/studio/youtube/rising", icon: TrendingUp },
           { name: "경쟁 채널 비교", href: "/studio/youtube/compare", icon: BarChart3 },
@@ -283,7 +277,6 @@ export default function Sidebar({
         icon: FileText,
         color: "text-indigo-400",
         children: [
-          { name: "AI 리포트 홈", href: "/studio/report", icon: Home },
           { name: "AI 시장 리포트", href: "/studio/report/market", icon: BarChart3 },
           { name: "산업별 AI 분석", href: "/studio/report/industry", icon: Building2 },
           { name: "AI 뉴스 브리핑", href: "/studio/report/news", icon: Newspaper },
@@ -303,7 +296,6 @@ export default function Sidebar({
         icon: Newspaper,
         color: "text-orange-400",
         children: [
-          { name: "뉴스 콘텐츠 홈", href: "/studio/news", icon: Home },
           { name: "실시간 뉴스 수집", href: "/studio/news/collect", icon: Rss },
           { name: "AI 뉴스 요약", href: "/studio/news/summary", icon: Sparkles },
           { name: "뉴스 기반 블로그 생성", href: "/studio/news/blog", icon: FileText },
@@ -323,7 +315,6 @@ export default function Sidebar({
         icon: Wand2,
         color: "text-amber-400",
         children: [
-          { name: "스튜디오 Tools 홈", href: "/studio/tools", icon: Home },
           { name: "AI 누끼 제거", href: "/studio/tools/bg-remover", icon: Wand2 },
           { name: "PDF 문서 분석", href: "/studio/tools/pdf-analyzer", icon: FileText },
           { name: "AI OCR 문자 추출", href: "/studio/tools/ocr", icon: Eye },
@@ -345,7 +336,6 @@ export default function Sidebar({
         icon: Users,
         color: "text-pink-400",
         children: [
-          { name: "커뮤니티 홈", href: "/studio/community", icon: Home },
           { name: "실시간 채팅", href: "/studio/community/chat", icon: MessageCircle },
           { name: "크리아이박스 글쓰기", href: "/studio/community/writing", icon: PenTool },
           { name: "네이버 블로그", href: "/studio/community/naver", icon: Newspaper },
@@ -365,7 +355,6 @@ export default function Sidebar({
         icon: Info,
         color: "text-amber-400",
         children: [
-          { name: "공지사항", href: "/studio/infocenter", icon: Home },
           { name: "공지사항", href: "/studio/infocenter/list/notices", icon: Bell },
           { name: "자유게시판", href: "/studio/infocenter/list/freeboard", icon: MessageSquare },
           { name: "꿀팁 / 노하우", href: "/studio/infocenter/list/tips", icon: Lightbulb },
@@ -395,19 +384,6 @@ export default function Sidebar({
     return matched?.key ? [matched.key] : [];
   });
 
-  useEffect(() => {
-    const matched = getMatchedGroup();
-    if (matched?.key) {
-      setExpandedGroups((prev) =>
-        prev.includes(matched.key) ? prev : [...prev, matched.key]
-      );
-    }
-  }, [pathname]);
-
-  const expandGroup = (key: string) => {
-    setExpandedGroups((prev) => (prev.includes(key) ? prev : [...prev, key]));
-  };
-
   const toggleGroup = (key: string) => {
     setExpandedGroups((prev) =>
       prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key]
@@ -425,14 +401,17 @@ export default function Sidebar({
         onClick={() => setIsMobileOpen(false)}
         title={isCollapsed ? item.name : undefined}
         className={`
-          group flex items-center rounded-lg px-2.5 py-2 text-[12.5px] font-bold transition-all
+          group relative flex items-center rounded-lg border px-2.5 py-2 text-[13px] font-bold transition-all
           ${isActive
-            ? "border border-blue-500/40 bg-blue-600/20 text-white shadow-lg shadow-blue-950/20"
-            : "text-zinc-100 hover:bg-zinc-800/80 hover:text-white"
+            ? "border-blue-400/25 bg-blue-500/15 text-white shadow-[inset_0_0_0_1px_rgba(59,130,246,0.10),0_10px_24px_rgba(37,99,235,0.10)]"
+            : "border-transparent text-zinc-100 hover:border-blue-400/15 hover:bg-blue-500/10 hover:text-white"
           }
           ${isCollapsed ? "lg:justify-center lg:px-0" : "gap-2.5"}
         `}
       >
+        {isActive && (
+          <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-blue-300" />
+        )}
         <Icon size={16} className={`shrink-0 ${isActive ? "text-blue-300" : color}`} />
         {!isCollapsed && <span className="truncate">{item.name}</span>}
       </Link>
@@ -457,17 +436,19 @@ export default function Sidebar({
         <Link
           href={group.href}
           onClick={() => {
-            expandGroup(group.key);
             setIsMobileOpen(false);
           }}
           className={`
-            flex items-center rounded-lg px-2.5 py-2 text-[12.5px] font-bold transition-all
+            relative flex items-center rounded-lg border px-2.5 py-2 text-[13px] font-bold transition-all
             ${isActive
-              ? "border border-blue-500/40 bg-blue-600/20 text-white"
-              : "text-zinc-100 hover:bg-zinc-800/80 hover:text-white"
+              ? "border-blue-400/25 bg-blue-500/15 text-white shadow-[inset_0_0_0_1px_rgba(59,130,246,0.10),0_10px_24px_rgba(37,99,235,0.10)]"
+              : "border-transparent text-zinc-100 hover:border-blue-400/15 hover:bg-blue-500/10 hover:text-white"
             }
           `}
         >
+          {isActive && (
+            <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-blue-300" />
+          )}
           <Icon size={16} className={`shrink-0 ${isActive ? "text-blue-300" : group.color}`} />
           <span className="ml-2.5 min-w-0 flex-1 truncate">{group.name}</span>
 
@@ -478,7 +459,7 @@ export default function Sidebar({
               e.stopPropagation();
               toggleGroup(group.key);
             }}
-            className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-700 hover:text-white"
+            className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-700 hover:text-white"
           >
             {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           </button>
@@ -496,13 +477,16 @@ export default function Sidebar({
                   href={child.href}
                   onClick={() => setIsMobileOpen(false)}
                   className={`
-                    flex items-center gap-2 rounded-md px-2 py-1.5 text-[11.5px] font-bold transition
+                    relative flex items-center gap-2 rounded-md border px-2.5 py-2 text-[13px] font-bold transition
                     ${childActive
-                      ? "bg-blue-500/15 text-white"
-                      : "text-zinc-300 hover:bg-zinc-800/70 hover:text-white"
+                      ? "border-blue-400/20 bg-blue-500/15 text-white shadow-[inset_0_0_0_1px_rgba(59,130,246,0.08)]"
+                      : "border-transparent text-zinc-300 hover:border-blue-400/15 hover:bg-blue-500/10 hover:text-white"
                     }
                   `}
                 >
+                  {childActive && (
+                    <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-blue-300" />
+                  )}
                   <ChildIcon
                     size={14}
                     className={`shrink-0 ${childActive ? "text-blue-300" : group.color}`}
@@ -519,7 +503,7 @@ export default function Sidebar({
 
   const sectionTitle = (label: string) =>
     !isCollapsed && (
-      <p className="mb-2 ml-1.5 text-[9px] font-black uppercase tracking-[0.22em] text-blue-400/90">
+      <p className="mb-2 ml-1.5 text-[11px] font-black tracking-[0.16em] text-blue-400/90">
         {label}
       </p>
     );
@@ -529,21 +513,27 @@ export default function Sidebar({
       className={`
         fixed left-0 top-0 z-[70] flex h-screen flex-col border-r border-zinc-800/80
         bg-[#090e15] transition-all duration-300 ease-in-out lg:sticky
-        ${isCollapsed ? "lg:w-14" : "lg:w-60"}
+        ${isCollapsed ? "lg:w-14" : "lg:w-[220px]"}
         ${isMobileOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"}
       `}
     >
       <div className="flex h-20 items-center border-b border-zinc-800/80 px-3">
         <Link href="/" className="flex min-w-0 items-center gap-2.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-lg shadow-blue-950/30">
-            <Layers size={18} />
+          <div className="flex h-[46px] w-[46px] shrink-0 items-center justify-center overflow-hidden rounded-xl shadow-lg shadow-blue-950/30">
+            <Image
+              src="/icon.png"
+              alt="Creaibox"
+              width={70}
+              height={70}
+              className="h-full w-full object-cover"
+              priority
+            />
           </div>
 
           {!isCollapsed && (
-            <div className="min-w-0">
-              <p className="truncate text-sm font-black text-white">CreAIbox</p>
-              <p className="truncate text-[9px] font-bold uppercase tracking-widest text-zinc-300">
-                Studio Workspace
+            <div className="flex min-w-0 items-center">
+              <p className="truncate text-2xl font-black leading-none tracking-tight text-white">
+                Creaibox
               </p>
             </div>
           )}
@@ -552,7 +542,7 @@ export default function Sidebar({
 
       <div className="flex-1 overflow-y-auto px-2.5 py-4">
         <div className="mb-3 flex items-center justify-between">
-          {sectionTitle("Workspace")}
+          {sectionTitle("AI Content Studio")}
 
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}

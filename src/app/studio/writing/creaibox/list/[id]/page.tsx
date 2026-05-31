@@ -390,12 +390,14 @@ export default function CreaiboxManuscriptDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0d12] text-white">
-      <div className="mx-auto grid max-w-[1880px] grid-cols-[390px_minmax(0,1fr)_470px] gap-0">
-        <aside className="min-h-screen border-r border-white/10 bg-[#0b0f15] p-4">
+    <div className="h-full w-full overflow-hidden bg-[#0a0d12] text-white">
+      <div className="grid h-full w-full grid-cols-[360px_minmax(0,1fr)_420px]">
+
+        {/* 왼쪽 글 목록 */}
+        <aside className="h-full overflow-y-auto custom-scrollbar border-r border-white/10 bg-[#0b0f15] p-4">
           <button
             onClick={() => router.push("/studio/writing/creaibox/list")}
-            className="mb-5 flex w-full items-center gap-3 rounded-2xl bg-white/5 px-4 py-4 text-left text-lg font-semibold text-white/85 hover:bg-white/10"
+            className="mb-5 flex w-full items-center gap-3 rounded-2xl bg-white/5 px-4 py-4 text-left text-base font-semibold text-white/85 hover:bg-white/10"
           >
             <ArrowLeft className="h-5 w-5" />
             목록으로 돌아가기
@@ -420,14 +422,14 @@ export default function CreaiboxManuscriptDetailPage() {
                   key={manuscript.id}
                   onClick={() => handleOpenManuscript(manuscript)}
                   className={`w-full rounded-3xl border p-4 text-left transition ${active
-                    ? "border-emerald-400 bg-[#24272d]"
-                    : "border-white/10 bg-white/[0.03] hover:bg-white/[0.05]"
+                      ? "border-emerald-400 bg-[#24272d]"
+                      : "border-white/10 bg-white/[0.03] hover:bg-white/[0.05]"
                     }`}
                 >
-                  <div className="mb-3 inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-sm font-bold uppercase tracking-[0.24em] text-emerald-300">
+                  <div className="mb-3 inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">
                     {manuscript.postType === "recreate" ? "RECREATE" : "CREATE"}
                   </div>
-                  <div className="line-clamp-2 text-[1.15rem] font-bold leading-snug text-white">
+                  <div className="line-clamp-2 text-[1.05rem] font-bold leading-snug text-white">
                     {manuscript.title}
                   </div>
                   <div className="mt-2 line-clamp-1 text-sm text-white/35">
@@ -439,7 +441,8 @@ export default function CreaiboxManuscriptDetailPage() {
           </div>
         </aside>
 
-        <main className="min-h-screen bg-white">
+        {/* 가운데 에디터 - 유동 영역 */}
+        <main className="h-full min-w-0 overflow-hidden bg-white">
           <UniversalBlogEditor
             title={data.title ?? ""}
             setTitle={(value) => updateLocalData({ title: value })}
@@ -466,27 +469,28 @@ export default function CreaiboxManuscriptDetailPage() {
           />
         </main>
 
-        <aside className="min-h-screen border-l border-white/10 bg-[#0b0f15] p-6">
-          <div className="mb-4 flex min-h-[74px] items-center justify-end border-b border-white/10 pb-4">
+        {/* 오른쪽 발행 정보 */}
+        <aside className="h-full overflow-y-auto custom-scrollbar border-l border-white/10 bg-[#0b0f15] p-5">
+          <div className="mb-4 flex min-h-[58px] items-center justify-end border-b border-white/10 pb-4">
             <button className="rounded-2xl bg-gradient-to-r from-[#4f46e5] via-[#7c3aed] to-[#ec4899] px-6 py-3 text-sm font-bold text-white shadow-[0_12px_30px_rgba(124,58,237,0.28)]">
               블로그 발행
             </button>
           </div>
 
-          <div className="rounded-[32px] border border-white/10 bg-[#111317] p-6 text-white">
+          <div className="rounded-[28px] border border-white/10 bg-[#111317] p-5 text-white">
             <div className="mb-5 flex items-start justify-between gap-4 border-b border-white/10 pb-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/40">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/40">
                   SEO & Publishing
                 </p>
-                <h2 className="mt-2 text-[2rem] font-black leading-tight">
-                  생성과 함께 채워지는 발행 정보
+                <h2 className="mt-2 text-2xl font-black leading-tight">
+                  발행 정보
                 </h2>
               </div>
               <span
-                className={`inline-flex rounded-full px-4 py-2 text-sm font-semibold ${seoStatus === "준비 완료"
-                  ? "bg-emerald-500/10 text-emerald-300"
-                  : "bg-amber-500/10 text-amber-300"
+                className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${seoStatus === "준비 완료"
+                    ? "bg-emerald-500/10 text-emerald-300"
+                    : "bg-amber-500/10 text-amber-300"
                   }`}
               >
                 {seoStatus}
@@ -495,93 +499,84 @@ export default function CreaiboxManuscriptDetailPage() {
 
             <button
               onClick={() => void handleSave()}
-              className="mb-6 w-full rounded-2xl bg-white/10 px-5 py-4 text-lg font-bold text-white hover:bg-white/15"
+              className="mb-5 w-full rounded-2xl bg-white/10 px-5 py-3 text-sm font-bold text-white hover:bg-white/15"
             >
               저장하기
             </button>
 
-            <div className="mb-6 grid grid-cols-3 gap-4 text-center">
-              <div className="rounded-3xl border border-white/10 bg-[#0f1217] px-4 py-5">
-                <div className="text-xs font-semibold uppercase tracking-[0.3em] text-white/38">
-                  Meta Length
+            <div className="mb-5 grid grid-cols-3 gap-3 text-center">
+              <div className="rounded-2xl border border-white/10 bg-[#0f1217] px-3 py-4">
+                <div className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/38">
+                  Meta
                 </div>
-                <div className="mt-4 text-[3.25rem] font-black leading-none text-emerald-400">
+                <div className="mt-3 text-3xl font-black leading-none text-emerald-400">
                   {(data.metaDescription || "").length}
                 </div>
-                <div className="mt-3 whitespace-nowrap text-sm text-white/38">
-                  권장 90-155자
-                </div>
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-[#0f1217] px-4 py-5">
-                <div className="text-xs font-semibold uppercase tracking-[0.3em] text-white/38">
-                  Slug Size
+              <div className="rounded-2xl border border-white/10 bg-[#0f1217] px-3 py-4">
+                <div className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/38">
+                  Slug
                 </div>
-                <div className="mt-4 text-[3.25rem] font-black leading-none text-sky-400">
+                <div className="mt-3 text-3xl font-black leading-none text-sky-400">
                   {(data.slug || "").length}
                 </div>
-                <div className="mt-3 whitespace-nowrap text-sm text-white/38">
-                  권장 80자 이하
-                </div>
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-[#0f1217] px-4 py-5">
-                <div className="text-xs font-semibold uppercase tracking-[0.3em] text-white/38">
-                  Tag Count
+              <div className="rounded-2xl border border-white/10 bg-[#0f1217] px-3 py-4">
+                <div className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/38">
+                  Tag
                 </div>
-                <div className="mt-4 text-[3.25rem] font-black leading-none text-fuchsia-400">
+                <div className="mt-3 text-3xl font-black leading-none text-fuchsia-400">
                   {toTagList(data.seoTags).length}
-                </div>
-                <div className="mt-3 whitespace-nowrap text-sm text-white/38">
-                  SEO 태그 개수
                 </div>
               </div>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-4">
               <label className="block">
-                <div className="mb-2 text-lg font-semibold text-white/75">슬러그 (Slug)</div>
+                <div className="mb-1.5 text-sm font-semibold text-white/75">슬러그 (Slug)</div>
                 <input
                   value={data.slug || ""}
                   onChange={(event) => updateLocalData({ slug: event.target.value })}
-                  className="w-full rounded-3xl border border-transparent bg-white px-6 py-4 text-xl font-semibold text-[#111111] outline-none"
+                  className="w-full rounded-2xl border border-transparent bg-white px-4 py-3 text-sm font-semibold text-[#111111] outline-none"
                 />
               </label>
 
               <label className="block">
-                <div className="mb-2 flex items-center justify-between text-lg font-semibold text-white/75">
+                <div className="mb-1.5 flex items-center justify-between text-sm font-semibold text-white/75">
                   <span>Meta Description</span>
-                  <span className="text-base font-medium text-white/45">
+                  <span className="text-xs font-medium text-white/45">
                     {(data.metaDescription || "").length}/155
                   </span>
                 </div>
                 <textarea
                   value={data.metaDescription || ""}
                   onChange={(event) => updateLocalData({ metaDescription: event.target.value })}
-                  className="min-h-[140px] w-full resize-none rounded-3xl border border-transparent bg-white px-6 py-5 text-lg leading-relaxed text-[#111111] outline-none"
+                  className="min-h-[110px] w-full resize-none rounded-2xl border border-transparent bg-white px-4 py-3 text-sm leading-relaxed text-[#111111] outline-none"
                 />
               </label>
 
               <label className="block">
-                <div className="mb-2 text-lg font-semibold text-white/75">Focus Keyword</div>
+                <div className="mb-1.5 text-sm font-semibold text-white/75">Focus Keyword</div>
                 <input
                   value={data.focusKeyword || ""}
                   onChange={(event) => updateLocalData({ focusKeyword: event.target.value })}
-                  className="w-full rounded-3xl border border-transparent bg-white px-6 py-4 text-xl font-semibold text-[#111111] outline-none"
+                  className="w-full rounded-2xl border border-transparent bg-white px-4 py-3 text-sm font-semibold text-[#111111] outline-none"
                 />
               </label>
 
               <label className="block">
-                <div className="mb-2 text-lg font-semibold text-white/75">Canonical URL</div>
+                <div className="mb-1.5 text-sm font-semibold text-white/75">Canonical URL</div>
                 <input
                   value={data.canonicalUrl || ""}
                   onChange={(event) => updateLocalData({ canonicalUrl: event.target.value })}
-                  className="w-full rounded-3xl border border-transparent bg-white px-6 py-4 text-lg text-[#111111] outline-none"
+                  className="w-full rounded-2xl border border-transparent bg-white px-4 py-3 text-sm text-[#111111] outline-none"
                 />
               </label>
 
               <label className="block">
-                <div className="mb-2 text-lg font-semibold text-white/75">SEO Tags</div>
+                <div className="mb-1.5 text-sm font-semibold text-white/75">SEO Tags</div>
                 <textarea
                   value={toTagList(data.seoTags).join(", ")}
                   onChange={(event) =>
@@ -592,15 +587,15 @@ export default function CreaiboxManuscriptDetailPage() {
                         .filter(Boolean),
                     })
                   }
-                  className="min-h-[110px] w-full resize-none rounded-3xl border border-transparent bg-white px-6 py-5 text-lg leading-relaxed text-[#111111] outline-none"
+                  className="min-h-[90px] w-full resize-none rounded-2xl border border-transparent bg-white px-4 py-3 text-sm leading-relaxed text-[#111111] outline-none"
                 />
               </label>
 
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2">
                 {toTagList(data.seoTags).map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-full border border-sky-400/30 bg-sky-500/10 px-4 py-2 text-sm font-semibold text-sky-200"
+                    className="rounded-full border border-sky-400/30 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-200"
                   >
                     #{tag}
                   </span>
@@ -609,7 +604,7 @@ export default function CreaiboxManuscriptDetailPage() {
             </div>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-5">
             <CreaiboxAnalysisTower
               seoScore={0}
               seoChecks={{

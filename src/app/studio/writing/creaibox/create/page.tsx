@@ -578,7 +578,7 @@ export default function CreaiboxEditorPage() {
   };
 
   return (
-    <div className="px-5 py-8 lg:px-8">
+    <div className="h-full w-full overflow-hidden bg-[#0b0b0d]">
       <CreaiboxCreateTab
         targetKeyword={targetKeyword}
         setTargetKeyword={setTargetKeyword}
