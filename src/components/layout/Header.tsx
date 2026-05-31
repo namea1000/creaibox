@@ -143,7 +143,7 @@ export default function Header() {
     { label: "기능", href: "#features" },
     { label: "사용방법", href: "#how-it-works" },
     { label: "가격", href: "/pricing" },
-    { label: "블로그", href: "/studio/blog" },
+    { label: "블로그", href: "/blog" },
     { label: "가이드", href: "/about" },
     { label: "고객지원", href: "/help" },
   ];

@@ -1,6 +1,9 @@
 import Link from "next/link";
-import { CalendarDays, Sparkles } from "lucide-react";
+import { CalendarDays, Sparkles, Star, ArrowRight } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
+
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
 
 interface PublishedPost {
   id: string;
@@ -18,19 +21,16 @@ function buildExcerpt(post: PublishedPost) {
   return source.length > 150 ? `${source.slice(0, 150)}...` : source;
 }
 
-function buildAccent(keyword: string) {
-  const seed = keyword.charCodeAt(0) || 75;
-  const palettes = [
-    "from-sky-500/30 via-cyan-500/20 to-blue-500/30",
-    "from-indigo-500/30 via-violet-500/20 to-fuchsia-500/30",
-    "from-emerald-500/25 via-teal-500/20 to-cyan-500/25",
-    "from-amber-500/25 via-orange-500/20 to-rose-500/20",
-  ];
-  return palettes[seed % palettes.length];
+function formatDate(value: string | null) {
+  if (!value) return "날짜 미상";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "날짜 미상";
+  return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}.`;
 }
 
 export default async function BlogPage() {
   const supabase = await createClient();
+
   const { data: posts, error } = await supabase
     .from("writing_creaibox_posts")
     .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at")
@@ -43,97 +43,151 @@ export default async function BlogPage() {
   }
 
   const publishedPosts = ((posts as PublishedPost[] | null) || []).filter((post) => post.slug);
+  const bestPosts = publishedPosts.slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-[#1f232a] pt-20 text-zinc-100">
-      <header className="border-b border-white/10 bg-[#20242b]">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-7">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-300">Creaibox Blog</p>
-            <h1 className="mt-2 text-4xl font-black tracking-tight text-white">AI 인사이트 블로그</h1>
-          </div>
-          <div className="hidden rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-zinc-300 md:block">
-            최신 발행 원고 아카이브
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-white text-zinc-950">
+      <Header />
 
-      <main className="mx-auto max-w-7xl px-6 py-10">
-        {publishedPosts.length === 0 ? (
-          <div className="rounded-[28px] border border-white/10 bg-[#252a31] px-8 py-20 text-center">
-            <p className="text-lg font-black text-white">아직 발행된 글이 없습니다.</p>
-            <p className="mt-3 text-sm font-medium text-zinc-400">Creaibox 에디터에서 글을 발행하면 이 공간에 카드 형태로 표시됩니다.</p>
+      <main className="pt-15">
+        <section className="mx-auto max-w-7xl px-6 py-12">
+          <div className="mb-10 flex items-end justify-between gap-6 border-b border-zinc-200 pb-8">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-blue-600">
+                Creaibox Blog
+              </p>
+              <h1 className="mt-2 text-4xl font-black tracking-tight text-zinc-950">
+                AI 인사이트 블로그
+              </h1>
+              <p className="mt-3 text-sm font-bold text-zinc-500">
+                최신 발행 원고와 인기 콘텐츠를 한눈에 확인하세요.
+              </p>
+            </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {publishedPosts.map((post) => {
-              const keyword = post.focus_keyword || "Creaibox";
-              const excerpt = buildExcerpt(post);
-              const tags = (post.seo_tags || []).slice(0, 4);
-              const accent = buildAccent(keyword);
 
-              return (
-                <Link
-                  key={post.id}
-                  href={`/blog/${post.slug}`}
-                  className="group rounded-[28px] border border-white/10 bg-[#252a31] p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-400/30 hover:bg-[#2a3038]"
-                >
-                  <div className="flex gap-6">
-                    <div className={`relative h-[176px] w-[290px] shrink-0 overflow-hidden rounded-[22px] bg-gradient-to-br ${accent}`}>
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_55%)]" />
-                      <div className="absolute left-4 top-4 rounded-full border border-white/20 bg-black/20 px-3 py-1 text-[11px] font-black text-white/90">
-                        {keyword}
-                      </div>
-                      <div className="absolute inset-x-5 bottom-5">
-                        <div className="inline-flex items-center gap-2 rounded-full bg-black/20 px-3 py-1 text-[11px] font-black text-white/90">
-                          <Sparkles size={12} />
-                          Creaibox Insight
+          {publishedPosts.length === 0 ? (
+            <div className="rounded-[28px] border border-zinc-200 bg-zinc-50 px-8 py-20 text-center">
+              <p className="text-lg font-black text-zinc-950">아직 발행된 글이 없습니다.</p>
+              <p className="mt-3 text-sm font-medium text-zinc-500">
+                Creaibox 에디터에서 글을 발행하면 이 공간에 카드 형태로 표시됩니다.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,2fr)_380px]">
+              {/* 왼쪽 2/3 글 목록 */}
+              <section className="space-y-6">
+                {publishedPosts.map((post) => {
+                  const keyword = post.focus_keyword || "Creaibox";
+                  const excerpt = buildExcerpt(post);
+                  const tags = (post.seo_tags || []).slice(0, 3);
+
+                  return (
+                    <Link
+                      key={post.id}
+                      href={`/blog/${post.slug}`}
+                      className="group flex gap-7 rounded-[30px] border border-zinc-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-xl"
+                    >
+                      <div className="relative h-[170px] w-[270px] shrink-0 overflow-hidden rounded-[24px] bg-gradient-to-br from-zinc-100 via-blue-50 to-cyan-100">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.95),transparent_55%)]" />
+                        <div className="absolute left-4 top-4 rounded-full border border-white/80 bg-white/80 px-3 py-1 text-[11px] font-black text-zinc-700">
+                          {keyword}
                         </div>
-                        <p className="mt-3 line-clamp-3 text-2xl font-black leading-tight text-white drop-shadow-[0_4px_18px_rgba(0,0,0,0.35)]">
-                          {post.title}
-                        </p>
+                        <div className="absolute inset-x-5 bottom-5">
+                          <div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-[11px] font-black text-blue-700">
+                            <Sparkles size={12} />
+                            Insight
+                          </div>
+                          <p className="mt-3 line-clamp-3 text-xl font-black leading-tight text-zinc-950">
+                            {post.title}
+                          </p>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex min-w-0 flex-1 flex-col">
-                      <h2 className="line-clamp-2 text-[2rem] font-black leading-[1.22] tracking-[-0.02em] text-white transition-colors group-hover:text-cyan-200">
-                        {post.title}
-                      </h2>
-                      <p className="mt-5 line-clamp-4 text-[1.08rem] leading-[1.9] text-zinc-300">{excerpt}</p>
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <h2 className="line-clamp-2 text-[1.85rem] font-black leading-[1.25] tracking-[-0.02em] text-zinc-950 transition-colors group-hover:text-blue-600">
+                          {post.title}
+                        </h2>
 
-                      <div className="mt-auto border-t border-white/10 pt-5">
-                        <div className="mb-4 flex flex-wrap gap-3 text-sm font-semibold text-zinc-300">
-                          {tags.length > 0 ? (
-                            tags.map((tag) => (
+                        <p className="mt-4 line-clamp-3 text-[1rem] leading-[1.85] text-zinc-600">
+                          {excerpt}
+                        </p>
+
+                        <div className="mt-auto border-t border-zinc-200 pt-4">
+                          <div className="mb-3 flex flex-wrap gap-3 text-sm font-semibold text-zinc-600">
+                            {(tags.length > 0 ? tags : [keyword]).map((tag) => (
                               <span key={tag} className="inline-flex items-center gap-2">
-                                <span className="h-2 w-2 rounded-full bg-blue-400" />
+                                <span className="h-2 w-2 rounded-full bg-blue-500" />
                                 {tag}
                               </span>
-                            ))
-                          ) : (
-                            <span className="inline-flex items-center gap-2">
-                              <span className="h-2 w-2 rounded-full bg-blue-400" />
-                              {keyword}
-                            </span>
-                          )}
-                        </div>
+                            ))}
+                          </div>
 
-                        <div className="flex items-center justify-between text-sm font-semibold text-zinc-400">
-                          <span className="inline-flex items-center gap-2">
-                            <CalendarDays size={15} />
-                            {post.created_at ? new Date(post.created_at).toLocaleDateString("ko-KR") : "날짜 미상"}
-                          </span>
-                          <span className="text-cyan-300 transition-colors group-hover:text-cyan-200">상세 보기</span>
+                          <div className="flex items-center justify-between text-sm font-semibold text-zinc-500">
+                            <span className="inline-flex items-center gap-2">
+                              <CalendarDays size={15} />
+                              {formatDate(post.created_at)}
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-blue-600 group-hover:text-blue-500">
+                              상세 보기 <ArrowRight size={15} />
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </Link>
+                  );
+                })}
+              </section>
+
+              {/* 오른쪽 1/3 베스트 글 위젯 */}
+              <aside className="lg:sticky lg:top-28 h-fit rounded-[34px] border border-zinc-200 bg-zinc-50 p-6 shadow-sm">
+                <div className="mb-5 flex items-center justify-between border-b border-zinc-200 pb-5">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-600">
+                      Best Posts
+                    </p>
+                    <h2 className="mt-1 text-2xl font-black text-zinc-950">
+                      베스트 글
+                    </h2>
                   </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
+                  <Star className="text-blue-500" size={22} />
+                </div>
+
+                <div className="space-y-1">
+                  {bestPosts.map((post, index) => {
+                    const keyword = post.focus_keyword || "Creaibox";
+
+                    return (
+                      <Link
+                        key={post.id}
+                        href={`/blog/${post.slug}`}
+                        className="group flex gap-4 rounded-2xl px-2 py-4 transition hover:bg-white"
+                      >
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-blue-200 bg-white text-sm font-black text-blue-600">
+                          {index + 1}
+                        </div>
+
+                        <div className="min-w-0 flex-1 border-b border-zinc-200 pb-4">
+                          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-400">
+                            {keyword}
+                          </p>
+                          <h3 className="mt-1 line-clamp-2 text-base font-black leading-snug text-zinc-800 group-hover:text-blue-600">
+                            {post.title}
+                          </h3>
+                          <p className="mt-2 text-xs font-semibold text-zinc-400">
+                            {formatDate(post.created_at)}
+                          </p>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </aside>
+            </div>
+          )}
+        </section>
       </main>
+
+      <Footer />
     </div>
   );
 }
