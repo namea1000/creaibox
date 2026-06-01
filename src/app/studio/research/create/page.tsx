@@ -137,7 +137,30 @@ export default function ResearchCreatePage() {
 
       if (updateError) throw updateError;
 
-      setMessage("파일 업로드와 DB 저장이 완료되었습니다.");
+      if (activeTab === "pdf") {
+        const extractRes = await fetch("/api/research/extract-pdf", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            sourceId: source.id,
+            storagePath,
+          }),
+        });
+
+        const extractJson = await extractRes.json();
+
+        if (!extractRes.ok) {
+          throw new Error(extractJson.error || "PDF 텍스트 추출에 실패했습니다.");
+        }
+
+        setMessage(
+          `PDF 업로드 및 추출 완료: ${extractJson.pageCount}페이지, ${extractJson.textLength}자`
+        );
+      } else {
+        setMessage("파일 업로드와 DB 저장이 완료되었습니다.");
+      }
     } catch (error) {
       console.error(error);
       setMessage(
@@ -175,26 +198,26 @@ export default function ResearchCreatePage() {
 
       if (sourceError) throw sourceError;
 
-      const { error: extractionError } = await supabase
-        .from("research_extractions")
-        .insert({
-          source_id: source.id,
-          user_id: userId,
-          extracted_title: url,
-          extracted_text: "",
-          meta: {
-            input_url: url,
-            note: "URL 저장 완료. 실제 본문 추출 API는 다음 단계에서 연결합니다.",
-          },
-          images: [],
-          char_count: 0,
-          word_count: 0,
-          language: "ko",
-        });
+      const extractRes = await fetch("/api/research/extract-url", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sourceId: source.id,
+          url,
+        }),
+      });
 
-      if (extractionError) throw extractionError;
+      const extractJson = await extractRes.json();
 
-      setMessage("URL이 프로젝트와 자료 보관함에 저장되었습니다.");
+      if (!extractRes.ok) {
+        throw new Error(extractJson.error || "URL 추출에 실패했습니다.");
+      }
+
+      setMessage(
+        `URL 추출 완료: 본문 ${extractJson.textLength}자, 이미지 ${extractJson.imageCount}개`
+      );
       setUrl("");
     } catch (error) {
       console.error(error);
@@ -317,8 +340,8 @@ export default function ResearchCreatePage() {
                     setMessage("");
                   }}
                   className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-black transition ${activeTab === tab.id
-                      ? "bg-violet-600 text-white"
-                      : "border border-zinc-800 bg-zinc-950 text-zinc-400 hover:border-violet-500/40"
+                    ? "bg-violet-600 text-white"
+                    : "border border-zinc-800 bg-zinc-950 text-zinc-400 hover:border-violet-500/40"
                     }`}
                 >
                   <Icon size={16} />
@@ -417,8 +440,8 @@ export default function ResearchCreatePage() {
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
               className={`mt-5 flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed bg-zinc-950 transition ${isDragging
-                  ? "border-violet-500 bg-violet-500/10"
-                  : "border-zinc-700 hover:border-violet-500/50"
+                ? "border-violet-500 bg-violet-500/10"
+                : "border-zinc-700 hover:border-violet-500/50"
                 }`}
             >
               <UploadCloud size={42} className="mb-3 text-violet-400" />
@@ -444,8 +467,8 @@ export default function ResearchCreatePage() {
         {message && (
           <section
             className={`rounded-2xl border p-5 ${message.includes("완료") || message.includes("저장")
-                ? "border-emerald-500/20 bg-emerald-500/5"
-                : "border-red-500/20 bg-red-500/5"
+              ? "border-emerald-500/20 bg-emerald-500/5"
+              : "border-red-500/20 bg-red-500/5"
               }`}
           >
             <div className="flex items-center gap-3">

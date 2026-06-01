@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { 
   ImageIcon, Heading1, Heading2, Bold, Italic, Link2,
-  Type, Wand2, Copy, Save, Cpu, Trash2, Send, RefreshCw, Download, Eye
+  Type, Wand2, Copy, Save, Cpu, Trash2, RefreshCw, Download, Eye
 } from 'lucide-react';
 
 interface ImageBlock {
@@ -534,7 +534,7 @@ export default function NaverEditorCanvas({
                   placeholder={isRecreateMode ? "AI 글 재창조를 가동하시면 중복 필터를 완전히 회피하는 제목이 빌드됩니다." : "제목을 입력하세요..."}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-transparent text-[2.05rem] font-black leading-[1.28] tracking-[-0.03em] text-zinc-950 placeholder-zinc-400 focus:outline-none"
+                  className="w-full bg-transparent text-base font-black leading-7 text-zinc-950 placeholder-zinc-400 focus:outline-none"
                 />
                 <span className="shrink-0 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[10px] font-mono text-zinc-500">
                   Chars: <strong className="text-emerald-500">{charCount}</strong>
@@ -573,7 +573,7 @@ export default function NaverEditorCanvas({
                 aria-multiline="true"
                 spellCheck={false}
                 data-placeholder={isRecreateMode ? "재창조 본문 결과 영역..." : "내용을 채워주세요..."}
-                className="min-h-[760px] w-full flex-1 cursor-text rounded-[10px] bg-transparent px-1 py-1 text-zinc-800 caret-zinc-950 outline-none transition-colors before:pointer-events-none before:absolute before:text-zinc-400 empty:before:content-[attr(data-placeholder)] focus:bg-zinc-50/70 [&_.cb-table-wrap]:my-8 [&_.cb-table-wrap]:overflow-x-auto [&_table]:w-full [&_table]:border-collapse [&_thead]:bg-zinc-100 [&_th]:border [&_th]:border-zinc-300 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-[1rem] [&_th]:font-black [&_td]:border [&_td]:border-zinc-200 [&_td]:px-4 [&_td]:py-3 [&_td]:align-top [&_td]:text-[1rem] [&_td]:leading-[1.8] [&_h1]:mb-6 [&_h1]:border-b [&_h1]:border-zinc-200 [&_h1]:pb-4 [&_h1]:text-[2.05rem] [&_h1]:font-black [&_h1]:leading-[1.25] [&_h1]:tracking-[-0.03em] [&_h2]:mt-12 [&_h2]:mb-5 [&_h2]:text-[1.72rem] [&_h2]:font-black [&_h2]:leading-[1.34] [&_h2]:tracking-[-0.02em] [&_h3]:mt-10 [&_h3]:mb-4 [&_h3]:text-[1.35rem] [&_h3]:font-black [&_h3]:leading-[1.42] [&_h4]:mt-8 [&_h4]:mb-3 [&_h4]:text-[1.18rem] [&_h4]:font-black [&_h4]:leading-[1.5] [&_p]:mb-6 [&_p]:text-[1.18rem] [&_p]:leading-[2.05] [&_p]:tracking-[-0.012em] [&_ul]:mb-8 [&_ul]:ml-6 [&_ul]:list-disc [&_ul]:space-y-3 [&_ul]:text-[1.12rem] [&_ul]:leading-[1.95] [&_ol]:mb-8 [&_ol]:ml-6 [&_ol]:list-decimal [&_ol]:space-y-3 [&_ol]:text-[1.12rem] [&_ol]:leading-[1.95] [&_blockquote]:my-8 [&_blockquote]:rounded-[22px] [&_blockquote]:border [&_blockquote]:border-zinc-200 [&_blockquote]:bg-zinc-50 [&_blockquote]:px-6 [&_blockquote]:py-5 [&_blockquote]:text-[1.02rem] [&_blockquote]:font-medium [&_blockquote]:leading-[1.9] [&_blockquote]:text-zinc-600"
+                className="min-h-[760px] w-full flex-1 cursor-text rounded-[10px] bg-transparent px-1 py-1 text-sm leading-7 text-zinc-800 caret-zinc-950 outline-none transition-colors before:pointer-events-none before:absolute before:text-zinc-400 empty:before:content-[attr(data-placeholder)] focus:bg-zinc-50/70 [&_.cb-table-wrap]:my-6 [&_.cb-table-wrap]:overflow-x-auto [&_table]:w-full [&_table]:border-collapse [&_thead]:bg-zinc-100 [&_th]:border [&_th]:border-zinc-300 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-sm [&_th]:font-black [&_td]:border [&_td]:border-zinc-200 [&_td]:px-3 [&_td]:py-2 [&_td]:align-top [&_td]:text-sm [&_td]:leading-7 [&_h1]:mb-4 [&_h1]:border-b [&_h1]:border-zinc-200 [&_h1]:pb-3 [&_h1]:text-base [&_h1]:font-black [&_h1]:leading-7 [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:text-base [&_h2]:font-black [&_h2]:leading-7 [&_h3]:mt-7 [&_h3]:mb-3 [&_h3]:text-[15px] [&_h3]:font-black [&_h3]:leading-7 [&_h4]:mt-6 [&_h4]:mb-2 [&_h4]:text-sm [&_h4]:font-black [&_h4]:leading-7 [&_p]:mb-4 [&_p]:text-sm [&_p]:leading-7 [&_ul]:mb-5 [&_ul]:ml-5 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:text-sm [&_ul]:leading-7 [&_ol]:mb-5 [&_ol]:ml-5 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:text-sm [&_ol]:leading-7 [&_blockquote]:my-5 [&_blockquote]:rounded-xl [&_blockquote]:border [&_blockquote]:border-zinc-200 [&_blockquote]:bg-zinc-50 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:text-sm [&_blockquote]:font-medium [&_blockquote]:leading-7 [&_blockquote]:text-zinc-600"
               />
             </div>
           </div>
@@ -591,10 +591,7 @@ export default function NaverEditorCanvas({
         )}
         <div className="flex items-center gap-2">
           {isDetailMode ? (
-            <>
-              <button onClick={handleFormDelete} className="p-2 rounded-xl border border-red-500/20 bg-red-500/5 text-red-400 text-xs font-bold hover:bg-red-500/10 transition-all flex items-center gap-1"><Trash2 size={13} /> 영구 삭제</button>
-              <button onClick={() => handleSavePostToSupabase('published')} className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-black hover:bg-emerald-500 active:scale-95 transition-all flex items-center gap-1.5 shadow-lg"><Send size={13} /> 네이버로 즉시 발행</button>
-            </>
+            null
           ) : isRecreateMode ? (
             <>
               <button onClick={handleCopy} className="px-4 py-2 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:bg-zinc-800 transition-all"><Copy size={13} /> 결과 복사</button>

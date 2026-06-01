@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   FileText,
@@ -26,69 +26,140 @@ import {
   Link2,
   FolderOpen,
 } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
 
 export default function ResearchStudioPage() {
-  const stats = [
-    { label: "분석 프로젝트", value: "0", icon: FolderOpen },
-    { label: "업로드 자료", value: "0", icon: UploadCloud },
-    { label: "추출 텍스트", value: "0", icon: FileText },
-    { label: "저장 이미지", value: "0", icon: ImageIcon },
+  const supabase = createClient();
+
+  const [stats, setStats] = useState({
+    projects: 0,
+    sources: 0,
+    extractions: 0,
+    images: 0,
+  });
+
+  const [recentProjects, setRecentProjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadHomeData();
+  }, []);
+
+  async function loadHomeData() {
+    try {
+      setLoading(true);
+
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) return;
+
+      const [
+        projectsRes,
+        sourcesRes,
+        extractionsRes,
+        imagesRes,
+        recentProjectsRes,
+      ] = await Promise.all([
+        supabase
+          .from("research_projects")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId),
+        supabase
+          .from("research_sources")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId),
+        supabase
+          .from("research_extractions")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId),
+        supabase
+          .from("research_images")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId),
+        supabase
+          .from("research_projects")
+          .select("id, title, created_at")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(5),
+      ]);
+
+      setStats({
+        projects: projectsRes.count || 0,
+        sources: sourcesRes.count || 0,
+        extractions: extractionsRes.count || 0,
+        images: imagesRes.count || 0,
+      });
+
+      setRecentProjects(recentProjectsRes.data || []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const statItems = [
+    { label: "분석 프로젝트", value: stats.projects, icon: FolderOpen },
+    { label: "업로드 자료", value: stats.sources, icon: UploadCloud },
+    { label: "추출 결과", value: stats.extractions, icon: FileText },
+    { label: "저장 이미지", value: stats.images, icon: ImageIcon },
   ];
 
   const sourceItems = [
     {
       title: "PDF 파일",
       desc: "논문, 보고서, 강의자료 PDF에서 텍스트를 추출합니다.",
-      href: "/studio/research/pdf",
+      href: "/studio/research/create",
       icon: FileText,
       color: "from-violet-600 to-blue-600",
     },
     {
       title: "Word 문서",
       desc: "DOCX 문서의 본문, 제목, 문단을 추출합니다.",
-      href: "/studio/research/docx",
+      href: "/studio/research/create",
       icon: FileText,
       color: "from-indigo-600 to-violet-600",
     },
     {
       title: "PPT 자료",
       desc: "PPTX 슬라이드의 제목, 본문, 발표자료를 정리합니다.",
-      href: "/studio/research/pptx",
+      href: "/studio/research/create",
       icon: FileText,
       color: "from-blue-600 to-cyan-600",
     },
     {
       title: "Excel / CSV",
       desc: "표, 키워드 목록, 데이터 파일을 분석용 텍스트로 변환합니다.",
-      href: "/studio/research/spreadsheet",
+      href: "/studio/research/create",
       icon: FileSpreadsheet,
       color: "from-emerald-600 to-teal-600",
     },
     {
       title: "이미지 OCR",
       desc: "JPG, PNG, WEBP 이미지 속 글자를 추출합니다.",
-      href: "/studio/research/image-ocr",
+      href: "/studio/research/create",
       icon: ImageIcon,
       color: "from-pink-600 to-rose-600",
     },
     {
       title: "YouTube 자막",
       desc: "YouTube 주소를 입력해 자막 기반 원고를 추출합니다.",
-      href: "/studio/research/youtube",
+      href: "/studio/research/create",
       icon: PlayCircle,
       color: "from-red-600 to-rose-600",
     },
     {
       title: "텍스트 붙여넣기",
       desc: "복사한 원고나 자료를 바로 붙여넣고 분석합니다.",
-      href: "/studio/research/text",
+      href: "/studio/research/create",
       icon: PenLine,
       color: "from-yellow-500 to-amber-600",
     },
     {
       title: "블로그 / 뉴스 / 웹페이지 URL",
       desc: "웹페이지 주소에서 본문, 이미지, 메타 정보를 추출합니다.",
-      href: "/studio/research/web-url",
+      href: "/studio/research/create",
       icon: Globe,
       color: "from-cyan-600 to-blue-600",
     },
@@ -122,8 +193,7 @@ export default function ResearchStudioPage() {
 
               <p className="mt-4 max-w-3xl text-sm leading-relaxed text-zinc-400 md:text-base">
                 PDF, 문서, 이미지, YouTube, 웹페이지 자료를 업로드하거나 URL로 불러와
-                텍스트를 추출하고, 이후 AI 요약·질문답변·블로그 생성까지 연결하는
-                콘텐츠 분석 공간입니다.
+                텍스트를 추출하고, AI 요약·질문답변·콘텐츠 생성까지 연결하는 공간입니다.
               </p>
             </div>
 
@@ -148,7 +218,7 @@ export default function ResearchStudioPage() {
         </section>
 
         <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {stats.map((item) => {
+          {statItems.map((item) => {
             const Icon = item.icon;
 
             return (
@@ -161,7 +231,6 @@ export default function ResearchStudioPage() {
                 </div>
 
                 <p className="text-2xl font-black">{item.value}</p>
-
                 <p className="mt-1 text-xs font-bold text-zinc-500">
                   {item.label}
                 </p>
@@ -171,30 +240,24 @@ export default function ResearchStudioPage() {
         </section>
 
         <section className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <Link
+            href="/studio/research/create"
+            className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 transition hover:border-violet-500/40"
+          >
             <div className="flex items-center gap-3">
               <Link2 className="text-violet-400" size={20} />
               <h2 className="text-lg font-black">URL로 자료 불러오기</h2>
             </div>
 
             <p className="mt-2 text-sm text-zinc-500">
-              블로그, 뉴스, 웹페이지, YouTube 주소를 입력해 자료를 추출합니다.
+              블로그, 뉴스, 웹페이지, YouTube 주소를 입력해 자료를 저장합니다.
             </p>
+          </Link>
 
-            <div className="mt-5 flex gap-2">
-              <input
-                type="text"
-                placeholder="https://example.com/article"
-                className="h-11 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 text-sm text-zinc-200 outline-none placeholder:text-zinc-600 focus:border-violet-500/50"
-              />
-
-              <button className="inline-flex h-11 items-center gap-2 rounded-xl bg-violet-600 px-4 text-sm font-black text-white hover:bg-violet-500">
-                추출
-              </button>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <Link
+            href="/studio/research/create"
+            className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 transition hover:border-violet-500/40"
+          >
             <div className="flex items-center gap-3">
               <UploadCloud className="text-blue-400" size={20} />
               <h2 className="text-lg font-black">파일 업로드</h2>
@@ -203,17 +266,7 @@ export default function ResearchStudioPage() {
             <p className="mt-2 text-sm text-zinc-500">
               파일 선택 또는 드래그 앤 드롭으로 자료를 업로드합니다.
             </p>
-
-            <div className="mt-5 flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-zinc-700 bg-zinc-950 px-4 py-5 text-center hover:border-violet-500/50">
-              <UploadCloud className="mb-2 text-violet-400" size={26} />
-              <p className="text-sm font-black text-zinc-300">
-                파일을 선택하거나 여기에 드래그하세요
-              </p>
-              <p className="mt-1 text-xs text-zinc-600">
-                PDF, DOCX, PPTX, XLSX, CSV, JPG, PNG, WEBP
-              </p>
-            </div>
-          </div>
+          </Link>
         </section>
 
         <section>
@@ -230,7 +283,7 @@ export default function ResearchStudioPage() {
 
               return (
                 <Link
-                  key={item.href}
+                  key={item.title}
                   href={item.href}
                   className="group rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5 transition hover:-translate-y-1 hover:border-violet-500/40"
                 >
@@ -270,12 +323,12 @@ export default function ResearchStudioPage() {
 
             <div className="mt-4 flex flex-wrap gap-2">
               {futureItems.map((item) => (
-                <button
+                <span
                   key={item}
-                  className="rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs font-bold text-zinc-300 hover:border-violet-500/40 hover:text-violet-400"
+                  className="rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs font-bold text-zinc-300"
                 >
                   {item}
-                </button>
+                </span>
               ))}
             </div>
           </div>
@@ -283,12 +336,22 @@ export default function ResearchStudioPage() {
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
             <div className="flex items-center gap-3">
               <Clock className="text-blue-400" size={20} />
-              <h2 className="text-lg font-black">최근 분석</h2>
+              <h2 className="text-lg font-black">최근 프로젝트</h2>
             </div>
 
-            <p className="mt-3 text-sm text-zinc-500">
-              최근 업로드하거나 추출한 자료 분석 이력이 여기에 표시됩니다.
-            </p>
+            <div className="mt-3 space-y-2 text-sm text-zinc-500">
+              {loading ? (
+                <p>불러오는 중...</p>
+              ) : recentProjects.length === 0 ? (
+                <p>최근 프로젝트가 없습니다.</p>
+              ) : (
+                recentProjects.map((project) => (
+                  <p key={project.id} className="truncate">
+                    {project.title || "제목 없음"}
+                  </p>
+                ))
+              )}
+            </div>
           </div>
 
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
@@ -329,13 +392,12 @@ export default function ResearchStudioPage() {
         <section className="rounded-2xl border border-violet-500/20 bg-violet-500/5 p-6">
           <div className="flex items-center gap-3">
             <Home className="text-violet-400" size={20} />
-            <h2 className="text-lg font-black text-white">제작 팁</h2>
+            <h2 className="text-lg font-black text-white">현재 연결 상태</h2>
           </div>
 
           <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-            자료 분석 스튜디오는 단순 파일 추출기가 아니라, 자료를 프로젝트 단위로 저장하고
-            추출 텍스트, 이미지, 메타데이터를 기반으로 블로그 글쓰기, SEO 콘텐츠,
-            유튜브 대본 생성까지 연결하는 공간으로 확장할 수 있습니다.
+            홈 화면은 research_projects, research_sources, research_extractions,
+            research_images의 실제 카운트와 최근 프로젝트를 불러오도록 연결된 상태입니다.
           </p>
         </section>
       </div>
