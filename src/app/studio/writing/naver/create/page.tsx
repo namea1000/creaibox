@@ -12,8 +12,10 @@ const AUTH_RETRY_ATTEMPTS = 3;
 
 const AI_RETRY_ATTEMPTS = 3;
 const AI_RETRY_DELAY_MS = 1200;
+const PRIMARY_GEMINI_MODEL = "gemini-3.1-flash-lite";
 
 const GEMINI_MODEL_FALLBACKS = [
+  PRIMARY_GEMINI_MODEL,
   "gemini-3-flash-preview",
   "gemini-2.5-flash",
   "gemini-2.0-flash",
@@ -278,7 +280,7 @@ export default function NaverCreatePage() {
     setIsAiLoading(true);
     setTitle("");
     setContent("");
-    setGenerationStatusMessage("AI 생성 준비 중입니다...");
+    setGenerationStatusMessage(`${PRIMARY_GEMINI_MODEL} 모델로 글을 생성하고 있습니다...`);
     setGenerationErrorMessage("");
 
     try {
@@ -308,12 +310,14 @@ export default function NaverCreatePage() {
           try {
             setGenerationStatusMessage(
               attempt === 1
-                ? `${modelName} 모델로 글을 생성하고 있습니다...`
+                ? modelName === PRIMARY_GEMINI_MODEL
+                  ? `${PRIMARY_GEMINI_MODEL} 모델로 글을 생성하고 있습니다...`
+                  : "AI 서버 상태에 따라 보조 모델로 이어서 글을 생성하고 있습니다..."
                 : `${modelName} 모델 재시도 중입니다. (${attempt}/${AI_RETRY_ATTEMPTS})`
             );
 
             const modelOptions: any = { model: modelName };
-            if (useSearch) modelOptions.tools = [{ googleSearch: {} }];
+            if (useSearch && modelName !== PRIMARY_GEMINI_MODEL) modelOptions.tools = [{ googleSearch: {} }];
 
             const model = genAI.getGenerativeModel(modelOptions);
             const result = await model.generateContent(prompt);

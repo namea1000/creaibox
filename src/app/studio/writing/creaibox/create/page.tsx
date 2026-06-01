@@ -13,12 +13,18 @@ const SESSION_TIMEOUT_MS = 4000;
 
 const AI_RETRY_ATTEMPTS = 3;
 const AI_RETRY_DELAY_MS = 1200;
+const PRIMARY_GEMINI_MODEL = "gemini-3.1-flash-lite";
 
 const GEMINI_MODEL_FALLBACKS = [
+  PRIMARY_GEMINI_MODEL,
   "gemini-3-flash-preview",
   "gemini-2.5-flash",
   "gemini-2.0-flash",
 ];
+
+function buildCreaiboxCanonicalUrl(slug: string) {
+  return `https://creaibox.com/blog/${slug}`;
+}
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -413,7 +419,7 @@ export default function CreaiboxEditorPage() {
     }
 
     setIsAiLoading(true);
-    setGenerationStatusMessage("AI 생성 준비 중입니다...");
+    setGenerationStatusMessage(`${PRIMARY_GEMINI_MODEL} 모델로 글을 생성하고 있습니다...`);
     setGenerationErrorMessage("");
 
     try {
@@ -457,13 +463,15 @@ export default function CreaiboxEditorPage() {
           try {
             setGenerationStatusMessage(
               attempt === 1
-                ? `${modelName} 모델로 글을 생성하고 있습니다...`
+                ? modelName === PRIMARY_GEMINI_MODEL
+                  ? `${PRIMARY_GEMINI_MODEL} 모델로 글을 생성하고 있습니다...`
+                  : "AI 서버 상태에 따라 보조 모델로 이어서 글을 생성하고 있습니다..."
                 : `${modelName} 모델 재시도 중입니다. (${attempt}/${AI_RETRY_ATTEMPTS})`
             );
 
             const modelOptions: any = { model: modelName };
 
-            if (useSearch) {
+            if (useSearch && modelName !== PRIMARY_GEMINI_MODEL) {
               modelOptions.tools = [{ googleSearch: {} }];
             }
 
@@ -515,7 +523,7 @@ export default function CreaiboxEditorPage() {
       setFocusKeyword(nextFocusKeyword);
       setSeoTags(nextSeoTags);
       setSlug(nextSlug);
-      setCanonicalUrl(`https://creaibox.blog/${nextSlug}`);
+      setCanonicalUrl(buildCreaiboxCanonicalUrl(nextSlug));
 
       if (nextMetaDescription) {
         setMetaDescription(nextMetaDescription);
@@ -530,7 +538,7 @@ export default function CreaiboxEditorPage() {
           seoTags: nextSeoTags,
           slug: nextSlug,
           metaDescription: nextMetaDescription,
-          canonicalUrl: `https://creaibox.blog/${nextSlug}`,
+          canonicalUrl: buildCreaiboxCanonicalUrl(nextSlug),
         });
       }, 100);
     } catch (error: any) {

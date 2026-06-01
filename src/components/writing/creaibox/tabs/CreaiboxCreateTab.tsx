@@ -154,7 +154,7 @@ export default function CreaiboxCreateTab({
     }
 
     if (title && (!canonicalUrl || canonicalUrl.trim() === '')) {
-      setCanonicalUrl(`https://creaibox.blog/${buildSlug(title)}`);
+      setCanonicalUrl(`https://creaibox.com/blog/${buildSlug(title)}`);
     }
 
     if (nextFocusKeyword && (!focusKeyword || focusKeyword.trim() === '')) {
@@ -849,7 +849,7 @@ export default function CreaiboxCreateTab({
                 />
               </div>
               <SeoInput label="Focus Keyword" value={focusKeyword} onChange={setFocusKeyword} placeholder="핵심 포커스 키워드" />
-              <SeoInput label="Canonical URL" value={canonicalUrl} onChange={setCanonicalUrl} placeholder="https://creaibox.blog/..." />
+              <SeoInput label="Canonical URL" value={canonicalUrl} onChange={setCanonicalUrl} placeholder="https://creaibox.com/blog/..." />
 
               <div>
                 <label className="block text-zinc-400 font-bold mb-1.5 text-[12px]">SEO Tags</label>

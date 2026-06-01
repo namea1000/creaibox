@@ -471,26 +471,26 @@ export default function NaverEditorCanvas({
         <div className="flex items-center gap-2 shrink-0">
         <button
           onClick={handleCopy ? handleCopy : () => { navigator.clipboard.writeText(`제목: ${title}\n\n${content}`); }}
-          className="px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:bg-zinc-800 active:scale-95 transition-all flex items-center gap-1.5"
+          className="px-3.5 py-2 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:bg-zinc-800 active:scale-95 transition-all flex items-center gap-1.5"
         >
           <Copy size={13} /> 전체 복사
         </button>
         <button
           onClick={handleDownload}
-          className="px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:bg-zinc-800 active:scale-95 transition-all flex items-center gap-1.5"
+          className="px-3.5 py-2 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:bg-zinc-800 active:scale-95 transition-all flex items-center gap-1.5"
         >
           <Download size={13} /> 다운로드
         </button>
         <button
           onClick={handlePreview}
-          className="px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:bg-zinc-800 active:scale-95 transition-all flex items-center gap-1.5"
+          className="px-3.5 py-2 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:bg-zinc-800 active:scale-95 transition-all flex items-center gap-1.5"
         >
           <Eye size={13} /> 미리보기
         </button>
         <button 
           onClick={() => handleSaveClick(isDetailMode ? 'completed' : undefined)} 
           disabled={isSaving}
-          className="px-3 py-1.5 rounded-xl bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-200 text-xs font-black active:scale-95 transition-all flex items-center gap-1.5"
+          className="px-3.5 py-2 rounded-lg bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-200 text-xs font-black active:scale-95 transition-all flex items-center gap-1.5"
         >
           <Save size={13} /> {isSaving ? "저장중..." : saveFeedback === 'saved' ? "저장완료" : "원고 저장"}
         </button>

@@ -2,11 +2,14 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, Check, RotateCcw, Search, Send } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/utils/supabase/client";
 import UniversalBlogEditor from "@/components/writing/editor/UniversalBlogEditor";
 import CreaiboxAnalysisTower from "@/components/writing/creaibox/tabs/CreaiboxAnalysisTower";
+import CreaiboxSchemaPanel from "@/components/writing/creaibox/tabs/CreaiboxSchemaPanel";
+import CreaiboxSeoOptimizationPanel from "@/components/writing/creaibox/tabs/CreaiboxSeoOptimizationPanel";
+import CreaiboxThumbnailPanel from "@/components/writing/creaibox/tabs/CreaiboxThumbnailPanel";
 import {
   creaiboxManuscriptKeys,
   type StudioManuscriptRecord,
@@ -19,6 +22,8 @@ const CREAIBOX_LIST_CACHE_KEY = "creaibox:manuscripts:list:v1";
 type StudioManuscriptRecordWithOptionalFields = StudioManuscriptRecord & {
   useSearch?: boolean;
 };
+
+type PublishingPanelTab = "seo" | "thumbnail" | "schema";
 
 function buildPublicBlogSlug(title?: string, focusKeyword?: string, targetKeyword?: string) {
   const base = (focusKeyword || targetKeyword || title || "")
@@ -108,6 +113,8 @@ export default function CreaiboxManuscriptDetailPage() {
   const [hasLocalEdits, setHasLocalEdits] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDirectLoading, setIsDirectLoading] = useState(false);
+  const [publishFeedback, setPublishFeedback] = useState("");
+  const [publishingPanelTab, setPublishingPanelTab] = useState<PublishingPanelTab>("seo");
 
   const sidebarList = useMemo(() => {
     if (queryList.length > 0) return queryList;
@@ -243,6 +250,18 @@ export default function CreaiboxManuscriptDetailPage() {
     setHasLocalEdits(true);
   }, []);
 
+  const showPublishFeedback = useCallback((message: string) => {
+    if (saveFeedbackTimeoutRef.current) {
+      clearTimeout(saveFeedbackTimeoutRef.current);
+    }
+
+    setPublishFeedback(message);
+    saveFeedbackTimeoutRef.current = setTimeout(() => {
+      setPublishFeedback("");
+      saveFeedbackTimeoutRef.current = null;
+    }, 3000);
+  }, []);
+
   const handleOpenManuscript = useCallback(
     (manuscript: StudioManuscriptRecord) => {
       setData(manuscript);
@@ -347,15 +366,40 @@ export default function CreaiboxManuscriptDetailPage() {
     [data, persistCaches, supabase]
   );
 
-  const seoStatus = useMemo(() => {
+  const publishingStatus = useMemo(() => {
     if (!data) return "대기 중";
 
-    const ok = Boolean(
-      data.slug && data.metaDescription && data.focusKeyword && (data.seoTags?.length ?? 0) > 0
-    );
-
-    return ok ? "준비 완료" : "보완 필요";
+    if (data.status === "published") return "발행 완료";
+    if (data.status === "trash") return "휴지통";
+    return "저장 완료";
   }, [data]);
+
+  const publishingStatusClass = useMemo(() => {
+    if (data?.status === "published") return "bg-emerald-500/10 text-emerald-300";
+    if (data?.status === "trash") return "bg-rose-500/10 text-rose-300";
+    return "bg-sky-500/10 text-sky-300";
+  }, [data?.status]);
+
+  const handlePublish = useCallback(async () => {
+    if (data?.status === "published") {
+      showPublishFeedback("이미 발행이 완료된 글입니다.");
+      return;
+    }
+
+    const published = await handleSave("published");
+
+    if (published) {
+      showPublishFeedback("블로그 발행이 완료되었습니다.");
+    }
+  }, [data?.status, handleSave, showPublishFeedback]);
+
+  const handleCancelPublish = useCallback(async () => {
+    const canceled = await handleSave("saved");
+
+    if (canceled) {
+      showPublishFeedback("발행이 취소되었습니다.");
+    }
+  }, [handleSave, showPublishFeedback]);
 
   if (!data && (isDetailLoading || isDirectLoading)) {
     return (
@@ -394,26 +438,26 @@ export default function CreaiboxManuscriptDetailPage() {
       <div className="grid h-full w-full grid-cols-[360px_minmax(0,1fr)_420px]">
 
         {/* 왼쪽 글 목록 */}
-        <aside className="h-full overflow-y-auto custom-scrollbar border-r border-white/10 bg-[#0b0f15] p-4">
+        <aside className="h-full overflow-y-auto custom-scrollbar border-r border-violet-500/20 bg-[#0b0f15] p-4 text-[13px]">
           <button
             onClick={() => router.push("/studio/writing/creaibox/list")}
-            className="mb-5 flex w-full items-center gap-3 rounded-2xl bg-white/5 px-4 py-4 text-left text-base font-semibold text-white/85 hover:bg-white/10"
+            className="mb-5 flex w-full items-center gap-3 rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3 text-left text-[13px] font-bold text-white/80 transition hover:border-violet-400/40 hover:bg-violet-500/10"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4 text-violet-300" />
             목록으로 돌아가기
           </button>
 
           <div className="relative mb-5">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/35" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300/60" />
             <input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="원고 검색..."
-              className="w-full rounded-2xl border border-white/10 bg-[#0f141b] py-4 pl-12 pr-4 text-white outline-none placeholder:text-white/30"
+              className="w-full rounded-xl border border-zinc-800/80 bg-zinc-950/30 py-3 pl-11 pr-4 text-[13px] font-medium text-white outline-none transition placeholder:text-white/30 focus:border-violet-500/50"
             />
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-2">
             {filteredManuscripts.map((manuscript) => {
               const active = manuscript.id === data.id;
 
@@ -421,19 +465,24 @@ export default function CreaiboxManuscriptDetailPage() {
                 <button
                   key={manuscript.id}
                   onClick={() => handleOpenManuscript(manuscript)}
-                  className={`w-full rounded-3xl border p-4 text-left transition ${active
-                      ? "border-emerald-400 bg-[#24272d]"
-                      : "border-white/10 bg-white/[0.03] hover:bg-white/[0.05]"
+                  className={`w-full rounded-xl border p-3.5 text-left transition ${active
+                      ? "border-violet-500/60 bg-violet-950/15"
+                      : "border-zinc-800/80 bg-zinc-950/30 hover:border-violet-500/35 hover:bg-zinc-900/40"
                     }`}
                 >
-                  <div className="mb-3 inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">
-                    {manuscript.postType === "recreate" ? "RECREATE" : "CREATE"}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className={`line-clamp-2 text-[13px] font-black leading-tight ${active ? "text-violet-300" : "text-zinc-100"}`}>
+                      {manuscript.title}
+                    </div>
+                    {active && <Check className="mt-0.5 h-3 w-3 shrink-0 text-violet-300" />}
                   </div>
-                  <div className="line-clamp-2 text-[1.05rem] font-bold leading-snug text-white">
-                    {manuscript.title}
-                  </div>
-                  <div className="mt-2 line-clamp-1 text-sm text-white/35">
-                    #{manuscript.targetKeyword || "키워드 없음"}
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <span className="inline-flex rounded-md border border-violet-500/30 bg-violet-500/10 px-1.5 py-0.5 text-[13px] font-black uppercase tracking-[0.16em] text-violet-300">
+                      {manuscript.postType === "recreate" ? "RECREATE" : "CREATE"}
+                    </span>
+                    <span className="line-clamp-1 text-[13px] font-medium text-zinc-500">
+                      #{manuscript.targetKeyword || "키워드 없음"}
+                    </span>
                   </div>
                 </button>
               );
@@ -463,170 +512,111 @@ export default function CreaiboxManuscriptDetailPage() {
             handleUpdateCaption={() => { }}
             handleDeleteImage={() => { }}
             handleEnhanceContent={() => { }}
-            handleSavePostToSupabase={handleSave}
+            handleSavePostToSupabase={() => handleSave("saved")}
             isDetailMode
             targetKeyword={data.targetKeyword ?? ""}
           />
         </main>
 
         {/* 오른쪽 발행 정보 */}
-        <aside className="h-full overflow-y-auto custom-scrollbar border-l border-white/10 bg-[#0b0f15] p-5">
-          <div className="mb-4 flex min-h-[58px] items-center justify-end border-b border-white/10 pb-4">
-            <button className="rounded-2xl bg-gradient-to-r from-[#4f46e5] via-[#7c3aed] to-[#ec4899] px-6 py-3 text-sm font-bold text-white shadow-[0_12px_30px_rgba(124,58,237,0.28)]">
-              블로그 발행
-            </button>
-          </div>
-
-          <div className="rounded-[28px] border border-white/10 bg-[#111317] p-5 text-white">
-            <div className="mb-5 flex items-start justify-between gap-4 border-b border-white/10 pb-4">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/40">
-                  SEO & Publishing
-                </p>
-                <h2 className="mt-2 text-2xl font-black leading-tight">
-                  발행 정보
-                </h2>
-              </div>
-              <span
-                className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${seoStatus === "준비 완료"
-                    ? "bg-emerald-500/10 text-emerald-300"
-                    : "bg-amber-500/10 text-amber-300"
-                  }`}
-              >
-                {seoStatus}
-              </span>
-            </div>
-
+        <aside className="h-full overflow-y-auto custom-scrollbar border-l border-white/10 bg-[#0b0f15]">
+          <div className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-zinc-800 bg-gradient-to-r from-[#131722] via-[#141926] to-[#10141f] px-5">
+            <div className="flex items-center gap-2">
             <button
-              onClick={() => void handleSave()}
-              className="mb-5 w-full rounded-2xl bg-white/10 px-5 py-3 text-sm font-bold text-white hover:bg-white/15"
+              onClick={() => void handlePublish()}
+              disabled={isSaving}
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#4f46e5] via-[#7c3aed] to-[#ec4899] px-3.5 py-2 text-xs font-black text-white shadow-[0_8px_18px_rgba(124,58,237,0.18)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              저장하기
+              <Send className="h-3.5 w-3.5" />
+              {isSaving ? "처리 중..." : "블로그 발행"}
             </button>
-
-            <div className="mb-5 grid grid-cols-3 gap-3 text-center">
-              <div className="rounded-2xl border border-white/10 bg-[#0f1217] px-3 py-4">
-                <div className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/38">
-                  Meta
-                </div>
-                <div className="mt-3 text-3xl font-black leading-none text-emerald-400">
-                  {(data.metaDescription || "").length}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-[#0f1217] px-3 py-4">
-                <div className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/38">
-                  Slug
-                </div>
-                <div className="mt-3 text-3xl font-black leading-none text-sky-400">
-                  {(data.slug || "").length}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-[#0f1217] px-3 py-4">
-                <div className="text-[9px] font-semibold uppercase tracking-[0.2em] text-white/38">
-                  Tag
-                </div>
-                <div className="mt-3 text-3xl font-black leading-none text-fuchsia-400">
-                  {toTagList(data.seoTags).length}
-                </div>
-              </div>
+            <button
+              onClick={() => void handleCancelPublish()}
+              disabled={isSaving}
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition hover:border-rose-400/35 hover:bg-rose-500/10 hover:text-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              발행 취소
+            </button>
             </div>
+            <span
+              className={`inline-flex shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${publishingStatusClass}`}
+            >
+              {publishingStatus}
+            </span>
+            {publishFeedback && (
+              <div className="absolute left-0 top-full z-20 mt-3 rounded-2xl border border-violet-400/30 bg-[#18121f] px-4 py-3 text-sm font-bold text-violet-100 shadow-[0_18px_45px_rgba(0,0,0,0.35)]">
+                {publishFeedback}
+              </div>
+            )}
+          </div>
 
-            <div className="space-y-4">
-              <label className="block">
-                <div className="mb-1.5 text-sm font-semibold text-white/75">슬러그 (Slug)</div>
-                <input
-                  value={data.slug || ""}
-                  onChange={(event) => updateLocalData({ slug: event.target.value })}
-                  className="w-full rounded-2xl border border-transparent bg-white px-4 py-3 text-sm font-semibold text-[#111111] outline-none"
-                />
-              </label>
+          <section className="border-b border-zinc-800 text-white">
+            <div className="mb-5 grid h-14 grid-cols-3 border-b border-white/10">
+              {[
+                { key: "seo", label: "SEO 최적화" },
+                { key: "thumbnail", label: "썸네일" },
+                { key: "schema", label: "스키마" },
+              ].map((tab) => {
+                const active = publishingPanelTab === tab.key;
 
-              <label className="block">
-                <div className="mb-1.5 flex items-center justify-between text-sm font-semibold text-white/75">
-                  <span>Meta Description</span>
-                  <span className="text-xs font-medium text-white/45">
-                    {(data.metaDescription || "").length}/155
-                  </span>
-                </div>
-                <textarea
-                  value={data.metaDescription || ""}
-                  onChange={(event) => updateLocalData({ metaDescription: event.target.value })}
-                  className="min-h-[110px] w-full resize-none rounded-2xl border border-transparent bg-white px-4 py-3 text-sm leading-relaxed text-[#111111] outline-none"
-                />
-              </label>
-
-              <label className="block">
-                <div className="mb-1.5 text-sm font-semibold text-white/75">Focus Keyword</div>
-                <input
-                  value={data.focusKeyword || ""}
-                  onChange={(event) => updateLocalData({ focusKeyword: event.target.value })}
-                  className="w-full rounded-2xl border border-transparent bg-white px-4 py-3 text-sm font-semibold text-[#111111] outline-none"
-                />
-              </label>
-
-              <label className="block">
-                <div className="mb-1.5 text-sm font-semibold text-white/75">Canonical URL</div>
-                <input
-                  value={data.canonicalUrl || ""}
-                  onChange={(event) => updateLocalData({ canonicalUrl: event.target.value })}
-                  className="w-full rounded-2xl border border-transparent bg-white px-4 py-3 text-sm text-[#111111] outline-none"
-                />
-              </label>
-
-              <label className="block">
-                <div className="mb-1.5 text-sm font-semibold text-white/75">SEO Tags</div>
-                <textarea
-                  value={toTagList(data.seoTags).join(", ")}
-                  onChange={(event) =>
-                    updateLocalData({
-                      seoTags: event.target.value
-                        .split(",")
-                        .map((item) => item.trim())
-                        .filter(Boolean),
-                    })
-                  }
-                  className="min-h-[90px] w-full resize-none rounded-2xl border border-transparent bg-white px-4 py-3 text-sm leading-relaxed text-[#111111] outline-none"
-                />
-              </label>
-
-              <div className="flex flex-wrap gap-2">
-                {toTagList(data.seoTags).map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-sky-400/30 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-200"
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setPublishingPanelTab(tab.key as PublishingPanelTab)}
+                    className={`border-r border-white/10 text-sm font-black transition last:border-r-0 ${active
+                        ? "bg-white/[0.06] text-white"
+                        : "text-white/45 hover:bg-white/[0.035] hover:text-white/80"
+                      }`}
                   >
-                    #{tag}
-                  </span>
-                ))}
-              </div>
+                    {tab.label}
+                  </button>
+                );
+              })}
             </div>
-          </div>
 
-          <div className="mt-5">
-            <CreaiboxAnalysisTower
-              seoScore={0}
-              seoChecks={{
-                titleKeyword: false,
-                contentDensity: false,
-                duplicateSafe: true,
-                lengthCheck: false,
-                structureCheck: false,
-                subHeadingCheck: false,
-              }}
-              posRatio={{
-                noun: 0,
-                verb: 0,
-                other: 0,
-              }}
-              frequencies={[]}
-              content={data.content ?? ""}
-              crawlabilityScore={0}
-              isDensitySafe={true}
-              isDetailMode
-            />
-          </div>
+            {publishingPanelTab === "seo" && (
+              <CreaiboxSeoOptimizationPanel
+                data={data}
+                updateLocalData={updateLocalData}
+              />
+            )}
+            {publishingPanelTab === "thumbnail" && <CreaiboxThumbnailPanel />}
+            {publishingPanelTab === "schema" && <CreaiboxSchemaPanel />}
+          </section>
+
+          {publishingPanelTab === "seo" && (
+            <div className="px-5">
+              <CreaiboxAnalysisTower
+                seoScore={0}
+                seoChecks={{
+                  titleKeyword: false,
+                  contentDensity: false,
+                  duplicateSafe: true,
+                  lengthCheck: false,
+                  structureCheck: false,
+                  subHeadingCheck: false,
+                }}
+                posRatio={{
+                  noun: 0,
+                  verb: 0,
+                  other: 0,
+                }}
+                frequencies={[]}
+                content={data.content ?? ""}
+                title={data.title ?? ""}
+                focusKeyword={data.focusKeyword ?? data.targetKeyword ?? ""}
+                metaDescription={data.metaDescription ?? ""}
+                slug={data.slug ?? ""}
+                canonicalUrl={data.canonicalUrl ?? ""}
+                seoTags={data.seoTags ?? []}
+                crawlabilityScore={0}
+                isDensitySafe={true}
+                isDetailMode
+              />
+            </div>
+          )}
         </aside>
       </div>
     </div>

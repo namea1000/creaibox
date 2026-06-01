@@ -35,8 +35,10 @@ const AUTH_RETRY_ATTEMPTS = 3;
 
 const AI_RETRY_ATTEMPTS = 3;
 const AI_RETRY_DELAY_MS = 1200;
+const PRIMARY_GEMINI_MODEL = "gemini-3.1-flash-lite";
 
 const GEMINI_MODEL_FALLBACKS = [
+  PRIMARY_GEMINI_MODEL,
   "gemini-3-flash-preview",
   "gemini-2.5-flash",
   "gemini-2.0-flash",
@@ -298,7 +300,7 @@ export default function NaverRecreatePage() {
     setIsAiLoading(true);
     setTitle("");
     setContent("");
-    setGenerationStatusMessage("AI 재창조 준비 중입니다...");
+    setGenerationStatusMessage(`${PRIMARY_GEMINI_MODEL} 모델로 원고를 재창조하고 있습니다...`);
     setGenerationErrorMessage("");
     setSourceAnalysis({ keywords: [], topic: "", summaryPoints: [] });
 
@@ -367,7 +369,9 @@ export default function NaverRecreatePage() {
           try {
             setGenerationStatusMessage(
               attempt === 1
-                ? `${modelName} 모델로 원고를 재창조하고 있습니다...`
+                ? modelName === PRIMARY_GEMINI_MODEL
+                  ? `${PRIMARY_GEMINI_MODEL} 모델로 원고를 재창조하고 있습니다...`
+                  : "AI 서버 상태에 따라 보조 모델로 이어서 원고를 재창조하고 있습니다..."
                 : `${modelName} 모델 재시도 중입니다. (${attempt}/${AI_RETRY_ATTEMPTS})`
             );
 

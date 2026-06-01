@@ -233,6 +233,22 @@ export default function Sidebar({
         ],
       },
       {
+        key: "research",
+        name: "자료 분석 스튜디오",
+        href: "/studio/research",
+        icon: Database,
+        color: "text-indigo-400",
+        children: [
+          { name: "새 자료 분석", href: "/studio/research/create", icon: FileText },
+          { name: "자료 보관함", href: "/studio/research/library", icon: Archive },
+          { name: "AI 채팅", href: "/studio/research/chat", icon: MessageCircle },
+          { name: "콘텐츠 생성", href: "/studio/research/content", icon: Sparkles },
+          { name: "추출 이미지", href: "/studio/research/images", icon: ImageIcon },
+          { name: "프로젝트 관리", href: "/studio/research/projects", icon: Folder },
+          { name: "설정", href: "/studio/research/settings", icon: Settings },
+        ],
+      },
+      {
         key: "keyword",
         name: "키워드 트렌드 분석",
         href: "/studio/keyword",
