@@ -174,8 +174,9 @@ export default function CreaiboxManuscriptListPage() {
   const searchTerm = useManuscriptUiStore((state) => state.creaiboxSearchTerm);
   const setSearchTerm = useManuscriptUiStore((state) => state.setCreaiboxSearchTerm);
 
-  const [cachedManuscripts, setCachedManuscripts] =
-    useState<StudioManuscriptRecord[]>(() => readCachedList());
+  const [cachedManuscripts, setCachedManuscripts] = useState<
+    StudioManuscriptRecord[]
+  >([]);
   const [fallbackManuscripts, setFallbackManuscripts] = useState<StudioManuscriptRecord[]>([]);
   const [isFallbackLoading, setIsFallbackLoading] = useState(false);
   const [fallbackError, setFallbackError] = useState<string | null>(null);
@@ -192,6 +193,13 @@ export default function CreaiboxManuscriptListPage() {
     isFetching,
     refetch,
   } = useCreaiboxManuscriptsQuery();
+
+  useEffect(() => {
+    const cachedList = readCachedList();
+    if (cachedList.length > 0) {
+      setCachedManuscripts(cachedList);
+    }
+  }, []);
 
   useEffect(() => {
     if (cachedManuscripts.length > 0) {

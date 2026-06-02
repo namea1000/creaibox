@@ -558,7 +558,7 @@ export default function Sidebar({
 
       <div className="flex-1 overflow-y-auto px-2.5 py-4">
         <div className="mb-3 flex items-center justify-between">
-          {sectionTitle("AI Content Studio")}
+          {sectionTitle("AI Creator Workspace")}
 
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
