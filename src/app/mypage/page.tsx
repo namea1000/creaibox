@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 
 import Sidebar from "@/components/layout/Sidebar";
 import Aside from "@/components/layout/Aside";
+import StudioTopbar from "@/components/studio/StudioTopbar";
 
 type WpSite = {
   siteName: string;
@@ -217,16 +218,19 @@ export default function MyPage() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#05070a] font-sans text-zinc-100">
-      <div className="flex flex-1 overflow-hidden pt-20">
-        <Sidebar
-          activeMenu="MyPage"
-          isCollapsed={isCollapsed}
-          setIsCollapsed={setIsCollapsed}
-          isMobileOpen={isMobileOpen}
-          setIsMobileOpen={setIsMobileOpen}
-        />
+      <Sidebar
+        activeMenu="MyPage"
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
+        isMobileOpen={isMobileOpen}
+        setIsMobileOpen={setIsMobileOpen}
+      />
 
-        <main className="custom-scrollbar flex-1 overflow-y-auto transition-all duration-300">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <StudioTopbar setIsMobileOpen={setIsMobileOpen} />
+
+        <div className="flex min-h-0 min-w-0 flex-1">
+          <main className="custom-scrollbar min-w-0 flex-1 overflow-y-auto overflow-x-hidden transition-all duration-300">
           <div className="mx-auto max-w-[1400px] p-6 pt-4 pb-48 lg:p-12 lg:pt-10">
             <header className="mb-12 flex flex-col items-start justify-between gap-6 border-b border-zinc-800 pb-10 text-left md:flex-row md:items-end">
               <div className="space-y-2">
@@ -458,8 +462,9 @@ export default function MyPage() {
 
         </main>
 
-        <div className="hidden shrink-0 border-l border-zinc-800/50 bg-[#05070a] xl:flex">
-          <Aside />
+          <div className="hidden shrink-0 border-l border-zinc-800/50 bg-[#05070a] xl:flex">
+            <Aside />
+          </div>
         </div>
       </div>
     </div>

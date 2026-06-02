@@ -37,6 +37,11 @@ type ServiceItem = {
 
 const geminiModels: ModelOption[] = [
   {
+    value: "gemini-3.1-flash-lite",
+    label:
+      "gemini-3.1-flash-lite 🟢 최신 Lite · 저비용 · 빠른 생성 · 대량 작업 추천",
+  },
+  {
     value: "gemini-3-flash-preview",
     label:
       "gemini-3-flash-preview ⚡ 최신 Preview · 최고 성능 · 이미지/텍스트/영상 멀티모달 · 차세대 AI 기능 우선 지원",
@@ -76,7 +81,7 @@ const leftHub: ServiceItem[] = [
     modelStorageKey: "gemini_postpay_model",
     provider: "gemini",
     name: "1. Google Gemini API - Tier 1 · Postpay(Billing Account)",
-    defaultModel: "gemini-3-flash-preview",
+    defaultModel: "gemini-3.1-flash-lite",
     modelOptions: geminiModels,
     tip:
       "💡 유료 Billing Account가 연결된 Gemini API Key입니다. 안정적인 사용량, 높은 한도, 상용 서비스용 AI 생성에 적합합니다.",
@@ -88,7 +93,7 @@ const leftHub: ServiceItem[] = [
     modelStorageKey: "gemini_free_model",
     provider: "gemini",
     name: "2. Google Gemini API - Free Tier",
-    defaultModel: "gemini-3-flash-preview",
+    defaultModel: "gemini-3.1-flash-lite",
     modelOptions: geminiModels,
     tip:
       "💡 무료 체험용 Gemini API Key입니다. 테스트, 개인 사용, 초기 개발용으로 활용하고 사용량 제한이 있을 수 있습니다.",
@@ -333,7 +338,7 @@ export default function APIVaultPage() {
 
   const [preferredProvider, setPreferredProvider] = useState("gemini_free");
   const [preferredModel, setPreferredModel] = useState(
-    "gemini-3-flash-preview"
+    "gemini-3.1-flash-lite"
   );
 
   const providerModelOptions = useMemo(() => {
@@ -345,9 +350,16 @@ export default function APIVaultPage() {
   useEffect(() => {
     const savedProvider = localStorage.getItem("preferred_ai_provider");
     const savedModel = localStorage.getItem("preferred_ai_model");
+    const nextModel =
+      savedModel === "gemini-3-flash-preview"
+        ? "gemini-3.1-flash-lite"
+        : savedModel;
 
     if (savedProvider) setPreferredProvider(savedProvider);
-    if (savedModel) setPreferredModel(savedModel);
+    if (nextModel) {
+      setPreferredModel(nextModel);
+      localStorage.setItem("preferred_ai_model", nextModel);
+    }
   }, []);
 
   const handlePreferredProviderChange = (provider: string) => {
@@ -373,18 +385,21 @@ export default function APIVaultPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#06080d] text-zinc-100">
-      <StudioTopbar setIsMobileOpen={setIsMobileOpen} />
-      <div className="flex flex-1 overflow-hidden pt-20">
-        <Sidebar
-          activeMenu="APIVault"
-          isCollapsed={isCollapsed}
-          setIsCollapsed={setIsCollapsed}
-          isMobileOpen={isMobileOpen}
-          setIsMobileOpen={setIsMobileOpen}
-        />
-        <main className="custom-scrollbar flex-1 overflow-y-auto transition-all duration-300">
-          <div className="mx-auto max-w-[1400px] p-6 pb-32 lg:p-12">
+    <div className="flex h-screen overflow-hidden bg-[#06080d] text-zinc-100">
+      <Sidebar
+        activeMenu="APIVault"
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
+        isMobileOpen={isMobileOpen}
+        setIsMobileOpen={setIsMobileOpen}
+      />
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <StudioTopbar setIsMobileOpen={setIsMobileOpen} />
+
+        <div className="flex min-h-0 min-w-0 flex-1">
+          <main className="custom-scrollbar min-w-0 flex-1 overflow-y-auto overflow-x-hidden transition-all duration-300">
+          <div className="mx-auto max-w-[1400px] p-6 pb-20 lg:px-12 lg:py-8">
             <header className="mb-8 border-b border-slate-800/80 pb-6">
               <div className="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-end">
                 <div>
@@ -516,15 +531,12 @@ export default function APIVaultPage() {
                 ))}
               </section>
             </div>
-
-            <footer className="mt-12 pb-8 text-center text-[9px] font-black uppercase tracking-[0.3em] text-slate-700">
-              Creaibox.com — AI Contents Studio
-            </footer>
           </div>
-        </main>
+          </main>
 
-        <div className="hidden shrink-0 xl:flex">
-          <Aside />
+          <div className="hidden shrink-0 xl:flex">
+            <Aside />
+          </div>
         </div>
       </div>
     </div>
