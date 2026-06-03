@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Sparkles,
   Search,
@@ -13,7 +13,10 @@ import {
   Tag,
   FileText,
   Check,
-  Download,
+  Star,
+  UploadCloud,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -26,6 +29,10 @@ interface GeneratedImage {
   type: "ai" | "stock";
   aspectRatio?: string;
   provider?: string;
+  sourceType?: string;
+  sourceId?: string;
+  imageRole?: string;
+  isPrimary?: boolean;
 }
 
 interface MockPost {
@@ -46,56 +53,246 @@ interface WritingNaverPostRecord {
   tags?: string[] | null;
 }
 
+interface GeneratedImageRecord {
+  id: string;
+  image_url: string;
+  prompt: string;
+  style?: string | null;
+  aspect_ratio?: string | null;
+  provider?: string | null;
+  source_type?: string | null;
+  source_id?: string | null;
+  image_role?: string | null;
+  is_primary?: boolean | null;
+  created_at?: string | null;
+}
+
+interface ThumbnailPreset {
+  selectedProvider: string;
+  selectedStyle: string;
+  selectedStyleDetail: string;
+  selectedAspectRatio: string;
+  selectedThumbnailType: string;
+  selectedTextIntensity: string;
+  selectedLayout: string;
+  selectedColorTone: string;
+  selectedTextLanguage: string;
+}
+
+const GENERATED_IMAGE_SOURCE_TYPE = "writing_naver_posts";
+const GENERATED_IMAGE_ROLE = "thumbnail";
+const THUMBNAIL_PRESET_STORAGE_KEY = "naver:thumbnail:preset:v1";
+
 const SESSION_TIMEOUT_MS = 4000;
 const AUTH_RETRY_DELAY_MS = 700;
 const AUTH_RETRY_ATTEMPTS = 3;
 
 const styleOptions = [
   {
-    label: "하이퍼 리얼리즘 실사",
+    label: "⭐ 하이퍼 리얼리즘 실사",
     value: "hyper-realistic-photo",
-    details: ["인물 실사", "제품 사진", "블로그 썸네일", "시네마틱 실사"],
+    details: ["⭐ 인물 실사", "⭐ 제품 사진", "⭐ 블로그 썸네일", "⭐ 시네마틱 실사"],
   },
   {
-    label: "애니메이션",
+    label: "⭐ 애니메이션",
     value: "anime",
-    details: ["재패니즈 애니", "웹툰 스타일", "픽사풍 3D", "사이버펑크 애니"],
+    details: ["⭐ 재패니즈 애니", "⭐ 웹툰 스타일", "⭐ 픽사풍 3D", "⭐ 사이버펑크 애니"],
   },
   {
-    label: "네이버 블로그용 일러스트",
+    label: "⭐ 네이버 블로그용 일러스트",
     value: "naver-blog-vector",
-    details: ["미니멀 벡터", "파스텔톤", "정보성 썸네일", "아이콘 중심"],
+    details: [
+      "⭐ 미니멀 벡터",
+      "⭐ 파스텔톤",
+      "⭐ 정보성 비주얼",
+      "⭐ 아이콘 중심",
+      "⭐ 뉴스 분석형",
+      "⭐ 주식 차트형",
+      "⭐ 제품 리뷰형",
+      "⭐ 가이드/방법론형",
+      "⭐ 비교 분석형",
+      "⭐ 체크리스트형",
+      "⭐ 트렌드 리포트형",
+    ],
   },
   {
-    label: "웅장한 3D 입체 팝아트",
+    label: "⭐ 웅장한 3D 입체 팝아트",
     value: "cinematic-3d-pop",
     details: ["3D 팝아트", "제품 광고 3D", "시네마틱 3D", "고급 렌더링"],
   },
 ];
 
 const aspectRatioOptions = [
-  { label: "3:2 네이버 블로그 썸네일", value: "3:2" },
-  { label: "16:9 와이드", value: "16:9" },
-  { label: "1:1 정사각형", value: "1:1" },
-  { label: "4:5 인스타 피드", value: "4:5" },
-  { label: "9:16 쇼츠/릴스", value: "9:16" },
+  { value: "4:3", label: "⭐ 4:3 일반 웹, 블로그 이미지" },
+  { value: "3:2", label: "⭐ 3:2 네이버 블로그 썸네일" },
+  { value: "16:9", label: "⭐ 16:9 유튜브 썸네일" },
+  { value: "1:1", label: "⭐ 1:1 SNS 게시물" },
+  { value: "4:5", label: "⭐ 4:5 인스타그램 피드" },
+  { value: "9:16", label: "⭐ 9:16 쇼츠 / 릴스 / 틱톡" },
+  { value: "5:4", label: "⭐ 5:4 기사 / 블로그 대표 이미지" },
+  { value: "3:4", label: "⭐ 3:4 카드뉴스" },
+  { value: "2:3", label: "⭐ 2:3 포스터" },
+  { value: "21:9", label: "⭐ 21:9 시네마틱 와이드" },
 ];
 
 const modelOptions = [
-  { label: "OpenAI", value: "openai" },
-  { label: "Gemini", value: "gemini" },
+  { label: "⭐ OpenAI", value: "openai" },
+  { label: "⭐ Gemini Nano Banana - 2.5 Flash", value: "gemini-2.5-flash-image" },
+  { label: "⭐ Gemini Nano Banana2 - 3.1 Flash", value: "gemini-3.1-flash-image-preview" },
+  { label: "⭐ Gemini Nano Banana Pro - 3 Pro image", value: "gemini-3-pro-image-preview" },
+  { label: "⭐ Imagen 4 - Gemini imagen-4", value: "imagen-4.0-generate-001" },
+];
+
+const DEFAULT_IMAGE_MODEL = "gemini-2.5-flash-image";
+
+function normalizeImageModel(value?: string | null) {
+  if (!value || value === "gemini") return DEFAULT_IMAGE_MODEL;
+  return value;
+}
+
+function getImageProviderFromModel(value: string) {
+  return value === "openai" ? "openai" : "gemini";
+}
+
+type ThumbnailTypeOption = {
+  label: string;
+  value: string;
+  disabled?: boolean;
+};
+
+const thumbnailTypeOptions: ThumbnailTypeOption[] = [
+  // 1. 인사이트 & 트렌드
+  { label: "① 인사이트 & 트렌드", value: "group-insight", disabled: true },
+  { label: "⭐ AI 인사이트 포스팅", value: "ai-insight-posting" },
+  { label: "⭐ 트렌드 브리프", value: "trend-brief" },
+  { label: "⭐ 시장/기술 분석 리포트", value: "market-tech-analysis" },
+  { label: "⭐ 최신 뉴스 및 이슈", value: "latest-news-issue" },
+  { label: "⭐ 오늘의 주요 이슈 정리", value: "today-issue-summary" },
+
+  // 2. 브랜드 & 퍼블리싱
+  { label: "② 브랜드 & 퍼블리싱", value: "group-brand", disabled: true },
+  { label: "⭐ 브랜드 스토리 포스팅", value: "brand-story-posting" },
+  { label: "⭐ 서비스 소개형 포스팅", value: "service-intro-posting" },
+  { label: "⭐ 뉴스레터형 콘텐츠", value: "newsletter-content" },
+  { label: "⭐ 기업 소개 및 서비스 안내", value: "company-service-guide" },
+
+  // 3. 기본 및 도구
+  { label: "③ 기본 및 도구", value: "group-basic", disabled: true },
+  { label: "⭐ 앱 설치 및 상세 가이드", value: "app-install-guide" },
+  { label: "⭐ AI 툴 및 웹 서비스 가이드", value: "ai-tool-web-service-guide" },
+  { label: "⭐ 유틸리티 설치/사용 방법", value: "utility-how-to" },
+  { label: "⭐ AI 자동 포스팅", value: "ai-auto-posting" },
+  { label: "⭐ 일반 정보성", value: "general-informational" },
+  { label: "⭐ 바로가기 버튼 생성", value: "shortcut-button-generation" },
+
+  // 4. 실무형 가이드
+  { label: "④ 실무형 가이드", value: "group-practical-guide", disabled: true },
+  { label: "⭐ 실전 가이드 아티클", value: "practical-guide-article" },
+  { label: "⭐ SEO 최적화 포스팅", value: "seo-optimized-posting" },
+  { label: "⭐ 튜토리얼 & 워크플로우", value: "tutorial-workflow" },
+  { label: "⭐ 체크리스트형 콘텐츠", value: "checklist-content" },
+  { label: "⭐ 비교 분석형 콘텐츠", value: "comparison-analysis" },
+  { label: "⭐ 문제 해결형 콘텐츠", value: "problem-solving-content" },
+
+  // 5. 수익형 핵심
+  { label: "⑤ 수익형 핵심", value: "group-profit", disabled: true },
+  { label: "⭐ 생활 정책 및 정부 지원금", value: "policy-subsidy" },
+  { label: "⭐ 금융 및 재테크", value: "finance-investment" },
+  { label: "⭐ 기업 정보 및 주식 정보", value: "company-stock-info" },
+  { label: "⭐ 건강 정보 및 영양제 분석", value: "health-supplement-analysis" },
+  { label: "⭐ 보험/대출/카드 정보", value: "insurance-loan-card" },
+  { label: "⭐ 부동산 정보", value: "real-estate-info" },
+
+  // 6. 리뷰 및 라이프스타일
+  { label: "⑥ 리뷰 및 라이프스타일", value: "group-review-lifestyle", disabled: true },
+  { label: "⭐ 일반 제품 리뷰", value: "general-product-review" },
+  { label: "⭐ 자동차 모델 리뷰", value: "car-model-review" },
+  { label: "⭐ 게임 리뷰 및 공략", value: "game-review-guide" },
+  { label: "⭐ IT 기기 사용 후기", value: "it-device-review" },
+  { label: "⭐ 맛집 리뷰", value: "restaurant-review" },
+  { label: "⭐ 국내 여행 정보", value: "domestic-travel-info" },
+  { label: "⭐ 영화/드라마 정보 및 리뷰", value: "movie-drama-review" },
+  { label: "⭐ 유명 연예인 인물 정보", value: "celebrity-profile" },
+
+  // 7. 교육 & 자기계발
+  { label: "⑦ 교육 & 자기계발", value: "group-education", disabled: true },
+  { label: "⭐ 교육/가이드형", value: "education-guide" },
+  { label: "⭐ 자기계발 포스팅", value: "self-improvement-posting" },
+  { label: "⭐ 공부법/학습법", value: "study-method" },
+  { label: "⭐ 강의/커리큘럼 소개", value: "course-curriculum-intro" },
+
+  // 8. 기존 핵심 옵션
+  { label: "⑧ 기존 핵심 옵션", value: "group-core", disabled: true },
+  { label: "⭐ 정보형 썸네일", value: "informational" },
+  { label: "⭐ 뉴스/이슈 분석형", value: "news-analysis" },
+  { label: "⭐ 주식/재테크 분석형", value: "stock-finance" },
+  { label: "⭐ 제품 리뷰형", value: "product-review" },
+  { label: "⭐ 맛집/여행 후기형", value: "review-travel" },
+];
+
+const textIntensityOptions = [
+  { label: "⭐ 텍스트 없음", value: "none" },
+  { label: "⭐ 제목만 크게", value: "title-only" },
+  { label: "⭐ 제목 + 핵심 포인트", value: "title-points" },
+  { label: "⭐ 제목 + 핵심 포인트 + 데이터 박스", value: "title-points-data" },
+];
+
+const layoutOptions = [
+  { label: "⭐ 좌측 제목 / 우측 비주얼", value: "left-title-right-visual" },
+  { label: "⭐ 상단 제목 / 하단 포인트 박스", value: "top-title-bottom-boxes" },
+  { label: "⭐ 중앙 대형 제목", value: "center-big-title" },
+  { label: "⭐ 카드 3~4개 인포그래픽", value: "card-infographic" },
+  { label: "⭐ 차트 강조형", value: "chart-focused" },
+];
+
+const colorToneOptions = [
+  { label: "⭐ 블루/옐로우 뉴스형", value: "blue-yellow-news" },
+  { label: "⭐ 네온 테크", value: "neon-tech" },
+  { label: "⭐ 다크 프리미엄", value: "dark-premium" },
+  { label: "⭐ 화이트 클린", value: "white-clean" },
+  { label: "⭐ 파스텔 블로그형", value: "pastel-blog" },
+];
+
+const textLanguageOptions = [
+  { label: "⭐ 텍스트 최소화", value: "minimal" },
+  { label: "⭐ 한국어", value: "ko" },
+  { label: "⭐ 영어", value: "en" },
+  { label: "⭐ 일본어", value: "ja" },
+  { label: "⭐ 중국어 (간체)", value: "zh-CN" },
+  { label: "⭐ 중국어 (번체)", value: "zh-TW" },
+  { label: "⭐ 스페인어", value: "es" },
+  { label: "⭐ 프랑스어", value: "fr" },
+  { label: "⭐ 독일어", value: "de" },
+  { label: "⭐ 포르투갈어", value: "pt" }, // 브라질 포함
+  { label: "⭐ 이탈리아어", value: "it" },
+  { label: "⭐ 러시아어", value: "ru" },
+  { label: "⭐ 아랍어", value: "ar" },
+  { label: "⭐ 힌디어", value: "hi" },
 ];
 
 export default function NaverThumbnailPage() {
   const supabase = useMemo(() => createClient(), []);
 
   const [imagePrompt, setImagePrompt] = useState("");
-  const [selectedStyle, setSelectedStyle] = useState("hyper-realistic-photo");
-  const [selectedStyleDetail, setSelectedStyleDetail] = useState("인물 실사");
+  const [selectedStyle, setSelectedStyle] = useState("naver-blog-vector");
+  const [selectedStyleDetail, setSelectedStyleDetail] = useState("정보성 썸네일");
   const [selectedAspectRatio, setSelectedAspectRatio] = useState("3:2");
-  const [selectedProvider, setSelectedProvider] = useState("gemini");
-  const [generateCount, setGenerateCount] = useState("1");
-  const [downloadFormat, setDownloadFormat] = useState<"png" | "webp">("png");
+  const [selectedProvider, setSelectedProvider] = useState(DEFAULT_IMAGE_MODEL);
+  const [selectedThumbnailType, setSelectedThumbnailType] = useState("informational");
+  const [selectedTextIntensity, setSelectedTextIntensity] = useState("title-points-data");
+  const [selectedLayout, setSelectedLayout] = useState("card-infographic");
+  const [selectedColorTone, setSelectedColorTone] = useState("blue-yellow-news");
+  const [selectedTextLanguage, setSelectedTextLanguage] = useState("ko");
+  const [openSaveMenuId, setOpenSaveMenuId] = useState<string | null>(null);
+  const [isPromptCopied, setIsPromptCopied] = useState(false);
+  const [isPresetPanelOpen, setIsPresetPanelOpen] = useState(true);
+  const [activePresetSlot, setActivePresetSlot] = useState<string | null>(null);
+  const [thumbnailPresets, setThumbnailPresets] = useState<Record<string, ThumbnailPreset | null>>({
+    recent: null,
+    option1: null,
+    option2: null,
+    option3: null,
+  });
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [stockSearchQuery, setStockSearchQuery] = useState("");
@@ -104,6 +301,10 @@ export default function NaverThumbnailPage() {
   const [isSyncLoading, setIsSyncLoading] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState("");
   const [isPostListLoading, setIsPostListLoading] = useState(true);
+  const [isGalleryLoading, setIsGalleryLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDraggingUpload, setIsDraggingUpload] = useState(false);
+  const uploadInputRef = useRef<HTMLInputElement | null>(null);
 
   const selectedStyleData = styleOptions.find((style) => style.value === selectedStyle);
 
@@ -124,20 +325,127 @@ export default function NaverThumbnailPage() {
     },
   ]);
 
-  const [gallery, setGallery] = useState<GeneratedImage[]>([
-    {
-      id: "1",
-      url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80",
-      style: "하이퍼 리얼리즘 실사",
-      styleDetail: "샘플",
-      prompt: "테크 기업 사무실에서 회의하는 프로 마케터들의 모습",
-      type: "ai",
-      aspectRatio: "3:2",
-      provider: "sample",
-    },
-  ]);
+  const [gallery, setGallery] = useState<GeneratedImage[]>([]);
 
   const selectedPost = posts.find((post) => post.id === selectedPostId) || null;
+
+  const getCurrentPreset = useCallback(
+    (): ThumbnailPreset => ({
+      selectedProvider,
+      selectedStyle,
+      selectedStyleDetail,
+      selectedAspectRatio,
+      selectedThumbnailType,
+      selectedTextIntensity,
+      selectedLayout,
+      selectedColorTone,
+      selectedTextLanguage,
+    }),
+    [
+      selectedProvider,
+      selectedStyle,
+      selectedStyleDetail,
+      selectedAspectRatio,
+      selectedThumbnailType,
+      selectedTextIntensity,
+      selectedLayout,
+      selectedColorTone,
+      selectedTextLanguage,
+    ]
+  );
+
+  const savePresetMap = useCallback((nextPresets: Record<string, ThumbnailPreset | null>) => {
+    setThumbnailPresets(nextPresets);
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(THUMBNAIL_PRESET_STORAGE_KEY, JSON.stringify(nextPresets));
+    }
+  }, []);
+
+  const applyPreset = useCallback((preset: ThumbnailPreset) => {
+    setSelectedProvider(normalizeImageModel(preset.selectedProvider));
+    setSelectedStyle(preset.selectedStyle);
+    setSelectedStyleDetail(preset.selectedStyleDetail);
+    setSelectedAspectRatio(preset.selectedAspectRatio);
+    setSelectedThumbnailType(preset.selectedThumbnailType);
+    setSelectedTextIntensity(preset.selectedTextIntensity);
+    setSelectedLayout(preset.selectedLayout);
+    setSelectedColorTone(preset.selectedColorTone);
+    setSelectedTextLanguage(preset.selectedTextLanguage);
+  }, []);
+
+  const getAutoPreset = useCallback((): ThumbnailPreset => {
+    const contentSummary = selectedPost?.content.replace(/\s+/g, " ").trim().slice(0, 500) || "";
+    const text = `${selectedPost?.title || ""} ${selectedPost?.keyword || ""} ${contentSummary}`.toLowerCase();
+    const base = getCurrentPreset();
+
+    if (/주가|주식|증권|금리|투자|재테크|반도체|삼성전자|하이닉스|시장|전망/.test(text)) {
+      return {
+        ...base,
+        selectedStyle: "naver-blog-vector",
+        selectedStyleDetail: "주식 차트형",
+        selectedThumbnailType: "stock-finance",
+        selectedTextIntensity: "title-points-data",
+        selectedLayout: "chart-focused",
+        selectedColorTone: "blue-yellow-news",
+        selectedAspectRatio: "3:2",
+      };
+    }
+
+    if (/뉴스|이슈|트렌드|전망|분석|리포트/.test(text)) {
+      return {
+        ...base,
+        selectedStyle: "naver-blog-vector",
+        selectedStyleDetail: "뉴스 분석형",
+        selectedThumbnailType: "news-analysis",
+        selectedTextIntensity: "title-points-data",
+        selectedLayout: "card-infographic",
+        selectedColorTone: "blue-yellow-news",
+        selectedAspectRatio: "3:2",
+      };
+    }
+
+    if (/방법|가이드|사용법|팁|상식|교육|정리|체크|체크리스트|비교|차이|단계|목록|요약/.test(text)) {
+      return {
+        ...base,
+        selectedStyle: "naver-blog-vector",
+        selectedStyleDetail: /비교|차이/.test(text)
+          ? "비교 분석형"
+          : /체크|체크리스트|목록/.test(text)
+            ? "체크리스트형"
+            : "가이드/방법론형",
+        selectedThumbnailType: "education-guide",
+        selectedTextIntensity: "title-points",
+        selectedLayout: "card-infographic",
+        selectedColorTone: "white-clean",
+        selectedAspectRatio: "3:2",
+      };
+    }
+
+    if (/리뷰|후기|맛집|여행|제품|추천/.test(text)) {
+      return {
+        ...base,
+        selectedStyle: "naver-blog-vector",
+        selectedStyleDetail: /제품/.test(text) ? "제품 리뷰형" : "정보성 썸네일",
+        selectedThumbnailType: /맛집|여행/.test(text) ? "review-travel" : "product-review",
+        selectedTextIntensity: "title-points",
+        selectedLayout: "left-title-right-visual",
+        selectedColorTone: "pastel-blog",
+        selectedAspectRatio: "3:2",
+      };
+    }
+
+    return {
+      ...base,
+      selectedStyle: "naver-blog-vector",
+      selectedStyleDetail: "정보성 썸네일",
+      selectedThumbnailType: "informational",
+      selectedTextIntensity: "title-points-data",
+      selectedLayout: "card-infographic",
+      selectedColorTone: "blue-yellow-news",
+      selectedAspectRatio: "3:2",
+    };
+  }, [getCurrentPreset, selectedPost]);
 
   const promptTemplates: Record<string, { categoryLabel: string; items: string[] }> = {
     tech: {
@@ -323,6 +631,83 @@ export default function NaverThumbnailPage() {
   }, [supabase]);
 
   useEffect(() => {
+    try {
+      const savedPresets = localStorage.getItem(THUMBNAIL_PRESET_STORAGE_KEY);
+      if (!savedPresets) return;
+
+      const parsed = JSON.parse(savedPresets) as Record<string, ThumbnailPreset | null>;
+      const normalizePreset = (preset: ThumbnailPreset | null) =>
+        preset
+          ? {
+            ...preset,
+            selectedProvider: normalizeImageModel(preset.selectedProvider),
+          }
+          : null;
+
+      setThumbnailPresets({
+        recent: normalizePreset(parsed.recent || null),
+        option1: normalizePreset(parsed.option1 || null),
+        option2: normalizePreset(parsed.option2 || null),
+        option3: normalizePreset(parsed.option3 || null),
+      });
+    } catch (error) {
+      console.error("썸네일 프리셋 로드 실패:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!activePresetSlot || !["option1", "option2", "option3"].includes(activePresetSlot)) return;
+
+    const nextPresets = {
+      ...thumbnailPresets,
+      [activePresetSlot]: getCurrentPreset(),
+    };
+
+    savePresetMap(nextPresets);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    activePresetSlot,
+    selectedProvider,
+    selectedStyle,
+    selectedStyleDetail,
+    selectedAspectRatio,
+    selectedThumbnailType,
+    selectedTextIntensity,
+    selectedLayout,
+    selectedColorTone,
+    selectedTextLanguage,
+  ]);
+
+  const handlePresetClick = (slot: "recent" | "auto" | "option1" | "option2" | "option3") => {
+    if (slot === "auto") {
+      applyPreset(getAutoPreset());
+      setActivePresetSlot("auto");
+      return;
+    }
+
+    const savedPreset = thumbnailPresets[slot];
+
+    if (savedPreset) {
+      applyPreset(savedPreset);
+      setActivePresetSlot(slot);
+      return;
+    }
+
+    if (slot === "recent") {
+      alert("아직 최근 생성 프리셋이 없습니다.");
+      return;
+    }
+
+    const nextPresets = {
+      ...thumbnailPresets,
+      [slot]: getCurrentPreset(),
+    };
+
+    savePresetMap(nextPresets);
+    setActivePresetSlot(slot);
+  };
+
+  useEffect(() => {
     const loadPosts = async () => {
       setIsPostListLoading(true);
 
@@ -361,9 +746,6 @@ export default function NaverThumbnailPage() {
 
           const preferredPost = formattedPosts[0];
           setSelectedPostId(preferredPost.id);
-          setImagePrompt(
-            `[🔗 원고 연동 비주얼 템플릿] ${preferredPost.keyword} 주제에 매칭되는 세련된 배경 디자인, 화려한 그라데이션 조명 효과, 4K 고해상도 그래픽`
-          );
           setStockSearchQuery(preferredPost.keyword);
         } else {
           setPosts([]);
@@ -379,20 +761,83 @@ export default function NaverThumbnailPage() {
     void loadPosts();
   }, [resolveUserId, supabase]);
 
+  useEffect(() => {
+    const loadGeneratedImages = async () => {
+      setIsGalleryLoading(true);
+
+      try {
+        if (!selectedPostId) {
+          setGallery([]);
+          return;
+        }
+
+        const userId = await resolveUserId();
+        if (!userId) {
+          setGallery([]);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("generated_images")
+          .select("id, image_url, prompt, style, aspect_ratio, provider, source_type, source_id, image_role, is_primary, created_at")
+          .eq("user_id", userId)
+          .eq("source_type", GENERATED_IMAGE_SOURCE_TYPE)
+          .eq("source_id", selectedPostId)
+          .eq("image_role", GENERATED_IMAGE_ROLE)
+          .order("is_primary", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(60);
+
+        if (error) throw error;
+
+        const savedImages: GeneratedImage[] = ((data || []) as GeneratedImageRecord[]).map((img) => ({
+          id: img.id,
+          url: img.image_url,
+          style: img.style || "AI 썸네일",
+          prompt: img.prompt || "",
+          type: "ai",
+          aspectRatio: img.aspect_ratio || "3:2",
+          provider: img.provider || "gemini",
+          sourceType: img.source_type || GENERATED_IMAGE_SOURCE_TYPE,
+          sourceId: img.source_id || selectedPostId,
+          imageRole: img.image_role || GENERATED_IMAGE_ROLE,
+          isPrimary: Boolean(img.is_primary),
+        }));
+
+        setGallery(savedImages);
+      } catch (error) {
+        console.error("저장 이미지 로드 실패:", error);
+      } finally {
+        setIsGalleryLoading(false);
+      }
+    };
+
+    void loadGeneratedImages();
+  }, [resolveUserId, selectedPostId, supabase]);
+
+  const buildPostPromptBase = (post: MockPost | null) => {
+    if (!post) {
+      return [
+        "[원고 제목] 네이버 블로그용 정보형 썸네일",
+        "[핵심 키워드] 블로그 썸네일",
+        "[본문 요약] 선택된 원고가 없으므로, 검색자가 한눈에 주제를 이해할 수 있는 정보형 썸네일로 구성한다.",
+      ].join("\n");
+    }
+
+    const contentSnippet = post.content.replace(/\s+/g, " ").trim().slice(0, 220);
+
+    return [
+      `[원고 제목] ${post.title}`,
+      `[핵심 키워드] ${post.keyword}`,
+      `[본문 요약] ${contentSnippet || "본문 내용을 바탕으로 핵심 메시지를 3~4개 포인트로 요약한다."}`,
+    ].join("\n");
+  };
+
   const handleSelectPostLink = (post: MockPost) => {
     setSelectedPostId(post.id);
     setIsSyncLoading(true);
 
     setTimeout(() => {
-      const contentSnippet = post.content.replace(/\s+/g, " ").trim().slice(0, 140);
-      const aiAnalyzedVisualPrompt = [
-        `[원고 제목] ${post.title}`,
-        `[핵심 키워드] ${post.keyword}`,
-        `[본문 요약] ${contentSnippet}`,
-        `[시각 목표] 네이버 블로그 썸네일에 적합한 강한 주제 전달력, 선명한 피사체, 클릭을 유도하는 구도, 텍스트 오버레이 없이 이미지 자체만 생성`,
-      ].join("\n");
-
-      setImagePrompt(aiAnalyzedVisualPrompt);
       setStockSearchQuery(post.keyword);
       setIsSyncLoading(false);
     }, 400);
@@ -403,26 +848,108 @@ export default function NaverThumbnailPage() {
     style: string,
     styleDetail: string,
     aspectRatio: string,
+    thumbnailType: string,
+    textIntensity: string,
+    layout: string,
+    colorTone: string,
+    textLanguage: string,
     post: MockPost | null
   ) => {
     const styleLabel = styleOptions.find((item) => item.value === style)?.label || style;
+    const aspectRatioLabel =
+      aspectRatioOptions.find((item) => item.value === aspectRatio)?.label || aspectRatio;
+    const thumbnailTypeLabel =
+      thumbnailTypeOptions.find((item) => item.value === thumbnailType)?.label || thumbnailType;
+    const textIntensityLabel =
+      textIntensityOptions.find((item) => item.value === textIntensity)?.label || textIntensity;
+    const layoutLabel = layoutOptions.find((item) => item.value === layout)?.label || layout;
+    const colorToneLabel = colorToneOptions.find((item) => item.value === colorTone)?.label || colorTone;
+    const textLanguageLabel =
+      textLanguageOptions.find((item) => item.value === textLanguage)?.label || textLanguage;
 
     const postContext = post
-      ? `주제는 "${post.title}" 이고 핵심 키워드는 "${post.keyword}" 이다. 본문 맥락과 일치하는 대표 장면을 썸네일용으로 구성하라.`
-      : "네이버 블로그 썸네일에 적합한 대표 장면을 구성하라.";
+      ? `주제는 "${post.title}" 이고 핵심 키워드는 "${post.keyword}" 이다. 제목을 한글 대형 타이포그래피로 강조하고, 본문 맥락을 3~4개의 짧은 한글 핵심 포인트로 요약한 정보형 썸네일을 구성하라.`
+      : "네이버 블로그에 적합한 한글 정보형 썸네일을 구성하라.";
 
     return [
-      postContext,
-      `이미지 스타일은 "${styleLabel}" 이고 세부 스타일은 "${styleDetail}" 이다.`,
-      `이미지 비율은 "${aspectRatio}" 기준으로 구성하라.`,
-      "고해상도, 선명한 메인 피사체, 강한 대비, 블로그 썸네일 친화적 구도, 텍스트 없는 이미지, 워터마크 없음.",
+      "아래 조건을 정확히 반영해서 네이버 블로그 썸네일 이미지를 만들어줘.",
+      "",
+      "## 원고 정보",
       basePrompt,
-    ].join(" ");
+      "",
+      "## 선택 옵션",
+      `- 이미지 스타일: ${styleLabel}`,
+      `- 비주얼 표현 방식: ${styleDetail}`,
+      `- 썸네일 유형: ${thumbnailTypeLabel}`,
+      `- 텍스트 강도: ${textIntensityLabel}`,
+      `- 레이아웃: ${layoutLabel}`,
+      `- 컬러 톤: ${colorToneLabel}`,
+      `- 텍스트 언어: ${textLanguageLabel}`,
+      `- 비율 / 사이즈: ${aspectRatioLabel} (${aspectRatio})`,
+      "",
+      "## 디자인 지시",
+      postContext,
+      [
+        "예시 이미지처럼 어두운 배경, 파란색/노란색/흰색 대비, 굵은 한글 제목, 뉴스 분석형 인포그래픽 분위기로 디자인하라.",
+        "큰 제목은 화면 왼쪽 또는 중앙에 배치하고, 아래에는 핵심 포인트 3~4개를 작은 박스와 아이콘으로 정리하라.",
+        "차트, 상승 화살표, 데이터 패널, 산업/주식/트렌드 관련 시각 요소를 주제에 맞게 사용하라.",
+        "캔버스 전체를 썸네일 디자인으로 꽉 채워라.",
+        "이미지 외곽과 내부 정보 박스는 둥근 모서리 없이 각진 네모 형태로 구성하라.",
+        "흰 테두리, 여백, 하단 설명 박스, 3:2 표기, sample 라벨, 불필요한 영어, 무관한 로고, 워터마크, SNS 카드 UI는 절대 넣지 마라.",
+        "텍스트는 제목과 핵심 포인트에 필요한 자연스러운 한국어만 사용하라.",
+      ].join(" "),
+      "",
+      "완성 결과물은 설명용 이미지나 목업이 아니라, 바로 블로그 대표 썸네일로 사용할 수 있는 단일 이미지여야 한다.",
+    ].join("\n");
+  };
+
+  useEffect(() => {
+    const generatedPrompt = buildImagePrompt(
+      buildPostPromptBase(selectedPost),
+      selectedStyle,
+      selectedStyleDetail,
+      selectedAspectRatio,
+      selectedThumbnailType,
+      selectedTextIntensity,
+      selectedLayout,
+      selectedColorTone,
+      selectedTextLanguage,
+      selectedPost
+    );
+
+    setImagePrompt(generatedPrompt);
+  }, [
+    selectedPost,
+    selectedStyle,
+    selectedStyleDetail,
+    selectedAspectRatio,
+    selectedThumbnailType,
+    selectedTextIntensity,
+    selectedLayout,
+    selectedColorTone,
+    selectedTextLanguage,
+  ]);
+
+  const handleCopyThumbnailPrompt = async () => {
+    if (!imagePrompt.trim()) {
+      alert("복사할 프롬프트가 없습니다.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(imagePrompt);
+      setIsPromptCopied(true);
+      setTimeout(() => setIsPromptCopied(false), 1500);
+    } catch (error) {
+      console.error("프롬프트 복사 실패:", error);
+      alert("프롬프트 복사에 실패했습니다.");
+    }
   };
 
   const getUserApiConfig = () => {
     if (selectedProvider === "openai") {
       return {
+        provider: "openai",
         apiKey: localStorage.getItem("openai_api_key") || "",
         model:
           localStorage.getItem("openai_model") ||
@@ -430,23 +957,17 @@ export default function NaverThumbnailPage() {
       };
     }
 
-    if (selectedProvider === "gemini") {
-      return {
-        apiKey:
-          localStorage.getItem("gemini_postpay_api_key") || "",
-        model:
-          localStorage.getItem("gemini_postpay_model") ||
-          "gemini-2.5-flash-image",
-      };
-    }
-
     return {
-      apiKey: "",
-      model: "",
+      provider: "gemini",
+      apiKey:
+        localStorage.getItem("gemini_postpay_api_key") ||
+        localStorage.getItem("gemini_api_key") ||
+        "",
+      model: normalizeImageModel(selectedProvider),
     };
   };
 
-  const handleAiGenerateImage = async (count: number) => {
+  const handleAiGenerateImage = async () => {
     if (!imagePrompt.trim()) return alert("프롬프트를 입력해 주세요!");
 
     const userApiConfig = getUserApiConfig();
@@ -462,14 +983,7 @@ export default function NaverThumbnailPage() {
 
     try {
       const styleLabel = styleOptions.find((item) => item.value === selectedStyle)?.label || selectedStyle;
-
-      const finalPrompt = buildImagePrompt(
-        imagePrompt,
-        selectedStyle,
-        selectedStyleDetail,
-        selectedAspectRatio,
-        selectedPost
-      );
+      const finalPrompt = imagePrompt.trim();
 
       const response = await fetch("/api/image-studio/generate", {
         method: "POST",
@@ -478,13 +992,17 @@ export default function NaverThumbnailPage() {
         },
         body: JSON.stringify({
           prompt: finalPrompt,
-          count,
+          count: 1,
           aspectRatio: selectedAspectRatio,
-          provider: selectedProvider,
+          provider: userApiConfig.provider,
           model: userApiConfig.model,
           apiKey: userApiConfig.apiKey,
           style: selectedStyle,
           styleDetail: selectedStyleDetail,
+          sourceType: GENERATED_IMAGE_SOURCE_TYPE,
+          sourceId: selectedPost?.id || selectedPostId || null,
+          imageRole: GENERATED_IMAGE_ROLE,
+          markAsPrimary: true,
         }),
       });
 
@@ -504,13 +1022,25 @@ export default function NaverThumbnailPage() {
         type: "ai",
         aspectRatio: img.aspect_ratio || selectedAspectRatio,
         provider: img.provider || selectedProvider,
+        sourceType: img.source_type || GENERATED_IMAGE_SOURCE_TYPE,
+        sourceId: img.source_id || selectedPost?.id || selectedPostId,
+        imageRole: img.image_role || GENERATED_IMAGE_ROLE,
+        isPrimary: Boolean(img.is_primary),
       }));
 
       if (newImages.length === 0) {
         throw new Error("생성된 썸네일이 없습니다.");
       }
 
-      setGallery((prev) => [...newImages, ...prev]);
+      savePresetMap({
+        ...thumbnailPresets,
+        recent: getCurrentPreset(),
+      });
+      setActivePresetSlot("recent");
+      setGallery((prev) => [
+        ...newImages,
+        ...prev.map((image) => ({ ...image, isPrimary: false })),
+      ]);
     } catch (error) {
       alert(error instanceof Error ? error.message : "이미지 생성에 실패했습니다.");
     } finally {
@@ -542,10 +1072,200 @@ export default function NaverThumbnailPage() {
     }, 1000);
   };
 
-  const downloadImage = async (image: GeneratedImage) => {
+  const convertImageFileToWebp = async (file: File) =>
+    new Promise<Blob>((resolve, reject) => {
+      const image = new Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      image.onload = () => {
+        const maxWidth = 1600;
+        const scale = Math.min(1, maxWidth / image.width);
+        const width = Math.round(image.width * scale);
+        const height = Math.round(image.height * scale);
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+
+        if (!context) {
+          URL.revokeObjectURL(objectUrl);
+          reject(new Error("이미지 변환 캔버스를 생성할 수 없습니다."));
+          return;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        context.drawImage(image, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            URL.revokeObjectURL(objectUrl);
+
+            if (!blob) {
+              reject(new Error("WebP 이미지 변환에 실패했습니다."));
+              return;
+            }
+
+            resolve(blob);
+          },
+          "image/webp",
+          0.78
+        );
+      };
+
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("이미지를 불러올 수 없습니다."));
+      };
+
+      image.src = objectUrl;
+    });
+
+  const handleUploadThumbnailFiles = async (fileList: FileList | File[]) => {
+    const files = Array.from(fileList).filter((file) => file.type.startsWith("image/"));
+
+    if (files.length === 0) {
+      alert("이미지 파일만 업로드할 수 있습니다.");
+      return;
+    }
+
+    if (!selectedPostId) {
+      alert("먼저 왼쪽 원고 목록에서 연결할 글을 선택해 주세요.");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const userId = await resolveUserId();
+
+      if (!userId) {
+        alert("로그인 세션을 확인할 수 없습니다.");
+        return;
+      }
+
+      const uploadedImages: GeneratedImage[] = [];
+
+      for (const [index, file] of files.entries()) {
+        const webpBlob = await convertImageFileToWebp(file);
+        const imageId =
+          typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : `${Date.now()}-${index}`;
+        const filePath = `${userId}/image-studio/${Date.now()}-${imageId}.webp`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("generated-images")
+          .upload(filePath, webpBlob, {
+            contentType: "image/webp",
+            upsert: false,
+          });
+
+        if (uploadError) {
+          throw new Error(`Storage upload failed: ${uploadError.message}`);
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from("generated-images")
+          .getPublicUrl(filePath);
+
+        const publicUrl = publicUrlData.publicUrl;
+        const { data, error: insertError } = await supabase
+          .from("generated_images")
+          .insert({
+            user_id: userId,
+            prompt: [
+              `PC 업로드 썸네일 - ${selectedPost?.title || "선택 원고"}`,
+              `원본 파일명: ${file.name}`,
+              imagePrompt.trim(),
+            ]
+              .filter(Boolean)
+              .join("\n\n"),
+            image_url: publicUrl,
+            style: selectedStyle,
+            aspect_ratio: selectedAspectRatio,
+            provider: selectedProvider,
+            source_type: GENERATED_IMAGE_SOURCE_TYPE,
+            source_id: selectedPostId,
+            image_role: GENERATED_IMAGE_ROLE,
+            is_primary: false,
+          })
+          .select("id, image_url, prompt, style, aspect_ratio, provider, source_type, source_id, image_role, is_primary")
+          .single();
+
+        if (insertError) {
+          throw new Error(`DB 저장 실패: ${insertError.message}`);
+        }
+
+        uploadedImages.push({
+          id: String(data.id),
+          url: data.image_url,
+          style: data.style || selectedStyle,
+          prompt: data.prompt || "",
+          type: "ai",
+          aspectRatio: data.aspect_ratio || selectedAspectRatio,
+          provider: data.provider || selectedProvider,
+          sourceType: data.source_type || GENERATED_IMAGE_SOURCE_TYPE,
+          sourceId: data.source_id || selectedPostId,
+          imageRole: data.image_role || GENERATED_IMAGE_ROLE,
+          isPrimary: false,
+        });
+      }
+
+      setGallery((prev) => [...uploadedImages, ...prev]);
+    } catch (error) {
+      console.error("썸네일 업로드 실패:", error);
+      alert(error instanceof Error ? error.message : "썸네일 업로드에 실패했습니다.");
+    } finally {
+      setIsUploading(false);
+      setIsDraggingUpload(false);
+
+      if (uploadInputRef.current) {
+        uploadInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleSetPrimaryThumbnail = async (image: GeneratedImage) => {
+    if (!selectedPostId) return;
+
+    try {
+      const userId = await resolveUserId();
+      if (!userId) {
+        alert("로그인 세션을 확인할 수 없습니다.");
+        return;
+      }
+
+      const { error: clearError } = await supabase
+        .from("generated_images")
+        .update({ is_primary: false })
+        .eq("user_id", userId)
+        .eq("source_type", GENERATED_IMAGE_SOURCE_TYPE)
+        .eq("source_id", selectedPostId);
+
+      if (clearError) throw clearError;
+
+      const { error: setError } = await supabase
+        .from("generated_images")
+        .update({ is_primary: true })
+        .eq("user_id", userId)
+        .eq("id", image.id);
+
+      if (setError) throw setError;
+
+      setGallery((prev) =>
+        prev
+          .map((item) => ({ ...item, isPrimary: item.id === image.id }))
+          .sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary))
+      );
+    } catch (error) {
+      console.error("대표 썸네일 지정 실패:", error);
+      alert("대표 썸네일 지정에 실패했습니다.");
+    }
+  };
+
+  const downloadImage = async (image: GeneratedImage, format: "png" | "webp") => {
     try {
       const response = await fetch(
-        `/api/image-studio/download?url=${encodeURIComponent(image.url)}&format=${downloadFormat}`
+        `/api/image-studio/download?url=${encodeURIComponent(image.url)}&format=${format}`
       );
 
       if (!response.ok) {
@@ -557,7 +1277,7 @@ export default function NaverThumbnailPage() {
 
       const anchor = document.createElement("a");
       anchor.href = objectUrl;
-      anchor.download = `creaibox-thumbnail-${image.id}.${downloadFormat}`;
+      anchor.download = `creaibox-thumbnail-${image.id}.${format}`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
@@ -569,14 +1289,42 @@ export default function NaverThumbnailPage() {
     }
   };
 
+  const presetButtons = [
+    {
+      id: "recent" as const,
+      label: "최근생성",
+      description: thumbnailPresets.recent ? "마지막 생성 조합" : "생성 후 저장",
+    },
+    {
+      id: "auto" as const,
+      label: "자동선택",
+      description: "원고 기반 추천",
+    },
+    {
+      id: "option1" as const,
+      label: "옵션1",
+      description: thumbnailPresets.option1 ? "저장됨" : "현재값 저장",
+    },
+    {
+      id: "option2" as const,
+      label: "옵션2",
+      description: thumbnailPresets.option2 ? "저장됨" : "현재값 저장",
+    },
+    {
+      id: "option3" as const,
+      label: "옵션3",
+      description: thumbnailPresets.option3 ? "저장됨" : "현재값 저장",
+    },
+  ];
+
   return (
-    <div className="grid h-[calc(100vh-100px)] w-full grid-cols-1 gap-0 overflow-hidden px-4 pl-6 text-[13px] text-zinc-100 xl:[grid-template-columns:320px_430px_minmax(0,1fr)]">
-      <div className="flex h-full flex-col gap-3 overflow-hidden border-r border-zinc-800/60 py-4 pr-4">
-        <h3 className="flex h-10 shrink-0 items-center gap-1.5 border-b border-zinc-800/60 pl-1 text-[13px] font-black uppercase tracking-[0.15em] text-emerald-400">
+    <div className="grid h-[calc(100vh-100px)] w-full grid-cols-1 gap-0 overflow-hidden text-[13px] text-zinc-100 xl:[grid-template-columns:320px_430px_minmax(0,1fr)]">
+      <div className="flex h-full flex-col overflow-hidden border-r border-zinc-800/60">
+        <h3 className="flex h-14 shrink-0 items-center gap-1.5 border-b border-zinc-800/60 bg-slate-950/40 px-4 text-[13px] font-black uppercase tracking-[0.15em] text-emerald-400">
           <FileText size={13} /> Manuscript Inventory
         </h3>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-0.5">
+        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 px-4 py-4">
           {isPostListLoading ? (
             <div className="h-full flex items-center justify-center text-[13px] text-zinc-500 font-bold">
               원고 목록 불러오는 중...
@@ -622,104 +1370,232 @@ export default function NaverThumbnailPage() {
         </div>
       </div>
 
-      <div className="flex h-full flex-col gap-4 overflow-y-auto border-r border-zinc-800/60 px-4 py-4 custom-scrollbar">
-        <div className="space-y-4 shrink-0 pb-4">
-          <h3 className="flex h-10 items-center gap-1.5 border-b border-zinc-800/60 text-[13px] font-black uppercase tracking-[0.15em] text-blue-400">
-            <Wand2 size={13} /> AI Thumbnail Engine
-          </h3>
+      <div className="flex h-full flex-col overflow-y-auto border-r border-zinc-800/60 custom-scrollbar">
+        <div className="shrink-0 pb-4">
+          <div className="flex h-14 items-center justify-between gap-3 border-b border-zinc-800/60 bg-slate-950/40 px-4">
+            <h3 className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-[0.15em] text-blue-400">
+              <Wand2 size={13} /> AI Thumbnail Engine
+            </h3>
 
-          <div className="space-y-4 text-[13px]">
+            <button
+              type="button"
+              onClick={() => void handleCopyThumbnailPrompt()}
+              className="flex shrink-0 items-center gap-1.5 border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 text-[13px] font-black text-blue-300 transition hover:bg-blue-500/20"
+            >
+              <Copy size={13} />
+              {isPromptCopied ? "복사 완료" : "프롬프트 복사하기"}
+            </button>
+          </div>
+
+          <div className="space-y-4 px-4 py-4 text-[13px]">
             <textarea
               value={imagePrompt}
               onChange={(e) => setImagePrompt(e.target.value)}
-              placeholder="직접 입력하거나 하단의 템플릿을 선택하세요..."
-              className="w-full h-24 p-3 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-300 placeholder-zinc-700 focus:outline-none resize-none leading-relaxed"
+              placeholder="원고와 선택 옵션을 바탕으로 외부 AI 채팅창에 붙여 넣을 썸네일 생성 프롬프트가 자동으로 채워집니다."
+              className="h-44 w-full resize-none bg-zinc-950 p-3 text-[13px] leading-relaxed text-zinc-300 placeholder-zinc-700 focus:outline-none"
             />
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-zinc-500 font-bold mb-1.5 pl-1">이미지 생성 모델</label>
-                <select
-                  value={selectedProvider}
-                  onChange={(e) => setSelectedProvider(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-300 font-bold focus:outline-none"
-                >
-                  {modelOptions.map((model) => (
-                    <option key={model.value} value={model.value}>
-                      {model.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="-mx-4 border-y border-zinc-800/80 bg-zinc-950/30">
+              <button
+                type="button"
+                onClick={() => setIsPresetPanelOpen((current) => !current)}
+                className="flex h-14 w-full items-center justify-between border-b border-zinc-800/80 bg-slate-950/70 px-4 text-left text-[13px] font-black text-zinc-100 transition hover:bg-blue-950/20"
+              >
+                <span className="flex items-center gap-2">
+                  <Grid size={14} className="text-blue-400" />
+                  썸네일 스타일 세부 옵션
+                </span>
+                {isPresetPanelOpen ? (
+                  <ChevronUp size={17} className="text-zinc-300" />
+                ) : (
+                  <ChevronDown size={17} className="text-zinc-300" />
+                )}
+              </button>
 
-              <div>
-                <label className="block text-zinc-500 font-bold mb-1.5 pl-1">생성 수량</label>
-                <select
-                  value={generateCount}
-                  onChange={(e) => setGenerateCount(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-300 font-bold focus:outline-none"
-                >
-                  <option value="1">1장 생성</option>
-                  <option value="3">3장 팩</option>
-                  <option value="5">5장 메가팩</option>
-                </select>
-              </div>
+              {isPresetPanelOpen && (
+                <div>
+                  <div className="grid grid-cols-5">
+                    {presetButtons.map((preset) => {
+                      const isActive = activePresetSlot === preset.id;
+                      const isSaved =
+                        preset.id === "auto" ||
+                        Boolean(thumbnailPresets[preset.id as keyof typeof thumbnailPresets]);
 
-              <div>
-                <label className="block text-zinc-500 font-bold mb-1.5 pl-1">스타일 선택</label>
-                <select
-                  value={selectedStyle}
-                  onChange={(e) => {
-                    const nextStyle = e.target.value;
-                    const nextStyleData = styleOptions.find((style) => style.value === nextStyle);
+                      return (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => handlePresetClick(preset.id)}
+                          className={`min-w-0 border-r border-zinc-800/70 px-2 py-2.5 text-center transition last:border-r-0 ${isActive
+                            ? "bg-blue-500/15 text-blue-200"
+                            : "bg-zinc-950 text-zinc-400 hover:bg-blue-950/20 hover:text-blue-200"
+                            }`}
+                        >
+                          <span className="block truncate text-[13px] font-black">{preset.label}</span>
+                          <span
+                            className={`mt-0.5 block truncate text-[11px] font-bold ${isSaved ? "text-emerald-400/80" : "text-zinc-600"
+                              }`}
+                          >
+                            {preset.description}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
 
-                    setSelectedStyle(nextStyle);
-                    setSelectedStyleDetail(nextStyleData?.details[0] || "");
-                  }}
-                  className="w-full px-3 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-300 font-bold focus:outline-none"
-                >
-                  {styleOptions.map((style) => (
-                    <option key={style.value} value={style.value}>
-                      {style.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  <div className="border-t border-zinc-800/80">
+                    <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
+                      <label className="px-4 py-2.5 text-zinc-100 font-bold">1. 이미지 생성 모델</label>
+                      <select
+                        value={selectedProvider}
+                        onChange={(e) => setSelectedProvider(e.target.value)}
+                        className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 text-zinc-100 font-bold outline-none transition hover:bg-blue-950/20"
+                      >
+                        {modelOptions.map((model) => (
+                          <option key={model.value} value={model.value}>
+                            {model.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-              <div>
-                <label className="block text-zinc-500 font-bold mb-1.5 pl-1">스타일 세부 선택</label>
-                <select
-                  value={selectedStyleDetail}
-                  onChange={(e) => setSelectedStyleDetail(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-300 font-bold focus:outline-none"
-                >
-                  {selectedStyleData?.details.map((detail) => (
-                    <option key={detail} value={detail}>
-                      {detail}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                    <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
+                      <label className="px-4 py-2.5 text-zinc-100 font-bold">2. 스타일 선택</label>
+                      <select
+                        value={selectedStyle}
+                        onChange={(e) => {
+                          const nextStyle = e.target.value;
+                          const nextStyleData = styleOptions.find((style) => style.value === nextStyle);
 
-              <div className="col-span-2">
-                <label className="block text-zinc-500 font-bold mb-1.5 pl-1">비율 / 사이즈 선택</label>
-                <select
-                  value={selectedAspectRatio}
-                  onChange={(e) => setSelectedAspectRatio(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-300 font-bold focus:outline-none"
-                >
-                  {aspectRatioOptions.map((ratio) => (
-                    <option key={ratio.value} value={ratio.value}>
-                      {ratio.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                          setSelectedStyle(nextStyle);
+                          setSelectedStyleDetail(nextStyleData?.details[0] || "");
+                        }}
+                        className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 text-zinc-100 font-bold outline-none transition hover:bg-blue-950/20"
+                      >
+                        {styleOptions.map((style) => (
+                          <option key={style.value} value={style.value}>
+                            {style.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
+                      <label className="px-4 py-2.5 text-zinc-100 font-bold">3. 비주얼 표현 방식</label>
+                      <select
+                        value={selectedStyleDetail}
+                        onChange={(e) => setSelectedStyleDetail(e.target.value)}
+                        className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 text-zinc-100 font-bold outline-none transition hover:bg-blue-950/20"
+                      >
+                        {selectedStyleData?.details.map((detail) => (
+                          <option key={detail} value={detail}>
+                            {detail}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
+                      <label className="px-4 py-2.5 text-zinc-100 font-bold">4. 비율 사이즈 선택</label>
+                      <select
+                        value={selectedAspectRatio}
+                        onChange={(e) => setSelectedAspectRatio(e.target.value)}
+                        className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 text-zinc-100 font-bold outline-none transition hover:bg-blue-950/20"
+                      >
+                        {aspectRatioOptions.map((ratio) => (
+                          <option key={ratio.value} value={ratio.value}>
+                            {ratio.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
+                      <label className="px-4 py-2.5 text-zinc-100 font-bold">5. 썸네일 유형</label>
+                      <select
+                        value={selectedThumbnailType}
+                        onChange={(e) => setSelectedThumbnailType(e.target.value)}
+                        className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 text-zinc-100 font-bold outline-none transition hover:bg-blue-950/20"
+                      >
+                        {thumbnailTypeOptions.map((option) => (
+                          <option
+                            key={option.value}
+                            value={option.value}
+                            disabled={option.disabled}
+                          >
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
+                      <label className="px-4 py-2.5 text-zinc-100 font-bold">6. 텍스트 강도</label>
+                      <select
+                        value={selectedTextIntensity}
+                        onChange={(e) => setSelectedTextIntensity(e.target.value)}
+                        className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 text-zinc-100 font-bold outline-none transition hover:bg-blue-950/20"
+                      >
+                        {textIntensityOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
+                      <label className="px-4 py-2.5 text-zinc-100 font-bold">7. 레이아웃</label>
+                      <select
+                        value={selectedLayout}
+                        onChange={(e) => setSelectedLayout(e.target.value)}
+                        className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 text-zinc-100 font-bold outline-none transition hover:bg-blue-950/20"
+                      >
+                        {layoutOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
+                      <label className="px-4 py-2.5 text-zinc-100 font-bold">8. 컬러 톤</label>
+                      <select
+                        value={selectedColorTone}
+                        onChange={(e) => setSelectedColorTone(e.target.value)}
+                        className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 text-zinc-100 font-bold outline-none transition hover:bg-blue-950/20"
+                      >
+                        {colorToneOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center transition hover:bg-blue-950/10">
+                      <label className="px-4 py-2.5 text-zinc-100 font-bold">9. 텍스트 언어</label>
+                      <select
+                        value={selectedTextLanguage}
+                        onChange={(e) => setSelectedTextLanguage(e.target.value)}
+                        className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 text-zinc-100 font-bold outline-none transition hover:bg-blue-950/20"
+                      >
+                        {textLanguageOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           <button
-            onClick={() => handleAiGenerateImage(parseInt(generateCount, 10))}
+            onClick={() => handleAiGenerateImage()}
             disabled={isGenerating || isSyncLoading}
             className="w-full py-3.5 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white text-[13px] font-black rounded-xl active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
           >
@@ -728,7 +1604,7 @@ export default function NaverThumbnailPage() {
           </button>
         </div>
 
-        <div className="space-y-3 shrink-0 border-t border-zinc-800/50 pt-4">
+        <div className="space-y-3 shrink-0 border-t border-zinc-800/50 px-4 pt-4">
           <h3 className="flex h-10 items-center gap-1.5 border-b border-zinc-800/60 text-[13px] font-black uppercase tracking-[0.15em] text-emerald-400">
             <Globe size={13} /> Free Stock Finder
           </h3>
@@ -797,8 +1673,8 @@ export default function NaverThumbnailPage() {
         </div>
       </div>
 
-      <div className="flex h-full min-w-0 flex-col overflow-hidden py-4 pl-4">
-        <div className="flex h-10 shrink-0 items-center justify-between border-b border-zinc-800/60 px-1">
+      <div className="flex h-full min-w-0 flex-col overflow-hidden">
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-800/60 bg-slate-950/40 px-4">
           <h2 className="text-[13px] font-black text-zinc-300 flex items-center gap-2">
             <Grid size={16} className="text-blue-400" /> MEDIA LIBRARY
           </h2>
@@ -810,79 +1686,188 @@ export default function NaverThumbnailPage() {
               </span>
             )}
 
-            <Download size={14} className="text-emerald-400" />
-            <select
-              value={downloadFormat}
-              onChange={(e) => setDownloadFormat(e.target.value as "png" | "webp")}
-              className="px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-950 text-zinc-300 text-[13px] font-bold"
+            <input
+              ref={uploadInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(event) => {
+                if (event.target.files) {
+                  void handleUploadThumbnailFiles(event.target.files);
+                }
+              }}
+            />
+
+            <button
+              type="button"
+              onClick={() => uploadInputRef.current?.click()}
+              disabled={isUploading}
+              className="flex items-center gap-1.5 border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-[13px] font-black text-emerald-300 transition hover:bg-emerald-500/20 disabled:opacity-60"
             >
-              <option value="png">PNG</option>
-              <option value="webp">WebP</option>
-            </select>
+              {isUploading ? <RefreshCw size={13} className="animate-spin" /> : <UploadCloud size={13} />}
+              파일 첨부
+            </button>
           </div>
         </div>
 
-        <div className="flex-1 p-5 overflow-y-auto custom-scrollbar">
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,320px))] gap-5">
-            {gallery.map((img) => (
-              <div
-                key={img.id}
-                className="group relative flex flex-col space-y-3 overflow-hidden rounded-2xl border border-zinc-800/80 bg-zinc-950 p-3"
-              >
-                <div className="relative w-full aspect-[3/2] rounded-xl overflow-hidden bg-zinc-900 border border-zinc-900 shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={img.url}
-                    alt="Asset"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-
-                  <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                    <span className="text-[13px] font-black px-2 py-0.5 rounded-md bg-blue-600/90 text-white">
-                      {img.type === "ai" ? "AI" : "STOCK"}
-                    </span>
-                    <span className="text-[13px] font-black px-2 py-0.5 bg-zinc-950/80 border border-zinc-800 rounded-md text-zinc-300 backdrop-blur-sm">
-                      {img.provider || "-"}
-                    </span>
-                    <span className="text-[13px] font-black px-2 py-0.5 bg-zinc-950/80 border border-zinc-800 rounded-md text-zinc-300 backdrop-blur-sm">
-                      {img.aspectRatio || "-"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex-1 flex flex-col justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-[13px] text-zinc-500 font-bold leading-normal">
-                      {img.style}
-                      {img.styleDetail ? ` / ${img.styleDetail}` : ""}
-                    </p>
-                    <p className="text-[13px] text-zinc-400 leading-normal line-clamp-2">
-                      <span className="text-zinc-500 font-bold">Prompt:</span> {img.prompt}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(img.url);
-                        alert("링크 복사됨!");
-                      }}
-                      className="py-2 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 text-[13px] font-bold transition-all flex items-center justify-center gap-1.5 hover:bg-zinc-800"
-                    >
-                      <Copy size={13} /> 링크 복사
-                    </button>
-
-                    <button
-                      onClick={() => void downloadImage(img)}
-                      className="py-2 rounded-xl bg-zinc-800 border border-zinc-700 text-emerald-400 text-[13px] font-black transition-all flex items-center justify-center gap-1.5 hover:bg-zinc-700"
-                    >
-                      <ArrowDownToLine size={13} /> {downloadFormat.toUpperCase()} 다운로드
-                    </button>
-                  </div>
-                </div>
+        <div
+          className="flex-1 p-5 overflow-y-auto custom-scrollbar"
+          onDragEnter={(event) => {
+            event.preventDefault();
+            setIsDraggingUpload(true);
+          }}
+          onDragOver={(event) => {
+            event.preventDefault();
+            setIsDraggingUpload(true);
+          }}
+          onDragLeave={(event) => {
+            event.preventDefault();
+            setIsDraggingUpload(false);
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            setIsDraggingUpload(false);
+            void handleUploadThumbnailFiles(event.dataTransfer.files);
+          }}
+        >
+          {isGalleryLoading ? (
+            <div className="flex h-full items-center justify-center text-[13px] font-bold text-zinc-500">
+              저장된 썸네일 불러오는 중...
+            </div>
+          ) : gallery.length === 0 ? (
+            <div
+              className={`flex h-full flex-col items-center justify-center gap-3 border border-dashed text-center text-[13px] font-bold transition ${isDraggingUpload
+                ? "border-emerald-400 bg-emerald-500/10 text-emerald-300"
+                : "border-zinc-800/80 text-zinc-500"
+                }`}
+            >
+              <UploadCloud size={28} className={isDraggingUpload ? "text-emerald-300" : "text-zinc-600"} />
+              <div>
+                <p>선택한 원고에 저장된 썸네일이 없습니다.</p>
+                <p className="mt-1 text-zinc-600">PC 이미지 파일을 드래그하거나 파일 첨부로 업로드하세요.</p>
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <div className="space-y-5">
+              <button
+                type="button"
+                onClick={() => uploadInputRef.current?.click()}
+                disabled={isUploading}
+                className={`flex w-full items-center justify-center gap-2 border border-dashed px-4 py-4 text-[13px] font-black transition ${isDraggingUpload
+                  ? "border-emerald-400 bg-emerald-500/10 text-emerald-300"
+                  : "border-zinc-800 bg-zinc-950/40 text-zinc-500 hover:border-emerald-500/40 hover:text-emerald-300"
+                  }`}
+              >
+                {isUploading ? <RefreshCw size={15} className="animate-spin" /> : <UploadCloud size={15} />}
+                {isUploading ? "이미지 업로드 중..." : "PC 이미지 파일 첨부 또는 드래그 업로드"}
+              </button>
+
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,320px))] gap-5">
+                {gallery.map((img) => (
+                  <div
+                    key={img.id}
+                    className="group relative flex flex-col space-y-3 overflow-visible border border-zinc-800/80 bg-zinc-950 p-3 text-[13px]"
+                  >
+                    <div className="relative w-full aspect-[3/2] overflow-hidden bg-zinc-900 border border-zinc-900 shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={img.url}
+                        alt="Asset"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+
+                      <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                        {img.isPrimary && (
+                          <span className="text-[13px] font-black px-2 py-0.5 bg-amber-500/95 text-zinc-950 shadow-lg shadow-amber-500/20">
+                            대표 썸네일
+                          </span>
+                        )}
+                        <span className="text-[13px] font-black px-2 py-0.5 bg-blue-600/90 text-white">
+                          {img.type === "ai" ? "AI" : "STOCK"}
+                        </span>
+                        <span className="text-[13px] font-black px-2 py-0.5 bg-zinc-950/80 border border-zinc-800 text-zinc-300 backdrop-blur-sm">
+                          {img.provider || "-"}
+                        </span>
+                        <span className="text-[13px] font-black px-2 py-0.5 bg-zinc-950/80 border border-zinc-800 text-zinc-300 backdrop-blur-sm">
+                          {img.aspectRatio || "-"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 flex flex-col justify-between gap-3">
+                      <div className="space-y-1">
+                        <p className="text-[13px] text-zinc-500 font-bold leading-normal">
+                          {img.style}
+                          {img.styleDetail ? ` / ${img.styleDetail}` : ""}
+                        </p>
+                        <p className="text-[13px] text-zinc-400 leading-normal line-clamp-2">
+                          <span className="text-zinc-500 font-bold">Prompt:</span> {img.prompt}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          onClick={() => void handleSetPrimaryThumbnail(img)}
+                          disabled={img.isPrimary}
+                          className={`py-2 border text-[13px] font-bold transition-all flex items-center justify-center gap-1.5 disabled:cursor-default ${img.isPrimary
+                            ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+                            : "border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+                            }`}
+                        >
+                          <Star size={13} /> {img.isPrimary ? "대표" : "대표 지정"}
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(img.url);
+                            alert("링크 복사됨!");
+                          }}
+                          className="py-2 border border-zinc-800 bg-zinc-900 text-zinc-300 text-[13px] font-bold transition-all flex items-center justify-center gap-1.5 hover:bg-zinc-800"
+                        >
+                          <Copy size={13} /> 링크 복사
+                        </button>
+
+                        <div className="relative">
+                          <button
+                            onClick={() =>
+                              setOpenSaveMenuId((current) => (current === img.id ? null : img.id))
+                            }
+                            className="flex w-full items-center justify-center gap-1.5 border border-zinc-700 bg-zinc-800 py-2 text-[13px] font-black text-emerald-400 transition-all hover:bg-zinc-700"
+                          >
+                            <ArrowDownToLine size={13} /> 이미지 저장
+                          </button>
+
+                          {openSaveMenuId === img.id && (
+                            <div className="absolute bottom-full right-0 z-30 mb-2 w-32 border border-zinc-700 bg-zinc-950 shadow-2xl shadow-black/40">
+                              <button
+                                onClick={() => {
+                                  setOpenSaveMenuId(null);
+                                  void downloadImage(img, "png");
+                                }}
+                                className="block w-full px-3 py-2 text-left text-[13px] font-bold text-zinc-200 transition hover:bg-zinc-800"
+                              >
+                                PNG로 저장
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setOpenSaveMenuId(null);
+                                  void downloadImage(img, "webp");
+                                }}
+                                className="block w-full border-t border-zinc-800 px-3 py-2 text-left text-[13px] font-bold text-zinc-200 transition hover:bg-zinc-800"
+                              >
+                                WebP로 저장
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

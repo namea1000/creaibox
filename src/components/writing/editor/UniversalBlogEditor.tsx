@@ -1,10 +1,52 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
-import { 
-  ImageIcon, Heading1, Heading2, Bold, Italic, Link2,
-  Type, Wand2, Copy, Save, Cpu, Trash2, RefreshCw, Download, Eye
-} from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Link from "@tiptap/extension-link";
+import Image from "@tiptap/extension-image";
+import Placeholder from "@tiptap/extension-placeholder";
+import Youtube from "@tiptap/extension-youtube";
+import { Table } from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import TableHeader from "@tiptap/extension-table-header";
+import TableCell from "@tiptap/extension-table-cell";
+import TextAlign from "@tiptap/extension-text-align";
+import {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  Bold,
+  CheckCircle2,
+  CirclePlay,
+  Code2,
+  Copy,
+  Cpu,
+  Download,
+  Eye,
+  FileText,
+  Heading1,
+  Heading2,
+  Heading3,
+  ImageIcon,
+  Italic,
+  Link2,
+  List,
+  ListOrdered,
+  Minus,
+  Quote,
+  RefreshCw,
+  Save,
+  Table2,
+  Trash2,
+  Type,
+  Wand2,
+} from "lucide-react";
+
+const CONTENT_IMAGE_SOURCE_TYPE = "writing_creaibox_posts";
+const CONTENT_IMAGE_ROLE = "content_image";
+const IMAGE_BUCKET = "generated-images";
 
 interface ImageBlock {
   id: string;
@@ -12,7 +54,7 @@ interface ImageBlock {
   caption: string;
 }
 
-interface NaverEditorCanvasProps {
+interface UniversalBlogEditorProps {
   title: string;
   setTitle: (v: string) => void;
   content: string;
@@ -26,7 +68,7 @@ interface NaverEditorCanvasProps {
   handleImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleUpdateCaption: (id: string, text: string) => void;
   handleDeleteImage: (id: string) => void;
-  handleEnhanceContent: (type: 'expand' | 'tone' | 'correct') => void;
+  handleEnhanceContent: (type: "expand" | "tone" | "correct") => void;
   handleSavePostToSupabase: (status?: any) => Promise<boolean | void>;
   handleCopy?: () => void;
   handleFormDelete?: () => void;
@@ -34,398 +76,657 @@ interface NaverEditorCanvasProps {
   isDetailMode?: boolean;
   targetKeyword?: string;
   isLoading?: boolean;
+  manuscriptId?: string | number;
 }
 
 function escapeHtml(value: string) {
   return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 function applyInlineMarkdown(value: string) {
   return escapeHtml(value)
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>');
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
 }
 
-function normalizeMarkdownLine(value: string) {
-  return value
-    .replace(/\u00a0/g, ' ')
-    .replace(/[\u200B-\u200D\uFEFF]/g, '')
-    .trim();
-}
+function markdownToHtml(markdown: string) {
+  if (!markdown) return "";
 
-function isMarkdownTableSeparator(line: string) {
-  return /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(normalizeMarkdownLine(line));
-}
-
-function parseMarkdownTableRow(line: string) {
-  return normalizeMarkdownLine(line)
-    .replace(/^\|/, '')
-    .replace(/\|$/, '')
-    .split('|')
-    .map((cell) => cell.trim());
-}
-
-function isMarkdownTableLike(line: string) {
-  const trimmed = normalizeMarkdownLine(line);
-  if (!trimmed.includes('|')) return false;
-  const cells = parseMarkdownTableRow(trimmed);
-  return cells.length >= 2 && cells.some((cell) => cell.length > 0);
-}
-
-function parseMarkdownHeading(line: string) {
-  const normalizedLine = normalizeMarkdownLine(line);
-  const match = normalizedLine.match(/^(#{1,6})\s*(.+)$/);
-  if (!match) return null;
-
-  return {
-    level: Math.min(match[1].length, 6),
-    text: match[2].trim(),
-  };
-}
-
-function getNextNonEmptyLine(lines: string[], startIndex: number) {
-  let cursor = startIndex;
-  while (cursor < lines.length && !normalizeMarkdownLine(lines[cursor])) {
-    cursor += 1;
+  if (/<[a-z][\s\S]*>/i.test(markdown.trim())) {
+    return markdown;
   }
-  return {
-    index: cursor,
-    line: cursor < lines.length ? normalizeMarkdownLine(lines[cursor]) : '',
-  };
-}
 
-function markdownToEditableHtml(markdown: string) {
-  const normalized = markdown.replace(/\r\n/g, '\n').trim();
-  if (!normalized) return '';
-
-  const lines = normalized.split('\n');
-  const blocks: string[] = [];
-  let paragraphBuffer: string[] = [];
+  const lines = markdown.replace(/\r\n/g, "\n").split("\n");
+  const html: string[] = [];
+  let paragraph: string[] = [];
+  let listType: "ul" | "ol" | null = null;
+  let listItems: string[] = [];
 
   const flushParagraph = () => {
-    const cleaned = paragraphBuffer.map((line) => line.trimEnd()).filter(Boolean);
-    if (cleaned.length > 0) {
-      blocks.push(`<p>${cleaned.map((line) => applyInlineMarkdown(line)).join('<br />')}</p>`);
+    if (paragraph.length > 0) {
+      html.push(`<p>${paragraph.map(applyInlineMarkdown).join("<br />")}</p>`);
+      paragraph = [];
     }
-    paragraphBuffer = [];
   };
 
-  let index = 0;
-  while (index < lines.length) {
-    const rawLine = lines[index];
-    const line = normalizeMarkdownLine(rawLine);
+  const flushList = () => {
+    if (listType && listItems.length > 0) {
+      html.push(`<${listType}>${listItems.join("")}</${listType}>`);
+    }
+    listType = null;
+    listItems = [];
+  };
+
+  for (const raw of lines) {
+    const line = raw.trim();
 
     if (!line) {
       flushParagraph();
-      index += 1;
+      flushList();
       continue;
     }
 
-    const heading = parseMarkdownHeading(line);
-    if (heading?.level === 1) {
+    if (/^###\s+/.test(line)) {
       flushParagraph();
-      blocks.push(`<h1>${applyInlineMarkdown(heading.text)}</h1>`);
-      index += 1;
-      continue;
-    }
-    if (heading?.level === 2) {
-      flushParagraph();
-      blocks.push(`<h2>${applyInlineMarkdown(heading.text)}</h2>`);
-      index += 1;
-      continue;
-    }
-    if (heading?.level === 3) {
-      flushParagraph();
-      blocks.push(`<h3>${applyInlineMarkdown(heading.text)}</h3>`);
-      index += 1;
-      continue;
-    }
-    if (heading && heading.level >= 4) {
-      flushParagraph();
-      blocks.push(`<h4>${applyInlineMarkdown(heading.text)}</h4>`);
-      index += 1;
+      flushList();
+      html.push(`<h3>${applyInlineMarkdown(line.replace(/^###\s+/, ""))}</h3>`);
       continue;
     }
 
-    if (/^[-*]\s+/.test(line)) {
+    if (/^##\s+/.test(line)) {
       flushParagraph();
-      const items: string[] = [];
-      while (index < lines.length && /^[-*]\s+/.test(lines[index].trim())) {
-        items.push(`<li>${applyInlineMarkdown(lines[index].trim().replace(/^[-*]\s+/, ''))}</li>`);
-        index += 1;
-      }
-      blocks.push(`<ul>${items.join('')}</ul>`);
+      flushList();
+      html.push(`<h2>${applyInlineMarkdown(line.replace(/^##\s+/, ""))}</h2>`);
       continue;
     }
 
-    if (/^\d+\.\s+/.test(line)) {
+    if (/^#\s+/.test(line)) {
       flushParagraph();
-      const items: string[] = [];
-      while (index < lines.length && /^\d+\.\s+/.test(lines[index].trim())) {
-        items.push(`<li>${applyInlineMarkdown(lines[index].trim().replace(/^\d+\.\s+/, ''))}</li>`);
-        index += 1;
-      }
-      blocks.push(`<ol>${items.join('')}</ol>`);
+      flushList();
+      html.push(`<h1>${applyInlineMarkdown(line.replace(/^#\s+/, ""))}</h1>`);
       continue;
     }
 
     if (/^>\s?/.test(line)) {
       flushParagraph();
-      const quoteLines: string[] = [];
-      while (index < lines.length && /^>\s?/.test(lines[index].trim())) {
-        quoteLines.push(applyInlineMarkdown(lines[index].trim().replace(/^>\s?/, '')));
-        index += 1;
-      }
-      blocks.push(`<blockquote>${quoteLines.join('<br />')}</blockquote>`);
+      flushList();
+      html.push(`<blockquote>${applyInlineMarkdown(line.replace(/^>\s?/, ""))}</blockquote>`);
       continue;
     }
 
-    const nextNonEmpty = getNextNonEmptyLine(lines, index + 1);
-    if (isMarkdownTableLike(line) && isMarkdownTableSeparator(nextNonEmpty.line)) {
+    if (/^---+$/.test(line)) {
       flushParagraph();
-      const tableLines: string[] = [line, nextNonEmpty.line];
-      let scanIndex = nextNonEmpty.index + 1;
-
-      while (scanIndex < lines.length) {
-        const candidate = normalizeMarkdownLine(lines[scanIndex]);
-        if (!candidate) {
-          scanIndex += 1;
-          continue;
-        }
-        if (!isMarkdownTableLike(candidate)) break;
-        tableLines.push(candidate);
-        scanIndex += 1;
-      }
-
-      index = scanIndex;
-
-      const headerCells = parseMarkdownTableRow(tableLines[0]);
-      const bodyLines = tableLines.slice(2);
-
-      const bodyRows = bodyLines
-        .filter((tableLine) => isMarkdownTableLike(tableLine))
-        .map((tableLine) => parseMarkdownTableRow(tableLine));
-
-      const headerHtml = headerCells
-        .map((cell) => `<th>${applyInlineMarkdown(cell)}</th>`)
-        .join('');
-      const bodyHtml = bodyRows
-        .map(
-          (row) =>
-            `<tr>${row
-              .map((cell) => `<td>${applyInlineMarkdown(cell)}</td>`)
-              .join('')}</tr>`
-        )
-        .join('');
-
-      blocks.push(
-        `<div class="cb-table-wrap"><table><thead><tr>${headerHtml}</tr></thead><tbody>${bodyHtml}</tbody></table></div>`
-      );
+      flushList();
+      html.push("<hr />");
       continue;
     }
 
-    paragraphBuffer.push(rawLine);
-    index += 1;
+    if (/^[-*]\s+/.test(line)) {
+      flushParagraph();
+      if (listType !== "ul") flushList();
+      listType = "ul";
+      listItems.push(`<li>${applyInlineMarkdown(line.replace(/^[-*]\s+/, ""))}</li>`);
+      continue;
+    }
+
+    if (/^\d+\.\s+/.test(line)) {
+      flushParagraph();
+      if (listType !== "ol") flushList();
+      listType = "ol";
+      listItems.push(`<li>${applyInlineMarkdown(line.replace(/^\d+\.\s+/, ""))}</li>`);
+      continue;
+    }
+
+    flushList();
+    paragraph.push(raw);
   }
 
   flushParagraph();
-  return blocks.join('');
+  flushList();
+
+  return html.join("");
 }
 
-function editableSurfaceToMarkdown(root: HTMLDivElement) {
-  const blocks: string[] = [];
+function stripHtml(value: string) {
+  if (typeof window === "undefined") {
+    return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  }
 
-  const stringifyNode = (node: ChildNode): string => {
-    if (node.nodeType === Node.TEXT_NODE) {
-      return node.textContent ?? '';
-    }
-    if (!(node instanceof HTMLElement)) return '';
+  const div = document.createElement("div");
+  div.innerHTML = value;
+  return div.textContent?.replace(/\s+/g, " ").trim() ?? "";
+}
 
-    if (node.tagName === 'BR') return '\n';
+function getReadingStats(html: string) {
+  const plain = stripHtml(html);
+  const chars = plain.replace(/\s+/g, "").length;
+  const words = plain ? plain.split(/\s+/).length : 0;
+  const paragraphs = (html.match(/<p[\s>]/g) || []).length;
+  const minutes = Math.max(1, Math.ceil(chars / 650));
 
-    const childText = Array.from(node.childNodes).map(stringifyNode).join('');
-
-    switch (node.tagName) {
-      case 'STRONG':
-      case 'B':
-        return `**${childText}**`;
-      case 'EM':
-      case 'I':
-        return `*${childText}*`;
-      default:
-        return childText;
-    }
+  return {
+    chars,
+    words,
+    paragraphs,
+    minutes,
   };
+}
 
-  Array.from(root.children).forEach((element) => {
-    if (!(element instanceof HTMLElement)) return;
-    const tag = element.tagName;
+const convertImageFileToWebp = async (file: File) =>
+  new Promise<Blob>((resolve, reject) => {
+    const image = new window.Image();
+    const objectUrl = URL.createObjectURL(file);
 
-    if (tag === 'H1') {
-      blocks.push(`# ${element.innerText.trim()}`);
-      return;
-    }
-    if (tag === 'H2') {
-      blocks.push(`## ${element.innerText.trim()}`);
-      return;
-    }
-    if (tag === 'H3') {
-      blocks.push(`### ${element.innerText.trim()}`);
-      return;
-    }
-    if (tag === 'H4') {
-      blocks.push(`#### ${element.innerText.trim()}`);
-      return;
-    }
-    if (tag === 'UL') {
-      const items = Array.from(element.querySelectorAll(':scope > li'))
-        .map((li) => `- ${Array.from(li.childNodes).map(stringifyNode).join('').trim()}`)
-        .join('\n');
-      blocks.push(items);
-      return;
-    }
-    if (tag === 'OL') {
-      const items = Array.from(element.querySelectorAll(':scope > li'))
-        .map((li, index) => `${index + 1}. ${Array.from(li.childNodes).map(stringifyNode).join('').trim()}`)
-        .join('\n');
-      blocks.push(items);
-      return;
-    }
-    if (tag === 'BLOCKQUOTE') {
-      const lines = element.innerText
-        .split('\n')
-        .map((line: string) => line.trim())
-        .filter(Boolean)
-        .map((line: string) => `> ${line}`)
-        .join('\n');
-      blocks.push(lines);
-      return;
-    }
-    if (tag === 'DIV' && element.classList.contains('cb-table-wrap')) {
-      const table = element.querySelector('table');
-      if (!table) return;
+    image.onload = () => {
+      const maxWidth = 1600;
+      const scale = Math.min(1, maxWidth / image.width);
+      const width = Math.round(image.width * scale);
+      const height = Math.round(image.height * scale);
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
 
-      const rows = Array.from(table.querySelectorAll('tr')).map((row) =>
-        Array.from(row.children).map((cell) =>
-          Array.from(cell.childNodes).map(stringifyNode).join('').trim()
-        )
-      );
-
-      if (rows.length > 0) {
-        const header = `| ${rows[0].join(' | ')} |`;
-        const separator = `| ${rows[0].map(() => '---').join(' | ')} |`;
-        const body = rows
-          .slice(1)
-          .map((row) => `| ${row.join(' | ')} |`)
-          .join('\n');
-        blocks.push([header, separator, body].filter(Boolean).join('\n'));
+      if (!context) {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("이미지 변환 캔버스를 생성할 수 없습니다."));
+        return;
       }
-      return;
-    }
 
-    const text = Array.from(element.childNodes).map(stringifyNode).join('').trim();
-    if (text) {
-      blocks.push(text);
-    }
+      canvas.width = width;
+      canvas.height = height;
+      context.drawImage(image, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          URL.revokeObjectURL(objectUrl);
+
+          if (!blob) {
+            reject(new Error("WebP 이미지 변환에 실패했습니다."));
+            return;
+          }
+
+          resolve(blob);
+        },
+        "image/webp",
+        0.82
+      );
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("이미지를 불러올 수 없습니다."));
+    };
+
+    image.src = objectUrl;
   });
 
-  return blocks.join('\n\n').replace(/\n{3,}/g, '\n\n').trim();
+function downloadFile(filename: string, content: string) {
+  const blob = new Blob([content], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
 }
 
-export default function NaverEditorCanvas({
-  title, setTitle, content, setContent, charCount, images, fileInputRef,
-  isSaving, isEnhancing, handleImageUploadClick, handleImageChange,
-  handleUpdateCaption, handleDeleteImage, handleEnhanceContent, 
-  handleSavePostToSupabase, handleCopy, handleFormDelete,
-  isRecreateMode = false, isDetailMode = false, targetKeyword = "AI 글쓰기", isLoading = false
-}: NaverEditorCanvasProps) {
-  const [saveFeedback, setSaveFeedback] = useState<'idle' | 'saved'>('idle');
-  const contentEditableRef = useRef<HTMLDivElement | null>(null);
-  const [isBodyEditing, setIsBodyEditing] = useState(false);
+export default function UniversalBlogEditor({
+  title,
+  setTitle,
+  content,
+  setContent,
+  charCount,
+  images,
+  fileInputRef,
+  isSaving,
+  isEnhancing,
+  handleImageUploadClick,
+  handleImageChange,
+  handleUpdateCaption,
+  handleDeleteImage,
+  handleEnhanceContent,
+  handleSavePostToSupabase,
+  handleCopy,
+  isRecreateMode = false,
+  isDetailMode = false,
+  targetKeyword = "AI 글쓰기",
+  isLoading = false,
+  manuscriptId,
+}: UniversalBlogEditorProps) {
+  const supabase = useMemo(() => createClient(), []);
+  const [saveFeedback, setSaveFeedback] = useState<"idle" | "saved">("idle");
+  const [isImageUploading, setIsImageUploading] = useState(false);
+  const [isClientReady, setIsClientReady] = useState(false);
+  const lastExternalContentRef = useRef(content);
 
   useEffect(() => {
-    if (saveFeedback !== 'saved') return;
+    setIsClientReady(true);
+  }, []);
+
+  const initialHtml = useMemo(() => markdownToHtml(content), []);
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3],
+        },
+      }),
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        linkOnPaste: true,
+        HTMLAttributes: {
+          class: "font-bold text-blue-600 underline underline-offset-2",
+          rel: "noopener noreferrer",
+          target: "_blank",
+        },
+      }),
+      Image.configure({
+        inline: false,
+        allowBase64: true,
+        HTMLAttributes: {
+          class: "my-6 rounded-2xl border border-zinc-200 shadow-sm",
+        },
+      }),
+      Youtube.configure({
+        width: 720,
+        height: 405,
+        controls: true,
+        nocookie: true,
+        HTMLAttributes: {
+          class: "my-6 overflow-hidden rounded-2xl border border-zinc-200",
+        },
+      }),
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      TextAlign.configure({
+        types: ["heading", "paragraph"],
+      }),
+      Placeholder.configure({
+        placeholder: isRecreateMode
+          ? "재창조 본문 결과 영역..."
+          : "내용을 입력하세요. H2/H3를 작성한 뒤 목차 버튼을 누르면 자동 목차가 생성됩니다.",
+      }),
+    ],
+    content: initialHtml,
+    editorProps: {
+      attributes: {
+        class:
+          "min-h-[760px] w-full outline-none text-sm leading-8 text-zinc-800 prose-editor",
+      },
+      handleDrop(view, event) {
+        const files = Array.from(event.dataTransfer?.files || []);
+        const imageFile = files.find((file) => file.type.startsWith("image/"));
+
+        if (!imageFile) return false;
+
+        event.preventDefault();
+
+        const coordinates = view.posAtCoords({
+          left: event.clientX,
+          top: event.clientY,
+        });
+
+        void insertContentImageFile(imageFile, coordinates?.pos);
+
+        return true;
+      },
+      handlePaste(view, event) {
+        const files = Array.from(event.clipboardData?.files || []);
+        const imageFile = files.find((file) => file.type.startsWith("image/"));
+
+        if (!imageFile) return false;
+
+        event.preventDefault();
+
+        const { from } = view.state.selection;
+        void insertContentImageFile(imageFile, from);
+
+        return true;
+      },
+    },
+    onUpdate({ editor }) {
+      const html = editor.getHTML();
+      lastExternalContentRef.current = html;
+      setContent(html);
+    },
+    immediatelyRender: false,
+  });
+
+  useEffect(() => {
+    if (!editor) return;
+    if (content === lastExternalContentRef.current) return;
+
+    const nextHtml = markdownToHtml(content);
+    if (nextHtml !== editor.getHTML()) {
+      editor.commands.setContent(nextHtml, {
+        emitUpdate: false,
+      });
+      lastExternalContentRef.current = content;
+    }
+  }, [content, editor]);
+
+  useEffect(() => {
+    if (saveFeedback !== "saved") return;
 
     const timer = setTimeout(() => {
-      setSaveFeedback('idle');
+      setSaveFeedback("idle");
     }, 3000);
 
     return () => clearTimeout(timer);
   }, [saveFeedback]);
 
+  const stats = useMemo(() => getReadingStats(content), [content]);
+
+  const headings = useMemo(() => {
+    if (!editor) return [];
+
+    const result: { level: number; text: string }[] = [];
+
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === "heading" && [2, 3].includes(node.attrs.level)) {
+        const text = node.textContent.trim();
+        if (text) {
+          result.push({
+            level: node.attrs.level,
+            text,
+          });
+        }
+      }
+    });
+
+    return result;
+  }, [editor, content]);
+
+  const syncLatestContent = () => {
+    if (!editor) return;
+    const html = editor.getHTML();
+    lastExternalContentRef.current = html;
+    setContent(html);
+  };
+
   const handleSaveClick = async (status?: any) => {
+    syncLatestContent();
+
     const result = await handleSavePostToSupabase(status);
+
     if (result !== false) {
-      setSaveFeedback('saved');
+      setSaveFeedback("saved");
     }
   };
 
-  useEffect(() => {
-    if (!contentEditableRef.current || isBodyEditing) return;
+  const handleInsertLink = () => {
+    if (!editor) return;
 
-    const nextHtml = markdownToEditableHtml(content);
-    if (contentEditableRef.current.innerHTML !== nextHtml) {
-      contentEditableRef.current.innerHTML = nextHtml;
-    }
-  }, [content, isBodyEditing]);
+    const previousUrl = editor.getAttributes("link").href;
+    const url = window.prompt("링크 URL을 입력하세요.", previousUrl || "");
 
-  const handleInlineContentInput = () => {
-    if (!contentEditableRef.current) return;
-    const nextValue = editableSurfaceToMarkdown(contentEditableRef.current)
-      .replace(/\u00a0/g, ' ')
-      .replace(/\r\n/g, '\n');
-    setContent(nextValue);
-  };
+    if (url === null) return;
 
-  const focusEditableSurface = () => {
-    if (!contentEditableRef.current) return;
-    contentEditableRef.current.focus();
-  };
-
-  const handleBodyFocus = () => {
-    setIsBodyEditing(true);
-  };
-
-  const handleBodyBlur = () => {
-    if (!contentEditableRef.current) {
-      setIsBodyEditing(false);
+    if (url === "") {
+      editor.chain().focus().extendMarkRange("link").unsetLink().run();
       return;
     }
 
-    const nextValue = editableSurfaceToMarkdown(contentEditableRef.current)
-      .replace(/\u00a0/g, ' ')
-      .replace(/\r\n/g, '\n');
-    setContent(nextValue);
-    setIsBodyEditing(false);
+    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+  };
+
+  const uploadContentImageFile = useCallback(
+    async (file: File) => {
+      if (!editor) return null;
+
+      if (!file.type.startsWith("image/")) {
+        alert("이미지 파일만 업로드할 수 있습니다.");
+        return null;
+      }
+
+      if (!manuscriptId) {
+        alert("본문 이미지와 연결할 원고 ID가 없습니다.");
+        return null;
+      }
+
+      setIsImageUploading(true);
+
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+          alert("로그인 세션을 확인할 수 없습니다.");
+          return null;
+        }
+
+        const webpBlob = await convertImageFileToWebp(file);
+        const imageId =
+          typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : `${Date.now()}`;
+
+        const filePath = `${user.id}/creaibox-content/${String(manuscriptId)}/${Date.now()}-${imageId}.webp`;
+
+        const { error: uploadError } = await supabase.storage
+          .from(IMAGE_BUCKET)
+          .upload(filePath, webpBlob, {
+            contentType: "image/webp",
+            upsert: false,
+          });
+
+        if (uploadError) {
+          throw new Error(`Storage upload failed: ${uploadError.message}`);
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from(IMAGE_BUCKET)
+          .getPublicUrl(filePath);
+
+        const publicUrl = publicUrlData.publicUrl;
+
+        const { data: savedImage, error: insertError } = await supabase
+          .from("generated_images")
+          .insert({
+            user_id: user.id,
+            prompt: [
+              `PC 업로드 본문 이미지 - ${title || "제목 없음"}`,
+              `원본 파일명: ${file.name}`,
+              targetKeyword ? `키워드: ${targetKeyword}` : "",
+            ]
+              .filter(Boolean)
+              .join("\n\n"),
+            image_url: publicUrl,
+            style: "manual-upload",
+            aspect_ratio: "content",
+            provider: "upload",
+            source_type: CONTENT_IMAGE_SOURCE_TYPE,
+            source_id: String(manuscriptId),
+            image_role: CONTENT_IMAGE_ROLE,
+            is_primary: false,
+          })
+          .select("id, image_url")
+          .single();
+
+        if (insertError) {
+          throw new Error(`DB 저장 실패: ${insertError.message}`);
+        }
+
+        return {
+          url: savedImage?.image_url || publicUrl,
+          fileName: file.name,
+        };
+      } catch (error) {
+        console.error("본문 이미지 업로드 실패:", error);
+        alert(error instanceof Error ? error.message : "본문 이미지 업로드에 실패했습니다.");
+        return null;
+      } finally {
+        setIsImageUploading(false);
+      }
+    },
+    [editor, manuscriptId, supabase, targetKeyword, title]
+  );
+
+  const insertContentImageFile = useCallback(
+    async (file: File, position?: number) => {
+      if (!editor) return;
+
+      const uploaded = await uploadContentImageFile(file);
+      if (!uploaded) return;
+
+      const imageNode = {
+        type: "image",
+        attrs: {
+          src: uploaded.url,
+          alt: title || targetKeyword || "본문 이미지",
+          title: uploaded.fileName,
+        },
+      };
+
+      if (typeof position === "number") {
+        editor.chain().focus().insertContentAt(position, imageNode).run();
+      } else {
+        editor.chain().focus().setImage(imageNode.attrs).run();
+      }
+
+      syncLatestContent();
+    },
+    [editor, syncLatestContent, targetKeyword, title, uploadContentImageFile]
+  );
+
+  const handleEditorImageUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      event.target.value = "";
+
+      if (!file) return;
+
+      await insertContentImageFile(file);
+    },
+    [insertContentImageFile]
+  );
+
+  const handleInsertImageUrl = () => {
+    if (!editor) return;
+
+    const url = window.prompt("이미지 URL을 입력하세요.");
+    if (!url) return;
+
+    editor.chain().focus().setImage({ src: url }).run();
+  };
+
+  const handleInsertYoutube = () => {
+    if (!editor) return;
+
+    const url = window.prompt("유튜브 URL을 입력하세요.");
+    if (!url) return;
+
+    editor.commands.setYoutubeVideo({
+      src: url,
+      width: 720,
+      height: 405,
+    });
+  };
+
+  const handleInsertTable = () => {
+    if (!editor) return;
+
+    editor
+      .chain()
+      .focus()
+      .insertTable({
+        rows: 3,
+        cols: 3,
+        withHeaderRow: true,
+      })
+      .run();
+  };
+
+  const handleInsertCta = () => {
+    if (!editor) return;
+
+    editor
+      .chain()
+      .focus()
+      .insertContent(`
+        <blockquote>
+          <p><strong>✅ 핵심 내용을 확인했다면, 지금 바로 다음 단계로 이동해보세요.</strong></p>
+          <p>👉 자세히 보기 / 신청하기 / 다운로드하기</p>
+        </blockquote>
+      `)
+      .run();
+  };
+
+  const handleGenerateToc = () => {
+    if (!editor) return;
+
+    const tocHeadings: { level: number; text: string }[] = [];
+
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === "heading" && [2, 3].includes(node.attrs.level)) {
+        const text = node.textContent.trim();
+        if (text && text !== "목차") {
+          tocHeadings.push({
+            level: node.attrs.level,
+            text,
+          });
+        }
+      }
+    });
+
+    if (tocHeadings.length === 0) {
+      window.alert("목차를 만들 H2/H3 소제목이 없습니다.");
+      return;
+    }
+
+    const tocHtml = `
+      <h2>목차</h2>
+      <ul>
+        ${tocHeadings
+        .map((heading) => {
+          const prefix = heading.level === 3 ? "└ " : "";
+          return `<li>${prefix}${escapeHtml(heading.text)}</li>`;
+        })
+        .join("")}
+      </ul>
+    `;
+
+    editor.chain().focus().insertContentAt(0, tocHtml).run();
   };
 
   const handleDownload = () => {
-    const fileContent = `# ${title}\n\n${content}`;
-    const blob = new Blob([fileContent], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = `${(title || targetKeyword || 'blog-post').slice(0, 40).replace(/[\\\\/:*?"<>|]/g, '').trim() || 'blog-post'}.md`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
+    const html = editor?.getHTML() ?? content;
+    const safeTitle =
+      (title || targetKeyword || "blog-post")
+        .slice(0, 40)
+        .replace(/[\\/:*?"<>|]/g, "")
+        .trim() || "blog-post";
+
+    downloadFile(`${safeTitle}.html`, `<!doctype html><html><body><h1>${escapeHtml(title)}</h1>${html}</body></html>`);
   };
 
   const handlePreview = () => {
-    const previewWindow = window.open('', '_blank', 'noopener,noreferrer');
+    const html = editor?.getHTML() ?? content;
+    const previewWindow = window.open("", "_blank", "noopener,noreferrer");
     if (!previewWindow) return;
 
-    const previewHtml = `
+    previewWindow.document.open();
+    previewWindow.document.write(`
       <!doctype html>
       <html lang="ko">
         <head>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <title>${escapeHtml(title || '미리보기')}</title>
+          <title>${escapeHtml(title || "미리보기")}</title>
           <style>
             body { margin: 0; padding: 48px 24px; background: #f5f5f4; color: #18181b; font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", sans-serif; }
             .sheet { max-width: 920px; margin: 0 auto; background: white; padding: 56px 64px; box-shadow: 0 20px 60px rgba(0,0,0,0.08); border-radius: 24px; }
@@ -435,175 +736,457 @@ export default function NaverEditorCanvas({
             p, li { font-size: 1.08rem; line-height: 2; }
             ul, ol { margin: 0 0 28px 24px; }
             blockquote { margin: 32px 0; padding: 20px 24px; background: #f4f4f5; border-radius: 18px; color: #52525b; }
+            table { width: 100%; border-collapse: collapse; margin: 28px 0; }
+            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            th { background: #f4f4f5; }
+            pre { background: #18181b; color: white; padding: 18px; border-radius: 16px; overflow-x: auto; }
+            img { max-width: 100%; height: auto; border-radius: 18px; }
+            iframe { width: 100%; max-width: 100%; border-radius: 18px; }
           </style>
         </head>
         <body>
           <article class="sheet">
-            <h1>${escapeHtml(title || '제목 없음')}</h1>
-            ${markdownToEditableHtml(content)}
+            <h1>${escapeHtml(title || "제목 없음")}</h1>
+            ${html}
           </article>
         </body>
       </html>
-    `;
-
-    previewWindow.document.open();
-    previewWindow.document.write(previewHtml);
+    `);
     previewWindow.document.close();
   };
 
+  const ToolbarButton = ({
+    onClick,
+    children,
+    active = false,
+    disabled = false,
+    className = "",
+  }: {
+    onClick: () => void;
+    children: React.ReactNode;
+    active?: boolean;
+    disabled?: boolean;
+    className?: string;
+  }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled || !editor}
+      className={`flex items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-bold transition-all disabled:cursor-not-allowed disabled:opacity-40 ${active
+        ? "bg-blue-500/15 text-blue-300"
+        : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
+        } ${className}`}
+    >
+      {children}
+    </button>
+  );
+
   return (
-    /* 🌟 [수술 핵심] 우측 관제탑 길이에 밀리지 않도록 에디터 박스 자체의 최소 높이를 min-h-[750px]로 고정 적출 */
-    <div className="lg:col-span-6 flex flex-col bg-[#0a0c10] overflow-hidden h-full min-h-[750px]">
-      <div className="h-14 border-b border-zinc-800 bg-gradient-to-r from-[#131722] via-[#141926] to-[#10141f] px-4 flex items-center justify-between gap-3 shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="flex items-center gap-1.5 shrink-0">
+    <div className="flex h-full min-h-[750px] flex-col overflow-hidden bg-[#0a0c10]">
+      <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-zinc-800 bg-gradient-to-r from-[#131722] via-[#141926] to-[#10141f] px-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex shrink-0 items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
           </div>
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]" />
-            <span className="truncate text-[0.78rem] font-black tracking-[0.24em] text-zinc-300 uppercase">
-              Creaibox Blog Edit Mode
-            </span>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-        <button
-          onClick={handleCopy ? handleCopy : () => { navigator.clipboard.writeText(`제목: ${title}\n\n${content}`); }}
-          className="px-3.5 py-2 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:bg-zinc-800 active:scale-95 transition-all flex items-center gap-1.5"
-        >
-          <Copy size={13} /> 전체 복사
-        </button>
-        <button
-          onClick={handleDownload}
-          className="px-3.5 py-2 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:bg-zinc-800 active:scale-95 transition-all flex items-center gap-1.5"
-        >
-          <Download size={13} /> 다운로드
-        </button>
-        <button
-          onClick={handlePreview}
-          className="px-3.5 py-2 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:bg-zinc-800 active:scale-95 transition-all flex items-center gap-1.5"
-        >
-          <Eye size={13} /> 미리보기
-        </button>
-        <button 
-          onClick={() => handleSaveClick(isDetailMode ? 'completed' : undefined)} 
-          disabled={isSaving}
-          className="px-3.5 py-2 rounded-lg bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-200 text-xs font-black active:scale-95 transition-all flex items-center gap-1.5"
-        >
-          <Save size={13} /> {isSaving ? "저장중..." : saveFeedback === 'saved' ? "저장완료" : "원고 저장"}
-        </button>
-        </div>
-      </div>
-      
-      {/* 최상단 에디터 포맷터 핫 버튼 제어반 */}
-      <div className="h-14 border-b border-zinc-800 bg-[#0b0d12] px-4 flex items-center justify-start overflow-x-auto shrink-0">
-        <div className="flex items-center gap-1.5 text-zinc-400 shrink-0">
-          <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
-          <button onClick={handleImageUploadClick} className="p-2 hover:bg-emerald-500/10 hover:text-emerald-400 rounded-xl transition-all text-xs font-bold border border-zinc-800 bg-zinc-900/50 flex items-center gap-1"><ImageIcon size={14} /> 사진 추가</button>
-          
-          <div className="w-px h-5 bg-zinc-800 mx-1" />
-          <button type="button" className="p-2 hover:bg-zinc-800 hover:text-white rounded-xl transition-colors"><Heading1 size={15} /></button>
-          <button type="button" className="p-2 hover:bg-zinc-800 hover:text-white rounded-xl transition-colors"><Heading2 size={15} /></button>
-          <div className="w-px h-4 bg-zinc-800 mx-1" />
-          <button type="button" className="p-2 hover:bg-zinc-800 hover:text-white rounded-xl font-bold transition-colors"><Bold size={15} /></button>
-          <button type="button" className="p-2 hover:bg-zinc-800 hover:text-white rounded-xl italic transition-colors"><Italic size={15} /></button>
-          <div className="w-px h-4 bg-zinc-800 mx-1" />
-          <button type="button" className="p-2 hover:bg-zinc-800 hover:text-white rounded-xl transition-colors"><Link2 size={15} /></button>
-          <div className="w-px h-5 bg-zinc-800 mx-1" />
-          
-          <button onClick={() => handleEnhanceContent('correct')} className="p-2 hover:bg-zinc-800 hover:text-white rounded-xl text-xs font-medium flex items-center gap-1 text-zinc-300"><Type size={14} /> 맞춤법</button>
-          <button onClick={() => handleEnhanceContent('expand')} disabled={isEnhancing} className="p-2 hover:bg-emerald-500/10 hover:text-emerald-400 rounded-xl text-xs font-black text-emerald-400 flex items-center gap-1"><Wand2 size={14} /> AI 보강</button>
+          <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]" />
+          <span className="truncate text-[0.78rem] font-black uppercase tracking-[0.24em] text-zinc-300">
+            Creaibox Tiptap Blog Editor
+          </span>
         </div>
 
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            onClick={handleCopy ? handleCopy : () => navigator.clipboard.writeText(`제목: ${title}\n\n${editor?.getHTML() ?? content}`)}
+            className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:bg-zinc-800"
+          >
+            <Copy size={13} /> 전체 복사
+          </button>
+
+          <button
+            onClick={handleDownload}
+            className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:bg-zinc-800"
+          >
+            <Download size={13} /> 다운로드
+          </button>
+
+          <button
+            onClick={handlePreview}
+            className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:bg-zinc-800"
+          >
+            <Eye size={13} /> 미리보기
+          </button>
+
+          <button
+            onClick={() => handleSaveClick(isDetailMode ? "completed" : undefined)}
+            disabled={isSaving}
+            className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 px-3.5 py-2 text-xs font-black text-zinc-200 transition-all hover:bg-zinc-700 disabled:opacity-60"
+          >
+            {saveFeedback === "saved" ? <CheckCircle2 size={13} /> : <Save size={13} />}
+            {isSaving ? "저장중..." : saveFeedback === "saved" ? "저장완료" : "원고 저장"}
+          </button>
+        </div>
       </div>
 
-      {/* 에디터 인풋 메인 프레임 격실 */}
+      <div className="shrink-0 border-b border-zinc-800 bg-[#0b0d12] px-4 py-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            onChange={handleEditorImageUpload}
+            className="hidden"
+          />
+          <ToolbarButton
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isImageUploading}
+            className="border border-zinc-800 bg-zinc-900/50 hover:bg-emerald-500/10 hover:text-emerald-400"
+          >
+            {isImageUploading ? <RefreshCw size={14} className="animate-spin" /> : <ImageIcon size={14} />}
+            {isImageUploading ? "업로드중" : "사진"}
+          </ToolbarButton>
+
+          <ToolbarButton onClick={handleInsertImageUrl}>
+            <ImageIcon size={14} /> URL이미지
+          </ToolbarButton>
+
+          <div className="mx-1 h-5 w-px bg-zinc-800" />
+
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
+            active={editor?.isActive("heading", { level: 1 })}
+          >
+            <Heading1 size={15} />
+          </ToolbarButton>
+
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
+            active={editor?.isActive("heading", { level: 2 })}
+          >
+            <Heading2 size={15} />
+          </ToolbarButton>
+
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
+            active={editor?.isActive("heading", { level: 3 })}
+          >
+            <Heading3 size={15} />
+          </ToolbarButton>
+
+          <div className="mx-1 h-4 w-px bg-zinc-800" />
+
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().toggleBold().run()}
+            active={editor?.isActive("bold")}
+          >
+            <Bold size={15} />
+          </ToolbarButton>
+
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().toggleItalic().run()}
+            active={editor?.isActive("italic")}
+          >
+            <Italic size={15} />
+          </ToolbarButton>
+
+          <ToolbarButton onClick={handleInsertLink} active={editor?.isActive("link")}>
+            <Link2 size={15} />
+          </ToolbarButton>
+
+          <div className="mx-1 h-4 w-px bg-zinc-800" />
+
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().toggleBulletList().run()}
+            active={editor?.isActive("bulletList")}
+          >
+            <List size={15} />
+          </ToolbarButton>
+
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+            active={editor?.isActive("orderedList")}
+          >
+            <ListOrdered size={15} />
+          </ToolbarButton>
+
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().toggleBlockquote().run()}
+            active={editor?.isActive("blockquote")}
+          >
+            <Quote size={15} />
+          </ToolbarButton>
+
+          <div className="mx-1 h-4 w-px bg-zinc-800" />
+
+          <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign("left").run()}>
+            <AlignLeft size={15} />
+          </ToolbarButton>
+
+          <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign("center").run()}>
+            <AlignCenter size={15} />
+          </ToolbarButton>
+
+          <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign("right").run()}>
+            <AlignRight size={15} />
+          </ToolbarButton>
+
+          <div className="mx-1 h-4 w-px bg-zinc-800" />
+
+          <ToolbarButton onClick={handleGenerateToc}>
+            <FileText size={14} /> 목차
+          </ToolbarButton>
+
+          <ToolbarButton onClick={handleInsertTable}>
+            <Table2 size={14} /> 표
+          </ToolbarButton>
+
+          <ToolbarButton onClick={handleInsertYoutube}>
+            <CirclePlay size={14} /> 유튜브
+          </ToolbarButton>
+
+          <ToolbarButton onClick={() => editor?.chain().focus().setHorizontalRule().run()}>
+            <Minus size={14} /> 구분선
+          </ToolbarButton>
+
+          <ToolbarButton
+            onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
+            active={editor?.isActive("codeBlock")}
+          >
+            <Code2 size={14} /> 코드
+          </ToolbarButton>
+
+          <ToolbarButton onClick={handleInsertCta}>CTA</ToolbarButton>
+
+          <div className="mx-1 h-5 w-px bg-zinc-800" />
+
+          <ToolbarButton onClick={() => handleEnhanceContent("correct")}>
+            <Type size={14} /> 맞춤법
+          </ToolbarButton>
+
+          <ToolbarButton
+            onClick={() => handleEnhanceContent("expand")}
+            disabled={isEnhancing}
+            className="text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
+          >
+            <Wand2 size={14} /> AI 보강
+          </ToolbarButton>
+        </div>
+      </div>
+
       <div className="flex-1 overflow-y-auto bg-white custom-scrollbar">
-        {isLoading ? (
+        {isLoading || !isClientReady ? (
           <div className="flex h-full w-full items-center justify-center gap-1.5 text-xs font-mono text-zinc-500">
-            <RefreshCw size={14} className="animate-spin text-emerald-400" /> Supabase 원고 복원 데이터 바인딩 중...
+            <RefreshCw size={14} className="animate-spin text-emerald-400" />
+            Supabase 원고 복원 데이터 바인딩 중...
           </div>
         ) : (
           <div className="mx-auto flex min-h-full w-full max-w-[920px] flex-col px-8 pb-12 pt-8 md:px-10">
-            <div className="flex min-h-[760px] flex-col">
-              <div className="mb-6 flex items-start justify-between gap-4 border-b border-zinc-200 pb-4">
+            <div className="mb-5 flex items-start justify-between gap-4 border-b border-zinc-200 pb-4">
+              <div className="min-w-0 flex-1">
                 <input
                   type="text"
-                  placeholder={isRecreateMode ? "AI 글 재창조를 가동하시면 중복 필터를 완전히 회피하는 제목이 빌드됩니다." : "제목을 입력하세요..."}
+                  placeholder={isRecreateMode ? "AI 재창조 제목이 생성됩니다." : "제목을 입력하세요..."}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-transparent text-base font-black leading-7 text-zinc-950 placeholder-zinc-400 focus:outline-none"
+                  className="w-full bg-transparent text-xl font-black leading-8 text-zinc-950 placeholder-zinc-400 focus:outline-none"
                 />
-                <span className="shrink-0 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[10px] font-mono text-zinc-500">
-                  Chars: <strong className="text-emerald-500">{charCount}</strong>
-                </span>
+
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-zinc-400">
+                  <span>키워드: {targetKeyword || "없음"}</span>
+                  <span>·</span>
+                  <span>{stats.paragraphs}문단</span>
+                  <span>·</span>
+                  <span>약 {stats.minutes}분 읽기</span>
+                  <span>·</span>
+                  <span>H2/H3 {headings.length}개</span>
+                </div>
               </div>
 
-              {images && images.length > 0 && (
-                <div className="mb-6 grid grid-cols-1 gap-3 border-b border-zinc-200 pb-5 sm:grid-cols-2">
-                  {images.map((img) => (
-                    <div key={img.id} className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 p-3 shadow-sm">
-                      <div className="relative h-32 w-full overflow-hidden rounded-xl bg-zinc-100">
-                        <img src={img.url} alt="Uploaded Block" className="h-full w-full object-cover" />
-                        <button onClick={() => handleDeleteImage(img.id)} className="absolute top-2 right-2 rounded-md bg-red-600 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"><Trash2 size={12} /></button>
-                      </div>
-                      <input
-                        type="text"
-                        value={img.caption}
-                        onChange={(e) => handleUpdateCaption(img.id, e.target.value)}
-                        className="mt-3 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 focus:outline-none"
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
+              <span className="shrink-0 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[10px] font-mono text-zinc-500">
+                Chars: <strong className="text-emerald-500">{stats.chars || charCount}</strong>
+              </span>
+            </div>
 
-              <div
-                ref={contentEditableRef}
-                contentEditable
-                suppressContentEditableWarning
-                onInput={handleInlineContentInput}
-                onFocus={handleBodyFocus}
-                onBlur={handleBodyBlur}
-                onClick={focusEditableSurface}
-                tabIndex={0}
-                role="textbox"
-                aria-multiline="true"
-                spellCheck={false}
-                data-placeholder={isRecreateMode ? "재창조 본문 결과 영역..." : "내용을 채워주세요..."}
-                className="min-h-[760px] w-full flex-1 cursor-text rounded-[10px] bg-transparent px-1 py-1 text-sm leading-7 text-zinc-800 caret-zinc-950 outline-none transition-colors before:pointer-events-none before:absolute before:text-zinc-400 empty:before:content-[attr(data-placeholder)] focus:bg-zinc-50/70 [&_.cb-table-wrap]:my-6 [&_.cb-table-wrap]:overflow-x-auto [&_table]:w-full [&_table]:border-collapse [&_thead]:bg-zinc-100 [&_th]:border [&_th]:border-zinc-300 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-sm [&_th]:font-black [&_td]:border [&_td]:border-zinc-200 [&_td]:px-3 [&_td]:py-2 [&_td]:align-top [&_td]:text-sm [&_td]:leading-7 [&_h1]:mb-4 [&_h1]:border-b [&_h1]:border-zinc-200 [&_h1]:pb-3 [&_h1]:text-base [&_h1]:font-black [&_h1]:leading-7 [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:text-base [&_h2]:font-black [&_h2]:leading-7 [&_h3]:mt-7 [&_h3]:mb-3 [&_h3]:text-[15px] [&_h3]:font-black [&_h3]:leading-7 [&_h4]:mt-6 [&_h4]:mb-2 [&_h4]:text-sm [&_h4]:font-black [&_h4]:leading-7 [&_p]:mb-4 [&_p]:text-sm [&_p]:leading-7 [&_ul]:mb-5 [&_ul]:ml-5 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:text-sm [&_ul]:leading-7 [&_ol]:mb-5 [&_ol]:ml-5 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:text-sm [&_ol]:leading-7 [&_blockquote]:my-5 [&_blockquote]:rounded-xl [&_blockquote]:border [&_blockquote]:border-zinc-200 [&_blockquote]:bg-zinc-50 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:text-sm [&_blockquote]:font-medium [&_blockquote]:leading-7 [&_blockquote]:text-zinc-600"
-              />
+            {images && images.length > 0 && (
+              <div className="mb-6 grid grid-cols-1 gap-3 border-b border-zinc-200 pb-5 sm:grid-cols-2">
+                {images.map((img) => (
+                  <div key={img.id} className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 p-3 shadow-sm">
+                    <div className="relative h-32 w-full overflow-hidden rounded-xl bg-zinc-100">
+                      <img src={img.url} alt={img.caption || "Uploaded Block"} className="h-full w-full object-cover" />
+                      <button
+                        onClick={() => handleDeleteImage(img.id)}
+                        className="absolute right-2 top-2 rounded-md bg-red-600 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+
+                    <input
+                      type="text"
+                      value={img.caption}
+                      onChange={(e) => handleUpdateCaption(img.id, e.target.value)}
+                      placeholder="이미지 캡션 또는 alt 설명"
+                      className="mt-3 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 focus:outline-none"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="min-h-[760px] rounded-[10px] bg-transparent px-1 py-1 text-zinc-800 focus-within:bg-zinc-50/70">
+              <EditorContent editor={editor} />
             </div>
           </div>
         )}
       </div>
 
-      {/* 에디터 최하단 마감 마스터 필터 */}
-      <div className="h-16 border-t border-zinc-800 bg-[#0b0d12] px-6 flex items-center justify-between shrink-0">
-        {isDetailMode ? (
-          <div className="text-[10px] text-zinc-500 font-bold flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> 세션 완공 동기화 모드 : #{targetKeyword}</div>
-        ) : (
-          <span className="text-[11px] text-zinc-500 font-medium">
-            {isRecreateMode ? "AI 재창조 원고 검증 파이프라인 대기 중" : "AI 스마트블록 통합 엔진 실시간 동기화 상태"}
-          </span>
-        )}
-        <div className="flex items-center gap-2">
-          {isDetailMode ? (
-            null
-          ) : isRecreateMode ? (
-            <>
-              <button onClick={handleCopy} className="px-4 py-2 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:bg-zinc-800 transition-all"><Copy size={13} /> 결과 복사</button>
-              <button onClick={() => handleSavePostToSupabase()} className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-black shadow-lg shadow-emerald-600/20 active:scale-95 transition-all">원고 최종 저장</button>
-            </>
-          ) : (
-            <span className="text-[11px] text-zinc-600 font-medium flex items-center gap-1">
-              <Cpu size={12} className="text-emerald-500" /> Supabase Authenticated Session Token Active
-            </span>
+      <div className="flex h-16 shrink-0 items-center justify-between border-t border-zinc-800 bg-[#0b0d12] px-6">
+        <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          {isDetailMode ? `Tiptap HTML 동기화 모드 : #${targetKeyword}` : "Tiptap 스마트블록 에디터 활성화"}
+        </div>
+
+        <div className="flex items-center gap-3 text-[11px] font-semibold text-zinc-500">
+          {isImageUploading && (
+            <span className="text-emerald-400 animate-pulse">이미지 업로드 중...</span>
           )}
+          <span>{stats.chars || charCount}자</span>
+          <span>{stats.words}단어</span>
+          <span>{stats.paragraphs}문단</span>
+          <span>약 {stats.minutes}분</span>
+          <span className="flex items-center gap-1">
+            <Cpu size={12} className="text-emerald-500" />
+            Supabase Session Active
+          </span>
         </div>
       </div>
+
+      <style jsx global>{`
+        .ProseMirror {
+          min-height: 760px;
+          outline: none;
+        }
+
+        .ProseMirror p {
+          margin: 0 0 1rem;
+          line-height: 1.9;
+          font-size: 0.95rem;
+        }
+
+        .ProseMirror h1 {
+          margin: 1.4rem 0 1rem;
+          padding-bottom: 0.75rem;
+          border-bottom: 1px solid #e4e4e7;
+          font-size: 1.35rem;
+          line-height: 1.45;
+          font-weight: 900;
+          color: #09090b;
+        }
+
+        .ProseMirror h2 {
+          margin: 2.2rem 0 0.9rem;
+          font-size: 1.2rem;
+          line-height: 1.55;
+          font-weight: 900;
+          color: #09090b;
+        }
+
+        .ProseMirror h3 {
+          margin: 1.8rem 0 0.75rem;
+          font-size: 1.05rem;
+          line-height: 1.55;
+          font-weight: 900;
+          color: #18181b;
+        }
+
+        .ProseMirror ul,
+        .ProseMirror ol {
+          margin: 0 0 1.25rem 1.35rem;
+          padding: 0;
+        }
+
+        .ProseMirror ul {
+          list-style: disc;
+        }
+
+        .ProseMirror ol {
+          list-style: decimal;
+        }
+
+        .ProseMirror li {
+          margin: 0.35rem 0;
+          line-height: 1.9;
+        }
+
+        .ProseMirror blockquote {
+          margin: 1.5rem 0;
+          padding: 1rem 1.25rem;
+          border: 1px solid #e4e4e7;
+          border-left: 4px solid #6366f1;
+          border-radius: 1rem;
+          background: #f8fafc;
+          color: #52525b;
+          font-weight: 600;
+        }
+
+        .ProseMirror pre {
+          margin: 1.5rem 0;
+          padding: 1rem;
+          overflow-x: auto;
+          border-radius: 1rem;
+          background: #09090b;
+          color: #f4f4f5;
+          font-size: 0.8rem;
+          line-height: 1.7;
+        }
+
+        .ProseMirror hr {
+          margin: 2rem 0;
+          border: 0;
+          border-top: 1px solid #e4e4e7;
+        }
+
+        .ProseMirror table {
+          width: 100%;
+          margin: 1.5rem 0;
+          border-collapse: collapse;
+          overflow: hidden;
+          border-radius: 0.75rem;
+        }
+
+        .ProseMirror th {
+          background: #f4f4f5;
+          font-weight: 900;
+        }
+
+        .ProseMirror th,
+        .ProseMirror td {
+          min-width: 90px;
+          border: 1px solid #d4d4d8;
+          padding: 0.65rem 0.75rem;
+          vertical-align: top;
+          font-size: 0.9rem;
+          line-height: 1.7;
+        }
+
+        .ProseMirror img {
+          max-width: 100%;
+          height: auto;
+        }
+
+        .ProseMirror iframe {
+          max-width: 100%;
+        }
+
+        .ProseMirror p.is-editor-empty:first-child::before {
+          content: attr(data-placeholder);
+          float: left;
+          color: #a1a1aa;
+          pointer-events: none;
+          height: 0;
+        }
+      `}</style>
     </div>
   );
 }

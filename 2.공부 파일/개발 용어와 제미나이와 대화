@@ -36,6 +36,57 @@
 
 SQL Editor에 칼럼 추가해달라는 말 : SQL Editor에 넣을 쿼리 정리해줘. 
 
+* 전체 폭을 쓰는 바 형태로 만들어라! 
+* grid-cols-4 => 4칸으로 분리, 또는 3칸... 
+
+“프리셋 바”처럼 만들면 딱 맞겠네요. 프롬프트 바로 아래에 접이식 4칸 바를 두고, 
+최근 생성/자동 선택/옵션 저장 슬롯을 누르면 현재 선택값 세트가 한 번에 적용되도록 붙이겠습니다.
+프리셋과 개별 선택 옵션들을 하나의 “설정 패널”처럼 붙여서, 둥근 박스 느낌을 빼고 라인으로만 구분되도록. 
+
+* 에디터 버전
+이 버전은 document.execCommand 기반이라 당장 적용 가능한 실전형 업그레이드야. 
+나중에 더 안정적인 Notion급 블록 에디터로 가려면 Tiptap으로 갈아타면 돼.
+
+2. Tiptap 방식
+
+Tiptap은 에디터 엔진 자체가 이미 갖춰진 라이브러리야.
+
+쉽게 말하면:
+
+Tiptap Editor
++
+확장 기능 Extensions
++
+JSON/HTML 저장
+
+장점:
+
+H1/H2/H3 안정적
+Bold, Italic, Link 안정적
+표, 이미지, 유튜브, 코드블록 확장 가능
+선택 텍스트 메뉴 만들기 쉬움
+/목차, /이미지, /표 같은 Slash Command 가능
+나중에 협업 편집까지 확장 가능
+블로그 공용 에디터로 장기 유지보수에 좋음
+3. CreAIbox 기준 추천
+
+지금은 빠르게 MVP를 만드는 단계라면 현재 방식도 가능해.
+
+하지만 앞으로 에디터에 아래 기능을 계속 넣을 거면 Tiptap으로 갈아타는 게 맞아.
+
+목차 자동 생성
+이미지 캡션/alt
+유튜브 임베드
+표 편집
+CTA 블록
+FAQ 블록
+AI 선택 문단 수정
+Slash Command
+블로그 템플릿 블록
+
+* 테미널 설치 
+npm install @tiptap/react @tiptap/starter-kit @tiptap/extension-link @tiptap/extension-image @tiptap/extension-placeholder @tiptap/extension-youtube @tiptap/extension-table @tiptap/extension-table-row @tiptap/extension-table-header @tiptap/extension-table-cell @tiptap/extension-text-align
+
 
 
 * textarea : #, ## 처럼 

@@ -1,10 +1,9 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { Search, ArrowLeft } from "lucide-react";
+import { Search, ArrowLeft, Check } from "lucide-react";
 import UniversalBlogEditor from "@/components/writing/editor/UniversalBlogEditor";
 import NaverAnalysisTower from "@/components/writing/naver/NaverAnalysisTower";
 import { createClient } from "@/utils/supabase/client";
@@ -103,26 +102,26 @@ export default function NaverManuscriptDetailPage() {
       <div className="grid h-full w-full grid-cols-[360px_minmax(0,1fr)_380px]">
 
         {/* 왼쪽 글 목록 */}
-        <aside className="h-full overflow-y-auto custom-scrollbar border-r border-white/10 bg-[#0d0f14] px-5 py-5">
-          <Link
-            href="/studio/writing/naver/list"
-            className="mb-5 flex h-12 items-center gap-2 rounded-2xl bg-white/5 px-4 text-base font-semibold text-white/88 transition hover:bg-white/10"
+        <aside className="h-full overflow-y-auto custom-scrollbar border-r border-emerald-500/20 bg-[#0b0f15] p-4 text-[13px]">
+          <button
+            onClick={() => router.push("/studio/writing/naver/list")}
+            className="mb-5 flex w-full items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-left text-[13px] font-bold text-white/80 transition hover:border-emerald-400/40 hover:bg-emerald-500/10"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4 text-emerald-300" />
             목록으로 돌아가기
-          </Link>
+          </button>
 
           <div className="relative mb-5">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/35" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-300/60" />
             <input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="원고 검색..."
-              className="h-14 w-full rounded-2xl border border-white/10 bg-[#0a0c10] pl-12 pr-4 text-base text-white outline-none transition placeholder:text-white/35 focus:border-emerald-400/50"
+              className="w-full rounded-xl border border-zinc-800/80 bg-zinc-950/30 py-3 pl-11 pr-4 text-[13px] font-medium text-white outline-none transition placeholder:text-white/30 focus:border-emerald-500/50"
             />
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-2">
             {filteredList.map((item) => {
               const active = String(item.id) === manuscriptId;
 
@@ -130,19 +129,24 @@ export default function NaverManuscriptDetailPage() {
                 <button
                   key={item.id}
                   onClick={() => router.push(`/studio/writing/naver/list/${item.id}`)}
-                  className={`w-full rounded-3xl border p-4 text-left transition ${active
-                      ? "border-emerald-400 bg-white/10"
-                      : "border-white/10 bg-white/[0.04] hover:bg-white/[0.07]"
+                  className={`w-full rounded-xl border p-3.5 text-left transition ${active
+                      ? "border-emerald-500/60 bg-emerald-950/15"
+                      : "border-zinc-800/80 bg-zinc-950/30 hover:border-emerald-500/35 hover:bg-zinc-900/40"
                     }`}
                 >
-                  <div className="mb-3 inline-flex rounded-full border border-cyan-400/50 bg-cyan-400/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
-                    {item.postType === "recreate" ? "RECREATE" : "CREATE"}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className={`line-clamp-2 text-[13px] font-black leading-tight ${active ? "text-emerald-300" : "text-zinc-100"}`}>
+                      {item.title}
+                    </div>
+                    {active && <Check className="mt-0.5 h-3 w-3 shrink-0 text-emerald-300" />}
                   </div>
-                  <div className="line-clamp-2 text-base font-semibold text-white">
-                    {item.title}
-                  </div>
-                  <div className="mt-2 line-clamp-1 text-sm text-white/45">
-                    #{item.targetKeyword ?? item.keyword}
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <span className="inline-flex rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[13px] font-black uppercase tracking-[0.16em] text-emerald-300">
+                      {item.postType === "recreate" ? "RECREATE" : "CREATE"}
+                    </span>
+                    <span className="line-clamp-1 text-[13px] font-medium text-zinc-500">
+                      #{item.targetKeyword ?? item.keyword ?? "키워드 없음"}
+                    </span>
                   </div>
                 </button>
               );

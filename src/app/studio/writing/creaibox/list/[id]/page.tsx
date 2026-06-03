@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/utils/supabase/client";
 import UniversalBlogEditor from "@/components/writing/editor/UniversalBlogEditor";
 import CreaiboxAnalysisTower from "@/components/writing/creaibox/tabs/CreaiboxAnalysisTower";
+import CreaiboxContentImagePanel from "@/components/writing/creaibox/tabs/CreaiboxContentImagePanel";
 import CreaiboxSchemaPanel from "@/components/writing/creaibox/tabs/CreaiboxSchemaPanel";
 import CreaiboxSeoOptimizationPanel from "@/components/writing/creaibox/tabs/CreaiboxSeoOptimizationPanel";
 import CreaiboxThumbnailPanel from "@/components/writing/creaibox/tabs/CreaiboxThumbnailPanel";
@@ -23,7 +24,7 @@ type StudioManuscriptRecordWithOptionalFields = StudioManuscriptRecord & {
   useSearch?: boolean;
 };
 
-type PublishingPanelTab = "seo" | "thumbnail" | "schema";
+type PublishingPanelTab = "seo" | "thumbnail" | "contentImage" | "schema";
 
 function buildPublicBlogSlug(title?: string, focusKeyword?: string, targetKeyword?: string) {
   const base = (focusKeyword || targetKeyword || title || "")
@@ -466,8 +467,8 @@ export default function CreaiboxManuscriptDetailPage() {
                   key={manuscript.id}
                   onClick={() => handleOpenManuscript(manuscript)}
                   className={`w-full rounded-xl border p-3.5 text-left transition ${active
-                      ? "border-violet-500/60 bg-violet-950/15"
-                      : "border-zinc-800/80 bg-zinc-950/30 hover:border-violet-500/35 hover:bg-zinc-900/40"
+                    ? "border-violet-500/60 bg-violet-950/15"
+                    : "border-zinc-800/80 bg-zinc-950/30 hover:border-violet-500/35 hover:bg-zinc-900/40"
                     }`}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -515,6 +516,7 @@ export default function CreaiboxManuscriptDetailPage() {
             handleSavePostToSupabase={() => handleSave("saved")}
             isDetailMode
             targetKeyword={data.targetKeyword ?? ""}
+            manuscriptId={data.id}
           />
         </main>
 
@@ -522,22 +524,22 @@ export default function CreaiboxManuscriptDetailPage() {
         <aside className="h-full overflow-y-auto custom-scrollbar border-l border-white/10 bg-[#0b0f15]">
           <div className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-zinc-800 bg-gradient-to-r from-[#131722] via-[#141926] to-[#10141f] px-5">
             <div className="flex items-center gap-2">
-            <button
-              onClick={() => void handlePublish()}
-              disabled={isSaving}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#4f46e5] via-[#7c3aed] to-[#ec4899] px-3.5 py-2 text-xs font-black text-white shadow-[0_8px_18px_rgba(124,58,237,0.18)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <Send className="h-3.5 w-3.5" />
-              {isSaving ? "처리 중..." : "블로그 발행"}
-            </button>
-            <button
-              onClick={() => void handleCancelPublish()}
-              disabled={isSaving}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition hover:border-rose-400/35 hover:bg-rose-500/10 hover:text-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              발행 취소
-            </button>
+              <button
+                onClick={() => void handlePublish()}
+                disabled={isSaving}
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#4f46e5] via-[#7c3aed] to-[#ec4899] px-3.5 py-2 text-xs font-black text-white shadow-[0_8px_18px_rgba(124,58,237,0.18)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Send className="h-3.5 w-3.5" />
+                {isSaving ? "처리 중..." : "블로그 발행"}
+              </button>
+              <button
+                onClick={() => void handleCancelPublish()}
+                disabled={isSaving}
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition hover:border-rose-400/35 hover:bg-rose-500/10 hover:text-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                발행 취소
+              </button>
             </div>
             <span
               className={`inline-flex shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${publishingStatusClass}`}
@@ -552,10 +554,11 @@ export default function CreaiboxManuscriptDetailPage() {
           </div>
 
           <section className="border-b border-zinc-800 text-white">
-            <div className="mb-5 grid h-14 grid-cols-3 border-b border-white/10">
+            <div className="grid h-14 grid-cols-4 border-b border-white/10 bg-transparent">
               {[
                 { key: "seo", label: "SEO 최적화" },
                 { key: "thumbnail", label: "썸네일" },
+                { key: "contentImage", label: "본문 이미지" },
                 { key: "schema", label: "스키마" },
               ].map((tab) => {
                 const active = publishingPanelTab === tab.key;
@@ -565,12 +568,15 @@ export default function CreaiboxManuscriptDetailPage() {
                     key={tab.key}
                     type="button"
                     onClick={() => setPublishingPanelTab(tab.key as PublishingPanelTab)}
-                    className={`border-r border-white/10 text-sm font-black transition last:border-r-0 ${active
-                        ? "bg-white/[0.06] text-white"
-                        : "text-white/45 hover:bg-white/[0.035] hover:text-white/80"
+                    className={`relative border-r border-white/10 text-sm font-black transition last:border-r-0 ${active
+                      ? "bg-blue-500/8 text-blue-200"
+                      : "text-white/45 hover:bg-white/[0.025] hover:text-blue-100"
                       }`}
                   >
                     {tab.label}
+                    {active && (
+                      <span className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-400" />
+                    )}
                   </button>
                 );
               })}
@@ -583,11 +589,12 @@ export default function CreaiboxManuscriptDetailPage() {
               />
             )}
             {publishingPanelTab === "thumbnail" && <CreaiboxThumbnailPanel />}
+            {publishingPanelTab === "contentImage" && <CreaiboxContentImagePanel />}
             {publishingPanelTab === "schema" && <CreaiboxSchemaPanel />}
           </section>
 
           {publishingPanelTab === "seo" && (
-            <div className="px-5">
+            <div>
               <CreaiboxAnalysisTower
                 seoScore={0}
                 seoChecks={{

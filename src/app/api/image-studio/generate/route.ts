@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import sharp from "sharp";
 
 export const runtime = "nodejs";
 
@@ -39,8 +40,34 @@ ${prompt}
 Style: ${style || "blog thumbnail"}
 Detail style: ${styleDetail || "clean visual"}
 Aspect ratio: ${aspectRatio || "3:2"}
-High quality, clean composition, professional blog thumbnail, no watermark, no text unless requested.
+The final image must follow this exact aspect ratio: ${aspectRatio || "3:2"}.
+Create a Korean editorial infographic blog thumbnail like a premium Naver blog cover image.
+Fill the entire canvas edge-to-edge with the thumbnail design.
+Use a bold readable Korean headline based only on the provided title and topic.
+Use 3 to 4 compact Korean key-point boxes with simple icons, charts, arrows, or topic symbols.
+Use a dark cinematic background, vivid blue/yellow/white contrast, clean hierarchy, and strong financial/news/analysis visual energy when relevant.
+Do not create a browser mockup, framed card, polaroid, SNS post card, caption footer, white border, margin, padding, or rounded outer container.
+Use sharp rectangular edges only. Do not round the image corners, inner panels, labels, data boxes, or visual frames.
+Do not add aspect-ratio labels, "3:2" text, sample labels, unrelated English, random brand names, watermark, UI badges, or bottom metadata strips.
+Every visible word must be intentional Korean text from the title/topic/keywords.
+High quality, clean composition, professional Korean blog thumbnail.
 `.trim();
+}
+
+function getAspectRatioSize(aspectRatio: string) {
+  switch (aspectRatio) {
+    case "16:9":
+      return { width: 1200, height: 675 };
+    case "9:16":
+      return { width: 675, height: 1200 };
+    case "1:1":
+      return { width: 1000, height: 1000 };
+    case "4:5":
+      return { width: 960, height: 1200 };
+    case "3:2":
+    default:
+      return { width: 1200, height: 800 };
+  }
 }
 
 async function generateWithOpenAI({
@@ -131,6 +158,25 @@ async function generateWithGemini({
   return Buffer.from(imagePart.inlineData.data, "base64");
 }
 
+async function compressForStorage(imageBuffer: Buffer, aspectRatio: string) {
+  const { width, height } = getAspectRatioSize(aspectRatio);
+
+  return sharp(imageBuffer)
+    .rotate()
+    .resize({
+      width,
+      height,
+      fit: "cover",
+      position: "center",
+      withoutEnlargement: true,
+    })
+    .webp({
+      quality: 72,
+      effort: 5,
+    })
+    .toBuffer();
+}
+
 export async function POST(req: Request) {
   try {
     const supabase = await createClient();
@@ -144,6 +190,10 @@ export async function POST(req: Request) {
       model,
       apiKey,
       count = 1,
+      sourceType,
+      sourceId,
+      imageRole,
+      markAsPrimary = false,
     } = await req.json();
 
     if (!prompt) {
@@ -163,6 +213,18 @@ export async function POST(req: Request) {
       );
     }
 
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: "로그인 세션을 확인할 수 없습니다." },
+        { status: 401 }
+      );
+    }
+
     const safeProvider: ImageProvider =
       provider === "openai" ? "openai" : "gemini";
 
@@ -175,6 +237,21 @@ export async function POST(req: Request) {
 
     const createdImages = [];
     const safeCount = Math.min(Math.max(Number(count) || 1, 1), 5);
+    const safeSourceId = sourceId ? String(sourceId) : null;
+    const safeImageRole = imageRole || "generated";
+
+    if (markAsPrimary && sourceType && safeSourceId) {
+      const { error: clearPrimaryError } = await supabase
+        .from("generated_images")
+        .update({ is_primary: false })
+        .eq("user_id", user.id)
+        .eq("source_type", sourceType)
+        .eq("source_id", safeSourceId);
+
+      if (clearPrimaryError) {
+        throw new Error(`generated_images primary reset failed: ${clearPrimaryError.message}`);
+      }
+    }
 
     for (let i = 0; i < safeCount; i += 1) {
       const imageBuffer =
@@ -191,18 +268,19 @@ export async function POST(req: Request) {
             model: model || "gpt-image-1",
           });
 
-      const fileName = `${Date.now()}-${i}.png`;
-      const filePath = `image-studio/${fileName}`;
+      const compressedImageBuffer = await compressForStorage(imageBuffer, aspectRatio);
+      const fileName = `${Date.now()}-${i}.webp`;
+      const filePath = `${user.id}/image-studio/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("generated-images")
-        .upload(filePath, imageBuffer, {
-          contentType: "image/png",
+        .upload(filePath, compressedImageBuffer, {
+          contentType: "image/webp",
           upsert: false,
         });
 
       if (uploadError) {
-        throw new Error(uploadError.message);
+        throw new Error(`Storage upload failed: ${uploadError.message}`);
       }
 
       const { data: publicUrlData } = supabase.storage
@@ -214,20 +292,24 @@ export async function POST(req: Request) {
       const { data: inserted, error: insertError } = await supabase
         .from("generated_images")
         .insert({
+          user_id: user.id,
           prompt,
           image_url: imageUrl,
           style,
-          style_detail: styleDetail,
           aspect_ratio: aspectRatio,
           provider: safeProvider,
+          source_type: sourceType || null,
+          source_id: safeSourceId,
+          image_role: safeImageRole,
+          is_primary: Boolean(markAsPrimary && i === 0),
         })
         .select(
-          "id, image_url, prompt, style, style_detail, aspect_ratio, provider, created_at"
+          "id, image_url, prompt, style, aspect_ratio, provider, source_type, source_id, image_role, is_primary, created_at"
         )
         .single();
 
       if (insertError) {
-        throw new Error(insertError.message);
+        throw new Error(`generated_images insert failed: ${insertError.message}`);
       }
 
       createdImages.push(inserted);

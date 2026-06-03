@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { 
-  FileText, Check, AlertCircle, ShieldCheck, Cpu, PieChart, 
+  Check, AlertCircle, ShieldCheck, Cpu, PieChart, 
   BarChart3, CheckCircle2, ChevronDown, ChevronUp, HelpCircle 
 } from 'lucide-react';
 
@@ -106,7 +106,7 @@ function SeoCheckGroup({
       <button
         type="button"
         onClick={onToggle}
-        className="flex h-11 w-full items-center justify-between text-left transition hover:bg-white/[0.03]"
+        className="flex h-14 w-full items-center justify-between px-5 text-left transition hover:bg-white/[0.03]"
       >
         <span className="flex items-center gap-2 text-sm font-black text-zinc-100">
           {title}
@@ -121,7 +121,7 @@ function SeoCheckGroup({
         )}
       </button>
       {isOpen && (
-        <div className="space-y-3 pb-5 pt-2">
+        <div className="space-y-3 px-5 pb-5 pt-2">
           {items.map((item) => (
             <SeoCheckRow key={item.label} item={item} />
           ))}
@@ -136,6 +136,7 @@ export default function CreaiboxAnalysisTower({
   isRecreateMode = false, similarityScore = 100, isDetailMode = false
 }: CreaiboxAnalysisTowerProps) {
   const [isSeoOptimizerOpen, setIsSeoOptimizerOpen] = useState(true);
+  const [isContentQualityOpen, setIsContentQualityOpen] = useState(true);
   const [openSeoGroups, setOpenSeoGroups] = useState<Record<SeoGroupKey, boolean>>({
     basic: true,
     additional: true,
@@ -156,6 +157,20 @@ export default function CreaiboxAnalysisTower({
   const hasExternalLink = /https?:\/\/(?!creaibox\.com|www\.creaibox\.com)/i.test(content);
   const hasInternalLink = /https?:\/\/(?:www\.)?creaibox\.com|]\(\//i.test(content);
   const hasRichMedia = /!\[[^\]]*]\([^)]+\)|<img|<video/i.test(content);
+  const isParagraphReadable = paragraphs.length > 0 && paragraphs.every((paragraph) => paragraph.length <= 450);
+  const isContentReadable = compactContentLength >= 600 && isParagraphReadable;
+  const hasRealSemanticRatio = posRatio.noun > 0 || posRatio.verb > 0 || posRatio.other > 0;
+  const effectiveCrawlabilityScore =
+    crawlabilityScore > 0
+      ? crawlabilityScore
+      : Math.min(
+          100,
+          20 +
+            (headingLines.length >= 3 ? 25 : 0) +
+            ((slug || canonicalUrl).length > 0 && (slug || canonicalUrl).length <= 75 ? 20 : 0) +
+            (hasInternalLink ? 15 : 0) +
+            (compactContentLength >= 600 ? 20 : 0)
+        );
 
   const basicSeoItems: SeoItem[] = [
     {
@@ -263,10 +278,10 @@ export default function CreaiboxAnalysisTower({
         <button
           type="button"
           onClick={() => setIsSeoOptimizerOpen((open) => !open)}
-          className="flex h-12 w-full items-center justify-between text-left transition hover:bg-white/[0.03]"
+          className="flex h-14 w-full items-center justify-between border-b border-zinc-800 bg-gradient-to-r from-[#131722] via-[#111827] to-[#0d1117] px-5 text-left transition hover:bg-blue-500/5"
         >
-          <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.15em] text-blue-400">
-            <FileText size={13} /> Cre Rank Math SEO Optimizer
+          <span className="text-sm font-black uppercase tracking-[0.12em] text-white">
+            Cre Rank Math SEO
           </span>
           <span className="flex items-center gap-2">
             <span className="rounded bg-blue-500/10 px-2 py-0.5 font-mono text-[10px] font-black text-blue-400">
@@ -310,77 +325,106 @@ export default function CreaiboxAnalysisTower({
         )}
       </section>
 
-      {/* 2단: Unique Content Guard */}
-      {(isRecreateMode || isDetailMode) && (
-        <section className="space-y-4 border-t border-zinc-800 py-6 animate-in fade-in duration-300">
-          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400 flex items-center gap-1.5">
-            <BarChart3 size={14} /> Unique Content Guard
-          </h3>
-          <div className="flex items-center gap-4">
-            <div className="relative w-14 h-14 rounded-full border border-zinc-800 bg-zinc-950 flex items-center justify-center shrink-0">
-              <span className={`text-sm font-black ${similarityScore < 50 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {similarityScore}%
-              </span>
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-zinc-200">콘텐츠 독창성</h4>
-              <p className="text-[10px] text-zinc-500 font-medium mt-0.5">Google이 선호하는 중복 없는 유니크한 원고 점수</p>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 3단: Content Quality Integrity */}
-      <section className="space-y-4 border-t border-zinc-800 py-6">
-        <h3 className="text-xs font-black uppercase tracking-[0.15em] text-amber-500 flex items-center gap-1.5">
-          <ShieldCheck size={13} /> Content Integrity
-        </h3>
-        <div className="grid grid-cols-2 gap-3 text-center">
-          <div className="px-1">
-            <span className="text-[10px] text-zinc-500 font-bold block mb-1">문맥 자연스러움</span>
-            <span className="text-xs font-black text-emerald-400">Human-Like</span>
-          </div>
-          <div className="px-1">
-            <span className="text-[10px] text-zinc-500 font-bold block mb-1">가독성 점수</span>
-            <span className="text-xs font-black text-emerald-400">High Score</span>
-          </div>
-        </div>
-      </section>
-
-      {/* 4단: 형태소 및 의미 분석 */}
-      <section className="space-y-5 border-t border-zinc-800 py-6">
-        <div className="flex justify-between items-center">
-          <h3 className="text-xs font-black text-zinc-200 flex items-center gap-2">
-            <Cpu size={14} className="text-emerald-400" /> Semantic Analysis
-          </h3>
-        </div>
-        
-        <div className="space-y-2.5">
-          <span className="text-[10px] text-zinc-400 font-medium flex items-center gap-1">
-            <PieChart size={12} className="text-blue-400" /> 의미론적 단어 구성 비율
+      {/* 2단: Content Quality Guard */}
+      <section className="border-t border-zinc-800">
+        <button
+          type="button"
+          onClick={() => setIsContentQualityOpen((open) => !open)}
+          className="flex h-14 w-full items-center justify-between border-b border-zinc-800 bg-gradient-to-r from-[#131722] via-[#111827] to-[#0d1117] px-5 text-left transition hover:bg-blue-500/5"
+        >
+          <span className="text-sm font-black uppercase tracking-[0.12em] text-white">
+            Content Quality Guard
           </span>
-          <div className="w-full h-3.5 rounded-full bg-zinc-950 overflow-hidden flex border border-zinc-900">
-            <div className="bg-blue-500 h-full" style={{ width: `${posRatio.noun}%` }} />
-            <div className="bg-emerald-500 h-full" style={{ width: `${posRatio.verb}%` }} />
-            <div className="bg-zinc-700 h-full" style={{ width: `${posRatio.other}%` }} />
-          </div>
-        </div>
-      </section>
+          {isContentQualityOpen ? (
+            <ChevronUp className="h-4 w-4 text-white/70" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-white/70" />
+          )}
+        </button>
 
-      {/* 5단: Crawlability Score */}
-      <section className="space-y-4 border-t border-zinc-800 py-6">
-        <h3 className="text-xs font-black uppercase tracking-[0.15em] text-emerald-400 flex items-center gap-1.5">
-          <BarChart3 size={13} /> Crawlability Index
-        </h3>
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full border border-zinc-800 bg-zinc-950 flex items-center justify-center font-black text-sm text-emerald-400 ring-4 ring-emerald-500/10">
-            {crawlabilityScore}%
+        {isContentQualityOpen && (
+          <div className="animate-in fade-in duration-300">
+            {(isRecreateMode || isDetailMode) && (
+              <section className="space-y-4 border-b border-zinc-800 px-5 py-6">
+                <h3 className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-[0.12em] text-emerald-400">
+                  <BarChart3 size={14} /> Unique Content Guard
+                </h3>
+                <div className="flex items-center gap-4">
+                  <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-zinc-800 bg-zinc-950">
+                    <span className="text-[13px] font-black text-zinc-500">
+                      대기
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="text-[13px] font-bold text-zinc-200">콘텐츠 독창성</h4>
+                    <p className="mt-0.5 text-[13px] font-medium text-zinc-500">외부 중복 검사 API 연동 후 실제 점수를 표시합니다.</p>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            <section className="space-y-4 border-b border-zinc-800 px-5 py-6">
+              <h3 className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-[0.12em] text-amber-500">
+                <ShieldCheck size={13} /> Content Integrity
+              </h3>
+              <div className="grid grid-cols-2 gap-3 text-center">
+                <div className="px-1">
+                  <span className="mb-1 block text-[13px] font-bold text-zinc-500">문맥 자연스러움</span>
+                  <span className={`text-[13px] font-black ${isParagraphReadable ? "text-emerald-400" : "text-amber-400"}`}>
+                    {isParagraphReadable ? "양호" : "점검 필요"}
+                  </span>
+                </div>
+                <div className="px-1">
+                  <span className="mb-1 block text-[13px] font-bold text-zinc-500">가독성 점수</span>
+                  <span className={`text-[13px] font-black ${isContentReadable ? "text-emerald-400" : "text-amber-400"}`}>
+                    {isContentReadable ? "양호" : "점검 필요"}
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-5 border-b border-zinc-800 px-5 py-6">
+              <div className="flex items-center justify-between">
+                <h3 className="flex items-center gap-2 text-[13px] font-black text-zinc-200">
+                  <Cpu size={14} className="text-emerald-400" /> Semantic Analysis
+                </h3>
+              </div>
+
+              <div className="space-y-2.5">
+                <span className="flex items-center gap-1 text-[13px] font-medium text-zinc-400">
+                  <PieChart size={12} className="text-blue-400" />
+                  {hasRealSemanticRatio ? "의미론적 단어 구성 비율" : "형태소 분석 연동 대기"}
+                </span>
+                <div className="flex h-3.5 w-full overflow-hidden rounded-full border border-zinc-900 bg-zinc-950">
+                  {hasRealSemanticRatio ? (
+                    <>
+                      <div className="h-full bg-blue-500" style={{ width: `${posRatio.noun}%` }} />
+                      <div className="h-full bg-emerald-500" style={{ width: `${posRatio.verb}%` }} />
+                      <div className="h-full bg-zinc-700" style={{ width: `${posRatio.other}%` }} />
+                    </>
+                  ) : (
+                    <div className="h-full w-full bg-zinc-900" />
+                  )}
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-4 px-5 py-6">
+              <h3 className="flex items-center gap-1.5 text-[13px] font-black uppercase tracking-[0.12em] text-emerald-400">
+                <BarChart3 size={13} /> Crawlability Index
+              </h3>
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-zinc-800 bg-zinc-950 text-[13px] font-black text-emerald-400 ring-4 ring-emerald-500/10">
+                  {effectiveCrawlabilityScore}%
+                </div>
+                <div>
+                  <h4 className="text-[13px] font-bold text-zinc-200">엔진 수집 효율</h4>
+                  <p className="text-[13px] font-medium text-zinc-500">제목, URL, 본문 길이, 내부 링크 기준의 추정 점수입니다.</p>
+                </div>
+              </div>
+            </section>
           </div>
-          <div>
-            <h4 className="text-xs font-bold text-zinc-200">엔진 수집 효율</h4>
-            <p className="text-[10px] text-zinc-500 font-medium">검색엔진 로봇이 읽기 가장 좋은 구조인가?</p>
-          </div>
-        </div>
+        )}
       </section>
     </div>
   );

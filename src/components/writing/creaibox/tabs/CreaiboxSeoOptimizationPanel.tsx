@@ -9,8 +9,88 @@ interface CreaiboxSeoOptimizationPanelProps {
   updateLocalData: (patch: Partial<StudioManuscriptRecord>) => void;
 }
 
+const TITLE_LIMIT = 60;
+const SLUG_LIMIT = 75;
+const META_DESCRIPTION_LIMIT = 160;
+
 function toTagList(value?: string[] | null) {
   return Array.isArray(value) ? value.filter(Boolean) : [];
+}
+
+function compactText(value?: string | null, fallback = "") {
+  return (value || fallback).replace(/\s+/g, " ").trim();
+}
+
+function truncateText(value: string, maxLength: number) {
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, maxLength).trim()}...`;
+}
+
+function buildPreviewUrl(data: StudioManuscriptRecord) {
+  if (data.canonicalUrl) return data.canonicalUrl;
+  if (data.slug) return `https://creaibox.com/blog/${data.slug}`;
+  return "https://creaibox.com/blog";
+}
+
+function LengthMeter({
+  current,
+  max,
+  idealMin,
+}: {
+  current: number;
+  max: number;
+  idealMin: number;
+}) {
+  const activeSegments = Math.min(5, Math.max(0, Math.ceil((current / max) * 5)));
+  const isOver = current > max;
+  const isGood = current >= idealMin && current <= max;
+  const colors = isOver
+    ? ["bg-rose-500", "bg-rose-500", "bg-rose-500", "bg-rose-500", "bg-rose-500"]
+    : ["bg-red-500", "bg-orange-500", "bg-amber-400", "bg-lime-500", "bg-emerald-500"];
+  const textColor = isOver ? "text-rose-300" : isGood ? "text-emerald-300" : "text-amber-300";
+
+  return (
+    <span className="flex items-center gap-2">
+      <span className={`text-xs font-medium ${textColor}`}>
+        {current}/{max}
+      </span>
+      <span className="flex h-1.5 w-24 overflow-hidden rounded-full bg-zinc-700/60">
+        {colors.map((color, index) => (
+          <span
+            key={`${color}-${index}`}
+            className={`h-full flex-1 border-r border-black/20 last:border-r-0 ${color} ${index < activeSegments ? "opacity-100" : "opacity-20"
+              }`}
+          />
+        ))}
+      </span>
+    </span>
+  );
+}
+
+function SnippetPreview({
+  title,
+  url,
+  description,
+  className = "",
+}: {
+  title: string;
+  url: string;
+  description: string;
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <p className="mb-1 truncate text-[13px] font-medium text-zinc-400">
+        {truncateText(url, 54)}
+      </p>
+      <h4 className="line-clamp-2 text-[18px] font-semibold leading-snug text-[#8ab4f8]">
+        {truncateText(title, 58)}
+      </h4>
+      <p className="mt-1 line-clamp-4 text-[13px] leading-relaxed text-zinc-400">
+        {truncateText(description, 190)}
+      </p>
+    </div>
+  );
 }
 
 export default function CreaiboxSeoOptimizationPanel({
@@ -18,16 +98,22 @@ export default function CreaiboxSeoOptimizationPanel({
   updateLocalData,
 }: CreaiboxSeoOptimizationPanelProps) {
   const [isSnippetOpen, setIsSnippetOpen] = useState(true);
+  const previewTitle = compactText(data.title, "제목 없음");
+  const previewUrl = buildPreviewUrl(data);
+  const previewDescription = compactText(
+    data.metaDescription,
+    compactText(data.content, "메타 설명을 입력하면 검색 결과 설명으로 표시됩니다.")
+  );
 
   return (
-    <div className="pb-6">
+    <div>
       <button
         type="button"
         onClick={() => setIsSnippetOpen((open) => !open)}
-        className="flex h-12 w-full items-center justify-between border-b border-zinc-800 px-5 text-left transition hover:bg-white/[0.03]"
+        className="flex h-14 w-full items-center justify-between bg-gradient-to-r from-[#131722] via-[#111827] to-[#0d1117] px-5 text-left transition hover:bg-blue-500/5"
       >
-        <span className="text-sm font-black text-white">
-          스니펫 편집
+        <span className="text-sm font-black uppercase tracking-[0.12em] text-white">
+          Cre Snippet Editor
         </span>
         {isSnippetOpen ? (
           <ChevronUp className="h-4 w-4 text-white/70" />
@@ -37,94 +123,147 @@ export default function CreaiboxSeoOptimizationPanel({
       </button>
 
       {isSnippetOpen && (
-        <div className="space-y-4 px-5 pt-4">
-      <label className="block">
-        <div className="mb-1.5 flex items-center justify-between text-sm font-semibold text-white/75">
-          <span>슬러그 (Slug)</span>
-          <span className="text-xs font-medium text-white/45">
-            {(data.slug || "").length}
-          </span>
-        </div>
-        <input
-          value={data.slug || ""}
-          onChange={(event) => updateLocalData({ slug: event.target.value })}
-          className="w-full rounded-xl border border-transparent bg-white px-4 py-3 text-sm font-semibold text-[#111111] outline-none"
-        />
-      </label>
+        <div className="space-y-4 px-5 py-4">
+          <section className="border-b border-zinc-800 pb-4">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-[13px] font-black text-white">미리보기</span>
+            </div>
+            <SnippetPreview
+              title={previewTitle}
+              url={previewUrl}
+              description={previewDescription}
+            />
+            <p className="mt-2 text-[12px] font-medium leading-relaxed text-zinc-500">
+              이 게시물이 검색 결과에 나타날 때 첫 번째 줄에 표시됩니다.
+            </p>
+          </section>
 
-      <label className="block">
-        <div className="mb-1.5 flex items-center justify-between text-sm font-semibold text-white/75">
-          <span>Meta Description</span>
-          <span className="text-xs font-medium text-white/45">
-            {(data.metaDescription || "").length}/155
-          </span>
-        </div>
-        <textarea
-          value={data.metaDescription || ""}
-          onChange={(event) => updateLocalData({ metaDescription: event.target.value })}
-          className="min-h-[110px] w-full resize-none rounded-xl border border-transparent bg-white px-4 py-3 text-sm leading-relaxed text-[#111111] outline-none"
-        />
-      </label>
+          <label className="block">
+            <div className="mb-1.5 flex items-center justify-between text-sm font-semibold text-white/75">
+              <span>Title</span>
+              <LengthMeter
+                current={previewTitle.length}
+                max={TITLE_LIMIT}
+                idealMin={35}
+              />
+            </div>
+            <input
+              value={data.title || ""}
+              onChange={(event) => updateLocalData({ title: event.target.value })}
+              className="w-full rounded-md border border-transparent bg-white px-4 py-3 text-sm font-semibold text-[#111111] outline-none"
+            />
+            <p className="mt-1.5 text-[12px] font-medium leading-relaxed text-zinc-500">
+              이 게시물이 검색 결과에 나타날 때 첫 번째 줄에 표시됩니다.
+            </p>
+          </label>
 
-      <label className="block">
-        <div className="mb-1.5 flex items-center justify-between text-sm font-semibold text-white/75">
-          <span>Focus Keyword</span>
-          <span className="text-xs font-medium text-white/45">
-            {(data.focusKeyword || "").length}
-          </span>
-        </div>
-        <input
-          value={data.focusKeyword || ""}
-          onChange={(event) => updateLocalData({ focusKeyword: event.target.value })}
-          className="w-full rounded-xl border border-transparent bg-white px-4 py-3 text-sm font-semibold text-[#111111] outline-none"
-        />
-      </label>
+          <label className="block">
+            <div className="mb-1.5 flex items-center justify-between text-sm font-semibold text-white/75">
+              <span>Slug (최대 75자까지 가능)</span>
+              <LengthMeter
+                current={(data.slug || "").length}
+                max={SLUG_LIMIT}
+                idealMin={20}
+              />
+            </div>
+            <input
+              value={data.slug || ""}
+              onChange={(event) => updateLocalData({ slug: event.target.value })}
+              className="w-full rounded-md border border-transparent bg-white px-4 py-3 text-sm font-semibold text-[#111111] outline-none"
+            />
+            <p className="mt-1.5 text-[12px] font-medium leading-relaxed text-zinc-500">
+              검색 결과의 게시물 제목 아래에 표시되는 이 페이지의 고유 URL입니다.
+            </p>
+          </label>
 
-      <label className="block">
-        <div className="mb-1.5 flex items-center justify-between text-sm font-semibold text-white/75">
-          <span>Canonical URL</span>
-          <span className="text-xs font-medium text-white/45">
-            {(data.canonicalUrl || "").length}
-          </span>
-        </div>
-        <input
-          value={data.canonicalUrl || ""}
-          onChange={(event) => updateLocalData({ canonicalUrl: event.target.value })}
-          className="w-full rounded-xl border border-transparent bg-white px-4 py-3 text-sm text-[#111111] outline-none"
-        />
-      </label>
+          <label className="block">
+            <div className="mb-1.5 flex items-center justify-between text-sm font-semibold text-white/75">
+              <span>Canonical URL (20~45자가 가장 깔끔한 권장 구간)</span>
+              <span className="text-xs font-medium text-white/45">
+                {(data.canonicalUrl || "").length}
+              </span>
+            </div>
+            <input
+              value={data.canonicalUrl || ""}
+              onChange={(event) => updateLocalData({ canonicalUrl: event.target.value })}
+              className="w-full rounded-md border border-transparent bg-white px-4 py-3 text-sm text-[#111111] outline-none"
+            />
+            <p className="mt-1.5 text-[12px] font-medium leading-relaxed text-zinc-500">
+              검색엔진에 기준 주소로 전달되는 정식 URL입니다.
+            </p>
+          </label>
 
-      <label className="block">
-        <div className="mb-1.5 flex items-center justify-between text-sm font-semibold text-white/75">
-          <span>SEO Tags</span>
-          <span className="text-xs font-medium text-white/45">
-            {toTagList(data.seoTags).length}
-          </span>
-        </div>
-        <textarea
-          value={toTagList(data.seoTags).join(", ")}
-          onChange={(event) =>
-            updateLocalData({
-              seoTags: event.target.value
-                .split(",")
-                .map((item) => item.trim())
-                .filter(Boolean),
-            })
-          }
-          className="min-h-[90px] w-full resize-none rounded-xl border border-transparent bg-white px-4 py-3 text-sm leading-relaxed text-[#111111] outline-none"
-        />
-      </label>
+          <label className="block">
+            <div className="mb-1.5 flex items-center justify-between text-sm font-semibold text-white/75">
+              <span>Meta Description</span>
+              <LengthMeter
+                current={(data.metaDescription || "").length}
+                max={META_DESCRIPTION_LIMIT}
+                idealMin={120}
+              />
+            </div>
+            <textarea
+              value={data.metaDescription || ""}
+              onChange={(event) => updateLocalData({ metaDescription: event.target.value })}
+              maxLength={META_DESCRIPTION_LIMIT}
+              className="min-h-[110px] w-full resize-none rounded-md border border-transparent bg-white px-4 py-3 text-sm leading-relaxed text-[#111111] outline-none"
+            />
+            <p className="mt-1.5 text-[12px] font-medium leading-relaxed text-zinc-500">
+              이 게시물이 검색 결과에 나타날 때 설명으로 표시됩니다.
+            </p>
+          </label>
 
-      <div className="flex flex-wrap gap-2">
-        {toTagList(data.seoTags).map((tag) => (
-          <span
-            key={tag}
-            className="rounded-full border border-sky-400/30 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-200"
-          >
-            #{tag}
-          </span>
-        ))}
-      </div>
+          <label className="block">
+            <div className="mb-1.5 flex items-center justify-between text-sm font-semibold text-white/75">
+              <span>Focus Keyword</span>
+              <span className="text-xs font-medium text-white/45">
+                {(data.focusKeyword || "").length}
+              </span>
+            </div>
+            <input
+              value={data.focusKeyword || ""}
+              onChange={(event) => updateLocalData({ focusKeyword: event.target.value })}
+              className="w-full rounded-md border border-transparent bg-white px-4 py-3 text-sm font-semibold text-[#111111] outline-none"
+            />
+            <p className="mt-1.5 text-[12px] font-medium leading-relaxed text-zinc-500">
+              SEO 검사 기준이 되는 핵심 키워드입니다.
+            </p>
+          </label>
+
+          <label className="block">
+            <div className="mb-1.5 flex items-center justify-between text-sm font-semibold text-white/75">
+              <span>SEO Tags</span>
+              <span className="text-xs font-medium text-white/45">
+                {toTagList(data.seoTags).length}
+              </span>
+            </div>
+            <textarea
+              value={toTagList(data.seoTags).join(", ")}
+              onChange={(event) =>
+                updateLocalData({
+                  seoTags: event.target.value
+                    .split(",")
+                    .map((item) => item.trim())
+                    .filter(Boolean),
+                })
+              }
+              className="min-h-[90px] w-full resize-none rounded-md border border-transparent bg-white px-4 py-3 text-sm leading-relaxed text-[#111111] outline-none"
+            />
+            <p className="mt-1.5 text-[12px] font-medium leading-relaxed text-zinc-500">
+              콘텐츠와 연결할 SEO 태그를 쉼표로 구분해 입력합니다.
+            </p>
+          </label>
+
+          <div className="flex flex-wrap gap-2">
+            {toTagList(data.seoTags).map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full border border-sky-400/30 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-200"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
         </div>
       )}
     </div>
