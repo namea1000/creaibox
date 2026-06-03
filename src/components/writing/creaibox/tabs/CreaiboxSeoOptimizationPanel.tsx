@@ -32,6 +32,11 @@ function buildPreviewUrl(data: StudioManuscriptRecord) {
   return "https://creaibox.com/blog";
 }
 
+function buildCanonicalUrlFromSlug(slug: string) {
+  const cleanSlug = slug.trim().replace(/^\/+/, "");
+  return cleanSlug ? `https://creaibox.com/blog/${cleanSlug}` : "https://creaibox.com/blog";
+}
+
 function LengthMeter({
   current,
   max,
@@ -168,7 +173,13 @@ export default function CreaiboxSeoOptimizationPanel({
             </div>
             <input
               value={data.slug || ""}
-              onChange={(event) => updateLocalData({ slug: event.target.value })}
+              onChange={(event) => {
+                const nextSlug = event.target.value;
+                updateLocalData({
+                  slug: nextSlug,
+                  canonicalUrl: buildCanonicalUrlFromSlug(nextSlug),
+                });
+              }}
               className="w-full rounded-md border border-transparent bg-white px-4 py-3 text-sm font-semibold text-[#111111] outline-none"
             />
             <p className="mt-1.5 text-[12px] font-medium leading-relaxed text-zinc-500">

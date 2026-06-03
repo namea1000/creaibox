@@ -44,9 +44,17 @@ import {
   Wand2,
 } from "lucide-react";
 
-const CONTENT_IMAGE_SOURCE_TYPE = "writing_creaibox_posts";
+const DEFAULT_CONTENT_IMAGE_SOURCE_TYPE = "writing_creaibox_posts";
 const CONTENT_IMAGE_ROLE = "content_image";
 const IMAGE_BUCKET = "generated-images";
+
+type GeneratedImageRow = {
+  id: string;
+  image_url: string | null;
+  source_type?: string | null;
+  source_id?: string | number | null;
+  image_role?: string | null;
+};
 
 interface ImageBlock {
   id: string;
@@ -77,13 +85,11 @@ interface UniversalBlogEditorProps {
   targetKeyword?: string;
   isLoading?: boolean;
   manuscriptId?: string | number;
+  contentImageSourceType?: string;
 }
 
 function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function applyInlineMarkdown(value: string) {
@@ -95,10 +101,7 @@ function applyInlineMarkdown(value: string) {
 
 function markdownToHtml(markdown: string) {
   if (!markdown) return "";
-
-  if (/<[a-z][\s\S]*>/i.test(markdown.trim())) {
-    return markdown;
-  }
+  if (/<[a-z][\s\S]*>/i.test(markdown.trim())) return markdown;
 
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
   const html: string[] = [];
@@ -114,9 +117,7 @@ function markdownToHtml(markdown: string) {
   };
 
   const flushList = () => {
-    if (listType && listItems.length > 0) {
-      html.push(`<${listType}>${listItems.join("")}</${listType}>`);
-    }
+    if (listType && listItems.length > 0) html.push(`<${listType}>${listItems.join("")}</${listType}>`);
     listType = null;
     listItems = [];
   };
@@ -208,12 +209,7 @@ function getReadingStats(html: string) {
   const paragraphs = (html.match(/<p[\s>]/g) || []).length;
   const minutes = Math.max(1, Math.ceil(chars / 650));
 
-  return {
-    chars,
-    words,
-    paragraphs,
-    minutes,
-  };
+  return { chars, words, paragraphs, minutes };
 }
 
 const convertImageFileToWebp = async (file: File) =>
@@ -242,12 +238,10 @@ const convertImageFileToWebp = async (file: File) =>
       canvas.toBlob(
         (blob) => {
           URL.revokeObjectURL(objectUrl);
-
           if (!blob) {
             reject(new Error("WebP 이미지 변환에 실패했습니다."));
             return;
           }
-
           resolve(blob);
         },
         "image/webp",
@@ -262,6 +256,62 @@ const convertImageFileToWebp = async (file: File) =>
 
     image.src = objectUrl;
   });
+
+function extractImageUrlsFromEditor(editor: any) {
+  const urls = new Set<string>();
+
+  editor.state.doc.descendants((node: any) => {
+    if (node.type.name === "image" && node.attrs?.src) {
+      urls.add(node.attrs.src);
+    }
+  });
+
+  return urls;
+}
+
+function getStoragePathFromPublicUrl(url: string | null | undefined) {
+  const value = url?.trim();
+  if (!value) return null;
+
+  const extractFromPath = (path: string) => {
+    const markers = [
+      `/storage/v1/object/public/${IMAGE_BUCKET}/`,
+      `/storage/v1/object/sign/${IMAGE_BUCKET}/`,
+      `/object/public/${IMAGE_BUCKET}/`,
+      `/object/sign/${IMAGE_BUCKET}/`,
+    ];
+
+    const marker = markers.find((item) => path.includes(item));
+    if (!marker) return null;
+
+    const rawPath = path.slice(path.indexOf(marker) + marker.length).split("?")[0];
+    return decodeURIComponent(rawPath).replace(/^\/+/, "");
+  };
+
+  if (!/^https?:\/\//i.test(value)) {
+    return value.replace(/^\/+/, "");
+  }
+
+  try {
+    const parsed = new URL(value);
+    return extractFromPath(parsed.pathname);
+  } catch {
+    return extractFromPath(value);
+  }
+}
+
+function uniqueValues(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean)));
+}
+
+function sourceIdMatches(row: GeneratedImageRow, manuscriptId: string | number) {
+  return String(row.source_id ?? "") === String(manuscriptId);
+}
+
+function pathBelongsToManuscript(path: string | null, manuscriptId: string | number) {
+  if (!path) return false;
+  return path.split("/").includes(String(manuscriptId));
+}
 
 function downloadFile(filename: string, content: string) {
   const blob = new Blob([content], { type: "text/html;charset=utf-8" });
@@ -286,8 +336,6 @@ export default function UniversalBlogEditor({
   fileInputRef,
   isSaving,
   isEnhancing,
-  handleImageUploadClick,
-  handleImageChange,
   handleUpdateCaption,
   handleDeleteImage,
   handleEnhanceContent,
@@ -298,12 +346,17 @@ export default function UniversalBlogEditor({
   targetKeyword = "AI 글쓰기",
   isLoading = false,
   manuscriptId,
+  contentImageSourceType = DEFAULT_CONTENT_IMAGE_SOURCE_TYPE,
 }: UniversalBlogEditorProps) {
   const supabase = useMemo(() => createClient(), []);
   const [saveFeedback, setSaveFeedback] = useState<"idle" | "saved">("idle");
   const [isImageUploading, setIsImageUploading] = useState(false);
+  const [isCleaningImages, setIsCleaningImages] = useState(false);
   const [isClientReady, setIsClientReady] = useState(false);
+
   const lastExternalContentRef = useRef(content);
+  const previousImageUrlsRef = useRef<Set<string>>(new Set());
+  const deleteContentImagesRef = useRef<(urls: string[]) => void>(() => { });
 
   useEffect(() => {
     setIsClientReady(true);
@@ -314,9 +367,8 @@ export default function UniversalBlogEditor({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: {
-          levels: [1, 2, 3],
-        },
+        heading: { levels: [1, 2, 3] },
+        link: false,
       }),
       Link.configure({
         openOnClick: false,
@@ -344,15 +396,11 @@ export default function UniversalBlogEditor({
           class: "my-6 overflow-hidden rounded-2xl border border-zinc-200",
         },
       }),
-      Table.configure({
-        resizable: true,
-      }),
+      Table.configure({ resizable: true }),
       TableRow,
       TableHeader,
       TableCell,
-      TextAlign.configure({
-        types: ["heading", "paragraph"],
-      }),
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
       Placeholder.configure({
         placeholder: isRecreateMode
           ? "재창조 본문 결과 영역..."
@@ -362,8 +410,7 @@ export default function UniversalBlogEditor({
     content: initialHtml,
     editorProps: {
       attributes: {
-        class:
-          "min-h-[760px] w-full outline-none text-sm leading-8 text-zinc-800 prose-editor",
+        class: "min-h-[760px] w-full outline-none text-sm leading-8 text-zinc-800 prose-editor",
       },
       handleDrop(view, event) {
         const files = Array.from(event.dataTransfer?.files || []);
@@ -379,7 +426,6 @@ export default function UniversalBlogEditor({
         });
 
         void insertContentImageFile(imageFile, coordinates?.pos);
-
         return true;
       },
       handlePaste(view, event) {
@@ -392,12 +438,27 @@ export default function UniversalBlogEditor({
 
         const { from } = view.state.selection;
         void insertContentImageFile(imageFile, from);
-
         return true;
       },
     },
     onUpdate({ editor }) {
       const html = editor.getHTML();
+
+      const previousUrls = previousImageUrlsRef.current;
+      const nextUrls = extractImageUrlsFromEditor(editor);
+
+      const removedUrls = Array.from(previousUrls).filter((url) => !nextUrls.has(url));
+
+      console.log("이전 이미지 URL:", Array.from(previousUrls));
+      console.log("현재 이미지 URL:", Array.from(nextUrls));
+      console.log("삭제된 이미지 URL:", removedUrls);
+
+      previousImageUrlsRef.current = nextUrls;
+
+      if (removedUrls.length > 0) {
+        deleteContentImagesRef.current(removedUrls);
+      }
+
       lastExternalContentRef.current = html;
       setContent(html);
     },
@@ -406,13 +467,18 @@ export default function UniversalBlogEditor({
 
   useEffect(() => {
     if (!editor) return;
+    previousImageUrlsRef.current = extractImageUrlsFromEditor(editor);
+  }, [editor, manuscriptId]);
+
+  useEffect(() => {
+    if (!editor) return;
     if (content === lastExternalContentRef.current) return;
 
     const nextHtml = markdownToHtml(content);
+
     if (nextHtml !== editor.getHTML()) {
-      editor.commands.setContent(nextHtml, {
-        emitUpdate: false,
-      });
+      editor.commands.setContent(nextHtml, { emitUpdate: false });
+      previousImageUrlsRef.current = extractImageUrlsFromEditor(editor);
       lastExternalContentRef.current = content;
     }
   }, [content, editor]);
@@ -420,10 +486,7 @@ export default function UniversalBlogEditor({
   useEffect(() => {
     if (saveFeedback !== "saved") return;
 
-    const timer = setTimeout(() => {
-      setSaveFeedback("idle");
-    }, 3000);
-
+    const timer = setTimeout(() => setSaveFeedback("idle"), 3000);
     return () => clearTimeout(timer);
   }, [saveFeedback]);
 
@@ -437,50 +500,107 @@ export default function UniversalBlogEditor({
     editor.state.doc.descendants((node) => {
       if (node.type.name === "heading" && [2, 3].includes(node.attrs.level)) {
         const text = node.textContent.trim();
-        if (text) {
-          result.push({
-            level: node.attrs.level,
-            text,
-          });
-        }
+        if (text) result.push({ level: node.attrs.level, text });
       }
     });
 
     return result;
   }, [editor, content]);
 
-  const syncLatestContent = () => {
+  const syncLatestContent = useCallback(() => {
     if (!editor) return;
     const html = editor.getHTML();
     lastExternalContentRef.current = html;
     setContent(html);
-  };
+  }, [editor, setContent]);
 
-  const handleSaveClick = async (status?: any) => {
-    syncLatestContent();
+  const deleteGeneratedImageRows = useCallback(
+    async (rows: GeneratedImageRow[]) => {
+      const ids = uniqueValues(rows.map((row) => row.id));
+      const storagePaths = uniqueValues(
+        rows
+          .map((row) => getStoragePathFromPublicUrl(row.image_url))
+          .filter(Boolean) as string[]
+      );
 
-    const result = await handleSavePostToSupabase(status);
+      let storageError: Error | null = null;
+      let dbError: Error | null = null;
 
-    if (result !== false) {
-      setSaveFeedback("saved");
-    }
-  };
+      if (storagePaths.length > 0) {
+        const { error } = await supabase.storage.from(IMAGE_BUCKET).remove(storagePaths);
+        if (error) storageError = new Error(`Storage 삭제 실패: ${error.message}`);
+      }
 
-  const handleInsertLink = () => {
-    if (!editor) return;
+      if (ids.length > 0) {
+        const { error } = await supabase.from("generated_images").delete().in("id", ids);
+        if (error) dbError = new Error(`DB 행 삭제 실패: ${error.message}`);
+      }
 
-    const previousUrl = editor.getAttributes("link").href;
-    const url = window.prompt("링크 URL을 입력하세요.", previousUrl || "");
+      if (storageError || dbError) {
+        throw new Error([storageError?.message, dbError?.message].filter(Boolean).join("\n"));
+      }
 
-    if (url === null) return;
+      return {
+        deletedRows: ids.length,
+        deletedFiles: storagePaths.length,
+      };
+    },
+    [supabase]
+  );
 
-    if (url === "") {
-      editor.chain().focus().extendMarkRange("link").unsetLink().run();
-      return;
-    }
+  const deleteContentImages = useCallback(
+    async (removedUrls: string[]) => {
+      if (!removedUrls.length || !manuscriptId) return;
 
-    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
-  };
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) return;
+
+        const removedPaths = removedUrls
+          .map((url) => getStoragePathFromPublicUrl(url))
+          .filter(Boolean) as string[];
+
+        console.log("삭제 감지 URL:", removedUrls);
+        console.log("삭제 감지 Storage Path:", removedPaths);
+
+        if (removedPaths.length === 0) return;
+
+        const { data: rows, error: selectError } = await supabase
+          .from("generated_images")
+          .select("id, image_url, source_type, source_id, image_role")
+          .eq("user_id", user.id)
+          .eq("image_role", CONTENT_IMAGE_ROLE);
+
+        if (selectError) throw selectError;
+
+        const matchedRows = ((rows || []) as GeneratedImageRow[]).filter((row) => {
+          if (row.image_role !== CONTENT_IMAGE_ROLE) return false;
+          const rowPath = getStoragePathFromPublicUrl(row.image_url);
+          if (!rowPath || !removedPaths.includes(rowPath)) return false;
+          return sourceIdMatches(row, manuscriptId) || pathBelongsToManuscript(rowPath, manuscriptId);
+        });
+
+        console.log("삭제 대상 DB rows:", matchedRows);
+
+        if (matchedRows.length === 0) return;
+
+        const result = await deleteGeneratedImageRows(matchedRows);
+        console.log("본문 이미지 DB/Storage 삭제 완료:", result);
+      } catch (error) {
+        console.error("본문 이미지 삭제 동기화 실패:", error);
+      }
+    },
+    [deleteGeneratedImageRows, manuscriptId, supabase]
+  );
+
+  useEffect(() => {
+    deleteContentImagesRef.current = (urls: string[]) => {
+      void deleteContentImages(urls);
+    };
+  }, [deleteContentImages]);
 
   const uploadContentImageFile = useCallback(
     async (file: File) => {
@@ -511,11 +631,10 @@ export default function UniversalBlogEditor({
 
         const webpBlob = await convertImageFileToWebp(file);
         const imageId =
-          typeof crypto !== "undefined" && "randomUUID" in crypto
-            ? crypto.randomUUID()
-            : `${Date.now()}`;
+          typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}`;
 
-        const filePath = `${user.id}/creaibox-content/${String(manuscriptId)}/${Date.now()}-${imageId}.webp`;
+        const sourceFolder = contentImageSourceType.replace(/[^a-z0-9_-]/gi, "-");
+        const filePath = `${user.id}/${sourceFolder}-content/${String(manuscriptId)}/${Date.now()}-${imageId}.webp`;
 
         const { error: uploadError } = await supabase.storage
           .from(IMAGE_BUCKET)
@@ -524,14 +643,9 @@ export default function UniversalBlogEditor({
             upsert: false,
           });
 
-        if (uploadError) {
-          throw new Error(`Storage upload failed: ${uploadError.message}`);
-        }
+        if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`);
 
-        const { data: publicUrlData } = supabase.storage
-          .from(IMAGE_BUCKET)
-          .getPublicUrl(filePath);
-
+        const { data: publicUrlData } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(filePath);
         const publicUrl = publicUrlData.publicUrl;
 
         const { data: savedImage, error: insertError } = await supabase
@@ -549,7 +663,7 @@ export default function UniversalBlogEditor({
             style: "manual-upload",
             aspect_ratio: "content",
             provider: "upload",
-            source_type: CONTENT_IMAGE_SOURCE_TYPE,
+            source_type: contentImageSourceType,
             source_id: String(manuscriptId),
             image_role: CONTENT_IMAGE_ROLE,
             is_primary: false,
@@ -557,9 +671,7 @@ export default function UniversalBlogEditor({
           .select("id, image_url")
           .single();
 
-        if (insertError) {
-          throw new Error(`DB 저장 실패: ${insertError.message}`);
-        }
+        if (insertError) throw new Error(`DB 저장 실패: ${insertError.message}`);
 
         return {
           url: savedImage?.image_url || publicUrl,
@@ -573,7 +685,7 @@ export default function UniversalBlogEditor({
         setIsImageUploading(false);
       }
     },
-    [editor, manuscriptId, supabase, targetKeyword, title]
+    [contentImageSourceType, editor, manuscriptId, supabase, targetKeyword, title]
   );
 
   const insertContentImageFile = useCallback(
@@ -599,6 +711,7 @@ export default function UniversalBlogEditor({
       }
 
       syncLatestContent();
+      previousImageUrlsRef.current = extractImageUrlsFromEditor(editor);
     },
     [editor, syncLatestContent, targetKeyword, title, uploadContentImageFile]
   );
@@ -609,11 +722,99 @@ export default function UniversalBlogEditor({
       event.target.value = "";
 
       if (!file) return;
-
       await insertContentImageFile(file);
     },
     [insertContentImageFile]
   );
+
+  const handleCleanupUnusedImages = useCallback(async () => {
+    if (!editor || !manuscriptId) {
+      alert("정리할 원고 정보가 없습니다.");
+      return;
+    }
+
+    setIsCleaningImages(true);
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        alert("로그인 세션을 확인할 수 없습니다.");
+        return;
+      }
+
+      const usedUrls = extractImageUrlsFromEditor(editor);
+      const usedPaths = Array.from(usedUrls)
+        .map((url) => getStoragePathFromPublicUrl(url))
+        .filter(Boolean) as string[];
+
+      const { data: rows, error: selectError } = await supabase
+        .from("generated_images")
+        .select("id, image_url, source_type, image_role, source_id")
+        .eq("user_id", user.id)
+        .eq("image_role", CONTENT_IMAGE_ROLE);
+
+      if (selectError) throw selectError;
+
+      const manuscriptRows = ((rows || []) as GeneratedImageRow[]).filter((row) => {
+        const rowPath = getStoragePathFromPublicUrl(row.image_url);
+        return sourceIdMatches(row, manuscriptId) || pathBelongsToManuscript(rowPath, manuscriptId);
+      });
+
+      const unusedRows = manuscriptRows.filter((row) => {
+        const rowPath = getStoragePathFromPublicUrl(row.image_url);
+        return rowPath && !usedPaths.includes(rowPath);
+      });
+
+      if (unusedRows.length === 0) {
+        alert("정리할 사용 안 하는 이미지가 없습니다.");
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `사용하지 않는 본문 이미지 ${unusedRows.length}개를 DB와 Storage에서 삭제할까요?`
+      );
+
+      if (!confirmed) return;
+
+      const result = await deleteGeneratedImageRows(unusedRows);
+
+      alert(
+        `사용하지 않는 이미지 ${result.deletedRows}개 DB 행과 ${result.deletedFiles}개 Storage 파일을 정리했습니다.`
+      );
+    } catch (error) {
+      console.error("사용 안 하는 이미지 정리 실패:", error);
+      alert(error instanceof Error ? error.message : "사용 안 하는 이미지 정리에 실패했습니다.");
+    } finally {
+      setIsCleaningImages(false);
+    }
+  }, [deleteGeneratedImageRows, editor, manuscriptId, supabase]);
+
+  const handleSaveClick = async (status?: any) => {
+    syncLatestContent();
+
+    const result = await handleSavePostToSupabase(status);
+
+    if (result !== false) setSaveFeedback("saved");
+  };
+
+  const handleInsertLink = () => {
+    if (!editor) return;
+
+    const previousUrl = editor.getAttributes("link").href;
+    const url = window.prompt("링크 URL을 입력하세요.", previousUrl || "");
+
+    if (url === null) return;
+
+    if (url === "") {
+      editor.chain().focus().extendMarkRange("link").unsetLink().run();
+      return;
+    }
+
+    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+  };
 
   const handleInsertImageUrl = () => {
     if (!editor) return;
@@ -630,25 +831,13 @@ export default function UniversalBlogEditor({
     const url = window.prompt("유튜브 URL을 입력하세요.");
     if (!url) return;
 
-    editor.commands.setYoutubeVideo({
-      src: url,
-      width: 720,
-      height: 405,
-    });
+    editor.commands.setYoutubeVideo({ src: url, width: 720, height: 405 });
   };
 
   const handleInsertTable = () => {
     if (!editor) return;
 
-    editor
-      .chain()
-      .focus()
-      .insertTable({
-        rows: 3,
-        cols: 3,
-        withHeaderRow: true,
-      })
-      .run();
+    editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
   };
 
   const handleInsertCta = () => {
@@ -674,12 +863,7 @@ export default function UniversalBlogEditor({
     editor.state.doc.descendants((node) => {
       if (node.type.name === "heading" && [2, 3].includes(node.attrs.level)) {
         const text = node.textContent.trim();
-        if (text && text !== "목차") {
-          tocHeadings.push({
-            level: node.attrs.level,
-            text,
-          });
-        }
+        if (text && text !== "목차") tocHeadings.push({ level: node.attrs.level, text });
       }
     });
 
@@ -706,10 +890,8 @@ export default function UniversalBlogEditor({
   const handleDownload = () => {
     const html = editor?.getHTML() ?? content;
     const safeTitle =
-      (title || targetKeyword || "blog-post")
-        .slice(0, 40)
-        .replace(/[\\/:*?"<>|]/g, "")
-        .trim() || "blog-post";
+      (title || targetKeyword || "blog-post").slice(0, 40).replace(/[\\/:*?"<>|]/g, "").trim() ||
+      "blog-post";
 
     downloadFile(`${safeTitle}.html`, `<!doctype html><html><body><h1>${escapeHtml(title)}</h1>${html}</body></html>`);
   };
@@ -772,9 +954,7 @@ export default function UniversalBlogEditor({
       type="button"
       onClick={onClick}
       disabled={disabled || !editor}
-      className={`flex items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-bold transition-all disabled:cursor-not-allowed disabled:opacity-40 ${active
-        ? "bg-blue-500/15 text-blue-300"
-        : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
+      className={`flex items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-bold transition-all disabled:cursor-not-allowed disabled:opacity-40 ${active ? "bg-blue-500/15 text-blue-300" : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
         } ${className}`}
     >
       {children}
@@ -804,17 +984,11 @@ export default function UniversalBlogEditor({
             <Copy size={13} /> 전체 복사
           </button>
 
-          <button
-            onClick={handleDownload}
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:bg-zinc-800"
-          >
+          <button onClick={handleDownload} className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:bg-zinc-800">
             <Download size={13} /> 다운로드
           </button>
 
-          <button
-            onClick={handlePreview}
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:bg-zinc-800"
-          >
+          <button onClick={handlePreview} className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:bg-zinc-800">
             <Eye size={13} /> 미리보기
           </button>
 
@@ -831,13 +1005,8 @@ export default function UniversalBlogEditor({
 
       <div className="shrink-0 border-b border-zinc-800 bg-[#0b0d12] px-4 py-2">
         <div className="flex flex-wrap items-center gap-1.5">
-          <input
-            type="file"
-            accept="image/*"
-            ref={fileInputRef}
-            onChange={handleEditorImageUpload}
-            className="hidden"
-          />
+          <input type="file" accept="image/*" ref={fileInputRef} onChange={handleEditorImageUpload} className="hidden" />
+
           <ToolbarButton
             onClick={() => fileInputRef.current?.click()}
             disabled={isImageUploading}
@@ -853,40 +1022,25 @@ export default function UniversalBlogEditor({
 
           <div className="mx-1 h-5 w-px bg-zinc-800" />
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
-            active={editor?.isActive("heading", { level: 1 })}
-          >
+          <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()} active={editor?.isActive("heading", { level: 1 })}>
             <Heading1 size={15} />
           </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
-            active={editor?.isActive("heading", { level: 2 })}
-          >
+          <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive("heading", { level: 2 })}>
             <Heading2 size={15} />
           </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
-            active={editor?.isActive("heading", { level: 3 })}
-          >
+          <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive("heading", { level: 3 })}>
             <Heading3 size={15} />
           </ToolbarButton>
 
           <div className="mx-1 h-4 w-px bg-zinc-800" />
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().toggleBold().run()}
-            active={editor?.isActive("bold")}
-          >
+          <ToolbarButton onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive("bold")}>
             <Bold size={15} />
           </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().toggleItalic().run()}
-            active={editor?.isActive("italic")}
-          >
+          <ToolbarButton onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive("italic")}>
             <Italic size={15} />
           </ToolbarButton>
 
@@ -896,24 +1050,15 @@ export default function UniversalBlogEditor({
 
           <div className="mx-1 h-4 w-px bg-zinc-800" />
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().toggleBulletList().run()}
-            active={editor?.isActive("bulletList")}
-          >
+          <ToolbarButton onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive("bulletList")}>
             <List size={15} />
           </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-            active={editor?.isActive("orderedList")}
-          >
+          <ToolbarButton onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive("orderedList")}>
             <ListOrdered size={15} />
           </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().toggleBlockquote().run()}
-            active={editor?.isActive("blockquote")}
-          >
+          <ToolbarButton onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive("blockquote")}>
             <Quote size={15} />
           </ToolbarButton>
 
@@ -949,10 +1094,7 @@ export default function UniversalBlogEditor({
             <Minus size={14} /> 구분선
           </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
-            active={editor?.isActive("codeBlock")}
-          >
+          <ToolbarButton onClick={() => editor?.chain().focus().toggleCodeBlock().run()} active={editor?.isActive("codeBlock")}>
             <Code2 size={14} /> 코드
           </ToolbarButton>
 
@@ -964,13 +1106,23 @@ export default function UniversalBlogEditor({
             <Type size={14} /> 맞춤법
           </ToolbarButton>
 
-          <ToolbarButton
-            onClick={() => handleEnhanceContent("expand")}
-            disabled={isEnhancing}
-            className="text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
-          >
+          <ToolbarButton onClick={() => handleEnhanceContent("expand")} disabled={isEnhancing} className="text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300">
             <Wand2 size={14} /> AI 보강
           </ToolbarButton>
+
+          <ToolbarButton
+            onClick={handleCleanupUnusedImages}
+            disabled={isCleaningImages || isImageUploading}
+            className="border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 hover:text-amber-200"
+          >
+            {isCleaningImages ? (
+              <RefreshCw size={14} className="animate-spin" />
+            ) : (
+              <Trash2 size={14} />
+            )}
+            {isCleaningImages ? "이미지 정리중" : "안쓰는 이미지 정리"}
+          </ToolbarButton>
+
         </div>
       </div>
 
@@ -1014,10 +1166,7 @@ export default function UniversalBlogEditor({
                   <div key={img.id} className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 p-3 shadow-sm">
                     <div className="relative h-32 w-full overflow-hidden rounded-xl bg-zinc-100">
                       <img src={img.url} alt={img.caption || "Uploaded Block"} className="h-full w-full object-cover" />
-                      <button
-                        onClick={() => handleDeleteImage(img.id)}
-                        className="absolute right-2 top-2 rounded-md bg-red-600 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                      >
+                      <button onClick={() => handleDeleteImage(img.id)} className="absolute right-2 top-2 rounded-md bg-red-600 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100">
                         <Trash2 size={12} />
                       </button>
                     </div>
@@ -1048,9 +1197,7 @@ export default function UniversalBlogEditor({
         </div>
 
         <div className="flex items-center gap-3 text-[11px] font-semibold text-zinc-500">
-          {isImageUploading && (
-            <span className="text-emerald-400 animate-pulse">이미지 업로드 중...</span>
-          )}
+          {isImageUploading && <span className="animate-pulse text-emerald-400">이미지 업로드 중...</span>}
           <span>{stats.chars || charCount}자</span>
           <span>{stats.words}단어</span>
           <span>{stats.paragraphs}문단</span>

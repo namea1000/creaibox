@@ -181,6 +181,8 @@ export default function NaverManuscriptDetailPage() {
             isRecreateMode={(data?.postType ?? data?.type) === "recreate"}
             targetKeyword={data?.targetKeyword ?? data?.keyword}
             isLoading={isDetailLoading && !data}
+            manuscriptId={manuscriptId}
+            contentImageSourceType="writing_naver_posts"
           />
         </main>
 

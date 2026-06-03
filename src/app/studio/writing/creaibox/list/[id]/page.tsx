@@ -145,7 +145,12 @@ export default function CreaiboxManuscriptDetailPage() {
     cachedDetail ?? selectedFromList
   );
 
-  const [data, setData] = useState<StudioManuscriptRecord | null>(() => cachedDetail ?? null);
+  const [isMounted, setIsMounted] = useState(false);
+  const [data, setData] = useState<StudioManuscriptRecord | null>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     const cached = readCachedList();
@@ -402,7 +407,7 @@ export default function CreaiboxManuscriptDetailPage() {
     }
   }, [handleSave, showPublishFeedback]);
 
-  if (!data && (isDetailLoading || isDirectLoading)) {
+  if (!isMounted || (!data && (isDetailLoading || isDirectLoading))) {
     return (
       <div className="min-h-screen bg-[#0a0d12] text-white">
         <div className="mx-auto grid max-w-[1880px] grid-cols-[360px_minmax(0,1.2fr)_420px] gap-0 px-0">
@@ -517,6 +522,7 @@ export default function CreaiboxManuscriptDetailPage() {
             isDetailMode
             targetKeyword={data.targetKeyword ?? ""}
             manuscriptId={data.id}
+            contentImageSourceType="writing_creaibox_posts"
           />
         </main>
 
