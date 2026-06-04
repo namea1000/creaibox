@@ -1,0 +1,10 @@
+경로 이상 없고 아무 이상 없을때!
+
+Cmd + Shift + P
+→ TypeScript: Restart TS Server
+
+업그레이드 하고 새로 빌드
+npm run build
+
+엔진 재가동
+npm run dev

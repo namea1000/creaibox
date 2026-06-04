@@ -151,7 +151,8 @@ export default function Sidebar({
         children: [
           { name: "AI 포스팅 글쓰기", href: "/studio/writing/creaibox/create", icon: Edit3 },
           { name: "AI 포스팅 에디터", href: "/studio/writing/creaibox/editor", icon: FileText },
-          { name: "발행 콘텐츠 아카이브", href: "/studio/writing/creaibox/list", icon: Archive },
+          { name: "발행 원고 관리", href: "/studio/writing/creaibox/list", icon: Archive },
+          { name: "크리아이박스 썸네일", href: "/studio/writing/creaibox/thumbnail", icon: ImageIcon },
           { name: "아이디어 제너레이터", href: "/studio/writing/creaibox/ideagenerator", icon: Lightbulb },
           { name: "트렌드 대시보드", href: "/studio/writing/creaibox/analytics", icon: BarChart3 },
           { name: "AI 이미지 워크샵", href: "/studio/writing/creaibox/image", icon: ImageIcon },
@@ -168,7 +169,7 @@ export default function Sidebar({
         children: [
           { name: "AI 스마트 글쓰기", href: "/studio/writing/naver/create", icon: Edit3 },
           { name: "AI 글 재창조", href: "/studio/writing/naver/recreate", icon: RefreshCw },
-          { name: "발행 원고 관리", href: "/studio/writing/naver/list", icon: FileArchive },
+          { name: "발행 원고 관리", href: "/studio/writing/naver/list", icon: Archive },
           { name: "네이버용 썸네일", href: "/studio/writing/naver/thumbnail", icon: ImageIcon },
           { name: "네이버 키워드 분석", href: "/studio/writing/naver/keyword", icon: Search },
           { name: "실시간 노출 진단", href: "/studio/writing/naver/diagnosis", icon: Eye },

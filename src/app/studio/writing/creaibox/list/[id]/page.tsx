@@ -594,7 +594,9 @@ export default function CreaiboxManuscriptDetailPage() {
                 updateLocalData={updateLocalData}
               />
             )}
-            {publishingPanelTab === "thumbnail" && <CreaiboxThumbnailPanel />}
+            {publishingPanelTab === "thumbnail" && (
+              <CreaiboxThumbnailPanel data={data} />
+            )}
             {publishingPanelTab === "contentImage" && <CreaiboxContentImagePanel />}
             {publishingPanelTab === "schema" && <CreaiboxSchemaPanel />}
           </section>
