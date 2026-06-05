@@ -8,12 +8,12 @@ export default function PrivacyPage() {
 
   return (
     <div className="w-full min-h-screen bg-[#0a0c10] text-zinc-100 pt-20 overflow-hidden relative">
-      
+
       {/* 🌌 배경 은은한 법적 신뢰감 그라데이션 */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-slate-500/5 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="max-w-4xl mx-auto px-6 py-20 relative z-10">
-        
+
         {/* 🛡️ SECTION 1: HEADER (상단 타이틀) */}
         <div className="border-b border-zinc-800 pb-8 mb-12 space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-700 bg-zinc-900/5 text-zinc-400 text-xs font-bold tracking-widest uppercase">
@@ -29,14 +29,14 @@ export default function PrivacyPage() {
 
         {/* 📄 SECTION 2: LEGAL ARTICLES (법적 조항 목록) */}
         <div className="space-y-10 text-sm md:text-base leading-relaxed text-zinc-300 font-medium">
-          
+
           {/* 제 1조 */}
           <div className="space-y-3">
             <h3 className="text-base md:text-lg font-black text-zinc-100 flex items-center gap-2">
               <span className="text-blue-500 font-mono">01.</span> 개인정보의 처리 목적
             </h3>
             <p className="text-zinc-400 text-xs md:text-sm pl-6">
-              <span className="text-zinc-200 font-bold">크리에이아이랩스</span>(이하 '회사')는 회사가 운영하는 인공지능 콘텐츠 생성 플랫폼 <span className="text-zinc-200 font-bold">'크리에이아이박스(CreAIbox)'</span>의 회원가입 의사 확인, 이용자 식별, 서비스 제공에 따른 본인 인증, 서비스 원활한 운영 및 주요 공지사항 전달, 인공지능 기반 분석 리포트 발행 등의 목적으로 개인정보를 처리합니다. 처리하고 있는 개인정보는 목적 이외의 용도로는 이용되지 않으며, 이용 목적이 변경되는 경우에는 별도의 동의를 받는 등 필요한 조치를 이행할 예정입니다.
+              <span className="text-zinc-200 font-bold">크리에이아이랩스</span>(이하 '회사')는 회사가 운영하는 인공지능 콘텐츠 생성 플랫폼 <span className="text-zinc-200 font-bold">'크리에이박스(CreAibox)'</span>의 회원가입 의사 확인, 이용자 식별, 서비스 제공에 따른 본인 인증, 서비스 원활한 운영 및 주요 공지사항 전달, 인공지능 기반 분석 리포트 발행 등의 목적으로 개인정보를 처리합니다. 처리하고 있는 개인정보는 목적 이외의 용도로는 이용되지 않으며, 이용 목적이 변경되는 경우에는 별도의 동의를 받는 등 필요한 조치를 이행할 예정입니다.
             </p>
           </div>
 
@@ -103,7 +103,7 @@ export default function PrivacyPage() {
               <p>회사는 개인정보 처리에 관한 업무를 총괄해서 책임지고, 개인정보 처리와 관련한 정보주체의 고충처리 등을 위하여 아래와 같이 개인정보 보호책임자를 지정하고 있습니다.</p>
               <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-900/30 font-medium text-zinc-400 space-y-1 max-w-md">
                 <p>• <span className="text-zinc-300 font-bold">개인정보 보호책임자:</span> 크리에이아이랩스 대표</p>
-                <p>• <span className="text-zinc-300 font-bold">연락처 / 대표 메일:</span> <a href="mailto:contact@creaibox.com" className="text-blue-400 hover:underline">contact@creaibox.com</a></p>
+                <p>• <span className="text-zinc-300 font-bold">연락처 / 대표 메일:</span> <a href="mailto:creaiboxofficial@gmail.com" className="text-blue-400 hover:underline">creaiboxofficial@gmail.com</a></p>
                 <p>• <span className="text-zinc-300 font-bold">고객지원 창구:</span> 카카오톡 채널 '크리에이아이박스'</p>
               </div>
             </div>

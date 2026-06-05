@@ -23,7 +23,7 @@ export default function TermsPage() {
             서비스 이용약관
           </h1>
           <p className="text-xs md:text-sm text-zinc-500 font-medium">
-            본 약관은 <span className="text-zinc-400 font-bold">2026년 05월 18일</span>부터 적용됩니다. 크리에이아이박스 서비스를 이용하시기 전에 본 약관을 주의 깊게 읽어주시기 바랍니다.
+            본 약관은 <span className="text-zinc-400 font-bold">2026년 05월 18일</span>부터 적용됩니다. 크리에이박스 서비스를 이용하시기 전에 본 약관을 주의 깊게 읽어주시기 바랍니다.
           </p>
         </div>
 
@@ -36,7 +36,7 @@ export default function TermsPage() {
               <span className="text-blue-500 font-mono">01.</span> 목적 및 정의
             </h3>
             <p className="text-zinc-400 text-xs md:text-sm pl-6">
-              본 약관은 <span className="text-zinc-200 font-bold">크리에이아이랩스</span>(이하 '회사')가 제공하는 올인원 AI 콘텐츠 생성 플랫폼 <span className="text-zinc-200 font-bold">'크리에이아이박스(CreAIbox)'</span> 서비스(이하 '서비스')의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
+              본 약관은 <span className="text-zinc-200 font-bold">크리에이아이랩스</span>(이하 '회사')가 제공하는 올인원 AI 콘텐츠 생성 플랫폼 <span className="text-zinc-200 font-bold">'크리아이박스(CreAibox)'</span> 서비스(이하 '서비스')의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
             </p>
           </div>
 

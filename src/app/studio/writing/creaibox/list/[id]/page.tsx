@@ -392,12 +392,32 @@ export default function CreaiboxManuscriptDetailPage() {
       return;
     }
 
+    const publishedSlug = buildPublicBlogSlug(
+      data?.title,
+      data?.focusKeyword,
+      data?.targetKeyword
+    );
+
     const published = await handleSave("published");
 
     if (published) {
+      try {
+        await fetch("/api/revalidate-blog", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            slug: publishedSlug,
+          }),
+        });
+      } catch {
+        // revalidate 실패는 발행 자체를 막지 않음
+      }
+
       showPublishFeedback("블로그 발행이 완료되었습니다.");
     }
-  }, [data?.status, handleSave, showPublishFeedback]);
+  }, [data, handleSave, showPublishFeedback]);
 
   const handleCancelPublish = useCallback(async () => {
     const canceled = await handleSave("saved");

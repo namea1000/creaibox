@@ -16,7 +16,7 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
-const ADMIN_EMAILS = ["jenam7720@gmail.com", "namjjang7720@gmail.com"];
+const ADMIN_EMAILS = ["creaiboxofficial@gmail.com", "jenam7720@gmail.com", "namjjang7720@gmail.com"];
 
 type UserRole = "ADMIN" | "MANAGER" | "PAID" | "FREE";
 type UserStatus = "ACTIVE" | "BANNED";

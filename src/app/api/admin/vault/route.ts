@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { encryptApiKey, maskApiKey } from "@/lib/server/api-vault-crypto";
 import { supabaseAdmin } from "@/lib/server/get-free-gemini-key";
 
-const ADMIN_EMAILS = ["jenam7720@gmail.com", "namjjang7720@gmail.com"];
+const ADMIN_EMAILS = ["creaiboxofficial@gmail.com", "jenam7720@gmail.com", "namjjang7720@gmail.com"];
 
 function isAdminEmail(email?: string | null) {
   return Boolean(email && ADMIN_EMAILS.includes(email));

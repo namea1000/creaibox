@@ -23,7 +23,7 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
-const ADMIN_EMAILS = ["jenam7720@gmail.com", "namjjang7720@gmail.com"];
+const ADMIN_EMAILS = ["creaiboxofficial@gmail.com", "jenam7720@gmail.com", "namjjang7720@gmail.com"];
 
 const PROVIDER_TYPE_OPTIONS = [
   { value: "ai", label: "AI Provider Pool", icon: Zap },

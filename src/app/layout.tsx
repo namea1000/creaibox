@@ -1,6 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "@/components/providers/query-provider";
+import "./globals.css";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,6 +33,7 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-white text-slate-900 selection:bg-violet-200/70">
         <QueryProvider>{children}</QueryProvider>
+        <GoogleAnalytics gaId="G-SRBFXMN9XQ" />
       </body>
     </html>
   );

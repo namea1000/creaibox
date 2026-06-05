@@ -22,6 +22,7 @@ interface PublishedPostDetail {
   canonical_url: string | null;
   seo_tags: string[] | null;
   created_at: string | null;
+  updated_at: string | null;
 }
 
 const blogMarkdownComponents: Components = {
@@ -111,7 +112,7 @@ async function fetchPublishedPost(slug: string) {
 
   const { data, error } = await supabase
     .from("writing_creaibox_posts")
-    .select("title, content, slug, meta_description, focus_keyword, canonical_url, seo_tags, created_at")
+    .select("title, content, slug, meta_description, focus_keyword, canonical_url, seo_tags, created_at, updated_at")
     .eq("slug", decodedSlug)
     .eq("status", "published")
     .order("created_at", { ascending: false })
@@ -163,8 +164,74 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   const publishedDate = formatDate(post.created_at);
   const normalizedContent = normalizePublishedContent(post.content || "");
 
+  const canonical = post.canonical_url || `https://creaibox.com/blog/${post.slug || slug}`;
+
+  const blogPostingJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title || "Creaibox Blog",
+    description:
+      post.meta_description || post.focus_keyword || "Creaibox 공개 블로그 상세 페이지",
+    url: canonical,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": canonical,
+    },
+    datePublished: post.created_at || undefined,
+    dateModified: post.updated_at || post.created_at || undefined,
+    author: {
+      "@type": "Organization",
+      name: "CreAIbox",
+      url: "https://creaibox.com",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "CreAIbox",
+      url: "https://creaibox.com",
+    },
+    keywords: tags,
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "홈",
+        item: "https://creaibox.com",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "블로그",
+        item: "https://creaibox.com/blog",
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: post.title || "게시글",
+        item: canonical,
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-white text-zinc-950">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(blogPostingJsonLd),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd),
+        }}
+      />
+
       <Header />
 
       <main className="pt-28">
