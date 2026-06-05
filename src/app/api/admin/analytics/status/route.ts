@@ -14,7 +14,7 @@ const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID || "540360142";
 
 async function gaRequest(
   accessToken: string,
-  endpoint: string,
+  endpoint: "runReport" | "runRealtimeReport",
   body: Record<string, unknown>
 ) {
   const res = await fetch(
@@ -78,6 +78,10 @@ export async function GET() {
     }
 
     const accessToken = session?.provider_token;
+    console.log("GA4_PROPERTY_ID =", GA4_PROPERTY_ID);
+    console.log("LOGIN_USER =", user.email);
+    console.log("HAS_PROVIDER_TOKEN =", Boolean(accessToken));
+    console.log("PROVIDER_TOKEN_HEAD =", accessToken?.slice(0, 12));
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -136,21 +140,24 @@ export async function GET() {
         .eq("role", "PAID"),
     ]);
 
+    let analyticsReady = Boolean(accessToken);
+    let analyticsError: string | null = null;
+
     let traffic = {
+      realtimeUsers: null as number | null,
       todayVisitors: null as number | null,
       yesterdayVisitors: null as number | null,
       sevenDayVisitors: null as number | null,
       thirtyDayVisitors: null as number | null,
-      realtimeUsers: null as number | null,
     };
 
-    let topPages: { page: string; views: number; users: number }[] = [];
-    let channels: { name: string; value: number }[] = [];
     let countries: { name: string; value: number }[] = [];
+    let channels: { name: string; value: number }[] = [];
+    let topPages: { page: string; path: string; views: number; users: number }[] = [];
     let devices: { name: string; value: number }[] = [];
+    let browsers: { name: string; value: number }[] = [];
+    let hourlyTrend: { hour: string; visitors: number; views: number }[] = [];
     let dailyTrend: { date: string; visitors: number; views: number }[] = [];
-
-    let analyticsReady = Boolean(accessToken);
 
     if (accessToken) {
       try {
@@ -166,46 +173,69 @@ export async function GET() {
         });
 
         traffic = {
+          realtimeUsers: metricValue(realtimeRes.rows?.[0]),
           todayVisitors: today,
           yesterdayVisitors: yesterday,
           sevenDayVisitors: sevenDays,
           thirtyDayVisitors: thirtyDays,
-          realtimeUsers: metricValue(realtimeRes.rows?.[0]),
         };
 
-        const topPagesRes = await gaRequest(accessToken, "runReport", {
-          dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
-          dimensions: [{ name: "pageTitle" }, { name: "pagePath" }],
-          metrics: [{ name: "screenPageViews" }, { name: "activeUsers" }],
-          limit: 10,
-        });
+        const [countryRes, channelRes, topPagesRes, deviceRes, browserRes, hourlyRes, dailyRes] =
+          await Promise.all([
+            gaRequest(accessToken, "runReport", {
+              dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+              dimensions: [{ name: "country" }],
+              metrics: [{ name: "activeUsers" }],
+              orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+              limit: 10,
+            }),
 
-        topPages =
-          topPagesRes.rows?.map((row: any) => ({
-            page: dimensionValue(row, 0) || dimensionValue(row, 1),
-            views: metricValue(row, 0),
-            users: metricValue(row, 1),
-          })) || [];
+            gaRequest(accessToken, "runReport", {
+              dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+              dimensions: [{ name: "sessionDefaultChannelGroup" }],
+              metrics: [{ name: "activeUsers" }],
+              orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+              limit: 10,
+            }),
 
-        const channelRes = await gaRequest(accessToken, "runReport", {
-          dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
-          dimensions: [{ name: "sessionDefaultChannelGroup" }],
-          metrics: [{ name: "activeUsers" }],
-          limit: 8,
-        });
+            gaRequest(accessToken, "runReport", {
+              dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+              dimensions: [{ name: "pageTitle" }, { name: "pagePath" }],
+              metrics: [{ name: "screenPageViews" }, { name: "activeUsers" }],
+              orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
+              limit: 20,
+            }),
 
-        channels =
-          channelRes.rows?.map((row: any) => ({
-            name: dimensionValue(row, 0),
-            value: metricValue(row, 0),
-          })) || [];
+            gaRequest(accessToken, "runReport", {
+              dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+              dimensions: [{ name: "deviceCategory" }],
+              metrics: [{ name: "activeUsers" }],
+              orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+            }),
 
-        const countryRes = await gaRequest(accessToken, "runReport", {
-          dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
-          dimensions: [{ name: "country" }],
-          metrics: [{ name: "activeUsers" }],
-          limit: 8,
-        });
+            gaRequest(accessToken, "runReport", {
+              dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+              dimensions: [{ name: "browser" }],
+              metrics: [{ name: "activeUsers" }],
+              orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+              limit: 10,
+            }),
+
+            gaRequest(accessToken, "runReport", {
+              dateRanges: [{ startDate: "today", endDate: "today" }],
+              dimensions: [{ name: "hour" }],
+              metrics: [{ name: "activeUsers" }, { name: "screenPageViews" }],
+              orderBys: [{ dimension: { dimensionName: "hour" } }],
+              limit: 24,
+            }),
+
+            gaRequest(accessToken, "runReport", {
+              dateRanges: [{ startDate: "7daysAgo", endDate: "today" }],
+              dimensions: [{ name: "date" }],
+              metrics: [{ name: "activeUsers" }, { name: "screenPageViews" }],
+              orderBys: [{ dimension: { dimensionName: "date" } }],
+            }),
+          ]);
 
         countries =
           countryRes.rows?.map((row: any) => ({
@@ -213,11 +243,19 @@ export async function GET() {
             value: metricValue(row, 0),
           })) || [];
 
-        const deviceRes = await gaRequest(accessToken, "runReport", {
-          dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
-          dimensions: [{ name: "deviceCategory" }],
-          metrics: [{ name: "activeUsers" }],
-        });
+        channels =
+          channelRes.rows?.map((row: any) => ({
+            name: dimensionValue(row, 0),
+            value: metricValue(row, 0),
+          })) || [];
+
+        topPages =
+          topPagesRes.rows?.map((row: any) => ({
+            page: dimensionValue(row, 0),
+            path: dimensionValue(row, 1),
+            views: metricValue(row, 0),
+            users: metricValue(row, 1),
+          })) || [];
 
         devices =
           deviceRes.rows?.map((row: any) => ({
@@ -225,21 +263,34 @@ export async function GET() {
             value: metricValue(row, 0),
           })) || [];
 
-        const trendRes = await gaRequest(accessToken, "runReport", {
-          dateRanges: [{ startDate: "7daysAgo", endDate: "today" }],
-          dimensions: [{ name: "date" }],
-          metrics: [{ name: "activeUsers" }, { name: "screenPageViews" }],
-        });
+        browsers =
+          browserRes.rows?.map((row: any) => ({
+            name: dimensionValue(row, 0),
+            value: metricValue(row, 0),
+          })) || [];
+
+        hourlyTrend =
+          hourlyRes.rows?.map((row: any) => ({
+            hour: `${dimensionValue(row, 0)}시`,
+            visitors: metricValue(row, 0),
+            views: metricValue(row, 1),
+          })) || [];
 
         dailyTrend =
-          trendRes.rows?.map((row: any) => ({
+          dailyRes.rows?.map((row: any) => ({
             date: dimensionValue(row, 0),
             visitors: metricValue(row, 0),
             views: metricValue(row, 1),
           })) || [];
-      } catch (gaError) {
+      } catch (error) {
         analyticsReady = false;
-        console.error("GA4 OAuth API error:", gaError);
+        analyticsError = error instanceof Error ? error.message : "GA4 API Error";
+
+        console.error("GA4 API error detail:", {
+          message: analyticsError,
+          hasAccessToken: Boolean(accessToken),
+          propertyId: GA4_PROPERTY_ID,
+        });
       }
     }
 
@@ -257,15 +308,20 @@ export async function GET() {
       draftPosts: draftPostsResult.count ?? 0,
       conversionRate:
         totalUsers > 0 ? Number(((paidUsers / totalUsers) * 100).toFixed(1)) : 0,
+
       googleAnalyticsReady: analyticsReady,
+      analyticsError,
       searchConsoleReady: Boolean(process.env.GOOGLE_CLIENT_ID),
       stripeReady: Boolean(process.env.STRIPE_SECRET_KEY),
+
       traffic,
-      channels,
       countries,
-      devices,
-      dailyTrend,
+      channels,
       topPages,
+      devices,
+      browsers,
+      hourlyTrend,
+      dailyTrend,
     });
   } catch (error) {
     return NextResponse.json(

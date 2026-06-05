@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { createClient } from "@/utils/supabase/client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   SiGoogleanalytics,
@@ -49,6 +50,9 @@ type AnalyticsStatus = {
   channels: { name: string; value: number }[];
   countries?: { name: string; value: number }[];
   devices?: { name: string; value: number }[];
+  browsers?: { name: string; value: number }[];
+  hourlyTrend?: { hour: string; visitors: number; views: number }[];
+  analyticsError?: string | null;
   topPages?: { page: string; views: number; users: number }[];
   dailyTrend?: { date: string; visitors: number; views?: number; users?: number; posts?: number }[];
 };
@@ -88,6 +92,29 @@ const quickLinks = [
 export default function AdminAnalyticsPage() {
   const [status, setStatus] = useState<AnalyticsStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const supabase = useMemo(() => createClient(), []);
+
+  const connectAnalytics = async () => {
+    await supabase.auth.signOut();
+
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/admin/analytics`,
+        scopes: [
+          "openid",
+          "email",
+          "profile",
+          "https://www.googleapis.com/auth/analytics.readonly",
+        ].join(" "),
+        queryParams: {
+          access_type: "offline",
+          prompt: "consent",
+          include_granted_scopes: "true",
+        },
+      },
+    });
+  };
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -246,6 +273,14 @@ export default function AdminAnalyticsPage() {
             Google Analytics
             <ExternalLink size={14} />
           </Link>
+
+          <button
+            type="button"
+            onClick={() => void connectAnalytics()}
+            className="inline-flex items-center gap-2 rounded-2xl border border-orange-500/30 bg-orange-500/10 px-5 py-3 text-xs font-black text-orange-300 hover:bg-orange-500/20"
+          >
+            Analytics 연결
+          </button>
 
           <button
             type="button"
