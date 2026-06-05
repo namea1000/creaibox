@@ -41,7 +41,7 @@ Geocoding
 ✅ YouTube Data API v3
 
 API Key
-AIzaSyAcNHtPvkTqmfbfYAzNjx0trEu9DIZlGtw
+AIza....
 
 | API              | OAuth | API Key |
 | ---------------- | ----- | ------- |
@@ -68,14 +68,17 @@ AIzaSyAcNHtPvkTqmfbfYAzNjx0trEu9DIZlGtw
 ├── settings/page.tsx
 ├── usermanagement/page.tsx ✅ 완료
 
-
+--------------------------------------------------------------------------------------------
 ⭐ 구글 애널리스틱
 
-스트림 ID
+스트림 ID → 데이터 스트림 식별용
 15008369739
 
-측정 ID
+측정 ID → 사이트에 심는 태그용
 G-SRBFXMN9XQ
+
+속성 ID → API 조회용 (Analytics Data API)
+540360142 
 
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-SRBFXMN9XQ"></script>
@@ -87,6 +90,43 @@ G-SRBFXMN9XQ
   gtag('config', 'G-SRBFXMN9XQ');
 </script>
 
+중요
+
+이 방식은 서비스 계정 방식이라서 Google Analytics에서 서비스 계정 이메일을 추가해야 해.
+
+Google Cloud → 서비스 계정 생성
+서비스 계정 이메일 복사
+Analytics → 관리자 → 속성 액세스 관리
+서비스 계정 이메일 추가
+권한은 뷰어
+
+그리고 .env.local에 추가:
+
+Google Cloud 서비스 계정
+creaibox-analytics-reader@project-51796415-94e5-4403-ad7.iam.gserviceaccount.com
+
+OAuth 2 클라이언트 ID
+104992061391638545456
+
+⭐⭐ OAuth Scope 추가는 나중에 이런 기능 만들 때 필요함.
+Google Cloud Console
+→ Google 인증 플랫폼
+→ 대상(Audience)
+또는
+→ OAuth 동의 화면
+
+미래 기능
+사용자 개인 Analytics 연결
+
+예)
+
+사용자 A
+→ 자기 사이트 Analytics 연결
+
+사용자 B
+→ 자기 사이트 Analytics 연결
+
+-------------------------------------------------------------------------------------------
 사용자
 ↓
 Google 로그인

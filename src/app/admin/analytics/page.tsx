@@ -14,7 +14,6 @@ import {
   AlertTriangle,
   ArrowUpRight,
   BarChart3,
-  CheckCircle2,
   Clock3,
   ExternalLink,
   FileText,
@@ -45,17 +44,13 @@ type AnalyticsStatus = {
     sevenDayVisitors: number | null;
     thirtyDayVisitors: number | null;
     realtimeUsers: number | null;
+    pageViews?: number | null;
   };
-  channels: {
-    name: string;
-    value: number;
-  }[];
-  dailyTrend: {
-    date: string;
-    visitors: number;
-    users: number;
-    posts: number;
-  }[];
+  channels: { name: string; value: number }[];
+  countries?: { name: string; value: number }[];
+  devices?: { name: string; value: number }[];
+  topPages?: { page: string; views: number; users: number }[];
+  dailyTrend?: { date: string; visitors: number; views?: number; users?: number; posts?: number }[];
 };
 
 function formatValue(value?: number | null) {
@@ -88,21 +83,6 @@ const quickLinks = [
     icon: SiStripe,
     description: "결제, 구독, 매출 관리",
   },
-];
-
-const futureFeatures = [
-  "GA4 실시간 방문자 연동",
-  "Search Console 검색어 TOP 20",
-  "유입 채널별 전환율 분석",
-  "인기 블로그 글 TOP 20",
-  "회원가입 전환 퍼널",
-  "무료 → 유료 전환율",
-  "Stripe MRR / ARR 대시보드",
-  "콘텐츠별 방문자 / 가입자 기여도",
-  "국가 / 디바이스 / 브라우저 분석",
-  "AI 기반 성장 인사이트",
-  "급상승 페이지 자동 감지",
-  "이탈률 높은 페이지 자동 감지",
 ];
 
 export default function AdminAnalyticsPage() {
@@ -253,7 +233,7 @@ export default function AdminAnalyticsPage() {
           </h1>
 
           <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-            방문자 · 유입 경로 · 회원 전환 · 콘텐츠 성과 · 매출 지표 통합 분석
+            GA4 실데이터 · 유입 경로 · 회원 전환 · 콘텐츠 성과 통합 분석
           </p>
         </div>
 
@@ -313,10 +293,10 @@ export default function AdminAnalyticsPage() {
         <div className="rounded-[30px] border border-zinc-800 bg-zinc-900/40 p-7 shadow-2xl">
           <div className="mb-6">
             <h2 className="text-xl font-black italic text-white">
-              트래픽 핵심 지표
+              GA4 트래픽 핵심 지표
             </h2>
             <p className="mt-1 text-xs font-bold text-zinc-600">
-              현재는 DB 기반 데이터와 API 준비 상태를 표시합니다. GA4 실데이터는 다음 단계에서 연결합니다.
+              Google Analytics Data API 기준 실데이터 표시 영역입니다.
             </p>
           </div>
 
@@ -329,7 +309,9 @@ export default function AdminAnalyticsPage() {
                   key={card.label}
                   className="rounded-2xl border border-zinc-800 bg-[#080b11] p-5"
                 >
-                  <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 ${card.color}`}>
+                  <div
+                    className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 ${card.color}`}
+                  >
                     <Icon size={18} />
                   </div>
 
@@ -342,7 +324,13 @@ export default function AdminAnalyticsPage() {
                   </p>
 
                   <div className="mt-4 h-2 overflow-hidden rounded-full bg-zinc-800">
-                    <div className="h-full w-[0%] rounded-full bg-orange-500" />
+                    <div
+                      className="h-full rounded-full bg-orange-500"
+                      style={{
+                        width:
+                          card.value === "-" ? "0%" : "65%",
+                      }}
+                    />
                   </div>
                 </div>
               );
@@ -440,26 +428,112 @@ export default function AdminAnalyticsPage() {
           </h2>
 
           <div className="mt-6 space-y-4">
-            {(status?.channels ?? []).map((channel) => (
-              <div
-                key={channel.name}
-                className="rounded-2xl border border-zinc-800 bg-[#080b11] p-5"
-              >
-                <div className="mb-2 flex items-center justify-between text-sm font-black">
-                  <span className="text-zinc-300">{channel.name}</span>
-                  <span className="text-zinc-500">
-                    {channel.value > 0 ? channel.value : "-"}
+            {(status?.channels ?? []).length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-zinc-800 p-8 text-center text-sm font-bold text-zinc-600">
+                GA4 채널 데이터가 아직 없습니다.
+              </div>
+            ) : (
+              status?.channels.map((channel) => (
+                <div
+                  key={channel.name}
+                  className="rounded-2xl border border-zinc-800 bg-[#080b11] p-5"
+                >
+                  <div className="mb-2 flex items-center justify-between text-sm font-black">
+                    <span className="text-zinc-300">{channel.name}</span>
+                    <span className="text-zinc-500">
+                      {formatValue(channel.value)}
+                    </span>
+                  </div>
+
+                  <div className="h-2 overflow-hidden rounded-full bg-zinc-800">
+                    <div
+                      className="h-full rounded-full bg-orange-500"
+                      style={{ width: `${Math.min(channel.value * 10, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="mb-10 grid gap-6 xl:grid-cols-3">
+        <div className="rounded-[30px] border border-zinc-800 bg-zinc-900/40 p-7 shadow-2xl">
+          <h2 className="text-xl font-black italic text-white">상위 페이지</h2>
+
+          <div className="mt-6 space-y-4">
+            {(status?.topPages ?? []).length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-zinc-800 p-8 text-center text-sm font-bold text-zinc-600">
+                페이지 데이터 없음
+              </div>
+            ) : (
+              status?.topPages?.map((page) => (
+                <div
+                  key={`${page.page}-${page.views}`}
+                  className="rounded-2xl border border-zinc-800 bg-[#080b11] p-4"
+                >
+                  <p className="line-clamp-1 text-sm font-black text-zinc-200">
+                    {page.page}
+                  </p>
+                  <p className="mt-2 text-xs font-bold text-zinc-600">
+                    Views {formatValue(page.views)} · Users {formatValue(page.users)}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-[30px] border border-zinc-800 bg-zinc-900/40 p-7 shadow-2xl">
+          <h2 className="text-xl font-black italic text-white">국가별 방문자</h2>
+
+          <div className="mt-6 space-y-4">
+            {(status?.countries ?? []).length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-zinc-800 p-8 text-center text-sm font-bold text-zinc-600">
+                국가 데이터 없음
+              </div>
+            ) : (
+              status?.countries?.map((country) => (
+                <div
+                  key={country.name}
+                  className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-[#080b11] px-5 py-4"
+                >
+                  <span className="text-sm font-bold text-zinc-400">
+                    {country.name}
+                  </span>
+                  <span className="text-lg font-black italic text-white">
+                    {formatValue(country.value)}
                   </span>
                 </div>
+              ))
+            )}
+          </div>
+        </div>
 
-                <div className="h-2 overflow-hidden rounded-full bg-zinc-800">
-                  <div
-                    className="h-full rounded-full bg-orange-500"
-                    style={{ width: `${Math.min(channel.value, 100)}%` }}
-                  />
-                </div>
+        <div className="rounded-[30px] border border-zinc-800 bg-zinc-900/40 p-7 shadow-2xl">
+          <h2 className="text-xl font-black italic text-white">디바이스</h2>
+
+          <div className="mt-6 space-y-4">
+            {(status?.devices ?? []).length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-zinc-800 p-8 text-center text-sm font-bold text-zinc-600">
+                디바이스 데이터 없음
               </div>
-            ))}
+            ) : (
+              status?.devices?.map((device) => (
+                <div
+                  key={device.name}
+                  className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-[#080b11] px-5 py-4"
+                >
+                  <span className="text-sm font-bold text-zinc-400">
+                    {device.name}
+                  </span>
+                  <span className="text-lg font-black italic text-white">
+                    {formatValue(device.value)}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -469,11 +543,10 @@ export default function AdminAnalyticsPage() {
           <AlertTriangle className="mt-1 text-yellow-400" size={22} />
           <div>
             <h2 className="text-lg font-black italic text-yellow-300">
-              실데이터 연결 전 안내
+              GA4 데이터 안내
             </h2>
             <p className="mt-2 text-sm leading-7 text-yellow-100/70">
-              이 페이지는 현재 Supabase 기반 회원/콘텐츠 데이터와 Google API 준비 상태를 표시합니다.
-              GA4 방문자, 실시간 접속자, 유입 채널, Search Console 검색어 데이터는 OAuth 토큰 저장 구조를 만든 뒤 연결하는 것이 안전합니다.
+              GA4 데이터는 실시간 화면에는 바로 표시되지만, Data API 보고서에는 수 분에서 수 시간 지연되어 반영될 수 있습니다.
             </p>
           </div>
         </div>
@@ -515,30 +588,35 @@ export default function AdminAnalyticsPage() {
 
         <div className="rounded-[30px] border border-zinc-800 bg-zinc-900/40 p-7 shadow-2xl">
           <h2 className="text-xl font-black italic text-white">
-            앞으로 만들 Analytics 기능
+            7일 방문 추이
           </h2>
 
-          <div className="mt-6 grid gap-3">
-            {futureFeatures.map((item, index) => (
-              <div
-                key={item}
-                className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-[#080b11] px-5 py-4"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-500/10 text-xs font-black text-orange-400">
-                    {index + 1}
-                  </span>
-
-                  <span className="text-sm font-bold text-zinc-300">
-                    {item}
-                  </span>
-                </div>
-
-                <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600">
-                  Planned
-                </span>
+          <div className="mt-6 space-y-4">
+            {(status?.dailyTrend ?? []).length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-zinc-800 p-8 text-center text-sm font-bold text-zinc-600">
+                추이 데이터 없음
               </div>
-            ))}
+            ) : (
+              status?.dailyTrend?.map((row) => (
+                <div
+                  key={row.date}
+                  className="rounded-2xl border border-zinc-800 bg-[#080b11] p-4"
+                >
+                  <div className="mb-2 flex justify-between text-xs font-black text-zinc-400">
+                    <span>{row.date}</span>
+                    <span>{formatValue(row.visitors)} users</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-zinc-800">
+                    <div
+                      className="h-full rounded-full bg-orange-500"
+                      style={{
+                        width: `${Math.min(row.visitors * 20, 100)}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>

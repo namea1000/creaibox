@@ -45,10 +45,21 @@ export default function SignupPage() {
   };
 
   const handleSocialLogin = async (provider: Provider) => {
+    const isGoogle = provider === "google";
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        ...(isGoogle
+          ? {
+            scopes: "openid email profile",
+            queryParams: {
+              access_type: "offline",
+              prompt: "select_account",
+            },
+          }
+          : {}),
       },
     });
 
