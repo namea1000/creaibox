@@ -1,5 +1,5 @@
 export const IMAGE_BUCKET = "generated-images";
-export const DEFAULT_IMAGE_MODEL = "gemini-2.5-flash-image";
+export const DEFAULT_IMAGE_MODEL = "gemini-3.1-flash-image-preview";
 
 export const SESSION_TIMEOUT_MS = 4000;
 export const AUTH_RETRY_DELAY_MS = 700;
@@ -7,10 +7,9 @@ export const AUTH_RETRY_ATTEMPTS = 3;
 
 export const modelOptions = [
   { label: "⭐ OpenAI", value: "openai" },
-  { label: "⭐ Gemini Nano Banana - 2.5 Flash", value: "gemini-2.5-flash-image" },
   { label: "⭐ Gemini Nano Banana2 - 3.1 Flash", value: "gemini-3.1-flash-image-preview" },
+  { label: "⭐ Gemini Nano Banana - 2.5 Flash", value: "gemini-2.5-flash-image" },
   { label: "⭐ Gemini Nano Banana Pro - 3 Pro image", value: "gemini-3-pro-image-preview" },
-  { label: "⭐ Imagen 4 - Gemini imagen-4", value: "imagen-4.0-generate-001" },
 ];
 
 export const styleOptions = [

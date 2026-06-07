@@ -100,7 +100,7 @@ export default function AdminAnalyticsPage() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/admin/analytics`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/admin/analytics`,
         scopes: [
           "openid",
           "email",

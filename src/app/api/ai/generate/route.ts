@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import {
   decryptVaultKey,
   getActiveVaultKeys,
@@ -19,9 +18,97 @@ type GenerateBody = {
 };
 
 const FREE_DAILY_LIMIT = 3;
+const DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite";
 
-function isHighDemandError(error: any) {
-  const message = String(error?.message || error || "").toLowerCase();
+type GeminiGenerateResponse = {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{
+        text?: string;
+      }>;
+    };
+  }>;
+  error?: {
+    message?: string;
+  };
+};
+
+function extractGeminiText(data: GeminiGenerateResponse) {
+  const text = data.candidates?.[0]?.content?.parts
+    ?.map((part) => part.text || "")
+    .join("")
+    .trim();
+
+  if (!text) {
+    throw new Error(data.error?.message || "Gemini 응답 본문이 비어 있습니다.");
+  }
+
+  return text;
+}
+
+async function generateGeminiContent({
+  apiKey,
+  modelName,
+  prompt,
+  useSearch,
+}: {
+  apiKey: string;
+  modelName: string;
+  prompt: string;
+  useSearch: boolean;
+}) {
+  const modelPath = modelName.startsWith("models/") ? modelName : `models/${modelName}`;
+  const body: Record<string, unknown> = {
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: prompt }],
+      },
+    ],
+  };
+
+  if (useSearch) {
+    body.tools = [{ googleSearch: {} }];
+  }
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/${modelPath}:generateContent?key=${encodeURIComponent(apiKey)}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    }
+  );
+
+  const rawText = await response.text();
+  let data: GeminiGenerateResponse = {};
+
+  try {
+    data = rawText ? (JSON.parse(rawText) as GeminiGenerateResponse) : {};
+  } catch {
+    if (!response.ok) {
+      throw new Error(rawText || `Gemini API 요청 실패 (${response.status})`);
+    }
+
+    return rawText.trim();
+  }
+
+  if (!response.ok) {
+    throw new Error(data.error?.message || rawText || `Gemini API 요청 실패 (${response.status})`);
+  }
+
+  return extractGeminiText(data);
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  return String(error || "");
+}
+
+function isHighDemandError(error: unknown) {
+  const message = getErrorMessage(error).toLowerCase();
 
   return (
     message.includes("503") ||
@@ -31,7 +118,7 @@ function isHighDemandError(error: any) {
   );
 }
 
-function getFriendlyAiErrorMessage(error: any) {
+function getFriendlyAiErrorMessage(error: unknown) {
   if (isHighDemandError(error)) {
     return "AI 서버가 현재 혼잡합니다. 자동 재시도 후에도 실패했습니다. 잠시 후 다시 시도해주세요.";
   }
@@ -159,7 +246,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let lastError: any = null;
+    let lastError: unknown = null;
 
     for (const vault of vaultKeys) {
       try {
@@ -168,22 +255,13 @@ export async function POST(req: NextRequest) {
         }
 
         const apiKey = decryptVaultKey(vault);
-        const genAI = new GoogleGenerativeAI(apiKey);
-
-        const modelName = body.model || vault.model || "gemini-2.0-flash";
-
-        const modelOptions: any = {
-          model: modelName,
-        };
-
-        if (body.useSearch) {
-          modelOptions.tools = [{ googleSearch: {} }];
-        }
-
-        const model = genAI.getGenerativeModel(modelOptions);
-        const result = await model.generateContent(body.prompt);
-        const response = await result.response;
-        const text = response.text();
+        const modelName = body.model || vault.model || DEFAULT_GEMINI_MODEL;
+        const text = await generateGeminiContent({
+          apiKey,
+          modelName,
+          prompt: body.prompt,
+          useSearch: Boolean(body.useSearch),
+        });
 
         await recordVaultSuccess(vault.id);
 
@@ -205,9 +283,9 @@ export async function POST(req: NextRequest) {
           model: modelName,
           vaultId: vault.id,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         lastError = error;
-        await recordVaultFailure(vault.id, String(error?.message || error));
+        await recordVaultFailure(vault.id, getErrorMessage(error));
 
         if (!isHighDemandError(error)) {
           continue;
@@ -224,21 +302,21 @@ export async function POST(req: NextRequest) {
       featureType,
       provider: "gemini",
       status: "error",
-      errorMessage: String(lastError?.message || lastError || "unknown error"),
+      errorMessage: getErrorMessage(lastError) || "unknown error",
     });
 
     return NextResponse.json(
       {
         error: getFriendlyAiErrorMessage(lastError),
-        rawError: String(lastError?.message || lastError || ""),
+        rawError: getErrorMessage(lastError),
       },
       { status: 503 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       {
         error: getFriendlyAiErrorMessage(error),
-        rawError: String(error?.message || error || ""),
+        rawError: getErrorMessage(error),
       },
       { status: 500 }
     );

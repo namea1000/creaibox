@@ -1,10 +1,13 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@/utils/supabase/client";
 import NaverRecreateTab from "@/components/writing/naver/tabs/NaverRecreateTab";
 import type { User } from "@supabase/supabase-js";
+import {
+  generateGeminiContent,
+  getRequiredUserGeminiVaultConfig,
+} from "@/lib/client/api-vault";
 import { naverManuscriptStore } from "@/lib/stores/manuscripts";
 
 interface SourceAnalysisResult {
@@ -39,9 +42,9 @@ const PRIMARY_GEMINI_MODEL = "gemini-3.1-flash-lite";
 
 const GEMINI_MODEL_FALLBACKS = [
   PRIMARY_GEMINI_MODEL,
+  "gemini-3.1-flash-lite",
   "gemini-3-flash-preview",
   "gemini-2.5-flash",
-  "gemini-2.0-flash",
 ];
 
 function wait(ms: number) {
@@ -155,28 +158,6 @@ export default function NaverRecreatePage() {
 
     void getProfile();
   }, [supabase]);
-
-  const getApiKey = async () => {
-    const localKey = localStorage.getItem("gemini_api_key");
-    if (localKey && localKey.trim()) return localKey;
-
-    const { data: vaultKeys } = await supabase
-      .from("admin_api_vault")
-      .select("key")
-      .eq("status", "active");
-
-    if (!vaultKeys || vaultKeys.length === 0) {
-      throw new Error("사용 가능한 API 키가 없습니다.");
-    }
-
-    const selectedKey = vaultKeys[Math.floor(Math.random() * vaultKeys.length)].key;
-
-    try {
-      return atob(selectedKey);
-    } catch {
-      return selectedKey;
-    }
-  };
 
   const saveToSupabase = async (
     currentContent: string,
@@ -305,8 +286,8 @@ export default function NaverRecreatePage() {
     setSourceAnalysis({ keywords: [], topic: "", summaryPoints: [] });
 
     try {
-      const apiKey = await getApiKey();
-      const genAI = new GoogleGenerativeAI(apiKey);
+      const vaultConfig = getRequiredUserGeminiVaultConfig();
+      const apiKey = vaultConfig.apiKey;
 
       const keywordInstruction = targetKeyword.trim()
         ? `새로 탄생할 원고의 집중 공략 타겟 키워드는 '${targetKeyword.trim()}'이며, 반드시 이 키워드를 중심으로 최적화하라.`
@@ -363,8 +344,9 @@ export default function NaverRecreatePage() {
 
       let text = "";
       let lastError: any = null;
+      const uniqueModelNames = [...new Set([vaultConfig.model, ...GEMINI_MODEL_FALLBACKS])];
 
-      for (const modelName of GEMINI_MODEL_FALLBACKS) {
+      for (const modelName of uniqueModelNames) {
         for (let attempt = 1; attempt <= AI_RETRY_ATTEMPTS; attempt += 1) {
           try {
             setGenerationStatusMessage(
@@ -375,10 +357,12 @@ export default function NaverRecreatePage() {
                 : `${modelName} 모델 재시도 중입니다. (${attempt}/${AI_RETRY_ATTEMPTS})`
             );
 
-            const model = genAI.getGenerativeModel({ model: modelName } as any);
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            text = response.text();
+            text = await generateGeminiContent({
+              apiKey,
+              modelName,
+              prompt,
+              responseMimeType: "application/json",
+            });
 
             lastError = null;
             setGenerationStatusMessage("AI 응답을 정리하는 중입니다...");

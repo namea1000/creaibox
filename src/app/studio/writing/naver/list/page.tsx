@@ -125,8 +125,13 @@ function toNumberValue(value: unknown, fallback = 0) {
 
 function normalizeNaverRecord(row: NaverRow, index: number): StudioManuscriptRecord {
   const id = String(row.id ?? index + 1);
-  const displayId = toNumberValue(row.display_id ?? row.displayId, Number(id) || index + 1);
+  const rawDisplayId = row.display_id ?? row.displayId;
+  const displayId =
+    typeof rawDisplayId === "number" && Number.isFinite(rawDisplayId) && rawDisplayId > 0
+      ? rawDisplayId
+      : undefined;
   const content = toStringValue(row.content);
+  const wordCountGoal = row.word_count_goal ?? row.wordCountGoal;
 
   return {
     id,
@@ -150,9 +155,8 @@ function normalizeNaverRecord(row: NaverRow, index: number): StudioManuscriptRec
     seoTags: Array.isArray(row.seo_tags) ? row.seo_tags.filter((tag): tag is string => typeof tag === "string") : [],
     wordCount: toNumberValue(row.word_count ?? row.wordCount, getWordCount(null, content)),
     wordCountGoal:
-      typeof (row.word_count_goal ?? row.wordCountGoal) === "string" ||
-      typeof (row.word_count_goal ?? row.wordCountGoal) === "number"
-        ? (row.word_count_goal ?? row.wordCountGoal)
+      typeof wordCountGoal === "string" || typeof wordCountGoal === "number"
+        ? wordCountGoal
         : undefined,
   } as StudioManuscriptRecord;
 }
@@ -170,12 +174,12 @@ export default function NaverManuscriptListPage() {
   const searchTerm = useManuscriptUiStore((state) => state.naverSearchTerm);
   const setSearchTerm = useManuscriptUiStore((state) => state.setNaverSearchTerm);
 
-  const [cachedManuscripts, setCachedManuscripts] =
-    useState<StudioManuscriptRecord[]>(() => readCachedList());
+  const [cachedManuscripts, setCachedManuscripts] = useState<StudioManuscriptRecord[]>([]);
   const [fallbackManuscripts, setFallbackManuscripts] = useState<StudioManuscriptRecord[]>([]);
   const [isFallbackLoading, setIsFallbackLoading] = useState(false);
   const [fallbackError, setFallbackError] = useState<string | null>(null);
   const [selectedTrashIds, setSelectedTrashIds] = useState<string[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
   const [tableFilters, setTableFilters] = useState<TableFilters>({
     writingType: "all",
     contentType: "all",
@@ -189,21 +193,44 @@ export default function NaverManuscriptListPage() {
     refetch,
   } = useNaverManuscriptsQuery();
 
+  const visibleQueryManuscripts = useMemo(
+    () => (isMounted ? queryManuscripts : []),
+    [isMounted, queryManuscripts]
+  );
+  const visibleIsLoading = isMounted && isLoading;
+  const visibleIsFetching = isMounted && isFetching;
+
   useEffect(() => {
+    queueMicrotask(() => {
+      setIsMounted(true);
+
+      const cachedList = readCachedList();
+      if (cachedList.length > 0) {
+        setCachedManuscripts(cachedList);
+        queryClient.setQueryData(naverManuscriptKeys.list, cachedList);
+      }
+    });
+  }, [queryClient]);
+
+  useEffect(() => {
+    if (!isMounted) return;
+
     if (cachedManuscripts.length > 0) {
       queryClient.setQueryData(naverManuscriptKeys.list, cachedManuscripts);
     }
-  }, [cachedManuscripts, queryClient]);
+  }, [cachedManuscripts, isMounted, queryClient]);
 
   useEffect(() => {
-    if (queryManuscripts.length > 0) {
+    if (!isMounted) return;
+
+    if (visibleQueryManuscripts.length > 0) {
       queueMicrotask(() => {
         setFallbackError(null);
-        setCachedManuscripts(queryManuscripts);
-        writeCachedList(queryManuscripts);
+        setCachedManuscripts(visibleQueryManuscripts);
+        writeCachedList(visibleQueryManuscripts);
       });
     }
-  }, [queryManuscripts]);
+  }, [isMounted, visibleQueryManuscripts]);
 
   const fetchDirectlyFromSupabase = useCallback(async () => {
     setIsFallbackLoading(true);
@@ -230,10 +257,12 @@ export default function NaverManuscriptListPage() {
   }, [queryClient, supabase]);
 
   useEffect(() => {
-    const hasQueryData = queryManuscripts.length > 0;
+    if (!isMounted) return;
+
+    const hasQueryData = visibleQueryManuscripts.length > 0;
     const hasCache = cachedManuscripts.length > 0;
 
-    if (!isLoading && !isFetching && !hasQueryData && !hasCache) {
+    if (!visibleIsLoading && !visibleIsFetching && !hasQueryData && !hasCache) {
       queueMicrotask(() => {
         void fetchDirectlyFromSupabase();
       });
@@ -241,12 +270,15 @@ export default function NaverManuscriptListPage() {
   }, [
     cachedManuscripts.length,
     fetchDirectlyFromSupabase,
-    isFetching,
-    isLoading,
-    queryManuscripts.length,
+    isMounted,
+    visibleIsFetching,
+    visibleIsLoading,
+    visibleQueryManuscripts.length,
   ]);
 
   useEffect(() => {
+    if (!isMounted) return;
+
     void refetch();
 
     const handleFocus = () => {
@@ -266,13 +298,13 @@ export default function NaverManuscriptListPage() {
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [refetch]);
+  }, [isMounted, refetch]);
 
   const manuscripts = useMemo(() => {
-    if (queryManuscripts.length > 0) return queryManuscripts;
+    if (visibleQueryManuscripts.length > 0) return visibleQueryManuscripts;
     if (fallbackManuscripts.length > 0) return fallbackManuscripts;
     return cachedManuscripts;
-  }, [cachedManuscripts, fallbackManuscripts, queryManuscripts]);
+  }, [cachedManuscripts, fallbackManuscripts, visibleQueryManuscripts]);
 
   const isTrashView = statusTab === "trash";
 
@@ -339,7 +371,7 @@ export default function NaverManuscriptListPage() {
   }, [filteredManuscripts, safeCurrentPage]);
 
   const shouldShowSkeletonRows =
-    manuscripts.length === 0 && (isLoading || isFetching || isFallbackLoading);
+    manuscripts.length === 0 && (visibleIsLoading || visibleIsFetching || isFallbackLoading);
 
   const paddedRows = useMemo(() => {
     const rows: Array<StudioManuscriptRecord | null> = [...paginatedManuscripts];

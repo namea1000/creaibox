@@ -3,8 +3,8 @@
 import React, { useMemo, useState, useEffect } from "react";
 import CreaiboxCreateTab from "@/components/writing/creaibox/tabs/CreaiboxCreateTab";
 import { createClient } from "@/utils/supabase/client";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { User } from "@supabase/supabase-js";
+import { getRequiredUserGeminiVaultConfig } from "@/lib/client/api-vault";
 import { creaiboxManuscriptStore } from "@/lib/stores/manuscripts";
 
 const AUTH_RETRY_DELAY_MS = 700;
@@ -19,7 +19,7 @@ const GEMINI_MODEL_FALLBACKS = [
   PRIMARY_GEMINI_MODEL,
   "gemini-3-flash-preview",
   "gemini-2.5-flash",
-  "gemini-2.0-flash",
+  "gemini-2.5-flash-lite",
 ];
 
 function buildCreaiboxCanonicalUrl(slug: string) {
@@ -30,8 +30,13 @@ function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function isHighDemandError(error: any) {
-  const message = String(error?.message || error || "").toLowerCase();
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  return String(error || "");
+}
+
+function isHighDemandError(error: unknown) {
+  const message = getErrorMessage(error).toLowerCase();
 
   return (
     message.includes("503") ||
@@ -41,12 +46,116 @@ function isHighDemandError(error: any) {
   );
 }
 
-function getFriendlyAiErrorMessage(error: any) {
+function isSearchToolError(error: unknown) {
+  const message = getErrorMessage(error).toLowerCase();
+
+  return (
+    message.includes("googlesearch") ||
+    message.includes("google_search") ||
+    message.includes("search grounding") ||
+    message.includes("grounding") ||
+    message.includes("billing") ||
+    message.includes("permission") ||
+    message.includes("not enabled") ||
+    message.includes("quota")
+  );
+}
+
+function getFriendlyAiErrorMessage(error: unknown) {
   if (isHighDemandError(error)) {
     return "AI 서버가 현재 혼잡합니다. 잠시 후 다시 시도해주세요. 문제가 계속되면 자동으로 다른 모델을 시도합니다.";
   }
 
+  if (isSearchToolError(error)) {
+    return "최신 정보 검색 도구 연결에 문제가 있어 생성에 실패했습니다. 검색 옵션을 끄고 다시 시도하거나 API 키의 검색/결제 설정을 확인해 주세요.";
+  }
+
   return "AI 생성 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
+}
+
+type GeminiGenerateResponse = {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{
+        text?: string;
+      }>;
+    };
+  }>;
+  error?: {
+    message?: string;
+  };
+};
+
+function extractGeminiText(data: GeminiGenerateResponse) {
+  const text = data.candidates?.[0]?.content?.parts
+    ?.map((part) => part.text || "")
+    .join("")
+    .trim();
+
+  if (!text) {
+    throw new Error(data.error?.message || "Gemini 응답 본문이 비어 있습니다.");
+  }
+
+  return text;
+}
+
+async function generateGeminiContent({
+  apiKey,
+  modelName,
+  prompt,
+  useSearch,
+}: {
+  apiKey: string;
+  modelName: string;
+  prompt: string;
+  useSearch: boolean;
+}) {
+  const modelPath = modelName.startsWith("models/") ? modelName : `models/${modelName}`;
+  const body: Record<string, unknown> = {
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: prompt }],
+      },
+    ],
+    generationConfig: {
+      responseMimeType: "application/json",
+    },
+  };
+
+  if (useSearch) {
+    body.tools = [{ googleSearch: {} }];
+  }
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/${modelPath}:generateContent?key=${encodeURIComponent(apiKey)}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    }
+  );
+
+  const rawText = await response.text();
+  let data: GeminiGenerateResponse = {};
+
+  try {
+    data = rawText ? (JSON.parse(rawText) as GeminiGenerateResponse) : {};
+  } catch {
+    if (!response.ok) {
+      throw new Error(rawText || `Gemini API 요청 실패 (${response.status})`);
+    }
+
+    return rawText.trim();
+  }
+
+  if (!response.ok) {
+    throw new Error(data.error?.message || rawText || `Gemini API 요청 실패 (${response.status})`);
+  }
+
+  return extractGeminiText(data);
 }
 
 function parseGeminiJson(text: string) {
@@ -203,7 +312,7 @@ function buildSeoSlug(title: string, focusKeyword: string) {
 export default function CreaiboxEditorPage() {
   const supabase = useMemo(() => createClient(), []);
 
-  const resolveAuthUser = async (): Promise<User | null> => {
+  const resolveAuthUser = React.useCallback(async (): Promise<User | null> => {
     for (let attempt = 0; attempt < AUTH_RETRY_ATTEMPTS; attempt += 1) {
       const timeout = new Promise<null>((resolve) => {
         setTimeout(() => resolve(null), SESSION_TIMEOUT_MS);
@@ -231,7 +340,7 @@ export default function CreaiboxEditorPage() {
     }
 
     return null;
-  };
+  }, [supabase]);
 
   const [targetKeyword, setTargetKeyword] = useState("");
   const [title, setTitle] = useState("");
@@ -274,29 +383,7 @@ export default function CreaiboxEditorPage() {
     };
 
     void getProfile();
-  }, [supabase]);
-
-  const getApiKey = async () => {
-    const localKey = localStorage.getItem("gemini_api_key");
-    if (localKey && localKey.trim()) return localKey;
-
-    const { data: vaultKeys } = await supabase
-      .from("admin_api_vault")
-      .select("key")
-      .eq("status", "active");
-
-    if (!vaultKeys || vaultKeys.length === 0) {
-      throw new Error("API 키를 찾을 수 없습니다.");
-    }
-
-    const selectedKey = vaultKeys[Math.floor(Math.random() * vaultKeys.length)].key;
-
-    try {
-      return atob(selectedKey);
-    } catch {
-      return selectedKey;
-    }
-  };
+  }, [resolveAuthUser, supabase]);
 
   const saveToSupabase = async (
     currentContent: string,
@@ -407,8 +494,8 @@ export default function CreaiboxEditorPage() {
           ? "원고가 아카이브에 저장되었습니다."
           : "AI 생성이 완료되어 아카이브에 자동 저장되었습니다."
       );
-    } catch (err: any) {
-      alert(`저장 실패: ${err.message}`);
+    } catch (err: unknown) {
+      alert(`저장 실패: ${getErrorMessage(err)}`);
     }
   };
 
@@ -424,8 +511,8 @@ export default function CreaiboxEditorPage() {
 
     try {
       const lengthPrompt = getLengthPrompt(wordCountGoal);
-      const apiKey = await getApiKey();
-      const genAI = new GoogleGenerativeAI(apiKey);
+      const vaultConfig = getRequiredUserGeminiVaultConfig();
+      const apiKey = vaultConfig.apiKey;
 
       const prompt = `
         당신은 Creaibox의 전문 블로그 콘텐츠 에디터입니다. 
@@ -456,46 +543,79 @@ export default function CreaiboxEditorPage() {
       `;
 
       let text = "";
-      let lastError: any = null;
+      let lastError: unknown = null;
+      const uniqueModelNames = [...new Set([vaultConfig.model, ...GEMINI_MODEL_FALLBACKS])];
+      const searchModes = useSearch ? [true, false] : [false];
 
-      for (const modelName of GEMINI_MODEL_FALLBACKS) {
-        for (let attempt = 1; attempt <= AI_RETRY_ATTEMPTS; attempt += 1) {
-          try {
-            setGenerationStatusMessage(
-              attempt === 1
-                ? modelName === PRIMARY_GEMINI_MODEL
-                  ? `${PRIMARY_GEMINI_MODEL} 모델로 글을 생성하고 있습니다...`
-                  : "AI 서버 상태에 따라 보조 모델로 이어서 글을 생성하고 있습니다..."
-                : `${modelName} 모델 재시도 중입니다. (${attempt}/${AI_RETRY_ATTEMPTS})`
-            );
-
-            const modelOptions: any = { model: modelName };
-
-            if (useSearch && modelName !== PRIMARY_GEMINI_MODEL) {
-              modelOptions.tools = [{ googleSearch: {} }];
-            }
-
-            const model = genAI.getGenerativeModel(modelOptions);
-            const result = await model.generateContent(prompt);
-            text = result.response.text();
-
-            lastError = null;
-            setGenerationStatusMessage("AI 응답을 정리하는 중입니다...");
-            break;
-          } catch (error: any) {
-            lastError = error;
-            console.warn(`[Creaibox Gemini 생성 실패] model=${modelName}, attempt=${attempt}`, error);
-
-            if (attempt < AI_RETRY_ATTEMPTS && isHighDemandError(error)) {
+      for (const modelName of uniqueModelNames) {
+        for (const shouldUseSearch of searchModes) {
+          for (let attempt = 1; attempt <= AI_RETRY_ATTEMPTS; attempt += 1) {
+            try {
               setGenerationStatusMessage(
-                "AI 서버가 혼잡하여 자동으로 다시 시도하고 있습니다..."
+                attempt === 1
+                  ? shouldUseSearch
+                    ? `${modelName} 모델과 최신 검색으로 글을 생성하고 있습니다...`
+                    : useSearch
+                      ? "검색 도구 연결이 불안정해 검색 없이 이어서 생성하고 있습니다..."
+                      : `${modelName} 모델로 글을 생성하고 있습니다...`
+                  : `${modelName} 모델 재시도 중입니다. (${attempt}/${AI_RETRY_ATTEMPTS})`
               );
-              await wait(AI_RETRY_DELAY_MS * attempt);
-              continue;
-            }
 
-            break;
+              const responseText = await generateGeminiContent({
+                apiKey,
+                modelName,
+                prompt,
+                useSearch: shouldUseSearch,
+              });
+
+              try {
+                parseGeminiJson(responseText);
+              } catch (parseError: unknown) {
+                lastError = parseError;
+                console.warn("[Creaibox Gemini JSON 파싱 실패]", {
+                  model: modelName,
+                  search: shouldUseSearch,
+                  attempt,
+                  preview: responseText.slice(0, 500),
+                  error: parseError,
+                });
+
+                if (attempt < AI_RETRY_ATTEMPTS) {
+                  setGenerationStatusMessage(
+                    "AI 응답 형식이 맞지 않아 자동으로 다시 시도하고 있습니다..."
+                  );
+                  await wait(AI_RETRY_DELAY_MS * attempt);
+                  continue;
+                }
+
+                break;
+              }
+
+              text = responseText;
+
+              lastError = null;
+              setGenerationStatusMessage("AI 응답을 정리하는 중입니다...");
+              break;
+            } catch (error: unknown) {
+              lastError = error;
+              console.warn(
+                `[Creaibox Gemini 생성 실패] model=${modelName}, search=${shouldUseSearch}, attempt=${attempt}`,
+                error
+              );
+
+              if (attempt < AI_RETRY_ATTEMPTS && isHighDemandError(error)) {
+                setGenerationStatusMessage(
+                  "AI 서버가 혼잡하여 자동으로 다시 시도하고 있습니다..."
+                );
+                await wait(AI_RETRY_DELAY_MS * attempt);
+                continue;
+              }
+
+              break;
+            }
           }
+
+          if (text) break;
         }
 
         if (text) break;
@@ -541,7 +661,7 @@ export default function CreaiboxEditorPage() {
           canonicalUrl: buildCreaiboxCanonicalUrl(nextSlug),
         });
       }, 100);
-    } catch (error: any) {
+    } catch (error: unknown) {
       const friendlyMessage = getFriendlyAiErrorMessage(error);
 
       console.error(error);

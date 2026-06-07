@@ -1,10 +1,14 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { User } from "@supabase/supabase-js";
 import { Sparkles } from "lucide-react";
+import {
+  generateGeminiContent,
+  getRequiredUserGeminiVaultConfig,
+} from "@/lib/client/api-vault";
 
 import LyricsInputPanel from "@/components/music/lyrics/LyricsInputPanel";
 import LyricsControlPanel from "@/components/music/lyrics/LyricsControlPanel";
@@ -21,13 +25,25 @@ const AI_RETRY_ATTEMPTS = 3;
 const AI_RETRY_DELAY_MS = 1200;
 
 const GEMINI_MODEL_FALLBACKS = [
+  "gemini-3.1-flash-lite",
   "gemini-3-flash-preview",
   "gemini-2.5-flash",
-  "gemini-2.0-flash",
 ];
 
 const DEFAULT_STRUCTURE =
   "[일반적인 노래, 약 3분] Intro - Verse 1 - Pre-Chorus - Chorus - Verse 2 - Pre-Chorus - Chorus - Bridge - Final Chorus - Outro";
+
+const ALBUM_PLAN_TO_LYRICS_KEY = "creaibox:music:album-plan-to-lyrics:v1";
+
+type AlbumPlanTrackPayload = {
+  trackNo?: number;
+  title?: string;
+};
+
+type AlbumPlanPayload = {
+  planId?: string;
+  tracks?: AlbumPlanTrackPayload[];
+};
 
 const initialForm: MusicFormState = {
   genre: "K-pop",
@@ -96,8 +112,11 @@ function extractJson(text: string) {
   }
 }
 
-export default function MusicLyricsPage() {
+function MusicLyricsPageContent() {
   const supabase = useMemo(() => createClient(), []);
+  const searchParams = useSearchParams();
+  const albumAutoRunRef = useRef(false);
+  const [albumPlanPayload, setAlbumPlanPayload] = useState<any>(null);
   const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [activeUser, setActiveUser] = useState<User | null>(null);
@@ -188,28 +207,6 @@ export default function MusicLyricsPage() {
     void loadUser();
   }, [supabase]);
 
-  const getApiKey = async () => {
-    const localKey = localStorage.getItem("gemini_api_key");
-    if (localKey && localKey.trim()) return localKey;
-
-    const { data: vaultKeys } = await supabase
-      .from("admin_api_vault")
-      .select("key")
-      .eq("status", "active");
-
-    if (!vaultKeys || vaultKeys.length === 0) {
-      throw new Error("사용 가능한 Gemini API 키가 없습니다.");
-    }
-
-    const selectedKey = vaultKeys[Math.floor(Math.random() * vaultKeys.length)].key;
-
-    try {
-      return atob(selectedKey);
-    } catch {
-      return selectedKey;
-    }
-  };
-
   const copyText = async (value: string) => {
     if (!value) return;
     await navigator.clipboard.writeText(value);
@@ -256,6 +253,57 @@ export default function MusicLyricsPage() {
         videoDescription: targetResult.videoDescription || "",
       },
     ];
+  };
+
+  const markAlbumPlanLyricsGenerated = async (payload?: AlbumPlanPayload | null) => {
+    if (!payload?.planId || !Array.isArray(payload.tracks) || payload.tracks.length === 0) {
+      return;
+    }
+
+    const targetTrackNos = new Set(
+      payload.tracks
+        .map((track) => Number(track.trackNo))
+        .filter((trackNo) => Number.isFinite(trackNo))
+    );
+    const targetTitles = new Set(
+      payload.tracks
+        .map((track) => String(track.title || "").trim())
+        .filter(Boolean)
+    );
+
+    const { data, error } = await supabase
+      .from("music_album_plans")
+      .select("track_list")
+      .eq("id", payload.planId)
+      .maybeSingle();
+
+    if (error || !data) {
+      console.warn("앨범 기획 가사 생성 상태 조회 실패:", error);
+      return;
+    }
+
+    const currentTracks = Array.isArray(data.track_list) ? data.track_list : [];
+    const nextTracks = currentTracks.map((track: any) => {
+      const trackNo = Number(track?.trackNo);
+      const title = String(track?.title || "").trim();
+      const isTarget = targetTrackNos.has(trackNo) || targetTitles.has(title);
+
+      return isTarget
+        ? {
+          ...track,
+          lyricsGenerated: true,
+        }
+        : track;
+    });
+
+    const { error: updateError } = await supabase
+      .from("music_album_plans")
+      .update({ track_list: nextTracks })
+      .eq("id", payload.planId);
+
+    if (updateError) {
+      console.warn("앨범 기획 가사 생성 상태 업데이트 실패:", updateError);
+    }
   };
 
   const createBatch = async ({
@@ -376,6 +424,9 @@ export default function MusicLyricsPage() {
         video_prompt: song.videoDescription || "",
         raw_result: {
           song,
+          album_title: albumPlanPayload?.albumTitle || "",
+          album_plan_id: albumPlanPayload?.planId || null,
+          album_plan_payload: albumPlanPayload || null,
           concept_description: song.conceptDescription || "",
           original_raw_result: finalRawResult,
         },
@@ -469,6 +520,9 @@ export default function MusicLyricsPage() {
         video_prompt: song.videoDescription || "",
         raw_result: {
           song,
+          album_title: albumPlanPayload?.albumTitle || "",
+          album_plan_id: albumPlanPayload?.planId || null,
+          album_plan_payload: albumPlanPayload || null,
           concept_description: song.conceptDescription || "",
           original_raw_result: rawResult,
         },
@@ -505,12 +559,36 @@ export default function MusicLyricsPage() {
     }
   };
 
-  const handleAiGenerate = async () => {
+  const handleAiGenerate = async (externalAlbumPlanPayload?: any) => {
     const safeCount = Math.min(Math.max(Number(form.generationCount) || 1, 1), 10);
 
     const finalTheme =
       form.theme.trim() ||
       `${form.mood} 감성의 ${form.genre} 곡. ${form.vocal} 보컬이 ${form.instrument} 중심 사운드 위에서 부르는 감성적인 노래`;
+    const activeAlbumPlanPayload =
+      externalAlbumPlanPayload || albumPlanPayload;
+
+    const albumPlanTracks = Array.isArray(activeAlbumPlanPayload?.tracks)
+      ? activeAlbumPlanPayload.tracks
+      : [];
+
+    const albumPlanText =
+      albumPlanTracks.length > 0
+        ? albumPlanTracks
+          .map(
+            (track: any, index: number) => `
+[Track ${index + 1}]
+title: ${track.title}
+story: ${track.story}
+moodKeywords: ${track.moodKeywords}
+genreInstrument: ${track.genreInstrument}
+tempo: ${track.tempo}
+stylePoint: ${track.stylePoint}
+addOnPrompt: ${track.addOnPrompt}
+`
+          )
+          .join("\n")
+        : "";
 
     if (!form.theme.trim()) {
       setForm((prev: MusicFormState) => ({
@@ -528,8 +606,8 @@ export default function MusicLyricsPage() {
     startProgressTimer();
 
     try {
-      const apiKey = await getApiKey();
-      const genAI = new GoogleGenerativeAI(apiKey);
+      const vaultConfig = getRequiredUserGeminiVaultConfig();
+      const apiKey = vaultConfig.apiKey;
 
       const prompt = `
 너는 AI 음악 제작 스튜디오의 전문 작곡가, 작사가, Suno 프롬프트 엔지니어다.
@@ -546,6 +624,20 @@ export default function MusicLyricsPage() {
 - 중심 악기/사운드: ${form.instrument}
 - 가사 언어: ${form.language}
 - 곡 구성: ${form.structure}
+
+[앨범 기획 트랙 리스트]
+${albumPlanText || "별도 앨범 기획 없음"}
+
+[앨범 기획 반영 필수 규칙]
+- 위 앨범 기획 트랙 리스트가 있으면 songs 배열은 반드시 트랙 리스트 개수와 동일하게 생성하라.
+- 각 song.title은 반드시 해당 Track의 title 값을 글자 그대로 사용하라.
+- 절대 새로운 곡 제목을 만들지 마라.
+- 절대 title을 번역하거나 변형하지 마라.
+- Track 1은 songs[0], Track 2는 songs[1]처럼 순서를 반드시 유지하라.
+- 각 song.conceptDescription에는 해당 Track의 story, moodKeywords, stylePoint, addOnPrompt를 반드시 반영하라.
+- 각 song.sunoPrompt에는 해당 Track의 genreInstrument, tempo, stylePoint, addOnPrompt를 반드시 반영하라.
+- 각 song.lyrics는 해당 Track의 story와 moodKeywords를 바탕으로 작성하라.
+- 앨범 기획 트랙 리스트가 있을 때는 사용자가 선택한 일반 theme보다 Track별 기획 정보를 우선하라.
 
 [생성 규칙]
 1. 각 곡은 제목, 가사, Suno 프롬프트가 서로 다르게 느껴져야 한다.
@@ -592,12 +684,9 @@ export default function MusicLyricsPage() {
 
       let text = "";
       let lastError: any = null;
+      const uniqueModelNames = [...new Set([vaultConfig.model, ...GEMINI_MODEL_FALLBACKS])];
 
-      for (const modelName of GEMINI_MODEL_FALLBACKS) {
-        const model = genAI.getGenerativeModel({
-          model: modelName,
-        } as any);
-
+      for (const modelName of uniqueModelNames) {
         for (let attempt = 1; attempt <= AI_RETRY_ATTEMPTS; attempt += 1) {
           try {
             setGenerationStatusMessage(
@@ -606,9 +695,12 @@ export default function MusicLyricsPage() {
                 : `${modelName} 모델 재시도 중입니다. (${attempt}/${AI_RETRY_ATTEMPTS})`
             );
 
-            const apiResult = await model.generateContent(prompt);
-            const response = await apiResult.response;
-            text = response.text();
+            text = await generateGeminiContent({
+              apiKey,
+              modelName,
+              prompt,
+              responseMimeType: "application/json",
+            });
 
             setGenerationProgress(92);
             setGenerationStatusMessage("AI 응답을 정리하는 중입니다...");
@@ -642,8 +734,18 @@ export default function MusicLyricsPage() {
 
       const songs: SongItem[] = Array.isArray(parsed.songs)
         ? parsed.songs.slice(0, safeCount).map((song: any, index: number) => ({
-          title: song.title || `Untitled Song ${index + 1}`,
-          conceptDescription: song.conceptDescription || finalTheme,
+          title: albumPlanTracks[index]?.title || song.title || `Untitled Song ${index + 1}`,
+          conceptDescription:
+            song.conceptDescription ||
+            [
+              albumPlanTracks[index]?.story,
+              albumPlanTracks[index]?.moodKeywords,
+              albumPlanTracks[index]?.stylePoint,
+              albumPlanTracks[index]?.addOnPrompt,
+            ]
+              .filter(Boolean)
+              .join(" / ") ||
+            finalTheme,
           sunoPrompt: song.sunoPrompt || fallbackSunoPrompt,
           lyrics: song.lyrics || "",
           visualDescription: song.visualDescription || "",
@@ -682,11 +784,15 @@ export default function MusicLyricsPage() {
       setGenerationStatusMessage("생성이 완료되었습니다. 라이브러리에 자동 저장 중입니다...");
       setIsAiLoading(false);
 
-      await saveToSupabase({
+      const saved = await saveToSupabase({
         finalResult: nextResult,
         finalRawResult: parsed,
         isManual: false,
       });
+
+      if (saved) {
+        await markAlbumPlanLyricsGenerated(activeAlbumPlanPayload);
+      }
 
       setGenerationStatusMessage("생성과 저장이 완료되었습니다.");
     } catch (err: any) {
@@ -703,6 +809,46 @@ export default function MusicLyricsPage() {
       alert(friendlyMessage);
     }
   };
+
+  useEffect(() => {
+    if (albumAutoRunRef.current) return;
+
+    const shouldAutoGenerate =
+      searchParams.get("autoGenerate") === "1" &&
+      searchParams.get("source") === "album-plan";
+
+    if (!shouldAutoGenerate) return;
+
+    const raw = window.sessionStorage.getItem(ALBUM_PLAN_TO_LYRICS_KEY);
+    if (!raw) return;
+
+    try {
+      const parsed = JSON.parse(raw);
+      albumAutoRunRef.current = true;
+      setAlbumPlanPayload(parsed);
+
+      setForm((prev: MusicFormState) => ({
+        ...prev,
+        genre: parsed.genre || prev.genre,
+        mood: parsed.mood || prev.mood,
+        vocal: parsed.vocal || prev.vocal,
+        tempo: parsed.tempo || prev.tempo,
+        instrument: parsed.instrument || prev.instrument,
+        language: parsed.language || prev.language,
+        generationCount: Math.min(Math.max(Number(parsed.generationCount) || 1, 1), 20),
+        theme:
+          parsed.mode === "single-track"
+            ? `${parsed.tracks?.[0]?.title || ""} - ${parsed.tracks?.[0]?.story || ""}`
+            : `${parsed.albumTitle || ""} - ${parsed.albumConcept || ""}`,
+      }));
+
+      setTimeout(() => {
+        void handleAiGenerate(parsed);
+      }, 500);
+    } catch (error) {
+      console.error("앨범 기획 자동 연결 실패:", error);
+    }
+  }, [searchParams]);
 
   return (
     <div className="mx-auto max-w-[1800px] space-y-8 px-5 py-6 lg:px-8 lg:py-8">
@@ -786,5 +932,13 @@ export default function MusicLyricsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MusicLyricsPage() {
+  return (
+    <Suspense fallback={null}>
+      <MusicLyricsPageContent />
+    </Suspense>
   );
 }

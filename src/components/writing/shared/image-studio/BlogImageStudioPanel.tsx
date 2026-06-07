@@ -47,6 +47,7 @@ import {
   normalizeImageModel,
   getStoragePathFromPublicUrl,
 } from "./blogImageUtils";
+import { getUserGeminiVaultConfig } from "@/lib/client/api-vault";
 
 interface SourcePostRecord {
   id: string | number;
@@ -110,10 +111,66 @@ export default function BlogImageStudioPanel({
   const [openSaveMenuId, setOpenSaveMenuId] = useState<string | null>(null);
 
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
+  const postListRef = useRef<HTMLDivElement | null>(null);
 
   const selectedStyleData = styleOptions.find((style) => style.value === selectedStyle);
   const activeSourceId = usePostInventory ? selectedPostId : String(sourceId || "");
   const selectedPost = posts.find((post) => post.id === selectedPostId) || null;
+
+  const selectPostByOffset = useCallback(
+    (offset: number) => {
+      if (!usePostInventory || posts.length === 0) return;
+
+      const currentIndex = Math.max(
+        0,
+        posts.findIndex((post) => post.id === selectedPostId)
+      );
+      const nextIndex = Math.min(Math.max(currentIndex + offset, 0), posts.length - 1);
+      const nextPost = posts[nextIndex];
+
+      if (nextPost && nextPost.id !== selectedPostId) {
+        setSelectedPostId(nextPost.id);
+      }
+    },
+    [posts, selectedPostId, usePostInventory]
+  );
+
+  useEffect(() => {
+    if (!usePostInventory) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+
+      const target = event.target as HTMLElement | null;
+      const tagName = target?.tagName?.toLowerCase();
+
+      if (
+        target?.isContentEditable ||
+        tagName === "input" ||
+        tagName === "textarea" ||
+        tagName === "select"
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      selectPostByOffset(event.key === "ArrowDown" ? 1 : -1);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectPostByOffset, usePostInventory]);
+
+  useEffect(() => {
+    if (!selectedPostId) return;
+
+    const selectedButton = postListRef.current?.querySelector<HTMLElement>(
+      `[data-post-id="${CSS.escape(selectedPostId)}"]`
+    );
+
+    selectedButton?.scrollIntoView({ block: "nearest" });
+  }, [selectedPostId]);
 
   const resolveUserId = useCallback(async () => {
     const {
@@ -494,9 +551,11 @@ export default function BlogImageStudioPanel({
       };
     }
 
+    const geminiConfig = getUserGeminiVaultConfig();
+
     return {
       provider: "gemini",
-      apiKey: localStorage.getItem("gemini_postpay_api_key") || localStorage.getItem("gemini_api_key") || "",
+      apiKey: geminiConfig?.apiKey || "",
       model: normalizeImageModel(selectedProvider),
     };
   };
@@ -783,13 +842,14 @@ export default function BlogImageStudioPanel({
             <FileText size={13} /> Manuscript Inventory
           </h3>
 
-          <div className="flex-1 space-y-2 overflow-y-auto px-4 py-4 custom-scrollbar">
+          <div ref={postListRef} className="flex-1 space-y-2 overflow-y-auto px-4 py-4 custom-scrollbar">
             {isPostListLoading ? (
               <div className="flex h-full items-center justify-center text-zinc-500">원고 목록 불러오는 중...</div>
             ) : (
               posts.map((post) => (
                 <button
                   key={post.id}
+                  data-post-id={post.id}
                   onClick={() => setSelectedPostId(post.id)}
                   className={`w-full rounded-xl border p-3.5 text-left transition ${selectedPostId === post.id
                     ? "border-emerald-700/50 bg-emerald-950/10"

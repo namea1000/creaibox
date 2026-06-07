@@ -55,6 +55,7 @@ import {
   Bell,
   MessageSquare,
   Share2,
+  Disc3,
   type LucideIcon,
 } from "lucide-react";
 
@@ -184,8 +185,10 @@ export default function Sidebar({
         icon: Music,
         color: "text-rose-400",
         children: [
-          { name: "곡 기획", href: "/studio/planning", icon: Sparkles },
+          { name: "AI 앨범 기획", href: "/studio/music/planning", icon: Sparkles },
           { name: "가사 & SUNO", href: "/studio/music/lyrics", icon: Mic2 },
+          { name: "생성곡 라이브러리", href: "/studio/music/library", icon: Mic2 },
+          { name: "앨범 관리", href: "/studio/music/albums", icon: Disc3 },
           { name: "스타일 포맷", href: "/studio/music/style-format", icon: Palette },
           { name: "커버 이미지", href: "/studio/music/cover-image", icon: ImageIcon },
           { name: "영상 프롬프트", href: "/studio/music/video-prompt", icon: Video },
@@ -193,7 +196,6 @@ export default function Sidebar({
           { name: "유튜브 최적화", href: "/studio/music/youtube-seo", icon: PlayCircle },
           { name: "태그 관리", href: "/studio/music/tags", icon: Tags },
           { name: "플레이리스트", href: "/studio/music/playlist", icon: Library },
-          { name: "저장 관리", href: "/studio/music/storage", icon: Save },
           { name: "프로젝트", href: "/studio/music/projects", icon: Folder },
           { name: "작업 내역", href: "/studio/music/history", icon: Clock },
           { name: "설정", href: "/studio/music/settings", icon: Settings },

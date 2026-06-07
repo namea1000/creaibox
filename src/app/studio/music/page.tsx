@@ -38,7 +38,7 @@ export default function MusicStudioHomePage() {
     {
       title: "곡 기획",
       desc: "장르, 분위기, 콘셉트, 앨범 방향성을 설계합니다.",
-      href: "/studio/planning",
+      href: "/studio/music/planning",
       icon: Sparkles,
       color: "from-violet-600 to-purple-600",
     },
@@ -48,6 +48,20 @@ export default function MusicStudioHomePage() {
       href: "/studio/music/lyrics",
       icon: Mic2,
       color: "from-rose-600 to-pink-600",
+    },
+    {
+      title: "앨범 관리",
+      desc: "여러 곡을 하나의 앨범으로 묶고 커버, 장르, 설명을 관리합니다.",
+      href: "/studio/music/albums",
+      icon: Disc3,
+      color: "from-indigo-600 to-violet-600",
+    },
+    {
+      title: "음악 라이브러리",
+      desc: "생성한 가사, Suno 프롬프트, 이미지/영상 프롬프트를 목록으로 관리합니다.",
+      href: "/studio/music/library",
+      icon: Library,
+      color: "from-emerald-600 to-green-600",
     },
     {
       title: "스타일 포맷",
@@ -99,13 +113,6 @@ export default function MusicStudioHomePage() {
       color: "from-blue-600 to-indigo-600",
     },
     {
-      title: "저장 관리",
-      desc: "가사, 프롬프트, 커버, 설명문 저장 내역을 관리합니다.",
-      href: "/studio/music/storage",
-      icon: Save,
-      color: "from-green-600 to-emerald-600",
-    },
-    {
       title: "프로젝트",
       desc: "앨범 단위, 채널 단위, 곡 단위 프로젝트를 관리합니다.",
       href: "/studio/music/projects",
@@ -129,12 +136,12 @@ export default function MusicStudioHomePage() {
   ];
 
   const quickActions = [
-    "Suno 곡 만들기",
-    "가사 생성",
-    "앨범 커버",
-    "유튜브 설명문",
-    "플레이리스트",
-    "영상 프롬프트",
+    { label: "Suno 곡 만들기", href: "/studio/music/lyrics" },
+    { label: "가사 생성", href: "/studio/music/lyrics" },
+    { label: "음악 라이브러리", href: "/studio/music/library" },
+    { label: "앨범 커버", href: "/studio/music/cover-image" },
+    { label: "유튜브 설명문", href: "/studio/music/youtube-seo" },
+    { label: "영상 프롬프트", href: "/studio/music/video-prompt" },
   ];
 
   return (
@@ -160,11 +167,11 @@ export default function MusicStudioHomePage() {
 
             <div className="flex gap-2">
               <Link
-                href="/studio/music/projects"
-                className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-sm font-black text-zinc-200 hover:border-rose-500/50"
+                href="/studio/music/library"
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-sm font-black text-zinc-200 hover:border-emerald-500/50"
               >
-                <Folder size={17} />
-                프로젝트 보기
+                <Library size={17} />
+                라이브러리 보기
               </Link>
 
               <Link
@@ -215,7 +222,7 @@ export default function MusicStudioHomePage() {
 
               return (
                 <Link
-                  key={item.href}
+                  key={item.title}
                   href={item.href}
                   className="group rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5 transition hover:-translate-y-1 hover:border-rose-500/40"
                 >
@@ -255,12 +262,13 @@ export default function MusicStudioHomePage() {
 
             <div className="mt-4 flex flex-wrap gap-2">
               {quickActions.map((item) => (
-                <button
-                  key={item}
+                <Link
+                  key={item.label}
+                  href={item.href}
                   className="rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs font-bold text-zinc-300 hover:border-rose-500/40 hover:text-rose-400"
                 >
-                  {item}
-                </button>
+                  {item.label}
+                </Link>
               ))}
             </div>
           </div>

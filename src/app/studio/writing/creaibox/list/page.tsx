@@ -55,8 +55,11 @@ function getWordCount(value?: number | null, content?: string | null) {
   return (content ?? "").replace(/\s+/g, "").length;
 }
 
-function getDisplayId(record: StudioManuscriptRecord, index: number) {
-  return Number(record.displayId ?? record.id ?? index + 1);
+function getRouteId(record: StudioManuscriptRecord, index: number) {
+  const displayId = Number(record.displayId);
+  if (Number.isFinite(displayId) && displayId > 0) return displayId;
+
+  return record.id || String(index + 1);
 }
 
 function safeText(value?: string | null) {
@@ -129,7 +132,11 @@ function toNumberValue(value: unknown, fallback = 0) {
 
 function normalizeCreaiboxRecord(row: CreaiboxRow, index: number): StudioManuscriptRecord {
   const id = String(row.id ?? index + 1);
-  const displayId = toNumberValue(row.display_id ?? row.displayId, Number(id) || index + 1);
+  const rawDisplayId = row.display_id ?? row.displayId;
+  const displayId =
+    typeof rawDisplayId === "number" && Number.isFinite(rawDisplayId) && rawDisplayId > 0
+      ? rawDisplayId
+      : undefined;
   const content = toStringValue(row.content);
 
   return {
@@ -181,6 +188,7 @@ export default function CreaiboxManuscriptListPage() {
   const [isFallbackLoading, setIsFallbackLoading] = useState(false);
   const [fallbackError, setFallbackError] = useState<string | null>(null);
   const [selectedTrashIds, setSelectedTrashIds] = useState<string[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
   const [tableFilters, setTableFilters] = useState<TableFilters>({
     writingType: "all",
     contentType: "all",
@@ -194,28 +202,44 @@ export default function CreaiboxManuscriptListPage() {
     refetch,
   } = useCreaiboxManuscriptsQuery();
 
-  useEffect(() => {
-    const cachedList = readCachedList();
-    if (cachedList.length > 0) {
-      setCachedManuscripts(cachedList);
-    }
-  }, []);
+  const visibleQueryManuscripts = useMemo(
+    () => (isMounted ? queryManuscripts : []),
+    [isMounted, queryManuscripts]
+  );
+  const visibleIsLoading = isMounted && isLoading;
+  const visibleIsFetching = isMounted && isFetching;
 
   useEffect(() => {
+    queueMicrotask(() => {
+      setIsMounted(true);
+
+      const cachedList = readCachedList();
+      if (cachedList.length > 0) {
+        setCachedManuscripts(cachedList);
+        queryClient.setQueryData(creaiboxManuscriptKeys.list, cachedList);
+      }
+    });
+  }, [queryClient]);
+
+  useEffect(() => {
+    if (!isMounted) return;
+
     if (cachedManuscripts.length > 0) {
       queryClient.setQueryData(creaiboxManuscriptKeys.list, cachedManuscripts);
     }
-  }, [cachedManuscripts, queryClient]);
+  }, [cachedManuscripts, isMounted, queryClient]);
 
   useEffect(() => {
-    if (queryManuscripts.length > 0) {
+    if (!isMounted) return;
+
+    if (visibleQueryManuscripts.length > 0) {
       queueMicrotask(() => {
         setFallbackError(null);
-        setCachedManuscripts(queryManuscripts);
-        writeCachedList(queryManuscripts);
+        setCachedManuscripts(visibleQueryManuscripts);
+        writeCachedList(visibleQueryManuscripts);
       });
     }
-  }, [queryManuscripts]);
+  }, [isMounted, visibleQueryManuscripts]);
 
   const fetchDirectlyFromSupabase = useCallback(async () => {
     setIsFallbackLoading(true);
@@ -242,10 +266,12 @@ export default function CreaiboxManuscriptListPage() {
   }, [queryClient, supabase]);
 
   useEffect(() => {
-    const hasQueryData = queryManuscripts.length > 0;
+    if (!isMounted) return;
+
+    const hasQueryData = visibleQueryManuscripts.length > 0;
     const hasCache = cachedManuscripts.length > 0;
 
-    if (!isLoading && !isFetching && !hasQueryData && !hasCache) {
+    if (!visibleIsLoading && !visibleIsFetching && !hasQueryData && !hasCache) {
       queueMicrotask(() => {
         void fetchDirectlyFromSupabase();
       });
@@ -253,12 +279,15 @@ export default function CreaiboxManuscriptListPage() {
   }, [
     cachedManuscripts.length,
     fetchDirectlyFromSupabase,
-    isFetching,
-    isLoading,
-    queryManuscripts.length,
+    isMounted,
+    visibleIsFetching,
+    visibleIsLoading,
+    visibleQueryManuscripts.length,
   ]);
 
   useEffect(() => {
+    if (!isMounted) return;
+
     void refetch();
 
     const handleFocus = () => {
@@ -278,13 +307,13 @@ export default function CreaiboxManuscriptListPage() {
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [refetch]);
+  }, [isMounted, refetch]);
 
   const manuscripts = useMemo(() => {
-    if (queryManuscripts.length > 0) return queryManuscripts;
+    if (visibleQueryManuscripts.length > 0) return visibleQueryManuscripts;
     if (fallbackManuscripts.length > 0) return fallbackManuscripts;
     return cachedManuscripts;
-  }, [cachedManuscripts, fallbackManuscripts, queryManuscripts]);
+  }, [cachedManuscripts, fallbackManuscripts, visibleQueryManuscripts]);
 
   const isTrashView = statusTab === "trash";
 
@@ -351,7 +380,7 @@ export default function CreaiboxManuscriptListPage() {
   }, [filteredManuscripts, safeCurrentPage]);
 
   const shouldShowSkeletonRows =
-    manuscripts.length === 0 && (isLoading || isFetching || isFallbackLoading);
+    manuscripts.length === 0 && (visibleIsLoading || visibleIsFetching || isFallbackLoading);
 
   const paddedRows = useMemo(() => {
     const rows: Array<StudioManuscriptRecord | null> = [...paginatedManuscripts];
@@ -406,9 +435,9 @@ export default function CreaiboxManuscriptListPage() {
 
   const handleOpenManuscript = useCallback(
     (manuscript: StudioManuscriptRecord, index: number) => {
-      const displayId = getDisplayId(manuscript, index);
-      queryClient.setQueryData(creaiboxManuscriptKeys.detail(displayId), manuscript);
-      router.push(`/studio/writing/creaibox/list/${displayId}`);
+      const routeId = getRouteId(manuscript, index);
+      queryClient.setQueryData(creaiboxManuscriptKeys.detail(routeId), manuscript);
+      router.push(`/studio/writing/creaibox/list/${routeId}`);
     },
     [queryClient, router]
   );
@@ -899,8 +928,8 @@ export default function CreaiboxManuscriptListPage() {
             const modeLabel = getContentTypeLabel(manuscript);
             const toneLabel = getToneLabel(manuscript.selectedTone);
 
-            const displayId = getDisplayId(manuscript, index);
-            const isSelected = pathname === `/studio/writing/creaibox/list/${displayId}`;
+            const routeId = getRouteId(manuscript, index);
+            const isSelected = pathname === `/studio/writing/creaibox/list/${routeId}`;
 
             return (
               <tr
@@ -1095,7 +1124,7 @@ export default function CreaiboxManuscriptListPage() {
         {paginationControls}
       </div>
 
-      {(isLoading || isFallbackLoading) && manuscripts.length === 0 && (
+      {(visibleIsLoading || isFallbackLoading) && manuscripts.length === 0 && (
         <div className="mt-6 flex items-center gap-3 border border-amber-300 bg-amber-50 px-5 py-4 text-[14px] text-amber-800">
           <AlertCircle className="h-5 w-5" />
           원고 목록을 불러오는 중입니다.

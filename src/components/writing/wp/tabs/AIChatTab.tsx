@@ -29,7 +29,6 @@ export default function AIChatTab() {
 
   const modelOptions = [
     { id: 'models/gemini-3-flash-preview', label: '3 Flash Preview (최신, 실시간 정보 반영)' },
-    { id: 'models/gemini-1.5-flash', label: '1.5 Flash (실시간 검색 지원 / 초고속)' },
     { id: 'models/gemini-1.5-pro', label: '1.5 Pro (고급 분석 및 추론)' },
   ];
 

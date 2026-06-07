@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { ArrowLeft, Check, RotateCcw, Search, Send } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/utils/supabase/client";
@@ -23,6 +24,8 @@ const CREAIBOX_LIST_CACHE_KEY = "creaibox:manuscripts:list:v1";
 type StudioManuscriptRecordWithOptionalFields = StudioManuscriptRecord & {
   useSearch?: boolean;
 };
+
+type CreaiboxRow = Record<string, unknown>;
 
 type PublishingPanelTab = "seo" | "thumbnail" | "contentImage" | "schema";
 
@@ -71,40 +74,68 @@ function writeCachedList(records: StudioManuscriptRecord[]) {
   }
 }
 
-function normalizeCreaiboxRecord(row: any): StudioManuscriptRecord {
-  const content = row.content ?? "";
+function toStringValue(value: unknown, fallback = "") {
+  return typeof value === "string" ? value : fallback;
+}
+
+function toNumberValue(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function normalizeCreaiboxRecord(row: CreaiboxRow): StudioManuscriptRecord {
+  const id = String(row.id ?? "");
+  const content = toStringValue(row.content);
+  const displayId = toNumberValue(row.display_id ?? row.displayId);
+  const targetKeyword = toStringValue(row.target_keyword ?? row.targetKeyword, "일반 원고");
+  const wordCountGoal = row.word_count_goal ?? row.wordCountGoal;
+  const postType =
+    row.post_type === "recreate" || row.postType === "recreate" ? "recreate" : "create";
+  const status =
+    row.status === "saved" || row.status === "published" || row.status === "trash"
+      ? row.status
+      : "draft";
 
   return {
-    id: row.id,
-    displayId: row.display_id ?? row.displayId ?? row.id,
-    title: row.title ?? "제목 없음",
+    id,
+    displayId,
+    title: toStringValue(row.title, "제목 없음"),
     content,
-    targetKeyword: row.target_keyword ?? row.targetKeyword ?? "",
-    selectedTone: row.selected_tone ?? row.selectedTone ?? "",
-    status: row.status ?? "draft",
-    postType: row.post_type ?? row.postType ?? "create",
-    sourceMode: row.source_mode ?? row.sourceMode ?? "",
-    createdAt: row.created_at ?? row.createdAt ?? null,
-    updatedAt: row.updated_at ?? row.updatedAt ?? null,
-    slug: row.slug ?? "",
-    metaDescription: row.meta_description ?? row.metaDescription ?? "",
-    focusKeyword: row.focus_keyword ?? row.focusKeyword ?? "",
-    canonicalUrl: row.canonical_url ?? row.canonicalUrl ?? "",
-    seoTags: Array.isArray(row.seo_tags) ? row.seo_tags : [],
-    wordCount: row.word_count ?? row.wordCount ?? content.replace(/\s+/g, "").length,
-    wordCountGoal: row.word_count_goal ?? row.wordCountGoal ?? null,
-  } as StudioManuscriptRecord;
+    keyword: targetKeyword,
+    targetKeyword,
+    type: postType,
+    postType,
+    detailLabel: postType === "recreate" ? "글 재창조" : "AI 인사이트 포스팅",
+    selectedTone: toStringValue(row.selected_tone ?? row.selectedTone),
+    status,
+    sourceMode: toStringValue(row.source_mode ?? row.sourceMode),
+    createdAt: toStringValue(row.created_at ?? row.createdAt) || undefined,
+    updatedAt: toStringValue(row.updated_at ?? row.updatedAt),
+    slug: toStringValue(row.slug),
+    metaDescription: toStringValue(row.meta_description ?? row.metaDescription),
+    focusKeyword: toStringValue(row.focus_keyword ?? row.focusKeyword),
+    canonicalUrl: toStringValue(row.canonical_url ?? row.canonicalUrl),
+    seoTags: Array.isArray(row.seo_tags)
+      ? row.seo_tags.filter((tag): tag is string => typeof tag === "string")
+      : [],
+    wordCount: toNumberValue(row.word_count ?? row.wordCount) ?? content.replace(/\s+/g, "").length,
+    wordCountGoal:
+      typeof wordCountGoal === "string" || typeof wordCountGoal === "number"
+        ? wordCountGoal
+        : undefined,
+    images: [],
+  };
 }
 
 export default function CreaiboxManuscriptDetailPage() {
-  const router = useRouter();
   const params = useParams<{ id: string }>();
   const supabase = useMemo(() => createClient(), []);
   const queryClient = useQueryClient();
 
-  const manuscriptId = Number(params?.id || 0);
+  const manuscriptId = params?.id || "";
+  const [activeRouteId, setActiveRouteId] = useState(manuscriptId);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const manuscriptListRef = useRef<HTMLDivElement | null>(null);
   const saveFeedbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: queryList = [], refetch: refetchList } = useCreaiboxManuscriptsQuery();
@@ -123,25 +154,29 @@ export default function CreaiboxManuscriptDetailPage() {
   }, [cachedList, queryList]);
 
   const selectedFromList = useMemo(
-    () => sidebarList.find((item) => Number(item.displayId) === manuscriptId || Number(item.id) === manuscriptId),
-    [sidebarList, manuscriptId]
+    () =>
+      sidebarList.find(
+        (item) =>
+          String(item.displayId) === activeRouteId || String(item.id) === activeRouteId
+      ),
+    [activeRouteId, sidebarList]
   );
 
   const cachedDetail = useMemo(() => {
     const cachedFromQuery = queryClient.getQueryData<StudioManuscriptRecord | null>(
-      creaiboxManuscriptKeys.detail(manuscriptId)
+      creaiboxManuscriptKeys.detail(activeRouteId)
     );
 
     if (cachedFromQuery) return cachedFromQuery;
     if (selectedFromList) return selectedFromList;
 
     return cachedList.find(
-      (item) => Number(item.displayId) === manuscriptId || Number(item.id) === manuscriptId
+      (item) => String(item.displayId) === activeRouteId || String(item.id) === activeRouteId
     );
-  }, [cachedList, manuscriptId, queryClient, selectedFromList]);
+  }, [activeRouteId, cachedList, queryClient, selectedFromList]);
 
   const { data: detail, isLoading: isDetailLoading } = useCreaiboxManuscriptDetailQuery(
-    manuscriptId,
+    activeRouteId,
     cachedDetail ?? selectedFromList
   );
 
@@ -149,52 +184,71 @@ export default function CreaiboxManuscriptDetailPage() {
   const [data, setData] = useState<StudioManuscriptRecord | null>(null);
 
   useEffect(() => {
-    setIsMounted(true);
+    queueMicrotask(() => {
+      setIsMounted(true);
+    });
   }, []);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setActiveRouteId(manuscriptId);
+    });
+  }, [manuscriptId]);
 
   useEffect(() => {
     const cached = readCachedList();
     if (cached.length > 0) {
-      setCachedList(cached);
-      queryClient.setQueryData(creaiboxManuscriptKeys.list, cached);
+      queueMicrotask(() => {
+        setCachedList(cached);
+        queryClient.setQueryData(creaiboxManuscriptKeys.list, cached);
+      });
     }
   }, [queryClient]);
 
   useEffect(() => {
     if (queryList.length > 0) {
-      setCachedList(queryList);
-      writeCachedList(queryList);
+      queueMicrotask(() => {
+        setCachedList(queryList);
+        writeCachedList(queryList);
+      });
     }
   }, [queryList]);
 
   useEffect(() => {
     if (!cachedDetail) return;
 
-    if (!data || Number(data.displayId) !== manuscriptId) {
-      setData(cachedDetail);
+    if (
+      !data ||
+      (String(data.displayId) !== activeRouteId && String(data.id) !== activeRouteId)
+    ) {
+      queueMicrotask(() => {
+        setData(cachedDetail);
+      });
     }
-  }, [cachedDetail, data, manuscriptId]);
+  }, [activeRouteId, cachedDetail, data]);
 
   useEffect(() => {
     if (!detail) return;
 
     if (!hasLocalEdits || detail.id !== data?.id) {
-      setData(detail);
-      setHasLocalEdits(false);
+      queueMicrotask(() => {
+        setData(detail);
+        setHasLocalEdits(false);
 
-      queryClient.setQueryData(creaiboxManuscriptKeys.detail(manuscriptId), detail);
+        queryClient.setQueryData(creaiboxManuscriptKeys.detail(activeRouteId), detail);
+      });
     }
-  }, [data?.id, detail, hasLocalEdits, manuscriptId, queryClient]);
+  }, [activeRouteId, data?.id, detail, hasLocalEdits, queryClient]);
 
   const fetchDirectDetail = useCallback(async () => {
-    if (!manuscriptId || data || isDirectLoading) return;
+    if (!activeRouteId || data || isDirectLoading) return;
 
     setIsDirectLoading(true);
 
     const { data: row, error } = await supabase
       .from("writing_creaibox_posts")
       .select("*")
-      .eq("id", manuscriptId)
+      .eq("id", activeRouteId)
       .maybeSingle();
 
     setIsDirectLoading(false);
@@ -206,7 +260,7 @@ export default function CreaiboxManuscriptDetailPage() {
     setData(normalized);
     setHasLocalEdits(false);
 
-    queryClient.setQueryData(creaiboxManuscriptKeys.detail(manuscriptId), normalized);
+    queryClient.setQueryData(creaiboxManuscriptKeys.detail(activeRouteId), normalized);
 
     const nextList = (() => {
       const exists = sidebarList.some((item) => item.id === normalized.id);
@@ -219,11 +273,13 @@ export default function CreaiboxManuscriptDetailPage() {
     setCachedList(nextList);
     writeCachedList(nextList);
     queryClient.setQueryData(creaiboxManuscriptKeys.list, nextList);
-  }, [data, isDirectLoading, manuscriptId, queryClient, sidebarList, supabase]);
+  }, [activeRouteId, data, isDirectLoading, queryClient, sidebarList, supabase]);
 
   useEffect(() => {
     if (!data && !isDetailLoading) {
-      void fetchDirectDetail();
+      queueMicrotask(() => {
+        void fetchDirectDetail();
+      });
     }
   }, [data, fetchDirectDetail, isDetailLoading]);
 
@@ -251,6 +307,34 @@ export default function CreaiboxManuscriptDetailPage() {
     });
   }, [sidebarList, searchTerm]);
 
+  const syncSelectedManuscript = useCallback(
+    (routeId: string) => {
+      const matched = sidebarList.find(
+        (item) => String(item.displayId) === routeId || String(item.id) === routeId
+      );
+
+      setActiveRouteId(routeId);
+
+      if (!matched) return;
+
+      setData(matched);
+      setHasLocalEdits(false);
+      queryClient.setQueryData(creaiboxManuscriptKeys.detail(routeId), matched);
+      queryClient.setQueryData(creaiboxManuscriptKeys.detail(matched.id), matched);
+    },
+    [queryClient, sidebarList]
+  );
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const routeId = window.location.pathname.split("/").filter(Boolean).at(-1) || "";
+      if (routeId) syncSelectedManuscript(routeId);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [syncSelectedManuscript]);
+
   const updateLocalData = useCallback((patch: Partial<StudioManuscriptRecord>) => {
     setData((prev) => (prev ? { ...prev, ...patch } : prev));
     setHasLocalEdits(true);
@@ -270,23 +354,88 @@ export default function CreaiboxManuscriptDetailPage() {
 
   const handleOpenManuscript = useCallback(
     (manuscript: StudioManuscriptRecord) => {
+      const routeId = String(manuscript.displayId ?? manuscript.id);
+      const nextPath = `/studio/writing/creaibox/list/${routeId}`;
+
       setData(manuscript);
       setHasLocalEdits(false);
+      queryClient.setQueryData(creaiboxManuscriptKeys.detail(routeId), manuscript);
+      queryClient.setQueryData(creaiboxManuscriptKeys.detail(manuscript.id), manuscript);
+      setActiveRouteId(routeId);
 
-      const displayId = Number(manuscript.displayId ?? manuscript.id);
-      queryClient.setQueryData(creaiboxManuscriptKeys.detail(displayId), manuscript);
-
-      router.push(`/studio/writing/creaibox/list/${displayId}`);
+      if (window.location.pathname !== nextPath) {
+        window.history.pushState({ creaiboxManuscriptId: routeId }, "", nextPath);
+      }
     },
-    [queryClient, router]
+    [queryClient]
   );
+
+  const navigateByOffset = useCallback(
+    (offset: number) => {
+      if (!isMounted || filteredManuscripts.length === 0) return;
+
+      const currentIndex = Math.max(
+        0,
+        filteredManuscripts.findIndex((item) => {
+          const routeId = String(item.displayId ?? item.id);
+          return routeId === activeRouteId || String(item.id) === activeRouteId;
+        })
+      );
+      const nextIndex = Math.min(Math.max(currentIndex + offset, 0), filteredManuscripts.length - 1);
+      const nextItem = filteredManuscripts[nextIndex];
+
+      if (nextItem) {
+        const nextRouteId = String(nextItem.displayId ?? nextItem.id);
+
+        if (nextRouteId !== activeRouteId && String(nextItem.id) !== activeRouteId) {
+          handleOpenManuscript(nextItem);
+        }
+      }
+    },
+    [activeRouteId, filteredManuscripts, handleOpenManuscript, isMounted]
+  );
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+
+      const target = event.target as HTMLElement | null;
+      const tagName = target?.tagName?.toLowerCase();
+
+      if (
+        target?.isContentEditable ||
+        tagName === "input" ||
+        tagName === "textarea" ||
+        tagName === "select"
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      navigateByOffset(event.key === "ArrowDown" ? 1 : -1);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [navigateByOffset]);
+
+  useEffect(() => {
+    if (!activeRouteId) return;
+
+    const activeButton = manuscriptListRef.current?.querySelector<HTMLElement>(
+      `[data-manuscript-id="${CSS.escape(activeRouteId)}"]`
+    );
+
+    activeButton?.scrollIntoView({ block: "nearest" });
+  }, [activeRouteId]);
 
   const persistCaches = useCallback(
     (nextRecord: StudioManuscriptRecord) => {
-      const displayId = Number(nextRecord.displayId ?? nextRecord.id);
+      const routeId = nextRecord.displayId ?? nextRecord.id;
 
       queryClient.setQueryData<StudioManuscriptRecord | null>(
-        creaiboxManuscriptKeys.detail(displayId),
+        creaiboxManuscriptKeys.detail(routeId),
         nextRecord
       );
 
@@ -448,12 +597,12 @@ export default function CreaiboxManuscriptDetailPage() {
       <div className="flex min-h-screen items-center justify-center bg-[#0a0d12] text-white">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
           <p className="text-xl font-bold">원고를 찾지 못했습니다.</p>
-          <button
-            onClick={() => router.push("/studio/writing/creaibox/list")}
+          <Link
+            href="/studio/writing/creaibox/list"
             className="mt-5 rounded-2xl bg-white px-5 py-3 font-bold text-black"
           >
             목록으로 돌아가기
-          </button>
+          </Link>
         </div>
       </div>
     );
@@ -465,13 +614,13 @@ export default function CreaiboxManuscriptDetailPage() {
 
         {/* 왼쪽 글 목록 */}
         <aside className="h-full overflow-y-auto custom-scrollbar border-r border-violet-500/20 bg-[#0b0f15] p-4 text-[13px]">
-          <button
-            onClick={() => router.push("/studio/writing/creaibox/list")}
+          <Link
+            href="/studio/writing/creaibox/list"
             className="mb-5 flex w-full items-center gap-3 rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3 text-left text-[13px] font-bold text-white/80 transition hover:border-violet-400/40 hover:bg-violet-500/10"
           >
             <ArrowLeft className="h-4 w-4 text-violet-300" />
             목록으로 돌아가기
-          </button>
+          </Link>
 
           <div className="relative mb-5">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300/60" />
@@ -483,13 +632,15 @@ export default function CreaiboxManuscriptDetailPage() {
             />
           </div>
 
-          <div className="space-y-2">
+          <div ref={manuscriptListRef} className="space-y-2">
             {filteredManuscripts.map((manuscript) => {
               const active = manuscript.id === data.id;
+              const routeId = String(manuscript.displayId ?? manuscript.id);
 
               return (
                 <button
                   key={manuscript.id}
+                  data-manuscript-id={routeId}
                   onClick={() => handleOpenManuscript(manuscript)}
                   className={`w-full rounded-xl border p-3.5 text-left transition ${active
                     ? "border-violet-500/60 bg-violet-950/15"
