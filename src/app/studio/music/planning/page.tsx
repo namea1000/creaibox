@@ -872,44 +872,6 @@ export default function MusicPlanningPage() {
     }
   };
 
-  const markLyricsGenerated = async (plan: AlbumPlan, targetTracks: AlbumTrack[]) => {
-    const currentTracks = Array.isArray(plan.track_list) ? plan.track_list : [];
-    const targetTrackNos = new Set(targetTracks.map((item) => Number(item.trackNo)));
-    const targetTitles = new Set(targetTracks.map((item) => item.title).filter(Boolean));
-
-    const nextTracks = currentTracks.map((item) => {
-      const isTarget =
-        targetTrackNos.has(Number(item.trackNo)) || targetTitles.has(item.title);
-
-      return isTarget
-        ? {
-          ...item,
-          lyricsGenerated: true,
-        }
-        : item;
-    });
-
-    setPlans((prev) =>
-      prev.map((item) =>
-        item.id === plan.id
-          ? {
-            ...item,
-            track_list: nextTracks,
-          }
-          : item
-      )
-    );
-
-    const { error } = await supabase
-      .from("music_album_plans")
-      .update({ track_list: nextTracks })
-      .eq("id", plan.id);
-
-    if (error) {
-      console.warn("Failed to update album plan lyrics status", error);
-    }
-  };
-
   const startLyricsGeneration = async (plan: AlbumPlan, track?: AlbumTrack) => {
     const tracks = Array.isArray(plan.track_list) ? plan.track_list : [];
     const targetTracks = track ? [track] : tracks;
@@ -931,7 +893,6 @@ export default function MusicPlanningPage() {
     };
 
     window.sessionStorage.setItem(ALBUM_PLAN_TO_LYRICS_KEY, JSON.stringify(payload));
-    void markLyricsGenerated(plan, targetTracks);
     router.push("/studio/music/lyrics?autoGenerate=1&source=album-plan");
   };
 

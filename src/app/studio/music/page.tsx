@@ -24,6 +24,7 @@ import {
   Circle,
   Wand2,
   FileText,
+  Waves,
 } from "lucide-react";
 
 export default function MusicStudioHomePage() {
@@ -62,6 +63,13 @@ export default function MusicStudioHomePage() {
       href: "/studio/music/library",
       icon: Library,
       color: "from-emerald-600 to-green-600",
+    },
+    {
+      title: "오디오 비주얼라이저",
+      desc: "음악에 반응하는 오디오 스펙트럼과 비주얼라이저를 만듭니다.",
+      href: "/studio/music/visualizer",
+      icon: Waves,
+      color: "from-pink-600 to-fuchsia-600",
     },
     {
       title: "스타일 포맷",

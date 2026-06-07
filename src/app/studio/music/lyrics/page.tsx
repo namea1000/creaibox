@@ -102,10 +102,38 @@ function extractJson(text: string) {
     return JSON.parse(cleaned);
   } catch {
     const firstBrace = cleaned.indexOf("{");
-    const lastBrace = cleaned.lastIndexOf("}");
+    if (firstBrace >= 0) {
+      let depth = 0;
+      let inString = false;
+      let escaped = false;
 
-    if (firstBrace >= 0 && lastBrace > firstBrace) {
-      return JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
+      for (let index = firstBrace; index < cleaned.length; index += 1) {
+        const char = cleaned[index];
+
+        if (escaped) {
+          escaped = false;
+          continue;
+        }
+
+        if (char === "\\") {
+          escaped = true;
+          continue;
+        }
+
+        if (char === "\"") {
+          inString = !inString;
+          continue;
+        }
+
+        if (inString) continue;
+
+        if (char === "{") depth += 1;
+        if (char === "}") depth -= 1;
+
+        if (depth === 0) {
+          return JSON.parse(cleaned.slice(firstBrace, index + 1));
+        }
+      }
     }
 
     throw new Error("AI 응답을 JSON으로 변환하지 못했습니다.");
@@ -255,20 +283,34 @@ function MusicLyricsPageContent() {
     ];
   };
 
-  const markAlbumPlanLyricsGenerated = async (payload?: AlbumPlanPayload | null) => {
+  const markAlbumPlanLyricsGenerated = async (
+    payload?: AlbumPlanPayload | null,
+    savedSongs?: SongItem[]
+  ) => {
     if (!payload?.planId || !Array.isArray(payload.tracks) || payload.tracks.length === 0) {
       return;
     }
 
+    if (!Array.isArray(savedSongs) || savedSongs.length === 0) {
+      return;
+    }
+
+    const savedTitles = new Set(
+      savedSongs
+        .map((song) => String(song.title || "").trim())
+        .filter(Boolean)
+    );
+
     const targetTrackNos = new Set(
       payload.tracks
+        .filter((track) => savedTitles.has(String(track.title || "").trim()))
         .map((track) => Number(track.trackNo))
         .filter((trackNo) => Number.isFinite(trackNo))
     );
     const targetTitles = new Set(
       payload.tracks
         .map((track) => String(track.title || "").trim())
-        .filter(Boolean)
+        .filter((title) => title && savedTitles.has(title))
     );
 
     const { data, error } = await supabase
@@ -374,7 +416,7 @@ function MusicLyricsPageContent() {
 
     if (songs.length === 0) {
       alert("❌ 저장할 가사가 아직 충분하지 않습니다.");
-      return false;
+      return { saved: false, savedSongs: [] as SongItem[] };
     }
 
     try {
@@ -384,7 +426,7 @@ function MusicLyricsPageContent() {
 
       if (!user) {
         alert("❌ 로그인 세션을 확인하지 못했습니다.");
-        return false;
+        return { saved: false, savedSongs: [] as SongItem[] };
       }
 
       if (!activeUser) setActiveUser(user);
@@ -457,10 +499,10 @@ function MusicLyricsPageContent() {
           : `✅ ${songs.length}곡이 자동 저장되었습니다.`
       );
 
-      return true;
+      return { saved: true, savedSongs: songs };
     } catch (err: any) {
       alert(`❌ 저장 오류: ${err.message}`);
-      return false;
+      return { saved: false, savedSongs: [] as SongItem[] };
     } finally {
       setIsSaving(false);
     }
@@ -683,6 +725,7 @@ ${albumPlanText || "별도 앨범 기획 없음"}
       `;
 
       let text = "";
+      let parsed: any = null;
       let lastError: any = null;
       const uniqueModelNames = [...new Set([vaultConfig.model, ...GEMINI_MODEL_FALLBACKS])];
 
@@ -702,6 +745,7 @@ ${albumPlanText || "별도 앨범 기획 없음"}
               responseMimeType: "application/json",
             });
 
+            parsed = extractJson(text);
             setGenerationProgress(92);
             setGenerationStatusMessage("AI 응답을 정리하는 중입니다...");
             lastError = null;
@@ -709,6 +753,8 @@ ${albumPlanText || "별도 앨범 기획 없음"}
           } catch (error: any) {
             lastError = error;
             console.warn(`[Gemini 생성 실패] model=${modelName}, attempt=${attempt}`, error);
+            text = "";
+            parsed = null;
 
             if (attempt < AI_RETRY_ATTEMPTS && isHighDemandError(error)) {
               setGenerationStatusMessage(
@@ -722,15 +768,14 @@ ${albumPlanText || "별도 앨범 기획 없음"}
           }
         }
 
-        if (text) break;
+        if (parsed) break;
       }
 
-      if (!text) {
+      if (!parsed) {
         throw lastError || new Error("AI 응답을 받지 못했습니다.");
       }
 
       setGenerationProgress(95);
-      const parsed = extractJson(text);
 
       const songs: SongItem[] = Array.isArray(parsed.songs)
         ? parsed.songs.slice(0, safeCount).map((song: any, index: number) => ({
@@ -784,17 +829,19 @@ ${albumPlanText || "별도 앨범 기획 없음"}
       setGenerationStatusMessage("생성이 완료되었습니다. 라이브러리에 자동 저장 중입니다...");
       setIsAiLoading(false);
 
-      const saved = await saveToSupabase({
+      const saveResult = await saveToSupabase({
         finalResult: nextResult,
         finalRawResult: parsed,
         isManual: false,
       });
 
-      if (saved) {
-        await markAlbumPlanLyricsGenerated(activeAlbumPlanPayload);
+      if (saveResult.saved) {
+        await markAlbumPlanLyricsGenerated(activeAlbumPlanPayload, saveResult.savedSongs);
       }
 
-      setGenerationStatusMessage("생성과 저장이 완료되었습니다.");
+      setGenerationStatusMessage(
+        `${saveResult.savedSongs.length}곡 생성과 저장이 완료되었습니다.`
+      );
     } catch (err: any) {
       console.error(err);
       stopProgressTimer();

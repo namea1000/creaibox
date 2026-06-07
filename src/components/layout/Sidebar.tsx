@@ -56,6 +56,7 @@ import {
   MessageSquare,
   Share2,
   Disc3,
+  Waves,
   type LucideIcon,
 } from "lucide-react";
 
@@ -190,6 +191,7 @@ export default function Sidebar({
           { name: "생성곡 라이브러리", href: "/studio/music/library", icon: Mic2 },
           { name: "앨범 관리", href: "/studio/music/albums", icon: Disc3 },
           { name: "스타일 포맷", href: "/studio/music/style-format", icon: Palette },
+          { name: "오디오 스펙트럼", href: "/studio/music/visualizer", icon: Waves, },
           { name: "커버 이미지", href: "/studio/music/cover-image", icon: ImageIcon },
           { name: "영상 프롬프트", href: "/studio/music/video-prompt", icon: Video },
           { name: "번역", href: "/studio/music/translate", icon: Languages },
