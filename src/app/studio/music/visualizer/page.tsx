@@ -58,9 +58,10 @@ type VisualizerTemplate =
   | "pulse-square"
   | "vinyl"
   | "heartbeat"
-  | "minimal"
+  | "minimal";
 type ExportQuality = "720p" | "1080p" | "4k";
 type ExportFps = 24 | 30 | 60;
+type VideoBlendMode = "source-over" | "screen" | "lighten" | "overlay" | "soft-light";
 
 const templates: {
   id: VisualizerTemplate;
@@ -178,6 +179,8 @@ export default function MusicVisualizerPage() {
   const animationRef = useRef<number | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const coverImageRef = useRef<HTMLImageElement | null>(null);
+  const videoOverlayRef = useRef<HTMLVideoElement | null>(null);
+  const mp4ConvertInputRef = useRef<HTMLInputElement | null>(null);
   const playRequestRef = useRef(0);
   const smoothedFreqRef = useRef<{ count: number; values: number[] }>({ count: 0, values: [] });
 
@@ -186,8 +189,17 @@ export default function MusicVisualizerPage() {
   const [audioUrl, setAudioUrl] = useState("");
   const [fileName, setFileName] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [videoOverlayUrl, setVideoOverlayUrl] = useState("");
+  const [videoOverlayName, setVideoOverlayName] = useState("");
+  const [videoOverlayOpacity, setVideoOverlayOpacity] = useState(65);
+  const [videoBlendMode, setVideoBlendMode] = useState<VideoBlendMode>("screen");
+  const [videoOverlayLoop, setVideoOverlayLoop] = useState(true);
+  const [videoOverlayMuted, setVideoOverlayMuted] = useState(true);
+  const [videoOverlayAutoPlay, setVideoOverlayAutoPlay] = useState(true);
   const [isMp4Rendering, setIsMp4Rendering] = useState(false);
   const [mp4Progress, setMp4Progress] = useState(0);
+  const [isFileConverting, setIsFileConverting] = useState(false);
+  const [fileConvertProgress, setFileConvertProgress] = useState(0);
   const [exportQuality, setExportQuality] = useState<ExportQuality>("1080p");
   const [exportFps, setExportFps] = useState<ExportFps>(30);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -241,8 +253,22 @@ export default function MusicVisualizerPage() {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       if (audioUrl) URL.revokeObjectURL(audioUrl);
       if (coverImageUrl) URL.revokeObjectURL(coverImageUrl);
+      if (videoOverlayUrl) URL.revokeObjectURL(videoOverlayUrl);
     };
-  }, [audioUrl, coverImageUrl]);
+  }, [audioUrl, coverImageUrl, videoOverlayUrl]);
+
+  useEffect(() => {
+    const video = videoOverlayRef.current;
+    if (!video || !videoOverlayUrl) return;
+
+    video.loop = videoOverlayLoop;
+    video.muted = videoOverlayMuted;
+    video.playsInline = true;
+
+    if ((videoOverlayAutoPlay && isPlaying) || isRecording) {
+      void video.play().catch(() => undefined);
+    }
+  }, [videoOverlayAutoPlay, videoOverlayLoop, videoOverlayMuted, videoOverlayUrl, isPlaying, isRecording]);
 
   const draw = () => {
     const canvas = canvasRef.current;
@@ -327,6 +353,32 @@ export default function MusicVisualizerPage() {
       ctx.restore();
     };
 
+    const drawVideoOverlay = () => {
+      const video = videoOverlayRef.current;
+      if (
+        !videoOverlayUrl ||
+        !video ||
+        video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA ||
+        !video.videoWidth ||
+        !video.videoHeight ||
+        videoOverlayOpacity <= 0
+      ) {
+        return;
+      }
+
+      const scale = Math.max(width / video.videoWidth, height / video.videoHeight);
+      const videoW = video.videoWidth * scale;
+      const videoH = video.videoHeight * scale;
+      const videoX = (width - videoW) / 2;
+      const videoY = (height - videoH) / 2;
+
+      ctx.save();
+      ctx.globalAlpha = videoOverlayOpacity / 100;
+      ctx.globalCompositeOperation = videoBlendMode;
+      ctx.drawImage(video, videoX, videoY, videoW, videoH);
+      ctx.restore();
+    };
+
     const frame = () => {
       analyser.getByteFrequencyData(freq);
       analyser.getByteTimeDomainData(wave);
@@ -381,6 +433,8 @@ export default function MusicVisualizerPage() {
         ctx.fillStyle = bg;
         ctx.fillRect(0, 0, width, height);
       }
+
+      drawVideoOverlay();
 
       const gradient = ctx.createLinearGradient(0, 0, width, height);
       if (isCoverBackgroundActive) {
@@ -679,8 +733,44 @@ export default function MusicVisualizerPage() {
     setCoverImageUrl(url);
   };
 
+  const handleVideoOverlayUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (videoOverlayUrl) URL.revokeObjectURL(videoOverlayUrl);
+
+    const url = URL.createObjectURL(file);
+    setVideoOverlayUrl(url);
+    setVideoOverlayName(file.name);
+    event.target.value = "";
+  };
+
+  const handleConvertLocalWebm = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsFileConverting(true);
+      setFileConvertProgress(0);
+
+      await convertWebmToMp4({
+        webmBlob: file,
+        title: file.name.replace(/\.[^/.]+$/, ""),
+        onProgress: setFileConvertProgress,
+      });
+    } catch (error: unknown) {
+      console.error(error);
+      window.alert(`MP4 변환 실패: ${getErrorMessage(error)}`);
+    } finally {
+      setIsFileConverting(false);
+      setFileConvertProgress(0);
+      event.target.value = "";
+    }
+  };
+
   const handlePlay = async () => {
     const audio = audioRef.current;
+    const videoOverlay = videoOverlayRef.current;
 
     if (!audio || !audioUrl) {
       window.alert("먼저 오디오 파일을 업로드하세요.");
@@ -708,6 +798,7 @@ export default function MusicVisualizerPage() {
     if (!audio.paused) {
       playRequestRef.current += 1;
       audio.pause();
+      if (videoOverlayAutoPlay) videoOverlay?.pause();
       setIsPlaying(false);
       return;
     }
@@ -717,6 +808,9 @@ export default function MusicVisualizerPage() {
 
     try {
       await audio.play();
+      if (videoOverlayAutoPlay && videoOverlay) {
+        void videoOverlay.play().catch(() => undefined);
+      }
       if (playRequestRef.current === requestId) {
         setIsPlaying(true);
       }
@@ -745,6 +839,7 @@ export default function MusicVisualizerPage() {
   const handleStartRecording = async (exportMode: "webm" | "mp4" = "webm") => {
     const canvas = canvasRef.current;
     const audio = audioRef.current;
+    const videoOverlay = videoOverlayRef.current;
     const exportSize = getExportSize(exportQuality, canvasSize);
     const originalCanvasWidth = canvas?.width;
     const originalCanvasHeight = canvas?.height;
@@ -842,6 +937,10 @@ export default function MusicVisualizerPage() {
     setIsRecording(true);
 
     audio.currentTime = 0;
+    if (videoOverlay && videoOverlayAutoPlay) {
+      videoOverlay.currentTime = 0;
+      void videoOverlay.play().catch(() => undefined);
+    }
     try {
       await audio.play();
       setIsPlaying(true);
@@ -860,6 +959,7 @@ export default function MusicVisualizerPage() {
   const handleStopRecording = () => {
     const recorder = mediaRecorderRef.current;
     const audio = audioRef.current;
+    const videoOverlay = videoOverlayRef.current;
 
     if (!recorder || recorder.state === "inactive") {
       setIsRecording(false);
@@ -877,6 +977,11 @@ export default function MusicVisualizerPage() {
       audio.currentTime = 0;
     }
 
+    if (videoOverlay && videoOverlayAutoPlay) {
+      videoOverlay.pause();
+      videoOverlay.currentTime = 0;
+    }
+
     setIsPlaying(false);
   };
 
@@ -889,7 +994,24 @@ export default function MusicVisualizerPage() {
   useEffect(() => {
     if (analyserRef.current) draw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [template, accentColor, backgroundColor, coverImageUrl, showCover, showTitle, useCoverAsBackground, coverBackgroundDim, canvasSize, displayTitle, spectrumY, spectrumHeight, spectrumWidth]);
+  }, [
+    template,
+    accentColor,
+    backgroundColor,
+    coverImageUrl,
+    showCover,
+    showTitle,
+    useCoverAsBackground,
+    coverBackgroundDim,
+    canvasSize,
+    displayTitle,
+    spectrumY,
+    spectrumHeight,
+    spectrumWidth,
+    videoOverlayUrl,
+    videoOverlayOpacity,
+    videoBlendMode,
+  ]);
 
   useEffect(() => {
     if (!audioRef.current || !audioUrl) return;
@@ -929,6 +1051,12 @@ export default function MusicVisualizerPage() {
                 <input type="file" accept="image/*" onChange={handleCoverUpload} className="hidden" />
               </label>
 
+              <label className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-fuchsia-400/30 bg-fuchsia-400/10 px-5 text-sm font-black text-fuchsia-100 hover:border-fuchsia-300">
+                <Film size={18} />
+                오버레이 영상
+                <input type="file" accept="video/*" onChange={handleVideoOverlayUpload} className="hidden" />
+              </label>
+
               <button
                 type="button"
                 onClick={handleDownloadPng}
@@ -960,6 +1088,23 @@ export default function MusicVisualizerPage() {
                     ? `MP4 변환 ${mp4Progress}%`
                     : `MP4 저장 ${exportQuality} ${exportFps}fps`}
               </button>
+
+              <button
+                type="button"
+                onClick={() => mp4ConvertInputRef.current?.click()}
+                disabled={isFileConverting}
+                className="inline-flex h-12 items-center gap-2 rounded-xl border border-emerald-300/30 bg-emerald-400/10 px-5 text-sm font-black text-emerald-100 hover:border-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Film size={18} />
+                {isFileConverting ? `파일 MP4 변환 ${fileConvertProgress}%` : "파일 MP4 변환"}
+              </button>
+              <input
+                ref={mp4ConvertInputRef}
+                type="file"
+                accept="video/webm,.webm"
+                onChange={handleConvertLocalWebm}
+                className="hidden"
+              />
             </div>
           </div>
         </section>
@@ -992,6 +1137,81 @@ export default function MusicVisualizerPage() {
               </div>
               <div className="mt-1">앨범: {selectedSong?.album_name || "연결 없음"}</div>
               <div className="mt-1">오디오: {fileName || "업로드 전"}</div>
+            </div>
+
+            <div className="rounded-xl border border-fuchsia-400/20 bg-fuchsia-400/5 p-4">
+              <h2 className="mb-3 flex items-center gap-2 text-lg font-black">
+                <Film className="text-fuchsia-300" size={22} />
+                영상 오버레이
+              </h2>
+
+              <div className="mb-4 rounded-xl border border-white/10 bg-black/30 p-3 text-xs leading-5 text-zinc-400">
+                <div className="font-bold text-white">
+                  {videoOverlayName || "오버레이 영상 없음"}
+                </div>
+                <div className="mt-1">
+                  스파클링, 빛 번짐, 입자 영상 등을 커버 위에 블렌드로 얹을 수 있습니다.
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <label className="block">
+                  <div className="mb-2 flex items-center justify-between text-sm font-bold text-zinc-300">
+                    <span>투명도</span>
+                    <span className="text-fuchsia-200">{videoOverlayOpacity}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={videoOverlayOpacity}
+                    onChange={(event) => setVideoOverlayOpacity(Number(event.target.value))}
+                    className="w-full accent-fuchsia-300"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-2 block text-sm font-bold text-zinc-300">블렌드 모드</span>
+                  <select
+                    value={videoBlendMode}
+                    onChange={(event) => setVideoBlendMode(event.target.value as VideoBlendMode)}
+                    className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-white outline-none focus:border-fuchsia-400"
+                  >
+                    <option value="screen">스크린</option>
+                    <option value="lighten">밝게</option>
+                    <option value="soft-light">부드러운 빛</option>
+                    <option value="overlay">오버레이</option>
+                    <option value="source-over">일반</option>
+                  </select>
+                </label>
+
+                <div className="grid grid-cols-3 gap-2 text-xs font-bold text-zinc-300">
+                  <label className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-3">
+                    반복
+                    <input
+                      type="checkbox"
+                      checked={videoOverlayLoop}
+                      onChange={(event) => setVideoOverlayLoop(event.target.checked)}
+                    />
+                  </label>
+                  <label className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-3">
+                    무음
+                    <input
+                      type="checkbox"
+                      checked={videoOverlayMuted}
+                      onChange={(event) => setVideoOverlayMuted(event.target.checked)}
+                    />
+                  </label>
+                  <label className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-3">
+                    자동
+                    <input
+                      type="checkbox"
+                      checked={videoOverlayAutoPlay}
+                      onChange={(event) => setVideoOverlayAutoPlay(event.target.checked)}
+                    />
+                  </label>
+                </div>
+              </div>
             </div>
 
             <h2 className="flex items-center gap-2 pt-4 text-xl font-black">
@@ -1218,16 +1438,33 @@ export default function MusicVisualizerPage() {
                 />
               </div>
 
+              {videoOverlayUrl ? (
+                <video
+                  ref={videoOverlayRef}
+                  src={videoOverlayUrl}
+                  muted={videoOverlayMuted}
+                  loop={videoOverlayLoop}
+                  playsInline
+                  className="hidden"
+                />
+              ) : null}
+
               {audioUrl ? (
                 <audio
                   ref={audioRef}
                   src={audioUrl}
                   onPlay={() => {
                     setIsPlaying(true);
+                    if (videoOverlayAutoPlay) {
+                      void videoOverlayRef.current?.play().catch(() => undefined);
+                    }
                   }}
                   onPause={() => {
                     playRequestRef.current += 1;
                     setIsPlaying(false);
+                    if (videoOverlayAutoPlay && !isRecording) {
+                      videoOverlayRef.current?.pause();
+                    }
                   }}
                   onTimeUpdate={(event) => {
                     const audio = event.currentTarget;
@@ -1238,6 +1475,11 @@ export default function MusicVisualizerPage() {
                   }}
                   onEnded={() => {
                     setIsPlaying(false);
+                    if (videoOverlayAutoPlay) {
+                      const videoOverlay = videoOverlayRef.current;
+                      videoOverlay?.pause();
+                      if (videoOverlay) videoOverlay.currentTime = 0;
+                    }
                     if (isRecording) handleStopRecording();
                   }}
                   className="mt-5 w-full"

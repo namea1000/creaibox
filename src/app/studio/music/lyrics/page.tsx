@@ -6,8 +6,9 @@ import { createClient } from "@/utils/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { Sparkles } from "lucide-react";
 import {
-  generateGeminiContent,
-  getRequiredUserGeminiVaultConfig,
+  generateGeminiContentWithFallback,
+  getPublicGeminiFallbackNotice,
+  getUserAiVaultConfig,
 } from "@/lib/client/api-vault";
 
 import LyricsInputPanel from "@/components/music/lyrics/LyricsInputPanel";
@@ -648,8 +649,11 @@ addOnPrompt: ${track.addOnPrompt}
     startProgressTimer();
 
     try {
-      const vaultConfig = getRequiredUserGeminiVaultConfig();
-      const apiKey = vaultConfig.apiKey;
+      const vaultConfig = getUserAiVaultConfig();
+
+      if (!vaultConfig) {
+        alert(getPublicGeminiFallbackNotice());
+      }
 
       const prompt = `
 너는 AI 음악 제작 스튜디오의 전문 작곡가, 작사가, Suno 프롬프트 엔지니어다.
@@ -727,7 +731,13 @@ ${albumPlanText || "별도 앨범 기획 없음"}
       let text = "";
       let parsed: any = null;
       let lastError: any = null;
-      const uniqueModelNames = [...new Set([vaultConfig.model, ...GEMINI_MODEL_FALLBACKS])];
+      const uniqueModelNames = [
+        ...new Set(
+          vaultConfig?.provider === "groq"
+            ? [vaultConfig.model]
+            : [vaultConfig?.model || GEMINI_MODEL_FALLBACKS[0], ...GEMINI_MODEL_FALLBACKS]
+        ),
+      ];
 
       for (const modelName of uniqueModelNames) {
         for (let attempt = 1; attempt <= AI_RETRY_ATTEMPTS; attempt += 1) {
@@ -738,12 +748,15 @@ ${albumPlanText || "별도 앨범 기획 없음"}
                 : `${modelName} 모델 재시도 중입니다. (${attempt}/${AI_RETRY_ATTEMPTS})`
             );
 
-            text = await generateGeminiContent({
-              apiKey,
+            const generationResult = await generateGeminiContentWithFallback({
               modelName,
               prompt,
               responseMimeType: "application/json",
+              type: "music_lyrics",
+              userId: activeUser?.id || null,
+              userEmail: activeUser?.email || null,
             });
+            text = generationResult.text;
 
             parsed = extractJson(text);
             setGenerationProgress(92);

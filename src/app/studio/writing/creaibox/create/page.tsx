@@ -4,7 +4,12 @@ import React, { useMemo, useState, useEffect } from "react";
 import CreaiboxCreateTab from "@/components/writing/creaibox/tabs/CreaiboxCreateTab";
 import { createClient } from "@/utils/supabase/client";
 import type { User } from "@supabase/supabase-js";
-import { getRequiredUserGeminiVaultConfig } from "@/lib/client/api-vault";
+import {
+  generateGeminiContentWithFallback,
+  getPublicGeminiFallbackNotice,
+  getUserAiVaultConfig,
+  getUserGeminiVaultConfig,
+} from "@/lib/client/api-vault";
 import { creaiboxManuscriptStore } from "@/lib/stores/manuscripts";
 
 const AUTH_RETRY_DELAY_MS = 700;
@@ -71,91 +76,6 @@ function getFriendlyAiErrorMessage(error: unknown) {
   }
 
   return "AI 생성 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
-}
-
-type GeminiGenerateResponse = {
-  candidates?: Array<{
-    content?: {
-      parts?: Array<{
-        text?: string;
-      }>;
-    };
-  }>;
-  error?: {
-    message?: string;
-  };
-};
-
-function extractGeminiText(data: GeminiGenerateResponse) {
-  const text = data.candidates?.[0]?.content?.parts
-    ?.map((part) => part.text || "")
-    .join("")
-    .trim();
-
-  if (!text) {
-    throw new Error(data.error?.message || "Gemini 응답 본문이 비어 있습니다.");
-  }
-
-  return text;
-}
-
-async function generateGeminiContent({
-  apiKey,
-  modelName,
-  prompt,
-  useSearch,
-}: {
-  apiKey: string;
-  modelName: string;
-  prompt: string;
-  useSearch: boolean;
-}) {
-  const modelPath = modelName.startsWith("models/") ? modelName : `models/${modelName}`;
-  const body: Record<string, unknown> = {
-    contents: [
-      {
-        role: "user",
-        parts: [{ text: prompt }],
-      },
-    ],
-    generationConfig: {
-      responseMimeType: "application/json",
-    },
-  };
-
-  if (useSearch) {
-    body.tools = [{ googleSearch: {} }];
-  }
-
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/${modelPath}:generateContent?key=${encodeURIComponent(apiKey)}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    }
-  );
-
-  const rawText = await response.text();
-  let data: GeminiGenerateResponse = {};
-
-  try {
-    data = rawText ? (JSON.parse(rawText) as GeminiGenerateResponse) : {};
-  } catch {
-    if (!response.ok) {
-      throw new Error(rawText || `Gemini API 요청 실패 (${response.status})`);
-    }
-
-    return rawText.trim();
-  }
-
-  if (!response.ok) {
-    throw new Error(data.error?.message || rawText || `Gemini API 요청 실패 (${response.status})`);
-  }
-
-  return extractGeminiText(data);
 }
 
 function parseGeminiJson(text: string) {
@@ -358,7 +278,7 @@ export default function CreaiboxEditorPage() {
   const [seoTags, setSeoTags] = useState<string[]>([]);
 
   const [isAiLoading, setIsAiLoading] = useState(false);
-  const [useSearch, setUseSearch] = useState(true);
+  const [searchGroundingAvailable, setSearchGroundingAvailable] = useState(false);
   const [userNickname, setUserNickname] = useState<string>("");
   const [activeUser, setActiveUser] = useState<User | null>(null);
   const [editLink, setEditLink] = useState("");
@@ -385,6 +305,19 @@ export default function CreaiboxEditorPage() {
     void getProfile();
   }, [resolveAuthUser, supabase]);
 
+  useEffect(() => {
+    const syncSearchGroundingAvailability = () => {
+      const config = getUserGeminiVaultConfig();
+      setSearchGroundingAvailable(config?.provider === "gemini_postpay");
+    };
+
+    syncSearchGroundingAvailability();
+
+    window.addEventListener("storage", syncSearchGroundingAvailability);
+
+    return () => window.removeEventListener("storage", syncSearchGroundingAvailability);
+  }, []);
+
   const saveToSupabase = async (
     currentContent: string,
     currentTitle: string,
@@ -395,6 +328,7 @@ export default function CreaiboxEditorPage() {
       slug?: string;
       metaDescription?: string;
       canonicalUrl?: string;
+      useSearch?: boolean;
     }
   ) => {
     if (!currentContent || currentContent.length < 50) {
@@ -450,7 +384,7 @@ export default function CreaiboxEditorPage() {
         canonical_url: overrides?.canonicalUrl || canonicalUrl || null,
         seo_tags: derivedSeoTags,
         word_count_goal: wordCountGoal,
-        use_search: useSearch,
+        use_search: overrides?.useSearch ?? searchGroundingAvailable,
       };
 
       const { data: insertedRow, error } = await supabase
@@ -511,8 +445,14 @@ export default function CreaiboxEditorPage() {
 
     try {
       const lengthPrompt = getLengthPrompt(wordCountGoal);
-      const vaultConfig = getRequiredUserGeminiVaultConfig();
-      const apiKey = vaultConfig.apiKey;
+      const vaultConfig = getUserAiVaultConfig();
+      const shouldUseGoogleSearch = Boolean(vaultConfig && vaultConfig.provider === "gemini_postpay");
+
+      if (!vaultConfig) {
+        alert(getPublicGeminiFallbackNotice());
+      }
+
+      setSearchGroundingAvailable(shouldUseGoogleSearch);
 
       const prompt = `
         당신은 Creaibox의 전문 블로그 콘텐츠 에디터입니다. 
@@ -522,7 +462,7 @@ export default function CreaiboxEditorPage() {
         - 길이 규격: ${lengthPrompt.label}
         - 목표 분량: 약 ${wordCountGoal}자
         - 길이 작성 지침: ${lengthPrompt.instruction}
-        - ${useSearch ? "Google Search를 활용해" : "내부 지식과 논리 전개를 활용해"} 2026년 최신 기술 트렌드와 인사이트를 반영하여 작성하십시오.
+        - ${shouldUseGoogleSearch ? "Google Search를 활용해" : "내부 지식과 논리 전개를 활용해"} 2026년 최신 기술 트렌드와 인사이트를 반영하여 작성하십시오.
         - 제목은 클릭하고 싶게 만들되 과장하지 말고, 첫 문단에서 글의 핵심 가치를 빠르게 전달하십시오.
         - 본문은 마크다운 형식으로 작성하고, 길이 규격에 맞게 문단 수와 정보 밀도를 조절하십시오.
         - 짧은 글은 압축적으로, 긴 글은 소제목/사례/FAQ/실행 팁을 충분히 포함해 깊이 있게 작성하십시오.
@@ -544,8 +484,15 @@ export default function CreaiboxEditorPage() {
 
       let text = "";
       let lastError: unknown = null;
-      const uniqueModelNames = [...new Set([vaultConfig.model, ...GEMINI_MODEL_FALLBACKS])];
-      const searchModes = useSearch ? [true, false] : [false];
+      let generationUsedSearch = false;
+      const uniqueModelNames = [
+        ...new Set(
+          vaultConfig?.provider === "groq"
+            ? [vaultConfig.model]
+            : [vaultConfig?.model || PRIMARY_GEMINI_MODEL, ...GEMINI_MODEL_FALLBACKS]
+        ),
+      ];
+      const searchModes = shouldUseGoogleSearch ? [true, false] : [false];
 
       for (const modelName of uniqueModelNames) {
         for (const shouldUseSearch of searchModes) {
@@ -555,18 +502,22 @@ export default function CreaiboxEditorPage() {
                 attempt === 1
                   ? shouldUseSearch
                     ? `${modelName} 모델과 최신 검색으로 글을 생성하고 있습니다...`
-                    : useSearch
+                    : shouldUseGoogleSearch
                       ? "검색 도구 연결이 불안정해 검색 없이 이어서 생성하고 있습니다..."
                       : `${modelName} 모델로 글을 생성하고 있습니다...`
                   : `${modelName} 모델 재시도 중입니다. (${attempt}/${AI_RETRY_ATTEMPTS})`
               );
 
-              const responseText = await generateGeminiContent({
-                apiKey,
+              const generationResult = await generateGeminiContentWithFallback({
                 modelName,
                 prompt,
                 useSearch: shouldUseSearch,
+                responseMimeType: "application/json",
+                type: "creaibox_create",
+                userId: activeUser?.id || null,
+                userEmail: activeUser?.email || null,
               });
+              const responseText = generationResult.text;
 
               try {
                 parseGeminiJson(responseText);
@@ -592,6 +543,7 @@ export default function CreaiboxEditorPage() {
               }
 
               text = responseText;
+              generationUsedSearch = generationResult.usedSearch;
 
               lastError = null;
               setGenerationStatusMessage("AI 응답을 정리하는 중입니다...");
@@ -659,6 +611,7 @@ export default function CreaiboxEditorPage() {
           slug: nextSlug,
           metaDescription: nextMetaDescription,
           canonicalUrl: buildCreaiboxCanonicalUrl(nextSlug),
+          useSearch: generationUsedSearch,
         });
       }, 100);
     } catch (error: unknown) {
@@ -732,8 +685,8 @@ export default function CreaiboxEditorPage() {
         setPostType={setPostType}
         isAiLoading={isAiLoading}
         setIsAiLoading={setIsAiLoading}
-        useSearch={useSearch}
-        setUseSearch={setUseSearch}
+        useSearch={searchGroundingAvailable}
+        searchGroundingAvailable={searchGroundingAvailable}
         handleAiGenerateLive={handleAiGenerateLive}
         handleSavePostToSupabase={() => saveToSupabase(content, title, true)}
         handleResetGeneratedContent={handleResetGeneratedContent}

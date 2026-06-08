@@ -5,8 +5,9 @@ import { createClient } from "@/utils/supabase/client";
 import NaverRecreateTab from "@/components/writing/naver/tabs/NaverRecreateTab";
 import type { User } from "@supabase/supabase-js";
 import {
-  generateGeminiContent,
-  getRequiredUserGeminiVaultConfig,
+  generateGeminiContentWithFallback,
+  getPublicGeminiFallbackNotice,
+  getUserAiVaultConfig,
 } from "@/lib/client/api-vault";
 import { naverManuscriptStore } from "@/lib/stores/manuscripts";
 
@@ -286,8 +287,11 @@ export default function NaverRecreatePage() {
     setSourceAnalysis({ keywords: [], topic: "", summaryPoints: [] });
 
     try {
-      const vaultConfig = getRequiredUserGeminiVaultConfig();
-      const apiKey = vaultConfig.apiKey;
+      const vaultConfig = getUserAiVaultConfig();
+
+      if (!vaultConfig) {
+        alert(getPublicGeminiFallbackNotice());
+      }
 
       const keywordInstruction = targetKeyword.trim()
         ? `새로 탄생할 원고의 집중 공략 타겟 키워드는 '${targetKeyword.trim()}'이며, 반드시 이 키워드를 중심으로 최적화하라.`
@@ -344,7 +348,13 @@ export default function NaverRecreatePage() {
 
       let text = "";
       let lastError: any = null;
-      const uniqueModelNames = [...new Set([vaultConfig.model, ...GEMINI_MODEL_FALLBACKS])];
+      const uniqueModelNames = [
+        ...new Set(
+          vaultConfig?.provider === "groq"
+            ? [vaultConfig.model]
+            : [vaultConfig?.model || PRIMARY_GEMINI_MODEL, ...GEMINI_MODEL_FALLBACKS]
+        ),
+      ];
 
       for (const modelName of uniqueModelNames) {
         for (let attempt = 1; attempt <= AI_RETRY_ATTEMPTS; attempt += 1) {
@@ -357,12 +367,15 @@ export default function NaverRecreatePage() {
                 : `${modelName} 모델 재시도 중입니다. (${attempt}/${AI_RETRY_ATTEMPTS})`
             );
 
-            text = await generateGeminiContent({
-              apiKey,
+            const generationResult = await generateGeminiContentWithFallback({
               modelName,
               prompt,
               responseMimeType: "application/json",
+              type: "naver_recreate",
+              userId: activeUser?.id || null,
+              userEmail: activeUser?.email || null,
             });
+            text = generationResult.text;
 
             lastError = null;
             setGenerationStatusMessage("AI 응답을 정리하는 중입니다...");

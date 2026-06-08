@@ -5,12 +5,17 @@ import Link from 'next/link';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CreaiboxAnalysisTower from "@/components/writing/creaibox/tabs/CreaiboxAnalysisTower";
+import CreaiboxContentImagePanel from "@/components/writing/creaibox/tabs/CreaiboxContentImagePanel";
+import CreaiboxSchemaPanel from "@/components/writing/creaibox/tabs/CreaiboxSchemaPanel";
+import CreaiboxSeoOptimizationPanel from "@/components/writing/creaibox/tabs/CreaiboxSeoOptimizationPanel";
 import { createClient } from '@/utils/supabase/client';
+import type { StudioManuscriptRecord } from "@/lib/queries/manuscripts";
 import {
-  Loader2, PenLine, ChevronDown, Zap, Copy, Download, ExternalLink, Eye, X, FileText, Trash2
+  Loader2, PenLine, ChevronDown, Zap, Copy, Download, ExternalLink, Eye, X, FileText, Trash2, Send, RotateCcw
 } from 'lucide-react';
 
 interface KeywordFrequency { word: string; count: number; density: number; status: 'good' | 'warning' | 'danger'; }
+type PublishingPanelTab = "seo" | "thumbnail" | "contentImage" | "schema";
 
 // 🌟 [타입스크립트 완전 호환] 부모와 연동되는 모든 매개변수 명세 선언
 interface CreaiboxCreateTabProps {
@@ -39,7 +44,7 @@ interface CreaiboxCreateTabProps {
   isAiLoading: boolean;
   setIsAiLoading: React.Dispatch<React.SetStateAction<boolean>>;
   useSearch: boolean;
-  setUseSearch: React.Dispatch<React.SetStateAction<boolean>>;
+  searchGroundingAvailable: boolean;
   handleAiGenerateLive: () => Promise<void>;
   handleSavePostToSupabase: () => Promise<void>;
   handleResetGeneratedContent: () => void;
@@ -49,10 +54,10 @@ interface CreaiboxCreateTabProps {
 }
 
 export default function CreaiboxCreateTab({
-  targetKeyword, setTargetKeyword, title, content,
+  targetKeyword, setTargetKeyword, title, setTitle, content, setContent,
   slug, setSlug, metaDescription, setMetaDescription, focusKeyword, setFocusKeyword, canonicalUrl, setCanonicalUrl, seoTags, setSeoTags,
   selectedTone, setSelectedTone, wordCountGoal, setWordCountGoal,
-  postType, setPostType, isAiLoading, useSearch, setUseSearch,
+  postType, setPostType, isAiLoading, useSearch, searchGroundingAvailable,
   handleAiGenerateLive,
   handleSavePostToSupabase,
   handleResetGeneratedContent,
@@ -66,15 +71,73 @@ export default function CreaiboxCreateTab({
   const [isSaveDropdownOpen, setIsSaveDropdownOpen] = useState(false);
   const [progress, setProgress] = useState(0);
   const [userNickname, setUserNickname] = useState<string>("");
+  const [publishingPanelTab, setPublishingPanelTab] = useState<PublishingPanelTab>("seo");
 
   const charCount = content.length;
   const metaDescriptionLength = metaDescription.trim().length;
-  const slugLength = slug.trim().length;
   const seoHealthLabel = !title || !content
     ? '대기 중'
     : metaDescriptionLength >= 90 && metaDescriptionLength <= 155 && focusKeyword
       ? '준비 완료'
       : '보완 필요';
+  const publishingStatusClass =
+    seoHealthLabel === "준비 완료"
+      ? "bg-emerald-500/10 text-emerald-300"
+      : seoHealthLabel === "보완 필요"
+        ? "bg-amber-500/10 text-amber-300"
+        : "bg-zinc-800/80 text-zinc-400";
+
+  const draftRecord = useMemo<StudioManuscriptRecord>(
+    () => ({
+      id: "create-draft",
+      displayId: undefined,
+      title: title || "",
+      content: content || "",
+      keyword: targetKeyword || "일반 원고",
+      targetKeyword: targetKeyword || "",
+      type: "create",
+      postType: "create",
+      detailLabel: postType || "AI 인사이트 포스팅",
+      selectedTone: selectedTone || "",
+      status: content ? "saved" : "draft",
+      sourceMode: "",
+      createdAt: undefined,
+      updatedAt: "",
+      slug,
+      metaDescription,
+      focusKeyword,
+      canonicalUrl,
+      seoTags,
+      wordCount: content.replace(/\s+/g, "").length,
+      wordCountGoal,
+      useSearch,
+      images: [],
+    }),
+    [
+      canonicalUrl,
+      content,
+      focusKeyword,
+      metaDescription,
+      postType,
+      selectedTone,
+      seoTags,
+      slug,
+      targetKeyword,
+      title,
+      useSearch,
+      wordCountGoal,
+    ]
+  );
+
+  const updateDraftRecord = (patch: Partial<StudioManuscriptRecord>) => {
+    if (typeof patch.title === "string") setTitle(patch.title);
+    if (typeof patch.content === "string") setContent(patch.content);
+    if (typeof patch.slug === "string") setSlug(patch.slug);
+    if (typeof patch.metaDescription === "string") setMetaDescription(patch.metaDescription);
+    if (typeof patch.focusKeyword === "string") setFocusKeyword(patch.focusKeyword);
+    if (typeof patch.canonicalUrl === "string") setCanonicalUrl(patch.canonicalUrl);
+    if (Array.isArray(patch.seoTags)) setSeoTags(patch.seoTags);
+  };
 
   const stripMarkdown = (value: string) =>
     value
@@ -537,26 +600,33 @@ export default function CreaiboxCreateTab({
         <div className="h-full overflow-y-auto custom-scrollbar border-r border-zinc-800/80 bg-[#111216] text-left">
           <div className="p-5 space-y-4">
 
-            <div className="p-4 bg-zinc-950/60 border border-zinc-800 rounded-xl space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[13px] font-black text-zinc-300">
-                  최신 정보 팩트체크 엔진
+            <div className={`rounded-xl border p-4 ${searchGroundingAvailable
+              ? "border-emerald-400/20 bg-emerald-500/10"
+              : "border-amber-400/20 bg-amber-500/10"
+              }`}>
+              <div className="flex items-start gap-3">
+                <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border text-[10px] font-black ${searchGroundingAvailable
+                  ? "border-emerald-400/50 bg-emerald-400/20 text-emerald-200"
+                  : "border-amber-400/50 bg-amber-400/20 text-amber-200"
+                  }`}>
+                  {searchGroundingAvailable ? "✓" : "!"}
                 </span>
-                <label className="relative flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={useSearch}
-                    onChange={(e) => setUseSearch(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-5 h-5 rounded border border-zinc-700 peer-checked:bg-blue-600 flex items-center justify-center transition-all">
-                    {useSearch && <span className="text-white text-[10px] font-black">✓</span>}
-                  </div>
-                </label>
+                <div>
+                  <p className="text-[13px] font-black text-zinc-200">
+                    실시간 정보 반영 안내
+                  </p>
+                  <p className="mt-1.5 text-[11px] font-bold leading-5 text-zinc-400">
+                    무료 Gemini API Key는 Google Search 기반 최신 정보 반영을 사용할 수 없습니다.
+                    /apivault의 <span className="text-emerald-300">Google Gemini API - Tier 1 · Postpay(Billing Account)</span>에 선불충전 유료 결제된 API Key를 저장하면 자동으로 최신 검색 기반으로 글을 생성합니다.
+                    GPT 등 실시간 검색 지원 모델을 선택한 경우에도 최신 정보 반영 워크플로우로 확장할 수 있습니다.
+                  </p>
+                  <p className={`mt-2 text-[11px] font-black ${searchGroundingAvailable ? "text-emerald-300" : "text-amber-300"}`}>
+                    {searchGroundingAvailable
+                      ? "현재 Tier1 Gemini 키가 감지되어 Google Search를 자동 사용합니다."
+                      : "현재는 검색 없이 저장된 모델 지식 기반으로 생성합니다."}
+                  </p>
+                </div>
               </div>
-              <p className="text-[11px] font-bold text-zinc-500">
-                Google Search 기반 최신 정보 반영
-              </p>
             </div>
 
             <div className="space-y-3 text-xs">
@@ -796,84 +866,101 @@ export default function CreaiboxCreateTab({
           </div>
         </div>
 
-        {/* 우측 SEO 타워 */}
-        <div className="h-full overflow-y-auto custom-scrollbar flex flex-col gap-4 border-l border-zinc-800/80 bg-[#111216] p-4">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/40 p-5">
-            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">
-                  SEO & Publishing
-                </p>
-                <h3 className="mt-1 text-base font-black text-zinc-100">
-                  발행 정보
-                </h3>
-              </div>
-              <span className={`rounded-full px-2.5 py-1 text-[10px] font-black border ${seoHealthLabel === '준비 완료'
-                  ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
-                  : seoHealthLabel === '보완 필요'
-                    ? 'border-amber-500/20 bg-amber-500/10 text-amber-300'
-                    : 'border-zinc-700 bg-zinc-800/80 text-zinc-400'
-                }`}>
-                {seoHealthLabel}
-              </span>
+        {/* 우측 발행 정보 */}
+        <aside className="h-full overflow-y-auto custom-scrollbar border-l border-zinc-800/80 bg-[#0b0f15]">
+          <div className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-zinc-800 bg-gradient-to-r from-[#131722] via-[#141926] to-[#10141f] px-5">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void handleSavePostToSupabase()}
+                disabled={!content || isAiLoading}
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#4f46e5] via-[#7c3aed] to-[#ec4899] px-3.5 py-2 text-xs font-black text-white shadow-[0_8px_18px_rgba(124,58,237,0.18)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Send className="h-3.5 w-3.5" />
+                원고 저장
+              </button>
+              <button
+                type="button"
+                onClick={handleResetGeneratedContent}
+                disabled={(!title && !content && !slug && !metaDescription && !focusKeyword && seoTags.length === 0) || isAiLoading}
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition hover:border-rose-400/35 hover:bg-rose-500/10 hover:text-rose-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                초기화
+              </button>
             </div>
-
-            <div className="mt-4 grid grid-cols-3 gap-3">
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3">
-                <p className="text-[10px] font-black uppercase text-zinc-500">META</p>
-                <p className="mt-2 text-lg font-black text-amber-400">{metaDescriptionLength}</p>
-              </div>
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3">
-                <p className="text-[10px] font-black uppercase text-zinc-500">SLUG</p>
-                <p className="mt-2 text-lg font-black text-blue-400">{slugLength}</p>
-              </div>
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3">
-                <p className="text-[10px] font-black uppercase text-zinc-500">TAG</p>
-                <p className="mt-2 text-lg font-black text-fuchsia-400">{seoTags.length}</p>
-              </div>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              <SeoInput label="슬러그" value={slug} onChange={setSlug} placeholder="ai-content-strategy-2026" />
-              <div>
-                <div className="mb-1.5 flex items-center justify-between">
-                  <label className="block text-zinc-400 font-bold text-[12px]">Meta Description</label>
-                  <span className="text-[11px] font-black text-zinc-500">{metaDescriptionLength}/155</span>
-                </div>
-                <textarea
-                  value={metaDescription}
-                  onChange={(e) => setMetaDescription(e.target.value)}
-                  placeholder="검색 결과에 보여줄 요약 설명"
-                  rows={3}
-                  className="w-full px-3 py-2.5 text-[14px] rounded-xl border border-zinc-700 bg-zinc-950 text-zinc-100 font-bold focus:outline-none focus:border-blue-500 resize-none"
-                />
-              </div>
-              <SeoInput label="Focus Keyword" value={focusKeyword} onChange={setFocusKeyword} placeholder="핵심 포커스 키워드" />
-              <SeoInput label="Canonical URL" value={canonicalUrl} onChange={setCanonicalUrl} placeholder="https://creaibox.com/blog/..." />
-
-              <div>
-                <label className="block text-zinc-400 font-bold mb-1.5 text-[12px]">SEO Tags</label>
-                <input
-                  type="text"
-                  value={seoTags.join(', ')}
-                  onChange={(e) => setSeoTags(e.target.value.split(',').map((tag) => tag.trim()).filter(Boolean))}
-                  placeholder="ai, seo, content, blog"
-                  className="w-full px-3 py-2.5 text-[14px] rounded-xl border border-zinc-700 bg-zinc-950 text-zinc-100 font-bold focus:outline-none focus:border-blue-500"
-                />
-              </div>
-            </div>
+            <span className={`inline-flex shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${publishingStatusClass}`}>
+              {seoHealthLabel}
+            </span>
           </div>
 
-          <CreaiboxAnalysisTower
-            seoScore={analysisMetrics.seoScore}
-            seoChecks={analysisMetrics.seoChecks}
-            posRatio={posRatio}
-            frequencies={analysisMetrics.frequencies}
-            content={content}
-            crawlabilityScore={analysisMetrics.crawlabilityScore}
-            isDensitySafe={analysisMetrics.isDensitySafe}
-          />
-        </div>
+          <section className="border-b border-zinc-800 text-white">
+            <div className="grid h-14 grid-cols-4 border-b border-white/10 bg-transparent">
+              {[
+                { key: "seo", label: "SEO 최적화" },
+                { key: "thumbnail", label: "썸네일" },
+                { key: "contentImage", label: "본문 이미지" },
+                { key: "schema", label: "스키마" },
+              ].map((tab) => {
+                const active = publishingPanelTab === tab.key;
+
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setPublishingPanelTab(tab.key as PublishingPanelTab)}
+                    className={`relative border-r border-white/10 text-sm font-black transition last:border-r-0 ${active
+                      ? "bg-blue-500/8 text-blue-200"
+                      : "text-white/45 hover:bg-white/[0.025] hover:text-blue-100"
+                      }`}
+                  >
+                    {tab.label}
+                    {active && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-400" />}
+                  </button>
+                );
+              })}
+            </div>
+
+            {publishingPanelTab === "seo" && (
+              <CreaiboxSeoOptimizationPanel
+                data={draftRecord}
+                updateLocalData={updateDraftRecord}
+              />
+            )}
+
+            {publishingPanelTab === "thumbnail" && (
+              <DraftOnlyPanel
+                title="썸네일 생성은 원고 저장 후 사용할 수 있습니다."
+                description="원고를 먼저 저장한 뒤 글수정 이동 버튼을 누르면 발행 원고 관리 화면에서 같은 썸네일 엔진으로 이어서 작업할 수 있습니다."
+              />
+            )}
+
+            {publishingPanelTab === "contentImage" && (
+              <CreaiboxContentImagePanel />
+            )}
+
+            {publishingPanelTab === "schema" && <CreaiboxSchemaPanel />}
+          </section>
+
+          {publishingPanelTab === "seo" && (
+            <CreaiboxAnalysisTower
+              seoScore={analysisMetrics.seoScore}
+              seoChecks={analysisMetrics.seoChecks}
+              posRatio={posRatio}
+              frequencies={analysisMetrics.frequencies}
+              content={content}
+              title={title}
+              focusKeyword={focusKeyword || targetKeyword}
+              metaDescription={metaDescription}
+              slug={slug}
+              canonicalUrl={canonicalUrl}
+              seoTags={seoTags}
+              crawlabilityScore={analysisMetrics.crawlabilityScore}
+              isDensitySafe={analysisMetrics.isDensitySafe}
+              isDetailMode
+            />
+          )}
+        </aside>
       </div>
 
       {isPreviewOpen && (
@@ -933,27 +1020,19 @@ export default function CreaiboxCreateTab({
   );
 }
 
-function SeoInput({
-  label,
-  value,
-  onChange,
-  placeholder,
+function DraftOnlyPanel({
+  title,
+  description,
 }: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
+  title: string;
+  description: string;
 }) {
   return (
-    <div>
-      <label className="block text-zinc-400 font-bold mb-1.5 text-[12px]">{label}</label>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full px-3 py-2.5 text-[14px] rounded-xl border border-zinc-700 bg-zinc-950 text-zinc-100 font-bold focus:outline-none focus:border-blue-500"
-      />
+    <div className="px-5 py-6">
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-950/45 p-5">
+        <p className="text-sm font-black text-zinc-100">{title}</p>
+        <p className="mt-2 text-xs font-medium leading-6 text-zinc-500">{description}</p>
+      </div>
     </div>
   );
 }

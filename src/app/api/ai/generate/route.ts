@@ -13,6 +13,7 @@ type GenerateBody = {
   provider?: "gemini";
   model?: string;
   useSearch?: boolean;
+  responseMimeType?: "application/json";
   userId?: string | null;
   userEmail?: string | null;
 };
@@ -51,11 +52,13 @@ async function generateGeminiContent({
   modelName,
   prompt,
   useSearch,
+  responseMimeType,
 }: {
   apiKey: string;
   modelName: string;
   prompt: string;
   useSearch: boolean;
+  responseMimeType?: "application/json";
 }) {
   const modelPath = modelName.startsWith("models/") ? modelName : `models/${modelName}`;
   const body: Record<string, unknown> = {
@@ -69,6 +72,10 @@ async function generateGeminiContent({
 
   if (useSearch) {
     body.tools = [{ googleSearch: {} }];
+  }
+
+  if (responseMimeType) {
+    body.generationConfig = { responseMimeType };
   }
 
   const response = await fetch(
@@ -230,7 +237,7 @@ export async function POST(req: NextRequest) {
     if (todayUsage >= FREE_DAILY_LIMIT) {
       return NextResponse.json(
         {
-          error: `무료 체험 일일 사용량 ${FREE_DAILY_LIMIT}회를 초과했습니다.`,
+          error: `공용 API 일일 사용량 ${FREE_DAILY_LIMIT}회를 초과했습니다. 사용자 정보 > API 키 관리 메뉴에서 본인의 API 키를 입력하면 개인 키로 계속 생성할 수 있습니다.`,
           code: "FREE_DAILY_LIMIT_EXCEEDED",
         },
         { status: 429 }
@@ -241,7 +248,7 @@ export async function POST(req: NextRequest) {
 
     if (vaultKeys.length === 0) {
       return NextResponse.json(
-        { error: "사용 가능한 무료체험 Gemini API Key가 없습니다." },
+        { error: "사용 가능한 공용 Gemini API Key가 없습니다." },
         { status: 503 }
       );
     }
@@ -261,6 +268,7 @@ export async function POST(req: NextRequest) {
           modelName,
           prompt: body.prompt,
           useSearch: Boolean(body.useSearch),
+          responseMimeType: body.responseMimeType,
         });
 
         await recordVaultSuccess(vault.id);
@@ -282,6 +290,7 @@ export async function POST(req: NextRequest) {
           provider: "gemini",
           model: modelName,
           vaultId: vault.id,
+          usedSearch: Boolean(body.useSearch),
         });
       } catch (error: unknown) {
         lastError = error;

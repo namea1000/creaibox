@@ -20,8 +20,9 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import {
-  generateGeminiContent,
-  getRequiredUserGeminiVaultConfig,
+  generateGeminiContentWithFallback,
+  getPublicGeminiFallbackNotice,
+  getUserAiVaultConfig,
 } from "@/lib/client/api-vault";
 
 const ALBUM_PLAN_TO_LYRICS_KEY = "creaibox:music:album-plan-to-lyrics:v1";
@@ -639,7 +640,11 @@ export default function MusicPlanningPage() {
         return;
       }
 
-      const vaultConfig = getRequiredUserGeminiVaultConfig();
+      const vaultConfig = getUserAiVaultConfig();
+
+      if (!vaultConfig) {
+        window.alert(getPublicGeminiFallbackNotice());
+      }
 
       const pureGenre = cleanOption(form.genre);
       const pureMood = cleanOption(form.mood);
@@ -694,12 +699,15 @@ export default function MusicPlanningPage() {
 }
       `;
 
-      const text = await generateGeminiContent({
-        apiKey: vaultConfig.apiKey,
-        modelName: vaultConfig.model || "gemini-3-flash-preview",
+      const generationResult = await generateGeminiContentWithFallback({
+        modelName: vaultConfig?.model || "gemini-3.1-flash-lite",
         prompt,
         responseMimeType: "application/json",
+        type: "music_album_planning",
+        userId: user.id,
+        userEmail: user.email || null,
       });
+      const text = generationResult.text;
 
       const parsed = extractJson(text);
 
