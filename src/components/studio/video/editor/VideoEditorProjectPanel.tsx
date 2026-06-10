@@ -6,19 +6,20 @@ import {
   Save,
   Plus,
   Search,
-  Clock3,
-  FileJson,
   Download,
   Upload,
   Trash2,
-  Monitor,
-  Smartphone,
-  Square,
   Database,
-  HardDrive,
-  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  Film,
+  Music,
+  Image as ImageIcon,
+  Type,
+  Briefcase,
+  Layers,
+  Settings,
 } from "lucide-react";
-
 import { useVideoEditor } from "./VideoEditorContext";
 
 type ProjectItem = {
@@ -28,7 +29,6 @@ type ProjectItem = {
   duration: number;
   updatedAt: string;
   assetCount: number;
-  storageMode: "local-only" | "metadata-db";
 };
 
 const sampleProjects: ProjectItem[] = [
@@ -36,19 +36,17 @@ const sampleProjects: ProjectItem[] = [
     id: "project-1",
     title: "YouTube Shorts 테스트",
     ratio: "9:16",
-    duration: 32,
+    duration: 15,
     updatedAt: "방금 전",
-    assetCount: 5,
-    storageMode: "metadata-db",
+    assetCount: 2,
   },
   {
     id: "project-2",
     title: "제품 소개 영상",
     ratio: "16:9",
-    duration: 78,
+    duration: 25,
     updatedAt: "오늘",
-    assetCount: 8,
-    storageMode: "metadata-db",
+    assetCount: 2,
   },
 ];
 
@@ -64,14 +62,35 @@ export default function VideoEditorProjectPanel() {
     importProjectJson,
   } = useVideoEditor();
 
+  const [projects, setProjects] = useState<ProjectItem[]>(sampleProjects);
   const [search, setSearch] = useState("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saved">("idle");
 
+  // Collapsible tree node states
+  const [openFolders, setOpenFolders] = useState({
+    projects: true,
+    smartLibrary: true,
+    backup: true,
+  });
+
+  const toggleFolder = (folder: "projects" | "smartLibrary" | "backup") => {
+    setOpenFolders((prev) => ({
+      ...prev,
+      [folder]: !prev[folder],
+    }));
+  };
+
   const filteredProjects = useMemo(() => {
-    return sampleProjects.filter((item) =>
+    return projects.filter((item) =>
       item.title.toLowerCase().includes(search.toLowerCase())
     );
-  }, [search]);
+  }, [projects, search]);
+
+  const handleDeleteProject = (id: string) => {
+    if (window.confirm("이 프로젝트를 삭제하시겠습니까?")) {
+      setProjects((prev) => prev.filter((item) => item.id !== id));
+    }
+  };
 
   const handleDownloadProject = () => {
     const json = exportProjectJson();
@@ -91,7 +110,6 @@ export default function VideoEditorProjectPanel() {
     if (!file) return;
 
     const reader = new FileReader();
-
     reader.onload = () => {
       try {
         importProjectJson(String(reader.result || ""));
@@ -103,7 +121,6 @@ export default function VideoEditorProjectPanel() {
         );
       }
     };
-
     reader.readAsText(file);
     event.currentTarget.value = "";
   };
@@ -113,241 +130,284 @@ export default function VideoEditorProjectPanel() {
     window.setTimeout(() => setSaveStatus("idle"), 1800);
   };
 
-  return (
-    <div className="space-y-4">
-      <PanelHeader
-        icon={FolderOpen}
-        title="프로젝트 관리"
-        desc="원본 파일은 사용자 PC에 두고, Supabase에는 프로젝트 메타데이터와 히스토리만 저장합니다."
-      />
+  const handleNewProject = () => {
+    if (window.confirm("현재 프로젝트를 초기화하고 새 프로젝트를 시작하시겠습니까?")) {
+      const emptyJson = JSON.stringify({
+        version: "creaibox-video-editor-v3",
+        projectTitle: "New Project",
+        activeTab: "media",
+        clips: [],
+        canvasRatio: "16:9",
+        canvasZoom: 75,
+        exportResolution: "1080p",
+        exportFps: 30,
+        exportQuality: "standard"
+      });
+      importProjectJson(emptyJson);
+    }
+  };
 
-      <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4">
-        <div className="flex items-start gap-3">
-          <HardDrive className="mt-1 shrink-0 text-cyan-200" size={20} />
-          <div>
-            <div className="text-sm font-black text-cyan-100">
-              Local Source + DB Metadata 구조
-            </div>
-            <p className="mt-1 text-xs leading-5 text-cyan-100/70">
-              영상/음악/이미지 원본은 업로드하지 않습니다. DB에는 파일명, 로컬 키,
-              프로젝트 JSON, 편집 히스토리만 저장합니다.
-            </p>
-          </div>
-        </div>
+  const handleLoadProject = (project: ProjectItem) => {
+    const mockClips = project.id === "project-1"
+      ? [
+          {
+            id: "clip-sample-1",
+            trackId: "video-1",
+            type: "video",
+            name: "Shorts Video.mp4",
+            startTime: 0,
+            duration: 8,
+            left: 0,
+            width: 27,
+            color: "bg-cyan-400/25",
+          },
+          {
+            id: "clip-sample-2",
+            trackId: "text-1",
+            type: "text",
+            name: "구독과 좋아요!",
+            startTime: 3,
+            duration: 7,
+            left: 10,
+            width: 23,
+            color: "bg-fuchsia-400/25",
+          }
+        ]
+      : [
+          {
+            id: "clip-sample-3",
+            trackId: "video-1",
+            type: "video",
+            name: "Product Intro.mp4",
+            startTime: 0,
+            duration: 15,
+            left: 0,
+            width: 50,
+            color: "bg-cyan-400/25",
+          },
+          {
+            id: "clip-sample-4",
+            trackId: "audio-1",
+            type: "audio",
+            name: "Calm Ambient Music.mp3",
+            startTime: 0,
+            duration: 25,
+            left: 0,
+            width: 83,
+            color: "bg-emerald-400/25",
+          }
+        ];
+
+    const sampleJson = JSON.stringify({
+      version: "creaibox-video-editor-v3",
+      projectTitle: project.title,
+      activeTab: "media",
+      clips: mockClips,
+      canvasRatio: project.ratio,
+      canvasZoom: 75,
+      exportResolution: "1080p",
+      exportFps: 30,
+      exportQuality: "standard"
+    });
+
+    try {
+      importProjectJson(sampleJson);
+    } catch (e) {
+      window.alert("프로젝트를 로드하지 못했습니다.");
+    }
+  };
+
+  // Stats calculation
+  const videoClips = clips.filter((c) => c.type === "video");
+  const audioClips = clips.filter((c) => c.type === "audio");
+  const imageClips = clips.filter((c) => c.type === "image");
+  const textClips = clips.filter((c) => c.type === "text" || c.type === "subtitle");
+
+  return (
+    <div className="flex h-full flex-col bg-transparent text-zinc-300 select-none">
+      {/* Title */}
+      <div className="flex h-12 shrink-0 items-center border-b border-white/5 px-4 bg-[#202026]">
+        <Briefcase size={15} className="mr-2 text-cyan-400" />
+        <span className="text-xs font-black uppercase tracking-wider text-white">
+          Project Browser
+        </span>
       </div>
 
-      <section className="rounded-2xl border border-white/10 bg-black/20 p-4">
-        <div className="mb-3 text-xs font-black uppercase tracking-widest text-zinc-500">
-          현재 프로젝트
-        </div>
-
-        <label className="block">
-          <div className="mb-2 text-xs font-bold text-zinc-500">프로젝트명</div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Rename Editor */}
+        <div className="space-y-1.5">
+          <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+            프로젝트 이름
+          </span>
           <input
             value={projectTitle}
             onChange={(event) => setProjectTitle(event.target.value)}
-            className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-3 text-sm font-bold text-white outline-none focus:border-cyan-400"
-          />
-        </label>
-
-        <div className="mt-4 grid grid-cols-4 gap-2">
-          <StatCard label="클립" value={clips.length} />
-          <StatCard label="소스" value={mediaItems.length} />
-          <StatCard label="길이" value={`${totalDuration}s`} />
-          <StatCard label="비율" value={canvasRatio} />
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <ActionButton
-            icon={Save}
-            label={saveStatus === "saved" ? "메타 저장 완료" : "DB 메타 저장"}
-            desc="Supabase 저장 예정"
-            onClick={handleMockSaveMetadata}
-          />
-
-          <ActionButton
-            icon={Download}
-            label="JSON 내보내기"
-            desc="로컬 프로젝트 백업"
-            onClick={handleDownloadProject}
-          />
-
-          <label className="cursor-pointer rounded-xl border border-white/10 bg-black/30 p-3 text-left hover:border-cyan-400/50">
-            <div className="flex items-center gap-2 text-xs font-black text-white">
-              <Upload size={14} />
-              JSON 불러오기
-            </div>
-            <div className="mt-1 text-[10px] leading-4 text-zinc-500">
-              로컬 백업 복원
-            </div>
-            <input
-              type="file"
-              accept="application/json,.json,.creaivideo"
-              className="hidden"
-              onChange={handleImportProject}
-            />
-          </label>
-
-          <ActionButton
-            icon={Plus}
-            label="새 프로젝트"
-            desc="초기화는 추후 연결"
-            onClick={() =>
-              window.alert("새 프로젝트 초기화 기능은 다음 단계에서 연결합니다.")
-            }
+            className="h-9 w-full rounded-none border border-white/10 bg-black/40 px-3 text-xs font-black text-white outline-none focus:border-cyan-400 focus:bg-black/20"
+            placeholder="Untitled Project"
           />
         </div>
-      </section>
 
-      <section className="rounded-2xl border border-white/10 bg-black/20 p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="text-xs font-black uppercase tracking-widest text-zinc-500">
-            프로젝트 목록
-          </div>
-          <Database size={15} className="text-zinc-500" />
-        </div>
-
-        <div className="mb-3 flex items-center gap-2 rounded-xl border border-white/10 bg-black/40 px-3 py-2">
-          <Search size={15} className="text-zinc-500" />
+        {/* Search */}
+        <div className="flex items-center gap-2 rounded-none border border-white/10 bg-black/40 px-2 py-1.5">
+          <Search size={13} className="text-zinc-500" />
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="프로젝트 검색"
-            className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-zinc-600"
+            placeholder="프로젝트 검색..."
+            className="min-w-0 flex-1 bg-transparent text-xs text-white outline-none placeholder:text-zinc-600"
           />
         </div>
 
-        <div className="space-y-2">
-          {filteredProjects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
-        </div>
+        {/* Directory Tree */}
+        <div className="space-y-2 text-xs">
+          {/* Node 1: Projects list */}
+          <div className="space-y-1">
+            <button
+              onClick={() => toggleFolder("projects")}
+              className="flex w-full items-center gap-1.5 py-1 text-left font-bold text-white hover:text-cyan-300"
+            >
+              {openFolders.projects ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              <Database size={13} className="text-amber-400" />
+              <span>프로젝트 목록 ({projects.length})</span>
+            </button>
 
-        {filteredProjects.length === 0 && (
-          <div className="rounded-xl border border-dashed border-white/10 bg-black/30 p-5 text-center text-sm text-zinc-500">
-            프로젝트가 없습니다.
+            {openFolders.projects && (
+              <div className="pl-4 space-y-1 border-l border-white/5 ml-1.5">
+                {filteredProjects.map((project) => {
+                  const isActive = projectTitle === project.title;
+                  return (
+                    <div
+                      key={project.id}
+                      className={`group flex items-center justify-between px-2 py-1.5 hover:bg-white/5 hover:text-white cursor-pointer ${
+                        isActive ? "bg-cyan-500/10 text-cyan-200 border-l border-cyan-400" : ""
+                      }`}
+                    >
+                      <div
+                        onClick={() => handleLoadProject(project)}
+                        className="flex-1 truncate font-medium flex items-center gap-1.5"
+                      >
+                        <FolderOpen size={12} className="text-zinc-500 shrink-0" />
+                        <span className="truncate">{project.title}</span>
+                      </div>
+
+                      <div className="hidden group-hover:flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => handleDeleteProject(project.id)}
+                          className="p-0.5 text-zinc-500 hover:text-red-400"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
-      </section>
 
-      <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
-        <div className="mb-1 flex items-center gap-2 font-black">
-          <AlertTriangle size={14} />
-          중요
+          {/* Node 2: Smart Library */}
+          <div className="space-y-1">
+            <button
+              onClick={() => toggleFolder("smartLibrary")}
+              className="flex w-full items-center gap-1.5 py-1 text-left font-bold text-white hover:text-cyan-300"
+            >
+              {openFolders.smartLibrary ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              <Layers size={13} className="text-cyan-400" />
+              <span>에셋 라이브러리</span>
+            </button>
+
+            {openFolders.smartLibrary && (
+              <div className="pl-4 space-y-1 border-l border-white/5 ml-1.5 text-zinc-400">
+                <TreeLeaf icon={Film} label="비디오 클립" count={videoClips.length} />
+                <TreeLeaf icon={Music} label="오디오 클립" count={audioClips.length} />
+                <TreeLeaf icon={ImageIcon} label="이미지 클립" count={imageClips.length} />
+                <TreeLeaf icon={Type} label="텍스트/자막" count={textClips.length} />
+              </div>
+            )}
+          </div>
+
+          {/* Node 3: Database & Backup Actions */}
+          <div className="space-y-1">
+            <button
+              onClick={() => toggleFolder("backup")}
+              className="flex w-full items-center gap-1.5 py-1 text-left font-bold text-white hover:text-cyan-300"
+            >
+              {openFolders.backup ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              <Settings size={13} className="text-purple-400" />
+              <span>백업 및 도구</span>
+            </button>
+
+            {openFolders.backup && (
+              <div className="pl-4 space-y-1 border-l border-white/5 ml-1.5 text-zinc-400">
+                <div
+                  onClick={handleMockSaveMetadata}
+                  className="flex items-center gap-1.5 px-2 py-1.5 hover:bg-white/5 hover:text-white cursor-pointer"
+                >
+                  <Save size={12} className="text-emerald-400 shrink-0" />
+                  <span>{saveStatus === "saved" ? "저장 완료!" : "DB 메타 저장"}</span>
+                </div>
+
+                <div
+                  onClick={handleDownloadProject}
+                  className="flex items-center gap-1.5 px-2 py-1.5 hover:bg-white/5 hover:text-white cursor-pointer"
+                >
+                  <Download size={12} className="text-cyan-400 shrink-0" />
+                  <span>JSON 내보내기</span>
+                </div>
+
+                <label className="flex items-center gap-1.5 px-2 py-1.5 hover:bg-white/5 hover:text-white cursor-pointer">
+                  <Upload size={12} className="text-zinc-400 shrink-0" />
+                  <span>JSON 불러오기</span>
+                  <input
+                    type="file"
+                    accept="application/json,.json,.creaivideo"
+                    className="hidden"
+                    onChange={handleImportProject}
+                  />
+                </label>
+
+                <div
+                  onClick={handleNewProject}
+                  className="flex items-center gap-1.5 px-2 py-1.5 hover:bg-white/5 hover:text-white cursor-pointer text-red-400 hover:text-red-300"
+                >
+                  <Plus size={12} className="shrink-0" />
+                  <span>새 프로젝트 초기화</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        브라우저 보안상 사용자 PC 파일 경로 전체를 DB에 저장할 수 없습니다. 대신
-        File System Access API의 파일 핸들은 IndexedDB에 저장하고, Supabase에는
-        local_file_key만 저장하는 구조가 맞습니다.
+      </div>
+
+      {/* Properties summary at the bottom */}
+      <div className="p-4 border-t border-white/5 bg-[#141418] text-[11px] text-zinc-500 space-y-1">
+        <div>미디어 소스: {mediaItems.length}개 에셋</div>
+        <div>타임라인 클립: {clips.length}개</div>
+        <div>총 재생 시간: {totalDuration}초</div>
+        <div>출력 비율: {canvasRatio}</div>
       </div>
     </div>
   );
 }
 
-function ProjectCard({ project }: { project: ProjectItem }) {
-  const RatioIcon =
-    project.ratio === "16:9"
-      ? Monitor
-      : project.ratio === "9:16"
-        ? Smartphone
-        : Square;
-
-  return (
-    <div className="rounded-xl border border-white/10 bg-black/30 p-3 hover:border-cyan-400/50">
-      <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-200">
-          <RatioIcon size={19} />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-black text-white">
-            {project.title}
-          </div>
-          <div className="mt-1 flex items-center gap-2 text-xs text-zinc-500">
-            <Clock3 size={12} />
-            {project.updatedAt} · {project.duration}s · {project.assetCount} assets
-          </div>
-        </div>
-
-        <button
-          type="button"
-          className="rounded-lg border border-white/10 p-2 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200"
-          title="프로젝트 열기"
-        >
-          <FolderOpen size={14} />
-        </button>
-
-        <button
-          type="button"
-          className="rounded-lg border border-white/10 p-2 text-zinc-400 hover:border-red-400 hover:text-red-300"
-          title="삭제"
-        >
-          <Trash2 size={14} />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | number;
-}) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-black/30 p-2 text-center">
-      <div className="text-[10px] text-zinc-500">{label}</div>
-      <div className="mt-1 text-xs font-black text-white">{value}</div>
-    </div>
-  );
-}
-
-function ActionButton({
+function TreeLeaf({
   icon: Icon,
   label,
-  desc,
-  onClick,
+  count,
 }: {
   icon: React.ElementType;
   label: string;
-  desc: string;
-  onClick: () => void;
+  count: number;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-xl border border-white/10 bg-black/30 p-3 text-left hover:border-cyan-400/50"
-    >
-      <div className="flex items-center gap-2 text-xs font-black text-white">
-        <Icon size={14} />
-        {label}
+    <div className="flex items-center justify-between px-2 py-1.5 hover:bg-white/5 hover:text-white">
+      <div className="flex items-center gap-1.5 truncate">
+        <Icon size={12} className="text-zinc-500 shrink-0" />
+        <span className="truncate">{label}</span>
       </div>
-      <div className="mt-1 text-[10px] leading-4 text-zinc-500">{desc}</div>
-    </button>
-  );
-}
-
-function PanelHeader({
-  icon: Icon,
-  title,
-  desc,
-}: {
-  icon: React.ElementType;
-  title: string;
-  desc: string;
-}) {
-  return (
-    <div className="mb-5 flex items-start gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-300">
-        <Icon size={20} />
-      </div>
-
-      <div>
-        <h3 className="font-black text-white">{title}</h3>
-        <p className="mt-1 text-xs leading-5 text-zinc-500">{desc}</p>
-      </div>
+      <span className="text-[10px] font-bold text-zinc-600 bg-black/40 px-1.5 py-0.5 shrink-0 rounded-none border border-white/5">
+        {count}
+      </span>
     </div>
   );
 }

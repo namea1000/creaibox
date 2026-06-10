@@ -14,6 +14,7 @@ interface BlogDetailPageProps {
 }
 
 interface PublishedPostDetail {
+  id: string;
   title: string | null;
   content: string | null;
   slug: string | null;
@@ -23,26 +24,27 @@ interface PublishedPostDetail {
   seo_tags: string[] | null;
   created_at: string | null;
   updated_at: string | null;
+  thumbnailUrl?: string | null;
 }
 
 const blogMarkdownComponents: Components = {
   h1: ({ children }) => (
-    <h1 className="mb-6 border-b border-zinc-200 pb-4 text-[2.15rem] font-black leading-[1.25] tracking-[-0.03em] text-zinc-950">
+    <h1 className="mb-6 border-b border-zinc-200 pb-4 text-[1.75rem] font-black leading-[1.25] tracking-[-0.03em] text-zinc-950">
       {children}
     </h1>
   ),
   h2: ({ children }) => (
-    <h2 className="mt-14 mb-6 text-[1.7rem] font-black leading-[1.35] tracking-[-0.02em] text-zinc-950">
+    <h2 className="mt-14 mb-6 text-[1.35rem] font-black leading-[1.35] tracking-[-0.02em] text-zinc-950">
       {children}
     </h2>
   ),
   h3: ({ children }) => (
-    <h3 className="mt-10 mb-4 text-[1.3rem] font-black leading-[1.4] text-zinc-900">
+    <h3 className="mt-10 mb-4 text-[1.05rem] font-black leading-[1.4] text-zinc-900">
       {children}
     </h3>
   ),
   p: ({ children }) => (
-    <p className="mb-6 text-[1.08rem] leading-[2.02] text-zinc-700">
+    <p className="mb-6 text-[1.18rem] leading-[2.02] text-zinc-700">
       {children}
     </p>
   ),
@@ -50,12 +52,12 @@ const blogMarkdownComponents: Components = {
     <strong className="font-black text-zinc-950">{children}</strong>
   ),
   ul: ({ children }) => (
-    <ul className="mb-8 ml-6 list-disc space-y-3 text-[1.05rem] leading-[1.95] text-zinc-700">
+    <ul className="mb-8 ml-6 list-disc space-y-3 text-[1.25rem] leading-[1.95] text-zinc-700">
       {children}
     </ul>
   ),
   ol: ({ children }) => (
-    <ol className="mb-8 ml-6 list-decimal space-y-3 text-[1.05rem] leading-[1.95] text-zinc-700">
+    <ol className="mb-8 ml-6 list-decimal space-y-3 text-[1.25rem] leading-[1.95] text-zinc-700">
       {children}
     </ol>
   ),
@@ -63,7 +65,7 @@ const blogMarkdownComponents: Components = {
     <li className="pl-1 marker:text-blue-600">{children}</li>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="my-8 rounded-[22px] border border-zinc-200 bg-zinc-50 px-6 py-5 text-[1.02rem] font-medium leading-[1.9] text-zinc-600">
+    <blockquote className="my-8 rounded-[22px] border border-zinc-200 bg-zinc-50 px-6 py-5 text-[1.12rem] font-medium leading-[1.9] text-zinc-600">
       {children}
     </blockquote>
   ),
@@ -75,6 +77,13 @@ const blogMarkdownComponents: Components = {
     >
       {children}
     </a>
+  ),
+  img: ({ src, alt }) => (
+    <img
+      src={src}
+      alt={alt || "이미지"}
+      className="my-8 w-full h-auto rounded-[24px]"
+    />
   ),
 };
 
@@ -112,7 +121,7 @@ async function fetchPublishedPost(slug: string) {
 
   const { data, error } = await supabase
     .from("writing_creaibox_posts")
-    .select("title, content, slug, meta_description, focus_keyword, canonical_url, seo_tags, created_at, updated_at")
+    .select("id, title, content, slug, meta_description, focus_keyword, canonical_url, seo_tags, created_at, updated_at")
     .eq("slug", decodedSlug)
     .eq("status", "published")
     .order("created_at", { ascending: false })
@@ -122,7 +131,24 @@ async function fetchPublishedPost(slug: string) {
     return null;
   }
 
-  return data[0] as PublishedPostDetail;
+  const post = data[0] as PublishedPostDetail;
+
+  // Fetch thumbnail for this post
+  const { data: images, error: imagesError } = await supabase
+    .from("generated_images")
+    .select("image_url, is_primary")
+    .eq("source_type", "writing_creaibox_posts")
+    .eq("image_role", "thumbnail")
+    .eq("source_id", post.id);
+
+  if (imagesError) {
+    console.error("썸네일 이미지 조회 실패:", imagesError.message);
+  }
+
+  const primaryImg = (images || []).find((img) => img.is_primary) || (images || [])[0];
+  post.thumbnailUrl = primaryImg ? primaryImg.image_url : null;
+
+  return post;
 }
 
 export async function generateMetadata({ params }: BlogDetailPageProps): Promise<Metadata> {
@@ -131,25 +157,53 @@ export async function generateMetadata({ params }: BlogDetailPageProps): Promise
 
   if (!post) {
     return {
-      title: "게시글을 찾을 수 없습니다 | Creaibox Blog",
+      title: "게시글을 찾을 수 없습니다 | CreAibox Blog",
     };
   }
 
   const canonical = post.canonical_url || `https://creaibox.com/blog/${slug}`;
 
   return {
-    title: `${post.title} | Creaibox Blog`,
-    description: post.meta_description || post.focus_keyword || "Creaibox 공개 블로그 상세 페이지",
+    title: `${post.title} | CreAibox Blog`,
+    description: post.meta_description || post.focus_keyword || "CreAibox 공개 블로그 상세 페이지",
     alternates: {
       canonical,
     },
     openGraph: {
-      title: post.title || "Creaibox Blog",
-      description: post.meta_description || post.focus_keyword || "Creaibox 공개 블로그 상세 페이지",
+      title: post.title || "CreAibox Blog",
+      description: post.meta_description || post.focus_keyword || "CreAibox 공개 블로그 상세 페이지",
       type: "article",
       url: canonical,
+      images: post.thumbnailUrl ? [post.thumbnailUrl] : undefined,
     },
   };
+}
+
+function insertThumbnailIntoHtml(html: string, thumbnailUrl: string, title: string) {
+  const imgHtml = `
+    <img
+      src="${thumbnailUrl}"
+      alt="${title.replace(/"/g, '&quot;')}"
+      class="my-8 w-full h-auto rounded-[24px]"
+    />
+  `;
+  const idx = html.indexOf("</p>");
+  if (idx !== -1) {
+    const insertPos = idx + 4; // after </p>
+    return html.substring(0, insertPos) + imgHtml + html.substring(insertPos);
+  }
+  return imgHtml + html;
+}
+
+function insertThumbnailIntoMarkdown(markdown: string, thumbnailUrl: string, title: string) {
+  const imgMarkdown = `\n\n![${title}](${thumbnailUrl})\n\n`;
+  const regex = /\r?\n\r?\n/;
+  const match = regex.exec(markdown);
+  if (match) {
+    const insertPos = match.index + match[0].length;
+    return markdown.substring(0, insertPos) + imgMarkdown + markdown.substring(insertPos);
+  }
+  return imgMarkdown + markdown;
 }
 
 export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
@@ -175,17 +229,27 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
 
   // 🌟 스키마 스크립트가 블로그 본문에 텍스트로 보이지 않도록 본문 렌더링 영역에서 삭제 처리
   const contentWithoutSchemas = (post.content || "").replace(schemaRegex, "");
-  const normalizedContent = normalizePublishedContent(contentWithoutSchemas);
+  let normalizedContent = normalizePublishedContent(contentWithoutSchemas);
+
+  // 썸네일 이미지가 존재하면 첫 번째 단락 다음에 삽입
+  if (post.thumbnailUrl) {
+    if (looksLikeHtml(normalizedContent)) {
+      normalizedContent = insertThumbnailIntoHtml(normalizedContent, post.thumbnailUrl, post.title || "thumbnail");
+    } else {
+      normalizedContent = insertThumbnailIntoMarkdown(normalizedContent, post.thumbnailUrl, post.title || "thumbnail");
+    }
+  }
 
   const canonical = post.canonical_url || `https://creaibox.com/blog/${post.slug || slug}`;
 
   const blogPostingJsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
-    headline: post.title || "Creaibox Blog",
+    headline: post.title || "CreAibox Blog",
     description:
-      post.meta_description || post.focus_keyword || "Creaibox 공개 블로그 상세 페이지",
+      post.meta_description || post.focus_keyword || "CreAibox 공개 블로그 상세 페이지",
     url: canonical,
+    image: post.thumbnailUrl || undefined,
     mainEntityOfPage: {
       "@type": "WebPage",
       "@id": canonical,
@@ -194,12 +258,12 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
     dateModified: post.updated_at || post.created_at || undefined,
     author: {
       "@type": "Organization",
-      name: "CreAIbox",
+      name: "CreAibox",
       url: "https://creaibox.com",
     },
     publisher: {
       "@type": "Organization",
-      name: "CreAIbox",
+      name: "CreAibox",
       url: "https://creaibox.com",
     },
     keywords: tags,
@@ -265,7 +329,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
       <Header />
 
       <main className="pt-28">
-        <div className="mx-auto max-w-5xl px-6 py-10">
+        <div className="mx-auto max-w-7xl px-6 py-10">
           <Link
             href="/blog"
             className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-100 px-4 py-2 text-sm font-black text-zinc-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
@@ -278,10 +342,10 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
             <header className="border-b border-zinc-200 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.12),transparent_42%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-8 py-10 md:px-12">
               <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-blue-700">
                 <Sparkles size={12} />
-                Creaibox Insight
+                CreAibox Insight
               </div>
 
-              <h1 className="mt-5 text-4xl font-black leading-[1.18] tracking-[-0.03em] text-zinc-950 md:text-5xl">
+              <h1 className="mt-5 text-3xl font-black leading-[1.18] tracking-[-0.03em] text-zinc-950 md:text-[2.5rem]">
                 {post.title}
               </h1>
 
@@ -306,10 +370,10 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                 </div>
               )}
 
-              <div className="mx-auto max-w-[880px]">
+              <div className="mx-auto max-w-[1100px]">
                 {looksLikeHtml(normalizedContent) ? (
                   <div
-                    className="blog-content text-[1.08rem] leading-[2.02] text-zinc-700 [&_a]:font-bold [&_a]:text-blue-600 [&_a]:underline [&_a]:decoration-blue-300 [&_a]:decoration-2 [&_a]:underline-offset-4 [&_blockquote]:my-8 [&_blockquote]:rounded-[18px] [&_blockquote]:border [&_blockquote]:border-zinc-200 [&_blockquote]:bg-zinc-50 [&_blockquote]:px-6 [&_blockquote]:py-5 [&_blockquote]:font-medium [&_br]:block [&_div[data-youtube-video]]:my-8 [&_h1]:mb-6 [&_h1]:border-b [&_h1]:border-zinc-200 [&_h1]:pb-4 [&_h1]:text-[2.15rem] [&_h1]:font-black [&_h1]:leading-[1.25] [&_h1]:tracking-[-0.03em] [&_h1]:text-zinc-950 [&_h2]:mt-14 [&_h2]:mb-6 [&_h2]:text-[1.7rem] [&_h2]:font-black [&_h2]:leading-[1.35] [&_h2]:tracking-[-0.02em] [&_h2]:text-zinc-950 [&_h3]:mt-10 [&_h3]:mb-4 [&_h3]:text-[1.3rem] [&_h3]:font-black [&_h3]:leading-[1.4] [&_h3]:text-zinc-900 [&_hr]:my-10 [&_hr]:border-zinc-200 [&_iframe]:aspect-video [&_iframe]:h-auto [&_iframe]:w-full [&_iframe]:rounded-[18px] [&_iframe]:border [&_iframe]:border-zinc-200 [&_img]:my-8 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-[18px] [&_li]:pl-1 [&_li]:marker:text-blue-600 [&_ol]:mb-8 [&_ol]:ml-6 [&_ol]:list-decimal [&_ol]:space-y-3 [&_p]:mb-6 [&_p]:text-[1.08rem] [&_p]:leading-[2.02] [&_p]:text-zinc-700 [&_strong]:font-black [&_strong]:text-zinc-950 [&_table]:my-8 [&_table]:w-full [&_table]:border-collapse [&_table]:overflow-hidden [&_table]:rounded-[16px] [&_td]:border [&_td]:border-zinc-200 [&_td]:px-4 [&_td]:py-3 [&_td]:align-top [&_th]:border [&_th]:border-zinc-200 [&_th]:bg-zinc-50 [&_th]:px-4 [&_th]:py-3 [&_th]:font-black [&_ul]:mb-8 [&_ul]:ml-6 [&_ul]:list-disc [&_ul]:space-y-3"
+                    className="blog-content text-[1.18rem] leading-[2.02] text-zinc-700 [&_a]:font-bold [&_a]:text-blue-600 [&_a]:underline [&_a]:decoration-blue-300 [&_a]:decoration-2 [&_a]:underline-offset-4 [&_blockquote]:my-8 [&_blockquote]:rounded-[18px] [&_blockquote]:border [&_blockquote]:border-zinc-200 [&_blockquote]:bg-zinc-50 [&_blockquote]:px-6 [&_blockquote]:py-5 [&_blockquote]:font-medium [&_br]:block [&_div[data-youtube-video]]:my-8 [&_h1]:mb-6 [&_h1]:border-b [&_h1]:border-zinc-200 [&_h1]:pb-4 [&_h1]:text-[1.75rem] [&_h1]:font-black [&_h1]:leading-[1.25] [&_h1]:tracking-[-0.03em] [&_h1]:text-zinc-950 [&_h2]:mt-14 [&_h2]:mb-6 [&_h2]:text-[1.35rem] [&_h2]:font-black [&_h2]:leading-[1.35] [&_h2]:tracking-[-0.02em] [&_h2]:text-zinc-950 [&_h3]:mt-10 [&_h3]:mb-4 [&_h3]:text-[1.05rem] [&_h3]:font-black [&_h3]:leading-[1.4] [&_h3]:text-zinc-900 [&_hr]:my-10 [&_hr]:border-zinc-200 [&_iframe]:aspect-video [&_iframe]:h-auto [&_iframe]:w-full [&_iframe]:rounded-[18px] [&_iframe]:border [&_iframe]:border-zinc-200 [&_img]:my-8 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-[18px] [&_li]:pl-1 [&_li]:marker:text-blue-600 [&_ol]:text-[1.25rem] [&_ol]:mb-8 [&_ol]:ml-6 [&_ol]:list-decimal [&_ol]:space-y-3 [&_p]:mb-6 [&_p]:text-[1.18rem] [&_p]:leading-[2.02] [&_p]:text-zinc-700 [&_strong]:font-black [&_strong]:text-zinc-950 [&_table]:my-8 [&_table]:w-full [&_table]:border-collapse [&_table]:overflow-hidden [&_table]:rounded-[16px] [&_td]:border [&_td]:border-zinc-200 [&_td]:px-4 [&_td]:py-3 [&_td]:align-top [&_th]:border [&_th]:border-zinc-200 [&_th]:bg-zinc-50 [&_th]:px-4 [&_th]:py-3 [&_th]:font-black [&_ul]:text-[1.25rem] [&_ul]:mb-8 [&_ul]:ml-6 [&_ul]:list-disc [&_ul]:space-y-3"
                     dangerouslySetInnerHTML={{
                       __html: sanitizePublishedHtml(normalizedContent),
                     }}
@@ -322,7 +386,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
               </div>
 
               {tags.length > 0 && (
-                <div className="mx-auto mt-12 max-w-[880px] border-t border-zinc-200 pt-8">
+                <div className="mx-auto mt-12 max-w-[1100px] border-t border-zinc-200 pt-8">
                   <h2 className="text-sm font-black uppercase tracking-[0.24em] text-zinc-500">
                     SEO Tags
                   </h2>

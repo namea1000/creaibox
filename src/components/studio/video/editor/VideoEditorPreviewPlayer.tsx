@@ -221,6 +221,7 @@ function PreviewMediaLayer({
       const customEvent = event as CustomEvent<{
         currentTime: number;
         totalDuration: number;
+        isSeek?: boolean;
       }>;
 
       const nextGlobalTime = customEvent.detail.currentTime;
@@ -233,16 +234,23 @@ function PreviewMediaLayer({
 
       const video = videoRef.current;
       const audio = audioRef.current;
+      const isSeek = Boolean(customEvent.detail.isSeek);
 
-      if (media?.type === "video" && video) {
-        if (Math.abs(video.currentTime - nextLocalTime) > 0.18) {
-          video.currentTime = nextLocalTime;
+      // 재생 중일 때는 1.0초 이상의 누적 편차 개입을 완전히 차단(0.1ms의 오디오 간섭도 차단)하여 4~5초 주기 더듬음/반복 버그를 근절합니다.
+      // 오직 타임라인을 클릭하는 수동 점프(isSeek === true)나 일시정지 상태(!isPlaying)일 때만 미디어 시간을 덮어씁니다.
+      if (isSeek || !isPlaying) {
+        const syncThreshold = 0.05;
+
+        if (media?.type === "video" && video) {
+          if (isSeek || Math.abs(video.currentTime - nextLocalTime) > syncThreshold) {
+            video.currentTime = nextLocalTime;
+          }
         }
-      }
 
-      if (media?.type === "audio" && audio) {
-        if (Math.abs(audio.currentTime - nextLocalTime) > 0.18) {
-          audio.currentTime = nextLocalTime;
+        if (media?.type === "audio" && audio) {
+          if (isSeek || Math.abs(audio.currentTime - nextLocalTime) > syncThreshold) {
+            audio.currentTime = nextLocalTime;
+          }
         }
       }
     };
@@ -258,7 +266,7 @@ function PreviewMediaLayer({
         handlePlaybackFrame
       );
     };
-  }, [clip.startTime, trimStart, media?.type]);
+  }, [clip.startTime, trimStart, media?.type, isPlaying]);
 
   useEffect(() => {
     if (media?.type !== "video") return;
@@ -272,7 +280,8 @@ function PreviewMediaLayer({
         ? Math.min(liveTimeRef.current, trimStart + effectiveDuration)
         : liveTimeRef.current;
 
-    if (Math.abs(video.currentTime - safeTime) > 0.25) {
+    // 재생이 멈춰있거나 오차가 클 때만 싱크 맞추기
+    if (!isPlaying || Math.abs(video.currentTime - safeTime) > 0.45) {
       video.currentTime = safeTime;
     }
 
@@ -288,8 +297,6 @@ function PreviewMediaLayer({
     }
   }, [
     media?.type,
-    localTime,
-    currentTime,
     isPlaying,
     clip.muted,
     clip.volume,
@@ -314,7 +321,8 @@ function PreviewMediaLayer({
         ? Math.min(liveTimeRef.current, trimStart + effectiveDuration)
         : liveTimeRef.current;
 
-    if (Math.abs(audio.currentTime - safeTime) > 0.25) {
+    // 재생이 멈춰있거나 오차가 클 때만 싱크 맞추기
+    if (!isPlaying || Math.abs(audio.currentTime - safeTime) > 0.45) {
       audio.currentTime = safeTime;
     }
 
@@ -330,8 +338,6 @@ function PreviewMediaLayer({
     }
   }, [
     media?.type,
-    localTime,
-    currentTime,
     isPlaying,
     clip.muted,
     clip.volume,
@@ -356,6 +362,38 @@ function PreviewMediaLayer({
         style={previewStyle}
       >
         <VisualizerPlaceholder clip={clip} currentTime={currentTime} />
+      </button>
+    );
+  }
+
+  if (!media.url) {
+    return (
+      <button
+        type="button"
+        onClick={onSelect}
+        className={`${sharedClass} bg-red-950/80 border-2 border-red-500/50 flex items-center justify-center`}
+        style={previewStyle}
+      >
+        <div className="text-center p-4">
+          <VolumeX size={48} className="mx-auto mb-3 text-red-400 animate-pulse" />
+          <span className="bg-red-600 text-white text-[10px] font-black px-1.5 py-0.5 mb-2 inline-block rounded-none">
+            MEDIA OFFLINE
+          </span>
+          <div className="text-xs font-bold text-red-200 truncate max-w-[240px] mx-auto">
+            {media.name}
+          </div>
+          <div className="text-[9px] text-red-400 mt-1 leading-normal">
+            새로고침으로 연결이 끊어졌습니다.<br />미디어를 재연결하세요.
+          </div>
+        </div>
+
+        <LayerBadge
+          icon={VolumeX}
+          label="OFFLINE"
+          tone="red"
+          name={media.name}
+          muted={true}
+        />
       </button>
     );
   }
@@ -607,7 +645,7 @@ function VisualizerPlaceholder({
           return (
             <div
               key={index}
-              className="w-2 rounded-full bg-gradient-to-t from-cyan-300 to-pink-400 shadow-[0_0_18px_rgba(34,211,238,0.65)]"
+              className="w-2 rounded-none bg-gradient-to-t from-cyan-300 to-pink-400 shadow-[0_0_18px_rgba(34,211,238,0.65)]"
               style={{ height: `${height}%` }}
             />
           );
@@ -628,7 +666,7 @@ function LayerBadge({
 }: {
   icon: React.ElementType;
   label: string;
-  tone: "cyan" | "violet" | "emerald";
+  tone: "cyan" | "violet" | "emerald" | "red";
   name: string;
   muted?: boolean;
   volume?: number;
@@ -639,11 +677,13 @@ function LayerBadge({
       ? "text-cyan-200"
       : tone === "violet"
         ? "text-violet-200"
-        : "text-emerald-200";
+        : tone === "emerald"
+          ? "text-emerald-200"
+          : "text-red-200";
 
   return (
     <div
-      className={`absolute left-4 bottom-4 flex max-w-[78%] items-center gap-2 rounded-lg bg-black/70 px-3 py-2 text-xs font-bold ${toneClass}`}
+      className={`absolute left-4 bottom-4 flex max-w-[78%] items-center gap-2 rounded-none bg-black/70 px-3 py-2 text-xs font-bold ${toneClass}`}
     >
       <Icon size={14} />
       <span>{label}</span>

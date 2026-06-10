@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import type { VideoEditorClip as VideoEditorClipType } from "./VideoEditorContext";
+import { useVideoEditor } from "./VideoEditorContext";
 
 type VideoEditorClipProps = {
   clip: VideoEditorClipType;
@@ -23,6 +24,7 @@ type VideoEditorClipProps = {
   visible: boolean;
   currentTime: number;
   timelineZoom: number;
+  isOffline?: boolean;
   onSelect: (clipId: string) => void;
   onRemove: (clipId: string) => void;
   onDuplicate: (clipId: string) => void;
@@ -38,6 +40,7 @@ export default function VideoEditorClip({
   visible,
   currentTime,
   timelineZoom,
+  isOffline = false,
   onSelect,
   onRemove,
   onDuplicate,
@@ -51,8 +54,10 @@ export default function VideoEditorClip({
       ? ((currentTime - clip.startTime) / clip.duration) * 100
       : 0;
 
+  const pxPerSecond = (timelineZoom / 100) * 16;
+
   const pixelsToSeconds = (deltaX: number) => {
-    return (deltaX / 100) * (100 / timelineZoom) * 3;
+    return deltaX / pxPerSecond;
   };
 
   const handleTrimStart = (
@@ -116,6 +121,10 @@ export default function VideoEditorClip({
     window.addEventListener("pointerup", handleUp);
   };
 
+  const { mediaItems } = useVideoEditor();
+  const media = clip.mediaId ? mediaItems.find((m) => m.id === clip.mediaId) : null;
+  const thumbnailUrl = media?.thumbnailUrl || (media?.type === "image" ? media?.url : "");
+
   return (
     <div
       draggable
@@ -123,21 +132,79 @@ export default function VideoEditorClip({
         event.dataTransfer.setData("clip-id", clip.id);
         event.dataTransfer.effectAllowed = "move";
       }}
-      onClick={() => onSelect(clip.id)}
-      className={`group absolute top-2 flex h-8 cursor-grab items-center justify-between overflow-hidden rounded-lg border px-3 transition active:cursor-grabbing ${active
+      onPointerDown={(event) => event.stopPropagation()}
+      onClick={(event) => {
+        event.stopPropagation();
+        onSelect(clip.id);
+      }}
+      className={`group absolute top-2 flex flex-col h-14 cursor-grab overflow-hidden rounded-none border transition active:cursor-grabbing ${active
           ? "border-cyan-300 bg-cyan-400/30"
-          : `border-white/10 ${clip.color}`
+          : isOffline
+            ? "border-red-500/50 bg-red-950/30 text-red-300"
+            : `border-white/10 ${clip.color}`
         } ${visible ? "" : "opacity-40"}`}
       style={{
-        left: `${clip.left}%`,
-        width: `${clip.width}%`,
+        left: `${clip.startTime * pxPerSecond}px`,
+        width: `${clip.duration * pxPerSecond}px`,
       }}
       title={`${clip.name} · ${clip.startTime.toFixed(1)}s ~ ${clipEnd.toFixed(
         1
       )}s`}
     >
+      {/* Top Bar: Name & Duration Info */}
+      <div className="h-5 shrink-0 w-full flex items-center justify-between px-1.5 bg-black/60 text-[9px] font-black text-white/90 border-b border-white/5 select-none pointer-events-none z-20">
+        <div className="flex items-center gap-1 min-w-0 max-w-[70%]">
+          {isOffline ? (
+            <VolumeX size={10} className="shrink-0 text-red-400 animate-pulse" />
+          ) : (
+            <ClipTypeIcon type={clip.type} muted={clip.muted} />
+          )}
+          <span className="truncate">{clip.name}</span>
+        </div>
+        <span className="shrink-0 text-white/50">{clip.duration.toFixed(1)}s</span>
+      </div>
+
+      {/* Bottom Area: Image Filmstrip or Audio Waveform */}
+      <div className="relative flex-1 w-full min-h-0 overflow-hidden bg-black/10 z-10 pointer-events-none">
+        {/* Filmstrip Background for Video/Image */}
+        {thumbnailUrl && (clip.type === "video" || clip.type === "image") && (
+          <div
+            className="absolute inset-0 z-0 bg-repeat bg-cover pointer-events-none opacity-85"
+            style={{
+              backgroundImage: `url(${thumbnailUrl})`,
+              backgroundRepeat: "repeat-x",
+              backgroundSize: "auto 100%",
+            }}
+          />
+        )}
+
+        {/* Waveform for Audio */}
+        {clip.type === "audio" && (
+          <div className="pointer-events-none absolute inset-x-1 bottom-1.5 z-0 flex h-[28px] items-end gap-[1.5px] opacity-80">
+            {(clip.waveform?.length
+              ? clip.waveform
+              : Array.from({ length: 48 })
+            ).map((value, index) => {
+              const height =
+                typeof value === "number"
+                  ? Math.max(10, value * 100)
+                  : 20 + Math.abs(Math.sin(index)) * 70;
+
+              return (
+                <span
+                  key={`${clip.id}-wave-${index}`}
+                  className="w-[1.5px] rounded-none bg-emerald-300"
+                  style={{ height: `${height}%` }}
+                />
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Playback Progress Indicator overlay */}
       <div
-        className="pointer-events-none absolute inset-y-0 left-0 bg-white/10"
+        className="pointer-events-none absolute inset-y-0 left-0 bg-white/10 z-10"
         style={{
           width: `${Math.max(0, Math.min(100, progress))}%`,
         }}
@@ -151,86 +218,23 @@ export default function VideoEditorClip({
         <div className="absolute right-0 top-0 z-10 h-full w-4 bg-white/20" />
       )}
 
+      {/* Trim Start handle */}
       <div
         role="button"
         tabIndex={0}
         title="시작점 Trim"
         onPointerDown={handleTrimStart}
-        className="absolute left-0 top-0 z-30 h-full w-2 cursor-ew-resize bg-cyan-200/60 opacity-0 transition group-hover:opacity-100"
+        className="absolute left-0 top-0 z-30 h-full w-1.5 cursor-ew-resize bg-cyan-400 opacity-0 transition group-hover:opacity-100"
       />
 
-      <div className="relative z-20 flex min-w-0 flex-1 items-center gap-2">
-        <ClipTypeIcon type={clip.type} muted={clip.muted} />
-
-        <GripVertical
-          size={12}
-          className="hidden shrink-0 text-white/30 group-hover:block"
-        />
-
-        <div className="truncate text-xs font-bold text-white/90">
-          {clip.name}
-        </div>
-      </div>
-
-      {clip.type === "audio" && (
-        <div className="pointer-events-none absolute inset-x-2 bottom-1 z-0 flex h-3 items-end gap-[2px] opacity-60">
-          {(clip.waveform?.length
-            ? clip.waveform
-            : Array.from({ length: 28 })
-          ).map((value, index) => {
-            const height =
-              typeof value === "number"
-                ? Math.max(10, value * 100)
-                : 20 + Math.abs(Math.sin(index)) * 70;
-
-            return (
-              <span
-                key={`${clip.id}-wave-${index}`}
-                className="w-[2px] rounded bg-emerald-200"
-                style={{ height: `${height}%` }}
-              />
-            );
-          })}
-        </div>
-      )}
-
-      <div className="relative z-30 flex items-center gap-1">
-        <MiniIconButton
-          title="복제"
-          icon={Copy}
-          onClick={(event) => {
-            event.stopPropagation();
-            onDuplicate(clip.id);
-          }}
-        />
-
-        <MiniIconButton
-          title="현재 위치 분할"
-          icon={Split}
-          onClick={(event) => {
-            event.stopPropagation();
-            onSplit(clip.id, currentTime);
-          }}
-        />
-
-        <MiniIconButton
-          title="삭제"
-          icon={Trash2}
-          danger
-          onClick={(event) => {
-            event.stopPropagation();
-            onRemove(clip.id);
-          }}
-        />
-
-        <div
-          role="button"
-          tabIndex={0}
-          title="끝점 Trim / 길이 조절"
-          onPointerDown={handleTrimEnd}
-          className="h-6 w-2 cursor-ew-resize rounded bg-white/40 opacity-0 transition hover:bg-cyan-200 group-hover:opacity-100"
-        />
-      </div>
+      {/* Trim End handle */}
+      <div
+        role="button"
+        tabIndex={0}
+        title="끝점 Trim / 길이 조절"
+        onPointerDown={handleTrimEnd}
+        className="absolute right-0 top-0 z-30 h-full w-1.5 cursor-ew-resize bg-cyan-400 opacity-0 transition group-hover:opacity-100"
+      />
     </div>
   );
 }
@@ -267,7 +271,7 @@ function MiniIconButton({
       type="button"
       title={title}
       onClick={onClick}
-      className={`rounded p-1 opacity-0 transition group-hover:opacity-100 ${danger
+      className={`rounded-none p-1 opacity-0 transition group-hover:opacity-100 ${danger
           ? "text-white/40 hover:bg-red-500/20 hover:text-red-200"
           : "text-white/40 hover:bg-cyan-500/20 hover:text-cyan-100"
         }`}

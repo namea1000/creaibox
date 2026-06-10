@@ -35,7 +35,7 @@ export default function VideoEditorSubtitleLayer() {
             key={clip.id}
             type="button"
             onClick={() => selectClip(clip.id)}
-            className={`pointer-events-auto absolute flex max-w-[80%] -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-xl border px-5 py-3 text-center transition ${active
+            className={`pointer-events-auto absolute flex max-w-[80%] -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-none border px-5 py-3 text-center transition ${active
                 ? "border-amber-300 ring-4 ring-amber-400/40"
                 : "border-white/20 hover:border-amber-300"
               }`}

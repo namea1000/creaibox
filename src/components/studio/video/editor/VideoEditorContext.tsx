@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useCallback, useMemo, useState } from "react";
 
 import type {
   ExportFps,
@@ -11,6 +11,73 @@ import type {
 } from "./types";
 
 import { DEFAULT_TIMELINE_TRACKS } from "./constants";
+
+const DB_NAME = "creaibox-video-editor-db";
+const STORE_NAME = "media-files";
+
+function openDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined" || !window.indexedDB) {
+      reject(new Error("IndexedDB not supported"));
+      return;
+    }
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function saveFileToCache(id: string, file: File): Promise<void> {
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, "readwrite");
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.put(file, id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  } catch (e) {
+    console.error("IndexedDB save failed:", e);
+  }
+}
+
+async function getFileFromCache(id: string): Promise<File | null> {
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, "readonly");
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.get(id);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (e) {
+    console.error("IndexedDB load failed:", e);
+    return null;
+  }
+}
+
+async function deleteFileFromCache(id: string): Promise<void> {
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, "readwrite");
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  } catch (e) {
+    console.error("IndexedDB delete failed:", e);
+  }
+}
 
 export type VideoEditorMediaType = "video" | "image" | "audio";
 
@@ -23,6 +90,8 @@ export type VideoEditorMediaItem = {
   duration?: number;
   size?: number;
   createdAt: string;
+  thumbnailUrl?: string;
+  waveform?: number[];
 };
 
 export type VideoTextStyle = {
@@ -194,13 +263,15 @@ type VideoEditorActions = {
 
   exportProjectJson: () => string;
   importProjectJson: (jsonText: string) => void;
+  relinkMediaFile: (id: string, file: File) => void;
 };
 
 type VideoEditorContextValue = VideoEditorState & VideoEditorActions;
 
 const VideoEditorContext = createContext<VideoEditorContextValue | null>(null);
 
-const TIMELINE_BASE_DURATION = 30;
+const TIMELINE_BASE_DURATION = 3600;
+const MIN_TIMELINE_DURATION = 30;
 const MAX_HISTORY = 50;
 
 const DEFAULT_TEXT_STYLE: VideoTextStyle = {
@@ -254,10 +325,10 @@ function clamp(value: number, min: number, max: number) {
 function calculateTotalDuration(clips: VideoEditorClip[]) {
   const maxEnd = clips.reduce(
     (max, clip) => Math.max(max, clip.startTime + clip.duration),
-    TIMELINE_BASE_DURATION
+    MIN_TIMELINE_DURATION
   );
 
-  return Math.max(TIMELINE_BASE_DURATION, Math.ceil(maxEnd));
+  return Math.max(MIN_TIMELINE_DURATION, Math.ceil(maxEnd));
 }
 
 function leftToTime(left: number) {
@@ -350,6 +421,7 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
 
   const [undoStack, setUndoStack] = useState<Snapshot[]>([]);
   const [redoStack, setRedoStack] = useState<Snapshot[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const totalDuration = calculateTotalDuration(clips);
 
@@ -389,22 +461,156 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     setCurrentTimeState(0);
   };
 
-  const addMediaFiles = (files: FileList | File[]) => {
+async function extractAudioWaveform(file: File, points = 60): Promise<number[]> {
+  try {
+    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const arrayBuffer = await file.arrayBuffer();
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    const channelData = audioBuffer.getChannelData(0);
+
+    const step = Math.floor(channelData.length / points);
+    const waveform: number[] = [];
+
+    for (let i = 0; i < points; i++) {
+      let max = 0;
+      const start = i * step;
+      const end = start + step;
+      for (let j = start; j < end; j++) {
+        const val = Math.abs(channelData[j]);
+        if (val > max) max = val;
+      }
+      waveform.push(Number(max.toFixed(3)));
+    }
+
+    const peak = Math.max(...waveform) || 1.0;
+    const normalized = waveform.map((v) =>
+      Number(Math.max(0.1, v / peak).toFixed(3))
+    );
+
+    await audioCtx.close();
+    return normalized;
+  } catch (e) {
+    console.error("Audio waveform analysis failed:", e);
+    return Array.from({ length: points }, () =>
+      Number((0.15 + Math.random() * 0.85).toFixed(3))
+    );
+  }
+}
+
+function getVideoThumbnail(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const video = document.createElement("video");
+    const url = URL.createObjectURL(file);
+    video.preload = "auto";
+    video.muted = true;
+    video.playsInline = true;
+    video.crossOrigin = "anonymous";
+
+    video.onloadeddata = () => {
+      video.currentTime = Math.min(1.0, video.duration / 2 || 0.5);
+    };
+
+    video.onseeked = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = 120;
+        canvas.height = 68;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.5);
+          resolve(dataUrl);
+        } else {
+          resolve("");
+        }
+      } catch (e) {
+        console.error("Thumbnail extraction failed:", e);
+        resolve("");
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    };
+
+    video.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve("");
+    };
+
+    video.src = url;
+  });
+}
+
+function getMediaDuration(file: File): Promise<number> {
+  return new Promise((resolve) => {
+    const type = file.type;
+    const url = URL.createObjectURL(file);
+    if (type.startsWith("video/")) {
+      const video = document.createElement("video");
+      video.preload = "metadata";
+      video.onloadedmetadata = () => {
+        URL.revokeObjectURL(url);
+        resolve(video.duration);
+      };
+      video.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(10); // 기본값 fallback
+      };
+      video.src = url;
+    } else if (type.startsWith("audio/")) {
+      const audio = document.createElement("audio");
+      audio.preload = "metadata";
+      audio.onloadedmetadata = () => {
+        URL.revokeObjectURL(url);
+        resolve(audio.duration);
+      };
+      audio.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(10); // 기본값 fallback
+      };
+      audio.src = url;
+    } else {
+      resolve(5); // 이미지 등은 기본 5초
+    }
+  });
+}
+
+  const addMediaFiles = async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
 
-    const nextItems: VideoEditorMediaItem[] = fileArray.map((file) => {
-      const type = getMediaType(file);
+    const nextItems: VideoEditorMediaItem[] = await Promise.all(
+      fileArray.map(async (file) => {
+        const type = getMediaType(file);
+        const duration = await getMediaDuration(file);
+        const mediaId = createId("media");
 
-      return {
-        id: createId("media"),
-        type,
-        name: file.name,
-        url: URL.createObjectURL(file),
-        file,
-        size: file.size,
-        createdAt: new Date().toISOString(),
-      };
-    });
+        // Save to IndexedDB
+        await saveFileToCache(mediaId, file);
+
+        let thumbnailUrl = "";
+        let waveform: number[] = [];
+
+        if (type === "image") {
+          thumbnailUrl = URL.createObjectURL(file);
+        } else if (type === "video") {
+          thumbnailUrl = await getVideoThumbnail(file);
+        } else if (type === "audio") {
+          waveform = await extractAudioWaveform(file);
+        }
+
+        return {
+          id: mediaId,
+          type,
+          name: file.name,
+          url: URL.createObjectURL(file),
+          file,
+          duration,
+          size: file.size,
+          createdAt: new Date().toISOString(),
+          thumbnailUrl,
+          waveform,
+        };
+      })
+    );
 
     setMediaItems((prev) => [...nextItems, ...prev]);
     if (nextItems[0]) setSelectedMediaId(nextItems[0].id);
@@ -420,13 +626,148 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       return prev.filter((item) => item.id !== id);
     });
 
+    // Delete from IndexedDB
+    void deleteFileFromCache(id);
+
     setClipsState((prev) => prev.filter((clip) => clip.mediaId !== id));
     setSelectedMediaId((current) => (current === id ? null : current));
   };
 
+  const relinkMediaFile = useCallback(async (id: string, file: File) => {
+    const type = getMediaType(file);
+    const newUrl = URL.createObjectURL(file);
+
+    // Save to IndexedDB
+    await saveFileToCache(id, file);
+
+    setMediaItems((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              type,
+              name: file.name,
+              url: newUrl,
+              file,
+              size: file.size,
+            }
+          : item
+      )
+    );
+  }, []);
+
+  // 1. Load from localStorage on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const restoreProject = async () => {
+      try {
+        const saved = localStorage.getItem("creaibox-video-editor-autosave");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.projectTitle) setProjectTitle(parsed.projectTitle);
+          if (parsed.activeTab) setActiveTab(parsed.activeTab);
+          if (parsed.canvasRatio) setCanvasRatio(parsed.canvasRatio);
+          if (parsed.canvasZoom) setCanvasZoomState(parsed.canvasZoom);
+          if (parsed.exportResolution) setExportResolution(parsed.exportResolution);
+          if (parsed.exportFps) setExportFps(parsed.exportFps);
+          if (parsed.exportQuality) setExportQuality(parsed.exportQuality);
+
+          if (Array.isArray(parsed.mediaItems)) {
+            const restoredMedia = await Promise.all(
+              parsed.mediaItems.map(async (item: any) => {
+                const isLocal = !item.url || item.url.startsWith("blob:");
+                if (isLocal) {
+                  const cachedFile = await getFileFromCache(item.id);
+                  if (cachedFile) {
+                    return {
+                      ...item,
+                      url: URL.createObjectURL(cachedFile),
+                      file: cachedFile,
+                    };
+                  }
+                }
+                return {
+                  ...item,
+                  url: item.url && !item.url.startsWith("blob:") ? item.url : "",
+                };
+              })
+            );
+            setMediaItems(restoredMedia);
+          }
+
+          if (Array.isArray(parsed.clips)) {
+            setClipsState(parsed.clips.map(normalizeClip));
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load autosave:", e);
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+
+    void restoreProject();
+  }, []);
+
+  // 2. Save to localStorage when state changes (only after isLoaded is true)
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (typeof window === "undefined") return;
+
+    try {
+      const stateToSave = {
+        projectTitle,
+        activeTab,
+        canvasRatio,
+        canvasZoom,
+        exportResolution,
+        exportFps,
+        exportQuality,
+        mediaItems: mediaItems.map((item) => ({
+          id: item.id,
+          type: item.type,
+          name: item.name,
+          url: item.url.startsWith("blob:") ? "" : item.url,
+          duration: item.duration,
+          size: item.size,
+          createdAt: item.createdAt,
+          thumbnailUrl: item.thumbnailUrl,
+        })),
+        clips,
+      };
+      localStorage.setItem("creaibox-video-editor-autosave", JSON.stringify(stateToSave));
+    } catch (e) {
+      console.error("Failed to save to localStorage:", e);
+    }
+  }, [
+    isLoaded,
+    projectTitle,
+    activeTab,
+    canvasRatio,
+    canvasZoom,
+    exportResolution,
+    exportFps,
+    exportQuality,
+    mediaItems,
+    clips,
+  ]);
+
   const addClipFromMedia = (media: VideoEditorMediaItem) => {
-    const left = clamp(8 + clips.length * 4, 0, 72);
+    // Automatically register media to mediaItems if not already registered (e.g., from Stock Panel)
+    setMediaItems((prev) => {
+      if (!prev.some((item) => item.id === media.id)) {
+        const itemWithThumbnail = {
+          ...media,
+          thumbnailUrl: media.thumbnailUrl || (media.type === "image" ? media.url : ""),
+        };
+        return [itemWithThumbnail, ...prev];
+      }
+      return prev;
+    });
+
     const duration = media.type === "image" ? 5 : media.duration || 10;
+    const startTime = Number(currentTime.toFixed(2));
 
     const clip: VideoEditorClip = normalizeClip({
       id: createId("clip"),
@@ -434,11 +775,12 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       mediaId: media.id,
       type: media.type,
       name: media.name,
-      startTime: leftToTime(left),
+      startTime,
       duration,
-      left,
-      width: durationToWidth(duration),
+      left: 0,
+      width: 0,
       color: getDefaultClipColor(media.type),
+      waveform: media.waveform,
     });
 
     setClipsWithHistory((prev) => [...prev, clip]);
@@ -446,18 +788,18 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
   };
 
   const addTextClip = () => {
-    const left = clamp(12 + clips.length * 3, 0, 80);
     const duration = 5;
+    const startTime = Number(currentTime.toFixed(2));
 
     const clip: VideoEditorClip = normalizeClip({
       id: createId("text"),
       trackId: "text-1",
       type: "text",
       name: "새 텍스트",
-      startTime: leftToTime(left),
+      startTime,
       duration,
-      left,
-      width: durationToWidth(duration),
+      left: 0,
+      width: 0,
       color: getDefaultClipColor("text"),
       textStyle: { ...DEFAULT_TEXT_STYLE },
     });
@@ -467,18 +809,18 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
   };
 
   const addSubtitleClip = () => {
-    const left = clamp(16 + clips.length * 3, 0, 76);
     const duration = 5;
+    const startTime = Number(currentTime.toFixed(2));
 
     const clip: VideoEditorClip = normalizeClip({
       id: createId("subtitle"),
       trackId: "subtitle-1",
       type: "subtitle",
       name: "새 자막입니다",
-      startTime: leftToTime(left),
+      startTime,
       duration,
-      left,
-      width: durationToWidth(duration),
+      left: 0,
+      width: 0,
       color: getDefaultClipColor("subtitle"),
       textStyle: { ...DEFAULT_SUBTITLE_STYLE },
     });
@@ -488,18 +830,18 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
   };
 
   const addVisualizerClip = () => {
-    const left = clamp(10 + clips.length * 3, 0, 72);
     const duration = 10;
+    const startTime = Number(currentTime.toFixed(2));
 
     const clip: VideoEditorClip = normalizeClip({
       id: createId("visualizer"),
       trackId: "video-1",
       type: "visualizer",
       name: "오디오 비주얼라이저",
-      startTime: leftToTime(left),
+      startTime,
       duration,
-      left,
-      width: durationToWidth(duration),
+      left: 0,
+      width: 0,
       color: getDefaultClipColor("visualizer"),
       transitionIn: "fade",
       transitionOut: "fade",
@@ -854,6 +1196,7 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
 
       exportProjectJson,
       importProjectJson,
+      relinkMediaFile,
     }),
     [
       projectTitle,
@@ -873,6 +1216,7 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       exportQuality,
       undoStack,
       redoStack,
+      relinkMediaFile,
     ]
   );
 

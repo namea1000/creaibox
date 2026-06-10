@@ -13,7 +13,9 @@ import {
   Sparkles,
   Upload,
   Waves,
+  Plus,
 } from "lucide-react";
+import { useVideoEditor } from "./VideoEditorContext";
 
 type VisualizerTemplate =
   | "bars"
@@ -43,27 +45,27 @@ const templates: {
   desc: string;
   icon: React.ElementType;
 }[] = [
-    { id: "bars", title: "Spectrum Bars", desc: "기본 막대형", icon: BarChart3 },
-    { id: "mirror-bars", title: "Mirror Bars", desc: "상하 대칭", icon: AudioLines },
-    { id: "skyline", title: "Neon Skyline", desc: "스카이라인", icon: BarChart3 },
-    { id: "circle", title: "Circle Pulse", desc: "원형", icon: CircleDot },
-    { id: "radial-dots", title: "Radial Dots", desc: "원형 도트", icon: Orbit },
-    { id: "wave", title: "Wave Line", desc: "파형 라인", icon: Waves },
-    { id: "twin-wave", title: "Twin Wave", desc: "쌍파형", icon: Waves },
-    { id: "dots", title: "Beat Dots", desc: "비트 도트", icon: Sparkles },
-    { id: "line", title: "Neon Flow", desc: "네온 라인", icon: Sparkles },
-    { id: "progress", title: "Progress Glow", desc: "진행바", icon: BarChart3 },
-    { id: "ring", title: "Glow Ring", desc: "링", icon: CircleDot },
-    { id: "orbit", title: "Orbit Pulse", desc: "궤도형", icon: Orbit },
-    { id: "equalizer", title: "EQ Blocks", desc: "이퀄라이저", icon: BarChart3 },
-    { id: "mountain", title: "Sound Mountain", desc: "산맥", icon: Waves },
-    { id: "tunnel", title: "Audio Tunnel", desc: "터널", icon: CircleDot },
-    { id: "particles", title: "Particles", desc: "입자", icon: Sparkles },
-    { id: "pulse-square", title: "Pulse Square", desc: "사각 펄스", icon: BarChart3 },
-    { id: "vinyl", title: "Vinyl Disc", desc: "LP", icon: Disc3 },
-    { id: "heartbeat", title: "Heartbeat", desc: "박동선", icon: Waves },
-    { id: "minimal", title: "Minimal Line", desc: "미니멀", icon: Music },
-  ];
+  { id: "bars", title: "Spectrum Bars", desc: "기본 막대형", icon: BarChart3 },
+  { id: "mirror-bars", title: "Mirror Bars", desc: "상하 대칭", icon: AudioLines },
+  { id: "skyline", title: "Neon Skyline", desc: "스카이라인", icon: BarChart3 },
+  { id: "circle", title: "Circle Pulse", desc: "원형", icon: CircleDot },
+  { id: "radial-dots", title: "Radial Dots", desc: "원형 도트", icon: Orbit },
+  { id: "wave", title: "Wave Line", desc: "파형 라인", icon: Waves },
+  { id: "twin-wave", title: "Twin Wave", desc: "쌍파형", icon: Waves },
+  { id: "dots", title: "Beat Dots", desc: "비트 도트", icon: Sparkles },
+  { id: "line", title: "Neon Flow", desc: "네온 라인", icon: Sparkles },
+  { id: "progress", title: "Progress Glow", desc: "진행바", icon: BarChart3 },
+  { id: "ring", title: "Glow Ring", desc: "링", icon: CircleDot },
+  { id: "orbit", title: "Orbit Pulse", desc: "궤도형", icon: Orbit },
+  { id: "equalizer", title: "EQ Blocks", desc: "이퀄라이저", icon: BarChart3 },
+  { id: "mountain", title: "Sound Mountain", desc: "산맥", icon: Waves },
+  { id: "tunnel", title: "Audio Tunnel", desc: "터널", icon: CircleDot },
+  { id: "particles", title: "Particles", desc: "입자", icon: Sparkles },
+  { id: "pulse-square", title: "Pulse Square", desc: "사각 펄스", icon: BarChart3 },
+  { id: "vinyl", title: "Vinyl Disc", desc: "LP", icon: Disc3 },
+  { id: "heartbeat", title: "Heartbeat", desc: "박동선", icon: Waves },
+  { id: "minimal", title: "Minimal Line", desc: "미니멀", icon: Music },
+];
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -80,6 +82,8 @@ export default function VideoEditorVisualizerPanel() {
     count: 0,
     values: [],
   });
+
+  const { addVisualizerClip } = useVideoEditor();
 
   const [audioUrl, setAudioUrl] = useState("");
   const [fileName, setFileName] = useState("");
@@ -447,12 +451,13 @@ export default function VideoEditorVisualizerPanel() {
         const value = Math.min(1, 0.18 + avg / 220);
 
         ctx.fillStyle = "rgba(255,255,255,0.1)";
-        ctx.roundRect(x, y, progressWidth, progressHeight, 999);
+        ctx.beginPath();
+        ctx.rect(x, y, progressWidth, progressHeight);
         ctx.fill();
 
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.roundRect(x, y, progressWidth * value, progressHeight, 999);
+        ctx.rect(x, y, progressWidth * value, progressHeight);
         ctx.fill();
       }
 
@@ -495,7 +500,7 @@ export default function VideoEditorVisualizerPanel() {
       if (template === "pulse-square") {
         const size = Math.min(width, height) * 0.42 + avg * 1.4;
         ctx.beginPath();
-        ctx.roundRect(width / 2 - size / 2, height / 2 - size / 2, size, size, 36);
+        ctx.rect(width / 2 - size / 2, height / 2 - size / 2, size, size);
         ctx.stroke();
       }
 
@@ -545,25 +550,25 @@ export default function VideoEditorVisualizerPanel() {
   };
 
   return (
-    <div className="space-y-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+    <div className="space-y-4 rounded-none border border-white/10 bg-black/20 p-4">
       <div>
         <h3 className="flex items-center gap-2 text-lg font-black text-white">
           <Waves className="text-pink-300" size={20} />
           Visualizer
         </h3>
         <p className="mt-1 text-xs leading-5 text-zinc-500">
-          뮤직 스튜디오의 오디오 스펙트럼 엔진을 비디오 편집기 Resources 패널에서 사용합니다.
+          오디오 스펙트럼 엔진을 사용하여 비디오와 동기화되는 비주얼라이저 클립을 추가합니다.
         </p>
       </div>
 
-      <label className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-pink-500 text-sm font-black text-white hover:bg-pink-400">
+      <label className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-none bg-pink-500 text-sm font-black text-white hover:bg-pink-400">
         <Upload size={17} />
         오디오 업로드
         <input type="file" accept="audio/*" onChange={handleAudioUpload} className="hidden" />
       </label>
 
-      <div className="rounded-xl border border-white/10 bg-black/30 p-3 text-xs leading-5 text-zinc-400">
-        <div className="font-bold text-white">{fileName || "오디오 없음"}</div>
+      <div className="rounded-none border border-white/10 bg-black/30 p-3 text-xs leading-5 text-zinc-400">
+        <div className="font-bold text-white">{fileName || "오디오 없음 (기본 데모 파동)"}</div>
         <div className="mt-1">선택 템플릿: {template}</div>
       </div>
 
@@ -580,7 +585,7 @@ export default function VideoEditorVisualizerPanel() {
                 setTemplate(item.id);
                 if (audioUrl) await setupAudio();
               }}
-              className={`rounded-xl border p-3 text-left transition ${active
+              className={`rounded-none border p-3 text-left transition ${active
                   ? "border-pink-400 bg-pink-400/10"
                   : "border-white/10 bg-black/30 hover:border-pink-400/50"
                 }`}
@@ -593,7 +598,7 @@ export default function VideoEditorVisualizerPanel() {
         })}
       </div>
 
-      <div className="space-y-3 rounded-xl border border-white/10 bg-black/30 p-3">
+      <div className="space-y-3 rounded-none border border-white/10 bg-black/30 p-3">
         <ColorField label="Accent" value={accentColor} onChange={setAccentColor} />
         <ColorField label="Background" value={backgroundColor} onChange={setBackgroundColor} />
 
@@ -620,7 +625,7 @@ export default function VideoEditorVisualizerPanel() {
         />
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-white/10 bg-black">
+      <div className="overflow-hidden rounded-none border border-white/10 bg-black">
         <canvas
           ref={canvasRef}
           width={1280}
@@ -648,17 +653,28 @@ export default function VideoEditorVisualizerPanel() {
         />
       ) : null}
 
-      <button
-        type="button"
-        onClick={handlePlay}
-        className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-cyan-400 text-sm font-black text-black hover:bg-cyan-300"
-      >
-        {isPlaying ? <Pause size={17} /> : <Play size={17} />}
-        {isPlaying ? "일시정지" : "미리보기 재생"}
-      </button>
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={handlePlay}
+          className="flex h-11 items-center justify-center gap-2 rounded-none bg-zinc-800 text-xs font-bold text-white hover:bg-zinc-700"
+        >
+          {isPlaying ? <Pause size={15} /> : <Play size={15} />}
+          {isPlaying ? "일시정지" : "미리보기 재생"}
+        </button>
 
-      <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
-        다음 단계에서 이 설정을 “Visualizer Clip”으로 타임라인에 추가하도록 연결하면 됩니다.
+        <button
+          type="button"
+          onClick={addVisualizerClip}
+          className="flex h-11 items-center justify-center gap-2 rounded-none bg-cyan-400 text-xs font-black text-black hover:bg-cyan-300"
+        >
+          <Plus size={15} />
+          타임라인에 추가
+        </button>
+      </div>
+
+      <div className="rounded-none border border-amber-400/20 bg-amber-400/10 p-3 text-[11px] leading-5 text-amber-100">
+        오디오를 업로드하거나 템플릿을 선택한 뒤 [타임라인에 추가]를 클릭하면 편집기에 실시간 동적 비주얼 스펙트럼 레이어가 적용됩니다.
       </div>
     </div>
   );

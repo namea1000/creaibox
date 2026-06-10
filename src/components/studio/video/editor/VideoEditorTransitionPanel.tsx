@@ -70,7 +70,7 @@ export default function VideoEditorTransitionPanel() {
           desc="타임라인에서 클립을 선택하면 전환 효과를 적용할 수 있습니다."
         />
 
-        <div className="rounded-2xl border border-dashed border-white/10 bg-black/30 p-5 text-center text-sm text-zinc-500">
+        <div className="rounded-none border border-dashed border-white/10 bg-black/30 p-5 text-center text-sm text-zinc-500">
           선택된 클립이 없습니다.
         </div>
       </div>
@@ -85,7 +85,7 @@ export default function VideoEditorTransitionPanel() {
         desc="선택한 클립의 시작/끝 전환 효과를 설정합니다."
       />
 
-      <div className="mb-4 rounded-xl border border-cyan-400/20 bg-cyan-400/10 p-3">
+      <div className="mb-4 rounded-none border border-cyan-400/20 bg-cyan-400/10 p-3">
         <div className="truncate text-sm font-black text-cyan-100">
           {selectedClip.name}
         </div>
@@ -158,7 +158,7 @@ export default function VideoEditorTransitionPanel() {
           />
         </div>
 
-        <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
+        <div className="rounded-none border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
           현재 전환 효과는 PreviewPlayer에 이미 연결되어 있어서 선택 즉시
           프리뷰에 반영됩니다.
         </div>
@@ -177,7 +177,7 @@ function TransitionGroup({
   onChange: (value: VideoTransitionType) => void;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+    <div className="rounded-none border border-white/10 bg-black/20 p-3">
       <div className="mb-3 text-xs font-black uppercase tracking-widest text-zinc-500">
         {title}
       </div>
@@ -192,13 +192,13 @@ function TransitionGroup({
               key={preset.value}
               type="button"
               onClick={() => onChange(preset.value)}
-              className={`flex items-center gap-3 rounded-xl border p-3 text-left transition ${active
+              className={`flex items-center gap-3 rounded-none border p-3 text-left transition ${active
                   ? "border-cyan-400 bg-cyan-400/15 text-cyan-100"
                   : "border-white/10 bg-black/30 text-zinc-400 hover:border-cyan-400/50"
                 }`}
             >
               <div
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${active ? "bg-cyan-400/20" : "bg-white/5"
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-none ${active ? "bg-cyan-400/20" : "bg-white/5"
                   }`}
               >
                 <Icon size={17} />
@@ -212,7 +212,7 @@ function TransitionGroup({
               </div>
 
               {active && (
-                <div className="rounded-full bg-cyan-400 px-2 py-1 text-[10px] font-black text-black">
+                <div className="rounded-none bg-cyan-400 px-2 py-1 text-[10px] font-black text-black">
                   ON
                 </div>
               )}
@@ -237,7 +237,7 @@ function PresetButton({
     <button
       type="button"
       onClick={onClick}
-      className="rounded-xl border border-white/10 bg-black/30 p-3 text-left hover:border-cyan-400/50"
+      className="rounded-none border border-white/10 bg-black/30 p-3 text-left hover:border-cyan-400/50"
     >
       <div className="flex items-center gap-2 text-xs font-black text-white">
         <Plus size={13} />
@@ -259,7 +259,7 @@ function PanelHeader({
 }) {
   return (
     <div className="mb-5 flex items-start gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-300">
+      <div className="flex h-10 w-10 items-center justify-center rounded-none bg-cyan-400/10 text-cyan-300">
         <Icon size={20} />
       </div>
 

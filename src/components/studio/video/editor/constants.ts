@@ -15,7 +15,6 @@ import {
 import type { TimelineTrack } from "./types";
 
 export const VIDEO_EDITOR_SIDEBAR_MENUS = [
-  { key: "project", label: "프로젝트", icon: FolderOpen, },
   { key: "media", label: "미디어 업로드", icon: Upload },
   { key: "image", label: "이미지", icon: ImageIcon },
   { key: "video", label: "비디오", icon: Film },

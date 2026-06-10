@@ -207,7 +207,7 @@ function drawTextClip(
 
   if (style.backgroundColor !== "transparent") {
     ctx.fillStyle = style.backgroundColor;
-    roundRect(ctx, x - boxWidth / 2, y - boxHeight / 2, boxWidth, boxHeight, 18);
+    roundRect(ctx, x - boxWidth / 2, y - boxHeight / 2, boxWidth, boxHeight, 0);
     ctx.fill();
   }
 

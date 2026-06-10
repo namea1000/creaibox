@@ -34,7 +34,7 @@ export default function VideoEditorMotionPanel() {
           desc="클립을 선택하면 위치, 크기, 회전, 투명도, 플립, 크롭을 조절할 수 있습니다."
         />
 
-        <div className="rounded-2xl border border-dashed border-white/10 bg-black/30 p-5 text-center text-sm text-zinc-500">
+        <div className="rounded-none border border-dashed border-white/10 bg-black/30 p-5 text-center text-sm text-zinc-500">
           선택된 클립이 없습니다.
         </div>
       </div>
@@ -70,7 +70,7 @@ export default function VideoEditorMotionPanel() {
         desc="위치, 크기, 회전, 투명도, 플립, 크롭을 조절합니다."
       />
 
-      <div className="mb-4 rounded-xl border border-cyan-400/20 bg-cyan-400/10 p-3">
+      <div className="mb-4 rounded-none border border-cyan-400/20 bg-cyan-400/10 p-3">
         <div className="truncate text-sm font-black text-cyan-100">
           {selectedClip.name}
         </div>
@@ -532,7 +532,7 @@ export default function VideoEditorMotionPanel() {
           </div>
         </MotionSection>
 
-        <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
+        <div className="rounded-none border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
           위치, 크기, 회전, 투명도는 PreviewPlayer에 바로 반영됩니다.
           Flip/Crop/Anchor는 다음 단계에서 PreviewPlayer 스타일 계산에 연결하면 실제 화면에 반영됩니다.
         </div>
@@ -549,7 +549,7 @@ function MotionSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+    <div className="rounded-none border border-white/10 bg-black/20 p-3">
       <div className="mb-3 text-xs font-black uppercase tracking-widest text-zinc-500">
         {title}
       </div>
@@ -578,7 +578,7 @@ function RangeField({
   onChange: (value: number) => void;
 }) {
   return (
-    <label className="block rounded-xl border border-white/10 bg-black/30 p-3">
+    <label className="block rounded-none border border-white/10 bg-black/30 p-3">
       <div className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-widest text-zinc-500">
         <span className="flex items-center gap-2">
           <Icon size={13} />
@@ -614,7 +614,7 @@ function ToggleButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-10 items-center justify-center gap-2 rounded-xl border text-xs font-black ${active
+      className={`flex h-10 items-center justify-center gap-2 rounded-none border text-xs font-black ${active
           ? "border-cyan-400 bg-cyan-400/20 text-cyan-200"
           : "border-white/10 bg-black/30 text-zinc-400 hover:border-cyan-400/40"
         }`}
@@ -640,7 +640,7 @@ function PresetButton({
     <button
       type="button"
       onClick={onClick}
-      className="rounded-xl border border-white/10 bg-black/30 p-3 text-left hover:border-cyan-400/50"
+      className="rounded-none border border-white/10 bg-black/30 p-3 text-left hover:border-cyan-400/50"
     >
       <div className="flex items-center gap-2 text-xs font-black text-white">
         <Icon size={13} />
@@ -662,7 +662,7 @@ function PanelHeader({
 }) {
   return (
     <div className="mb-5 flex items-start gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-300">
+      <div className="flex h-10 w-10 items-center justify-center rounded-none bg-cyan-400/10 text-cyan-300">
         <Icon size={20} />
       </div>
 

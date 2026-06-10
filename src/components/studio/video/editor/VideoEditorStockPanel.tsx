@@ -5,7 +5,6 @@ import {
   Search,
   Library,
   Image as ImageIcon,
-  Film,
   Music,
   Download,
   ExternalLink,
@@ -16,8 +15,9 @@ import {
   List,
   Crown,
   Globe2,
-  Video,
+  Film,
 } from "lucide-react";
+import { useVideoEditor } from "./VideoEditorContext";
 
 type StockCategory = "all" | "image" | "video" | "audio";
 type StockProvider = "all" | "unsplash" | "pexels" | "pixabay" | "mixkit" | "videvo";
@@ -39,13 +39,13 @@ const stockProviders: {
   desc: string;
   url?: string;
 }[] = [
-    { id: "all", label: "All", desc: "전체" },
-    { id: "unsplash", label: "Unsplash", desc: "이미지 중심", url: "https://unsplash.com" },
-    { id: "pexels", label: "Pexels", desc: "이미지/영상", url: "https://www.pexels.com" },
-    { id: "pixabay", label: "Pixabay", desc: "이미지/영상/음원", url: "https://pixabay.com" },
-    { id: "mixkit", label: "Mixkit", desc: "영상/BGM/SFX", url: "https://mixkit.co" },
-    { id: "videvo", label: "Videvo", desc: "영상 소스", url: "https://www.videvo.net" },
-  ];
+  { id: "all", label: "All", desc: "전체" },
+  { id: "unsplash", label: "Unsplash", desc: "이미지 중심", url: "https://unsplash.com" },
+  { id: "pexels", label: "Pexels", desc: "이미지/영상", url: "https://www.pexels.com" },
+  { id: "pixabay", label: "Pixabay", desc: "이미지/영상/음원", url: "https://pixabay.com" },
+  { id: "mixkit", label: "Mixkit", desc: "영상/BGM/SFX", url: "https://mixkit.co" },
+  { id: "videvo", label: "Videvo", desc: "영상 소스", url: "https://www.videvo.net" },
+];
 
 const stockItems: StockItem[] = [
   {
@@ -129,6 +129,40 @@ export default function VideoEditorStockPanel() {
   const [provider, setProvider] = useState<StockProvider>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
+  const { addClipFromMedia } = useVideoEditor();
+
+  const handleAddStock = (item: StockItem) => {
+    let mockUrl = "";
+    let mockThumbnail = "";
+    if (item.type === "image") {
+      mockUrl = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&auto=format&fit=crop";
+      mockThumbnail = mockUrl;
+    } else if (item.type === "audio") {
+      mockUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
+    } else {
+      mockUrl = "https://assets.mixkit.co/videos/preview/mixkit-forest-stream-in-the-sunlight-529-large.mp4";
+      // Quality placeholder thumbnails for stock videos
+      if (item.id === "stock-1") {
+        mockThumbnail = "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=300&auto=format&fit=crop";
+      } else if (item.id === "stock-4") {
+        mockThumbnail = "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=300&auto=format&fit=crop";
+      } else if (item.id === "stock-6") {
+        mockThumbnail = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=300&auto=format&fit=crop";
+      } else {
+        mockThumbnail = "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=300&auto=format&fit=crop";
+      }
+    }
+
+    addClipFromMedia({
+      id: item.id + "-" + Date.now(),
+      type: item.type,
+      name: item.title,
+      url: mockUrl,
+      thumbnailUrl: mockThumbnail,
+      createdAt: new Date().toISOString(),
+    });
+  };
+
   const filteredItems = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
@@ -156,7 +190,7 @@ export default function VideoEditorStockPanel() {
         desc="Unsplash, Pexels, Pixabay, Mixkit, Videvo 연결을 위한 스톡 미디어 허브입니다."
       />
 
-      <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4">
+      <div className="rounded-none border border-cyan-400/20 bg-cyan-400/10 p-4">
         <div className="flex items-start gap-3">
           <Globe2 className="mt-1 shrink-0 text-cyan-200" size={20} />
           <div>
@@ -164,15 +198,14 @@ export default function VideoEditorStockPanel() {
               Stock API 연결 준비 완료 구조
             </div>
             <p className="mt-1 text-xs leading-5 text-cyan-100/70">
-              현재는 샘플 소스와 외부 검색 허브입니다. 나중에 API Vault의
-              Pexels/Unsplash/Pixabay 키와 연결하면 검색 결과를 바로 불러올 수 있습니다.
+              API Vault 키와 연동하면 검색 결과를 즉시 불러올 수 있습니다. 스톡 아이템의 "+" 버튼을 누르면 타임라인에 바로 추가됩니다.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-        <div className="mb-3 flex items-center gap-2 rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+      <div className="rounded-none border border-white/10 bg-black/30 p-3">
+        <div className="mb-3 flex items-center gap-2 rounded-none border border-white/10 bg-black/40 px-3 py-2">
           <Search size={15} className="text-zinc-500" />
           <input
             value={search}
@@ -199,7 +232,7 @@ export default function VideoEditorStockPanel() {
               key={item.id}
               type="button"
               onClick={() => setProvider(item.id)}
-              className={`rounded-xl border p-3 text-left transition ${active
+              className={`rounded-none border p-3 text-left transition ${active
                   ? "border-cyan-400 bg-cyan-400/15 text-cyan-100"
                   : "border-white/10 bg-black/30 text-zinc-400 hover:border-cyan-400/40"
                 }`}
@@ -213,7 +246,7 @@ export default function VideoEditorStockPanel() {
         })}
       </div>
 
-      <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 p-2">
+      <div className="flex items-center justify-between rounded-none border border-white/10 bg-black/30 p-2">
         <div className="flex items-center gap-2 px-2 text-xs font-bold text-zinc-500">
           <Filter size={14} />
           {filteredItems.length} resources
@@ -223,7 +256,7 @@ export default function VideoEditorStockPanel() {
           <button
             type="button"
             onClick={() => setViewMode("grid")}
-            className={`rounded-lg p-2 ${viewMode === "grid"
+            className={`rounded-none p-2 ${viewMode === "grid"
                 ? "bg-cyan-400/20 text-cyan-200"
                 : "text-zinc-500 hover:text-cyan-200"
               }`}
@@ -233,7 +266,7 @@ export default function VideoEditorStockPanel() {
           <button
             type="button"
             onClick={() => setViewMode("list")}
-            className={`rounded-lg p-2 ${viewMode === "list"
+            className={`rounded-none p-2 ${viewMode === "list"
                 ? "bg-cyan-400/20 text-cyan-200"
                 : "text-zinc-500 hover:text-cyan-200"
               }`}
@@ -248,7 +281,7 @@ export default function VideoEditorStockPanel() {
           href={buildProviderSearchUrl(selectedProvider.id, search)}
           target="_blank"
           rel="noreferrer"
-          className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-bold text-zinc-300 hover:border-cyan-400/50 hover:text-cyan-200"
+          className="flex items-center justify-between rounded-none border border-white/10 bg-black/30 px-4 py-3 text-sm font-bold text-zinc-300 hover:border-cyan-400/50 hover:text-cyan-200"
         >
           <span>{selectedProvider.label}에서 검색 열기</span>
           <ExternalLink size={15} />
@@ -258,24 +291,24 @@ export default function VideoEditorStockPanel() {
       {viewMode === "grid" ? (
         <div className="grid grid-cols-2 gap-3">
           {filteredItems.map((item) => (
-            <StockGridCard key={item.id} item={item} />
+            <StockGridCard key={item.id} item={item} onAdd={() => handleAddStock(item)} />
           ))}
         </div>
       ) : (
         <div className="space-y-2">
           {filteredItems.map((item) => (
-            <StockListCard key={item.id} item={item} />
+            <StockListCard key={item.id} item={item} onAdd={() => handleAddStock(item)} />
           ))}
         </div>
       )}
 
       {filteredItems.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-black/30 p-5 text-center text-sm text-zinc-500">
+        <div className="rounded-none border border-dashed border-white/10 bg-black/30 p-5 text-center text-sm text-zinc-500">
           검색 결과가 없습니다.
         </div>
       )}
 
-      <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
+      <div className="rounded-none border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
         다음 연결 단계: API Vault에 Unsplash/Pexels/Pixabay 키 저장 → 검색 API 호출 →
         결과 URL을 MediaItem으로 변환 → 타임라인에 추가.
       </div>
@@ -283,22 +316,22 @@ export default function VideoEditorStockPanel() {
   );
 }
 
-function StockGridCard({ item }: { item: StockItem }) {
+function StockGridCard({ item, onAdd }: { item: StockItem; onAdd: () => void }) {
   const Icon = getStockIcon(item.type);
 
   return (
-    <div className="group overflow-hidden rounded-2xl border border-white/10 bg-black/30 transition hover:border-cyan-400/50">
+    <div className="group overflow-hidden rounded-none border border-white/10 bg-black/30 transition hover:border-cyan-400/50">
       <div className="relative flex aspect-video items-center justify-center bg-gradient-to-br from-zinc-900 via-black to-cyan-950">
         <Icon size={28} className="text-cyan-200" />
 
         {item.premium && (
-          <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-amber-400 px-2 py-1 text-[10px] font-black text-black">
+          <div className="absolute right-2 top-2 flex items-center gap-1 rounded-none bg-amber-400 px-2 py-1 text-[10px] font-black text-black">
             <Crown size={11} />
             PRO
           </div>
         )}
 
-        <div className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-1 text-[10px] font-black uppercase text-white/70">
+        <div className="absolute left-2 top-2 rounded-none bg-black/70 px-2 py-1 text-[10px] font-black uppercase text-white/70">
           {item.provider}
         </div>
       </div>
@@ -318,8 +351,9 @@ function StockGridCard({ item }: { item: StockItem }) {
 
           <button
             type="button"
-            className="rounded-lg border border-white/10 p-2 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200"
-            title="나중에 Media Library로 가져오기"
+            onClick={onAdd}
+            className="rounded-none border border-white/10 p-2 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200"
+            title="타임라인에 추가하기"
           >
             <Plus size={13} />
           </button>
@@ -329,13 +363,13 @@ function StockGridCard({ item }: { item: StockItem }) {
   );
 }
 
-function StockListCard({ item }: { item: StockItem }) {
+function StockListCard({ item, onAdd }: { item: StockItem; onAdd: () => void }) {
   const Icon = getStockIcon(item.type);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-black/30 p-3 hover:border-cyan-400/50">
+    <div className="rounded-none border border-white/10 bg-black/30 p-3 hover:border-cyan-400/50">
       <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-200">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-none bg-cyan-400/10 text-cyan-200">
           <Icon size={20} />
         </div>
 
@@ -354,9 +388,11 @@ function StockListCard({ item }: { item: StockItem }) {
 
         <button
           type="button"
-          className="rounded-lg border border-white/10 p-2 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200"
+          onClick={onAdd}
+          className="rounded-none border border-white/10 p-2 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200"
+          title="타임라인에 추가하기"
         >
-          <Download size={14} />
+          <Plus size={14} />
         </button>
       </div>
     </div>
@@ -394,7 +430,7 @@ function FilterButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-lg border px-2 py-2 text-[11px] font-black ${active
+      className={`rounded-none border px-2 py-2 text-[11px] font-black ${active
           ? "border-cyan-400 bg-cyan-400/15 text-cyan-200"
           : "border-white/10 bg-black/20 text-zinc-500 hover:border-cyan-400/40"
         }`}
@@ -415,7 +451,7 @@ function PanelHeader({
 }) {
   return (
     <div className="mb-5 flex items-start gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-300">
+      <div className="flex h-10 w-10 items-center justify-center rounded-none bg-cyan-400/10 text-cyan-300">
         <Icon size={20} />
       </div>
 

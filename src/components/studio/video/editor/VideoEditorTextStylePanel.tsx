@@ -36,7 +36,7 @@ const animationPresets = [
 ];
 
 export default function VideoEditorTextStylePanel() {
-  const { clips, selectedClipId, updateClipTextStyle, updateClip } =
+  const { clips, selectedClipId, updateClipTextStyle, updateClip, addTextClip, addSubtitleClip } =
     useVideoEditor();
 
   const selectedClip = clips.find((clip) => clip.id === selectedClipId) || null;
@@ -50,8 +50,22 @@ export default function VideoEditorTextStylePanel() {
           desc="텍스트 또는 자막 클립을 선택하면 폰트, 색상, 그림자, 애니메이션을 설정할 수 있습니다."
         />
 
-        <div className="rounded-2xl border border-dashed border-white/10 bg-black/30 p-5 text-center text-sm text-zinc-500">
-          텍스트/자막 클립을 선택하세요.
+        <div className="rounded-none border border-dashed border-white/10 bg-black/30 p-5 text-center text-sm text-zinc-500 space-y-4">
+          <div>선택된 텍스트/자막 클립이 없습니다. 아래 버튼을 눌러 추가하세요.</div>
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={addTextClip}
+              className="rounded-none border border-fuchsia-400 bg-fuchsia-400/10 px-3 py-2 text-xs font-black text-fuchsia-200 hover:bg-fuchsia-400/20"
+            >
+              텍스트 추가
+            </button>
+            <button
+              onClick={addSubtitleClip}
+              className="rounded-none border border-amber-400 bg-amber-400/10 px-3 py-2 text-xs font-black text-amber-200 hover:bg-amber-400/20"
+            >
+              자막 추가
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -80,7 +94,7 @@ export default function VideoEditorTextStylePanel() {
         desc="폰트, 크기, 색상, 그림자, 위치, 애니메이션을 설정합니다."
       />
 
-      <div className="mb-4 rounded-xl border border-fuchsia-400/20 bg-fuchsia-400/10 p-3">
+      <div className="mb-4 rounded-none border border-fuchsia-400/20 bg-fuchsia-400/10 p-3">
         <div className="truncate text-sm font-black text-fuchsia-100">
           {selectedClip.name}
         </div>
@@ -399,9 +413,8 @@ export default function VideoEditorTextStylePanel() {
           </div>
         </TextSection>
 
-        <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
-          폰트/정렬/글로우/애니메이션 값은 Context에 저장됩니다. 다음 단계에서
-          TextLayer와 RenderCanvas에 이 값을 반영하면 실제 프리뷰/렌더에 적용됩니다.
+        <div className="rounded-none border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
+          설정된 스타일은 타임라인 렌더러와 인스펙터 상세 텍스트에 연동됩니다.
         </div>
       </div>
     </div>
@@ -416,7 +429,7 @@ function TextSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+    <div className="rounded-none border border-white/10 bg-black/20 p-3">
       <div className="mb-3 text-xs font-black uppercase tracking-widest text-zinc-500">
         {title}
       </div>
@@ -445,7 +458,7 @@ function RangeField({
   onChange: (value: number) => void;
 }) {
   return (
-    <label className="block rounded-xl border border-white/10 bg-black/30 p-3">
+    <label className="block rounded-none border border-white/10 bg-black/30 p-3">
       <div className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-widest text-zinc-500">
         <span className="flex items-center gap-2">
           <Icon size={13} />
@@ -476,7 +489,7 @@ function ColorField({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="flex h-11 items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3">
+    <label className="flex h-11 items-center justify-between rounded-none border border-white/10 bg-black/30 px-3">
       <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">
         {label}
       </span>
@@ -509,7 +522,7 @@ function SelectField({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-3 text-sm font-bold text-white outline-none focus:border-fuchsia-400"
+        className="h-11 w-full rounded-none border border-white/10 bg-black/40 px-3 text-sm font-bold text-white outline-none focus:border-fuchsia-400"
       >
         {options.map((item) => (
           <option key={item.value} value={item.value}>
@@ -536,7 +549,7 @@ function ToggleButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-10 items-center justify-center gap-2 rounded-xl border text-xs font-black ${active
+      className={`flex h-10 items-center justify-center gap-2 rounded-none border text-xs font-black ${active
           ? "border-fuchsia-400 bg-fuchsia-400/20 text-fuchsia-200"
           : "border-white/10 bg-black/30 text-zinc-400 hover:border-fuchsia-400/40"
         }`}
@@ -562,7 +575,7 @@ function PresetButton({
     <button
       type="button"
       onClick={onClick}
-      className="rounded-xl border border-white/10 bg-black/30 p-3 text-left hover:border-fuchsia-400/50"
+      className="rounded-none border border-white/10 bg-black/30 p-3 text-left hover:border-fuchsia-400/50"
     >
       <div className="flex items-center gap-2 text-xs font-black text-white">
         <Icon size={13} />
@@ -584,7 +597,7 @@ function PanelHeader({
 }) {
   return (
     <div className="mb-5 flex items-start gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-fuchsia-400/10 text-fuchsia-300">
+      <div className="flex h-10 w-10 items-center justify-center rounded-none bg-fuchsia-400/10 text-fuchsia-300">
         <Icon size={20} />
       </div>
 

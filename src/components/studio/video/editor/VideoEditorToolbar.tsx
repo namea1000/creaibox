@@ -110,7 +110,7 @@ export default function VideoEditorToolbar() {
         <button
           type="button"
           onClick={togglePlayback}
-          className="flex items-center gap-2 rounded-xl bg-cyan-400 px-4 py-2 text-sm font-black text-black hover:bg-cyan-300"
+          className="flex items-center gap-2 rounded-none bg-cyan-400 px-4 py-2 text-sm font-black text-black hover:bg-cyan-300"
         >
           {isPlaying ? <Pause size={16} /> : <Play size={16} />}
           {isPlaying ? "재생 중" : "재생"}
@@ -119,7 +119,7 @@ export default function VideoEditorToolbar() {
         <button
           type="button"
           onClick={stopPlayback}
-          className="flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm font-bold text-zinc-300 hover:border-cyan-400"
+          className="flex items-center gap-2 rounded-none border border-white/10 px-4 py-2 text-sm font-bold text-zinc-300 hover:border-cyan-400"
         >
           <Pause size={16} />
           정지
@@ -147,7 +147,7 @@ function ToolButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-30 ${active
+      className={`flex items-center gap-2 rounded-none border px-3 py-2 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-30 ${active
           ? "border-cyan-400 bg-cyan-400/15 text-cyan-200"
           : "border-white/10 text-zinc-400 hover:border-cyan-400/50 hover:text-cyan-200"
         }`}
@@ -172,7 +172,7 @@ function ToolIcon({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="rounded-xl border border-white/10 p-2 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-30"
+      className="rounded-none border border-white/10 p-2 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-30"
     >
       <Icon size={16} />
     </button>

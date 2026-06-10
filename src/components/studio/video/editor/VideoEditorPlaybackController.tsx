@@ -27,9 +27,25 @@ export default function VideoEditorPlaybackController() {
   const lastAutoSelectedClipIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    const timeDiff = Math.abs(currentTime - playbackTimeRef.current);
+    const isManualSeek = timeDiff > 0.3;
+
     playbackTimeRef.current = currentTime;
     lastUiPublishRef.current = currentTime;
-  }, [currentTime]);
+
+    // 자동으로 흐르는 재생 틱이 아니라, 사용자가 실제로 클릭하거나 조작하여 0.3초 이상 급격한 타임점프가 일어났을 때만 강제 싱크 신호를 쏨
+    if (isManualSeek) {
+      window.dispatchEvent(
+        new CustomEvent("creaibox-video-editor-playback-frame", {
+          detail: {
+            currentTime,
+            totalDuration,
+            isSeek: true,
+          },
+        })
+      );
+    }
+  }, [currentTime, totalDuration]);
 
   useEffect(() => {
     if (!isPlaying) {

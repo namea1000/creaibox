@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 import {
   Upload,
@@ -38,43 +38,40 @@ export default function VideoEditorSidebar() {
     setActiveTab,
   } = useVideoEditor();
 
+  // Redirect project tab to media since Column 1 is now the dedicated Project Browser
+  const currentTab = activeTab === "project" ? "media" : activeTab;
+
   return (
-    <aside className="w-[320px] shrink-0 border-r border-white/10 bg-[#0d0d12]">
-      <div className="border-b border-white/10 p-4">
-        <h2 className="mb-4 text-sm font-black uppercase tracking-wider text-zinc-400">
-          Resources
-        </h2>
+    <aside className="h-full w-full flex flex-col bg-transparent">
+      {/* CapCut Style Horizontal Tabs Header */}
+      <div className="h-12 border-b border-white/5 bg-[#202026] px-2 flex gap-1 items-center overflow-x-auto shrink-0 scrollbar-none">
+        {VIDEO_EDITOR_SIDEBAR_MENUS.map((menu) => {
+          const Icon = menu.icon;
+          const active = currentTab === menu.key;
 
-        <div className="grid grid-cols-2 gap-2">
-          {VIDEO_EDITOR_SIDEBAR_MENUS.map((menu) => {
-            const Icon = menu.icon;
-            const active = activeTab === menu.key;
-
-            return (
-              <button
-                key={menu.key}
-                type="button"
-                onClick={() => setActiveTab(menu.key as VideoEditorTab)}
-                className={`flex items-center gap-2 rounded-xl border px-3 py-3 text-left text-xs font-bold transition ${active
-                  ? "border-cyan-400 bg-cyan-400/15 text-cyan-200"
-                  : "border-white/10 bg-black/20 text-zinc-400 hover:border-cyan-400/50"
-                  }`}
-              >
-                <Icon size={16} />
-                {menu.label}
-              </button>
-            );
-          })}
-        </div>
+          return (
+            <button
+              key={menu.key}
+              type="button"
+              onClick={() => setActiveTab(menu.key as VideoEditorTab)}
+              className={`flex items-center gap-1.5 rounded-none border-b-2 px-3 h-full text-xs font-black transition shrink-0 outline-none ${
+                active
+                  ? "border-cyan-400 text-white"
+                  : "border-transparent text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              <Icon size={13} />
+              {menu.label}
+            </button>
+          );
+        })}
       </div>
 
-      <div className="h-[calc(100%-190px)] overflow-y-auto p-4">
-        {activeTab === "media" ? (
+      <div className="flex-1 overflow-y-auto p-4 min-h-0">
+        {currentTab === "media" ? (
           <VideoEditorMediaLibrary />
-        ) : activeTab === "project" ? (
-          <VideoEditorProjectPanel />
         ) : (
-          <StaticPanel activeTab={activeTab} />
+          <StaticPanel activeTab={currentTab} />
         )}
       </div>
     </aside>
@@ -82,11 +79,71 @@ export default function VideoEditorSidebar() {
 }
 
 function StaticPanel({ activeTab }: { activeTab: VideoEditorTab }) {
-  const { addTextClip, addSubtitleClip } = useVideoEditor();
+  const {
+    clips,
+    selectedClipId,
+    splitClip,
+    currentTime,
+    updateClip,
+    addClipFromMedia,
+    addMediaFiles,
+    setCanvasRatio,
+  } = useVideoEditor();
 
-  if (activeTab === "project") {
-    return <VideoEditorProjectPanel />;
-  }
+  const handleAddAiImage = () => {
+    addClipFromMedia({
+      id: `media-ai-${Date.now()}`,
+      type: "image",
+      name: "AI Generated Landscape.png",
+      url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&auto=format&fit=crop",
+      createdAt: new Date().toISOString(),
+    });
+  };
+
+  const handleAddBgImage = () => {
+    addClipFromMedia({
+      id: `media-bg-${Date.now()}`,
+      type: "image",
+      name: "Gradient Background.png",
+      url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop",
+      createdAt: new Date().toISOString(),
+    });
+  };
+
+  const handleRotate = () => {
+    if (!selectedClipId) {
+      alert("회전할 클립을 타임라인에서 먼저 선택해 주세요.");
+      return;
+    }
+    const target = clips.find((c) => c.id === selectedClipId);
+    if (target) {
+      const nextRotation = ((target.rotation || 0) + 90) % 360;
+      updateClip(selectedClipId, { rotation: nextRotation });
+    }
+  };
+
+  const handleSpeedChange = () => {
+    if (!selectedClipId) {
+      alert("속도를 조절할 클립을 타임라인에서 먼저 선택해 주세요.");
+      return;
+    }
+    const target = clips.find((c) => c.id === selectedClipId);
+    if (target) {
+      const nextDuration = Math.max(0.5, target.duration / 2);
+      updateClip(selectedClipId, {
+        duration: nextDuration,
+        name: `${target.name.replace(" (2.0x)", "")} (2.0x)`,
+      });
+    }
+  };
+
+  const handleSplit = () => {
+    if (!selectedClipId) {
+      alert("분할할 클립을 타임라인에서 먼저 선택해 주세요.");
+      return;
+    }
+    splitClip(selectedClipId, currentTime);
+  };
 
   if (activeTab === "image") {
     return (
@@ -95,9 +152,13 @@ function StaticPanel({ activeTab }: { activeTab: VideoEditorTab }) {
         title="이미지"
         desc="썸네일, 커버, 배경 이미지를 추가합니다."
       >
-        <PanelButton label="이미지 업로드" />
-        <PanelButton label="AI 이미지 생성 결과 불러오기" />
-        <PanelButton label="배경 이미지 추가" />
+        <PanelUploadButton
+          label="이미지 업로드"
+          accept="image/*"
+          onUpload={(files) => addMediaFiles(files)}
+        />
+        <PanelButton label="AI 이미지 생성 결과 불러오기" onClick={handleAddAiImage} />
+        <PanelButton label="배경 이미지 추가" onClick={handleAddBgImage} />
       </PanelSection>
     );
   }
@@ -109,10 +170,14 @@ function StaticPanel({ activeTab }: { activeTab: VideoEditorTab }) {
         title="비디오"
         desc="비디오 클립을 타임라인에 추가합니다."
       >
-        <PanelButton label="비디오 업로드" />
-        <PanelButton label="클립 분할" />
-        <PanelButton label="속도 조절" />
-        <PanelButton label="반전 / 회전" />
+        <PanelUploadButton
+          label="비디오 업로드"
+          accept="video/*"
+          onUpload={(files) => addMediaFiles(files)}
+        />
+        <PanelButton label="클립 분할" onClick={handleSplit} />
+        <PanelButton label="속도 조절 (2배속)" onClick={handleSpeedChange} />
+        <PanelButton label="반전 / 회전 (90°)" onClick={handleRotate} />
       </PanelSection>
     );
   }
@@ -157,11 +222,51 @@ function StaticPanel({ activeTab }: { activeTab: VideoEditorTab }) {
       title="설정"
       desc="프로젝트 기본 설정을 관리합니다."
     >
-      <PanelButton label="화면 비율 16:9" />
-      <PanelButton label="화면 비율 9:16" />
-      <PanelButton label="화면 비율 1:1" />
-      <PanelButton label="배경 색상" />
+      <PanelButton label="화면 비율 16:9" onClick={() => setCanvasRatio("16:9")} />
+      <PanelButton label="화면 비율 9:16" onClick={() => setCanvasRatio("9:16")} />
+      <PanelButton label="화면 비율 1:1" onClick={() => setCanvasRatio("1:1")} />
+      <PanelButton
+        label="배경 색상 (기본 검정)"
+        onClick={() => alert("현재 검은색 배경색이 적용되어 있습니다.")}
+      />
     </PanelSection>
+  );
+}
+
+function PanelUploadButton({
+  label,
+  accept,
+  onUpload,
+}: {
+  label: string;
+  accept: string;
+  onUpload: (files: FileList) => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => fileInputRef.current?.click()}
+        className="flex w-full items-center justify-between rounded-none border border-white/10 bg-black/30 px-4 py-3 text-left text-sm font-bold text-zinc-300 hover:border-cyan-400/50 hover:text-cyan-200"
+      >
+        {label}
+        <Upload size={15} />
+      </button>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={accept}
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.value && e.target.files && e.target.files.length > 0) {
+            onUpload(e.target.files);
+            e.target.value = "";
+          }
+        }}
+      />
+    </>
   );
 }
 
@@ -180,7 +285,7 @@ function SubTabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex flex-col items-center justify-center gap-1 rounded-xl border px-2 py-3 text-[10px] font-black transition ${active
+      className={`flex flex-col items-center justify-center gap-1 rounded-none border px-2 py-3 text-[10px] font-black transition ${active
         ? "border-pink-400 bg-pink-400/15 text-pink-200"
         : "border-white/10 bg-black/30 text-zinc-500 hover:border-pink-400/50"
         }`}
@@ -202,7 +307,7 @@ function PanelHeader({
 }) {
   return (
     <div className="mb-5 flex items-start gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-300">
+      <div className="flex h-10 w-10 items-center justify-center rounded-none bg-cyan-400/10 text-cyan-300">
         <Icon size={20} />
       </div>
 
@@ -244,7 +349,7 @@ function PanelButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-left text-sm font-bold text-zinc-300 hover:border-cyan-400/50 hover:text-cyan-200"
+      className="flex w-full items-center justify-between rounded-none border border-white/10 bg-black/30 px-4 py-3 text-left text-sm font-bold text-zinc-300 hover:border-cyan-400/50 hover:text-cyan-200"
     >
       {label}
       <Plus size={15} />
