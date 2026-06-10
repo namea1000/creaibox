@@ -1,102 +1,169 @@
 # ==================================================
-# CreAibox AI Agent Rules
+
+# Documentation Rules
+
 # ==================================================
 
-Before writing code, modifying code, or creating new files,
-always review the documentation inside:
+Documentation is mandatory for all major features.
 
-/docs
+The following documentation structure must be maintained.
 
-Priority order:
+For every major module:
 
-1. /docs/project/*
-   - Product vision
-   - Current roadmap
-   - TODO status
+Required files:
 
-2. /docs/api/*
-   - Database schema
-   - API endpoints
-   - Supabase structure
+docs/arch/<module>.md
+docs/arch/<module>-design-spec.md
 
-3. /docs/pages/*
-   - Page specifications
-   - Route definitions
+Example:
 
-4. /docs/rules/*
-   - Coding standards
-   - Naming conventions
-   - Commit conventions
+docs/arch/writing-studio.md
+docs/arch/writing-studio-design-spec.md
 
-5. /docs/arch/*
-   - Technical architecture
-   - System design
+docs/arch/research-studio.md
+docs/arch/research-studio-design-spec.md
 
-If documentation conflicts with existing code,
-follow documentation first and report the inconsistency.
+docs/arch/music-studio.md
+docs/arch/music-studio-design-spec.md
 
-Do not invent:
-- database tables
-- api routes
-- folder structures
-- component names
+docs/arch/ai-assistant.md
+docs/arch/ai-assistant-design-spec.md
 
-without checking docs first.
+# --------------------------------------------------
 
-New features, architecture changes, database changes,
-and major UI changes must be documented in /docs.
+# Operational Documentation
 
-Small bug fixes and minor UI adjustments do not require
-documentation updates unless behavior changes.
+# --------------------------------------------------
 
-When creating new functionality:
-1. Read related docs.
-2. Read existing implementation.
-3. Create or update docs first.
-4. Then implement.
+Purpose:
 
-When modifying existing functionality:
-1. Read related docs.
-2. Read existing implementation.
-3. Update docs if architecture changes.
-4. Then implement.
+* Quick understanding
+* Developer onboarding
+* Fast AI Agent context loading
 
-Documentation is part of the task.
-A task is not complete until related docs are updated.
+Recommended length:
 
-The docs directory is the source of truth for the CreAibox project.
+50 ~ 200 lines
 
-# Branding
+Contents:
 
-Official brand name is:
+1. Purpose
+2. Main Features
+3. UI Structure
+4. Database Structure
+5. API Structure
+6. Component Structure
+7. Future Expansion
 
-CreAibox
+This document should describe the CURRENT STATE only.
 
-Always use:
-✅ CreAibox
+# --------------------------------------------------
 
-Never use:
-❌ CreAIbox
-❌ Creaibox
-❌ CreaIbox
-❌ CREAIBOX
+# Design Specification Documentation
 
-This applies to:
-- UI text
-- Documentation
-- README
-- Database comments
-- Project descriptions
-- Marketing content
-- Blog content
-- Source code comments
+# --------------------------------------------------
 
-If a file contains old branding,
-normalize it to "CreAibox"
-when modifying that file.
+Purpose:
 
-When documentation and implementation differ:
+* Preserve architecture decisions
+* Preserve design intent
+* Preserve future roadmap
+* Preserve implementation rationale
+
+No length limit.
+
+Contents:
+
+1. Architecture decisions
+2. Database design rationale
+3. API design rationale
+4. UI/UX decisions
+5. Business rules
+6. Scaling strategy
+7. Future roadmap
+8. Technical considerations
+
+This document may be large and detailed.
+
+Long design documents are acceptable if they improve
+future maintenance and AI Agent understanding.
+
+# --------------------------------------------------
+
+# Documentation Update Rules
+
+# --------------------------------------------------
+
+Feature implementation is NOT complete until
+documentation is updated.
+
+When a feature is added:
+
+1. Update operational documentation
+2. Update design specification documentation
+3. Update database documentation if required
+4. Update API documentation if required
+
+When architecture changes:
+
+1. Update all affected documentation
+2. Do not leave outdated architecture documents
+3. Re-write documents to reflect the current implementation
+
+# --------------------------------------------------
+
+# AI Agent Documentation Responsibilities
+
+# --------------------------------------------------
+
+When completing a major task:
+
+Before considering the task complete:
+
+* Verify documentation exists
+* Verify documentation matches implementation
+* Update documentation if needed
+* Report documentation updates performed
+
+AI Agents must not finish implementation work
+without reviewing documentation impact.
+
+# --------------------------------------------------
+
+# Documentation Source of Truth
+
+# --------------------------------------------------
+
+Code and documentation must remain synchronized.
+
+If implementation differs from documentation:
 
 1. Report the difference.
-2. Do not silently overwrite architecture decisions.
-3. Update docs only if the implementation was intentionally changed.
+2. Determine which is authoritative.
+3. Update documentation when implementation was intentionally changed.
+
+Never silently ignore documentation drift.
+
+# --------------------------------------------------
+
+# CreAibox Project Rule
+
+# --------------------------------------------------
+
+All major Studio modules must maintain:
+
+1. Operational Documentation
+2. Design Specification Documentation
+
+Examples:
+
+* Writing Studio
+* Research Studio
+* Music Studio
+* Image Studio
+* AI Assistant
+* Reporter
+* Tools
+* Future Studios
+
+This rule applies to all future CreAibox development.

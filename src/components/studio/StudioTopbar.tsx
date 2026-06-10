@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
-import { StickyNote } from "lucide-react";
 import {
   Menu,
   Plus,
@@ -25,7 +24,10 @@ import {
   HelpCircle,
   Home,
   ChevronRight,
+  StickyNote,
+  Bot,
 } from "lucide-react";
+
 interface StudioTopbarProps {
   setIsMobileOpen: (open: boolean) => void;
 }
@@ -184,7 +186,7 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
           <Menu size={22} />
         </button>
 
-        <div className="hidden min-w-[260px] items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/80 pl-2 pr-3 py-2 text-sm font-bold text-zinc-300 xl:flex">
+        <div className="hidden min-w-[260px] items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/80 py-2 pl-2 pr-3 text-sm font-bold text-zinc-300 xl:flex">
           <Link
             href="/"
             className="-ml-1 flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-white"
@@ -194,17 +196,13 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
 
           <ChevronRight size={14} className="text-zinc-600" />
 
-          <Link
-            href="/studio"
-            className="text-zinc-300 hover:text-blue-400"
-          >
+          <Link href="/studio" className="text-zinc-300 hover:text-blue-400">
             Studio
           </Link>
 
           {pathname !== "/studio" && (
             <>
               <ChevronRight size={14} className="text-zinc-600" />
-
               <span className="capitalize text-blue-400">
                 {pathname.replace("/studio/", "").split("/")[0]}
               </span>
@@ -258,13 +256,21 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
         </button>
 
         <button
+          onClick={() => window.dispatchEvent(new Event("open-ai-assistant"))}
+          className="hidden h-12 items-center gap-2 rounded-xl border border-cyan-400/20 bg-cyan-500/10 px-4 text-zinc-300 transition hover:bg-cyan-500/15 hover:text-cyan-300 md:flex"
+        >
+          <Bot size={20} />
+          <span className="text-sm font-black text-zinc-100">
+            AI Assistant
+          </span>
+        </button>
+
+        <button
           onClick={() => window.dispatchEvent(new Event("open-cre-note"))}
-          className="hidden h-12 items-center gap-2 rounded-xl border border-white/10 bg-purple-700 px-4 text-zinc-300 hover:bg-emerald-500/15 hover:text-emerald-400 md:flex"
+          className="hidden h-12 items-center gap-2 rounded-xl border border-white/10 bg-purple-700 px-4 text-zinc-300 transition hover:bg-emerald-500/15 hover:text-emerald-400 md:flex"
         >
           <StickyNote size={20} />
-          <span className="text-sm font-black text-zinc-100">
-            Cre Note
-          </span>
+          <span className="text-sm font-black text-zinc-100">Cre Note</span>
         </button>
 
         <div className="flex shrink-0 justify-end md:min-w-[190px]">
