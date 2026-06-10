@@ -162,7 +162,20 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
 
   const tags = post.seo_tags || [];
   const publishedDate = formatDate(post.created_at);
-  const normalizedContent = normalizePublishedContent(post.content || "");
+
+  // 🌟 본문에 저장된 커스텀 JSON-LD 스키마 추출
+  const customSchemas: string[] = [];
+  const schemaRegex = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi;
+  let match;
+  while ((match = schemaRegex.exec(post.content || "")) !== null) {
+    if (match[1]) {
+      customSchemas.push(match[1].trim());
+    }
+  }
+
+  // 🌟 스키마 스크립트가 블로그 본문에 텍스트로 보이지 않도록 본문 렌더링 영역에서 삭제 처리
+  const contentWithoutSchemas = (post.content || "").replace(schemaRegex, "");
+  const normalizedContent = normalizePublishedContent(contentWithoutSchemas);
 
   const canonical = post.canonical_url || `https://creaibox.com/blog/${post.slug || slug}`;
 
@@ -231,6 +244,23 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
           __html: JSON.stringify(breadcrumbJsonLd),
         }}
       />
+      {customSchemas.map((schemaStr, idx) => {
+        try {
+          const parsed = JSON.parse(schemaStr);
+          return (
+            <script
+              key={`custom-schema-${idx}`}
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify(parsed),
+              }}
+            />
+          );
+        } catch (e) {
+          console.error("Custom schema JSON parse error:", e);
+          return null;
+        }
+      })}
 
       <Header />
 

@@ -939,7 +939,9 @@ export default function CreaiboxCreateTab({
               <CreaiboxContentImagePanel />
             )}
 
-            {publishingPanelTab === "schema" && <CreaiboxSchemaPanel />}
+            {publishingPanelTab === "schema" && (
+              <CreaiboxSchemaPanel data={draftRecord} updateLocalData={updateDraftRecord} />
+            )}
           </section>
 
           {publishingPanelTab === "seo" && (

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import {
   Send, X, CheckCircle2, Loader2, ChevronLeft, ThumbsUp,
@@ -38,7 +38,7 @@ export default function PostWriteTab() {
   const [files, setFiles] = useState<File[]>([]); 
   const [showEmoji, setShowEmoji] = useState<{ target: string | null }>({ target: null });
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [activeUser, setActiveUser] = useState<any>(null);
 
   const emojis = ["😀", "😁", "😂", "🤣", "😃", "😄", "😅", "😆", "😉", "😊", "😋", "😎", "😍", "😘", "🥰", "😗", "😙", "😚", "☺️", "🙂", "🤗", "🤩", "🤔", "🤨", "😐", "😑", "😶", "🙄", "😏", "😣", "😥", "😮", "🤐", "😯", "😪", "😫", "🥱", "😴"];

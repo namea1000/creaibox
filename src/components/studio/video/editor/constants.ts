@@ -8,11 +8,14 @@ import {
   Sparkles,
   Settings,
   Waves,
+  Move,
+  FolderOpen,
 } from "lucide-react";
 
 import type { TimelineTrack } from "./types";
 
 export const VIDEO_EDITOR_SIDEBAR_MENUS = [
+  { key: "project", label: "프로젝트", icon: FolderOpen, },
   { key: "media", label: "미디어 업로드", icon: Upload },
   { key: "image", label: "이미지", icon: ImageIcon },
   { key: "video", label: "비디오", icon: Film },
@@ -21,7 +24,7 @@ export const VIDEO_EDITOR_SIDEBAR_MENUS = [
   { key: "subtitle", label: "자막", icon: Captions },
   { key: "text", label: "텍스트", icon: Type },
   { key: "effects", label: "효과", icon: Sparkles },
-  { key: "settings", label: "설정", icon: Settings },
+  { key: "settings", label: "모션", icon: Move },
 ] as const;
 
 export const EXPORT_RESOLUTION_OPTIONS = [

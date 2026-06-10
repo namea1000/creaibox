@@ -61,14 +61,26 @@ function isSearchToolError(error: unknown) {
     message.includes("grounding") ||
     message.includes("billing") ||
     message.includes("permission") ||
-    message.includes("not enabled") ||
-    message.includes("quota")
+    message.includes("not enabled")
   );
 }
 
 function getFriendlyAiErrorMessage(error: unknown) {
+  const message = getErrorMessage(error);
+  const lowerMessage = message.toLowerCase();
+
   if (isHighDemandError(error)) {
     return "AI 서버가 현재 혼잡합니다. 잠시 후 다시 시도해주세요. 문제가 계속되면 자동으로 다른 모델을 시도합니다.";
+  }
+
+  if (
+    lowerMessage.includes("groq") &&
+    (lowerMessage.includes("tokens per minute") ||
+      lowerMessage.includes("tpm") ||
+      lowerMessage.includes("request too large") ||
+      lowerMessage.includes("토큰 제한"))
+  ) {
+    return "Groq API 토큰 제한에 걸렸습니다. 글 길이를 줄이거나 /apivault에서 Gemini Tier 1 또는 다른 모델을 선택해 다시 시도해 주세요.";
   }
 
   if (isSearchToolError(error)) {

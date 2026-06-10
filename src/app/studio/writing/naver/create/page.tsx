@@ -268,6 +268,9 @@ export default function NaverCreatePage() {
     try {
       const lengthPrompt = getLengthPrompt(wordCountGoal);
       const vaultConfig = getUserAiVaultConfig();
+      const shouldUseGoogleSearch = Boolean(
+        useSearch && vaultConfig?.provider === "gemini_postpay"
+      );
 
       if (!vaultConfig) {
         alert(getPublicGeminiFallbackNotice());
@@ -281,7 +284,7 @@ export default function NaverCreatePage() {
         - 길이 규격: ${lengthPrompt.label}
         - 목표 분량: 약 ${wordCountGoal}자
         - 길이 작성 지침: ${lengthPrompt.instruction}
-        - 연도 정보: 2026년 최신 팩트체크 기반 전개 ${useSearch ? "(구글 검색 활용)" : "(내부 지식 기반)"}
+        - 연도 정보: 2026년 최신 팩트체크 기반 전개 ${shouldUseGoogleSearch ? "(구글 검색 활용)" : "(내부 지식 기반)"}
         - 제목은 클릭하고 싶게 만들되 과장하지 말고, 첫 문단에서 핵심 결론을 빠르게 전달하라.
         - 짧은 글은 압축적으로, 긴 글은 소제목/사례/FAQ/실행 팁을 충분히 넣어라.
         오직 규격에 맞는 JSON 오브젝트만 반환하라: { "title": "생성된 제목", "content": "마크다운 본문" }
@@ -311,7 +314,7 @@ export default function NaverCreatePage() {
             const generationResult = await generateGeminiContentWithFallback({
               modelName,
               prompt,
-              useSearch,
+              useSearch: shouldUseGoogleSearch,
               responseMimeType: "application/json",
               type: "naver_create",
               userId: activeUser?.id || null,

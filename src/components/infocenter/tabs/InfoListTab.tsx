@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { 
   MessageSquare, User as UserIcon, 
@@ -9,17 +9,38 @@ import {
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+const getCacheKey = (tab: string) => `creaibox:community:posts:${tab}:v2`;
+
+function readCachedPosts(tab: string): any[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.sessionStorage.getItem(getCacheKey(tab));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeCachedPosts(tab: string, posts: any[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(getCacheKey(tab), JSON.stringify(posts));
+  } catch {
+    // ignore
+  }
+}
+
 export default function BoardListTab({ activeTab = 'all' }: { activeTab?: string }) {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const [isMounted, setIsMounted] = useState(false);
+  const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
 
-  const fetchPosts = async () => {
-    // 🌟 로딩 상태를 true로 유지하면서 데이터를 다시 가져옵니다.
+  const fetchPosts = useCallback(async () => {
     try {
-      // [중요] community_comments 테이블에서 개수를 세어올 수 있도록 쿼리를 보강하거나 
-      // community_posts 테이블의 comment_count 필드가 최신인지 확인해야 합니다.
       let query = supabase
         .from('community_posts')
         .select(`
@@ -41,18 +62,36 @@ export default function BoardListTab({ activeTab = 'all' }: { activeTab?: string
           comment_count: post.community_comments?.[0]?.count || 0
         }));
         setPosts(formattedData);
+        writeCachedPosts(activeTab, formattedData);
       }
     } catch (err) {
       console.error("데이터 로드 실패:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, supabase]);
 
+  // 1. Initial mount check and cache loading
   useEffect(() => {
+    queueMicrotask(() => {
+      setIsMounted(true);
+      const cache = readCachedPosts(activeTab);
+      if (cache.length > 0) {
+        setPosts(cache);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
+    });
+  }, [activeTab]);
+
+  // 2. Data fetching and subscription
+  useEffect(() => {
+    if (!isMounted) return;
+
     fetchPosts();
 
-    // 🌟 [추가] 실시간 구독 로직: DB에 변화가 생기면 즉시 리스트 갱신
+    // 🌟 실시간 구독 로직: DB에 변화가 생기면 즉시 리스트 갱신
     const channel = supabase
       .channel('schema-db-changes')
       .on(
@@ -65,7 +104,7 @@ export default function BoardListTab({ activeTab = 'all' }: { activeTab?: string
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [activeTab, supabase]);
+  }, [fetchPosts, isMounted, supabase]);
 
   // 스타일 고정 (원본 보전)
   const listBg = "bg-zinc-900/20 border-zinc-800/50";
@@ -73,7 +112,8 @@ export default function BoardListTab({ activeTab = 'all' }: { activeTab?: string
   const textColor = "text-zinc-100";
   const subTextColor = "text-zinc-500";
 
-  if (loading) {
+  // If page is loading and we have no posts (neither cached nor fetched), show loader
+  if (loading && posts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 opacity-30 italic font-black uppercase tracking-widest text-white">
         <div className="animate-spin mb-4 text-2xl">⌛</div>
@@ -100,7 +140,7 @@ export default function BoardListTab({ activeTab = 'all' }: { activeTab?: string
         </div>
 
         <Link 
-          href={`/infocenter/writing?category=${activeTab === 'all' ? 'free' : activeTab}`} 
+          href={`/studio/infocenter/writing?category=${activeTab === 'all' ? 'free' : activeTab}`} 
           className="group relative inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all duration-300 shadow-lg shadow-blue-900/20 active:scale-95 overflow-hidden font-sans"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
@@ -125,7 +165,7 @@ export default function BoardListTab({ activeTab = 'all' }: { activeTab?: string
               {posts.map((post) => (
                 <tr 
                   key={post.id} 
-                  onClick={() => router.push(`/infocenter/view/${post.id}`)} 
+                  onClick={() => router.push(`/studio/infocenter/view/${post.id}`)} 
                   className={`group cursor-pointer transition-all ${itemHover}`}
                 >
                   <td className="px-6 py-5">

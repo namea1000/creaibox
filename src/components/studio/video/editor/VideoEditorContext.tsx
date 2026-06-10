@@ -37,6 +37,24 @@ export type VideoTextStyle = {
 
 export type VideoTransitionType = "none" | "fade" | "zoom" | "slide" | "blur";
 
+export type VideoBlendMode =
+  | "normal"
+  | "multiply"
+  | "screen"
+  | "overlay"
+  | "darken"
+  | "lighten"
+  | "color-dodge"
+  | "color-burn"
+  | "hard-light"
+  | "soft-light"
+  | "difference"
+  | "exclusion"
+  | "hue"
+  | "saturation"
+  | "color"
+  | "luminosity";
+
 export type VideoEditorClip = {
   id: string;
   trackId: string;
@@ -51,12 +69,47 @@ export type VideoEditorClip = {
 
   trimStart?: number;
   trimEnd?: number;
+
   volume?: number;
   muted?: boolean;
+
+  // Audio Mixer
+  fadeIn?: number;
+  fadeOut?: number;
+  audioGain?: number;
+  audioPan?: number;
+
+  // Motion
+  motionX?: number;
+  motionY?: number;
+  motionWidth?: number;
+  motionHeight?: number;
+
+  scale?: number;
+  rotation?: number;
+  opacity?: number;
+
+  // Effects
+  brightness?: number;
+  contrast?: number;
+  saturation?: number;
+
+  blur?: number;
+  grayscale?: number;
+  sepia?: number;
+
+  glow?: boolean;
+  neon?: boolean;
+
+  // Text
   textStyle?: VideoTextStyle;
+
+  // Transition
   transitionIn?: VideoTransitionType;
   transitionOut?: VideoTransitionType;
+
   waveform?: number[];
+  blendMode?: VideoBlendMode;
 };
 
 type Snapshot = {
@@ -100,12 +153,14 @@ type VideoEditorActions = {
   addClipFromMedia: (media: VideoEditorMediaItem) => void;
   addTextClip: () => void;
   addSubtitleClip: () => void;
+  addVisualizerClip: () => void;
 
   removeClip: (id: string) => void;
   duplicateClip: (id: string) => void;
   splitClip: (id: string, splitTime?: number) => void;
   selectClip: (id: string | null) => void;
 
+  updateClip: (id: string, patch: Partial<VideoEditorClip>) => void;
   updateClipName: (id: string, name: string) => void;
   updateClipPosition: (id: string, left: number) => void;
   updateClipDuration: (id: string, duration: number) => void;
@@ -220,12 +275,45 @@ function timeToLeft(startTime: number) {
 function normalizeClip(rawClip: VideoEditorClip): VideoEditorClip {
   return {
     ...rawClip,
+
     trimStart: rawClip.trimStart ?? 0,
     trimEnd: rawClip.trimEnd ?? 0,
+
     volume: rawClip.volume ?? 1,
     muted: rawClip.muted ?? false,
+
+    fadeIn: rawClip.fadeIn ?? 0,
+    fadeOut: rawClip.fadeOut ?? 0,
+
+    audioGain: rawClip.audioGain ?? 1,
+    audioPan: rawClip.audioPan ?? 0,
+
+    motionX: rawClip.motionX ?? 50,
+    motionY: rawClip.motionY ?? 50,
+
+    motionWidth: rawClip.motionWidth ?? 100,
+    motionHeight: rawClip.motionHeight ?? 100,
+
+    scale: rawClip.scale ?? 1,
+    rotation: rawClip.rotation ?? 0,
+    opacity: rawClip.opacity ?? 1,
+
+    brightness: rawClip.brightness ?? 1,
+    contrast: rawClip.contrast ?? 1,
+    saturation: rawClip.saturation ?? 1,
+
+    blur: rawClip.blur ?? 0,
+    grayscale: rawClip.grayscale ?? 0,
+    sepia: rawClip.sepia ?? 0,
+
+    glow: rawClip.glow ?? false,
+    neon: rawClip.neon ?? false,
+
+    blendMode: rawClip.blendMode ?? "normal",
+
     transitionIn: rawClip.transitionIn ?? "none",
     transitionOut: rawClip.transitionOut ?? "none",
+
     textStyle:
       rawClip.textStyle ??
       (rawClip.type === "subtitle"
@@ -233,7 +321,9 @@ function normalizeClip(rawClip: VideoEditorClip): VideoEditorClip {
         : rawClip.type === "text"
           ? { ...DEFAULT_TEXT_STYLE }
           : undefined),
+
     waveform: rawClip.waveform ?? [],
+
   };
 }
 
@@ -397,6 +487,28 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     setSelectedClipId(clip.id);
   };
 
+  const addVisualizerClip = () => {
+    const left = clamp(10 + clips.length * 3, 0, 72);
+    const duration = 10;
+
+    const clip: VideoEditorClip = normalizeClip({
+      id: createId("visualizer"),
+      trackId: "video-1",
+      type: "visualizer",
+      name: "오디오 비주얼라이저",
+      startTime: leftToTime(left),
+      duration,
+      left,
+      width: durationToWidth(duration),
+      color: getDefaultClipColor("visualizer"),
+      transitionIn: "fade",
+      transitionOut: "fade",
+    });
+
+    setClipsWithHistory((prev) => [...prev, clip]);
+    setSelectedClipId(clip.id);
+  };
+
   const removeClip = (id: string) => {
     setClipsWithHistory((prev) => prev.filter((clip) => clip.id !== id));
     setSelectedClipId((current) => (current === id ? null : current));
@@ -443,7 +555,6 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       ...target,
       duration: firstDuration,
       width: firstWidth,
-      trimEnd: target.trimEnd,
       name: `${target.name} A`,
     });
 
@@ -464,10 +575,16 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     setSelectedClipId(secondClip.id);
   };
 
-  const updateClipName = (id: string, name: string) => {
+  const updateClip = (id: string, patch: Partial<VideoEditorClip>) => {
     setClipsWithHistory((prev) =>
-      prev.map((clip) => (clip.id === id ? normalizeClip({ ...clip, name }) : clip))
+      prev.map((clip) =>
+        clip.id === id ? normalizeClip({ ...clip, ...patch }) : clip
+      )
     );
+  };
+
+  const updateClipName = (id: string, name: string) => {
+    updateClip(id, { name });
   };
 
   const updateClipPosition = (id: string, left: number) => {
@@ -525,49 +642,24 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
   };
 
   const updateClipTrimStart = (id: string, nextTrimStart: number) => {
-    setClipsWithHistory((prev) =>
-      prev.map((clip) => {
-        if (clip.id !== id) return clip;
-
-        const trimStart = clamp(nextTrimStart, 0, Math.max(0, clip.duration - 0.5));
-
-        return normalizeClip({
-          ...clip,
-          trimStart,
-        });
-      })
-    );
+    updateClip(id, {
+      trimStart: clamp(nextTrimStart, 0, TIMELINE_BASE_DURATION),
+    });
   };
 
   const updateClipTrimEnd = (id: string, nextTrimEnd: number) => {
-    setClipsWithHistory((prev) =>
-      prev.map((clip) => {
-        if (clip.id !== id) return clip;
-
-        const trimEnd = clamp(nextTrimEnd, 0, Math.max(0, clip.duration - 0.5));
-
-        return normalizeClip({
-          ...clip,
-          trimEnd,
-        });
-      })
-    );
+    updateClip(id, {
+      trimEnd: clamp(nextTrimEnd, 0, TIMELINE_BASE_DURATION),
+    });
   };
 
   const updateClipVolume = (id: string, volume: number) => {
-    setClipsWithHistory((prev) =>
-      prev.map((clip) =>
-        clip.id === id ? normalizeClip({ ...clip, volume: clamp(volume, 0, 2) }) : clip
-      )
-    );
+    updateClip(id, { volume: clamp(volume, 0, 2) });
   };
 
   const toggleClipMute = (id: string) => {
-    setClipsWithHistory((prev) =>
-      prev.map((clip) =>
-        clip.id === id ? normalizeClip({ ...clip, muted: !clip.muted }) : clip
-      )
-    );
+    const target = clips.find((clip) => clip.id === id);
+    updateClip(id, { muted: !(target?.muted ?? false) });
   };
 
   const updateClipTextStyle = (id: string, patch: Partial<VideoTextStyle>) => {
@@ -595,26 +687,16 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     target: "in" | "out",
     transition: VideoTransitionType
   ) => {
-    setClipsWithHistory((prev) =>
-      prev.map((clip) =>
-        clip.id === id
-          ? normalizeClip({
-            ...clip,
-            ...(target === "in"
-              ? { transitionIn: transition }
-              : { transitionOut: transition }),
-          })
-          : clip
-      )
+    updateClip(
+      id,
+      target === "in"
+        ? { transitionIn: transition }
+        : { transitionOut: transition }
     );
   };
 
   const updateClipWaveform = (id: string, waveform: number[]) => {
-    setClipsWithHistory((prev) =>
-      prev.map((clip) =>
-        clip.id === id ? normalizeClip({ ...clip, waveform }) : clip
-      )
-    );
+    updateClip(id, { waveform });
   };
 
   const setCanvasZoom = (value: number) => {
@@ -652,7 +734,7 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
   const exportProjectJson = () => {
     return JSON.stringify(
       {
-        version: "creaibox-video-editor-v2",
+        version: "creaibox-video-editor-v3",
         projectTitle,
         activeTab,
         mediaItems: mediaItems.map((item) => ({
@@ -681,7 +763,8 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
 
     if (
       parsed.version !== "creaibox-video-editor-v1" &&
-      parsed.version !== "creaibox-video-editor-v2"
+      parsed.version !== "creaibox-video-editor-v2" &&
+      parsed.version !== "creaibox-video-editor-v3"
     ) {
       throw new Error("지원하지 않는 프로젝트 파일입니다.");
     }
@@ -734,12 +817,14 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
       addClipFromMedia,
       addTextClip,
       addSubtitleClip,
+      addVisualizerClip,
 
       removeClip,
       duplicateClip,
       splitClip,
       selectClip: setSelectedClipId,
 
+      updateClip,
       updateClipName,
       updateClipPosition,
       updateClipDuration,

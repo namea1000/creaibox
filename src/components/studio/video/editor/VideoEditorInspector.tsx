@@ -17,6 +17,9 @@ import {
   Move,
   Palette,
   SlidersHorizontal,
+  RotateCw,
+  Maximize2,
+  Eye,
 } from "lucide-react";
 
 import {
@@ -26,7 +29,10 @@ import {
 } from "./constants";
 import { useVideoEditor } from "./VideoEditorContext";
 import type { ExportFps, ExportQuality, ExportResolution } from "./types";
-import type { VideoTransitionType } from "./VideoEditorContext";
+import type {
+  VideoBlendMode,
+  VideoTransitionType,
+} from "./VideoEditorContext";
 
 const transitionOptions: { label: string; value: VideoTransitionType }[] = [
   { label: "없음", value: "none" },
@@ -34,6 +40,18 @@ const transitionOptions: { label: string; value: VideoTransitionType }[] = [
   { label: "Zoom", value: "zoom" },
   { label: "Slide", value: "slide" },
   { label: "Blur", value: "blur" },
+];
+
+const blendModeOptions: { label: string; value: VideoBlendMode }[] = [
+  { label: "Normal", value: "normal" },
+  { label: "Screen", value: "screen" },
+  { label: "Overlay", value: "overlay" },
+  { label: "Multiply", value: "multiply" },
+  { label: "Lighten", value: "lighten" },
+  { label: "Darken", value: "darken" },
+  { label: "Soft Light", value: "soft-light" },
+  { label: "Hard Light", value: "hard-light" },
+  { label: "Difference", value: "difference" },
 ];
 
 export default function VideoEditorInspector({
@@ -48,6 +66,7 @@ export default function VideoEditorInspector({
     removeClip,
     duplicateClip,
     splitClip,
+    updateClip,
     updateClipName,
     updateClipTime,
     updateClipTrimStart,
@@ -203,6 +222,231 @@ export default function VideoEditorInspector({
             </InspectorCard>
           )}
 
+          {selectedClip && (
+            <InspectorCard title="Motion / Transform">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <RangeField
+                    label="X 위치"
+                    value={selectedClip.motionX ?? 50}
+                    min={0}
+                    max={100}
+                    step={1}
+                    display={`${selectedClip.motionX ?? 50}%`}
+                    onChange={(value) => updateClip(selectedClip.id, { motionX: value })}
+                  />
+
+                  <RangeField
+                    label="Y 위치"
+                    value={selectedClip.motionY ?? 50}
+                    min={0}
+                    max={100}
+                    step={1}
+                    display={`${selectedClip.motionY ?? 50}%`}
+                    onChange={(value) => updateClip(selectedClip.id, { motionY: value })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <RangeField
+                    label="가로 크기"
+                    value={selectedClip.motionWidth ?? 100}
+                    min={10}
+                    max={200}
+                    step={1}
+                    display={`${selectedClip.motionWidth ?? 100}%`}
+                    onChange={(value) =>
+                      updateClip(selectedClip.id, { motionWidth: value })
+                    }
+                  />
+
+                  <RangeField
+                    label="세로 크기"
+                    value={selectedClip.motionHeight ?? 100}
+                    min={10}
+                    max={200}
+                    step={1}
+                    display={`${selectedClip.motionHeight ?? 100}%`}
+                    onChange={(value) =>
+                      updateClip(selectedClip.id, { motionHeight: value })
+                    }
+                  />
+                </div>
+
+                <RangeField
+                  label="Scale"
+                  value={selectedClip.scale ?? 1}
+                  min={0.1}
+                  max={3}
+                  step={0.05}
+                  display={`${Math.round((selectedClip.scale ?? 1) * 100)}%`}
+                  onChange={(value) => updateClip(selectedClip.id, { scale: value })}
+                />
+
+                <RangeField
+                  label="Rotation"
+                  value={selectedClip.rotation ?? 0}
+                  min={-360}
+                  max={360}
+                  step={1}
+                  display={`${selectedClip.rotation ?? 0}°`}
+                  onChange={(value) => updateClip(selectedClip.id, { rotation: value })}
+                />
+
+                <RangeField
+                  label="Opacity"
+                  value={selectedClip.opacity ?? 1}
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  display={`${Math.round((selectedClip.opacity ?? 1) * 100)}%`}
+                  onChange={(value) => updateClip(selectedClip.id, { opacity: value })}
+                />
+
+                <div className="grid grid-cols-3 gap-2">
+                  <ResetButton
+                    icon={Move}
+                    label="위치 초기화"
+                    onClick={() =>
+                      updateClip(selectedClip.id, {
+                        motionX: 50,
+                        motionY: 50,
+                      })
+                    }
+                  />
+                  <ResetButton
+                    icon={Maximize2}
+                    label="크기 초기화"
+                    onClick={() =>
+                      updateClip(selectedClip.id, {
+                        motionWidth: 100,
+                        motionHeight: 100,
+                        scale: 1,
+                      })
+                    }
+                  />
+                  <ResetButton
+                    icon={RotateCw}
+                    label="회전 초기화"
+                    onClick={() =>
+                      updateClip(selectedClip.id, {
+                        rotation: 0,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            </InspectorCard>
+          )}
+
+          {selectedClip && (
+            <InspectorCard title="Effects / Filter">
+              <div className="space-y-4">
+                <RangeField
+                  label="Brightness"
+                  value={selectedClip.brightness ?? 1}
+                  min={0}
+                  max={3}
+                  step={0.05}
+                  display={`${Math.round((selectedClip.brightness ?? 1) * 100)}%`}
+                  onChange={(value) => updateClip(selectedClip.id, { brightness: value })}
+                />
+
+                <RangeField
+                  label="Contrast"
+                  value={selectedClip.contrast ?? 1}
+                  min={0}
+                  max={3}
+                  step={0.05}
+                  display={`${Math.round((selectedClip.contrast ?? 1) * 100)}%`}
+                  onChange={(value) => updateClip(selectedClip.id, { contrast: value })}
+                />
+
+                <RangeField
+                  label="Saturation"
+                  value={selectedClip.saturation ?? 1}
+                  min={0}
+                  max={3}
+                  step={0.05}
+                  display={`${Math.round((selectedClip.saturation ?? 1) * 100)}%`}
+                  onChange={(value) => updateClip(selectedClip.id, { saturation: value })}
+                />
+
+                <RangeField
+                  label="Blur"
+                  value={selectedClip.blur ?? 0}
+                  min={0}
+                  max={20}
+                  step={0.5}
+                  display={`${selectedClip.blur ?? 0}px`}
+                  onChange={(value) => updateClip(selectedClip.id, { blur: value })}
+                />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <RangeField
+                    label="Grayscale"
+                    value={selectedClip.grayscale ?? 0}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    display={`${Math.round((selectedClip.grayscale ?? 0) * 100)}%`}
+                    onChange={(value) =>
+                      updateClip(selectedClip.id, { grayscale: value })
+                    }
+                  />
+
+                  <RangeField
+                    label="Sepia"
+                    value={selectedClip.sepia ?? 0}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    display={`${Math.round((selectedClip.sepia ?? 0) * 100)}%`}
+                    onChange={(value) => updateClip(selectedClip.id, { sepia: value })}
+                  />
+                </div>
+
+                <SelectField
+                  label="Blend Mode"
+                  value={selectedClip.blendMode ?? "normal"}
+                  options={blendModeOptions}
+                  onChange={(value) =>
+                    updateClip(selectedClip.id, {
+                      blendMode: value as VideoBlendMode,
+                    })
+                  }
+                />
+
+                <div className="grid grid-cols-2 gap-2">
+                  <ResetButton
+                    icon={SlidersHorizontal}
+                    label="필터 초기화"
+                    onClick={() =>
+                      updateClip(selectedClip.id, {
+                        brightness: 1,
+                        contrast: 1,
+                        saturation: 1,
+                        blur: 0,
+                        grayscale: 0,
+                        sepia: 0,
+                        blendMode: "normal",
+                      })
+                    }
+                  />
+                  <ResetButton
+                    icon={Eye}
+                    label="투명도 초기화"
+                    onClick={() =>
+                      updateClip(selectedClip.id, {
+                        opacity: 1,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            </InspectorCard>
+          )}
+
           {selectedClip && (selectedClip.type === "audio" || selectedClip.type === "video") && (
             <InspectorCard title="Audio">
               <div className="space-y-4">
@@ -344,22 +588,22 @@ export default function VideoEditorInspector({
                 />
 
                 <p className="text-xs leading-5 text-zinc-500">
-                  현재는 상태 저장 단계입니다. Canvas/Render 쪽에 효과 적용 로직을 붙이면 실제 출력됩니다.
+                  Fade, Zoom, Slide, Blur 전환 효과가 프리뷰에 즉시 반영됩니다.
                 </p>
               </div>
             </InspectorCard>
           )}
 
           {selectedClip && (
-            <InspectorCard title="Motion / Effect">
+            <InspectorCard title="Advanced">
               <div className="grid grid-cols-2 gap-2">
-                <MiniFeature icon={Move} label="Position" />
-                <MiniFeature icon={Palette} label="Color" />
-                <MiniFeature icon={SlidersHorizontal} label="Filter" />
-                <MiniFeature icon={Wand2} label="Keyframe" />
+                <MiniFeature icon={Move} label="Motion Ready" />
+                <MiniFeature icon={Palette} label="Color Ready" />
+                <MiniFeature icon={SlidersHorizontal} label="Filter Ready" />
+                <MiniFeature icon={Wand2} label="Keyframe Next" />
               </div>
               <p className="mt-3 text-xs leading-5 text-zinc-500">
-                다음 단계에서 opacity, scale, rotation, blur, brightness를 Context에 더 붙여 확장하면 됩니다.
+                다음 단계에서 Keyframe 배열을 붙이면 시간에 따라 위치/크기/효과가 자동 변화합니다.
               </p>
             </InspectorCard>
           )}
@@ -598,6 +842,27 @@ function SelectField({
         ))}
       </select>
     </label>
+  );
+}
+
+function ResetButton({
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  icon: React.ElementType;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex min-h-10 items-center justify-center gap-1 rounded-xl border border-white/10 bg-black/30 px-2 py-2 text-[10px] font-black text-zinc-400 hover:border-cyan-400/50 hover:text-cyan-200"
+    >
+      <Icon size={13} />
+      {label}
+    </button>
   );
 }
 

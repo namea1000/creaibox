@@ -1,4 +1,5 @@
 export type VideoEditorTab =
+  | "project"
   | "media"
   | "image"
   | "video"

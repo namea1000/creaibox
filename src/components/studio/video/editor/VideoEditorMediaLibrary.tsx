@@ -17,8 +17,10 @@ import {
 import { useMemo, useState } from "react";
 import { useVideoEditor } from "./VideoEditorContext";
 import type { VideoEditorMediaType } from "./VideoEditorContext";
+import VideoEditorStockPanel from "./VideoEditorStockPanel";
+import VideoEditorStoragePanel from "./VideoEditorStoragePanel";
 
-type LibraryTab = "uploads" | "ai-images" | "ai-videos" | "music" | "stock" | "recent";
+type LibraryTab = "uploads" | "ai-images" | "ai-videos" | "music" | "stock" | "recent" | "storage";
 
 const libraryTabs: {
   id: LibraryTab;
@@ -30,7 +32,7 @@ const libraryTabs: {
     { id: "ai-videos", label: "AI Videos", icon: Video },
     { id: "music", label: "Music", icon: Music },
     { id: "stock", label: "Stock", icon: Library },
-    { id: "recent", label: "Recent", icon: FolderOpen },
+    { id: "storage", label: "Storage", icon: Library },
   ];
 
 export default function VideoEditorMediaLibrary() {
@@ -45,6 +47,8 @@ export default function VideoEditorMediaLibrary() {
 
   const [libraryTab, setLibraryTab] = useState<LibraryTab>("uploads");
   const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] =
+    useState<"grid" | "list">("grid");
   const [typeFilter, setTypeFilter] = useState<"all" | VideoEditorMediaType>("all");
 
   const filteredMediaItems = useMemo(() => {
@@ -54,6 +58,22 @@ export default function VideoEditorMediaLibrary() {
       return matchSearch && matchType;
     });
   }, [mediaItems, search, typeFilter]);
+
+  const stats = useMemo(() => {
+    return {
+      total: mediaItems.length,
+      videos: mediaItems.filter((m) => m.type === "video").length,
+      images: mediaItems.filter((m) => m.type === "image").length,
+      audios: mediaItems.filter((m) => m.type === "audio").length,
+      size:
+        mediaItems.reduce(
+          (sum, item) => sum + (item.size || 0),
+          0
+        ) /
+        1024 /
+        1024,
+    };
+  }, [mediaItems]);
 
   return (
     <div className="space-y-4">
@@ -74,8 +94,8 @@ export default function VideoEditorMediaLibrary() {
               type="button"
               onClick={() => setLibraryTab(tab.id)}
               className={`flex flex-col items-center justify-center gap-1 rounded-xl border px-2 py-3 text-[10px] font-black transition ${active
-                  ? "border-cyan-400 bg-cyan-400/15 text-cyan-200"
-                  : "border-white/10 bg-black/30 text-zinc-500 hover:border-cyan-400/50"
+                ? "border-cyan-400 bg-cyan-400/15 text-cyan-200"
+                : "border-white/10 bg-black/30 text-zinc-500 hover:border-cyan-400/50"
                 }`}
             >
               <Icon size={15} />
@@ -83,6 +103,17 @@ export default function VideoEditorMediaLibrary() {
             </button>
           );
         })}
+      </div>
+
+      <div className="grid grid-cols-5 gap-2">
+        <StatCard label="전체" value={stats.total} />
+        <StatCard label="영상" value={stats.videos} />
+        <StatCard label="이미지" value={stats.images} />
+        <StatCard label="오디오" value={stats.audios} />
+        <StatCard
+          label="용량"
+          value={`${stats.size.toFixed(1)}MB`}
+        />
       </div>
 
       {libraryTab === "uploads" ? (
@@ -138,8 +169,8 @@ export default function VideoEditorMediaLibrary() {
                     key={item.id}
                     onClick={() => selectMedia(item.id)}
                     className={`group cursor-pointer rounded-xl border p-3 transition ${active
-                        ? "border-cyan-400 bg-cyan-400/10"
-                        : "border-white/10 bg-black/30 hover:border-cyan-400/40"
+                      ? "border-cyan-400 bg-cyan-400/10"
+                      : "border-white/10 bg-black/30 hover:border-cyan-400/40"
                       }`}
                   >
                     <div className="flex items-center gap-3">
@@ -184,6 +215,10 @@ export default function VideoEditorMediaLibrary() {
             )}
           </div>
         </>
+      ) : libraryTab === "stock" ? (
+        <VideoEditorStockPanel />
+      ) : libraryTab === "storage" ? (
+        <VideoEditorStoragePanel />
       ) : (
         <ComingSoonPanel tab={libraryTab} />
       )}
@@ -228,8 +263,8 @@ function FilterButton({
       type="button"
       onClick={onClick}
       className={`rounded-lg border px-2 py-2 text-[11px] font-black ${active
-          ? "border-cyan-400 bg-cyan-400/15 text-cyan-200"
-          : "border-white/10 bg-black/20 text-zinc-500 hover:border-cyan-400/40"
+        ? "border-cyan-400 bg-cyan-400/15 text-cyan-200"
+        : "border-white/10 bg-black/20 text-zinc-500 hover:border-cyan-400/40"
         }`}
     >
       {label}
@@ -261,6 +296,25 @@ function PanelHeader({
       <div>
         <h3 className="font-black text-white">{title}</h3>
         <p className="mt-1 text-xs leading-5 text-zinc-500">{desc}</p>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/30 p-2 text-center">
+      <div className="text-[10px] text-zinc-500">
+        {label}
+      </div>
+      <div className="mt-1 text-xs font-black text-white">
+        {value}
       </div>
     </div>
   );

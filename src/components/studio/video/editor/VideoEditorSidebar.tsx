@@ -23,6 +23,12 @@ import { useVideoEditor } from "./VideoEditorContext";
 import type { VideoEditorTab } from "./types";
 import VideoEditorVisualizerPanel from "./VideoEditorVisualizerPanel";
 import VideoEditorMediaLibrary from "./VideoEditorMediaLibrary";
+import VideoEditorTransitionPanel from "./VideoEditorTransitionPanel";
+import VideoEditorEffectsPanel from "./VideoEditorEffectsPanel";
+import VideoEditorTextStylePanel from "./VideoEditorTextStylePanel";
+import VideoEditorAudioMixer from "./VideoEditorAudioMixer";
+import VideoEditorMotionPanel from "./VideoEditorMotionPanel";
+import VideoEditorProjectPanel from "./VideoEditorProjectPanel";
 
 type AudioPanelTab = "library" | "visualizer" | "settings";
 
@@ -65,6 +71,8 @@ export default function VideoEditorSidebar() {
       <div className="h-[calc(100%-190px)] overflow-y-auto p-4">
         {activeTab === "media" ? (
           <VideoEditorMediaLibrary />
+        ) : activeTab === "project" ? (
+          <VideoEditorProjectPanel />
         ) : (
           <StaticPanel activeTab={activeTab} />
         )}
@@ -75,6 +83,10 @@ export default function VideoEditorSidebar() {
 
 function StaticPanel({ activeTab }: { activeTab: VideoEditorTab }) {
   const { addTextClip, addSubtitleClip } = useVideoEditor();
+
+  if (activeTab === "project") {
+    return <VideoEditorProjectPanel />;
+  }
 
   if (activeTab === "image") {
     return (
@@ -106,18 +118,7 @@ function StaticPanel({ activeTab }: { activeTab: VideoEditorTab }) {
   }
 
   if (activeTab === "audio") {
-    return (
-      <PanelSection
-        icon={Music}
-        title="오디오"
-        desc="배경음악, 효과음, 보이스 파일을 관리합니다."
-      >
-        <PanelButton label="오디오 업로드" />
-        <PanelButton label="뮤직 스튜디오 곡 불러오기" />
-        <PanelButton label="효과음 추가" />
-        <PanelButton label="보이스 파일 추가" />
-      </PanelSection>
-    );
+    return <VideoEditorAudioMixer />;
   }
 
   if (activeTab === "visualizer") {
@@ -135,49 +136,19 @@ function StaticPanel({ activeTab }: { activeTab: VideoEditorTab }) {
   }
 
   if (activeTab === "subtitle") {
-    return (
-      <PanelSection
-        icon={Captions}
-        title="자막"
-        desc="영상 자막과 자동 자막 기능을 관리합니다."
-      >
-        <PanelButton label="자막 추가" onClick={addSubtitleClip} />
-        <PanelButton label="자동 자막 생성" />
-        <PanelButton label="SRT 파일 불러오기" />
-        <PanelButton label="자막 스타일" />
-      </PanelSection>
-    );
+    return <VideoEditorTextStylePanel />;
   }
 
   if (activeTab === "text") {
-    return (
-      <PanelSection
-        icon={Type}
-        title="텍스트"
-        desc="제목, 설명, 강조 문구를 추가합니다."
-      >
-        <PanelButton label="제목 텍스트" onClick={addTextClip} />
-        <PanelButton label="일반 텍스트" />
-        <PanelButton label="하이라이트 텍스트" />
-        <PanelButton label="하단 고정 문구" />
-      </PanelSection>
-    );
+    return <VideoEditorTextStylePanel />;
   }
 
   if (activeTab === "effects") {
-    return (
-      <PanelSection
-        icon={Sparkles}
-        title="효과"
-        desc="전환, 필터, 오버레이 효과를 추가합니다."
-      >
-        <PanelButton label="페이드 인/아웃" />
-        <PanelButton label="줌 인/아웃" />
-        <PanelButton label="블러 효과" />
-        <PanelButton label="네온 효과" />
-        <PanelButton label="스펙트럼 효과" />
-      </PanelSection>
-    );
+    return <VideoEditorEffectsPanel />;
+  }
+
+  if (activeTab === "settings") {
+    return <VideoEditorMotionPanel />;
   }
 
   return (

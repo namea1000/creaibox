@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { 
   ChevronLeft, ThumbsUp, MessageSquare, Edit3, Trash2, Loader2, 
@@ -16,7 +16,7 @@ interface InfoViewTabProps {
 
 export default function InfoViewTab({ postId }: InfoViewTabProps) {
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [postData, setPostData] = useState<any>(null);
   const [comments, setComments] = useState<any[]>([]);

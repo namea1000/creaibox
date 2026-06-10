@@ -74,7 +74,16 @@ const MODEL_OPTIONS: Record<string, string[]> = {
   gemini: ["gemini-3.1-flash-lite", "gemini-3-flash-preview", "gemini-2.5-flash"],
   openai: ["gpt-4.1", "gpt-4.1-mini", "gpt-4o-mini"],
   claude: ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"],
-  groq: ["llama-3.1-70b-versatile", "llama-3.1-8b-instant"],
+  groq: [
+    "llama-3.1-8b-instant",
+    "llama-3.3-70b-versatile",
+    "openai/gpt-oss-20b",
+    "openai/gpt-oss-120b",
+    "groq/compound-mini",
+    "groq/compound",
+    "qwen/qwen3-32b",
+    "meta-llama/llama-4-scout-17b-16e-instruct",
+  ],
   together: ["meta-llama/Llama-3.3-70B-Instruct-Turbo", "Qwen/Qwen2.5-72B-Instruct-Turbo"],
   fireworks: ["accounts/fireworks/models/llama-v3p1-70b-instruct"],
 
