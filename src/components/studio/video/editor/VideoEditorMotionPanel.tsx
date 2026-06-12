@@ -41,8 +41,6 @@ export default function VideoEditorMotionPanel() {
     );
   }
 
-  const anyClip = selectedClip as any;
-
   const motionX = selectedClip.motionX ?? 50;
   const motionY = selectedClip.motionY ?? 50;
   const motionWidth = selectedClip.motionWidth ?? 100;
@@ -51,16 +49,16 @@ export default function VideoEditorMotionPanel() {
   const rotation = selectedClip.rotation ?? 0;
   const opacity = selectedClip.opacity ?? 1;
 
-  const flipX = Boolean(anyClip.flipX);
-  const flipY = Boolean(anyClip.flipY);
+  const flipX = Boolean(selectedClip.flipX);
+  const flipY = Boolean(selectedClip.flipY);
 
-  const cropTop = anyClip.cropTop ?? 0;
-  const cropRight = anyClip.cropRight ?? 0;
-  const cropBottom = anyClip.cropBottom ?? 0;
-  const cropLeft = anyClip.cropLeft ?? 0;
+  const cropTop = selectedClip.cropTop ?? 0;
+  const cropRight = selectedClip.cropRight ?? 0;
+  const cropBottom = selectedClip.cropBottom ?? 0;
+  const cropLeft = selectedClip.cropLeft ?? 0;
 
-  const anchorX = anyClip.anchorX ?? 50;
-  const anchorY = anyClip.anchorY ?? 50;
+  const anchorX = selectedClip.anchorX ?? 50;
+  const anchorY = selectedClip.anchorY ?? 50;
 
   return (
     <div>
@@ -237,7 +235,7 @@ export default function VideoEditorMotionPanel() {
               label="Flip X"
               active={flipX}
               onClick={() =>
-                updateClip(selectedClip.id, { flipX: !flipX } as any)
+                updateClip(selectedClip.id, { flipX: !flipX })
               }
             />
 
@@ -246,7 +244,7 @@ export default function VideoEditorMotionPanel() {
               label="Flip Y"
               active={flipY}
               onClick={() =>
-                updateClip(selectedClip.id, { flipY: !flipY } as any)
+                updateClip(selectedClip.id, { flipY: !flipY })
               }
             />
           </div>
@@ -324,7 +322,7 @@ export default function VideoEditorMotionPanel() {
               step={1}
               display={`${cropTop}%`}
               onChange={(value) =>
-                updateClip(selectedClip.id, { cropTop: value } as any)
+                updateClip(selectedClip.id, { cropTop: value })
               }
             />
 
@@ -337,7 +335,7 @@ export default function VideoEditorMotionPanel() {
               step={1}
               display={`${cropBottom}%`}
               onChange={(value) =>
-                updateClip(selectedClip.id, { cropBottom: value } as any)
+                updateClip(selectedClip.id, { cropBottom: value })
               }
             />
 
@@ -350,7 +348,7 @@ export default function VideoEditorMotionPanel() {
               step={1}
               display={`${cropLeft}%`}
               onChange={(value) =>
-                updateClip(selectedClip.id, { cropLeft: value } as any)
+                updateClip(selectedClip.id, { cropLeft: value })
               }
             />
 
@@ -363,7 +361,7 @@ export default function VideoEditorMotionPanel() {
               step={1}
               display={`${cropRight}%`}
               onChange={(value) =>
-                updateClip(selectedClip.id, { cropRight: value } as any)
+                updateClip(selectedClip.id, { cropRight: value })
               }
             />
           </div>
@@ -379,7 +377,7 @@ export default function VideoEditorMotionPanel() {
                   cropBottom: 10,
                   cropLeft: 0,
                   cropRight: 0,
-                } as any)
+                })
               }
             />
 
@@ -393,7 +391,7 @@ export default function VideoEditorMotionPanel() {
                   cropBottom: 0,
                   cropLeft: 0,
                   cropRight: 0,
-                } as any)
+                })
               }
             />
           </div>
@@ -410,7 +408,7 @@ export default function VideoEditorMotionPanel() {
               step={1}
               display={`${anchorX}%`}
               onChange={(value) =>
-                updateClip(selectedClip.id, { anchorX: value } as any)
+                updateClip(selectedClip.id, { anchorX: value })
               }
             />
 
@@ -423,7 +421,7 @@ export default function VideoEditorMotionPanel() {
               step={1}
               display={`${anchorY}%`}
               onChange={(value) =>
-                updateClip(selectedClip.id, { anchorY: value } as any)
+                updateClip(selectedClip.id, { anchorY: value })
               }
             />
           </div>
@@ -434,7 +432,7 @@ export default function VideoEditorMotionPanel() {
               label="좌상"
               desc="0/0"
               onClick={() =>
-                updateClip(selectedClip.id, { anchorX: 0, anchorY: 0 } as any)
+                updateClip(selectedClip.id, { anchorX: 0, anchorY: 0 })
               }
             />
             <PresetButton
@@ -442,7 +440,7 @@ export default function VideoEditorMotionPanel() {
               label="중앙"
               desc="50/50"
               onClick={() =>
-                updateClip(selectedClip.id, { anchorX: 50, anchorY: 50 } as any)
+                updateClip(selectedClip.id, { anchorX: 50, anchorY: 50 })
               }
             />
             <PresetButton
@@ -450,7 +448,7 @@ export default function VideoEditorMotionPanel() {
               label="우하"
               desc="100/100"
               onClick={() =>
-                updateClip(selectedClip.id, { anchorX: 100, anchorY: 100 } as any)
+                updateClip(selectedClip.id, { anchorX: 100, anchorY: 100 })
               }
             />
           </div>
@@ -526,7 +524,7 @@ export default function VideoEditorMotionPanel() {
                   cropLeft: 0,
                   anchorX: 50,
                   anchorY: 50,
-                } as any)
+                })
               }
             />
           </div>

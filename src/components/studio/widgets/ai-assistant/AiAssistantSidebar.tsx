@@ -37,6 +37,15 @@ function formatChars(value: number) {
   return new Intl.NumberFormat("ko-KR").format(value);
 }
 
+const studioLabels: Record<string, string> = {
+  general: "General",
+  writing: "Writing",
+  seo: "SEO",
+  music: "Music",
+  research: "Research",
+  thumbnail: "Thumbnail",
+};
+
 export default function AiAssistantSidebar({
   folders,
   conversations,
@@ -259,7 +268,7 @@ export default function AiAssistantSidebar({
 
                   <div className="mt-3 flex items-center justify-between text-[10px] font-bold text-zinc-500">
                     <span>
-                      {conversation.studio_type}
+                      {studioLabels[conversation.studio_type] || conversation.studio_type}
                     </span>
 
                     <span>

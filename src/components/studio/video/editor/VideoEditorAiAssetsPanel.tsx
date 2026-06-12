@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Sparkles,
   Image as ImageIcon,
@@ -10,10 +10,6 @@ import {
   RefreshCw,
   Plus,
   FolderOpen,
-  Clock3,
-  Wand2,
-  Bot,
-  Download,
 } from "lucide-react";
 import { useVideoEditor } from "./VideoEditorContext";
 
@@ -68,6 +64,7 @@ const sampleAssets: AiAsset[] = [
 export default function VideoEditorAiAssetsPanel() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<AssetType>("all");
+  const assetInstanceIdRef = useRef(0);
 
   const { addClipFromMedia } = useVideoEditor();
 
@@ -81,12 +78,14 @@ export default function VideoEditorAiAssetsPanel() {
       mockUrl = "https://assets.mixkit.co/videos/preview/mixkit-curved-road-on-a-mountain-slope-5136-large.mp4";
     }
 
+    assetInstanceIdRef.current += 1;
+
     addClipFromMedia({
-      id: item.id + "-" + Date.now(),
+      id: `${item.id}-${assetInstanceIdRef.current}`,
       type: item.type === "music" ? "audio" : item.type,
       name: item.title,
       url: mockUrl,
-      createdAt: new Date().toISOString(),
+      createdAt: `ai-asset-${assetInstanceIdRef.current}`,
     });
   };
 

@@ -56,6 +56,7 @@ export default function VideoEditorTimeline() {
     updateClipPosition,
     updateClipDuration,
     updateClipTime,
+    updateClipPlacement,
     currentTime,
     totalDuration,
     setCurrentTime,
@@ -71,23 +72,101 @@ export default function VideoEditorTimeline() {
   const pxPerSecond = (timelineZoom / 100) * 16;
   const totalWidth = Math.max(1200, totalDuration * pxPerSecond);
   const playheadLeft = currentTime * pxPerSecond;
+  const timelineEnd = Math.max(30, totalDuration);
+  const timelineGridStyle = {
+    backgroundImage:
+      "linear-gradient(to right, rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px)",
+    backgroundSize: `${pxPerSecond * 5}px 100%, ${pxPerSecond}px 100%`,
+  };
 
   const timeMarks = useMemo(() => {
-    const marks = [];
-    // 전체 길이에 따라 간격을 유동적으로 (30초 미만은 5초 간격, 길어지면 10초 또는 30초 간격)
-    let step = 5;
-    if (totalDuration > 300) step = 30; // 5분 이상 시 30초 단위
-    else if (totalDuration > 120) step = 15; // 2분 이상 시 15초 단위
-    else if (totalDuration > 60) step = 10; // 1분 이상 시 10초 단위
-
-    const end = Math.max(30, totalDuration);
-    for (let t = 0; t <= end; t += step) {
+    const marks: number[] = [];
+    for (let t = 0; t <= timelineEnd; t += 5) {
       marks.push(t);
     }
     return marks;
-  }, [totalDuration]);
+  }, [timelineEnd]);
 
-  const handleDropClip = (event: React.DragEvent<HTMLDivElement>) => {
+  const getClipTrackType = (clipType: string) => {
+    if (clipType === "audio") return "audio";
+    if (clipType === "text") return "text";
+    if (clipType === "subtitle") return "subtitle";
+    if (clipType === "visualizer") return "visualizer";
+    return "video";
+  };
+
+  const resolveNonOverlappingStart = ({
+    clipId,
+    trackId,
+    rawStartTime,
+    duration,
+  }: {
+    clipId: string;
+    trackId: string;
+    rawStartTime: number;
+    duration: number;
+  }) => {
+    const maxStartTime = Math.max(0, 3600 - duration);
+    const clampStart = (value: number) =>
+      Number(Math.max(0, Math.min(maxStartTime, value)).toFixed(2));
+    const safeRawStart = clampStart(rawStartTime);
+    const trackClips = clips
+      .filter((clip) => clip.id !== clipId && clip.trackId === trackId)
+      .sort((a, b) => a.startTime - b.startTime);
+
+    const snapThresholdSec = 12 / pxPerSecond;
+    const snapPoints = [0, currentTime];
+    trackClips.forEach((clip) => {
+      snapPoints.push(clip.startTime);
+      snapPoints.push(clip.startTime + clip.duration);
+    });
+
+    let snappedStart = safeRawStart;
+    let minDiff = snapThresholdSec;
+
+    snapPoints.forEach((point) => {
+      const startAligned = clampStart(point);
+      const endAligned = clampStart(point - duration);
+      const startDiff = Math.abs(safeRawStart - startAligned);
+      const endDiff = Math.abs(safeRawStart - endAligned);
+
+      if (startDiff < minDiff) {
+        minDiff = startDiff;
+        snappedStart = startAligned;
+      }
+
+      if (endDiff < minDiff) {
+        minDiff = endDiff;
+        snappedStart = endAligned;
+      }
+    });
+
+    const candidates = [
+      safeRawStart,
+      snappedStart,
+      0,
+      currentTime,
+      ...trackClips.flatMap((clip) => [
+        clip.startTime - duration,
+        clip.startTime + clip.duration,
+      ]),
+    ]
+      .map(clampStart)
+      .filter((candidate, index, list) => list.indexOf(candidate) === index);
+
+    if (candidates.length === 0) return snappedStart;
+
+    return candidates.sort(
+      (a, b) =>
+        Math.abs(a - snappedStart) - Math.abs(b - snappedStart) ||
+        Math.abs(a - safeRawStart) - Math.abs(b - safeRawStart)
+    )[0];
+  };
+
+  const handleDropClip = (
+    event: React.DragEvent<HTMLDivElement>,
+    targetTrackId: string
+  ) => {
     event.preventDefault();
 
     const clipId = event.dataTransfer.getData("clip-id");
@@ -99,10 +178,20 @@ export default function VideoEditorTimeline() {
     const targetClip = clips.find((clip) => clip.id === clipId);
     if (!targetClip) return;
 
-    const nextStartTime = Math.max(0, dropX / pxPerSecond);
+    const targetTrack = tracks.find((track) => track.id === targetTrackId);
+    const expectedTrackType = getClipTrackType(targetClip.type);
+    const safeTrackId =
+      targetTrack?.type === expectedTrackType ? targetTrackId : targetClip.trackId;
+    const rawStartTime = Math.max(0, dropX / pxPerSecond);
 
-    // 퍼센트 대신 startTime과 duration을 직접 초 단위로 전달하여 업데이트
-    updateClipTime(clipId, nextStartTime, targetClip.duration);
+    const nextStartTime = resolveNonOverlappingStart({
+      clipId,
+      trackId: safeTrackId,
+      rawStartTime,
+      duration: targetClip.duration,
+    });
+
+    updateClipPlacement(clipId, safeTrackId, nextStartTime, targetClip.duration);
     selectClip(clipId);
   };
 
@@ -221,7 +310,10 @@ export default function VideoEditorTimeline() {
             }}
           >
             {/* 눈금자 헤더 영역 */}
-            <div className="relative h-8 border-b border-white/5 bg-[#18181c]">
+            <div
+              className="relative h-8 border-b border-white/5 bg-[#18181c]"
+              style={timelineGridStyle}
+            >
               <div className="absolute inset-0 text-[10px] text-zinc-500">
                 {timeMarks.map((time) => {
                   const mins = Math.floor(time / 60).toString().padStart(2, "0");
@@ -229,7 +321,7 @@ export default function VideoEditorTimeline() {
                   return (
                     <div
                       key={time}
-                      className="absolute border-r border-white/5 px-2 leading-8 h-full"
+                      className="absolute h-full border-l border-white/15 px-1.5 leading-8"
                       style={{ left: `${time * pxPerSecond}px` }}
                     >
                       {`${mins}:${secs}`}
@@ -262,8 +354,9 @@ export default function VideoEditorTimeline() {
                   <div
                     key={track.id}
                     onDragOver={(event) => event.preventDefault()}
-                    onDrop={handleDropClip}
-                    className="relative h-[72px] border-b border-white/5 bg-[linear-gradient(to_right,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[length:80px_100%]"
+                    onDrop={(event) => handleDropClip(event, track.id)}
+                    className="relative h-[72px] border-b border-white/5"
+                    style={timelineGridStyle}
                   >
                     {trackClips.length === 0 ? (
                       <div className="flex h-full items-center px-4 text-xs text-zinc-700">
@@ -288,10 +381,6 @@ export default function VideoEditorTimeline() {
                             timelineZoom={timelineZoom}
                             isOffline={isOffline}
                             onSelect={selectClip}
-                            onRemove={removeClip}
-                            onDuplicate={duplicateClip}
-                            onSplit={splitClip}
-                            onUpdatePosition={updateClipPosition}
                             onUpdateDuration={updateClipDuration}
                             onUpdateTime={updateClipTime}
                           />

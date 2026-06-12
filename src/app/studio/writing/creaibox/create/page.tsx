@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import CreaiboxCreateTab from "@/components/writing/creaibox/tabs/CreaiboxCreateTab";
 import { createClient } from "@/utils/supabase/client";
 import type { User } from "@supabase/supabase-js";
@@ -11,6 +12,10 @@ import {
   getUserGeminiVaultConfig,
 } from "@/lib/client/api-vault";
 import { creaiboxManuscriptStore } from "@/lib/stores/manuscripts";
+import {
+  createContentPlannerOutput,
+  updateContentPlannerItemStatus,
+} from "@/lib/content-planner/supabase";
 
 const AUTH_RETRY_DELAY_MS = 700;
 const AUTH_RETRY_ATTEMPTS = 3;
@@ -242,6 +247,23 @@ function buildSeoSlug(title: string, focusKeyword: string) {
 }
 
 export default function CreaiboxEditorPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[600px] w-full items-center justify-center bg-[#0b0b0d]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+          <span className="font-black text-cyan-400 tracking-widest text-xs uppercase italic">
+            Creaibox Editor Loading...
+          </span>
+        </div>
+      </div>
+    }>
+      <CreaiboxEditorPageContent />
+    </Suspense>
+  );
+}
+
+function CreaiboxEditorPageContent() {
   const supabase = useMemo(() => createClient(), []);
 
   const resolveAuthUser = React.useCallback(async (): Promise<User | null> => {
@@ -288,6 +310,8 @@ export default function CreaiboxEditorPage() {
   const [focusKeyword, setFocusKeyword] = useState("");
   const [canonicalUrl, setCanonicalUrl] = useState("");
   const [seoTags, setSeoTags] = useState<string[]>([]);
+  const [itemId, setItemId] = useState<string | null>(null);
+  const [campaignId, setCampaignId] = useState<string | null>(null);
 
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [searchGroundingAvailable, setSearchGroundingAvailable] = useState(false);
@@ -329,6 +353,31 @@ export default function CreaiboxEditorPage() {
 
     return () => window.removeEventListener("storage", syncSearchGroundingAvailability);
   }, []);
+
+  const searchParams = useSearchParams();
+  const [hasAutoRun, setHasAutoRun] = useState(false);
+
+  useEffect(() => {
+    const source = searchParams.get("source");
+    if (source === "content-planner") {
+      const keyword = searchParams.get("keyword");
+      const titleParam = searchParams.get("title");
+      const contentTypeParam = searchParams.get("contentType");
+      const itemIdParam = searchParams.get("itemId");
+      const campaignIdParam = searchParams.get("campaignId");
+
+      if (itemIdParam) setItemId(itemIdParam);
+      if (campaignIdParam) setCampaignId(campaignIdParam);
+
+      if (keyword && !hasAutoRun) {
+        setTargetKeyword(keyword);
+        if (titleParam) setTitle(titleParam);
+        if (contentTypeParam) setPostType(contentTypeParam);
+        setHasAutoRun(true);
+        void handleAiGenerateLive(keyword);
+      }
+    }
+  }, [searchParams, hasAutoRun]);
 
   const saveToSupabase = async (
     currentContent: string,
@@ -407,6 +456,26 @@ export default function CreaiboxEditorPage() {
 
       if (error) throw error;
 
+      if (itemId && campaignId && insertedRow) {
+        try {
+          const outputPayload = {
+            campaignId: campaignId,
+            itemId: itemId,
+            outputType: "creaibox_blog" as const,
+            platform: "Creaibox 블로그" as const,
+            targetRoute: `/studio/writing/creaibox/list/${insertedRow.display_id}`,
+            title: currentTitle,
+            status: "generated" as const,
+            generatedPostId: insertedRow.id,
+            metadata: { display_id: insertedRow.display_id }
+          };
+          await createContentPlannerOutput(outputPayload);
+          await updateContentPlannerItemStatus(itemId, "generated");
+        } catch (linkErr) {
+          console.error("Failed to link planner output:", linkErr);
+        }
+      }
+
       if (insertedRow?.display_id) {
         setEditLink(`/studio/writing/creaibox/list/${insertedRow.display_id}`);
       }
@@ -445,8 +514,9 @@ export default function CreaiboxEditorPage() {
     }
   };
 
-  const handleAiGenerateLive = async () => {
-    if (!targetKeyword.trim()) {
+  const handleAiGenerateLive = async (overrideKeyword?: string) => {
+    const activeKeyword = overrideKeyword || targetKeyword;
+    if (!activeKeyword.trim()) {
       alert("타겟 키워드를 입력해 주세요.");
       return;
     }
@@ -468,7 +538,7 @@ export default function CreaiboxEditorPage() {
 
       const prompt = `
         당신은 Creaibox의 전문 블로그 콘텐츠 에디터입니다. 
-        - 주제: ${targetKeyword}
+        - 주제: ${activeKeyword}
         - 어조: ${selectedTone}
         - 글 유형: ${postType}
         - 길이 규격: ${lengthPrompt.label}
@@ -591,7 +661,7 @@ export default function CreaiboxEditorPage() {
 
       const parsed = parseGeminiJson(text);
 
-      const finalTitle = sanitizeGeneratedTitle(parsed.title || "", targetKeyword);
+      const finalTitle = sanitizeGeneratedTitle(parsed.title || "", activeKeyword);
       const finalContent = stripHorizontalRules(parsed.content || "");
       const nextFocusKeyword = normalizeFocusKeyword(
         parsed.focusKeyword,

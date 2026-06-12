@@ -49,6 +49,7 @@ import {
   TrendingUp,
   Radio,
   Bot,
+  Brain,
   Rss,
   Megaphone,
   Building2,
@@ -57,8 +58,12 @@ import {
   Share2,
   Disc3,
   Waves,
+  CalendarDays,
+  Target,
   type LucideIcon,
 } from "lucide-react";
+
+import { SiNaver, SiYoutube } from "react-icons/si";
 
 interface SidebarProps {
   activeMenu?: string;
@@ -83,7 +88,7 @@ type MenuGroup = {
   children?: MenuItem[];
 };
 
-type SidebarIcon = React.ComponentType<React.ComponentProps<LucideIcon>>;
+type SidebarIcon = React.ComponentType<any>;
 
 function PieIcon(props: React.ComponentProps<LucideIcon>) {
   return <BarChart3 {...props} />;
@@ -123,7 +128,7 @@ export default function Sidebar({
           { name: "전체 콘텐츠", href: "/studio/library/all", icon: Library },
 
           { name: "크리아이박스 콘텐츠", href: "/studio/library/creaibox", icon: PenTool },
-          { name: "네이버 콘텐츠", href: "/studio/library/naver", icon: Newspaper },
+          { name: "네이버 콘텐츠", href: "/studio/library/naver", icon: SiNaver },
           { name: "뉴스 콘텐츠", href: "/studio/library/news", icon: Rss },
 
           { name: "음악 / 가사 콘텐츠", href: "/studio/library/music", icon: Music },
@@ -145,12 +150,30 @@ export default function Sidebar({
         ],
       },
       {
+        key: "content-planner",
+        name: "AI 콘텐츠 플래너",
+        href: "/studio/content-planner",
+        icon: Brain,
+        color: "text-cyan-400",
+        children: [
+          { name: "콘텐츠 아이디어 허브", href: "/studio/content-planner/idea-hub", icon: Lightbulb },
+          { name: "AI 콘텐츠 기획", href: "/studio/content-planner/planning", icon: Sparkles },
+          { name: "기획 라이브러리", href: "/studio/content-planner/library", icon: Library },
+          { name: "콘텐츠 캘린더", href: "/studio/content-planner/calendar", icon: CalendarDays },
+          { name: "트렌드 키워드", href: "/studio/content-planner/trends", icon: TrendingUp },
+          { name: "전략 및 타겟 분석", href: "/studio/content-planner/strategy", icon: Target },
+          { name: "자동화 워크플로우", href: "/studio/content-planner/workflow", icon: Bot },
+          { name: "플래너 설정", href: "/studio/content-planner/settings", icon: Settings },
+        ],
+      },
+      {
         key: "creaibox-writing",
         name: "크리아이박스 글쓰기",
         href: "/studio/writing/creaibox",
         icon: PenTool,
         color: "text-violet-400",
         children: [
+          { name: "AI 포스팅 기획", href: "/studio/writing/creaibox/plan", icon: Sparkles },
           { name: "AI 포스팅 글쓰기", href: "/studio/writing/creaibox/create", icon: Edit3 },
           { name: "AI 포스팅 에디터", href: "/studio/writing/creaibox/editor", icon: FileText },
           { name: "발행 원고 관리", href: "/studio/writing/creaibox/list", icon: Archive },
@@ -166,7 +189,7 @@ export default function Sidebar({
         key: "naver-writing",
         name: "네이버 글쓰기",
         href: "/studio/writing/naver",
-        icon: Newspaper,
+        icon: SiNaver,
         color: "text-emerald-400",
         children: [
           { name: "AI 스마트 글쓰기", href: "/studio/writing/naver/create", icon: Edit3 },
@@ -195,7 +218,7 @@ export default function Sidebar({
           { name: "커버 이미지", href: "/studio/music/cover-image", icon: ImageIcon },
           { name: "영상 프롬프트", href: "/studio/music/video-prompt", icon: Video },
           { name: "번역", href: "/studio/music/translate", icon: Languages },
-          { name: "유튜브 최적화", href: "/studio/music/youtube-seo", icon: PlayCircle },
+          { name: "유튜브 최적화", href: "/studio/music/youtube-seo", icon: SiYoutube },
           { name: "태그 관리", href: "/studio/music/tags", icon: Tags },
           { name: "플레이리스트", href: "/studio/music/playlist", icon: Library },
           { name: "프로젝트", href: "/studio/music/projects", icon: Folder },
@@ -265,7 +288,7 @@ export default function Sidebar({
           { name: "형태소 분석기", href: "/studio/keyword/morphology", icon: PieIcon },
           { name: "실시간 순위 추적", href: "/studio/keyword/rank", icon: LineChart },
           { name: "트렌드 급상승 분석", href: "/studio/keyword/rising", icon: TrendingUp },
-          { name: "유튜브 키워드 분석", href: "/studio/keyword/youtube", icon: PlayCircle },
+          { name: "유튜브 키워드 분석", href: "/studio/keyword/youtube", icon: SiYoutube },
           { name: "SEO 경쟁 분석", href: "/studio/keyword/seo", icon: Search },
           { name: "AI 키워드 전략 생성", href: "/studio/keyword/strategy", icon: Bot },
           { name: "자동 콘텐츠 연결", href: "/studio/keyword/workflow", icon: Sparkles },
@@ -276,7 +299,7 @@ export default function Sidebar({
         key: "youtube",
         name: "유튜브 트렌드 분석",
         href: "/studio/youtube",
-        icon: PlayCircle,
+        icon: SiYoutube,
         color: "text-red-400",
         children: [
           { name: "채널 상세 분석", href: "/studio/youtube/channel", icon: Users },
@@ -342,7 +365,7 @@ export default function Sidebar({
           { name: "AI 프롬프트 개선기", href: "/studio/tools/prompt-enhancer", icon: Sparkles },
           { name: "AI 프롬프트 번역기", href: "/studio/tools/prompt-translator", icon: Languages },
           { name: "해시태그 생성기", href: "/studio/tools/hashtag", icon: Tags },
-          { name: "유튜브 썸네일 다운로더", href: "/studio/tools/youtube-thumbnail", icon: PlayCircle },
+          { name: "유튜브 썸네일 다운로더", href: "/studio/tools/youtube-thumbnail", icon: SiYoutube },
           { name: "색상 추출기", href: "/studio/tools/color-picker", icon: Palette },
           { name: "QR 생성기", href: "/studio/tools/qr", icon: CircleHelp },
           { name: "포맷 변환기", href: "/studio/tools/converter", icon: RefreshCw },
@@ -359,11 +382,11 @@ export default function Sidebar({
         children: [
           { name: "실시간 채팅", href: "/studio/community/chat", icon: MessageCircle },
           { name: "크리아이박스 글쓰기", href: "/studio/community/writing", icon: PenTool },
-          { name: "네이버 블로그", href: "/studio/community/naver", icon: Newspaper },
+          { name: "네이버 블로그", href: "/studio/community/naver", icon: SiNaver },
           { name: "뮤직 스튜디오", href: "/studio/community/music", icon: Music },
           { name: "이미지 스튜디오", href: "/studio/community/image", icon: ImageIcon },
           { name: "비디오 스튜디오", href: "/studio/community/video", icon: Video },
-          { name: "유튜브 연구소", href: "/studio/community/youtube", icon: PlayCircle },
+          { name: "유튜브 연구소", href: "/studio/community/youtube", icon: SiYoutube },
           { name: "AI 트렌드 토론방", href: "/studio/community/ai-trend", icon: Bot },
           { name: "협업 프로젝트", href: "/studio/community/collab", icon: Share2 },
           { name: "수익화 연구소", href: "/studio/community/money", icon: BadgeDollarSign },

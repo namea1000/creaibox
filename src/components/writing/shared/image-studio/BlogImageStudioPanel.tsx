@@ -109,8 +109,22 @@ export default function BlogImageStudioPanel({
   const [isBlueprintHubOpen, setIsBlueprintHubOpen] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>("tech");
   const [openSaveMenuId, setOpenSaveMenuId] = useState<string | null>(null);
+  const [isThumbnailTypeDropdownOpen, setIsThumbnailTypeDropdownOpen] = useState(false);
 
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
+  const thumbnailTypeDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (thumbnailTypeDropdownRef.current && !thumbnailTypeDropdownRef.current.contains(event.target as Node)) {
+        setIsThumbnailTypeDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
   const postListRef = useRef<HTMLDivElement | null>(null);
 
   const selectedStyleData = styleOptions.find((style) => style.value === selectedStyle);
@@ -1007,17 +1021,54 @@ export default function BlogImageStudioPanel({
 
                   <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
                     <label className="px-4 py-2.5 font-bold text-zinc-100">5. 썸네일 유형</label>
-                    <select
-                      value={selectedThumbnailType}
-                      onChange={(e) => setSelectedThumbnailType(e.target.value)}
-                      className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 font-bold text-zinc-100 outline-none"
-                    >
-                      {thumbnailTypeOptions.map((option) => (
-                        <option key={option.value} value={option.value} disabled={option.disabled}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative w-full border-l border-zinc-800 bg-blue-950/10 font-bold text-zinc-100 outline-none" ref={thumbnailTypeDropdownRef}>
+                      <button
+                        type="button"
+                        onClick={() => setIsThumbnailTypeDropdownOpen(!isThumbnailTypeDropdownOpen)}
+                        className="flex h-10 w-full items-center justify-between px-3 text-left outline-none text-[13px] font-bold"
+                      >
+                        <span className="truncate">
+                          {thumbnailTypeOptions.find((opt) => opt.value === selectedThumbnailType)?.label || "선택해 주세요"}
+                        </span>
+                        <ChevronDown size={14} className={`text-zinc-400 transition-transform duration-200 shrink-0 ml-1 ${isThumbnailTypeDropdownOpen ? "rotate-180" : ""}`} />
+                      </button>
+
+                      {isThumbnailTypeDropdownOpen && (
+                        <div className="absolute left-0 right-0 z-50 mt-1 max-h-80 overflow-y-auto rounded-xl border border-zinc-800 bg-[#0e1322] p-2 shadow-2xl backdrop-blur-md custom-scrollbar">
+                          {thumbnailTypeOptions.map((option) => {
+                            if (option.disabled) {
+                              return (
+                                <div
+                                  key={option.value}
+                                  className="px-3 py-2 text-xs font-black text-cyan-300 border-b border-white/5 mt-3 first:mt-0 bg-white/[0.03] rounded-md"
+                                >
+                                  {option.label}
+                                </div>
+                              );
+                            }
+
+                            const isSelected = selectedThumbnailType === option.value;
+                            return (
+                              <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedThumbnailType(option.value);
+                                  setIsThumbnailTypeDropdownOpen(false);
+                                }}
+                                className={`flex w-full items-center px-4 py-2.5 text-left text-xs transition duration-150 rounded-lg mt-0.5 first:mt-0 ${
+                                  isSelected
+                                    ? "bg-cyan-500/20 text-cyan-200 font-bold"
+                                    : "text-zinc-300 hover:bg-white/5 hover:text-white"
+                                }`}
+                              >
+                                {option.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">

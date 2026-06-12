@@ -137,7 +137,7 @@ const quickTools = [
   {
     title: "YouTube Studio",
     href: "https://studio.youtube.com/",
-    icon: PlayCircle,
+    icon: SiYoutube,
     description: "공식 YouTube Studio 이동",
   },
   {

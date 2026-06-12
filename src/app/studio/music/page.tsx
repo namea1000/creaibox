@@ -235,9 +235,9 @@ export default function MusicStudioHomePage() {
                   className="group rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5 transition hover:-translate-y-1 hover:border-rose-500/40"
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex gap-4">
+                    <div className="flex items-start gap-4">
                       <div
-                        className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${item.color}`}
+                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${item.color}`}
                       >
                         <Icon size={22} />
                       </div>

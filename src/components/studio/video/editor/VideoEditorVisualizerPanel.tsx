@@ -110,10 +110,7 @@ export default function VideoEditorVisualizerPanel() {
     audioRef.current.load();
   }, [audioUrl]);
 
-  useEffect(() => {
-    if (analyserRef.current) draw();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [template, accentColor, backgroundColor, spectrumY, spectrumHeight, spectrumWidth]);
+
 
   const setupAudio = async () => {
     const audio = audioRef.current;
@@ -542,6 +539,11 @@ export default function VideoEditorVisualizerPanel() {
 
     frame();
   };
+
+  useEffect(() => {
+    if (analyserRef.current) draw();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [template, accentColor, backgroundColor, spectrumY, spectrumHeight, spectrumWidth]);
 
   const handleCanvasSpectrumDrag = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();

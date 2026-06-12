@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { SiYoutube } from "react-icons/si";
 import {
   PlayCircle,
   Users,
@@ -120,7 +121,7 @@ export default function YoutubeTrendHomePage() {
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-red-400">
-                <PlayCircle size={15} />
+                <SiYoutube size={15} />
                 YouTube Trend Studio
               </div>
 

@@ -3,16 +3,11 @@
 import {
   Film,
   Image as ImageIcon,
-  Music,
   Type,
   Captions,
   Sparkles,
-  Trash2,
-  Copy,
-  Split,
   Volume2,
   VolumeX,
-  GripVertical,
 } from "lucide-react";
 
 import type { VideoEditorClip as VideoEditorClipType } from "./VideoEditorContext";
@@ -26,10 +21,6 @@ type VideoEditorClipProps = {
   timelineZoom: number;
   isOffline?: boolean;
   onSelect: (clipId: string) => void;
-  onRemove: (clipId: string) => void;
-  onDuplicate: (clipId: string) => void;
-  onSplit: (clipId: string, splitTime?: number) => void;
-  onUpdatePosition: (clipId: string, left: number) => void;
   onUpdateDuration: (clipId: string, duration: number) => void;
   onUpdateTime: (clipId: string, startTime: number, duration: number) => void;
 };
@@ -42,9 +33,6 @@ export default function VideoEditorClip({
   timelineZoom,
   isOffline = false,
   onSelect,
-  onRemove,
-  onDuplicate,
-  onSplit,
   onUpdateDuration,
   onUpdateTime,
 }: VideoEditorClipProps) {
@@ -59,6 +47,8 @@ export default function VideoEditorClip({
   const pixelsToSeconds = (deltaX: number) => {
     return deltaX / pxPerSecond;
   };
+
+  const { mediaItems, clips } = useVideoEditor();
 
   const handleTrimStart = (
     event: React.PointerEvent<HTMLDivElement>
@@ -76,12 +66,36 @@ export default function VideoEditorClip({
         0,
         Number((originalStartTime + deltaSeconds).toFixed(2))
       );
-      const nextDuration = Math.max(
+
+      // Snapping logic during start trim
+      let snappedStart = nextStart;
+      const SNAP_THRESHOLD_PX = 12;
+      const snapThresholdSec = SNAP_THRESHOLD_PX / pxPerSecond;
+      let minDiff = snapThresholdSec;
+
+      const snapPoints = [0, currentTime];
+      clips.forEach((c) => {
+        if (c.id !== clip.id) {
+          snapPoints.push(c.startTime);
+          snapPoints.push(c.startTime + c.duration);
+        }
+      });
+
+      snapPoints.forEach((pt) => {
+        const diff = Math.abs(nextStart - pt);
+        if (diff < minDiff) {
+          minDiff = diff;
+          snappedStart = pt;
+        }
+      });
+
+      const finalStart = Math.max(0, snappedStart);
+      const finalDuration = Math.max(
         0.5,
-        Number((originalDuration - deltaSeconds).toFixed(2))
+        Number((originalDuration - (finalStart - originalStartTime)).toFixed(2))
       );
 
-      onUpdateTime(clip.id, nextStart, nextDuration);
+      onUpdateTime(clip.id, finalStart, finalDuration);
     };
 
     const handleUp = () => {
@@ -109,7 +123,36 @@ export default function VideoEditorClip({
         Number((startDuration + deltaSeconds).toFixed(2))
       );
 
-      onUpdateDuration(clip.id, nextDuration);
+      const nextEnd = clip.startTime + nextDuration;
+
+      // Snapping logic during end trim
+      let snappedEnd = nextEnd;
+      const SNAP_THRESHOLD_PX = 12;
+      const snapThresholdSec = SNAP_THRESHOLD_PX / pxPerSecond;
+      let minDiff = snapThresholdSec;
+
+      const snapPoints = [currentTime];
+      clips.forEach((c) => {
+        if (c.id !== clip.id) {
+          snapPoints.push(c.startTime);
+          snapPoints.push(c.startTime + c.duration);
+        }
+      });
+
+      snapPoints.forEach((pt) => {
+        const diff = Math.abs(nextEnd - pt);
+        if (diff < minDiff) {
+          minDiff = diff;
+          snappedEnd = pt;
+        }
+      });
+
+      const finalDuration = Math.max(
+        0.5,
+        Number((snappedEnd - clip.startTime).toFixed(2))
+      );
+
+      onUpdateDuration(clip.id, finalDuration);
     };
 
     const handleUp = () => {
@@ -120,8 +163,6 @@ export default function VideoEditorClip({
     window.addEventListener("pointermove", handleMove);
     window.addEventListener("pointerup", handleUp);
   };
-
-  const { mediaItems } = useVideoEditor();
   const media = clip.mediaId ? mediaItems.find((m) => m.id === clip.mediaId) : null;
   const thumbnailUrl = media?.thumbnailUrl || (media?.type === "image" ? media?.url : "");
 
@@ -137,7 +178,7 @@ export default function VideoEditorClip({
         event.stopPropagation();
         onSelect(clip.id);
       }}
-      className={`group absolute top-2 flex flex-col h-14 cursor-grab overflow-hidden rounded-none border transition active:cursor-grabbing ${active
+      className={`group absolute top-2 flex flex-col h-14 cursor-grab overflow-hidden rounded-[5px] border transition active:cursor-grabbing ${active
           ? "border-cyan-300 bg-cyan-400/30"
           : isOffline
             ? "border-red-500/50 bg-red-950/30 text-red-300"
@@ -193,7 +234,7 @@ export default function VideoEditorClip({
               return (
                 <span
                   key={`${clip.id}-wave-${index}`}
-                  className="w-[1.5px] rounded-none bg-emerald-300"
+                  className="w-[1.5px] rounded-full bg-emerald-300"
                   style={{ height: `${height}%` }}
                 />
               );
@@ -224,7 +265,7 @@ export default function VideoEditorClip({
         tabIndex={0}
         title="시작점 Trim"
         onPointerDown={handleTrimStart}
-        className="absolute left-0 top-0 z-30 h-full w-1.5 cursor-ew-resize bg-cyan-400 opacity-0 transition group-hover:opacity-100"
+        className="absolute left-0 top-0 z-30 h-full w-1.5 cursor-ew-resize rounded-l-[5px] bg-cyan-400 opacity-0 transition group-hover:opacity-100"
       />
 
       {/* Trim End handle */}
@@ -233,7 +274,7 @@ export default function VideoEditorClip({
         tabIndex={0}
         title="끝점 Trim / 길이 조절"
         onPointerDown={handleTrimEnd}
-        className="absolute right-0 top-0 z-30 h-full w-1.5 cursor-ew-resize bg-cyan-400 opacity-0 transition group-hover:opacity-100"
+        className="absolute right-0 top-0 z-30 h-full w-1.5 cursor-ew-resize rounded-r-[5px] bg-cyan-400 opacity-0 transition group-hover:opacity-100"
       />
     </div>
   );
@@ -253,30 +294,4 @@ function ClipTypeIcon({
   if (type === "text") return <Type size={13} className="shrink-0 text-fuchsia-200" />;
   if (type === "subtitle") return <Captions size={13} className="shrink-0 text-amber-200" />;
   return <Sparkles size={13} className="shrink-0 text-pink-200" />;
-}
-
-function MiniIconButton({
-  icon: Icon,
-  title,
-  danger,
-  onClick,
-}: {
-  icon: React.ElementType;
-  title: string;
-  danger?: boolean;
-  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
-}) {
-  return (
-    <button
-      type="button"
-      title={title}
-      onClick={onClick}
-      className={`rounded-none p-1 opacity-0 transition group-hover:opacity-100 ${danger
-          ? "text-white/40 hover:bg-red-500/20 hover:text-red-200"
-          : "text-white/40 hover:bg-cyan-500/20 hover:text-cyan-100"
-        }`}
-    >
-      <Icon size={12} />
-    </button>
-  );
 }

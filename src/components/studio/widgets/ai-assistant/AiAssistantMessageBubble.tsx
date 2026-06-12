@@ -43,6 +43,7 @@ function getAgentLabel(agent: string) {
 
 export default function AiAssistantMessageBubble({ message }: Props) {
   const [copied, setCopied] = useState(false);
+  const [completedActions, setCompletedActions] = useState<Record<string, string>>({});
 
   const isUser = message.role === "user";
   const isAssistant = message.role === "assistant";
@@ -134,26 +135,37 @@ export default function AiAssistantMessageBubble({ message }: Props) {
             </div>
 
             <div className="grid gap-2">
-              {message.actions.map((action) => (
-                <button
-                  key={action.id}
-                  onClick={() => {
-                    if (action.actionType === "copy_result") {
-                      void handleCopy();
-                    }
-                  }}
-                  className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-left text-xs font-bold text-zinc-200 transition hover:border-cyan-400/30 hover:bg-cyan-500/10 hover:text-cyan-100"
-                >
-                  <span className="flex items-center gap-2">
-                    <Clipboard size={14} />
-                    {action.label}
-                  </span>
+              {message.actions.map((action) => {
+                const status = completedActions[action.id] || action.status || "pending";
+                return (
+                  <button
+                    key={action.id}
+                    onClick={() => {
+                      if (action.actionType === "copy_result") {
+                        void handleCopy();
+                        setCompletedActions((prev) => ({
+                          ...prev,
+                          [action.id]: "copied",
+                        }));
+                      }
+                    }}
+                    className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-left text-xs font-bold text-zinc-200 transition hover:border-cyan-400/30 hover:bg-cyan-500/10 hover:text-cyan-100"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Clipboard size={14} />
+                      {action.label}
+                    </span>
 
-                  <span className="rounded-md bg-white/5 px-2 py-0.5 text-[10px] text-zinc-500">
-                    {action.status ?? "pending"}
-                  </span>
-                </button>
-              ))}
+                    <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                      status === "copied" || status === "applied"
+                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                        : "bg-white/5 text-zinc-500"
+                    }`}>
+                      {status}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

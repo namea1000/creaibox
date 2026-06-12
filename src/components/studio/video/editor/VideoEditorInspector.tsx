@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Download,
   Film,
@@ -84,6 +84,8 @@ export default function VideoEditorInspector({
     setExportResolution,
     setExportFps,
     setExportQuality,
+    currentTime,
+    totalDuration,
   } = useVideoEditor();
 
   const selectedClip = clips.find((clip) => clip.id === selectedClipId) || null;
@@ -95,23 +97,17 @@ export default function VideoEditorInspector({
 
   const [activeTab, setActiveTab] = useState<InspectorTab>("video");
 
-  // Keep active tab relevant to the selection
-  useEffect(() => {
-    if (!selectedClip) {
-      if (activeTab !== "export" && activeTab !== "video") {
-        setActiveTab("video");
-      }
-      return;
-    }
-    const isAudioVisible = selectedClip.type === "video" || selectedClip.type === "audio";
-    const isTextVisible = selectedClip.type === "text" || selectedClip.type === "subtitle";
-
-    if (activeTab === "audio" && !isAudioVisible) {
-      setActiveTab("video");
-    } else if (activeTab === "text" && !isTextVisible) {
-      setActiveTab("video");
-    }
-  }, [selectedClipId, selectedClip?.type, activeTab]);
+  const isAudioVisible =
+    selectedClip?.type === "video" || selectedClip?.type === "audio";
+  const isTextVisible =
+    selectedClip?.type === "text" || selectedClip?.type === "subtitle";
+  const visibleActiveTab: InspectorTab =
+    (!selectedClip && activeTab !== "export") ||
+    (activeTab === "audio" && !isAudioVisible) ||
+    (activeTab === "text" && !isTextVisible) ||
+    (activeTab === "effects" && !selectedClip)
+      ? "video"
+      : activeTab;
 
   return (
     <aside className="flex h-full w-full flex-col bg-transparent">
@@ -119,40 +115,40 @@ export default function VideoEditorInspector({
       <div className="flex h-12 shrink-0 border-b border-white/5 bg-[#202026]">
         <TabButton
           label="비디오"
-          active={activeTab === "video"}
+          active={visibleActiveTab === "video"}
           onClick={() => setActiveTab("video")}
         />
-        {selectedClip && (selectedClip.type === "video" || selectedClip.type === "audio") && (
+        {selectedClip && isAudioVisible && (
           <TabButton
             label="오디오"
-            active={activeTab === "audio"}
+            active={visibleActiveTab === "audio"}
             onClick={() => setActiveTab("audio")}
           />
         )}
-        {selectedClip && (selectedClip.type === "text" || selectedClip.type === "subtitle") && (
+        {selectedClip && isTextVisible && (
           <TabButton
             label="텍스트"
-            active={activeTab === "text"}
+            active={visibleActiveTab === "text"}
             onClick={() => setActiveTab("text")}
           />
         )}
         {selectedClip && (
           <TabButton
             label="효과/전환"
-            active={activeTab === "effects"}
+            active={visibleActiveTab === "effects"}
             onClick={() => setActiveTab("effects")}
           />
         )}
         <TabButton
           label="내보내기"
-          active={activeTab === "export"}
+          active={visibleActiveTab === "export"}
           onClick={() => setActiveTab("export")}
         />
       </div>
 
       {/* Tab Contents Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {activeTab === "video" && (
+        {visibleActiveTab === "video" && (
           <>
             <InspectorCard title="선택된 클립">
               {selectedClip ? (
@@ -399,7 +395,7 @@ export default function VideoEditorInspector({
           </>
         )}
 
-        {activeTab === "audio" && selectedClip && (selectedClip.type === "audio" || selectedClip.type === "video") && (
+        {visibleActiveTab === "audio" && selectedClip && isAudioVisible && (
           <InspectorCard title="Audio">
             <div className="space-y-4">
               <div className="flex items-center justify-between rounded-none border border-white/10 bg-black/30 p-3">
@@ -433,7 +429,7 @@ export default function VideoEditorInspector({
           </InspectorCard>
         )}
 
-        {activeTab === "text" && selectedClip && (selectedClip.type === "text" || selectedClip.type === "subtitle") && textStyle && (
+        {visibleActiveTab === "text" && selectedClip && isTextVisible && textStyle && (
           <InspectorCard title="Text Style">
             <div className="space-y-4">
               <RangeField
@@ -516,7 +512,7 @@ export default function VideoEditorInspector({
           </InspectorCard>
         )}
 
-        {activeTab === "effects" && selectedClip && (
+        {visibleActiveTab === "effects" && selectedClip && (
           <>
             <InspectorCard title="Effects / Filter">
               <div className="space-y-4">
@@ -664,7 +660,7 @@ export default function VideoEditorInspector({
           </>
         )}
 
-        {activeTab === "export" && (
+        {visibleActiveTab === "export" && (
           <InspectorCard title="Export Settings">
             <div className="space-y-4">
               <div>
@@ -744,6 +740,14 @@ export default function VideoEditorInspector({
             </div>
           </InspectorCard>
         )}
+      </div>
+
+      <div className="flex h-8 shrink-0 items-center justify-between border-t border-white/5 bg-[#151519] px-3 text-[10px] font-bold text-zinc-500">
+        <span>{visibleActiveTab.toUpperCase()}</span>
+        <span>{selectedClip ? selectedClip.type : "NO CLIP"}</span>
+        <span>
+          {currentTime.toFixed(1)}s / {totalDuration}s
+        </span>
       </div>
     </aside>
   );

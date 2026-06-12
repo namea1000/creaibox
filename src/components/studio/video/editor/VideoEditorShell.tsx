@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 
 import { VideoEditorProvider } from "./VideoEditorContext";
 
@@ -15,21 +15,21 @@ import VideoEditorRenderCanvas, {
   type VideoEditorRenderCanvasRef,
 } from "./VideoEditorRenderCanvas";
 
+const DEFAULT_PROJECT_PANEL_WIDTH = 240;
+const DEFAULT_MEDIA_PANEL_WIDTH = 330;
+const DEFAULT_INSPECTOR_PANEL_WIDTH = 360;
+const DEFAULT_TIMELINE_HEIGHT = 320;
+
+const MAX_PROJECT_PANEL_WIDTH = 420;
+const MAX_MEDIA_PANEL_WIDTH = 560;
+const MAX_INSPECTOR_PANEL_WIDTH = 560;
+const MAX_TIMELINE_HEIGHT = 560;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
 export default function VideoEditorShell() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return (
-      <div className="h-[calc(100vh-64px)] bg-[#050507] flex items-center justify-center text-zinc-500 font-black">
-        Loading CreAibox Video Studio...
-      </div>
-    );
-  }
-
   return (
     <VideoEditorProvider>
       <VideoEditorWorkspace />
@@ -39,6 +39,10 @@ export default function VideoEditorShell() {
 
 function VideoEditorWorkspace() {
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [projectPanelWidth, setProjectPanelWidth] = useState(DEFAULT_PROJECT_PANEL_WIDTH);
+  const [mediaPanelWidth, setMediaPanelWidth] = useState(DEFAULT_MEDIA_PANEL_WIDTH);
+  const [inspectorPanelWidth, setInspectorPanelWidth] = useState(DEFAULT_INSPECTOR_PANEL_WIDTH);
+  const [timelineHeight, setTimelineHeight] = useState(DEFAULT_TIMELINE_HEIGHT);
   const renderCanvasRef = useRef<VideoEditorRenderCanvasRef | null>(null);
 
   const handleExportWebm = async () => {
@@ -49,37 +53,156 @@ function VideoEditorWorkspace() {
     await renderCanvasRef.current?.exportMp4(onProgress);
   };
 
+  const startHorizontalResize = (
+    event: React.PointerEvent<HTMLDivElement>,
+    options: {
+      currentSize: number;
+      minSize: number;
+      maxSize: number;
+      onResize: (size: number) => void;
+      direction?: "normal" | "reverse";
+    }
+  ) => {
+    event.preventDefault();
+    const startX = event.clientX;
+    const startSize = options.currentSize;
+    const direction = options.direction === "reverse" ? -1 : 1;
+
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    const handleMove = (moveEvent: PointerEvent) => {
+      const nextSize = startSize + (moveEvent.clientX - startX) * direction;
+      options.onResize(clamp(nextSize, options.minSize, options.maxSize));
+    };
+
+    const handleUp = () => {
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+    };
+
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
+  };
+
+  const startTimelineResize = (event: React.PointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const startY = event.clientY;
+    const startHeight = timelineHeight;
+
+    document.body.style.cursor = "row-resize";
+    document.body.style.userSelect = "none";
+
+    const handleMove = (moveEvent: PointerEvent) => {
+      const nextHeight = startHeight + (startY - moveEvent.clientY);
+      setTimelineHeight(
+        clamp(nextHeight, DEFAULT_TIMELINE_HEIGHT, MAX_TIMELINE_HEIGHT)
+      );
+    };
+
+    const handleUp = () => {
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+    };
+
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
+  };
+
   return (
     <>
       <VideoEditorPlaybackController />
 
       <div className="h-[calc(100vh-64px)] bg-[#000000] text-white p-1 flex flex-col gap-1 overflow-hidden select-none">
-        <div className="flex h-full flex-col gap-1">
+        <div className="flex h-full flex-col">
           {/* Top Panel: 4-Split Grid */}
-          <div className="flex min-h-0 flex-[3] gap-1">
+          <div className="flex min-h-0 flex-1">
             {/* Column 1: Project Tree (FCP Event/Project Browser) */}
-            <div className="w-[240px] shrink-0 bg-[#1b1b1f] border border-white/5 flex flex-col min-h-0 shadow-2xl">
+            <div
+              className="shrink-0 bg-[#1b1b1f] border border-white/5 flex flex-col min-h-0 shadow-2xl rounded-[6px] overflow-hidden"
+              style={{ width: projectPanelWidth }}
+            >
               <VideoEditorProjectPanel />
             </div>
 
+            <ResizeDivider
+              label="프로젝트 영역 너비 조절"
+              onPointerDown={(event) =>
+                startHorizontalResize(event, {
+                  currentSize: projectPanelWidth,
+                  minSize: DEFAULT_PROJECT_PANEL_WIDTH,
+                  maxSize: MAX_PROJECT_PANEL_WIDTH,
+                  onResize: setProjectPanelWidth,
+                })
+              }
+            />
+
             {/* Column 2: Resources & Media Library (CapCut Tabs Style) */}
-            <div className="w-[330px] shrink-0 bg-[#1b1b1f] border border-white/5 flex flex-col min-h-0 shadow-2xl">
+            <div
+              className="shrink-0 bg-[#1b1b1f] border border-white/5 flex flex-col min-h-0 shadow-2xl rounded-[6px] overflow-hidden"
+              style={{ width: mediaPanelWidth }}
+            >
               <VideoEditorSidebar />
             </div>
 
+            <ResizeDivider
+              label="미디어 영역 너비 조절"
+              onPointerDown={(event) =>
+                startHorizontalResize(event, {
+                  currentSize: mediaPanelWidth,
+                  minSize: DEFAULT_MEDIA_PANEL_WIDTH,
+                  maxSize: MAX_MEDIA_PANEL_WIDTH,
+                  onResize: setMediaPanelWidth,
+                })
+              }
+            />
+
             {/* Column 3: Canvas / Player */}
-            <div className="flex-1 bg-[#1b1b1f] border border-white/5 flex flex-col min-h-0 shadow-2xl">
-              <VideoEditorCanvas onOpenExport={() => setIsExportOpen(true)} />
+            <div className="min-w-0 flex-1 bg-[#1b1b1f] border border-white/5 flex flex-col min-h-0 shadow-2xl rounded-[6px] overflow-hidden">
+              <VideoEditorCanvas />
             </div>
 
+            <ResizeDivider
+              label="속성 영역 너비 조절"
+              onPointerDown={(event) =>
+                startHorizontalResize(event, {
+                  currentSize: inspectorPanelWidth,
+                  minSize: DEFAULT_INSPECTOR_PANEL_WIDTH,
+                  maxSize: MAX_INSPECTOR_PANEL_WIDTH,
+                  onResize: setInspectorPanelWidth,
+                  direction: "reverse",
+                })
+              }
+            />
+
             {/* Column 4: Right Inspector */}
-            <div className="w-[360px] shrink-0 bg-[#1b1b1f] border border-white/5 flex flex-col min-h-0 shadow-2xl">
+            <div
+              className="shrink-0 bg-[#1b1b1f] border border-white/5 flex flex-col min-h-0 shadow-2xl rounded-[6px] overflow-hidden"
+              style={{ width: inspectorPanelWidth }}
+            >
               <VideoEditorInspector onOpenExport={() => setIsExportOpen(true)} />
             </div>
           </div>
 
+          <div
+            role="separator"
+            aria-label="타임라인 영역 높이 조절"
+            aria-orientation="horizontal"
+            onPointerDown={startTimelineResize}
+            className="group relative h-1 shrink-0 cursor-row-resize bg-black"
+          >
+            <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-white/0 transition group-hover:bg-cyan-300/70" />
+          </div>
+
           {/* Bottom Panel: Timeline */}
-          <div className="h-[320px] shrink-0 bg-[#1b1b1f] border border-white/5 flex flex-col shadow-2xl">
+          <div
+            className="shrink-0 bg-[#1b1b1f] border border-white/5 flex flex-col shadow-2xl rounded-[6px] overflow-hidden"
+            style={{ height: timelineHeight }}
+          >
             <VideoEditorTimeline />
           </div>
         </div>
@@ -94,5 +217,25 @@ function VideoEditorWorkspace() {
         onExportMp4={handleExportMp4}
       />
     </>
+  );
+}
+
+function ResizeDivider({
+  label,
+  onPointerDown,
+}: {
+  label: string;
+  onPointerDown: (event: React.PointerEvent<HTMLDivElement>) => void;
+}) {
+  return (
+    <div
+      role="separator"
+      aria-label={label}
+      aria-orientation="vertical"
+      onPointerDown={onPointerDown}
+      className="group relative w-1 shrink-0 cursor-col-resize bg-black"
+    >
+      <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-white/0 transition group-hover:bg-cyan-300/70" />
+    </div>
   );
 }

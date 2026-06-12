@@ -8,10 +8,12 @@ import AiAssistantMessageBubble from "./AiAssistantMessageBubble";
 
 type Props = {
   messages: AiAssistantMessage[];
+  isSending?: boolean;
 };
 
 export default function AiAssistantMessageList({
   messages,
+  isSending = false,
 }: Props) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -20,7 +22,7 @@ export default function AiAssistantMessageList({
       behavior: "smooth",
       block: "end",
     });
-  }, [messages]);
+  }, [messages, isSending]);
 
   if (!messages.length) {
     return (
@@ -66,6 +68,23 @@ export default function AiAssistantMessageList({
               message={message}
             />
           ))}
+
+          {isSending && (
+            <div className="flex gap-3 justify-start animate-pulse">
+              <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/10 text-cyan-300">
+                <Bot size={18} className="animate-spin" style={{ animationDuration: '3s' }} />
+              </div>
+
+              <div className="min-w-0 max-w-[82%] rounded-3xl border border-white/10 bg-white/[0.04] px-4 py-3 shadow-lg text-zinc-300 text-sm font-semibold flex items-center gap-1.5">
+                <span>AI가 답변을 생성하는 중입니다</span>
+                <span className="flex gap-0.5">
+                  <span className="animate-bounce inline-block" style={{ animationDelay: '0s' }}>.</span>
+                  <span className="animate-bounce inline-block" style={{ animationDelay: '0.2s' }}>.</span>
+                  <span className="animate-bounce inline-block" style={{ animationDelay: '0.4s' }}>.</span>
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div ref={bottomRef} />

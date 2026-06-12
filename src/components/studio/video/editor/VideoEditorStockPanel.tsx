@@ -6,9 +6,7 @@ import {
   Library,
   Image as ImageIcon,
   Music,
-  Download,
   ExternalLink,
-  Sparkles,
   Plus,
   Filter,
   Grid2X2,
@@ -154,7 +152,7 @@ export default function VideoEditorStockPanel() {
     }
 
     addClipFromMedia({
-      id: item.id + "-" + Date.now(),
+      id: generateStockItemId(item.id),
       type: item.type,
       name: item.title,
       url: mockUrl,
@@ -198,7 +196,7 @@ export default function VideoEditorStockPanel() {
               Stock API 연결 준비 완료 구조
             </div>
             <p className="mt-1 text-xs leading-5 text-cyan-100/70">
-              API Vault 키와 연동하면 검색 결과를 즉시 불러올 수 있습니다. 스톡 아이템의 "+" 버튼을 누르면 타임라인에 바로 추가됩니다.
+              API Vault 키와 연동하면 검색 결과를 즉시 불러올 수 있습니다. 스톡 아이템의 &quot;+&quot; 버튼을 누르면 타임라인에 바로 추가됩니다.
             </p>
           </div>
         </div>
@@ -317,12 +315,10 @@ export default function VideoEditorStockPanel() {
 }
 
 function StockGridCard({ item, onAdd }: { item: StockItem; onAdd: () => void }) {
-  const Icon = getStockIcon(item.type);
-
   return (
     <div className="group overflow-hidden rounded-none border border-white/10 bg-black/30 transition hover:border-cyan-400/50">
       <div className="relative flex aspect-video items-center justify-center bg-gradient-to-br from-zinc-900 via-black to-cyan-950">
-        <Icon size={28} className="text-cyan-200" />
+        <StockTypeIcon type={item.type} size={28} className="text-cyan-200" />
 
         {item.premium && (
           <div className="absolute right-2 top-2 flex items-center gap-1 rounded-none bg-amber-400 px-2 py-1 text-[10px] font-black text-black">
@@ -364,13 +360,11 @@ function StockGridCard({ item, onAdd }: { item: StockItem; onAdd: () => void }) 
 }
 
 function StockListCard({ item, onAdd }: { item: StockItem; onAdd: () => void }) {
-  const Icon = getStockIcon(item.type);
-
   return (
     <div className="rounded-none border border-white/10 bg-black/30 p-3 hover:border-cyan-400/50">
       <div className="flex items-center gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-none bg-cyan-400/10 text-cyan-200">
-          <Icon size={20} />
+          <StockTypeIcon type={item.type} size={20} />
         </div>
 
         <div className="min-w-0 flex-1">
@@ -399,10 +393,22 @@ function StockListCard({ item, onAdd }: { item: StockItem; onAdd: () => void }) 
   );
 }
 
-function getStockIcon(type: StockItem["type"]) {
-  if (type === "video") return Film;
-  if (type === "audio") return Music;
-  return ImageIcon;
+function StockTypeIcon({
+  type,
+  size = 20,
+  className,
+}: {
+  type: StockItem["type"];
+  size?: number;
+  className?: string;
+}) {
+  if (type === "video") return <Film size={size} className={className} />;
+  if (type === "audio") return <Music size={size} className={className} />;
+  return <ImageIcon size={size} className={className} />;
+}
+
+function generateStockItemId(itemId: string) {
+  return itemId + "-" + Date.now();
 }
 
 function buildProviderSearchUrl(provider: StockProvider, search: string) {

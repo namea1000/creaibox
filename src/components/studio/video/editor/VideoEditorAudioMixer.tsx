@@ -81,10 +81,10 @@ export default function VideoEditorAudioMixer() {
     );
   }
 
-  const fadeIn = (selectedClip as any).fadeIn ?? 0;
-  const fadeOut = (selectedClip as any).fadeOut ?? 0;
-  const audioPan = (selectedClip as any).audioPan ?? 0;
-  const audioGain = (selectedClip as any).audioGain ?? 1;
+  const fadeIn = selectedClip.fadeIn ?? 0;
+  const fadeOut = selectedClip.fadeOut ?? 0;
+  const audioPan = selectedClip.audioPan ?? 0;
+  const audioGain = selectedClip.audioGain ?? 1;
 
   return (
     <div>
@@ -145,7 +145,7 @@ export default function VideoEditorAudioMixer() {
             step={0.05}
             display={`${Math.round(audioGain * 100)}%`}
             onChange={(value) =>
-              updateClip(selectedClip.id, { audioGain: value } as any)
+              updateClip(selectedClip.id, { audioGain: value })
             }
           />
 
@@ -164,7 +164,7 @@ export default function VideoEditorAudioMixer() {
                   : `R ${Math.round(audioPan * 100)}%`
             }
             onChange={(value) =>
-              updateClip(selectedClip.id, { audioPan: value } as any)
+              updateClip(selectedClip.id, { audioPan: value })
             }
           />
         </AudioSection>
@@ -179,7 +179,7 @@ export default function VideoEditorAudioMixer() {
             step={0.1}
             display={`${fadeIn.toFixed(1)}s`}
             onChange={(value) =>
-              updateClip(selectedClip.id, { fadeIn: value } as any)
+              updateClip(selectedClip.id, { fadeIn: value })
             }
           />
 
@@ -192,7 +192,7 @@ export default function VideoEditorAudioMixer() {
             step={0.1}
             display={`${fadeOut.toFixed(1)}s`}
             onChange={(value) =>
-              updateClip(selectedClip.id, { fadeOut: value } as any)
+              updateClip(selectedClip.id, { fadeOut: value })
             }
           />
 
@@ -202,7 +202,7 @@ export default function VideoEditorAudioMixer() {
               label="부드러운 시작"
               desc="Fade In 1s"
               onClick={() =>
-                updateClip(selectedClip.id, { fadeIn: 1 } as any)
+                updateClip(selectedClip.id, { fadeIn: 1 })
               }
             />
 
@@ -211,7 +211,7 @@ export default function VideoEditorAudioMixer() {
               label="부드러운 종료"
               desc="Fade Out 1s"
               onClick={() =>
-                updateClip(selectedClip.id, { fadeOut: 1 } as any)
+                updateClip(selectedClip.id, { fadeOut: 1 })
               }
             />
 
@@ -225,7 +225,7 @@ export default function VideoEditorAudioMixer() {
                   fadeIn: 1,
                   fadeOut: 1.5,
                   muted: false,
-                } as any)
+                })
               }
             />
 
@@ -241,7 +241,7 @@ export default function VideoEditorAudioMixer() {
                   fadeOut: 0,
                   audioPan: 0,
                   audioGain: 1,
-                } as any)
+                })
               }
             />
           </div>
@@ -265,7 +265,7 @@ export default function VideoEditorAudioMixer() {
               onClick={() =>
                 updateClip(selectedClip.id, {
                   waveform: buildFakeWaveform(`${selectedClip.id}-${Date.now()}`),
-                } as any)
+                })
               }
             />
 
@@ -276,7 +276,7 @@ export default function VideoEditorAudioMixer() {
               onClick={() =>
                 updateClip(selectedClip.id, {
                   waveform: [],
-                } as any)
+                })
               }
             />
           </div>

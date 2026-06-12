@@ -17,6 +17,7 @@ import type { VideoEditorClip, VideoEditorMediaItem } from "./VideoEditorContext
 export default function VideoEditorPreviewPlayer() {
   const {
     mediaItems,
+    tracks,
     clips,
     selectedClipId,
     selectClip,
@@ -34,11 +35,30 @@ export default function VideoEditorPreviewPlayer() {
     [clips, currentTime]
   );
 
-  const mediaClips = visibleClips.filter(
+  const mediaClips = useMemo(() => {
+    const trackOrder = new Map(tracks.map((track, index) => [track.id, index]));
+
+    return visibleClips
+      .filter(
+        (clip) =>
+          clip.type === "video" ||
+          clip.type === "image" ||
+          clip.type === "audio" ||
+          clip.type === "visualizer"
+      )
+      .sort((a, b) => {
+        const aTrackIndex = trackOrder.get(a.trackId) ?? Number.MAX_SAFE_INTEGER;
+        const bTrackIndex = trackOrder.get(b.trackId) ?? Number.MAX_SAFE_INTEGER;
+
+        if (aTrackIndex !== bTrackIndex) return bTrackIndex - aTrackIndex;
+        return a.startTime - b.startTime;
+      });
+  }, [tracks, visibleClips]);
+
+  const hasVisiblePictureLayer = mediaClips.some(
     (clip) =>
       clip.type === "video" ||
       clip.type === "image" ||
-      clip.type === "audio" ||
       clip.type === "visualizer"
   );
 
@@ -63,6 +83,7 @@ export default function VideoEditorPreviewPlayer() {
               isPlaying={isPlaying}
               active={selectedClipId === clip.id}
               zIndex={10 + index}
+              showAudioPlaceholder={!hasVisiblePictureLayer}
               onSelect={() => selectClip(clip.id)}
             />
           );
@@ -96,6 +117,7 @@ function PreviewMediaLayer({
   isPlaying,
   active,
   zIndex,
+  showAudioPlaceholder,
   onSelect,
 }: {
   clip: VideoEditorClip;
@@ -104,6 +126,7 @@ function PreviewMediaLayer({
   isPlaying: boolean;
   active: boolean;
   zIndex: number;
+  showAudioPlaceholder: boolean;
   onSelect: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -303,10 +326,10 @@ function PreviewMediaLayer({
     clip.duration,
     trimStart,
     trimEnd,
-    (clip as any).fadeIn,
-    (clip as any).fadeOut,
-    (clip as any).audioGain,
-    (clip as any).audioPan,
+    clip.fadeIn,
+    clip.fadeOut,
+    clip.audioGain,
+    clip.audioPan,
   ]);
 
   useEffect(() => {
@@ -344,14 +367,18 @@ function PreviewMediaLayer({
     clip.duration,
     trimStart,
     trimEnd,
-    (clip as any).fadeIn,
-    (clip as any).fadeOut,
-    (clip as any).audioGain,
-    (clip as any).audioPan,
+    clip.fadeIn,
+    clip.fadeOut,
+    clip.audioGain,
+    clip.audioPan,
   ]);
 
   const sharedClass = `absolute flex items-center justify-center overflow-hidden bg-black ${active ? "ring-4 ring-cyan-400/70" : ""
     }`;
+
+  if (media?.type === "audio" && !showAudioPlaceholder) {
+    return media.url ? <audio ref={audioRef} src={media.url} /> : null;
+  }
 
   if (clip.type === "visualizer" || !media) {
     return (
@@ -568,7 +595,7 @@ function getTransitionStyle(clip: VideoEditorClip, currentTime: number) {
   let scale = 1;
   let blur = 0;
   let translateX = 0;
-  let translateY = 0;
+  const translateY = 0;
 
   if (isIn) {
     if (clip.transitionIn === "fade") opacity = inProgress;

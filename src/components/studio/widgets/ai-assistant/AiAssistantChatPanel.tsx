@@ -29,10 +29,11 @@ type Props = {
     patch: Partial<AiAssistantConversation>
   ) => void;
 
+  isSending?: boolean;
+
   onAppendMessages: (
     conversationId: string,
-    userContent: string,
-    assistantContent: string
+    userContent: string
   ) => void;
 };
 
@@ -121,6 +122,7 @@ function buildDemoAssistantResponse(message: string, studioType: string) {
 export default function AiAssistantChatPanel({
   conversation,
   folders,
+  isSending = false,
   onUpdateConversation,
   onAppendMessages,
 }: Props) {
@@ -158,12 +160,7 @@ export default function AiAssistantChatPanel({
   const handleSubmit = (message: string) => {
     if (isLimitReached) return;
 
-    const assistantResponse = buildDemoAssistantResponse(
-      message,
-      conversation.studio_type
-    );
-
-    onAppendMessages(conversation.id, message, assistantResponse);
+    onAppendMessages(conversation.id, message);
   };
 
   return (
@@ -281,7 +278,10 @@ export default function AiAssistantChatPanel({
       </div>
 
       {/* Messages */}
-      <AiAssistantMessageList messages={conversation.messages} />
+      <AiAssistantMessageList
+        messages={conversation.messages}
+        isSending={isSending}
+      />
 
       {/* Limit Notice */}
       {usagePercent >= 80 && !isLimitReached && (
@@ -304,12 +304,14 @@ export default function AiAssistantChatPanel({
 
       {/* Input */}
       <AiAssistantInput
-        disabled={isLimitReached}
+        disabled={isLimitReached || isSending}
         onSubmit={handleSubmit}
         placeholder={
-          isLimitReached
-            ? "한도에 도달한 채팅창입니다."
-            : "AI Assistant에게 요청하기..."
+          isSending
+            ? "AI Assistant가 응답을 생성하는 중입니다..."
+            : isLimitReached
+              ? "한도에 도달한 채팅창입니다."
+              : "AI Assistant에게 요청하기..."
         }
       />
     </section>

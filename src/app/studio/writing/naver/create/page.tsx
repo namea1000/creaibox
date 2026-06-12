@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import NaverCreateTab from "@/components/writing/naver/tabs/NaverCreateTab";
 import { createClient } from "@/utils/supabase/client";
 import type { User } from "@supabase/supabase-js";
@@ -10,6 +11,10 @@ import {
   getUserAiVaultConfig,
 } from "@/lib/client/api-vault";
 import { naverManuscriptStore } from "@/lib/stores/manuscripts";
+import {
+  createContentPlannerOutput,
+  updateContentPlannerItemStatus,
+} from "@/lib/content-planner/supabase";
 
 const AUTH_RETRY_DELAY_MS = 700;
 const AUTH_RETRY_ATTEMPTS = 3;
@@ -107,6 +112,23 @@ function getLengthPrompt(wordCountGoal: string) {
 }
 
 export default function NaverCreatePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[600px] w-full items-center justify-center bg-[#0b0b0d]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+          <span className="font-black text-emerald-400 tracking-widest text-xs uppercase italic">
+            Naver Studio Loading...
+          </span>
+        </div>
+      </div>
+    }>
+      <NaverCreatePageContent />
+    </Suspense>
+  );
+}
+
+function NaverCreatePageContent() {
   const supabase = useMemo(() => createClient(), []);
 
   const resolveAuthUser = async (): Promise<User | null> => {
@@ -147,6 +169,8 @@ export default function NaverCreatePage() {
   const [editLink, setEditLink] = useState<string>("");
   const [generationStatusMessage, setGenerationStatusMessage] = useState("");
   const [generationErrorMessage, setGenerationErrorMessage] = useState("");
+  const [itemId, setItemId] = useState<string | null>(null);
+  const [campaignId, setCampaignId] = useState<string | null>(null);
 
   useEffect(() => {
     const getProfile = async () => {
@@ -167,6 +191,31 @@ export default function NaverCreatePage() {
 
     void getProfile();
   }, [supabase]);
+
+  const searchParams = useSearchParams();
+  const [hasAutoRun, setHasAutoRun] = useState(false);
+
+  useEffect(() => {
+    const source = searchParams.get("source");
+    if (source === "content-planner") {
+      const keyword = searchParams.get("keyword");
+      const titleParam = searchParams.get("title");
+      const contentTypeParam = searchParams.get("contentType");
+      const itemIdParam = searchParams.get("itemId");
+      const campaignIdParam = searchParams.get("campaignId");
+
+      if (itemIdParam) setItemId(itemIdParam);
+      if (campaignIdParam) setCampaignId(campaignIdParam);
+
+      if (keyword && !hasAutoRun) {
+        setTargetKeyword(keyword);
+        if (titleParam) setTitle(titleParam);
+        if (contentTypeParam) setPostType(contentTypeParam);
+        setHasAutoRun(true);
+        void handleAiGenerateLive(keyword);
+      }
+    }
+  }, [searchParams, hasAutoRun]);
 
   const saveToSupabase = async (
     currentContent: string,
@@ -223,6 +272,26 @@ export default function NaverCreatePage() {
         return;
       }
 
+      if (itemId && campaignId && insertedRow) {
+        try {
+          const outputPayload = {
+            campaignId: campaignId,
+            itemId: itemId,
+            outputType: "naver_blog" as const,
+            platform: "네이버 블로그" as const,
+            targetRoute: `/studio/writing/naver/list/${insertedRow.id}`,
+            title: currentTitle || title || "제목 없음",
+            status: "generated" as const,
+            generatedPostId: insertedRow.id,
+            metadata: {}
+          };
+          await createContentPlannerOutput(outputPayload);
+          await updateContentPlannerItemStatus(itemId, "generated");
+        } catch (linkErr) {
+          console.error("Failed to link planner output:", linkErr);
+        }
+      }
+
       if (insertedRow?.id) {
         setEditLink(`/studio/writing/naver/list/${insertedRow.id}`);
 
@@ -253,8 +322,9 @@ export default function NaverCreatePage() {
     }
   };
 
-  const handleAiGenerateLive = async () => {
-    if (!targetKeyword.trim()) {
+  const handleAiGenerateLive = async (overrideKeyword?: string) => {
+    const activeKeyword = overrideKeyword || targetKeyword;
+    if (!activeKeyword.trim()) {
       alert("타겟 키워드를 기입해 주십시오, 사장님!");
       return;
     }
@@ -278,7 +348,7 @@ export default function NaverCreatePage() {
 
       const prompt = `
         너는 블로그 스마트블록 노출 전문 탑 마케터이다. 조건에 부합하는 고품질 원고를 빌드하라.
-        - 키워드: ${targetKeyword}
+        - 키워드: ${activeKeyword}
         - 어조: ${selectedTone}
         - 유형: ${postType}
         - 길이 규격: ${lengthPrompt.label}
@@ -350,7 +420,7 @@ export default function NaverCreatePage() {
 
       const parsedData = parseGeminiJson(text);
 
-      const finalTitle = parsedData.title || `[스마트] ${targetKeyword} 핵심 분석`;
+      const finalTitle = parsedData.title || `[스마트] ${activeKeyword} 핵심 분석`;
       const finalContent = parsedData.content || "";
 
       setTitle(finalTitle);

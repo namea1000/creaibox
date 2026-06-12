@@ -15,7 +15,6 @@ import {
   Trash2,
   RefreshCw,
   ShieldCheck,
-  ExternalLink,
   Grid2X2,
   List,
   Lock,
@@ -134,7 +133,7 @@ export default function VideoEditorStoragePanel() {
     }
 
     addClipFromMedia({
-      id: item.id + "-" + Date.now(),
+      id: generateStorageItemId(item.id),
       type: item.type,
       name: item.name,
       url: mockUrl,
@@ -187,7 +186,7 @@ export default function VideoEditorStoragePanel() {
               저장소 연결 구조 준비
             </div>
             <p className="mt-1 text-xs leading-5 text-emerald-100/70">
-              Supabase Storage 버킷 및 외부 클라우드 연동 구조입니다. 항목의 "+" 버튼을 누르면 타임라인에 즉시 추가됩니다.
+              Supabase Storage 버킷 및 외부 클라우드 연동 구조입니다. 항목의 &quot;+&quot; 버튼을 누르면 타임라인에 즉시 추가됩니다.
             </p>
           </div>
         </div>
@@ -333,12 +332,10 @@ export default function VideoEditorStoragePanel() {
 }
 
 function StorageGridCard({ item, onAdd }: { item: StorageItem; onAdd: () => void }) {
-  const Icon = getStorageIcon(item.type);
-
   return (
     <div className="group overflow-hidden rounded-none border border-white/10 bg-black/30 transition hover:border-emerald-400/50">
       <div className="relative flex aspect-video items-center justify-center bg-gradient-to-br from-zinc-900 via-black to-emerald-950">
-        <Icon size={28} className="text-emerald-200" />
+        <StorageTypeIcon type={item.type} size={28} className="text-emerald-200" />
 
         <div className="absolute left-2 top-2 rounded-none bg-black/70 px-2 py-1 text-[10px] font-black uppercase text-white/70">
           {item.provider}
@@ -377,13 +374,11 @@ function StorageGridCard({ item, onAdd }: { item: StorageItem; onAdd: () => void
 }
 
 function StorageListCard({ item, onAdd }: { item: StorageItem; onAdd: () => void }) {
-  const Icon = getStorageIcon(item.type);
-
   return (
     <div className="rounded-none border border-white/10 bg-black/30 p-3 hover:border-emerald-400/50">
       <div className="flex items-center gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-none bg-emerald-400/10 text-emerald-200">
-          <Icon size={20} />
+          <StorageTypeIcon type={item.type} size={20} />
         </div>
 
         <div className="min-w-0 flex-1">
@@ -415,10 +410,22 @@ function StorageListCard({ item, onAdd }: { item: StorageItem; onAdd: () => void
   );
 }
 
-function getStorageIcon(type: StorageItem["type"]) {
-  if (type === "video") return FileVideo;
-  if (type === "audio") return FileAudio;
-  return FileImage;
+function StorageTypeIcon({
+  type,
+  size = 20,
+  className,
+}: {
+  type: StorageItem["type"];
+  size?: number;
+  className?: string;
+}) {
+  if (type === "video") return <FileVideo size={size} className={className} />;
+  if (type === "audio") return <FileAudio size={size} className={className} />;
+  return <FileImage size={size} className={className} />;
+}
+
+function generateStorageItemId(itemId: string) {
+  return itemId + "-" + Date.now();
 }
 
 function StatCard({

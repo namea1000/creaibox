@@ -17,7 +17,11 @@ export default function VideoEditorPlaybackController() {
     selectClip,
     removeClip,
     duplicateClip,
+    copyClip,
+    pasteClip,
     splitClip,
+    undo,
+    redo,
   } = useVideoEditor();
 
   const frameRef = useRef<number | null>(null);
@@ -133,6 +137,37 @@ export default function VideoEditorPlaybackController() {
 
       if (isTyping) return;
 
+      const isCommandKey = event.metaKey || event.ctrlKey;
+      const key = event.key.toLowerCase();
+
+      if (isCommandKey && key === "z") {
+        event.preventDefault();
+        if (event.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+        return;
+      }
+
+      if (isCommandKey && key === "y") {
+        event.preventDefault();
+        redo();
+        return;
+      }
+
+      if (isCommandKey && key === "c" && selectedClipId) {
+        event.preventDefault();
+        copyClip(selectedClipId);
+        return;
+      }
+
+      if (isCommandKey && key === "v") {
+        event.preventDefault();
+        pasteClip(playbackTimeRef.current);
+        return;
+      }
+
       if (event.code === "Space") {
         event.preventDefault();
         setIsPlaying(!isPlaying);
@@ -169,12 +204,12 @@ export default function VideoEditorPlaybackController() {
         removeClip(selectedClipId);
       }
 
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "d" && selectedClipId) {
+      if (isCommandKey && key === "d" && selectedClipId) {
         event.preventDefault();
         duplicateClip(selectedClipId);
       }
 
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "b" && selectedClipId) {
+      if (isCommandKey && key === "b" && selectedClipId) {
         event.preventDefault();
         splitClip(selectedClipId);
       }
@@ -190,7 +225,11 @@ export default function VideoEditorPlaybackController() {
     setCurrentTime,
     removeClip,
     duplicateClip,
+    copyClip,
+    pasteClip,
     splitClip,
+    undo,
+    redo,
   ]);
 
   return null;

@@ -6,10 +6,8 @@ import {
   Captions,
   Type,
   Sparkles,
-  Settings,
   Waves,
   Move,
-  FolderOpen,
 } from "lucide-react";
 
 import type { TimelineTrack } from "./types";

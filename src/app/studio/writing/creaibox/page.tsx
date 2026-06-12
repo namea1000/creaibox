@@ -34,6 +34,13 @@ export default function CreaiboxWritingHomePage() {
 
   const menus = [
     {
+      title: "AI 포스팅 기획",
+      desc: "글을 작성하기 전 주제, 키워드, 타깃 독자 및 목차를 설계합니다.",
+      href: "/studio/writing/creaibox/plan",
+      icon: Sparkles,
+      color: "from-cyan-500 to-blue-600",
+    },
+    {
       title: "AI 포스팅 글쓰기",
       desc: "키워드만 입력하면 SEO 블로그 글을 자동 생성합니다.",
       href: "/studio/writing/creaibox/create",

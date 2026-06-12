@@ -1,18 +1,29 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import AiAssistantSidebar from "./AiAssistantSidebar";
 import AiAssistantChatPanel from "./AiAssistantChatPanel";
 
 export type AiAssistantFolder = {
   id: string;
+  user_id?: string;
   name: string;
+  description?: string | null;
   color: string;
   icon?: string;
+  sort_order?: number;
   is_pinned?: boolean;
   is_deleted?: boolean;
   created_at?: string;
   updated_at?: string;
+};
+
+export type AiAssistantAction = {
+  id: string;
+  label: string;
+  actionType: string;
+  payload?: Record<string, unknown>;
+  status?: "pending" | "applied" | "failed" | "cancelled";
 };
 
 export type AiAssistantMessage = {
@@ -24,16 +35,9 @@ export type AiAssistantMessage = {
   actions?: AiAssistantAction[];
 };
 
-export type AiAssistantAction = {
-  id: string;
-  label: string;
-  actionType: string;
-  payload?: Record<string, unknown>;
-  status?: "pending" | "applied" | "failed" | "cancelled";
-};
-
 export type AiAssistantConversation = {
   id: string;
+  user_id?: string;
   folder_id: string | null;
   title: string;
   description?: string | null;
@@ -47,9 +51,8 @@ export type AiAssistantConversation = {
   messages: AiAssistantMessage[];
   agents_used?: string[];
   context_summary?: string | null;
+  search_text?: string | null;
   is_closed: boolean;
-  closed_reason?: string | null;
-  closed_at?: string | null;
   is_pinned: boolean;
   is_archived: boolean;
   is_deleted: boolean;
@@ -57,182 +60,113 @@ export type AiAssistantConversation = {
   updated_at: string;
 };
 
-const nowIso = () => new Date().toISOString();
+function normalizeMessages(value: unknown): AiAssistantMessage[] {
+  if (!Array.isArray(value)) return [];
 
-const mockFolders: AiAssistantFolder[] = [
-  {
-    id: "folder-general",
-    name: "기본",
-    color: "#06b6d4",
-    icon: "bot",
-    is_pinned: true,
-    created_at: nowIso(),
-    updated_at: nowIso(),
-  },
-  {
-    id: "folder-writing",
-    name: "글쓰기",
-    color: "#3b82f6",
-    icon: "writing",
-    created_at: nowIso(),
-    updated_at: nowIso(),
-  },
-  {
-    id: "folder-seo",
-    name: "SEO / 발행",
-    color: "#22c55e",
-    icon: "seo",
-    created_at: nowIso(),
-    updated_at: nowIso(),
-  },
-  {
-    id: "folder-music",
-    name: "음악 / Suno",
-    color: "#ec4899",
-    icon: "music",
-    created_at: nowIso(),
-    updated_at: nowIso(),
-  },
-  {
-    id: "folder-research",
-    name: "리서치",
-    color: "#a855f7",
-    icon: "research",
-    created_at: nowIso(),
-    updated_at: nowIso(),
-  },
-];
+  return value.filter((item): item is AiAssistantMessage => {
+    return (
+      typeof item === "object" &&
+      item !== null &&
+      "id" in item &&
+      "role" in item &&
+      "content" in item
+    );
+  });
+}
 
-const mockConversations: AiAssistantConversation[] = [
-  {
-    id: "conv-welcome",
-    folder_id: "folder-general",
-    title: "AI Assistant 시작하기",
-    description: "CreAIbox 멀티 에이전트 허브 기본 채팅",
-    studio_type: "general",
-    page_path: "/studio",
-    plan_key: "free",
-    max_chars_limit: 300000,
-    total_chars: 1340,
-    conversation_count: 2,
-    message_count: 4,
-    agents_used: ["router", "writing", "seo"],
-    context_summary: "사용자가 CreAIbox AI Assistant 초기 설계를 진행 중입니다.",
-    is_closed: false,
-    is_pinned: true,
-    is_archived: false,
-    is_deleted: false,
-    created_at: nowIso(),
-    updated_at: nowIso(),
-    messages: [
-      {
-        id: "msg-1",
-        role: "system",
-        content:
-          "AI Assistant는 CreAIbox 전체 스튜디오에서 사용하는 멀티 에이전트 작업 허브입니다.",
-        created_at: nowIso(),
-      },
-      {
-        id: "msg-2",
-        role: "user",
-        content: "글쓰기 채팅을 만들고 SEO까지 같이 점검하고 싶어.",
-        created_at: nowIso(),
-      },
-      {
-        id: "msg-3",
-        role: "assistant",
-        content:
-          "좋습니다. 이 채팅창에서는 Writing Agent와 SEO Agent를 함께 사용해 글 구조, 제목, 메타설명, 키워드, FAQ, 발행 전 점검까지 도와줄 수 있습니다.",
-        created_at: nowIso(),
-        agents: ["writing", "seo"],
-        actions: [
-          {
-            id: "action-1",
-            label: "SEO 점검 시작",
-            actionType: "run_seo_audit",
-            status: "pending",
-          },
-          {
-            id: "action-2",
-            label: "제목 개선",
-            actionType: "improve_title",
-            status: "pending",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "conv-writing",
-    folder_id: "folder-writing",
-    title: "글쓰기 채팅",
-    description: "블로그 원고 구조와 문장 개선",
-    studio_type: "writing",
-    page_path: "/studio/writing/creaibox/create",
-    plan_key: "free",
-    max_chars_limit: 300000,
-    total_chars: 108420,
-    conversation_count: 36,
-    message_count: 72,
-    agents_used: ["writing", "seo", "thumbnail"],
-    context_summary: "블로그 글쓰기와 SEO 발행 준비 중심의 대화입니다.",
-    is_closed: false,
-    is_pinned: true,
-    is_archived: false,
-    is_deleted: false,
-    created_at: nowIso(),
-    updated_at: nowIso(),
-    messages: [
-      {
-        id: "msg-w-1",
-        role: "assistant",
-        content:
-          "글쓰기 채팅입니다. 현재 채팅창은 30만자 한도 중 약 10.8만자를 사용했습니다.",
-        created_at: nowIso(),
-        agents: ["writing"],
-      },
-    ],
-  },
-  {
-    id: "conv-suno",
-    folder_id: "folder-music",
-    title: "Suno 가사 채팅",
-    description: "Suno 프롬프트와 유튜브 제목 생성",
-    studio_type: "music",
-    page_path: "/studio/music/lyrics",
-    plan_key: "free",
-    max_chars_limit: 300000,
-    total_chars: 48200,
-    conversation_count: 18,
-    message_count: 36,
-    agents_used: ["music"],
-    is_closed: false,
-    is_pinned: false,
-    is_archived: false,
-    is_deleted: false,
-    created_at: nowIso(),
-    updated_at: nowIso(),
-    messages: [
-      {
-        id: "msg-m-1",
-        role: "assistant",
-        content:
-          "Suno 가사 채팅입니다. 장르, 분위기, 보컬 스타일을 기반으로 가사와 프롬프트를 개선할 수 있습니다.",
-        created_at: nowIso(),
-        agents: ["music"],
-      },
-    ],
-  },
-];
+function normalizeConversation(item: any): AiAssistantConversation {
+  return {
+    ...item,
+    folder_id: item.folder_id ?? null,
+    description: item.description ?? null,
+    page_path: item.page_path ?? null,
+    plan_key: item.plan_key ?? "free",
+    max_chars_limit: item.max_chars_limit ?? 300000,
+    total_chars: item.total_chars ?? 0,
+    conversation_count: item.conversation_count ?? 0,
+    message_count: item.message_count ?? 0,
+    messages: normalizeMessages(item.messages),
+    agents_used: Array.isArray(item.agents_used) ? item.agents_used : [],
+    is_closed: Boolean(item.is_closed),
+    is_pinned: Boolean(item.is_pinned),
+    is_archived: Boolean(item.is_archived),
+    is_deleted: Boolean(item.is_deleted),
+  };
+}
 
 export default function AiAssistantPanel() {
-  const [folders, setFolders] = useState<AiAssistantFolder[]>(mockFolders);
-  const [conversations, setConversations] =
-    useState<AiAssistantConversation[]>(mockConversations);
-  const [activeFolderId, setActiveFolderId] = useState<string>("folder-general");
-  const [activeConversationId, setActiveConversationId] =
-    useState<string>("conv-welcome");
+  const [folders, setFolders] = useState<AiAssistantFolder[]>([]);
+  const [conversations, setConversations] = useState<AiAssistantConversation[]>([]);
+  const [activeFolderId, setActiveFolderId] = useState<string>("all");
+  const [activeConversationId, setActiveConversationId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const fetchFolders = useCallback(async () => {
+    const res = await fetch("/api/ai-assistant/folders", {
+      cache: "no-store",
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      throw new Error(json?.error ?? "폴더를 불러오지 못했습니다.");
+    }
+
+    setFolders(json.folders ?? []);
+  }, []);
+
+  const fetchConversations = useCallback(async () => {
+    const params = new URLSearchParams();
+
+    if (activeFolderId) params.set("folder_id", activeFolderId);
+    if (searchQuery.trim()) params.set("search", searchQuery.trim());
+
+    const res = await fetch(`/api/ai-assistant/conversations?${params.toString()}`, {
+      cache: "no-store",
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      throw new Error(json?.error ?? "채팅창을 불러오지 못했습니다.");
+    }
+
+    const nextConversations: AiAssistantConversation[] =
+      (json.conversations ?? []).map(normalizeConversation);
+
+    setConversations(nextConversations);
+
+    setActiveConversationId((prev) => {
+      if (prev && nextConversations.some((item) => item.id === prev)) {
+        return prev;
+      }
+
+      return nextConversations[0]?.id ?? "";
+    });
+  }, [activeFolderId, searchQuery]);
+
+  const loadInitialData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setErrorMessage("");
+
+      await fetchFolders();
+      await fetchConversations();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "AI Assistant 데이터를 불러오지 못했습니다."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchFolders, fetchConversations]);
+
+  useEffect(() => {
+    void loadInitialData();
+  }, [loadInitialData]);
 
   const activeConversation = useMemo(() => {
     return (
@@ -242,175 +176,212 @@ export default function AiAssistantPanel() {
     );
   }, [activeConversationId, conversations]);
 
-  const filteredConversations = useMemo(() => {
-    const keyword = searchQuery.trim().toLowerCase();
+  const createFolder = async () => {
+    const name = window.prompt("새 폴더 이름을 입력하세요.", "새 폴더");
+    if (!name?.trim()) return;
 
-    return conversations
-      .filter((conversation) => !conversation.is_deleted)
-      .filter((conversation) => {
-        if (activeFolderId === "all") return true;
-        if (activeFolderId === "pinned") return conversation.is_pinned;
-        if (activeFolderId === "archived") return conversation.is_archived;
-        return conversation.folder_id === activeFolderId;
-      })
-      .filter((conversation) => {
-        if (!keyword) return true;
+    try {
+      setErrorMessage("");
 
-        const messageText = conversation.messages
-          .map((message) => message.content)
-          .join(" ")
-          .toLowerCase();
-
-        return (
-          conversation.title.toLowerCase().includes(keyword) ||
-          (conversation.description ?? "").toLowerCase().includes(keyword) ||
-          messageText.includes(keyword)
-        );
-      })
-      .sort((a, b) => {
-        if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
-        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      const res = await fetch("/api/ai-assistant/folders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          color: "#06b6d4",
+          icon: "folder",
+        }),
       });
-  }, [activeFolderId, conversations, searchQuery]);
 
-  const createFolder = () => {
-    const folderName = `새 폴더 ${folders.length + 1}`;
+      const json = await res.json();
 
-    const nextFolder: AiAssistantFolder = {
-      id: `folder-${crypto.randomUUID()}`,
-      name: folderName,
-      color: "#06b6d4",
-      icon: "folder",
-      is_pinned: false,
-      is_deleted: false,
-      created_at: nowIso(),
-      updated_at: nowIso(),
-    };
+      if (!res.ok) {
+        throw new Error(json?.error ?? "폴더 생성에 실패했습니다.");
+      }
 
-    setFolders((prev) => [...prev, nextFolder]);
-    setActiveFolderId(nextFolder.id);
+      setFolders((prev) => [...prev, json.folder]);
+      setActiveFolderId(json.folder.id);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "폴더 생성에 실패했습니다.");
+    }
   };
 
-  const createConversation = () => {
+  const createConversation = async () => {
+    const title = window.prompt("새 채팅창 이름을 입력하세요.", "새 AI 채팅");
+    if (!title?.trim()) return;
+
     const targetFolderId =
       activeFolderId === "all" || activeFolderId === "pinned" || activeFolderId === "archived"
-        ? "folder-general"
+        ? null
         : activeFolderId;
 
-    const nextConversation: AiAssistantConversation = {
-      id: `conv-${crypto.randomUUID()}`,
-      folder_id: targetFolderId,
-      title: "새 AI 채팅",
-      description: "새로 생성한 AI Assistant 채팅창",
-      studio_type: "general",
-      page_path: typeof window !== "undefined" ? window.location.pathname : null,
-      plan_key: "free",
-      max_chars_limit: 300000,
-      total_chars: 0,
-      conversation_count: 0,
-      message_count: 0,
-      messages: [
-        {
-          id: `msg-${crypto.randomUUID()}`,
-          role: "assistant",
-          content:
-            "새 채팅창입니다. 글쓰기, SEO, 음악, 리서치, 썸네일 작업을 요청할 수 있습니다.",
-          created_at: nowIso(),
-          agents: ["router"],
-        },
-      ],
-      agents_used: ["router"],
-      context_summary: null,
-      is_closed: false,
-      is_pinned: false,
-      is_archived: false,
-      is_deleted: false,
-      created_at: nowIso(),
-      updated_at: nowIso(),
-    };
+    try {
+      setErrorMessage("");
 
-    setConversations((prev) => [nextConversation, ...prev]);
-    setActiveConversationId(nextConversation.id);
-    setActiveFolderId(targetFolderId);
+      const res = await fetch("/api/ai-assistant/conversations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: title.trim(),
+          folder_id: targetFolderId,
+          studio_type: "general",
+          page_path: typeof window !== "undefined" ? window.location.pathname : null,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json?.error ?? "채팅창 생성에 실패했습니다.");
+      }
+
+      const nextConversation = normalizeConversation(json.conversation);
+
+      setConversations((prev) => [nextConversation, ...prev]);
+      setActiveConversationId(nextConversation.id);
+
+      if (nextConversation.folder_id) {
+        setActiveFolderId(nextConversation.folder_id);
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "채팅창 생성에 실패했습니다.");
+    }
   };
 
-  const updateConversation = (
+  const updateConversation = async (
     conversationId: string,
     patch: Partial<AiAssistantConversation>
   ) => {
-    setConversations((prev) =>
-      prev.map((conversation) =>
-        conversation.id === conversationId
-          ? {
-            ...conversation,
-            ...patch,
-            updated_at: nowIso(),
-          }
-          : conversation
-      )
-    );
+    try {
+      setErrorMessage("");
+
+      const res = await fetch(`/api/ai-assistant/conversations/${conversationId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(patch),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json?.error ?? "채팅창 수정에 실패했습니다.");
+      }
+
+      const nextConversation = normalizeConversation(json.conversation);
+
+      setConversations((prev) =>
+        patch.is_deleted
+          ? prev.filter((item) => item.id !== conversationId)
+          : prev.map((item) => (item.id === conversationId ? nextConversation : item))
+      );
+
+      if (patch.is_deleted && activeConversationId === conversationId) {
+        setActiveConversationId("");
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "채팅창 수정에 실패했습니다.");
+    }
   };
 
-  const appendMessages = (
-    conversationId: string,
-    userContent: string,
-    assistantContent: string
-  ) => {
-    const userMessage: AiAssistantMessage = {
-      id: `msg-${crypto.randomUUID()}`,
+  const appendMessages = async (conversationId: string, userContent: string) => {
+    if (isSending) return;
+
+    const originalConversations = conversations;
+
+    // Create optimistic user message
+    const tempUserMessage: AiAssistantMessage = {
+      id: `temp-${crypto.randomUUID()}`,
       role: "user",
       content: userContent,
-      created_at: nowIso(),
+      created_at: new Date().toISOString(),
     };
 
-    const assistantMessage: AiAssistantMessage = {
-      id: `msg-${crypto.randomUUID()}`,
-      role: "assistant",
-      content: assistantContent,
-      created_at: nowIso(),
-      agents: ["router", "writing", "seo"],
-      actions: [
-        {
-          id: `action-${crypto.randomUUID()}`,
-          label: "결과 복사",
-          actionType: "copy_result",
-          status: "pending",
-        },
-      ],
-    };
-
-    const addedChars = userContent.length + assistantContent.length;
-
+    // Optimistically update conversations list in UI
     setConversations((prev) =>
-      prev.map((conversation) => {
-        if (conversation.id !== conversationId) return conversation;
-
-        const nextTotalChars = conversation.total_chars + addedChars;
-        const isLimitReached = nextTotalChars >= conversation.max_chars_limit;
-
-        return {
-          ...conversation,
-          total_chars: nextTotalChars,
-          conversation_count: conversation.conversation_count + 1,
-          message_count: conversation.message_count + 2,
-          messages: [...conversation.messages, userMessage, assistantMessage],
-          agents_used: Array.from(
-            new Set([...(conversation.agents_used ?? []), "router", "writing", "seo"])
-          ),
-          is_closed: isLimitReached,
-          closed_reason: isLimitReached ? "max_chars_limit_reached" : conversation.closed_reason,
-          closed_at: isLimitReached ? nowIso() : conversation.closed_at,
-          updated_at: nowIso(),
-        };
+      prev.map((item) => {
+        if (item.id === conversationId) {
+          return {
+            ...item,
+            messages: [...item.messages, tempUserMessage],
+            total_chars: item.total_chars + userContent.length,
+            message_count: item.message_count + 1,
+          };
+        }
+        return item;
       })
     );
+
+    try {
+      setIsSending(true);
+      setErrorMessage("");
+
+      const res = await fetch("/api/ai-assistant", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          message: userContent,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        if (json?.conversation) {
+          const closedConversation = normalizeConversation(json.conversation);
+          setConversations((prev) =>
+            prev.map((item) => (item.id === conversationId ? closedConversation : item))
+          );
+        } else {
+          // Revert optimistic update on error
+          setConversations(originalConversations);
+        }
+
+        throw new Error(json?.error ?? "AI 응답 생성에 실패했습니다.");
+      }
+
+      const nextConversation = normalizeConversation(json.conversation);
+
+      setConversations((prev) =>
+        prev.map((item) => (item.id === conversationId ? nextConversation : item))
+      );
+
+      setActiveConversationId(nextConversation.id);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "AI 응답 생성에 실패했습니다.");
+      // Revert if error occurred and state wasn't updated by a closed conversation
+      setConversations((prev) => {
+        const hasResponse = prev.some(
+          (c) => c.id === conversationId && c.messages.some((m) => m.role === "assistant")
+        );
+        return hasResponse ? prev : originalConversations;
+      });
+    } finally {
+      setIsSending(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-0 flex-1 items-center justify-center bg-[#05080c] text-sm font-bold text-zinc-500">
+        AI Assistant 불러오는 중...
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-0 flex-1 bg-[#05080c]">
       <AiAssistantSidebar
         folders={folders}
-        conversations={filteredConversations}
+        conversations={conversations}
         activeFolderId={activeFolderId}
         activeConversationId={activeConversationId}
         searchQuery={searchQuery}
@@ -421,12 +392,21 @@ export default function AiAssistantPanel() {
         onCreateConversation={createConversation}
       />
 
-      <AiAssistantChatPanel
-        conversation={activeConversation}
-        folders={folders}
-        onUpdateConversation={updateConversation}
-        onAppendMessages={appendMessages}
-      />
+      <div className="flex min-w-0 flex-1 flex-col">
+        {errorMessage && (
+          <div className="border-b border-red-400/20 bg-red-500/10 px-4 py-2 text-xs font-bold text-red-200">
+            {errorMessage}
+          </div>
+        )}
+
+        <AiAssistantChatPanel
+          conversation={activeConversation}
+          folders={folders}
+          isSending={isSending}
+          onUpdateConversation={updateConversation}
+          onAppendMessages={appendMessages}
+        />
+      </div>
     </div>
   );
 }

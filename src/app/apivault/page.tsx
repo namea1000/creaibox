@@ -17,6 +17,8 @@ import {
 import {
   SiGoogle,
   SiYoutube,
+  SiOpenai,
+  SiClaude,
 } from "react-icons/si";
 
 import Sidebar from "@/components/layout/Sidebar";
@@ -365,9 +367,9 @@ export default function APIVaultPage() {
                         ) : s.id === "groq" ? (
                           <Zap size={18} className="text-orange-400" />
                         ) : s.id === "openai" ? (
-                          <Bot size={18} className="text-emerald-400" />
+                          <SiOpenai size={18} className="text-emerald-400" />
                         ) : (
-                          <MessageSquare size={18} className="text-amber-400" />
+                          <SiClaude size={18} className="text-amber-400" />
                         )
                       }
                     />

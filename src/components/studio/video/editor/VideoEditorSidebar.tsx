@@ -36,6 +36,9 @@ export default function VideoEditorSidebar() {
   const {
     activeTab,
     setActiveTab,
+    mediaItems,
+    clips,
+    selectedClipId,
   } = useVideoEditor();
 
   // Redirect project tab to media since Column 1 is now the dedicated Project Browser
@@ -73,6 +76,13 @@ export default function VideoEditorSidebar() {
         ) : (
           <StaticPanel activeTab={currentTab} />
         )}
+      </div>
+
+      <div className="flex h-8 shrink-0 items-center justify-between border-t border-white/5 bg-[#151519] px-3 text-[10px] font-bold text-zinc-500">
+        <span>{VIDEO_EDITOR_SIDEBAR_MENUS.find((menu) => menu.key === currentTab)?.label}</span>
+        <span>소스 {mediaItems.length}</span>
+        <span>클립 {clips.length}</span>
+        <span>{selectedClipId ? "선택됨" : "대기"}</span>
       </div>
     </aside>
   );

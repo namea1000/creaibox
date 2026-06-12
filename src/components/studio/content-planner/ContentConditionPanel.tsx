@@ -1,0 +1,383 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { Lightbulb, Sparkles, ChevronDown } from "lucide-react";
+import Link from "next/link";
+import type { ContentType, ContentPlannerFormState } from "@/lib/content-planner/types";
+
+type Props = {
+  contentTypes: ContentType[];
+  itemCountOptions: number[];
+  contentType: ContentType;
+  itemCount: number;
+  mainKeyword: string;
+  referenceNote: string;
+  onChangeContentType: (value: ContentType) => void;
+  onChangeItemCount: (value: number) => void;
+  onChangeMainKeyword: (value: string) => void;
+  onChangeReferenceNote: (value: string) => void;
+
+  postType: string;
+  onChangePostType: (value: string) => void;
+
+  strategyLevel: ContentPlannerFormState["strategyLevel"];
+  resultFormat: ContentPlannerFormState["resultFormat"];
+  onChangeStrategyLevel: (value: ContentPlannerFormState["strategyLevel"]) => void;
+  onChangeResultFormat: (value: ContentPlannerFormState["resultFormat"]) => void;
+  onGenerate: () => void;
+  isGenerating?: boolean;
+
+  largeCategory?: string;
+  onChangeLargeCategory?: (value: string) => void;
+  mainTopic?: string;
+  onChangeMainTopic?: (value: string) => void;
+  subTopic?: string;
+  onChangeSubTopic?: (value: string) => void;
+};
+
+const getContentTypeEmoji = (type: string) => {
+  const map: Record<string, string> = {
+    "멀티 플랫폼 콘텐츠 기획": "🌐",
+    "블로그 글쓰기 콘텐츠": "📝",
+    "유튜브 쇼츠 기획": "🎬",
+    "유튜브 롱폼 기획": "🎥",
+    "틱톡 숏폼 기획": "📱",
+    "네이버 클립 기획": "📎",
+    "인스타그램 릴스 기획": "📸",
+    "SNS 카드뉴스 기획": "🖼️",
+    "뉴스레터 기획": "✉️",
+    "브랜드 캠페인 기획": "📢",
+  };
+  return map[type] || "✨";
+};
+
+const getItemCountEmoji = (count: number) => {
+  const map: Record<number, string> = {
+    5: "📄",
+    10: "📑",
+    20: "🗂️",
+    30: "📊",
+    50: "📦",
+    100: "🚀",
+  };
+  return map[count] || "🔢";
+};
+
+const getStrategyLevelEmoji = (level: string) => {
+  const map: Record<string, string> = {
+    "기본 전략": "⚡",
+    "고급 전략": "💎",
+    "전문가 전략": "👑",
+  };
+  return map[level] || "⚙️";
+};
+
+const getResultFormatEmoji = (format: string) => {
+  const map: Record<string, string> = {
+    "시리즈만": "📦",
+    "시리즈 + 채널별 제작안": "📢",
+    "콘텐츠 캘린더 포함": "📅",
+  };
+  return map[format] || "⚙️";
+};
+
+const postTypeOptions = [
+  { label: "① 인사이트 & 트렌드", disabled: true },
+  { label: "🧠 AI 인사이트 포스팅", disabled: false },
+  { label: "📈 트렌드 브리프", disabled: false },
+  { label: "📊 시장/기술 분석 리포트", disabled: false },
+  { label: "📰 최신 뉴스 및 이슈", disabled: false },
+  { label: "📌 오늘의 주요 이슈 정리", disabled: false },
+
+  { label: "② 정보성 콘텐츠", disabled: true },
+  { label: "ℹ️ 일반 정보성", disabled: false },
+  { label: "💵 생활 정책 및 정부 지원금", disabled: false },
+  { label: "🥗 건강 정보 및 영양제 분석", disabled: false },
+  { label: "💳 보험/대출/카드 정보", disabled: false },
+  { label: "🏠 부동산 정보", disabled: false },
+
+  { label: "③ 금융 & 비즈니스", disabled: true },
+  { label: "💰 금융 및 재테크", disabled: false },
+  { label: "📈 주식/재테크 분석", disabled: false },
+  { label: "🏢 기업 정보 및 주식 정보", disabled: false },
+  { label: "🚀 비즈니스/창업 정보", disabled: false },
+
+  { label: "④ 브랜드 & 퍼블리싱", disabled: true },
+  { label: "📖 브랜드 스토리 포스팅", disabled: false },
+  { label: "📢 서비스 소개형 포스팅", disabled: false },
+  { label: "🏢 기업 소개 및 서비스 안내", disabled: false },
+  { label: "✉️ 뉴스레터형 콘텐츠", disabled: false },
+
+  { label: "⑤ 도구 & 사용법", disabled: true },
+  { label: "📱 앱 설치 및 상세 가이드", disabled: false },
+  { label: "🤖 AI 툴 및 웹 서비스 가이드", disabled: false },
+  { label: "⚙️ 유틸리티 설치/사용 방법", disabled: false },
+  { label: "🤖 AI 자동 포스팅", disabled: false },
+  { label: "🔗 바로가기 버튼 생성", disabled: false },
+
+  { label: "⑥ 실무형 가이드", disabled: true },
+  { label: "📘 실전 가이드 아티클", disabled: false },
+  { label: "🔍 SEO 최적화 포스팅", disabled: false },
+  { label: "🔄 튜토리얼 & 워크플로우", disabled: false },
+  { label: "✅ 체크리스트형 콘텐츠", disabled: false },
+  { label: "⚖️ 비교 분석형 콘텐츠", disabled: false },
+  { label: "🧩 문제 해결형 콘텐츠", disabled: false },
+
+  { label: "⑦ 리뷰 & 라이프스타일", disabled: true },
+  { label: "📦 일반 제품 리뷰", disabled: false },
+  { label: "⚖️ 제품 비교 리뷰", disabled: false },
+  { label: "💻 IT 기기 사용 후기", disabled: false },
+  { label: "🚗 자동차 모델 리뷰", disabled: false },
+  { label: "🎮 게임 리뷰 및 공략", disabled: false },
+  { label: "🍳 맛집 리뷰", disabled: false },
+  { label: "✈️ 국내 여행 정보", disabled: false },
+  { label: "🎬 영화/드라마 정보 및 리뷰", disabled: false },
+  { label: "🌟 유명 연예인 인물 정보", disabled: false },
+
+  { label: "⑧ 교육 & 자기계발", disabled: true },
+  { label: "🎓 교육/가이드형", disabled: false },
+  { label: "🌱 자기계발 포스팅", disabled: false },
+  { label: "📚 공부법/학습법", disabled: false },
+  { label: "🏫 강의/커리큘럼 소개", disabled: false },
+];
+
+export default function ContentConditionPanel({
+  contentTypes,
+  itemCountOptions,
+  contentType,
+  itemCount,
+  mainKeyword,
+  referenceNote,
+  onChangeContentType,
+  onChangeItemCount,
+  onChangeMainKeyword,
+  onChangeReferenceNote,
+  postType,
+  onChangePostType,
+  strategyLevel,
+  resultFormat,
+  onChangeStrategyLevel,
+  onChangeResultFormat,
+  onGenerate,
+  isGenerating = false,
+  largeCategory = "",
+  onChangeLargeCategory,
+  mainTopic = "",
+  onChangeMainTopic,
+  subTopic = "",
+  onChangeSubTopic,
+}: Props) {
+  const [isPostTypeOpen, setIsPostTypeOpen] = useState(false);
+  const postTypeDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (postTypeDropdownRef.current && !postTypeDropdownRef.current.contains(event.target as Node)) {
+        setIsPostTypeOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-xl shadow-black/20">
+      <div className="mb-5 flex items-center gap-2">
+        <div className="rounded-xl border border-cyan-300/20 bg-cyan-300/10 p-2 text-cyan-300">
+          <Lightbulb size={18} />
+        </div>
+        <h2 className="text-sm font-black text-white">콘텐츠 생성 조건</h2>
+      </div>
+
+      <div className="space-y-3">
+        {/* 1. 콘텐츠 유형 */}
+        <label className="grid grid-cols-[86px_minmax(0,1fr)] items-center gap-3">
+          <span className="text-xs font-bold text-slate-400">콘텐츠 유형</span>
+          <select
+            value={contentType}
+            onChange={(e) => onChangeContentType(e.target.value as ContentType)}
+            className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none focus:border-cyan-400"
+          >
+            {contentTypes.map((item) => (
+              <option key={item} value={item} className="bg-slate-950">
+                {getContentTypeEmoji(item)} {item}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {/* 2. 포스트 타입 - Custom Premium Dropdown */}
+        <div className="grid grid-cols-[86px_minmax(0,1fr)] items-center gap-3">
+          <span className="text-xs font-bold text-slate-400 font-extrabold text-cyan-200">포스트 타입</span>
+          <div className="relative w-full" ref={postTypeDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsPostTypeOpen(!isPostTypeOpen)}
+              className="flex h-11 w-full items-center justify-between rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none focus:border-cyan-400 font-bold"
+            >
+              <span className="truncate">{postType || "선택해 주세요"}</span>
+              <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 shrink-0 ml-1 ${isPostTypeOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {isPostTypeOpen && (
+              <div className="absolute left-0 right-0 z-50 mt-1 max-h-80 overflow-y-auto rounded-xl border border-white/10 bg-[#0e1322] p-2 shadow-2xl backdrop-blur-md custom-scrollbar">
+                {postTypeOptions.map((item) => {
+                  if (item.disabled) {
+                    return (
+                      <div
+                        key={item.label}
+                        className="px-3 py-2 text-xs font-black text-cyan-300 border-b border-white/5 mt-3 first:mt-0 bg-white/[0.03] rounded-md"
+                      >
+                        {item.label}
+                      </div>
+                    );
+                  }
+
+                  const isSelected = postType === item.label;
+                  return (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => {
+                        onChangePostType(item.label);
+                        setIsPostTypeOpen(false);
+                      }}
+                      className={`flex w-full items-center px-4 py-2.5 text-left text-xs transition duration-150 rounded-lg mt-0.5 first:mt-0 ${
+                        isSelected
+                          ? "bg-cyan-500/20 text-cyan-200 font-bold"
+                          : "text-slate-300 hover:bg-white/5 hover:text-white"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 3. 생성 개수 */}
+        <label className="grid grid-cols-[86px_minmax(0,1fr)] items-center gap-3">
+          <span className="text-xs font-bold text-slate-400">생성 개수</span>
+          <select
+            value={itemCount}
+            onChange={(e) => onChangeItemCount(Number(e.target.value))}
+            className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none focus:border-cyan-400"
+          >
+            {itemCountOptions.map((item) => (
+              <option key={item} value={item} className="bg-slate-950">
+                {getItemCountEmoji(item)} {item}개 기획
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {/* 4. 전략 수준 */}
+        <label className="grid grid-cols-[86px_minmax(0,1fr)] items-center gap-3">
+          <span className="text-xs font-bold text-slate-400">전략 수준</span>
+          <select
+            value={strategyLevel}
+            onChange={(e) => onChangeStrategyLevel(e.target.value as ContentPlannerFormState["strategyLevel"])}
+            className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none focus:border-cyan-400"
+          >
+            {["기본 전략", "고급 전략", "전문가 전략"].map((item) => (
+              <option key={item} value={item} className="bg-slate-950">
+                {getStrategyLevelEmoji(item)} {item}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {/* 5. 결과 구성 */}
+        <label className="grid grid-cols-[86px_minmax(0,1fr)] items-center gap-3">
+          <span className="text-xs font-bold text-slate-400">결과 구성</span>
+          <select
+            value={resultFormat}
+            onChange={(e) => onChangeResultFormat(e.target.value as ContentPlannerFormState["resultFormat"])}
+            className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none focus:border-cyan-400"
+          >
+            {["시리즈만", "시리즈 + 채널별 제작안", "콘텐츠 캘린더 포함"].map((item) => (
+              <option key={item} value={item} className="bg-slate-950">
+                {getResultFormatEmoji(item)} {item}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {/* 대분류 */}
+        <label className="grid grid-cols-[86px_minmax(0,1fr)] items-center gap-3">
+          <span className="text-xs font-bold text-slate-400">대분류</span>
+          <input
+            value={largeCategory}
+            onChange={(e) => onChangeLargeCategory?.(e.target.value)}
+            placeholder="선택된 대분류"
+            className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none placeholder:text-slate-600 focus:border-cyan-400"
+          />
+        </label>
+
+        {/* 상세 분야 */}
+        <label className="grid grid-cols-[86px_minmax(0,1fr)] items-center gap-3">
+          <span className="text-xs font-bold text-slate-400">상세 분야</span>
+          <input
+            value={mainTopic}
+            onChange={(e) => onChangeMainTopic?.(e.target.value)}
+            placeholder="선택된 상세 분야"
+            className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none placeholder:text-slate-600 focus:border-cyan-400"
+          />
+        </label>
+
+        {/* 추천 시리즈 */}
+        <label className="grid grid-cols-[86px_minmax(0,1fr)] items-center gap-3">
+          <span className="text-xs font-bold text-slate-400">추천 시리즈</span>
+          <input
+            value={subTopic}
+            onChange={(e) => onChangeSubTopic?.(e.target.value)}
+            placeholder="선택된 추천 시리즈"
+            className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none placeholder:text-slate-600 focus:border-cyan-400"
+          />
+        </label>
+
+        {/* 메인 키워드 주제 */}
+        <label className="grid grid-cols-[86px_minmax(0,1fr)] items-center gap-3">
+          <span className="text-xs font-bold text-slate-400 font-extrabold text-cyan-200">메인 키워드 주제</span>
+          <input
+            value={mainKeyword}
+            onChange={(e) => onChangeMainKeyword(e.target.value)}
+            placeholder="예: AI 콘텐츠 자동화"
+            className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none placeholder:text-slate-600 focus:border-cyan-400 font-bold"
+          />
+        </label>
+
+        <textarea
+          value={referenceNote}
+          onChange={(e) => onChangeReferenceNote(e.target.value)}
+          placeholder="선택 입력: 기획 방향, 브랜드 톤, 타깃 독자, 원하는 콘텐츠 스타일..."
+          rows={4}
+          className="min-h-[96px] w-full resize-none rounded-xl border border-white/10 bg-black/40 p-4 text-xs text-white outline-none placeholder:text-slate-600 focus:border-cyan-400"
+        />
+
+        <button
+          type="button"
+          onClick={onGenerate}
+          disabled={isGenerating}
+          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-cyan-400 px-5 text-xs font-black text-slate-950 hover:bg-cyan-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+        >
+          {isGenerating ? (
+            <>
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-950 border-t-transparent" />
+              생성 중...
+            </>
+          ) : (
+            <>
+              <Sparkles size={14} />
+              AI 콘텐츠 기획
+            </>
+          )}
+        </button>
+      </div>
+    </section>
+  );
+}

@@ -20,12 +20,12 @@ import {
   Layers,
   Settings,
 } from "lucide-react";
-import { useVideoEditor } from "./VideoEditorContext";
+import { useVideoEditor, type CanvasRatio } from "./VideoEditorContext";
 
 type ProjectItem = {
   id: string;
   title: string;
-  ratio: "16:9" | "9:16" | "1:1";
+  ratio: CanvasRatio;
   duration: number;
   updatedAt: string;
   assetCount: number;
@@ -138,7 +138,7 @@ export default function VideoEditorProjectPanel() {
         activeTab: "media",
         clips: [],
         canvasRatio: "16:9",
-        canvasZoom: 75,
+        canvasZoom: 100,
         exportResolution: "1080p",
         exportFps: 30,
         exportQuality: "standard"
@@ -204,7 +204,7 @@ export default function VideoEditorProjectPanel() {
       activeTab: "media",
       clips: mockClips,
       canvasRatio: project.ratio,
-      canvasZoom: 75,
+      canvasZoom: 100,
       exportResolution: "1080p",
       exportFps: 30,
       exportQuality: "standard"
@@ -379,12 +379,11 @@ export default function VideoEditorProjectPanel() {
         </div>
       </div>
 
-      {/* Properties summary at the bottom */}
-      <div className="p-4 border-t border-white/5 bg-[#141418] text-[11px] text-zinc-500 space-y-1">
-        <div>미디어 소스: {mediaItems.length}개 에셋</div>
-        <div>타임라인 클립: {clips.length}개</div>
-        <div>총 재생 시간: {totalDuration}초</div>
-        <div>출력 비율: {canvasRatio}</div>
+      <div className="flex h-8 shrink-0 items-center justify-between border-t border-white/5 bg-[#151519] px-3 text-[10px] font-bold text-zinc-500">
+        <span>소스 {mediaItems.length}</span>
+        <span>클립 {clips.length}</span>
+        <span>{totalDuration}s</span>
+        <span>{canvasRatio}</span>
       </div>
     </div>
   );

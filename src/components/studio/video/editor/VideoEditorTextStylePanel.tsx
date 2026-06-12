@@ -84,8 +84,6 @@ export default function VideoEditorTextStylePanel() {
     shadow: true,
   };
 
-  const anyClip = selectedClip as any;
-
   return (
     <div>
       <PanelHeader
@@ -107,9 +105,9 @@ export default function VideoEditorTextStylePanel() {
         <TextSection title="폰트">
           <SelectField
             label="Font Family"
-            value={anyClip.fontFamily ?? "sans-serif"}
+            value={selectedClip.fontFamily ?? "sans-serif"}
             options={fontPresets}
-            onChange={(value) => updateClip(selectedClip.id, { fontFamily: value } as any)}
+            onChange={(value) => updateClip(selectedClip.id, { fontFamily: value })}
           />
 
           <RangeField
@@ -129,20 +127,20 @@ export default function VideoEditorTextStylePanel() {
             <ToggleButton
               icon={AlignLeft}
               label="Left"
-              active={anyClip.textAlign === "left"}
-              onClick={() => updateClip(selectedClip.id, { textAlign: "left" } as any)}
+              active={selectedClip.textAlign === "left"}
+              onClick={() => updateClip(selectedClip.id, { textAlign: "left" })}
             />
             <ToggleButton
               icon={AlignCenter}
               label="Center"
-              active={!anyClip.textAlign || anyClip.textAlign === "center"}
-              onClick={() => updateClip(selectedClip.id, { textAlign: "center" } as any)}
+              active={!selectedClip.textAlign || selectedClip.textAlign === "center"}
+              onClick={() => updateClip(selectedClip.id, { textAlign: "center" })}
             />
             <ToggleButton
               icon={AlignRight}
               label="Right"
-              active={anyClip.textAlign === "right"}
-              onClick={() => updateClip(selectedClip.id, { textAlign: "right" } as any)}
+              active={selectedClip.textAlign === "right"}
+              onClick={() => updateClip(selectedClip.id, { textAlign: "right" })}
             />
           </div>
 
@@ -201,7 +199,7 @@ export default function VideoEditorTextStylePanel() {
                 updateClip(selectedClip.id, {
                   textGlow: true,
                   textAnimation: "glow",
-                } as any);
+                });
               }}
             />
 
@@ -299,22 +297,22 @@ export default function VideoEditorTextStylePanel() {
           <ToggleButton
             icon={Sparkles}
             label="Glow"
-            active={Boolean(anyClip.textGlow)}
+            active={Boolean(selectedClip.textGlow)}
             onClick={() =>
-              updateClip(selectedClip.id, { textGlow: !anyClip.textGlow } as any)
+              updateClip(selectedClip.id, { textGlow: !selectedClip.textGlow })
             }
           />
 
           <RangeField
             icon={Eye}
             label="텍스트 투명도"
-            value={anyClip.textOpacity ?? 1}
+            value={selectedClip.textOpacity ?? 1}
             min={0}
             max={1}
             step={0.05}
-            display={`${Math.round((anyClip.textOpacity ?? 1) * 100)}%`}
+            display={`${Math.round((selectedClip.textOpacity ?? 1) * 100)}%`}
             onChange={(value) =>
-              updateClip(selectedClip.id, { textOpacity: value } as any)
+              updateClip(selectedClip.id, { textOpacity: value })
             }
           />
         </TextSection>
@@ -322,10 +320,10 @@ export default function VideoEditorTextStylePanel() {
         <TextSection title="애니메이션">
           <SelectField
             label="Text Animation"
-            value={anyClip.textAnimation ?? "none"}
+            value={selectedClip.textAnimation ?? "none"}
             options={animationPresets}
             onChange={(value) =>
-              updateClip(selectedClip.id, { textAnimation: value } as any)
+              updateClip(selectedClip.id, { textAnimation: value })
             }
           />
 
@@ -342,7 +340,7 @@ export default function VideoEditorTextStylePanel() {
                   bold: true,
                   shadow: true,
                 });
-                updateClip(selectedClip.id, { textAnimation: "pop" } as any);
+                updateClip(selectedClip.id, { textAnimation: "pop" });
               }}
             />
 
@@ -361,7 +359,7 @@ export default function VideoEditorTextStylePanel() {
                 updateClip(selectedClip.id, {
                   textAnimation: "fade-in",
                   textGlow: true,
-                } as any);
+                });
               }}
             />
 
@@ -380,7 +378,7 @@ export default function VideoEditorTextStylePanel() {
                 updateClip(selectedClip.id, {
                   textAnimation: "bounce",
                   textGlow: true,
-                } as any);
+                });
               }}
             />
 
@@ -407,7 +405,7 @@ export default function VideoEditorTextStylePanel() {
                   textGlow: false,
                   textOpacity: 1,
                   textAnimation: "none",
-                } as any);
+                });
               }}
             />
           </div>

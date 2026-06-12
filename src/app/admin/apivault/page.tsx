@@ -19,6 +19,8 @@ import {
   Video,
   Mic,
   Search,
+  PieChart,
+  DollarSign,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -183,6 +185,15 @@ export default function APIVaultAdminPage() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [newKey, setNewKey] = useState(emptyKey);
+  const [usageStats, setUsageStats] = useState({
+    totalCalls: 0,
+    monthlyCalls: 0,
+    failCount: 0,
+    estimatedCost: 0,
+  });
+
+  const [providerUsage, setProviderUsage] = useState<any[]>([]);
+  const [studioUsage, setStudioUsage] = useState<any[]>([]);
 
   const fetchKeys = useCallback(
     async (email?: string) => {
@@ -210,6 +221,70 @@ export default function APIVaultAdminPage() {
     [adminEmail]
   );
 
+  const fetchUsageAnalytics = useCallback(async () => {
+    const { data } = await supabase
+      .from("ai_generation_usage_logs")
+      .select("*");
+
+    const logs = data || [];
+
+    const totalCalls = logs.length;
+
+    const monthlyCalls = logs.filter((log) => {
+      const d = new Date(log.created_at);
+      const now = new Date();
+
+      return (
+        d.getMonth() === now.getMonth() &&
+        d.getFullYear() === now.getFullYear()
+      );
+    }).length;
+
+    const failCount = logs.filter(
+      (log) => log.status !== "success"
+    ).length;
+
+    const estimatedCost = logs.reduce(
+      (sum, log) => sum + Number(log.estimated_cost || 0),
+      0
+    );
+
+    setUsageStats({
+      totalCalls,
+      monthlyCalls,
+      failCount,
+      estimatedCost,
+    });
+
+    const providerMap: Record<string, number> = {};
+
+    logs.forEach((log) => {
+      providerMap[log.provider || "unknown"] =
+        (providerMap[log.provider || "unknown"] || 0) + 1;
+    });
+
+    setProviderUsage(
+      Object.entries(providerMap).map(([provider, count]) => ({
+        provider,
+        count,
+      }))
+    );
+
+    const studioMap: Record<string, number> = {};
+
+    logs.forEach((log) => {
+      studioMap[log.studio_type || "unknown"] =
+        (studioMap[log.studio_type || "unknown"] || 0) + 1;
+    });
+
+    setStudioUsage(
+      Object.entries(studioMap).map(([studio, count]) => ({
+        studio,
+        count,
+      }))
+    );
+  }, [supabase]);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -230,6 +305,7 @@ export default function APIVaultAdminPage() {
       setIsAdmin(true);
       setAdminEmail(email);
       await fetchKeys(email);
+      await fetchUsageAnalytics();
     };
 
     void checkAdmin();
@@ -407,10 +483,18 @@ export default function APIVaultAdminPage() {
 
             <section className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-4">
               {[
-                ["Total Keys", apiKeys.length, Database, "text-white"],
-                ["Active Keys", activeKeys, Zap, "text-emerald-400"],
-                ["Today Usage", todayUsage, Activity, "text-blue-400"],
-                ["Issue Keys", issueKeys, AlertTriangle, "text-red-400"],
+                ["API Keys", apiKeys.length, Database, "text-white"],
+
+                ["AI Calls", usageStats.totalCalls, Activity, "text-blue-400"],
+
+                ["Monthly Calls", usageStats.monthlyCalls, Zap, "text-emerald-400"],
+
+                [
+                  "Estimated Cost",
+                  `$${usageStats.estimatedCost.toFixed(2)}`,
+                  DollarSign,
+                  "text-yellow-400",
+                ],
               ].map(([label, value, Icon, color]: any) => (
                 <div key={label} className="rounded-3xl border border-zinc-800 bg-zinc-900/40 p-6">
                   <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500">
@@ -420,6 +504,51 @@ export default function APIVaultAdminPage() {
                   <p className={`mt-2 text-3xl font-black ${color}`}>{value}</p>
                 </div>
               ))}
+            </section>
+
+            <section className="mb-8 grid gap-6 lg:grid-cols-2">
+
+              <div className="rounded-3xl border border-zinc-800 bg-zinc-900/40 p-6">
+                <h3 className="mb-4 flex items-center gap-2 text-sm font-black uppercase text-blue-400">
+                  <BarChart3 size={16} />
+                  Provider Analytics
+                </h3>
+
+                <div className="space-y-2">
+                  {providerUsage.map((item) => (
+                    <div
+                      key={item.provider}
+                      className="flex justify-between text-sm"
+                    >
+                      <span>{item.provider}</span>
+                      <span className="font-black text-blue-400">
+                        {item.count}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-zinc-800 bg-zinc-900/40 p-6">
+                <h3 className="mb-4 flex items-center gap-2 text-sm font-black uppercase text-emerald-400">
+                  <PieChart size={16} />
+                  Studio Analytics
+                </h3>
+
+                <div className="space-y-2">
+                  {studioUsage.map((item) => (
+                    <div
+                      key={item.studio}
+                      className="flex justify-between text-sm"
+                    >
+                      <span>{item.studio}</span>
+                      <span className="font-black text-emerald-400">
+                        {item.count}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </section>
 
             <section className="mb-6 flex flex-wrap gap-3">

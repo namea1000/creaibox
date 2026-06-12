@@ -7,6 +7,7 @@ import type {
   ExportQuality,
   ExportResolution,
   TimelineTrack,
+  TimelineTrackType,
   VideoEditorTab,
 } from "./types";
 
@@ -80,6 +81,7 @@ async function deleteFileFromCache(id: string): Promise<void> {
 }
 
 export type VideoEditorMediaType = "video" | "image" | "audio";
+export type CanvasRatio = "16:9" | "9:16" | "1:1" | "4:5" | "5:4" | "21:9" | "4:3";
 
 export type VideoEditorMediaItem = {
   id: string;
@@ -153,6 +155,14 @@ export type VideoEditorClip = {
   motionY?: number;
   motionWidth?: number;
   motionHeight?: number;
+  flipX?: boolean;
+  flipY?: boolean;
+  cropTop?: number;
+  cropRight?: number;
+  cropBottom?: number;
+  cropLeft?: number;
+  anchorX?: number;
+  anchorY?: number;
 
   scale?: number;
   rotation?: number;
@@ -172,6 +182,11 @@ export type VideoEditorClip = {
 
   // Text
   textStyle?: VideoTextStyle;
+  fontFamily?: string;
+  textAlign?: "left" | "center" | "right";
+  textGlow?: boolean;
+  textOpacity?: number;
+  textAnimation?: string;
 
   // Transition
   transitionIn?: VideoTransitionType;
@@ -182,6 +197,7 @@ export type VideoEditorClip = {
 };
 
 type Snapshot = {
+  tracks: TimelineTrack[];
   clips: VideoEditorClip[];
   selectedClipId: string | null;
   currentTime: number;
@@ -200,7 +216,7 @@ type VideoEditorState = {
   totalDuration: number;
   isPlaying: boolean;
 
-  canvasRatio: "16:9" | "9:16" | "1:1";
+  canvasRatio: CanvasRatio;
   canvasZoom: number;
 
   exportResolution: ExportResolution;
@@ -226,6 +242,8 @@ type VideoEditorActions = {
 
   removeClip: (id: string) => void;
   duplicateClip: (id: string) => void;
+  copyClip: (id: string) => void;
+  pasteClip: (startTime?: number) => void;
   splitClip: (id: string, splitTime?: number) => void;
   selectClip: (id: string | null) => void;
 
@@ -234,6 +252,12 @@ type VideoEditorActions = {
   updateClipPosition: (id: string, left: number) => void;
   updateClipDuration: (id: string, duration: number) => void;
   updateClipTime: (id: string, startTime: number, duration: number) => void;
+  updateClipPlacement: (
+    id: string,
+    trackId: string,
+    startTime: number,
+    duration: number
+  ) => void;
   updateClipTrimStart: (id: string, nextTrimStart: number) => void;
   updateClipTrimEnd: (id: string, nextTrimEnd: number) => void;
   updateClipVolume: (id: string, volume: number) => void;
@@ -251,7 +275,7 @@ type VideoEditorActions = {
   togglePlayback: () => void;
   stopPlayback: () => void;
 
-  setCanvasRatio: (value: "16:9" | "9:16" | "1:1") => void;
+  setCanvasRatio: (value: CanvasRatio) => void;
   setCanvasZoom: (value: number) => void;
 
   setExportResolution: (value: ExportResolution) => void;
@@ -273,6 +297,8 @@ const VideoEditorContext = createContext<VideoEditorContextValue | null>(null);
 const TIMELINE_BASE_DURATION = 3600;
 const MIN_TIMELINE_DURATION = 30;
 const MAX_HISTORY = 50;
+const DEFAULT_CANVAS_ZOOM = 100;
+const LEGACY_DEFAULT_CANVAS_ZOOM = 75;
 
 const DEFAULT_TEXT_STYLE: VideoTextStyle = {
   fontSize: 42,
@@ -309,6 +335,41 @@ function getDefaultClipColor(type: VideoEditorMediaType | VideoEditorClip["type"
   return "bg-pink-400/25";
 }
 
+function getTrackTypeByClipType(type: VideoEditorClip["type"]): TimelineTrackType {
+  if (type === "audio") return "audio";
+  if (type === "text") return "text";
+  if (type === "subtitle") return "subtitle";
+  if (type === "visualizer") return "visualizer";
+  return "video";
+}
+
+function getTrackColor(type: TimelineTrackType) {
+  if (type === "video") return "bg-cyan-400/25";
+  if (type === "audio") return "bg-emerald-400/25";
+  if (type === "text") return "bg-violet-400/25";
+  if (type === "subtitle") return "bg-amber-400/25";
+  if (type === "visualizer") return "bg-pink-400/25";
+  return "bg-white/10";
+}
+
+function getTrackName(type: TimelineTrackType, index: number) {
+  if (type === "video") return `Video Track ${index}`;
+  if (type === "audio") return `Audio Track ${index}`;
+  if (type === "text") return `Text Track ${index}`;
+  if (type === "subtitle") return `Subtitle Track ${index}`;
+  if (type === "visualizer") return `Visualizer Track ${index}`;
+  return `Track ${index}`;
+}
+
+function createTrack(type: TimelineTrackType, index: number): TimelineTrack {
+  return {
+    id: `${type}-${index}`,
+    name: getTrackName(type, index),
+    type,
+    color: getTrackColor(type),
+  };
+}
+
 function getTrackIdByMediaType(type: VideoEditorMediaType) {
   if (type === "audio") return "audio-1";
   return "video-1";
@@ -320,6 +381,12 @@ function createId(prefix: string) {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+function getInitialCanvasZoom(value: unknown) {
+  if (typeof value !== "number") return DEFAULT_CANVAS_ZOOM;
+  if (value === LEGACY_DEFAULT_CANVAS_ZOOM) return DEFAULT_CANVAS_ZOOM;
+  return value;
 }
 
 function calculateTotalDuration(clips: VideoEditorClip[]) {
@@ -343,6 +410,105 @@ function timeToLeft(startTime: number) {
   return clamp((startTime / TIMELINE_BASE_DURATION) * 100, 0, 100);
 }
 
+function intervalsOverlap(
+  startA: number,
+  durationA: number,
+  startB: number,
+  durationB: number
+) {
+  const endA = startA + durationA;
+  const endB = startB + durationB;
+  return startA < endB && endA > startB;
+}
+
+function hasTrackOverlap(
+  clips: VideoEditorClip[],
+  clipId: string,
+  trackId: string,
+  startTime: number,
+  duration: number
+) {
+  return clips.some(
+    (clip) =>
+      clip.id !== clipId &&
+      clip.trackId === trackId &&
+      intervalsOverlap(startTime, duration, clip.startTime, clip.duration)
+  );
+}
+
+function resolveNonOverlappingStart(
+  clips: VideoEditorClip[],
+  clipId: string,
+  trackId: string,
+  startTime: number,
+  duration: number
+) {
+  const maxStart = Math.max(0, TIMELINE_BASE_DURATION - duration);
+  const clampStart = (value: number) =>
+    Number(clamp(value, 0, maxStart).toFixed(2));
+  const safeStart = clampStart(startTime);
+
+  if (!hasTrackOverlap(clips, clipId, trackId, safeStart, duration)) {
+    return safeStart;
+  }
+
+  const trackClips = clips
+    .filter((clip) => clip.id !== clipId && clip.trackId === trackId)
+    .sort((a, b) => a.startTime - b.startTime);
+  const candidates = [
+    0,
+    safeStart,
+    ...trackClips.flatMap((clip) => [
+      clip.startTime - duration,
+      clip.startTime + clip.duration,
+    ]),
+  ]
+    .map(clampStart)
+    .filter(
+      (candidate, index, list) =>
+        list.indexOf(candidate) === index &&
+        !hasTrackOverlap(clips, clipId, trackId, candidate, duration)
+    );
+
+  if (candidates.length === 0) return safeStart;
+
+  return candidates.sort((a, b) => Math.abs(a - safeStart) - Math.abs(b - safeStart))[0];
+}
+
+function clampDurationToTrackGap(
+  clips: VideoEditorClip[],
+  clipId: string,
+  trackId: string,
+  startTime: number,
+  duration: number
+) {
+  const nextClip = clips
+    .filter((clip) => clip.id !== clipId && clip.trackId === trackId)
+    .sort((a, b) => a.startTime - b.startTime)
+    .find((clip) => clip.startTime >= startTime);
+  const maxDuration = nextClip
+    ? Math.max(0.5, nextClip.startTime - startTime)
+    : TIMELINE_BASE_DURATION - startTime;
+
+  return clamp(duration, 0.5, maxDuration);
+}
+
+function clampStartToPreviousTrackGap(
+  clips: VideoEditorClip[],
+  clipId: string,
+  trackId: string,
+  startTime: number
+) {
+  const previousClip = clips
+    .filter((clip) => clip.id !== clipId && clip.trackId === trackId)
+    .sort((a, b) => b.startTime - a.startTime)
+    .find((clip) => clip.startTime + clip.duration <= startTime);
+
+  if (!previousClip) return clamp(startTime, 0, TIMELINE_BASE_DURATION);
+
+  return clamp(startTime, previousClip.startTime + previousClip.duration, TIMELINE_BASE_DURATION);
+}
+
 function normalizeClip(rawClip: VideoEditorClip): VideoEditorClip {
   return {
     ...rawClip,
@@ -364,6 +530,14 @@ function normalizeClip(rawClip: VideoEditorClip): VideoEditorClip {
 
     motionWidth: rawClip.motionWidth ?? 100,
     motionHeight: rawClip.motionHeight ?? 100,
+    flipX: rawClip.flipX ?? false,
+    flipY: rawClip.flipY ?? false,
+    cropTop: rawClip.cropTop ?? 0,
+    cropRight: rawClip.cropRight ?? 0,
+    cropBottom: rawClip.cropBottom ?? 0,
+    cropLeft: rawClip.cropLeft ?? 0,
+    anchorX: rawClip.anchorX ?? 50,
+    anchorY: rawClip.anchorY ?? 50,
 
     scale: rawClip.scale ?? 1,
     rotation: rawClip.rotation ?? 0,
@@ -403,7 +577,7 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
   const [activeTab, setActiveTab] = useState<VideoEditorTab>("media");
 
   const [mediaItems, setMediaItems] = useState<VideoEditorMediaItem[]>([]);
-  const [tracks] = useState<TimelineTrack[]>(DEFAULT_TIMELINE_TRACKS);
+  const [tracks, setTracks] = useState<TimelineTrack[]>(DEFAULT_TIMELINE_TRACKS);
   const [clips, setClipsState] = useState<VideoEditorClip[]>([]);
 
   const [selectedMediaId, setSelectedMediaId] = useState<string | null>(null);
@@ -412,8 +586,8 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
   const [currentTime, setCurrentTimeState] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const [canvasRatio, setCanvasRatio] = useState<"16:9" | "9:16" | "1:1">("16:9");
-  const [canvasZoom, setCanvasZoomState] = useState(75);
+  const [canvasRatio, setCanvasRatio] = useState<CanvasRatio>("16:9");
+  const [canvasZoom, setCanvasZoomState] = useState(DEFAULT_CANVAS_ZOOM);
 
   const [exportResolution, setExportResolution] = useState<ExportResolution>("1080p");
   const [exportFps, setExportFps] = useState<ExportFps>(30);
@@ -421,11 +595,13 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
 
   const [undoStack, setUndoStack] = useState<Snapshot[]>([]);
   const [redoStack, setRedoStack] = useState<Snapshot[]>([]);
+  const [copiedClip, setCopiedClip] = useState<VideoEditorClip | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const totalDuration = calculateTotalDuration(clips);
 
   const makeSnapshot = (): Snapshot => ({
+    tracks,
     clips,
     selectedClipId,
     currentTime,
@@ -463,7 +639,16 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
 
 async function extractAudioWaveform(file: File, points = 60): Promise<number[]> {
   try {
-    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const AudioContextConstructor =
+      window.AudioContext ||
+      (window as Window & { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+
+    if (!AudioContextConstructor) {
+      throw new Error("AudioContext not supported");
+    }
+
+    const audioCtx = new AudioContextConstructor();
     const arrayBuffer = await file.arrayBuffer();
     const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
     const channelData = audioBuffer.getChannelData(0);
@@ -668,14 +853,14 @@ function getMediaDuration(file: File): Promise<number> {
           if (parsed.projectTitle) setProjectTitle(parsed.projectTitle);
           if (parsed.activeTab) setActiveTab(parsed.activeTab);
           if (parsed.canvasRatio) setCanvasRatio(parsed.canvasRatio);
-          if (parsed.canvasZoom) setCanvasZoomState(parsed.canvasZoom);
+          setCanvasZoomState(getInitialCanvasZoom(parsed.canvasZoom));
           if (parsed.exportResolution) setExportResolution(parsed.exportResolution);
           if (parsed.exportFps) setExportFps(parsed.exportFps);
           if (parsed.exportQuality) setExportQuality(parsed.exportQuality);
 
           if (Array.isArray(parsed.mediaItems)) {
             const restoredMedia = await Promise.all(
-              parsed.mediaItems.map(async (item: any) => {
+              parsed.mediaItems.map(async (item: VideoEditorMediaItem) => {
                 const isLocal = !item.url || item.url.startsWith("blob:");
                 if (isLocal) {
                   const cachedFile = await getFileFromCache(item.id);
@@ -698,6 +883,10 @@ function getMediaDuration(file: File): Promise<number> {
 
           if (Array.isArray(parsed.clips)) {
             setClipsState(parsed.clips.map(normalizeClip));
+          }
+
+          if (Array.isArray(parsed.tracks) && parsed.tracks.length > 0) {
+            setTracks(parsed.tracks);
           }
         }
       } catch (e) {
@@ -724,6 +913,7 @@ function getMediaDuration(file: File): Promise<number> {
         exportResolution,
         exportFps,
         exportQuality,
+        tracks,
         mediaItems: mediaItems.map((item) => ({
           id: item.id,
           type: item.type,
@@ -751,6 +941,7 @@ function getMediaDuration(file: File): Promise<number> {
     exportQuality,
     mediaItems,
     clips,
+    tracks,
   ]);
 
   const addClipFromMedia = (media: VideoEditorMediaItem) => {
@@ -874,6 +1065,77 @@ function getMediaDuration(file: File): Promise<number> {
     setSelectedClipId(duplicated.id);
   };
 
+  const copyClip = (id: string) => {
+    const target = clips.find((clip) => clip.id === id);
+    if (!target) return;
+
+    setCopiedClip(normalizeClip({ ...target }));
+  };
+
+  const pasteClip = (startTime?: number) => {
+    if (!copiedClip) return;
+
+    const maxStartTime = Math.max(0, TIMELINE_BASE_DURATION - copiedClip.duration);
+    const safeStartTime =
+      typeof startTime === "number"
+        ? clamp(startTime, 0, maxStartTime)
+        : clamp(currentTime, 0, maxStartTime);
+    const left = timeToLeft(safeStartTime);
+    const trackType = getTrackTypeByClipType(copiedClip.type);
+    const sameTypeTracks = tracks.filter((track) => track.type === trackType);
+    const availableTrack = sameTypeTracks.find((track) =>
+      clips.every(
+        (clip) =>
+          clip.trackId !== track.id ||
+          !intervalsOverlap(
+            safeStartTime,
+            copiedClip.duration,
+            clip.startTime,
+            clip.duration
+          )
+      )
+    );
+    const targetTrack =
+      availableTrack ?? createTrack(trackType, sameTypeTracks.length + 1);
+
+    if (!availableTrack) {
+      setTracks((prev) => {
+        const insertAfterIndex = prev.reduce(
+          (lastIndex, track, index) =>
+            track.type === trackType ? index : lastIndex,
+          -1
+        );
+
+        if (insertAfterIndex < 0) return [...prev, targetTrack];
+
+        return [
+          ...prev.slice(0, insertAfterIndex + 1),
+          targetTrack,
+          ...prev.slice(insertAfterIndex + 1),
+        ];
+      });
+    }
+
+    const width = clamp(
+      copiedClip.width || durationToWidth(copiedClip.duration),
+      4,
+      100 - left
+    );
+
+    const pasted: VideoEditorClip = normalizeClip({
+      ...copiedClip,
+      id: createId("clip-paste"),
+      trackId: targetTrack.id,
+      name: `${copiedClip.name} 복사본`,
+      startTime: Number(safeStartTime.toFixed(2)),
+      left,
+      width,
+    });
+
+    setClipsWithHistory((prev) => [...prev, pasted]);
+    setSelectedClipId(pasted.id);
+  };
+
   const splitClip = (id: string, splitTime?: number) => {
     const target = clips.find((clip) => clip.id === id);
     if (!target || target.duration <= 1) return;
@@ -935,11 +1197,18 @@ function getMediaDuration(file: File): Promise<number> {
         if (clip.id !== id) return clip;
 
         const safeLeft = clamp(left, 0, 100 - clip.width);
+        const safeStart = resolveNonOverlappingStart(
+          prev,
+          clip.id,
+          clip.trackId,
+          leftToTime(safeLeft),
+          clip.duration
+        );
 
         return normalizeClip({
           ...clip,
-          left: safeLeft,
-          startTime: leftToTime(safeLeft),
+          left: timeToLeft(safeStart),
+          startTime: safeStart,
         });
       })
     );
@@ -950,7 +1219,13 @@ function getMediaDuration(file: File): Promise<number> {
       prev.map((clip) => {
         if (clip.id !== id) return clip;
 
-        const safeDuration = clamp(duration, 0.5, TIMELINE_BASE_DURATION);
+        const safeDuration = clampDurationToTrackGap(
+          prev,
+          clip.id,
+          clip.trackId,
+          clip.startTime,
+          duration
+        );
         const nextWidth = durationToWidth(safeDuration);
 
         return normalizeClip({
@@ -967,13 +1242,66 @@ function getMediaDuration(file: File): Promise<number> {
       prev.map((clip) => {
         if (clip.id !== id) return clip;
 
-        const safeStart = clamp(startTime, 0, TIMELINE_BASE_DURATION);
-        const safeDuration = clamp(duration, 0.5, TIMELINE_BASE_DURATION);
+        const requestedStart = clamp(startTime, 0, TIMELINE_BASE_DURATION);
+        const safeStart = clampStartToPreviousTrackGap(
+          prev,
+          clip.id,
+          clip.trackId,
+          requestedStart
+        );
+        const requestedEnd = requestedStart + duration;
+        const requestedDuration = Math.max(0.5, requestedEnd - safeStart);
+        const safeDuration = clampDurationToTrackGap(
+          prev,
+          clip.id,
+          clip.trackId,
+          safeStart,
+          requestedDuration
+        );
         const left = timeToLeft(safeStart);
         const width = clamp(durationToWidth(safeDuration), 4, 100 - left);
 
         return normalizeClip({
           ...clip,
+          startTime: Number(safeStart.toFixed(2)),
+          duration: Number(safeDuration.toFixed(2)),
+          left,
+          width,
+        });
+      })
+    );
+  };
+
+  const updateClipPlacement = (
+    id: string,
+    trackId: string,
+    startTime: number,
+    duration: number
+  ) => {
+    setClipsWithHistory((prev) =>
+      prev.map((clip) => {
+        if (clip.id !== id) return clip;
+
+        const safeDuration = clampDurationToTrackGap(
+          prev,
+          clip.id,
+          trackId,
+          startTime,
+          duration
+        );
+        const safeStart = resolveNonOverlappingStart(
+          prev,
+          clip.id,
+          trackId,
+          startTime,
+          safeDuration
+        );
+        const left = timeToLeft(safeStart);
+        const width = clamp(durationToWidth(safeDuration), 4, 100 - left);
+
+        return normalizeClip({
+          ...clip,
+          trackId,
           startTime: Number(safeStart.toFixed(2)),
           duration: Number(safeDuration.toFixed(2)),
           left,
@@ -1054,6 +1382,7 @@ function getMediaDuration(file: File): Promise<number> {
     setRedoStack((prev) => [...prev.slice(-MAX_HISTORY + 1), current]);
     setUndoStack((prev) => prev.slice(0, -1));
 
+    setTracks(previous.tracks);
     setClipsState(previous.clips.map(normalizeClip));
     setSelectedClipId(previous.selectedClipId);
     setCurrentTimeState(previous.currentTime);
@@ -1068,6 +1397,7 @@ function getMediaDuration(file: File): Promise<number> {
     setUndoStack((prev) => [...prev.slice(-MAX_HISTORY + 1), current]);
     setRedoStack((prev) => prev.slice(0, -1));
 
+    setTracks(next.tracks);
     setClipsState(next.clips.map(normalizeClip));
     setSelectedClipId(next.selectedClipId);
     setCurrentTimeState(next.currentTime);
@@ -1087,6 +1417,7 @@ function getMediaDuration(file: File): Promise<number> {
           size: item.size,
           createdAt: item.createdAt,
         })),
+        tracks,
         clips,
         canvasRatio,
         canvasZoom,
@@ -1115,9 +1446,14 @@ function getMediaDuration(file: File): Promise<number> {
 
     setProjectTitle(parsed.projectTitle || "Untitled Project");
     setActiveTab(parsed.activeTab || "media");
+    setTracks(
+      Array.isArray(parsed.tracks) && parsed.tracks.length > 0
+        ? parsed.tracks
+        : DEFAULT_TIMELINE_TRACKS
+    );
     setClipsState(Array.isArray(parsed.clips) ? parsed.clips.map(normalizeClip) : []);
     setCanvasRatio(parsed.canvasRatio || "16:9");
-    setCanvasZoomState(parsed.canvasZoom || 75);
+    setCanvasZoomState(getInitialCanvasZoom(parsed.canvasZoom));
     setExportResolution(parsed.exportResolution || "1080p");
     setExportFps(parsed.exportFps || 30);
     setExportQuality(parsed.exportQuality || "standard");
@@ -1163,6 +1499,8 @@ function getMediaDuration(file: File): Promise<number> {
 
       removeClip,
       duplicateClip,
+      copyClip,
+      pasteClip,
       splitClip,
       selectClip: setSelectedClipId,
 
@@ -1171,6 +1509,7 @@ function getMediaDuration(file: File): Promise<number> {
       updateClipPosition,
       updateClipDuration,
       updateClipTime,
+      updateClipPlacement,
       updateClipTrimStart,
       updateClipTrimEnd,
       updateClipVolume,
@@ -1216,6 +1555,7 @@ function getMediaDuration(file: File): Promise<number> {
       exportQuality,
       undoStack,
       redoStack,
+      copiedClip,
       relinkMediaFile,
     ]
   );

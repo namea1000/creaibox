@@ -10,6 +10,10 @@ import {
 import { useVideoEditor } from "./VideoEditorContext";
 import type { ExportFps, ExportQuality, ExportResolution } from "./types";
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "알 수 없는 오류";
+}
+
 export default function VideoEditorExportPanel({
   open,
   onClose,
@@ -145,8 +149,8 @@ export default function VideoEditorExportPanel({
                     setIsExporting(true);
                     setExportMode("webm");
                     await onExportWebm();
-                  } catch (error: any) {
-                    window.alert(`WebM 내보내기 실패: ${error.message || "알 수 없는 오류"}`);
+                  } catch (error: unknown) {
+                    window.alert(`WebM 내보내기 실패: ${getErrorMessage(error)}`);
                   } finally {
                     setIsExporting(false);
                     setExportMode(null);
@@ -170,8 +174,8 @@ export default function VideoEditorExportPanel({
                     await onExportMp4((progress) => {
                       setMp4Progress(progress);
                     });
-                  } catch (error: any) {
-                    window.alert(`MP4 내보내기 실패: ${error.message || "알 수 없는 오류"}`);
+                  } catch (error: unknown) {
+                    window.alert(`MP4 내보내기 실패: ${getErrorMessage(error)}`);
                   } finally {
                     setIsExporting(false);
                     setExportMode(null);

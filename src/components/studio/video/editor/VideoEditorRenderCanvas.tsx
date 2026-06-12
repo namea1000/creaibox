@@ -31,6 +31,15 @@ function safeFileName(value: string) {
 }
 
 function getExportSize(resolution: string, ratio: string) {
+  const longEdge =
+    resolution === "4k"
+      ? 3840
+      : resolution === "2k"
+        ? 2560
+        : resolution === "1080p"
+          ? 1920
+          : 1280;
+
   if (ratio === "9:16") {
     if (resolution === "4k") return { width: 2160, height: 3840 };
     if (resolution === "2k") return { width: 1440, height: 2560 };
@@ -44,6 +53,11 @@ function getExportSize(resolution: string, ratio: string) {
     if (resolution === "1080p") return { width: 1080, height: 1080 };
     return { width: 720, height: 720 };
   }
+
+  if (ratio === "4:5") return { width: Math.round(longEdge * 0.8), height: longEdge };
+  if (ratio === "5:4") return { width: longEdge, height: Math.round(longEdge * 0.8) };
+  if (ratio === "21:9") return { width: longEdge, height: Math.round((longEdge * 9) / 21) };
+  if (ratio === "4:3") return { width: longEdge, height: Math.round((longEdge * 3) / 4) };
 
   if (resolution === "4k") return { width: 3840, height: 2160 };
   if (resolution === "2k") return { width: 2560, height: 1440 };

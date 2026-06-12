@@ -12,6 +12,10 @@ function safeFileName(value: string) {
     .slice(0, 80);
 }
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "알 수 없는 오류";
+}
+
 export default function VideoEditorProjectIO() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { projectTitle, exportProjectJson, importProjectJson } = useVideoEditor();
@@ -40,8 +44,8 @@ export default function VideoEditorProjectIO() {
     try {
       const text = await file.text();
       importProjectJson(text);
-    } catch (error: any) {
-      window.alert(`프로젝트 불러오기 실패: ${error.message || "알 수 없는 오류"}`);
+    } catch (error: unknown) {
+      window.alert(`프로젝트 불러오기 실패: ${getErrorMessage(error)}`);
     } finally {
       event.currentTarget.value = "";
     }
