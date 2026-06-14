@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Download,
   Film,
@@ -21,6 +21,7 @@ import {
   RotateCw,
   Maximize2,
   Eye,
+  Gauge,
 } from "lucide-react";
 
 import {
@@ -34,6 +35,12 @@ import type {
   VideoBlendMode,
   VideoTransitionType,
 } from "./VideoEditorContext";
+import VideoEditorAudioMixer from "./VideoEditorAudioMixer";
+import VideoEditorEffectsPanel from "./VideoEditorEffectsPanel";
+import VideoEditorMotionPanel from "./VideoEditorMotionPanel";
+import VideoEditorTransitionPanel from "./VideoEditorTransitionPanel";
+import VideoEditorTextStylePanel from "./VideoEditorTextStylePanel";
+import VideoEditorVisualizerInspector from "./VideoEditorVisualizerInspector";
 
 const transitionOptions: { label: string; value: VideoTransitionType }[] = [
   { label: "없음", value: "none" },
@@ -41,6 +48,13 @@ const transitionOptions: { label: string; value: VideoTransitionType }[] = [
   { label: "Zoom", value: "zoom" },
   { label: "Slide", value: "slide" },
   { label: "Blur", value: "blur" },
+  { label: "Wipe", value: "wipe" },
+  { label: "Push", value: "push" },
+  { label: "Spin", value: "spin" },
+  { label: "Glitch", value: "glitch" },
+  { label: "Flash", value: "flash" },
+  { label: "Dip Black", value: "dip-to-black" },
+  { label: "Cross Zoom", value: "cross-zoom" },
 ];
 
 const blendModeOptions: { label: string; value: VideoBlendMode }[] = [
@@ -55,7 +69,15 @@ const blendModeOptions: { label: string; value: VideoBlendMode }[] = [
   { label: "Difference", value: "difference" },
 ];
 
-type InspectorTab = "video" | "audio" | "text" | "effects" | "export";
+type InspectorTab =
+  | "clip"
+  | "video"
+  | "audio"
+  | "text"
+  | "visualizer"
+  | "effects"
+  | "transition"
+  | "export";
 
 export default function VideoEditorInspector({
   onOpenExport,
@@ -89,66 +111,89 @@ export default function VideoEditorInspector({
   } = useVideoEditor();
 
   const selectedClip = clips.find((clip) => clip.id === selectedClipId) || null;
+
+  const handleRotate = () => {
+    if (!selectedClipId) return;
+    const nextRotation = ((selectedClip?.rotation || 0) + 90) % 360;
+    updateClip(selectedClipId, { rotation: nextRotation });
+  };
+
+  const handleSpeedChange = () => {
+    if (!selectedClipId) return;
+    const nextDuration = Math.max(0.5, (selectedClip?.duration || 5) / 2);
+    updateClip(selectedClipId, {
+      duration: nextDuration,
+      name: `${(selectedClip?.name || "").replace(" (2.0x)", "")} (2.0x)`,
+    });
+  };
   const selectedMedia = selectedClip?.mediaId
     ? mediaItems.find((item) => item.id === selectedClip.mediaId) || null
     : null;
 
   const textStyle = selectedClip?.textStyle;
 
-  const [activeTab, setActiveTab] = useState<InspectorTab>("video");
+  const [activeTab, setActiveTab] = useState<InspectorTab>("clip");
 
-  const isAudioVisible =
-    selectedClip?.type === "video" || selectedClip?.type === "audio";
-  const isTextVisible =
-    selectedClip?.type === "text" || selectedClip?.type === "subtitle";
-  const visibleActiveTab: InspectorTab =
-    (!selectedClip && activeTab !== "export") ||
-    (activeTab === "audio" && !isAudioVisible) ||
-    (activeTab === "text" && !isTextVisible) ||
-    (activeTab === "effects" && !selectedClip)
-      ? "video"
-      : activeTab;
+  useEffect(() => {
+    if (selectedClip) {
+      if (selectedClip.type === "text" || selectedClip.type === "subtitle") {
+        setActiveTab("text");
+      } else if (selectedClip.type === "video" || selectedClip.type === "image") {
+        setActiveTab("video");
+      } else if (selectedClip.type === "audio") {
+        setActiveTab("audio");
+      } else if (selectedClip.type === "visualizer") {
+        setActiveTab("visualizer");
+      }
+    }
+  }, [selectedClipId, selectedClip?.type]);
+
+  const visibleActiveTab: InspectorTab = activeTab;
 
   return (
     <aside className="flex h-full w-full flex-col bg-transparent">
       {/* Tab Selector Header */}
-      <div className="flex h-12 shrink-0 border-b border-white/5 bg-[#202026]">
+      <div className="flex h-12 shrink-0 border-b border-white/5 bg-[#202026] overflow-x-auto scrollbar-none items-center px-1">
+        <TabButton
+          label="클립"
+          active={visibleActiveTab === "clip"}
+          onClick={() => setActiveTab("clip")}
+        />
         <TabButton
           label="비디오"
           active={visibleActiveTab === "video"}
           onClick={() => setActiveTab("video")}
         />
-        {selectedClip && isAudioVisible && (
-          <TabButton
-            label="오디오"
-            active={visibleActiveTab === "audio"}
-            onClick={() => setActiveTab("audio")}
-          />
-        )}
-        {selectedClip && isTextVisible && (
-          <TabButton
-            label="텍스트"
-            active={visibleActiveTab === "text"}
-            onClick={() => setActiveTab("text")}
-          />
-        )}
-        {selectedClip && (
-          <TabButton
-            label="효과/전환"
-            active={visibleActiveTab === "effects"}
-            onClick={() => setActiveTab("effects")}
-          />
-        )}
         <TabButton
-          label="내보내기"
-          active={visibleActiveTab === "export"}
-          onClick={() => setActiveTab("export")}
+          label="오디오"
+          active={visibleActiveTab === "audio"}
+          onClick={() => setActiveTab("audio")}
+        />
+        <TabButton
+          label="비주얼라이저"
+          active={visibleActiveTab === "visualizer"}
+          onClick={() => setActiveTab("visualizer")}
+        />
+        <TabButton
+          label="텍스트"
+          active={visibleActiveTab === "text"}
+          onClick={() => setActiveTab("text")}
+        />
+        <TabButton
+          label="효과"
+          active={visibleActiveTab === "effects"}
+          onClick={() => setActiveTab("effects")}
+        />
+        <TabButton
+          label="전환"
+          active={visibleActiveTab === "transition"}
+          onClick={() => setActiveTab("transition")}
         />
       </div>
 
       {/* Tab Contents Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {visibleActiveTab === "video" && (
+        {visibleActiveTab === "clip" && (
           <>
             <InspectorCard title="선택된 클립">
               {selectedClip ? (
@@ -168,7 +213,7 @@ export default function VideoEditorInspector({
                     <button
                       type="button"
                       onClick={() => removeClip(selectedClip.id)}
-                      className="rounded-none border border-white/10 p-2 text-zinc-500 hover:border-red-400 hover:text-red-300"
+                      className="rounded-md border border-white/10 p-2 text-zinc-500 hover:border-red-400 hover:text-red-300"
                     >
                       <Trash2 size={15} />
                     </button>
@@ -183,7 +228,7 @@ export default function VideoEditorInspector({
                       onChange={(event) =>
                         updateClipName(selectedClip.id, event.target.value)
                       }
-                      className="h-11 w-full rounded-none border border-white/10 bg-black/40 px-3 text-sm font-bold text-white outline-none focus:border-cyan-400"
+                      className="h-11 w-full rounded-md border border-white/10 bg-black/40 px-3 text-sm font-bold text-white outline-none focus:border-cyan-400"
                     />
                   </label>
 
@@ -241,7 +286,7 @@ export default function VideoEditorInspector({
                   </div>
                 </div>
               ) : (
-                <div className="rounded-none border border-dashed border-white/10 bg-black/30 p-5 text-center text-sm text-zinc-500">
+                <div className="rounded-md border border-dashed border-white/10 bg-black/30 p-5 text-center text-sm text-zinc-500">
                   타임라인에서 클립을 선택하면 상세 정보가 표시됩니다.
                 </div>
               )}
@@ -275,471 +320,40 @@ export default function VideoEditorInspector({
                 </div>
               </InspectorCard>
             )}
-
-            {selectedClip && (
-              <InspectorCard title="Motion / Transform">
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <RangeField
-                      label="X 위치"
-                      value={selectedClip.motionX ?? 50}
-                      min={0}
-                      max={100}
-                      step={1}
-                      display={`${selectedClip.motionX ?? 50}%`}
-                      onChange={(value) => updateClip(selectedClip.id, { motionX: value })}
-                    />
-
-                    <RangeField
-                      label="Y 위치"
-                      value={selectedClip.motionY ?? 50}
-                      min={0}
-                      max={100}
-                      step={1}
-                      display={`${selectedClip.motionY ?? 50}%`}
-                      onChange={(value) => updateClip(selectedClip.id, { motionY: value })}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <RangeField
-                      label="가로 크기"
-                      value={selectedClip.motionWidth ?? 100}
-                      min={10}
-                      max={200}
-                      step={1}
-                      display={`${selectedClip.motionWidth ?? 100}%`}
-                      onChange={(value) =>
-                        updateClip(selectedClip.id, { motionWidth: value })
-                      }
-                    />
-
-                    <RangeField
-                      label="세로 크기"
-                      value={selectedClip.motionHeight ?? 100}
-                      min={10}
-                      max={200}
-                      step={1}
-                      display={`${selectedClip.motionHeight ?? 100}%`}
-                      onChange={(value) =>
-                        updateClip(selectedClip.id, { motionHeight: value })
-                      }
-                    />
-                  </div>
-
-                  <RangeField
-                    label="Scale"
-                    value={selectedClip.scale ?? 1}
-                    min={0.1}
-                    max={3}
-                    step={0.05}
-                    display={`${Math.round((selectedClip.scale ?? 1) * 100)}%`}
-                    onChange={(value) => updateClip(selectedClip.id, { scale: value })}
-                  />
-
-                  <RangeField
-                    label="Rotation"
-                    value={selectedClip.rotation ?? 0}
-                    min={-360}
-                    max={360}
-                    step={1}
-                    display={`${selectedClip.rotation ?? 0}°`}
-                    onChange={(value) => updateClip(selectedClip.id, { rotation: value })}
-                  />
-
-                  <RangeField
-                    label="Opacity"
-                    value={selectedClip.opacity ?? 1}
-                    min={0}
-                    max={1}
-                    step={0.05}
-                    display={`${Math.round((selectedClip.opacity ?? 1) * 100)}%`}
-                    onChange={(value) => updateClip(selectedClip.id, { opacity: value })}
-                  />
-
-                  <div className="grid grid-cols-3 gap-2">
-                    <ResetButton
-                      icon={Move}
-                      label="위치 초기화"
-                      onClick={() =>
-                        updateClip(selectedClip.id, {
-                          motionX: 50,
-                          motionY: 50,
-                        })
-                      }
-                    />
-                    <ResetButton
-                      icon={Maximize2}
-                      label="크기 초기화"
-                      onClick={() =>
-                        updateClip(selectedClip.id, {
-                          motionWidth: 100,
-                          motionHeight: 100,
-                          scale: 1,
-                        })
-                      }
-                    />
-                    <ResetButton
-                      icon={RotateCw}
-                      label="회전 초기화"
-                      onClick={() =>
-                        updateClip(selectedClip.id, {
-                          rotation: 0,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-              </InspectorCard>
-            )}
           </>
         )}
 
-        {visibleActiveTab === "audio" && selectedClip && isAudioVisible && (
-          <InspectorCard title="Audio">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between rounded-none border border-white/10 bg-black/30 p-3">
-                <div className="flex items-center gap-2 text-sm font-bold text-zinc-300">
-                  {selectedClip.muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                  음소거
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => toggleClipMute(selectedClip.id)}
-                  className={`rounded-none px-3 py-1 text-xs font-black ${selectedClip.muted
-                      ? "bg-red-500/20 text-red-200"
-                      : "bg-emerald-400/20 text-emerald-200"
-                    }`}
-                >
-                  {selectedClip.muted ? "Muted" : "On"}
-                </button>
-              </div>
-
-              <RangeField
-                label="볼륨"
-                value={selectedClip.volume ?? 1}
-                min={0}
-                max={2}
-                step={0.05}
-                display={`${Math.round((selectedClip.volume ?? 1) * 100)}%`}
-                onChange={(value) => updateClipVolume(selectedClip.id, value)}
-              />
+        {visibleActiveTab === "video" && (
+          selectedClip && (selectedClip.type === "video" || selectedClip.type === "image") ? (
+            <VideoEditorMotionPanel />
+          ) : (
+            <div className="rounded-md border border-dashed border-white/10 bg-black/30 p-5 text-center text-sm text-zinc-500">
+              비디오 또는 이미지 클립을 선택하면 상세 비디오 조절기가 표시됩니다.
             </div>
-          </InspectorCard>
+          )
         )}
 
-        {visibleActiveTab === "text" && selectedClip && isTextVisible && textStyle && (
-          <InspectorCard title="Text Style">
-            <div className="space-y-4">
-              <RangeField
-                label="글자 크기"
-                value={textStyle.fontSize}
-                min={14}
-                max={96}
-                step={1}
-                display={`${textStyle.fontSize}px`}
-                onChange={(value) =>
-                  updateClipTextStyle(selectedClip.id, { fontSize: value })
-                }
-              />
-
-              <div className="grid grid-cols-2 gap-3">
-                <ColorField
-                  label="글자색"
-                  value={textStyle.color}
-                  onChange={(value) =>
-                    updateClipTextStyle(selectedClip.id, { color: value })
-                  }
-                />
-                <ColorField
-                  label="배경색"
-                  value={toColorInputValue(textStyle.backgroundColor)}
-                  onChange={(value) =>
-                    updateClipTextStyle(selectedClip.id, { backgroundColor: value })
-                  }
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <RangeField
-                  label="X 위치"
-                  value={textStyle.x}
-                  min={0}
-                  max={100}
-                  step={1}
-                  display={`${textStyle.x}%`}
-                  onChange={(value) =>
-                    updateClipTextStyle(selectedClip.id, { x: value })
-                  }
-                />
-                <RangeField
-                  label="Y 위치"
-                  value={textStyle.y}
-                  min={0}
-                  max={100}
-                  step={1}
-                  display={`${textStyle.y}%`}
-                  onChange={(value) =>
-                    updateClipTextStyle(selectedClip.id, { y: value })
-                  }
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <ToggleButton
-                  icon={Type}
-                  label="Bold"
-                  active={textStyle.bold}
-                  onClick={() =>
-                    updateClipTextStyle(selectedClip.id, {
-                      bold: !textStyle.bold,
-                    })
-                  }
-                />
-                <ToggleButton
-                  icon={Sparkles}
-                  label="Shadow"
-                  active={textStyle.shadow}
-                  onClick={() =>
-                    updateClipTextStyle(selectedClip.id, {
-                      shadow: !textStyle.shadow,
-                    })
-                  }
-                />
-              </div>
-            </div>
-          </InspectorCard>
+        {visibleActiveTab === "audio" && (
+          <VideoEditorAudioMixer />
         )}
 
-        {visibleActiveTab === "effects" && selectedClip && (
-          <>
-            <InspectorCard title="Effects / Filter">
-              <div className="space-y-4">
-                <RangeField
-                  label="Brightness"
-                  value={selectedClip.brightness ?? 1}
-                  min={0}
-                  max={3}
-                  step={0.05}
-                  display={`${Math.round((selectedClip.brightness ?? 1) * 100)}%`}
-                  onChange={(value) => updateClip(selectedClip.id, { brightness: value })}
-                />
-
-                <RangeField
-                  label="Contrast"
-                  value={selectedClip.contrast ?? 1}
-                  min={0}
-                  max={3}
-                  step={0.05}
-                  display={`${Math.round((selectedClip.contrast ?? 1) * 100)}%`}
-                  onChange={(value) => updateClip(selectedClip.id, { contrast: value })}
-                />
-
-                <RangeField
-                  label="Saturation"
-                  value={selectedClip.saturation ?? 1}
-                  min={0}
-                  max={3}
-                  step={0.05}
-                  display={`${Math.round((selectedClip.saturation ?? 1) * 100)}%`}
-                  onChange={(value) => updateClip(selectedClip.id, { saturation: value })}
-                />
-
-                <RangeField
-                  label="Blur"
-                  value={selectedClip.blur ?? 0}
-                  min={0}
-                  max={20}
-                  step={0.5}
-                  display={`${selectedClip.blur ?? 0}px`}
-                  onChange={(value) => updateClip(selectedClip.id, { blur: value })}
-                />
-
-                <div className="grid grid-cols-2 gap-3">
-                  <RangeField
-                    label="Grayscale"
-                    value={selectedClip.grayscale ?? 0}
-                    min={0}
-                    max={1}
-                    step={0.05}
-                    display={`${Math.round((selectedClip.grayscale ?? 0) * 100)}%`}
-                    onChange={(value) =>
-                      updateClip(selectedClip.id, { grayscale: value })
-                    }
-                  />
-
-                  <RangeField
-                    label="Sepia"
-                    value={selectedClip.sepia ?? 0}
-                    min={0}
-                    max={1}
-                    step={0.05}
-                    display={`${Math.round((selectedClip.sepia ?? 0) * 100)}%`}
-                    onChange={(value) => updateClip(selectedClip.id, { sepia: value })}
-                  />
-                </div>
-
-                <SelectField
-                  label="Blend Mode"
-                  value={selectedClip.blendMode ?? "normal"}
-                  options={blendModeOptions}
-                  onChange={(value) =>
-                    updateClip(selectedClip.id, {
-                      blendMode: value as VideoBlendMode,
-                    })
-                  }
-                />
-
-                <div className="grid grid-cols-2 gap-2">
-                  <ResetButton
-                    icon={SlidersHorizontal}
-                    label="필터 초기화"
-                    onClick={() =>
-                      updateClip(selectedClip.id, {
-                        brightness: 1,
-                        contrast: 1,
-                        saturation: 1,
-                        blur: 0,
-                        grayscale: 0,
-                        sepia: 0,
-                        blendMode: "normal",
-                      })
-                    }
-                  />
-                  <ResetButton
-                    icon={Eye}
-                    label="투명도 초기화"
-                    onClick={() =>
-                      updateClip(selectedClip.id, {
-                        opacity: 1,
-                      })
-                    }
-                  />
-                </div>
-              </div>
-            </InspectorCard>
-
-            <InspectorCard title="Transition">
-              <div className="space-y-3">
-                <SelectField
-                  label="시작 효과"
-                  value={selectedClip.transitionIn ?? "none"}
-                  options={transitionOptions}
-                  onChange={(value) =>
-                    updateClipTransition(selectedClip.id, "in", value as VideoTransitionType)
-                  }
-                />
-
-                <SelectField
-                  label="끝 효과"
-                  value={selectedClip.transitionOut ?? "none"}
-                  options={transitionOptions}
-                  onChange={(value) =>
-                    updateClipTransition(selectedClip.id, "out", value as VideoTransitionType)
-                  }
-                />
-
-                <p className="text-xs leading-5 text-zinc-500">
-                  Fade, Zoom, Slide, Blur 전환 효과가 프리뷰에 즉시 반영됩니다.
-                </p>
-              </div>
-            </InspectorCard>
-
-            <InspectorCard title="Advanced">
-              <div className="grid grid-cols-2 gap-2">
-                <MiniFeature icon={Move} label="Motion Ready" />
-                <MiniFeature icon={Palette} label="Color Ready" />
-                <MiniFeature icon={SlidersHorizontal} label="Filter Ready" />
-                <MiniFeature icon={Wand2} label="Keyframe Next" />
-              </div>
-              <p className="mt-3 text-xs leading-5 text-zinc-500">
-                다음 단계에서 Keyframe 배열을 붙이면 시간에 따라 위치/크기/효과가 자동 변화합니다.
-              </p>
-            </InspectorCard>
-          </>
+        {visibleActiveTab === "text" && (
+          <VideoEditorTextStylePanel />
         )}
 
-        {visibleActiveTab === "export" && (
-          <InspectorCard title="Export Settings">
-            <div className="space-y-4">
-              <div>
-                <div className="mb-2 text-xs font-bold uppercase tracking-widest text-zinc-500">
-                  해상도
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {EXPORT_RESOLUTION_OPTIONS.map((item) => (
-                    <OptionButton
-                      key={item.value}
-                      label={item.label}
-                      desc={item.desc}
-                      active={exportResolution === item.value}
-                      onClick={() =>
-                        setExportResolution(item.value as ExportResolution)
-                      }
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <div className="mb-2 text-xs font-bold uppercase tracking-widest text-zinc-500">
-                  프레임
-                </div>
-
-                <div className="grid grid-cols-3 gap-2">
-                  {EXPORT_FPS_OPTIONS.map((item) => (
-                    <OptionButton
-                      key={item.value}
-                      label={item.label}
-                      active={exportFps === item.value}
-                      onClick={() => setExportFps(item.value as ExportFps)}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <div className="mb-2 text-xs font-bold uppercase tracking-widest text-zinc-500">
-                  화질
-                </div>
-
-                <div className="grid grid-cols-1 gap-2">
-                  {EXPORT_QUALITY_OPTIONS.map((item) => (
-                    <OptionButton
-                      key={item.value}
-                      label={item.label}
-                      desc={item.desc}
-                      active={exportQuality === item.value}
-                      onClick={() =>
-                        setExportQuality(item.value as ExportQuality)
-                      }
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-none border border-cyan-400/20 bg-cyan-400/10 p-4 text-sm text-cyan-200">
-                현재 설정: {exportResolution} · {exportFps}fps ·{" "}
-                {
-                  EXPORT_QUALITY_OPTIONS.find(
-                    (item) => item.value === exportQuality
-                  )?.label
-                }
-              </div>
-
-              <button
-                type="button"
-                onClick={onOpenExport}
-                className="flex w-full items-center justify-center gap-2 rounded-none bg-cyan-400 py-3 font-black text-black hover:bg-cyan-300"
-              >
-                <Download size={17} />
-                MP4 내보내기
-              </button>
-            </div>
-          </InspectorCard>
+        {visibleActiveTab === "visualizer" && (
+          <VideoEditorVisualizerInspector />
         )}
+
+        {visibleActiveTab === "effects" && (
+          <VideoEditorEffectsPanel />
+        )}
+
+        {visibleActiveTab === "transition" && (
+          <VideoEditorTransitionPanel />
+        )}
+
+
       </div>
 
       <div className="flex h-8 shrink-0 items-center justify-between border-t border-white/5 bg-[#151519] px-3 text-[10px] font-bold text-zinc-500">
@@ -766,7 +380,7 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex-1 text-xs font-black transition border-b-2 h-full flex items-center justify-center outline-none ${
+      className={`px-3 shrink-0 text-xs font-black transition border-b-2 h-full flex items-center justify-center outline-none ${
         active
           ? "border-cyan-400 text-white bg-transparent"
           : "border-transparent text-zinc-500 hover:text-zinc-300 bg-transparent"
@@ -785,7 +399,7 @@ function InspectorCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-none border border-white/10 bg-black/20 p-4">
+    <div className="rounded-md border border-white/10 bg-black/20 p-4">
       <div className="mb-3 text-sm font-black uppercase tracking-wider text-zinc-400">
         {title}
       </div>
@@ -815,7 +429,7 @@ function NumberField({
         {label}
       </div>
 
-      <div className="flex h-11 items-center rounded-none border border-white/10 bg-black/40 px-3 focus-within:border-cyan-400">
+      <div className="flex h-11 items-center rounded-md border border-white/10 bg-black/40 px-3 focus-within:border-cyan-400">
         <input
           type="number"
           value={value}
@@ -857,7 +471,7 @@ function RangeField({
   onChange: (value: number) => void;
 }) {
   return (
-    <label className="block rounded-none border border-white/10 bg-black/30 p-3">
+    <label className="block rounded-md border border-white/10 bg-black/30 p-3">
       <div className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-widest text-zinc-500">
         <span>{label}</span>
         <span className="text-cyan-200">{display}</span>
@@ -885,7 +499,7 @@ function ColorField({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="flex h-11 items-center justify-between rounded-none border border-white/10 bg-black/30 px-3">
+    <label className="flex h-11 items-center justify-between rounded-md border border-white/10 bg-black/30 px-3">
       <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">
         {label}
       </span>
@@ -918,7 +532,7 @@ function SelectField({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-none border border-white/10 bg-black/40 px-3 text-sm font-bold text-white outline-none focus:border-cyan-400"
+        className="h-11 w-full rounded-md border border-white/10 bg-black/40 px-3 text-sm font-bold text-white outline-none focus:border-cyan-400"
       >
         {options.map((item) => (
           <option key={item.value} value={item.value}>
@@ -943,7 +557,7 @@ function ResetButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex min-h-10 items-center justify-center gap-1 rounded-none border border-white/10 bg-black/30 px-2 py-2 text-[10px] font-black text-zinc-400 hover:border-cyan-400/50 hover:text-cyan-200"
+      className="flex min-h-10 items-center justify-center gap-1 rounded-md border border-white/10 bg-black/30 px-2 py-2 text-[10px] font-black text-zinc-400 hover:border-cyan-400/50 hover:text-cyan-200"
     >
       <Icon size={13} />
       {label}
@@ -966,7 +580,7 @@ function ToggleButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-10 items-center justify-center gap-2 rounded-none border text-xs font-black ${active
+      className={`flex h-10 items-center justify-center gap-2 rounded-md border text-xs font-black ${active
           ? "border-cyan-400 bg-cyan-400/20 text-cyan-200"
           : "border-white/10 bg-black/30 text-zinc-400 hover:border-cyan-400/40"
         }`}
@@ -992,7 +606,7 @@ function ActionButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-10 items-center justify-center gap-2 rounded-none border text-xs font-black ${danger
+      className={`flex h-10 items-center justify-center gap-2 rounded-md border text-xs font-black ${danger
           ? "border-red-400/30 bg-red-500/10 text-red-300 hover:bg-red-500/20"
           : "border-white/10 bg-black/30 text-zinc-300 hover:border-cyan-400/50 hover:text-cyan-200"
         }`}
@@ -1011,7 +625,7 @@ function MiniFeature({
   label: string;
 }) {
   return (
-    <div className="flex h-10 items-center justify-center gap-2 rounded-none border border-white/10 bg-black/30 text-xs font-bold text-zinc-500">
+    <div className="flex h-10 items-center justify-center gap-2 rounded-md border border-white/10 bg-black/30 text-xs font-bold text-zinc-500">
       <Icon size={14} />
       {label}
     </div>
@@ -1033,7 +647,7 @@ function OptionButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-none border px-3 py-3 text-left text-sm transition ${active
+      className={`rounded-md border px-3 py-3 text-left text-sm transition ${active
           ? "border-cyan-400 bg-cyan-400/20 text-cyan-200"
           : "border-white/10 bg-black/20 text-zinc-400 hover:border-cyan-400/50"
         }`}
@@ -1046,7 +660,7 @@ function OptionButton({
 
 function InfoBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-none border border-white/10 bg-black/30 p-3">
+    <div className="rounded-md border border-white/10 bg-black/30 p-3">
       <div className="text-[10px] uppercase tracking-widest text-zinc-600">
         {label}
       </div>

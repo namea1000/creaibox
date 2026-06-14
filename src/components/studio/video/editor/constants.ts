@@ -13,15 +13,10 @@ import {
 import type { TimelineTrack } from "./types";
 
 export const VIDEO_EDITOR_SIDEBAR_MENUS = [
-  { key: "media", label: "미디어 업로드", icon: Upload },
-  { key: "image", label: "이미지", icon: ImageIcon },
-  { key: "video", label: "비디오", icon: Film },
-  { key: "audio", label: "오디오", icon: Music },
+  { key: "media", label: "미디어 라이브러리", icon: Upload },
   { key: "visualizer", label: "비주얼라이저", icon: Waves },
   { key: "subtitle", label: "자막", icon: Captions },
   { key: "text", label: "텍스트", icon: Type },
-  { key: "effects", label: "효과", icon: Sparkles },
-  { key: "settings", label: "모션", icon: Move },
 ] as const;
 
 export const EXPORT_RESOLUTION_OPTIONS = [

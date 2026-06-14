@@ -1,8 +1,15 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import {
+  mapGenreOption,
+  mapMoodOption,
+  mapVocalOption,
+  mapInstrumentOption,
+  mapTempoOption,
+} from "@/lib/music-lyrics-planner/utils";
 import {
   AlertCircle,
   CheckCircle2,
@@ -255,8 +262,9 @@ function normalizePresetSettings(value: unknown): AlbumOptionSettings {
   };
 }
 
-export default function MusicPlanningPage() {
+function MusicPlanningPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = useMemo(() => createClient(), []);
 
   const [plans, setPlans] = useState<AlbumPlan[]>([]);
@@ -275,6 +283,33 @@ export default function MusicPlanningPage() {
   const presetTabRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const [form, setForm] = useState<AlbumOptionSettings>(defaultAlbumOptionSettings);
+
+  useEffect(() => {
+    const genreParam = searchParams.get("genre");
+    const moodParam = searchParams.get("mood");
+    const vocalParam = searchParams.get("vocal");
+    const instrumentParam = searchParams.get("instrument");
+    const tempoParam = searchParams.get("tempo");
+    const themeParam = searchParams.get("theme");
+
+    if (genreParam || moodParam || vocalParam || instrumentParam || tempoParam || themeParam) {
+      const mappedGenre = mapGenreOption(genreParam);
+      const mappedMood = mapMoodOption(moodParam);
+      const vocalOption = mapVocalOption(vocalParam);
+      const instrumentOption = mapInstrumentOption(instrumentParam);
+      const tempoOption = mapTempoOption(tempoParam);
+
+      setForm((prev) => ({
+        ...prev,
+        genre: mappedGenre || prev.genre,
+        mood: mappedMood || prev.mood,
+        vocal: vocalOption || prev.vocal,
+        instrument: instrumentOption || prev.instrument,
+        tempo: tempoOption || prev.tempo,
+        albumTheme: themeParam || prev.albumTheme,
+      }));
+    }
+  }, [searchParams]);
 
   const fetchPlans = useCallback(async () => {
     setIsLoading(true);
@@ -1524,5 +1559,13 @@ export default function MusicPlanningPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function MusicPlanningPage() {
+  return (
+    <Suspense fallback={null}>
+      <MusicPlanningPageContent />
+    </Suspense>
   );
 }

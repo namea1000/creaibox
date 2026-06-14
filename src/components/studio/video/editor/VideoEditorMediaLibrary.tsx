@@ -35,7 +35,7 @@ const libraryTabs: {
     { id: "storage", label: "Storage", icon: Library },
   ];
 
-export default function VideoEditorMediaLibrary() {
+export default function VideoEditorMediaLibrary({ forcedTab }: { forcedTab?: LibraryTab }) {
   const {
     mediaItems,
     addMediaFiles,
@@ -46,7 +46,8 @@ export default function VideoEditorMediaLibrary() {
     relinkMediaFile,
   } = useVideoEditor();
 
-  const [libraryTab, setLibraryTab] = useState<LibraryTab>("uploads");
+  const [libraryTabState, setLibraryTabState] = useState<LibraryTab>("uploads");
+  const libraryTab = forcedTab || libraryTabState;
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] =
     useState<"grid" | "list">("grid");
@@ -84,27 +85,29 @@ export default function VideoEditorMediaLibrary() {
         desc="업로드 파일, AI 생성 결과, 음악, 스톡 리소스를 관리합니다."
       />
 
-      <div className="grid grid-cols-3 gap-2">
-        {libraryTabs.map((tab) => {
-          const Icon = tab.icon;
-          const active = libraryTab === tab.id;
+      {!forcedTab && (
+        <div className="grid grid-cols-3 gap-2">
+          {libraryTabs.map((tab) => {
+            const Icon = tab.icon;
+            const active = libraryTab === tab.id;
 
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setLibraryTab(tab.id)}
-              className={`flex flex-col items-center justify-center gap-1 rounded-none border px-2 py-3 text-[10px] font-black transition ${active
-                ? "border-cyan-400 bg-cyan-400/15 text-cyan-200"
-                : "border-white/10 bg-black/30 text-zinc-500 hover:border-cyan-400/50"
-                }`}
-            >
-              <Icon size={15} />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setLibraryTabState(tab.id)}
+                className={`flex flex-col items-center justify-center gap-1 rounded-md border px-2 py-3 text-[10px] font-black transition ${active
+                  ? "border-cyan-400 bg-cyan-400/15 text-cyan-200"
+                  : "border-white/10 bg-black/30 text-zinc-500 hover:border-cyan-400/50"
+                  }`}
+              >
+                <Icon size={15} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="grid grid-cols-5 gap-2">
         <StatCard label="전체" value={stats.total} />
@@ -119,7 +122,7 @@ export default function VideoEditorMediaLibrary() {
 
       {libraryTab === "uploads" ? (
         <>
-          <label className="flex h-28 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-none border border-dashed border-cyan-400/40 bg-cyan-400/5 text-sm font-bold text-cyan-200 hover:bg-cyan-400/10">
+          <label className="flex h-28 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed border-cyan-400/40 bg-cyan-400/5 text-sm font-bold text-cyan-200 hover:bg-cyan-400/10">
             <Upload size={24} />
             파일 업로드
             <span className="text-xs text-cyan-100/60">video / image / audio</span>
@@ -137,8 +140,8 @@ export default function VideoEditorMediaLibrary() {
             />
           </label>
 
-          <div className="rounded-none border border-white/10 bg-black/30 p-3">
-            <div className="mb-3 flex items-center gap-2 rounded-none border border-white/10 bg-black/40 px-3 py-2">
+          <div className="rounded-md border border-white/10 bg-black/30 p-3">
+            <div className="mb-3 flex items-center gap-2 rounded-md border border-white/10 bg-black/40 px-3 py-2">
               <Search size={15} className="text-zinc-500" />
               <input
                 value={search}
@@ -158,7 +161,7 @@ export default function VideoEditorMediaLibrary() {
 
           <div className="space-y-2">
             {filteredMediaItems.length === 0 ? (
-              <div className="rounded-none border border-white/10 bg-black/30 p-4 text-center text-sm text-zinc-500">
+              <div className="rounded-md border border-white/10 bg-black/30 p-4 text-center text-sm text-zinc-500">
                 업로드된 미디어가 표시됩니다.
               </div>
             ) : (
@@ -170,7 +173,7 @@ export default function VideoEditorMediaLibrary() {
                   <div
                     key={item.id}
                     onClick={() => selectMedia(item.id)}
-                    className={`group cursor-pointer rounded-none border p-3 transition ${active
+                    className={`group cursor-pointer rounded-md border p-3 transition ${active
                       ? "border-cyan-400 bg-cyan-400/10"
                       : isOffline
                         ? "border-red-500/30 bg-red-950/10 hover:border-red-500/50"
@@ -209,7 +212,7 @@ export default function VideoEditorMediaLibrary() {
                           event.stopPropagation();
                           removeMediaItem(item.id);
                         }}
-                        className="rounded-none p-2 text-zinc-600 opacity-0 hover:bg-red-500/10 hover:text-red-300 group-hover:opacity-100"
+                        className="rounded-md p-2 text-zinc-600 opacity-0 hover:bg-red-500/10 hover:text-red-300 group-hover:opacity-100"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -217,7 +220,7 @@ export default function VideoEditorMediaLibrary() {
 
                     {isOffline ? (
                       <label
-                        className="mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-none border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-200 hover:bg-red-500/20 hover:text-red-100"
+                        className="mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-200 hover:bg-red-500/20 hover:text-red-100"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Upload size={14} />
@@ -241,7 +244,7 @@ export default function VideoEditorMediaLibrary() {
                           event.stopPropagation();
                           addClipFromMedia(item);
                         }}
-                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-none border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-zinc-300 hover:border-cyan-400 hover:text-cyan-200"
+                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-zinc-300 hover:border-cyan-400 hover:text-cyan-200"
                       >
                         <Plus size={14} />
                         타임라인에 추가
@@ -257,6 +260,58 @@ export default function VideoEditorMediaLibrary() {
         <VideoEditorStockPanel />
       ) : libraryTab === "storage" ? (
         <VideoEditorStoragePanel />
+      ) : libraryTab === "ai-images" ? (
+        <div className="space-y-4">
+          <div className="rounded-md border border-dashed border-white/10 bg-black/30 p-5 text-center">
+            <Sparkles size={28} className="mx-auto mb-3 text-cyan-300" />
+            <div className="font-black text-white">AI 이미지 생성 결과</div>
+            <p className="mt-2 text-xs leading-5 text-zinc-500">
+              AI 이미지 스튜디오에서 생성한 최신 이미지를 불러옵니다.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              addClipFromMedia({
+                id: `media-ai-${Date.now()}`,
+                type: "image",
+                name: "AI Generated Landscape.png",
+                url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&auto=format&fit=crop",
+                createdAt: new Date().toISOString(),
+              });
+            }}
+            className="flex w-full items-center justify-between rounded-md border border-white/10 bg-black/30 px-4 py-3 text-left text-sm font-bold text-zinc-300 hover:border-cyan-400/50 hover:text-cyan-200"
+          >
+            AI 이미지 생성 결과 불러오기
+            <Plus size={15} />
+          </button>
+        </div>
+      ) : libraryTab === "music" ? (
+        <div className="space-y-4">
+          <div className="rounded-md border border-dashed border-white/10 bg-black/30 p-5 text-center">
+            <Music size={28} className="mx-auto mb-3 text-emerald-300" />
+            <div className="font-black text-white">뮤직 스튜디오 곡</div>
+            <p className="mt-2 text-xs leading-5 text-zinc-500">
+              뮤직 스튜디오에서 완성한 생성 음악 트랙을 불러옵니다.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              addClipFromMedia({
+                id: `media-music-${Date.now()}`,
+                type: "audio",
+                name: "Chill Focus Lounge (Generated).mp3",
+                url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+                createdAt: new Date().toISOString(),
+              });
+            }}
+            className="flex w-full items-center justify-between rounded-md border border-white/10 bg-black/30 px-4 py-3 text-left text-sm font-bold text-zinc-300 hover:border-cyan-400/50 hover:text-cyan-200"
+          >
+            생성곡 라이브러리 불러오기
+            <Plus size={15} />
+          </button>
+        </div>
       ) : (
         <ComingSoonPanel tab={libraryTab} />
       )}
@@ -277,7 +332,7 @@ function ComingSoonPanel({ tab }: { tab: LibraryTab }) {
             : "최근 사용한 파일";
 
   return (
-    <div className="rounded-none border border-dashed border-white/10 bg-black/30 p-5 text-center">
+    <div className="rounded-md border border-dashed border-white/10 bg-black/30 p-5 text-center">
       <Sparkles size={28} className="mx-auto mb-3 text-cyan-300" />
       <div className="font-black text-white">{label}</div>
       <p className="mt-2 text-xs leading-5 text-zinc-500">
@@ -300,7 +355,7 @@ function FilterButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-none border px-2 py-2 text-[11px] font-black ${active
+      className={`rounded-md border px-2 py-2 text-[11px] font-black ${active
         ? "border-cyan-400 bg-cyan-400/15 text-cyan-200"
         : "border-white/10 bg-black/20 text-zinc-500 hover:border-cyan-400/40"
         }`}
@@ -327,7 +382,7 @@ function PanelHeader({
 }) {
   return (
     <div className="mb-5 flex items-start gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-none bg-cyan-400/10 text-cyan-300">
+      <div className="flex h-10 w-10 items-center justify-center rounded-md bg-cyan-400/10 text-cyan-300">
         <Icon size={20} />
       </div>
 
@@ -347,7 +402,7 @@ function StatCard({
   value: string | number;
 }) {
   return (
-    <div className="rounded-none border border-white/10 bg-black/30 p-2 text-center">
+    <div className="rounded-md border border-white/10 bg-black/30 p-2 text-center">
       <div className="text-[10px] text-zinc-500">
         {label}
       </div>

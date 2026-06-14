@@ -4,23 +4,22 @@ import { useRef, useState } from "react";
 
 import { VideoEditorProvider } from "./VideoEditorContext";
 
-import VideoEditorSidebar from "./VideoEditorSidebar";
 import VideoEditorCanvas from "./VideoEditorCanvas";
 import VideoEditorTimeline from "./VideoEditorTimeline";
 import VideoEditorInspector from "./VideoEditorInspector";
-import VideoEditorProjectPanel from "./VideoEditorProjectPanel";
+import VideoEditorUnifiedLibrary from "./VideoEditorUnifiedLibrary";
 import VideoEditorPlaybackController from "./VideoEditorPlaybackController";
 import VideoEditorExportPanel from "./VideoEditorExportPanel";
 import VideoEditorRenderCanvas, {
   type VideoEditorRenderCanvasRef,
 } from "./VideoEditorRenderCanvas";
+import type { VideoExportOptions } from "./export/exportTypes";
 
 const DEFAULT_PROJECT_PANEL_WIDTH = 240;
 const DEFAULT_MEDIA_PANEL_WIDTH = 330;
 const DEFAULT_INSPECTOR_PANEL_WIDTH = 360;
 const DEFAULT_TIMELINE_HEIGHT = 320;
 
-const MAX_PROJECT_PANEL_WIDTH = 420;
 const MAX_MEDIA_PANEL_WIDTH = 560;
 const MAX_INSPECTOR_PANEL_WIDTH = 560;
 const MAX_TIMELINE_HEIGHT = 560;
@@ -45,12 +44,24 @@ function VideoEditorWorkspace() {
   const [timelineHeight, setTimelineHeight] = useState(DEFAULT_TIMELINE_HEIGHT);
   const renderCanvasRef = useRef<VideoEditorRenderCanvasRef | null>(null);
 
-  const handleExportWebm = async () => {
-    await renderCanvasRef.current?.exportWebm();
+  const handleExportWebCodecs = async (options?: VideoExportOptions) => {
+    await renderCanvasRef.current?.exportWebCodecs(options);
   };
 
-  const handleExportMp4 = async (onProgress?: (progress: number) => void) => {
-    await renderCanvasRef.current?.exportMp4(onProgress);
+  const handleExportWebm = async (options?: VideoExportOptions) => {
+    await renderCanvasRef.current?.exportWebm(options);
+  };
+
+  const handleExportMp4 = async (options?: VideoExportOptions) => {
+    await renderCanvasRef.current?.exportMp4(options);
+  };
+
+  const handleExportDirectMp4 = async (options?: VideoExportOptions) => {
+    await renderCanvasRef.current?.exportDirectMp4(options);
+  };
+
+  const handleRenderSampleFrame = async (time: number, options?: VideoExportOptions) => {
+    return (await renderCanvasRef.current?.renderSampleFrame(time, options)) ?? "";
   };
 
   const startHorizontalResize = (
@@ -121,32 +132,16 @@ function VideoEditorWorkspace() {
         <div className="flex h-full flex-col">
           {/* Top Panel: 4-Split Grid */}
           <div className="flex min-h-0 flex-1">
-            {/* Column 1: Project Tree (FCP Event/Project Browser) */}
+            {/* Combined Event & Resource Library (CapCut Style Unified Panel) */}
             <div
               className="shrink-0 bg-[#1b1b1f] border border-white/5 flex flex-col min-h-0 shadow-2xl rounded-[6px] overflow-hidden"
-              style={{ width: projectPanelWidth }}
+              style={{ width: projectPanelWidth + mediaPanelWidth + 4 }}
             >
-              <VideoEditorProjectPanel />
-            </div>
-
-            <ResizeDivider
-              label="프로젝트 영역 너비 조절"
-              onPointerDown={(event) =>
-                startHorizontalResize(event, {
-                  currentSize: projectPanelWidth,
-                  minSize: DEFAULT_PROJECT_PANEL_WIDTH,
-                  maxSize: MAX_PROJECT_PANEL_WIDTH,
-                  onResize: setProjectPanelWidth,
-                })
-              }
-            />
-
-            {/* Column 2: Resources & Media Library (CapCut Tabs Style) */}
-            <div
-              className="shrink-0 bg-[#1b1b1f] border border-white/5 flex flex-col min-h-0 shadow-2xl rounded-[6px] overflow-hidden"
-              style={{ width: mediaPanelWidth }}
-            >
-              <VideoEditorSidebar />
+              <VideoEditorUnifiedLibrary
+                projectPanelWidth={projectPanelWidth}
+                mediaPanelWidth={mediaPanelWidth}
+                onProjectPanelResize={setProjectPanelWidth}
+              />
             </div>
 
             <ResizeDivider
@@ -163,7 +158,7 @@ function VideoEditorWorkspace() {
 
             {/* Column 3: Canvas / Player */}
             <div className="min-w-0 flex-1 bg-[#1b1b1f] border border-white/5 flex flex-col min-h-0 shadow-2xl rounded-[6px] overflow-hidden">
-              <VideoEditorCanvas />
+              <VideoEditorCanvas onOpenExport={() => setIsExportOpen(true)} />
             </div>
 
             <ResizeDivider
@@ -213,8 +208,11 @@ function VideoEditorWorkspace() {
       <VideoEditorExportPanel
         open={isExportOpen}
         onClose={() => setIsExportOpen(false)}
+        onExportWebCodecs={handleExportWebCodecs}
         onExportWebm={handleExportWebm}
         onExportMp4={handleExportMp4}
+        onExportDirectMp4={handleExportDirectMp4}
+        onRenderSampleFrame={handleRenderSampleFrame}
       />
     </>
   );

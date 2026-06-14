@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import {
   Film,
   Image as ImageIcon,
@@ -49,19 +50,33 @@ export default function VideoEditorClip({
   };
 
   const { mediaItems, clips } = useVideoEditor();
+  const activeTrimPointerRef = useRef<number | null>(null);
 
   const handleTrimStart = (
     event: React.PointerEvent<HTMLDivElement>
   ) => {
+    event.preventDefault();
     event.stopPropagation();
-    event.currentTarget.setPointerCapture(event.pointerId);
+    onSelect(clip.id);
+
+    const handleElement = event.currentTarget;
+    activeTrimPointerRef.current = event.pointerId;
+
+    try {
+      handleElement.setPointerCapture(event.pointerId);
+    } catch {
+      // 포인터가 이미 해제된 경우는 무시합니다.
+    }
 
     const startX = event.clientX;
     const originalStartTime = clip.startTime;
     const originalDuration = clip.duration;
+    let pendingClientX = startX;
+    let frameId: number | null = null;
+    let isCleaningUp = false;
 
-    const handleMove = (moveEvent: PointerEvent) => {
-      const deltaSeconds = pixelsToSeconds(moveEvent.clientX - startX);
+    const updateTrim = (clientX: number) => {
+      const deltaSeconds = pixelsToSeconds(clientX - startX);
       const nextStart = Math.max(
         0,
         Number((originalStartTime + deltaSeconds).toFixed(2))
@@ -98,26 +113,87 @@ export default function VideoEditorClip({
       onUpdateTime(clip.id, finalStart, finalDuration);
     };
 
-    const handleUp = () => {
+    const handleMove = (moveEvent: PointerEvent) => {
+      if (activeTrimPointerRef.current !== moveEvent.pointerId) return;
+      moveEvent.preventDefault();
+      pendingClientX = moveEvent.clientX;
+
+      if (frameId !== null) return;
+      frameId = window.requestAnimationFrame(() => {
+        frameId = null;
+        updateTrim(pendingClientX);
+      });
+    };
+
+    const cleanupTrim = () => {
+      if (isCleaningUp) return;
+      isCleaningUp = true;
+
+      if (frameId !== null) {
+        window.cancelAnimationFrame(frameId);
+        frameId = null;
+      }
+
+      updateTrim(pendingClientX);
+      activeTrimPointerRef.current = null;
+
+      try {
+        if (handleElement.hasPointerCapture(event.pointerId)) {
+          handleElement.releasePointerCapture(event.pointerId);
+        }
+      } catch {
+        // 포인터 캡처가 이미 해제된 경우는 무시합니다.
+      }
+
       window.removeEventListener("pointermove", handleMove);
       window.removeEventListener("pointerup", handleUp);
+      window.removeEventListener("pointercancel", handleUp);
+      window.removeEventListener("blur", handleUp);
+      handleElement.removeEventListener("lostpointercapture", handleUp);
+    };
+
+    const handleUp = (upEvent?: PointerEvent | Event) => {
+      if (
+        upEvent instanceof PointerEvent &&
+        activeTrimPointerRef.current !== upEvent.pointerId
+      ) {
+        return;
+      }
+
+      cleanupTrim();
     };
 
     window.addEventListener("pointermove", handleMove);
     window.addEventListener("pointerup", handleUp);
+    window.addEventListener("pointercancel", handleUp);
+    window.addEventListener("blur", handleUp);
+    handleElement.addEventListener("lostpointercapture", handleUp);
   };
 
   const handleTrimEnd = (
     event: React.PointerEvent<HTMLDivElement>
   ) => {
+    event.preventDefault();
     event.stopPropagation();
-    event.currentTarget.setPointerCapture(event.pointerId);
+    onSelect(clip.id);
+
+    const handleElement = event.currentTarget;
+    activeTrimPointerRef.current = event.pointerId;
+
+    try {
+      handleElement.setPointerCapture(event.pointerId);
+    } catch {
+      // 포인터가 이미 해제된 경우는 무시합니다.
+    }
 
     const startX = event.clientX;
     const startDuration = clip.duration;
+    let pendingClientX = startX;
+    let frameId: number | null = null;
+    let isCleaningUp = false;
 
-    const handleMove = (moveEvent: PointerEvent) => {
-      const deltaSeconds = pixelsToSeconds(moveEvent.clientX - startX);
+    const updateTrim = (clientX: number) => {
+      const deltaSeconds = pixelsToSeconds(clientX - startX);
       const nextDuration = Math.max(
         0.5,
         Number((startDuration + deltaSeconds).toFixed(2))
@@ -155,13 +231,61 @@ export default function VideoEditorClip({
       onUpdateDuration(clip.id, finalDuration);
     };
 
-    const handleUp = () => {
+    const handleMove = (moveEvent: PointerEvent) => {
+      if (activeTrimPointerRef.current !== moveEvent.pointerId) return;
+      moveEvent.preventDefault();
+      pendingClientX = moveEvent.clientX;
+
+      if (frameId !== null) return;
+      frameId = window.requestAnimationFrame(() => {
+        frameId = null;
+        updateTrim(pendingClientX);
+      });
+    };
+
+    const cleanupTrim = () => {
+      if (isCleaningUp) return;
+      isCleaningUp = true;
+
+      if (frameId !== null) {
+        window.cancelAnimationFrame(frameId);
+        frameId = null;
+      }
+
+      updateTrim(pendingClientX);
+      activeTrimPointerRef.current = null;
+
+      try {
+        if (handleElement.hasPointerCapture(event.pointerId)) {
+          handleElement.releasePointerCapture(event.pointerId);
+        }
+      } catch {
+        // 포인터 캡처가 이미 해제된 경우는 무시합니다.
+      }
+
       window.removeEventListener("pointermove", handleMove);
       window.removeEventListener("pointerup", handleUp);
+      window.removeEventListener("pointercancel", handleUp);
+      window.removeEventListener("blur", handleUp);
+      handleElement.removeEventListener("lostpointercapture", handleUp);
+    };
+
+    const handleUp = (upEvent?: PointerEvent | Event) => {
+      if (
+        upEvent instanceof PointerEvent &&
+        activeTrimPointerRef.current !== upEvent.pointerId
+      ) {
+        return;
+      }
+
+      cleanupTrim();
     };
 
     window.addEventListener("pointermove", handleMove);
     window.addEventListener("pointerup", handleUp);
+    window.addEventListener("pointercancel", handleUp);
+    window.addEventListener("blur", handleUp);
+    handleElement.addEventListener("lostpointercapture", handleUp);
   };
   const media = clip.mediaId ? mediaItems.find((m) => m.id === clip.mediaId) : null;
   const thumbnailUrl = media?.thumbnailUrl || (media?.type === "image" ? media?.url : "");
@@ -170,7 +294,16 @@ export default function VideoEditorClip({
     <div
       draggable
       onDragStart={(event) => {
+        if (activeTrimPointerRef.current !== null) {
+          event.preventDefault();
+          return;
+        }
+
+        const rect = event.currentTarget.getBoundingClientRect();
+        const grabOffsetX = Math.max(0, event.clientX - rect.left);
+
         event.dataTransfer.setData("clip-id", clip.id);
+        event.dataTransfer.setData("clip-grab-offset-x", String(grabOffsetX));
         event.dataTransfer.effectAllowed = "move";
       }}
       onPointerDown={(event) => event.stopPropagation()}
@@ -224,12 +357,9 @@ export default function VideoEditorClip({
           <div className="pointer-events-none absolute inset-x-1 bottom-1.5 z-0 flex h-[28px] items-end gap-[1.5px] opacity-80">
             {(clip.waveform?.length
               ? clip.waveform
-              : Array.from({ length: 48 })
+              : Array.from({ length: 48 }, () => 0.08)
             ).map((value, index) => {
-              const height =
-                typeof value === "number"
-                  ? Math.max(10, value * 100)
-                  : 20 + Math.abs(Math.sin(index)) * 70;
+              const height = Math.max(10, value * 100);
 
               return (
                 <span
@@ -265,6 +395,7 @@ export default function VideoEditorClip({
         tabIndex={0}
         title="시작점 Trim"
         onPointerDown={handleTrimStart}
+        onDragStart={(event) => event.preventDefault()}
         className="absolute left-0 top-0 z-30 h-full w-1.5 cursor-ew-resize rounded-l-[5px] bg-cyan-400 opacity-0 transition group-hover:opacity-100"
       />
 
@@ -274,6 +405,7 @@ export default function VideoEditorClip({
         tabIndex={0}
         title="끝점 Trim / 길이 조절"
         onPointerDown={handleTrimEnd}
+        onDragStart={(event) => event.preventDefault()}
         className="absolute right-0 top-0 z-30 h-full w-1.5 cursor-ew-resize rounded-r-[5px] bg-cyan-400 opacity-0 transition group-hover:opacity-100"
       />
     </div>

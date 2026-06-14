@@ -63,6 +63,31 @@ Video Studio는 사용자의 영상, 이미지, 오디오 원본 파일을 Supab
 
 실제 MP4 파일은 저장하지 않는다.
 
+Render Queue가 job을 추가하면 로그인 사용자에 한해 `video_project_exports` row를 best-effort로 생성한다. Supabase 요청이 실패하거나 사용자가 로그인하지 않은 경우에도 export 자체는 계속 진행하고 DB 기록만 건너뛴다.
+
+현재 저장 필드:
+
+- `user_id`: Supabase `auth.getUser()` 결과
+- `project_id`: 현재 에디터가 안정적인 DB project id를 보유하지 않으면 `null`
+- `title`: export 시점 프로젝트 제목
+- `export_resolution`: 720p, 1080p, 2k, 4k
+- `export_fps`: 24, 30, 60
+- `export_quality`: low, standard, high
+- `output_file_name`: 사용자 PC에 저장될 파일명
+- `output_local_key`: `local-export://<queue-id>/<file-name>` 형식의 로컬 참조 키
+- `status`: `created`, `rendering`, `completed`, `failed`, `canceled`
+- `progress`: 0~100
+- `created_at`: DB 생성 시각
+
+저장하지 않는 값:
+
+- 실제 WebM/MP4 바이너리
+- 원본 영상/오디오/이미지 파일
+- Supabase Storage path
+- 실패 메시지 전문
+
+Export Panel은 최근 export 기록을 조회해 상태, 해상도, FPS, 품질, 파일명, 생성 시간을 표시한다. 실패 메시지 전문은 현재 테이블 컬럼에 없으므로 Render Queue의 로컬 상태에서만 확인 가능하다.
+
 ## 용량 정책
 
 사용자가 많아져도 DB에는 메타데이터만 저장되므로 용량 부담은 낮다.
@@ -86,3 +111,5 @@ Video Studio는 사용자의 영상, 이미지, 오디오 원본 파일을 Supab
 모든 테이블은 RLS를 사용한다.
 
 사용자는 자신의 프로젝트, 에셋, 클립, 저장 기록만 조회/수정/삭제할 수 있다.
+
+`video_project_exports`도 `auth.uid() = user_id` 정책을 따른다. 브라우저 클라이언트는 로그인된 사용자의 row만 insert/update/select할 수 있어야 한다.

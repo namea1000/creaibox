@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronRight,
   LayoutDashboard,
+  Star,
   HelpCircle,
   MessageCircle,
   FileText,
@@ -119,6 +120,20 @@ export default function Sidebar({
         color: "text-blue-400",
       },
       {
+        key: "shortcuts",
+        name: "바로가기",
+        href: "/studio/content-planner/idea-hub",
+        icon: Star,
+        color: "text-amber-400",
+        children: [
+          { name: "가사 소재 허브", href: "/studio/music/lyrics/idea-hub", icon: Lightbulb },
+          { name: "콘텐츠 아이디어 허브", href: "/studio/content-planner/idea-hub", icon: Lightbulb },
+          { name: "AI 콘텐츠 기획", href: "/studio/content-planner/planning", icon: Sparkles },
+          { name: "AI 앨범 기획", href: "/studio/music/planning", icon: Sparkles },
+          { name: "가사 & SUNO", href: "/studio/music/lyrics", icon: Mic2 },
+        ],
+      },
+      {
         key: "library",
         name: "콘텐츠 라이브러리",
         href: "/studio/library",
@@ -209,6 +224,7 @@ export default function Sidebar({
         icon: Music,
         color: "text-rose-400",
         children: [
+          { name: "가사 소재 허브", href: "/studio/music/lyrics/idea-hub", icon: Lightbulb },
           { name: "AI 앨범 기획", href: "/studio/music/planning", icon: Sparkles },
           { name: "가사 & SUNO", href: "/studio/music/lyrics", icon: Mic2 },
           { name: "생성곡 라이브러리", href: "/studio/music/library", icon: Mic2 },

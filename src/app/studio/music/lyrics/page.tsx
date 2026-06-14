@@ -6,6 +6,13 @@ import { createClient } from "@/utils/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { Sparkles } from "lucide-react";
 import {
+  mapLyricsGenreOption,
+  mapLyricsMoodOption,
+  mapLyricsVocalOption,
+  mapLyricsTempoOption,
+  mapLyricsInstrumentOption,
+} from "@/lib/music-lyrics-planner/utils";
+import {
   generateGeminiContentWithFallback,
   getPublicGeminiFallbackNotice,
   getUserAiVaultConfig,
@@ -871,6 +878,31 @@ ${albumPlanText || "별도 앨범 기획 없음"}
   };
 
   useEffect(() => {
+    const genreParam = searchParams.get("genre");
+    const moodParam = searchParams.get("mood");
+    const vocalParam = searchParams.get("vocal");
+    const instrumentParam = searchParams.get("instrument");
+    const tempoParam = searchParams.get("tempo");
+    const themeParam = searchParams.get("theme");
+
+    if (genreParam || moodParam || vocalParam || instrumentParam || tempoParam || themeParam) {
+      const mappedGenre = mapLyricsGenreOption(genreParam);
+      const mappedMood = mapLyricsMoodOption(moodParam);
+      const mappedVocal = mapLyricsVocalOption(vocalParam);
+      const mappedTempo = mapLyricsTempoOption(tempoParam);
+      const mappedInstrument = mapLyricsInstrumentOption(instrumentParam);
+
+      setForm((prev) => ({
+        ...prev,
+        genre: mappedGenre || prev.genre,
+        mood: mappedMood || prev.mood,
+        vocal: mappedVocal || prev.vocal,
+        tempo: mappedTempo || prev.tempo,
+        instrument: mappedInstrument || prev.instrument,
+        theme: themeParam || prev.theme,
+      }));
+    }
+
     if (albumAutoRunRef.current) return;
 
     const shouldAutoGenerate =

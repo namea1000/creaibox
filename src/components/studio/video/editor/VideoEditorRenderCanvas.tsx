@@ -3,24 +3,38 @@
 import { forwardRef, useImperativeHandle, useRef } from "react";
 import { useVideoEditor } from "./VideoEditorContext";
 import { convertWebmBlobToMp4 } from "./ffmpeg/convertWebmToMp4";
+import {
+  collectAudioMixSources,
+  detectOfflineAudioMixdownSupport,
+  renderOfflineAudioMixdown,
+  scheduleAudioMixdown,
+} from "./export/audioMixdown";
+import { getRecommendedVideoBitrate } from "./export/exportBitratePresets";
+import { isWebCodecsConfigSupported } from "./export/webCodecsSupport";
+import { detectDirectMp4Support } from "./export/directMp4Support";
+import { exportDirectMp4VideoOnly } from "./export/directMp4Exporter";
+import { exportWebCodecsVideoOnly } from "./export/webCodecsVideoExporter";
+import { runWebCodecsWorkerClient } from "./export/webCodecsWorkerClient";
+import { buildRenderFramePlan } from "./render/renderFramePlan";
+import type { RenderFrameLayer } from "./render/renderFramePlan";
+import { RenderFallbackRenderer } from "./render/renderFallbackRenderer";
+import {
+  applyClipCanvasState,
+  colorWithOpacity,
+  getCanvasFilter,
+  getRenderTransition,
+  mapBlendModeToCanvas,
+} from "./render/videoRenderMath";
+import type { VideoExportOptions } from "./export/exportTypes";
 import type { VideoEditorClip, VideoTextStyle } from "./VideoEditorContext";
+import type { TimelineTrack } from "./types";
 
 export type VideoEditorRenderCanvasRef = {
-  exportWebm: () => Promise<void>;
-  exportMp4: (onProgress?: (progress: number) => void) => Promise<void>;
-};
-
-type AudioRenderSource = {
-  clipId: string;
-  mediaId: string;
-  url: string;
-  startTime: number;
-  duration: number;
-  type: "audio" | "video";
-  trimStart: number;
-  trimEnd: number;
-  volume: number;
-  muted: boolean;
+  exportWebCodecs: (options?: VideoExportOptions) => Promise<void>;
+  exportWebm: (options?: VideoExportOptions) => Promise<void>;
+  exportMp4: (options?: VideoExportOptions) => Promise<void>;
+  exportDirectMp4: (options?: VideoExportOptions) => Promise<void>;
+  renderSampleFrame: (time: number, options?: VideoExportOptions) => Promise<string>;
 };
 
 function safeFileName(value: string) {
@@ -28,6 +42,24 @@ function safeFileName(value: string) {
     .replace(/[\\/:*?"<>|]/g, "")
     .replace(/\s+/g, "-")
     .slice(0, 80);
+}
+
+function downloadBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function throwIfAborted(signal?: AbortSignal) {
+  if (!signal?.aborted) return;
+  throw new DOMException("Export cancelled", "AbortError");
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof DOMException && error.name === "AbortError";
 }
 
 function getExportSize(resolution: string, ratio: string) {
@@ -63,23 +95,6 @@ function getExportSize(resolution: string, ratio: string) {
   if (resolution === "2k") return { width: 2560, height: 1440 };
   if (resolution === "1080p") return { width: 1920, height: 1080 };
   return { width: 1280, height: 720 };
-}
-
-function drawContainImage(
-  ctx: CanvasRenderingContext2D,
-  image: CanvasImageSource,
-  sourceWidth: number,
-  sourceHeight: number,
-  targetWidth: number,
-  targetHeight: number
-) {
-  const scale = Math.min(targetWidth / sourceWidth, targetHeight / sourceHeight);
-  const width = sourceWidth * scale;
-  const height = sourceHeight * scale;
-  const x = (targetWidth - width) / 2;
-  const y = (targetHeight - height) / 2;
-
-  ctx.drawImage(image, x, y, width, height);
 }
 
 function loadImage(url: string) {
@@ -135,65 +150,186 @@ function loadMediaElement(
   });
 }
 
-async function decodeAudioBuffer(audioContext: AudioContext, url: string) {
+async function decodeAudioBufferForRender(url: string) {
   const response = await fetch(url);
   const arrayBuffer = await response.arrayBuffer();
-  return audioContext.decodeAudioData(arrayBuffer);
+  const audioContext = new AudioContext();
+
+  try {
+    return await audioContext.decodeAudioData(arrayBuffer);
+  } finally {
+    await audioContext.close().catch(() => undefined);
+  }
 }
 
-function getTransitionProgress(clip: VideoEditorClip, time: number) {
-  const transitionDuration = Math.min(0.6, clip.duration / 3);
-  const startElapsed = time - clip.startTime;
-  const endRemaining = clip.startTime + clip.duration - time;
+type VisualizerAnalysisFrame = {
+  frequencyData: number[];
+  timeDomainData: number[];
+  average: number;
+};
+
+type VisualizerAnalysis = {
+  fps: number;
+  frames: VisualizerAnalysisFrame[];
+};
+
+type VisualizerDisplayState = {
+  count: number;
+  values: number[];
+};
+
+function analyzeAudioBufferForVisualizer(buffer: AudioBuffer, fps = 24): VisualizerAnalysis {
+  const channel = buffer.getChannelData(0);
+  const sampleRate = buffer.sampleRate;
+  const frameCount = Math.max(1, Math.ceil(buffer.duration * fps));
+  const binCount = 512;
+  const frames: VisualizerAnalysisFrame[] = [];
+
+  let previousFrequencyData = Array(binCount).fill(0) as number[];
+  let previousTimeDomainData = Array(binCount).fill(128) as number[];
+
+  for (let frame = 0; frame < frameCount; frame += 1) {
+    const centerSample = Math.max(
+      0,
+      Math.min(channel.length - 1, Math.floor((frame / fps) * sampleRate))
+    );
+    const windowSize = Math.min(channel.length, 4096);
+    const startSample = Math.max(0, centerSample - Math.floor(windowSize / 2));
+    const endSample = Math.min(channel.length, startSample + windowSize);
+    const sampleCount = Math.max(1, endSample - startSample);
+    const frequencyData: number[] = [];
+    const timeDomainData: number[] = [];
+    let totalEnergy = 0;
+
+    for (let index = 0; index < binCount; index += 1) {
+      const binStart = startSample + Math.floor((index / binCount) * sampleCount);
+      const binEnd = startSample + Math.floor(((index + 1) / binCount) * sampleCount);
+      let peak = 0;
+      let sumSquares = 0;
+      let values = 0;
+
+      for (let sampleIndex = binStart; sampleIndex < Math.max(binEnd, binStart + 1); sampleIndex += 1) {
+        const value = channel[Math.min(channel.length - 1, sampleIndex)] || 0;
+        peak = Math.max(peak, Math.abs(value));
+        sumSquares += value * value;
+        values += 1;
+      }
+
+      const rms = Math.sqrt(sumSquares / Math.max(values, 1));
+      const shaped = Math.pow(rms * 0.84 + peak * 0.16, 0.82);
+      const waveSample = channel[Math.min(channel.length - 1, binStart)] || 0;
+      const rawFreqValue = Math.min(255, shaped * 360);
+      const rawWaveValue = 128 + Math.max(-1, Math.min(1, waveSample)) * 66;
+      const previousFreqValue = previousFrequencyData[index] ?? rawFreqValue;
+      const previousWaveValue = previousTimeDomainData[index] ?? rawWaveValue;
+      const freqSmoothing = rawFreqValue > previousFreqValue ? 0.14 : 0.06;
+      const waveSmoothing = 0.12;
+      const freqValue = previousFreqValue + (rawFreqValue - previousFreqValue) * freqSmoothing;
+      const waveValue = previousWaveValue + (rawWaveValue - previousWaveValue) * waveSmoothing;
+      frequencyData.push(freqValue);
+      timeDomainData.push(waveValue);
+      totalEnergy += freqValue;
+    }
+
+    const spatialFrequencyData = smoothVisualizerBins(frequencyData);
+    const spatialTimeDomainData = smoothVisualizerBins(timeDomainData);
+    previousFrequencyData = spatialFrequencyData;
+    previousTimeDomainData = spatialTimeDomainData;
+
+    frames.push({
+      frequencyData: spatialFrequencyData,
+      timeDomainData: spatialTimeDomainData,
+      average: totalEnergy / Math.max(binCount, 1),
+    });
+  }
+
+  return { fps, frames };
+}
+
+function smoothVisualizerBins(values: number[]) {
+  return values.map((value, index) => {
+    const previous2 = values[Math.max(0, index - 2)] ?? value;
+    const previous = values[Math.max(0, index - 1)] ?? value;
+    const next = values[Math.min(values.length - 1, index + 1)] ?? value;
+    const next2 = values[Math.min(values.length - 1, index + 2)] ?? value;
+    return previous2 * 0.08 + previous * 0.18 + value * 0.48 + next * 0.18 + next2 * 0.08;
+  });
+}
+
+function getVisualizerAnalysisFrame(
+  analysis: VisualizerAnalysis,
+  offsetSeconds: number
+): VisualizerAnalysisFrame {
+  const rawIndex = Math.max(
+    0,
+    Math.min(analysis.frames.length - 1, offsetSeconds * analysis.fps)
+  );
+  const index = Math.floor(rawIndex);
+  const nextIndex = Math.min(analysis.frames.length - 1, index + 1);
+  const ratio = rawIndex - index;
+  const current = analysis.frames[index];
+  const next = analysis.frames[nextIndex];
+
+  if (!next || ratio <= 0) return current;
 
   return {
-    transitionDuration,
-    startElapsed,
-    endRemaining,
-    inProgress: Math.max(0, Math.min(1, startElapsed / transitionDuration)),
-    outProgress: Math.max(0, Math.min(1, endRemaining / transitionDuration)),
-    isIn:
-      Boolean(clip.transitionIn && clip.transitionIn !== "none") &&
-      startElapsed < transitionDuration,
-    isOut:
-      Boolean(clip.transitionOut && clip.transitionOut !== "none") &&
-      endRemaining < transitionDuration,
+    frequencyData: interpolateVisualizerBins(current.frequencyData, next.frequencyData, ratio),
+    timeDomainData: interpolateVisualizerBins(current.timeDomainData, next.timeDomainData, ratio),
+    average: current.average + (next.average - current.average) * ratio,
   };
 }
 
-function applyTransition(
+function interpolateVisualizerBins(current: number[], next: number[], ratio: number) {
+  return current.map((value, index) => value + ((next[index] ?? value) - value) * ratio);
+}
+
+function isStaticRenderLayer(layer: RenderFrameLayer) {
+  const clip = layer.clip;
+  if (clip.keyframes?.length) return false;
+  if (clip.transitionIn && clip.transitionIn !== "none") return false;
+  if (clip.transitionOut && clip.transitionOut !== "none") return false;
+  return true;
+}
+
+function isStaticTextLayer(layer: RenderFrameLayer) {
+  if (layer.kind !== "text" && layer.kind !== "subtitle") return false;
+  return isStaticRenderLayer(layer);
+}
+
+function applyTextCanvasState(
   ctx: CanvasRenderingContext2D,
   clip: VideoEditorClip,
   time: number,
   canvasWidth: number,
   canvasHeight: number
 ) {
-  const { inProgress, outProgress, isIn, isOut } = getTransitionProgress(clip, time);
-
-  let alpha = 1;
-  let scale = 1;
-  let translateX = 0;
-  let blur = 0;
-
-  if (isIn) {
-    if (clip.transitionIn === "fade") alpha = inProgress;
-    if (clip.transitionIn === "zoom") scale = 0.92 + inProgress * 0.08;
-    if (clip.transitionIn === "slide") translateX = (1 - inProgress) * canvasWidth * 0.08;
-    if (clip.transitionIn === "blur") blur = (1 - inProgress) * 8;
-  }
-
-  if (isOut) {
-    if (clip.transitionOut === "fade") alpha = Math.min(alpha, outProgress);
-    if (clip.transitionOut === "zoom") scale = 0.92 + outProgress * 0.08;
-    if (clip.transitionOut === "slide") translateX = (1 - outProgress) * -canvasWidth * 0.08;
-    if (clip.transitionOut === "blur") blur = Math.max(blur, (1 - outProgress) * 8);
-  }
-
-  ctx.globalAlpha = alpha;
-  ctx.translate(canvasWidth / 2 + translateX, canvasHeight / 2);
-  ctx.scale(scale, scale);
+  const transition = getRenderTransition(clip, time);
+  ctx.globalAlpha = (clip.opacity ?? 1) * transition.opacity;
+  ctx.filter = getCanvasFilter(clip, time);
+  ctx.globalCompositeOperation = mapBlendModeToCanvas(clip.blendMode ?? "normal");
+  ctx.translate(
+    canvasWidth / 2 + canvasWidth * (transition.translateX / 100),
+    canvasHeight / 2 + canvasHeight * (transition.translateY / 100)
+  );
+  ctx.rotate((transition.rotate * Math.PI) / 180);
+  ctx.scale(transition.scale, transition.scale);
   ctx.translate(-canvasWidth / 2, -canvasHeight / 2);
-  ctx.filter = blur > 0 ? `blur(${blur}px)` : "none";
+
+  if (
+    transition.clipInsetLeft > 0 ||
+    transition.clipInsetRight > 0 ||
+    transition.clipInsetTop > 0 ||
+    transition.clipInsetBottom > 0
+  ) {
+    ctx.beginPath();
+    ctx.rect(
+      canvasWidth * transition.clipInsetLeft,
+      canvasHeight * transition.clipInsetTop,
+      canvasWidth * (1 - transition.clipInsetLeft - transition.clipInsetRight),
+      canvasHeight * (1 - transition.clipInsetTop - transition.clipInsetBottom)
+    );
+    ctx.clip();
+  }
 }
 
 function drawTextClip(
@@ -204,24 +340,38 @@ function drawTextClip(
   fallback: VideoTextStyle
 ) {
   const style = clip.textStyle ?? fallback;
-  const x = canvasWidth * (style.x / 100);
-  const y = canvasHeight * (style.y / 100);
+  const safeX = clip.type === "subtitle" ? Math.min(90, Math.max(10, style.x)) : style.x;
+  const safeY = clip.type === "subtitle" ? Math.min(88, Math.max(12, style.y)) : style.y;
+  const x = canvasWidth * (safeX / 100);
+  const y = canvasHeight * (safeY / 100);
   const fontSize = Math.round((style.fontSize / 1280) * canvasWidth * 1.05);
 
   ctx.save();
-  ctx.textAlign = "center";
+  const textAlign = clip.textAlign ?? "center";
+  ctx.textAlign = textAlign;
   ctx.textBaseline = "middle";
-  ctx.font = `${style.bold ? 900 : 500} ${fontSize}px sans-serif`;
+  const fontFamily = clip.fontFamily ?? "sans-serif";
+  ctx.font = `${style.bold ? 900 : 500} ${fontSize}px ${fontFamily}`;
 
-  const metrics = ctx.measureText(clip.name);
+  const maxTextWidth = canvasWidth * (clip.type === "subtitle" ? 0.78 : 0.86);
+  const lines = getWrappedTextLines(ctx, clip.name, maxTextWidth);
+  const lineHeight = fontSize * 1.22;
+  const textWidth = Math.max(...lines.map((line) => ctx.measureText(line).width));
   const paddingX = fontSize * 0.65;
   const paddingY = fontSize * 0.42;
-  const boxWidth = metrics.width + paddingX * 2;
-  const boxHeight = fontSize + paddingY * 2;
+  const boxWidth = textWidth + paddingX * 2;
+  const boxHeight = lineHeight * lines.length + paddingY * 2;
+
+  let boxX = x - boxWidth / 2;
+  if (textAlign === "left") {
+    boxX = x - paddingX;
+  } else if (textAlign === "right") {
+    boxX = x - boxWidth + paddingX;
+  }
 
   if (style.backgroundColor !== "transparent") {
-    ctx.fillStyle = style.backgroundColor;
-    roundRect(ctx, x - boxWidth / 2, y - boxHeight / 2, boxWidth, boxHeight, 0);
+    ctx.fillStyle = colorWithOpacity(style.backgroundColor, clip.textBgOpacity ?? 1);
+    roundRect(ctx, boxX, y - boxHeight / 2, boxWidth, boxHeight, 0);
     ctx.fill();
   }
 
@@ -231,9 +381,45 @@ function drawTextClip(
     ctx.shadowOffsetY = 8;
   }
 
-  ctx.fillStyle = style.color;
-  ctx.fillText(clip.name, x, y);
+  ctx.fillStyle = colorWithOpacity(style.color, clip.textOpacity ?? 1);
+  const firstLineY = y - ((lines.length - 1) * lineHeight) / 2;
+  lines.forEach((line, index) => {
+    ctx.fillText(line, x, firstLineY + index * lineHeight);
+  });
   ctx.restore();
+}
+
+function getWrappedTextLines(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number
+) {
+  const normalizedLines = text
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const lines: string[] = [];
+
+  for (const sourceLine of normalizedLines.length ? normalizedLines : [text]) {
+    const words = sourceLine.split(/\s+/);
+    let currentLine = "";
+
+    for (const word of words) {
+      const candidate = currentLine ? `${currentLine} ${word}` : word;
+      if (ctx.measureText(candidate).width <= maxWidth || !currentLine) {
+        currentLine = candidate;
+      } else {
+        lines.push(currentLine);
+        currentLine = word;
+      }
+    }
+
+    if (currentLine) lines.push(currentLine);
+  }
+
+  return lines.length ? lines : [text];
 }
 
 function roundRect(
@@ -254,6 +440,258 @@ function roundRect(
   ctx.closePath();
 }
 
+function drawVisualizerClip(
+  ctx: CanvasRenderingContext2D,
+  clip: VideoEditorClip,
+  time: number,
+  width: number,
+  height: number,
+  paintBackground: boolean,
+  audioData?: { frequencyData: number[]; timeDomainData: number[]; average: number },
+  displayState?: VisualizerDisplayState
+) {
+  const visualizerClip = clip as VideoEditorClip & {
+    visualizerTemplate?: string;
+    visualizerAccentColor?: string;
+    visualizerBackgroundColor?: string;
+    visualizerY?: number;
+    visualizerHeight?: number;
+    visualizerWidth?: number;
+  };
+  const template = visualizerClip.visualizerTemplate || "circle";
+  const accentColor = visualizerClip.visualizerAccentColor || "#ff4fd8";
+  const backgroundColor = visualizerClip.visualizerBackgroundColor || "#050507";
+  const spectrumY = height * ((visualizerClip.visualizerY ?? 50) / 100);
+  const spectrumHeight = height * ((visualizerClip.visualizerHeight ?? 58) / 100);
+  const spectrumWidth = width * ((visualizerClip.visualizerWidth ?? 92) / 100);
+  const elapsed = Math.max(0, time - clip.startTime);
+  const frequencyData = audioData?.frequencyData ?? [];
+  const timeDomainData = audioData?.timeDomainData ?? [];
+  const average = audioData?.average ?? 0;
+
+  const getFrequencyValue = (index: number, count: number) => {
+    const safeCount = Math.max(count, 1);
+    if (frequencyData.length === 0) {
+      return Math.abs(Math.sin(elapsed * 2.2 + index * 0.22)) * 120 + 18;
+    }
+
+    const position = index / Math.max(safeCount - 1, 1);
+    const minBin = 2;
+    const maxBin = Math.max(Math.floor(frequencyData.length * 0.65), minBin + 2);
+    const toLogBin = (ratio: number) => {
+      const safeRatio = Math.min(Math.max(ratio, 0), 1);
+      return Math.floor(minBin * Math.pow(maxBin / minBin, safeRatio));
+    };
+    const linearOffset = Math.floor(position * (frequencyData.length * 0.18));
+    const start = Math.max(toLogBin(index / safeCount), minBin + linearOffset);
+    const end = Math.max(toLogBin((index + 1) / safeCount), start + 1);
+    let total = 0;
+
+    for (let sourceIndex = start; sourceIndex < end; sourceIndex += 1) {
+      total += frequencyData[Math.min(frequencyData.length - 1, sourceIndex)] ?? 0;
+    }
+
+    const averageValue = total / Math.max(end - start, 1);
+    const highFrequencyLift = 1 + position * 0.65;
+    const lowFrequencyTame = 0.88 + position * 0.12;
+    const targetValue = Math.min(
+      255,
+      Math.pow(Math.max(0, averageValue) / 255, 0.78) * 245 * highFrequencyLift * lowFrequencyTame
+    );
+
+    if (!displayState) return targetValue;
+
+    if (displayState.count !== safeCount) {
+      displayState.count = safeCount;
+      displayState.values = Array(safeCount).fill(targetValue);
+    }
+
+    const previousValue = displayState.values[index] ?? targetValue;
+    const smoothing = targetValue > previousValue ? 0.48 : 0.28;
+    const visibleValue = previousValue + (targetValue - previousValue) * smoothing;
+    displayState.values[index] = visibleValue;
+
+    return visibleValue;
+  };
+
+  const getWaveValue = (index: number, count: number) => {
+    if (timeDomainData.length === 0) {
+      return 128 + Math.sin(elapsed * 2.5 + index * 0.18) * 54;
+    }
+
+    const sourceIndex = Math.min(
+      timeDomainData.length - 1,
+      Math.max(0, Math.floor((index / Math.max(count - 1, 1)) * timeDomainData.length))
+    );
+    return timeDomainData[sourceIndex] ?? 128;
+  };
+
+  if (paintBackground) {
+    ctx.fillStyle = backgroundColor;
+    ctx.fillRect(-width / 2, -height / 2, width, height);
+  }
+  ctx.strokeStyle = accentColor;
+  ctx.fillStyle = accentColor;
+  ctx.shadowColor = accentColor;
+  ctx.shadowBlur = Math.max(10, width * 0.014);
+
+  if (template === "progress") {
+    const barWidth = spectrumWidth * 0.78;
+    const barHeight = Math.max(10, spectrumHeight * 0.12);
+    const x = -barWidth / 2;
+    const y = spectrumY - height / 2 - barHeight / 2;
+    const progress = Math.min(1, elapsed / Math.max(clip.duration, 0.1));
+
+    ctx.globalAlpha *= 0.25;
+    roundRect(ctx, x, y, barWidth, barHeight, barHeight / 2);
+    ctx.fill();
+    ctx.globalAlpha /= 0.25;
+    roundRect(ctx, x, y, barWidth * progress, barHeight, barHeight / 2);
+    ctx.fill();
+    return;
+  }
+
+  if (template === "bars" || template === "skyline") {
+    const count = template === "skyline" ? 72 : 96;
+    const startX = -spectrumWidth / 2;
+    const gap = spectrumWidth / count;
+    const baselineY = template === "skyline"
+      ? height / 2
+      : spectrumY - height / 2;
+    const maxHeight = template === "skyline" ? spectrumHeight : spectrumHeight * 0.9;
+
+    for (let index = 0; index < count; index += 1) {
+      const value = getFrequencyValue(index, count);
+      const barHeight = Math.max(3, (value / 255) * maxHeight);
+      const x = startX + index * gap;
+      const y = template === "skyline"
+        ? baselineY - barHeight
+        : baselineY - barHeight / 2;
+
+      ctx.fillRect(x + gap * 0.18, y, Math.max(2, gap * 0.64), barHeight);
+    }
+    return;
+  }
+
+  if (template === "mirror-bars") {
+    const count = 88;
+    const startX = -spectrumWidth / 2;
+    const gap = spectrumWidth / count;
+    const centerY = spectrumY - height / 2;
+
+    for (let index = 0; index < count; index += 1) {
+      const value = getFrequencyValue(index, count);
+      const barHeight = Math.max(3, (value / 255) * spectrumHeight * 0.5);
+      const x = startX + index * gap;
+      const barWidth = Math.max(2, gap * 0.64);
+      ctx.fillRect(x + gap * 0.18, centerY - barHeight, barWidth, barHeight);
+      ctx.fillRect(x + gap * 0.18, centerY, barWidth, barHeight);
+    }
+    return;
+  }
+
+  if (template === "circle" || template === "ring" || template === "orbit" || template === "orbital" || template === "radial-dots") {
+    const radius = Math.min(spectrumWidth, spectrumHeight) * (0.25 + average * 0.00025);
+    const count = template === "radial-dots" ? 90 : template === "orbital" ? 72 : 140;
+
+    for (let index = 0; index < count; index += 1) {
+      const angle = (Math.PI * 2 * index) / count;
+      const pulse = getFrequencyValue(index, count) / 255;
+      const inner = radius;
+      const outer = radius + pulse * Math.min(width, height) * 0.045;
+      const cx = Math.cos(angle);
+      const cy = Math.sin(angle);
+
+      ctx.beginPath();
+      ctx.lineWidth = Math.max(2, width * 0.0022);
+      if (template === "radial-dots") {
+        ctx.arc(cx * outer, spectrumY - height / 2 + cy * outer, Math.max(2, 2 + pulse * 8), 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.moveTo(cx * inner, spectrumY - height / 2 + cy * inner);
+        ctx.lineTo(cx * outer, spectrumY - height / 2 + cy * outer);
+        ctx.stroke();
+      }
+    }
+    return;
+  }
+
+  if (template === "wave" || template === "twin-wave" || template === "line" || template === "mountain" || template === "heartbeat" || template === "minimal") {
+    const count = template === "minimal" ? 80 : 256;
+    const startX = -spectrumWidth / 2;
+    const centerY = spectrumY - height / 2;
+    ctx.beginPath();
+
+    for (let index = 0; index < count; index += 1) {
+      const waveValue = getWaveValue(index, count);
+      const freqValue = getFrequencyValue(index, count);
+      const x = startX + (index / Math.max(count - 1, 1)) * spectrumWidth;
+      let y = centerY + ((waveValue - 128) / 128) * (spectrumHeight * 0.45);
+
+      if (template === "line") y = centerY - (freqValue / 255) * (spectrumHeight * 0.45) + Math.sin(index * 0.22) * (spectrumHeight * 0.12);
+      if (template === "mountain") y = height / 2 - (freqValue / 255) * spectrumHeight;
+      if (template === "heartbeat") y = centerY + Math.sin(index * 0.12) * (spectrumHeight * 0.08) - (freqValue / 255) * (spectrumHeight * 0.35);
+      if (template === "minimal") y = centerY - (freqValue / 255) * (spectrumHeight * 0.24);
+
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+
+    if (template === "mountain") {
+      ctx.lineTo(spectrumWidth / 2, height / 2);
+      ctx.lineTo(-spectrumWidth / 2, height / 2);
+      ctx.closePath();
+      ctx.globalAlpha *= 0.5;
+      ctx.fill();
+    } else {
+      ctx.stroke();
+    }
+
+    if (template === "twin-wave") {
+      ctx.beginPath();
+      for (let index = 0; index < count; index += 1) {
+        const waveValue = getWaveValue(index, count);
+        const x = startX + (index / Math.max(count - 1, 1)) * spectrumWidth;
+        const y = centerY - ((waveValue - 128) / 128) * (spectrumHeight * 0.45);
+        if (index === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    return;
+  }
+
+  if (template === "dots" || template === "particles" || template === "beat-dots") {
+    const count = template === "particles" ? 120 : 64;
+    for (let index = 0; index < count; index += 1) {
+      const value = getFrequencyValue(index, count);
+      const x = -spectrumWidth / 2 + (index / Math.max(count - 1, 1)) * spectrumWidth;
+      const y = spectrumY - height / 2 + Math.sin(index * 0.4 + elapsed) * spectrumHeight * 0.18;
+      ctx.beginPath();
+      ctx.arc(x, y, Math.max(2, 2 + (value / 255) * 10), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    return;
+  }
+
+  const count = 56;
+  const startX = -spectrumWidth / 2;
+  const gap = spectrumWidth / count;
+  const centerY = spectrumY - height / 2;
+
+  for (let index = 0; index < count; index += 1) {
+    const pulse = getFrequencyValue(index, count) / 255;
+    const barHeight = Math.max(3, spectrumHeight * (0.12 + pulse * 0.72));
+    const x = startX + index * gap;
+
+    ctx.beginPath();
+    ctx.lineWidth = Math.max(2, gap * 0.48);
+    ctx.moveTo(x, centerY - barHeight / 2);
+    ctx.lineTo(x, centerY + barHeight / 2);
+    ctx.stroke();
+  }
+}
+
 export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRenderCanvas(
   _props,
   ref
@@ -263,171 +701,352 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
   const {
     projectTitle,
     mediaItems,
+    tracks,
     clips,
     totalDuration,
     canvasRatio,
     exportResolution,
     exportFps,
+    exportQuality,
   } = useVideoEditor();
 
   useImperativeHandle(ref, () => {
-    const renderToWebmBlob = async () => {
-      const canvas = canvasRef.current;
-      if (!canvas) throw new Error("렌더 캔버스를 찾지 못했습니다.");
-
-      const size = getExportSize(exportResolution, canvasRatio);
-      canvas.width = size.width;
-      canvas.height = size.height;
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("Canvas context를 생성하지 못했습니다.");
-
+    const createFrameRenderer = (
+      canvas: HTMLCanvasElement,
+      ctx: CanvasRenderingContext2D,
+      renderClips = clips,
+      renderMediaItems = mediaItems,
+      renderTracks: TimelineTrack[] = tracks,
+      renderCanvasRatio = canvasRatio
+    ) => {
       const imageCache = new Map<string, HTMLImageElement>();
       const videoCache = new Map<string, HTMLVideoElement>();
+      const visualizerAudioSources = collectAudioMixSources({
+        clips: renderClips,
+        mediaItems: renderMediaItems,
+      });
+      const visualizerAudioCache = new Map<string, Promise<VisualizerAnalysis>>();
+      const visualizerDisplayStates = new Map<string, VisualizerDisplayState>();
+      const staticMediaFrameCache = new Map<string, HTMLCanvasElement>();
+      const staticOverlayFrameCache = new Map<string, HTMLCanvasElement>();
+      const fallbackRenderer = RenderFallbackRenderer.create();
 
-      const audioContext = new AudioContext();
-      const audioDestination = audioContext.createMediaStreamDestination();
-      const audioBufferCache = new Map<string, AudioBuffer>();
-      const scheduledAudioNodes: AudioBufferSourceNode[] = [];
+      const getVisualizerAudioData = async (time: number) => {
+        const activeSource = visualizerAudioSources.find(
+          (source) =>
+            !source.muted &&
+            time >= source.startTime &&
+            time <= source.startTime + source.duration
+        );
 
-      const audioSources: AudioRenderSource[] = clips
-        .map((clip) => {
-          if (clip.type !== "audio" && clip.type !== "video") return null;
-          if (clip.muted) return null;
+        if (!activeSource) return undefined;
 
-          const media = clip.mediaId
-            ? mediaItems.find((item) => item.id === clip.mediaId)
-            : null;
-
-          if (!media) return null;
-          if (media.type !== "audio" && media.type !== "video") return null;
-
-          return {
-            clipId: clip.id,
-            mediaId: media.id,
-            url: media.url,
-            startTime: clip.startTime,
-            duration: clip.duration,
-            trimStart: clip.trimStart ?? 0,
-            trimEnd: clip.trimEnd ?? 0,
-            volume: clip.volume ?? 1,
-            muted: clip.muted ?? false,
-            type: media.type,
-          } as AudioRenderSource;
-        })
-        .filter(Boolean) as AudioRenderSource[];
-
-      const scheduleAudio = async () => {
-        await audioContext.resume();
-
-        for (const source of audioSources) {
-          let buffer = audioBufferCache.get(source.mediaId);
-
-          if (!buffer) {
-            buffer = await decodeAudioBuffer(audioContext, source.url);
-            audioBufferCache.set(source.mediaId, buffer);
-          }
-
-          const bufferSource = audioContext.createBufferSource();
-          const gainNode = audioContext.createGain();
-
-          bufferSource.buffer = buffer;
-          gainNode.gain.value = Math.max(0, Math.min(2, source.volume));
-
-          bufferSource.connect(gainNode);
-          gainNode.connect(audioDestination);
-
-          const offset = Math.max(0, source.trimStart);
-          const safeDuration = Math.min(
-            source.duration,
-            Math.max(0.1, buffer.duration - offset - source.trimEnd)
+        let analysisPromise = visualizerAudioCache.get(activeSource.mediaId);
+        if (!analysisPromise) {
+          analysisPromise = decodeAudioBufferForRender(activeSource.url).then((buffer) =>
+            analyzeAudioBufferForVisualizer(buffer)
           );
-
-          bufferSource.start(
-            audioContext.currentTime + source.startTime,
-            offset,
-            safeDuration
-          );
-
-          scheduledAudioNodes.push(bufferSource);
+          visualizerAudioCache.set(activeSource.mediaId, analysisPromise);
         }
+
+        const analysis = await analysisPromise;
+        const offsetSeconds = Math.max(0, time - activeSource.startTime + activeSource.trimStart);
+        return getVisualizerAnalysisFrame(analysis, offsetSeconds);
       };
 
-      const canvasStream = canvas.captureStream(exportFps);
-
-      await scheduleAudio();
-
-      const mixedStream = new MediaStream([
-        ...canvasStream.getVideoTracks(),
-        ...audioDestination.stream.getAudioTracks(),
-      ]);
-
-      const chunks: BlobPart[] = [];
-
-      const recorder = new MediaRecorder(mixedStream, {
-        mimeType: "video/webm;codecs=vp9,opus",
-      });
-
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) chunks.push(event.data);
+      const drawMediaClip = async (
+        targetCtx: CanvasRenderingContext2D,
+        targetCanvas: HTMLCanvasElement,
+        source: CanvasImageSource,
+        sourceWidth: number,
+        sourceHeight: number,
+        clip: VideoEditorClip,
+        time: number
+      ) => {
+        await fallbackRenderer.drawMediaLayer({
+          ctx: targetCtx,
+          canvasWidth: targetCanvas.width,
+          canvasHeight: targetCanvas.height,
+          source,
+          sourceWidth,
+          sourceHeight,
+          clip,
+          currentTime: time,
+        });
       };
 
-      const stopPromise = new Promise<Blob>((resolve) => {
-        recorder.onstop = () => {
-          resolve(new Blob(chunks, { type: "video/webm" }));
-        };
-      });
+      const getImageForLayer = async (layer: RenderFrameLayer) => {
+        if (!layer.media || layer.media.type !== "image") return null;
 
-      const renderFrame = async (time: number) => {
+        let image = imageCache.get(layer.media.id);
+        if (!image) {
+          image = await loadImage(layer.media.url);
+          imageCache.set(layer.media.id, image);
+        }
+
+        return image;
+      };
+
+      const isStableImageLayer = (layer: RenderFrameLayer) => {
+        if (layer.kind !== "image" || !layer.media || layer.media.type !== "image") return false;
+        if (layer.clip.keyframes?.length) return false;
+        if (layer.transition.opacity !== 1) return false;
+        if (layer.transition.scale !== 1) return false;
+        if (layer.transition.translateX !== 0 || layer.transition.translateY !== 0) return false;
+        if (layer.transition.rotate !== 0 || layer.transition.blur !== 0) return false;
+        if (
+          layer.transition.clipInsetLeft !== 0 ||
+          layer.transition.clipInsetRight !== 0 ||
+          layer.transition.clipInsetTop !== 0 ||
+          layer.transition.clipInsetBottom !== 0
+        ) {
+          return false;
+        }
+        return true;
+      };
+
+      const getStaticMediaCacheKey = (layers: RenderFrameLayer[]) => {
+        if (layers.length === 0 || !layers.every(isStableImageLayer)) return null;
+
+        return layers
+          .map((layer) =>
+            [
+              layer.clip.id,
+              layer.media?.id,
+              layer.clip.startTime,
+              layer.clip.duration,
+              layer.clip.motionX,
+              layer.clip.motionY,
+              layer.clip.motionWidth,
+              layer.clip.motionHeight,
+              layer.clip.scale,
+              layer.clip.rotation,
+              layer.clip.opacity,
+              layer.clip.blendMode,
+              layer.clip.brightness,
+              layer.clip.contrast,
+              layer.clip.saturation,
+              layer.clip.blur,
+              layer.clip.grayscale,
+              layer.clip.sepia,
+              layer.clip.cropLeft,
+              layer.clip.cropRight,
+              layer.clip.cropTop,
+              layer.clip.cropBottom,
+            ].join(":")
+          )
+          .join("|");
+      };
+
+      const drawStaticMediaLayers = async (
+        layers: RenderFrameLayer[],
+        cacheKey: string,
+        time: number
+      ) => {
+        const cachedCanvas = staticMediaFrameCache.get(cacheKey);
+        if (cachedCanvas) {
+          ctx.drawImage(cachedCanvas, 0, 0);
+          return true;
+        }
+
+        const cacheCanvas = document.createElement("canvas");
+        cacheCanvas.width = canvas.width;
+        cacheCanvas.height = canvas.height;
+        const cacheCtx = cacheCanvas.getContext("2d");
+        if (!cacheCtx) return false;
+
+        cacheCtx.fillStyle = "#000000";
+        cacheCtx.fillRect(0, 0, cacheCanvas.width, cacheCanvas.height);
+
+        for (const layer of layers) {
+          const image = await getImageForLayer(layer);
+          if (!image) return false;
+
+          await drawMediaClip(
+            cacheCtx,
+            cacheCanvas,
+            image,
+            image.width,
+            image.height,
+            layer.clip,
+            time
+          );
+        }
+
+        staticMediaFrameCache.set(cacheKey, cacheCanvas);
+        ctx.drawImage(cacheCanvas, 0, 0);
+        return true;
+      };
+
+      const getStaticOverlayCacheKey = (layers: RenderFrameLayer[]) => {
+        if (layers.length === 0 || !layers.every(isStaticTextLayer)) return null;
+
+        return layers
+          .map((layer) =>
+            [
+              layer.kind,
+              layer.clip.id,
+              layer.clip.name,
+              layer.clip.startTime,
+              layer.clip.duration,
+              layer.clip.opacity,
+              layer.clip.textOpacity,
+              layer.clip.textBgOpacity,
+              layer.clip.fontFamily,
+              layer.clip.textAlign,
+              JSON.stringify(layer.clip.textStyle ?? {}),
+            ].join(":")
+          )
+          .join("|");
+      };
+
+      const drawTextLayerToContext = (
+        targetCtx: CanvasRenderingContext2D,
+        layer: RenderFrameLayer,
+        time: number
+      ) => {
+        const clip = layer.clip;
+        targetCtx.save();
+        applyTextCanvasState(targetCtx, clip, time, canvas.width, canvas.height);
+        drawTextClip(
+          targetCtx,
+          clip,
+          canvas.width,
+          canvas.height,
+          clip.type === "subtitle"
+            ? {
+                fontSize: 30,
+                color: "#ffffff",
+                backgroundColor: "rgba(0,0,0,0.72)",
+                x: 50,
+                y: 82,
+                bold: true,
+                shadow: true,
+              }
+            : {
+                fontSize: 42,
+                color: "#ffffff",
+                backgroundColor: "rgba(0,0,0,0.45)",
+                x: 50,
+                y: 50,
+                bold: true,
+                shadow: true,
+              }
+        );
+        targetCtx.restore();
+      };
+
+      const drawStaticOverlayLayers = (
+        layers: RenderFrameLayer[],
+        cacheKey: string,
+        time: number
+      ) => {
+        const cachedCanvas = staticOverlayFrameCache.get(cacheKey);
+        if (cachedCanvas) {
+          ctx.drawImage(cachedCanvas, 0, 0);
+          return true;
+        }
+
+        const cacheCanvas = document.createElement("canvas");
+        cacheCanvas.width = canvas.width;
+        cacheCanvas.height = canvas.height;
+        const cacheCtx = cacheCanvas.getContext("2d");
+        if (!cacheCtx) return false;
+
+        for (const layer of layers) {
+          drawTextLayerToContext(cacheCtx, layer, time);
+        }
+
+        staticOverlayFrameCache.set(cacheKey, cacheCanvas);
+        ctx.drawImage(cacheCanvas, 0, 0);
+        return true;
+      };
+
+      return async (time: number) => {
         ctx.save();
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = "source-over";
         ctx.filter = "none";
         ctx.fillStyle = "#000000";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.restore();
 
-        const visibleClips = clips.filter(
-          (clip) => time >= clip.startTime && time <= clip.startTime + clip.duration
+        const framePlan = buildRenderFramePlan({
+          clips: renderClips,
+          mediaItems: renderMediaItems,
+          tracks: renderTracks,
+          currentTime: time,
+          canvasRatio: renderCanvasRatio,
+        });
+        const hasImageOrVideoLayer = framePlan.layers.some(
+          (layer) => layer.kind === "image" || layer.kind === "video"
         );
 
-        for (const clip of visibleClips) {
+        const mediaLayers = framePlan.layers.filter(
+          (layer) => layer.kind === "image" || layer.kind === "video" || layer.kind === "audio"
+        );
+        const cacheableMediaLayers = mediaLayers.filter(
+          (layer) => layer.kind === "image" || layer.kind === "video"
+        );
+        const visualizerLayers = framePlan.layers.filter((layer) => layer.kind === "visualizer");
+        const overlayTextLayers = framePlan.layers.filter(
+          (layer) => layer.kind === "text" || layer.kind === "subtitle"
+        );
+        const staticMediaCacheKey = getStaticMediaCacheKey(cacheableMediaLayers);
+        const didDrawStaticMediaCache = staticMediaCacheKey
+          ? await drawStaticMediaLayers(cacheableMediaLayers, staticMediaCacheKey, time)
+          : false;
+        const staticOverlayCacheKey = getStaticOverlayCacheKey(overlayTextLayers);
+
+        for (const layer of [...mediaLayers, ...visualizerLayers, ...overlayTextLayers]) {
+          const clip = layer.clip;
           if (clip.type === "text") {
-            ctx.save();
-            applyTransition(ctx, clip, time, canvas.width, canvas.height);
-            drawTextClip(ctx, clip, canvas.width, canvas.height, {
-              fontSize: 42,
-              color: "#ffffff",
-              backgroundColor: "rgba(0,0,0,0.45)",
-              x: 50,
-              y: 50,
-              bold: true,
-              shadow: true,
-            });
-            ctx.restore();
+            if (!staticOverlayCacheKey) {
+              drawTextLayerToContext(ctx, layer, time);
+            }
             continue;
           }
 
           if (clip.type === "subtitle") {
+            if (!staticOverlayCacheKey) {
+              drawTextLayerToContext(ctx, layer, time);
+            }
+            continue;
+          }
+
+          if (clip.type === "visualizer") {
             ctx.save();
-            applyTransition(ctx, clip, time, canvas.width, canvas.height);
-            drawTextClip(ctx, clip, canvas.width, canvas.height, {
-              fontSize: 30,
-              color: "#ffffff",
-              backgroundColor: "rgba(0,0,0,0.72)",
-              x: 50,
-              y: 82,
-              bold: true,
-              shadow: true,
-            });
+            const { boxWidth, boxHeight } = applyClipCanvasState(
+              ctx,
+              clip,
+              time,
+              canvas.width,
+              canvas.height
+            );
+            const audioData = await getVisualizerAudioData(time);
+            let displayState = visualizerDisplayStates.get(clip.id);
+            if (!displayState) {
+              displayState = { count: 0, values: [] };
+              visualizerDisplayStates.set(clip.id, displayState);
+            }
+            drawVisualizerClip(
+              ctx,
+              clip,
+              time,
+              boxWidth,
+              boxHeight,
+              !hasImageOrVideoLayer,
+              audioData,
+              displayState
+            );
             ctx.restore();
             continue;
           }
 
-          const media = clip.mediaId
-            ? mediaItems.find((item) => item.id === clip.mediaId)
-            : null;
+          const media = layer.media;
 
+          if (didDrawStaticMediaCache && layer.kind === "image") continue;
           if (!media) continue;
 
           if (media.type === "image") {
@@ -438,10 +1057,15 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
               imageCache.set(media.id, image);
             }
 
-            ctx.save();
-            applyTransition(ctx, clip, time, canvas.width, canvas.height);
-            drawContainImage(ctx, image, image.width, image.height, canvas.width, canvas.height);
-            ctx.restore();
+            await drawMediaClip(
+              ctx,
+              canvas,
+              image,
+              image.width,
+              image.height,
+              clip,
+              time
+            );
           }
 
           if (media.type === "video") {
@@ -466,118 +1090,639 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
               window.setTimeout(resolve, 80);
             });
 
-            ctx.save();
-            applyTransition(ctx, clip, time, canvas.width, canvas.height);
-            drawContainImage(
+            await drawMediaClip(
               ctx,
+              canvas,
               video,
               video.videoWidth || canvas.width,
               video.videoHeight || canvas.height,
-              canvas.width,
-              canvas.height
+              clip,
+              time
             );
-            ctx.restore();
           }
 
-          if (media.type === "audio") {
-            ctx.save();
-            applyTransition(ctx, clip, time, canvas.width, canvas.height);
+          if (media.type === "audio") continue;
+        }
 
-            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-            gradient.addColorStop(0, "#064e3b");
-            gradient.addColorStop(0.5, "#000000");
-            gradient.addColorStop(1, "#164e63");
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.fillStyle = clip.muted ? "#fca5a5" : "#6ee7b7";
-            ctx.font = `900 ${Math.round(canvas.width * 0.035)}px sans-serif`;
-            ctx.textAlign = "center";
-            ctx.fillText(
-              clip.muted ? `${media.name} (Muted)` : media.name,
-              canvas.width / 2,
-              canvas.height / 2
-            );
-
-            ctx.strokeStyle = clip.muted ? "rgba(248,113,113,0.65)" : "rgba(34,211,238,0.9)";
-            ctx.lineWidth = Math.max(3, canvas.width * 0.003);
-
-            const barCount = 64;
-            const centerY = canvas.height * 0.62;
-            const barWidth = canvas.width / barCount;
-
-            for (let i = 0; i < barCount; i += 1) {
-              const h =
-                Math.abs(Math.sin(time * 4 + i * 0.35)) * canvas.height * 0.18 +
-                canvas.height * 0.02;
-
-              ctx.beginPath();
-              ctx.moveTo(i * barWidth + barWidth / 2, centerY - h / 2);
-              ctx.lineTo(i * barWidth + barWidth / 2, centerY + h / 2);
-              ctx.stroke();
-            }
-
-            ctx.restore();
-          }
+        if (staticOverlayCacheKey) {
+          drawStaticOverlayLayers(overlayTextLayers, staticOverlayCacheKey, time);
         }
       };
+    };
+
+    const renderToWebmBlob = async (options?: VideoExportOptions) => {
+      const signal = options?.signal;
+      const snapshot = options?.snapshot;
+      const targetResolution = snapshot?.resolution ?? options?.resolution ?? exportResolution;
+      const targetFps = snapshot?.fps ?? options?.fps ?? exportFps;
+      const targetQuality = snapshot?.quality ?? options?.quality ?? exportQuality;
+      const targetCanvasRatio = snapshot?.canvasRatio ?? canvasRatio;
+      const renderClips = snapshot?.clipsSnapshot ?? clips;
+      const renderMediaItems = snapshot?.mediaItemsSnapshot ?? mediaItems;
+      const renderTracks = snapshot?.tracksSnapshot ?? tracks;
+      const renderDuration = snapshot?.duration ?? totalDuration;
+      const canvas = canvasRef.current;
+      if (!canvas) throw new Error("렌더 캔버스를 찾지 못했습니다.");
+      throwIfAborted(signal);
+
+      const size = snapshot
+        ? { width: snapshot.width, height: snapshot.height }
+        : getExportSize(targetResolution, targetCanvasRatio);
+      canvas.width = size.width;
+      canvas.height = size.height;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas context를 생성하지 못했습니다.");
+      const renderFrame = createFrameRenderer(
+        canvas,
+        ctx,
+        renderClips,
+        renderMediaItems,
+        renderTracks,
+        targetCanvasRatio
+      );
+
+      const audioContext = new AudioContext();
+      const audioDestination = audioContext.createMediaStreamDestination();
+      const audioBufferCache = new Map<string, AudioBuffer>();
+      const scheduledAudioNodes: AudioBufferSourceNode[] = [];
+      let recorder: MediaRecorder | null = null;
+      const audioSources = collectAudioMixSources({ clips: renderClips, mediaItems: renderMediaItems });
+
+      const canvasStream = canvas.captureStream(targetFps);
+
+      throwIfAborted(signal);
+      const audioMix = await scheduleAudioMixdown({
+        audioContext,
+        destination: audioDestination,
+        sources: audioSources,
+        bufferCache: audioBufferCache,
+        signal,
+      });
+      scheduledAudioNodes.push(...audioMix.scheduledNodes);
+      if (audioMix.skippedSources.length > 0) {
+        options?.onProgress?.({
+          stage: "rendering-webm",
+          progress: 0,
+          message: `${audioMix.skippedSources.length}개 오디오 소스를 건너뛰고 export를 계속합니다.`,
+        });
+      }
+      throwIfAborted(signal);
+
+      const mixedStream = new MediaStream([
+        ...canvasStream.getVideoTracks(),
+        ...audioDestination.stream.getAudioTracks(),
+      ]);
+
+      const chunks: BlobPart[] = [];
+
+      recorder = new MediaRecorder(mixedStream, {
+        mimeType: "video/webm;codecs=vp9,opus",
+        videoBitsPerSecond: getRecommendedVideoBitrate({
+          resolution: targetResolution,
+          fps: targetFps,
+          quality: targetQuality,
+        }),
+        audioBitsPerSecond: 192_000,
+      });
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunks.push(event.data);
+      };
+
+      const stopPromise = new Promise<Blob>((resolve) => {
+        recorder.onstop = () => {
+          resolve(new Blob(chunks, { type: "video/webm" }));
+        };
+      });
 
       recorder.start();
 
-      const frameDuration = 1 / exportFps;
-      const totalFrames = Math.ceil(totalDuration * exportFps);
+      const frameDurationMs = 1000 / targetFps;
       const renderStartTime = performance.now();
+      options?.onProgress?.({
+        stage: "rendering-webm",
+        progress: 0,
+        message: "WebM 실시간 렌더링을 시작합니다.",
+      });
 
-      for (let frame = 0; frame <= totalFrames; frame += 1) {
-        const time = frame * frameDuration;
-        await renderFrame(time);
+      try {
+        let lastProgress = -1;
 
-        const targetElapsedMs = time * 1000;
-        const actualElapsedMs = performance.now() - renderStartTime;
-        const waitMs = Math.max(0, targetElapsedMs - actualElapsedMs);
+        while (true) {
+          throwIfAborted(signal);
+          const elapsedSeconds = Math.min(
+            renderDuration,
+            (performance.now() - renderStartTime) / 1000
+          );
+          const time = elapsedSeconds;
+          await renderFrame(time);
 
-        if (waitMs > 0) {
-          await new Promise((resolve) => window.setTimeout(resolve, waitMs));
-        } else {
-          await new Promise((resolve) => requestAnimationFrame(resolve));
+          const progress = Math.min(
+            100,
+            Math.round((elapsedSeconds / Math.max(renderDuration, 0.1)) * 100)
+          );
+          if (progress !== lastProgress) {
+            options?.onProgress?.({
+              stage: "rendering-webm",
+              progress,
+              message: `WebM 실시간 렌더링 중 ${progress}%`,
+            });
+            lastProgress = progress;
+          }
+
+          if (elapsedSeconds >= renderDuration) break;
+
+          const actualElapsedMs = performance.now() - renderStartTime;
+          const nextFrameElapsedMs =
+            (Math.floor(actualElapsedMs / frameDurationMs) + 1) * frameDurationMs;
+          const waitMs = Math.max(0, nextFrameElapsedMs - actualElapsedMs);
+
+          if (waitMs > 0) {
+            await new Promise((resolve) => window.setTimeout(resolve, waitMs));
+          } else {
+            await new Promise((resolve) => requestAnimationFrame(resolve));
+          }
+        }
+
+        recorder.stop();
+        const blob = await stopPromise;
+        options?.onProgress?.({
+          stage: "rendering-webm",
+          progress: 100,
+          message: "WebM 렌더링이 완료되었습니다.",
+        });
+
+        return blob;
+      } catch (error) {
+        if (recorder && recorder.state !== "inactive") {
+          recorder.stop();
+          await stopPromise.catch(() => undefined);
+        }
+
+        if (isAbortError(error)) {
+          options?.onProgress?.({
+            stage: "cancelled",
+            progress: 0,
+            message: "내보내기가 취소되었습니다.",
+          });
+        }
+
+        throw error;
+      } finally {
+        scheduledAudioNodes.forEach((node) => {
+          try {
+            node.stop();
+          } catch {
+            // 이미 종료된 노드는 무시
+          }
+        });
+
+        mixedStream.getTracks().forEach((track) => track.stop());
+        await audioContext.close().catch(() => undefined);
+      }
+    };
+
+    const renderToWebCodecsVideoOnly = async (options?: VideoExportOptions) => {
+      const signal = options?.signal;
+      const snapshot = options?.snapshot;
+      const targetResolution = snapshot?.resolution ?? options?.resolution ?? exportResolution;
+      const targetFps = snapshot?.fps ?? options?.fps ?? exportFps;
+      const targetQuality = snapshot?.quality ?? options?.quality ?? exportQuality;
+      const targetCanvasRatio = snapshot?.canvasRatio ?? canvasRatio;
+      const renderClips = snapshot?.clipsSnapshot ?? clips;
+      const renderMediaItems = snapshot?.mediaItemsSnapshot ?? mediaItems;
+      const renderTracks = snapshot?.tracksSnapshot ?? tracks;
+      const renderDuration = snapshot?.duration ?? totalDuration;
+      const renderTitle = snapshot?.projectTitle ?? projectTitle;
+      const hasWorkerUnsupportedVideoSource = snapshot
+        ? snapshot.clipsSnapshot.some((clip) => {
+            if (clip.type !== "video" || !clip.mediaId) return false;
+            return snapshot.mediaItemsSnapshot.some(
+              (item) => item.id === clip.mediaId && item.type === "video"
+            );
+          })
+        : false;
+      const canvas = canvasRef.current;
+      if (!canvas) throw new Error("렌더 캔버스를 찾지 못했습니다.");
+      throwIfAborted(signal);
+
+      if (snapshot) {
+        const canUseWorkerEncoder = !snapshot.hasAudio && !hasWorkerUnsupportedVideoSource;
+        const workerResult = await runWebCodecsWorkerClient({
+          jobId: `webcodecs-${snapshot.createdAt}`,
+          snapshot,
+          renderMode: canUseWorkerEncoder ? "full" : "probe",
+          signal,
+          onProgress: (progress) => {
+            options?.onProgress?.({
+              stage: "worker-preflight",
+              progress: progress.progress,
+              message: progress.message,
+            });
+          },
+        });
+
+        if (workerResult.outputBlob) {
+          throwIfAborted(signal);
+          downloadBlob(
+            workerResult.outputBlob,
+            workerResult.outputFileName || `${safeFileName(renderTitle)}-worker-webcodecs.webm`
+          );
+          options?.onProgress?.({
+            stage: "completed",
+            progress: 100,
+            message: "Worker WebCodecs WebM 파일 저장을 시작했습니다.",
+          });
+          return;
+        }
+
+        if (workerResult.usedWorker) {
+          options?.onProgress?.({
+            stage: "worker-preflight",
+            progress: workerResult.workerRenderLoop ? 20 : 6,
+            message: workerResult.workerRenderLoop
+              ? `WebCodecs Worker frame loop 완료 (${workerResult.renderedFrames ?? 0}/${workerResult.totalFrames ?? 0} frames). ${workerResult.reason || "main-thread encoder로 이어갑니다."}`
+              : workerResult.reason
+                ? `WebCodecs Worker: ${workerResult.reason}`
+                : "WebCodecs Worker 확인 후 main-thread export로 이어갑니다.",
+          });
         }
       }
 
-      recorder.stop();
+      if (snapshot?.hasAudio) {
+        const audioSources = collectAudioMixSources({
+          clips: snapshot.clipsSnapshot,
+          mediaItems: snapshot.mediaItemsSnapshot,
+        });
 
-      scheduledAudioNodes.forEach((node) => {
-        try {
-          node.stop();
-        } catch {
-          // 이미 종료된 노드는 무시
+        if (audioSources.length > 0) {
+          options?.onProgress?.({
+            stage: "encoding-webcodecs",
+            progress: 7,
+            message: "Audio WebCodecs Beta: snapshot 오디오 mixdown 가능 여부를 확인합니다.",
+          });
+
+          const offlineMixdown = detectOfflineAudioMixdownSupport();
+          if (!offlineMixdown.supported) {
+            throw new Error(
+              `Audio WebCodecs Beta mixdown 준비 실패: ${offlineMixdown.reason}`
+            );
+          }
+
+          if (snapshot.preflight?.capabilities.audioEncoder.supported) {
+            options?.onProgress?.({
+              stage: "encoding-webcodecs",
+              progress: 8,
+              message: `Audio WebCodecs Beta: ${audioSources.length}개 오디오 소스를 fallback mux 대상으로 확인했습니다.`,
+            });
+          }
+
+          throw new Error("Audio WebCodecs Beta는 mixdown 준비 단계이며 WebM audio mux가 없어 Quick WebM으로 fallback합니다.");
         }
+      }
+
+      const targetBitrate = snapshot?.bitrate ?? getRecommendedVideoBitrate({
+        resolution: targetResolution,
+        fps: targetFps,
+        quality: targetQuality,
       });
+      const isStableWebCodecsPath =
+        targetFps === 30 && (targetResolution === "720p" || targetResolution === "1080p");
+      const isExperimentalWebCodecsPath =
+        targetResolution === "2k" ||
+        targetResolution === "4k" ||
+        targetFps === 60 ||
+        targetFps === 24;
+      const preflightRisk = snapshot?.preflight?.riskLevel;
 
-      await audioContext.close();
+      if (!isStableWebCodecsPath && isExperimentalWebCodecsPath) {
+        const isFpsOnlyExperimental =
+          targetFps === 60 && (targetResolution === "720p" || targetResolution === "1080p");
+        const canTryExperimental =
+          snapshot?.preflight?.capabilities.webCodecs.supported === true &&
+          (preflightRisk === "low" ||
+            preflightRisk === "medium" ||
+            (isFpsOnlyExperimental && preflightRisk === "high"));
 
-      return stopPromise;
+        if (!canTryExperimental) {
+          throw new Error("Fast WebCodecs experimental 설정은 target config 지원과 안전한 preflight 결과가 필요합니다.");
+        }
+      }
+
+      const support = await isWebCodecsConfigSupported({
+        codec: "vp8",
+        width: snapshot?.width ?? getExportSize(targetResolution, targetCanvasRatio).width,
+        height: snapshot?.height ?? getExportSize(targetResolution, targetCanvasRatio).height,
+        fps: targetFps,
+        bitrate: targetBitrate,
+        bitrateMode: "variable",
+      });
+      if (!support.supported) {
+        throw new Error(support.reason || "WebCodecs target config를 지원하지 않습니다.");
+      }
+
+      const size = snapshot
+        ? { width: snapshot.width, height: snapshot.height }
+        : getExportSize(targetResolution, targetCanvasRatio);
+      canvas.width = size.width;
+      canvas.height = size.height;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas context를 생성하지 못했습니다.");
+
+      await exportWebCodecsVideoOnly({
+        canvas,
+        width: size.width,
+        height: size.height,
+        fps: targetFps,
+        totalDuration: renderDuration,
+        totalFrames: snapshot?.totalFrames,
+        title: renderTitle,
+        bitrate: targetBitrate,
+        codec: support.codec ?? "vp8",
+        renderFrame: createFrameRenderer(
+          canvas,
+          ctx,
+          renderClips,
+          renderMediaItems,
+          renderTracks,
+          targetCanvasRatio
+        ),
+        options,
+        audioPlan: snapshot?.hasAudio
+          ? {
+              mode: "audio-beta-fallback",
+              reason: "Audio mixdown/AudioEncoder 준비는 가능하지만 WebM audio mux가 없어 Quick WebM/MP4 경로를 사용합니다.",
+            }
+          : { mode: "video-only" },
+        workerPlan: {
+          enabled: Boolean(snapshot),
+          renderLoop: snapshot?.hasAudio || !snapshot || hasWorkerUnsupportedVideoSource
+            ? "worker-probe"
+            : "worker-full",
+          reason: snapshot?.hasAudio
+            ? "오디오 포함 export는 Worker video-only 인코딩 대신 Quick WebM fallback을 사용합니다."
+            : hasWorkerUnsupportedVideoSource
+              ? "비디오 원본 디코딩은 main-thread 렌더러가 담당하고 Worker는 probe만 실행합니다."
+            : "Worker OffscreenCanvas frame output을 WebCodecs encoder에 직접 연결합니다.",
+        },
+      });
     };
 
     return {
-      exportWebm: async () => {
-        const blob = await renderToWebmBlob();
+      exportWebCodecs: async (options?: VideoExportOptions) => {
+        try {
+          await renderToWebCodecsVideoOnly(options);
+        } catch (error) {
+          if (isAbortError(error)) throw error;
 
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${safeFileName(projectTitle)}.webm`;
-        a.click();
-        URL.revokeObjectURL(url);
+          options?.onProgress?.({
+            stage: "rendering-webm",
+            progress: 0,
+            message: `WebCodecs 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"} Quick WebM으로 전환합니다.`,
+          });
+
+          const blob = await renderToWebmBlob(options);
+          throwIfAborted(options?.signal);
+          downloadBlob(blob, `${safeFileName(options?.snapshot?.projectTitle ?? projectTitle)}.webm`);
+          options?.onProgress?.({
+            stage: "completed",
+            progress: 100,
+            message: "Fallback WebM 파일 저장을 시작했습니다.",
+          });
+        }
       },
 
-      exportMp4: async (onProgress?: (progress: number) => void) => {
-        const webmBlob = await renderToWebmBlob();
+      exportWebm: async (options?: VideoExportOptions) => {
+        const blob = await renderToWebmBlob(options);
+        throwIfAborted(options?.signal);
+        downloadBlob(blob, `${safeFileName(options?.snapshot?.projectTitle ?? projectTitle)}.webm`);
+        options?.onProgress?.({
+          stage: "completed",
+          progress: 100,
+          message: "WebM 파일 저장을 시작했습니다.",
+        });
+      },
+
+      exportMp4: async (options?: VideoExportOptions) => {
+        const webmBlob = await renderToWebmBlob(options);
+        throwIfAborted(options?.signal);
+        options?.onProgress?.({
+          stage: "converting-mp4",
+          progress: 0,
+          message: "MP4 변환을 시작합니다.",
+        });
 
         await convertWebmBlobToMp4({
           webmBlob,
-          title: projectTitle,
-          onProgress,
+          title: options?.snapshot?.projectTitle ?? projectTitle,
+          signal: options?.signal,
+          onProgress: (progress) =>
+            options?.onProgress?.({
+              stage: "converting-mp4",
+              progress,
+              message: `MP4 변환 중 ${progress}%`,
+            }),
         });
+        throwIfAborted(options?.signal);
+        options?.onProgress?.({
+          stage: "completed",
+          progress: 100,
+          message: "MP4 파일 저장을 시작했습니다.",
+        });
+      },
+
+      exportDirectMp4: async (options?: VideoExportOptions) => {
+        const snapshot = options?.snapshot;
+        const targetResolution = snapshot?.resolution ?? options?.resolution ?? exportResolution;
+        const targetFps = snapshot?.fps ?? options?.fps ?? exportFps;
+        const targetQuality = snapshot?.quality ?? options?.quality ?? exportQuality;
+        const targetCanvasRatio = snapshot?.canvasRatio ?? canvasRatio;
+        const renderClips = snapshot?.clipsSnapshot ?? clips;
+        const renderMediaItems = snapshot?.mediaItemsSnapshot ?? mediaItems;
+        const renderTracks = snapshot?.tracksSnapshot ?? tracks;
+        const renderDuration = snapshot?.duration ?? totalDuration;
+        const renderTitle = snapshot?.projectTitle ?? projectTitle;
+        const targetBitrate = snapshot?.bitrate ?? getRecommendedVideoBitrate({
+          resolution: targetResolution,
+          fps: targetFps,
+          quality: targetQuality,
+        });
+        const size = snapshot
+          ? { width: snapshot.width, height: snapshot.height }
+          : getExportSize(targetResolution, targetCanvasRatio);
+        const audioSources = collectAudioMixSources({
+          clips: renderClips,
+          mediaItems: renderMediaItems,
+        });
+        const canvas = canvasRef.current;
+        if (!canvas) throw new Error("렌더 캔버스를 찾지 못했습니다.");
+
+        const runCompatibleMp4Fallback = async (reason: string) => {
+          options?.onProgress?.({
+            stage: "converting-mp4",
+            progress: 0,
+            message: `Direct MP4 fallback: ${reason} 기존 Compatible MP4 경로로 처리합니다.`,
+          });
+
+          const webmBlob = await renderToWebmBlob(options);
+          throwIfAborted(options?.signal);
+          options?.onProgress?.({
+            stage: "converting-mp4",
+            progress: 0,
+            message: "Direct MP4 fallback: FFmpeg WASM MP4 변환을 시작합니다.",
+          });
+
+          await convertWebmBlobToMp4({
+            webmBlob,
+            title: `${renderTitle}-direct-mp4`,
+            signal: options?.signal,
+            onProgress: (progress) =>
+              options?.onProgress?.({
+                stage: "converting-mp4",
+                progress,
+                message: `Direct MP4 fallback 변환 중 ${progress}%`,
+              }),
+          });
+          throwIfAborted(options?.signal);
+          options?.onProgress?.({
+            stage: "completed",
+            progress: 100,
+            message: "Direct MP4 fallback 파일 저장을 시작했습니다.",
+          });
+        };
+
+        const support = snapshot?.preflight?.capabilities.directMp4 ?? await detectDirectMp4Support({
+          width: size.width,
+          height: size.height,
+          fps: targetFps,
+          bitrate: targetBitrate,
+          hasAudio: audioSources.length > 0,
+        });
+
+        if (!support.video.supported || !support.muxer.supported) {
+          await runCompatibleMp4Fallback(
+            support.reason || support.video.reason || support.muxer.reason || "H.264/Mediabunny 직접 MP4 capability가 부족합니다.",
+          );
+          return;
+        }
+
+        if (audioSources.length > 0 && !support.audio.supported) {
+          await runCompatibleMp4Fallback(
+            support.audio.reason || "AAC AudioEncoder direct MP4 capability가 부족합니다.",
+          );
+          return;
+        }
+
+        try {
+          throwIfAborted(options?.signal);
+          let audioBuffer: AudioBuffer | undefined;
+
+          if (audioSources.length > 0) {
+            const offlineMixdown = detectOfflineAudioMixdownSupport();
+            if (!offlineMixdown.supported) {
+              await runCompatibleMp4Fallback(
+                offlineMixdown.reason || "OfflineAudioContext mixdown을 사용할 수 없습니다.",
+              );
+              return;
+            }
+
+            options?.onProgress?.({
+              stage: "encoding-webcodecs",
+              progress: 0,
+              message: `Direct MP4 오디오 mixdown을 시작합니다. (${audioSources.length}개 소스)`,
+            });
+
+            const mixdown = await renderOfflineAudioMixdown({
+              sources: audioSources,
+              duration: renderDuration,
+              sampleRate: support.audio.sampleRate ?? 48_000,
+              numberOfChannels: support.audio.numberOfChannels ?? 2,
+              signal: options?.signal,
+            });
+            audioBuffer = mixdown.audioBuffer;
+
+            if (mixdown.skippedSources.length > 0) {
+              options?.onProgress?.({
+                stage: "encoding-webcodecs",
+                progress: 1,
+                message: `${mixdown.skippedSources.length}개 오디오 소스를 건너뛰고 Direct MP4 mux를 계속합니다.`,
+              });
+            }
+          }
+
+          canvas.width = size.width;
+          canvas.height = size.height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) throw new Error("Canvas context를 생성하지 못했습니다.");
+
+          const blob = await exportDirectMp4VideoOnly({
+            canvas,
+            fps: targetFps,
+            totalDuration: renderDuration,
+            totalFrames: snapshot?.totalFrames,
+            bitrate: targetBitrate,
+            audioBuffer,
+            audioBitrate: support.audio.bitrate ?? 160_000,
+            renderFrame: createFrameRenderer(
+              canvas,
+              ctx,
+              renderClips,
+              renderMediaItems,
+              renderTracks,
+              targetCanvasRatio
+            ),
+            options,
+          });
+
+          throwIfAborted(options?.signal);
+          downloadBlob(blob, `${safeFileName(renderTitle)}-direct-mp4.mp4`);
+          options?.onProgress?.({
+            stage: "completed",
+            progress: 100,
+            message: "Direct MP4 파일 저장을 시작했습니다.",
+          });
+          return;
+        } catch (error) {
+          if (isAbortError(error)) throw error;
+
+          await runCompatibleMp4Fallback(
+            `직접 MP4 생성 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}.`,
+          );
+          return;
+        }
+      },
+      renderSampleFrame: async (time: number, options?: VideoExportOptions) => {
+        const snapshot = options?.snapshot;
+        const targetResolution = snapshot?.resolution ?? options?.resolution ?? exportResolution;
+        const targetCanvasRatio = snapshot?.canvasRatio ?? canvasRatio;
+        const renderClips = snapshot?.clipsSnapshot ?? clips;
+        const renderMediaItems = snapshot?.mediaItemsSnapshot ?? mediaItems;
+        const renderTracks = snapshot?.tracksSnapshot ?? tracks;
+        const canvas = canvasRef.current;
+        if (!canvas) throw new Error("렌더 캔버스를 찾지 못했습니다.");
+
+        const size = snapshot
+          ? { width: snapshot.width, height: snapshot.height }
+          : getExportSize(targetResolution, targetCanvasRatio);
+        canvas.width = size.width;
+        canvas.height = size.height;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("Canvas context를 생성하지 못했습니다.");
+
+        const renderFrame = createFrameRenderer(
+          canvas,
+          ctx,
+          renderClips,
+          renderMediaItems,
+          renderTracks,
+          targetCanvasRatio
+        );
+
+        await renderFrame(time);
+        return canvas.toDataURL("image/jpeg", 0.9);
       },
     };
   });

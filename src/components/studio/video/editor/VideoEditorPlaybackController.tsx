@@ -29,6 +29,19 @@ export default function VideoEditorPlaybackController() {
   const lastTimestampRef = useRef<number | null>(null);
   const lastUiPublishRef = useRef(currentTime);
   const lastAutoSelectedClipIdRef = useRef<string | null>(null);
+  const prevIsPlayingRef = useRef(isPlaying);
+
+  useEffect(() => {
+    const wasPlaying = prevIsPlayingRef.current;
+    prevIsPlayingRef.current = isPlaying;
+
+    if (isPlaying && !wasPlaying && selectedClipId) {
+      const selectedClip = clips.find((c) => c.id === selectedClipId);
+      if (selectedClip && selectedClip.type === "visualizer") {
+        selectClip(null);
+      }
+    }
+  }, [isPlaying, selectedClipId, clips, selectClip]);
 
   useEffect(() => {
     const timeDiff = Math.abs(currentTime - playbackTimeRef.current);
@@ -175,14 +188,14 @@ export default function VideoEditorPlaybackController() {
 
       if (event.key === "ArrowRight") {
         event.preventDefault();
-        const nextTime = Math.min(totalDuration, playbackTimeRef.current + 1);
+        const nextTime = Math.min(totalDuration, Number((playbackTimeRef.current + 0.1).toFixed(2)));
         playbackTimeRef.current = nextTime;
         setCurrentTime(nextTime);
       }
 
       if (event.key === "ArrowLeft") {
         event.preventDefault();
-        const nextTime = Math.max(0, playbackTimeRef.current - 1);
+        const nextTime = Math.max(0, Number((playbackTimeRef.current - 0.1).toFixed(2)));
         playbackTimeRef.current = nextTime;
         setCurrentTime(nextTime);
       }

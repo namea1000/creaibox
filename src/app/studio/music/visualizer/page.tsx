@@ -287,26 +287,36 @@ export default function MusicVisualizerPage() {
     const getFreq = (i: number, count: number) => {
       const safeCount = Math.max(count, 1);
       const position = i / Math.max(safeCount - 1, 1);
-      const minBin = 4;
-      const maxBin = Math.max(Math.floor(bufferLength * 0.78), minBin + 1);
+      
+      // Define frequency search range
+      const minBin = 2; // Capture deeper bass frequencies
+      const maxBin = Math.max(Math.floor(bufferLength * 0.65), minBin + 2); // Exclude dead high-frequency ranges to concentrate response
+      
       const toLogBin = (ratio: number) => {
         const safeRatio = clamp(ratio, 0, 1);
         return Math.floor(minBin * Math.pow(maxBin / minBin, safeRatio));
       };
-      const start = toLogBin(i / safeCount);
-      const end = Math.max(start + 1, toLogBin((i + 1) / safeCount));
+      
+      // Mix linear index progression to guarantee unique, independent bin mappings per bar (no groupings)
+      const linearOffset = Math.floor(position * (bufferLength * 0.18));
+      const start = Math.max(toLogBin(i / safeCount), minBin + linearOffset);
+      const end = Math.max(toLogBin((i + 1) / safeCount), start + 1);
+      
       let total = 0;
-
       for (let index = start; index < end; index += 1) {
         total += freq[index] || 0;
       }
 
       const average = total / Math.max(end - start, 1);
-      const highFrequencyLift = 1 + position * 0.45;
-      const lowFrequencyTame = 0.7 + position * 0.3;
+      
+      // Enhance treble lift and bass dynamically
+      const highFrequencyLift = 1 + position * 0.65;
+      const lowFrequencyTame = 0.88 + position * 0.12;
+      
+      // Increase sensitivity on lower frequency levels
       const targetValue = Math.min(
-        205,
-        Math.pow(average / 255, 0.84) * 198 * highFrequencyLift * lowFrequencyTame
+        255,
+        Math.pow(average / 255, 0.78) * 235 * highFrequencyLift * lowFrequencyTame
       );
 
       if (smoothedFreqRef.current.count !== safeCount) {
@@ -314,7 +324,9 @@ export default function MusicVisualizerPage() {
       }
 
       const previousValue = smoothedFreqRef.current.values[i] ?? targetValue;
-      const smoothing = targetValue > previousValue ? 0.34 : 0.22;
+      
+      // Boost reaction velocity (ascent 0.48, decay 0.28) for a punchier, bouncy animation
+      const smoothing = targetValue > previousValue ? 0.48 : 0.28;
       const visibleValue = previousValue + (targetValue - previousValue) * smoothing;
       smoothedFreqRef.current.values[i] = visibleValue;
 

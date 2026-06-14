@@ -242,13 +242,13 @@ export default function VideoEditorProjectPanel() {
           <input
             value={projectTitle}
             onChange={(event) => setProjectTitle(event.target.value)}
-            className="h-9 w-full rounded-none border border-white/10 bg-black/40 px-3 text-xs font-black text-white outline-none focus:border-cyan-400 focus:bg-black/20"
+            className="h-9 w-full rounded-md border border-white/10 bg-black/40 px-3 text-xs font-black text-white outline-none focus:border-cyan-400 focus:bg-black/20"
             placeholder="Untitled Project"
           />
         </div>
 
         {/* Search */}
-        <div className="flex items-center gap-2 rounded-none border border-white/10 bg-black/40 px-2 py-1.5">
+        <div className="flex items-center gap-2 rounded-md border border-white/10 bg-black/40 px-2 py-1.5">
           <Search size={13} className="text-zinc-500" />
           <input
             value={search}
@@ -404,7 +404,7 @@ function TreeLeaf({
         <Icon size={12} className="text-zinc-500 shrink-0" />
         <span className="truncate">{label}</span>
       </div>
-      <span className="text-[10px] font-bold text-zinc-600 bg-black/40 px-1.5 py-0.5 shrink-0 rounded-none border border-white/5">
+      <span className="text-[10px] font-bold text-zinc-600 bg-black/40 px-1.5 py-0.5 shrink-0 rounded-md border border-white/5">
         {count}
       </span>
     </div>

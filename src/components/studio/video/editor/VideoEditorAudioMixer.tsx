@@ -18,6 +18,7 @@ import { useVideoEditor } from "./VideoEditorContext";
 
 export default function VideoEditorAudioMixer() {
   const {
+    mediaItems,
     clips,
     selectedClipId,
     updateClip,
@@ -28,6 +29,9 @@ export default function VideoEditorAudioMixer() {
   } = useVideoEditor();
 
   const selectedClip = clips.find((clip) => clip.id === selectedClipId) || null;
+  const selectedMedia = selectedClip?.mediaId
+    ? mediaItems.find((item) => item.id === selectedClip.mediaId) || null
+    : null;
 
   const audioClips = clips.filter(
     (clip) => clip.type === "audio" || clip.type === "video"
@@ -54,7 +58,7 @@ export default function VideoEditorAudioMixer() {
 
         <div className="space-y-3">
           {audioClips.length === 0 ? (
-            <div className="rounded-none border border-dashed border-white/10 bg-black/30 p-5 text-center text-sm text-zinc-500 space-y-4">
+            <div className="rounded-md border border-dashed border-white/10 bg-black/30 p-5 text-center text-sm text-zinc-500 space-y-4">
               <div>타임라인에 등록된 오디오 클립이 없습니다. 아래 버튼으로 추가해 보세요.</div>
               <div className="flex gap-2 justify-center">
                 <PanelUploadButton
@@ -64,7 +68,7 @@ export default function VideoEditorAudioMixer() {
                 />
                 <button
                   onClick={handleLoadSampleBgm}
-                  className="flex items-center gap-1 rounded-none border border-emerald-400 bg-emerald-400/10 px-3 py-2 text-xs font-black text-emerald-200 hover:bg-emerald-400/20"
+                  className="flex items-center gap-1 rounded-md border border-emerald-400 bg-emerald-400/10 px-3 py-2 text-xs font-black text-emerald-200 hover:bg-emerald-400/20"
                 >
                   <Plus size={12} />
                   기본 BGM 추가
@@ -94,7 +98,7 @@ export default function VideoEditorAudioMixer() {
         desc="볼륨, 페이드 인/아웃, 뮤트, 좌우 밸런스, 파형을 조절합니다."
       />
 
-      <div className="mb-4 rounded-none border border-emerald-400/20 bg-emerald-400/10 p-3">
+      <div className="mb-4 rounded-md border border-emerald-400/20 bg-emerald-400/10 p-3">
         <div className="truncate text-sm font-black text-emerald-100">
           {selectedClip.name}
         </div>
@@ -107,7 +111,7 @@ export default function VideoEditorAudioMixer() {
 
       <div className="space-y-4">
         <AudioSection title="기본 볼륨">
-          <div className="flex items-center justify-between rounded-none border border-white/10 bg-black/30 p-3">
+          <div className="flex items-center justify-between rounded-md border border-white/10 bg-black/30 p-3">
             <div className="flex items-center gap-2 text-sm font-bold text-zinc-300">
               {selectedClip.muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
               음소거
@@ -116,7 +120,7 @@ export default function VideoEditorAudioMixer() {
             <button
               type="button"
               onClick={() => toggleClipMute(selectedClip.id)}
-              className={`rounded-none px-3 py-1 text-xs font-black ${selectedClip.muted
+              className={`rounded-md px-3 py-1 text-xs font-black ${selectedClip.muted
                   ? "bg-red-500/20 text-red-200"
                   : "bg-emerald-400/20 text-emerald-200"
                 }`}
@@ -252,7 +256,7 @@ export default function VideoEditorAudioMixer() {
             waveform={
               selectedClip.waveform?.length
                 ? selectedClip.waveform
-                : buildFakeWaveform(selectedClip.id)
+                : selectedMedia?.waveform ?? []
             }
             muted={selectedClip.muted}
           />
@@ -260,11 +264,11 @@ export default function VideoEditorAudioMixer() {
           <div className="grid grid-cols-2 gap-2">
             <PresetButton
               icon={Waves}
-              label="파형 생성"
-              desc="임시 파형 저장"
+              label="파형 동기화"
+              desc="미디어 분석값 적용"
               onClick={() =>
                 updateClip(selectedClip.id, {
-                  waveform: buildFakeWaveform(`${selectedClip.id}-${Date.now()}`),
+                  waveform: selectedMedia?.waveform ?? [],
                 })
               }
             />
@@ -282,11 +286,11 @@ export default function VideoEditorAudioMixer() {
           </div>
 
           <p className="text-xs leading-5 text-zinc-500">
-            현재는 브라우저 실시간 분석 전 단계의 임시 파형입니다. 다음 단계에서 실제 AudioBuffer 분석을 붙이면 업로드한 음원의 실제 파형으로 표시됩니다.
+            업로드한 오디오/비디오 파일을 브라우저 AudioBuffer로 분석한 파형만 표시합니다. 분석 실패 시 원본 파일은 업로드하지 않고 빈 파형으로 유지합니다.
           </p>
         </AudioSection>
 
-        <div className="rounded-none border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
+        <div className="rounded-md border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
           볼륨/뮤트는 PreviewPlayer에 즉시 반영됩니다. Fade, Pan, Gain 설정값은 타임라인 믹서에 연동되어 관리됩니다.
         </div>
       </div>
@@ -309,7 +313,7 @@ function PanelUploadButton({
       <button
         type="button"
         onClick={() => fileInputRef.current?.click()}
-        className="flex items-center gap-1 rounded-none border border-white/10 bg-black/30 px-3 py-2 text-xs font-black text-zinc-300 hover:border-cyan-400/50 hover:text-cyan-200"
+        className="flex items-center gap-1 rounded-md border border-white/10 bg-black/30 px-3 py-2 text-xs font-black text-zinc-300 hover:border-cyan-400/50 hover:text-cyan-200"
       >
         <Upload size={12} />
         {label}
@@ -341,7 +345,7 @@ function AudioClipMiniCard({
   muted?: boolean;
 }) {
   return (
-    <div className="rounded-none border border-white/10 bg-black/30 p-3">
+    <div className="rounded-md border border-white/10 bg-black/30 p-3">
       <div className="flex items-center gap-2 text-sm font-black text-white">
         {muted ? (
           <VolumeX size={15} className="text-red-300" />
@@ -364,9 +368,11 @@ function WaveformPreview({
   waveform: number[];
   muted?: boolean;
 }) {
+  const bars = waveform.length ? waveform : Array.from({ length: 52 }, () => 0.08);
+
   return (
-    <div className="flex h-24 items-center gap-[3px] rounded-none border border-white/10 bg-black/40 px-3">
-      {waveform.map((value, index) => (
+    <div className="flex h-24 items-center gap-[3px] rounded-md border border-white/10 bg-black/40 px-3">
+      {bars.map((value, index) => (
         <div
           key={index}
           className={`flex-1 rounded-full ${muted ? "bg-red-300/70" : "bg-emerald-300/80"
@@ -389,7 +395,7 @@ function AudioSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-none border border-white/10 bg-black/20 p-3">
+    <div className="rounded-md border border-white/10 bg-black/20 p-3">
       <div className="mb-3 text-xs font-black uppercase tracking-widest text-zinc-500">
         {title}
       </div>
@@ -418,7 +424,7 @@ function RangeField({
   onChange: (value: number) => void;
 }) {
   return (
-    <label className="block rounded-none border border-white/10 bg-black/30 p-3">
+    <label className="block rounded-md border border-white/10 bg-black/30 p-3">
       <div className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-widest text-zinc-500">
         <span className="flex items-center gap-2">
           <Icon size={13} />
@@ -454,7 +460,7 @@ function PresetButton({
     <button
       type="button"
       onClick={onClick}
-      className="rounded-none border border-white/10 bg-black/30 p-3 text-left hover:border-emerald-400/50"
+      className="rounded-md border border-white/10 bg-black/30 p-3 text-left hover:border-emerald-400/50"
     >
       <div className="flex items-center gap-2 text-xs font-black text-white">
         <Icon size={13} />
@@ -476,7 +482,7 @@ function PanelHeader({
 }) {
   return (
     <div className="mb-5 flex items-start gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-none bg-emerald-400/10 text-emerald-300">
+      <div className="flex h-10 w-10 items-center justify-center rounded-md bg-emerald-400/10 text-emerald-300">
         <Icon size={20} />
       </div>
 
@@ -486,18 +492,4 @@ function PanelHeader({
       </div>
     </div>
   );
-}
-
-function buildFakeWaveform(seed: string) {
-  const base = seed
-    .split("")
-    .reduce((sum, char) => sum + char.charCodeAt(0), 0);
-
-  return Array.from({ length: 52 }).map((_, index) => {
-    const value =
-      Math.abs(Math.sin(index * 0.42 + base * 0.01)) * 0.75 +
-      Math.abs(Math.cos(index * 0.19 + base * 0.02)) * 0.25;
-
-    return Math.min(1, Math.max(0.08, value));
-  });
 }

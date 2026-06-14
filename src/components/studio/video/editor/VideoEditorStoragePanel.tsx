@@ -178,7 +178,7 @@ export default function VideoEditorStoragePanel() {
         desc="Supabase Storage, Google Drive, Dropbox, Local 파일을 통합 관리하는 저장소 허브입니다."
       />
 
-      <div className="rounded-none border border-emerald-400/20 bg-emerald-400/10 p-4">
+      <div className="rounded-md border border-emerald-400/20 bg-emerald-400/10 p-4">
         <div className="flex items-start gap-3">
           <ShieldCheck className="mt-1 shrink-0 text-emerald-200" size={20} />
           <div>
@@ -202,7 +202,7 @@ export default function VideoEditorStoragePanel() {
               key={item.id}
               type="button"
               onClick={() => setProvider(item.id)}
-              className={`rounded-none border p-3 text-left transition ${active
+              className={`rounded-md border p-3 text-left transition ${active
                   ? "border-emerald-400 bg-emerald-400/15 text-emerald-100"
                   : "border-white/10 bg-black/30 text-zinc-400 hover:border-emerald-400/40"
                 }`}
@@ -225,8 +225,8 @@ export default function VideoEditorStoragePanel() {
         <StatCard label="용량" value={`${stats.size.toFixed(1)}MB`} />
       </div>
 
-      <div className="rounded-none border border-white/10 bg-black/30 p-3">
-        <div className="mb-3 flex items-center gap-2 rounded-none border border-white/10 bg-black/40 px-3 py-2">
+      <div className="rounded-md border border-white/10 bg-black/30 p-3">
+        <div className="mb-3 flex items-center gap-2 rounded-md border border-white/10 bg-black/40 px-3 py-2">
           <Search size={15} className="text-zinc-500" />
           <input
             value={search}
@@ -273,7 +273,7 @@ export default function VideoEditorStoragePanel() {
         />
       </div>
 
-      <div className="flex items-center justify-between rounded-none border border-white/10 bg-black/30 p-2">
+      <div className="flex items-center justify-between rounded-md border border-white/10 bg-black/30 p-2">
         <div className="px-2 text-xs font-bold text-zinc-500">
           {filteredItems.length} files
         </div>
@@ -282,7 +282,7 @@ export default function VideoEditorStoragePanel() {
           <button
             type="button"
             onClick={() => setViewMode("grid")}
-            className={`rounded-none p-2 ${viewMode === "grid"
+            className={`rounded-md p-2 ${viewMode === "grid"
                 ? "bg-emerald-400/20 text-emerald-200"
                 : "text-zinc-500 hover:text-emerald-200"
               }`}
@@ -293,7 +293,7 @@ export default function VideoEditorStoragePanel() {
           <button
             type="button"
             onClick={() => setViewMode("list")}
-            className={`rounded-none p-2 ${viewMode === "list"
+            className={`rounded-md p-2 ${viewMode === "list"
                 ? "bg-emerald-400/20 text-emerald-200"
                 : "text-zinc-500 hover:text-emerald-200"
               }`}
@@ -318,12 +318,12 @@ export default function VideoEditorStoragePanel() {
       )}
 
       {filteredItems.length === 0 && (
-        <div className="rounded-none border border-dashed border-white/10 bg-black/30 p-5 text-center text-sm text-zinc-500">
+        <div className="rounded-md border border-dashed border-white/10 bg-black/30 p-5 text-center text-sm text-zinc-500">
           표시할 저장 파일이 없습니다.
         </div>
       )}
 
-      <div className="rounded-none border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
+      <div className="rounded-md border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
         다음 연결 단계: Supabase bucket 생성 → user_id 경로 저장 →
         storage_files 테이블 생성 → 이 패널에서 실제 파일 목록 조회.
       </div>
@@ -333,16 +333,16 @@ export default function VideoEditorStoragePanel() {
 
 function StorageGridCard({ item, onAdd }: { item: StorageItem; onAdd: () => void }) {
   return (
-    <div className="group overflow-hidden rounded-none border border-white/10 bg-black/30 transition hover:border-emerald-400/50">
+    <div className="group overflow-hidden rounded-md border border-white/10 bg-black/30 transition hover:border-emerald-400/50">
       <div className="relative flex aspect-video items-center justify-center bg-gradient-to-br from-zinc-900 via-black to-emerald-950">
         <StorageTypeIcon type={item.type} size={28} className="text-emerald-200" />
 
-        <div className="absolute left-2 top-2 rounded-none bg-black/70 px-2 py-1 text-[10px] font-black uppercase text-white/70">
+        <div className="absolute left-2 top-2 rounded-md bg-black/70 px-2 py-1 text-[10px] font-black uppercase text-white/70">
           {item.provider}
         </div>
 
         {item.status === "locked" && (
-          <div className="absolute right-2 top-2 rounded-none bg-zinc-800 px-2 py-1 text-[10px] font-black text-zinc-300">
+          <div className="absolute right-2 top-2 rounded-md bg-zinc-800 px-2 py-1 text-[10px] font-black text-zinc-300">
             <Lock size={10} className="inline-block" /> Locked
           </div>
         )}
@@ -362,7 +362,7 @@ function StorageGridCard({ item, onAdd }: { item: StorageItem; onAdd: () => void
           <button
             type="button"
             onClick={onAdd}
-            className="rounded-none border border-white/10 p-2 text-zinc-400 hover:border-emerald-400 hover:text-emerald-200"
+            className="rounded-md border border-white/10 p-2 text-zinc-400 hover:border-emerald-400 hover:text-emerald-200"
             title="타임라인에 추가"
           >
             <Plus size={13} />
@@ -375,9 +375,9 @@ function StorageGridCard({ item, onAdd }: { item: StorageItem; onAdd: () => void
 
 function StorageListCard({ item, onAdd }: { item: StorageItem; onAdd: () => void }) {
   return (
-    <div className="rounded-none border border-white/10 bg-black/30 p-3 hover:border-emerald-400/50">
+    <div className="rounded-md border border-white/10 bg-black/30 p-3 hover:border-emerald-400/50">
       <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-none bg-emerald-400/10 text-emerald-200">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-emerald-400/10 text-emerald-200">
           <StorageTypeIcon type={item.type} size={20} />
         </div>
 
@@ -393,7 +393,7 @@ function StorageListCard({ item, onAdd }: { item: StorageItem; onAdd: () => void
         <button
           type="button"
           onClick={onAdd}
-          className="rounded-none border border-white/10 p-2 text-zinc-400 hover:border-emerald-400 hover:text-emerald-200"
+          className="rounded-md border border-white/10 p-2 text-zinc-400 hover:border-emerald-400 hover:text-emerald-200"
           title="타임라인에 추가"
         >
           <Plus size={14} />
@@ -401,7 +401,7 @@ function StorageListCard({ item, onAdd }: { item: StorageItem; onAdd: () => void
 
         <button
           type="button"
-          className="rounded-none border border-white/10 p-2 text-zinc-400 hover:border-red-400 hover:text-red-300"
+          className="rounded-md border border-white/10 p-2 text-zinc-400 hover:border-red-400 hover:text-red-300"
         >
           <Trash2 size={14} />
         </button>
@@ -436,7 +436,7 @@ function StatCard({
   value: string | number;
 }) {
   return (
-    <div className="rounded-none border border-white/10 bg-black/30 p-2 text-center">
+    <div className="rounded-md border border-white/10 bg-black/30 p-2 text-center">
       <div className="text-[10px] text-zinc-500">{label}</div>
       <div className="mt-1 text-xs font-black text-white">{value}</div>
     </div>
@@ -455,7 +455,7 @@ function ActionButton({
   return (
     <button
       type="button"
-      className="rounded-none border border-white/10 bg-black/30 p-3 text-left hover:border-emerald-400/50"
+      className="rounded-md border border-white/10 bg-black/30 p-3 text-left hover:border-emerald-400/50"
     >
       <div className="flex items-center gap-2 text-xs font-black text-white">
         <Icon size={14} />
@@ -479,7 +479,7 @@ function FilterButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-none border px-2 py-2 text-[11px] font-black ${active
+      className={`rounded-md border px-2 py-2 text-[11px] font-black ${active
           ? "border-emerald-400 bg-emerald-400/15 text-emerald-200"
           : "border-white/10 bg-black/20 text-zinc-500 hover:border-emerald-400/40"
         }`}
@@ -500,7 +500,7 @@ function PanelHeader({
 }) {
   return (
     <div className="mb-5 flex items-start gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-none bg-emerald-400/10 text-emerald-300">
+      <div className="flex h-10 w-10 items-center justify-center rounded-md bg-emerald-400/10 text-emerald-300">
         <Icon size={20} />
       </div>
 

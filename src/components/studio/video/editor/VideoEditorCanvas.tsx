@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ChevronDown,
   Maximize2,
@@ -12,7 +12,7 @@ import {
   Smartphone,
   Square,
   Monitor,
-  Layers,
+  Download,
 } from "lucide-react";
 
 import { useVideoEditor, type CanvasRatio } from "./VideoEditorContext";
@@ -32,11 +32,16 @@ const ASPECT_RATIO_OPTIONS: Array<{
   { label: "4:3", name: "Classic", value: "4:3" },
 ];
 
-export default function VideoEditorCanvas() {
+export default function VideoEditorCanvas({
+  onOpenExport,
+}: {
+  onOpenExport?: () => void;
+} = {}) {
   const previewFrameRef = useRef<HTMLDivElement | null>(null);
+  const ratioMenuRef = useRef<HTMLDivElement | null>(null);
   const [isRatioMenuOpen, setIsRatioMenuOpen] = useState(false);
+  const [audioMeter, setAudioMeter] = useState({ low: 0, mid: 0, high: 0 });
   const {
-    clips,
     currentTime,
     totalDuration,
     isPlaying,
@@ -48,22 +53,6 @@ export default function VideoEditorCanvas() {
     projectTitle,
     setProjectTitle,
   } = useVideoEditor();
-
-  const visibleClips = clips.filter(
-    (clip) =>
-      currentTime >= clip.startTime &&
-      currentTime <= clip.startTime + clip.duration
-  );
-
-  const miniWaveform = useMemo(() => {
-    const activeAudioClip = visibleClips.find((clip) => clip.type === "audio");
-    const waveform = activeAudioClip?.waveform;
-    if (waveform?.length) return waveform.slice(0, 48);
-
-    return Array.from({ length: 48 }, (_, index) =>
-      0.22 + Math.abs(Math.sin(index * 0.72)) * 0.72
-    );
-  }, [visibleClips]);
 
   const canvasClass =
     canvasRatio === "16:9"
@@ -92,6 +81,43 @@ export default function VideoEditorCanvas() {
     void target.requestFullscreen?.();
   };
 
+  useEffect(() => {
+    if (!isPlaying) return;
+
+    const handleAudioMeter = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        low: number;
+        mid: number;
+        high: number;
+      }>;
+      setAudioMeter({
+        low: customEvent.detail.low,
+        mid: customEvent.detail.mid,
+        high: customEvent.detail.high,
+      });
+    };
+
+    window.addEventListener("creaibox-video-editor-audio-meter", handleAudioMeter);
+    return () => {
+      window.removeEventListener("creaibox-video-editor-audio-meter", handleAudioMeter);
+    };
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (!isRatioMenuOpen) return;
+
+    const handleClickOutside = (event: PointerEvent) => {
+      if (ratioMenuRef.current && !ratioMenuRef.current.contains(event.target as Node)) {
+        setIsRatioMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handleClickOutside);
+    return () => {
+      document.removeEventListener("pointerdown", handleClickOutside);
+    };
+  }, [isRatioMenuOpen]);
+
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-transparent">
       <div className="flex h-12 shrink-0 items-center justify-between border-b border-white/5 bg-[#202026] px-4 select-none">
@@ -99,17 +125,17 @@ export default function VideoEditorCanvas() {
           <input
             value={projectTitle}
             onChange={(event) => setProjectTitle(event.target.value)}
-            className="h-8 w-[140px] rounded-none border border-transparent bg-transparent py-1 px-1.5 text-xs font-bold text-white outline-none focus:bg-white/5 focus:border-white/10"
+            className="h-8 w-[140px] rounded-md border border-transparent bg-transparent py-1 px-1.5 text-xs font-bold text-white outline-none focus:bg-white/5 focus:border-white/10"
             placeholder="프로젝트 이름"
           />
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="relative">
+          <div className="relative" ref={ratioMenuRef}>
             <button
               type="button"
               onClick={() => setIsRatioMenuOpen((value) => !value)}
-              className="flex items-center gap-1.5 rounded-none border border-white/10 bg-black/20 px-2.5 py-1.5 text-xs font-bold text-zinc-300 hover:border-cyan-400 hover:text-cyan-100"
+              className="flex items-center gap-1.5 rounded-md border border-white/10 bg-black/20 px-2.5 py-1.5 text-xs font-bold text-zinc-300 hover:border-cyan-400 hover:text-cyan-100"
             >
               가로세로 비율
               <ChevronDown size={13} />
@@ -155,6 +181,16 @@ export default function VideoEditorCanvas() {
             active={canvasRatio === "1:1"}
             onClick={() => setCanvasRatio("1:1")}
           />
+          {onOpenExport && (
+            <button
+              type="button"
+              onClick={onOpenExport}
+              className="flex items-center gap-1.5 rounded-md bg-cyan-400 hover:bg-cyan-300 px-3 py-1.5 text-xs font-black text-black ml-2 shadow-[0_0_10px_rgba(34,211,238,0.25)] transition outline-none"
+            >
+              <Download size={13} className="shrink-0" />
+              내보내기
+            </button>
+          )}
         </div>
       </div>
 
@@ -172,55 +208,39 @@ export default function VideoEditorCanvas() {
             <VideoEditorPreviewPlayer />
 
             <div className="pointer-events-none absolute inset-8 rounded-none border border-dashed border-white/10" />
-
-            <div className="absolute left-4 top-4 z-40 rounded-none border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs font-bold text-cyan-200">
-              {canvasRatio}
-            </div>
-
-            <div className="absolute right-4 top-4 z-40 flex items-center gap-2 rounded-none border border-white/10 bg-black/60 px-3 py-1 text-xs text-zinc-400">
-              <Layers size={13} />
-              활성 레이어 {visibleClips.length}개
-            </div>
-
-            <div className="absolute bottom-4 right-4 z-40 max-w-[60%] truncate rounded-none border border-white/10 bg-black/60 px-3 py-1 text-xs text-zinc-400">
-              {visibleClips.length > 0
-                ? visibleClips.map((clip) => clip.name).join(" · ")
-                : "Stage Area"}
-            </div>
           </div>
         </div>
       </div>
 
-      <div className="flex h-9 shrink-0 items-center justify-between border-t border-white/5 bg-[#151519] px-3 text-[10px] text-zinc-500">
-        <div className="flex min-w-[160px] items-center gap-2 font-mono text-cyan-300">
-          <button
-            type="button"
-            onClick={togglePlayback}
-            className="flex h-6 w-6 items-center justify-center rounded-none text-zinc-200 hover:bg-white/10 hover:text-cyan-200"
-            aria-label={isPlaying ? "일시정지" : "재생"}
-          >
-            {isPlaying ? <Pause size={14} /> : <Play size={14} />}
-          </button>
+      <div className="relative h-9 shrink-0 border-t border-white/5 bg-[#151519] px-3 text-[10px] text-zinc-500">
+        <div className="absolute left-3 top-1/2 flex -translate-y-1/2 items-center gap-2 font-mono text-cyan-300">
           <span>{formatTimecode(currentTime)}</span>
           <span className="text-zinc-700">/</span>
           <span className="text-zinc-500">{formatTimecode(totalDuration)}</span>
         </div>
 
-        <div className="flex h-6 flex-1 max-w-[240px] items-end justify-center gap-[2px] px-4">
-          {miniWaveform.map((value, index) => (
-            <span
-              key={`canvas-wave-${index}`}
-              className="w-[2px] rounded-full bg-cyan-200/70"
-              style={{ height: `${Math.max(3, value * 22)}px` }}
-            />
-          ))}
+        <button
+          type="button"
+          onClick={togglePlayback}
+          className="absolute left-1/2 top-1/2 flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md text-zinc-200 hover:bg-white/10 hover:text-cyan-200"
+          aria-label={isPlaying ? "일시정지" : "재생"}
+        >
+          {isPlaying ? <Pause size={14} /> : <Play size={14} />}
+        </button>
+
+        <div className="pointer-events-none absolute left-[calc(50%+34px)] top-1/2 flex -translate-y-1/2 items-center justify-center">
+          <AudioLevelMeter
+            low={isPlaying ? audioMeter.low : 0}
+            mid={isPlaying ? audioMeter.mid : 0}
+            high={isPlaying ? audioMeter.high : 0}
+          />
         </div>
 
-        <div className="flex min-w-[220px] items-center justify-end gap-2">
+        <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center justify-end gap-2">
           <button
             type="button"
             onClick={() => setCanvasZoom(canvasZoom - 10)}
-            className="rounded-none border border-white/10 p-1.5 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200"
+            className="rounded-md border border-white/10 p-1.5 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200"
           >
             <Minus size={13} />
           </button>
@@ -228,27 +248,56 @@ export default function VideoEditorCanvas() {
           <button
             type="button"
             onClick={() => setCanvasZoom(canvasZoom + 10)}
-            className="rounded-none border border-white/10 p-1.5 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200"
+            className="rounded-md border border-white/10 p-1.5 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200"
           >
             <Plus size={13} />
           </button>
           <button
             type="button"
             onClick={() => setCanvasZoom(100)}
-            className="rounded-none border border-white/10 p-1.5 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200"
+            className="rounded-md border border-white/10 p-1.5 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200"
           >
             <RotateCcw size={13} />
           </button>
           <button
             type="button"
             onClick={handleToggleFullscreen}
-            className="rounded-none border border-white/10 p-1.5 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200"
+            className="rounded-md border border-white/10 p-1.5 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200"
           >
             <Maximize2 size={13} />
           </button>
         </div>
       </div>
     </div>
+  );
+}
+
+function AudioLevelMeter({
+  low,
+  mid,
+  high,
+}: {
+  low: number;
+  mid: number;
+  high: number;
+}) {
+  return (
+    <div className="flex h-7 items-end gap-1.5 rounded-md px-2">
+      <MeterBar value={low} className="bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.85)]" />
+      <MeterBar value={mid} className="bg-lime-400 shadow-[0_0_10px_rgba(163,230,53,0.85)]" />
+      <MeterBar value={high} className="bg-teal-300 shadow-[0_0_10px_rgba(94,234,212,0.85)]" />
+    </div>
+  );
+}
+
+function MeterBar({ value, className }: { value: number; className: string }) {
+  const height = Math.max(1, Math.min(26, 1 + value * 27));
+
+  return (
+    <span
+      className={`w-1 rounded-full transition-[height] duration-75 ${className}`}
+      style={{ height: `${height}px` }}
+    />
   );
 }
 
@@ -280,7 +329,7 @@ function RatioButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-none px-2.5 py-1.5 text-xs font-bold transition outline-none ${active
+      className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-bold transition outline-none ${active
           ? "text-white"
           : "text-zinc-500 hover:text-zinc-300"
         }`}

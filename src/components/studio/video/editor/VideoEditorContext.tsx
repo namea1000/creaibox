@@ -12,9 +12,12 @@ import type {
 } from "./types";
 
 import { DEFAULT_TIMELINE_TRACKS } from "./constants";
+import type { SubtitleImportCue } from "./subtitle/subtitleImport";
 
 const DB_NAME = "creaibox-video-editor-db";
+const DB_VERSION = 2;
 const STORE_NAME = "media-files";
+const WAVEFORM_STORE_NAME = "media-waveforms";
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -22,11 +25,14 @@ function openDB(): Promise<IDBDatabase> {
       reject(new Error("IndexedDB not supported"));
       return;
     }
-    const request = indexedDB.open(DB_NAME, 1);
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME);
+      }
+      if (!db.objectStoreNames.contains(WAVEFORM_STORE_NAME)) {
+        db.createObjectStore(WAVEFORM_STORE_NAME);
       }
     };
     request.onsuccess = () => resolve(request.result);
@@ -34,7 +40,45 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
-async function saveFileToCache(id: string, file: File): Promise<void> {
+function getWaveformCacheKey(file: File) {
+  return `${file.name}:${file.size}:${file.lastModified}`;
+}
+
+async function saveWaveformToCache(key: string, waveform: number[]): Promise<void> {
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(WAVEFORM_STORE_NAME, "readwrite");
+      const store = transaction.objectStore(WAVEFORM_STORE_NAME);
+      const request = store.put(waveform, key);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  } catch (e) {
+    console.error("IndexedDB waveform save failed:", e);
+  }
+}
+
+async function getWaveformFromCache(key: string): Promise<number[] | null> {
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(WAVEFORM_STORE_NAME, "readonly");
+      const store = transaction.objectStore(WAVEFORM_STORE_NAME);
+      const request = store.get(key);
+      request.onsuccess = () => {
+        const value = request.result;
+        resolve(Array.isArray(value) ? value : null);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  } catch (e) {
+    console.error("IndexedDB waveform load failed:", e);
+    return null;
+  }
+}
+
+export async function saveFileToCache(id: string, file: File): Promise<void> {
   try {
     const db = await openDB();
     return new Promise((resolve, reject) => {
@@ -49,7 +93,7 @@ async function saveFileToCache(id: string, file: File): Promise<void> {
   }
 }
 
-async function getFileFromCache(id: string): Promise<File | null> {
+export async function getFileFromCache(id: string): Promise<File | null> {
   try {
     const db = await openDB();
     return new Promise((resolve, reject) => {
@@ -65,7 +109,7 @@ async function getFileFromCache(id: string): Promise<File | null> {
   }
 }
 
-async function deleteFileFromCache(id: string): Promise<void> {
+export async function deleteFileFromCache(id: string): Promise<void> {
   try {
     const db = await openDB();
     return new Promise((resolve, reject) => {
@@ -106,7 +150,31 @@ export type VideoTextStyle = {
   shadow: boolean;
 };
 
-export type VideoTransitionType = "none" | "fade" | "zoom" | "slide" | "blur";
+export type VideoMotionKeyframe = {
+  id: string;
+  time: number;
+  motionX?: number;
+  motionY?: number;
+  motionWidth?: number;
+  motionHeight?: number;
+  scale?: number;
+  rotation?: number;
+  opacity?: number;
+};
+
+export type VideoTransitionType =
+  | "none"
+  | "fade"
+  | "zoom"
+  | "slide"
+  | "blur"
+  | "wipe"
+  | "push"
+  | "spin"
+  | "glitch"
+  | "flash"
+  | "dip-to-black"
+  | "cross-zoom";
 
 export type VideoBlendMode =
   | "normal"
@@ -186,12 +254,14 @@ export type VideoEditorClip = {
   textAlign?: "left" | "center" | "right";
   textGlow?: boolean;
   textOpacity?: number;
+  textBgOpacity?: number;
   textAnimation?: string;
 
   // Transition
   transitionIn?: VideoTransitionType;
   transitionOut?: VideoTransitionType;
 
+  keyframes?: VideoMotionKeyframe[];
   waveform?: number[];
   blendMode?: VideoBlendMode;
 };
@@ -225,6 +295,11 @@ type VideoEditorState = {
 
   canUndo: boolean;
   canRedo: boolean;
+
+  clickedPreviewMediaItem: VideoEditorMediaItem | null;
+  clickedPreviewMediaTime: number;
+  previewMediaItem: VideoEditorMediaItem | null;
+  previewMediaTime: number;
 };
 
 type VideoEditorActions = {
@@ -238,7 +313,15 @@ type VideoEditorActions = {
   addClipFromMedia: (media: VideoEditorMediaItem) => void;
   addTextClip: () => void;
   addSubtitleClip: () => void;
-  addVisualizerClip: () => void;
+  addSubtitleCues: (cues: SubtitleImportCue[]) => void;
+  addVisualizerClip: (options?: {
+    template?: string;
+    accentColor?: string;
+    backgroundColor?: string;
+    y?: number;
+    height?: number;
+    width?: number;
+  }) => void;
 
   removeClip: (id: string) => void;
   duplicateClip: (id: string) => void;
@@ -288,6 +371,10 @@ type VideoEditorActions = {
   exportProjectJson: () => string;
   importProjectJson: (jsonText: string) => void;
   relinkMediaFile: (id: string, file: File) => void;
+  setTracks: (tracks: TimelineTrack[]) => void;
+  setClips: (clips: VideoEditorClip[]) => void;
+  setClickedPreviewMedia: (item: VideoEditorMediaItem | null, time?: number) => void;
+  setPreviewMedia: (item: VideoEditorMediaItem | null, time?: number) => void;
 };
 
 type VideoEditorContextValue = VideoEditorState & VideoEditorActions;
@@ -302,7 +389,7 @@ const LEGACY_DEFAULT_CANVAS_ZOOM = 75;
 
 const DEFAULT_TEXT_STYLE: VideoTextStyle = {
   fontSize: 42,
-  color: "#ffffff",
+  color: "#000000",
   backgroundColor: "rgba(0,0,0,0.45)",
   x: 50,
   y: 50,
@@ -370,11 +457,6 @@ function createTrack(type: TimelineTrackType, index: number): TimelineTrack {
   };
 }
 
-function getTrackIdByMediaType(type: VideoEditorMediaType) {
-  if (type === "audio") return "audio-1";
-  return "video-1";
-}
-
 function createId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -434,6 +516,51 @@ function hasTrackOverlap(
       clip.trackId === trackId &&
       intervalsOverlap(startTime, duration, clip.startTime, clip.duration)
   );
+}
+
+function findAvailableTrack(
+  tracks: TimelineTrack[],
+  clips: VideoEditorClip[],
+  trackType: TimelineTrackType,
+  startTime: number,
+  duration: number
+) {
+  const sameTypeTracks = tracks.filter((track) => track.type === trackType);
+  const availableTrack = sameTypeTracks.find((track) =>
+    clips.every(
+      (clip) =>
+        clip.trackId !== track.id ||
+        !intervalsOverlap(startTime, duration, clip.startTime, clip.duration)
+    )
+  );
+
+  return {
+    sameTypeTracks,
+    targetTrack:
+      availableTrack ?? createTrack(trackType, sameTypeTracks.length + 1),
+    shouldCreateTrack: !availableTrack,
+  };
+}
+
+function insertTrackAfterSameType(
+  tracks: TimelineTrack[],
+  track: TimelineTrack,
+  trackType: TimelineTrackType
+) {
+  if (tracks.some((item) => item.id === track.id)) return tracks;
+
+  const insertAfterIndex = tracks.reduce(
+    (lastIndex, item, index) => (item.type === trackType ? index : lastIndex),
+    -1
+  );
+
+  if (insertAfterIndex < 0) return [...tracks, track];
+
+  return [
+    ...tracks.slice(0, insertAfterIndex + 1),
+    track,
+    ...tracks.slice(insertAfterIndex + 1),
+  ];
 }
 
 function resolveNonOverlappingStart(
@@ -559,6 +686,12 @@ function normalizeClip(rawClip: VideoEditorClip): VideoEditorClip {
     transitionIn: rawClip.transitionIn ?? "none",
     transitionOut: rawClip.transitionOut ?? "none",
 
+    keyframes: Array.isArray(rawClip.keyframes)
+      ? rawClip.keyframes
+          .filter((keyframe) => Number.isFinite(keyframe.time))
+          .sort((a, b) => a.time - b.time)
+      : [],
+
     textStyle:
       rawClip.textStyle ??
       (rawClip.type === "subtitle"
@@ -566,6 +699,8 @@ function normalizeClip(rawClip: VideoEditorClip): VideoEditorClip {
         : rawClip.type === "text"
           ? { ...DEFAULT_TEXT_STYLE }
           : undefined),
+
+    textBgOpacity: rawClip.textBgOpacity ?? (rawClip.type === "text" ? 0 : 1),
 
     waveform: rawClip.waveform ?? [],
 
@@ -598,6 +733,11 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
   const [copiedClip, setCopiedClip] = useState<VideoEditorClip | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const [clickedPreviewMediaItem, setClickedPreviewMediaItem] = useState<VideoEditorMediaItem | null>(null);
+  const [clickedPreviewMediaTime, setClickedPreviewMediaTime] = useState<number>(0);
+  const [previewMediaItem, setPreviewMediaItem] = useState<VideoEditorMediaItem | null>(null);
+  const [previewMediaTime, setPreviewMediaTime] = useState<number>(0);
+
   const totalDuration = calculateTotalDuration(clips);
 
   const makeSnapshot = (): Snapshot => ({
@@ -624,20 +764,44 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     });
   };
 
+  const setClickedPreviewMedia = useCallback((item: VideoEditorMediaItem | null, time = 0) => {
+    setClickedPreviewMediaItem(item);
+    setClickedPreviewMediaTime(time);
+    setPreviewMediaItem(item);
+    setPreviewMediaTime(time);
+  }, []);
+
+  const setPreviewMedia = useCallback((item: VideoEditorMediaItem | null, time = 0) => {
+    setPreviewMediaItem(item);
+    setPreviewMediaTime(time);
+  }, []);
+
+  const selectClip = useCallback((id: string | null) => {
+    setSelectedClipId(id);
+    setClickedPreviewMediaItem(null);
+    setPreviewMediaItem(null);
+  }, []);
+
   const setCurrentTime = (value: number) => {
     setCurrentTimeState(clamp(value, 0, totalDuration));
+    setClickedPreviewMediaItem(null);
+    setPreviewMediaItem(null);
   };
 
   const togglePlayback = () => {
     setIsPlaying((prev) => !prev);
+    setClickedPreviewMediaItem(null);
+    setPreviewMediaItem(null);
   };
 
   const stopPlayback = () => {
     setIsPlaying(false);
     setCurrentTimeState(0);
+    setClickedPreviewMediaItem(null);
+    setPreviewMediaItem(null);
   };
 
-async function extractAudioWaveform(file: File, points = 60): Promise<number[]> {
+async function extractAudioWaveform(file: File, points = 96): Promise<number[]> {
   try {
     const AudioContextConstructor =
       window.AudioContext ||
@@ -651,19 +815,23 @@ async function extractAudioWaveform(file: File, points = 60): Promise<number[]> 
     const audioCtx = new AudioContextConstructor();
     const arrayBuffer = await file.arrayBuffer();
     const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-    const channelData = audioBuffer.getChannelData(0);
 
-    const step = Math.floor(channelData.length / points);
+    const step = Math.max(1, Math.floor(audioBuffer.length / points));
     const waveform: number[] = [];
 
     for (let i = 0; i < points; i++) {
       let max = 0;
       const start = i * step;
-      const end = start + step;
-      for (let j = start; j < end; j++) {
-        const val = Math.abs(channelData[j]);
-        if (val > max) max = val;
+      const end = Math.min(audioBuffer.length, start + step);
+
+      for (let channel = 0; channel < audioBuffer.numberOfChannels; channel += 1) {
+        const channelData = audioBuffer.getChannelData(channel);
+        for (let j = start; j < end; j++) {
+          const val = Math.abs(channelData[j] ?? 0);
+          if (val > max) max = val;
+        }
       }
+
       waveform.push(Number(max.toFixed(3)));
     }
 
@@ -676,10 +844,20 @@ async function extractAudioWaveform(file: File, points = 60): Promise<number[]> 
     return normalized;
   } catch (e) {
     console.error("Audio waveform analysis failed:", e);
-    return Array.from({ length: points }, () =>
-      Number((0.15 + Math.random() * 0.85).toFixed(3))
-    );
+    return [];
   }
+}
+
+async function getOrCreateAudioWaveform(file: File) {
+  const cacheKey = getWaveformCacheKey(file);
+  const cachedWaveform = await getWaveformFromCache(cacheKey);
+  if (cachedWaveform?.length) return cachedWaveform;
+
+  const waveform = await extractAudioWaveform(file);
+  if (waveform.length) {
+    await saveWaveformToCache(cacheKey, waveform);
+  }
+  return waveform;
 }
 
 function getVideoThumbnail(file: File): Promise<string> {
@@ -778,8 +956,8 @@ function getMediaDuration(file: File): Promise<number> {
           thumbnailUrl = URL.createObjectURL(file);
         } else if (type === "video") {
           thumbnailUrl = await getVideoThumbnail(file);
-        } else if (type === "audio") {
-          waveform = await extractAudioWaveform(file);
+        } else if (type === "audio" || type === "video") {
+          waveform = await getOrCreateAudioWaveform(file);
         }
 
         return {
@@ -882,7 +1060,21 @@ function getMediaDuration(file: File): Promise<number> {
           }
 
           if (Array.isArray(parsed.clips)) {
-            setClipsState(parsed.clips.map(normalizeClip));
+            const restoredClips = await Promise.all(
+              parsed.clips.map(async (clip: VideoEditorClip) => {
+                if (clip.type === "visualizer" && (clip as any).visualizerVideoName) {
+                  const cachedFile = await getFileFromCache("overlay-" + clip.id);
+                  if (cachedFile) {
+                    return {
+                      ...clip,
+                      visualizerVideoUrl: URL.createObjectURL(cachedFile),
+                    };
+                  }
+                }
+                return clip;
+              })
+            );
+            setClipsState(restoredClips.map(normalizeClip));
           }
 
           if (Array.isArray(parsed.tracks) && parsed.tracks.length > 0) {
@@ -924,7 +1116,16 @@ function getMediaDuration(file: File): Promise<number> {
           createdAt: item.createdAt,
           thumbnailUrl: item.thumbnailUrl,
         })),
-        clips,
+        clips: clips.map((clip) => {
+          if (clip.type === "visualizer") {
+            const { visualizerVideoUrl, ...rest } = clip as any;
+            return {
+              ...rest,
+              visualizerVideoUrl: "",
+            };
+          }
+          return clip;
+        }),
       };
       localStorage.setItem("creaibox-video-editor-autosave", JSON.stringify(stateToSave));
     } catch (e) {
@@ -959,10 +1160,22 @@ function getMediaDuration(file: File): Promise<number> {
 
     const duration = media.type === "image" ? 5 : media.duration || 10;
     const startTime = Number(currentTime.toFixed(2));
+    const trackType = getTrackTypeByClipType(media.type);
+    const { targetTrack, shouldCreateTrack } = findAvailableTrack(
+      tracks,
+      clips,
+      trackType,
+      startTime,
+      duration
+    );
+
+    if (shouldCreateTrack) {
+      setTracks((prev) => insertTrackAfterSameType(prev, targetTrack, trackType));
+    }
 
     const clip: VideoEditorClip = normalizeClip({
       id: createId("clip"),
-      trackId: getTrackIdByMediaType(media.type),
+      trackId: targetTrack.id,
       mediaId: media.id,
       type: media.type,
       name: media.name,
@@ -981,10 +1194,22 @@ function getMediaDuration(file: File): Promise<number> {
   const addTextClip = () => {
     const duration = 5;
     const startTime = Number(currentTime.toFixed(2));
+    const trackType = "text";
+    const { targetTrack, shouldCreateTrack } = findAvailableTrack(
+      tracks,
+      clips,
+      trackType,
+      startTime,
+      duration
+    );
+
+    if (shouldCreateTrack) {
+      setTracks((prev) => insertTrackAfterSameType(prev, targetTrack, trackType));
+    }
 
     const clip: VideoEditorClip = normalizeClip({
       id: createId("text"),
-      trackId: "text-1",
+      trackId: targetTrack.id,
       type: "text",
       name: "새 텍스트",
       startTime,
@@ -1002,10 +1227,22 @@ function getMediaDuration(file: File): Promise<number> {
   const addSubtitleClip = () => {
     const duration = 5;
     const startTime = Number(currentTime.toFixed(2));
+    const trackType = "subtitle";
+    const { targetTrack, shouldCreateTrack } = findAvailableTrack(
+      tracks,
+      clips,
+      trackType,
+      startTime,
+      duration
+    );
+
+    if (shouldCreateTrack) {
+      setTracks((prev) => insertTrackAfterSameType(prev, targetTrack, trackType));
+    }
 
     const clip: VideoEditorClip = normalizeClip({
       id: createId("subtitle"),
-      trackId: "subtitle-1",
+      trackId: targetTrack.id,
       type: "subtitle",
       name: "새 자막입니다",
       startTime,
@@ -1020,13 +1257,78 @@ function getMediaDuration(file: File): Promise<number> {
     setSelectedClipId(clip.id);
   };
 
-  const addVisualizerClip = () => {
+  const addSubtitleCues = (cues: SubtitleImportCue[]) => {
+    const validCues = cues.filter((cue) => cue.endTime > cue.startTime && cue.text.trim());
+    if (validCues.length === 0) return;
+
+    const trackType = "subtitle";
+    const firstStartTime = Number(validCues[0].startTime.toFixed(2));
+    const { targetTrack, shouldCreateTrack } = findAvailableTrack(
+      tracks,
+      clips,
+      trackType,
+      firstStartTime,
+      Math.max(0.5, validCues[0].endTime - validCues[0].startTime)
+    );
+
+    if (shouldCreateTrack) {
+      setTracks((prev) => insertTrackAfterSameType(prev, targetTrack, trackType));
+    }
+
+    const importedClips = validCues.map((cue, index) =>
+      normalizeClip({
+        id: createId("subtitle"),
+        trackId: targetTrack.id,
+        type: "subtitle",
+        name: cue.text,
+        startTime: Number(cue.startTime.toFixed(2)),
+        duration: Number(Math.max(0.5, cue.endTime - cue.startTime).toFixed(2)),
+        left: 0,
+        width: 0,
+        color: getDefaultClipColor("subtitle"),
+        textStyle: {
+          ...DEFAULT_SUBTITLE_STYLE,
+          y: 84,
+        },
+        textAlign: "center",
+        textOpacity: 1,
+        textBgOpacity: 0.92,
+        transitionIn: index === 0 ? "fade" : "none",
+        transitionOut: "none",
+      })
+    );
+
+    setClipsWithHistory((prev) => [...prev, ...importedClips]);
+    setSelectedClipId(importedClips[0]?.id ?? null);
+  };
+
+  const addVisualizerClip = (options?: {
+    template?: string;
+    accentColor?: string;
+    backgroundColor?: string;
+    y?: number;
+    height?: number;
+    width?: number;
+  }) => {
     const duration = 10;
     const startTime = Number(currentTime.toFixed(2));
+    const trackType = "visualizer";
+
+    const { targetTrack, shouldCreateTrack } = findAvailableTrack(
+      tracks,
+      clips,
+      trackType,
+      startTime,
+      duration
+    );
+
+    if (shouldCreateTrack) {
+      setTracks((prev) => insertTrackAfterSameType(prev, targetTrack, trackType));
+    }
 
     const clip: VideoEditorClip = normalizeClip({
       id: createId("visualizer"),
-      trackId: "video-1",
+      trackId: targetTrack.id,
       type: "visualizer",
       name: "오디오 비주얼라이저",
       startTime,
@@ -1036,7 +1338,14 @@ function getMediaDuration(file: File): Promise<number> {
       color: getDefaultClipColor("visualizer"),
       transitionIn: "fade",
       transitionOut: "fade",
-    });
+      // Visualizer options
+      visualizerTemplate: options?.template || "circle",
+      visualizerAccentColor: options?.accentColor || "#ff4fd8",
+      visualizerBackgroundColor: options?.backgroundColor || "#050507",
+      visualizerY: options?.y ?? 50,
+      visualizerHeight: options?.height ?? 58,
+      visualizerWidth: options?.width ?? 92,
+    } as any);
 
     setClipsWithHistory((prev) => [...prev, clip]);
     setSelectedClipId(clip.id);
@@ -1051,14 +1360,35 @@ function getMediaDuration(file: File): Promise<number> {
     const target = clips.find((clip) => clip.id === id);
     if (!target) return;
 
-    const nextLeft = clamp(target.left + target.width + 2, 0, 100 - target.width);
+    const maxStartTime = Math.max(0, TIMELINE_BASE_DURATION - target.duration);
+    const desiredStartTime = clamp(
+      target.startTime + target.duration,
+      0,
+      maxStartTime
+    );
+    const trackType = getTrackTypeByClipType(target.type);
+    const { targetTrack, shouldCreateTrack } = findAvailableTrack(
+      tracks,
+      clips,
+      trackType,
+      desiredStartTime,
+      target.duration
+    );
+    const left = timeToLeft(desiredStartTime);
+    const width = clamp(durationToWidth(target.duration), 4, 100 - left);
+
+    if (shouldCreateTrack) {
+      setTracks((prev) => insertTrackAfterSameType(prev, targetTrack, trackType));
+    }
 
     const duplicated: VideoEditorClip = normalizeClip({
       ...target,
       id: createId("clip-copy"),
+      trackId: targetTrack.id,
       name: `${target.name} 복사본`,
-      left: nextLeft,
-      startTime: leftToTime(nextLeft),
+      startTime: Number(desiredStartTime.toFixed(2)),
+      left,
+      width,
     });
 
     setClipsWithHistory((prev) => [...prev, duplicated]);
@@ -1082,38 +1412,16 @@ function getMediaDuration(file: File): Promise<number> {
         : clamp(currentTime, 0, maxStartTime);
     const left = timeToLeft(safeStartTime);
     const trackType = getTrackTypeByClipType(copiedClip.type);
-    const sameTypeTracks = tracks.filter((track) => track.type === trackType);
-    const availableTrack = sameTypeTracks.find((track) =>
-      clips.every(
-        (clip) =>
-          clip.trackId !== track.id ||
-          !intervalsOverlap(
-            safeStartTime,
-            copiedClip.duration,
-            clip.startTime,
-            clip.duration
-          )
-      )
+    const { targetTrack, shouldCreateTrack } = findAvailableTrack(
+      tracks,
+      clips,
+      trackType,
+      safeStartTime,
+      copiedClip.duration
     );
-    const targetTrack =
-      availableTrack ?? createTrack(trackType, sameTypeTracks.length + 1);
 
-    if (!availableTrack) {
-      setTracks((prev) => {
-        const insertAfterIndex = prev.reduce(
-          (lastIndex, track, index) =>
-            track.type === trackType ? index : lastIndex,
-          -1
-        );
-
-        if (insertAfterIndex < 0) return [...prev, targetTrack];
-
-        return [
-          ...prev.slice(0, insertAfterIndex + 1),
-          targetTrack,
-          ...prev.slice(insertAfterIndex + 1),
-        ];
-      });
+    if (shouldCreateTrack) {
+      setTracks((prev) => insertTrackAfterSameType(prev, targetTrack, trackType));
     }
 
     const width = clamp(
@@ -1465,6 +1773,10 @@ function getMediaDuration(file: File): Promise<number> {
     );
   };
 
+  const setClips = useCallback((newClips: VideoEditorClip[]) => {
+    setClipsState(newClips.map(normalizeClip));
+  }, []);
+
   const value = useMemo<VideoEditorContextValue>(
     () => ({
       projectTitle,
@@ -1485,6 +1797,11 @@ function getMediaDuration(file: File): Promise<number> {
       canUndo: undoStack.length > 0,
       canRedo: redoStack.length > 0,
 
+      clickedPreviewMediaItem,
+      clickedPreviewMediaTime,
+      previewMediaItem,
+      previewMediaTime,
+
       setProjectTitle,
       setActiveTab,
 
@@ -1495,6 +1812,7 @@ function getMediaDuration(file: File): Promise<number> {
       addClipFromMedia,
       addTextClip,
       addSubtitleClip,
+      addSubtitleCues,
       addVisualizerClip,
 
       removeClip,
@@ -1502,7 +1820,7 @@ function getMediaDuration(file: File): Promise<number> {
       copyClip,
       pasteClip,
       splitClip,
-      selectClip: setSelectedClipId,
+      selectClip,
 
       updateClip,
       updateClipName,
@@ -1536,6 +1854,10 @@ function getMediaDuration(file: File): Promise<number> {
       exportProjectJson,
       importProjectJson,
       relinkMediaFile,
+      setTracks,
+      setClips,
+      setClickedPreviewMedia,
+      setPreviewMedia,
     }),
     [
       projectTitle,
@@ -1557,6 +1879,15 @@ function getMediaDuration(file: File): Promise<number> {
       redoStack,
       copiedClip,
       relinkMediaFile,
+      setTracks,
+      setClips,
+      clickedPreviewMediaItem,
+      clickedPreviewMediaTime,
+      previewMediaItem,
+      previewMediaTime,
+      selectClip,
+      setClickedPreviewMedia,
+      setPreviewMedia,
     ]
   );
 

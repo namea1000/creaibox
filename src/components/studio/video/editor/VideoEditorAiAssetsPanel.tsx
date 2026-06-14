@@ -113,8 +113,8 @@ export default function VideoEditorAiAssetsPanel() {
         <StatCard label="Music" value="33" />
       </div>
 
-      <div className="rounded-none border border-white/10 bg-black/30 p-3">
-        <div className="flex items-center gap-2 rounded-none border border-white/10 bg-black/40 px-3 py-2">
+      <div className="rounded-md border border-white/10 bg-black/30 p-3">
+        <div className="flex items-center gap-2 rounded-md border border-white/10 bg-black/40 px-3 py-2">
           <Search size={15} />
           <input
             value={search}
@@ -167,7 +167,7 @@ export default function VideoEditorAiAssetsPanel() {
         ))}
       </div>
 
-      <div className="rounded-none border border-cyan-400/20 bg-cyan-400/10 p-4 text-xs leading-5 text-cyan-100">
+      <div className="rounded-md border border-cyan-400/20 bg-cyan-400/10 p-4 text-xs leading-5 text-cyan-100">
         연결됨:
         <br />
         • Image Studio
@@ -199,9 +199,9 @@ function AssetCard({
         : Music;
 
   return (
-    <div className="rounded-none border border-white/10 bg-black/30 p-3 hover:border-cyan-400/50">
+    <div className="rounded-md border border-white/10 bg-black/30 p-3 hover:border-cyan-400/50">
       <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-none bg-cyan-400/10">
+        <div className="flex h-11 w-11 items-center justify-center rounded-md bg-cyan-400/10">
           <Icon size={18} className="text-cyan-200" />
         </div>
 
@@ -218,7 +218,7 @@ function AssetCard({
         <button
           type="button"
           onClick={onAdd}
-          className="rounded-none border border-white/10 p-2 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200"
+          className="rounded-md border border-white/10 p-2 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200"
           title="타임라인에 추가"
         >
           <Plus size={14} />
@@ -231,7 +231,7 @@ function AssetCard({
 function PanelHeader() {
   return (
     <div className="flex items-start gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-none bg-cyan-400/10 text-cyan-300">
+      <div className="flex h-10 w-10 items-center justify-center rounded-md bg-cyan-400/10 text-cyan-300">
         <Sparkles size={20} />
       </div>
 
@@ -256,7 +256,7 @@ function StatCard({
   value: string;
 }) {
   return (
-    <div className="rounded-none border border-white/10 bg-black/30 p-3 text-center">
+    <div className="rounded-md border border-white/10 bg-black/30 p-3 text-center">
       <div className="text-[10px] text-zinc-500">
         {label}
       </div>
@@ -278,7 +278,7 @@ function ActionCard({
   desc: string;
 }) {
   return (
-    <button className="rounded-none border border-white/10 bg-black/30 p-3 text-left hover:border-cyan-400/50">
+    <button className="rounded-md border border-white/10 bg-black/30 p-3 text-left hover:border-cyan-400/50">
       <div className="flex items-center gap-2 text-sm font-black text-white">
         <Icon size={15} />
         {title}
@@ -304,7 +304,7 @@ function FilterButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-none border px-2 py-2 text-[11px] font-black ${active
+      className={`rounded-md border px-2 py-2 text-[11px] font-black ${active
           ? "border-cyan-400 bg-cyan-400/15 text-cyan-200"
           : "border-white/10 bg-black/20 text-zinc-500 hover:border-cyan-400/40"
         }`}

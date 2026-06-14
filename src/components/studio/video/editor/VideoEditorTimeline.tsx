@@ -13,34 +13,119 @@ import {
   Copy,
   Undo2,
   Redo2,
+  Trash2,
+  ChevronUp,
+  ChevronDown,
+  GripVertical,
 } from "lucide-react";
 
 import { useVideoEditor } from "./VideoEditorContext";
 import VideoEditorClip from "./VideoEditorClip";
 
+const TIMELINE_LABEL_INTERVALS = [
+  0.5, 1, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600,
+];
+const MIN_TIMELINE_LABEL_SPACING_PX = 72;
+const MIN_TIMELINE_ZOOM = 2;
+const MAX_TIMELINE_ZOOM = 1600;
+
+function getTimelineLabelInterval(pxPerSecond: number) {
+  return (
+    TIMELINE_LABEL_INTERVALS.find(
+      (interval) => interval * pxPerSecond >= MIN_TIMELINE_LABEL_SPACING_PX
+    ) ?? TIMELINE_LABEL_INTERVALS[TIMELINE_LABEL_INTERVALS.length - 1]
+  );
+}
+
+function formatTimelineMark(totalSeconds: number) {
+  const hours = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  
+  // Clean up floating point inaccuracies
+  const roundedTime = Math.round(totalSeconds * 10) / 10;
+  const secs = roundedTime % 60;
+  
+  const hasFraction = Math.abs(roundedTime - Math.round(roundedTime)) > 0.01;
+  const secsStr = hasFraction
+    ? secs.toFixed(1).padStart(4, "0")
+    : Math.round(secs).toString().padStart(2, "0");
+
+  if (hours > 0) {
+    return `${hours}:${mins.toString().padStart(2, "0")}:${secsStr}`;
+  }
+
+  return `${mins.toString().padStart(2, "0")}:${secsStr}`;
+}
+
+function clampTimelineZoom(value: number) {
+  return Math.min(MAX_TIMELINE_ZOOM, Math.max(MIN_TIMELINE_ZOOM, Math.round(value)));
+}
+
+function getTimelineZoomStep(value: number) {
+  if (value < 10) return 1;
+  if (value < 25) return 2;
+  if (value < 100) return 5;
+  if (value < 400) return 25;
+  return 100;
+}
+
 export default function VideoEditorTimeline() {
   const [timelineZoom, setTimelineZoom] = useState(100);
+  const [showAddTrackMenu, setShowAddTrackMenu] = useState(false);
+  const [showLeftAddTrackMenu, setShowLeftAddTrackMenu] = useState(false);
+  const timelineRootRef = useRef<HTMLDivElement | null>(null);
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
+  const headersTracksContainerRef = useRef<HTMLDivElement | null>(null);
+  const timelineZoomRef = useRef(timelineZoom);
+
+  const handleTimelineScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (headersTracksContainerRef.current) {
+      headersTracksContainerRef.current.scrollTop = e.currentTarget.scrollTop;
+    }
+  };
+
+  const handleHeadersWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (timelineScrollRef.current) {
+      timelineScrollRef.current.scrollTop += e.deltaY;
+    }
+  };
 
   useEffect(() => {
+    timelineZoomRef.current = timelineZoom;
+  }, [timelineZoom]);
+
+  useEffect(() => {
+    const root = timelineRootRef.current;
     const container = timelineScrollRef.current;
-    if (!container) return;
+    if (!root || !container) return;
 
     const handleWheel = (event: WheelEvent) => {
-      if (event.ctrlKey) {
-        event.preventDefault();
-        // zoomDelta: negative deltaY means pinching out (zooming in), positive means pinching in (zooming out)
-        const zoomDelta = -event.deltaY * 0.45;
-        setTimelineZoom((prev) => {
-          const next = prev + zoomDelta;
-          return Math.min(400, Math.max(25, Math.round(next)));
-        });
-      }
+      const isTrackpadZoom =
+        event.ctrlKey || event.metaKey || Math.abs(event.deltaZ) > 0;
+
+      if (!isTrackpadZoom) return;
+
+      event.preventDefault();
+
+      const rect = container.getBoundingClientRect();
+      const pointerX = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
+      const currentPxPerSecond = (timelineZoomRef.current / 100) * 16;
+      const anchoredTime = (container.scrollLeft + pointerX) / currentPxPerSecond;
+      const zoomDelta = -event.deltaY * 0.45;
+      const nextZoom = clampTimelineZoom(timelineZoomRef.current + zoomDelta);
+      const nextPxPerSecond = (nextZoom / 100) * 16;
+
+      timelineZoomRef.current = nextZoom;
+      setTimelineZoom(nextZoom);
+
+      window.requestAnimationFrame(() => {
+        container.scrollLeft = Math.max(0, anchoredTime * nextPxPerSecond - pointerX);
+      });
     };
 
-    container.addEventListener("wheel", handleWheel, { passive: false });
+    root.addEventListener("wheel", handleWheel, { passive: false });
     return () => {
-      container.removeEventListener("wheel", handleWheel);
+      root.removeEventListener("wheel", handleWheel);
     };
   }, []);
 
@@ -64,28 +149,131 @@ export default function VideoEditorTimeline() {
     redo,
     canUndo,
     canRedo,
+    setTracks,
+    setClips,
   } = useVideoEditor();
 
-  const selectedClip = clips.find((clip) => clip.id === selectedClipId) || null;
+  const handleDeleteTrack = (trackId: string) => {
+    if (window.confirm("트랙을 정말로 삭제하시겠습니까?")) {
+      const updatedTracks = tracks.filter((t) => t.id !== trackId);
+      setTracks(updatedTracks);
+
+      const updatedClips = clips.filter((c) => c.trackId !== trackId);
+      setClips(updatedClips);
+    }
+  };
+
+  const handleMoveTrack = (index: number, direction: "up" | "down") => {
+    const nextIndex = direction === "up" ? index - 1 : index + 1;
+    if (nextIndex < 0 || nextIndex >= tracks.length) return;
+
+    const newTracks = [...tracks];
+    const temp = newTracks[index];
+    newTracks[index] = newTracks[nextIndex];
+    newTracks[nextIndex] = temp;
+
+    setTracks(newTracks);
+  };
+
+  const handleDragTrackStart = (event: React.DragEvent<HTMLDivElement>, index: number) => {
+    const target = event.target as HTMLElement;
+    if (target.closest("button") || target.closest("input")) {
+      event.preventDefault();
+      return;
+    }
+    event.dataTransfer.setData("track-index", String(index));
+    event.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragTrackOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
+
+  const handleDropTrack = (event: React.DragEvent<HTMLDivElement>, targetIndex: number) => {
+    const sourceIndexStr = event.dataTransfer.getData("track-index");
+    if (!sourceIndexStr) return;
+
+    const sourceIndex = Number(sourceIndexStr);
+    if (sourceIndex === targetIndex) return;
+
+    const newTracks = [...tracks];
+    const [draggedTrack] = newTracks.splice(sourceIndex, 1);
+    newTracks.splice(targetIndex, 0, draggedTrack);
+
+    setTracks(newTracks);
+  };
+
+  const handleAddTrack = (type: "video" | "audio" | "text" | "subtitle" | "visualizer") => {
+    const sameTypeTracks = tracks.filter((t) => t.type === type);
+    const timestamp = Date.now();
+    const trackId = `${type}-${timestamp}`;
+
+    const getTrackName = (t: string, idx: number) => {
+      const displayIdx = idx + 1;
+      if (t === "video") return `Video Track ${displayIdx}`;
+      if (t === "audio") return `Audio Track ${displayIdx}`;
+      if (t === "text") return `Text Track ${displayIdx}`;
+      if (t === "subtitle") return `Subtitle Track ${displayIdx}`;
+      if (t === "visualizer") return `Visualizer Track ${displayIdx}`;
+      return `Track ${displayIdx}`;
+    };
+
+    const getTrackColor = (t: string) => {
+      if (t === "video") return "bg-cyan-400/25";
+      if (t === "audio") return "bg-emerald-400/25";
+      if (t === "text") return "bg-violet-400/25";
+      if (t === "subtitle") return "bg-amber-400/25";
+      if (t === "visualizer") return "bg-pink-400/25";
+      return "bg-zinc-400/25";
+    };
+
+    const newTrack = {
+      id: trackId,
+      name: getTrackName(type, sameTypeTracks.length),
+      type,
+      color: getTrackColor(type),
+    };
+
+    const lastSameTypeIndex = tracks.reduce(
+      (lastIndex, item, index) => (item.type === type ? index : lastIndex),
+      -1
+    );
+
+    let updatedTracks;
+    if (lastSameTypeIndex < 0) {
+      updatedTracks = [...tracks, newTrack];
+    } else {
+      updatedTracks = [
+        ...tracks.slice(0, lastSameTypeIndex + 1),
+        newTrack,
+        ...tracks.slice(lastSameTypeIndex + 1),
+      ];
+    }
+
+    setTracks(updatedTracks);
+  };
 
   // 100% 줌일 때 1초당 16픽셀 (줌 상태에 따라 비례)
   const pxPerSecond = (timelineZoom / 100) * 16;
   const totalWidth = Math.max(1200, totalDuration * pxPerSecond);
   const playheadLeft = currentTime * pxPerSecond;
   const timelineEnd = Math.max(30, totalDuration);
+  const labelInterval = getTimelineLabelInterval(pxPerSecond);
+  const majorGridInterval = labelInterval;
+  const minorGridInterval = pxPerSecond >= 80 ? 0.1 : Math.max(1, labelInterval / 5);
   const timelineGridStyle = {
     backgroundImage:
       "linear-gradient(to right, rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px)",
-    backgroundSize: `${pxPerSecond * 5}px 100%, ${pxPerSecond}px 100%`,
+    backgroundSize: `${pxPerSecond * majorGridInterval}px 100%, ${pxPerSecond * minorGridInterval}px 100%`,
   };
 
   const timeMarks = useMemo(() => {
     const marks: number[] = [];
-    for (let t = 0; t <= timelineEnd; t += 5) {
+    for (let t = 0; t <= timelineEnd; t += labelInterval) {
       marks.push(t);
     }
     return marks;
-  }, [timelineEnd]);
+  }, [labelInterval, timelineEnd]);
 
   const getClipTrackType = (clipType: string) => {
     if (clipType === "audio") return "audio";
@@ -152,7 +340,15 @@ export default function VideoEditorTimeline() {
       ]),
     ]
       .map(clampStart)
-      .filter((candidate, index, list) => list.indexOf(candidate) === index);
+      .filter(
+        (candidate, index, list) =>
+          list.indexOf(candidate) === index &&
+          trackClips.every(
+            (clip) =>
+              candidate + duration <= clip.startTime ||
+              candidate >= clip.startTime + clip.duration
+          )
+      );
 
     if (candidates.length === 0) return snappedStart;
 
@@ -173,7 +369,10 @@ export default function VideoEditorTimeline() {
     if (!clipId) return;
 
     const rect = event.currentTarget.getBoundingClientRect();
-    const dropX = event.clientX - rect.left; // 드롭된 곳의 픽셀 좌표
+    const grabOffsetX = Number(
+      event.dataTransfer.getData("clip-grab-offset-x") || "0"
+    );
+    const dropX = event.clientX - rect.left - grabOffsetX;
     
     const targetClip = clips.find((clip) => clip.id === clipId);
     if (!targetClip) return;
@@ -196,36 +395,66 @@ export default function VideoEditorTimeline() {
   };
 
   const handleTimelineSeek = (event: React.PointerEvent<HTMLDivElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const clickX = event.clientX - rect.left; // 클릭한 곳의 픽셀 좌표
-    const nextTime = Math.max(0, Math.min(totalDuration, clickX / pxPerSecond));
+    if (event.button !== 0) return;
 
-    setCurrentTime(Number(nextTime.toFixed(1)));
+    const rect = event.currentTarget.getBoundingClientRect();
+    const calculateTime = (clientX: number) => {
+      const clickX = clientX - rect.left;
+      const rawTime = Math.max(0, Math.min(totalDuration, clickX / pxPerSecond));
+      
+      const snapThresholdSec = 12 / pxPerSecond;
+      const snapPoints = [0, totalDuration];
+      clips.forEach((clip) => {
+        snapPoints.push(clip.startTime);
+        snapPoints.push(clip.startTime + clip.duration);
+      });
+
+      let snappedTime = rawTime;
+      let minDiff = snapThresholdSec;
+
+      snapPoints.forEach((point) => {
+        const diff = Math.abs(rawTime - point);
+        if (diff < minDiff) {
+          minDiff = diff;
+          snappedTime = point;
+        }
+      });
+
+      if (snappedTime !== rawTime) {
+        return Number(snappedTime.toFixed(2));
+      }
+      return Number((Math.round(rawTime * 10) / 10).toFixed(2));
+    };
+
+    const nextTime = calculateTime(event.clientX);
+    setCurrentTime(nextTime);
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      const nextDragTime = calculateTime(moveEvent.clientX);
+      setCurrentTime(nextDragTime);
+    };
+
+    const handlePointerUp = () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    window.addEventListener("pointerup", handlePointerUp, { passive: true });
   };
 
   return (
-    <div className="h-full w-full flex flex-col bg-transparent">
-      <div className="flex h-12 shrink-0 items-center justify-between border-b border-white/5 bg-[#202026] px-4">
+    <div ref={timelineRootRef} className="h-full w-full flex flex-col bg-transparent">
+      <div className="flex h-8 shrink-0 items-center justify-between border-b border-white/5 bg-[#202026] px-4">
         <div className="flex items-center gap-2">
-          <div className="font-black text-zinc-300">Timeline</div>
-
-          <div className="ml-3 rounded-none border border-white/10 bg-black/30 px-3 py-1 text-xs text-zinc-500">
-            {currentTime.toFixed(1)}s / {totalDuration}s
-          </div>
-
-          {selectedClip && (
-            <div className="max-w-[320px] truncate rounded-none border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-bold text-cyan-200">
-              선택: {selectedClip.name} · {selectedClip.startTime.toFixed(1)}s ~{" "}
-              {(selectedClip.startTime + selectedClip.duration).toFixed(1)}s
-            </div>
-          )}
+          <div className="font-black text-xs text-zinc-300">Timeline</div>
         </div>
 
         <div className="flex items-center gap-2">
           <TimelineTool icon={Undo2} label="Undo" disabled={!canUndo} onClick={undo} />
           <TimelineTool icon={Redo2} label="Redo" disabled={!canRedo} onClick={redo} />
 
-          <div className="mx-1 h-5 w-px bg-white/10" />
+          <div className="mx-1 h-4 w-px bg-white/10" />
 
           <TimelineTool icon={MousePointer2} label="선택" active />
 
@@ -247,16 +476,83 @@ export default function VideoEditorTimeline() {
             }}
           />
 
-          <TimelineTool icon={Plus} label="트랙 추가" disabled />
+          <div 
+            className="relative"
+            onMouseLeave={() => setShowAddTrackMenu(false)}
+          >
+            <TimelineTool 
+              icon={Plus} 
+              label="트랙 추가" 
+              onClick={() => setShowAddTrackMenu(!showAddTrackMenu)} 
+            />
+            {showAddTrackMenu && (
+              <div className="absolute right-0 top-full mt-1.5 w-36 rounded border border-white/10 bg-[#1e1e24] p-1 shadow-lg z-50 text-[10.5px]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleAddTrack("video");
+                    setShowAddTrackMenu(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded px-2.5 py-2 text-left text-zinc-300 hover:bg-white/5 hover:text-white font-medium"
+                >
+                  비디오 트랙 추가
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleAddTrack("audio");
+                    setShowAddTrackMenu(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded px-2.5 py-2 text-left text-zinc-300 hover:bg-white/5 hover:text-white font-medium"
+                >
+                  오디오 트랙 추가
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleAddTrack("text");
+                    setShowAddTrackMenu(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded px-2.5 py-2 text-left text-zinc-300 hover:bg-white/5 hover:text-white font-medium"
+                >
+                  텍스트 트랙 추가
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleAddTrack("subtitle");
+                    setShowAddTrackMenu(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded px-2.5 py-2 text-left text-zinc-300 hover:bg-white/5 hover:text-white font-medium"
+                >
+                  자막 트랙 추가
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleAddTrack("visualizer");
+                    setShowAddTrackMenu(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded px-2.5 py-2 text-left text-zinc-300 hover:bg-white/5 hover:text-white font-medium"
+                >
+                  비주얼라이저 트랙 추가
+                </button>
+              </div>
+            )}
+          </div>
 
-          <div className="mx-2 h-5 w-px bg-white/10" />
+          <div className="mx-2 h-4 w-px bg-white/10" />
 
           <button
             type="button"
-            onClick={() => setTimelineZoom((value) => Math.max(25, value - 25))}
-            className="rounded-none border border-white/10 p-2 text-zinc-400 hover:border-cyan-400"
+            onClick={() =>
+              setTimelineZoom((value) =>
+                clampTimelineZoom(value - getTimelineZoomStep(value))
+              )
+            }
+            className="rounded-md border border-white/10 p-1 text-zinc-400 hover:border-cyan-400"
           >
-            <ZoomOut size={15} />
+            <ZoomOut size={13} />
           </button>
 
           <div className="w-16 text-center text-xs font-bold text-zinc-400">
@@ -265,66 +561,196 @@ export default function VideoEditorTimeline() {
 
           <button
             type="button"
-            onClick={() => setTimelineZoom((value) => Math.min(400, value + 25))}
-            className="rounded-none border border-white/10 p-2 text-zinc-400 hover:border-cyan-400"
+            onClick={() =>
+              setTimelineZoom((value) =>
+                clampTimelineZoom(value + getTimelineZoomStep(value))
+              )
+            }
+            className="rounded-md border border-white/10 p-1 text-zinc-400 hover:border-cyan-400"
           >
-            <ZoomIn size={15} />
+            <ZoomIn size={13} />
           </button>
         </div>
       </div>
 
-      <div className="flex h-[calc(100%-48px)]">
-        <div className="w-[190px] shrink-0 border-r border-white/5 bg-[#141418]">
-          <div className="h-8 border-b border-white/5 px-4 text-xs font-bold leading-8 text-zinc-500">
-            Tracks
+      <div className="flex h-[calc(100%-32px)] min-h-0 bg-[#141418]">
+        {/* Left Column: Track Headers */}
+        <div
+          onWheel={handleHeadersWheel}
+          className="w-[190px] shrink-0 border-r border-white/5 bg-[#141418] overflow-hidden flex flex-col h-full select-none"
+        >
+          {/* Tracks Title Header */}
+          <div 
+            className="relative h-8 border-b border-white/5 px-3 text-xs font-bold text-zinc-500 shrink-0 bg-[#141418] flex items-center justify-between"
+            onMouseLeave={() => setShowLeftAddTrackMenu(false)}
+          >
+            <span>Tracks</span>
+            <button
+              type="button"
+              onClick={() => setShowLeftAddTrackMenu(!showLeftAddTrackMenu)}
+              className="flex items-center gap-0.5 text-[10px] font-black text-cyan-400 hover:text-cyan-300 transition"
+            >
+              <Plus size={10} />
+              <span>Track 추가</span>
+            </button>
+            
+            {showLeftAddTrackMenu && (
+              <div className="absolute left-2 top-full mt-1.5 w-36 rounded border border-white/10 bg-[#1e1e24] p-1 shadow-lg z-50 text-[10.5px]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleAddTrack("video");
+                    setShowLeftAddTrackMenu(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-zinc-300 hover:bg-white/5 hover:text-white font-medium"
+                >
+                  비디오 트랙 추가
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleAddTrack("audio");
+                    setShowLeftAddTrackMenu(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-zinc-300 hover:bg-white/5 hover:text-white font-medium"
+                >
+                  오디오 트랙 추가
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleAddTrack("text");
+                    setShowLeftAddTrackMenu(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-zinc-300 hover:bg-white/5 hover:text-white font-medium"
+                >
+                  텍스트 트랙 추가
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleAddTrack("subtitle");
+                    setShowLeftAddTrackMenu(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-zinc-300 hover:bg-white/5 hover:text-white font-medium"
+                >
+                  자막 트랙 추가
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleAddTrack("visualizer");
+                    setShowLeftAddTrackMenu(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-zinc-300 hover:bg-white/5 hover:text-white font-medium"
+                >
+                  비주얼라이저 트랙 추가
+                </button>
+              </div>
+            )}
           </div>
 
-          {tracks.map((track) => (
-            <div
-              key={track.id}
-              className="flex h-[72px] items-center justify-between border-b border-white/5 px-3"
-            >
-              <div>
-                <div className="text-xs font-bold text-zinc-300">{track.name}</div>
-                <div className="text-[10px] uppercase text-zinc-600">{track.type}</div>
-              </div>
+          {/* Track Headers Container */}
+          <div 
+            ref={headersTracksContainerRef}
+            className="flex-1 overflow-hidden"
+          >
+            {tracks.map((track, index) => (
+              <div
+                key={track.id}
+                draggable
+                onDragStart={(event) => handleDragTrackStart(event, index)}
+                onDragOver={handleDragTrackOver}
+                onDrop={(event) => handleDropTrack(event, index)}
+                className="group/track flex h-[72px] items-center justify-between border-b border-white/5 px-3 bg-[#141418] cursor-grab active:cursor-grabbing select-none"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="text-zinc-600 hover:text-zinc-400 cursor-grab">
+                    <GripVertical size={14} />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-zinc-300 truncate max-w-[90px]" title={track.name}>
+                      {track.name}
+                    </div>
+                    <div className="text-[10px] uppercase text-zinc-600">{track.type}</div>
+                  </div>
+                </div>
 
-              <div className="flex items-center gap-1 text-zinc-600">
-                <Eye size={13} />
-                <Lock size={13} />
-                {track.type === "audio" && <Volume2 size={13} />}
+                <div className="flex items-center gap-1 text-zinc-600">
+                  {/* Move Up/Down buttons (visible on hover) */}
+                  <button
+                    type="button"
+                    disabled={index === 0}
+                    onClick={() => handleMoveTrack(index, "up")}
+                    className="hidden group-hover/track:flex p-0.5 text-zinc-500 hover:text-white hover:bg-white/5 rounded transition disabled:opacity-20 disabled:hover:bg-transparent"
+                    title="위로 이동"
+                  >
+                    <ChevronUp size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={index === tracks.length - 1}
+                    onClick={() => handleMoveTrack(index, "down")}
+                    className="hidden group-hover/track:flex p-0.5 text-zinc-500 hover:text-white hover:bg-white/5 rounded transition disabled:opacity-20 disabled:hover:bg-transparent"
+                    title="아래로 이동"
+                  >
+                    <ChevronDown size={13} />
+                  </button>
+
+                  {/* Delete track button (visible on hover) */}
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteTrack(track.id)}
+                    className="hidden group-hover/track:flex p-1 text-zinc-500 hover:text-red-400 hover:bg-white/5 rounded transition animate-pulse"
+                    title="트랙 삭제"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                  
+                  <button className="p-0.5 hover:text-zinc-400 transition">
+                    <Eye size={13} />
+                  </button>
+                  <button className="p-0.5 hover:text-zinc-400 transition">
+                    <Lock size={13} />
+                  </button>
+                  {track.type === "audio" && (
+                    <button className="p-0.5 hover:text-zinc-400 transition">
+                      <Volume2 size={13} />
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
+        {/* Right Column: Timeline Grid & Clips */}
         <div
           ref={timelineScrollRef}
-          className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden"
+          onScroll={handleTimelineScroll}
+          className="min-w-0 flex-1 overflow-auto h-full scrollbar-thin scrollbar-thumb-zinc-800"
         >
           <div
-            onPointerDown={handleTimelineSeek}
-            className="min-w-full relative cursor-pointer"
+            className="relative min-w-full"
             style={{
               width: `${totalWidth}px`,
             }}
+            onPointerDown={handleTimelineSeek}
           >
-            {/* 눈금자 헤더 영역 */}
+            {/* 눈금자 헤더 영역 (sticky top) */}
             <div
-              className="relative h-8 border-b border-white/5 bg-[#18181c]"
+              className="relative h-8 border-b border-white/5 bg-[#18181c] sticky top-0 z-20 cursor-pointer select-none"
               style={timelineGridStyle}
             >
               <div className="absolute inset-0 text-[10px] text-zinc-500">
                 {timeMarks.map((time) => {
-                  const mins = Math.floor(time / 60).toString().padStart(2, "0");
-                  const secs = Math.floor(time % 60).toString().padStart(2, "0");
                   return (
                     <div
                       key={time}
                       className="absolute h-full border-l border-white/15 px-1.5 leading-8"
                       style={{ left: `${time * pxPerSecond}px` }}
                     >
-                      {`${mins}:${secs}`}
+                      {formatTimelineMark(time)}
                     </div>
                   );
                 })}
@@ -335,7 +761,7 @@ export default function VideoEditorTimeline() {
                 className="pointer-events-none absolute top-0 z-30 h-full w-px bg-red-400"
                 style={{ left: `${playheadLeft}px` }}
               >
-                <div className="-ml-2 h-4 w-4 rounded-none bg-red-400" />
+                <div className="-ml-2 h-4 w-4 rounded-md bg-red-400" />
               </div>
             </div>
 
@@ -355,11 +781,10 @@ export default function VideoEditorTimeline() {
                     key={track.id}
                     onDragOver={(event) => event.preventDefault()}
                     onDrop={(event) => handleDropClip(event, track.id)}
-                    className="relative h-[72px] border-b border-white/5"
-                    style={timelineGridStyle}
+                    className="relative h-[72px] border-b border-white/5 bg-[#17171d]/10"
                   >
                     {trackClips.length === 0 ? (
-                      <div className="flex h-full items-center px-4 text-xs text-zinc-700">
+                      <div className="flex h-full items-center px-4 text-xs text-zinc-700/70 select-none">
                         Drop media here
                       </div>
                     ) : (
@@ -416,7 +841,7 @@ function TimelineTool({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`flex items-center gap-1 rounded-none px-2.5 py-1.5 text-xs font-bold transition outline-none disabled:cursor-not-allowed disabled:opacity-30 ${
+      className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-bold transition outline-none disabled:cursor-not-allowed disabled:opacity-30 ${
         active
           ? "text-white"
           : "text-zinc-500 hover:text-zinc-300"

@@ -83,7 +83,15 @@ export default function VideoEditorVisualizerPanel() {
     values: [],
   });
 
-  const { addVisualizerClip } = useVideoEditor();
+  const {
+    addVisualizerClip,
+    updateClip,
+    clips,
+    selectedClipId,
+    mediaItems,
+    currentTime,
+    selectClip,
+  } = useVideoEditor();
 
   const [audioUrl, setAudioUrl] = useState("");
   const [fileName, setFileName] = useState("");
@@ -109,7 +117,130 @@ export default function VideoEditorVisualizerPanel() {
     if (!audioRef.current || !audioUrl) return;
     audioRef.current.load();
   }, [audioUrl]);
+  // Find currently selected visualizer clip
+  const activeVisualizer = selectedClipId
+    ? clips.find((c) => c.id === selectedClipId && c.type === "visualizer")
+    : null;
 
+  const anyClip = activeVisualizer as any;
+
+  // Derive visualizer values from selected visualizer clip, or fall back to local state
+  const templateVal = anyClip?.visualizerTemplate || template;
+  const accentColorVal = anyClip?.visualizerAccentColor || accentColor;
+  const backgroundColorVal = anyClip?.visualizerBackgroundColor || backgroundColor;
+  const spectrumYVal = anyClip?.visualizerY !== undefined ? anyClip.visualizerY : spectrumY;
+  const spectrumHeightVal = anyClip?.visualizerHeight !== undefined ? anyClip.visualizerHeight : spectrumHeight;
+  const spectrumWidthVal = anyClip?.visualizerWidth !== undefined ? anyClip.visualizerWidth : spectrumWidth;
+
+  // Wrapper setters to update either the active clip or local state
+  const handleTemplateChange = (val: VisualizerTemplate) => {
+    if (activeVisualizer) {
+      updateClip(activeVisualizer.id, { visualizerTemplate: val } as any);
+    } else {
+      setTemplate(val);
+    }
+  };
+
+  const handleAccentColorChange = (val: string) => {
+    if (activeVisualizer) {
+      updateClip(activeVisualizer.id, { visualizerAccentColor: val } as any);
+    } else {
+      setAccentColor(val);
+    }
+  };
+
+  const handleBackgroundColorChange = (val: string) => {
+    if (activeVisualizer) {
+      updateClip(activeVisualizer.id, { visualizerBackgroundColor: val } as any);
+    } else {
+      setBackgroundColor(val);
+    }
+  };
+
+  const handleSpectrumYChange = (val: number) => {
+    if (activeVisualizer) {
+      updateClip(activeVisualizer.id, { visualizerY: val } as any);
+    } else {
+      setSpectrumY(val);
+    }
+  };
+
+  const handleSpectrumHeightChange = (val: number) => {
+    if (activeVisualizer) {
+      updateClip(activeVisualizer.id, { visualizerHeight: val } as any);
+    } else {
+      setSpectrumHeight(val);
+    }
+  };
+
+  const handleSpectrumWidthChange = (val: number) => {
+    if (activeVisualizer) {
+      updateClip(activeVisualizer.id, { visualizerWidth: val } as any);
+    } else {
+      setSpectrumWidth(val);
+    }
+  };
+
+  // Automatically select audio from timeline when an audio clip is selected
+  useEffect(() => {
+    if (!selectedClipId) return;
+    const selectedClip = clips.find((c) => c.id === selectedClipId);
+    if (selectedClip && selectedClip.type === "audio") {
+      const media = selectedClip.mediaId
+        ? mediaItems.find((m) => m.id === selectedClip.mediaId)
+        : null;
+      if (media && media.url) {
+        setAudioUrl(media.url);
+        setFileName(media.name);
+        setIsPlaying(false);
+        smoothedFreqRef.current = { count: 0, values: [] };
+      }
+    }
+  }, [selectedClipId, clips, mediaItems]);
+
+  const addOrUpdateVisualizerClip = (newTemplate: VisualizerTemplate) => {
+    if (activeVisualizer) {
+      // Update template of selected visualizer clip
+      updateClip(activeVisualizer.id, {
+        visualizerTemplate: newTemplate,
+        visualizerAccentColor: accentColorVal,
+        visualizerBackgroundColor: backgroundColorVal,
+        visualizerY: spectrumYVal,
+        visualizerHeight: spectrumHeightVal,
+        visualizerWidth: spectrumWidthVal,
+      } as any);
+    } else {
+      // Find visualizer clip at currentTime on any visualizer track
+      const existingVisualizerAtTime = clips.find(
+        (c) =>
+          c.type === "visualizer" &&
+          currentTime >= c.startTime &&
+          currentTime <= c.startTime + c.duration
+      );
+
+      if (existingVisualizerAtTime) {
+        updateClip(existingVisualizerAtTime.id, {
+          visualizerTemplate: newTemplate,
+          visualizerAccentColor: accentColorVal,
+          visualizerBackgroundColor: backgroundColorVal,
+          visualizerY: spectrumYVal,
+          visualizerHeight: spectrumHeightVal,
+          visualizerWidth: spectrumWidthVal,
+        } as any);
+        selectClip(existingVisualizerAtTime.id);
+      } else {
+        // Create new visualizer clip
+        addVisualizerClip({
+          template: newTemplate,
+          accentColor: accentColorVal,
+          backgroundColor: backgroundColorVal,
+          y: spectrumYVal,
+          height: spectrumHeightVal,
+          width: spectrumWidthVal,
+        });
+      }
+    }
+  };
 
 
   const setupAudio = async () => {
@@ -184,6 +315,14 @@ export default function VideoEditorVisualizerPanel() {
     const canvas = canvasRef.current;
     const analyser = analyserRef.current;
     if (!canvas || !analyser) return;
+
+    // Shadowing the outer state/derived variables to capture their values at drawing setup time
+    const template = templateVal;
+    const accentColor = accentColorVal;
+    const backgroundColor = backgroundColorVal;
+    const spectrumY = spectrumYVal;
+    const spectrumHeight = spectrumHeightVal;
+    const spectrumWidth = spectrumWidthVal;
 
     if (animationRef.current) cancelAnimationFrame(animationRef.current);
 
@@ -543,16 +682,16 @@ export default function VideoEditorVisualizerPanel() {
   useEffect(() => {
     if (analyserRef.current) draw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [template, accentColor, backgroundColor, spectrumY, spectrumHeight, spectrumWidth]);
+  }, [templateVal, accentColorVal, backgroundColorVal, spectrumYVal, spectrumHeightVal, spectrumWidthVal]);
 
   const handleCanvasSpectrumDrag = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const nextY = ((event.clientY - rect.top) / rect.height) * 100;
-    setSpectrumY(Math.round(clamp(nextY, 5, 95)));
+    handleSpectrumYChange(Math.round(clamp(nextY, 5, 95)));
   };
 
   return (
-    <div className="space-y-4 rounded-none border border-white/10 bg-black/20 p-4">
+    <div className="space-y-4 rounded-md border border-white/10 bg-black/20 p-4">
       <div>
         <h3 className="flex items-center gap-2 text-lg font-black text-white">
           <Waves className="text-pink-300" size={20} />
@@ -563,31 +702,32 @@ export default function VideoEditorVisualizerPanel() {
         </p>
       </div>
 
-      <label className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-none bg-pink-500 text-sm font-black text-white hover:bg-pink-400">
+      <label className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-md bg-pink-500 text-sm font-black text-white hover:bg-pink-400">
         <Upload size={17} />
         오디오 업로드
         <input type="file" accept="audio/*" onChange={handleAudioUpload} className="hidden" />
       </label>
 
-      <div className="rounded-none border border-white/10 bg-black/30 p-3 text-xs leading-5 text-zinc-400">
+      <div className="rounded-md border border-white/10 bg-black/30 p-3 text-xs leading-5 text-zinc-400">
         <div className="font-bold text-white">{fileName || "오디오 없음 (기본 데모 파동)"}</div>
-        <div className="mt-1">선택 템플릿: {template}</div>
+        <div className="mt-1">선택 템플릿: {templateVal}</div>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         {templates.map((item) => {
           const Icon = item.icon;
-          const active = template === item.id;
+          const active = templateVal === item.id;
 
           return (
             <button
               key={item.id}
               type="button"
               onClick={async () => {
-                setTemplate(item.id);
+                handleTemplateChange(item.id);
                 if (audioUrl) await setupAudio();
+                addOrUpdateVisualizerClip(item.id);
               }}
-              className={`rounded-none border p-3 text-left transition ${active
+              className={`rounded-md border p-3 text-left transition ${active
                   ? "border-pink-400 bg-pink-400/10"
                   : "border-white/10 bg-black/30 hover:border-pink-400/50"
                 }`}
@@ -600,34 +740,8 @@ export default function VideoEditorVisualizerPanel() {
         })}
       </div>
 
-      <div className="space-y-3 rounded-none border border-white/10 bg-black/30 p-3">
-        <ColorField label="Accent" value={accentColor} onChange={setAccentColor} />
-        <ColorField label="Background" value={backgroundColor} onChange={setBackgroundColor} />
 
-        <RangeField
-          label="세로 위치"
-          value={spectrumY}
-          min={5}
-          max={95}
-          onChange={setSpectrumY}
-        />
-        <RangeField
-          label="세로 크기"
-          value={spectrumHeight}
-          min={10}
-          max={95}
-          onChange={setSpectrumHeight}
-        />
-        <RangeField
-          label="가로 폭"
-          value={spectrumWidth}
-          min={20}
-          max={100}
-          onChange={setSpectrumWidth}
-        />
-      </div>
-
-      <div className="overflow-hidden rounded-none border border-white/10 bg-black">
+      <div className="overflow-hidden rounded-md border border-white/10 bg-black">
         <canvas
           ref={canvasRef}
           width={1280}
@@ -659,7 +773,7 @@ export default function VideoEditorVisualizerPanel() {
         <button
           type="button"
           onClick={handlePlay}
-          className="flex h-11 items-center justify-center gap-2 rounded-none bg-zinc-800 text-xs font-bold text-white hover:bg-zinc-700"
+          className="flex h-11 items-center justify-center gap-2 rounded-md bg-zinc-800 text-xs font-bold text-white hover:bg-zinc-700"
         >
           {isPlaying ? <Pause size={15} /> : <Play size={15} />}
           {isPlaying ? "일시정지" : "미리보기 재생"}
@@ -667,15 +781,15 @@ export default function VideoEditorVisualizerPanel() {
 
         <button
           type="button"
-          onClick={addVisualizerClip}
-          className="flex h-11 items-center justify-center gap-2 rounded-none bg-cyan-400 text-xs font-black text-black hover:bg-cyan-300"
+          onClick={() => addOrUpdateVisualizerClip(templateVal)}
+          className="flex h-11 items-center justify-center gap-2 rounded-md bg-cyan-400 text-xs font-black text-black hover:bg-cyan-300"
         >
           <Plus size={15} />
           타임라인에 추가
         </button>
       </div>
 
-      <div className="rounded-none border border-amber-400/20 bg-amber-400/10 p-3 text-[11px] leading-5 text-amber-100">
+      <div className="rounded-md border border-amber-400/20 bg-amber-400/10 p-3 text-[11px] leading-5 text-amber-100">
         오디오를 업로드하거나 템플릿을 선택한 뒤 [타임라인에 추가]를 클릭하면 편집기에 실시간 동적 비주얼 스펙트럼 레이어가 적용됩니다.
       </div>
     </div>

@@ -16,12 +16,13 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowRight,
+  Gauge,
 } from "lucide-react";
 
 import { useVideoEditor } from "./VideoEditorContext";
 
 export default function VideoEditorMotionPanel() {
-  const { clips, selectedClipId, updateClip } = useVideoEditor();
+  const { clips, currentTime, selectedClipId, updateClip } = useVideoEditor();
 
   const selectedClip = clips.find((clip) => clip.id === selectedClipId) || null;
 
@@ -30,11 +31,11 @@ export default function VideoEditorMotionPanel() {
       <div>
         <PanelHeader
           icon={Move}
-          title="Motion"
+          title="비디오 / 모션"
           desc="클립을 선택하면 위치, 크기, 회전, 투명도, 플립, 크롭을 조절할 수 있습니다."
         />
 
-        <div className="rounded-none border border-dashed border-white/10 bg-black/30 p-5 text-center text-sm text-zinc-500">
+        <div className="rounded-md border border-dashed border-white/10 bg-black/30 p-5 text-center text-sm text-zinc-500">
           선택된 클립이 없습니다.
         </div>
       </div>
@@ -48,6 +49,23 @@ export default function VideoEditorMotionPanel() {
   const scale = selectedClip.scale ?? 1;
   const rotation = selectedClip.rotation ?? 0;
   const opacity = selectedClip.opacity ?? 1;
+  const keyframes = [...(selectedClip.keyframes ?? [])].sort((a, b) => a.time - b.time);
+  const localKeyframeTime = Math.max(
+    0,
+    Math.min(selectedClip.duration, currentTime - selectedClip.startTime)
+  );
+  const activeKeyframe = keyframes.find(
+    (keyframe) => Math.abs(keyframe.time - localKeyframeTime) < 0.05
+  );
+
+  const handleSpeedChange = () => {
+    if (!selectedClip) return;
+    const nextDuration = Math.max(0.5, selectedClip.duration / 2);
+    updateClip(selectedClip.id, {
+      duration: nextDuration,
+      name: `${selectedClip.name.replace(" (2.0x)", "")} (2.0x)`,
+    });
+  };
 
   const flipX = Boolean(selectedClip.flipX);
   const flipY = Boolean(selectedClip.flipY);
@@ -60,15 +78,42 @@ export default function VideoEditorMotionPanel() {
   const anchorX = selectedClip.anchorX ?? 50;
   const anchorY = selectedClip.anchorY ?? 50;
 
+  const addOrUpdateKeyframe = () => {
+    const nextKeyframe = {
+      id: activeKeyframe?.id ?? `kf-${Date.now()}`,
+      time: Number(localKeyframeTime.toFixed(3)),
+      motionX,
+      motionY,
+      motionWidth,
+      motionHeight,
+      scale,
+      rotation,
+      opacity,
+    };
+    const nextKeyframes = [
+      ...keyframes.filter((keyframe) => keyframe.id !== activeKeyframe?.id),
+      nextKeyframe,
+    ].sort((a, b) => a.time - b.time);
+
+    updateClip(selectedClip.id, { keyframes: nextKeyframes });
+  };
+
+  const removeActiveKeyframe = () => {
+    if (!activeKeyframe) return;
+    updateClip(selectedClip.id, {
+      keyframes: keyframes.filter((keyframe) => keyframe.id !== activeKeyframe.id),
+    });
+  };
+
   return (
     <div>
       <PanelHeader
         icon={Move}
-        title="Motion"
+        title="비디오 / 모션"
         desc="위치, 크기, 회전, 투명도, 플립, 크롭을 조절합니다."
       />
 
-      <div className="mb-4 rounded-none border border-cyan-400/20 bg-cyan-400/10 p-3">
+      <div className="mb-4 rounded-md border border-cyan-400/20 bg-cyan-400/10 p-3">
         <div className="truncate text-sm font-black text-cyan-100">
           {selectedClip.name}
         </div>
@@ -78,6 +123,97 @@ export default function VideoEditorMotionPanel() {
       </div>
 
       <div className="space-y-4">
+        <MotionSection title="Keyframes">
+          <div className="rounded-md border border-cyan-400/15 bg-cyan-400/10 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-black text-cyan-100">
+                  현재 위치 {localKeyframeTime.toFixed(2)}s
+                </div>
+                <div className="mt-1 text-[11px] text-cyan-200/70">
+                  {keyframes.length}개 keyframe · {activeKeyframe ? "현재 위치에 keyframe 있음" : "현재 모션 값을 저장 가능"}
+                </div>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <button
+                  type="button"
+                  onClick={addOrUpdateKeyframe}
+                  className="rounded-md bg-cyan-400 px-3 py-2 text-xs font-black text-black hover:bg-cyan-300"
+                >
+                  {activeKeyframe ? "Update" : "Add"}
+                </button>
+                <button
+                  type="button"
+                  disabled={!activeKeyframe}
+                  onClick={removeActiveKeyframe}
+                  className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-xs font-black text-white hover:border-red-400 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+
+            {keyframes.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {keyframes.map((keyframe) => (
+                  <span
+                    key={keyframe.id}
+                    className={`rounded-md border px-2 py-1 text-[10px] font-black ${
+                      activeKeyframe?.id === keyframe.id
+                        ? "border-cyan-400 bg-cyan-400/20 text-cyan-100"
+                        : "border-white/10 bg-black/30 text-zinc-400"
+                    }`}
+                  >
+                    {keyframe.time.toFixed(2)}s
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <PresetButton
+                icon={Sparkles}
+                label="Ken Burns"
+                desc="느린 확대"
+                onClick={() =>
+                  updateClip(selectedClip.id, {
+                    keyframes: [
+                      {
+                        id: `kf-${Date.now()}-a`,
+                        time: 0,
+                        motionX: 50,
+                        motionY: 50,
+                        motionWidth: 100,
+                        motionHeight: 100,
+                        scale: 1,
+                        rotation: 0,
+                        opacity: 1,
+                      },
+                      {
+                        id: `kf-${Date.now()}-b`,
+                        time: selectedClip.duration,
+                        motionX: 50,
+                        motionY: 50,
+                        motionWidth: 100,
+                        motionHeight: 100,
+                        scale: 1.22,
+                        rotation: 0,
+                        opacity: 1,
+                      },
+                    ],
+                  })
+                }
+              />
+              <PresetButton
+                icon={RotateCcw}
+                label="Keyframes 초기화"
+                desc="모션 고정값 사용"
+                onClick={() => updateClip(selectedClip.id, { keyframes: [] })}
+              />
+            </div>
+          </div>
+        </MotionSection>
+
         <MotionSection title="Position">
           <div className="grid grid-cols-2 gap-3">
             <RangeField
@@ -275,6 +411,26 @@ export default function VideoEditorMotionPanel() {
               onClick={() => updateClip(selectedClip.id, { rotation: -90 })}
             />
           </div>
+
+          {selectedClip.type === "video" && (
+            <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/5">
+              <PresetButton
+                icon={RotateCw}
+                label="회전 (90°)"
+                desc="시계방향 90도 회전"
+                onClick={() => {
+                  const nextRotation = ((selectedClip.rotation || 0) + 90) % 360;
+                  updateClip(selectedClip.id, { rotation: nextRotation });
+                }}
+              />
+              <PresetButton
+                icon={Gauge}
+                label="배속 (2.0x)"
+                desc="재생 속도 2배속"
+                onClick={handleSpeedChange}
+              />
+            </div>
+          )}
         </MotionSection>
 
         <MotionSection title="Opacity">
@@ -530,7 +686,7 @@ export default function VideoEditorMotionPanel() {
           </div>
         </MotionSection>
 
-        <div className="rounded-none border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
+        <div className="rounded-md border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-100">
           위치, 크기, 회전, 투명도는 PreviewPlayer에 바로 반영됩니다.
           Flip/Crop/Anchor는 다음 단계에서 PreviewPlayer 스타일 계산에 연결하면 실제 화면에 반영됩니다.
         </div>
@@ -547,7 +703,7 @@ function MotionSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-none border border-white/10 bg-black/20 p-3">
+    <div className="rounded-md border border-white/10 bg-black/20 p-3">
       <div className="mb-3 text-xs font-black uppercase tracking-widest text-zinc-500">
         {title}
       </div>
@@ -576,7 +732,7 @@ function RangeField({
   onChange: (value: number) => void;
 }) {
   return (
-    <label className="block rounded-none border border-white/10 bg-black/30 p-3">
+    <label className="block rounded-md border border-white/10 bg-black/30 p-3">
       <div className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-widest text-zinc-500">
         <span className="flex items-center gap-2">
           <Icon size={13} />
@@ -612,7 +768,7 @@ function ToggleButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-10 items-center justify-center gap-2 rounded-none border text-xs font-black ${active
+      className={`flex h-10 items-center justify-center gap-2 rounded-md border text-xs font-black ${active
           ? "border-cyan-400 bg-cyan-400/20 text-cyan-200"
           : "border-white/10 bg-black/30 text-zinc-400 hover:border-cyan-400/40"
         }`}
@@ -638,7 +794,7 @@ function PresetButton({
     <button
       type="button"
       onClick={onClick}
-      className="rounded-none border border-white/10 bg-black/30 p-3 text-left hover:border-cyan-400/50"
+      className="rounded-md border border-white/10 bg-black/30 p-3 text-left hover:border-cyan-400/50"
     >
       <div className="flex items-center gap-2 text-xs font-black text-white">
         <Icon size={13} />
@@ -660,7 +816,7 @@ function PanelHeader({
 }) {
   return (
     <div className="mb-5 flex items-start gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-none bg-cyan-400/10 text-cyan-300">
+      <div className="flex h-10 w-10 items-center justify-center rounded-md bg-cyan-400/10 text-cyan-300">
         <Icon size={20} />
       </div>
 

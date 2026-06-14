@@ -26,21 +26,21 @@ export default function VideoEditorHeader({
         <input
           value={projectTitle}
           onChange={(event) => setProjectTitle(event.target.value)}
-          className="h-9 w-[260px] rounded-none border border-white/10 bg-black/30 px-3 text-sm font-bold text-zinc-200 outline-none focus:border-cyan-400"
+          className="h-9 w-[260px] rounded-md border border-white/10 bg-black/30 px-3 text-sm font-bold text-zinc-200 outline-none focus:border-cyan-400"
         />
 
-        <div className="flex items-center gap-2 rounded-none border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-bold text-emerald-300">
+        <div className="flex items-center gap-2 rounded-md border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-bold text-emerald-300">
           <Cloud size={14} />
           로컬 저장 가능
         </div>
       </div>
 
       <div className="flex items-center gap-2">
-        <button className="rounded-none border border-white/10 p-2 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200">
+        <button className="rounded-md border border-white/10 p-2 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200">
           <Undo2 size={17} />
         </button>
 
-        <button className="rounded-none border border-white/10 p-2 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200">
+        <button className="rounded-md border border-white/10 p-2 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200">
           <Redo2 size={17} />
         </button>
 
@@ -51,13 +51,13 @@ export default function VideoEditorHeader({
         <button
           type="button"
           onClick={onOpenExport}
-          className="flex items-center gap-2 rounded-none bg-cyan-400 px-4 py-2 text-sm font-bold text-black hover:bg-cyan-300"
+          className="flex items-center gap-2 rounded-md bg-cyan-400 px-4 py-2 text-sm font-bold text-black hover:bg-cyan-300"
         >
           <Download size={16} />
           내보내기
         </button>
 
-        <button className="rounded-none border border-white/10 p-2 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200">
+        <button className="rounded-md border border-white/10 p-2 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200">
           <MoreHorizontal size={17} />
         </button>
       </div>
