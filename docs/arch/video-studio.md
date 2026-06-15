@@ -13,7 +13,7 @@ Video Studio is the browser-based video editing module for CreAibox. It lets use
 - Preview playback keeps an internal high-resolution playback clock and only publishes throttled UI time, so pausing freezes the current media frame instead of snapping back to the last rounded UI timestamp.
 - Local media cache using IndexedDB for uploaded files.
 - Project autosave using browser local storage.
-- Export panel with a clean CapCut-style single-screen layout, customizable file name input, local folder selection (File System Access API), and audio-only output formats (MP3, WAV, AAC).
+- Export panel with a clean CapCut-style single-screen layout, customizable file name input, local folder selection (File System Access API), audio-only output formats (MP3, WAV, AAC), and a tabbed bottom-left info panel displaying output media specifications, timeline clip breakdown, hardware acceleration status, and dynamic rendering alerts.
 - Engine simplification: Direct MP4 (`direct-mp4`) is the default and only visible video rendering engine in the UI, hiding other legacy engines (`fast-webcodecs`, `quick-webm`, `compatible-mp4`). The direct exporter automatically falls back to Compatible MP4 if H.264/AAC capability checks fail.
 - Audio-only export: Decodes the offline mixed audio buffer, saves directly to the chosen folder as a WAV file, or transcodes it to MP3/AAC via FFmpeg WASM.
 - Step 2 export consistency:

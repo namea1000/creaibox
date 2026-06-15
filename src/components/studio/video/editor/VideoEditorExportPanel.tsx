@@ -182,6 +182,8 @@ export default function VideoEditorExportPanel({
   const [audioExportFormat, setAudioExportFormat] = useState<"mp3" | "wav" | "aac">("mp3");
   const [exportVideoFormat, setExportVideoFormat] = useState<"mp4" | "mov">("mp4");
   const [isQueueDrawerOpen, setIsQueueDrawerOpen] = useState<boolean>(false);
+  const [leftActiveTab, setLeftActiveTab] = useState<"spec" | "notices">("spec");
+
 
   // Sync exportFileName with projectTitle
   useEffect(() => {
@@ -1088,6 +1090,231 @@ export default function VideoEditorExportPanel({
                 }}
               />
             )}
+
+            {/* Tabs for left details */}
+            <div className="flex border-b border-white/10 text-[10px] font-black text-zinc-400 mt-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setLeftActiveTab("spec")}
+                className={`flex-1 py-2 text-center border-b-2 transition ${
+                  leftActiveTab === "spec"
+                    ? "border-cyan-400 text-cyan-400"
+                    : "border-transparent hover:text-zinc-200"
+                }`}
+              >
+                미디어 및 인코딩 정보
+              </button>
+              <button
+                type="button"
+                onClick={() => setLeftActiveTab("notices")}
+                className={`flex-1 py-2 text-center border-b-2 transition flex items-center justify-center gap-1 ${
+                  leftActiveTab === "notices"
+                    ? "border-cyan-400 text-cyan-400"
+                    : "border-transparent hover:text-zinc-200"
+                }`}
+              >
+                경고 및 내보내기 안내
+                {((preflightResult && !preflightResult.canRender) || showPerformanceWarning) && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                )}
+              </button>
+            </div>
+
+            {leftActiveTab === "spec" && (
+              <div className="space-y-3 mt-1 shrink-0">
+                {/* 출력 스펙 요약 */}
+                <div className="rounded-xl border border-white/5 bg-zinc-950/20 p-3 space-y-2">
+                  <div className="text-[10px] font-black text-zinc-400 uppercase tracking-wider">
+                    출력 미디어 정보
+                  </div>
+                  <div className="space-y-1.5 text-[10px]">
+                    <div className="flex justify-between border-b border-white/5 pb-1">
+                      <span className="text-zinc-500">포맷 및 해상도</span>
+                      <span className="font-semibold text-zinc-300">
+                        {exportVideoEnabled
+                          ? `${exportVideoFormat.toUpperCase()} · ${exportSize.width} × ${exportSize.height} (${canvasRatio})`
+                          : "비디오 제외 (오디오 전용)"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-b border-white/5 pb-1">
+                      <span className="text-zinc-500">프레임 속도</span>
+                      <span className="font-semibold text-zinc-300">
+                        {exportVideoEnabled ? `${exportFps} fps` : "-"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-b border-white/5 pb-1">
+                      <span className="text-zinc-500">오디오 사양</span>
+                      <span className="font-semibold text-zinc-300">
+                        {exportAudioEnabled
+                          ? `${audioExportFormat.toUpperCase()} 포맷 (오디오 단독)`
+                          : exportVideoEnabled
+                            ? "AAC Stereo · 48,000 Hz"
+                            : "선택 안 됨"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between pb-0.5">
+                      <span className="text-zinc-500">비디오 코덱</span>
+                      <span className="font-semibold text-cyan-400">
+                        {exportVideoEnabled
+                          ? exportVideoFormat === "mov"
+                            ? "Stream Copy (무손실 복사)"
+                            : directMp4Config?.supported
+                              ? "H.264 (하드웨어 가속)"
+                              : "H.264 (Compatible WASM)"
+                          : "비활성화"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 타임라인 구성 */}
+                <div className="rounded-xl border border-white/5 bg-zinc-950/20 p-3 space-y-2">
+                  <div className="text-[10px] font-black text-zinc-400 uppercase tracking-wider">
+                    타임라인 클립 구성
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5 text-[10px] text-zinc-500">
+                    <div className="flex items-center gap-1.5 bg-black/10 p-1.5 rounded-lg border border-white/5">
+                      <Film size={12} className="text-blue-400 shrink-0" />
+                      <span>비디오: <strong className="text-zinc-200">{clips.filter(c => c.type === 'video').length}개</strong></span>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-black/10 p-1.5 rounded-lg border border-white/5">
+                      <Volume2 size={12} className="text-emerald-400 shrink-0" />
+                      <span>오디오: <strong className="text-zinc-200">{clips.filter(c => c.type === 'audio').length}개</strong></span>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-black/10 p-1.5 rounded-lg border border-white/5">
+                      <Monitor size={12} className="text-purple-400 shrink-0" />
+                      <span>이미지: <strong className="text-zinc-200">{clips.filter(c => c.type === 'image').length}개</strong></span>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-black/10 p-1.5 rounded-lg border border-white/5">
+                      <Database size={12} className="text-amber-400 shrink-0" />
+                      <span>자막/자료: <strong className="text-zinc-200">{clips.filter(c => c.type === 'subtitle' || c.type === 'text').length}개</strong></span>
+                    </div>
+                    <div className="col-span-2 flex items-center gap-1.5 bg-black/10 p-1.5 rounded-lg border border-white/5">
+                      <Gauge size={12} className="text-cyan-400 shrink-0" />
+                      <span>비주얼라이저 효과: <strong className="text-zinc-200">{clips.filter(c => c.type === 'visualizer').length}개</strong></span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 시스템 가속 정보 */}
+                <div className="rounded-xl border border-white/5 bg-zinc-950/20 p-3 space-y-1.5 text-[10px]">
+                  <div className="flex justify-between items-center pb-1 border-b border-white/5">
+                    <span className="text-zinc-500">그래픽 가속 (WebGPU)</span>
+                    <span className={`px-1.5 py-0.5 rounded font-black ${webgpuRendererSupport?.supported ? "bg-cyan-950/30 text-cyan-400 border border-cyan-500/20" : "bg-zinc-800 text-zinc-500"}`}>
+                      {webgpuRendererSupport?.supported ? "활성화" : "미지원"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pb-1 border-b border-white/5">
+                    <span className="text-zinc-500">효과 가속 (WebGL)</span>
+                    <span className={`px-1.5 py-0.5 rounded font-black ${webglEffectsSupport?.supported ? "bg-cyan-950/30 text-cyan-400 border border-cyan-500/20" : "bg-zinc-800 text-zinc-500"}`}>
+                      {webglEffectsSupport?.supported ? "활성화" : "미지원"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-500">백그라운드 워커</span>
+                    <span className={`px-1.5 py-0.5 rounded font-black ${workerSupport?.supported ? "bg-cyan-950/30 text-cyan-400 border border-cyan-500/20" : "bg-zinc-800 text-zinc-500"}`}>
+                      {workerSupport?.supported ? "사용 대기" : "미지원"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {leftActiveTab === "notices" && (
+              <div className="space-y-2 mt-1 max-h-[260px] overflow-y-auto pr-1 shrink-0">
+                {/* 1. Preflight Blocking/Warning issues */}
+                {preflightResult && !preflightResult.canRender && (
+                  <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-[10px] text-red-200">
+                    <div className="font-black flex items-center gap-1.5 mb-1.5">
+                      <AlertCircle size={12} className="text-red-400" />
+                      내보내기 차단 오류
+                    </div>
+                    <ul className="list-disc pl-3.5 space-y-1">
+                      {preflightResult.blockingReasons.map((reason, i) => (
+                        <li key={i}>{reason}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {!!preflightResult?.warnings.length && (
+                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-[10px] text-amber-200">
+                    <div className="font-black flex items-center gap-1.5 mb-1.5">
+                      <AlertCircle size={12} className="text-amber-400" />
+                      렌더링 경고 ({preflightResult.warnings.length})
+                    </div>
+                    <ul className="list-disc pl-3.5 space-y-1 text-zinc-300 leading-normal">
+                      {preflightResult.warnings.map((warn, i) => (
+                        <li key={i}>{warn}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* 2. Format specific guidelines */}
+                {exportVideoEnabled && exportVideoFormat === "mov" && (
+                  <div className="rounded-xl border border-cyan-500/20 bg-cyan-950/15 p-3 text-[10px] text-cyan-200">
+                    <div className="font-black flex items-center gap-1.5 mb-1 text-cyan-300">
+                      <Check size={12} />
+                      무손실 MOV 리믹싱(Remuxing)
+                    </div>
+                    <p className="leading-relaxed opacity-80 text-zinc-300">
+                      오디오와 비디오 데이터를 다시 인코딩하지 않고 컨테이너 포맷만 MOV로 변환(Stream Copy)합니다. <strong>화질 저하가 전혀 없고 처리 속도가 엄청나게 빠릅니다.</strong>
+                    </p>
+                  </div>
+                )}
+
+                {exportVideoEnabled && exportVideoFormat === "mp4" && (
+                  <div className="rounded-xl border border-white/5 bg-zinc-900/40 p-3 text-[10px] text-zinc-300">
+                    <div className="font-black flex items-center gap-1.5 mb-1 text-cyan-400">
+                      <Check size={12} />
+                      Direct MP4 내보내기 경로
+                    </div>
+                    <p className="leading-relaxed opacity-75 text-zinc-400">
+                      {directMp4Config?.supported
+                        ? "브라우저 H.264 비디오 및 AAC 오디오 하드웨어 인코더를 사용하여 고속으로 MP4 파일을 병합 생성합니다."
+                        : "시스템 하드웨어 인코더 부적합으로 인해 WebM 영상 생성 후 MP4 트랜스코딩을 진행하는 Compatible MP4 fallback 모드로 실행됩니다."}
+                    </p>
+                  </div>
+                )}
+
+                {exportAudioEnabled && (
+                  <div className="rounded-xl border border-white/5 bg-zinc-900/40 p-3 text-[10px] text-zinc-300">
+                    <div className="font-black flex items-center gap-1.5 mb-1 text-cyan-400">
+                      <Check size={12} />
+                      오디오 전용 내보내기
+                    </div>
+                    <p className="leading-relaxed opacity-75 text-zinc-400">
+                      타임라인의 오디오를 믹스다운하여 {audioExportFormat.toUpperCase()} 파일로 저장합니다. 비디오 프레임 처리를 스킵하므로 즉시 처리가 완료됩니다.
+                    </p>
+                  </div>
+                )}
+
+                {/* 3. Performance warning */}
+                {showPerformanceWarning && (
+                  <div className="rounded-xl border border-red-500/10 bg-red-950/10 p-3 text-[10px] text-red-300">
+                    <div className="font-black flex items-center gap-1.5 mb-1">
+                      <AlertCircle size={12} className="text-red-400" />
+                      고부하 설정 경고
+                    </div>
+                    <p className="leading-relaxed opacity-75 text-zinc-400">
+                      {exportResolution === "4k" && exportFps === 60
+                        ? "4K 해상도와 60fps 설정은 매우 많은 시스템 자원을 소모합니다. 긴 영상의 경우 브라우저 탭이 다운될 수 있으므로 1080p/30fps 조정을 권장합니다."
+                        : "해상도 또는 FPS 설정이 높아 디바이스 부하가 발생할 수 있습니다. 렌더가 느릴 경우 설정을 낮춰주세요."}
+                    </p>
+                  </div>
+                )}
+
+                {/* 4. Directory picker warning */}
+                <div className="rounded-xl border border-white/5 bg-black/20 p-3 text-[10px] text-zinc-400">
+                  <div className="font-black mb-1 text-zinc-300">📂 보안 디렉토리 지정 팁</div>
+                  <p className="leading-relaxed opacity-75 text-zinc-400">
+                    브라우저 보안상 다운로드, 데스크톱, 문서 등의 <strong>최상위 폴더는 직접 선택할 수 없습니다</strong>. 해당 폴더 내부에 새로운 폴더를 생성하고 해당 하위 폴더를 지정해 주세요.
+                  </p>
+                </div>
+              </div>
+            )}
+
           </div>
 
           {/* Right Column: Settings & Actions */}
