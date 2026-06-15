@@ -2,7 +2,7 @@
 
 import { forwardRef, useImperativeHandle, useRef } from "react";
 import { useVideoEditor, getFileFromCache } from "./VideoEditorContext";
-import { convertWebmBlobToMp4, terminateFFmpeg, runWithFFmpegLock } from "./ffmpeg/convertWebmToMp4";
+import { convertWebmBlobToMp4, terminateFFmpeg, runWithFFmpegLock, convertMp4BlobToMov } from "./ffmpeg/convertWebmToMp4";
 import {
   collectAudioMixSources,
   detectOfflineAudioMixdownSupport,
@@ -1710,10 +1710,11 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
         try {
           const webmBlob = await renderToWebmBlob(options);
           throwIfAborted(options?.signal);
+          const format = options?.videoFormat || "mp4";
           options?.onProgress?.({
             stage: "converting-mp4",
             progress: 0,
-            message: "MP4 변환을 시작합니다.",
+            message: `${format.toUpperCase()} 변환을 시작합니다.`,
           });
 
           await convertWebmBlobToMp4({
@@ -1722,18 +1723,19 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
             signal: options?.signal,
             fileName: options?.fileName,
             directoryHandle: options?.directoryHandle,
+            videoFormat: format,
             onProgress: (progress) =>
               options?.onProgress?.({
                 stage: "converting-mp4",
                 progress,
-                message: `MP4 변환 중 ${progress}%`,
+                message: `${format.toUpperCase()} 변환 중 ${progress}%`,
               }),
           });
           throwIfAborted(options?.signal);
           options?.onProgress?.({
             stage: "completed",
             progress: 100,
-            message: "MP4 파일 저장을 시작했습니다.",
+            message: `${format.toUpperCase()} 파일 저장을 시작했습니다.`,
           });
         } finally {
           terminateFFmpeg();
@@ -1768,10 +1770,11 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
           if (!canvas) throw new Error("렌더 캔버스를 찾지 못했습니다.");
 
           const runCompatibleMp4Fallback = async (reason: string) => {
+            const format = options?.videoFormat || "mp4";
             options?.onProgress?.({
               stage: "converting-mp4",
               progress: 0,
-              message: `Direct MP4 fallback: ${reason} 기존 Compatible MP4 경로로 처리합니다.`,
+              message: `Direct ${format.toUpperCase()} fallback: ${reason} 기존 호환 렌더 경로로 처리합니다.`,
             });
 
             const webmBlob = await renderToWebmBlob(options);
@@ -1779,27 +1782,28 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
             options?.onProgress?.({
               stage: "converting-mp4",
               progress: 0,
-              message: "Direct MP4 fallback: FFmpeg WASM MP4 변환을 시작합니다.",
+              message: `Direct ${format.toUpperCase()} fallback: FFmpeg WASM ${format.toUpperCase()} 변환을 시작합니다.`,
             });
 
             await convertWebmBlobToMp4({
               webmBlob,
-              title: `${renderTitle}-direct-mp4`,
+              title: `${renderTitle}-direct-${format}`,
               signal: options?.signal,
               fileName: options?.fileName,
               directoryHandle: options?.directoryHandle,
+              videoFormat: format,
               onProgress: (progress) =>
                 options?.onProgress?.({
                   stage: "converting-mp4",
                   progress,
-                  message: `Direct MP4 fallback 변환 중 ${progress}%`,
+                  message: `Direct ${format.toUpperCase()} fallback 변환 중 ${progress}%`,
                 }),
             });
             throwIfAborted(options?.signal);
             options?.onProgress?.({
               stage: "completed",
               progress: 100,
-              message: "Direct MP4 fallback 파일 저장을 시작했습니다.",
+              message: `Direct ${format.toUpperCase()} fallback 파일 저장을 시작했습니다.`,
             });
           };
 
@@ -1888,15 +1892,42 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
             });
 
             throwIfAborted(options?.signal);
-            const finalFileName = options?.fileName
-              ? (options.fileName.endsWith(".mp4") ? options.fileName : `${options.fileName}.mp4`)
-              : `${safeFileName(renderTitle)}-direct-mp4.mp4`;
-            await saveBlob(blob, finalFileName, options?.directoryHandle);
-            options?.onProgress?.({
-              stage: "completed",
-              progress: 100,
-              message: "Direct MP4 파일 저장을 시작했습니다.",
-            });
+            const format = options?.videoFormat || "mp4";
+            if (format === "mov") {
+              options?.onProgress?.({
+                stage: "converting-mp4",
+                progress: 0,
+                message: "MOV 형식 변환 중...",
+              });
+              await convertMp4BlobToMov({
+                mp4Blob: blob,
+                title: renderTitle,
+                signal: options?.signal,
+                fileName: options?.fileName,
+                directoryHandle: options?.directoryHandle,
+                onProgress: (progress) =>
+                  options?.onProgress?.({
+                    stage: "converting-mp4",
+                    progress,
+                    message: `MOV 변환 중 ${progress}%`,
+                  }),
+              });
+              options?.onProgress?.({
+                stage: "completed",
+                progress: 100,
+                message: "MOV 파일 저장을 시작했습니다.",
+              });
+            } else {
+              const finalFileName = options?.fileName
+                ? (options.fileName.endsWith(".mp4") ? options.fileName : `${options.fileName}.mp4`)
+                : `${safeFileName(renderTitle)}-direct-mp4.mp4`;
+              await saveBlob(blob, finalFileName, options?.directoryHandle);
+              options?.onProgress?.({
+                stage: "completed",
+                progress: 100,
+                message: "Direct MP4 파일 저장을 시작했습니다.",
+              });
+            }
             return;
           } catch (error) {
             if (isAbortError(error)) throw error;

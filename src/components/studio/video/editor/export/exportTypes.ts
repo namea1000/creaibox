@@ -34,4 +34,5 @@ export type VideoExportOptions = {
   fileName?: string;
   directoryHandle?: any;
   audioFormat?: "mp3" | "wav" | "aac";
+  videoFormat?: "mp4" | "mov";
 };

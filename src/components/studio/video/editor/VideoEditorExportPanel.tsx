@@ -180,6 +180,7 @@ export default function VideoEditorExportPanel({
   const [exportVideoEnabled, setExportVideoEnabled] = useState<boolean>(true);
   const [exportAudioEnabled, setExportAudioEnabled] = useState<boolean>(false);
   const [audioExportFormat, setAudioExportFormat] = useState<"mp3" | "wav" | "aac">("mp3");
+  const [exportVideoFormat, setExportVideoFormat] = useState<"mp4" | "mov">("mp4");
   const [isQueueDrawerOpen, setIsQueueDrawerOpen] = useState<boolean>(false);
 
   // Sync exportFileName with projectTitle
@@ -771,6 +772,7 @@ export default function VideoEditorExportPanel({
         fileName: (job as any).fileName,
         directoryHandle: (job as any).directoryHandle,
         audioFormat: (job as any).audioFormat,
+        videoFormat: (job as any).videoFormat,
       };
 
       if (job.engine === "audio-only") {
@@ -895,6 +897,7 @@ export default function VideoEditorExportPanel({
         estimatedSeconds: benchmark.estimatedRenderSeconds,
         fileName: exportFileName,
         directoryHandle: exportDirectoryHandle,
+        videoFormat: exportVideoFormat,
       } as any);
 
       const createdRecord = await createVideoProjectExportRecord(queuedJob);
@@ -1175,7 +1178,7 @@ export default function VideoEditorExportPanel({
                     </div>
 
                     {/* Quality */}
-                    <div className="col-span-2 space-y-1">
+                    <div className="space-y-1">
                       <label className="text-[10px] font-black text-zinc-500">화질 (비트레이트)</label>
                       <select
                         value={exportQuality}
@@ -1187,6 +1190,19 @@ export default function VideoEditorExportPanel({
                             {opt.label} ({opt.desc})
                           </option>
                         ))}
+                      </select>
+                    </div>
+
+                    {/* Video Format */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-zinc-500">포맷</label>
+                      <select
+                        value={exportVideoFormat}
+                        onChange={(e) => setExportVideoFormat(e.target.value as "mp4" | "mov")}
+                        className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400 transition"
+                      >
+                        <option value="mp4" className="bg-[#101014]">MP4</option>
+                        <option value="mov" className="bg-[#101014]">MOV</option>
                       </select>
                     </div>
                   </div>
