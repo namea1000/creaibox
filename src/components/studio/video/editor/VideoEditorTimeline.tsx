@@ -269,6 +269,7 @@ export default function VideoEditorTimeline() {
     backgroundImage:
       "linear-gradient(to right, rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px)",
     backgroundSize: `${pxPerSecond * majorGridInterval}px 100%, ${pxPerSecond * minorGridInterval}px 100%`,
+    backgroundPosition: "-1px 0, -1px 0",
   };
 
   const timeMarks = useMemo(() => {
@@ -519,12 +520,14 @@ export default function VideoEditorTimeline() {
 
   return (
     <div ref={timelineRootRef} className="h-full w-full flex flex-col bg-transparent">
-      <div className="flex h-8 shrink-0 items-center justify-between border-b border-white/5 bg-[#202026] px-4">
-        <div className="flex items-center gap-2">
+      <div className="flex h-8 shrink-0 items-center border-b border-white/5 bg-[#202026]">
+        {/* Left header column, matching Track Headers width (190px) */}
+        <div className="w-[190px] shrink-0 border-r-2 border-zinc-700 flex items-center px-4 h-full select-none">
           <div className="font-black text-xs text-zinc-300">Timeline</div>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Right header tools, aligned to start at 0s */}
+        <div className="flex-1 flex items-center justify-start gap-2 px-4 h-full overflow-x-auto scrollbar-none">
           <TimelineTool icon={Undo2} label="Undo" disabled={!canUndo} onClick={undo} />
           <TimelineTool icon={Redo2} label="Redo" disabled={!canRedo} onClick={redo} />
 
@@ -560,7 +563,7 @@ export default function VideoEditorTimeline() {
               onClick={() => setShowAddTrackMenu(!showAddTrackMenu)} 
             />
             {showAddTrackMenu && (
-              <div className="absolute right-0 top-full mt-1.5 w-36 rounded border border-white/10 bg-[#1e1e24] p-1 shadow-lg z-50 text-[10.5px]">
+              <div className="absolute left-0 top-full mt-1.5 w-36 rounded border border-white/10 bg-[#1e1e24] p-1 shadow-lg z-50 text-[10.5px]">
                 <button
                   type="button"
                   onClick={() => {
@@ -651,7 +654,7 @@ export default function VideoEditorTimeline() {
         {/* Left Column: Track Headers */}
         <div
           onWheel={handleHeadersWheel}
-          className="w-[190px] shrink-0 border-r border-white/5 bg-[#141418] overflow-hidden flex flex-col h-full select-none"
+          className="w-[190px] shrink-0 border-r-2 border-zinc-700 bg-[#141418] overflow-hidden flex flex-col h-full select-none"
         >
           {/* Tracks Title Header */}
           <div 
@@ -826,7 +829,7 @@ export default function VideoEditorTimeline() {
                   return (
                     <div
                       key={time}
-                      className="absolute h-full border-l border-white/15 px-1.5 leading-8"
+                      className="absolute h-full px-1.5 leading-8"
                       style={{ left: `${time * pxPerSecond}px` }}
                     >
                       {formatTimelineMark(time)}
@@ -845,7 +848,7 @@ export default function VideoEditorTimeline() {
             </div>
 
             {/* 클립 트랙 영역 */}
-            <div className="relative">
+            <div className="relative" style={timelineGridStyle}>
               {/* 플레이헤드 세로선 */}
               <div
                 className="pointer-events-none absolute top-0 z-30 h-full w-px bg-red-400"
@@ -934,10 +937,10 @@ function TimelineTool({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-bold transition outline-none disabled:cursor-not-allowed disabled:opacity-30 ${
+      className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-bold transition outline-none disabled:cursor-not-allowed disabled:opacity-40 ${
         active
           ? "text-white"
-          : "text-zinc-500 hover:text-zinc-300"
+          : "text-zinc-400 hover:text-zinc-200"
       }`}
     >
       <Icon size={14} />

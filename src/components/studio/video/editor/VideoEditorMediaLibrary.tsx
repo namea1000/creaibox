@@ -16,7 +16,7 @@ import {
 
 import { useMemo, useState } from "react";
 import { useVideoEditor } from "./VideoEditorContext";
-import type { VideoEditorMediaType } from "./VideoEditorContext";
+import type { VideoEditorMediaType, VideoEditorMediaItem } from "./VideoEditorContext";
 import VideoEditorStockPanel from "./VideoEditorStockPanel";
 import VideoEditorStoragePanel from "./VideoEditorStoragePanel";
 
@@ -213,7 +213,7 @@ export default function VideoEditorMediaLibrary({ forcedTab }: { forcedTab?: Lib
                       }`}
                   >
                     <div className="flex items-center gap-3">
-                      <MediaIcon type={item.type} />
+                      <MediaThumbnail item={item} />
 
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-bold text-white flex items-center gap-2">
@@ -417,10 +417,54 @@ function FilterButton({
   );
 }
 
-function MediaIcon({ type }: { type: string }) {
-  if (type === "video") return <Film className="text-cyan-300" size={20} />;
-  if (type === "audio") return <Music className="text-emerald-300" size={20} />;
-  return <ImageIcon className="text-violet-300" size={20} />;
+function MediaThumbnail({ item }: { item: VideoEditorMediaItem }) {
+  const isAudio = item.type === "audio";
+  const thumbnailUrl = item.thumbnailUrl || (item.type === "image" ? item.url : "");
+
+  if (isAudio) {
+    return (
+      <div className="relative w-24 aspect-video rounded overflow-hidden bg-gradient-to-br from-emerald-950/80 to-black/80 flex flex-col justify-between p-1.5 shrink-0 border border-emerald-500/20">
+        <Music size={14} className="text-emerald-400" />
+        <div className="flex items-end gap-[1px] h-3">
+          {(item.waveform?.length
+            ? item.waveform.slice(0, 16)
+            : Array.from({ length: 10 }, () => 0.08)
+          ).map((value, idx) => {
+            const height = Math.max(15, value * 100);
+            return (
+              <div
+                key={idx}
+                className="flex-1 rounded-t-[1px] bg-emerald-500/50"
+                style={{ height: `${height}%` }}
+              />
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-24 aspect-video rounded overflow-hidden bg-black/40 flex items-center justify-center shrink-0 border border-white/5">
+      {thumbnailUrl ? (
+        <img
+          src={thumbnailUrl}
+          alt={item.name}
+          className="h-full w-full object-cover pointer-events-none select-none"
+        />
+      ) : item.type === "video" ? (
+        <div className="flex flex-col items-center gap-0.5 text-cyan-400 bg-cyan-950/20 w-full h-full justify-center">
+          <Film size={18} />
+          <span className="text-[7px] font-bold uppercase tracking-wider text-cyan-400/80">Video</span>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center gap-0.5 text-violet-400 bg-violet-950/20 w-full h-full justify-center">
+          <ImageIcon size={18} />
+          <span className="text-[7px] font-bold uppercase tracking-wider text-violet-400/80">Image</span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function PanelHeader({
