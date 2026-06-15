@@ -76,7 +76,7 @@ export const topicCategories: IdeaHubTopicCategory[] = [
   {
     id: "business",
     group: "경제 & 비즈니스",
-    name: "비즈니스(Business)",
+    name: "비즈니스 & 창업(Business & Startup)",
     emoji: "📈",
     description: "창업, SaaS, 마케팅, 브랜딩",
     subTopicCount: 12,
@@ -1090,6 +1090,114 @@ export const topicSubTopics: IdeaHubSubTopic[] = [
     description: "Business Strategy",
     keywords: ["전략", "사업전략", "Business Strategy"],
     ideaCount: 100,
+  },
+
+  {
+    id: "solo-startup",
+    categoryId: "business",
+    name: "1인 창업(Solo Startup)",
+    description: "Solo Startup & Micro Business",
+    keywords: ["1인 창업", "소자본 창업", "무자본 창업", "부업"],
+    ideaCount: 80,
+  },
+
+  {
+    id: "online-business",
+    categoryId: "business",
+    name: "온라인 비즈니스 창업(Online Business)",
+    description: "Online Business Startup",
+    keywords: ["온라인 창업", "쇼핑몰 창업", "스마트스토어", "해외구매대행"],
+    ideaCount: 80,
+  },
+
+  {
+    id: "franchise-startup",
+    categoryId: "business",
+    name: "프랜차이즈 창업(Franchise)",
+    description: "Franchise Startup Guidelines",
+    keywords: ["프랜차이즈 창업", "가맹점", "소상공인", "체인점"],
+    ideaCount: 80,
+  },
+
+  {
+    id: "restaurant-startup",
+    categoryId: "business",
+    name: "외식 & 식당 창업(Restaurant)",
+    description: "Restaurant & Food Service Startup",
+    keywords: ["식당 창업", "외식 창업", "음식점 창업", "F&B"],
+    ideaCount: 80,
+  },
+
+  {
+    id: "trending-startup",
+    categoryId: "business",
+    name: "요즘 뜨는 트렌드 창업(Trending)",
+    description: "Trending Business & Startup Items",
+    keywords: ["요즘 뜨는 창업", "트렌드 창업", "이색 창업", "신규 사업"],
+    ideaCount: 80,
+  },
+
+  {
+    id: "capital-efficient-startup",
+    categoryId: "business",
+    name: "소자본 & 무자본 창업(Low Capital)",
+    description: "Low Capital & Budget Startup",
+    keywords: ["소자본 창업", "무자본 창업", "소규모 창업", "소자본 창업 아이템"],
+    ideaCount: 80,
+  },
+
+  {
+    id: "youtube-creator-startup",
+    categoryId: "business",
+    name: "유튜브 크리에이터 창업(Creator)",
+    description: "YouTube Channel & Creator Business",
+    keywords: ["유튜브 창업", "크리에이터 창업", "유튜버 부업", "채널 수익화"],
+    ideaCount: 80,
+  },
+
+  {
+    id: "blog-monetization-startup",
+    categoryId: "business",
+    name: "블로그 미디어 창업(Blogger)",
+    description: "Blog Media & Affiliate Business",
+    keywords: ["블로그 창업", "블로거 부업", "제휴 마케팅", "수익형 블로그"],
+    ideaCount: 80,
+  },
+
+  {
+    id: "cafe-startup",
+    categoryId: "business",
+    name: "카페 & 디저트 창업(Cafe)",
+    description: "Cafe & Dessert Shop Startup",
+    keywords: ["카페 창업", "디저트 창업", "커피 전문점", "개인 카페"],
+    ideaCount: 80,
+  },
+
+  {
+    id: "space-rental-startup",
+    categoryId: "business",
+    name: "공간 대여 창업(Space Rental)",
+    description: "Space Rental & Share Space Startup",
+    keywords: ["공간 대여", "공유 오피스", "파티룸 창업", "스터디룸 창업"],
+    ideaCount: 80,
+  },
+
+  {
+    id: "unmanned-store-startup",
+    categoryId: "business",
+    name: "무인 매장 창업(Unmanned)",
+    description: "Unmanned Store & Automated Shop Startup",
+    keywords: ["무인 매장", "무인 창업", "무인 아이스크림", "무인 카페"],
+    ideaCount: 80,
+  },
+
+  {
+    id: "consulting-startup",
+    categoryId: "business",
+    name: "컨설팅 & 교육 창업(Consulting)",
+    description: "Knowledge Consulting & Coaching Business",
+    keywords: ["컨설팅 창업", "교육 창업", "전문 강사", "1인 컨설팅"],
+    ideaCount: 80,
   },
 
   // ======================================================

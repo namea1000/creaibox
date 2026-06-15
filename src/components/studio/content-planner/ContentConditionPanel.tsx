@@ -4,6 +4,34 @@ import { useState, useRef, useEffect } from "react";
 import { Lightbulb, Sparkles, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import type { ContentType, ContentPlannerFormState } from "@/lib/content-planner/types";
+import { topicCategories, topicSubTopics } from "@/lib/content-planner/topic-categories";
+import { ideaHubSeries } from "@/lib/content-planner/topic-series";
+
+const mainGroups = [
+  "기술 & 디지털",
+  "경제 & 비즈니스",
+  "생활 & 문화",
+  "건강 & 라이프스타일",
+  "교육 & 지식",
+  "사회 & 국제",
+  "법률 & 정책 & 복지",
+  "환경 & 지구과학",
+  "크리에이티브 & 예술",
+  "산업 & 미래",
+];
+
+const groupEmojis: Record<string, string> = {
+  "기술 & 디지털": "💻",
+  "경제 & 비즈니스": "💼",
+  "생활 & 문화": "☕",
+  "건강 & 라이프스타일": "🧘",
+  "교육 & 지식": "🎓",
+  "사회 & 국제": "🌏",
+  "법률 & 정책 & 복지": "⚖️",
+  "환경 & 지구과학": "🌱",
+  "크리에이티브 & 예술": "🎨",
+  "산업 & 미래": "🏭",
+};
 
 type Props = {
   contentTypes: ContentType[];
@@ -169,6 +197,8 @@ export default function ContentConditionPanel({
 }: Props) {
   const [isPostTypeOpen, setIsPostTypeOpen] = useState(false);
   const postTypeDropdownRef = useRef<HTMLDivElement>(null);
+  const [isCustomSubTopic, setIsCustomSubTopic] = useState(false);
+  const [isCustomKeyword, setIsCustomKeyword] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -310,45 +340,244 @@ export default function ContentConditionPanel({
         {/* 대분류 */}
         <label className="grid grid-cols-[86px_minmax(0,1fr)] items-center gap-3">
           <span className="text-xs font-bold text-slate-400">대분류</span>
-          <input
+          <select
             value={largeCategory}
-            onChange={(e) => onChangeLargeCategory?.(e.target.value)}
-            placeholder="선택된 대분류"
-            className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none placeholder:text-slate-600 focus:border-cyan-400"
-          />
+            onChange={(e) => {
+              const newGroup = e.target.value;
+              onChangeLargeCategory?.(newGroup);
+              setIsCustomSubTopic(false);
+              setIsCustomKeyword(false);
+
+              // Find the first category in the new group to auto-select
+              const firstCat = topicCategories.find((c) => c.group === newGroup);
+              if (firstCat) {
+                onChangeMainTopic?.(firstCat.name);
+
+                // Find first subtopic
+                const firstSub = topicSubTopics.find((s) => s.categoryId === firstCat.id);
+                if (firstSub) {
+                  onChangeSubTopic?.(firstSub.name);
+                  // Find first idea
+                  const firstIdea = ideaHubSeries.find((idea) => idea.subTopicId === firstSub.id);
+                  onChangeMainKeyword?.(firstIdea ? firstIdea.title : "");
+                } else {
+                  onChangeSubTopic?.("");
+                  onChangeMainKeyword?.("");
+                }
+              } else {
+                onChangeMainTopic?.("");
+                onChangeSubTopic?.("");
+                onChangeMainKeyword?.("");
+              }
+            }}
+            className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none focus:border-cyan-400"
+          >
+            <option value="" className="bg-slate-950">대분류 선택</option>
+            {mainGroups.map((group) => (
+              <option key={group} value={group} className="bg-slate-950">
+                {groupEmojis[group] || "📁"} {group}
+              </option>
+            ))}
+          </select>
         </label>
 
         {/* 상세 분야 */}
         <label className="grid grid-cols-[86px_minmax(0,1fr)] items-center gap-3">
           <span className="text-xs font-bold text-slate-400">상세 분야</span>
-          <input
+          <select
             value={mainTopic}
-            onChange={(e) => onChangeMainTopic?.(e.target.value)}
-            placeholder="선택된 상세 분야"
-            className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none placeholder:text-slate-600 focus:border-cyan-400"
-          />
+            onChange={(e) => {
+              const newTopicName = e.target.value;
+              onChangeMainTopic?.(newTopicName);
+              setIsCustomSubTopic(false);
+              setIsCustomKeyword(false);
+
+              const cat = topicCategories.find((c) => c.name === newTopicName);
+              if (cat) {
+                const firstSub = topicSubTopics.find((s) => s.categoryId === cat.id);
+                if (firstSub) {
+                  onChangeSubTopic?.(firstSub.name);
+                  const firstIdea = ideaHubSeries.find((idea) => idea.subTopicId === firstSub.id);
+                  onChangeMainKeyword?.(firstIdea ? firstIdea.title : "");
+                } else {
+                  onChangeSubTopic?.("");
+                  onChangeMainKeyword?.("");
+                }
+              } else {
+                onChangeSubTopic?.("");
+                onChangeMainKeyword?.("");
+              }
+            }}
+            disabled={!largeCategory}
+            className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none focus:border-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <option value="" className="bg-slate-950">
+              {largeCategory ? "상세 분야 선택" : "대분류를 먼저 선택해 주세요"}
+            </option>
+            {topicCategories
+              .filter((cat) => cat.group === largeCategory)
+              .map((cat) => (
+                <option key={cat.id} value={cat.name} className="bg-slate-950">
+                  {cat.emoji} {cat.name}
+                </option>
+              ))}
+          </select>
         </label>
 
         {/* 추천 시리즈 */}
         <label className="grid grid-cols-[86px_minmax(0,1fr)] items-center gap-3">
           <span className="text-xs font-bold text-slate-400">추천 시리즈</span>
-          <input
-            value={subTopic}
-            onChange={(e) => onChangeSubTopic?.(e.target.value)}
-            placeholder="선택된 추천 시리즈"
-            className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none placeholder:text-slate-600 focus:border-cyan-400"
-          />
+          {(() => {
+            const currentCategory = topicCategories.find((c) => c.name === mainTopic);
+            const filteredSubTopics = currentCategory
+              ? topicSubTopics.filter((sub) => sub.categoryId === currentCategory.id)
+              : [];
+
+            const isPresetSubTopic = filteredSubTopics.some((sub) => sub.name === subTopic);
+            const showCustomSubTopic = isCustomSubTopic || (subTopic !== "" && !isPresetSubTopic);
+
+            if (showCustomSubTopic) {
+              return (
+                <div className="relative flex items-center w-full">
+                  <input
+                    value={subTopic}
+                    onChange={(e) => {
+                      onChangeSubTopic?.(e.target.value);
+                      onChangeMainKeyword?.("");
+                    }}
+                    placeholder="추천 시리즈 직접 입력"
+                    className="h-11 w-full rounded-xl border border-white/10 bg-black/40 pl-4 pr-16 text-xs text-white outline-none placeholder:text-slate-600 focus:border-cyan-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCustomSubTopic(false);
+                      const firstSub = filteredSubTopics[0];
+                      if (firstSub) {
+                        onChangeSubTopic?.(firstSub.name);
+                        const firstIdea = ideaHubSeries.find((idea) => idea.subTopicId === firstSub.id);
+                        onChangeMainKeyword?.(firstIdea ? firstIdea.title : "");
+                      } else {
+                        onChangeSubTopic?.("");
+                        onChangeMainKeyword?.("");
+                      }
+                    }}
+                    className="absolute right-3 text-cyan-400 hover:text-cyan-300 text-xs font-bold"
+                  >
+                    목록 선택
+                  </button>
+                </div>
+              );
+            }
+
+            return (
+              <select
+                value={subTopic}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "__custom__") {
+                    setIsCustomSubTopic(true);
+                    onChangeSubTopic?.("");
+                    onChangeMainKeyword?.("");
+                  } else {
+                    onChangeSubTopic?.(val);
+                    const sub = topicSubTopics.find((s) => s.name === val);
+                    if (sub) {
+                      const firstIdea = ideaHubSeries.find((idea) => idea.subTopicId === sub.id);
+                      onChangeMainKeyword?.(firstIdea ? firstIdea.title : "");
+                    } else {
+                      onChangeMainKeyword?.("");
+                    }
+                  }
+                }}
+                disabled={!mainTopic}
+                className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none focus:border-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="" className="bg-slate-950">
+                  {mainTopic ? "추천 시리즈 선택" : "상세 분야를 먼저 선택해 주세요"}
+                </option>
+                {filteredSubTopics.map((sub) => (
+                  <option key={sub.id} value={sub.name} className="bg-slate-950">
+                    ⚡ {sub.name}
+                  </option>
+                ))}
+                {mainTopic && (
+                  <option value="__custom__" className="bg-slate-950">
+                    📝 직접 입력...
+                  </option>
+                )}
+              </select>
+            );
+          })()}
         </label>
 
         {/* 메인 키워드 주제 */}
         <label className="grid grid-cols-[86px_minmax(0,1fr)] items-center gap-3">
           <span className="text-xs font-bold text-slate-400 font-extrabold text-cyan-200">메인 키워드 주제</span>
-          <input
-            value={mainKeyword}
-            onChange={(e) => onChangeMainKeyword(e.target.value)}
-            placeholder="예: AI 콘텐츠 자동화"
-            className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none placeholder:text-slate-600 focus:border-cyan-400 font-bold"
-          />
+          {(() => {
+            const currentSubTopic = topicSubTopics.find((s) => s.name === subTopic);
+            const filteredIdeas = currentSubTopic
+              ? ideaHubSeries.filter((idea) => idea.subTopicId === currentSubTopic.id)
+              : [];
+
+            const isPresetKeyword = filteredIdeas.some((idea) => idea.title === mainKeyword);
+            const showCustomInput = isCustomKeyword || (mainKeyword !== "" && !isPresetKeyword);
+
+            if (showCustomInput) {
+              return (
+                <div className="relative flex items-center w-full">
+                  <input
+                    value={mainKeyword}
+                    onChange={(e) => onChangeMainKeyword(e.target.value)}
+                    placeholder="예: AI 콘텐츠 자동화"
+                    className="h-11 w-full rounded-xl border border-white/10 bg-black/40 pl-4 pr-16 text-xs text-white outline-none placeholder:text-slate-600 focus:border-cyan-400 font-bold"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCustomKeyword(false);
+                      const firstIdea = filteredIdeas[0];
+                      onChangeMainKeyword(firstIdea ? firstIdea.title : "");
+                    }}
+                    className="absolute right-3 text-cyan-400 hover:text-cyan-300 text-xs font-bold"
+                  >
+                    목록 선택
+                  </button>
+                </div>
+              );
+            }
+
+            return (
+              <select
+                value={mainKeyword}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "__custom__") {
+                    setIsCustomKeyword(true);
+                    onChangeMainKeyword("");
+                  } else {
+                    onChangeMainKeyword(val);
+                  }
+                }}
+                disabled={!subTopic}
+                className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none focus:border-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed font-bold"
+              >
+                <option value="" className="bg-slate-950">
+                  {subTopic ? "메인 키워드 주제 선택" : "추천 시리즈를 먼저 선택해 주세요"}
+                </option>
+                {subTopic && (
+                  <option value="__custom__" className="bg-slate-950">
+                    📝 직접 입력...
+                  </option>
+                )}
+                {filteredIdeas.map((idea) => (
+                  <option key={idea.id} value={idea.title} className="bg-slate-950">
+                    ✨ {idea.title}
+                  </option>
+                ))}
+              </select>
+            );
+          })()}
         </label>
 
         <textarea

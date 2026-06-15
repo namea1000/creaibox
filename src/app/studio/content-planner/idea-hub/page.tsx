@@ -241,6 +241,16 @@ export default function IdeaHubPage() {
     setKeyword("");
   };
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const groupParam = params.get("group");
+      if (groupParam) {
+        handleSelectMainGroup(groupParam);
+      }
+    }
+  }, []);
+
   const handleSelectCategory = useCallback((catId: string, group: string) => {
     setSelectedCategoryId(catId);
     setSelectedMainGroup(group);

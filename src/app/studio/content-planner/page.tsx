@@ -43,6 +43,13 @@ export default function ContentPlannerHomePage() {
 
   const menus = [
     {
+      title: "콘텐츠 아이디어 허브",
+      desc: "대분류 10개 카테고별 메인 키워드 추천 및 실시간 인기 시리즈를 탐색합니다.",
+      href: "/studio/content-planner/idea-hub",
+      icon: Brain,
+      color: "from-violet-600 to-indigo-600",
+    },
+    {
       title: "AI 콘텐츠 기획",
       desc: "목표, 플랫폼, 키워드를 선택해 블로그·쇼츠·SNS 콘텐츠 시리즈를 생성합니다.",
       href: "/studio/content-planner/planning",
@@ -99,6 +106,45 @@ export default function ContentPlannerHomePage() {
     { label: "콘텐츠 캘린더", href: "/studio/content-planner/calendar" },
     { label: "트렌드 분석", href: "/studio/content-planner/trends" },
   ];
+
+  const mainGroups = [
+    "기술 & 디지털",
+    "경제 & 비즈니스",
+    "생활 & 문화",
+    "건강 & 라이프스타일",
+    "교육 & 지식",
+    "사회 & 국제",
+    "법률 & 정책 & 복지",
+    "환경 & 지구과학",
+    "크리에이티브 & 예술",
+    "산업 & 미래",
+  ];
+
+  const groupEmojis: Record<string, string> = {
+    "기술 & 디지털": "💻",
+    "경제 & 비즈니스": "💼",
+    "생활 & 문화": "☕",
+    "건강 & 라이프스타일": "🧘",
+    "교육 & 지식": "🎓",
+    "사회 & 국제": "🌏",
+    "법률 & 정책 & 복지": "⚖️",
+    "환경 & 지구과학": "🌱",
+    "크리에이티브 & 예술": "🎨",
+    "산업 & 미래": "🏭",
+  };
+
+  const englishLabels: Record<string, string> = {
+    "기술 & 디지털": "Tech & Digital",
+    "경제 & 비즈니스": "Economy & Business",
+    "생활 & 문화": "Life & Culture",
+    "건강 & 라이프스타일": "Health & Lifestyle",
+    "교육 & 지식": "Education & Knowledge",
+    "사회 & 국제": "Society & Global",
+    "법률 & 정책 & 복지": "Law, Policy & Welfare",
+    "환경 & 지구과학": "Environment & Earth",
+    "크리에이티브 & 예술": "Creative & Art",
+    "산업 & 미래": "Industry & Future",
+  };
 
   return (
     <div className="min-h-full bg-[#06080d] px-5 py-8 text-zinc-100 lg:px-8">
@@ -167,6 +213,35 @@ export default function ContentPlannerHomePage() {
                   </div>
                 );
               })}
+            </section>
+
+            {/* 대분류 탐색 (10개) 박스 */}
+            <section className="space-y-4">
+              <div className="flex flex-col px-1">
+                <h2 className="text-sm font-black text-white flex items-center gap-2">
+                  <Brain className="text-violet-400" size={18} />
+                  아이디어 허브 대분류 탐색 ({mainGroups.length}개)
+                </h2>
+                <p className="text-[10px] text-zinc-500 font-bold mt-0.5">
+                  원하는 대분류 카테고리를 선택하시면 해당 분야의 추천 시리즈와 메인 키워드 탐색 화면으로 즉시 이동합니다.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-2">
+                {mainGroups.map((group) => (
+                  <Link
+                    key={group}
+                    href={`/studio/content-planner/idea-hub?group=${encodeURIComponent(group)}`}
+                    className="flex flex-col items-center justify-center p-3 rounded-2xl border border-zinc-800 bg-[#0b0d14]/40 text-center transition duration-200 hover:border-violet-500 hover:bg-violet-950/10 cursor-pointer"
+                  >
+                    <span className="text-xl mb-1.5">{groupEmojis[group] || "📁"}</span>
+                    <span className="text-[11px] font-black truncate w-full text-white">{group}</span>
+                    <span className="text-[9px] font-bold mt-1 truncate w-full text-zinc-500">
+                      {englishLabels[group]}
+                    </span>
+                  </Link>
+                ))}
+              </div>
             </section>
 
             {/* Menu Cards */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
   FolderOpen,
   FolderPlus,
@@ -17,12 +17,10 @@ import {
   Captions,
   Maximize2,
   Palette,
-  Search,
   ChevronDown,
   ChevronRight,
   Trash2,
   Edit2,
-  Layers,
   Save,
   Download,
   Plus,
@@ -119,6 +117,27 @@ const initialProjects: ProjectItem[] = [
   },
 ];
 
+function readStoredValue<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+
+  try {
+    const saved = window.localStorage.getItem(key);
+    return saved ? (JSON.parse(saved) as T) : fallback;
+  } catch (error) {
+    console.error(`Failed to load ${key} from localStorage:`, error);
+    return fallback;
+  }
+}
+
+function getDefaultCategory(tab: VideoEditorTab) {
+  if (tab === "project") return "details";
+  if (tab === "media") return "uploads";
+  if (tab === "visualizer") return "spectrum";
+  if (tab === "text" || tab === "subtitle") return "text-add";
+  if (tab === "settings") return "ratio";
+  return "uploads";
+}
+
 interface VideoEditorUnifiedLibraryProps {
   projectPanelWidth: number;
   mediaPanelWidth: number;
@@ -127,30 +146,21 @@ interface VideoEditorUnifiedLibraryProps {
 
 export default function VideoEditorUnifiedLibrary({
   projectPanelWidth,
-  mediaPanelWidth,
+  mediaPanelWidth: _mediaPanelWidth,
   onProjectPanelResize,
 }: VideoEditorUnifiedLibraryProps) {
   const { activeTab, setActiveTab, mediaItems, clips, tracks, selectedClipId, projectTitle, setProjectTitle, setTracks, setClips } =
     useVideoEditor();
 
-  const [libraries, setLibraries] = useState<string[]>(initialLibraries);
-  const [events, setEvents] = useState<EventItem[]>(initialEvents);
-  const [projects, setProjects] = useState<ProjectItem[]>(initialProjects);
-
-  // Load project list data from localStorage on mount
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const savedLibs = localStorage.getItem("creaibox-video-editor-libraries");
-      const savedEvents = localStorage.getItem("creaibox-video-editor-events");
-      const savedProjects = localStorage.getItem("creaibox-video-editor-projects");
-      if (savedLibs) setLibraries(JSON.parse(savedLibs));
-      if (savedEvents) setEvents(JSON.parse(savedEvents));
-      if (savedProjects) setProjects(JSON.parse(savedProjects));
-    } catch (e) {
-      console.error("Failed to load project list from localStorage:", e);
-    }
-  }, []);
+  const [libraries, setLibraries] = useState<string[]>(() =>
+    readStoredValue("creaibox-video-editor-libraries", initialLibraries)
+  );
+  const [events, setEvents] = useState<EventItem[]>(() =>
+    readStoredValue("creaibox-video-editor-events", initialEvents)
+  );
+  const [projects, setProjects] = useState<ProjectItem[]>(() =>
+    readStoredValue("creaibox-video-editor-projects", initialProjects)
+  );
 
   // Save libraries to localStorage when they change
   useEffect(() => {
@@ -173,29 +183,35 @@ export default function VideoEditorUnifiedLibrary({
   // Sync active project's timeline state (clips and tracks) from context to projects list
   useEffect(() => {
     if (!projectTitle) return;
-    setProjects((prev) => {
-      const activeProj = prev.find((p) => p.title === projectTitle);
-      if (!activeProj) return prev;
-      
-      // Prevent redundant renders if clips and tracks match
-      if (activeProj.clips === clips && activeProj.tracks === tracks) {
-        return prev;
-      }
-      return prev.map((p) => {
-        if (p.title === projectTitle) {
-          return {
-            ...p,
-            clips,
-            tracks,
-          };
+    const timeout = window.setTimeout(() => {
+      setProjects((prev) => {
+        const activeProj = prev.find((p) => p.title === projectTitle);
+        if (!activeProj) return prev;
+
+        // Prevent redundant renders if clips and tracks match
+        if (activeProj.clips === clips && activeProj.tracks === tracks) {
+          return prev;
         }
-        return p;
+        return prev.map((p) => {
+          if (p.title === projectTitle) {
+            return {
+              ...p,
+              clips,
+              tracks,
+            };
+          }
+          return p;
+        });
       });
-    });
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
   }, [projectTitle, clips, tracks]);
 
   const [selectedEventId, setSelectedEventId] = useState<string | null>("event-1");
-  const [activeCategory, setActiveCategory] = useState<string>("uploads");
+  const [activeCategory, setActiveCategory] = useState<string>(() =>
+    getDefaultCategory(activeTab)
+  );
 
   const [openLibraries, setOpenLibraries] = useState<Record<string, boolean>>({
     "YouTube Shorts": true,
@@ -359,17 +375,11 @@ export default function VideoEditorUnifiedLibrary({
 
   // Sync category when activeTab changes
   useEffect(() => {
-    if (activeTab === "project") {
-      setActiveCategory("details");
-    } else if (activeTab === "media") {
-      setActiveCategory("uploads");
-    } else if (activeTab === "visualizer") {
-      setActiveCategory("spectrum");
-    } else if (activeTab === "text" || activeTab === "subtitle") {
-      setActiveCategory("text-add");
-    } else if (activeTab === "settings") {
-      setActiveCategory("ratio");
-    }
+    const timeout = window.setTimeout(() => {
+      setActiveCategory(getDefaultCategory(activeTab));
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
   }, [activeTab]);
 
   const currentTab = activeTab;
@@ -387,22 +397,20 @@ export default function VideoEditorUnifiedLibrary({
   };
 
   const handleSaveRename = (id: string) => {
-    if (!editTitle.trim()) {
+    const trimmedTitle = editTitle.trim();
+    if (!trimmedTitle) {
       setEditingProjectId(null);
       return;
     }
+    const projectBeingRenamed = projects.find((project) => project.id === id);
+    const shouldSyncActiveProjectTitle = projectBeingRenamed?.title === projectTitle;
+
     setProjects((prev) =>
-      prev.map((p) => {
-        if (p.id === id) {
-          // If the currently loaded project is renamed, sync it with context
-          if (projectTitle === p.title) {
-            setProjectTitle(editTitle);
-          }
-          return { ...p, title: editTitle };
-        }
-        return p;
-      })
+      prev.map((p) => (p.id === id ? { ...p, title: trimmedTitle } : p))
     );
+    if (shouldSyncActiveProjectTitle) {
+      setProjectTitle(trimmedTitle);
+    }
     setEditingProjectId(null);
   };
 
@@ -957,7 +965,7 @@ function ProjectDetailContent({
 
         {eventProjects.length === 0 ? (
           <div className="rounded-md border border-dashed border-white/10 bg-black/10 p-6 text-center text-zinc-500 text-xs">
-            등록된 프로젝트가 없습니다. 우측 상단의 '프로젝트 추가' 버튼을 눌러 새 프로젝트를 생성하세요.
+            등록된 프로젝트가 없습니다. 우측 상단의 &apos;프로젝트 추가&apos; 버튼을 눌러 새 프로젝트를 생성하세요.
           </div>
         ) : (
           <div className="space-y-2">
@@ -1051,7 +1059,7 @@ function ProjectDetailContent({
 
         {mediaItems.length === 0 ? (
           <div className="rounded-md border border-dashed border-white/10 bg-black/10 p-6 text-center text-zinc-500 text-xs">
-            가져온 미디어 파일이 없습니다. 상단 '미디어' 탭에서 파일을 추가해 주세요.
+            가져온 미디어 파일이 없습니다. 상단 &apos;미디어&apos; 탭에서 파일을 추가해 주세요.
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -1059,10 +1067,20 @@ function ProjectDetailContent({
               const isSelected = clickedPreviewMediaItem?.id === item.id;
               const isHovered = hoveredMediaId === item.id;
               const isAudio = item.type === "audio";
+              const isOffline = !item.url;
 
               return (
                 <div
                   key={item.id}
+                  draggable={!isOffline}
+                  onDragStart={(event) => {
+                    if (isOffline) {
+                      event.preventDefault();
+                      return;
+                    }
+                    event.dataTransfer.setData("media-id", item.id);
+                    event.dataTransfer.effectAllowed = "copy";
+                  }}
                   onPointerMove={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     const x = e.clientX - rect.left;
@@ -1087,7 +1105,7 @@ function ProjectDetailContent({
                     const scrubTime = pct * duration;
                     setClickedPreviewMedia(item, scrubTime);
                   }}
-                  className={`group/item relative flex flex-col aspect-video rounded-md border overflow-hidden cursor-pointer select-none transition-all duration-150 ${
+                  className={`group/item relative flex flex-col aspect-video rounded-md border overflow-hidden cursor-grab active:cursor-grabbing select-none transition-all duration-150 ${
                     isSelected
                       ? "border-yellow-500 ring-2 ring-yellow-500/50 shadow-[0_0_12px_rgba(234,179,8,0.3)] bg-yellow-950/20"
                       : "border-white/10 hover:border-white/30 bg-black/30"

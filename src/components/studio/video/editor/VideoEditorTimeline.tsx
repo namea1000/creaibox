@@ -151,6 +151,7 @@ export default function VideoEditorTimeline() {
     canRedo,
     setTracks,
     setClips,
+    addClipFromMedia,
   } = useVideoEditor();
 
   const handleDeleteTrack = (trackId: string) => {
@@ -366,14 +367,28 @@ export default function VideoEditorTimeline() {
     event.preventDefault();
 
     const clipId = event.dataTransfer.getData("clip-id");
-    if (!clipId) return;
+    const mediaId = event.dataTransfer.getData("media-id");
 
     const rect = event.currentTarget.getBoundingClientRect();
     const grabOffsetX = Number(
       event.dataTransfer.getData("clip-grab-offset-x") || "0"
     );
     const dropX = event.clientX - rect.left - grabOffsetX;
-    
+    const rawStartTime = Math.max(0, dropX / pxPerSecond);
+
+    if (!clipId && mediaId) {
+      const media = mediaItems.find((item) => item.id === mediaId);
+      if (!media) return;
+
+      addClipFromMedia(media, {
+        trackId: targetTrackId,
+        startTime: rawStartTime,
+      });
+      return;
+    }
+
+    if (!clipId) return;
+
     const targetClip = clips.find((clip) => clip.id === clipId);
     if (!targetClip) return;
 
@@ -381,7 +396,6 @@ export default function VideoEditorTimeline() {
     const expectedTrackType = getClipTrackType(targetClip.type);
     const safeTrackId =
       targetTrack?.type === expectedTrackType ? targetTrackId : targetClip.trackId;
-    const rawStartTime = Math.max(0, dropX / pxPerSecond);
 
     const nextStartTime = resolveNonOverlappingStart({
       clipId,

@@ -172,6 +172,15 @@ export default function VideoEditorMediaLibrary({ forcedTab }: { forcedTab?: Lib
                 return (
                   <div
                     key={item.id}
+                    draggable={!isOffline}
+                    onDragStart={(event) => {
+                      if (isOffline) {
+                        event.preventDefault();
+                        return;
+                      }
+                      event.dataTransfer.setData("media-id", item.id);
+                      event.dataTransfer.effectAllowed = "copy";
+                    }}
                     onClick={() => selectMedia(item.id)}
                     className={`group cursor-pointer rounded-md border p-3 transition ${active
                       ? "border-cyan-400 bg-cyan-400/10"

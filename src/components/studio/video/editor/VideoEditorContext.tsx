@@ -266,6 +266,17 @@ export type VideoEditorClip = {
   blendMode?: VideoBlendMode;
 };
 
+type VideoEditorVisualizerClip = VideoEditorClip & {
+  visualizerTemplate?: string;
+  visualizerAccentColor?: string;
+  visualizerBackgroundColor?: string;
+  visualizerY?: number;
+  visualizerHeight?: number;
+  visualizerWidth?: number;
+  visualizerVideoName?: string;
+  visualizerVideoUrl?: string;
+};
+
 type Snapshot = {
   tracks: TimelineTrack[];
   clips: VideoEditorClip[];
@@ -310,7 +321,10 @@ type VideoEditorActions = {
   removeMediaItem: (id: string) => void;
   selectMedia: (id: string | null) => void;
 
-  addClipFromMedia: (media: VideoEditorMediaItem) => void;
+  addClipFromMedia: (
+    media: VideoEditorMediaItem,
+    options?: { trackId?: string; startTime?: number }
+  ) => void;
   addTextClip: () => void;
   addSubtitleClip: () => void;
   addSubtitleCues: (cues: SubtitleImportCue[]) => void;
@@ -1062,7 +1076,8 @@ function getMediaDuration(file: File): Promise<number> {
           if (Array.isArray(parsed.clips)) {
             const restoredClips = await Promise.all(
               parsed.clips.map(async (clip: VideoEditorClip) => {
-                if (clip.type === "visualizer" && (clip as any).visualizerVideoName) {
+                const visualizerClip = clip as VideoEditorVisualizerClip;
+                if (clip.type === "visualizer" && visualizerClip.visualizerVideoName) {
                   const cachedFile = await getFileFromCache("overlay-" + clip.id);
                   if (cachedFile) {
                     return {
@@ -1118,7 +1133,8 @@ function getMediaDuration(file: File): Promise<number> {
         })),
         clips: clips.map((clip) => {
           if (clip.type === "visualizer") {
-            const { visualizerVideoUrl, ...rest } = clip as any;
+            const { visualizerVideoUrl: _visualizerVideoUrl, ...rest } =
+              clip as VideoEditorVisualizerClip;
             return {
               ...rest,
               visualizerVideoUrl: "",
@@ -1145,7 +1161,10 @@ function getMediaDuration(file: File): Promise<number> {
     tracks,
   ]);
 
-  const addClipFromMedia = (media: VideoEditorMediaItem) => {
+  const addClipFromMedia = (
+    media: VideoEditorMediaItem,
+    options?: { trackId?: string; startTime?: number }
+  ) => {
     // Automatically register media to mediaItems if not already registered (e.g., from Stock Panel)
     setMediaItems((prev) => {
       if (!prev.some((item) => item.id === media.id)) {
@@ -1159,15 +1178,35 @@ function getMediaDuration(file: File): Promise<number> {
     });
 
     const duration = media.type === "image" ? 5 : media.duration || 10;
-    const startTime = Number(currentTime.toFixed(2));
+    const requestedStartTime = Number((options?.startTime ?? currentTime).toFixed(2));
     const trackType = getTrackTypeByClipType(media.type);
-    const { targetTrack, shouldCreateTrack } = findAvailableTrack(
-      tracks,
-      clips,
-      trackType,
-      startTime,
-      duration
-    );
+    const requestedTrack = options?.trackId
+      ? tracks.find((track) => track.id === options.trackId)
+      : null;
+    const canUseRequestedTrack = requestedTrack?.type === trackType;
+    const availableTrack = canUseRequestedTrack
+      ? {
+          targetTrack: requestedTrack,
+          shouldCreateTrack: false,
+        }
+      : findAvailableTrack(
+          tracks,
+          clips,
+          trackType,
+          requestedStartTime,
+          duration
+        );
+    const targetTrack = availableTrack.targetTrack;
+    const shouldCreateTrack = availableTrack.shouldCreateTrack;
+    const startTime = canUseRequestedTrack
+      ? resolveNonOverlappingStart(
+          clips,
+          "",
+          targetTrack.id,
+          requestedStartTime,
+          duration
+        )
+      : requestedStartTime;
 
     if (shouldCreateTrack) {
       setTracks((prev) => insertTrackAfterSameType(prev, targetTrack, trackType));
@@ -1345,7 +1384,7 @@ function getMediaDuration(file: File): Promise<number> {
       visualizerY: options?.y ?? 50,
       visualizerHeight: options?.height ?? 58,
       visualizerWidth: options?.width ?? 92,
-    } as any);
+    } as VideoEditorVisualizerClip);
 
     setClipsWithHistory((prev) => [...prev, clip]);
     setSelectedClipId(clip.id);

@@ -6,6 +6,10 @@ Video Studio is currently a client-side editor. The browser owns local media fil
 
 The export architecture must evolve incrementally. Existing MediaRecorder and FFmpeg WASM export paths remain the compatibility baseline while faster engines are added behind capability checks.
 
+Project event media thumbnails and Media Library cards share the same timeline drag payload (`media-id`). Dropping a media item onto a timeline row calls `addClipFromMedia()` with the target track id and drop time. If the target track type is compatible, the clip is placed on that track and shifted only as needed to avoid overlap. If the user drops onto an incompatible track, the editor falls back to the normal available-track selection for that media type.
+
+Preview playback uses `VideoEditorPlaybackController` as the authoritative high-resolution clock during playback. React state `currentTime` is throttled for UI updates and must not feed small rounded values back into the playback clock while playing. Manual seeks still resynchronize media elements. When playback transitions from playing to paused, the controller publishes the exact internal paused time and dispatches a final playback-frame sync event so video/audio elements freeze on the current frame instead of snapping backward to the last rounded UI timestamp.
+
 ## 2. Export Engine Strategy
 
 Current engines:

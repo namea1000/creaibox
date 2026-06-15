@@ -8,7 +8,9 @@ Video Studio is the browser-based video editing module for CreAibox. It lets use
 
 - Unified project/media library panel.
 - Multi-track timeline with video, audio, text, subtitle, and visualizer tracks.
+- Project event media thumbnails and Media Library items can be dragged directly onto compatible timeline tracks.
 - Preview player with motion, effects, transition, audio mixer, and visualizer rendering.
+- Preview playback keeps an internal high-resolution playback clock and only publishes throttled UI time, so pausing freezes the current media frame instead of snapping back to the last rounded UI timestamp.
 - Local media cache using IndexedDB for uploaded files.
 - Project autosave using browser local storage.
 - Export panel with resolution, FPS, quality, and export engine selection.

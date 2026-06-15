@@ -35,17 +35,37 @@ export default function VideoEditorPlaybackController() {
     const wasPlaying = prevIsPlayingRef.current;
     prevIsPlayingRef.current = isPlaying;
 
+    if (!isPlaying && wasPlaying) {
+      const pausedTime = Math.min(totalDuration, Math.max(0, playbackTimeRef.current));
+      lastUiPublishRef.current = pausedTime;
+      setCurrentTime(Number(pausedTime.toFixed(2)));
+      window.dispatchEvent(
+        new CustomEvent("creaibox-video-editor-playback-frame", {
+          detail: {
+            currentTime: pausedTime,
+            totalDuration,
+            isSeek: true,
+          },
+        })
+      );
+    }
+
     if (isPlaying && !wasPlaying && selectedClipId) {
       const selectedClip = clips.find((c) => c.id === selectedClipId);
       if (selectedClip && selectedClip.type === "visualizer") {
         selectClip(null);
       }
     }
-  }, [isPlaying, selectedClipId, clips, selectClip]);
+  }, [isPlaying, totalDuration, selectedClipId, clips, setCurrentTime, selectClip]);
 
   useEffect(() => {
     const timeDiff = Math.abs(currentTime - playbackTimeRef.current);
     const isManualSeek = timeDiff > 0.3;
+
+    if (isPlaying && !isManualSeek) {
+      lastUiPublishRef.current = currentTime;
+      return;
+    }
 
     playbackTimeRef.current = currentTime;
     lastUiPublishRef.current = currentTime;
@@ -62,7 +82,7 @@ export default function VideoEditorPlaybackController() {
         })
       );
     }
-  }, [currentTime, totalDuration]);
+  }, [currentTime, totalDuration, isPlaying]);
 
   useEffect(() => {
     if (!isPlaying) {
