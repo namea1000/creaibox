@@ -1,13 +1,14 @@
 "use client";
 
 import { forwardRef, useImperativeHandle, useRef } from "react";
-import { useVideoEditor } from "./VideoEditorContext";
-import { convertWebmBlobToMp4 } from "./ffmpeg/convertWebmToMp4";
+import { useVideoEditor, getFileFromCache } from "./VideoEditorContext";
+import { convertWebmBlobToMp4, terminateFFmpeg, runWithFFmpegLock } from "./ffmpeg/convertWebmToMp4";
 import {
   collectAudioMixSources,
   detectOfflineAudioMixdownSupport,
   renderOfflineAudioMixdown,
   scheduleAudioMixdown,
+  extractAudioWithFFmpeg,
 } from "./export/audioMixdown";
 import { getRecommendedVideoBitrate } from "./export/exportBitratePresets";
 import { isWebCodecsConfigSupported } from "./export/webCodecsSupport";
@@ -34,6 +35,7 @@ export type VideoEditorRenderCanvasRef = {
   exportWebm: (options?: VideoExportOptions) => Promise<void>;
   exportMp4: (options?: VideoExportOptions) => Promise<void>;
   exportDirectMp4: (options?: VideoExportOptions) => Promise<void>;
+  exportAudioOnly: (options?: VideoExportOptions) => Promise<void>;
   renderSampleFrame: (time: number, options?: VideoExportOptions) => Promise<string>;
 };
 
@@ -51,6 +53,82 @@ function downloadBlob(blob: Blob, fileName: string) {
   a.download = fileName;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+async function saveBlob(blob: Blob, fileName: string, directoryHandle?: any) {
+  if (directoryHandle) {
+    try {
+      console.log(`[saveBlob] Saving to directory handle: ${directoryHandle.name}`);
+      const fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      console.log(`[saveBlob] Successfully saved ${fileName} to directory`);
+      return;
+    } catch (err) {
+      console.warn("[saveBlob] Directory write failed, falling back to download:", err);
+    }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function audioBufferToWav(buffer: AudioBuffer): ArrayBuffer {
+  const numOfChan = buffer.numberOfChannels;
+  const length = buffer.length * numOfChan * 2 + 44;
+  const bufferArr = new ArrayBuffer(length);
+  const view = new DataView(bufferArr);
+  const channels: Float32Array[] = [];
+  let i;
+  let sample;
+  let offset = 0;
+  let pos = 0;
+
+  const setUint16 = (data: number) => {
+    view.setUint16(pos, data, true);
+    pos += 2;
+  };
+
+  const setUint32 = (data: number) => {
+    view.setUint32(pos, data, true);
+    pos += 4;
+  };
+
+  setUint32(0x46464952); // "RIFF"
+  setUint32(length - 8);
+  setUint32(0x45564157); // "WAVE"
+
+  setUint32(0x20746d66); // "fmt "
+  setUint32(16);
+  setUint16(1);
+  setUint16(numOfChan);
+  setUint32(buffer.sampleRate);
+  setUint32(buffer.sampleRate * numOfChan * 2);
+  setUint16(numOfChan * 2);
+  setUint16(16);
+
+  setUint32(0x61746164); // "data"
+  setUint32(length - pos - 4);
+
+  for (i = 0; i < buffer.numberOfChannels; i++) {
+    channels.push(buffer.getChannelData(i));
+  }
+
+  while (pos < length) {
+    for (i = 0; i < numOfChan; i++) {
+      sample = Math.max(-1, Math.min(1, channels[i][offset] ?? 0));
+      sample = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+      view.setInt16(pos, sample, true);
+      pos += 2;
+    }
+    offset++;
+  }
+
+  return bufferArr;
 }
 
 function throwIfAborted(signal?: AbortSignal) {
@@ -72,6 +150,8 @@ function getExportSize(resolution: string, ratio: string) {
           ? 1920
           : 1280;
 
+  const makeEven = (n: number) => Math.round(n / 2) * 2;
+
   if (ratio === "9:16") {
     if (resolution === "4k") return { width: 2160, height: 3840 };
     if (resolution === "2k") return { width: 1440, height: 2560 };
@@ -86,10 +166,10 @@ function getExportSize(resolution: string, ratio: string) {
     return { width: 720, height: 720 };
   }
 
-  if (ratio === "4:5") return { width: Math.round(longEdge * 0.8), height: longEdge };
-  if (ratio === "5:4") return { width: longEdge, height: Math.round(longEdge * 0.8) };
-  if (ratio === "21:9") return { width: longEdge, height: Math.round((longEdge * 9) / 21) };
-  if (ratio === "4:3") return { width: longEdge, height: Math.round((longEdge * 3) / 4) };
+  if (ratio === "4:5") return { width: makeEven(longEdge * 0.8), height: makeEven(longEdge) };
+  if (ratio === "5:4") return { width: makeEven(longEdge), height: makeEven(longEdge * 0.8) };
+  if (ratio === "21:9") return { width: makeEven(longEdge), height: makeEven((longEdge * 9) / 21) };
+  if (ratio === "4:3") return { width: makeEven(longEdge), height: makeEven((longEdge * 3) / 4) };
 
   if (resolution === "4k") return { width: 3840, height: 2160 };
   if (resolution === "2k") return { width: 2560, height: 1440 };
@@ -150,15 +230,98 @@ function loadMediaElement(
   });
 }
 
-async function decodeAudioBufferForRender(url: string) {
-  const response = await fetch(url);
-  const arrayBuffer = await response.arrayBuffer();
-  const audioContext = new AudioContext();
+async function decodeAudioBufferForRender(
+  mediaId: string,
+  url: string,
+  type: "video" | "audio",
+  fileName: string,
+  file?: File
+) {
+  const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+  if (!AudioContextClass) {
+    throw new Error("Browser does not support AudioContext");
+  }
+  const tempCtx = new AudioContextClass();
+  const safeFileName = fileName || "temp_video_audio";
 
   try {
-    return await audioContext.decodeAudioData(arrayBuffer);
+    if (type === "video") {
+      console.log("[decodeAudioBufferForRender] Skipping native decodeAudioData for video file, extracting directly via FFmpeg:", url, safeFileName);
+      
+      const getFileBytes = async () => {
+        try {
+          if (file) {
+            console.log("[decodeAudioBufferForRender] Reading from in-memory File object:", file.name, file.size);
+            return new Uint8Array(await file.arrayBuffer());
+          }
+          const cachedFile = await getFileFromCache(mediaId);
+          if (cachedFile) {
+            console.log("[decodeAudioBufferForRender] Reading from IndexedDB cache:", mediaId);
+            return new Uint8Array(await cachedFile.arrayBuffer());
+          }
+        } catch (err) {
+          console.warn("[decodeAudioBufferForRender] Failed to read cached file:", err);
+        }
+        console.log("[decodeAudioBufferForRender] Fetching video URL fallback:", url);
+        const response = await fetch(url);
+        return new Uint8Array(await response.arrayBuffer());
+      };
+
+      const wavBuffer = await extractAudioWithFFmpeg(getFileBytes, safeFileName);
+      const decoded = await tempCtx.decodeAudioData(wavBuffer);
+      return decoded;
+    } else {
+      let arrayBuffer: ArrayBuffer | null = null;
+      try {
+        if (file) {
+          console.log("[decodeAudioBufferForRender] Reading from in-memory File object:", file.name, file.size);
+          arrayBuffer = await file.arrayBuffer();
+        } else {
+          const cachedFile = await getFileFromCache(mediaId);
+          if (cachedFile) {
+            console.log("[decodeAudioBufferForRender] Reading from IndexedDB cache:", mediaId);
+            arrayBuffer = await cachedFile.arrayBuffer();
+          }
+        }
+      } catch (err) {
+        console.warn("[decodeAudioBufferForRender] Failed to read cached/in-memory file:", err);
+      }
+
+      if (!arrayBuffer) {
+        console.log("[decodeAudioBufferForRender] Fetching audio URL:", url);
+        const response = await fetch(url);
+        arrayBuffer = await response.arrayBuffer();
+      }
+
+      try {
+        const decoded = await tempCtx.decodeAudioData(arrayBuffer);
+        arrayBuffer = null;
+        return decoded;
+      } catch (decodeError) {
+        console.warn("[decodeAudioBufferForRender] Browser decodeAudioData failed, trying FFmpeg fallback:", decodeError);
+        arrayBuffer = null;
+
+        const getFileBytesFallback = async () => {
+          try {
+            if (file) {
+              return new Uint8Array(await file.arrayBuffer());
+            }
+            const cachedFile = await getFileFromCache(mediaId);
+            if (cachedFile) {
+              return new Uint8Array(await cachedFile.arrayBuffer());
+            }
+          } catch (err) {}
+          const fallbackResponse = await fetch(url);
+          return new Uint8Array(await fallbackResponse.arrayBuffer());
+        };
+
+        const wavBuffer = await extractAudioWithFFmpeg(getFileBytesFallback, safeFileName);
+        const decoded = await tempCtx.decodeAudioData(wavBuffer);
+        return decoded;
+      }
+    }
   } finally {
-    await audioContext.close().catch(() => undefined);
+    await tempCtx.close().catch(() => undefined);
   }
 }
 
@@ -717,7 +880,8 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
       renderClips = clips,
       renderMediaItems = mediaItems,
       renderTracks: TimelineTrack[] = tracks,
-      renderCanvasRatio = canvasRatio
+      renderCanvasRatio = canvasRatio,
+      isExport = false
     ) => {
       const imageCache = new Map<string, HTMLImageElement>();
       const videoCache = new Map<string, HTMLVideoElement>();
@@ -743,7 +907,13 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
 
         let analysisPromise = visualizerAudioCache.get(activeSource.mediaId);
         if (!analysisPromise) {
-          analysisPromise = decodeAudioBufferForRender(activeSource.url).then((buffer) =>
+          analysisPromise = decodeAudioBufferForRender(
+            activeSource.mediaId,
+            activeSource.url,
+            activeSource.type,
+            activeSource.name,
+            activeSource.file
+          ).then((buffer) =>
             analyzeAudioBufferForVisualizer(buffer)
           );
           visualizerAudioCache.set(activeSource.mediaId, analysisPromise);
@@ -1071,10 +1241,25 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
           if (media.type === "video") {
             let video = videoCache.get(media.id);
 
+            const seekCountKey = `seek_count_${media.id}`;
+            let seekCount = (videoCache as any).get(seekCountKey) || 0;
+            const maxSeekCount = isExport ? 150 : 20;
+            if (video && seekCount >= maxSeekCount) {
+              video.src = "";
+              video.load();
+              video = null as any;
+              videoCache.delete(media.id);
+              seekCount = 0;
+              if (isExport) {
+                await new Promise<void>((resolve) => setTimeout(resolve, 100));
+              }
+            }
+
             if (!video) {
               video = (await loadMediaElement(media.url, "video")) as HTMLVideoElement;
               videoCache.set(media.id, video);
             }
+            (videoCache as any).set(seekCountKey, seekCount + 1);
 
             const localTime = Math.max(
               0,
@@ -1139,7 +1324,8 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
         renderClips,
         renderMediaItems,
         renderTracks,
-        targetCanvasRatio
+        targetCanvasRatio,
+        true // isExport
       );
 
       const audioContext = new AudioContext();
@@ -1241,7 +1427,11 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
           if (waitMs > 0) {
             await new Promise((resolve) => window.setTimeout(resolve, waitMs));
           } else {
-            await new Promise((resolve) => requestAnimationFrame(resolve));
+            if (typeof document !== "undefined" && document.hidden) {
+              await new Promise((resolve) => setTimeout(resolve, 4));
+            } else {
+              await new Promise((resolve) => requestAnimationFrame(resolve));
+            }
           }
         }
 
@@ -1447,7 +1637,8 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
           renderClips,
           renderMediaItems,
           renderTracks,
-          targetCanvasRatio
+          targetCanvasRatio,
+          true // isExport
         ),
         options,
         audioPlan: snapshot?.hasAudio
@@ -1485,7 +1676,10 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
 
           const blob = await renderToWebmBlob(options);
           throwIfAborted(options?.signal);
-          downloadBlob(blob, `${safeFileName(options?.snapshot?.projectTitle ?? projectTitle)}.webm`);
+          const finalFileName = options?.fileName
+            ? (options.fileName.endsWith(".webm") ? options.fileName : `${options.fileName}.webm`)
+            : `${safeFileName(options?.snapshot?.projectTitle ?? projectTitle)}.webm`;
+          await saveBlob(blob, finalFileName, options?.directoryHandle);
           options?.onProgress?.({
             stage: "completed",
             progress: 100,
@@ -1495,204 +1689,317 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
       },
 
       exportWebm: async (options?: VideoExportOptions) => {
-        const blob = await renderToWebmBlob(options);
-        throwIfAborted(options?.signal);
-        downloadBlob(blob, `${safeFileName(options?.snapshot?.projectTitle ?? projectTitle)}.webm`);
-        options?.onProgress?.({
-          stage: "completed",
-          progress: 100,
-          message: "WebM 파일 저장을 시작했습니다.",
-        });
+        try {
+          const blob = await renderToWebmBlob(options);
+          throwIfAborted(options?.signal);
+          const finalFileName = options?.fileName
+            ? (options.fileName.endsWith(".webm") ? options.fileName : `${options.fileName}.webm`)
+            : `${safeFileName(options?.snapshot?.projectTitle ?? projectTitle)}.webm`;
+          await saveBlob(blob, finalFileName, options?.directoryHandle);
+          options?.onProgress?.({
+            stage: "completed",
+            progress: 100,
+            message: "WebM 파일 저장을 시작했습니다.",
+          });
+        } finally {
+          terminateFFmpeg();
+        }
       },
 
       exportMp4: async (options?: VideoExportOptions) => {
-        const webmBlob = await renderToWebmBlob(options);
-        throwIfAborted(options?.signal);
-        options?.onProgress?.({
-          stage: "converting-mp4",
-          progress: 0,
-          message: "MP4 변환을 시작합니다.",
-        });
-
-        await convertWebmBlobToMp4({
-          webmBlob,
-          title: options?.snapshot?.projectTitle ?? projectTitle,
-          signal: options?.signal,
-          onProgress: (progress) =>
-            options?.onProgress?.({
-              stage: "converting-mp4",
-              progress,
-              message: `MP4 변환 중 ${progress}%`,
-            }),
-        });
-        throwIfAborted(options?.signal);
-        options?.onProgress?.({
-          stage: "completed",
-          progress: 100,
-          message: "MP4 파일 저장을 시작했습니다.",
-        });
-      },
-
-      exportDirectMp4: async (options?: VideoExportOptions) => {
-        const snapshot = options?.snapshot;
-        const targetResolution = snapshot?.resolution ?? options?.resolution ?? exportResolution;
-        const targetFps = snapshot?.fps ?? options?.fps ?? exportFps;
-        const targetQuality = snapshot?.quality ?? options?.quality ?? exportQuality;
-        const targetCanvasRatio = snapshot?.canvasRatio ?? canvasRatio;
-        const renderClips = snapshot?.clipsSnapshot ?? clips;
-        const renderMediaItems = snapshot?.mediaItemsSnapshot ?? mediaItems;
-        const renderTracks = snapshot?.tracksSnapshot ?? tracks;
-        const renderDuration = snapshot?.duration ?? totalDuration;
-        const renderTitle = snapshot?.projectTitle ?? projectTitle;
-        const targetBitrate = snapshot?.bitrate ?? getRecommendedVideoBitrate({
-          resolution: targetResolution,
-          fps: targetFps,
-          quality: targetQuality,
-        });
-        const size = snapshot
-          ? { width: snapshot.width, height: snapshot.height }
-          : getExportSize(targetResolution, targetCanvasRatio);
-        const audioSources = collectAudioMixSources({
-          clips: renderClips,
-          mediaItems: renderMediaItems,
-        });
-        const canvas = canvasRef.current;
-        if (!canvas) throw new Error("렌더 캔버스를 찾지 못했습니다.");
-
-        const runCompatibleMp4Fallback = async (reason: string) => {
-          options?.onProgress?.({
-            stage: "converting-mp4",
-            progress: 0,
-            message: `Direct MP4 fallback: ${reason} 기존 Compatible MP4 경로로 처리합니다.`,
-          });
-
+        try {
           const webmBlob = await renderToWebmBlob(options);
           throwIfAborted(options?.signal);
           options?.onProgress?.({
             stage: "converting-mp4",
             progress: 0,
-            message: "Direct MP4 fallback: FFmpeg WASM MP4 변환을 시작합니다.",
+            message: "MP4 변환을 시작합니다.",
           });
 
           await convertWebmBlobToMp4({
             webmBlob,
-            title: `${renderTitle}-direct-mp4`,
+            title: options?.snapshot?.projectTitle ?? projectTitle,
             signal: options?.signal,
+            fileName: options?.fileName,
+            directoryHandle: options?.directoryHandle,
             onProgress: (progress) =>
               options?.onProgress?.({
                 stage: "converting-mp4",
                 progress,
-                message: `Direct MP4 fallback 변환 중 ${progress}%`,
+                message: `MP4 변환 중 ${progress}%`,
               }),
           });
           throwIfAborted(options?.signal);
           options?.onProgress?.({
             stage: "completed",
             progress: 100,
-            message: "Direct MP4 fallback 파일 저장을 시작했습니다.",
+            message: "MP4 파일 저장을 시작했습니다.",
           });
-        };
-
-        const support = snapshot?.preflight?.capabilities.directMp4 ?? await detectDirectMp4Support({
-          width: size.width,
-          height: size.height,
-          fps: targetFps,
-          bitrate: targetBitrate,
-          hasAudio: audioSources.length > 0,
-        });
-
-        if (!support.video.supported || !support.muxer.supported) {
-          await runCompatibleMp4Fallback(
-            support.reason || support.video.reason || support.muxer.reason || "H.264/Mediabunny 직접 MP4 capability가 부족합니다.",
-          );
-          return;
+        } finally {
+          terminateFFmpeg();
         }
+      },
 
-        if (audioSources.length > 0 && !support.audio.supported) {
-          await runCompatibleMp4Fallback(
-            support.audio.reason || "AAC AudioEncoder direct MP4 capability가 부족합니다.",
-          );
-          return;
-        }
-
+      exportDirectMp4: async (options?: VideoExportOptions) => {
         try {
-          throwIfAborted(options?.signal);
-          let audioBuffer: AudioBuffer | undefined;
+          const snapshot = options?.snapshot;
+          const targetResolution = snapshot?.resolution ?? options?.resolution ?? exportResolution;
+          const targetFps = snapshot?.fps ?? options?.fps ?? exportFps;
+          const targetQuality = snapshot?.quality ?? options?.quality ?? exportQuality;
+          const targetCanvasRatio = snapshot?.canvasRatio ?? canvasRatio;
+          const renderClips = snapshot?.clipsSnapshot ?? clips;
+          const renderMediaItems = snapshot?.mediaItemsSnapshot ?? mediaItems;
+          const renderTracks = snapshot?.tracksSnapshot ?? tracks;
+          const renderDuration = snapshot?.duration ?? totalDuration;
+          const renderTitle = snapshot?.projectTitle ?? projectTitle;
+          const targetBitrate = snapshot?.bitrate ?? getRecommendedVideoBitrate({
+            resolution: targetResolution,
+            fps: targetFps,
+            quality: targetQuality,
+          });
+          const size = snapshot
+            ? { width: snapshot.width, height: snapshot.height }
+            : getExportSize(targetResolution, targetCanvasRatio);
+          const audioSources = collectAudioMixSources({
+            clips: renderClips,
+            mediaItems: renderMediaItems,
+          });
+          const canvas = canvasRef.current;
+          if (!canvas) throw new Error("렌더 캔버스를 찾지 못했습니다.");
 
-          if (audioSources.length > 0) {
-            const offlineMixdown = detectOfflineAudioMixdownSupport();
-            if (!offlineMixdown.supported) {
-              await runCompatibleMp4Fallback(
-                offlineMixdown.reason || "OfflineAudioContext mixdown을 사용할 수 없습니다.",
-              );
-              return;
-            }
-
+          const runCompatibleMp4Fallback = async (reason: string) => {
             options?.onProgress?.({
-              stage: "encoding-webcodecs",
+              stage: "converting-mp4",
               progress: 0,
-              message: `Direct MP4 오디오 mixdown을 시작합니다. (${audioSources.length}개 소스)`,
+              message: `Direct MP4 fallback: ${reason} 기존 Compatible MP4 경로로 처리합니다.`,
             });
 
-            const mixdown = await renderOfflineAudioMixdown({
-              sources: audioSources,
-              duration: renderDuration,
-              sampleRate: support.audio.sampleRate ?? 48_000,
-              numberOfChannels: support.audio.numberOfChannels ?? 2,
+            const webmBlob = await renderToWebmBlob(options);
+            throwIfAborted(options?.signal);
+            options?.onProgress?.({
+              stage: "converting-mp4",
+              progress: 0,
+              message: "Direct MP4 fallback: FFmpeg WASM MP4 변환을 시작합니다.",
+            });
+
+            await convertWebmBlobToMp4({
+              webmBlob,
+              title: `${renderTitle}-direct-mp4`,
               signal: options?.signal,
+              fileName: options?.fileName,
+              directoryHandle: options?.directoryHandle,
+              onProgress: (progress) =>
+                options?.onProgress?.({
+                  stage: "converting-mp4",
+                  progress,
+                  message: `Direct MP4 fallback 변환 중 ${progress}%`,
+                }),
             });
-            audioBuffer = mixdown.audioBuffer;
+            throwIfAborted(options?.signal);
+            options?.onProgress?.({
+              stage: "completed",
+              progress: 100,
+              message: "Direct MP4 fallback 파일 저장을 시작했습니다.",
+            });
+          };
 
-            if (mixdown.skippedSources.length > 0) {
-              options?.onProgress?.({
-                stage: "encoding-webcodecs",
-                progress: 1,
-                message: `${mixdown.skippedSources.length}개 오디오 소스를 건너뛰고 Direct MP4 mux를 계속합니다.`,
-              });
-            }
+          const support = snapshot?.preflight?.capabilities.directMp4 ?? await detectDirectMp4Support({
+            width: size.width,
+            height: size.height,
+            fps: targetFps,
+            bitrate: targetBitrate,
+            hasAudio: audioSources.length > 0,
+          });
+
+          if (!support.video.supported || !support.muxer.supported) {
+            await runCompatibleMp4Fallback(
+              support.reason || support.video.reason || support.muxer.reason || "H.264/Mediabunny 직접 MP4 capability가 부족합니다.",
+            );
+            return;
           }
 
-          canvas.width = size.width;
-          canvas.height = size.height;
-          const ctx = canvas.getContext("2d");
-          if (!ctx) throw new Error("Canvas context를 생성하지 못했습니다.");
+          if (audioSources.length > 0 && !support.audio.supported) {
+            await runCompatibleMp4Fallback(
+              support.audio.reason || "AAC AudioEncoder direct MP4 capability가 부족합니다.",
+            );
+            return;
+          }
 
-          const blob = await exportDirectMp4VideoOnly({
-            canvas,
-            fps: targetFps,
-            totalDuration: renderDuration,
-            totalFrames: snapshot?.totalFrames,
-            bitrate: targetBitrate,
-            audioBuffer,
-            audioBitrate: support.audio.bitrate ?? 160_000,
-            renderFrame: createFrameRenderer(
+          try {
+            throwIfAborted(options?.signal);
+            let audioBuffer: AudioBuffer | undefined;
+
+            if (audioSources.length > 0) {
+              const offlineMixdown = detectOfflineAudioMixdownSupport();
+              if (!offlineMixdown.supported) {
+                await runCompatibleMp4Fallback(
+                  offlineMixdown.reason || "OfflineAudioContext mixdown을 사용할 수 없습니다.",
+                );
+                return;
+              }
+
+              options?.onProgress?.({
+                stage: "encoding-webcodecs",
+                progress: 0,
+                message: `Direct MP4 오디오 mixdown을 시작합니다. (${audioSources.length}개 소스)`,
+              });
+
+              const mixdown = await renderOfflineAudioMixdown({
+                sources: audioSources,
+                duration: renderDuration,
+                sampleRate: support.audio.sampleRate ?? 48_000,
+                numberOfChannels: support.audio.numberOfChannels ?? 2,
+                signal: options?.signal,
+              });
+              audioBuffer = mixdown.audioBuffer;
+
+              if (mixdown.skippedSources.length > 0) {
+                options?.onProgress?.({
+                  stage: "encoding-webcodecs",
+                  progress: 1,
+                  message: `${mixdown.skippedSources.length}개 오디오 소스를 건너뛰고 Direct MP4 mux를 계속합니다.`,
+                });
+              }
+            }
+
+            canvas.width = size.width;
+            canvas.height = size.height;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) throw new Error("Canvas context를 생성하지 못했습니다.");
+
+            const blob = await exportDirectMp4VideoOnly({
               canvas,
-              ctx,
-              renderClips,
-              renderMediaItems,
-              renderTracks,
-              targetCanvasRatio
-            ),
-            options,
+              fps: targetFps,
+              totalDuration: renderDuration,
+              totalFrames: snapshot?.totalFrames,
+              bitrate: targetBitrate,
+              audioBuffer,
+              audioBitrate: support.audio.bitrate ?? 160_000,
+              renderFrame: createFrameRenderer(
+                canvas,
+                ctx,
+                renderClips,
+                renderMediaItems,
+                renderTracks,
+                targetCanvasRatio,
+                true // isExport
+              ),
+              options,
+            });
+
+            throwIfAborted(options?.signal);
+            const finalFileName = options?.fileName
+              ? (options.fileName.endsWith(".mp4") ? options.fileName : `${options.fileName}.mp4`)
+              : `${safeFileName(renderTitle)}-direct-mp4.mp4`;
+            await saveBlob(blob, finalFileName, options?.directoryHandle);
+            options?.onProgress?.({
+              stage: "completed",
+              progress: 100,
+              message: "Direct MP4 파일 저장을 시작했습니다.",
+            });
+            return;
+          } catch (error) {
+            if (isAbortError(error)) throw error;
+
+            await runCompatibleMp4Fallback(
+              `직접 MP4 생성 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}.`,
+            );
+            return;
+          }
+        } finally {
+          terminateFFmpeg();
+        }
+      },
+
+      exportAudioOnly: async (options?: VideoExportOptions) => {
+        try {
+          const snapshot = options?.snapshot;
+          const renderClips = snapshot?.clipsSnapshot ?? clips;
+          const renderMediaItems = snapshot?.mediaItemsSnapshot ?? mediaItems;
+          const renderDuration = snapshot?.duration ?? totalDuration;
+          const renderTitle = snapshot?.projectTitle ?? projectTitle;
+
+          options?.onProgress?.({
+            stage: "rendering-webm",
+            progress: 10,
+            message: "오디오 소스를 수집 중입니다...",
+          });
+
+          const audioSources = collectAudioMixSources({
+            clips: renderClips,
+            mediaItems: renderMediaItems,
+          });
+
+          options?.onProgress?.({
+            stage: "rendering-webm",
+            progress: 30,
+            message: "오디오 믹스다운을 시작합니다...",
+          });
+
+          const mixdown = await renderOfflineAudioMixdown({
+            sources: audioSources,
+            duration: renderDuration,
+            sampleRate: 48_000,
+            numberOfChannels: 2,
+            signal: options?.signal,
           });
 
           throwIfAborted(options?.signal);
-          downloadBlob(blob, `${safeFileName(renderTitle)}-direct-mp4.mp4`);
+
+          options?.onProgress?.({
+            stage: "converting-mp4",
+            progress: 70,
+            message: "오디오 파일 변환 중...",
+          });
+
+          const wavBuffer = audioBufferToWav(mixdown.audioBuffer);
+          const wavBlob = new Blob([wavBuffer], { type: "audio/wav" });
+          const format = options?.audioFormat || "mp3";
+          const finalFileName = options?.fileName
+            ? (options.fileName.endsWith(`.${format}`) ? options.fileName : `${options.fileName}.${format}`)
+            : `${safeFileName(renderTitle)}.${format}`;
+
+          if (format === "wav") {
+            await saveBlob(wavBlob, finalFileName, options?.directoryHandle);
+          } else {
+            await runWithFFmpegLock(async (ffmpeg: any) => {
+              const inputName = `input_${Date.now()}.wav`;
+              const outputName = `output_${Date.now()}.${format}`;
+
+              await ffmpeg.writeFile(inputName, new Uint8Array(wavBuffer));
+              
+              const codec = format === "mp3" ? "libmp3lame" : "aac";
+              await ffmpeg.exec([
+                "-i",
+                inputName,
+                "-acodec",
+                codec,
+                "-ab",
+                "192k",
+                outputName,
+              ]);
+
+              throwIfAborted(options?.signal);
+              const data = await ffmpeg.readFile(outputName);
+              const audioBlob = new Blob([data as any], { type: `audio/${format}` });
+
+              await saveBlob(audioBlob, finalFileName, options?.directoryHandle);
+
+              await ffmpeg.deleteFile(inputName).catch(() => {});
+              await ffmpeg.deleteFile(outputName).catch(() => {});
+            });
+          }
+
           options?.onProgress?.({
             stage: "completed",
             progress: 100,
-            message: "Direct MP4 파일 저장을 시작했습니다.",
+            message: "오디오 파일 저장이 완료되었습니다.",
           });
-          return;
-        } catch (error) {
-          if (isAbortError(error)) throw error;
-
-          await runCompatibleMp4Fallback(
-            `직접 MP4 생성 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}.`,
-          );
-          return;
+        } finally {
+          terminateFFmpeg();
         }
       },
+
       renderSampleFrame: async (time: number, options?: VideoExportOptions) => {
         const snapshot = options?.snapshot;
         const targetResolution = snapshot?.resolution ?? options?.resolution ?? exportResolution;

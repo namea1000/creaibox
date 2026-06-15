@@ -5,7 +5,8 @@ export type VideoExportEngine =
   | "fast-webcodecs"
   | "quick-webm"
   | "compatible-mp4"
-  | "direct-mp4";
+  | "direct-mp4"
+  | "audio-only";
 
 export type VideoExportStage =
   | "idle"
@@ -30,4 +31,7 @@ export type VideoExportOptions = {
   fps?: ExportFps;
   quality?: ExportQuality;
   snapshot?: RenderJobSnapshot;
+  fileName?: string;
+  directoryHandle?: any;
+  audioFormat?: "mp3" | "wav" | "aac";
 };

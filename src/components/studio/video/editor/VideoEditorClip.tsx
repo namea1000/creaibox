@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   Film,
   Image as ImageIcon,
@@ -9,6 +9,7 @@ import {
   Sparkles,
   Volume2,
   VolumeX,
+  Upload,
 } from "lucide-react";
 
 import type { VideoEditorClip as VideoEditorClipType } from "./VideoEditorContext";
@@ -49,8 +50,32 @@ export default function VideoEditorClip({
     return deltaX / pxPerSecond;
   };
 
-  const { mediaItems, clips } = useVideoEditor();
+  const { mediaItems, clips, detachAudio, extractAndDownloadAudio, relinkMediaFile } = useVideoEditor();
   const activeTrimPointerRef = useRef<number | null>(null);
+
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    const handleClose = () => setContextMenu(null);
+    window.addEventListener("click", handleClose);
+    window.addEventListener("contextmenu", handleClose);
+    return () => {
+      window.removeEventListener("click", handleClose);
+      window.removeEventListener("contextmenu", handleClose);
+    };
+  }, [contextMenu]);
+
+  const handleContextMenu = (event: React.MouseEvent) => {
+    if ((clip.type !== "video" && clip.type !== "audio") || isOffline || isExtracting) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setContextMenu({
+      x: event.clientX,
+      y: event.clientY,
+    });
+  };
 
   const handleTrimStart = (
     event: React.PointerEvent<HTMLDivElement>
@@ -292,9 +317,9 @@ export default function VideoEditorClip({
 
   return (
     <div
-      draggable
+      draggable={!isExtracting}
       onDragStart={(event) => {
-        if (activeTrimPointerRef.current !== null) {
+        if (isExtracting || activeTrimPointerRef.current !== null) {
           event.preventDefault();
           return;
         }
@@ -306,17 +331,25 @@ export default function VideoEditorClip({
         event.dataTransfer.setData("clip-grab-offset-x", String(grabOffsetX));
         event.dataTransfer.effectAllowed = "move";
       }}
-      onPointerDown={(event) => event.stopPropagation()}
+      onPointerDown={(event) => {
+        if (isExtracting) {
+          event.preventDefault();
+          return;
+        }
+        event.stopPropagation();
+      }}
       onClick={(event) => {
+        if (isExtracting) return;
         event.stopPropagation();
         onSelect(clip.id);
       }}
+      onContextMenu={handleContextMenu}
       className={`group absolute top-2 flex flex-col h-14 cursor-grab overflow-hidden rounded-[5px] border transition active:cursor-grabbing ${active
           ? "border-cyan-300 bg-cyan-400/30"
           : isOffline
             ? "border-red-500/50 bg-red-950/30 text-red-300"
             : `border-white/10 ${clip.color}`
-        } ${visible ? "" : "opacity-40"}`}
+        } ${visible ? "" : "opacity-40"} ${isExtracting ? "pointer-events-none opacity-80" : ""}`}
       style={{
         left: `${clip.startTime * pxPerSecond}px`,
         width: `${clip.duration * pxPerSecond}px`,
@@ -325,6 +358,13 @@ export default function VideoEditorClip({
         1
       )}s`}
     >
+      {/* Audio extraction loading overlay */}
+      {isExtracting && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/75 text-[10px] font-black text-cyan-300 select-none pointer-events-auto">
+          <span className="animate-pulse">오디오 처리 중...</span>
+        </div>
+      )}
+
       {/* Top Bar: Name & Duration Info */}
       <div className="h-5 shrink-0 w-full flex items-center justify-between px-1.5 bg-black/60 text-[9px] font-black text-white/90 border-b border-white/5 select-none pointer-events-none z-20">
         <div className="flex items-center gap-1 min-w-0 max-w-[70%]">
@@ -350,6 +390,23 @@ export default function VideoEditorClip({
               backgroundSize: "auto 100%",
             }}
           />
+        )}
+
+        {/* Waveform for Video containing audio */}
+        {clip.type === "video" && clip.waveform && clip.waveform.length > 0 && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex h-[16px] items-end gap-[1px] opacity-85 bg-black/40 px-1 pb-[1px]">
+            {clip.waveform.map((value, index) => {
+              const height = Math.max(10, value * 100);
+
+              return (
+                <span
+                  key={`${clip.id}-video-wave-${index}`}
+                  className="w-[1px] rounded-full bg-cyan-300"
+                  style={{ height: `${height}%` }}
+                />
+              );
+            })}
+          </div>
         )}
 
         {/* Waveform for Audio */}
@@ -394,7 +451,7 @@ export default function VideoEditorClip({
         role="button"
         tabIndex={0}
         title="시작점 Trim"
-        onPointerDown={handleTrimStart}
+        onPointerDown={isExtracting ? undefined : handleTrimStart}
         onDragStart={(event) => event.preventDefault()}
         className="absolute left-0 top-0 z-30 h-full w-1.5 cursor-ew-resize rounded-l-[5px] bg-cyan-400 opacity-0 transition group-hover:opacity-100"
       />
@@ -404,10 +461,91 @@ export default function VideoEditorClip({
         role="button"
         tabIndex={0}
         title="끝점 Trim / 길이 조절"
-        onPointerDown={handleTrimEnd}
+        onPointerDown={isExtracting ? undefined : handleTrimEnd}
         onDragStart={(event) => event.preventDefault()}
         className="absolute right-0 top-0 z-30 h-full w-1.5 cursor-ew-resize rounded-r-[5px] bg-cyan-400 opacity-0 transition group-hover:opacity-100"
       />
+
+      {/* Fixed Context Menu */}
+      {contextMenu && (
+        <div
+          style={{
+            position: "fixed",
+            top: contextMenu.y,
+            left: contextMenu.x,
+            zIndex: 9999,
+          }}
+          className="w-48 rounded border border-white/10 bg-[#1e1e24] p-1 shadow-lg text-[10.5px] font-bold text-zinc-300 pointer-events-auto"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {clip.type === "video" && (
+            <button
+              type="button"
+              onClick={async (e) => {
+                e.stopPropagation();
+                setContextMenu(null);
+                setIsExtracting(true);
+                try {
+                  await detachAudio(clip.id);
+                } catch (err: any) {
+                  console.error(err);
+                  alert(err.message || "오디오 분리 중 오류가 발생했습니다.");
+                } finally {
+                  setIsExtracting(false);
+                }
+              }}
+              className="flex w-full items-center gap-2 rounded px-2.5 py-2 text-left hover:bg-white/5 hover:text-white transition"
+            >
+              오디오 분리
+            </button>
+          )}
+          {clip.type === "audio" && (
+            <button
+              type="button"
+              onClick={async (e) => {
+                e.stopPropagation();
+                setContextMenu(null);
+                setIsExtracting(true);
+                try {
+                  await extractAndDownloadAudio(clip.id);
+                } catch (err: any) {
+                  console.error(err);
+                  alert(err.message || "오디오 파일 추출 중 오류가 발생했습니다.");
+                } finally {
+                  setIsExtracting(false);
+                }
+              }}
+              className="flex w-full items-center gap-2 rounded px-2.5 py-2 text-left hover:bg-white/5 hover:text-white transition"
+            >
+              오디오 파일 추출 (PC 다운로드)
+            </button>
+          )}
+          {(clip.type === "video" || clip.type === "audio") && clip.mediaId && (
+            <label className="flex w-full items-center gap-2 rounded px-2.5 py-2 text-left hover:bg-white/5 hover:text-white border-t border-white/5 cursor-pointer transition">
+              <Upload size={13} className="shrink-0 text-zinc-400" />
+              미디어 파일 재연결
+              <input
+                type="file"
+                accept={clip.type === "audio" ? "audio/*" : "video/*"}
+                className="hidden"
+                onChange={async (event) => {
+                  setContextMenu(null);
+                  const file = event.target.files?.[0];
+                  if (file) {
+                    try {
+                      await relinkMediaFile(clip.mediaId!, file);
+                    } catch (err: any) {
+                      console.error(err);
+                      alert(err.message || "파일 재연결 중 오류가 발생했습니다.");
+                    }
+                  }
+                }}
+              />
+            </label>
+          )}
+        </div>
+      )}
     </div>
   );
 }

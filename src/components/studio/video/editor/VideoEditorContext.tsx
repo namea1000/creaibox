@@ -13,6 +13,8 @@ import type {
 
 import { DEFAULT_TIMELINE_TRACKS } from "./constants";
 import type { SubtitleImportCue } from "./subtitle/subtitleImport";
+import { getFFmpeg, runWithFFmpegLock } from "./ffmpeg/convertWebmToMp4";
+import { fetchFile } from "@ffmpeg/util";
 
 const DB_NAME = "creaibox-video-editor-db";
 const DB_VERSION = 2;
@@ -81,10 +83,19 @@ async function getWaveformFromCache(key: string): Promise<number[] | null> {
 export async function saveFileToCache(id: string, file: File): Promise<void> {
   try {
     const db = await openDB();
+    // Convert File to a pure Blob to force IndexedDB to copy the raw bytes,
+    // which prevents the browser's temporary local file permission from expiring on page reload.
+    const blob = new Blob([file], { type: file.type });
+    const dataToSave = {
+      blob,
+      name: file.name,
+      type: file.type,
+      lastModified: file.lastModified,
+    };
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, "readwrite");
       const store = transaction.objectStore(STORE_NAME);
-      const request = store.put(file, id);
+      const request = store.put(dataToSave, id);
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
@@ -100,7 +111,29 @@ export async function getFileFromCache(id: string): Promise<File | null> {
       const transaction = db.transaction(STORE_NAME, "readonly");
       const store = transaction.objectStore(STORE_NAME);
       const request = store.get(id);
-      request.onsuccess = () => resolve(request.result || null);
+      request.onsuccess = () => {
+        const result = request.result;
+        if (!result) {
+          resolve(null);
+          return;
+        }
+
+        // Reconstruct File from stored object or support legacy formats
+        if (result instanceof File) {
+          resolve(result);
+        } else if (result instanceof Blob) {
+          resolve(new File([result], "restored-file", { type: result.type }));
+        } else if (result && typeof result === "object" && result.blob) {
+          resolve(
+            new File([result.blob], result.name || "restored-file", {
+              type: result.type || result.blob.type,
+              lastModified: result.lastModified,
+            })
+          );
+        } else {
+          resolve(null);
+        }
+      };
       request.onerror = () => reject(request.error);
     });
   } catch (e) {
@@ -317,7 +350,7 @@ type VideoEditorActions = {
   setProjectTitle: (value: string) => void;
   setActiveTab: (value: VideoEditorTab) => void;
 
-  addMediaFiles: (files: FileList | File[]) => void;
+  addMediaFiles: (files: FileList | File[]) => Promise<VideoEditorMediaItem[]>;
   removeMediaItem: (id: string) => void;
   selectMedia: (id: string | null) => void;
 
@@ -389,6 +422,8 @@ type VideoEditorActions = {
   setClips: (clips: VideoEditorClip[]) => void;
   setClickedPreviewMedia: (item: VideoEditorMediaItem | null, time?: number) => void;
   setPreviewMedia: (item: VideoEditorMediaItem | null, time?: number) => void;
+  detachAudio: (clipId: string) => Promise<void>;
+  extractAndDownloadAudio: (clipId: string) => Promise<void>;
 };
 
 type VideoEditorContextValue = VideoEditorState & VideoEditorActions;
@@ -396,7 +431,7 @@ type VideoEditorContextValue = VideoEditorState & VideoEditorActions;
 const VideoEditorContext = createContext<VideoEditorContextValue | null>(null);
 
 const TIMELINE_BASE_DURATION = 3600;
-const MIN_TIMELINE_DURATION = 30;
+const MIN_TIMELINE_DURATION = 5;
 const MAX_HISTORY = 50;
 const DEFAULT_CANVAS_ZOOM = 100;
 const LEGACY_DEFAULT_CANVAS_ZOOM = 75;
@@ -491,7 +526,7 @@ function calculateTotalDuration(clips: VideoEditorClip[]) {
     MIN_TIMELINE_DURATION
   );
 
-  return Math.max(MIN_TIMELINE_DURATION, Math.ceil(maxEnd));
+  return Math.max(MIN_TIMELINE_DURATION, Number(maxEnd.toFixed(1)));
 }
 
 function leftToTime(left: number) {
@@ -815,6 +850,43 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
     setPreviewMediaItem(null);
   };
 
+async function extractAudioWithFFmpeg(getFileBytes: () => Promise<Uint8Array>, fileName: string): Promise<ArrayBuffer> {
+  return runWithFFmpegLock(async (ffmpeg) => {
+    const safeName = (fileName || "temp_video_audio")
+      .replace(/[\\/:*?"<>|]/g, "")
+      .replace(/\s+/g, "-")
+      .slice(0, 50);
+    const inputName = `input_${Date.now()}_${safeName}`;
+    const outputName = `output_${Date.now()}_${safeName}.wav`;
+
+    let u8Array: Uint8Array | null = await getFileBytes();
+    await ffmpeg.writeFile(inputName, u8Array);
+    u8Array = null; // Free the JS memory reference IMMEDIATELY before running exec!
+    
+    // Extract audio to standard 16-bit PCM WAV at 48000Hz (highly compatible with decodeAudioData)
+    await ffmpeg.exec([
+      "-i",
+      inputName,
+      "-vn",
+      "-acodec",
+      "pcm_s16le",
+      "-ar",
+      "48000",
+      outputName,
+    ]);
+
+    const data = await ffmpeg.readFile(outputName);
+    
+    await ffmpeg.deleteFile(inputName).catch(() => {});
+    await ffmpeg.deleteFile(outputName).catch(() => {});
+
+    const u8 = data as Uint8Array;
+    const audioBuffer = new ArrayBuffer(u8.byteLength);
+    new Uint8Array(audioBuffer).set(u8);
+    return audioBuffer;
+  });
+}
+
 async function extractAudioWaveform(file: File, points = 96): Promise<number[]> {
   try {
     const AudioContextConstructor =
@@ -827,8 +899,52 @@ async function extractAudioWaveform(file: File, points = 96): Promise<number[]> 
     }
 
     const audioCtx = new AudioContextConstructor();
-    const arrayBuffer = await file.arrayBuffer();
-    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    
+    let audioBuffer: AudioBuffer;
+    if (file.type.startsWith("video/")) {
+      // Direct FFmpeg extraction for video file waveforms to avoid native decode failures and double memory allocation.
+      console.log("[VideoEditorContext] Waveform: skipping native decodeAudioData for video file, extracting directly via FFmpeg:", file.name);
+      const getFileBytes = async () => {
+        return new Uint8Array(await file.arrayBuffer());
+      };
+      const wavBuffer = await extractAudioWithFFmpeg(getFileBytes, file.name);
+      
+      audioBuffer = await Promise.race([
+        audioCtx.decodeAudioData(wavBuffer),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Waveform fallback decoding timeout (15s)")), 15000)
+        ),
+      ]);
+    } else {
+      let arrayBuffer: ArrayBuffer | null = await file.arrayBuffer();
+      try {
+        audioBuffer = await Promise.race([
+          audioCtx.decodeAudioData(arrayBuffer),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Audio decoding timeout (15s)")), 15000)
+          ),
+        ]);
+        arrayBuffer = null;
+      } catch (decodeError) {
+        console.warn("[VideoEditorContext] Browser decodeAudioData failed for waveform, trying FFmpeg fallback:", decodeError);
+        arrayBuffer = null;
+        try {
+          const getFileBytesFallback = async () => {
+            return new Uint8Array(await file.arrayBuffer());
+          };
+          const wavBuffer = await extractAudioWithFFmpeg(getFileBytesFallback, file.name);
+          audioBuffer = await Promise.race([
+            audioCtx.decodeAudioData(wavBuffer),
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error("Waveform fallback decoding timeout (15s)")), 15000)
+            ),
+          ]);
+        } catch (ffmpegError) {
+          console.error("[VideoEditorContext] FFmpeg waveform fallback extraction failed:", ffmpegError);
+          throw decodeError; // rethrow original error if fallback also fails
+        }
+      }
+    }
 
     const step = Math.max(1, Math.floor(audioBuffer.length / points));
     const waveform: number[] = [];
@@ -951,7 +1067,7 @@ function getMediaDuration(file: File): Promise<number> {
   });
 }
 
-  const addMediaFiles = async (files: FileList | File[]) => {
+  const addMediaFiles = async (files: FileList | File[]): Promise<VideoEditorMediaItem[]> => {
     const fileArray = Array.from(files);
 
     const nextItems: VideoEditorMediaItem[] = await Promise.all(
@@ -970,7 +1086,9 @@ function getMediaDuration(file: File): Promise<number> {
           thumbnailUrl = URL.createObjectURL(file);
         } else if (type === "video") {
           thumbnailUrl = await getVideoThumbnail(file);
-        } else if (type === "audio" || type === "video") {
+        }
+
+        if (type === "audio" || type === "video") {
           waveform = await getOrCreateAudioWaveform(file);
         }
 
@@ -991,6 +1109,7 @@ function getMediaDuration(file: File): Promise<number> {
 
     setMediaItems((prev) => [...nextItems, ...prev]);
     if (nextItems[0]) setSelectedMediaId(nextItems[0].id);
+    return nextItems;
   };
 
   const removeMediaItem = (id: string) => {
@@ -1534,6 +1653,149 @@ function getMediaDuration(file: File): Promise<number> {
     );
   };
 
+  const detachAudio = useCallback(async (clipId: string): Promise<void> => {
+    const clip = clips.find((c) => c.id === clipId);
+    if (!clip || clip.type !== "video" || !clip.mediaId) {
+      throw new Error("올바르지 않은 클립이거나 비디오 클립이 아닙니다.");
+    }
+
+    const media = mediaItems.find((m) => m.id === clip.mediaId);
+    if (!media) {
+      throw new Error("미디어 아이템을 찾을 수 없습니다.");
+    }
+
+    // 1. Mute the original video clip
+    updateClip(clip.id, { muted: true });
+
+    // 2. Find or create an audio track
+    const trackType = "audio";
+    const availableTrack = findAvailableTrack(
+      tracks,
+      clips,
+      trackType,
+      clip.startTime,
+      clip.duration
+    );
+    if (availableTrack.shouldCreateTrack) {
+      setTracks((prev) => insertTrackAfterSameType(prev, availableTrack.targetTrack, trackType));
+    }
+
+    // 3. Create the audio clip referencing the same video media ID
+    const newAudioClip: VideoEditorClip = normalizeClip({
+      id: createId("clip"),
+      trackId: availableTrack.targetTrack.id,
+      mediaId: media.id,
+      type: "audio",
+      name: `${media.name} (Audio)`,
+      startTime: clip.startTime,
+      duration: clip.duration,
+      trimStart: clip.trimStart || 0,
+      trimEnd: clip.trimEnd || 0,
+      left: 0,
+      width: 0,
+      color: getDefaultClipColor("audio"),
+      waveform: media.waveform,
+    });
+
+    setClipsWithHistory((prev) => [...prev, newAudioClip]);
+    setSelectedClipId(newAudioClip.id);
+  }, [clips, mediaItems, tracks, updateClip, setTracks, setClipsWithHistory, setSelectedClipId]);
+
+  const extractAndDownloadAudio = useCallback(async (clipId: string): Promise<void> => {
+    const clip = clips.find((c) => c.id === clipId);
+    if (!clip || (clip.type !== "video" && clip.type !== "audio") || !clip.mediaId) {
+      throw new Error("올바르지 않은 클립이거나 오디오/비디오 클립이 아닙니다.");
+    }
+
+    const media = mediaItems.find((m) => m.id === clip.mediaId);
+    if (!media) {
+      throw new Error("미디어 아이템을 찾을 수 없습니다.");
+    }
+
+    let file: File | null = media.file || null;
+    if (!file) {
+      file = await getFileFromCache(media.id);
+    }
+    if (!file) {
+      throw new Error(
+        "비디오 파일의 데이터를 읽을 수 없습니다. 브라우저 보안 정책으로 인해 로컬 파일 연결이 만료되었습니다. 미디어 라이브러리에서 해당 비디오의 '미디어 파일 재연결' 버튼을 눌러 파일을 다시 선택해 주세요."
+      );
+    }
+
+    const baseName = media.name.replace(/\.[^/.]+$/, "");
+    let arrayBuffer: ArrayBuffer | null = null;
+    try {
+      arrayBuffer = await file.arrayBuffer();
+    } catch (err) {
+      console.error("Failed to read file bytes:", err);
+      throw new Error(
+        "비디오 파일의 데이터를 읽을 수 없습니다. 브라우저 보안 정책으로 인해 로컬 파일 연결이 만료되었습니다. 미디어 라이브러리에서 해당 비디오의 '미디어 파일 재연결' 버튼을 눌러 파일을 다시 선택해 주세요."
+      );
+    }
+
+    const audioData = await runWithFFmpegLock(async (ffmpeg) => {
+      const inputName = `input_${Date.now()}`;
+      const outputName = `output_${Date.now()}.mp3`;
+
+      let u8Array: Uint8Array | null = new Uint8Array(arrayBuffer!);
+      arrayBuffer = null; // Free JS heap buffer reference immediately
+      await ffmpeg.writeFile(inputName, u8Array);
+      u8Array = null; // Free local reference immediately before transcode
+
+      try {
+        await ffmpeg.exec([
+          "-i",
+          inputName,
+          "-vn",
+          "-acodec",
+          "libmp3lame",
+          "-ab",
+          "192k",
+          outputName,
+        ]);
+        const data = await ffmpeg.readFile(outputName);
+        await ffmpeg.deleteFile(inputName).catch(() => {});
+        await ffmpeg.deleteFile(outputName).catch(() => {});
+        return { data, extension: "mp3", mimeType: "audio/mp3" };
+      } catch (err) {
+        console.warn("FFmpeg MP3 extraction failed, falling back to WAV:", err);
+        const wavOutputName = `output_${Date.now()}.wav`;
+        await ffmpeg.exec([
+          "-i",
+          inputName,
+          "-vn",
+          "-acodec",
+          "pcm_s16le",
+          "-ar",
+          "48000",
+          wavOutputName,
+        ]);
+        const data = await ffmpeg.readFile(wavOutputName);
+        await ffmpeg.deleteFile(inputName).catch(() => {});
+        await ffmpeg.deleteFile(wavOutputName).catch(() => {});
+        return { data, extension: "wav", mimeType: "audio/wav" };
+      }
+    });
+
+    const uint8 = audioData.data as Uint8Array;
+    const blob = new Blob([uint8.buffer as ArrayBuffer], { type: audioData.mimeType });
+    const finalFileName = `${baseName}_audio.${audioData.extension}`;
+    const extractedFile = new File([blob], finalFileName, { type: audioData.mimeType });
+
+    // 1. Download to user's PC
+    const downloadUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = finalFileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(downloadUrl);
+
+    // 2. Automatically register it as a new audio entry in the Media Library
+    await addMediaFiles([extractedFile]);
+  }, [clips, mediaItems, addMediaFiles]);
+
   const updateClipName = (id: string, name: string) => {
     updateClip(id, { name });
   };
@@ -1897,6 +2159,8 @@ function getMediaDuration(file: File): Promise<number> {
       setClips,
       setClickedPreviewMedia,
       setPreviewMedia,
+      detachAudio,
+      extractAndDownloadAudio,
     }),
     [
       projectTitle,
@@ -1927,6 +2191,8 @@ function getMediaDuration(file: File): Promise<number> {
       selectClip,
       setClickedPreviewMedia,
       setPreviewMedia,
+      detachAudio,
+      extractAndDownloadAudio,
     ]
   );
 

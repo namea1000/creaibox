@@ -60,6 +60,10 @@ function VideoEditorWorkspace() {
     await renderCanvasRef.current?.exportDirectMp4(options);
   };
 
+  const handleExportAudioOnly = async (options?: VideoExportOptions) => {
+    await renderCanvasRef.current?.exportAudioOnly(options);
+  };
+
   const handleRenderSampleFrame = async (time: number, options?: VideoExportOptions) => {
     return (await renderCanvasRef.current?.renderSampleFrame(time, options)) ?? "";
   };
@@ -212,6 +216,7 @@ function VideoEditorWorkspace() {
         onExportWebm={handleExportWebm}
         onExportMp4={handleExportMp4}
         onExportDirectMp4={handleExportDirectMp4}
+        onExportAudioOnly={handleExportAudioOnly}
         onRenderSampleFrame={handleRenderSampleFrame}
       />
     </>

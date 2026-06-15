@@ -13,18 +13,15 @@ Video Studio is the browser-based video editing module for CreAibox. It lets use
 - Preview playback keeps an internal high-resolution playback clock and only publishes throttled UI time, so pausing freezes the current media frame instead of snapping back to the last rounded UI timestamp.
 - Local media cache using IndexedDB for uploaded files.
 - Project autosave using browser local storage.
-- Export panel with resolution, FPS, quality, and export engine selection.
-- Step 1 export engines:
-  - Quick WebM: Canvas capture plus MediaRecorder.
-  - Compatible MP4: WebM render plus FFmpeg WASM conversion.
+- Export panel with a clean CapCut-style single-screen layout, customizable file name input, local folder selection (File System Access API), and audio-only output formats (MP3, WAV, AAC).
+- Engine simplification: Direct MP4 (`direct-mp4`) is the default and only visible video rendering engine in the UI, hiding other legacy engines (`fast-webcodecs`, `quick-webm`, `compatible-mp4`). The direct exporter automatically falls back to Compatible MP4 if H.264/AAC capability checks fail.
+- Audio-only export: Decodes the offline mixed audio buffer, saves directly to the chosen folder as a WAV file, or transcodes it to MP3/AAC via FFmpeg WASM.
 - Step 2 export consistency:
   - Motion, effects, blend mode, crop, flip, text opacity, audio fade/gain/pan, and basic visualizer rendering are reflected in browser-side export.
 - Step 3 fast export:
   - Fast WebCodecs detects browser support and creates VP8 video-only WebM files for 720p/1080p 30fps.
   - Unsupported browsers, unsupported settings, and encoder failures fallback to Quick WebM.
 - Step 4 advanced export options:
-  - Basic export keeps 720p/1080p and 24/30fps visible by default.
-  - Advanced export contains 2K/4K and 60fps.
   - Resolution/FPS/quality-specific bitrate presets are shown in the UI and passed to the active renderer.
   - High-load settings show warnings and estimated frame counts.
 - Step 5 worker/export job foundation:

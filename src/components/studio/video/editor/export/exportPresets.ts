@@ -6,6 +6,11 @@ export const VIDEO_EXPORT_ENGINES: Array<{
   desc: string;
 }> = [
   {
+    value: "direct-mp4",
+    label: "Direct MP4",
+    desc: "WebCodecs H.264/AAC와 Mediabunny MP4 muxer로 MP4를 직접 생성합니다. 현재 1단계에서는 Compatible MP4로 안전 fallback합니다.",
+  },
+  {
     value: "fast-webcodecs",
     label: "Fast WebCodecs",
     desc: "지원 브라우저에서 video-only WebM을 빠르게 인코딩합니다. 오디오가 필요한 경우 Quick WebM 또는 MP4를 사용하세요. 실패 시 Quick WebM으로 fallback합니다.",
@@ -19,10 +24,5 @@ export const VIDEO_EXPORT_ENGINES: Array<{
     value: "compatible-mp4",
     label: "Compatible MP4",
     desc: "WebM 렌더 후 FFmpeg WASM으로 MP4 변환을 수행합니다.",
-  },
-  {
-    value: "direct-mp4",
-    label: "Direct MP4",
-    desc: "WebCodecs H.264/AAC와 Mediabunny MP4 muxer로 MP4를 직접 생성합니다. 현재 1단계에서는 Compatible MP4로 안전 fallback합니다.",
   },
 ];

@@ -77,6 +77,8 @@ export default function VideoEditorTimeline() {
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
   const headersTracksContainerRef = useRef<HTMLDivElement | null>(null);
   const timelineZoomRef = useRef(timelineZoom);
+  const [draggingOverTrackId, setDraggingOverTrackId] = useState<string | null>(null);
+  const [isDraggingOverGrid, setIsDraggingOverGrid] = useState(false);
 
   const handleTimelineScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (headersTracksContainerRef.current) {
@@ -152,6 +154,7 @@ export default function VideoEditorTimeline() {
     setTracks,
     setClips,
     addClipFromMedia,
+    addMediaFiles,
   } = useVideoEditor();
 
   const handleDeleteTrack = (trackId: string) => {
@@ -258,7 +261,7 @@ export default function VideoEditorTimeline() {
   const pxPerSecond = (timelineZoom / 100) * 16;
   const totalWidth = Math.max(1200, totalDuration * pxPerSecond);
   const playheadLeft = currentTime * pxPerSecond;
-  const timelineEnd = Math.max(30, totalDuration);
+  const timelineEnd = Math.max(5, totalDuration);
   const labelInterval = getTimelineLabelInterval(pxPerSecond);
   const majorGridInterval = labelInterval;
   const minorGridInterval = pxPerSecond >= 80 ? 0.1 : Math.max(1, labelInterval / 5);
@@ -365,9 +368,7 @@ export default function VideoEditorTimeline() {
     targetTrackId: string
   ) => {
     event.preventDefault();
-
-    const clipId = event.dataTransfer.getData("clip-id");
-    const mediaId = event.dataTransfer.getData("media-id");
+    event.stopPropagation();
 
     const rect = event.currentTarget.getBoundingClientRect();
     const grabOffsetX = Number(
@@ -375,6 +376,26 @@ export default function VideoEditorTimeline() {
     );
     const dropX = event.clientX - rect.left - grabOffsetX;
     const rawStartTime = Math.max(0, dropX / pxPerSecond);
+
+    const externalFiles = event.dataTransfer.files;
+    if (externalFiles && externalFiles.length > 0) {
+      addMediaFiles(externalFiles).then((newItems) => {
+        if (!newItems || newItems.length === 0) return;
+        let currentStart = rawStartTime;
+        newItems.forEach((media) => {
+          const duration = media.type === "image" ? 5 : media.duration || 10;
+          addClipFromMedia(media, {
+            trackId: targetTrackId,
+            startTime: currentStart,
+          });
+          currentStart += duration;
+        });
+      });
+      return;
+    }
+
+    const clipId = event.dataTransfer.getData("clip-id");
+    const mediaId = event.dataTransfer.getData("media-id");
 
     if (!clipId && mediaId) {
       const media = mediaItems.find((item) => item.id === mediaId);
@@ -406,6 +427,45 @@ export default function VideoEditorTimeline() {
 
     updateClipPlacement(clipId, safeTrackId, nextStartTime, targetClip.duration);
     selectClip(clipId);
+  };
+
+  const handleDragOverTimelineGrid = (event: React.DragEvent<HTMLDivElement>) => {
+    const isFile = event.dataTransfer.types.includes("Files");
+    if (isFile) {
+      event.preventDefault();
+      setIsDraggingOverGrid(true);
+    }
+  };
+
+  const handleDragLeaveTimelineGrid = () => {
+    setIsDraggingOverGrid(false);
+  };
+
+  const handleDropTimelineGrid = (event: React.DragEvent<HTMLDivElement>) => {
+    if (event.defaultPrevented) return;
+    const externalFiles = event.dataTransfer.files;
+    if (!externalFiles || externalFiles.length === 0) return;
+
+    event.preventDefault();
+    setIsDraggingOverGrid(false);
+
+    const rect = timelineScrollRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const scrollLeft = timelineScrollRef.current?.scrollLeft || 0;
+    const dropX = event.clientX - rect.left + scrollLeft;
+    const rawStartTime = Math.max(0, dropX / pxPerSecond);
+
+    addMediaFiles(externalFiles).then((newItems) => {
+      if (!newItems || newItems.length === 0) return;
+      let currentStart = rawStartTime;
+      newItems.forEach((media) => {
+        const duration = media.type === "image" ? 5 : media.duration || 10;
+        addClipFromMedia(media, {
+          startTime: currentStart,
+        });
+        currentStart += duration;
+      });
+    });
   };
 
   const handleTimelineSeek = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -742,7 +802,12 @@ export default function VideoEditorTimeline() {
         <div
           ref={timelineScrollRef}
           onScroll={handleTimelineScroll}
-          className="min-w-0 flex-1 overflow-auto h-full scrollbar-thin scrollbar-thumb-zinc-800"
+          onDragOver={handleDragOverTimelineGrid}
+          onDragLeave={handleDragLeaveTimelineGrid}
+          onDrop={handleDropTimelineGrid}
+          className={`min-w-0 flex-1 overflow-auto h-full scrollbar-thin scrollbar-thumb-zinc-800 transition-colors duration-200 ${
+            isDraggingOverGrid ? "bg-cyan-500/5 ring-1 ring-inset ring-cyan-500/30" : ""
+          }`}
         >
           <div
             className="relative min-w-full"
@@ -789,13 +854,27 @@ export default function VideoEditorTimeline() {
 
               {tracks.map((track) => {
                 const trackClips = clips.filter((clip) => clip.trackId === track.id);
+                const isDraggingOverTrack = draggingOverTrackId === track.id;
 
                 return (
                   <div
                     key={track.id}
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={(event) => handleDropClip(event, track.id)}
-                    className="relative h-[72px] border-b border-white/5 bg-[#17171d]/10"
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      setDraggingOverTrackId(track.id);
+                    }}
+                    onDragLeave={() => {
+                      setDraggingOverTrackId(null);
+                    }}
+                    onDrop={(event) => {
+                      setDraggingOverTrackId(null);
+                      handleDropClip(event, track.id);
+                    }}
+                    className={`relative h-[72px] border-b border-white/5 transition-colors duration-150 ${
+                      isDraggingOverTrack
+                        ? "bg-cyan-500/15 border-b-cyan-400"
+                        : "bg-[#17171d]/10"
+                    }`}
                   >
                     {trackClips.length === 0 ? (
                       <div className="flex h-full items-center px-4 text-xs text-zinc-700/70 select-none">

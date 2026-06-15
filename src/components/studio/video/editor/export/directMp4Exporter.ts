@@ -105,8 +105,12 @@ export async function exportDirectMp4VideoOnly({
         lastProgress = progress;
       }
 
-      if (frame % 60 === 0) {
-        await new Promise((resolve) => requestAnimationFrame(resolve));
+      if (frame % 5 === 0) {
+        if (typeof document !== "undefined" && document.hidden) {
+          await new Promise((resolve) => setTimeout(resolve, 4));
+        } else {
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+        }
       }
     }
 

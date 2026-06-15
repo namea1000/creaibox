@@ -114,7 +114,12 @@ export async function fetchRecentVideoProjectExportRecords(limit = 6) {
 export function buildOutputFileName(job: {
   projectTitle: string;
   engine: VideoExportEngine;
+  audioFormat?: "mp3" | "wav" | "aac";
 }) {
+  if (job.engine === "audio-only") {
+    const ext = job.audioFormat || "mp3";
+    return `${safeFileName(job.projectTitle)}.${ext}`;
+  }
   const extension =
     job.engine === "compatible-mp4" || job.engine === "direct-mp4"
       ? "mp4"

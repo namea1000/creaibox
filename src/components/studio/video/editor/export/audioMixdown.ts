@@ -1,12 +1,15 @@
-import type {
-  VideoEditorClip,
-  VideoEditorMediaItem,
+import {
+  getFileFromCache,
+  type VideoEditorClip,
+  type VideoEditorMediaItem,
 } from "../VideoEditorContext";
+import { getFFmpeg, runWithFFmpegLock } from "../ffmpeg/convertWebmToMp4";
 
 export type AudioMixSource = {
   clipId: string;
   mediaId: string;
   url: string;
+  file?: File;
   name: string;
   startTime: number;
   duration: number;
@@ -77,6 +80,7 @@ export function collectAudioMixSources({
         clipId: clip.id,
         mediaId: media.id,
         url: media.url,
+        file: media.file,
         name: media.name,
         startTime: clip.startTime,
         duration: clip.duration,
@@ -94,16 +98,189 @@ export function collectAudioMixSources({
     .filter(Boolean) as AudioMixSource[];
 }
 
-async function decodeAudioBuffer(audioContext: AudioContext, url: string) {
-  const response = await fetch(url);
-  const arrayBuffer = await response.arrayBuffer();
-  return audioContext.decodeAudioData(arrayBuffer);
+const globalAudioBufferCache = new Map<string, AudioBuffer>();
+
+export async function extractAudioWithFFmpeg(getFileBytes: () => Promise<Uint8Array>, fileName: string): Promise<ArrayBuffer> {
+  return runWithFFmpegLock(async (ffmpeg) => {
+    const safeName = (fileName || "temp_video_audio")
+      .replace(/[\\/:*?"<>|]/g, "")
+      .replace(/\s+/g, "-")
+      .slice(0, 50);
+    const inputName = `input_${Date.now()}_${safeName}`;
+    const outputName = `output_${Date.now()}_${safeName}.wav`;
+
+    let u8Array: Uint8Array | null = await getFileBytes();
+    await ffmpeg.writeFile(inputName, u8Array);
+    u8Array = null; // Free the JS memory reference IMMEDIATELY before running exec!
+    
+    // Extract audio to standard 16-bit PCM WAV at 48000Hz (highly compatible with decodeAudioData)
+    await ffmpeg.exec([
+      "-i",
+      inputName,
+      "-vn",
+      "-acodec",
+      "pcm_s16le",
+      "-ar",
+      "48000",
+      outputName,
+    ]);
+
+    const data = await ffmpeg.readFile(outputName);
+    
+    await ffmpeg.deleteFile(inputName).catch(() => {});
+    await ffmpeg.deleteFile(outputName).catch(() => {});
+
+    const u8 = data as Uint8Array;
+    const audioBuffer = new ArrayBuffer(u8.byteLength);
+    new Uint8Array(audioBuffer).set(u8);
+    return audioBuffer;
+  });
 }
 
-async function decodeOfflineAudioBuffer(audioContext: OfflineAudioContext, url: string) {
-  const response = await fetch(url);
-  const arrayBuffer = await response.arrayBuffer();
-  return audioContext.decodeAudioData(arrayBuffer);
+function ensureExtension(fileName: string, type: "video" | "audio"): string {
+  const lower = fileName.toLowerCase();
+  if (type === "video") {
+    const videoExtensions = [".mp4", ".mov", ".webm", ".avi", ".mkv", ".flv", ".3gp", ".ts"];
+    if (videoExtensions.some(ext => lower.endsWith(ext))) {
+      return fileName;
+    }
+    return fileName + ".mp4";
+  } else {
+    const audioExtensions = [".mp3", ".wav", ".aac", ".ogg", ".m4a", ".flac", ".wma"];
+    if (audioExtensions.some(ext => lower.endsWith(ext))) {
+      return fileName;
+    }
+    return fileName + ".mp3";
+  }
+}
+
+async function decodeAudioBufferWithTimeout(
+  mediaId: string,
+  url: string,
+  type: "video" | "audio",
+  fileName: string,
+  signal?: AbortSignal,
+  file?: File
+) {
+  const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+  if (!AudioContextClass) {
+    throw new Error("Browser does not support AudioContext");
+  }
+  const tempCtx = new AudioContextClass();
+  const safeFileName = ensureExtension(fileName, type);
+
+  try {
+    if (type === "video") {
+      // For video files, browser decodeAudioData usually fails on the container.
+      // Directly extract audio via FFmpeg to avoid double memory allocation and failures.
+      console.log("[AudioMixdown] Skipping native decodeAudioData for video file, extracting directly via FFmpeg:", url, safeFileName);
+      
+      const getFileBytes = async () => {
+        try {
+          if (file) {
+            console.log("[AudioMixdown] Found video File object in-memory:", file.name, file.size);
+            return new Uint8Array(await file.arrayBuffer());
+          }
+          const cachedFile = await getFileFromCache(mediaId);
+          if (cachedFile) {
+            console.log("[AudioMixdown] Found video file in IndexedDB cache:", mediaId);
+            return new Uint8Array(await cachedFile.arrayBuffer());
+          }
+        } catch (err) {
+          console.warn("[AudioMixdown] Failed to read cached file:", err);
+        }
+        console.log("[AudioMixdown] Fetching video URL fallback:", url);
+        const response = await fetch(url, { signal });
+        return new Uint8Array(await response.arrayBuffer());
+      };
+
+      const wavBuffer = await extractAudioWithFFmpeg(getFileBytes, safeFileName);
+      const decoded = await tempCtx.decodeAudioData(wavBuffer);
+      return decoded;
+    } else {
+      let arrayBuffer: ArrayBuffer | null = null;
+      try {
+        if (file) {
+          console.log("[AudioMixdown] Found audio File object in-memory:", file.name, file.size);
+          arrayBuffer = await file.arrayBuffer();
+        } else {
+          const cachedFile = await getFileFromCache(mediaId);
+          if (cachedFile) {
+            console.log("[AudioMixdown] Found audio file in IndexedDB cache:", mediaId);
+            arrayBuffer = await cachedFile.arrayBuffer();
+          }
+        }
+      } catch (err) {
+        console.warn("[AudioMixdown] Failed to read cached audio file:", err);
+      }
+
+      if (!arrayBuffer) {
+        console.log("[AudioMixdown] Fetching audio URL:", url);
+        const response = await fetch(url, { signal });
+        arrayBuffer = await response.arrayBuffer();
+      }
+
+      try {
+        const decoded = await tempCtx.decodeAudioData(arrayBuffer);
+        arrayBuffer = null;
+        return decoded;
+      } catch (decodeError) {
+        console.warn("[AudioMixdown] Browser decodeAudioData failed for audio file, trying FFmpeg fallback:", decodeError);
+        arrayBuffer = null; // release reference
+
+        const getFileBytesFallback = async () => {
+          try {
+            if (file) {
+              return new Uint8Array(await file.arrayBuffer());
+            }
+            const cachedFile = await getFileFromCache(mediaId);
+            if (cachedFile) {
+              return new Uint8Array(await cachedFile.arrayBuffer());
+            }
+          } catch (err) {}
+          const fallbackResponse = await fetch(url, { signal });
+          return new Uint8Array(await fallbackResponse.arrayBuffer());
+        };
+
+        const wavBuffer = await extractAudioWithFFmpeg(getFileBytesFallback, safeFileName);
+        const decoded = await tempCtx.decodeAudioData(wavBuffer);
+        return decoded;
+      }
+    }
+  } finally {
+    await tempCtx.close().catch(() => undefined);
+  }
+}
+
+async function predecodeSources(sources: AudioMixSource[], signal?: AbortSignal) {
+  const uniqueSources = Array.from(
+    new Map(sources.map((s) => [s.mediaId, s])).values()
+  );
+
+  for (const source of uniqueSources) {
+    if (globalAudioBufferCache.has(source.mediaId)) {
+      continue;
+    }
+    if (signal?.aborted) return;
+
+    try {
+      // Decode sequentially to avoid memory spikes and Chrome "Aw, Snap!" (Error Code 5) OOM crashes.
+      const buffer = await Promise.race([
+        decodeAudioBufferWithTimeout(source.mediaId, source.url, source.type, source.name, signal, source.file),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Audio decoding timeout (15s)")), 15000)
+        ),
+      ]);
+      globalAudioBufferCache.set(source.mediaId, buffer);
+      // Yield to allow Chrome to run GC on the large ArrayBuffers
+      await new Promise<void>((resolve) => setTimeout(resolve, 200));
+    } catch (err) {
+      console.warn(
+        `[AudioMixdown] Failed to decode audio for ${source.name} (${source.mediaId}):`,
+        err
+      );
+    }
+  }
 }
 
 export async function scheduleAudioMixdown({
@@ -124,17 +301,23 @@ export async function scheduleAudioMixdown({
 
   await audioContext.resume();
 
+  // Pre-decode all sources in parallel
+  await predecodeSources(sources, signal);
+
   for (const source of sources) {
     if (signal?.aborted) {
       throw new DOMException("Export cancelled", "AbortError");
     }
 
     try {
-      let buffer = bufferCache.get(source.mediaId);
+      let buffer =
+        bufferCache.get(source.mediaId) || globalAudioBufferCache.get(source.mediaId);
 
       if (!buffer) {
-        buffer = await decodeAudioBuffer(audioContext, source.url);
+        // Fallback decode just in case predecode was skipped or failed
+        buffer = await decodeAudioBufferWithTimeout(source.mediaId, source.url, source.type, source.name, signal, source.file);
         bufferCache.set(source.mediaId, buffer);
+        globalAudioBufferCache.set(source.mediaId, buffer);
       }
 
       const bufferSource = audioContext.createBufferSource();
@@ -199,6 +382,9 @@ export async function renderOfflineAudioMixdown({
     throw new Error("OfflineAudioContext를 지원하지 않는 브라우저입니다.");
   }
 
+  // Pre-decode all sources in parallel
+  await predecodeSources(sources, signal);
+
   const safeDuration = Math.max(0.1, duration);
   const frameCount = Math.ceil(safeDuration * sampleRate);
   const audioContext = new OfflineAudioContext(numberOfChannels, frameCount, sampleRate);
@@ -211,10 +397,13 @@ export async function renderOfflineAudioMixdown({
     }
 
     try {
-      let buffer = bufferCache.get(source.mediaId);
+      let buffer =
+        bufferCache.get(source.mediaId) || globalAudioBufferCache.get(source.mediaId);
       if (!buffer) {
-        buffer = await decodeOfflineAudioBuffer(audioContext, source.url);
+        // Fallback decode just in case
+        buffer = await decodeAudioBufferWithTimeout(source.mediaId, source.url, source.type, source.name, signal, source.file);
         bufferCache.set(source.mediaId, buffer);
+        globalAudioBufferCache.set(source.mediaId, buffer);
       }
 
       const bufferSource = audioContext.createBufferSource();

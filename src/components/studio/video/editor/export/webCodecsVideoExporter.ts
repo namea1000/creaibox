@@ -267,7 +267,11 @@ export async function exportWebCodecsVideoOnly({
       });
 
       if (frame % 30 === 0) {
-        await new Promise((resolve) => requestAnimationFrame(resolve));
+        if (typeof document !== "undefined" && document.hidden) {
+          await new Promise((resolve) => setTimeout(resolve, 4));
+        } else {
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+        }
       }
     }
 

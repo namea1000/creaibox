@@ -52,6 +52,25 @@ export default function VideoEditorMediaLibrary({ forcedTab }: { forcedTab?: Lib
   const [viewMode, setViewMode] =
     useState<"grid" | "list">("grid");
   const [typeFilter, setTypeFilter] = useState<"all" | VideoEditorMediaType>("all");
+  const [isDraggingOverBox, setIsDraggingOverBox] = useState(false);
+
+  const handleDragOverBox = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDraggingOverBox(true);
+  };
+
+  const handleDragLeaveBox = () => {
+    setIsDraggingOverBox(false);
+  };
+
+  const handleDropBox = async (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDraggingOverBox(false);
+    const files = event.dataTransfer.files;
+    if (files && files.length > 0) {
+      await addMediaFiles(files);
+    }
+  };
 
   const filteredMediaItems = useMemo(() => {
     return mediaItems.filter((item) => {
@@ -62,18 +81,13 @@ export default function VideoEditorMediaLibrary({ forcedTab }: { forcedTab?: Lib
   }, [mediaItems, search, typeFilter]);
 
   const stats = useMemo(() => {
+    const totalBytes = mediaItems.reduce((sum, item) => sum + (item.size || 0), 0);
     return {
       total: mediaItems.length,
       videos: mediaItems.filter((m) => m.type === "video").length,
       images: mediaItems.filter((m) => m.type === "image").length,
       audios: mediaItems.filter((m) => m.type === "audio").length,
-      size:
-        mediaItems.reduce(
-          (sum, item) => sum + (item.size || 0),
-          0
-        ) /
-        1024 /
-        1024,
+      sizeBytes: totalBytes,
     };
   }, [mediaItems]);
 
@@ -116,14 +130,23 @@ export default function VideoEditorMediaLibrary({ forcedTab }: { forcedTab?: Lib
         <StatCard label="오디오" value={stats.audios} />
         <StatCard
           label="용량"
-          value={`${stats.size.toFixed(1)}MB`}
+          value={formatBytes(stats.sizeBytes)}
         />
       </div>
 
       {libraryTab === "uploads" ? (
         <>
-          <label className="flex h-28 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed border-cyan-400/40 bg-cyan-400/5 text-sm font-bold text-cyan-200 hover:bg-cyan-400/10">
-            <Upload size={24} />
+          <label
+            onDragOver={handleDragOverBox}
+            onDragLeave={handleDragLeaveBox}
+            onDrop={handleDropBox}
+            className={`flex h-28 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed text-sm font-bold transition-all duration-200 ${
+              isDraggingOverBox
+                ? "border-cyan-400 bg-cyan-400/20 text-cyan-100 scale-[1.02]"
+                : "border-cyan-400/40 bg-cyan-400/5 text-cyan-200 hover:bg-cyan-400/10"
+            }`}
+          >
+            <Upload size={24} className={`transition-transform duration-200 ${isDraggingOverBox ? "scale-110 -translate-y-0.5" : ""}`} />
             파일 업로드
             <span className="text-xs text-cyan-100/60">video / image / audio</span>
             <input
@@ -205,7 +228,7 @@ export default function VideoEditorMediaLibrary({ forcedTab }: { forcedTab?: Lib
                         <div className="mt-1 text-xs text-zinc-500 flex items-center gap-2">
                           <span className="uppercase">{item.type}</span>
                           <span>·</span>
-                          <span>{item.size ? `${(item.size / 1024 / 1024).toFixed(1)}MB` : "-"}</span>
+                          <span>{item.size ? formatBytes(item.size) : "-"}</span>
                           {isOffline && (
                             <>
                               <span>·</span>
@@ -247,17 +270,37 @@ export default function VideoEditorMediaLibrary({ forcedTab }: { forcedTab?: Lib
                         />
                       </label>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          addClipFromMedia(item);
-                        }}
-                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-zinc-300 hover:border-cyan-400 hover:text-cyan-200"
-                      >
-                        <Plus size={14} />
-                        타임라인에 추가
-                      </button>
+                      <div className="mt-3 flex gap-2 w-full">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            addClipFromMedia(item);
+                          }}
+                          className="flex-1 flex items-center justify-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-zinc-300 hover:border-cyan-400 hover:text-cyan-200"
+                        >
+                          <Plus size={14} />
+                          타임라인에 추가
+                        </button>
+                        <label
+                          className="flex items-center justify-center rounded-md border border-white/10 bg-white/5 p-2 text-zinc-400 hover:border-cyan-400 hover:text-cyan-200 cursor-pointer"
+                          title="미디어 파일 재연결"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Upload size={14} />
+                          <input
+                            type="file"
+                            accept={item.type === "video" ? "video/*" : item.type === "audio" ? "audio/*" : "image/*"}
+                            className="hidden"
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              if (file) {
+                                relinkMediaFile(item.id, file);
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
                     )}
                   </div>
                 );
@@ -420,4 +463,16 @@ function StatCard({
       </div>
     </div>
   );
+}
+
+function formatBytes(bytes: number, decimals = 1): string {
+  if (bytes === 0) return "0.0MB";
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  if (i < 2) {
+    return `${(bytes / 1024 / 1024).toFixed(dm)}MB`;
+  }
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + sizes[i];
 }

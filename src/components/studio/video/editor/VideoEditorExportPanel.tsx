@@ -15,6 +15,8 @@ import {
   RefreshCw,
   Volume2,
   VolumeX,
+  Folder,
+  Check,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -114,6 +116,7 @@ export default function VideoEditorExportPanel({
   onExportWebm,
   onExportMp4,
   onExportDirectMp4,
+  onExportAudioOnly,
   onRenderSampleFrame,
 }: {
   open: boolean;
@@ -122,6 +125,7 @@ export default function VideoEditorExportPanel({
   onExportWebm: (options?: VideoExportOptions) => Promise<void>;
   onExportMp4: (options?: VideoExportOptions) => Promise<void>;
   onExportDirectMp4: (options?: VideoExportOptions) => Promise<void>;
+  onExportAudioOnly: (options?: VideoExportOptions) => Promise<void>;
   onRenderSampleFrame: (time: number, options?: VideoExportOptions) => Promise<string>;
 }) {
   const {
@@ -139,7 +143,7 @@ export default function VideoEditorExportPanel({
     setExportQuality,
     currentTime,
   } = useVideoEditor();
-  const [selectedEngine, setSelectedEngine] = useState<VideoExportEngine>("quick-webm");
+  const [selectedEngine, setSelectedEngine] = useState<VideoExportEngine>("direct-mp4");
   const exportJob = useExportJob();
   const renderQueue = useRenderQueue();
   const isExporting = exportJob.status === "running";
@@ -168,6 +172,34 @@ export default function VideoEditorExportPanel({
   const [previewTime, setPreviewTime] = useState(0);
   const [mixedAudioBuffer, setMixedAudioBuffer] = useState<AudioBuffer | null>(null);
   const [isAudioLoading, setIsAudioLoading] = useState(false);
+
+  // New CapCut export options states
+  const [exportFileName, setExportFileName] = useState<string>(() => projectTitle);
+  const [exportFolderPath, setExportFolderPath] = useState<string>("기본 다운로드 폴더");
+  const [exportDirectoryHandle, setExportDirectoryHandle] = useState<any | null>(null);
+  const [exportVideoEnabled, setExportVideoEnabled] = useState<boolean>(true);
+  const [exportAudioEnabled, setExportAudioEnabled] = useState<boolean>(false);
+  const [audioExportFormat, setAudioExportFormat] = useState<"mp3" | "wav" | "aac">("mp3");
+  const [isQueueDrawerOpen, setIsQueueDrawerOpen] = useState<boolean>(false);
+
+  // Sync exportFileName with projectTitle
+  useEffect(() => {
+    setExportFileName(projectTitle);
+  }, [projectTitle]);
+
+  const handleSelectFolder = async () => {
+    try {
+      if ("showDirectoryPicker" in window) {
+        const handle = await (window as any).showDirectoryPicker({ startIn: "downloads" });
+        setExportDirectoryHandle(handle);
+        setExportFolderPath(handle.name);
+      } else {
+        alert("이 브라우저는 폴더 지정을 지원하지 않습니다. 파일은 브라우저 기본 다운로드 폴더에 저장됩니다.");
+      }
+    } catch (err) {
+      console.warn("Folder picker error or cancelled:", err);
+    }
+  };
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -736,9 +768,14 @@ export default function VideoEditorExportPanel({
         fps: job.fps,
         quality: job.quality,
         snapshot: job.snapshot,
+        fileName: (job as any).fileName,
+        directoryHandle: (job as any).directoryHandle,
+        audioFormat: (job as any).audioFormat,
       };
 
-      if (job.engine === "fast-webcodecs") {
+      if (job.engine === "audio-only") {
+        await onExportAudioOnly(options);
+      } else if (job.engine === "fast-webcodecs") {
         await onExportWebCodecs(options);
       } else if (job.engine === "quick-webm") {
         await onExportWebm(options);
@@ -807,9 +844,14 @@ export default function VideoEditorExportPanel({
   }, [isExporting, processQueueItem, renderQueue]);
 
   const handleEnqueueExport = async () => {
+    if (!exportVideoEnabled && !exportAudioEnabled) {
+      window.alert("내보낼 대상을 선택해 주세요 (동영상 또는 오디오).");
+      return;
+    }
+
     const preflight = await executePreflight(createPreflightInput());
 
-    if (!preflight.canRender) {
+    if (exportVideoEnabled && !preflight.canRender) {
       window.alert(`내보내기를 시작할 수 없습니다.\n\n${preflight.blockingReasons.join("\n")}`);
       return;
     }
@@ -817,47 +859,70 @@ export default function VideoEditorExportPanel({
     const benchmark = await runExportBenchmark(createBenchmarkInput(), { sampleFrames: 10 });
     setBenchmarkResult(benchmark);
     const size = getExportSize(exportResolution, canvasRatio);
-    const snapshot = buildRenderJobSnapshot({
-      context: {
-        projectTitle,
-        clips,
-        mediaItems,
-        tracks,
-        totalDuration,
-        canvasRatio,
-      },
-      options: {
-        engine: selectedEngine,
+
+    if (exportVideoEnabled) {
+      const snapshot = buildRenderJobSnapshot({
+        context: {
+          projectTitle,
+          clips,
+          mediaItems,
+          tracks,
+          totalDuration,
+          canvasRatio,
+        },
+        options: {
+          engine: "direct-mp4",
+          resolution: exportResolution,
+          fps: exportFps,
+          quality: exportQuality,
+          width: size.width,
+          height: size.height,
+        },
+        preflight,
+        benchmark,
+      });
+
+      const queuedJob = enqueueRenderJob({
+        projectTitle: exportFileName || projectTitle,
+        engine: "direct-mp4",
         resolution: exportResolution,
         fps: exportFps,
         quality: exportQuality,
-        width: size.width,
-        height: size.height,
-      },
-      preflight,
-      benchmark,
-    });
+        duration: totalDuration,
+        snapshot,
+        preflight,
+        benchmark,
+        estimatedSeconds: benchmark.estimatedRenderSeconds,
+        fileName: exportFileName,
+        directoryHandle: exportDirectoryHandle,
+      } as any);
 
-    const queuedJob = enqueueRenderJob({
-      projectTitle,
-      engine: selectedEngine,
-      resolution: exportResolution,
-      fps: exportFps,
-      quality: exportQuality,
-      duration: totalDuration,
-      snapshot,
-      preflight,
-      benchmark,
-      estimatedSeconds: benchmark.estimatedRenderSeconds,
-    });
+      const createdRecord = await createVideoProjectExportRecord(queuedJob);
+      if (createdRecord.saved) {
+        attachExportRecordToRenderJob(queuedJob.id, createdRecord.record.id);
+        void refreshExportHistory();
+      }
+    }
 
-    const createdRecord = await createVideoProjectExportRecord(queuedJob);
-    if (createdRecord.saved) {
-      attachExportRecordToRenderJob(queuedJob.id, createdRecord.record.id);
-      void refreshExportHistory();
-    } else {
-      setExportHistoryStatus(`DB 기록 skipped: ${createdRecord.reason}`);
-      console.warn("[VideoExport] export record create skipped:", createdRecord.reason);
+    if (exportAudioEnabled) {
+      const queuedJob = enqueueRenderJob({
+        projectTitle: exportFileName ? `${exportFileName}_audio` : `${projectTitle}_audio`,
+        engine: "audio-only",
+        resolution: exportResolution,
+        fps: exportFps,
+        quality: exportQuality,
+        duration: totalDuration,
+        estimatedSeconds: 2,
+        fileName: exportFileName ? `${exportFileName}_audio` : undefined,
+        directoryHandle: exportDirectoryHandle,
+        audioFormat: audioExportFormat,
+      } as any);
+
+      const createdRecord = await createVideoProjectExportRecord(queuedJob);
+      if (createdRecord.saved) {
+        attachExportRecordToRenderJob(queuedJob.id, createdRecord.record.id);
+        void refreshExportHistory();
+      }
     }
   };
 
@@ -883,193 +948,42 @@ export default function VideoEditorExportPanel({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-8 backdrop-blur-sm">
-      <div className="max-h-[calc(100vh-4rem)] w-full max-w-3xl overflow-y-auto rounded-2xl border border-white/10 bg-[#101014] text-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
+      <div className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-white/10 bg-[#101014] text-white shadow-2xl overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 shrink-0">
           <div>
-            <h2 className="text-2xl font-black">내보내기</h2>
-            <p className="mt-1 text-sm text-zinc-500">
-              현재 편집 프로젝트를 영상 파일로 저장합니다.
+            <h2 className="text-lg font-black">내보내기</h2>
+            <p className="text-xs text-zinc-500">
+              현재 편집 프로젝트를 영상 또는 오디오 파일로 저장합니다.
             </p>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-white/10 bg-black/30 p-2 text-zinc-400 hover:text-white"
+            className="rounded-xl border border-white/10 bg-black/30 p-2 text-zinc-400 hover:text-white transition"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
-        <div className="grid gap-5 p-6 lg:grid-cols-[1fr_280px]">
-          <div className="space-y-5">
-            <ExportSection title="해상도" icon={Monitor}>
-              <div className="grid grid-cols-2 gap-2">
-                {basicResolutionOptions.map((item) => (
-                  <OptionButton
-                    key={item.value}
-                    label={item.label}
-                    desc={item.desc}
-                    active={exportResolution === item.value}
-                    onClick={() => setExportResolution(item.value as ExportResolution)}
-                  />
-                ))}
-              </div>
-            </ExportSection>
-
-            <ExportSection title="프레임" icon={Clock}>
-              <div className="grid grid-cols-2 gap-2">
-                {basicFpsOptions.map((item) => (
-                  <OptionButton
-                    key={item.value}
-                    label={item.label}
-                    active={exportFps === item.value}
-                    onClick={() => setExportFps(item.value as ExportFps)}
-                  />
-                ))}
-              </div>
-            </ExportSection>
-
-            <section className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <button
-                type="button"
-                onClick={() => setIsAdvancedOpen((value) => !value)}
-                className="flex w-full items-center justify-between text-sm font-black uppercase tracking-wider text-zinc-400"
-              >
-                <span className="flex items-center gap-2">
-                  <Gauge size={16} />
-                  Advanced
-                </span>
-                <ChevronDown
-                  size={16}
-                  className={`transition ${isAdvancedOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-
-              {isAdvancedOpen && (
-                <div className="mt-4 space-y-4">
-                  <div>
-                    <div className="mb-2 text-[10px] font-black uppercase tracking-widest text-zinc-600">
-                      고급 해상도
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {advancedResolutionOptions.map((item) => (
-                        <OptionButton
-                          key={item.value}
-                          label={item.label}
-                          desc={item.desc}
-                          active={exportResolution === item.value}
-                          onClick={() => setExportResolution(item.value as ExportResolution)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="mb-2 text-[10px] font-black uppercase tracking-widest text-zinc-600">
-                      고급 프레임
-                    </div>
-                    <div className="grid grid-cols-1 gap-2">
-                      {advancedFpsOptions.map((item) => (
-                        <OptionButton
-                          key={item.value}
-                          label={item.label}
-                          desc="부하가 크며 긴 영상에서는 시간이 오래 걸릴 수 있습니다."
-                          active={exportFps === item.value}
-                          onClick={() => setExportFps(item.value as ExportFps)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </section>
-
-            <ExportSection title="화질" icon={Gauge}>
-              <div className="grid grid-cols-1 gap-2">
-                {EXPORT_QUALITY_OPTIONS.map((item) => (
-                  <OptionButton
-                    key={item.value}
-                    label={item.label}
-                    desc={`${item.desc} · 현재 권장 ${formatBitrate(
-                      getRecommendedVideoBitrate({
-                        resolution: exportResolution,
-                        fps: exportFps,
-                        quality: item.value as ExportQuality,
-                      })
-                    )}`}
-                    active={exportQuality === item.value}
-                    onClick={() => setExportQuality(item.value as ExportQuality)}
-                  />
-                ))}
-              </div>
-            </ExportSection>
-
-            <ExportSection title="엔진" icon={Film}>
-              <div className="grid grid-cols-1 gap-2">
-                {VIDEO_EXPORT_ENGINES.map((item) => (
-                  <OptionButton
-                    key={item.value}
-                    label={item.label}
-                    desc={
-                      item.value === "fast-webcodecs"
-                        ? `${item.desc} ${
-                            webCodecsSupport === null
-                              ? "지원 확인 중..."
-                              : webCodecsSupport.supported
-                                ? "현재 브라우저 지원됨."
-                                : `현재 브라우저 미지원: ${webCodecsSupport.reason}`
-                          }`
-                        : item.value === "direct-mp4"
-                          ? `${item.desc} Mediabunny 설치됨 · H.264/AAC 지원은 Preflight에서 확인합니다.`
-                        : item.desc
-                    }
-                    active={selectedEngine === item.value}
-                    onClick={() => setSelectedEngine(item.value)}
-                  />
-                ))}
-              </div>
-            </ExportSection>
-          </div>
-
-          <aside className="space-y-4 rounded-2xl border border-white/10 bg-black/30 p-5">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-400/10 text-cyan-300">
-              <Film size={28} />
-            </div>
-
-            <div>
-              <div className="text-xs font-bold uppercase tracking-widest text-zinc-500">
-                Project
-              </div>
-              <div className="mt-1 truncate text-lg font-black">{projectTitle}</div>
-            </div>
-
-            {/* Export Frame Preview Card */}
-            <div className="rounded-xl border border-white/10 bg-black/40 p-3 text-xs">
-              <div className="mb-2 flex items-center justify-between font-black">
+        <div className="grid gap-6 p-6 lg:grid-cols-[400px_1fr] overflow-y-auto flex-1 min-h-0">
+          {/* Left Column: Preview */}
+          <div className="flex flex-col gap-4">
+            <div className="rounded-xl border border-white/5 bg-zinc-950/20 p-3">
+              <div className="mb-2 flex items-center justify-between font-black text-[11px]">
                 <span className="flex items-center gap-1.5 text-zinc-300">
-                  <Monitor size={14} className="text-cyan-400" />
-                  내보내기 프레임 프리뷰
+                  <Monitor size={13} className="text-cyan-400" />
+                  프레임 프리뷰
                   {isAudioLoading && (
-                    <span className="ml-1 flex items-center gap-1 text-[10px] text-zinc-500 font-normal">
-                      <Volume2 size={12} className="animate-pulse text-cyan-400" />
-                      믹싱 중...
+                    <span className="ml-1 flex items-center gap-1 text-[9px] text-zinc-500 font-normal">
+                      <Volume2 size={10} className="animate-pulse text-cyan-400" />
+                      믹싱...
                     </span>
                   )}
                   {!isAudioLoading && mixedAudioBuffer && (
-                    <span title="오디오 프리뷰 재생 가능 (볼륨이 켜져 있습니다)">
-                      <Volume2
-                        size={12}
-                        className="ml-1 text-cyan-400 cursor-help"
-                      />
-                    </span>
-                  )}
-                  {!isAudioLoading && !mixedAudioBuffer && clips.some((c) => c.type === "audio" || c.type === "video") && (
-                    <span title="오디오 데시벨 분석 또는 로드 실패">
-                      <VolumeX
-                        size={12}
-                        className="ml-1 text-zinc-600 cursor-help"
-                      />
+                    <span title="오디오 프리뷰 재생 가능">
+                      <Volume2 size={10} className="ml-1 text-cyan-400" />
                     </span>
                   )}
                 </span>
@@ -1078,194 +992,67 @@ export default function VideoEditorExportPanel({
                 </span>
               </div>
 
-              {previewImageUrl ? (
-                <div className="relative group overflow-hidden rounded-lg border border-white/5 bg-zinc-950 aspect-video flex items-center justify-center">
-                  <img
-                    src={previewImageUrl}
-                    alt="Export Frame Preview"
-                    className="h-full w-full object-contain"
-                  />
-                  {/* Playback controls overlay on hover */}
-                  <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition duration-150 flex items-center justify-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setIsPlayingPreview((prev) => !prev)}
-                      className="rounded-full bg-cyan-500 hover:bg-cyan-400 p-2.5 text-slate-900 transition active:scale-95 flex items-center justify-center shadow-lg hover:scale-105"
-                      title={isPlayingPreview ? "일시정지" : "재생"}
-                    >
-                      {isPlayingPreview ? (
-                        <Pause size={16} fill="currentColor" />
-                      ) : (
-                        <Play size={16} fill="currentColor" className="ml-0.5" />
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleGeneratePreviewFrame}
-                      disabled={isPreviewLoading}
-                      className="rounded-full bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 p-2.5 text-zinc-300 transition active:scale-95 flex items-center justify-center shadow-lg hover:scale-105"
-                      title="새로고침"
-                    >
-                      <RefreshCw size={16} className={isPreviewLoading ? "animate-spin" : ""} />
-                    </button>
+              <div className="relative group overflow-hidden rounded-lg border border-white/10 bg-zinc-950 aspect-video flex items-center justify-center">
+                {previewImageUrl ? (
+                  <>
+                    <img
+                      src={previewImageUrl}
+                      alt="Export Frame Preview"
+                      className="h-full w-full object-contain"
+                    />
+                    <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition duration-150 flex items-center justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setIsPlayingPreview((prev) => !prev)}
+                        className="rounded-full bg-cyan-500 hover:bg-cyan-400 p-2.5 text-slate-900 transition active:scale-95 flex items-center justify-center shadow-lg"
+                      >
+                        {isPlayingPreview ? (
+                          <Pause size={16} fill="currentColor" />
+                        ) : (
+                          <Play size={16} fill="currentColor" className="ml-0.5" />
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleGeneratePreviewFrame}
+                        disabled={isPreviewLoading}
+                        className="rounded-full bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 p-2.5 text-zinc-300 transition active:scale-95 flex items-center justify-center shadow-lg"
+                      >
+                        <RefreshCw size={16} className={isPreviewLoading ? "animate-spin" : ""} />
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-2 text-zinc-500 text-[10px] text-center p-3">
+                    <span>미리보기 프레임이 생성되지 않았습니다.</span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsPlayingPreview(true)}
+                        className="inline-flex items-center justify-center gap-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 px-3 py-1 font-black text-slate-900 text-[10px] transition active:scale-95"
+                      >
+                        <Play size={10} fill="currentColor" />
+                        재생
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleGeneratePreviewFrame}
+                        disabled={isPreviewLoading}
+                        className="inline-flex items-center justify-center rounded-lg bg-zinc-800 border border-zinc-700 hover:border-zinc-600 px-3 py-1 font-black text-zinc-300 text-[10px] transition active:scale-95"
+                      >
+                        {isPreviewLoading ? "렌더링..." : "프레임 로드"}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="rounded-lg border border-dashed border-white/10 bg-zinc-950/20 aspect-video flex flex-col items-center justify-center gap-2 text-zinc-500 text-[10px] text-center p-3">
-                  <span>현재 재생헤드 시점의 내보내기 결과물 프레임을 미리 확인하거나 애니메이션으로 재생해 보세요.</span>
-                  <div className="flex items-center gap-2 mt-1">
-                    <button
-                      type="button"
-                      onClick={() => setIsPlayingPreview(true)}
-                      className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 px-3 py-1.5 font-black text-slate-900 transition duration-150 active:scale-95 shadow-md"
-                    >
-                      <Play size={12} fill="currentColor" />
-                      프리뷰 재생
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleGeneratePreviewFrame}
-                      disabled={isPreviewLoading}
-                      className="inline-flex items-center justify-center rounded-lg bg-zinc-800 border border-zinc-700 hover:border-zinc-600 px-3 py-1.5 font-black text-zinc-300 transition duration-150 active:scale-95 disabled:opacity-50"
-                    >
-                      {isPreviewLoading ? "렌더링 중..." : "단일 프레임 생성"}
-                    </button>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="grid grid-cols-2 gap-2 text-[10px] rounded-xl border border-white/5 bg-black/10 p-3">
               <InfoBox label="클립" value={`${clips.length}개`} />
-              <InfoBox label="길이" value={`${totalDuration}s`} />
-              <InfoBox label="해상도" value={exportResolution} />
-              <InfoBox label="크기" value={selectedResolutionDesc} />
-              <InfoBox label="프레임" value={`${exportFps}fps`} />
-              <InfoBox label="화질" value={selectedQualityLabel} />
-              <InfoBox label="권장 비트레이트" value={formatBitrate(recommendedBitrate)} />
-              <InfoBox label="예상 파일" value={estimatedFileSizeLabel} />
-              <InfoBox label="예상 프레임" value={`${estimatedFrameCount.toLocaleString()}장`} />
-              <InfoBox label="예상 시간" value={isBenchmarking ? "측정 중" : estimatedRenderTimeLabel} />
-              <InfoBox
-                label="평균 프레임"
-                value={
-                  benchmarkResult
-                    ? `${benchmarkResult.averageFrameMs.toFixed(1)}ms`
-                    : "계산 중"
-                }
-              />
-              <InfoBox
-                label="Worker"
-                value={
-                  workerSupport === null
-                    ? "확인 전"
-                    : workerSupport.supported
-                      ? workerSupport.offscreenCanvas
-                        ? "Ready"
-                        : "Main fallback"
-                      : "Unavailable"
-                }
-              />
-              <InfoBox
-                label="WebGPU"
-                value={
-                  webgpuRendererSupport === null
-                    ? "확인 전"
-                    : webgpuRendererSupport.supported
-                      ? "Ready"
-                      : "Fallback"
-                }
-              />
-              <InfoBox
-                label="WebGL FX"
-                value={
-                  webglEffectsSupport === null
-                    ? "확인 전"
-                    : webglEffectsSupport.supported
-                      ? "Ready"
-                      : "Canvas fallback"
-                }
-              />
-              <InfoBox label="오디오" value={selectedEngineAudioMode} />
-              <InfoBox
-                label="AudioEnc"
-                value={
-                  selectedEngine === "direct-mp4"
-                    ? directMp4Config?.audio.supported
-                      ? "AAC"
-                      : "Fallback"
-                    : selectedEngine === "fast-webcodecs"
-                    ? audioEncoderConfig?.supported
-                      ? audioEncoderConfig.codec?.toUpperCase() || "Ready"
-                      : "Fallback"
-                    : "대기"
-                }
-              />
-              <InfoBox label="MIME" value={selectedMimeType} />
-              <InfoBox
-                label="WebCodecs"
-                value={
-                  selectedEngine === "direct-mp4"
-                    ? directMp4Config?.video.supported
-                      ? "H.264 OK"
-                      : "Fallback"
-                    : selectedEngine !== "fast-webcodecs"
-                    ? "대기"
-                    : webCodecsConfig?.supported
-                      ? "Config OK"
-                      : "Fallback"
-                }
-              />
-              <InfoBox
-                label="WC Worker"
-                value={
-                  selectedEngine !== "fast-webcodecs"
-                    ? "대기"
-                    : canUseWebCodecsWorker
-                      ? "Orchestrate"
-                      : "Main fallback"
-                }
-              />
-              <InfoBox
-                label="Codec"
-                value={
-                  selectedEngine === "fast-webcodecs"
-                    ? `${webCodecsConfig?.codec || "vp8"} · ${formatBitrate(recommendedBitrate)}`
-                    : selectedEngine === "direct-mp4"
-                      ? `${directMp4Config?.video.codec || "H.264"}/${directMp4Config?.audio.codecString || "AAC"} · ${formatBitrate(recommendedBitrate)}`
-                    : "-"
-                }
-              />
-              <InfoBox
-                label="Direct"
-                value={
-                  selectedEngine !== "direct-mp4"
-                    ? "대기"
-                    : directMp4Config?.supported
-                      ? hasAudioSource
-                        ? "H.264+AAC"
-                        : "H.264"
-                      : "Fallback"
-                }
-              />
-              <InfoBox
-                label="Benchmark"
-                value={
-                  benchmarkResult
-                    ? `${benchmarkResult.sampledFrames}f · ${getBenchmarkModeLabel(benchmarkResult.mode)}`
-                    : "대기"
-                }
-              />
-              <InfoBox
-                label="Fallback"
-                value={
-                  selectedEngine === "fast-webcodecs"
-                    ? "Quick WebM"
-                    : selectedEngine === "direct-mp4"
-                      ? "Compatible MP4"
-                      : "None"
-                }
-              />
+              <InfoBox label="길이" value={`${totalDuration.toFixed(1)}초`} />
+              <InfoBox label="예상 파일 크기" value={estimatedFileSizeLabel} />
+              <InfoBox label="예상 소요 시간" value={isBenchmarking ? "측정 중" : estimatedRenderTimeLabel} />
             </div>
 
             {benchmarkResult && benchmarkResult.riskLevel !== "low" && (
@@ -1295,358 +1082,340 @@ export default function VideoEditorExportPanel({
                   if (action === "set-30fps") {
                     setExportFps(30);
                   }
-                  if (action === "set-quick-webm") {
-                    setSelectedEngine("quick-webm");
-                  }
-                  if (action === "set-compatible-mp4") {
-                    setSelectedEngine("compatible-mp4");
-                  }
                 }}
               />
             )}
+          </div>
 
-            {selectedEngine === "fast-webcodecs" && (
-              <PreflightCard
-                tone={isExperimentalWebCodecs ? "warning" : "info"}
-                title={isExperimentalWebCodecs ? "WebCodecs Experimental" : "WebCodecs Config"}
-                items={[
-                  webCodecsConfig?.supported
-                    ? `지원 config: ${webCodecsConfig.width ?? "-"}x${webCodecsConfig.height ?? "-"} · ${webCodecsConfig.fps ?? exportFps}fps`
-                    : `미지원 config: ${webCodecsConfig?.reason || "지원 확인 중"}`,
-                  `Codec ${webCodecsConfig?.codec || "vp8"} · bitrate ${formatBitrate(recommendedBitrate)}`,
-                  isExperimentalWebCodecs
-                    ? "2K/4K 또는 60fps는 preflight low/medium일 때만 experimental로 시도합니다."
-                    : "권장 Fast WebCodecs 경로는 720p/1080p 30fps video-only입니다.",
-                  hasAudioSource
-                    ? "오디오는 아직 WebCodecs mux 대상이 아니며 Quick WebM/MP4 fallback 안내를 유지합니다."
-                    : "현재 설정은 video-only WebCodecs export 대상입니다.",
-                ]}
-              />
-            )}
+          {/* Right Column: Settings & Actions */}
+          <div className="flex flex-col justify-between gap-4 h-full min-h-[400px]">
+            <div className="space-y-4">
+              {/* File Name */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-black text-zinc-400">이름</label>
+                <input
+                  type="text"
+                  value={exportFileName}
+                  onChange={(e) => setExportFileName(e.target.value)}
+                  className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs font-medium text-white outline-none focus:border-cyan-400 transition"
+                  placeholder="프로젝트 이름 입력"
+                />
+              </div>
 
-            {selectedEngine === "direct-mp4" && (
-              <PreflightCard
-                tone={directMp4Config?.supported ? "info" : "warning"}
-                title="Direct MP4 Capability"
-                items={[
-                  directMp4Config?.video.supported
-                    ? `H.264 ${directMp4Config.video.codec || "지원"} ${directMp4Config.video.width ?? exportSize.width}x${directMp4Config.video.height ?? exportSize.height} · ${directMp4Config.video.fps ?? exportFps}fps`
-                    : directMp4Config?.video.reason || "H.264 VideoEncoder 지원 확인 중",
-                  hasAudioSource
-                    ? directMp4Config?.audio.supported
-                      ? `AAC ${directMp4Config.audio.codecString || "mp4a.40.2"} ${directMp4Config.audio.sampleRate ?? 48000}Hz 지원`
-                      : directMp4Config?.audio.reason || "AAC AudioEncoder 지원 확인 중"
-                    : "오디오 소스가 없어 AAC encode는 선택 사항입니다.",
-                  directMp4Config?.muxer.supported
-                    ? "Mediabunny MP4 muxer 구성 요소가 감지되었습니다."
-                    : directMp4Config?.muxer.reason || "Mediabunny MP4 muxer 확인 중",
-                  directMp4Config?.supported
-                    ? "예상 경로: WebM 중간 파일 없이 Direct MP4 mux"
-                    : "예상 경로: Compatible MP4 fallback",
-                  hasAudioSource
-                    ? "오디오 포함 프로젝트는 OfflineAudioContext mixdown 후 AAC 트랙으로 직접 MP4 mux를 시도합니다. 실패 시 Compatible MP4 fallback을 사용합니다."
-                    : "오디오가 없는 프로젝트는 H.264 Direct MP4를 직접 생성하고, 실패 시 Compatible MP4 fallback을 사용합니다.",
-                ]}
-              />
-            )}
-
-            {selectedEngine === "fast-webcodecs" && hasAudioSource && (
-              <PreflightCard
-                tone="warning"
-                title="Audio WebCodecs Beta"
-                items={[
-                  audioEncoderConfig?.supported
-                    ? `AudioEncoder ${audioEncoderConfig.codec?.toUpperCase()} ${audioEncoderConfig.sampleRate ?? 48000}Hz 지원 감지`
-                    : audioEncoderConfig?.reason || "AudioEncoder 지원 확인 중",
-                  "volume, muted, fadeIn, fadeOut, audioGain, audioPan 값은 기존 Quick WebM/MP4 mixdown 경로에서 반영됩니다.",
-                  "현재 WebCodecs muxer는 video-only라 오디오 포함 Fast WebCodecs는 Quick WebM fallback으로 처리됩니다.",
-                ]}
-              />
-            )}
-
-            {selectedEngine === "fast-webcodecs" && (
-              <PreflightCard
-                tone={canUseWebCodecsWorker ? "info" : "warning"}
-                title="WebCodecs Worker"
-                items={[
-                  canUseWebCodecsWorker
-                    ? "Worker와 OffscreenCanvas가 감지되어 WebCodecs worker orchestration을 먼저 실행합니다."
-                    : workerSupport?.reason || "Worker 또는 OffscreenCanvas가 부족해 main-thread WebCodecs로 fallback합니다.",
-                  "현재 Worker는 snapshot/config 검사와 cancel 메시지 수신을 담당합니다.",
-                  "DOM media element 기반 frame rendering은 아직 main-thread에 남아 있습니다.",
-                ]}
-              />
-            )}
-
-            {preflightResult && !preflightResult.canRender && (
-              <PreflightCard
-                tone="danger"
-                title="Preflight 차단"
-                items={preflightResult.blockingReasons}
-              />
-            )}
-
-            {preflightResult?.warnings.length ? (
-              <PreflightCard
-                tone={preflightResult.riskLevel === "extreme" ? "danger" : "warning"}
-                title={`Render Preflight · ${preflightResult.riskLevel.toUpperCase()}`}
-                items={preflightResult.warnings}
-              />
-            ) : null}
-
-            {preflightResult?.recommendations.length ? (
-              <PreflightCard
-                tone="info"
-                title="권장 사항"
-                items={preflightResult.recommendations}
-              />
-            ) : null}
-
-            {showPerformanceWarning && (
-              <div className="rounded-xl border border-red-400/25 bg-red-400/10 p-3 text-xs leading-5 text-red-100">
-                <div className="mb-1 flex items-center gap-2 font-black">
-                  <AlertCircle size={14} />
-                  고부하 내보내기
+              {/* Export Folder Location */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-black text-zinc-400">내보내기 위치</label>
+                <div
+                  onClick={handleSelectFolder}
+                  className="flex gap-2 cursor-pointer group"
+                >
+                  <input
+                    type="text"
+                    readOnly
+                    value={exportFolderPath}
+                    className="flex-1 truncate rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs font-medium text-zinc-400 group-hover:border-zinc-500 outline-none cursor-pointer transition"
+                  />
+                  <button
+                    type="button"
+                    className="flex shrink-0 items-center justify-center rounded-lg border border-white/10 bg-zinc-900 hover:bg-zinc-800 p-2 text-zinc-300 transition active:scale-95 cursor-pointer"
+                    title="폴더 지정"
+                  >
+                    <Folder size={16} />
+                  </button>
                 </div>
-                {exportResolution === "4k" && exportFps === 60
-                  ? "4K/60fps는 브라우저 메모리와 CPU 사용량이 매우 큽니다. 긴 영상은 Quick WebM 또는 1080p/30fps를 권장합니다."
-                  : "현재 설정은 렌더링 시간이 오래 걸릴 수 있습니다. 브라우저가 느려지면 해상도나 FPS를 낮춰 주세요."}
+                <p className="text-[10px] text-zinc-500 leading-normal mt-1">
+                  ※ 브라우저 보안 정책상 '다운로드'나 '데스크톱' 상위 폴더 자체는 직접 선택이 불가능하므로, 해당 폴더 안에 **새 폴더**를 만들어 선택해 주세요.
+                </p>
               </div>
-            )}
 
-            <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-xs leading-5 text-amber-200">
-              <div className="mb-1 flex items-center gap-2 font-black">
-                <AlertCircle size={14} />
-                현재 단계
+              {/* Video Option */}
+              <div className="rounded-xl border border-white/5 bg-black/20 p-3.5 space-y-3">
+                <label className="flex items-center gap-2 text-xs font-black text-zinc-200 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={exportVideoEnabled}
+                    onChange={(e) => setExportVideoEnabled(e.target.checked)}
+                    className="rounded border-white/10 bg-black/40 text-cyan-400 focus:ring-0 w-4 h-4 cursor-pointer"
+                  />
+                  <span>동영상 내보내기</span>
+                </label>
+
+                {exportVideoEnabled && (
+                  <div className="grid grid-cols-2 gap-3 pl-6 border-l border-white/5">
+                    {/* Resolution */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-zinc-500">해상도</label>
+                      <select
+                        value={exportResolution}
+                        onChange={(e) => setExportResolution(e.target.value as ExportResolution)}
+                        className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400 transition"
+                      >
+                        {EXPORT_RESOLUTION_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value} className="bg-[#101014]">
+                            {opt.label} ({opt.desc})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Framerate */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-zinc-500">프레임 속도</label>
+                      <select
+                        value={exportFps}
+                        onChange={(e) => setExportFps(Number(e.target.value) as ExportFps)}
+                        className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400 transition"
+                      >
+                        {EXPORT_FPS_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value} className="bg-[#101014]">
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Quality */}
+                    <div className="col-span-2 space-y-1">
+                      <label className="text-[10px] font-black text-zinc-500">화질 (비트레이트)</label>
+                      <select
+                        value={exportQuality}
+                        onChange={(e) => setExportQuality(e.target.value as ExportQuality)}
+                        className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400 transition"
+                      >
+                        {EXPORT_QUALITY_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value} className="bg-[#101014]">
+                            {opt.label} ({opt.desc})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
-              모달을 닫아도 현재 내보내기는 계속됩니다. 페이지 이동, 새로고침, 탭 닫기 시에는 작업이 중단될 수 있습니다. 부하 수준: {exportLoadLevel.toUpperCase()}.
-              {webglEffectsSupport?.supported === false
-                ? ` WebGL 효과 렌더러는 미지원 상태라 기존 Canvas filter로 fallback합니다.`
-                : ""}
-              {selectedEngine === "fast-webcodecs" && hasAudioSource
-                ? " Fast WebCodecs는 video-only라 오디오가 필요하면 Quick WebM 또는 MP4를 선택하세요."
-                : ""}
-              {selectedEngine === "fast-webcodecs" && !fastWebCodecsReady
-                ? " 현재 설정에서 Fast WebCodecs가 실패하면 Quick WebM으로 자동 fallback합니다."
-                : ""}
+
+              {/* Audio Option */}
+              <div className="rounded-xl border border-white/5 bg-black/20 p-3.5 space-y-3">
+                <label className="flex items-center gap-2 text-xs font-black text-zinc-200 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={exportAudioEnabled}
+                    onChange={(e) => setExportAudioEnabled(e.target.checked)}
+                    className="rounded border-white/10 bg-black/40 text-cyan-400 focus:ring-0 w-4 h-4 cursor-pointer"
+                  />
+                  <span>오디오만 내보내기</span>
+                </label>
+
+                {exportAudioEnabled && (
+                  <div className="pl-6 border-l border-white/5">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-zinc-500">오디오 포맷</label>
+                      <select
+                        value={audioExportFormat}
+                        onChange={(e) => setAudioExportFormat(e.target.value as "mp3" | "wav" | "aac")}
+                        className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400 transition"
+                      >
+                        <option value="mp3" className="bg-[#101014]">MP3</option>
+                        <option value="wav" className="bg-[#101014]">WAV (무손실)</option>
+                        <option value="aac" className="bg-[#101014]">AAC</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Collapsible Drawer for Queue and History */}
+              <div className="border-t border-white/5 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setIsQueueDrawerOpen((prev) => !prev)}
+                  className="flex w-full items-center justify-between text-[11px] font-black text-zinc-400 hover:text-zinc-200 transition"
+                >
+                  <span className="flex items-center gap-2">
+                    <Database size={13} />
+                    대기열 및 내보내기 히스토리 ({renderQueue.length})
+                  </span>
+                  <ChevronDown
+                    size={13}
+                    className={`transform transition-transform duration-200 ${
+                      isQueueDrawerOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {isQueueDrawerOpen && (
+                  <div className="mt-3 max-h-40 overflow-y-auto space-y-3 pr-1 text-xs">
+                    {/* Render Queue Section */}
+                    <div className="rounded-lg border border-white/5 bg-black/40 p-2.5 space-y-2">
+                      <div className="text-[10px] font-black text-zinc-500">
+                        진행 중인 대기열
+                      </div>
+                      {activeQueueItems.length === 0 ? (
+                        <div className="text-[10px] text-zinc-600 text-center py-1">
+                          대기 중인 작업이 없습니다.
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {activeQueueItems.map((item) => (
+                            <div key={item.id} className="rounded border border-white/5 bg-zinc-950/40 p-2 text-[10px] space-y-1">
+                              <div className="flex justify-between font-black text-zinc-300">
+                                <span className="truncate max-w-[150px]">{item.projectTitle}</span>
+                                <span className="text-cyan-400">{Math.round(item.progress.progress)}%</span>
+                              </div>
+                              <div className="text-zinc-500 flex justify-between">
+                                <span>{getEngineLabel(item.engine)} · {item.resolution} · {item.fps}fps</span>
+                                <span>{getQueueStatusLabel(item.status)}</span>
+                              </div>
+                              <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${
+                                    item.status === "failed"
+                                      ? "bg-red-400"
+                                      : item.status === "cancelled"
+                                        ? "bg-amber-400"
+                                        : item.status === "completed"
+                                          ? "bg-emerald-400"
+                                          : "bg-cyan-400"
+                                  }`}
+                                  style={{ width: `${item.progress.progress}%` }}
+                                />
+                              </div>
+                              {item.progress.message && (
+                                <div className="text-[9px] text-zinc-600 truncate">{item.progress.message}</div>
+                              )}
+                              <div className="flex gap-1.5 mt-1">
+                                {item.status === "pending" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCancelQueuedExport(item)}
+                                    className="rounded px-1.5 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white"
+                                  >
+                                    취소
+                                  </button>
+                                )}
+                                {(item.status === "failed" || item.status === "cancelled") && (
+                                  <button
+                                    type="button"
+                                    onClick={() => retryRenderQueueJob(item.id)}
+                                    className="rounded px-1.5 py-0.5 bg-cyan-400/10 hover:bg-cyan-400/20 border border-cyan-400/20 text-cyan-300 hover:text-cyan-200"
+                                  >
+                                    재시도
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Export History Section */}
+                    <div className="rounded-lg border border-white/5 bg-black/40 p-2.5 space-y-2">
+                      <div className="text-[10px] font-black text-zinc-500">
+                        최근 완료된 내보내기
+                      </div>
+                      {recentExportRecords.length === 0 ? (
+                        <div className="text-[10px] text-zinc-600 text-center py-1">
+                          완료 기록이 없습니다.
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {recentExportRecords.slice(0, 5).map((record) => (
+                            <div key={record.id} className="rounded border border-white/5 bg-zinc-950/40 p-2 text-[10px] flex justify-between items-center">
+                              <div className="min-w-0 flex-1 pr-2">
+                                <div className="truncate font-black text-zinc-300">{record.title}</div>
+                                <div className="text-[9px] text-zinc-500">
+                                  {record.export_resolution} · {record.export_fps}fps · {record.export_quality}
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <span className={`font-black ${getExportRecordStatusClass(record.status)}`}>
+                                  {getExportRecordStatusLabel(record.status)}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-              <div className="mb-2 flex items-center justify-between text-xs">
-                <span className="font-black text-zinc-300">
-                  {exportProgress.stage === "idle"
-                    ? "대기 중"
-                    : exportProgress.stage === "worker-preflight"
-                      ? "Worker 확인"
-                    : exportProgress.stage === "encoding-webcodecs"
-                      ? "WebCodecs 인코딩"
-                    : exportProgress.stage === "rendering-webm"
-                      ? "WebM 렌더링"
-                      : exportProgress.stage === "converting-mp4"
-                        ? "MP4 변환"
+            {/* Progress / Actions Footer */}
+            <div className="border-t border-white/5 pt-4 shrink-0">
+              {/* If exporting, show status progress */}
+              {isExporting ? (
+                <div className="rounded-xl border border-white/5 bg-cyan-950/10 p-3">
+                  <div className="mb-2 flex items-center justify-between text-xs">
+                    <span className="font-black text-zinc-300">
+                      {exportProgress.stage === "idle"
+                        ? "대기 중"
+                        : exportProgress.stage === "worker-preflight"
+                          ? "Worker 확인"
+                        : exportProgress.stage === "encoding-webcodecs"
+                          ? "오디오/비디오 인코딩"
+                        : exportProgress.stage === "rendering-webm"
+                          ? "WebM 렌더링"
+                        : exportProgress.stage === "converting-mp4"
+                          ? "MP4 변환"
                         : exportProgress.stage === "completed"
                           ? "완료"
                           : exportProgress.stage === "cancelled"
                             ? "취소됨"
                             : "실패"}
-                </span>
-                <span className="font-mono text-cyan-300">
-                  {Math.round(exportProgress.progress)}%
-                </span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    exportProgress.stage === "failed"
-                      ? "bg-red-400"
-                      : exportProgress.stage === "cancelled"
-                        ? "bg-amber-400"
-                        : "bg-cyan-400"
-                  }`}
-                  style={{ width: `${Math.max(0, Math.min(100, exportProgress.progress))}%` }}
-                />
-              </div>
-              <div className="mt-2 text-[11px] leading-5 text-zinc-500">
-                {exportProgress.message}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-2">
-              <button
-                type="button"
-                onClick={handleEnqueueExport}
-                disabled={isPreflighting || preflightResult?.canRender === false}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-400 py-3 font-black text-black hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Download size={17} />
-                {isPreflighting
-                  ? "Preflight 확인 중..."
-                  : isExporting
-                  ? "대기열에 추가"
-                  : selectedEngine === "fast-webcodecs"
-                    ? "Fast WebM 큐 추가"
-                    : selectedEngine === "quick-webm"
-                      ? "WebM 큐 추가"
-                      : selectedEngine === "direct-mp4"
-                        ? "Direct MP4 큐 추가"
-                      : "MP4 큐 추가"}
-              </button>
-
-              <button
-                type="button"
-                disabled={!isExporting}
-                onClick={handleCancelExport}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/30 py-3 font-black text-white hover:border-red-400 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                취소
-              </button>
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-              <div className="mb-3 flex items-center justify-between text-xs">
-                <span className="font-black text-zinc-300">Render Queue</span>
-                <span className="font-mono text-zinc-500">{renderQueue.length} jobs</span>
-              </div>
-
-              {activeQueueItems.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-white/10 p-3 text-center text-[11px] text-zinc-500">
-                  대기 중인 render job이 없습니다.
+                    </span>
+                    <span className="font-mono text-cyan-300 font-bold">
+                      {Math.round(exportProgress.progress)}%
+                    </span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        exportProgress.stage === "failed"
+                          ? "bg-red-400"
+                          : exportProgress.stage === "cancelled"
+                            ? "bg-amber-400"
+                            : "bg-cyan-400"
+                      }`}
+                      style={{ width: `${Math.max(0, Math.min(100, exportProgress.progress))}%` }}
+                    />
+                  </div>
+                  {exportProgress.message && (
+                    <div className="mt-1.5 text-[10px] leading-relaxed text-zinc-500">
+                      {exportProgress.message}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleCancelExport}
+                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 py-2 text-xs font-black text-red-400 hover:bg-red-500/20 active:scale-95 transition hover:text-red-300"
+                  >
+                    내보내기 중단
+                  </button>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {activeQueueItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="rounded-lg border border-white/10 bg-black/30 p-2"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="truncate text-[11px] font-black text-zinc-200">
-                            {getEngineLabel(item.engine)} · {item.resolution} · {item.fps}fps
-                          </div>
-                          <div className="mt-0.5 text-[10px] text-zinc-600">
-                            {getQueueStatusLabel(item.status)}
-                          </div>
-                          {item.snapshot && (
-                            <div className="mt-1 text-[10px] leading-4 text-zinc-500">
-                              {item.snapshot.width}×{item.snapshot.height} ·{" "}
-                              {item.snapshot.totalFrames.toLocaleString()}f ·{" "}
-                              {formatEstimatedRenderTime(item.snapshot.estimatedRenderSeconds ?? 0)}
-                            </div>
-                          )}
-                        </div>
-                        <div className="shrink-0 font-mono text-[10px] text-cyan-300">
-                          {Math.round(item.progress.progress)}%
-                        </div>
-                      </div>
-
-                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
-                        <div
-                          className={`h-full rounded-full ${
-                            item.status === "failed"
-                              ? "bg-red-400"
-                              : item.status === "cancelled"
-                                ? "bg-amber-400"
-                                : item.status === "completed"
-                                  ? "bg-emerald-400"
-                                  : "bg-cyan-400"
-                          }`}
-                          style={{
-                            width: `${Math.max(0, Math.min(100, item.progress.progress))}%`,
-                          }}
-                        />
-                      </div>
-
-                      {item.progress.message && (
-                        <div className="mt-1 line-clamp-2 text-[10px] leading-4 text-zinc-500">
-                          {item.progress.message}
-                        </div>
-                      )}
-
-                      {item.snapshot && (
-                        <div className="mt-1 text-[10px] leading-4 text-zinc-600">
-                          MIME {item.snapshot.selectedMimeType || "unknown"} · Risk{" "}
-                          {item.snapshot.preflight?.riskLevel || item.snapshot.benchmark?.riskLevel || "low"}
-                        </div>
-                      )}
-
-                      <div className="mt-2 flex gap-2">
-                        {item.status === "pending" && (
-                          <button
-                            type="button"
-                            onClick={() => handleCancelQueuedExport(item)}
-                            className="rounded-md border border-white/10 px-2 py-1 text-[10px] font-black text-zinc-300 hover:border-amber-400 hover:text-amber-200"
-                          >
-                            취소
-                          </button>
-                        )}
-                        {(item.status === "failed" || item.status === "cancelled") && (
-                          <button
-                            type="button"
-                            onClick={() => retryRenderQueueJob(item.id)}
-                            className="rounded-md border border-white/10 px-2 py-1 text-[10px] font-black text-zinc-300 hover:border-cyan-400 hover:text-cyan-200"
-                          >
-                            재시도
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-black/20 py-2.5 text-xs font-black text-zinc-300 hover:text-white transition active:scale-95"
+                  >
+                    닫기
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleEnqueueExport}
+                    disabled={isPreflighting || preflightResult?.canRender === false}
+                    className="flex-[2] flex items-center justify-center gap-1.5 rounded-xl bg-cyan-400 py-2.5 text-xs font-black text-black hover:bg-cyan-300 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Download size={14} />
+                    {isPreflighting ? "Preflight 확인 중..." : "내보내기"}
+                  </button>
                 </div>
               )}
             </div>
-
-            <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-              <div className="mb-3 flex items-center justify-between gap-2 text-xs">
-                <span className="flex items-center gap-1.5 font-black text-zinc-300">
-                  <Database size={13} />
-                  Export History
-                </span>
-                <span className="truncate font-mono text-[10px] text-zinc-500">
-                  {exportHistoryStatus}
-                </span>
-              </div>
-
-              {recentExportRecords.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-white/10 p-3 text-center text-[11px] text-zinc-500">
-                  로그인 전이거나 저장된 export 기록이 없습니다.
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {recentExportRecords.slice(0, 5).map((record) => (
-                    <div
-                      key={record.id}
-                      className="rounded-lg border border-white/10 bg-black/30 p-2"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="truncate text-[11px] font-black text-zinc-200">
-                            {record.title}
-                          </div>
-                          <div className="mt-0.5 text-[10px] text-zinc-600">
-                            {record.export_resolution} · {record.export_fps}fps ·{" "}
-                            {record.export_quality}
-                          </div>
-                          <div className="mt-0.5 truncate text-[10px] text-zinc-600">
-                            {record.output_file_name || "local file"} ·{" "}
-                            {formatExportRecordTime(record.created_at)}
-                          </div>
-                        </div>
-                        <div className="shrink-0 text-right">
-                          <div className={`font-black text-[10px] ${getExportRecordStatusClass(record.status)}`}>
-                            {getExportRecordStatusLabel(record.status)}
-                          </div>
-                          <div className="font-mono text-[10px] text-cyan-300">
-                            {record.progress}%
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </aside>
+          </div>
         </div>
       </div>
     </div>
@@ -1853,6 +1622,8 @@ function getExportSize(resolution: ExportResolution, ratio: CanvasRatio) {
           ? 1920
           : 1280;
 
+  const makeEven = (n: number) => Math.round(n / 2) * 2;
+
   if (ratio === "9:16") {
     if (resolution === "4k") return { width: 2160, height: 3840 };
     if (resolution === "2k") return { width: 1440, height: 2560 };
@@ -1867,10 +1638,10 @@ function getExportSize(resolution: ExportResolution, ratio: CanvasRatio) {
     return { width: 720, height: 720 };
   }
 
-  if (ratio === "4:5") return { width: Math.round(longEdge * 0.8), height: longEdge };
-  if (ratio === "5:4") return { width: longEdge, height: Math.round(longEdge * 0.8) };
-  if (ratio === "21:9") return { width: longEdge, height: Math.round((longEdge * 9) / 21) };
-  if (ratio === "4:3") return { width: longEdge, height: Math.round((longEdge * 3) / 4) };
+  if (ratio === "4:5") return { width: makeEven(longEdge * 0.8), height: makeEven(longEdge) };
+  if (ratio === "5:4") return { width: makeEven(longEdge), height: makeEven(longEdge * 0.8) };
+  if (ratio === "21:9") return { width: makeEven(longEdge), height: makeEven((longEdge * 9) / 21) };
+  if (ratio === "4:3") return { width: makeEven(longEdge), height: makeEven((longEdge * 3) / 4) };
 
   if (resolution === "4k") return { width: 3840, height: 2160 };
   if (resolution === "2k") return { width: 2560, height: 1440 };
