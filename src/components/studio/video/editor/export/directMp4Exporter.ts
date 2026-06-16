@@ -18,6 +18,7 @@ type DirectMp4VideoExportInput = {
   audioBitrate?: number;
   renderFrame: (time: number) => Promise<void>;
   options?: VideoExportOptions;
+  codec?: string;
 };
 
 function throwIfAborted(signal?: AbortSignal) {
@@ -35,6 +36,7 @@ export async function exportDirectMp4VideoOnly({
   audioBitrate = 160_000,
   renderFrame,
   options,
+  codec,
 }: DirectMp4VideoExportInput) {
   const signal = options?.signal;
   throwIfAborted(signal);
@@ -49,6 +51,7 @@ export async function exportDirectMp4VideoOnly({
     bitrate,
     keyFrameInterval: 2,
     sizeChangeBehavior: "deny",
+    fullCodecString: codec,
   });
   const audioSource = audioBuffer
     ? new AudioBufferSource({
@@ -58,7 +61,7 @@ export async function exportDirectMp4VideoOnly({
       })
     : null;
 
-  output.addVideoTrack(videoSource);
+  output.addVideoTrack(videoSource, { frameRate: fps });
   if (audioSource) {
     output.addAudioTrack(audioSource);
   }

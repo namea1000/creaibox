@@ -6,6 +6,10 @@ export const DIRECT_MP4_H264_CODEC_CANDIDATES = [
   "avc1.42001f",
   "avc1.4d002a",
   "avc1.64002a",
+  "avc1.4d0033",
+  "avc1.640033",
+  "avc1.4d0034",
+  "avc1.640034",
 ] as const;
 
 export const DIRECT_MP4_AAC_CODEC_CANDIDATES = ["mp4a.40.2"] as const;

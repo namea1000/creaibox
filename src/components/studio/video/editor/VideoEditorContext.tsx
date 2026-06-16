@@ -1136,6 +1136,13 @@ function getMediaDuration(file: File): Promise<number> {
     // Save to IndexedDB
     await saveFileToCache(id, file);
 
+    let newThumbnailUrl = "";
+    if (type === "image") {
+      newThumbnailUrl = newUrl;
+    } else if (type === "video") {
+      newThumbnailUrl = await getVideoThumbnail(file);
+    }
+
     setMediaItems((prev) =>
       prev.map((item) =>
         item.id === id
@@ -1146,6 +1153,7 @@ function getMediaDuration(file: File): Promise<number> {
               url: newUrl,
               file,
               size: file.size,
+              thumbnailUrl: newThumbnailUrl || item.thumbnailUrl,
             }
           : item
       )
@@ -1176,10 +1184,12 @@ function getMediaDuration(file: File): Promise<number> {
                 if (isLocal) {
                   const cachedFile = await getFileFromCache(item.id);
                   if (cachedFile) {
+                    const newUrl = URL.createObjectURL(cachedFile);
                     return {
                       ...item,
-                      url: URL.createObjectURL(cachedFile),
+                      url: newUrl,
                       file: cachedFile,
+                      thumbnailUrl: item.type === "image" ? newUrl : item.thumbnailUrl,
                     };
                   }
                 }

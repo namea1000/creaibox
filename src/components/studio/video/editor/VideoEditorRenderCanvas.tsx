@@ -1879,6 +1879,7 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
               bitrate: targetBitrate,
               audioBuffer,
               audioBitrate: support.audio.bitrate ?? 160_000,
+              codec: support.video.codec,
               renderFrame: createFrameRenderer(
                 canvas,
                 ctx,

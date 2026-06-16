@@ -182,7 +182,6 @@ export default function VideoEditorExportPanel({
   const [audioExportFormat, setAudioExportFormat] = useState<"mp3" | "wav" | "aac">("mp3");
   const [exportVideoFormat, setExportVideoFormat] = useState<"mp4" | "mov">("mp4");
   const [isQueueDrawerOpen, setIsQueueDrawerOpen] = useState<boolean>(false);
-  const [leftActiveTab, setLeftActiveTab] = useState<"spec" | "notices">("spec");
 
 
   // Sync exportFileName with projectTitle
@@ -1060,168 +1059,268 @@ export default function VideoEditorExportPanel({
               <InfoBox label="예상 소요 시간" value={isBenchmarking ? "측정 중" : estimatedRenderTimeLabel} />
             </div>
 
-            {benchmarkResult && benchmarkResult.riskLevel !== "low" && (
-              <PreflightCard
-                tone={benchmarkResult.riskLevel === "extreme" ? "danger" : "warning"}
-                title={`Export Benchmark · ${benchmarkResult.riskLevel.toUpperCase()}`}
-                items={[
-                  `예상 렌더 시간: ${formatEstimatedRenderTime(benchmarkResult.estimatedRenderSeconds)}`,
-                  `평균 프레임 처리: ${benchmarkResult.averageFrameMs.toFixed(1)}ms`,
-                  `샘플: ${benchmarkResult.sampledFrames}프레임`,
-                ]}
-              />
-            )}
 
-            {fourKPolicy.applies && (
-              <FourKPolicyCard
-                policy={fourKPolicy}
-                onAction={(action) => {
-                  if (action === "set-1080p") {
-                    setExportResolution("1080p");
-                    setExportFps(30);
-                  }
-                  if (action === "set-1440p") {
-                    setExportResolution("2k");
-                    setExportFps(30);
-                  }
-                  if (action === "set-30fps") {
-                    setExportFps(30);
-                  }
-                }}
-              />
-            )}
 
-            {/* Tabs for left details */}
-            <div className="flex border-b border-white/10 text-[10px] font-black text-zinc-400 mt-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => setLeftActiveTab("spec")}
-                className={`flex-1 py-2 text-center border-b-2 transition ${
-                  leftActiveTab === "spec"
-                    ? "border-cyan-400 text-cyan-400"
-                    : "border-transparent hover:text-zinc-200"
-                }`}
-              >
-                미디어 및 인코딩 정보
-              </button>
-              <button
-                type="button"
-                onClick={() => setLeftActiveTab("notices")}
-                className={`flex-1 py-2 text-center border-b-2 transition flex items-center justify-center gap-1 ${
-                  leftActiveTab === "notices"
-                    ? "border-cyan-400 text-cyan-400"
-                    : "border-transparent hover:text-zinc-200"
-                }`}
-              >
-                경고 및 내보내기 안내
-                {((preflightResult && !preflightResult.canRender) || showPerformanceWarning) && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-                )}
-              </button>
-            </div>
-
-            {leftActiveTab === "spec" && (
-              <div className="space-y-3 mt-1 shrink-0">
-                {/* 출력 스펙 요약 */}
-                <div className="rounded-xl border border-white/5 bg-zinc-950/20 p-3 space-y-2">
-                  <div className="text-[10px] font-black text-zinc-400 uppercase tracking-wider">
-                    출력 미디어 정보
-                  </div>
-                  <div className="space-y-1.5 text-[10px]">
-                    <div className="flex justify-between border-b border-white/5 pb-1">
-                      <span className="text-zinc-500">포맷 및 해상도</span>
-                      <span className="font-semibold text-zinc-300">
-                        {exportVideoEnabled
-                          ? `${exportVideoFormat.toUpperCase()} · ${exportSize.width} × ${exportSize.height} (${canvasRatio})`
-                          : "비디오 제외 (오디오 전용)"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between border-b border-white/5 pb-1">
-                      <span className="text-zinc-500">프레임 속도</span>
-                      <span className="font-semibold text-zinc-300">
-                        {exportVideoEnabled ? `${exportFps} fps` : "-"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between border-b border-white/5 pb-1">
-                      <span className="text-zinc-500">오디오 사양</span>
-                      <span className="font-semibold text-zinc-300">
-                        {exportAudioEnabled
-                          ? `${audioExportFormat.toUpperCase()} 포맷 (오디오 단독)`
-                          : exportVideoEnabled
-                            ? "AAC Stereo · 48,000 Hz"
-                            : "선택 안 됨"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between pb-0.5">
-                      <span className="text-zinc-500">비디오 코덱</span>
-                      <span className="font-semibold text-cyan-400">
-                        {exportVideoEnabled
-                          ? exportVideoFormat === "mov"
-                            ? "Stream Copy (무손실 복사)"
-                            : directMp4Config?.supported
-                              ? "H.264 (하드웨어 가속)"
-                              : "H.264 (Compatible WASM)"
-                          : "비활성화"}
-                      </span>
-                    </div>
-                  </div>
+            <div className="space-y-3 mt-3 shrink-0">
+              {/* 출력 스펙 요약 */}
+              <div className="rounded-xl border border-white/5 bg-zinc-950/20 p-3 space-y-2">
+                <div className="text-[10px] font-black text-zinc-400 uppercase tracking-wider">
+                  출력 미디어 정보
                 </div>
-
-                {/* 타임라인 구성 */}
-                <div className="rounded-xl border border-white/5 bg-zinc-950/20 p-3 space-y-2">
-                  <div className="text-[10px] font-black text-zinc-400 uppercase tracking-wider">
-                    타임라인 클립 구성
-                  </div>
-                  <div className="grid grid-cols-2 gap-1.5 text-[10px] text-zinc-500">
-                    <div className="flex items-center gap-1.5 bg-black/10 p-1.5 rounded-lg border border-white/5">
-                      <Film size={12} className="text-blue-400 shrink-0" />
-                      <span>비디오: <strong className="text-zinc-200">{clips.filter(c => c.type === 'video').length}개</strong></span>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-black/10 p-1.5 rounded-lg border border-white/5">
-                      <Volume2 size={12} className="text-emerald-400 shrink-0" />
-                      <span>오디오: <strong className="text-zinc-200">{clips.filter(c => c.type === 'audio').length}개</strong></span>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-black/10 p-1.5 rounded-lg border border-white/5">
-                      <Monitor size={12} className="text-purple-400 shrink-0" />
-                      <span>이미지: <strong className="text-zinc-200">{clips.filter(c => c.type === 'image').length}개</strong></span>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-black/10 p-1.5 rounded-lg border border-white/5">
-                      <Database size={12} className="text-amber-400 shrink-0" />
-                      <span>자막/자료: <strong className="text-zinc-200">{clips.filter(c => c.type === 'subtitle' || c.type === 'text').length}개</strong></span>
-                    </div>
-                    <div className="col-span-2 flex items-center gap-1.5 bg-black/10 p-1.5 rounded-lg border border-white/5">
-                      <Gauge size={12} className="text-cyan-400 shrink-0" />
-                      <span>비주얼라이저 효과: <strong className="text-zinc-200">{clips.filter(c => c.type === 'visualizer').length}개</strong></span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 시스템 가속 정보 */}
-                <div className="rounded-xl border border-white/5 bg-zinc-950/20 p-3 space-y-1.5 text-[10px]">
-                  <div className="flex justify-between items-center pb-1 border-b border-white/5">
-                    <span className="text-zinc-500">그래픽 가속 (WebGPU)</span>
-                    <span className={`px-1.5 py-0.5 rounded font-black ${webgpuRendererSupport?.supported ? "bg-cyan-950/30 text-cyan-400 border border-cyan-500/20" : "bg-zinc-800 text-zinc-500"}`}>
-                      {webgpuRendererSupport?.supported ? "활성화" : "미지원"}
+                <div className="space-y-1.5 text-[10px]">
+                  <div className="flex justify-between border-b border-white/5 pb-1">
+                    <span className="text-zinc-500">포맷 및 해상도</span>
+                    <span className="font-semibold text-zinc-300">
+                      {exportVideoEnabled
+                        ? `${exportVideoFormat.toUpperCase()} · ${exportSize.width} × ${exportSize.height} (${canvasRatio})`
+                        : "비디오 제외 (오디오 전용)"}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center pb-1 border-b border-white/5">
-                    <span className="text-zinc-500">효과 가속 (WebGL)</span>
-                    <span className={`px-1.5 py-0.5 rounded font-black ${webglEffectsSupport?.supported ? "bg-cyan-950/30 text-cyan-400 border border-cyan-500/20" : "bg-zinc-800 text-zinc-500"}`}>
-                      {webglEffectsSupport?.supported ? "활성화" : "미지원"}
+                  <div className="flex justify-between border-b border-white/5 pb-1">
+                    <span className="text-zinc-500">프레임 속도</span>
+                    <span className="font-semibold text-zinc-300">
+                      {exportVideoEnabled ? `${exportFps} fps` : "-"}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-zinc-500">백그라운드 워커</span>
-                    <span className={`px-1.5 py-0.5 rounded font-black ${workerSupport?.supported ? "bg-cyan-950/30 text-cyan-400 border border-cyan-500/20" : "bg-zinc-800 text-zinc-500"}`}>
-                      {workerSupport?.supported ? "사용 대기" : "미지원"}
+                  <div className="flex justify-between border-b border-white/5 pb-1">
+                    <span className="text-zinc-500">오디오 사양</span>
+                    <span className="font-semibold text-zinc-300">
+                      {exportAudioEnabled
+                        ? `${audioExportFormat.toUpperCase()} 포맷 (오디오 단독)`
+                        : exportVideoEnabled
+                          ? "AAC Stereo · 48,000 Hz"
+                          : "선택 안 됨"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between pb-0.5">
+                    <span className="text-zinc-500">비디오 코덱</span>
+                    <span className="font-semibold text-cyan-400">
+                      {exportVideoEnabled
+                        ? exportVideoFormat === "mov"
+                          ? "Stream Copy (무손실 복사)"
+                          : directMp4Config?.supported
+                            ? "H.264 (하드웨어 가속)"
+                            : "H.264 (Compatible WASM)"
+                        : "비활성화"}
                     </span>
                   </div>
                 </div>
               </div>
-            )}
 
-            {leftActiveTab === "notices" && (
-              <div className="space-y-2 mt-1 max-h-[260px] overflow-y-auto pr-1 shrink-0">
+              {/* 타임라인 구성 */}
+              <div className="rounded-xl border border-white/5 bg-zinc-950/20 p-3 space-y-2">
+                <div className="text-[10px] font-black text-zinc-400 uppercase tracking-wider">
+                  타임라인 클립 구성
+                </div>
+                <div className="grid grid-cols-2 gap-1.5 text-[10px] text-zinc-500">
+                  <div className="flex items-center gap-1.5 bg-black/10 p-1.5 rounded-lg border border-white/5">
+                    <Film size={12} className="text-blue-400 shrink-0" />
+                    <span>비디오: <strong className="text-zinc-200">{clips.filter(c => c.type === 'video').length}개</strong></span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-black/10 p-1.5 rounded-lg border border-white/5">
+                    <Volume2 size={12} className="text-emerald-400 shrink-0" />
+                    <span>오디오: <strong className="text-zinc-200">{clips.filter(c => c.type === 'audio').length}개</strong></span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-black/10 p-1.5 rounded-lg border border-white/5">
+                    <Monitor size={12} className="text-purple-400 shrink-0" />
+                    <span>이미지: <strong className="text-zinc-200">{clips.filter(c => c.type === 'image').length}개</strong></span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-black/10 p-1.5 rounded-lg border border-white/5">
+                    <Database size={12} className="text-amber-400 shrink-0" />
+                    <span>자막/자료: <strong className="text-zinc-200">{clips.filter(c => c.type === 'subtitle' || c.type === 'text').length}개</strong></span>
+                  </div>
+                  <div className="col-span-2 flex items-center gap-1.5 bg-black/10 p-1.5 rounded-lg border border-white/5">
+                    <Gauge size={12} className="text-cyan-400 shrink-0" />
+                    <span>비주얼라이저 효과: <strong className="text-zinc-200">{clips.filter(c => c.type === 'visualizer').length}개</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 시스템 가속 정보 */}
+              <div className="rounded-xl border border-white/5 bg-zinc-950/20 p-3 space-y-1.5 text-[10px]">
+                <div className="flex justify-between items-center pb-1 border-b border-white/5">
+                  <span className="text-zinc-500">그래픽 가속 (WebGPU)</span>
+                  <span className={`px-1.5 py-0.5 rounded font-black ${webgpuRendererSupport?.supported ? "bg-cyan-950/30 text-cyan-400 border border-cyan-500/20" : "bg-zinc-800 text-zinc-500"}`}>
+                    {webgpuRendererSupport?.supported ? "활성화" : "미지원"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pb-1 border-b border-white/5">
+                  <span className="text-zinc-500">효과 가속 (WebGL)</span>
+                  <span className={`px-1.5 py-0.5 rounded font-black ${webglEffectsSupport?.supported ? "bg-cyan-950/30 text-cyan-400 border border-cyan-500/20" : "bg-zinc-800 text-zinc-500"}`}>
+                    {webglEffectsSupport?.supported ? "활성화" : "미지원"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-500">백그라운드 워커</span>
+                  <span className={`px-1.5 py-0.5 rounded font-black ${workerSupport?.supported ? "bg-cyan-950/30 text-cyan-400 border border-cyan-500/20" : "bg-zinc-800 text-zinc-500"}`}>
+                    {workerSupport?.supported ? "사용 대기" : "미지원"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Right Column: Settings & Actions */}
+          <div className="flex flex-col gap-4 h-full min-h-[400px]">
+            <div className="space-y-4 flex-1 flex flex-col min-h-0">
+              {/* File Name */}
+              <div className="flex items-center gap-3">
+                <label className="text-[11px] font-black text-zinc-400 shrink-0 w-20">이름</label>
+                <input
+                  type="text"
+                  value={exportFileName}
+                  onChange={(e) => setExportFileName(e.target.value)}
+                  className="flex-1 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs font-medium text-white outline-none focus:border-cyan-400 transition"
+                  placeholder="프로젝트 이름 입력"
+                />
+              </div>
+
+              {/* Export Folder Location */}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-3">
+                  <label className="text-[11px] font-black text-zinc-400 shrink-0 w-20">내보내기 위치</label>
+                  <div
+                    onClick={handleSelectFolder}
+                    className="flex-1 flex gap-2 cursor-pointer group"
+                  >
+                    <input
+                      type="text"
+                      readOnly
+                      value={exportFolderPath}
+                      className="flex-1 truncate rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs font-medium text-zinc-400 group-hover:border-zinc-500 outline-none cursor-pointer transition"
+                    />
+                    <button
+                      type="button"
+                      className="flex shrink-0 items-center justify-center rounded-lg border border-white/10 bg-zinc-900 hover:bg-zinc-800 p-2 text-zinc-300 transition active:scale-95 cursor-pointer"
+                      title="폴더 지정"
+                    >
+                      <Folder size={16} />
+                    </button>
+                  </div>
+                </div>
+                <p className="text-[10px] text-zinc-500 leading-normal pl-[92px]">
+                  ※ 브라우저 보안 정책상 다운로드, 데스크톱, 문서 등의 최상위 폴더 자체는 직접 선택할 수 없으므로, 해당 폴더 안에 **새 폴더**를 만들어 하위 폴더로 선택해 주세요.
+                </p>
+              </div>
+
+              {/* Video Option */}
+              <div className="rounded-xl border border-white/5 bg-black/20 p-3.5 space-y-3">
+                <label className="flex items-center gap-2 text-xs font-black text-zinc-200 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={exportVideoEnabled}
+                    onChange={(e) => setExportVideoEnabled(e.target.checked)}
+                    className="rounded border-white/10 bg-black/40 text-cyan-400 focus:ring-0 w-4 h-4 cursor-pointer"
+                  />
+                  <span>동영상 내보내기</span>
+                </label>
+
+                {exportVideoEnabled && (
+                  <div className="grid grid-cols-2 gap-3 pl-6 border-l border-white/5">
+                    {/* Resolution */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-zinc-500">해상도</label>
+                      <select
+                        value={exportResolution}
+                        onChange={(e) => setExportResolution(e.target.value as ExportResolution)}
+                        className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400 transition"
+                      >
+                        {EXPORT_RESOLUTION_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value} className="bg-[#101014]">
+                            {opt.label} ({opt.desc})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Framerate */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-zinc-500">프레임 속도</label>
+                      <select
+                        value={exportFps}
+                        onChange={(e) => setExportFps(Number(e.target.value) as ExportFps)}
+                        className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400 transition"
+                      >
+                        {EXPORT_FPS_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value} className="bg-[#101014]">
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Quality */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-zinc-500">화질 (비트레이트)</label>
+                      <select
+                        value={exportQuality}
+                        onChange={(e) => setExportQuality(e.target.value as ExportQuality)}
+                        className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400 transition"
+                      >
+                        {EXPORT_QUALITY_OPTIONS.map((opt) => {
+                          const optBitrate = getRecommendedVideoBitrate({
+                            resolution: exportResolution,
+                            fps: exportFps,
+                            quality: opt.value as ExportQuality,
+                          });
+                          return (
+                            <option key={opt.value} value={opt.value} className="bg-[#101014]">
+                              {opt.label} (약 {formatBitrate(optBitrate)})
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+
+                    {/* Video Format */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-zinc-500">포맷</label>
+                      <select
+                        value={exportVideoFormat}
+                        onChange={(e) => setExportVideoFormat(e.target.value as "mp4" | "mov")}
+                        className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400 transition"
+                      >
+                        <option value="mp4" className="bg-[#101014]">MP4</option>
+                        <option value="mov" className="bg-[#101014]">MOV</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Audio Option */}
+              <div className="rounded-xl border border-white/5 bg-black/20 p-3.5 space-y-3">
+                <label className="flex items-center gap-2 text-xs font-black text-zinc-200 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={exportAudioEnabled}
+                    onChange={(e) => setExportAudioEnabled(e.target.checked)}
+                    className="rounded border-white/10 bg-black/40 text-cyan-400 focus:ring-0 w-4 h-4 cursor-pointer"
+                  />
+                  <span>오디오만 내보내기</span>
+                </label>
+
+                {exportAudioEnabled && (
+                  <div className="pl-6 border-l border-white/5">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-zinc-500">오디오 포맷</label>
+                      <select
+                        value={audioExportFormat}
+                        onChange={(e) => setAudioExportFormat(e.target.value as "mp3" | "wav" | "aac")}
+                        className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400 transition"
+                      >
+                        <option value="mp3" className="bg-[#101014]">MP3</option>
+                        <option value="wav" className="bg-[#101014]">WAV (무손실)</option>
+                        <option value="aac" className="bg-[#101014]">AAC</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 안내 및 경고 (Warnings and Guidelines) */}
+              <div className="space-y-2 mt-4 flex-1 min-h-0 overflow-y-auto pr-1 border border-white/5 bg-[#0a0a0c]/60 rounded-xl p-3">
                 {/* 1. Preflight Blocking/Warning issues */}
                 {preflightResult && !preflightResult.canRender && (
                   <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-[10px] text-red-200">
@@ -1237,13 +1336,14 @@ export default function VideoEditorExportPanel({
                   </div>
                 )}
 
+                {/* Preflight warnings */}
                 {!!preflightResult?.warnings.length && (
-                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-[10px] text-amber-200">
-                    <div className="font-black flex items-center gap-1.5 mb-1.5">
-                      <AlertCircle size={12} className="text-amber-400" />
+                  <div className="rounded-xl border border-white/5 bg-zinc-950/20 p-3 text-[10px] text-zinc-400">
+                    <div className="font-black flex items-center gap-1.5 mb-1.5 text-zinc-300">
+                      <AlertCircle size={12} className="text-zinc-500" />
                       렌더링 경고 ({preflightResult.warnings.length})
                     </div>
-                    <ul className="list-disc pl-3.5 space-y-1 text-zinc-300 leading-normal">
+                    <ul className="list-disc pl-3.5 space-y-1 text-zinc-400 leading-normal">
                       {preflightResult.warnings.map((warn, i) => (
                         <li key={i}>{warn}</li>
                       ))}
@@ -1305,163 +1405,125 @@ export default function VideoEditorExportPanel({
                   </div>
                 )}
 
-                {/* 4. Directory picker warning */}
-                <div className="rounded-xl border border-white/5 bg-black/20 p-3 text-[10px] text-zinc-400">
-                  <div className="font-black mb-1 text-zinc-300">📂 보안 디렉토리 지정 팁</div>
-                  <p className="leading-relaxed opacity-75 text-zinc-400">
-                    브라우저 보안상 다운로드, 데스크톱, 문서 등의 <strong>최상위 폴더는 직접 선택할 수 없습니다</strong>. 해당 폴더 내부에 새로운 폴더를 생성하고 해당 하위 폴더를 지정해 주세요.
-                  </p>
-                </div>
-              </div>
-            )}
 
-          </div>
+                {/* Benchmark Result Alert (Compact 1-line) */}
+                {benchmarkResult && benchmarkResult.riskLevel !== "low" && (
+                  <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-medium py-1 px-1">
+                    <AlertCircle size={12} className="text-amber-500 shrink-0" />
+                    <span>벤치마크 경고: 예상 렌더 약 {formatEstimatedRenderTime(benchmarkResult.estimatedRenderSeconds)} (평균 {benchmarkResult.averageFrameMs.toFixed(1)}ms)</span>
+                  </div>
+                )}
 
-          {/* Right Column: Settings & Actions */}
-          <div className="flex flex-col justify-between gap-4 h-full min-h-[400px]">
-            <div className="space-y-4">
-              {/* File Name */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-black text-zinc-400">이름</label>
-                <input
-                  type="text"
-                  value={exportFileName}
-                  onChange={(e) => setExportFileName(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs font-medium text-white outline-none focus:border-cyan-400 transition"
-                  placeholder="프로젝트 이름 입력"
-                />
-              </div>
-
-              {/* Export Folder Location */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-black text-zinc-400">내보내기 위치</label>
-                <div
-                  onClick={handleSelectFolder}
-                  className="flex gap-2 cursor-pointer group"
-                >
-                  <input
-                    type="text"
-                    readOnly
-                    value={exportFolderPath}
-                    className="flex-1 truncate rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs font-medium text-zinc-400 group-hover:border-zinc-500 outline-none cursor-pointer transition"
-                  />
-                  <button
-                    type="button"
-                    className="flex shrink-0 items-center justify-center rounded-lg border border-white/10 bg-zinc-900 hover:bg-zinc-800 p-2 text-zinc-300 transition active:scale-95 cursor-pointer"
-                    title="폴더 지정"
-                  >
-                    <Folder size={16} />
-                  </button>
-                </div>
-                <p className="text-[10px] text-zinc-500 leading-normal mt-1">
-                  ※ 브라우저 보안 정책상 '다운로드'나 '데스크톱' 상위 폴더 자체는 직접 선택이 불가능하므로, 해당 폴더 안에 **새 폴더**를 만들어 선택해 주세요.
-                </p>
-              </div>
-
-              {/* Video Option */}
-              <div className="rounded-xl border border-white/5 bg-black/20 p-3.5 space-y-3">
-                <label className="flex items-center gap-2 text-xs font-black text-zinc-200 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={exportVideoEnabled}
-                    onChange={(e) => setExportVideoEnabled(e.target.checked)}
-                    className="rounded border-white/10 bg-black/40 text-cyan-400 focus:ring-0 w-4 h-4 cursor-pointer"
-                  />
-                  <span>동영상 내보내기</span>
-                </label>
-
-                {exportVideoEnabled && (
-                  <div className="grid grid-cols-2 gap-3 pl-6 border-l border-white/5">
-                    {/* Resolution */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black text-zinc-500">해상도</label>
-                      <select
-                        value={exportResolution}
-                        onChange={(e) => setExportResolution(e.target.value as ExportResolution)}
-                        className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400 transition"
-                      >
-                        {EXPORT_RESOLUTION_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value} className="bg-[#101014]">
-                            {opt.label} ({opt.desc})
-                          </option>
+                {/* 4K Policy Alert (Compact 1-line) */}
+                {fourKPolicy.applies && (
+                  <div className="flex items-start gap-1.5 text-[10px] text-zinc-400 font-medium py-1 px-1 flex-wrap">
+                    <AlertCircle size={12} className="text-amber-500 shrink-0 mt-0.5" />
+                    <span>4K 안전 경고: {fourKPolicy.reasons[0]}</span>
+                    {fourKPolicy.fallbackRecommendations.length > 0 && (
+                      <span className="text-zinc-500 font-normal">
+                        (권장:{" "}
+                        {fourKPolicy.fallbackRecommendations.map((rec) => (
+                          <button
+                            key={rec.action}
+                            type="button"
+                            onClick={() => {
+                              if (rec.action === "set-1080p") {
+                                setExportResolution("1080p");
+                                setExportFps(30);
+                              }
+                              if (rec.action === "set-1440p") {
+                                setExportResolution("2k");
+                                setExportFps(30);
+                              }
+                              if (rec.action === "set-30fps") {
+                                setExportFps(30);
+                              }
+                            }}
+                            className="text-cyan-400 hover:underline inline ml-1 font-bold cursor-pointer"
+                          >
+                            {rec.label}
+                          </button>
                         ))}
-                      </select>
-                    </div>
-
-                    {/* Framerate */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black text-zinc-500">프레임 속도</label>
-                      <select
-                        value={exportFps}
-                        onChange={(e) => setExportFps(Number(e.target.value) as ExportFps)}
-                        className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400 transition"
-                      >
-                        {EXPORT_FPS_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value} className="bg-[#101014]">
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Quality */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black text-zinc-500">화질 (비트레이트)</label>
-                      <select
-                        value={exportQuality}
-                        onChange={(e) => setExportQuality(e.target.value as ExportQuality)}
-                        className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400 transition"
-                      >
-                        {EXPORT_QUALITY_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value} className="bg-[#101014]">
-                            {opt.label} ({opt.desc})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Video Format */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black text-zinc-500">포맷</label>
-                      <select
-                        value={exportVideoFormat}
-                        onChange={(e) => setExportVideoFormat(e.target.value as "mp4" | "mov")}
-                        className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400 transition"
-                      >
-                        <option value="mp4" className="bg-[#101014]">MP4</option>
-                        <option value="mov" className="bg-[#101014]">MOV</option>
-                      </select>
-                    </div>
+                        )
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* Audio Option */}
-              <div className="rounded-xl border border-white/5 bg-black/20 p-3.5 space-y-3">
-                <label className="flex items-center gap-2 text-xs font-black text-zinc-200 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={exportAudioEnabled}
-                    onChange={(e) => setExportAudioEnabled(e.target.checked)}
-                    className="rounded border-white/10 bg-black/40 text-cyan-400 focus:ring-0 w-4 h-4 cursor-pointer"
-                  />
-                  <span>오디오만 내보내기</span>
-                </label>
-
-                {exportAudioEnabled && (
-                  <div className="pl-6 border-l border-white/5">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black text-zinc-500">오디오 포맷</label>
-                      <select
-                        value={audioExportFormat}
-                        onChange={(e) => setAudioExportFormat(e.target.value as "mp3" | "wav" | "aac")}
-                        className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-cyan-400 transition"
-                      >
-                        <option value="mp3" className="bg-[#101014]">MP3</option>
-                        <option value="wav" className="bg-[#101014]">WAV (무손실)</option>
-                        <option value="aac" className="bg-[#101014]">AAC</option>
-                      </select>
+            {/* Bottom Actions & History */}
+            <div className="space-y-3 shrink-0">
+              {/* Progress / Actions Footer */}
+              <div className="border-t border-white/5 pt-3">
+                {/* If exporting, show status progress */}
+                {isExporting ? (
+                  <div className="rounded-xl border border-white/5 bg-cyan-950/10 p-3">
+                    <div className="mb-2 flex items-center justify-between text-xs">
+                      <span className="font-black text-zinc-300">
+                        {exportProgress.stage === "idle"
+                          ? "대기 중"
+                          : exportProgress.stage === "worker-preflight"
+                            ? "Worker 확인"
+                          : exportProgress.stage === "encoding-webcodecs"
+                            ? "오디오/비디오 인코딩"
+                          : exportProgress.stage === "rendering-webm"
+                            ? "WebM 렌더링"
+                          : exportProgress.stage === "converting-mp4"
+                            ? "MP4 변환"
+                          : exportProgress.stage === "completed"
+                            ? "완료"
+                            : exportProgress.stage === "cancelled"
+                              ? "취소됨"
+                              : "실패"}
+                      </span>
+                      <span className="font-mono text-cyan-300 font-bold">
+                        {Math.round(exportProgress.progress)}%
+                      </span>
                     </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${
+                          exportProgress.stage === "failed"
+                            ? "bg-red-400"
+                            : exportProgress.stage === "cancelled"
+                              ? "bg-amber-400"
+                              : "bg-cyan-400"
+                        }`}
+                        style={{ width: `${Math.max(0, Math.min(100, exportProgress.progress))}%` }}
+                      />
+                    </div>
+                    {exportProgress.message && (
+                      <div className="mt-1.5 text-[10px] leading-relaxed text-zinc-500">
+                        {exportProgress.message}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleCancelExport}
+                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 py-2 text-xs font-black text-red-400 hover:bg-red-500/20 active:scale-95 transition hover:text-red-300"
+                    >
+                      내보내기 중단
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-black/20 py-2.5 text-xs font-black text-zinc-300 hover:text-white transition active:scale-95"
+                    >
+                      닫기
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleEnqueueExport}
+                      disabled={isPreflighting || preflightResult?.canRender === false}
+                      className="flex-[2] flex items-center justify-center gap-1.5 rounded-xl bg-cyan-400 py-2.5 text-xs font-black text-black hover:bg-cyan-300 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Download size={14} />
+                      {isPreflighting ? "Preflight 확인 중..." : "내보내기"}
+                    </button>
                   </div>
                 )}
               </div>
@@ -1584,80 +1646,6 @@ export default function VideoEditorExportPanel({
                 )}
               </div>
             </div>
-
-            {/* Progress / Actions Footer */}
-            <div className="border-t border-white/5 pt-4 shrink-0">
-              {/* If exporting, show status progress */}
-              {isExporting ? (
-                <div className="rounded-xl border border-white/5 bg-cyan-950/10 p-3">
-                  <div className="mb-2 flex items-center justify-between text-xs">
-                    <span className="font-black text-zinc-300">
-                      {exportProgress.stage === "idle"
-                        ? "대기 중"
-                        : exportProgress.stage === "worker-preflight"
-                          ? "Worker 확인"
-                        : exportProgress.stage === "encoding-webcodecs"
-                          ? "오디오/비디오 인코딩"
-                        : exportProgress.stage === "rendering-webm"
-                          ? "WebM 렌더링"
-                        : exportProgress.stage === "converting-mp4"
-                          ? "MP4 변환"
-                        : exportProgress.stage === "completed"
-                          ? "완료"
-                          : exportProgress.stage === "cancelled"
-                            ? "취소됨"
-                            : "실패"}
-                    </span>
-                    <span className="font-mono text-cyan-300 font-bold">
-                      {Math.round(exportProgress.progress)}%
-                    </span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className={`h-full rounded-full transition-all duration-300 ${
-                        exportProgress.stage === "failed"
-                          ? "bg-red-400"
-                          : exportProgress.stage === "cancelled"
-                            ? "bg-amber-400"
-                            : "bg-cyan-400"
-                      }`}
-                      style={{ width: `${Math.max(0, Math.min(100, exportProgress.progress))}%` }}
-                    />
-                  </div>
-                  {exportProgress.message && (
-                    <div className="mt-1.5 text-[10px] leading-relaxed text-zinc-500">
-                      {exportProgress.message}
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleCancelExport}
-                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 py-2 text-xs font-black text-red-400 hover:bg-red-500/20 active:scale-95 transition hover:text-red-300"
-                  >
-                    내보내기 중단
-                  </button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-black/20 py-2.5 text-xs font-black text-zinc-300 hover:text-white transition active:scale-95"
-                  >
-                    닫기
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleEnqueueExport}
-                    disabled={isPreflighting || preflightResult?.canRender === false}
-                    className="flex-[2] flex items-center justify-center gap-1.5 rounded-xl bg-cyan-400 py-2.5 text-xs font-black text-black hover:bg-cyan-300 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <Download size={14} />
-                    {isPreflighting ? "Preflight 확인 중..." : "내보내기"}
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>
@@ -1722,6 +1710,7 @@ function InfoBox({ label, value }: { label: string; value: string }) {
   );
 }
 
+/*
 function PreflightCard({
   title,
   items,
@@ -1800,6 +1789,7 @@ function FourKPolicyCard({
     </div>
   );
 }
+*/
 
 function getEngineLabel(engine: VideoExportEngine) {
   if (engine === "fast-webcodecs") return "Fast";

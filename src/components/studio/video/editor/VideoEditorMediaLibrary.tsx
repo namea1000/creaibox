@@ -419,7 +419,7 @@ function FilterButton({
 
 function MediaThumbnail({ item }: { item: VideoEditorMediaItem }) {
   const isAudio = item.type === "audio";
-  const thumbnailUrl = item.thumbnailUrl || (item.type === "image" ? item.url : "");
+  const thumbnailUrl = item.type === "image" ? item.url : (item.thumbnailUrl || "");
 
   if (isAudio) {
     return (
