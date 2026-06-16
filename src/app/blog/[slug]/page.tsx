@@ -121,9 +121,10 @@ async function fetchPublishedPost(slug: string) {
 
   const { data, error } = await supabase
     .from("writing_creaibox_posts")
-    .select("id, title, content, slug, meta_description, focus_keyword, canonical_url, seo_tags, created_at, updated_at")
+    .select("id, title, content, slug, meta_description, focus_keyword, canonical_url, seo_tags, created_at, updated_at, profiles!inner(role)")
     .eq("slug", decodedSlug)
     .eq("status", "published")
+    .eq("profiles.role", "ADMIN")
     .order("created_at", { ascending: false })
     .limit(1);
 

@@ -1708,7 +1708,10 @@ function getMediaDuration(file: File): Promise<number> {
     setClipsWithHistory((prev) => [...prev, ...pastedClips]);
     setSelectedClipIds(pastedClips.map((c) => c.id));
     setSelectedClipId(pastedClips[pastedClips.length - 1].id);
-  }, [copiedClips, copiedClip, currentTime, tracks, clips, setSelectedClipId]);
+
+    const maxEndTime = Math.max(...pastedClips.map((c) => c.startTime + c.duration));
+    setCurrentTime(Number(maxEndTime.toFixed(2)));
+  }, [copiedClips, copiedClip, currentTime, tracks, clips, setSelectedClipId, setCurrentTime]);
 
   const splitClip = (id: string, splitTime?: number) => {
     const target = clips.find((clip) => clip.id === id);
@@ -1734,6 +1737,7 @@ function getMediaDuration(file: File): Promise<number> {
       duration: firstDuration,
       width: firstWidth,
       name: `${target.name} A`,
+      trimEnd: (target.trimStart ?? 0) + firstDuration,
     });
 
     const secondClip: VideoEditorClip = normalizeClip({
@@ -1744,6 +1748,7 @@ function getMediaDuration(file: File): Promise<number> {
       duration: secondDuration,
       left: secondLeft,
       width: clamp(secondWidth, 4, 100 - secondLeft),
+      trimStart: (target.trimStart ?? 0) + firstDuration,
     });
 
     setClipsWithHistory((prev) =>
@@ -2119,12 +2124,19 @@ function getMediaDuration(file: File): Promise<number> {
       prev.map((clip) => {
         if (clip.id !== id) return clip;
 
+        const media = mediaItems.find((m) => m.id === clip.mediaId);
+        const maxDuration = (clip.type === "video" || clip.type === "audio") && media && typeof media.duration === "number" && media.duration > 0
+          ? media.duration - (clip.trimStart ?? 0)
+          : Infinity;
+
+        const clampedDuration = Math.min(duration, maxDuration);
+
         const safeDuration = clampDurationToTrackGap(
           prev,
           clip.id,
           clip.trackId,
           clip.startTime,
-          duration
+          clampedDuration
         );
         const nextWidth = durationToWidth(safeDuration);
 
@@ -2142,15 +2154,29 @@ function getMediaDuration(file: File): Promise<number> {
       prev.map((clip) => {
         if (clip.id !== id) return clip;
 
-        const requestedStart = clamp(startTime, 0, TIMELINE_BASE_DURATION);
+        const media = mediaItems.find((m) => m.id === clip.mediaId);
+        const hasMediaLimit = (clip.type === "video" || clip.type === "audio") && media && typeof media.duration === "number" && media.duration > 0;
+
+        let minStart = 0;
+        if (hasMediaLimit && media?.duration) {
+          minStart = Math.max(0, clip.startTime - (clip.trimStart ?? 0));
+        }
+
+        const requestedStart = clamp(startTime, minStart, TIMELINE_BASE_DURATION);
         const safeStart = clampStartToPreviousTrackGap(
           prev,
           clip.id,
           clip.trackId,
           requestedStart
         );
-        const requestedEnd = requestedStart + duration;
-        const requestedDuration = Math.max(0.5, requestedEnd - safeStart);
+
+        const isTrimLeft = Math.abs((startTime + duration) - (clip.startTime + clip.duration)) < 0.05;
+        const startDiff = safeStart - clip.startTime;
+        const newTrimStart = isTrimLeft
+          ? Math.max(0, (clip.trimStart ?? 0) + startDiff)
+          : (clip.trimStart ?? 0);
+
+        const requestedDuration = Math.max(0.5, duration);
         const safeDuration = clampDurationToTrackGap(
           prev,
           clip.id,
@@ -2158,13 +2184,21 @@ function getMediaDuration(file: File): Promise<number> {
           safeStart,
           requestedDuration
         );
+
+        // Enforce max duration based on the new trimStart
+        const maxDuration = hasMediaLimit && media?.duration
+          ? media.duration - newTrimStart
+          : Infinity;
+        const finalDuration = Math.min(safeDuration, maxDuration);
+
         const left = timeToLeft(safeStart);
-        const width = clamp(durationToWidth(safeDuration), 4, 100 - left);
+        const width = clamp(durationToWidth(finalDuration), 4, 100 - left);
 
         return normalizeClip({
           ...clip,
           startTime: Number(safeStart.toFixed(2)),
-          duration: Number(safeDuration.toFixed(2)),
+          duration: Number(finalDuration.toFixed(2)),
+          trimStart: Number(newTrimStart.toFixed(2)),
           left,
           width,
         });
@@ -2182,12 +2216,19 @@ function getMediaDuration(file: File): Promise<number> {
       prev.map((clip) => {
         if (clip.id !== id) return clip;
 
+        const media = mediaItems.find((m) => m.id === clip.mediaId);
+        const maxDuration = (clip.type === "video" || clip.type === "audio") && media && typeof media.duration === "number" && media.duration > 0
+          ? media.duration - (clip.trimStart ?? 0)
+          : Infinity;
+
+        const clampedDuration = Math.min(duration, maxDuration);
+
         const safeDuration = clampDurationToTrackGap(
           prev,
           clip.id,
           trackId,
           startTime,
-          duration
+          clampedDuration
         );
         const safeStart = resolveNonOverlappingStart(
           prev,
@@ -2212,9 +2253,30 @@ function getMediaDuration(file: File): Promise<number> {
   };
 
   const updateClipTrimStart = (id: string, nextTrimStart: number) => {
-    updateClip(id, {
-      trimStart: clamp(nextTrimStart, 0, TIMELINE_BASE_DURATION),
-    });
+    setClipsWithHistory((prev) =>
+      prev.map((clip) => {
+        if (clip.id !== id) return clip;
+
+        const media = mediaItems.find((m) => m.id === clip.mediaId);
+        const hasMediaLimit = (clip.type === "video" || clip.type === "audio") && media && typeof media.duration === "number" && media.duration > 0;
+        const maxTrimStart = hasMediaLimit && media?.duration ? media.duration - 0.5 : TIMELINE_BASE_DURATION;
+        const clampedTrimStart = clamp(nextTrimStart, 0, maxTrimStart);
+
+        let safeDuration = clip.duration;
+        if (hasMediaLimit && media?.duration) {
+          safeDuration = Math.min(clip.duration, media.duration - clampedTrimStart);
+        }
+
+        const nextWidth = durationToWidth(safeDuration);
+
+        return normalizeClip({
+          ...clip,
+          trimStart: Number(clampedTrimStart.toFixed(2)),
+          duration: Number(safeDuration.toFixed(2)),
+          width: clamp(nextWidth, 4, 100 - clip.left),
+        });
+      })
+    );
   };
 
   const updateClipTrimEnd = (id: string, nextTrimEnd: number) => {

@@ -51,6 +51,10 @@ interface CreaiboxCreateTabProps {
   editLink?: string;
   generationStatusMessage?: string;
   generationErrorMessage?: string;
+  userRole?: string;
+  userBrandId?: string;
+  userBrandIds?: string[];
+  extraConfigs?: any;
 }
 
 export default function CreaiboxCreateTab({
@@ -63,7 +67,11 @@ export default function CreaiboxCreateTab({
   handleResetGeneratedContent,
   editLink,
   generationStatusMessage,
-  generationErrorMessage
+  generationErrorMessage,
+  userRole,
+  userBrandId,
+  userBrandIds,
+  extraConfigs,
 }: CreaiboxCreateTabProps) {
 
   const supabase = useMemo(() => createClient(), []);
@@ -217,7 +225,11 @@ export default function CreaiboxCreateTab({
     }
 
     if (title && (!canonicalUrl || canonicalUrl.trim() === '')) {
-      setCanonicalUrl(`https://creaibox.com/blog/${buildSlug(title)}`);
+      if (userRole !== "ADMIN" && userBrandId) {
+        setCanonicalUrl(`https://${userBrandId}.creaibox.com/${buildSlug(title)}`);
+      } else {
+        setCanonicalUrl(`https://creaibox.com/blog/${buildSlug(title)}`);
+      }
     }
 
     if (nextFocusKeyword && (!focusKeyword || focusKeyword.trim() === '')) {
@@ -925,6 +937,10 @@ export default function CreaiboxCreateTab({
               <CreaiboxSeoOptimizationPanel
                 data={draftRecord}
                 updateLocalData={updateDraftRecord}
+                userRole={userRole}
+                userBrandId={userBrandId}
+                userBrandIds={userBrandIds}
+                extraConfigs={extraConfigs}
               />
             )}
 

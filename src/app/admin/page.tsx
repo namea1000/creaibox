@@ -15,6 +15,7 @@ import {
   Server,
   Settings,
   ShieldCheck,
+  Globe,
   type LucideIcon,
 } from "lucide-react";
 
@@ -33,6 +34,13 @@ const adminMenus: AdminMenu[] = [
     href: "/admin/usermanagement",
     icon: Users,
     iconColor: "text-blue-400",
+  },
+  {
+    title: "브랜드 ID 및 도메인 관리",
+    description: "사용자 블로그 서브도메인(Brand ID) 및 독립 도메인 신청 승인, 실시간 진단 모니터링",
+    href: "/admin/brands",
+    icon: Globe,
+    iconColor: "text-emerald-400",
   },
   {
     title: "API Gateway Vault",

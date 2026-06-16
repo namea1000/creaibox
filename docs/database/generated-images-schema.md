@@ -284,15 +284,17 @@ user-b
 
 기본 원칙
 
-사용자는 자신의 이미지만 접근 가능
+* 생성/수정/삭제: 사용자는 자신의 이미지만 처리 가능 (auth.uid() = user_id)
+* 조회(Select): 누구나 조회 가능 (true) - 블로그 썸네일 노출 등을 위해 공개 조회 허용
 
 모든 정책
 
 ```sql
-auth.uid() = user_id
+-- 테이블 조회 권한
+create policy "Anyone can read generated images" on public.generated_images for select using (true);
+-- 스토리지 버킷 조회 권한
+create policy "Anyone can view generated images" on storage.objects for select using (bucket_id = 'generated-images');
 ```
-
-기반
 
 ---
 

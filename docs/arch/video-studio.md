@@ -148,6 +148,24 @@ Video Studio is the browser-based video editing module for CreAibox. It lets use
   - The WebGPU shader handles brightness, contrast, saturation, grayscale, sepia, and blur on precomposed cropped/contained media layers.
   - Text, subtitle, audio placeholder, and visualizer layers remain Canvas2D-composited in the same frame render path.
   - Render preflight and the Export panel expose WebGPU readiness while keeping existing fallback export behavior.
+- Timeline & Multi-selection Enhancements:
+  - Multi-clip selection: support drag-selecting multiple clips simultaneously (marquee selection) by dragging on blank grid areas, highlighting selected clips in cyan with selection borders. Supports modifier keys (Shift, Cmd/Ctrl) for additive selections.
+  - Multi-clip batch operations: copy, duplicate, paste, and delete operate on all currently selected clips as a batch.
+  - Playhead paste advancement: after pasting clips, the playhead automatically moves to the end of the rightmost pasted clip to facilitate rapid continuous sequential layout.
+  - Custom bottom scrollbar: custom-drawn thick scrollbar overlay (20px-24px track, 32px interactive touch area) that remains invisible to not block clicks on lower tracks and fades in smoothly on mouse hover, supporting grab dragging and click-to-jump timeline navigation.
+  - Boundary edge auto-scrolling: dragging clips or drag-selecting marquee near the left/right boundaries of the visible timeline grid triggers automatic horizontal scrolling to allow navigation to hidden timeline segments.
+  - Media duration constraints: Except for synthetic clips (image, text, subtitle, visualizer) which can be stretched indefinitely, video and audio clips are strictly capped at their original media file duration (taking trimStart into account) during timeline resizing, drag-and-drop relocation, and inspector input updates.
+  - Timeline scroll buffer (Final Cut Pro style): Calculates an extra duration of 40% of the viewport width dynamically (`extraDuration = (scrollInfo.clientWidth * 0.4) / pxPerSecond`) and extends the timeline ruler/scroll boundaries beyond the last clip. This ensures that users always have a visual blank space at the right end of the timeline to drag, drop, or edit clips.
+- Reverse Playback & Smart Scene Split (CapCut-like features):
+  - Reverse Playback: Reverses a video or audio clip's active range (`trimStart` to `trimEnd`) using FFmpeg `-vf reverse` and `-af areverse` with a fallback to video-only if the audio track is missing or invalid. Saves the reversed media locally to IndexedDB and swaps timeline references.
+  - Smart Scene Split: Analyzes a video clip's active range using the FFmpeg scene change filter (`select='gt(scene,0.3)'`) to parse cuts/transitions and automatically splits the clip into multiple clips at those timestamps in a single batch state update.
+  - Locked execution: Integrates a global lock (`runWithFFmpegLock`) to run operations sequentially, showing a full-screen glassmorphism loading overlay with real-time progress text (e.g. conversion status percentage).
+- Large File Optimization & Crash Prevention:
+  - Streaming Audio Extraction: Uses `mediabunny`'s `BlobSource` / `AudioBufferSink` in `audioExtractor.ts` to stream audio frames chunk-by-chunk from massive files (up to 24GB+), generating lightweight WAV Blobs and avoiding browser-level 2GB array buffer limit crashes.
+  - IndexedDB Quota Guardrail: Restricts local caching of raw source video assets exceeding 500MB to avoid database/disk write lockups, while still caching the lightweight audio WAV files (<10MB).
+  - Chunked File System Writing: Splits large exported videos (MP4/WebM) into 16MB slices when writing to the File System Access API `createWritable()` stream, preventing IPC buffer overflows and Chrome process SIGABRT crashes.
+  - Silent Video Handling: Prevents freezes by checking for audio tracks on import/relink. Silent videos return an empty waveform and generate a 1-second silent `AudioBuffer` for the web audio mixdown, bypassing play/export errors gracefully.
+  - Global AudioContext Sharing: Prevents browser Web Audio context exhaustion (which silences playback when 6-10 AudioContexts are created) by caching and reusing a single global AudioContext instance on `window` for all preview media layers, avoiding audio drops when clips are copied/pasted, duplicated, or unmounted.
 
 ## 3. UI Structure
 
@@ -208,8 +226,10 @@ There is no dedicated Video Studio server render API in the current implementati
 - Export job store: `src/components/studio/video/editor/export/exportJobStore.ts`
 - Worker preflight: `src/components/studio/video/editor/export/exportWorkerSupport.ts`
 - Audio mixdown: `src/components/studio/video/editor/export/audioMixdown.ts`
+- Streaming audio extractor: `src/components/studio/video/editor/export/audioExtractor.ts`
 - Waveform analysis/cache: `src/components/studio/video/editor/VideoEditorContext.tsx`
 - FFmpeg converter: `src/components/studio/video/editor/ffmpeg/convertWebmToMp4.ts`
+- FFmpeg operations: `src/components/studio/video/editor/ffmpeg/videoOperations.ts`
 
 ## 7. Future Expansion
 

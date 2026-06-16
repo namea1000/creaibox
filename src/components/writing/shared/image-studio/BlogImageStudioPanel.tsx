@@ -696,52 +696,28 @@ export default function BlogImageStudioPanel({
       const uploadedImages: GeneratedImage[] = [];
 
       for (const [index, file] of files.entries()) {
-        const webpBlob = await convertImageFileToWebp(file);
-        const imageId =
-          typeof crypto !== "undefined" && "randomUUID" in crypto
-            ? crypto.randomUUID()
-            : `${Date.now()}-${index}`;
-
-        const filePath = `${userId}/image-studio/${Date.now()}-${imageId}.webp`;
-
-        const { error: uploadError } = await supabase.storage
-          .from(IMAGE_BUCKET)
-          .upload(filePath, webpBlob, {
-            contentType: "image/webp",
-            upsert: false,
-          });
-
-        if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`);
-
-        const { data: publicUrlData } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(filePath);
-        const publicUrl = publicUrlData.publicUrl;
-
         const currentPost = buildCurrentPost();
 
-        const { data, error: insertError } = await supabase
-          .from("generated_images")
-          .insert({
-            user_id: userId,
-            prompt: [
-              `PC 업로드 ${mode === "thumbnail" ? "썸네일" : "본문 이미지"} - ${currentPost?.title || title || "선택 원고"}`,
-              `원본 파일명: ${file.name}`,
-              imagePrompt.trim(),
-            ]
-              .filter(Boolean)
-              .join("\n\n"),
-            image_url: publicUrl,
-            style: selectedStyle,
-            aspect_ratio: selectedAspectRatio,
-            provider: selectedProvider,
-            source_type: sourceType,
-            source_id: activeSourceId,
-            image_role: imageRole,
-            is_primary: false,
-          })
-          .select("id, image_url, prompt, style, aspect_ratio, provider, source_type, source_id, image_role, is_primary")
-          .single();
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("sourceType", sourceType);
+        formData.append("sourceId", activeSourceId);
+        formData.append("imageRole", imageRole);
+        formData.append("title", currentPost?.title || title || "선택 원고");
+        formData.append("targetKeyword", imagePrompt.trim());
 
-        if (insertError) throw new Error(`DB 저장 실패: ${insertError.message}`);
+        const response = await fetch("/api/image-upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "이미지 업로드에 실패했습니다.");
+        }
+
+        const data = result.image;
 
         uploadedImages.push({
           id: String(data.id),

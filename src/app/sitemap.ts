@@ -8,8 +8,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const { data: posts, error } = await supabase
     .from("writing_creaibox_posts")
-    .select("slug, updated_at")
+    .select("slug, updated_at, profiles!inner(role)")
     .eq("status", "published")
+    .eq("profiles.role", "ADMIN")
     .not("slug", "is", null);
 
   if (error) {

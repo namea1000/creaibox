@@ -24,6 +24,8 @@ import {
 import Sidebar from "@/components/layout/Sidebar";
 import Aside from "@/components/layout/Aside";
 import StudioTopbar from "@/components/studio/StudioTopbar";
+import CreNoteWidget from "@/components/studio/widgets/CreNoteWidget";
+import AiAssistantWidget from "@/components/studio/widgets/AiAssistantWidget";
 import {
   AI_API_VAULT_SERVICES,
   AI_PROVIDER_LABELS,
@@ -403,6 +405,8 @@ export default function APIVaultPage() {
                 </section>
               </div>
             </div>
+            <CreNoteWidget />
+            <AiAssistantWidget />
           </main>
 
           <div className="hidden shrink-0 xl:flex">

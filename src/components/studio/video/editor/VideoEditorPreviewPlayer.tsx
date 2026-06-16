@@ -44,6 +44,24 @@ const getMediaElementAudioGraphs = (): WeakMap<HTMLMediaElement, MediaElementAud
   return win[GLOBAL_AUDIO_GRAPHS_KEY];
 };
 
+const GLOBAL_AUDIO_CONTEXT_KEY = "__creaibox_global_audio_context__";
+
+const getGlobalAudioContext = (): AudioContext | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  const win = window as any;
+  if (!win[GLOBAL_AUDIO_CONTEXT_KEY]) {
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+    if (!AudioContextClass) return null;
+    win[GLOBAL_AUDIO_CONTEXT_KEY] = new AudioContextClass();
+  }
+  return win[GLOBAL_AUDIO_CONTEXT_KEY];
+};
+
 export default function VideoEditorPreviewPlayer() {
   const {
     mediaItems,
@@ -266,17 +284,13 @@ function PreviewMediaLayer({
     let graph = graphs.get(element);
 
     if (!graph) {
-      const AudioContextClass =
-        window.AudioContext ||
-        (window as typeof window & { webkitAudioContext?: typeof AudioContext })
-          .webkitAudioContext;
+      const audioContext = getGlobalAudioContext();
 
-      if (!AudioContextClass) {
+      if (!audioContext) {
         element.volume = mix.volume;
         return;
       }
 
-      const audioContext = new AudioContextClass();
       let source;
       try {
         source = audioContext.createMediaElementSource(element);

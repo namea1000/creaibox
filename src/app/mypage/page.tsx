@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   User,
   Shield,
@@ -12,6 +12,7 @@ import {
   Mail,
   LogIn,
   RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -30,12 +31,33 @@ type WpSite = {
 type ProfileState = {
   nickname: string;
   brand_id: string;
+  requested_brand_id: string;
+  brand_id_status: string;
+  brand_id_rejection_reason: string;
   membership_level: string;
+  role?: string;
   extra_configs?: {
     wp_sites?: WpSite[];
+    brand_ids?: string[];
     [key: string]: any;
   };
 };
+
+function getBrandLimit(membershipLevel: string, role: string) {
+  const cleanLevel = (membershipLevel || "").toLowerCase();
+  const cleanRole = (role || "").toUpperCase();
+
+  if (cleanRole === "ADMIN" || cleanRole === "SUPER_ADMIN" || cleanLevel === "admin") {
+    return 10;
+  }
+  if (cleanLevel === "pro" || cleanLevel === "business" || cleanLevel === "enterprise") {
+    return 3;
+  }
+  if (cleanLevel === "creator") {
+    return 2;
+  }
+  return 1;
+}
 
 export default function MyPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -51,9 +73,69 @@ export default function MyPage() {
   const [profile, setProfile] = useState<ProfileState>({
     nickname: "",
     brand_id: "",
+    requested_brand_id: "",
+    brand_id_status: "NONE",
+    brand_id_rejection_reason: "",
     membership_level: "free",
+    role: "FREE",
     extra_configs: {},
   });
+
+  const [checkingBrandId, setCheckingBrandId] = useState("");
+  const [isBrandChecking, setIsBrandChecking] = useState(false);
+  const [brandAvailable, setBrandAvailable] = useState<boolean | null>(null);
+  const [checkingBrandName, setCheckingBrandName] = useState("");
+  const [brandInput, setBrandInput] = useState("");
+  const [customDomainInput, setCustomDomainInput] = useState("");
+
+  const [selectedBrandForDomain, setSelectedBrandForDomain] = useState("");
+
+  const approvedBrands = useMemo(() => {
+    return [profile.brand_id, ...(profile.extra_configs?.brand_ids || [])].filter(Boolean);
+  }, [profile.brand_id, profile.extra_configs?.brand_ids]);
+
+  const getBrandDomainConfig = useCallback((bId: string) => {
+    if (!bId) return { status: "NONE", domain: "", requested: "", reason: "" };
+    const configs = profile.extra_configs || {};
+    const isPrimary = bId === profile.brand_id;
+    
+    const status = configs[`custom_domain_status_${bId}`] !== undefined 
+      ? configs[`custom_domain_status_${bId}`] 
+      : (isPrimary ? (configs.custom_domain_status || "NONE") : "NONE");
+       
+    const domain = configs[`custom_domain_${bId}`] !== undefined 
+      ? configs[`custom_domain_${bId}`] 
+      : (isPrimary ? (configs.custom_domain || "") : "");
+       
+    const requested = configs[`requested_custom_domain_${bId}`] !== undefined 
+      ? configs[`requested_custom_domain_${bId}`] 
+      : (isPrimary ? (configs.requested_custom_domain || "") : "");
+       
+    const reason = configs[`custom_domain_rejection_reason_${bId}`] !== undefined 
+      ? configs[`custom_domain_rejection_reason_${bId}`] 
+      : (isPrimary ? (configs.custom_domain_rejection_reason || "") : "");
+       
+    return { status, domain, requested, reason };
+  }, [profile.brand_id, profile.extra_configs]);
+
+  useEffect(() => {
+    if (approvedBrands.length > 0) {
+      if (!selectedBrandForDomain || !approvedBrands.includes(selectedBrandForDomain)) {
+        setSelectedBrandForDomain(approvedBrands[0]);
+      }
+    } else {
+      setSelectedBrandForDomain("");
+    }
+  }, [approvedBrands, selectedBrandForDomain]);
+
+  useEffect(() => {
+    if (!selectedBrandForDomain) {
+      setCustomDomainInput("");
+      return;
+    }
+    const { domain, requested } = getBrandDomainConfig(selectedBrandForDomain);
+    setCustomDomainInput(requested || domain || "");
+  }, [selectedBrandForDomain, profile.extra_configs, getBrandDomainConfig]);
 
   const nicknameRegex = /^[a-zA-Z0-9가-힣]{2,12}$/;
 
@@ -91,9 +173,14 @@ export default function MyPage() {
           setProfile({
             nickname: data.nickname || "",
             brand_id: data.brand_id || "",
+            requested_brand_id: data.requested_brand_id || "",
+            brand_id_status: data.brand_id_status || "NONE",
+            brand_id_rejection_reason: data.brand_id_rejection_reason || "",
             membership_level: data.membership_level || "free",
+            role: data.role || "FREE",
             extra_configs: data.extra_configs || {},
           });
+          setBrandInput("");
 
           setWpSites(data.extra_configs?.wp_sites || []);
         }
@@ -130,6 +217,330 @@ export default function MyPage() {
     }
 
     alert(data ? "이미 사용 중인 닉네임입니다." : "사용 가능한 닉네임입니다!");
+  };
+
+  const checkBrandIdAvailability = async (value: string) => {
+    const brand = value ? value.trim().toLowerCase() : "";
+
+    if (!/^[a-z0-9]{2,15}$/.test(brand)) {
+      alert("❌ Brand ID는 영문 소문자와 숫자 조합으로 2~15자만 가능합니다.");
+      return;
+    }
+
+    setIsBrandChecking(true);
+    setBrandAvailable(null);
+    setCheckingBrandName("");
+
+    try {
+      const { data: primaryMatch } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("brand_id", brand)
+        .maybeSingle();
+
+      if (primaryMatch && primaryMatch.id !== user?.id) {
+        setBrandAvailable(false);
+        alert("❌ 이미 등록된 브랜드 ID입니다.");
+        return;
+      }
+
+      const { data: requestedMatch } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("requested_brand_id", brand)
+        .in("brand_id_status", ["PENDING", "APPROVED"])
+        .maybeSingle();
+
+      if (requestedMatch && requestedMatch.id !== user?.id) {
+        setBrandAvailable(false);
+        alert("❌ 다른 사용자가 신청 중이거나 승인된 브랜드 ID입니다.");
+        return;
+      }
+
+      const { data: extraMatch } = await supabase
+        .from("profiles")
+        .select("id")
+        .contains("extra_configs", { brand_ids: [brand] })
+        .maybeSingle();
+
+      if (extraMatch && extraMatch.id !== user?.id) {
+        setBrandAvailable(false);
+        alert("❌ 이미 등록된 브랜드 ID입니다.");
+        return;
+      }
+
+      const { data: reservedData, error: reservedError } = await supabase
+        .from("reserved_brand_ids")
+        .select("id")
+        .eq("brand_id", brand)
+        .maybeSingle();
+
+      if (reservedError) throw reservedError;
+
+      if (reservedData) {
+        setBrandAvailable(false);
+        alert("❌ 시스템 예약어 또는 사용이 금지된 브랜드 ID입니다.");
+        return;
+      }
+
+      setBrandAvailable(true);
+      setCheckingBrandName(brand);
+      alert("✅ 사용 가능한 브랜드 ID입니다!");
+    } catch (err: any) {
+      console.error(err);
+      alert("체크 중 오류가 발생했습니다.");
+    } finally {
+      setIsBrandChecking(false);
+    }
+  };
+
+  const requestBrandId = async () => {
+    if (!user) return;
+    const brand = checkingBrandName.trim().toLowerCase();
+    if (!brand || !brandAvailable) {
+      alert("먼저 사용 가능한 브랜드 ID를 조회해 주세요.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const approvedBrands = [profile.brand_id, ...(profile.extra_configs?.brand_ids || [])].filter(Boolean);
+      const limit = getBrandLimit(profile.membership_level, profile.role || "");
+
+      if (approvedBrands.length >= limit) {
+        alert(`❌ 브랜드 ID 최대 보유 한도(${limit}개)를 초과할 수 없습니다.`);
+        setIsSaving(false);
+        return;
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          requested_brand_id: brand,
+          brand_id_status: "PENDING",
+          brand_id_rejection_reason: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      setProfile((prev) => ({
+        ...prev,
+        requested_brand_id: brand,
+        brand_id_status: "PENDING",
+        brand_id_rejection_reason: "",
+      }));
+
+      alert("🎉 브랜드 ID 신청이 정상적으로 접수되었습니다. 관리자 승인을 기다려주세요!");
+
+      setBrandAvailable(null);
+      setBrandInput("");
+    } catch (err: any) {
+      console.error(err);
+      alert(`신청 실패: ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelBrand = async (brandIdToCancel: string) => {
+    if (!user || !profile) return;
+
+    const msg = "정말로 신청을 취소하시겠습니까? 취소하시면 자동 취소가 되며 새로 신청 절차를 밟아야 합니다.";
+    if (!confirm(msg)) return;
+
+    setIsSaving(true);
+    try {
+      const { data: latestProfile, error: fetchErr } = await supabase
+        .from("profiles")
+        .select("brand_id, brand_id_status, requested_brand_id, extra_configs")
+        .eq("id", user.id)
+        .single();
+
+      if (fetchErr) throw fetchErr;
+
+      let primaryBrandId = latestProfile.brand_id || null;
+      let brandIdStatus = latestProfile.brand_id_status || "NONE";
+      let requestedBrandId = latestProfile.requested_brand_id || null;
+      let brandIds: string[] = latestProfile.extra_configs?.brand_ids || [];
+      let nextExtraConfigs = { ...(latestProfile.extra_configs || {}) };
+
+      if (primaryBrandId === brandIdToCancel) {
+        if (brandIds.length > 0) {
+          primaryBrandId = brandIds[0];
+          brandIds = brandIds.slice(1);
+          brandIdStatus = "APPROVED";
+          
+          // Copy configs of the new primary brand to the base configs
+          const keysToCopy = [
+            "blog_title", "blog_description", "blog_template", "blog_accent_color",
+            "ga_id", "naver_advisor_key", "seo_template_title", "seo_template_desc",
+            "custom_domain", "custom_domain_status", "requested_custom_domain", "custom_domain_rejection_reason"
+          ];
+          keysToCopy.forEach(key => {
+            const suffixKey = `${key}_${primaryBrandId}`;
+            if (nextExtraConfigs[suffixKey] !== undefined) {
+              nextExtraConfigs[key] = nextExtraConfigs[suffixKey];
+            } else {
+              delete nextExtraConfigs[key];
+            }
+          });
+        } else {
+          primaryBrandId = null;
+          brandIdStatus = "NONE";
+          
+          // Clear base configs
+          const keysToClear = [
+            "blog_title", "blog_description", "blog_template", "blog_accent_color",
+            "ga_id", "naver_advisor_key", "seo_template_title", "seo_template_desc",
+            "custom_domain", "custom_domain_status", "requested_custom_domain", "custom_domain_rejection_reason"
+          ];
+          keysToClear.forEach(key => {
+            delete nextExtraConfigs[key];
+          });
+        }
+      } else {
+        brandIds = brandIds.filter((bId: string) => bId !== brandIdToCancel);
+      }
+
+      nextExtraConfigs.brand_ids = brandIds;
+
+      // Purge all configurations with this brand suffix
+      const suffix = `_${brandIdToCancel}`;
+      Object.keys(nextExtraConfigs).forEach((key) => {
+        if (key.endsWith(suffix)) {
+          delete nextExtraConfigs[key];
+        }
+      });
+
+      const { error: updateErr } = await supabase
+        .from("profiles")
+        .update({
+          brand_id: primaryBrandId,
+          brand_id_status: brandIdStatus,
+          requested_brand_id: primaryBrandId === null ? null : requestedBrandId,
+          extra_configs: nextExtraConfigs,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (updateErr) throw updateErr;
+
+      setProfile((prev: any) => ({
+        ...prev,
+        brand_id: primaryBrandId || "",
+        brand_id_status: brandIdStatus,
+        requested_brand_id: primaryBrandId === null ? "" : (requestedBrandId || ""),
+        extra_configs: nextExtraConfigs,
+      }));
+
+      alert("✅ 브랜드 ID 신청이 성공적으로 취소되었습니다.");
+    } catch (err: any) {
+      console.error(err);
+      alert(`취소 중 오류가 발생했습니다: ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const requestCustomDomain = async () => {
+    if (!user || !selectedBrandForDomain) return;
+    const domain = customDomainInput.trim().toLowerCase();
+    if (!domain) {
+      alert("연결할 독립 도메인을 입력해 주세요.");
+      return;
+    }
+    
+    const domainRegex = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/;
+    if (!domainRegex.test(domain)) {
+      alert("올바른 도메인 형식(예: blog.mybrand.com 또는 mybrand.com)을 입력해 주세요.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const isPrimary = selectedBrandForDomain === profile.brand_id;
+      const nextExtraConfigs = {
+        ...(profile.extra_configs || {}),
+        [`requested_custom_domain_${selectedBrandForDomain}`]: domain,
+        [`custom_domain_status_${selectedBrandForDomain}`]: "PENDING",
+        [`custom_domain_rejection_reason_${selectedBrandForDomain}`]: null,
+      };
+
+      if (isPrimary) {
+        nextExtraConfigs.requested_custom_domain = domain;
+        nextExtraConfigs.custom_domain_status = "PENDING";
+        nextExtraConfigs.custom_domain_rejection_reason = null;
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          extra_configs: nextExtraConfigs,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      setProfile((prev: any) => ({
+        ...prev,
+        extra_configs: nextExtraConfigs,
+      }));
+
+      alert(`✅ [${selectedBrandForDomain}] 브랜드에 대한 독립 도메인 연결 신청이 접수되었습니다. 관리자 심사 후 연결됩니다.`);
+    } catch (err: any) {
+      alert(`신청 실패: ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const disconnectCustomDomain = async () => {
+    if (!user || !selectedBrandForDomain) return;
+    if (!confirm(`[${selectedBrandForDomain}] 브랜드에 연결된 독립 도메인을 해제하시겠습니까?`)) return;
+
+    setIsSaving(true);
+    try {
+      const isPrimary = selectedBrandForDomain === profile.brand_id;
+      const nextExtraConfigs = {
+        ...(profile.extra_configs || {}),
+        [`custom_domain_${selectedBrandForDomain}`]: null,
+        [`requested_custom_domain_${selectedBrandForDomain}`]: null,
+        [`custom_domain_status_${selectedBrandForDomain}`]: "NONE",
+        [`custom_domain_rejection_reason_${selectedBrandForDomain}`]: null,
+      };
+
+      if (isPrimary) {
+        nextExtraConfigs.custom_domain = null;
+        nextExtraConfigs.requested_custom_domain = null;
+        nextExtraConfigs.custom_domain_status = "NONE";
+        nextExtraConfigs.custom_domain_rejection_reason = null;
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          extra_configs: nextExtraConfigs,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      setProfile((prev: any) => ({
+        ...prev,
+        extra_configs: nextExtraConfigs,
+      }));
+      setCustomDomainInput("");
+
+      alert("✅ 독립 도메인 연결이 해제되었습니다.");
+    } catch (err: any) {
+      alert(`해제 실패: ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const addWpSite = () => {
@@ -216,6 +627,13 @@ export default function MyPage() {
     );
   }
 
+  const limit = getBrandLimit(profile.membership_level, profile.role || "");
+  const isProOrAbove =
+    profile.membership_level === "pro" ||
+    profile.membership_level === "admin" ||
+    profile.role === "ADMIN" ||
+    profile.role === "SUPER_ADMIN";
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#05070a] font-sans text-zinc-100">
       <Sidebar
@@ -297,14 +715,432 @@ export default function MyPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-3 opacity-40 grayscale">
-                    <label className="pl-1 text-[10px] font-black uppercase tracking-widest text-zinc-600">
-                      Brand ID
+                  <div className="space-y-4 pt-4 border-t border-zinc-800/50">
+                    <label className="pl-1 text-[11px] font-black uppercase tracking-widest text-zinc-500 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Globe size={12} className="text-blue-400" /> 브랜드 ID 보유 현황 ({approvedBrands.length} / {limit}개)
+                      </span>
+                      <span className="text-[10px] text-zinc-600">
+                        Free: 1개 | Creator: 2개 | Pro: 3개 | Admin: 10개
+                      </span>
                     </label>
-                    <div className="flex items-center rounded-2xl border border-zinc-800 bg-black/40 px-6 py-4">
-                      <span className="text-sm font-black uppercase italic text-zinc-600">Coming Soon</span>
-                      <span className="ml-auto text-xs font-black text-zinc-800">.creaibox.com</span>
+
+                    {/* Approved Brands List */}
+                    {approvedBrands.length > 0 && (
+                      <div className="space-y-2">
+                        {approvedBrands.map((bId) => (
+                          <div key={bId} className="flex items-center justify-between rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-6 py-4">
+                            <div className="flex flex-col text-left">
+                              <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">승인 완료 (LIVE)</span>
+                              <a 
+                                href={`http://${bId}.localhost:3000`} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-sm font-black text-white hover:text-blue-400 transition-colors flex items-center gap-1 mt-0.5 italic tracking-tight"
+                              >
+                                {bId}.creaibox.com
+                              </a>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {(() => {
+                                const { status, domain } = getBrandDomainConfig(bId);
+                                if (status === "APPROVED" && domain) {
+                                  return (
+                                    <a
+                                      href={`https://${domain}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-xs font-bold text-emerald-400 hover:text-emerald-300 mr-2 transition-colors italic tracking-tight"
+                                    >
+                                      ({domain})
+                                    </a>
+                                  );
+                                }
+                                return null;
+                              })()}
+                              <span className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-emerald-400">
+                                LIVE
+                              </span>
+                              <button
+                                onClick={() => handleCancelBrand(bId)}
+                                disabled={isSaving}
+                                className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors"
+                              >
+                                신청 취소
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Pending Request */}
+                    {profile.brand_id_status === "PENDING" && profile.requested_brand_id && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between rounded-2xl border border-amber-500/20 bg-amber-500/5 px-6 py-4">
+                          <div className="flex flex-col text-left">
+                            <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">심사 대기 중</span>
+                            <span className="text-sm font-black text-zinc-400 mt-0.5 italic tracking-tight">
+                              {profile.requested_brand_id}.creaibox.com
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="animate-pulse inline-block w-2 h-2 rounded-full bg-amber-500" />
+                            <span className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-amber-400">
+                              PENDING
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Rejected Request */}
+                    {profile.brand_id_status === "REJECTED" && profile.requested_brand_id && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between rounded-2xl border border-red-500/20 bg-red-500/5 px-6 py-4">
+                          <div className="flex flex-col text-left">
+                            <span className="text-[10px] font-bold text-red-500 uppercase tracking-wider">반려됨</span>
+                            <span className="text-sm font-black text-zinc-500 line-through mt-0.5 italic tracking-tight">
+                              {profile.requested_brand_id}.creaibox.com
+                            </span>
+                          </div>
+                          <span className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-red-400">
+                            REJECTED
+                          </span>
+                        </div>
+                        {profile.brand_id_rejection_reason && (
+                          <div className="rounded-xl border border-red-500/10 bg-red-600/5 p-4 text-[11px] font-bold text-red-400 leading-relaxed text-left">
+                            💡 반려 사유: {profile.brand_id_rejection_reason}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Apply Form - Render only if count is below limit */}
+                    {approvedBrands.length + (profile.brand_id_status === "PENDING" ? 1 : 0) < limit ? (
+                      <div className="space-y-4 pt-2">
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <input
+                              type="text"
+                              value={brandInput}
+                              onChange={(e) => {
+                                setBrandInput(e.target.value);
+                                setBrandAvailable(null);
+                              }}
+                              className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 pl-6 pr-28 py-5 text-sm font-bold text-white shadow-inner outline-none transition-all placeholder:text-zinc-800 focus:border-blue-500"
+                              placeholder="추가할 브랜드 ID 입력"
+                            />
+                            <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-600">
+                              .creaibox.com
+                            </span>
+                          </div>
+
+                          <button
+                            onClick={() => checkBrandIdAvailability(brandInput)}
+                            disabled={isBrandChecking}
+                            className="rounded-2xl border border-zinc-700 bg-zinc-800 px-6 text-[11px] font-black uppercase italic tracking-tighter text-zinc-300 transition-all hover:bg-zinc-700 disabled:opacity-50"
+                          >
+                            {isBrandChecking ? "Checking..." : "Check"}
+                          </button>
+                        </div>
+
+                        {brandAvailable === true && checkingBrandName === brandInput.trim().toLowerCase() && (
+                          <div className="flex items-center justify-between rounded-2xl border border-blue-500/20 bg-blue-600/5 p-5">
+                            <div className="space-y-1 text-left">
+                              <p className="text-xs font-black text-blue-400 flex items-center gap-1.5">
+                                <CheckCircle size={14} /> 사용 가능한 브랜드 ID입니다!
+                              </p>
+                              <p className="text-[11px] font-bold text-zinc-500 leading-relaxed">
+                                {checkingBrandName}.creaibox.com 도메인을 추가하시겠습니까?
+                              </p>
+                            </div>
+                            <button
+                              onClick={requestBrandId}
+                              disabled={isSaving}
+                              className="rounded-xl bg-blue-500 hover:bg-blue-600 px-5 py-2.5 text-[11px] font-black uppercase italic tracking-widest text-white transition-all shadow-[0_4px_12px_rgba(59,130,246,0.2)]"
+                            >
+                              추가하기
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-6 text-center">
+                        <AlertTriangle className="mx-auto text-amber-500 mb-2" size={24} />
+                        <p className="text-xs font-black text-zinc-400">브랜드 ID 한도 도달</p>
+                        <p className="text-[11px] font-medium text-zinc-600 mt-1.5 leading-relaxed">
+                          현재 요금제 등급에서 등록 가능한 최대 브랜드 ID 개수({limit}개)에 도달했습니다.<br />
+                          더 많은 브랜드 ID를 등록하려면 요금제를 업그레이드해 주세요.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="space-y-2.5 rounded-2xl border border-blue-500/10 bg-blue-600/5 p-5">
+                      <p className="flex items-center gap-2 text-xs font-black leading-relaxed text-blue-400">
+                        <CheckCircle size={14} /> 브랜드 ID 신청 안내
+                      </p>
+                      <ul className="text-[11px] font-bold leading-relaxed text-zinc-500 list-disc pl-4 space-y-1 text-left">
+                        <li>브랜드 ID는 영문 소문자와 숫자 조합으로 2~15자만 가능합니다.</li>
+                        <li>신청 후 관리자 승인을 통해 나만의 개인 브랜드 블로그 서브도메인이 최종 할당됩니다.</li>
+                        <li>apple, creaibox 등 시스템/유명 브랜드 예약어는 신청이 제한됩니다.</li>
+                      </ul>
                     </div>
+                  </div>
+
+                  {/* Custom Domain Section */}
+                  <div className="space-y-4 pt-4 border-t border-zinc-800/50">
+                    <label className="pl-1 text-[11px] font-black uppercase tracking-widest text-zinc-500 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Globe size={12} className="text-blue-400" /> 독립 도메인 연결 (Custom Domain)
+                      </span>
+                      <span className="text-[10px] text-zinc-600">
+                        Pro 요금제 이상 제공
+                      </span>
+                    </label>
+
+                    {/* Non-Pro User Block */}
+                    {!isProOrAbove ? (
+                      <div className="space-y-3">
+                        <div className="relative">
+                          <input
+                            type="text"
+                            disabled
+                            className="w-full rounded-2xl border border-zinc-900/60 bg-zinc-950/40 px-6 py-5 text-sm font-bold text-zinc-700 outline-none cursor-not-allowed"
+                            placeholder="연결할 도메인 입력 (예: aaa.com)"
+                          />
+                        </div>
+                        <div className="rounded-2xl border border-amber-500/10 bg-amber-500/5 p-5 text-[11px] font-bold text-amber-500 leading-relaxed text-left flex items-start gap-2">
+                          <AlertTriangle className="shrink-0 mt-0.5 text-amber-500" size={14} />
+                          <div>
+                            <p className="font-black">독립 도메인 연결 제한</p>
+                            <p className="text-zinc-500 mt-1">
+                              독립 도메인 연결 기능은 <strong>Pro 멤버십 이상</strong> 회원에게만 제공되는 프리미엄 기능입니다.<br />
+                              나만의 개인 독립 도메인(예: aaa.com)으로 블로그를 브랜딩하려면 멤버십을 업그레이드해 주세요.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {(() => {
+                          if (approvedBrands.length === 0) {
+                            return (
+                              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-5 text-[11px] font-bold text-zinc-500 leading-relaxed text-left">
+                                ❌ 독립 도메인을 연결할 승인 완료된 브랜드 ID가 없습니다. 먼저 브랜드 ID를 신청하고 승인받으셔야 합니다.
+                              </div>
+                            );
+                          }
+
+                          const { 
+                            status: currentDomainStatus, 
+                            domain: currentDomain, 
+                            requested: currentRequestedDomain, 
+                            reason: currentRejectionReason 
+                          } = getBrandDomainConfig(selectedBrandForDomain);
+
+                          return (
+                            <div className="space-y-4">
+                              {/* Brand selector dropdown */}
+                              <div className="flex flex-col space-y-2 text-left bg-zinc-950/40 p-5 rounded-3xl border border-zinc-900">
+                                <label className="pl-1 text-[10px] font-black uppercase tracking-wider text-zinc-500">
+                                  설정할 브랜드 ID 선택
+                                </label>
+                                <select
+                                  value={selectedBrandForDomain}
+                                  onChange={(e) => setSelectedBrandForDomain(e.target.value)}
+                                  className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4 text-sm font-bold text-white outline-none transition-all focus:border-blue-500"
+                                >
+                                  {approvedBrands.map((b) => (
+                                    <option key={b} value={b}>
+                                      {b}.creaibox.com
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {/* Status == NONE */}
+                              {(!currentDomainStatus || currentDomainStatus === "NONE") && (
+                                <div className="space-y-4">
+                                  <div className="flex gap-2">
+                                    <input
+                                      type="text"
+                                      value={customDomainInput}
+                                      onChange={(e) => setCustomDomainInput(e.target.value)}
+                                      className="flex-1 rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-5 text-sm font-bold text-white shadow-inner outline-none transition-all placeholder:text-zinc-800 focus:border-blue-500"
+                                      placeholder="연결할 독립 도메인 입력 (예: aaa.com)"
+                                    />
+                                    <button
+                                      onClick={requestCustomDomain}
+                                      disabled={isSaving}
+                                      className="rounded-2xl bg-blue-500 hover:bg-blue-600 px-6 text-[11px] font-black uppercase italic tracking-widest text-white transition-all shadow-[0_4px_12px_rgba(59,130,246,0.2)] disabled:opacity-50 font-bold"
+                                    >
+                                      {isSaving ? "신청 중..." : "연결 신청"}
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Status == PENDING */}
+                              {currentDomainStatus === "PENDING" && (
+                                <div className="space-y-3">
+                                  <div className="flex items-center justify-between rounded-2xl border border-amber-500/20 bg-amber-500/5 px-6 py-4">
+                                    <div className="flex flex-col text-left">
+                                      <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">
+                                        [{selectedBrandForDomain}] 독립 도메인 심사 중
+                                      </span>
+                                      <span className="text-sm font-black text-zinc-400 mt-0.5 italic tracking-tight">
+                                        {currentRequestedDomain}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="animate-pulse inline-block w-2 h-2 rounded-full bg-amber-500" />
+                                      <span className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-amber-400">
+                                        PENDING
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-5 text-[11px] font-bold text-zinc-500 leading-relaxed text-left space-y-1">
+                                    <p className="text-zinc-300 font-black">⏳ 도메인 신청 접수 완료</p>
+                                    <p>관리자가 신청된 독립 도메인을 검토하여 1~2일 내로 등록 및 SSL 인증서를 발급합니다.</p>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Status == APPROVED */}
+                              {currentDomainStatus === "APPROVED" && (
+                                <div className="space-y-4">
+                                  <div className="flex items-center justify-between rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-6 py-4">
+                                    <div className="flex flex-col text-left">
+                                      <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">
+                                        [{selectedBrandForDomain}] 연결 완료 (LIVE)
+                                      </span>
+                                      <a
+                                        href={`https://${currentDomain}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-sm font-black text-white hover:text-blue-400 transition-colors flex items-center gap-1 mt-0.5 italic tracking-tight"
+                                      >
+                                        {currentDomain}
+                                      </a>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <span className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-emerald-400">
+                                        LIVE
+                                      </span>
+                                      <button
+                                        onClick={disconnectCustomDomain}
+                                        className="rounded-xl bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-zinc-300 transition-colors"
+                                      >
+                                        연결 해제
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* DNS Connection Guides */}
+                                  <div className="space-y-2.5 rounded-2xl border border-blue-500/10 bg-blue-600/5 p-5 text-left">
+                                    <p className="flex items-center gap-2 text-xs font-black leading-relaxed text-blue-400">
+                                      <CheckCircle size={14} /> DNS 설정 필수 안내
+                                    </p>
+                                    <p className="text-[11px] font-bold leading-relaxed text-zinc-500">
+                                      독립 도메인 연결을 완료하려면 본인의 DNS 관리자(Cloudflare, GoDaddy 등)에서 아래 레코드를 추가하셔야 합니다.
+                                    </p>
+                                    <div className="p-3 bg-zinc-950 rounded-xl border border-zinc-800 space-y-1.5 font-mono text-[10px] text-zinc-400">
+                                      <div className="flex justify-between border-b border-zinc-900 pb-1.5">
+                                        <span>레코드 타입: <strong className="text-white">CNAME</strong></span>
+                                        <span>이름(호스트): <strong className="text-white">@ 또는 blog</strong></span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span>대상 주소(Value):</span>
+                                        <span className="text-white font-bold">{selectedBrandForDomain}.creaibox.com</span>
+                                      </div>
+                                    </div>
+                                    <p className="text-[9px] font-bold text-zinc-600">
+                                      * DNS 정보 전파는 최대 24-48시간이 소요될 수 있습니다.
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Status == REJECTED */}
+                              {currentDomainStatus === "REJECTED" && (
+                                <div className="space-y-3">
+                                  <div className="flex items-center justify-between rounded-2xl border border-red-500/20 bg-red-500/5 px-6 py-4">
+                                    <div className="flex flex-col text-left">
+                                      <span className="text-[10px] font-bold text-red-500 uppercase tracking-wider">
+                                        [{selectedBrandForDomain}] 연결 반려됨
+                                      </span>
+                                      <span className="text-sm font-black text-zinc-500 line-through mt-0.5 italic tracking-tight">
+                                        {currentRequestedDomain}
+                                      </span>
+                                    </div>
+                                    <span className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-red-400">
+                                      REJECTED
+                                    </span>
+                                  </div>
+                                  {currentRejectionReason && (
+                                    <div className="rounded-xl border border-red-500/10 bg-red-600/5 p-4 text-[11px] font-bold text-red-400 leading-relaxed text-left">
+                                      💡 반려 사유: {currentRejectionReason}
+                                    </div>
+                                  )}
+                                  {/* Re-apply form */}
+                                  <div className="flex gap-2 pt-2">
+                                    <input
+                                      type="text"
+                                      value={customDomainInput}
+                                      onChange={(e) => setCustomDomainInput(e.target.value)}
+                                      className="flex-1 rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-5 text-sm font-bold text-white shadow-inner outline-none transition-all placeholder:text-zinc-800 focus:border-blue-500"
+                                      placeholder="연결할 독립 도메인 다시 입력 (예: aaa.com)"
+                                    />
+                                    <button
+                                      onClick={requestCustomDomain}
+                                      disabled={isSaving}
+                                      className="rounded-2xl bg-blue-500 hover:bg-blue-600 px-6 text-[11px] font-black uppercase italic tracking-widest text-white transition-all shadow-[0_4px_12px_rgba(59,130,246,0.2)] font-bold"
+                                    >
+                                      다시 신청
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+
+                        {/* Domain Purchase Shortcuts */}
+                        <div className="pt-4 border-t border-zinc-800/40 text-left">
+                          <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500 mb-2.5 flex items-center gap-1.5">
+                            💡 도메인 등록/구입 바로가기
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            <a
+                              href="https://www.gabia.com"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 hover:text-white transition-all flex items-center gap-1"
+                            >
+                              가비아 (Gabia) ↗
+                            </a>
+
+                            <a
+                              href="https://vercel.com"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 hover:text-white transition-all flex items-center gap-1"
+                            >
+                              Vercel ↗
+                            </a>
+                            <a
+                              href="https://www.cafe24.com"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 hover:text-white transition-all flex items-center gap-1"
+                            >
+                              카페24 (Cafe24) ↗
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </section>

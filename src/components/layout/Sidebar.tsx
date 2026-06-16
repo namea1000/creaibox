@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -13,10 +13,13 @@ import {
   Star,
   HelpCircle,
   MessageCircle,
+  Globe,
   FileText,
   Newspaper,
   Sparkles,
   Search,
+  ShieldCheck,
+  Server,
   Image as ImageIcon,
   Video,
   Music,
@@ -65,6 +68,14 @@ import {
 } from "lucide-react";
 
 import { SiNaver, SiYoutube } from "react-icons/si";
+import { createClient } from "@/utils/supabase/client";
+
+const ADMIN_EMAILS = [
+  "creaiboxofficial@gmail.com",
+  "jenam7720@gmail.com",
+  "namjjang7720@gmail.com",
+  "admin@creaibox.com",
+];
 
 interface SidebarProps {
   activeMenu?: string;
@@ -102,6 +113,37 @@ export default function Sidebar({
   setIsMobileOpen,
 }: SidebarProps) {
   const pathname = usePathname();
+
+  const [isAdmin, setIsAdmin] = useState(false);
+  const supabase = useMemo(() => createClient(), []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const checkUser = (user: any) => {
+      if (!mounted) return;
+      if (user && ADMIN_EMAILS.includes(user.email || "")) {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
+    };
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      checkUser(user);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      checkUser(session?.user ?? null);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   const menuGroups: MenuGroup[] = useMemo(
     () => [
@@ -192,6 +234,7 @@ export default function Sidebar({
           { name: "AI 포스팅 글쓰기", href: "/studio/writing/creaibox/create", icon: Edit3 },
           { name: "AI 포스팅 에디터", href: "/studio/writing/creaibox/editor", icon: FileText },
           { name: "발행 원고 관리", href: "/studio/writing/creaibox/list", icon: Archive },
+          { name: "블로그 관리", href: "/studio/writing/creaibox/blog-management", icon: Settings },
           { name: "크리아이박스 썸네일", href: "/studio/writing/creaibox/thumbnail", icon: ImageIcon },
           { name: "아이디어 제너레이터", href: "/studio/writing/creaibox/ideagenerator", icon: Lightbulb },
           { name: "트렌드 대시보드", href: "/studio/writing/creaibox/analytics", icon: BarChart3 },
@@ -423,8 +466,30 @@ export default function Sidebar({
           { name: "Q&A", href: "/studio/infocenter/list/qna", icon: MessageCircle },
         ],
       },
+      ...(isAdmin
+        ? [
+            {
+              key: "admin",
+              name: "관리자 센터",
+              href: "/admin",
+              icon: ShieldCheck,
+              color: "text-red-500",
+              children: [
+                { name: "사용자 관리", href: "/admin/usermanagement", icon: Users },
+                { name: "브랜드 ID 및 도메인 관리", href: "/admin/brands", icon: Globe },
+                { name: "API Vault", href: "/admin/apivault", icon: Database },
+                { name: "Google 연동", href: "/admin/google", icon: Settings },
+                { name: "SEO 관리", href: "/admin/seo", icon: Search },
+                { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+                { name: "결제 관리", href: "/admin/billing", icon: Settings },
+                { name: "콘텐츠 관리", href: "/admin/content", icon: FileText },
+                { name: "시스템 관리", href: "/admin/system", icon: Server },
+              ],
+            },
+          ]
+        : []),
     ],
-    []
+    [isAdmin]
   );
 
   const isPathActive = (href: string) => {

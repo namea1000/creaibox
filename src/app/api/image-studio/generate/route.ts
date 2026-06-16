@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import sharp from "sharp";
+import { uploadToGoogleDrive, isGoogleDriveConfigured } from "@/lib/google-drive";
 
 export const runtime = "nodejs";
 
@@ -270,24 +271,35 @@ export async function POST(req: Request) {
 
       const compressedImageBuffer = await compressForStorage(imageBuffer, aspectRatio);
       const fileName = `${Date.now()}-${i}.webp`;
-      const filePath = `${user.id}/image-studio/${fileName}`;
+      let imageUrl = "";
 
-      const { error: uploadError } = await supabase.storage
-        .from("generated-images")
-        .upload(filePath, compressedImageBuffer, {
-          contentType: "image/webp",
-          upsert: false,
-        });
-
-      if (uploadError) {
-        throw new Error(`Storage upload failed: ${uploadError.message}`);
+      if (isGoogleDriveConfigured()) {
+        try {
+          imageUrl = await uploadToGoogleDrive(compressedImageBuffer, fileName, "image/webp");
+        } catch (gdriveError: any) {
+          console.error("Google Drive upload failed, falling back to Supabase storage:", gdriveError);
+        }
       }
 
-      const { data: publicUrlData } = supabase.storage
-        .from("generated-images")
-        .getPublicUrl(filePath);
+      if (!imageUrl) {
+        const filePath = `${user.id}/image-studio/${fileName}`;
+        const { error: uploadError } = await supabase.storage
+          .from("generated-images")
+          .upload(filePath, compressedImageBuffer, {
+            contentType: "image/webp",
+            upsert: false,
+          });
 
-      const imageUrl = publicUrlData.publicUrl;
+        if (uploadError) {
+          throw new Error(`Storage upload failed: ${uploadError.message}`);
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from("generated-images")
+          .getPublicUrl(filePath);
+
+        imageUrl = publicUrlData.publicUrl;
+      }
 
       const { data: inserted, error: insertError } = await supabase
         .from("generated_images")

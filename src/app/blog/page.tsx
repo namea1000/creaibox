@@ -34,8 +34,9 @@ export default async function BlogPage() {
 
   const { data: posts, error } = await supabase
     .from("writing_creaibox_posts")
-    .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at")
+    .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at, profiles!inner(role)")
     .eq("status", "published")
+    .eq("profiles.role", "ADMIN")
     .not("slug", "is", null)
     .order("created_at", { ascending: false });
 
@@ -43,7 +44,7 @@ export default async function BlogPage() {
     console.error("공개 블로그 목록 조회 실패:", error.message);
   }
 
-  const publishedPostsRaw = ((posts as PublishedPost[] | null) || []).filter((post) => post.slug);
+  const publishedPostsRaw = (((posts as any) as PublishedPost[] | null) || []).filter((post) => post.slug);
   let publishedPosts: PublishedPost[] = [];
 
   if (publishedPostsRaw.length > 0) {

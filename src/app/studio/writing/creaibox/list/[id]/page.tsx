@@ -42,7 +42,13 @@ function buildPublicBlogSlug(title?: string, focusKeyword?: string, targetKeywor
   return base || `creaibox-post-${Date.now()}`;
 }
 
-function buildCanonicalUrl(slug: string) {
+function buildCanonicalUrl(slug: string, role?: string, brandId?: string) {
+  if (role === "ADMIN") {
+    return `https://creaibox.com/blog/${slug}`;
+  }
+  if (brandId) {
+    return `https://${brandId}.creaibox.com/${slug}`;
+  }
   return `https://creaibox.com/blog/${slug}`;
 }
 
@@ -182,6 +188,40 @@ export default function CreaiboxManuscriptDetailPage() {
 
   const [isMounted, setIsMounted] = useState(false);
   const [data, setData] = useState<StudioManuscriptRecord | null>(null);
+  const [userRole, setUserRole] = useState<string>("");
+  const [userBrandId, setUserBrandId] = useState<string>("");
+  const [userBrandIds, setUserBrandIds] = useState<string[]>([]);
+  const [extraConfigs, setExtraConfigs] = useState<any>(null);
+
+  useEffect(() => {
+    const getProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("role, brand_id, extra_configs")
+          .eq("id", user.id)
+          .single();
+        if (prof?.role) setUserRole(prof.role);
+        if (prof?.brand_id) setUserBrandId(prof.brand_id);
+        if (prof?.extra_configs) setExtraConfigs(prof.extra_configs);
+
+        const approvedBrands: string[] = [];
+        if (prof?.brand_id) {
+          approvedBrands.push(prof.brand_id);
+        }
+        if (prof?.extra_configs?.brand_ids && Array.isArray(prof.extra_configs.brand_ids)) {
+          prof.extra_configs.brand_ids.forEach((b: string) => {
+            if (b && !approvedBrands.includes(b)) {
+              approvedBrands.push(b);
+            }
+          });
+        }
+        setUserBrandIds(approvedBrands);
+      }
+    };
+    void getProfile();
+  }, [supabase]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -471,7 +511,18 @@ export default function CreaiboxManuscriptDetailPage() {
         safeData.targetKeyword
       );
 
-      const canonicalUrl = buildCanonicalUrl(slug);
+      let canonicalUrl = safeData.canonicalUrl || "";
+      if (userRole !== "ADMIN" && userBrandId) {
+        const prefix = `https://${userBrandId}.creaibox.com`;
+        if (!canonicalUrl.startsWith(prefix)) {
+          canonicalUrl = `${prefix}/${slug}`;
+        }
+      } else {
+        if (!canonicalUrl) {
+          canonicalUrl = buildCanonicalUrl(slug, userRole, userBrandId);
+        }
+      }
+
       const now = new Date().toISOString();
       const nextStatus = (status ?? safeData.status ?? "draft") as StudioManuscriptRecord["status"];
 
@@ -518,7 +569,7 @@ export default function CreaiboxManuscriptDetailPage() {
 
       return true;
     },
-    [data, persistCaches, supabase]
+    [data, persistCaches, supabase, userRole, userBrandId]
   );
 
   const publishingStatus = useMemo(() => {
@@ -763,6 +814,10 @@ export default function CreaiboxManuscriptDetailPage() {
               <CreaiboxSeoOptimizationPanel
                 data={data}
                 updateLocalData={updateLocalData}
+                userRole={userRole}
+                userBrandId={userBrandId}
+                userBrandIds={userBrandIds}
+                extraConfigs={extraConfigs}
               />
             )}
             {publishingPanelTab === "thumbnail" && (

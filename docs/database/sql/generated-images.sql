@@ -74,6 +74,13 @@ using (
 auth.uid() = user_id
 );
 
+create policy "Anyone can read generated images"
+on public.generated_images
+for select
+using (
+true
+);
+
 create policy "Users can insert own generated images"
 on public.generated_images
 for insert
@@ -118,4 +125,11 @@ to authenticated
 using (
 bucket_id = 'generated-images'
 and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+create policy "Anyone can view generated images"
+on storage.objects
+for select
+using (
+bucket_id = 'generated-images'
 );

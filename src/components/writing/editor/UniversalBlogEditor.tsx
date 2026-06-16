@@ -619,62 +619,27 @@ export default function UniversalBlogEditor({
       setIsImageUploading(true);
 
       try {
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("sourceType", contentImageSourceType);
+        formData.append("sourceId", String(manuscriptId));
+        formData.append("imageRole", CONTENT_IMAGE_ROLE);
+        formData.append("title", title || "");
+        formData.append("targetKeyword", targetKeyword || "");
 
-        if (userError || !user) {
-          alert("로그인 세션을 확인할 수 없습니다.");
-          return null;
+        const response = await fetch("/api/image-upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "본문 이미지 업로드에 실패했습니다.");
         }
 
-        const webpBlob = await convertImageFileToWebp(file);
-        const imageId =
-          typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}`;
-
-        const sourceFolder = contentImageSourceType.replace(/[^a-z0-9_-]/gi, "-");
-        const filePath = `${user.id}/${sourceFolder}-content/${String(manuscriptId)}/${Date.now()}-${imageId}.webp`;
-
-        const { error: uploadError } = await supabase.storage
-          .from(IMAGE_BUCKET)
-          .upload(filePath, webpBlob, {
-            contentType: "image/webp",
-            upsert: false,
-          });
-
-        if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`);
-
-        const { data: publicUrlData } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(filePath);
-        const publicUrl = publicUrlData.publicUrl;
-
-        const { data: savedImage, error: insertError } = await supabase
-          .from("generated_images")
-          .insert({
-            user_id: user.id,
-            prompt: [
-              `PC 업로드 본문 이미지 - ${title || "제목 없음"}`,
-              `원본 파일명: ${file.name}`,
-              targetKeyword ? `키워드: ${targetKeyword}` : "",
-            ]
-              .filter(Boolean)
-              .join("\n\n"),
-            image_url: publicUrl,
-            style: "manual-upload",
-            aspect_ratio: "content",
-            provider: "upload",
-            source_type: contentImageSourceType,
-            source_id: String(manuscriptId),
-            image_role: CONTENT_IMAGE_ROLE,
-            is_primary: false,
-          })
-          .select("id, image_url")
-          .single();
-
-        if (insertError) throw new Error(`DB 저장 실패: ${insertError.message}`);
-
         return {
-          url: savedImage?.image_url || publicUrl,
+          url: result.image.image_url,
           fileName: file.name,
         };
       } catch (error) {
@@ -685,7 +650,7 @@ export default function UniversalBlogEditor({
         setIsImageUploading(false);
       }
     },
-    [contentImageSourceType, editor, manuscriptId, supabase, targetKeyword, title]
+    [contentImageSourceType, editor, manuscriptId, targetKeyword, title]
   );
 
   const insertContentImageFile = useCallback(

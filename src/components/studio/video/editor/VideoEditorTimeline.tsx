@@ -59,6 +59,10 @@ function formatTimelineMark(totalSeconds: number) {
   return `${mins.toString().padStart(2, "0")}:${secsStr}`;
 }
 
+function clamp(val: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, val));
+}
+
 function clampTimelineZoom(value: number) {
   return Math.min(MAX_TIMELINE_ZOOM, Math.max(MIN_TIMELINE_ZOOM, Math.round(value)));
 }
@@ -83,11 +87,23 @@ export default function VideoEditorTimeline() {
   const timelineZoomRef = useRef(timelineZoom);
   const [draggingOverTrackId, setDraggingOverTrackId] = useState<string | null>(null);
   const [isDraggingOverGrid, setIsDraggingOverGrid] = useState(false);
+  const [scrollInfo, setScrollInfo] = useState({ scrollLeft: 0, scrollWidth: 0, clientWidth: 0 });
+  const marqueeActiveRef = useRef(false);
+  const marqueeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const marqueeMousePosRef = useRef<{ clientX: number; clientY: number } | null>(null);
+  const marqueeEventRef = useRef<{ shiftKey: boolean; metaKey: boolean } | null>(null);
+  const isDraggingRef = useRef(false);
+  const dragMouseXRef = useRef<number | null>(null);
 
   const handleTimelineScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (headersTracksContainerRef.current) {
       headersTracksContainerRef.current.scrollTop = e.currentTarget.scrollTop;
     }
+    setScrollInfo({
+      scrollLeft: e.currentTarget.scrollLeft,
+      scrollWidth: e.currentTarget.scrollWidth,
+      clientWidth: e.currentTarget.clientWidth,
+    });
   };
 
   const handleHeadersWheel = (e: React.WheelEvent<HTMLDivElement>) => {
@@ -177,82 +193,6 @@ export default function VideoEditorTimeline() {
     }
   }, [selectedClipIds, selectClip, selectClipIds]);
 
-  const handleGridPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0) return;
-    
-    const target = event.target as HTMLElement;
-    if (target.closest("button") || target.closest(".pointer-events-auto")) return;
-
-    // Check if clicking inside video editor clip element
-    if (target.closest(".group.absolute.top-2")) return;
-
-    event.preventDefault();
-
-    const gridEl = gridRef.current;
-    if (!gridEl) return;
-
-    const gridRect = gridEl.getBoundingClientRect();
-    const startX = event.clientX - gridRect.left;
-    const startY = event.clientY - gridRect.top;
-
-    setMarqueeStart({ x: startX, y: startY });
-    setMarqueeEnd({ x: startX, y: startY });
-
-    const handlePointerMove = (moveEvent: PointerEvent) => {
-      moveEvent.preventDefault();
-      const currentX = moveEvent.clientX - gridRect.left;
-      const currentY = moveEvent.clientY - gridRect.top;
-      setMarqueeEnd({ x: currentX, y: currentY });
-
-      const left = Math.min(startX, currentX);
-      const right = Math.max(startX, currentX);
-      const top = Math.min(startY, currentY);
-      const bottom = Math.max(startY, currentY);
-
-      const startTime = left / pxPerSecond;
-      const endTime = right / pxPerSecond;
-      const startTrackIdx = Math.floor(top / 72);
-      const endTrackIdx = Math.floor(bottom / 72);
-
-      const intersectingClipIds: string[] = [];
-      clips.forEach((clip) => {
-        const trackIdx = tracks.findIndex((t) => t.id === clip.trackId);
-        if (trackIdx === -1) return;
-
-        const inTrackRange = trackIdx >= startTrackIdx && trackIdx <= endTrackIdx;
-        const inTimeRange = clip.startTime < endTime && (clip.startTime + clip.duration) > startTime;
-
-        if (inTrackRange && inTimeRange) {
-          intersectingClipIds.push(clip.id);
-        }
-      });
-
-      if (event.shiftKey || event.metaKey) {
-        const combined = Array.from(new Set([...selectedClipIds, ...intersectingClipIds]));
-        selectClipIds(combined);
-      } else {
-        selectClipIds(intersectingClipIds);
-      }
-    };
-
-    const handlePointerUp = (upEvent: PointerEvent) => {
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
-
-      const endX = upEvent.clientX - gridRect.left;
-      const endY = upEvent.clientY - gridRect.top;
-
-      if (Math.abs(startX - endX) < 3 && Math.abs(startY - endY) < 3) {
-        selectClip(null);
-      }
-
-      setMarqueeStart(null);
-      setMarqueeEnd(null);
-    };
-
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
-  };
 
   const selectedClip = clips.find((c) => c.id === selectedClipId);
   const isVideoOrAudioClip = selectedClip && (selectedClip.type === "video" || selectedClip.type === "audio");
@@ -360,9 +300,277 @@ export default function VideoEditorTimeline() {
 
   // 100% 줌일 때 1초당 16픽셀 (줌 상태에 따라 비례)
   const pxPerSecond = (timelineZoom / 100) * 16;
-  const totalWidth = Math.max(1200, totalDuration * pxPerSecond);
+  // 40% screen width scroll buffer (like Final Cut Pro)
+  const extraDuration = pxPerSecond > 0 ? (scrollInfo.clientWidth * 0.4) / pxPerSecond : 0;
+  const timelineEnd = Math.max(5, totalDuration + extraDuration);
+  const totalWidth = Math.max(1200, timelineEnd * pxPerSecond);
+
+  const updateScrollInfo = useCallback(() => {
+    const el = timelineScrollRef.current;
+    if (el) {
+      setScrollInfo({
+        scrollLeft: el.scrollLeft,
+        scrollWidth: el.scrollWidth,
+        clientWidth: el.clientWidth,
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    updateScrollInfo();
+  }, [totalWidth, clips.length, updateScrollInfo]);
+
+  useEffect(() => {
+    window.addEventListener("resize", updateScrollInfo);
+    return () => window.removeEventListener("resize", updateScrollInfo);
+  }, [updateScrollInfo]);
+
+  const updateMarqueeSelection = useCallback((clientX: number, clientY: number) => {
+    const gridEl = gridRef.current;
+    const startPos = marqueeStartRef.current;
+    if (!gridEl || !startPos) return;
+
+    const gridRect = gridEl.getBoundingClientRect();
+    const currentX = clientX - gridRect.left;
+    const currentY = clientY - gridRect.top;
+    setMarqueeEnd({ x: currentX, y: currentY });
+
+    const left = Math.min(startPos.x, currentX);
+    const right = Math.max(startPos.x, currentX);
+    const top = Math.min(startPos.y, currentY);
+    const bottom = Math.max(startPos.y, currentY);
+
+    const startTime = left / pxPerSecond;
+    const endTime = right / pxPerSecond;
+    const startTrackIdx = Math.floor(top / 72);
+    const endTrackIdx = Math.floor(bottom / 72);
+
+    const intersectingClipIds: string[] = [];
+    clips.forEach((clip) => {
+      const trackIdx = tracks.findIndex((t) => t.id === clip.trackId);
+      if (trackIdx === -1) return;
+
+      const inTrackRange = trackIdx >= startTrackIdx && trackIdx <= endTrackIdx;
+      const inTimeRange = clip.startTime < endTime && (clip.startTime + clip.duration) > startTime;
+
+      if (inTrackRange && inTimeRange) {
+        intersectingClipIds.push(clip.id);
+      }
+    });
+
+    if (marqueeEventRef.current && (marqueeEventRef.current.shiftKey || marqueeEventRef.current.metaKey)) {
+      const combined = Array.from(new Set([...selectedClipIds, ...intersectingClipIds]));
+      selectClipIds(combined);
+    } else {
+      selectClipIds(intersectingClipIds);
+    }
+  }, [pxPerSecond, clips, tracks, selectedClipIds, selectClipIds]);
+
+  const handleGridPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    
+    const target = event.target as HTMLElement;
+    if (target.closest("button") || target.closest(".pointer-events-auto")) return;
+
+    // Check if clicking inside video editor clip element
+    if (target.closest(".group.absolute.top-2")) return;
+
+    event.preventDefault();
+
+    const gridEl = gridRef.current;
+    if (!gridEl) return;
+
+    const gridRect = gridEl.getBoundingClientRect();
+    const startX = event.clientX - gridRect.left;
+    const startY = event.clientY - gridRect.top;
+
+    setMarqueeStart({ x: startX, y: startY });
+    setMarqueeEnd({ x: startX, y: startY });
+
+    marqueeStartRef.current = { x: startX, y: startY };
+    marqueeActiveRef.current = true;
+    marqueeMousePosRef.current = { clientX: event.clientX, clientY: event.clientY };
+    marqueeEventRef.current = { shiftKey: event.shiftKey, metaKey: event.metaKey };
+    isDraggingRef.current = true;
+    dragMouseXRef.current = event.clientX;
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      moveEvent.preventDefault();
+      marqueeMousePosRef.current = { clientX: moveEvent.clientX, clientY: moveEvent.clientY };
+      marqueeEventRef.current = { shiftKey: moveEvent.shiftKey, metaKey: moveEvent.metaKey };
+      dragMouseXRef.current = moveEvent.clientX;
+      isDraggingRef.current = true;
+
+      updateMarqueeSelection(moveEvent.clientX, moveEvent.clientY);
+    };
+
+    const handlePointerUp = (upEvent: PointerEvent) => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+
+      const endX = upEvent.clientX - gridRect.left;
+      const endY = upEvent.clientY - gridRect.top;
+
+      if (Math.abs(startX - endX) < 3 && Math.abs(startY - endY) < 3) {
+        selectClip(null);
+      }
+
+      setMarqueeStart(null);
+      setMarqueeEnd(null);
+      marqueeStartRef.current = null;
+      marqueeActiveRef.current = false;
+      marqueeMousePosRef.current = null;
+      marqueeEventRef.current = null;
+      isDraggingRef.current = false;
+      dragMouseXRef.current = null;
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+  };
+
+  useEffect(() => {
+    let animationFrameId: number;
+
+    const scrollLoop = () => {
+      if (!isDraggingRef.current || dragMouseXRef.current === null) {
+        animationFrameId = requestAnimationFrame(scrollLoop);
+        return;
+      }
+
+      const container = timelineScrollRef.current;
+      if (!container) {
+        animationFrameId = requestAnimationFrame(scrollLoop);
+        return;
+      }
+
+      const rect = container.getBoundingClientRect();
+      const mouseX = dragMouseXRef.current;
+
+      const EDGE_THRESHOLD = 60; // pixels from edge to start scrolling
+      const MAX_SPEED = 15; // max pixels to scroll per frame
+
+      const leftDist = mouseX - rect.left;
+      const rightDist = rect.right - mouseX;
+
+      let scrolled = false;
+
+      if (leftDist < EDGE_THRESHOLD && leftDist > -20) {
+        const speedFactor = (EDGE_THRESHOLD - Math.max(0, leftDist)) / EDGE_THRESHOLD;
+        const scrollDelta = Math.ceil(speedFactor * MAX_SPEED);
+        const prevScrollLeft = container.scrollLeft;
+        container.scrollLeft = Math.max(0, container.scrollLeft - scrollDelta);
+        if (container.scrollLeft !== prevScrollLeft) {
+          scrolled = true;
+        }
+      } else if (rightDist < EDGE_THRESHOLD && rightDist > -20) {
+        const speedFactor = (EDGE_THRESHOLD - Math.max(0, rightDist)) / EDGE_THRESHOLD;
+        const scrollDelta = Math.ceil(speedFactor * MAX_SPEED);
+        const prevScrollLeft = container.scrollLeft;
+        container.scrollLeft = Math.min(
+          container.scrollWidth - container.clientWidth,
+          container.scrollLeft + scrollDelta
+        );
+        if (container.scrollLeft !== prevScrollLeft) {
+          scrolled = true;
+        }
+      }
+
+      if (scrolled && marqueeActiveRef.current && marqueeMousePosRef.current) {
+        updateMarqueeSelection(
+          marqueeMousePosRef.current.clientX,
+          marqueeMousePosRef.current.clientY
+        );
+      }
+
+      animationFrameId = requestAnimationFrame(scrollLoop);
+    };
+
+    animationFrameId = requestAnimationFrame(scrollLoop);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [updateMarqueeSelection]);
+
+  useEffect(() => {
+    const handleGlobalDragEnd = () => {
+      isDraggingRef.current = false;
+      dragMouseXRef.current = null;
+    };
+    window.addEventListener("dragend", handleGlobalDragEnd);
+    window.addEventListener("drop", handleGlobalDragEnd);
+    return () => {
+      window.removeEventListener("dragend", handleGlobalDragEnd);
+      window.removeEventListener("drop", handleGlobalDragEnd);
+    };
+  }, []);
+
+  const handleScrollbarPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const el = timelineScrollRef.current;
+    if (!el) return;
+
+    const startX = e.clientX;
+    const startScrollLeft = el.scrollLeft;
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      
+      const trackWidth = el.clientWidth;
+      const scrollRangeVal = el.scrollWidth - el.clientWidth;
+      
+      const minHandleWidthVal = 60;
+      const handleWidthVal = Math.max(minHandleWidthVal, (el.clientWidth / el.scrollWidth) * el.clientWidth);
+      const trackRangeVal = trackWidth - handleWidthVal;
+
+      if (trackRangeVal <= 0) return;
+
+      const newScrollLeft = startScrollLeft + (deltaX / trackRangeVal) * scrollRangeVal;
+      el.scrollLeft = Math.max(0, Math.min(scrollRangeVal, newScrollLeft));
+    };
+
+    const handlePointerUp = () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+  };
+
+  const handleTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget) return;
+
+    const el = timelineScrollRef.current;
+    if (!el) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const trackWidth = rect.width;
+
+    const minHandleWidthVal = 60;
+    const handleWidthVal = Math.max(minHandleWidthVal, (el.clientWidth / el.scrollWidth) * el.clientWidth);
+
+    const targetLeftOffset = clickX - handleWidthVal / 2;
+    const trackRangeVal = trackWidth - handleWidthVal;
+    if (trackRangeVal <= 0) return;
+
+    const percentage = clamp(targetLeftOffset / trackRangeVal, 0, 1);
+    const scrollRangeVal = el.scrollWidth - el.clientWidth;
+    el.scrollLeft = percentage * scrollRangeVal;
+  };
+
+  const showScrollbar = scrollInfo.scrollWidth > scrollInfo.clientWidth;
+  const minHandleWidth = 60;
+  const handleWidth = showScrollbar
+    ? Math.max(minHandleWidth, (scrollInfo.clientWidth / scrollInfo.scrollWidth) * scrollInfo.clientWidth)
+    : 0;
+  const trackRange = scrollInfo.clientWidth - handleWidth;
+  const scrollRange = scrollInfo.scrollWidth - scrollInfo.clientWidth;
+  const leftOffset = scrollRange > 0
+    ? (scrollInfo.scrollLeft / scrollRange) * trackRange
+    : 0;
   const playheadLeft = currentTime * pxPerSecond;
-  const timelineEnd = Math.max(5, totalDuration);
   const labelInterval = getTimelineLabelInterval(pxPerSecond);
   const majorGridInterval = labelInterval;
   const minorGridInterval = pxPerSecond >= 80 ? 0.1 : Math.max(1, labelInterval / 5);
@@ -532,6 +740,9 @@ export default function VideoEditorTimeline() {
   };
 
   const handleDragOverTimelineGrid = (event: React.DragEvent<HTMLDivElement>) => {
+    dragMouseXRef.current = event.clientX;
+    isDraggingRef.current = true;
+
     const isFile = event.dataTransfer.types.includes("Files");
     if (isFile) {
       event.preventDefault();
@@ -855,136 +1066,157 @@ export default function VideoEditorTimeline() {
           </div>
         </div>
 
-        {/* Right Column: Timeline Grid & Clips */}
-        <div
-          ref={timelineScrollRef}
-          onScroll={handleTimelineScroll}
-          onDragOver={handleDragOverTimelineGrid}
-          onDragLeave={handleDragLeaveTimelineGrid}
-          onDrop={handleDropTimelineGrid}
-          className={`min-w-0 flex-1 overflow-auto h-full scrollbar-thin scrollbar-thumb-zinc-800 transition-colors duration-200 ${
-            isDraggingOverGrid ? "bg-cyan-500/5 ring-1 ring-inset ring-cyan-500/30" : ""
-          }`}
-        >
+        {/* Right Column Wrapper */}
+        <div className="relative flex-1 min-w-0 h-full overflow-hidden group/scrollbar">
+          {/* Right Column: Timeline Grid & Clips */}
           <div
-            className="relative min-w-full"
-            style={{
-              width: `${totalWidth}px`,
-            }}
-            onPointerDown={handleTimelineSeek}
+            ref={timelineScrollRef}
+            onScroll={handleTimelineScroll}
+            onDragOver={handleDragOverTimelineGrid}
+            onDragLeave={handleDragLeaveTimelineGrid}
+            onDrop={handleDropTimelineGrid}
+            className={`min-w-0 w-full overflow-auto h-full scrollbar-none transition-colors duration-200 ${
+              isDraggingOverGrid ? "bg-cyan-500/5 ring-1 ring-inset ring-cyan-500/30" : ""
+            }`}
           >
-            {/* 눈금자 헤더 영역 (sticky top) */}
             <div
-              className="relative h-8 border-b border-white/5 bg-[#18181c] sticky top-0 z-20 cursor-pointer select-none"
-              style={timelineGridStyle}
+              className="relative min-w-full"
+              style={{
+                width: `${totalWidth}px`,
+              }}
+              onPointerDown={handleTimelineSeek}
             >
-              <div className="absolute inset-0 text-[10px] text-zinc-500">
-                {timeMarks.map((time) => {
+              {/* 눈금자 헤더 영역 (sticky top) */}
+              <div
+                className="relative h-8 border-b border-white/5 bg-[#18181c] sticky top-0 z-20 cursor-pointer select-none"
+                style={timelineGridStyle}
+              >
+                <div className="absolute inset-0 text-[10px] text-zinc-500">
+                  {timeMarks.map((time) => {
+                    return (
+                      <div
+                        key={time}
+                        className="absolute h-full px-1.5 leading-8"
+                        style={{ left: `${time * pxPerSecond}px` }}
+                      >
+                        {formatTimelineMark(time)}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* 플레이헤드 핀 */}
+                <div
+                  className="pointer-events-none absolute top-0 z-30 h-full w-px bg-red-400"
+                  style={{ left: `${playheadLeft}px` }}
+                >
+                  <div className="-ml-2 h-4 w-4 rounded-md bg-red-400" />
+                </div>
+              </div>
+
+              {/* 클립 트랙 영역 */}
+              <div
+                ref={gridRef}
+                className="relative"
+                style={timelineGridStyle}
+                onPointerDown={handleGridPointerDown}
+              >
+                {/* 플레이헤드 세로선 */}
+                <div
+                  className="pointer-events-none absolute top-0 z-30 h-full w-px bg-red-400"
+                  style={{ left: `${playheadLeft}px` }}
+                />
+
+                {/* Marquee Selection Area */}
+                {marqueeStart && marqueeEnd && (
+                  <div
+                    className="absolute border border-cyan-400 bg-cyan-400/10 pointer-events-none rounded z-50 backdrop-blur-[1px]"
+                    style={{
+                      left: `${Math.min(marqueeStart.x, marqueeEnd.x)}px`,
+                      top: `${Math.min(marqueeStart.y, marqueeEnd.y)}px`,
+                      width: `${Math.abs(marqueeStart.x - marqueeEnd.x)}px`,
+                      height: `${Math.abs(marqueeStart.y - marqueeEnd.y)}px`,
+                    }}
+                  />
+                )}
+
+                {tracks.map((track) => {
+                  const trackClips = clips.filter((clip) => clip.trackId === track.id);
+                  const isDraggingOverTrack = draggingOverTrackId === track.id;
+
                   return (
                     <div
-                      key={time}
-                      className="absolute h-full px-1.5 leading-8"
-                      style={{ left: `${time * pxPerSecond}px` }}
+                      key={track.id}
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        setDraggingOverTrackId(track.id);
+                      }}
+                      onDragLeave={() => {
+                        setDraggingOverTrackId(null);
+                      }}
+                      onDrop={(event) => {
+                        setDraggingOverTrackId(null);
+                        handleDropClip(event, track.id);
+                      }}
+                      className={`relative h-[72px] border-b border-white/5 transition-colors duration-150 ${
+                        isDraggingOverTrack
+                          ? "bg-cyan-500/15 border-b-cyan-400"
+                          : ""
+                      }`}
                     >
-                      {formatTimelineMark(time)}
+                      {trackClips.length === 0 ? (
+                        <div className="absolute inset-0 flex items-center justify-center text-[10px] text-zinc-600 pointer-events-none select-none">
+                          Drop media here
+                        </div>
+                      ) : (
+                        trackClips.map((clip) => {
+                          const media = clip.mediaId
+                            ? mediaItems.find((m) => m.id === clip.mediaId)
+                            : null;
+                          const isOffline = clip.mediaId ? !media : false;
+                          const visible = true;
+
+                          return (
+                            <VideoEditorClip
+                              key={clip.id}
+                              clip={clip}
+                              active={selectedClipIds.includes(clip.id)}
+                              visible={visible}
+                              currentTime={currentTime}
+                              timelineZoom={timelineZoom}
+                              isOffline={isOffline}
+                              onSelect={handleSelectClip}
+                              onUpdateDuration={updateClipDuration}
+                              onUpdateTime={updateClipTime}
+                            />
+                          );
+                        })
+                      )}
                     </div>
                   );
                 })}
               </div>
-
-              {/* 플레이헤드 핀 */}
-              <div
-                className="pointer-events-none absolute top-0 z-30 h-full w-px bg-red-400"
-                style={{ left: `${playheadLeft}px` }}
-              >
-                <div className="-ml-2 h-4 w-4 rounded-md bg-red-400" />
-              </div>
-            </div>
-
-            {/* 클립 트랙 영역 */}
-            <div
-              ref={gridRef}
-              className="relative"
-              style={timelineGridStyle}
-              onPointerDown={handleGridPointerDown}
-            >
-              {/* 플레이헤드 세로선 */}
-              <div
-                className="pointer-events-none absolute top-0 z-30 h-full w-px bg-red-400"
-                style={{ left: `${playheadLeft}px` }}
-              />
-
-              {/* Marquee Selection Area */}
-              {marqueeStart && marqueeEnd && (
-                <div
-                  className="absolute border border-cyan-400 bg-cyan-400/10 pointer-events-none rounded z-50 backdrop-blur-[1px]"
-                  style={{
-                    left: `${Math.min(marqueeStart.x, marqueeEnd.x)}px`,
-                    top: `${Math.min(marqueeStart.y, marqueeEnd.y)}px`,
-                    width: `${Math.abs(marqueeStart.x - marqueeEnd.x)}px`,
-                    height: `${Math.abs(marqueeStart.y - marqueeEnd.y)}px`,
-                  }}
-                />
-              )}
-
-              {tracks.map((track) => {
-                const trackClips = clips.filter((clip) => clip.trackId === track.id);
-                const isDraggingOverTrack = draggingOverTrackId === track.id;
-
-                return (
-                  <div
-                    key={track.id}
-                    onDragOver={(event) => {
-                      event.preventDefault();
-                      setDraggingOverTrackId(track.id);
-                    }}
-                    onDragLeave={() => {
-                      setDraggingOverTrackId(null);
-                    }}
-                    onDrop={(event) => {
-                      setDraggingOverTrackId(null);
-                      handleDropClip(event, track.id);
-                    }}
-                    className={`relative h-[72px] border-b border-white/5 transition-colors duration-150 ${
-                      isDraggingOverTrack
-                        ? "bg-cyan-500/15 border-b-cyan-400"
-                        : "bg-[#17171d]/10"
-                    }`}
-                  >
-                    {trackClips.length === 0 ? (
-                      <div className="flex h-full items-center px-4 text-xs text-zinc-700/70 select-none">
-                        Drop media here
-                      </div>
-                    ) : (
-                      trackClips.map((clip) => {
-                        const clipStart = clip.startTime;
-                        const clipEnd = clip.startTime + clip.duration;
-                        const visible = currentTime >= clipStart && currentTime <= clipEnd;
-                        const isOffline = clip.mediaId
-                          ? !mediaItems.find((m) => m.id === clip.mediaId)?.url
-                          : false;
-
-                        return (
-                          <VideoEditorClip
-                            key={clip.id}
-                            clip={clip}
-                            active={selectedClipIds.includes(clip.id)}
-                            visible={visible}
-                            currentTime={currentTime}
-                            timelineZoom={timelineZoom}
-                            isOffline={isOffline}
-                            onSelect={handleSelectClip}
-                            onUpdateDuration={updateClipDuration}
-                            onUpdateTime={updateClipTime}
-                          />
-                        );
-                      })
-                    )}
-                  </div>
-                );
-              })}
             </div>
           </div>
+
+          {/* Custom Bottom Scrollbar Overlay */}
+          {showScrollbar && (
+            <div 
+              className="absolute bottom-0 left-0 right-0 h-8 bg-transparent hover:bg-black/60 opacity-0 group-hover/scrollbar:opacity-100 pointer-events-none group-hover/scrollbar:pointer-events-auto transition-all duration-200 z-50 flex items-center px-2 cursor-pointer"
+              onClick={handleTrackClick}
+            >
+              <div className="w-full h-5 hover:h-6 rounded-full bg-white/5 hover:bg-white/10 transition-all duration-150 relative border border-white/5">
+                <div
+                  onPointerDown={handleScrollbarPointerDown}
+                  className="absolute top-0.5 bottom-0.5 rounded-full bg-zinc-500 hover:bg-cyan-400 active:bg-cyan-300 cursor-grab active:cursor-grabbing transition-colors duration-150 shadow border border-white/10"
+                  style={{
+                    width: `${handleWidth}px`,
+                    left: `${leftOffset}px`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

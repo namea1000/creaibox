@@ -32,7 +32,13 @@ const GEMINI_MODEL_FALLBACKS = [
   "gemini-2.5-flash-lite",
 ];
 
-function buildCreaiboxCanonicalUrl(slug: string) {
+function buildCreaiboxCanonicalUrl(slug: string, role?: string, brandId?: string) {
+  if (role === "ADMIN") {
+    return `https://creaibox.com/blog/${slug}`;
+  }
+  if (brandId) {
+    return `https://${brandId}.creaibox.com/${slug}`;
+  }
   return `https://creaibox.com/blog/${slug}`;
 }
 
@@ -316,6 +322,10 @@ function CreaiboxEditorPageContent() {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [searchGroundingAvailable, setSearchGroundingAvailable] = useState(false);
   const [userNickname, setUserNickname] = useState<string>("");
+  const [userRole, setUserRole] = useState<string>("");
+  const [userBrandId, setUserBrandId] = useState<string>("");
+  const [userBrandIds, setUserBrandIds] = useState<string[]>([]);
+  const [extraConfigs, setExtraConfigs] = useState<any>(null);
   const [activeUser, setActiveUser] = useState<User | null>(null);
   const [editLink, setEditLink] = useState("");
   const [generationStatusMessage, setGenerationStatusMessage] = useState("");
@@ -330,11 +340,27 @@ function CreaiboxEditorPageContent() {
 
         const { data: prof } = await supabase
           .from("profiles")
-          .select("nickname")
+          .select("nickname, role, brand_id, extra_configs")
           .eq("id", user.id)
           .single();
 
         if (prof?.nickname) setUserNickname(prof.nickname);
+        if (prof?.role) setUserRole(prof.role);
+        if (prof?.brand_id) setUserBrandId(prof.brand_id);
+        if (prof?.extra_configs) setExtraConfigs(prof.extra_configs);
+
+        const approvedBrands: string[] = [];
+        if (prof?.brand_id) {
+          approvedBrands.push(prof.brand_id);
+        }
+        if (prof?.extra_configs?.brand_ids && Array.isArray(prof.extra_configs.brand_ids)) {
+          prof.extra_configs.brand_ids.forEach((b: string) => {
+            if (b && !approvedBrands.includes(b)) {
+              approvedBrands.push(b);
+            }
+          });
+        }
+        setUserBrandIds(approvedBrands);
       }
     };
 
@@ -430,6 +456,15 @@ function CreaiboxEditorPageContent() {
             ].slice(0, 5)
             : null;
 
+      let finalCanonicalUrl = overrides?.canonicalUrl || canonicalUrl || null;
+      if (userRole !== "ADMIN" && userBrandId) {
+        const prefix = `https://${userBrandId}.creaibox.com`;
+        const activeSlug = overrides?.slug || slug || "";
+        if (!finalCanonicalUrl || !finalCanonicalUrl.startsWith(prefix)) {
+          finalCanonicalUrl = `${prefix}/${activeSlug}`;
+        }
+      }
+
       const payload = {
         user_id: user.id,
         user_nicename: userNickname || user.email?.split("@")[0],
@@ -442,7 +477,7 @@ function CreaiboxEditorPageContent() {
         slug: overrides?.slug || slug || null,
         meta_description: overrides?.metaDescription || metaDescription || null,
         focus_keyword: derivedFocusKeyword,
-        canonical_url: overrides?.canonicalUrl || canonicalUrl || null,
+        canonical_url: finalCanonicalUrl,
         seo_tags: derivedSeoTags,
         word_count_goal: wordCountGoal,
         use_search: overrides?.useSearch ?? searchGroundingAvailable,
@@ -677,7 +712,7 @@ function CreaiboxEditorPageContent() {
       setFocusKeyword(nextFocusKeyword);
       setSeoTags(nextSeoTags);
       setSlug(nextSlug);
-      setCanonicalUrl(buildCreaiboxCanonicalUrl(nextSlug));
+      setCanonicalUrl(buildCreaiboxCanonicalUrl(nextSlug, userRole, userBrandId));
 
       if (nextMetaDescription) {
         setMetaDescription(nextMetaDescription);
@@ -692,7 +727,7 @@ function CreaiboxEditorPageContent() {
           seoTags: nextSeoTags,
           slug: nextSlug,
           metaDescription: nextMetaDescription,
-          canonicalUrl: buildCreaiboxCanonicalUrl(nextSlug),
+          canonicalUrl: buildCreaiboxCanonicalUrl(nextSlug, userRole, userBrandId),
           useSearch: generationUsedSearch,
         });
       }, 100);
@@ -775,6 +810,10 @@ function CreaiboxEditorPageContent() {
         editLink={editLink}
         generationStatusMessage={generationStatusMessage}
         generationErrorMessage={generationErrorMessage}
+        userRole={userRole}
+        userBrandId={userBrandId}
+        userBrandIds={userBrandIds}
+        extraConfigs={extraConfigs}
       />
     </div>
   );
