@@ -405,9 +405,14 @@ function PreviewMediaLayer({
       }>;
 
       const nextGlobalTime = customEvent.detail.currentTime;
+      const trimEnd = clip.trimEnd ?? 0;
+      const effectiveDuration = Math.max(0, clip.duration - trimEnd);
       const nextLocalTime = Math.max(
         0,
-        nextGlobalTime - clip.startTime + trimStart
+        Math.min(
+          nextGlobalTime - clip.startTime + trimStart,
+          trimStart + effectiveDuration
+        )
       );
 
       liveTimeRef.current = nextLocalTime;
@@ -416,8 +421,6 @@ function PreviewMediaLayer({
       const audio = audioRef.current;
       const isSeek = Boolean(customEvent.detail.isSeek);
 
-      // 재생 중일 때는 1.0초 이상의 누적 편차 개입을 완전히 차단(0.1ms의 오디오 간섭도 차단)하여 4~5초 주기 더듬음/반복 버그를 근절합니다.
-      // 오직 타임라인을 클릭하는 수동 점프(isSeek === true)나 일시정지 상태(!isPlaying)일 때만 미디어 시간을 덮어씁니다.
       if (isSeek || !isPlaying) {
         const syncThreshold = 0.05;
 
@@ -446,7 +449,7 @@ function PreviewMediaLayer({
         handlePlaybackFrame
       );
     };
-  }, [clip.startTime, trimStart, media?.type, isPlaying]);
+  }, [clip.startTime, clip.duration, trimStart, clip.trimEnd, media?.type, isPlaying]);
 
   useEffect(() => {
     if (media?.type !== "video") return;
@@ -465,20 +468,27 @@ function PreviewMediaLayer({
       video.currentTime = safeTime;
     }
 
-    video.muted = clip.muted ?? false;
+    const hasAudio = media?.hasAudio !== false && (!media?.waveform || media.waveform.length > 0);
+    video.muted = (clip.muted ?? false) || !hasAudio;
 
-    void ensureAudioGraph(video);
+    if (hasAudio) {
+      void ensureAudioGraph(video);
+    }
 
     if (isPlaying) {
       const playPromise = video.play();
       if (playPromise) playPromise.catch(() => undefined);
-      startAudioMeter();
+      if (hasAudio) {
+        startAudioMeter();
+      }
     } else {
       video.pause();
       stopAudioMeter();
     }
   }, [
     media?.type,
+    media?.hasAudio,
+    media?.waveform,
     isPlaying,
     clip.muted,
     clip.volume,

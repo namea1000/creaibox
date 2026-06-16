@@ -11,6 +11,21 @@ function safeFileName(value: string) {
     .slice(0, 80);
 }
 
+async function writeBlobToHandleInChunks(fileHandle: any, blob: Blob) {
+  const writable = await fileHandle.createWritable();
+  try {
+    const chunkSize = 16 * 1024 * 1024; // 16MB chunks
+    for (let offset = 0; offset < blob.size; offset += chunkSize) {
+      const chunk = blob.slice(offset, offset + chunkSize);
+      await writable.write(chunk);
+    }
+    await writable.close();
+  } catch (err) {
+    await writable.close().catch(() => {});
+    throw err;
+  }
+}
+
 export async function getFFmpeg(onProgress?: (progress: number) => void) {
   if (!ffmpegInstance) {
     ffmpegInstance = new FFmpeg();
@@ -100,8 +115,8 @@ export async function convertWebmBlobToMp4({
     }
 
     const format = videoFormat || "mp4";
-    const inputName = "input.webm";
-    const outputName = `output.${format}`;
+    const inputName = `input_${Date.now()}.webm`;
+    const outputName = `output_${Date.now()}.${format}`;
 
     const handleAbort = () => {
       ffmpeg.terminate();
@@ -112,7 +127,7 @@ export async function convertWebmBlobToMp4({
     signal?.addEventListener("abort", handleAbort, { once: true });
 
     try {
-      let uint8Array: Uint8Array;
+      let uint8Array: Uint8Array | null = null;
       try {
         const arrayBuffer = await webmBlob.arrayBuffer();
         uint8Array = new Uint8Array(arrayBuffer);
@@ -121,7 +136,11 @@ export async function convertWebmBlobToMp4({
         uint8Array = await fetchFile(webmBlob);
       }
       await ffmpeg.writeFile(inputName, uint8Array);
+      uint8Array = null; // Free JS memory reference IMMEDIATELY!
       throwIfAborted(signal);
+
+      // Yield execution to allow GC
+      await new Promise<void>((resolve) => setTimeout(resolve, 100));
 
       await ffmpeg.exec([
         "-i",
@@ -143,6 +162,10 @@ export async function convertWebmBlobToMp4({
       const data = await ffmpeg.readFile(outputName);
       throwIfAborted(signal);
 
+      // Delete immediately to free WASM FS memory!
+      await ffmpeg.deleteFile(inputName).catch(() => { });
+      await ffmpeg.deleteFile(outputName).catch(() => { });
+
       const videoBlob = new Blob(
         [new Uint8Array(data as Uint8Array)],
         {
@@ -158,13 +181,8 @@ export async function convertWebmBlobToMp4({
         try {
           console.log(`[convertWebmBlobToMp4] Attempting to save converted ${format.toUpperCase()} to directory: ${directoryHandle.name}`);
           const fileHandle = await directoryHandle.getFileHandle(finalFileName, { create: true });
-          const writable = await fileHandle.createWritable();
-          await writable.write(videoBlob);
-          await writable.close();
+          await writeBlobToHandleInChunks(fileHandle, videoBlob);
           console.log(`[convertWebmBlobToMp4] Successfully saved to directory: ${directoryHandle.name}`);
-          
-          await ffmpeg.deleteFile(inputName).catch(() => { });
-          await ffmpeg.deleteFile(outputName).catch(() => { });
           return;
         } catch (err) {
           console.warn("[convertWebmBlobToMp4] Directory write failed, falling back to download:", err);
@@ -177,13 +195,18 @@ export async function convertWebmBlobToMp4({
       a.download = finalFileName;
       a.click();
       URL.revokeObjectURL(url);
-
-      await ffmpeg.deleteFile(inputName).catch(() => { });
-      await ffmpeg.deleteFile(outputName).catch(() => { });
     } finally {
       signal?.removeEventListener("abort", handleAbort);
       if (onProgress) {
         ffmpeg.off("progress", progressListener);
+      }
+      // Explicitly terminate FFmpeg to release the entire WASM memory heap!
+      try {
+        ffmpeg.terminate();
+        ffmpegInstance = null;
+        isLoaded = false;
+      } catch (e) {
+        console.warn("Failed to terminate FFmpeg in convertWebmBlobToMp4 finally block:", e);
       }
     }
   });
@@ -215,8 +238,8 @@ export async function convertMp4BlobToMov({
       ffmpeg.on("progress", progressListener);
     }
 
-    const inputName = "input.mp4";
-    const outputName = "output.mov";
+    const inputName = `input_${Date.now()}.mp4`;
+    const outputName = `output_${Date.now()}.mov`;
 
     const handleAbort = () => {
       ffmpeg.terminate();
@@ -227,14 +250,18 @@ export async function convertMp4BlobToMov({
     signal?.addEventListener("abort", handleAbort, { once: true });
 
     try {
-      let uint8Array: Uint8Array;
+      let uint8Array: Uint8Array | null = null;
       try {
         uint8Array = new Uint8Array(await mp4Blob.arrayBuffer());
       } catch {
         uint8Array = await fetchFile(mp4Blob);
       }
       await ffmpeg.writeFile(inputName, uint8Array);
+      uint8Array = null; // Free JS memory reference IMMEDIATELY!
       throwIfAborted(signal);
+
+      // Yield execution to allow GC
+      await new Promise<void>((resolve) => setTimeout(resolve, 100));
 
       // Stream copy (fast remuxing without transcoding)
       await ffmpeg.exec(["-i", inputName, "-c", "copy", outputName]);
@@ -242,6 +269,10 @@ export async function convertMp4BlobToMov({
 
       const data = await ffmpeg.readFile(outputName);
       throwIfAborted(signal);
+
+      // Delete immediately to free WASM FS memory!
+      await ffmpeg.deleteFile(inputName).catch(() => { });
+      await ffmpeg.deleteFile(outputName).catch(() => { });
 
       const movBlob = new Blob(
         [new Uint8Array(data as Uint8Array)],
@@ -258,13 +289,8 @@ export async function convertMp4BlobToMov({
         try {
           console.log(`[convertMp4BlobToMov] Saving to directory handle: ${directoryHandle.name}`);
           const fileHandle = await directoryHandle.getFileHandle(finalFileName, { create: true });
-          const writable = await fileHandle.createWritable();
-          await writable.write(movBlob);
-          await writable.close();
+          await writeBlobToHandleInChunks(fileHandle, movBlob);
           console.log(`[convertMp4BlobToMov] Successfully saved to directory: ${directoryHandle.name}`);
-          
-          await ffmpeg.deleteFile(inputName).catch(() => { });
-          await ffmpeg.deleteFile(outputName).catch(() => { });
           return;
         } catch (err) {
           console.warn("[convertMp4BlobToMov] Directory write failed, falling back to download:", err);
@@ -277,13 +303,18 @@ export async function convertMp4BlobToMov({
       a.download = finalFileName;
       a.click();
       URL.revokeObjectURL(url);
-
-      await ffmpeg.deleteFile(inputName).catch(() => { });
-      await ffmpeg.deleteFile(outputName).catch(() => { });
     } finally {
       signal?.removeEventListener("abort", handleAbort);
       if (onProgress) {
         ffmpeg.off("progress", progressListener);
+      }
+      // Explicitly terminate FFmpeg to release the entire WASM memory heap!
+      try {
+        ffmpeg.terminate();
+        ffmpegInstance = null;
+        isLoaded = false;
+      } catch (e) {
+        console.warn("Failed to terminate FFmpeg in convertMp4BlobToMov finally block:", e);
       }
     }
   });

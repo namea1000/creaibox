@@ -22,7 +22,7 @@ type VideoEditorClipProps = {
   currentTime: number;
   timelineZoom: number;
   isOffline?: boolean;
-  onSelect: (clipId: string) => void;
+  onSelect: (clipId: string, event?: React.MouseEvent | React.PointerEvent) => void;
   onUpdateDuration: (clipId: string, duration: number) => void;
   onUpdateTime: (clipId: string, startTime: number, duration: number) => void;
 };
@@ -82,7 +82,7 @@ export default function VideoEditorClip({
   ) => {
     event.preventDefault();
     event.stopPropagation();
-    onSelect(clip.id);
+    onSelect(clip.id, event);
 
     const handleElement = event.currentTarget;
     activeTrimPointerRef.current = event.pointerId;
@@ -200,7 +200,7 @@ export default function VideoEditorClip({
   ) => {
     event.preventDefault();
     event.stopPropagation();
-    onSelect(clip.id);
+    onSelect(clip.id, event);
 
     const handleElement = event.currentTarget;
     activeTrimPointerRef.current = event.pointerId;
@@ -341,7 +341,7 @@ export default function VideoEditorClip({
       onClick={(event) => {
         if (isExtracting) return;
         event.stopPropagation();
-        onSelect(clip.id);
+        onSelect(clip.id, event);
       }}
       onContextMenu={handleContextMenu}
       className={`group absolute top-2 flex flex-col h-14 cursor-grab overflow-hidden rounded-[5px] border transition active:cursor-grabbing ${active

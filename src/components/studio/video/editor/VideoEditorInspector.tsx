@@ -22,6 +22,7 @@ import {
   Maximize2,
   Eye,
   Gauge,
+  RotateCcw,
 } from "lucide-react";
 
 import {
@@ -108,6 +109,8 @@ export default function VideoEditorInspector({
     setExportQuality,
     currentTime,
     totalDuration,
+    reverseVideoClip,
+    detectScenesAndSplitClip,
   } = useVideoEditor();
 
   const selectedClip = clips.find((clip) => clip.id === selectedClipId) || null;
@@ -282,6 +285,21 @@ export default function VideoEditorInspector({
                       label="삭제"
                       danger
                       onClick={() => removeClip(selectedClip.id)}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <ActionButton
+                      icon={RotateCcw}
+                      label="역재생"
+                      disabled={!(selectedClip.type === "video" || selectedClip.type === "audio")}
+                      onClick={() => void reverseVideoClip(selectedClip.id)}
+                    />
+                    <ActionButton
+                      icon={Wand2}
+                      label="장면 분할"
+                      disabled={selectedClip.type !== "video"}
+                      onClick={() => void detectScenesAndSplitClip(selectedClip.id)}
                     />
                   </div>
                 </div>
@@ -595,18 +613,21 @@ function ActionButton({
   icon: Icon,
   label,
   danger,
+  disabled,
   onClick,
 }: {
   icon: React.ElementType;
   label: string;
   danger?: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={onClick}
-      className={`flex h-10 items-center justify-center gap-2 rounded-md border text-xs font-black ${danger
+      className={`flex h-10 items-center justify-center gap-2 rounded-md border text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-30 ${danger
           ? "border-red-400/30 bg-red-500/10 text-red-300 hover:bg-red-500/20"
           : "border-white/10 bg-black/30 text-zinc-300 hover:border-cyan-400/50 hover:text-cyan-200"
         }`}

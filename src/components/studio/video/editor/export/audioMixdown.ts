@@ -4,6 +4,7 @@ import {
   type VideoEditorMediaItem,
 } from "../VideoEditorContext";
 import { getFFmpeg, runWithFFmpegLock } from "../ffmpeg/convertWebmToMp4";
+import { extractAudioWithMediabunny } from "./audioExtractor";
 
 export type AudioMixSource = {
   clipId: string;
@@ -171,32 +172,115 @@ async function decodeAudioBufferWithTimeout(
 
   try {
     if (type === "video") {
-      // For video files, browser decodeAudioData usually fails on the container.
-      // Directly extract audio via FFmpeg to avoid double memory allocation and failures.
-      console.log("[AudioMixdown] Skipping native decodeAudioData for video file, extracting directly via FFmpeg:", url, safeFileName);
-      
-      const getFileBytes = async () => {
-        try {
-          if (file) {
-            console.log("[AudioMixdown] Found video File object in-memory:", file.name, file.size);
-            return new Uint8Array(await file.arrayBuffer());
-          }
+      // 1. Try to load the pre-extracted audio-only WAV file from IndexedDB cache to save memory
+      try {
+        const cachedAudioFile = await getFileFromCache("audio-extract-" + mediaId);
+        if (cachedAudioFile) {
+          console.log("[AudioMixdown] Found pre-extracted video audio in IndexedDB:", cachedAudioFile.name, cachedAudioFile.size);
+          const arrayBuffer = await cachedAudioFile.arrayBuffer();
+          const decoded = await tempCtx.decodeAudioData(arrayBuffer);
+          return decoded;
+        }
+      } catch (err) {
+        console.warn("[AudioMixdown] Failed to read cached pre-extracted audio file:", err);
+      }
+
+      // 2. Try extractAudioWithMediabunny first to avoid memory/RangeError issues
+      console.log("[AudioMixdown] Trying Mediabunny streaming audio extraction for video file:", safeFileName);
+      try {
+        let fileOrBlob: File | Blob | null = file || null;
+        if (!fileOrBlob) {
           const cachedFile = await getFileFromCache(mediaId);
           if (cachedFile) {
-            console.log("[AudioMixdown] Found video file in IndexedDB cache:", mediaId);
-            return new Uint8Array(await cachedFile.arrayBuffer());
+            fileOrBlob = cachedFile;
           }
-        } catch (err) {
-          console.warn("[AudioMixdown] Failed to read cached file:", err);
         }
-        console.log("[AudioMixdown] Fetching video URL fallback:", url);
-        const response = await fetch(url, { signal });
-        return new Uint8Array(await response.arrayBuffer());
-      };
+        if (!fileOrBlob && url) {
+          console.log("[AudioMixdown] Fetching video URL as Blob reference:", url);
+          const response = await fetch(url, { signal });
+          fileOrBlob = await response.blob();
+        }
+        if (fileOrBlob) {
+          const wavBlob = await extractAudioWithMediabunny(fileOrBlob);
+          if (wavBlob === null) {
+            console.log("[AudioMixdown] Video file is silent (no audio track). Returning silent AudioBuffer:", safeFileName);
+            return tempCtx.createBuffer(2, 48000, 48000);
+          }
+          const wavBuffer = await wavBlob.arrayBuffer();
+          const decoded = await tempCtx.decodeAudioData(wavBuffer);
+          console.log("[AudioMixdown] Mediabunny extraction and native decode succeeded for video file:", safeFileName);
+          return decoded;
+        }
+      } catch (mediabunnyError) {
+        console.warn("[AudioMixdown] Mediabunny extraction failed, falling back to full-file native decode:", mediabunnyError);
+      }
 
-      const wavBuffer = await extractAudioWithFFmpeg(getFileBytes, safeFileName);
-      const decoded = await tempCtx.decodeAudioData(wavBuffer);
-      return decoded;
+      // 3. Try native decodeAudioData as fallback for video file
+      console.log("[AudioMixdown] Trying native decodeAudioData first for video file:", url, safeFileName);
+      
+      let arrayBuffer: ArrayBuffer | null = null;
+      try {
+        if (file) {
+          console.log("[AudioMixdown] Reading from in-memory File object:", file.name, file.size);
+          arrayBuffer = await file.arrayBuffer();
+        } else {
+          const cachedFile = await getFileFromCache(mediaId);
+          if (cachedFile) {
+            console.log("[AudioMixdown] Reading from IndexedDB cache:", mediaId);
+            arrayBuffer = await cachedFile.arrayBuffer();
+          }
+        }
+        if (!arrayBuffer) {
+          if (!url || (!url.startsWith("blob:") && !url.startsWith("http:") && !url.startsWith("https:"))) {
+            throw new Error("미디어 파일의 URL 또는 파일 데이터가 존재하지 않습니다. 미디어 파일을 재연결해 주세요.");
+          }
+          console.log("[AudioMixdown] Fetching video URL:", url);
+          const response = await fetch(url, { signal });
+          arrayBuffer = await response.arrayBuffer();
+        }
+        const decoded = await tempCtx.decodeAudioData(arrayBuffer);
+        console.log("[AudioMixdown] Native decodeAudioData succeeded for video file:", safeFileName);
+        return decoded;
+      } catch (nativeError) {
+        console.warn("[AudioMixdown] Native decodeAudioData failed for video file, trying FFmpeg fallback:", nativeError);
+        
+        // Free ArrayBuffer reference to minimize memory before launching FFmpeg
+        arrayBuffer = null;
+
+        const getFileBytes = async () => {
+          try {
+            if (file) {
+              console.log("[AudioMixdown] Fallback: Found video File object in-memory:", file.name, file.size);
+              return new Uint8Array(await file.arrayBuffer());
+            }
+            const cachedFile = await getFileFromCache(mediaId);
+            if (cachedFile) {
+              console.log("[AudioMixdown] Fallback: Found video file in IndexedDB cache:", mediaId);
+              return new Uint8Array(await cachedFile.arrayBuffer());
+            }
+          } catch (err) {
+            console.warn("[AudioMixdown] Fallback: Failed to read cached file:", err);
+          }
+          if (!url || (!url.startsWith("blob:") && !url.startsWith("http:") && !url.startsWith("https:"))) {
+            throw new Error("미디어 파일의 URL 또는 파일 데이터가 존재하지 않습니다. 미디어 파일을 재연결해 주세요.");
+          }
+          console.log("[AudioMixdown] Fallback: Fetching video URL fallback:", url);
+          const response = await fetch(url, { signal });
+          return new Uint8Array(await response.arrayBuffer());
+        };
+
+        try {
+          const wavBuffer = await extractAudioWithFFmpeg(getFileBytes, safeFileName);
+          if (!wavBuffer || wavBuffer.byteLength === 0) {
+            throw new Error("FFmpeg extracted an empty audio buffer");
+          }
+          const decoded = await tempCtx.decodeAudioData(wavBuffer);
+          return decoded;
+        } catch (ffmpegError) {
+          console.error("[AudioMixdown] Fallback FFmpeg extraction failed for video file:", ffmpegError);
+          throw nativeError; // throw original native decode error if both fail
+        }
+      }
     } else {
       let arrayBuffer: ArrayBuffer | null = null;
       try {

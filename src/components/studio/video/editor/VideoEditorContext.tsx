@@ -15,6 +15,8 @@ import { DEFAULT_TIMELINE_TRACKS } from "./constants";
 import type { SubtitleImportCue } from "./subtitle/subtitleImport";
 import { getFFmpeg, runWithFFmpegLock } from "./ffmpeg/convertWebmToMp4";
 import { fetchFile } from "@ffmpeg/util";
+import { extractAudioWithMediabunny } from "./export/audioExtractor";
+import { reverseVideo, detectSceneChanges } from "./ffmpeg/videoOperations";
 
 const DB_NAME = "creaibox-video-editor-db";
 const DB_VERSION = 2;
@@ -81,6 +83,13 @@ async function getWaveformFromCache(key: string): Promise<number[] | null> {
 }
 
 export async function saveFileToCache(id: string, file: File): Promise<void> {
+  // If the file is larger than 500MB, skip saving it to IndexedDB to prevent browser storage quota crashes (SIGABRT)
+  const MAX_CACHE_SIZE = 500 * 1024 * 1024; // 500MB
+  if (file.size > MAX_CACHE_SIZE) {
+    console.log(`[saveFileToCache] Skipping IndexedDB cache for large file: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`);
+    return;
+  }
+
   try {
     const db = await openDB();
     // Convert File to a pure Blob to force IndexedDB to copy the raw bytes,
@@ -171,6 +180,7 @@ export type VideoEditorMediaItem = {
   createdAt: string;
   thumbnailUrl?: string;
   waveform?: number[];
+  hasAudio?: boolean;
 };
 
 export type VideoTextStyle = {
@@ -325,6 +335,7 @@ type VideoEditorState = {
   clips: VideoEditorClip[];
   selectedMediaId: string | null;
   selectedClipId: string | null;
+  selectedClipIds: string[];
 
   currentTime: number;
   totalDuration: number;
@@ -344,6 +355,9 @@ type VideoEditorState = {
   clickedPreviewMediaTime: number;
   previewMediaItem: VideoEditorMediaItem | null;
   previewMediaTime: number;
+
+  processingClipId: string | null;
+  processingMessage: string;
 };
 
 type VideoEditorActions = {
@@ -424,6 +438,10 @@ type VideoEditorActions = {
   setPreviewMedia: (item: VideoEditorMediaItem | null, time?: number) => void;
   detachAudio: (clipId: string) => Promise<void>;
   extractAndDownloadAudio: (clipId: string) => Promise<void>;
+  reverseVideoClip: (clipId: string) => Promise<void>;
+  detectScenesAndSplitClip: (clipId: string) => Promise<void>;
+  splitClipAtTimes: (id: string, splitTimes: number[]) => void;
+  selectClipIds: (ids: string[]) => void;
 };
 
 type VideoEditorContextValue = VideoEditorState & VideoEditorActions;
@@ -457,8 +475,17 @@ const DEFAULT_SUBTITLE_STYLE: VideoTextStyle = {
 };
 
 function getMediaType(file: File): VideoEditorMediaType {
-  if (file.type.startsWith("video/")) return "video";
-  if (file.type.startsWith("audio/")) return "audio";
+  const mimeType = file.type || "";
+  if (mimeType.startsWith("video/")) return "video";
+  if (mimeType.startsWith("audio/")) return "audio";
+
+  const lowerName = file.name.toLowerCase();
+  const videoExtensions = [".mp4", ".mov", ".webm", ".avi", ".mkv", ".flv", ".3gp", ".ts", ".m4v"];
+  if (videoExtensions.some((ext) => lowerName.endsWith(ext))) return "video";
+
+  const audioExtensions = [".mp3", ".wav", ".aac", ".ogg", ".m4a", ".flac", ".wma", ".caf"];
+  if (audioExtensions.some((ext) => lowerName.endsWith(ext))) return "audio";
+
   return "image";
 }
 
@@ -766,6 +793,8 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
 
   const [selectedMediaId, setSelectedMediaId] = useState<string | null>(null);
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
+  const [selectedClipIds, setSelectedClipIds] = useState<string[]>([]);
+  const [copiedClips, setCopiedClips] = useState<VideoEditorClip[]>([]);
 
   const [currentTime, setCurrentTimeState] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -786,6 +815,9 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
   const [clickedPreviewMediaTime, setClickedPreviewMediaTime] = useState<number>(0);
   const [previewMediaItem, setPreviewMediaItem] = useState<VideoEditorMediaItem | null>(null);
   const [previewMediaTime, setPreviewMediaTime] = useState<number>(0);
+
+  const [processingClipId, setProcessingClipId] = useState<string | null>(null);
+  const [processingMessage, setProcessingMessage] = useState("");
 
   const totalDuration = calculateTotalDuration(clips);
 
@@ -827,6 +859,14 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
 
   const selectClip = useCallback((id: string | null) => {
     setSelectedClipId(id);
+    setSelectedClipIds(id ? [id] : []);
+    setClickedPreviewMediaItem(null);
+    setPreviewMediaItem(null);
+  }, []);
+
+  const selectClipIds = useCallback((ids: string[]) => {
+    setSelectedClipIds(ids);
+    setSelectedClipId(ids.length > 0 ? ids[ids.length - 1] : null);
     setClickedPreviewMediaItem(null);
     setPreviewMediaItem(null);
   }, []);
@@ -901,20 +941,25 @@ async function extractAudioWaveform(file: File, points = 96): Promise<number[]> 
     const audioCtx = new AudioContextConstructor();
     
     let audioBuffer: AudioBuffer;
-    if (file.type.startsWith("video/")) {
-      // Direct FFmpeg extraction for video file waveforms to avoid native decode failures and double memory allocation.
-      console.log("[VideoEditorContext] Waveform: skipping native decodeAudioData for video file, extracting directly via FFmpeg:", file.name);
-      const getFileBytes = async () => {
-        return new Uint8Array(await file.arrayBuffer());
-      };
-      const wavBuffer = await extractAudioWithFFmpeg(getFileBytes, file.name);
-      
-      audioBuffer = await Promise.race([
-        audioCtx.decodeAudioData(wavBuffer),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Waveform fallback decoding timeout (15s)")), 15000)
-        ),
-      ]);
+    if (getMediaType(file) === "video") {
+      console.log("[VideoEditorContext] Waveform: Extracting audio track using Mediabunny:", file.name);
+      try {
+        const wavBlob = await extractAudioWithMediabunny(file);
+        if (!wavBlob) {
+          console.log("[VideoEditorContext] Waveform: Video is silent, returning empty waveform");
+          return [];
+        }
+        const wavBuffer = await wavBlob.arrayBuffer();
+        audioBuffer = await Promise.race([
+          audioCtx.decodeAudioData(wavBuffer),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Waveform decoding timeout (15s)")), 15000)
+          ),
+        ]);
+      } catch (err) {
+        console.warn("[VideoEditorContext] Waveform: Mediabunny extraction failed for video:", err);
+        throw err;
+      }
     } else {
       let arrayBuffer: ArrayBuffer | null = await file.arrayBuffer();
       try {
@@ -1035,9 +1080,9 @@ function getVideoThumbnail(file: File): Promise<string> {
 
 function getMediaDuration(file: File): Promise<number> {
   return new Promise((resolve) => {
-    const type = file.type;
+    const type = getMediaType(file);
     const url = URL.createObjectURL(file);
-    if (type.startsWith("video/")) {
+    if (type === "video") {
       const video = document.createElement("video");
       video.preload = "metadata";
       video.onloadedmetadata = () => {
@@ -1049,7 +1094,7 @@ function getMediaDuration(file: File): Promise<number> {
         resolve(10); // 기본값 fallback
       };
       video.src = url;
-    } else if (type.startsWith("audio/")) {
+    } else if (type === "audio") {
       const audio = document.createElement("audio");
       audio.preload = "metadata";
       audio.onloadedmetadata = () => {
@@ -1079,6 +1124,29 @@ function getMediaDuration(file: File): Promise<number> {
         // Save to IndexedDB
         await saveFileToCache(mediaId, file);
 
+        let hasAudio = false;
+
+        // Pre-extract audio track for video to bypass loading giant video array buffers later
+        if (type === "video") {
+          try {
+            console.log("[VideoEditorContext] Pre-extracting audio track using Mediabunny:", file.name);
+            const wavBlob = await extractAudioWithMediabunny(file);
+            if (wavBlob) {
+              await saveFileToCache("audio-extract-" + mediaId, new File([wavBlob], file.name + ".wav", { type: "audio/wav" }));
+              console.log("[VideoEditorContext] Pre-extract: Successfully cached audio-only WAV track for:", file.name);
+              hasAudio = true;
+            } else {
+              console.log("[VideoEditorContext] Pre-extract: Video file is silent, skipping audio cache:", file.name);
+              hasAudio = false;
+            }
+          } catch (e) {
+            console.warn("[VideoEditorContext] Pre-extract: Failed to cache audio track for video:", e);
+            hasAudio = true;
+          }
+        } else if (type === "audio") {
+          hasAudio = true;
+        }
+
         let thumbnailUrl = "";
         let waveform: number[] = [];
 
@@ -1103,6 +1171,7 @@ function getMediaDuration(file: File): Promise<number> {
           createdAt: new Date().toISOString(),
           thumbnailUrl,
           waveform,
+          hasAudio,
         };
       })
     );
@@ -1124,6 +1193,7 @@ function getMediaDuration(file: File): Promise<number> {
 
     // Delete from IndexedDB
     void deleteFileFromCache(id);
+    void deleteFileFromCache("audio-extract-" + id);
 
     setClipsState((prev) => prev.filter((clip) => clip.mediaId !== id));
     setSelectedMediaId((current) => (current === id ? null : current));
@@ -1135,6 +1205,29 @@ function getMediaDuration(file: File): Promise<number> {
 
     // Save to IndexedDB
     await saveFileToCache(id, file);
+
+    let hasAudio = false;
+
+    // Pre-extract audio track for video to bypass loading giant video array buffers later
+    if (type === "video") {
+      try {
+        console.log("[VideoEditorContext] Relink: Extracting audio track using Mediabunny:", file.name);
+        const wavBlob = await extractAudioWithMediabunny(file);
+        if (wavBlob) {
+          await saveFileToCache("audio-extract-" + id, new File([wavBlob], file.name + ".wav", { type: "audio/wav" }));
+          console.log("[VideoEditorContext] Relink: Successfully cached audio-only WAV track for:", file.name);
+          hasAudio = true;
+        } else {
+          console.log("[VideoEditorContext] Relink: Video file is silent, skipping audio cache:", file.name);
+          hasAudio = false;
+        }
+      } catch (e) {
+        console.warn("[VideoEditorContext] Relink: Failed to pre-extract audio track for video cache:", e);
+        hasAudio = true;
+      }
+    } else if (type === "audio") {
+      hasAudio = true;
+    }
 
     let newThumbnailUrl = "";
     if (type === "image") {
@@ -1154,6 +1247,7 @@ function getMediaDuration(file: File): Promise<number> {
               file,
               size: file.size,
               thumbnailUrl: newThumbnailUrl || item.thumbnailUrl,
+              hasAudio,
             }
           : item
       )
@@ -1259,6 +1353,7 @@ function getMediaDuration(file: File): Promise<number> {
           size: item.size,
           createdAt: item.createdAt,
           thumbnailUrl: item.thumbnailUrl,
+          hasAudio: item.hasAudio,
         })),
         clips: clips.map((clip) => {
           if (clip.type === "visualizer") {
@@ -1519,98 +1614,101 @@ function getMediaDuration(file: File): Promise<number> {
     setSelectedClipId(clip.id);
   };
 
-  const removeClip = (id: string) => {
-    setClipsWithHistory((prev) => prev.filter((clip) => clip.id !== id));
-    setSelectedClipId((current) => (current === id ? null : current));
-  };
+  const removeClip = useCallback((id: string) => {
+    const idsToRemove = selectedClipIds.includes(id) ? selectedClipIds : [id];
+    setClipsWithHistory((prev) => prev.filter((clip) => !idsToRemove.includes(clip.id)));
+    setSelectedClipId((current) => (current && idsToRemove.includes(current) ? null : current));
+    setSelectedClipIds((prev) => prev.filter((cid) => !idsToRemove.includes(cid)));
+  }, [selectedClipIds, setClipsWithHistory]);
 
-  const duplicateClip = (id: string) => {
-    const target = clips.find((clip) => clip.id === id);
-    if (!target) return;
+  const duplicateClip = useCallback((id: string) => {
+    const idsToDuplicate = selectedClipIds.includes(id) ? selectedClipIds : [id];
+    const targets = clips.filter((c) => idsToDuplicate.includes(c.id));
+    if (targets.length === 0) return;
 
-    const maxStartTime = Math.max(0, TIMELINE_BASE_DURATION - target.duration);
-    const desiredStartTime = clamp(
-      target.startTime + target.duration,
-      0,
-      maxStartTime
-    );
-    const trackType = getTrackTypeByClipType(target.type);
-    const { targetTrack, shouldCreateTrack } = findAvailableTrack(
-      tracks,
-      clips,
-      trackType,
-      desiredStartTime,
-      target.duration
-    );
-    const left = timeToLeft(desiredStartTime);
-    const width = clamp(durationToWidth(target.duration), 4, 100 - left);
+    const minStart = Math.min(...targets.map((c) => c.startTime));
+    const maxEnd = Math.max(...targets.map((c) => c.startTime + c.duration));
+    const duplicateOffset = maxEnd - minStart;
 
-    if (shouldCreateTrack) {
-      setTracks((prev) => insertTrackAfterSameType(prev, targetTrack, trackType));
-    }
-
-    const duplicated: VideoEditorClip = normalizeClip({
-      ...target,
-      id: createId("clip-copy"),
-      trackId: targetTrack.id,
-      name: `${target.name} 복사본`,
-      startTime: Number(desiredStartTime.toFixed(2)),
-      left,
-      width,
+    const newClips = targets.map((target) => {
+      const newStart = clamp(target.startTime + duplicateOffset, 0, TIMELINE_BASE_DURATION - target.duration);
+      const trackType = getTrackTypeByClipType(target.type);
+      const { targetTrack } = findAvailableTrack(
+        tracks,
+        clips,
+        trackType,
+        newStart,
+        target.duration
+      );
+      const left = timeToLeft(newStart);
+      const width = clamp(durationToWidth(target.duration), 4, 100 - left);
+      return normalizeClip({
+        ...target,
+        id: createId("clip-copy"),
+        trackId: targetTrack.id,
+        name: `${target.name} 복사본`,
+        startTime: Number(newStart.toFixed(2)),
+        left,
+        width,
+      });
     });
 
-    setClipsWithHistory((prev) => [...prev, duplicated]);
-    setSelectedClipId(duplicated.id);
-  };
+    setClipsWithHistory((prev) => [...prev, ...newClips]);
+    setSelectedClipIds(newClips.map((c) => c.id));
+    setSelectedClipId(newClips[newClips.length - 1].id);
+  }, [clips, selectedClipIds, tracks, setClipsWithHistory, setSelectedClipId]);
 
-  const copyClip = (id: string) => {
-    const target = clips.find((clip) => clip.id === id);
-    if (!target) return;
+  const copyClip = useCallback((id: string) => {
+    const idsToCopy = selectedClipIds.includes(id) ? selectedClipIds : [id];
+    const targets = clips.filter((c) => idsToCopy.includes(c.id));
+    if (targets.length === 0) return;
 
-    setCopiedClip(normalizeClip({ ...target }));
-  };
+    setCopiedClips(targets.map((c) => normalizeClip({ ...c })));
+    setCopiedClip(normalizeClip({ ...targets[0] }));
+  }, [clips, selectedClipIds]);
 
-  const pasteClip = (startTime?: number) => {
-    if (!copiedClip) return;
+  const pasteClip = useCallback((startTime?: number) => {
+    const activeCopiedClips = copiedClips.length > 0 ? copiedClips : (copiedClip ? [copiedClip] : []);
+    if (activeCopiedClips.length === 0) return;
 
-    const maxStartTime = Math.max(0, TIMELINE_BASE_DURATION - copiedClip.duration);
-    const safeStartTime =
-      typeof startTime === "number"
-        ? clamp(startTime, 0, maxStartTime)
-        : clamp(currentTime, 0, maxStartTime);
-    const left = timeToLeft(safeStartTime);
-    const trackType = getTrackTypeByClipType(copiedClip.type);
-    const { targetTrack, shouldCreateTrack } = findAvailableTrack(
-      tracks,
-      clips,
-      trackType,
-      safeStartTime,
-      copiedClip.duration
-    );
+    const minCopiedStartTime = Math.min(...activeCopiedClips.map((c) => c.startTime));
+    const baseStartTime = typeof startTime === "number" ? startTime : currentTime;
 
-    if (shouldCreateTrack) {
-      setTracks((prev) => insertTrackAfterSameType(prev, targetTrack, trackType));
-    }
+    const pastedClips = activeCopiedClips.map((copied) => {
+      const offset = copied.startTime - minCopiedStartTime;
+      const maxStartTime = Math.max(0, TIMELINE_BASE_DURATION - copied.duration);
+      const safeStartTime = clamp(baseStartTime + offset, 0, maxStartTime);
+      const left = timeToLeft(safeStartTime);
+      const trackType = getTrackTypeByClipType(copied.type);
+      const { targetTrack } = findAvailableTrack(
+        tracks,
+        clips,
+        trackType,
+        safeStartTime,
+        copied.duration
+      );
 
-    const width = clamp(
-      copiedClip.width || durationToWidth(copiedClip.duration),
-      4,
-      100 - left
-    );
+      const width = clamp(
+        copied.width || durationToWidth(copied.duration),
+        4,
+        100 - left
+      );
 
-    const pasted: VideoEditorClip = normalizeClip({
-      ...copiedClip,
-      id: createId("clip-paste"),
-      trackId: targetTrack.id,
-      name: `${copiedClip.name} 복사본`,
-      startTime: Number(safeStartTime.toFixed(2)),
-      left,
-      width,
+      return normalizeClip({
+        ...copied,
+        id: createId("clip-paste"),
+        trackId: targetTrack.id,
+        name: `${copied.name} 복사본`,
+        startTime: Number(safeStartTime.toFixed(2)),
+        left,
+        width,
+      });
     });
 
-    setClipsWithHistory((prev) => [...prev, pasted]);
-    setSelectedClipId(pasted.id);
-  };
+    setClipsWithHistory((prev) => [...prev, ...pastedClips]);
+    setSelectedClipIds(pastedClips.map((c) => c.id));
+    setSelectedClipId(pastedClips[pastedClips.length - 1].id);
+  }, [copiedClips, copiedClip, currentTime, tracks, clips, setSelectedClipId]);
 
   const splitClip = (id: string, splitTime?: number) => {
     const target = clips.find((clip) => clip.id === id);
@@ -1805,6 +1903,189 @@ function getMediaDuration(file: File): Promise<number> {
     // 2. Automatically register it as a new audio entry in the Media Library
     await addMediaFiles([extractedFile]);
   }, [clips, mediaItems, addMediaFiles]);
+
+  const splitClipAtTimes = useCallback((id: string, splitTimes: number[]) => {
+    const target = clips.find((clip) => clip.id === id);
+    if (!target || target.duration <= 1) return;
+
+    // Filter and sort split times that fall within the clip
+    const relativeSplits = splitTimes
+      .map((time) => time - target.startTime)
+      .filter((offset) => offset >= 0.5 && offset <= target.duration - 0.5)
+      .sort((a, b) => a - b);
+
+    if (relativeSplits.length === 0) return;
+
+    // Filter out splits that are too close to each other (less than 0.5 seconds)
+    const cleanRelativeSplits: number[] = [];
+    let lastOffset = 0;
+    for (const offset of relativeSplits) {
+      if (offset - lastOffset >= 0.5 && target.duration - offset >= 0.5) {
+        cleanRelativeSplits.push(offset);
+        lastOffset = offset;
+      }
+    }
+
+    if (cleanRelativeSplits.length === 0) return;
+
+    const boundaries = [0, ...cleanRelativeSplits, target.duration];
+    const newClips: VideoEditorClip[] = [];
+
+    for (let i = 0; i < boundaries.length - 1; i++) {
+      const bStart = boundaries[i];
+      const bEnd = boundaries[i + 1];
+      const segmentDuration = Number((bEnd - bStart).toFixed(2));
+      const segmentStartTime = Number((target.startTime + bStart).toFixed(2));
+      const segmentLeft = timeToLeft(segmentStartTime);
+      const segmentWidth = durationToWidth(segmentDuration);
+
+      const suffix = String.fromCharCode(65 + i); // A, B, C, ...
+
+      newClips.push(
+        normalizeClip({
+          ...target,
+          id: i === 0 ? target.id : createId("clip-split"),
+          name: `${target.name} ${suffix}`,
+          startTime: segmentStartTime,
+          duration: segmentDuration,
+          left: segmentLeft,
+          width: segmentWidth,
+          trimStart: (target.trimStart ?? 0) + bStart,
+          trimEnd: (target.trimStart ?? 0) + bEnd,
+        })
+      );
+    }
+
+    setClipsWithHistory((prev) => {
+      const idx = prev.findIndex((clip) => clip.id === id);
+      if (idx === -1) return prev;
+      const result = [...prev];
+      result.splice(idx, 1, ...newClips);
+      return result;
+    });
+
+    setSelectedClipId(newClips[0].id);
+  }, [clips, setClipsWithHistory, setSelectedClipId]);
+
+  const reverseVideoClip = useCallback(async (clipId: string): Promise<void> => {
+    const clip = clips.find((c) => c.id === clipId);
+    if (!clip || !clip.mediaId) return;
+
+    const media = mediaItems.find((m) => m.id === clip.mediaId);
+    if (!media) return;
+
+    setProcessingClipId(clipId);
+    setProcessingMessage("영상을 역재생 변환하는 중입니다...");
+
+    try {
+      let file: File | null = media.file || null;
+      if (!file) {
+        file = await getFileFromCache(media.id);
+      }
+      if (!file) {
+        throw new Error("미디어 원본 파일을 찾을 수 없습니다.");
+      }
+
+      const trimStart = clip.trimStart ?? 0;
+      const trimEnd = clip.trimEnd ?? media.duration ?? 0;
+
+      const reversedBlob = await reverseVideo({
+        file,
+        hasAudio: media.hasAudio ?? false,
+        trimStart,
+        trimEnd,
+        onProgress: (p) => {
+          setProcessingMessage(`영상을 역재생 변환하는 중입니다... (${p}%)`);
+        },
+      });
+
+      const nameWithoutExt = media.name.replace(/\.[^/.]+$/, "");
+      const reversedFile = new File(
+        [reversedBlob],
+        `reversed_${nameWithoutExt}_${Date.now()}.mp4`,
+        { type: "video/mp4" }
+      );
+
+      setProcessingMessage("변환된 미디어 정보를 등록하는 중입니다...");
+      
+      const [newMediaItem] = await addMediaFiles([reversedFile]);
+      if (!newMediaItem) {
+        throw new Error("역재생 미디어 등록에 실패했습니다.");
+      }
+
+      setClipsWithHistory((prev) =>
+        prev.map((c) =>
+          c.id === clipId
+            ? normalizeClip({
+                ...c,
+                mediaId: newMediaItem.id,
+                name: `역재생_${c.name}`,
+                trimStart: 0,
+                trimEnd: newMediaItem.duration ?? 0,
+              })
+            : c
+        )
+      );
+
+      console.log("[reverseVideoClip] Reverse complete for clip:", clipId);
+    } catch (err) {
+      console.error("[reverseVideoClip] Failed to reverse video:", err);
+      alert(err instanceof Error ? err.message : "역재생 변환에 실패했습니다.");
+    } finally {
+      setProcessingClipId(null);
+      setProcessingMessage("");
+    }
+  }, [clips, mediaItems, addMediaFiles, setClipsWithHistory]);
+
+  const detectScenesAndSplitClip = useCallback(async (clipId: string): Promise<void> => {
+    const clip = clips.find((c) => c.id === clipId);
+    if (!clip || !clip.mediaId || clip.type !== "video") return;
+
+    const media = mediaItems.find((m) => m.id === clip.mediaId);
+    if (!media) return;
+
+    setProcessingClipId(clipId);
+    setProcessingMessage("장면 분할을 위해 영상을 분석하는 중입니다...");
+
+    try {
+      let file: File | null = media.file || null;
+      if (!file) {
+        file = await getFileFromCache(media.id);
+      }
+      if (!file) {
+        throw new Error("미디어 원본 파일을 찾을 수 없습니다.");
+      }
+
+      const trimStart = clip.trimStart ?? 0;
+      const trimEnd = clip.trimEnd ?? media.duration ?? 0;
+
+      const cutPoints = await detectSceneChanges({
+        file,
+        trimStart,
+        trimEnd,
+        onProgress: (p) => {
+          setProcessingMessage(`영상을 분석하는 중입니다... (${p}%)`);
+        },
+      });
+
+      console.log("[detectScenesAndSplitClip] Detected scene cuts relative to trim:", cutPoints);
+
+      if (cutPoints.length === 0) {
+        alert("장면 전환점이 감지되지 않았습니다.");
+        return;
+      }
+
+      const timelineSplitTimes = cutPoints.map((pt) => clip.startTime + pt);
+
+      splitClipAtTimes(clipId, timelineSplitTimes);
+    } catch (err) {
+      console.error("[detectScenesAndSplitClip] Failed to detect scenes:", err);
+      alert(err instanceof Error ? err.message : "장면 분할 분석에 실패했습니다.");
+    } finally {
+      setProcessingClipId(null);
+      setProcessingMessage("");
+    }
+  }, [clips, mediaItems, splitClipAtTimes]);
 
   const updateClipName = (id: string, name: string) => {
     updateClip(id, { name });
@@ -2097,6 +2378,7 @@ function getMediaDuration(file: File): Promise<number> {
       clips,
       selectedMediaId,
       selectedClipId,
+      selectedClipIds,
       currentTime,
       totalDuration,
       isPlaying,
@@ -2112,6 +2394,9 @@ function getMediaDuration(file: File): Promise<number> {
       clickedPreviewMediaTime,
       previewMediaItem,
       previewMediaTime,
+
+      processingClipId,
+      processingMessage,
 
       setProjectTitle,
       setActiveTab,
@@ -2171,6 +2456,10 @@ function getMediaDuration(file: File): Promise<number> {
       setPreviewMedia,
       detachAudio,
       extractAndDownloadAudio,
+      reverseVideoClip,
+      detectScenesAndSplitClip,
+      splitClipAtTimes,
+      selectClipIds,
     }),
     [
       projectTitle,
@@ -2180,6 +2469,7 @@ function getMediaDuration(file: File): Promise<number> {
       clips,
       selectedMediaId,
       selectedClipId,
+      selectedClipIds,
       currentTime,
       totalDuration,
       isPlaying,
@@ -2203,6 +2493,12 @@ function getMediaDuration(file: File): Promise<number> {
       setPreviewMedia,
       detachAudio,
       extractAndDownloadAudio,
+      processingClipId,
+      processingMessage,
+      reverseVideoClip,
+      detectScenesAndSplitClip,
+      splitClipAtTimes,
+      selectClipIds,
     ]
   );
 

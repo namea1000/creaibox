@@ -12,6 +12,7 @@ import {
 } from "./export/audioMixdown";
 import { getRecommendedVideoBitrate } from "./export/exportBitratePresets";
 import { isWebCodecsConfigSupported } from "./export/webCodecsSupport";
+import { extractAudioWithMediabunny } from "./export/audioExtractor";
 import { detectDirectMp4Support } from "./export/directMp4Support";
 import { exportDirectMp4VideoOnly } from "./export/directMp4Exporter";
 import { exportWebCodecsVideoOnly } from "./export/webCodecsVideoExporter";
@@ -55,14 +56,27 @@ function downloadBlob(blob: Blob, fileName: string) {
   URL.revokeObjectURL(url);
 }
 
+async function writeBlobToHandleInChunks(fileHandle: any, blob: Blob) {
+  const writable = await fileHandle.createWritable();
+  try {
+    const chunkSize = 16 * 1024 * 1024; // 16MB chunks
+    for (let offset = 0; offset < blob.size; offset += chunkSize) {
+      const chunk = blob.slice(offset, offset + chunkSize);
+      await writable.write(chunk);
+    }
+    await writable.close();
+  } catch (err) {
+    await writable.close().catch(() => {});
+    throw err;
+  }
+}
+
 async function saveBlob(blob: Blob, fileName: string, directoryHandle?: any) {
   if (directoryHandle) {
     try {
       console.log(`[saveBlob] Saving to directory handle: ${directoryHandle.name}`);
       const fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
-      const writable = await fileHandle.createWritable();
-      await writable.write(blob);
-      await writable.close();
+      await writeBlobToHandleInChunks(fileHandle, blob);
       console.log(`[saveBlob] Successfully saved ${fileName} to directory`);
       return;
     } catch (err) {
@@ -246,30 +260,115 @@ async function decodeAudioBufferForRender(
 
   try {
     if (type === "video") {
-      console.log("[decodeAudioBufferForRender] Skipping native decodeAudioData for video file, extracting directly via FFmpeg:", url, safeFileName);
-      
-      const getFileBytes = async () => {
-        try {
-          if (file) {
-            console.log("[decodeAudioBufferForRender] Reading from in-memory File object:", file.name, file.size);
-            return new Uint8Array(await file.arrayBuffer());
+      // 1. Try to load the pre-extracted audio-only WAV file from IndexedDB cache to save memory
+      try {
+        const cachedAudioFile = await getFileFromCache("audio-extract-" + mediaId);
+        if (cachedAudioFile) {
+          console.log("[decodeAudioBufferForRender] Found pre-extracted video audio in IndexedDB:", cachedAudioFile.name, cachedAudioFile.size);
+          const arrayBuffer = await cachedAudioFile.arrayBuffer();
+          const decoded = await tempCtx.decodeAudioData(arrayBuffer);
+          return decoded;
+        }
+      } catch (err) {
+        console.warn("[decodeAudioBufferForRender] Failed to read cached pre-extracted audio file:", err);
+      }
+
+      // 2. Try extractAudioWithMediabunny first to avoid memory/RangeError issues
+      console.log("[decodeAudioBufferForRender] Trying Mediabunny streaming audio extraction for video file:", safeFileName);
+      try {
+        let fileOrBlob: File | Blob | null = file || null;
+        if (!fileOrBlob) {
+          const cachedFile = await getFileFromCache(mediaId);
+          if (cachedFile) {
+            fileOrBlob = cachedFile;
           }
+        }
+        if (!fileOrBlob && url) {
+          console.log("[decodeAudioBufferForRender] Fetching video URL as Blob reference:", url);
+          const response = await fetch(url);
+          fileOrBlob = await response.blob();
+        }
+        if (fileOrBlob) {
+          const wavBlob = await extractAudioWithMediabunny(fileOrBlob);
+          if (wavBlob === null) {
+            console.log("[decodeAudioBufferForRender] Video file is silent (no audio track). Returning silent AudioBuffer:", safeFileName);
+            return tempCtx.createBuffer(2, 48000, 48000);
+          }
+          const wavBuffer = await wavBlob.arrayBuffer();
+          const decoded = await tempCtx.decodeAudioData(wavBuffer);
+          console.log("[decodeAudioBufferForRender] Mediabunny extraction and native decode succeeded for video file:", safeFileName);
+          return decoded;
+        }
+      } catch (mediabunnyError) {
+        console.warn("[decodeAudioBufferForRender] Mediabunny extraction failed, falling back to full-file native decode:", mediabunnyError);
+      }
+
+      // 3. Try native decodeAudioData as fallback for video file
+      console.log("[decodeAudioBufferForRender] Trying native decodeAudioData first for video file:", url, safeFileName);
+      
+      let arrayBuffer: ArrayBuffer | null = null;
+      try {
+        if (file) {
+          console.log("[decodeAudioBufferForRender] Reading from in-memory File object:", file.name, file.size);
+          arrayBuffer = await file.arrayBuffer();
+        } else {
           const cachedFile = await getFileFromCache(mediaId);
           if (cachedFile) {
             console.log("[decodeAudioBufferForRender] Reading from IndexedDB cache:", mediaId);
-            return new Uint8Array(await cachedFile.arrayBuffer());
+            arrayBuffer = await cachedFile.arrayBuffer();
           }
-        } catch (err) {
-          console.warn("[decodeAudioBufferForRender] Failed to read cached file:", err);
         }
-        console.log("[decodeAudioBufferForRender] Fetching video URL fallback:", url);
-        const response = await fetch(url);
-        return new Uint8Array(await response.arrayBuffer());
-      };
+        if (!arrayBuffer) {
+          if (!url || (!url.startsWith("blob:") && !url.startsWith("http:") && !url.startsWith("https:"))) {
+            throw new Error("미디어 파일의 URL 또는 파일 데이터가 존재하지 않습니다. 미디어 파일을 재연결해 주세요.");
+          }
+          console.log("[decodeAudioBufferForRender] Fetching video URL:", url);
+          const response = await fetch(url);
+          arrayBuffer = await response.arrayBuffer();
+        }
+        const decoded = await tempCtx.decodeAudioData(arrayBuffer);
+        console.log("[decodeAudioBufferForRender] Native decodeAudioData succeeded for video file:", safeFileName);
+        return decoded;
+      } catch (nativeError) {
+        console.warn("[decodeAudioBufferForRender] Native decodeAudioData failed for video file, trying FFmpeg fallback:", nativeError);
+        
+        // Free ArrayBuffer reference to minimize memory before launching FFmpeg
+        arrayBuffer = null;
 
-      const wavBuffer = await extractAudioWithFFmpeg(getFileBytes, safeFileName);
-      const decoded = await tempCtx.decodeAudioData(wavBuffer);
-      return decoded;
+        const getFileBytes = async () => {
+          try {
+            if (file) {
+              console.log("[decodeAudioBufferForRender] Fallback: Found video File object in-memory:", file.name, file.size);
+              return new Uint8Array(await file.arrayBuffer());
+            }
+            const cachedFile = await getFileFromCache(mediaId);
+            if (cachedFile) {
+              console.log("[decodeAudioBufferForRender] Fallback: Found video file in IndexedDB cache:", mediaId);
+              return new Uint8Array(await cachedFile.arrayBuffer());
+            }
+          } catch (err) {
+            console.warn("[decodeAudioBufferForRender] Fallback: Failed to read cached file:", err);
+          }
+          if (!url || (!url.startsWith("blob:") && !url.startsWith("http:") && !url.startsWith("https:"))) {
+            throw new Error("미디어 파일의 URL 또는 파일 데이터가 존재하지 않습니다. 미디어 파일을 재연결해 주세요.");
+          }
+          console.log("[decodeAudioBufferForRender] Fallback: Fetching video URL fallback:", url);
+          const response = await fetch(url);
+          return new Uint8Array(await response.arrayBuffer());
+        };
+
+        try {
+          const wavBuffer = await extractAudioWithFFmpeg(getFileBytes, safeFileName);
+          if (!wavBuffer || wavBuffer.byteLength === 0) {
+            throw new Error("FFmpeg extracted an empty audio buffer");
+          }
+          const decoded = await tempCtx.decodeAudioData(wavBuffer);
+          return decoded;
+        } catch (ffmpegError) {
+          console.error("[decodeAudioBufferForRender] Fallback FFmpeg extraction failed for video file:", ffmpegError);
+          throw nativeError; // throw original native decode error if both fail
+        }
+      }
     } else {
       let arrayBuffer: ArrayBuffer | null = null;
       try {

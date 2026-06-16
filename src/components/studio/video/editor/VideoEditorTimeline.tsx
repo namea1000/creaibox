@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import {
   Lock,
   Eye,
@@ -17,6 +17,8 @@ import {
   ChevronUp,
   ChevronDown,
   GripVertical,
+  RotateCcw,
+  Wand2,
 } from "lucide-react";
 
 import { useVideoEditor } from "./VideoEditorContext";
@@ -71,11 +73,13 @@ function getTimelineZoomStep(value: number) {
 
 export default function VideoEditorTimeline() {
   const [timelineZoom, setTimelineZoom] = useState(100);
-  const [showAddTrackMenu, setShowAddTrackMenu] = useState(false);
   const [showLeftAddTrackMenu, setShowLeftAddTrackMenu] = useState(false);
   const timelineRootRef = useRef<HTMLDivElement | null>(null);
   const timelineScrollRef = useRef<HTMLDivElement | null>(null);
   const headersTracksContainerRef = useRef<HTMLDivElement | null>(null);
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const [marqueeStart, setMarqueeStart] = useState<{ x: number; y: number } | null>(null);
+  const [marqueeEnd, setMarqueeEnd] = useState<{ x: number; y: number } | null>(null);
   const timelineZoomRef = useRef(timelineZoom);
   const [draggingOverTrackId, setDraggingOverTrackId] = useState<string | null>(null);
   const [isDraggingOverGrid, setIsDraggingOverGrid] = useState(false);
@@ -136,7 +140,9 @@ export default function VideoEditorTimeline() {
     clips,
     mediaItems,
     selectedClipId,
+    selectedClipIds,
     selectClip,
+    selectClipIds,
     removeClip,
     duplicateClip,
     splitClip,
@@ -155,7 +161,102 @@ export default function VideoEditorTimeline() {
     setClips,
     addClipFromMedia,
     addMediaFiles,
+    reverseVideoClip,
+    detectScenesAndSplitClip,
   } = useVideoEditor();
+
+  const handleSelectClip = useCallback((clipId: string, event?: React.MouseEvent | React.PointerEvent) => {
+    if (event && (event.shiftKey || event.metaKey)) {
+      if (selectedClipIds.includes(clipId)) {
+        selectClipIds(selectedClipIds.filter((id) => id !== clipId));
+      } else {
+        selectClipIds([...selectedClipIds, clipId]);
+      }
+    } else {
+      selectClip(clipId);
+    }
+  }, [selectedClipIds, selectClip, selectClipIds]);
+
+  const handleGridPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    
+    const target = event.target as HTMLElement;
+    if (target.closest("button") || target.closest(".pointer-events-auto")) return;
+
+    // Check if clicking inside video editor clip element
+    if (target.closest(".group.absolute.top-2")) return;
+
+    event.preventDefault();
+
+    const gridEl = gridRef.current;
+    if (!gridEl) return;
+
+    const gridRect = gridEl.getBoundingClientRect();
+    const startX = event.clientX - gridRect.left;
+    const startY = event.clientY - gridRect.top;
+
+    setMarqueeStart({ x: startX, y: startY });
+    setMarqueeEnd({ x: startX, y: startY });
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      moveEvent.preventDefault();
+      const currentX = moveEvent.clientX - gridRect.left;
+      const currentY = moveEvent.clientY - gridRect.top;
+      setMarqueeEnd({ x: currentX, y: currentY });
+
+      const left = Math.min(startX, currentX);
+      const right = Math.max(startX, currentX);
+      const top = Math.min(startY, currentY);
+      const bottom = Math.max(startY, currentY);
+
+      const startTime = left / pxPerSecond;
+      const endTime = right / pxPerSecond;
+      const startTrackIdx = Math.floor(top / 72);
+      const endTrackIdx = Math.floor(bottom / 72);
+
+      const intersectingClipIds: string[] = [];
+      clips.forEach((clip) => {
+        const trackIdx = tracks.findIndex((t) => t.id === clip.trackId);
+        if (trackIdx === -1) return;
+
+        const inTrackRange = trackIdx >= startTrackIdx && trackIdx <= endTrackIdx;
+        const inTimeRange = clip.startTime < endTime && (clip.startTime + clip.duration) > startTime;
+
+        if (inTrackRange && inTimeRange) {
+          intersectingClipIds.push(clip.id);
+        }
+      });
+
+      if (event.shiftKey || event.metaKey) {
+        const combined = Array.from(new Set([...selectedClipIds, ...intersectingClipIds]));
+        selectClipIds(combined);
+      } else {
+        selectClipIds(intersectingClipIds);
+      }
+    };
+
+    const handlePointerUp = (upEvent: PointerEvent) => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+
+      const endX = upEvent.clientX - gridRect.left;
+      const endY = upEvent.clientY - gridRect.top;
+
+      if (Math.abs(startX - endX) < 3 && Math.abs(startY - endY) < 3) {
+        selectClip(null);
+      }
+
+      setMarqueeStart(null);
+      setMarqueeEnd(null);
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+  };
+
+  const selectedClip = clips.find((c) => c.id === selectedClipId);
+  const isVideoOrAudioClip = selectedClip && (selectedClip.type === "video" || selectedClip.type === "audio");
+  const isVideoClip = selectedClip && selectedClip.type === "video";
 
   const handleDeleteTrack = (trackId: string) => {
     if (window.confirm("트랙을 정말로 삭제하시겠습니까?")) {
@@ -553,70 +654,23 @@ export default function VideoEditorTimeline() {
             }}
           />
 
-          <div 
-            className="relative"
-            onMouseLeave={() => setShowAddTrackMenu(false)}
-          >
-            <TimelineTool 
-              icon={Plus} 
-              label="트랙 추가" 
-              onClick={() => setShowAddTrackMenu(!showAddTrackMenu)} 
-            />
-            {showAddTrackMenu && (
-              <div className="absolute left-0 top-full mt-1.5 w-36 rounded border border-white/10 bg-[#1e1e24] p-1 shadow-lg z-50 text-[10.5px]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleAddTrack("video");
-                    setShowAddTrackMenu(false);
-                  }}
-                  className="flex w-full items-center gap-2 rounded px-2.5 py-2 text-left text-zinc-300 hover:bg-white/5 hover:text-white font-medium"
-                >
-                  비디오 트랙 추가
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleAddTrack("audio");
-                    setShowAddTrackMenu(false);
-                  }}
-                  className="flex w-full items-center gap-2 rounded px-2.5 py-2 text-left text-zinc-300 hover:bg-white/5 hover:text-white font-medium"
-                >
-                  오디오 트랙 추가
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleAddTrack("text");
-                    setShowAddTrackMenu(false);
-                  }}
-                  className="flex w-full items-center gap-2 rounded px-2.5 py-2 text-left text-zinc-300 hover:bg-white/5 hover:text-white font-medium"
-                >
-                  텍스트 트랙 추가
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleAddTrack("subtitle");
-                    setShowAddTrackMenu(false);
-                  }}
-                  className="flex w-full items-center gap-2 rounded px-2.5 py-2 text-left text-zinc-300 hover:bg-white/5 hover:text-white font-medium"
-                >
-                  자막 트랙 추가
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleAddTrack("visualizer");
-                    setShowAddTrackMenu(false);
-                  }}
-                  className="flex w-full items-center gap-2 rounded px-2.5 py-2 text-left text-zinc-300 hover:bg-white/5 hover:text-white font-medium"
-                >
-                  비주얼라이저 트랙 추가
-                </button>
-              </div>
-            )}
-          </div>
+          <TimelineTool
+            icon={RotateCcw}
+            label="역재생"
+            disabled={!isVideoOrAudioClip}
+            onClick={() => {
+              if (selectedClipId) void reverseVideoClip(selectedClipId);
+            }}
+          />
+
+          <TimelineTool
+            icon={Wand2}
+            label="장면 분할"
+            disabled={!isVideoClip}
+            onClick={() => {
+              if (selectedClipId) void detectScenesAndSplitClip(selectedClipId);
+            }}
+          />
 
           <div className="mx-2 h-4 w-px bg-white/10" />
 
@@ -848,12 +902,30 @@ export default function VideoEditorTimeline() {
             </div>
 
             {/* 클립 트랙 영역 */}
-            <div className="relative" style={timelineGridStyle}>
+            <div
+              ref={gridRef}
+              className="relative"
+              style={timelineGridStyle}
+              onPointerDown={handleGridPointerDown}
+            >
               {/* 플레이헤드 세로선 */}
               <div
                 className="pointer-events-none absolute top-0 z-30 h-full w-px bg-red-400"
                 style={{ left: `${playheadLeft}px` }}
               />
+
+              {/* Marquee Selection Area */}
+              {marqueeStart && marqueeEnd && (
+                <div
+                  className="absolute border border-cyan-400 bg-cyan-400/10 pointer-events-none rounded z-50 backdrop-blur-[1px]"
+                  style={{
+                    left: `${Math.min(marqueeStart.x, marqueeEnd.x)}px`,
+                    top: `${Math.min(marqueeStart.y, marqueeEnd.y)}px`,
+                    width: `${Math.abs(marqueeStart.x - marqueeEnd.x)}px`,
+                    height: `${Math.abs(marqueeStart.y - marqueeEnd.y)}px`,
+                  }}
+                />
+              )}
 
               {tracks.map((track) => {
                 const trackClips = clips.filter((clip) => clip.trackId === track.id);
@@ -896,12 +968,12 @@ export default function VideoEditorTimeline() {
                           <VideoEditorClip
                             key={clip.id}
                             clip={clip}
-                            active={selectedClipId === clip.id}
+                            active={selectedClipIds.includes(clip.id)}
                             visible={visible}
                             currentTime={currentTime}
                             timelineZoom={timelineZoom}
                             isOffline={isOffline}
-                            onSelect={selectClip}
+                            onSelect={handleSelectClip}
                             onUpdateDuration={updateClipDuration}
                             onUpdateTime={updateClipTime}
                           />

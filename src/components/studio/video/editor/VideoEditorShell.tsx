@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 
-import { VideoEditorProvider } from "./VideoEditorContext";
+import { VideoEditorProvider, useVideoEditor } from "./VideoEditorContext";
 
 import VideoEditorCanvas from "./VideoEditorCanvas";
 import VideoEditorTimeline from "./VideoEditorTimeline";
@@ -37,6 +37,7 @@ export default function VideoEditorShell() {
 }
 
 function VideoEditorWorkspace() {
+  const { processingClipId, processingMessage } = useVideoEditor();
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [projectPanelWidth, setProjectPanelWidth] = useState(DEFAULT_PROJECT_PANEL_WIDTH);
   const [mediaPanelWidth, setMediaPanelWidth] = useState(DEFAULT_MEDIA_PANEL_WIDTH);
@@ -219,6 +220,19 @@ function VideoEditorWorkspace() {
         onExportAudioOnly={handleExportAudioOnly}
         onRenderSampleFrame={handleRenderSampleFrame}
       />
+
+      {processingClipId && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[9999] flex flex-col items-center justify-center">
+          <div className="bg-[#1e1e24]/90 border border-white/10 rounded-xl p-8 max-w-sm w-full mx-4 shadow-2xl flex flex-col items-center text-center backdrop-blur-xl">
+            <div className="relative w-16 h-16 mb-4">
+              <div className="absolute inset-0 rounded-full border-4 border-white/5" />
+              <div className="absolute inset-0 rounded-full border-4 border-cyan-400 border-t-transparent animate-spin" />
+            </div>
+            <h3 className="text-lg font-black text-white mb-2">FFmpeg 작업 중</h3>
+            <p className="text-sm text-zinc-400 font-bold">{processingMessage || "비디오를 처리하고 있습니다. 잠시만 기다려 주세요..."}</p>
+          </div>
+        </div>
+      )}
     </>
   );
 }

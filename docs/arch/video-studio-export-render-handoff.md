@@ -165,6 +165,8 @@ Current audio behavior:
 - Direct MP4 uses OfflineAudioContext mixdown and AAC encoding through Mediabunny when supported.
 - Audio mixer values include volume, muted, fadeIn, fadeOut, audioGain, audioPan, trim start, and trim end.
 - Failed source decode should skip only that source when possible, not kill the whole export.
+- Silent video files (no audio track) are handled gracefully: `extractAudioWithMediabunny` returns `null` instead of throwing, and mixdown/canvas decoding falls back to a 1-second silent `AudioBuffer` to prevent Web Audio API pipeline stalls.
+- Large video files cache only their pre-extracted audio WAV track in IndexedDB, saving up to 98% memory during playback/export.
 
 Important limitation:
 
@@ -237,6 +239,8 @@ Be careful when editing:
 
 - `VideoEditorRenderCanvas.tsx`
   - It is the central export path for Quick WebM, Compatible MP4, Direct MP4, and fallback WebCodecs rendering.
+- `VideoEditorPreviewPlayer.tsx`
+  - Manages real-time DOM layers and playback sync. Completely disables active sync (seeking) during playback for both video and audio to ensure native smooth rendering, bypassing AudioContext routing for silent videos. Do not apply active sync to playing elements to prevent stutters.
 - `render/renderFramePlan.ts`
   - Preview/export ordering depends on it.
 - `export/audioMixdown.ts`
