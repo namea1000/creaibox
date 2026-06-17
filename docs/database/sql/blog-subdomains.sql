@@ -25,11 +25,15 @@ ALTER TABLE public.profiles ADD CONSTRAINT brand_id_status_check
 CREATE TABLE IF NOT EXISTS public.blog_categories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  brand_id TEXT, -- Mapped brand ID (subdomain)
   name TEXT NOT NULL,
   slug TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  CONSTRAINT unique_user_category_slug UNIQUE (user_id, slug)
+  created_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Composite Unique Index supporting nullable brand_id
+CREATE UNIQUE INDEX IF NOT EXISTS unique_user_brand_category_slug 
+ON public.blog_categories (user_id, COALESCE(brand_id, ''), slug);
 
 -- Enable RLS for Blog Categories
 ALTER TABLE public.blog_categories ENABLE ROW LEVEL SECURITY;
@@ -129,4 +133,25 @@ BEGIN
   RETURN NULL;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- =========================================================================
+-- MIGRATION: Run this to patch an existing database with multi-tenant categories
+-- =========================================================================
+--
+-- ALTER TABLE public.blog_categories ADD COLUMN IF NOT EXISTS brand_id TEXT;
+--
+-- -- Migrate existing categories to the user's primary brand_id
+-- UPDATE public.blog_categories c
+-- SET brand_id = p.brand_id
+-- FROM public.profiles p
+-- WHERE c.user_id = p.id AND c.brand_id IS NULL;
+--
+-- -- Drop old unique constraint
+-- ALTER TABLE public.blog_categories DROP CONSTRAINT IF EXISTS unique_user_category_slug;
+--
+-- -- Re-create composite unique index
+-- CREATE UNIQUE INDEX IF NOT EXISTS unique_user_brand_category_slug 
+-- ON public.blog_categories (user_id, COALESCE(brand_id, ''), slug);
+
 

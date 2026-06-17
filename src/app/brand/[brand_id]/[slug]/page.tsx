@@ -259,14 +259,30 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
     category = catData as BlogCategory | null;
   }
 
-  // Fetch Categories for Header Nav
+  // Fetch Categories for Header Nav (filtering by active brand_id or null for legacy)
   const { data: categoriesData } = await supabase
     .from("blog_categories")
     .select("*")
     .eq("user_id", profile.id)
+    .or(`brand_id.eq.${brand_id},brand_id.is.null`)
     .order("created_at", { ascending: true });
 
   const categories = (categoriesData as BlogCategory[] | null) || [];
+
+  // Sort categories based on brand_id category order
+  const primaryId = profile.brand_id || "";
+  const configs = profile.extra_configs || {};
+  const orderIds = configs[`category_order_${brand_id}`] || (brand_id === primaryId ? configs.category_order : []) || [];
+  if (Array.isArray(orderIds) && orderIds.length > 0) {
+    categories.sort((a, b) => {
+      const aIdx = orderIds.indexOf(a.id);
+      const bIdx = orderIds.indexOf(b.id);
+      if (aIdx === -1 && bIdx === -1) return 0;
+      if (aIdx === -1) return 1;
+      if (bIdx === -1) return -1;
+      return aIdx - bIdx;
+    });
+  }
 
   const tags = post.seo_tags || [];
   const publishedDate = formatDate(post.created_at);

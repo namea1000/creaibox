@@ -83,18 +83,13 @@ export default function BlogManagementPage() {
         }
         setUser(currentUser);
 
-        // Fetch user profile, blog categories, and published posts in parallel
-        const [profileRes, catsRes, postsRes] = await Promise.all([
+        // Fetch user profile and published posts in parallel
+        const [profileRes, postsRes] = await Promise.all([
           supabase
             .from("profiles")
             .select("*")
             .eq("id", currentUser.id)
             .maybeSingle(),
-          supabase
-            .from("blog_categories")
-            .select("*")
-            .eq("user_id", currentUser.id)
-            .order("created_at", { ascending: true }),
           supabase
             .from("writing_creaibox_posts")
             .select("id, title, slug, created_at")
@@ -135,10 +130,7 @@ export default function BlogManagementPage() {
           }
         }
 
-        // Process categories
-        if (catsRes.data) {
-          setCategories(catsRes.data as BlogCategory[]);
-        }
+
 
         // Process published posts
         if (postsRes.data) {
@@ -191,6 +183,36 @@ export default function BlogManagementPage() {
     setCustomDomainRejectionReason(getConfigValue("custom_domain_rejection_reason", ""));
     setCustomDomainInput(reqDomain || domain || "");
 
+    // Fetch categories dynamically for this activeBrandId!
+    const fetchCats = async () => {
+      try {
+        const { data: catsData } = await supabase
+          .from("blog_categories")
+          .select("*")
+          .eq("user_id", profile.id)
+          .or(`brand_id.eq.${activeBrandId},brand_id.is.null`)
+          .order("created_at", { ascending: true });
+
+        if (catsData) {
+          const cats = catsData as BlogCategory[];
+          const orderIds = configs[`category_order_${activeBrandId}`] || (activeBrandId === primaryId ? configs.category_order : []) || [];
+          if (Array.isArray(orderIds) && orderIds.length > 0) {
+            cats.sort((a, b) => {
+              const aIdx = orderIds.indexOf(a.id);
+              const bIdx = orderIds.indexOf(b.id);
+              if (aIdx === -1 && bIdx === -1) return 0;
+              if (aIdx === -1) return 1;
+              if (bIdx === -1) return -1;
+              return aIdx - bIdx;
+            });
+          }
+          setCategories(cats);
+        }
+      } catch (err) {
+        console.error("Failed to fetch categories for brand:", err);
+      }
+    };
+    void fetchCats();
   }, [activeBrandId, profile]);
 
   // 1. Action: Save Blog Profile & Customizer & SEO config
@@ -261,8 +283,8 @@ export default function BlogManagementPage() {
     const slug = newCatSlug.trim().toLowerCase();
 
     if (!name || !slug) return;
-    if (!/^[a-z0-9-]{2,20}$/.test(slug)) {
-      alert("카테고리 슬러그는 영문 소문자, 숫자, 하이픈(-) 조합 2~20자만 가능합니다.");
+    if (!/^[a-z0-9가-힣_-]{2,30}$/i.test(slug)) {
+      alert("카테고리 슬러그는 영문, 한글, 숫자, 하이픈(-), 언더바(_) 조합 2~30자만 가능합니다.");
       return;
     }
 
@@ -278,6 +300,7 @@ export default function BlogManagementPage() {
         .from("blog_categories")
         .insert({
           user_id: user.id,
+          brand_id: activeBrandId,
           name,
           slug,
         })
@@ -313,6 +336,59 @@ export default function BlogManagementPage() {
       setCategories(prev => prev.filter(c => c.id !== id));
     } catch (e: any) {
       alert(`삭제 실패: ${e.message}`);
+    }
+  };
+  // 4. Action: Move Category (Up/Down) and Auto-Save
+  const handleMoveCategory = async (index: number, direction: "up" | "down") => {
+    if (!user || !activeBrandId) return;
+
+    const newCategories = [...categories];
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+
+    if (targetIndex < 0 || targetIndex >= newCategories.length) return;
+
+    // Swap
+    const temp = newCategories[index];
+    newCategories[index] = newCategories[targetIndex];
+    newCategories[targetIndex] = temp;
+
+    setCategories(newCategories);
+
+    // Save to profiles.extra_configs
+    try {
+      const orderIds = newCategories.map(c => c.id);
+      
+      const { data: currentProfile } = await supabase
+        .from("profiles")
+        .select("brand_id, extra_configs")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const mergedConfigs = {
+        ...(currentProfile?.extra_configs || {}),
+        [`category_order_${activeBrandId}`]: orderIds,
+      };
+
+      if (activeBrandId === currentProfile?.brand_id) {
+        mergedConfigs.category_order = orderIds;
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          extra_configs: mergedConfigs,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      setProfile((prev: any) => ({
+        ...prev,
+        extra_configs: mergedConfigs
+      }));
+    } catch (e: any) {
+      console.error("Failed to save category order:", e);
     }
   };
 
@@ -666,39 +742,138 @@ export default function BlogManagementPage() {
                   </div>
                 </div>
 
+                {/* 🌟 실시간 블로그 라이브 프리뷰 목업 (Premium WOW UI) */}
                 <div className="rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-6 space-y-4">
-                  <h4 className="text-xs font-black uppercase italic tracking-wider text-white">
-                    디자인 프리뷰 정보
+                  <h4 className="text-xs font-black uppercase italic tracking-wider text-white flex items-center justify-between">
+                    <span>블로그 실시간 프리뷰</span>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-2 py-0.5 text-[9px] font-black tracking-wider text-emerald-400">
+                      LIVE
+                    </span>
                   </h4>
-                  <div className="space-y-4">
-                    <div className="rounded-2xl border border-zinc-900 bg-black/40 p-5 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-zinc-500 uppercase">도메인 주소</span>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">ACTIVE</span>
+
+                  {/* 브라우저 목업 */}
+                  <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-[#09090b] shadow-[0_20px_40px_rgba(0,0,0,0.6)]">
+                    {/* 브라우저 헤더 */}
+                    <div className="flex h-10 items-center justify-between bg-zinc-950 px-4 border-b border-zinc-900">
+                      <div className="flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full bg-[#ff5f57]" />
+                        <span className="h-2 w-2 rounded-full bg-[#febc2e]" />
+                        <span className="h-2 w-2 rounded-full bg-[#28c840]" />
                       </div>
-                      <p className="font-mono text-xs font-black italic text-zinc-300">
+                      <div className="rounded bg-zinc-900/80 px-4 py-1 text-[9px] font-mono text-zinc-500 truncate w-40 text-center">
                         {activeBrandId}.creaibox.com
-                      </p>
+                      </div>
+                      <div className="w-8" />
                     </div>
 
-                    <div className="rounded-2xl border border-zinc-900 bg-black/40 p-5 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-zinc-500 uppercase">활성 템플릿</span>
+                    {/* 블로그 홈 콘텐츠 */}
+                    <div className="p-4 space-y-4 max-h-[360px] overflow-y-auto custom-scrollbar bg-zinc-950 text-left">
+                      {/* 미니 블로그 헤더 */}
+                      <div className="flex items-center justify-between border-b border-zinc-900 pb-2">
+                        <span 
+                          className="text-xs font-black italic tracking-tighter uppercase transition-colors"
+                          style={{ color: blogAccentColor }}
+                        >
+                          {blogTitle || "MY BLOG"}
+                        </span>
+                        <div className="flex gap-2 text-[8px] font-bold text-zinc-500">
+                          <span>전체글</span>
+                          <span>골프 레슨</span>
+                        </div>
                       </div>
-                      <p className="text-xs font-black uppercase text-white">
-                        {blogTemplate.toUpperCase()} TEMPLATE
-                      </p>
-                    </div>
 
-                    <div className="rounded-2xl border border-zinc-900 bg-black/40 p-5 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-zinc-500 uppercase">강조 색상</span>
+                      {/* 미니 블로그 배너 */}
+                      <div 
+                        className="rounded-xl p-4 text-center space-y-2 border border-zinc-900"
+                        style={{ 
+                          backgroundImage: `linear-gradient(135deg, ${blogAccentColor}12, #09090b)`,
+                        }}
+                      >
+                        <h5 className="text-sm font-black text-white">{blogTitle || "MY BLOG"}</h5>
+                        <p className="text-[9px] font-bold text-zinc-500 leading-normal line-clamp-2">
+                          {blogDesc || "블로그 소개 및 설명글 영역입니다."}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-2 text-xs font-bold text-zinc-300">
-                        <span className="inline-block w-4 h-4 rounded-full" style={{ backgroundColor: blogAccentColor }} />
-                        {blogAccentColor}
+
+                      {/* 템플릿별 실시간 목록 미리보기 */}
+                      <div className="space-y-3">
+                        {/* 1. CARD Template */}
+                        {blogTemplate === "card" && (
+                          <div className="grid grid-cols-2 gap-3">
+                            {[1, 2].map((i) => (
+                              <div key={i} className="rounded-xl border border-zinc-900 bg-zinc-900/20 overflow-hidden flex flex-col">
+                                <div 
+                                  className="h-14 w-full"
+                                  style={{
+                                    backgroundImage: `linear-gradient(135deg, ${blogAccentColor}33, #09090b)`,
+                                  }}
+                                />
+                                <div className="p-2.5 space-y-1.5 flex-1 flex flex-col justify-between">
+                                  <div className="space-y-1">
+                                    <div className="h-1.5 w-6 rounded bg-zinc-800" />
+                                    <div className="h-2.5 w-full rounded bg-zinc-700" />
+                                  </div>
+                                  <div className="flex items-center justify-between pt-1 text-[7px] font-black" style={{ color: blogAccentColor }}>
+                                    <span>자세히 보기</span>
+                                    <span>&rarr;</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* 2. LIST Template */}
+                        {blogTemplate === "list" && (
+                          <div className="space-y-2.5">
+                            {[1, 2].map((i) => (
+                              <div key={i} className="flex gap-2.5 rounded-xl border border-zinc-900 bg-zinc-900/20 p-2">
+                                <div 
+                                  className="h-10 w-16 rounded bg-zinc-950 shrink-0"
+                                  style={{
+                                    backgroundImage: `linear-gradient(135deg, ${blogAccentColor}33, #09090b)`,
+                                  }}
+                                />
+                                <div className="flex-1 flex flex-col justify-between py-0.5">
+                                  <div className="space-y-1">
+                                    <div className="h-1.5 w-8 rounded bg-zinc-800" />
+                                    <div className="h-2.5 w-16 rounded bg-zinc-700" />
+                                  </div>
+                                  <div className="text-[7px] font-black" style={{ color: blogAccentColor }}>
+                                    Read Post &rarr;
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* 3. NEWS Template */}
+                        {blogTemplate === "news" && (
+                          <div className="space-y-2">
+                            {[1, 2].map((i) => (
+                              <div key={i} className="border-b border-zinc-900 pb-2 last:border-0 last:pb-0">
+                                <div className="flex gap-1.5 text-[6px] font-black text-zinc-600 mb-1">
+                                  <span style={{ color: blogAccentColor }}>NEWS</span>
+                                  <span>2026. 06. 17.</span>
+                                </div>
+                                <div className="h-3 w-4/5 rounded bg-zinc-700" />
+                                <div className="h-1.5 w-full rounded bg-zinc-800 mt-1" />
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
+
                     </div>
+                  </div>
+
+                  {/* 간략 정보 요약 */}
+                  <div className="rounded-2xl border border-zinc-900 bg-black/40 p-4 text-[10px] font-bold text-zinc-500 leading-relaxed space-y-1">
+                    <p className="text-white font-black">💡 테마 및 템플릿 실시간 적용</p>
+                    <p>
+                      강조 색상과 템플릿 레이아웃이 실제 사용자 사이트({activeBrandId}.creaibox.com)에 즉각 반영되어 출력됩니다.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -754,7 +929,7 @@ export default function BlogManagementPage() {
                   </button>
                 </form>
 
-                <div className="lg:col-span-2 space-y-4">
+                <div className="space-y-4">
                   <h3 className="text-md font-black uppercase italic tracking-wider text-white flex items-center gap-2">
                     카테고리 리스트 ({categories.length})
                   </h3>
@@ -768,25 +943,44 @@ export default function BlogManagementPage() {
                       <table className="w-full text-left border-collapse">
                         <thead>
                           <tr className="border-b border-zinc-900 bg-zinc-950/40 text-[10px] font-black uppercase tracking-wider text-zinc-500">
-                            <th className="px-6 py-4">카테고리 명</th>
-                            <th className="px-6 py-4">카테고리 슬러그 (URL 경로)</th>
-                            <th className="px-6 py-4 text-right">삭제</th>
+                            <th className="px-4 py-4">카테고리 명</th>
+                            <th className="px-4 py-4 text-center">정렬</th>
+                            <th className="px-4 py-4 text-right">삭제</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {categories.map((cat) => (
+                          {categories.map((cat, idx) => (
                             <tr 
                               key={cat.id} 
                               className="border-b border-zinc-900/50 hover:bg-zinc-900/20 transition-all text-xs font-bold text-zinc-300"
                             >
-                              <td className="px-6 py-5">
-                                <span className="font-black text-white">{cat.name}</span>
+                              <td className="px-4 py-4 min-w-[110px]">
+                                <span className="font-black text-white block truncate">{cat.name}</span>
+                                <span className="text-[9px] text-zinc-500 font-mono">/{cat.slug}</span>
                               </td>
-                              <td className="px-6 py-5 font-mono text-zinc-400">
-                                /category/{cat.slug}
+                              <td className="px-4 py-4 text-center">
+                                <div className="inline-flex gap-1">
+                                  <button
+                                    type="button"
+                                    disabled={idx === 0}
+                                    onClick={() => handleMoveCategory(idx, "up")}
+                                    className="h-7 w-7 rounded bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-all disabled:opacity-30 disabled:hover:bg-zinc-900 flex items-center justify-center font-black"
+                                  >
+                                    ▲
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={idx === categories.length - 1}
+                                    onClick={() => handleMoveCategory(idx, "down")}
+                                    className="h-7 w-7 rounded bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-all disabled:opacity-30 disabled:hover:bg-zinc-900 flex items-center justify-center font-black"
+                                  >
+                                    ▼
+                                  </button>
+                                </div>
                               </td>
-                              <td className="px-6 py-5 text-right">
+                              <td className="px-4 py-4 text-right">
                                 <button
+                                  type="button"
                                   onClick={() => handleDeleteCategory(cat.id, cat.name)}
                                   className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-2 text-zinc-500 hover:text-red-400 transition-colors"
                                 >
@@ -799,6 +993,83 @@ export default function BlogManagementPage() {
                       </table>
                     </div>
                   )}
+                </div>
+
+                {/* 🌟 실시간 카테고리 헤더 프리뷰 목업 */}
+                <div className="rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-6 space-y-4">
+                  <h4 className="text-xs font-black uppercase italic tracking-wider text-white flex items-center justify-between">
+                    <span>블로그 실시간 프리뷰</span>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-2 py-0.5 text-[9px] font-black tracking-wider text-emerald-400">
+                      LIVE
+                    </span>
+                  </h4>
+
+                  {/* 브라우저 목업 */}
+                  <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-[#09090b] shadow-[0_20px_40px_rgba(0,0,0,0.6)]">
+                    {/* 브라우저 헤더 */}
+                    <div className="flex h-10 items-center justify-between bg-zinc-950 px-4 border-b border-zinc-900">
+                      <div className="flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full bg-[#ff5f57]" />
+                        <span className="h-2 w-2 rounded-full bg-[#febc2e]" />
+                        <span className="h-2 w-2 rounded-full bg-[#28c840]" />
+                      </div>
+                      <div className="rounded bg-zinc-900/80 px-4 py-1 text-[9px] font-mono text-zinc-500 truncate w-40 text-center">
+                        {activeBrandId}.creaibox.com
+                      </div>
+                      <div className="w-8" />
+                    </div>
+
+                    {/* 블로그 홈 콘텐츠 */}
+                    <div className="p-4 space-y-4 max-h-[360px] overflow-y-auto custom-scrollbar bg-zinc-950 text-left">
+                      {/* 미니 블로그 헤더 - 실시간 카테고리 매핑 */}
+                      <div className="flex flex-col gap-2 border-b border-zinc-900 pb-2">
+                        <div className="flex items-center justify-between">
+                          <span 
+                            className="text-xs font-black italic tracking-tighter uppercase transition-colors"
+                            style={{ color: blogAccentColor }}
+                          >
+                            {blogTitle || "MY BLOG"}
+                          </span>
+                        </div>
+                        {/* 헤더 메뉴 실시간 매핑 */}
+                        <div className="flex flex-wrap gap-2 text-[8px] font-bold text-zinc-500 bg-zinc-900/40 p-2 rounded-lg border border-zinc-900">
+                          <span className="text-zinc-300 underline underline-offset-2 decoration-blue-500">전체글</span>
+                          {categories.length === 0 ? (
+                            <span className="text-zinc-600 italic">카테고리 없음</span>
+                          ) : (
+                            categories.slice(0, 5).map((cat) => (
+                              <span key={cat.id} className="text-zinc-400 hover:text-white transition-all truncate max-w-[50px]">
+                                {cat.name}
+                              </span>
+                            ))
+                          )}
+                          {categories.length > 5 && <span>...</span>}
+                        </div>
+                      </div>
+
+                      {/* 미니 블로그 배너 */}
+                      <div 
+                        className="rounded-xl p-4 text-center space-y-2 border border-zinc-900"
+                        style={{ 
+                          backgroundImage: `linear-gradient(135deg, ${blogAccentColor}12, #09090b)`,
+                        }}
+                      >
+                        <h5 className="text-sm font-black text-white">{blogTitle || "MY BLOG"}</h5>
+                        <p className="text-[9px] font-bold text-zinc-500 leading-normal line-clamp-2">
+                          {blogDesc || "블로그 소개 및 설명글 영역입니다."}
+                        </p>
+                      </div>
+
+                    </div>
+                  </div>
+
+                  {/* 간략 정보 요약 */}
+                  <div className="rounded-2xl border border-zinc-900 bg-black/40 p-4 text-[10px] font-bold text-zinc-500 leading-relaxed space-y-1">
+                    <p className="text-white font-black">💡 상단 헤더 메뉴 실시간 연동</p>
+                    <p>
+                      카테고리 추가, 삭제 및 <b>정렬 순서(▲/▼)</b>를 바꾸면 실제 블로그 사이트의 상단 메뉴바 순서도 실시간으로 반영되어 출력됩니다.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}

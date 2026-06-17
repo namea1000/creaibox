@@ -48,11 +48,12 @@ Stores user-defined categories for blog header navigation.
 | --- | --- | --- | --- |
 | `id` | `uuid` | `PRIMARY KEY`, default `gen_random_uuid()` | Unique category identifier |
 | `user_id` | `uuid` | `REFERENCES profiles(id) ON DELETE CASCADE` | Category owner |
+| `brand_id` | `text` | | Mapped brand ID (subdomain) |
 | `name` | `text` | | Category name displayed in UI |
 | `slug` | `text` | | Category URL slug |
 | `created_at` | `timestamptz` | default `now()` | Creation timestamp |
 
-* **Composite Unique Constraint**: `unique_user_category_slug` on `(user_id, slug)` to prevent duplicate slugs for the same user.
+* **Composite Unique Index**: `unique_user_brand_category_slug` on `(user_id, COALESCE(brand_id, ''), slug)` to prevent duplicate slugs for the same user and brand.
 
 ---
 
