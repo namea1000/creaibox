@@ -7,6 +7,8 @@ import remarkGfm from "remark-gfm";
 import { ArrowLeft, CalendarDays, Sparkles, Tag } from "lucide-react";
 import { createClient, createAdminClient } from "@/utils/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 interface PublishedPostDetail {
   id: string;
   title: string | null;

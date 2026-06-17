@@ -5,6 +5,8 @@ import type { Metadata } from "next";
 import { CalendarDays, Sparkles, Star, ArrowRight, Rss, ArrowLeft, Tag } from "lucide-react";
 import { createClient, createAdminClient } from "@/utils/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 interface PublishedPost {
   id: string;
   title: string | null;
