@@ -14,6 +14,7 @@
 * **`role`**: `text` (`"FREE" | "PAID" | "ADMIN" | "MANAGER"`)
 * **`status`**: `text` (`"ACTIVE" | "INACTIVE"`)
 * **`membership_level`**: `text` (`"free" | "pro" | "admin" | "manager"`)
+* **`admin_memo`**: `text` (어드민 전용 개별 코멘트)
 * **`created_at`**: `timestamp`
 * **`last_login_at`**: `timestamp`
 * **`updated_at`**: `timestamp`

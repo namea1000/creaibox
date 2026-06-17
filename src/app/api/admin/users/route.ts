@@ -72,6 +72,7 @@ export async function GET(req: NextRequest) {
       totalUsage: logs.length,
       joinedAt: profile?.created_at || user.created_at,
       lastLogin: profile?.last_login_at || user.last_sign_in_at || null,
+      adminMemo: profile?.admin_memo || "",
     };
   });
 
@@ -91,23 +92,34 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Missing user id" }, { status: 400 });
   }
 
-  const { error } = await supabaseAdmin.from("profiles").upsert(
-    {
-      id: body.id,
-      role: body.role,
-      status: body.status,
-      membership_level:
-        body.role === "PAID"
-          ? "pro"
-          : body.role === "ADMIN"
-            ? "admin"
-            : body.role === "MANAGER"
-              ? "manager"
-              : "free",
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "id" }
-  );
+  const updateData: any = {
+    id: body.id,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (body.role !== undefined) {
+    updateData.role = body.role;
+    updateData.membership_level =
+      body.role === "PAID"
+        ? "pro"
+        : body.role === "ADMIN"
+          ? "admin"
+          : body.role === "MANAGER"
+            ? "manager"
+            : "free";
+  }
+
+  if (body.status !== undefined) {
+    updateData.status = body.status;
+  }
+
+  if (body.adminMemo !== undefined) {
+    updateData.admin_memo = body.adminMemo;
+  }
+
+  const { error } = await supabaseAdmin
+    .from("profiles")
+    .upsert(updateData, { onConflict: "id" });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

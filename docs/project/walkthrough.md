@@ -237,3 +237,28 @@
 ### 9-3. 카카오톡 공유 디버깅 관련 검증 상태 및 공유 디버깅 팁
 * `npx tsc --noEmit` 수행 결과 **에러 없음 (0 compilation errors)** 상태를 최종 확인했습니다.
 * **카카오톡 공유 디버깅**: 메타 태그 수정 후 카카오톡 캐시로 인해 이미지가 바로 나타나지 않는 경우, [카카오톡 공유 디버거](https://developers.kakao.com/tool/debugger/sharing)에 접속해 `https://creaibox.com`을 조회하고 **[캐시 재스크랩]**을 실행하여 캐시를 초기화할 수 있습니다.
+
+## 10. 어드민 전용 사용자 개별 메모(코멘트) 기능 추가
+
+관리자가 지인 및 가입된 사용자의 정보(특이사항, 관리 기록 등)를 개별적으로 기록하고 나만 볼 수 있도록 관리자 센터 내 '사용자 관리' 테이블에 **어드민 전용 코멘트(메모)** 기능을 구현하였습니다.
+
+### 10-1. 주요 작업 내역
+* **데이터베이스(Supabase) profiles 스키마 연동**:
+  * `profiles` 테이블에 `admin_memo` TEXT 컬럼을 연동하기 위해 [profiles.sql](file:///Users/a1234/Local%20Sites/creaibox/docs/database/sql/profiles.sql)을 업데이트하고, [schema.md](file:///Users/a1234/Local%20Sites/creaibox/docs/database/schema.md) 및 [profiles-schema.md](file:///Users/a1234/Local%20Sites/creaibox/docs/database/profiles-schema.md)에 문서를 구축하였습니다.
+* **백엔드 API `/api/admin/users` 연동 고도화**:
+  * `GET` 요청 시 Supabase profiles 테이블에서 사용자 목록을 스캔할 때 `admin_memo`를 포함하여 `adminMemo` 프로퍼티로 리턴하도록 핸들러를 수정했습니다.
+  * `PATCH` 요청 시, 전달받은 body 값에 `adminMemo`가 존재하는 경우 `profiles` 테이블의 `admin_memo` 컬럼을 동적으로 upsert 처리하도록 유연한 업데이트 로직을 탑재했습니다.
+* **관리자 사용자 관리 UI (`/admin/usermanagement`) 고도화**:
+  * 사용자 관리 리스트의 마지막 열(`SETTINGS`)에 `MessageSquare` 메모 아이콘 버튼을 추가했습니다.
+  * 메모가 작성되어 있는 사용자는 활성화 상태(파란색 배경 및 보더)로 노출되며, 마우스 호버 시 툴팁으로 메모 내용을 빠르게 미리보기 할 수 있습니다.
+  * 메모가 비어있는 사용자는 회색 비활성 아이콘으로 노출됩니다.
+  * 메모 아이콘 버튼을 누르면 유리 효과(Glassmorphism)가 적용된 깔끔한 디자인의 **[어드민 개별 메모] 모달**이 출력되어 내용을 작성하거나 수정하여 저장할 수 있습니다.
+
+### 10-2. 변경 및 추가 파일 목록
+* **[MODIFY] [profiles.sql](file:///Users/a1234/Local%20Sites/creaibox/docs/database/sql/profiles.sql)**: `profiles` 테이블에 `admin_memo` TEXT 컬럼 스키마 추가.
+* **[MODIFY] [schema.md](file:///Users/a1234/Local%20Sites/creaibox/docs/database/schema.md)** & **[profiles-schema.md](file:///Users/a1234/Local%20Sites/creaibox/docs/database/profiles-schema.md)**: 데이터베이스 및 API 사용 명세에 `admin_memo` 컬럼 정의 반영.
+* **[MODIFY] [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/admin/users/route.ts)**: GET 응답 매핑에 `adminMemo` 추가 및 PATCH에서 메모 컬럼을 부분적/동적으로 업데이트하도록 변경.
+* **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/admin/usermanagement/page.tsx)**: UI 리스트 테이블 내 개별 메모 작성 상태 표시 아이콘 배치, 어드민 전용 개별 메모 작성/수정 모달(`AdminMemoModal`) 연동.
+
+### 10-3. 검증 상태
+* `npx tsc --noEmit`을 통해 정적 컴파일 **에러 없음(0 compilation errors)** 상태를 확인하여 구현 안정성을 확인했습니다.

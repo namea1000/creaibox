@@ -39,6 +39,7 @@ create table if not exists public.profiles (
 
   work_stats jsonb default '{"writing":0,"visual":0,"music":0,"video":0}'::jsonb,
   extra_configs jsonb default '{}'::jsonb,
+  admin_memo text,
 
   last_login_at timestamptz,
 

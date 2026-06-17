@@ -136,6 +136,7 @@ Profiles는 회원 1명당 1 Row를 가진다.
 | nickname   | 활동명           |
 | brand_id   | 브랜드 ID        |
 | avatar_url | 프로필 이미지       |
+| admin_memo | 어드민 전용 개별 코멘트 (비공개) |
 
 ---
 

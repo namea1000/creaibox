@@ -12,6 +12,7 @@ import {
   Briefcase,
   Loader2,
   RefreshCw,
+  MessageSquare,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -31,6 +32,7 @@ interface UserProfile {
   totalUsage: number;
   joinedAt: string;
   lastLogin: string | null;
+  adminMemo?: string;
 }
 
 export default function UserManagementPage() {
@@ -44,6 +46,11 @@ export default function UserManagementPage() {
   const [adminEmail, setAdminEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
+
+  // 어드민 개별 메모를 위한 상태 관리
+  const [selectedUserForMemo, setSelectedUserForMemo] = useState<UserProfile | null>(null);
+  const [memoText, setMemoText] = useState("");
+  const [savingMemo, setSavingMemo] = useState(false);
 
   const fetchUsers = useCallback(
     async (email?: string) => {
@@ -170,6 +177,47 @@ export default function UserManagementPage() {
       alert(err.message);
     } finally {
       setSavingId(null);
+    }
+  };
+
+  // 메모 모달 열기
+  const openMemoModal = (user: UserProfile) => {
+    setSelectedUserForMemo(user);
+    setMemoText(user.adminMemo || "");
+  };
+
+  // 메모 저장 핸들러
+  const handleSaveMemo = async () => {
+    if (!selectedUserForMemo) return;
+    setSavingMemo(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-email": adminEmail,
+        },
+        body: JSON.stringify({
+          id: selectedUserForMemo.id,
+          adminMemo: memoText,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "메모 저장 실패");
+      }
+
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === selectedUserForMemo.id ? { ...u, adminMemo: memoText } : u
+        )
+      );
+      setSelectedUserForMemo(null);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSavingMemo(false);
     }
   };
 
@@ -417,17 +465,31 @@ export default function UserManagementPage() {
                             </td>
 
                             <td className="px-8 py-6 text-right">
-                              <button
-                                type="button"
-                                disabled={savingId === user.id}
-                                className="rounded-xl bg-zinc-800/50 p-2.5 text-zinc-400 transition-all hover:bg-zinc-700 hover:text-blue-500 active:scale-90 disabled:opacity-50"
-                              >
-                                {savingId === user.id ? (
-                                  <Loader2 size={16} className="animate-spin" />
-                                ) : (
-                                  <Settings size={16} />
-                                )}
-                              </button>
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => openMemoModal(user)}
+                                  className={`rounded-xl p-2.5 transition-all active:scale-90 border ${
+                                    user.adminMemo
+                                      ? "bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20"
+                                      : "bg-zinc-800/50 text-zinc-500 border-transparent hover:bg-zinc-700 hover:text-zinc-300"
+                                  }`}
+                                  title={user.adminMemo ? "메모 내용: " + user.adminMemo : "메모 작성"}
+                                >
+                                  <MessageSquare size={16} />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={savingId === user.id}
+                                  className="rounded-xl bg-zinc-800/50 p-2.5 text-zinc-400 transition-all hover:bg-zinc-700 hover:text-blue-500 active:scale-90 disabled:opacity-50"
+                                >
+                                  {savingId === user.id ? (
+                                    <Loader2 size={16} className="animate-spin" />
+                                  ) : (
+                                    <Settings size={16} />
+                                  )}
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))
@@ -445,6 +507,59 @@ export default function UserManagementPage() {
 
         </main>
       </div>
+
+      {/* Admin Memo Modal */}
+      {selectedUserForMemo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg overflow-hidden rounded-[32px] border border-zinc-800 bg-[#0d111a] shadow-2xl">
+            <header className="border-b border-zinc-800/60 bg-zinc-900/30 px-6 py-5">
+              <h3 className="flex items-center gap-2.5 text-sm font-black text-white">
+                <MessageSquare className="text-blue-500" size={18} />
+                어드민 개별 메모
+              </h3>
+              <p className="mt-1 text-[9px] font-bold text-zinc-500 uppercase tracking-wider">
+                {selectedUserForMemo.name} ({selectedUserForMemo.email}) 님을 위한 비공개 기록
+              </p>
+            </header>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="text-[9px] font-black uppercase tracking-wider text-zinc-400 block mb-2">
+                  메모 내용 (나만 볼 수 있음)
+                </label>
+                <textarea
+                  value={memoText}
+                  onChange={(e) => setMemoText(e.target.value)}
+                  placeholder="지인에 대한 특이사항, 등급 조정 이유, 관리 정보 등을 기록하세요..."
+                  className="w-full h-40 rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 text-xs font-bold text-white placeholder:text-zinc-700 focus:border-blue-500 focus:outline-none resize-none transition duration-150 custom-scrollbar"
+                />
+              </div>
+            </div>
+
+            <footer className="border-t border-zinc-800/60 bg-zinc-900/10 px-6 py-4 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectedUserForMemo(null)}
+                className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-2 text-xs font-black text-zinc-400 hover:text-white transition"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={savingMemo}
+                onClick={handleSaveMemo}
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-xs font-black text-white hover:bg-blue-500 transition shadow-lg shadow-blue-600/15 disabled:opacity-50"
+              >
+                {savingMemo ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  "저장하기"
+                )}
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
