@@ -180,8 +180,9 @@ AI
 예시
 
 ```txt
-url
-text
+url     (URL 재창조)
+text    (텍스트 재창조)
+direct  (수기 직접 글쓰기)
 ```
 
 ---

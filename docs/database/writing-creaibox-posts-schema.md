@@ -237,7 +237,31 @@ false
 
 ---
 
-## 9. Relationships
+## 9. Source Mode
+
+작성 방식 구분 컬럼
+
+| Column      | Description |
+| ----------- | ----------- |
+| source_mode | 원고 작성 방식   |
+
+---
+
+### source_mode
+
+AI 생성을 통해 만들어졌는지, 혹은 사용자가 직접 수기로 작성했는지 구분하는 모드 필드이다.
+
+예시
+
+```txt
+url     (URL 재창조)
+text    (텍스트 재창조)
+direct  (수기 직접 글쓰기)
+```
+
+---
+
+## 10. Relationships
 
 | From    | To            | Rule           |
 | ------- | ------------- | -------------- |
@@ -247,7 +271,7 @@ false
 
 ---
 
-## 10. Indexes
+## 11. Indexes
 
 | Index                                 | Purpose    |
 | ------------------------------------- | ---------- |
@@ -259,7 +283,7 @@ false
 
 ---
 
-## 11. RLS Policy
+## 12. RLS Policy
 
 기본 원칙
 
@@ -291,7 +315,7 @@ auth.uid() = user_id
 
 ---
 
-## 12. updated_at Trigger
+## 13. updated_at Trigger
 
 수정 시 자동 갱신
 
@@ -309,7 +333,7 @@ set_updated_at()
 
 ---
 
-## 13. Sitemap Integration
+## 14. Sitemap Integration
 
 CreAibox Blog는 이 테이블을 기반으로 사이트맵을 생성한다.
 
@@ -331,7 +355,7 @@ https://creaibox.com/blog/[slug]
 
 ---
 
-## 14. Future Expansion
+## 15. Future Expansion
 
 향후 확장 예정
 
@@ -346,7 +370,7 @@ https://creaibox.com/blog/[slug]
 
 ---
 
-## 15. Related Documents
+## 16. Related Documents
 
 실행 SQL
 

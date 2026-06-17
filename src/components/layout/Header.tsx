@@ -202,15 +202,7 @@ export default function Header() {
         </nav>
 
         <div className="hidden w-[390px] shrink-0 items-center justify-end gap-3 lg:flex">
-          {!isAuthReady ? (
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-36 animate-pulse rounded-xl bg-slate-100" />
-              <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2 py-1.5 shadow-sm">
-                <div className="h-9 w-9 animate-pulse rounded-full bg-slate-100" />
-                <div className="h-4 w-4 animate-pulse rounded bg-slate-100" />
-              </div>
-            </div>
-          ) : user ? (
+          {user ? (
             <>
               <Link
                 href="/studio"
@@ -378,9 +370,7 @@ export default function Header() {
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-2">
-            {!isAuthReady ? (
-              <div className="col-span-2 h-12 animate-pulse rounded-2xl bg-slate-100" />
-            ) : user ? (
+            {user ? (
               <>
                 <Link
                   href="/studio"

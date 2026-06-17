@@ -16,6 +16,7 @@ import {
   Save,
   Send,
   FilePlus2,
+  X,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/utils/supabase/client";
@@ -180,6 +181,8 @@ export default function NaverManuscriptListPage() {
   const [fallbackError, setFallbackError] = useState<string | null>(null);
   const [selectedTrashIds, setSelectedTrashIds] = useState<string[]>([]);
   const [isMounted, setIsMounted] = useState(false);
+  const [isCreatingDirect, setIsCreatingDirect] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
   const [tableFilters, setTableFilters] = useState<TableFilters>({
     writingType: "all",
     contentType: "all",
@@ -629,6 +632,68 @@ export default function NaverManuscriptListPage() {
     [manuscripts, queryClient, setCurrentPage, setStatusTab, supabase]
   );
 
+  const handleCreateDirect = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      window.alert("로그인 정보를 확인할 수 없습니다.");
+      return;
+    }
+
+    setIsCreatingDirect(true);
+
+    try {
+      const payload = {
+        user_id: user.id,
+        user_nicename: user.email?.split("@")[0] ?? null,
+        title: "수기 작성한 새 글",
+        content: "",
+        status: "draft",
+        post_type: "create",
+        categories: ["AI 스마트 글쓰기"],
+        tags: ["친근하고 부드러운 말투"],
+        target_keyword: "",
+        selected_tone: "친근하고 부드러운 말투",
+        word_count_goal: null,
+        source_mode: "direct",
+      };
+
+      const { data, error } = await supabase
+        .from("writing_naver_posts")
+        .insert([payload])
+        .select("*")
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      const newPost = normalizeNaverRecord(data as NaverRow, 0);
+
+      const nextList = [newPost, ...manuscripts];
+      setCachedManuscripts(nextList);
+      setFallbackManuscripts(nextList);
+      writeCachedList(nextList);
+
+      queryClient.setQueryData<StudioManuscriptRecord[]>(
+        naverManuscriptKeys.list,
+        nextList
+      );
+      queryClient.setQueryData(
+        naverManuscriptKeys.detail(newPost.id),
+        newPost
+      );
+
+      router.push(`/studio/writing/naver/list/${newPost.id}`);
+    } catch (err: any) {
+      setCreateError(err.message);
+    } finally {
+      setIsCreatingDirect(false);
+    }
+  };
+
   const handlePublish = useCallback(
     async (manuscript: StudioManuscriptRecord) => {
       const now = new Date().toISOString();
@@ -744,6 +809,23 @@ export default function NaverManuscriptListPage() {
         </div>
       </div>
 
+      {createError && (
+        <div className="mb-4 flex items-center justify-between border border-red-300 bg-red-50 px-4 py-3 text-[14px] text-red-800 rounded-lg shadow-sm">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
+            <span>새 글 생성 실패: {createError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setCreateError(null)}
+            className="text-red-800 hover:text-red-950 font-bold ml-4"
+            aria-label="에러 메시지 닫기"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       <div className="mb-4 flex flex-wrap items-center gap-2 text-[14px]">
         {[
           { key: "all", label: "전체 원고", count: tabCounts.all, Icon: ListChecks },
@@ -831,7 +913,17 @@ export default function NaverManuscriptListPage() {
             className="inline-flex items-center gap-2 border border-blue-600 bg-white px-3 py-1.5 text-[14px] font-semibold text-[#135e96] hover:bg-blue-50"
           >
             <FilePlus2 className="h-4 w-4" />
-            새글 쓰기
+            AI로 새글 쓰기
+          </button>
+
+          <button
+            type="button"
+            disabled={isCreatingDirect}
+            onClick={handleCreateDirect}
+            className="inline-flex items-center gap-2 border border-slate-300 bg-white px-3 py-1.5 text-[14px] font-semibold text-slate-700 hover:border-slate-500 hover:bg-slate-50 disabled:opacity-50"
+          >
+            <FilePlus2 className="h-4 w-4" />
+            {isCreatingDirect ? "생성 중..." : "수기 직접 새글 쓰기"}
           </button>
 
           {isTrashView && (

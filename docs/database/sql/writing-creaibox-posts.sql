@@ -36,6 +36,7 @@ seo_tags text[],
 
 -- Settings
 word_count_goal text,
+source_mode text,
 use_search boolean default true
 );
 

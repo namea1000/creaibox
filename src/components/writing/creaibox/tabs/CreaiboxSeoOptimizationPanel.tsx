@@ -389,7 +389,23 @@ export default function CreaiboxSeoOptimizationPanel({
                     }
                   }
                 }
-                updateLocalData({ canonicalUrl: val });
+
+                // Canonical URL에서 슬러그를 추출하여 동기화
+                const cleanUrl = val.split("?")[0].split("#")[0].replace(/\/+$/, "");
+                const pathSegments = cleanUrl.split("/");
+                const extractedSlug = pathSegments[pathSegments.length - 1] || "";
+                
+                // 추출한 값이 도메인이거나 프로토콜이 아닌 경우에만 슬러그로 설정
+                const isDomain = 
+                  extractedSlug.includes(".") || 
+                  extractedSlug.includes(":") || 
+                  extractedSlug === "localhost" || 
+                  extractedSlug === "blog";
+
+                updateLocalData({
+                  canonicalUrl: val,
+                  ...(isDomain ? {} : { slug: extractedSlug }),
+                });
               }}
               className="w-full rounded-md border border-transparent bg-white px-4 py-3 text-sm text-[#111111] outline-none"
             />

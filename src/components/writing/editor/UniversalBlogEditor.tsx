@@ -26,6 +26,7 @@ import {
   Download,
   Eye,
   FileText,
+  Globe,
   Heading1,
   Heading2,
   Heading3,
@@ -38,11 +39,72 @@ import {
   Quote,
   RefreshCw,
   Save,
+  Sparkles,
   Table2,
   Trash2,
   Type,
   Wand2,
 } from "lucide-react";
+
+const postTypeOptions = [
+  { label: "① 인사이트 & 트렌드", disabled: true },
+  { label: "🧠 AI 인사이트 포스팅", disabled: false },
+  { label: "📈 트렌드 브리프", disabled: false },
+  { label: "📊 시장/기술 분석 리포트", disabled: false },
+  { label: "📰 최신 뉴스 및 이슈", disabled: false },
+  { label: "📌 오늘의 주요 이슈 정리", disabled: false },
+
+  { label: "② 정보성 콘텐츠", disabled: true },
+  { label: "ℹ️ 일반 정보성", disabled: false },
+  { label: "💵 생활 정책 및 정부 지원금", disabled: false },
+  { label: "🥗 건강 정보 및 영양제 분석", disabled: false },
+  { label: "💳 보험/대출/카드 정보", disabled: false },
+  { label: "🏠 부동산 정보", disabled: false },
+
+  { label: "③ 금융 & 비즈니스", disabled: true },
+  { label: "💰 금융 및 재테크", disabled: false },
+  { label: "📈 주식/재테크 분석", disabled: false },
+  { label: "🏢 기업 정보 및 주식 정보", disabled: false },
+  { label: "🚀 비즈니스/창업 정보", disabled: false },
+
+  { label: "④ 브랜드 & 퍼블리싱", disabled: true },
+  { label: "📖 브랜드 스토리 포스팅", disabled: false },
+  { label: "📢 서비스 소개형 포스팅", disabled: false },
+  { label: "🏢 기업 소개 및 서비스 안내", disabled: false },
+  { label: "✉️ 뉴스레터형 콘텐츠", disabled: false },
+
+  { label: "⑤ 도구 & 사용법", disabled: true },
+  { label: "📱 앱 설치 및 상세 가이드", disabled: false },
+  { label: "🤖 AI 툴 및 웹 서비스 가이드", disabled: false },
+  { label: "⚙️ 유틸리티 설치/사용 방법", disabled: false },
+  { label: "🤖 AI 자동 포스팅", disabled: false },
+  { label: "🔗 바로가기 버튼 생성", disabled: false },
+
+  { label: "⑥ 실무형 가이드", disabled: true },
+  { label: "📘 실전 가이드 아티클", disabled: false },
+  { label: "🔍 SEO 최적화 포스팅", disabled: false },
+  { label: "🔄 튜토리얼 & 워크플로우", disabled: false },
+  { label: "✅ 체크리스트형 콘텐츠", disabled: false },
+  { label: "⚖️ 비교 분석형 콘텐츠", disabled: false },
+  { label: "🧩 문제 해결형 콘텐츠", disabled: false },
+
+  { label: "⑦ 리뷰 & 라이프스타일", disabled: true },
+  { label: "📦 일반 제품 리뷰", disabled: false },
+  { label: "⚖️ 제품 비교 리뷰", disabled: false },
+  { label: "💻 IT 기기 사용 후기", disabled: false },
+  { label: "🚗 자동차 모델 리뷰", disabled: false },
+  { label: "🎮 게임 리뷰 및 공략", disabled: false },
+  { label: "🍳 맛집 리뷰", disabled: false },
+  { label: "✈️ 국내 여행 정보", disabled: false },
+  { label: "🎬 영화/드라마 정보 및 리뷰", disabled: false },
+  { label: "🌟 유명 연예인 인물 정보", disabled: false },
+
+  { label: "⑧ 교육 & 자기계발", disabled: true },
+  { label: "🎓 교육/가이드형", disabled: false },
+  { label: "🌱 자기계발 포스팅", disabled: false },
+  { label: "📚 공부법/학습법", disabled: false },
+  { label: "🏫 강의/커리큘럼 소개", disabled: false },
+];
 
 const DEFAULT_CONTENT_IMAGE_SOURCE_TYPE = "writing_creaibox_posts";
 const CONTENT_IMAGE_ROLE = "content_image";
@@ -72,11 +134,16 @@ interface UniversalBlogEditorProps {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   isSaving: boolean;
   isEnhancing: boolean;
+  isEnhancingContent?: boolean;
+  isEnhancingToc?: boolean;
+  isPolishing?: boolean;
+  isChangingPostType?: boolean;
+  isApplyingSearch?: boolean;
   handleImageUploadClick: () => void;
   handleImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleUpdateCaption: (id: string, text: string) => void;
   handleDeleteImage: (id: string) => void;
-  handleEnhanceContent: (type: "expand" | "tone" | "correct") => void;
+  handleEnhanceContent: (type: string) => void;
   handleSavePostToSupabase: (status?: any) => Promise<boolean | void>;
   handleCopy?: () => void;
   handleFormDelete?: () => void;
@@ -86,6 +153,8 @@ interface UniversalBlogEditorProps {
   isLoading?: boolean;
   manuscriptId?: string | number;
   contentImageSourceType?: string;
+  onGenerateSeo?: () => Promise<void>;
+  isGeneratingSeo?: boolean;
 }
 
 function escapeHtml(value: string) {
@@ -336,6 +405,11 @@ export default function UniversalBlogEditor({
   fileInputRef,
   isSaving,
   isEnhancing,
+  isEnhancingContent = false,
+  isEnhancingToc = false,
+  isPolishing = false,
+  isChangingPostType = false,
+  isApplyingSearch = false,
   handleUpdateCaption,
   handleDeleteImage,
   handleEnhanceContent,
@@ -347,16 +421,131 @@ export default function UniversalBlogEditor({
   isLoading = false,
   manuscriptId,
   contentImageSourceType = DEFAULT_CONTENT_IMAGE_SOURCE_TYPE,
+  onGenerateSeo,
+  isGeneratingSeo = false,
 }: UniversalBlogEditorProps) {
   const supabase = useMemo(() => createClient(), []);
   const [saveFeedback, setSaveFeedback] = useState<"idle" | "saved">("idle");
   const [isImageUploading, setIsImageUploading] = useState(false);
+  const [isContentDropdownOpen, setIsContentDropdownOpen] = useState(false);
+  const [isTocDropdownOpen, setIsTocDropdownOpen] = useState(false);
+  const [isPostTypeDropdownOpen, setIsPostTypeDropdownOpen] = useState(false);
+  const contentDropdownRef = useRef<HTMLDivElement>(null);
+  const tocDropdownRef = useRef<HTMLDivElement>(null);
+  const postTypeDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (contentDropdownRef.current && !contentDropdownRef.current.contains(event.target as Node)) {
+        setIsContentDropdownOpen(false);
+      }
+      if (tocDropdownRef.current && !tocDropdownRef.current.contains(event.target as Node)) {
+        setIsTocDropdownOpen(false);
+      }
+      if (postTypeDropdownRef.current && !postTypeDropdownRef.current.contains(event.target as Node)) {
+        setIsPostTypeDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const [isCleaningImages, setIsCleaningImages] = useState(false);
   const [isClientReady, setIsClientReady] = useState(false);
 
   const lastExternalContentRef = useRef(content);
   const previousImageUrlsRef = useRef<Set<string>>(new Set());
   const deleteContentImagesRef = useRef<(urls: string[]) => void>(() => { });
+  const processingUrlsRef = useRef<Set<string>>(new Set());
+
+  const autoUploadExternalImages = useCallback(
+    async (currentEditor: any) => {
+      if (!currentEditor || !manuscriptId) return;
+
+      const externalUrls: string[] = [];
+
+      currentEditor.state.doc.descendants((node: any) => {
+        if (node.type.name === "image" && node.attrs?.src) {
+          const src = node.attrs.src;
+          const isExternal =
+            src &&
+            /^https?:\/\//i.test(src) &&
+            !src.includes("supabase.co") &&
+            !src.includes("google.com") &&
+            !src.includes("googleapis.com") &&
+            !src.includes("googleusercontent.com") &&
+            !src.includes("localhost:") &&
+            !processingUrlsRef.current.has(src);
+
+          if (isExternal) {
+            externalUrls.push(src);
+          }
+        }
+      });
+
+      if (externalUrls.length === 0) return;
+
+      console.log("외부 이미지 자동 감지 및 업로드 시작:", externalUrls);
+
+      for (const url of externalUrls) {
+        processingUrlsRef.current.add(url);
+
+        // 백그라운드 비동기로 각 이미지 업로드 시도
+        void (async () => {
+          try {
+            const response = await fetch("/api/image-upload/external", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                imageUrl: url,
+                sourceType: contentImageSourceType,
+                sourceId: String(manuscriptId),
+                title: title || "",
+                targetKeyword: targetKeyword || "",
+              }),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+              throw new Error(result.error || "외부 이미지 업로드 실패");
+            }
+
+            const newUrl = result.image.image_url;
+
+            // 에디터가 언마운트되지 않았고 인스턴스가 존재할 때 해당 이미지 src 치환
+            if (currentEditor && !currentEditor.isDestroyed) {
+              currentEditor.view.state.doc.descendants((node: any, pos: number) => {
+                if (node.type.name === "image" && node.attrs?.src === url) {
+                  const transaction = currentEditor.state.tr.setNodeMarkup(pos, undefined, {
+                    ...node.attrs,
+                    src: newUrl,
+                  });
+                  currentEditor.view.dispatch(transaction);
+                }
+              });
+
+              // 업데이트 반영
+              const html = currentEditor.getHTML();
+              lastExternalContentRef.current = html;
+              setContent(html);
+              previousImageUrlsRef.current = extractImageUrlsFromEditor(currentEditor);
+            }
+            console.log(`외부 이미지 치환 성공: ${url} -> ${newUrl}`);
+          } catch (err) {
+            console.error("외부 이미지 자동 업로드 실패:", err);
+          } finally {
+            processingUrlsRef.current.delete(url);
+          }
+        })();
+      }
+    },
+    [contentImageSourceType, manuscriptId, targetKeyword, title, setContent]
+  );
 
   useEffect(() => {
     setIsClientReady(true);
@@ -461,6 +650,9 @@ export default function UniversalBlogEditor({
 
       lastExternalContentRef.current = html;
       setContent(html);
+
+      // 외부 이미지 감지 및 자동 업로드
+      void autoUploadExternalImages(editor);
     },
     immediatelyRender: false,
   });
@@ -963,12 +1155,13 @@ export default function UniversalBlogEditor({
             className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 px-3.5 py-2 text-xs font-black text-zinc-200 transition-all hover:bg-zinc-700 disabled:opacity-60"
           >
             {saveFeedback === "saved" ? <CheckCircle2 size={13} /> : <Save size={13} />}
-            {isSaving ? "저장중..." : saveFeedback === "saved" ? "저장완료" : "원고 저장"}
+            {isSaving ? "저장중..." : saveFeedback === "saved" ? "저장완료" : "원고 다운로드"}
           </button>
         </div>
       </div>
 
-      <div className="shrink-0 border-b border-zinc-800 bg-[#0b0d12] px-4 py-2">
+      <div className="shrink-0 border-b border-zinc-800 bg-[#0b0d12] px-4 py-2 flex flex-col gap-2">
+        {/* 1번째 줄 */}
         <div className="flex flex-wrap items-center gap-1.5">
           <input type="file" accept="image/*" ref={fileInputRef} onChange={handleEditorImageUpload} className="hidden" />
 
@@ -1058,36 +1251,193 @@ export default function UniversalBlogEditor({
           <ToolbarButton onClick={() => editor?.chain().focus().setHorizontalRule().run()}>
             <Minus size={14} /> 구분선
           </ToolbarButton>
+        </div>
 
+        {/* 2번째 줄 */}
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-zinc-800/40 pt-1.5">
           <ToolbarButton onClick={() => editor?.chain().focus().toggleCodeBlock().run()} active={editor?.isActive("codeBlock")}>
             <Code2 size={14} /> 코드
           </ToolbarButton>
 
           <ToolbarButton onClick={handleInsertCta}>CTA</ToolbarButton>
 
-          <div className="mx-1 h-5 w-px bg-zinc-800" />
+          <div className="mx-1 h-4 w-px bg-zinc-800" />
 
           <ToolbarButton onClick={() => handleEnhanceContent("correct")}>
             <Type size={14} /> 맞춤법
           </ToolbarButton>
+        </div>
 
-          <ToolbarButton onClick={() => handleEnhanceContent("expand")} disabled={isEnhancing} className="text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300">
-            <Wand2 size={14} /> AI 보강
-          </ToolbarButton>
+        {/* 3번째 줄 - AI 관련 도구 */}
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-zinc-800/40 pt-1.5">
+          {/* AI 내용 보강 */}
+          <div className="relative" ref={contentDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsContentDropdownOpen((prev) => !prev)}
+              disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch}
+              className="flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-xs font-black transition-all text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {isEnhancingContent ? (
+                <RefreshCw size={14} className="animate-spin" />
+              ) : (
+                <Wand2 size={14} />
+              )}
+              {isEnhancingContent ? "보강 중..." : "AI 내용 보강"}
+            </button>
+            {isContentDropdownOpen && (
+              <div className="absolute left-0 mt-1.5 w-44 rounded-xl border border-zinc-800 bg-[#121214] py-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-50">
+                <div className="px-3 py-1 text-[10px] font-black text-zinc-500 uppercase tracking-wider">
+                  내용 분량 보강
+                </div>
+                {[10, 30, 50, 70, 100].map((percent) => (
+                  <button
+                    key={percent}
+                    type="button"
+                    onClick={() => {
+                      handleEnhanceContent(`expand_${percent}`);
+                      setIsContentDropdownOpen(false);
+                    }}
+                    className="flex w-full items-center px-3 py-2 text-left text-xs font-bold text-zinc-300 hover:bg-zinc-800/80 hover:text-white transition-colors"
+                  >
+                    {percent}% 내용 보강
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
+          {/* AI 목차 및 내용 보강 */}
+          <div className="relative" ref={tocDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsTocDropdownOpen((prev) => !prev)}
+              disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch}
+              className="flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-xs font-black transition-all text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {isEnhancingToc ? (
+                <RefreshCw size={14} className="animate-spin" />
+              ) : (
+                <Wand2 size={14} />
+              )}
+              {isEnhancingToc ? "보강 중..." : "AI 목차 및 내용 보강"}
+            </button>
+            {isTocDropdownOpen && (
+              <div className="absolute left-0 mt-1.5 w-44 max-h-[480px] overflow-y-auto custom-scrollbar rounded-xl border border-zinc-800 bg-[#121214] py-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-50">
+                <div className="px-3 py-1 text-[10px] font-black text-zinc-500 uppercase tracking-wider">
+                  문맥 목차 보강
+                </div>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((count) => (
+                  <button
+                    key={count}
+                    type="button"
+                    onClick={() => {
+                      handleEnhanceContent(`expand_toc_${count}`);
+                      setIsTocDropdownOpen(false);
+                    }}
+                    className="flex w-full items-center px-3 py-2 text-left text-xs font-bold text-zinc-300 hover:bg-zinc-800/80 hover:text-white transition-colors"
+                  >
+                    목차 {count}개 보강
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* AI 글 다듬기 */}
           <ToolbarButton
-            onClick={handleCleanupUnusedImages}
-            disabled={isCleaningImages || isImageUploading}
-            className="border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 hover:text-amber-200"
+            onClick={() => handleEnhanceContent("polish")}
+            disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch}
+            className="text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
           >
-            {isCleaningImages ? (
+            {isPolishing ? (
               <RefreshCw size={14} className="animate-spin" />
             ) : (
-              <Trash2 size={14} />
+              <Sparkles size={14} />
             )}
-            {isCleaningImages ? "이미지 정리중" : "안쓰는 이미지 정리"}
+            {isPolishing ? "다듬는 중..." : "AI 글 다듬기"}
           </ToolbarButton>
 
+          {/* AI 포스트 타입 변경 */}
+          <div className="relative" ref={postTypeDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsPostTypeDropdownOpen((prev) => !prev)}
+              disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch}
+              className="flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-xs font-black transition-all text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {isChangingPostType ? (
+                <RefreshCw size={14} className="animate-spin" />
+              ) : (
+                <Wand2 size={14} />
+              )}
+              {isChangingPostType ? "변경 중..." : "AI 포스트 타입 변경"}
+            </button>
+            {isPostTypeDropdownOpen && (
+              <div className="absolute left-0 mt-1.5 w-60 max-h-[480px] overflow-y-auto custom-scrollbar rounded-xl border border-zinc-800 bg-[#121214] py-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-50">
+                {postTypeOptions.map((item) => {
+                  if (item.disabled) {
+                    return (
+                      <div
+                        key={item.label}
+                        className="px-3 py-1.5 text-[10px] font-black text-cyan-400 border-b border-zinc-800 mt-2 first:mt-0 bg-zinc-900/40"
+                      >
+                        {item.label}
+                      </div>
+                    );
+                  }
+                  return (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => {
+                        const yes = window.confirm(
+                          `"${item.label}" 타입으로 전체 본문을 변경하시겠습니까?\n(본문 내용의 전체 흐름과 핵심 정보는 유지되면서 서술 방식과 스타일만 타입에 맞춰 재작성됩니다.)`
+                        );
+                        if (yes) {
+                          handleEnhanceContent(`change_post_type:${item.label}`);
+                        }
+                        setIsPostTypeDropdownOpen(false);
+                      }}
+                      className="flex w-full items-center px-4 py-2 text-left text-xs font-bold text-zinc-300 hover:bg-zinc-800/80 hover:text-white transition-colors"
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Google Search 실시간 정보 반영 */}
+          <ToolbarButton
+            onClick={() => handleEnhanceContent("apply_google_search")}
+            disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch}
+            className="text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
+          >
+            {isApplyingSearch ? (
+              <RefreshCw size={14} className="animate-spin" />
+            ) : (
+              <Globe size={14} />
+            )}
+            {isApplyingSearch ? "실시간 검색 반영 중..." : "Google Search 실시간 정보 반영"}
+          </ToolbarButton>
+
+          {onGenerateSeo && (
+            <button
+              type="button"
+              onClick={onGenerateSeo}
+              disabled={isGeneratingSeo || isSaving || !title}
+              className="flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-2 text-xs font-black text-emerald-300 transition-all hover:bg-emerald-500/20 disabled:opacity-40"
+            >
+              {isGeneratingSeo ? (
+                <RefreshCw size={14} className="animate-spin" />
+              ) : (
+                <Wand2 size={14} />
+              )}
+              {isGeneratingSeo ? "SEO 생성 중..." : "AI SEO최적화 생성"}
+            </button>
+          )}
         </div>
       </div>
 

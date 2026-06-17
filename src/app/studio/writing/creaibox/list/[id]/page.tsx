@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Check, RotateCcw, Search, Send } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/utils/supabase/client";
@@ -134,6 +134,7 @@ function normalizeCreaiboxRecord(row: CreaiboxRow): StudioManuscriptRecord {
 
 export default function CreaiboxManuscriptDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const queryClient = useQueryClient();
 
@@ -151,6 +152,12 @@ export default function CreaiboxManuscriptDetailPage() {
   const [hasLocalEdits, setHasLocalEdits] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDirectLoading, setIsDirectLoading] = useState(false);
+  const [isGeneratingSeo, setIsGeneratingSeo] = useState(false);
+  const [isEnhancingContent, setIsEnhancingContent] = useState(false);
+  const [isEnhancingToc, setIsEnhancingToc] = useState(false);
+  const [isPolishing, setIsPolishing] = useState(false);
+  const [isChangingPostType, setIsChangingPostType] = useState(false);
+  const [isApplyingSearch, setIsApplyingSearch] = useState(false);
   const [publishFeedback, setPublishFeedback] = useState("");
   const [publishingPanelTab, setPublishingPanelTab] = useState<PublishingPanelTab>("seo");
 
@@ -347,6 +354,111 @@ export default function CreaiboxManuscriptDetailPage() {
     });
   }, [sidebarList, searchTerm]);
 
+  const persistCaches = useCallback(
+    (nextRecord: StudioManuscriptRecord) => {
+      const routeId = nextRecord.displayId ?? nextRecord.id;
+
+      queryClient.setQueryData<StudioManuscriptRecord | null>(
+        creaiboxManuscriptKeys.detail(routeId),
+        nextRecord
+      );
+
+      queryClient.setQueryData<StudioManuscriptRecord[]>(
+        creaiboxManuscriptKeys.list,
+        (prev = []) => {
+          const exists = prev.some((item) => item.id === nextRecord.id);
+          const nextList = exists
+            ? prev.map((item) => (item.id === nextRecord.id ? nextRecord : item))
+            : [nextRecord, ...prev];
+
+          writeCachedList(nextList);
+          setCachedList(nextList);
+
+          return nextList;
+        }
+      );
+    },
+    [queryClient]
+  );
+
+  const handleSave = useCallback(
+    async (status?: StudioManuscriptRecord["status"]) => {
+      if (!data) return false;
+
+      setIsSaving(true);
+
+      const safeData = data as StudioManuscriptRecordWithOptionalFields;
+
+      const slug = safeData.slug?.trim()
+        ? safeData.slug.trim()
+        : buildPublicBlogSlug(
+            safeData.title,
+            safeData.focusKeyword,
+            safeData.targetKeyword
+          );
+
+      let canonicalUrl = safeData.canonicalUrl || "";
+      if (userRole !== "ADMIN" && userBrandId) {
+        const prefix = `https://${userBrandId}.creaibox.com`;
+        if (!canonicalUrl.startsWith(prefix)) {
+          canonicalUrl = `${prefix}/${slug}`;
+        }
+      } else {
+        if (!canonicalUrl) {
+          canonicalUrl = buildCanonicalUrl(slug, userRole, userBrandId);
+        }
+      }
+
+      const now = new Date().toISOString();
+      const nextStatus = (status ?? safeData.status ?? "draft") as StudioManuscriptRecord["status"];
+
+      const updatePayload = {
+        title: safeData.title ?? "",
+        content: safeData.content ?? "",
+        target_keyword: safeData.targetKeyword ?? "",
+        selected_tone: safeData.selectedTone ?? "",
+        status: nextStatus,
+        slug,
+        meta_description: safeData.metaDescription ?? "",
+        focus_keyword: safeData.focusKeyword ?? "",
+        canonical_url: canonicalUrl,
+        seo_tags: toTagList(safeData.seoTags),
+        word_count_goal: safeData.wordCountGoal ?? null,
+        use_search: safeData.useSearch ?? false,
+        post_type: safeData.detailLabel ?? "",
+      };
+
+      const { error } = await supabase
+        .from("writing_creaibox_posts")
+        .update(updatePayload)
+        .eq("id", safeData.id);
+
+      setIsSaving(false);
+
+      if (error) {
+        window.alert(`저장 실패: ${error.message}`);
+        return false;
+      }
+
+      const nextRecord: StudioManuscriptRecord = {
+        ...safeData,
+        slug,
+        canonicalUrl,
+        status: nextStatus,
+        updatedAt: now,
+        displayId: safeData.displayId,
+        wordCount: (safeData.content ?? "").replace(/\s+/g, "").length,
+      };
+
+      setData(nextRecord);
+      setHasLocalEdits(false);
+      persistCaches(nextRecord);
+
+      return true;
+    },
+    [data, persistCaches, supabase, userRole, userBrandId]
+  );
+
   const syncSelectedManuscript = useCallback(
     (routeId: string) => {
       const matched = sidebarList.find(
@@ -397,6 +509,10 @@ export default function CreaiboxManuscriptDetailPage() {
       const routeId = String(manuscript.displayId ?? manuscript.id);
       const nextPath = `/studio/writing/creaibox/list/${routeId}`;
 
+      if (hasLocalEdits) {
+        void handleSave("saved");
+      }
+
       setData(manuscript);
       setHasLocalEdits(false);
       queryClient.setQueryData(creaiboxManuscriptKeys.detail(routeId), manuscript);
@@ -407,7 +523,7 @@ export default function CreaiboxManuscriptDetailPage() {
         window.history.pushState({ creaiboxManuscriptId: routeId }, "", nextPath);
       }
     },
-    [queryClient]
+    [queryClient, hasLocalEdits, handleSave]
   );
 
   const navigateByOffset = useCallback(
@@ -470,107 +586,195 @@ export default function CreaiboxManuscriptDetailPage() {
     activeButton?.scrollIntoView({ block: "nearest" });
   }, [activeRouteId]);
 
-  const persistCaches = useCallback(
-    (nextRecord: StudioManuscriptRecord) => {
-      const routeId = nextRecord.displayId ?? nextRecord.id;
+  const handleGenerateSeo = useCallback(async () => {
+    if (!data) return;
 
-      queryClient.setQueryData<StudioManuscriptRecord | null>(
-        creaiboxManuscriptKeys.detail(routeId),
-        nextRecord
-      );
+    if (!data.title && !data.content) {
+      window.alert("제목 또는 본문 내용이 있어야 SEO 최적화 데이터를 생성할 수 있습니다.");
+      return;
+    }
 
-      queryClient.setQueryData<StudioManuscriptRecord[]>(
-        creaiboxManuscriptKeys.list,
-        (prev = []) => {
-          const exists = prev.some((item) => item.id === nextRecord.id);
-          const nextList = exists
-            ? prev.map((item) => (item.id === nextRecord.id ? nextRecord : item))
-            : [nextRecord, ...prev];
+    setIsGeneratingSeo(true);
 
-          writeCachedList(nextList);
-          setCachedList(nextList);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const plainContent = (data.content ?? "")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
 
-          return nextList;
-        }
-      );
-    },
-    [queryClient]
-  );
+      const prompt = `당신은 최고의 SEO 전문가입니다. 아래 제공된 원고 제목과 본문 내용을 분석하여, 검색엔진 최적화(SEO)를 위한 핵심 필드값들을 생성해 주세요.
+반드시 아래 정의된 JSON 구조로만 응답해야 하며, 그 외의 텍스트(예: markdown code block 백틱)는 절대 포함하지 말고 순수 JSON만 반환해야 합니다.
 
-  const handleSave = useCallback(
-    async (status?: StudioManuscriptRecord["status"]) => {
-      if (!data) return false;
+응답 JSON 구조:
+{
+  "focusKeyword": "글의 핵심이 되는 타겟 키워드 1개 (예: '골프 스윙 팁')",
+  "metaDescription": "검색 결과 페이지(SERP)에 표시될 매력적이고 요약된 설명문 (70자 이상 120자 이하)",
+  "seoTags": ["글의 맥락을 보여주는 핵심 키워드 태그 3~5개 배열"],
+  "slug": "URL 경로로 사용할 영어 소문자 및 하이픈(-) 조합의 슬러그 (예: 'golf-swing-basic-guide')"
+}
 
-      setIsSaving(true);
+작성된 원고 정보:
+- 제목: ${data.title}
+- 본문 요약: ${plainContent.slice(0, 3000)}`;
 
-      const safeData = data as StudioManuscriptRecordWithOptionalFields;
+      const response = await fetch("/api/ai/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "seo_optimization",
+          prompt,
+          responseMimeType: "application/json",
+          userId: user?.id,
+          userEmail: user?.email,
+        }),
+      });
 
-      const slug = buildPublicBlogSlug(
-        safeData.title,
-        safeData.focusKeyword,
-        safeData.targetKeyword
-      );
+      const result = await response.json();
 
-      let canonicalUrl = safeData.canonicalUrl || "";
-      if (userRole !== "ADMIN" && userBrandId) {
-        const prefix = `https://${userBrandId}.creaibox.com`;
-        if (!canonicalUrl.startsWith(prefix)) {
-          canonicalUrl = `${prefix}/${slug}`;
-        }
-      } else {
-        if (!canonicalUrl) {
-          canonicalUrl = buildCanonicalUrl(slug, userRole, userBrandId);
-        }
+      if (!response.ok) {
+        throw new Error(result.error || "SEO 생성 API 호출에 실패했습니다.");
       }
 
-      const now = new Date().toISOString();
-      const nextStatus = (status ?? safeData.status ?? "draft") as StudioManuscriptRecord["status"];
+      const parsedSeo = JSON.parse(result.text);
 
-      const updatePayload = {
-        title: safeData.title ?? "",
-        content: safeData.content ?? "",
-        target_keyword: safeData.targetKeyword ?? "",
-        selected_tone: safeData.selectedTone ?? "",
-        status: nextStatus,
-        slug,
-        meta_description: safeData.metaDescription ?? "",
-        focus_keyword: safeData.focusKeyword ?? "",
-        canonical_url: canonicalUrl,
-        seo_tags: toTagList(safeData.seoTags),
-        word_count_goal: safeData.wordCountGoal ?? null,
-        use_search: safeData.useSearch ?? false,
-      };
+      updateLocalData({
+        focusKeyword: parsedSeo.focusKeyword || "",
+        metaDescription: parsedSeo.metaDescription || "",
+        seoTags: Array.isArray(parsedSeo.seoTags) ? parsedSeo.seoTags : [],
+        slug: parsedSeo.slug || "",
+      });
 
-      const { error } = await supabase
-        .from("writing_creaibox_posts")
-        .update(updatePayload)
-        .eq("id", safeData.id);
+      // SEO 탭으로 전환
+      setPublishingPanelTab("seo");
+      window.alert("AI SEO 최적화 데이터가 생성되어 적용되었습니다.");
+    } catch (error: any) {
+      console.error("SEO 생성 실패:", error);
+      window.alert(`SEO 최적화 생성 실패: ${error.message}`);
+    } finally {
+      setIsGeneratingSeo(false);
+    }
+  }, [data, supabase, updateLocalData]);
 
-      setIsSaving(false);
+  const handleEnhanceContent = useCallback(
+    async (option: string) => {
+      if (!data) return;
 
-      if (error) {
-        window.alert(`저장 실패: ${error.message}`);
-        return false;
+      if (option.startsWith("expand_")) {
+        if (option.includes("toc_")) {
+          setIsEnhancingToc(true);
+        } else {
+          setIsEnhancingContent(true);
+        }
+      } else if (option === "correct" || option === "polish") {
+        setIsPolishing(true);
+      } else if (option.startsWith("change_post_type:")) {
+        setIsChangingPostType(true);
+      } else if (option === "apply_google_search") {
+        setIsApplyingSearch(true);
       }
 
-      const nextRecord: StudioManuscriptRecord = {
-        ...safeData,
-        slug,
-        canonicalUrl,
-        status: nextStatus,
-        updatedAt: now,
-        displayId: safeData.displayId,
-        wordCount: (safeData.content ?? "").replace(/\s+/g, "").length,
-      };
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
 
-      setData(nextRecord);
-      setHasLocalEdits(false);
-      persistCaches(nextRecord);
+        let promptInstruction = "";
+        if (option.startsWith("expand_")) {
+          if (option.includes("toc_")) {
+            const count = option.replace("expand_toc_", "");
+            promptInstruction = `현재 본문에 있는 기존 목차(H2 등)들과 긴밀하게 연관되고 이어지는 새로운 목차(H2 또는 H3 태그)를 정확히 ${count}개 생성하여 추가해 주세요. 또한, 새로 추가된 각 목차 하위에는 상세하고 깊이 있는 설명 문단(글 내용)도 함께 작성해서 본문의 마지막 또는 문맥상 적합한 위치에 자연스럽게 덧붙여 전체 원고의 분량을 확장해 주세요. 기존에 존재하던 목차나 본문 내용은 절대로 삭제, 수정, 축소하지 마십시오.`;
+          } else {
+            const percent = option.replace("expand_", "");
+            promptInstruction = `기존의 흐름, 맥락, 구조(HTML 태그)를 최대한 유지하면서 문장을 더 구체화하고 관련 유용한 정보를 덧붙여서 원고의 전체적인 분량이 대략 ${percent}% 정도 더 풍성하고 알차게 늘어나도록 내용을 확장하여 보강해 주세요. 절대 기존 내용을 누락하거나 마음대로 생략하여 아예 새로운 글로 대체하지 마세요.`;
+          }
+        } else if (option === "correct") {
+          promptInstruction = `기존 내용의 흐름과 맥락을 완벽히 유지하면서 맞춤법, 띄어쓰기, 문맥에 어색한 비문 등을 깔끔하게 수정해 주세요. 기존 문단의 내용이나 전체적인 분량을 마음대로 축소하거나 생략해서는 안 됩니다.`;
+        } else if (option === "polish") {
+          promptInstruction = `작성자가 초안으로 작성한 기존 본문을 완성도 높은 완결성 있는 고품질 글로 다듬어 완성해 주세요. 전체적인 맥락과 핵심 주제, 주요 팩트는 온전히 보존하되, 문장의 표현력을 풍부하고 매끄럽게 가다듬고 오탈자를 교정하며, 논리적 구조와 가독성을 대폭 개선하여 하나의 완결성 높은 고품질의 글로 전체 재작성해 주셔야 합니다. 절대 기존의 유용한 지식 정보나 핵심 주장을 축소, 생략하거나 아예 상관없는 새로운 이야기로 덮어씌우지 마십시오.`;
+        } else if (option.startsWith("change_post_type:")) {
+          const targetType = option.replace("change_post_type:", "");
+          promptInstruction = `작성자가 입력한 기존 본문의 전체적인 핵심 주제와 팩트 정보, 전체 흐름은 동일하게 유지하되, 전체 글의 포스트 타입(글 작성 양식 및 어조)을 [${targetType}] 스타일로 새롭게 재구성하여 재작성해 주세요. 포스트 타입별 글쓰기 특징에 맞춰 제목과의 연계성, 목차 구조, 설명하는 방식, 서론/본론/결론의 논리 구성 방식을 해당 포스트 타입 스타일에 맞춤 최적화해야 합니다. 절대 기존 정보나 중요한 주장을 누락시키지 마십시오.`;
+        } else if (option === "apply_google_search") {
+          promptInstruction = `현재 본문에 기재된 수치, 통계, 주식 현황, 뉴스 등의 정보가 최신 현실 정보와 일치하는지 Google Search를 활용하여 실시간 검색하고 분석해 주세요. 만약 기존 본문에 적힌 수치나 데이터(예: 주가, 통계치, 특정 정책 내용 등)가 현재 시점의 실시간 정보와 다르거나 오래되었다면, 최신 실시간 검색 결과에 기반하여 본문의 수치와 관련 문맥 정보를 올바르게 수정하고 내용을 업데이트해 주세요. 전체 글의 주요 핵심 주제나 기존 맥락 흐름은 그대로 유지하되, 정보의 사실성과 최신성(팩트)만 실시간 데이터로 교체하고 관련 설명을 보강해야 합니다.`;
+        }
 
-      return true;
+        const prompt = `당신은 전문 콘텐츠 에디터이자 SEO 작가입니다. 제공된 원고 제목과 본문(HTML 형식)을 기반으로, 지시사항에 따라 본문을 더 완성도 높고 알차게 보강(확장)해 주세요.
+
+[원고 제목]: ${data.title}
+[원고 태그/키워드]: ${data.targetKeyword ?? ""}
+[기존 본문 (HTML)]:
+${data.content ?? ""}
+
+[지시사항]:
+${promptInstruction}
+
+[출력 형식 및 제약 조건]:
+1. 반드시 기존 본문 내용의 맥락을 누락하지 말고, 내용을 더 풍성하게 다듬거나 확장해야 합니다.
+2. 마크다운 기호(예: ** 혹은 * 등)가 아닌 기존 본문에 맞춰 <h2>, <h3>, <p>, <ul>, <li>, <strong> 등 적합한 HTML 태그 형태로 결과를 작성해야 합니다.
+3. 지시사항 외의 다른 부연 설명이나 마크다운 백틱(예: \`\`\`html 등)은 절대 포함하지 말고, 브라우저에서 바로 사용할 수 있는 순수한 HTML 본문 코드만 출력하세요.`;
+
+        const useSearch = option === "apply_google_search";
+        const response = await fetch("/api/ai/generate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            type: useSearch ? "google_search_reflection" : "content_enhancement",
+            prompt,
+            useSearch,
+            userId: user?.id,
+            userEmail: user?.email,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "AI 보강 호출에 실패했습니다.");
+        }
+
+        let enhancedHtml = result.text || "";
+        enhancedHtml = enhancedHtml.replace(/^```html\s*/i, "").replace(/```$/, "").trim();
+
+        if (enhancedHtml) {
+          // 포스트 타입 변경 성공 시, 데이터 모델의 post_type도 함께 갱신 처리
+          if (option.startsWith("change_post_type:")) {
+            const targetType = option.replace("change_post_type:", "");
+            updateLocalData({
+              content: enhancedHtml,
+              detailLabel: targetType,
+            });
+          } else {
+            updateLocalData({ content: enhancedHtml });
+          }
+          window.alert("AI 처리 및 본문 반영이 완료되었습니다.");
+        }
+      } catch (error: any) {
+        console.error("Content enhancement failed:", error);
+        window.alert(`AI 보강 실패: ${error.message}`);
+      } finally {
+        setIsEnhancingContent(false);
+        setIsEnhancingToc(false);
+        setIsPolishing(false);
+        setIsChangingPostType(false);
+        setIsApplyingSearch(false);
+      }
     },
-    [data, persistCaches, supabase, userRole, userBrandId]
+    [data, supabase, updateLocalData]
   );
+
+  useEffect(() => {
+    if (!hasLocalEdits || !data || isSaving) return;
+
+    const timer = setTimeout(() => {
+      console.log("Creaibox 자동 저장 실행 중...");
+      void handleSave("saved");
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [data?.title, data?.content, hasLocalEdits, isSaving, handleSave]);
 
   const publishingStatus = useMemo(() => {
     if (!data) return "대기 중";
@@ -665,13 +869,19 @@ export default function CreaiboxManuscriptDetailPage() {
 
         {/* 왼쪽 글 목록 */}
         <aside className="h-full overflow-y-auto custom-scrollbar border-r border-violet-500/20 bg-[#0b0f15] p-4 text-[13px]">
-          <Link
-            href="/studio/writing/creaibox/list"
+          <button
+            type="button"
+            onClick={() => {
+              if (hasLocalEdits) {
+                void handleSave("saved");
+              }
+              router.push("/studio/writing/creaibox/list");
+            }}
             className="mb-5 flex w-full items-center gap-3 rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3 text-left text-[13px] font-bold text-white/80 transition hover:border-violet-400/40 hover:bg-violet-500/10"
           >
             <ArrowLeft className="h-4 w-4 text-violet-300" />
             목록으로 돌아가기
-          </Link>
+          </button>
 
           <div className="relative mb-5">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300/60" />
@@ -735,16 +945,23 @@ export default function CreaiboxManuscriptDetailPage() {
             fileInputRef={fileInputRef}
             isSaving={isSaving}
             isEnhancing={false}
+            isEnhancingContent={isEnhancingContent}
+            isEnhancingToc={isEnhancingToc}
+            isPolishing={isPolishing}
+            isChangingPostType={isChangingPostType}
+            isApplyingSearch={isApplyingSearch}
             handleImageUploadClick={() => { }}
             handleImageChange={() => { }}
             handleUpdateCaption={() => { }}
             handleDeleteImage={() => { }}
-            handleEnhanceContent={() => { }}
+            handleEnhanceContent={handleEnhanceContent}
             handleSavePostToSupabase={() => handleSave("saved")}
             isDetailMode
             targetKeyword={data.targetKeyword ?? ""}
             manuscriptId={data.id}
             contentImageSourceType="writing_creaibox_posts"
+            onGenerateSeo={handleGenerateSeo}
+            isGeneratingSeo={isGeneratingSeo}
           />
         </main>
 

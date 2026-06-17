@@ -86,6 +86,10 @@
 * **Fife CDN 주소 체계 적용 (Bypass CORP/CORS Blocks)**:
   * 기존 `drive.google.com/uc?id=` 링크는 브라우저 쿠키 확인으로 인한 303 리다이렉트와 `cross-origin-resource-policy` 제한으로 브라우저에서 엑박(Broken Image)이 뜨는 문제가 있었습니다.
   * 이를 해결하기 위해 구글의 고속 이미지 서빙 CDN 주소인 **`https://lh3.googleusercontent.com/d/[FILE_ID]`** 포맷으로 반환하도록 커스텀 처리했습니다. 이 주소는 리다이렉트 없이 `Access-Control-Allow-Origin: *` 헤더를 포함해 200 OK로 직결되어 에디터 및 블로그 페이지에서 막힘없이 렌더링됩니다.
+* **API 호출 트래픽 및 OAuth 할당량 우회 구조 (Bypass API & OAuth Quotas for Viewers)**:
+  * 일반 외부 방문자가 블로그 글에 접속하여 이미지를 읽는(View) 행위는 구글의 `lh3.googleusercontent.com` 공개 CDN 서버로 바로 요청이 도달하기 때문에, **구글 Cloud Console 상의 일일 OAuth 요청 수나 API 호출 할당량을 전혀 소모하지 않습니다.**
+  * 구글 드라이브 API 및 OAuth 인증 트래픽이 발생하는 시점은 **오직 글 작성 시 이미지를 신규 업로드하거나 AI 생성 썸네일을 구글 드라이브에 최초로 저장할 때(Write)**, 그리고 음원 재생/어드민 세팅 등 백엔드 API를 명시적으로 호출하는 시점에만 극소량(일반 업로드 시 분당 20,000회 제한 범주 내) 발생하므로 할당량 제한에서 완전히 안전합니다.
+  * "일일 OAuth 토큰 부여 10,000회 한도"는 최초 구글 계정 연동 동의창을 거쳐 토큰을 발급받을 때만 해당하며, 이미지 업로드/다운로드 등의 일반적인 API 호출 및 재인증(Refresh Token 활용) 시에는 전혀 카운트되지 않습니다.
 
 ### 4-2. 변경 및 추가 파일 목록
 * **[NEW] [google-drive.ts](file:///Users/a1234/Local%20Sites/creaibox/src/lib/google-drive.ts)**: Google Drive API OAuth2 인증 및 지정 공유 폴더(`1e8CAUHmT1pH1VQBpHNOvVRy2Zl0JTDrK`) 업로드 유틸리티 구현. 업로드된 파일은 즉시 public(전체 공개)으로 설정되어 직관적인 embed 링크(`https://lh3.googleusercontent.com/d/[FILE_ID]`)가 반환됩니다.
@@ -294,3 +298,33 @@
 
 ### 11-3. 검증 상태
 * `npx tsc --noEmit`을 수행하여 **에러 없음(0 compilation errors)** 상태로 컴파일 및 타입 검증이 성공적으로 완료되었음을 검증했습니다.
+
+---
+
+## 12. 수기 직접 새글 쓰기 기능 추가 (Direct Post Creation)
+
+AI 생성 단계를 거치지 않고, 사용자가 직접 수동으로 처음부터 글을 작성할 수 있는 **[수기 직접 새글 쓰기]** 기능을 Creaibox 및 네이버 발행 원고 관리 모듈에 각각 추가했습니다.
+
+### 12-1. 주요 작업 내역
+* **AI 생성 우회 및 빈 글 즉시 생성**:
+  * 기존에는 무조건 `/studio/writing/[engine]/create`로 이동하여 AI 키워드 및 생성 프로세스를 거쳐야만 원고가 등록되었습니다.
+  * 새로운 **`[수기 직접 새글 쓰기]`** 기능은 이 단계를 건너뛰고, 클릭 즉시 Supabase 테이블(`writing_creaibox_posts` 또는 `writing_naver_posts`)에 기본 데이터(Status: `draft`, Source Mode: `direct`)가 세팅된 빈 포스트 레코드를 `insert` 합니다.
+* **실시간 상세 에디터 화면으로 리다이렉트**:
+  * 빈 포스트 생성 완료 직후, 생성된 원고의 고유 ID(`displayId` 또는 `id`)를 조회하여 에디터 상세 페이지 `/studio/writing/[engine]/list/[id]`로 브라우저를 즉시 리다이렉트(`router.push`) 처리합니다.
+  * 사용자는 빈 에디터 화면에서 곧바로 직접 텍스트를 수기로 타이핑하여 저장 및 발행까지 완료할 수 있습니다.
+* **상태 관리 및 캐시 동기화**:
+  * 직접 생성된 새 글이 목록 화면에 즉시 보일 수 있도록 클라이언트 상태(`setCachedManuscripts`, `setFallbackManuscripts`)와 React Query 캐시 데이터를 동기화 갱신했습니다.
+  * 비동기 생성 시 버튼 중복 클릭 방지를 위해 `isCreatingDirect` 로딩 상태값에 따라 버튼을 비활성화(`disabled`) 처리하여 안정성을 높였습니다.
+
+### 12-2. 변경 및 추가 파일 목록
+* **[MODIFY] [page.tsx (creaibox/list)](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/list/page.tsx)**:
+  * 기존 `[새글 쓰기]` 버튼을 `[AI로 새글 쓰기]`로 수정.
+  * 그 옆에 신규 `[수기 직접 새글 쓰기]` 버튼 및 로딩 상태 탑재.
+  * 직접 작성용 새 레코드를 생성하고 상세 에디터 경로로 리다이렉트하는 `handleCreateDirect` 이벤트 핸들러 신설.
+* **[MODIFY] [page.tsx (naver/list)](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/naver/list/page.tsx)**:
+  * 네이버용 기존 `[새글 쓰기]` 버튼을 `[AI로 새글 쓰기]`로 수정.
+  * 그 옆에 네이버용 신규 `[수기 직접 새글 쓰기]` 버튼 및 로딩 상태 탑재.
+  * 네이버 테이블 `writing_naver_posts`에 직접 작성용 새 레코드를 삽입하고 에디터 경로(`/studio/writing/naver/list/[id]`)로 리다이렉트 처리하는 `handleCreateDirect` 이벤트 핸들러 신설.
+
+### 12-3. 검증 상태
+* `npx tsc --noEmit`을 돌려 **에러 없음(0 compilation errors)** 상태로 컴파일 및 타입 검증이 성공적으로 완료되었음을 검증했습니다.
