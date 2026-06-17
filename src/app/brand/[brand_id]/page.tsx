@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { CalendarDays, Sparkles, Star, ArrowRight, Rss, ArrowLeft, Tag } from "lucide-react";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createAdminClient } from "@/utils/supabase/server";
 
 interface PublishedPost {
   id: string;
@@ -88,7 +88,7 @@ function isPostForBrand(postCanonicalUrl: string | null, targetBrandId: string, 
 // 🌟 Dynamically generate page metadata with Naver Site Verification support
 export async function generateMetadata({ params }: BrandPageProps): Promise<Metadata> {
   const { brand_id } = await params;
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const profile = await getProfileByBrandId(supabase, brand_id);
 
@@ -117,7 +117,7 @@ export async function generateMetadata({ params }: BrandPageProps): Promise<Meta
 
 export default async function BrandBlogHome({ params }: BrandPageProps) {
   const { brand_id } = await params;
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   // 1. Fetch Profile
   const profile = await getProfileByBrandId(supabase, brand_id);
