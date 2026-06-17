@@ -217,10 +217,23 @@
 ### 8-3. 검증 상태
 * `npx tsc --noEmit` 수행 결과 **에러 없음 (0 compilation errors)** 상태를 완벽 확인하여 데이터 및 라우팅 추가가 안정적으로 빌드됨을 검증했습니다.
 
+## 9. 사주 & 운세 200개 아이디어 전체 적용 및 글로벌 오픈그래프(오픈 썸네일) 추가
 
+사주 & 운세 카테고리의 10개 추천 시리즈별로 메인 키워드 20가지씩(총 200개) 기획안 데이터를 완성하여 연계하였으며, 카카오톡/SNS로 사이트 링크 전송 시 로고 썸네일이 나타나지 않던 문제를 해결하기 위해 글로벌 오픈그래프 설정을 고도화했습니다.
 
+### 9-1. 주요 작업 내역
+* **사주 & 운세 200개 아이디어 데이터 매핑 완성**:
+  * `new-subtopics.ts` 에 작성되어 있던 사주 & 운세 하위 10개 시리즈별 20개씩(총 200개) 기획 아이디어가 정상 로드되도록 맞추었습니다.
+  * [topic-categories.ts](file:///Users/a1234/Local%20Sites/creaibox/src/lib/content-planner/topic-categories.ts) 내 `fortune-telling` 카테고리의 총 아이디어 수(`ideaCount: 200`) 및 각 10개 시리즈(subTopic)들의 아이디어 수(`ideaCount: 20`) 메타데이터를 일괄 수정하여 UI 데이터 불일치를 해소했습니다.
+* **글로벌 오픈그래프(OpenGraph) 및 트위터 메타 태그 탑재**:
+  * 카카오톡, 페이스북, 트위터(X) 등에서 `creaibox.com` 주소를 공유할 때 미리보기 로고 이미지가 누락되던 문제를 수정했습니다.
+  * [layout.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/layout.tsx) 의 글로벌 `metadata` 객체에 `metadataBase: new URL("https://creaibox.com")`와 함께 `openGraph`, `twitter` 속성을 추가하였습니다.
+  * 썸네일 이미지로 public 폴더의 `/logothumbnail.webp` (1200x630 권장 비율)를 지정하여 깔끔하게 로고 카드가 렌더링되도록 구현했습니다.
 
+### 9-2. 변경 및 추가 파일 목록
+* **[MODIFY] [topic-categories.ts](file:///Users/a1234/Local%20Sites/creaibox/src/lib/content-planner/topic-categories.ts)**: `fortune-telling` 카테고리 및 하위 10개 시리즈의 `ideaCount`를 실제 200개 분량에 맞춰 10에서 20(카테고리 전체는 100에서 200)으로 업데이트.
+* **[MODIFY] [layout.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/layout.tsx)**: 글로벌 `metadata` 설정에 `metadataBase`, `openGraph` 및 `twitter` 속성을 추가하여 로고 썸네일(/logothumbnail.webp) 연동.
 
-
-
-
+### 9-3. 카카오톡 공유 디버깅 관련 검증 상태 및 공유 디버깅 팁
+* `npx tsc --noEmit` 수행 결과 **에러 없음 (0 compilation errors)** 상태를 최종 확인했습니다.
+* **카카오톡 공유 디버깅**: 메타 태그 수정 후 카카오톡 캐시로 인해 이미지가 바로 나타나지 않는 경우, [카카오톡 공유 디버거](https://developers.kakao.com/tool/debugger/sharing)에 접속해 `https://creaibox.com`을 조회하고 **[캐시 재스크랩]**을 실행하여 캐시를 초기화할 수 있습니다.
