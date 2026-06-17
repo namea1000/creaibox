@@ -167,3 +167,23 @@ The Admin console validates configuration status on demand by:
 * **DNS CNAME lookup**: Queries Cloudflare's JSON-over-HTTPS (DoH) API (`https://cloudflare-dns.com/dns-query?name={custom_domain}&type=CNAME`) to verify it targets `{brand_id}.creaibox.com` or `creaibox.com`.
 * **SSL & Routing Verification**: Fetches the diagnostic endpoint `https://{custom_domain}/.well-known/creaibox-diagnostics`. If the middleware returns a successful JSON body containing `brandId` matching the user's mapped subdomain, it confirms 100% operational DNS, SSL, and routing.
 * **CORS Safe fallback**: If direct fetch is blocked, falls back to `{ mode: 'no-cors' }` request testing to verify basic network visibility.
+
+---
+
+## 6. Troubleshooting & Environment Variable Cautions
+
+### Subdomain "Blog Under Construction" Error due to Corrupt Environment Variables (2026-06-18)
+* **Problem**: Even after a brand ID was APPROVED in the admin panel, visiting the subdomains (e.g., `blog.creaibox.com`, `golfgosu.creaibox.com`) rendered the "Blog Under Construction" page on the live server, whereas it loaded normally in local development (`localhost:3000`).
+* **Root Cause**:
+  * The `profiles` table is strictly protected by Row-Level Security (RLS) policies, meaning anonymous/non-logged-in visitors cannot select profiles directly. 
+  * Thus, the public blog page uses `createAdminClient()` (powered by `SUPABASE_SERVICE_ROLE_KEY`) to safely query public profile info (title, description, and visual settings) while bypassing RLS.
+  * In the live hosting environment (Vercel), `SUPABASE_SERVICE_ROLE_KEY` was contaminated with a trailing newline (`\n`) and adjacent environment variables (specifically `API_VAULT_ENCRYPTION_KEY=...`) due to a manual copy-paste drag error during registration. 
+  * This led to a internal client initialization failure: `TypeError: Headers.set: "... \nAPI_VAULT_ENCRYPTION_KEY=..." is an invalid header value.` when Supabase attempted to set the Authorization header.
+* **Resolution & Defensive Measures**:
+  * Added robust defensive parsing inside `createAdminClient` ([server.ts](file:///Users/a1234/Local%20Sites/creaibox/src/utils/supabase/server.ts)):
+    ```typescript
+    serviceKey = serviceKey.split("\n")[0].trim();
+    ```
+    This split-and-trim logic filters out any trailing newlines or accidentally pasted variables, making client creation resilient to configuration mishaps.
+  * *Tip*: While the defensive code mitigates live runtime issues immediately after code deployment, it is highly recommended to inspect and trim the variables cleanly inside the Vercel Settings panel for clean configuration state.
+

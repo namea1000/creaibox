@@ -52,6 +52,7 @@ export async function middleware(request: NextRequest) {
   const isStaticOrApi = 
     path.startsWith("/_next") ||
     path.startsWith("/api") ||
+    path.startsWith("/brand") || // 🌟 무한/중복 리라이트 방지: 내부 리라이트된 경로는 재라우팅하지 않음
     path.includes(".");
 
   if (!isStaticOrApi) {
@@ -157,6 +158,7 @@ export async function middleware(request: NextRequest) {
       if (!isCreaiboxDomain && !isLocalhost) {
         rewriteResponse.headers.set("x-custom-domain", cleanHost);
       }
+      
       return rewriteResponse;
     }
   }
