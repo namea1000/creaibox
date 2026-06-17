@@ -17,8 +17,6 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
-const ADMIN_EMAILS = ["creaiboxofficial@gmail.com", "jenam7720@gmail.com", "namjjang7720@gmail.com"];
-
 type UserRole = "ADMIN" | "MANAGER" | "PAID" | "FREE";
 type UserStatus = "ACTIVE" | "BANNED";
 
@@ -33,6 +31,7 @@ interface UserProfile {
   joinedAt: string;
   lastLogin: string | null;
   adminMemo?: string;
+  isWhitelisted?: boolean;
 }
 
 export default function UserManagementPage() {
@@ -93,7 +92,21 @@ export default function UserManagementPage() {
 
       if (!mounted) return;
 
-      if (!user || !ADMIN_EMAILS.includes(user.email || "")) {
+      if (!user) {
+        alert("⚠️ 로그인이 필요합니다.");
+        router.replace("/");
+        return;
+      }
+
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      if (!mounted) return;
+
+      if (error || !profile || profile.role !== "ADMIN") {
         alert("⚠️ 슈퍼 어드민 전용 구역입니다.");
         router.replace("/");
         return;
@@ -133,6 +146,43 @@ export default function UserManagementPage() {
       banned: users.filter((u) => u.status === "BANNED").length,
     };
   }, [users]);
+
+  const toggleWhitelist = async (user: UserProfile) => {
+    const isAdding = !user.isWhitelisted;
+    setSavingId(user.id);
+
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-email": adminEmail,
+        },
+        body: JSON.stringify({
+          id: user.id,
+          email: user.email,
+          addToWhitelist: isAdding ? true : undefined,
+          removeFromWhitelist: !isAdding ? true : undefined,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "화이트리스트 처리 실패");
+      }
+
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === user.id ? { ...u, isWhitelisted: isAdding } : u
+        )
+      );
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSavingId(null);
+    }
+  };
 
   const updateUser = async (
     userId: string,
@@ -387,28 +437,45 @@ export default function UserManagementPage() {
                             </td>
 
                             <td className="px-8 py-6">
-                              <select
-                                value={user.role}
-                                disabled={savingId === user.id}
-                                onChange={(e) =>
-                                  updateUser(user.id, {
-                                    role: e.target.value as UserRole,
-                                  })
-                                }
-                                className={`rounded-lg border px-3 py-2 text-[10px] font-black uppercase tracking-widest outline-none ${user.role === "ADMIN"
-                                  ? "border-red-500/20 bg-red-500/10 text-red-400"
-                                  : user.role === "MANAGER"
-                                    ? "border-purple-500/20 bg-purple-500/10 text-purple-400"
-                                    : user.role === "PAID"
-                                      ? "border-yellow-500/20 bg-yellow-500/10 text-yellow-400"
-                                      : "border-zinc-700 bg-zinc-800/50 text-zinc-400"
-                                  }`}
-                              >
-                                <option value="ADMIN">ADMIN</option>
-                                <option value="MANAGER">MANAGER</option>
-                                <option value="PAID">PAID</option>
-                                <option value="FREE">FREE</option>
-                              </select>
+                              <div className="flex flex-col gap-2">
+                                <select
+                                  value={user.role}
+                                  disabled={savingId === user.id}
+                                  onChange={(e) =>
+                                    updateUser(user.id, {
+                                      role: e.target.value as UserRole,
+                                    })
+                                  }
+                                  className={`rounded-lg border px-3 py-2 text-[10px] font-black uppercase tracking-widest outline-none ${user.role === "ADMIN"
+                                    ? "border-red-500/20 bg-red-500/10 text-red-400"
+                                    : user.role === "MANAGER"
+                                      ? "border-purple-500/20 bg-purple-500/10 text-purple-400"
+                                      : user.role === "PAID"
+                                        ? "border-yellow-500/20 bg-yellow-500/10 text-yellow-400"
+                                        : "border-zinc-700 bg-zinc-800/50 text-zinc-400"
+                                    }`}
+                                >
+                                  <option value="ADMIN">ADMIN</option>
+                                  <option value="MANAGER">MANAGER</option>
+                                  <option value="PAID">PAID</option>
+                                  <option value="FREE">FREE</option>
+                                </select>
+                                
+                                {user.role === "ADMIN" && (
+                                  <button
+                                    type="button"
+                                    disabled={savingId === user.id}
+                                    onClick={() => toggleWhitelist(user)}
+                                    className={`w-fit rounded-md px-2 py-1 text-[8px] font-black uppercase tracking-wider transition-all border active:scale-95 ${
+                                      user.isWhitelisted
+                                        ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                                        : "border-rose-500/25 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 animate-pulse"
+                                    }`}
+                                  >
+                                    {user.isWhitelisted ? "● 승인 완료" : "⚠️ 승인 대기"}
+                                  </button>
+                                )}
+                              </div>
                             </td>
 
                             <td className="px-8 py-6">

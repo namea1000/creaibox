@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { encryptApiKey, maskApiKey } from "@/lib/server/api-vault-crypto";
 import { supabaseAdmin } from "@/lib/server/get-free-gemini-key";
 
-const ADMIN_EMAILS = ["creaiboxofficial@gmail.com", "jenam7720@gmail.com", "namjjang7720@gmail.com"];
-
-function isAdminEmail(email?: string | null) {
-  return Boolean(email && ADMIN_EMAILS.includes(email));
+async function checkIsAdminEmail(email?: string | null) {
+  if (!email) return false;
+  const { data, error } = await supabaseAdmin
+    .from("admin_whitelist")
+    .select("email")
+    .eq("email", email)
+    .maybeSingle();
+  return !error && !!data;
 }
 
 function getAdminEmail(req: NextRequest) {
@@ -68,7 +72,7 @@ function buildVaultPayload(body: any, shouldEncryptKey: boolean) {
 export async function GET(req: NextRequest) {
   const email = getAdminEmail(req);
 
-  if (!isAdminEmail(email)) {
+  if (!(await checkIsAdminEmail(email))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -95,7 +99,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const email = getAdminEmail(req);
 
-  if (!isAdminEmail(email)) {
+  if (!(await checkIsAdminEmail(email))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -127,7 +131,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const email = getAdminEmail(req);
 
-  if (!isAdminEmail(email)) {
+  if (!(await checkIsAdminEmail(email))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -162,7 +166,7 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const email = getAdminEmail(req);
 
-  if (!isAdminEmail(email)) {
+  if (!(await checkIsAdminEmail(email))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

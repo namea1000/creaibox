@@ -262,3 +262,35 @@
 
 ### 10-3. 검증 상태
 * `npx tsc --noEmit`을 통해 정적 컴파일 **에러 없음(0 compilation errors)** 상태를 확인하여 구현 안정성을 확인했습니다.
+
+---
+
+## 11. 이중 잠금 화이트리스트(Admin Whitelist) 시스템 및 이메일 하드코딩 완전 제거
+
+보안성을 대폭 강화하기 위해 소스코드 내부에 하드코딩되어 있던 `ADMIN_EMAILS` 리스트를 전면 제거하고, 데이터베이스 `admin_whitelist` 테이블을 통한 **2차 어드민 승인(이중 잠금) 시스템**을 구축했습니다.
+
+### 11-1. 주요 작업 내역
+* **데이터베이스(Supabase) `admin_whitelist` 테이블 연동**:
+  * API 권한 조회와 실질적인 관리자 권한 여부를 통제하기 위해 `admin_whitelist` 테이블을 연동했습니다.
+  * [admin-whitelist.sql](file:///Users/a1234/Local%20Sites/creaibox/docs/database/sql/admin-whitelist.sql) 스크립트를 작성하여 Supabase SQL Editor를 통해 100% Copy-paste 실행 및 RLS 정책을 수립할 수 있도록 처리했습니다.
+  * 관련 컬럼 명세는 [admin-whitelist-schema.md](file:///Users/a1234/Local%20Sites/creaibox/docs/database/admin-whitelist-schema.md) 및 [schema.md](file:///Users/a1234/Local%20Sites/creaibox/docs/database/schema.md)에 문서화를 마쳤습니다.
+* **소스코드 내 하드코딩 `ADMIN_EMAILS` 완전 제거**:
+  * 기존 `Sidebar.tsx`, `page.tsx (usermanagement)` 등 클라이언트 컴포넌트 파일에 하드코딩되어 있던 `ADMIN_EMAILS` 문자열 배열 상수를 완전히 지웠습니다.
+  * 사이드바 가시성(`isAdmin`) 판별 시, 현재 사용자 ID를 기반으로 `profiles` 테이블의 `role === "ADMIN"` 인지 Supabase client를 통해 동적으로 조회하도록 변경했습니다.
+  * 사용자 관리 페이지(`usermanagement`) 진입 시에도 동일하게 profiles 테이블 상에서 본인의 역할이 `ADMIN` 인지 비동기로 검증하도록 보안 메커니즘을 변경했습니다.
+* **이중 잠금 화이트리스트 승인 UI 구현**:
+  * 사용자 관리 목록의 `Access Level` 열 내부에서 해당 사용자의 역할(`role`)이 `ADMIN` 일 때만 승인 상태를 제어할 수 있는 동적 버튼을 배치했습니다.
+  * `isWhitelisted`가 `true` 이면 초록색 **`● 승인 완료`** 뱃지를, `false` 이면 빨간색 펄스 애니메이션이 적용된 **`⚠️ 승인 대기`** 버튼이 나타납니다.
+  * 이 버튼을 클릭하면 서버의 PATCH API `/api/admin/users`로 `addToWhitelist` 또는 `removeFromWhitelist` 요청을 보내어 데이터베이스의 `admin_whitelist` 테이블에 이메일을 즉각 추가/삭제하고 상태를 리렌더링하도록 연동했습니다.
+  * 안전장치로 관리자가 특정 사용자를 `ADMIN` 등급에서 일반 등급(FREE, PAID 등)으로 강등시킬 때, 백엔드 API에서 해당 사용자의 이메일을 화이트리스트 테이블에서도 자동으로 삭제하게끔 안전장치를 보강했습니다.
+
+### 11-2. 변경 및 추가 파일 목록
+* **[NEW] [admin-whitelist.sql](file:///Users/a1234/Local%20Sites/creaibox/docs/database/sql/admin-whitelist.sql)**: `admin_whitelist` 테이블 생성 및 RLS 설정, 초기 관리자 4명 등록 SQL 스크립트.
+* **[NEW] [admin-whitelist-schema.md](file:///Users/a1234/Local%20Sites/creaibox/docs/database/admin-whitelist-schema.md)**: 화이트리스트 데이터베이스 필드 명세 및 RLS 정책 가이드 문서.
+* **[MODIFY] [schema.md](file:///Users/a1234/Local%20Sites/creaibox/docs/database/schema.md)**: 시스템 테이블 리스트 하단에 `admin_whitelist` 추가 및 갱신.
+* **[MODIFY] [route.ts (users)](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/admin/users/route.ts)**: 화이트리스트 등록 여부(`isWhitelisted`)를 map하여 전달하도록 GET 수정, 화이트리스트 개별 추가/삭제 및 강등 시 자동 탈락 로직을 PATCH에 추가.
+* **[MODIFY] [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx)**: 하드코딩 `ADMIN_EMAILS` 제거 및 `profiles` 테이블 단건 조회를 통한 동적 어드민 판별 로직 적용.
+* **[MODIFY] [page.tsx (usermanagement)](file:///Users/a1234/Local%20Sites/creaibox/src/app/admin/usermanagement/page.tsx)**: 하드코딩 `ADMIN_EMAILS` 제거, UI 테이블 내 `⚠️ 승인 대기 / ● 승인 완료` 동적 제어 버튼 적용 및 `/api/admin/users` PATCH를 통한 화이트리스트 토글 API 연동.
+
+### 11-3. 검증 상태
+* `npx tsc --noEmit`을 수행하여 **에러 없음(0 compilation errors)** 상태로 컴파일 및 타입 검증이 성공적으로 완료되었음을 검증했습니다.

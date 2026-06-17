@@ -70,12 +70,7 @@ import {
 import { SiNaver, SiYoutube } from "react-icons/si";
 import { createClient } from "@/utils/supabase/client";
 
-const ADMIN_EMAILS = [
-  "creaiboxofficial@gmail.com",
-  "jenam7720@gmail.com",
-  "namjjang7720@gmail.com",
-  "admin@creaibox.com",
-];
+
 
 interface SidebarProps {
   activeMenu?: string;
@@ -120,23 +115,41 @@ export default function Sidebar({
   useEffect(() => {
     let mounted = true;
 
-    const checkUser = (user: any) => {
+    const checkUser = async (user: any) => {
       if (!mounted) return;
-      if (user && ADMIN_EMAILS.includes(user.email || "")) {
-        setIsAdmin(true);
-      } else {
+      if (!user) {
         setIsAdmin(false);
+        return;
+      }
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+
+        if (mounted) {
+          if (!error && data && data.role === "ADMIN") {
+            setIsAdmin(true);
+          } else {
+            setIsAdmin(false);
+          }
+        }
+      } catch (err) {
+        if (mounted) {
+          setIsAdmin(false);
+        }
       }
     };
 
     supabase.auth.getUser().then(({ data: { user } }) => {
-      checkUser(user);
+      void checkUser(user);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      checkUser(session?.user ?? null);
+      void checkUser(session?.user ?? null);
     });
 
     return () => {

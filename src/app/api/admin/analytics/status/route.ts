@@ -1,14 +1,18 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { supabaseAdmin } from "@/lib/server/get-free-gemini-key";
 
 export const runtime = "nodejs";
 
-const ADMIN_EMAILS = [
-  "creaiboxofficial@gmail.com",
-  "jenam7720@gmail.com",
-  "namjjang7720@gmail.com",
-  "admin@creaibox.com",
-];
+async function checkIsAdminEmail(email?: string | null) {
+  if (!email) return false;
+  const { data, error } = await supabaseAdmin
+    .from("admin_whitelist")
+    .select("email")
+    .eq("email", email)
+    .maybeSingle();
+  return !error && !!data;
+}
 
 const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID || "540360142";
 
@@ -73,7 +77,7 @@ export async function GET() {
       data: { session },
     } = await supabase.auth.getSession();
 
-    if (userError || !user || !ADMIN_EMAILS.includes(user.email || "")) {
+    if (userError || !user || !(await checkIsAdminEmail(user.email))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
