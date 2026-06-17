@@ -41,27 +41,40 @@ function formatDate(value: string | null) {
 }
 
 async function getProfileByBrandId(supabase: any, brandId: string) {
-  let { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("brand_id", brandId)
-    .eq("brand_id_status", "APPROVED")
-    .maybeSingle();
-
-  if (!profile) {
-    const { data: profiles } = await supabase
+  try {
+    let { data: profile, error } = await supabase
       .from("profiles")
       .select("*")
-      .not("extra_configs", "is", null);
+      .eq("brand_id", brandId)
+      .eq("brand_id_status", "APPROVED")
+      .maybeSingle();
 
-    if (profiles) {
-      profile = profiles.find((p: any) => {
-        const brandIds = p.extra_configs?.brand_ids || [];
-        return brandIds.includes(brandId);
-      }) || null;
+    if (error) {
+      console.error("Error fetching primary profile in home page:", error);
     }
+
+    if (!profile) {
+      const { data: profiles, error: err2 } = await supabase
+        .from("profiles")
+        .select("*")
+        .not("extra_configs", "is", null);
+
+      if (err2) {
+        console.error("Error fetching fallback profiles in home page:", err2);
+      }
+
+      if (profiles) {
+        profile = profiles.find((p: any) => {
+          const brandIds = p.extra_configs?.brand_ids || [];
+          return brandIds.includes(brandId);
+        }) || null;
+      }
+    }
+    return profile;
+  } catch (err) {
+    console.error("getProfileByBrandId exception in home page:", err);
+    return null;
   }
-  return profile;
 }
 
 function isPostForBrand(postCanonicalUrl: string | null, targetBrandId: string, profileConfigs: any) {

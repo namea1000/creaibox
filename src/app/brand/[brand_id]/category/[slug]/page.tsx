@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { CalendarDays, Sparkles, ArrowRight, Rss, ArrowLeft, Tag } from "lucide-react";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createAdminClient } from "@/utils/supabase/server";
 
 interface PublishedPost {
   id: string;
@@ -41,27 +41,40 @@ function formatDate(value: string | null) {
 }
 
 async function getProfileByBrandId(supabase: any, brandId: string) {
-  let { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("brand_id", brandId)
-    .eq("brand_id_status", "APPROVED")
-    .maybeSingle();
-
-  if (!profile) {
-    const { data: profiles } = await supabase
+  try {
+    let { data: profile, error } = await supabase
       .from("profiles")
       .select("*")
-      .not("extra_configs", "is", null);
+      .eq("brand_id", brandId)
+      .eq("brand_id_status", "APPROVED")
+      .maybeSingle();
 
-    if (profiles) {
-      profile = profiles.find((p: any) => {
-        const brandIds = p.extra_configs?.brand_ids || [];
-        return brandIds.includes(brandId);
-      }) || null;
+    if (error) {
+      console.error("Error fetching primary profile in category page:", error);
     }
+
+    if (!profile) {
+      const { data: profiles, error: err2 } = await supabase
+        .from("profiles")
+        .select("*")
+        .not("extra_configs", "is", null);
+
+      if (err2) {
+        console.error("Error fetching fallback profiles in category page:", err2);
+      }
+
+      if (profiles) {
+        profile = profiles.find((p: any) => {
+          const brandIds = p.extra_configs?.brand_ids || [];
+          return brandIds.includes(brandId);
+        }) || null;
+      }
+    }
+    return profile;
+  } catch (err) {
+    console.error("getProfileByBrandId exception in category page:", err);
+    return null;
   }
-  return profile;
 }
 
 function isPostForBrand(postCanonicalUrl: string | null, targetBrandId: string, profileConfigs: any) {
@@ -89,7 +102,7 @@ function isPostForBrand(postCanonicalUrl: string | null, targetBrandId: string, 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const { brand_id, slug } = await params;
   const decodedSlug = decodeURIComponent(slug);
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const profile = await getProfileByBrandId(supabase, brand_id);
 
@@ -119,7 +132,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 export default async function BrandCategoryPage({ params }: CategoryPageProps) {
   const { brand_id, slug } = await params;
   const decodedSlug = decodeURIComponent(slug);
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   // 1. Fetch Profile
   const profile = await getProfileByBrandId(supabase, brand_id);

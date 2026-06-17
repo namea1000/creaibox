@@ -125,25 +125,39 @@ async function fetchPost(brandId: string, slug: string) {
   const decodedSlug = decodeURIComponent(slug);
 
   // 1. Fetch Profile
-  let { data: profile } = await supabase
-    .from("profiles")
-    .select("id, brand_id, nickname, extra_configs")
-    .eq("brand_id", brandId)
-    .eq("brand_id_status", "APPROVED")
-    .maybeSingle();
-
-  if (!profile) {
-    const { data: profiles } = await supabase
+  let profile: any = null;
+  try {
+    let { data: primaryProfile, error } = await supabase
       .from("profiles")
       .select("id, brand_id, nickname, extra_configs")
-      .not("extra_configs", "is", null);
+      .eq("brand_id", brandId)
+      .eq("brand_id_status", "APPROVED")
+      .maybeSingle();
 
-    if (profiles) {
-      profile = profiles.find((p: any) => {
-        const brandIds = p.extra_configs?.brand_ids || [];
-        return brandIds.includes(brandId);
-      }) || null;
+    if (error) {
+      console.error("Error fetching primary profile in post detail page:", error);
     }
+    profile = primaryProfile;
+
+    if (!profile) {
+      const { data: profiles, error: err2 } = await supabase
+        .from("profiles")
+        .select("id, brand_id, nickname, extra_configs")
+        .not("extra_configs", "is", null);
+
+      if (err2) {
+        console.error("Error fetching fallback profiles in post detail page:", err2);
+      }
+
+      if (profiles) {
+        profile = profiles.find((p: any) => {
+          const brandIds = p.extra_configs?.brand_ids || [];
+          return brandIds.includes(brandId);
+        }) || null;
+      }
+    }
+  } catch (err) {
+    console.error("fetchPost profile query exception in post detail page:", err);
   }
 
   if (!profile) return null;
