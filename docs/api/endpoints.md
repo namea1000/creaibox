@@ -60,3 +60,46 @@
 ## 4. 이미지 생성 API (`/api/image-studio/generate`)
 * **메서드**: `POST`
 * **동작**: AI 모델을 호출하여 프롬프트 가이드를 따르는 고화질 이미지를 렌더링하고, 생성된 바이너리를 Supabase Storage(`generated-images`)에 업로드한 뒤 Public CDN URL을 발행해 에디터에 바인딩합니다.
+
+---
+
+## 5. 뮤직 스튜디오 오디오 목록 조회 API (`/api/music-studio/list`)
+* **메서드**: `GET`
+* **동작**: 구글 드라이브 내 지정된 음악 폴더(`GDRIVE_MUSIC_FOLDER_ID`) 내의 오디오 파일(.mp3, .wav 등) 목록을 조회하여 스트리밍 가능한 내부 API 프록시 주소와 파일 메타데이터를 반환합니다.
+* **기능 및 보안**:
+  1. **사용자 세션 확인**: Supabase 서버 클라이언트를 활용하여 로그인 세션을 검증합니다.
+  2. **화이트리스트 이메일 검증**: `ALLOWED_TESTER_EMAILS` 환경 변수에 지정된 이메일 계정인지 확인하여 클로즈드 베타 권한이 있는 이메일만 허용합니다. (미등록시 403 반환)
+  3. **Google Drive API v3 연동**: `googleapis` 패키지를 통해 OAuth 2.0 자격증명으로 구글 드라이브 클라이언트를 연결하고, `'[FOLDER_ID]' in parents and (mimeType contains 'audio/' or name contains '.mp3' or name contains '.wav')` 쿼리로 음원 파일들을 로드합니다.
+  4. **스트리밍 주소 매핑**: 개별 오디오 파일의 ID를 기반으로 제3자 쿠키나 CORS/CORP(Cross-Origin Resource Policy) 제약을 우회하기 위해 내부 프록시 스트리밍 주소(`/api/music-studio/stream?id=[FILE_ID]`)를 가공하여 트랙 배열로 반환합니다.
+* **응답 예시**:
+  ```json
+  {
+    "success": true,
+    "album": "Awakening",
+    "genre": "Vocal Trance",
+    "tracks": [
+      {
+        "id": "1A2B3C4D...",
+        "title": "Awakening (Vocal Mix)",
+        "fileName": "Awakening_Vocal_Mix.mp3",
+        "mimeType": "audio/mpeg",
+        "size": 6120400,
+        "createdAt": "2026-06-16T12:00:00Z",
+        "streamUrl": "/api/music-studio/stream?id=1A2B3C4D..."
+      }
+    ]
+  }
+  ```
+
+---
+
+## 6. 뮤직 스튜디오 오디오 바이너리 스트리밍 API (`/api/music-studio/stream`)
+* **메서드**: `GET`
+* **쿼리 스트링**: `?id=[구글드라이브_파일_ID]`
+* **동작**: 구글 드라이브 API v3의 `alt=media` 엔드포인트를 호출하여 오디오 바이너리를 Next.js 백엔드 서버를 통해 브라우저로 실시간 스트리밍 프록시합니다.
+* **보안 및 최적화**:
+  1. **세션 및 권한 검증**: Supabase 로그인 상태 및 `ALLOWED_TESTER_EMAILS` 화이트리스트 접근 권한을 확인하여 불법 오디오 다운로드 및 트래픽을 차단합니다.
+  2. **Range 바이트 요청 지원**: 브라우저 오디오 플레이어가 탐색(Seeking)하거나 iOS/Safari 디바이스 등에서 요구하는 partial content를 완벽 지원하기 위해, 클라이언트 request의 `Range` 헤더를 Google Drive API 요청 시 그대로 포워딩합니다.
+  3. **206 Partial Content 대응**: 구글 드라이브가 반환하는 `206 Partial Content` 및 `Content-Range` 헤더와 오디오 버퍼를 브라우저에 투명하게 스트리밍하여, 다운로드 대기 없이 탐색 재생이 고속으로 동작하도록 구현하였습니다.
+
+

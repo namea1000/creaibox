@@ -65,6 +65,13 @@ export default function MusicStudioHomePage() {
       color: "from-emerald-600 to-green-600",
     },
     {
+      title: "Cre Music 플레이어",
+      desc: "구글 드라이브 연동 스포티파이 스타일 실시간 음악 플레이어입니다.",
+      href: "/studio/music/cre-music",
+      icon: Headphones,
+      color: "from-emerald-500 to-cyan-500",
+    },
+    {
       title: "오디오 비주얼라이저",
       desc: "음악에 반응하는 오디오 스펙트럼과 비주얼라이저를 만듭니다.",
       href: "/studio/music/visualizer",
@@ -144,6 +151,7 @@ export default function MusicStudioHomePage() {
   ];
 
   const quickActions = [
+    { label: "Cre Music 플레이어", href: "/studio/music/cre-music" },
     { label: "Suno 곡 만들기", href: "/studio/music/lyrics" },
     { label: "가사 생성", href: "/studio/music/lyrics" },
     { label: "음악 라이브러리", href: "/studio/music/library" },

@@ -19,6 +19,7 @@ import { useVideoEditor } from "./VideoEditorContext";
 import type { VideoEditorMediaType, VideoEditorMediaItem } from "./VideoEditorContext";
 import VideoEditorStockPanel from "./VideoEditorStockPanel";
 import VideoEditorStoragePanel from "./VideoEditorStoragePanel";
+import VideoEditorAiAssetsPanel from "./VideoEditorAiAssetsPanel";
 
 type LibraryTab = "uploads" | "ai-images" | "ai-videos" | "music" | "stock" | "recent" | "storage";
 
@@ -312,6 +313,8 @@ export default function VideoEditorMediaLibrary({ forcedTab }: { forcedTab?: Lib
         <VideoEditorStockPanel />
       ) : libraryTab === "storage" ? (
         <VideoEditorStoragePanel />
+      ) : libraryTab === "ai-videos" ? (
+        <VideoEditorAiAssetsPanel />
       ) : libraryTab === "ai-images" ? (
         <div className="space-y-4">
           <div className="rounded-md border border-dashed border-white/10 bg-black/30 p-5 text-center">

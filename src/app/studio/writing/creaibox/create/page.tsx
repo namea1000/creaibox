@@ -16,6 +16,7 @@ import {
   createContentPlannerOutput,
   updateContentPlannerItemStatus,
 } from "@/lib/content-planner/supabase";
+import { robustParseJson } from "@/lib/utils";
 
 const AUTH_RETRY_DELAY_MS = 700;
 const AUTH_RETRY_ATTEMPTS = 3;
@@ -102,20 +103,7 @@ function getFriendlyAiErrorMessage(error: unknown) {
 }
 
 function parseGeminiJson(text: string) {
-  const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
-
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    const firstBrace = cleaned.indexOf("{");
-    const lastBrace = cleaned.lastIndexOf("}");
-
-    if (firstBrace >= 0 && lastBrace > firstBrace) {
-      return JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
-    }
-
-    throw new Error("AI 응답을 JSON으로 변환하지 못했습니다.");
-  }
+  return robustParseJson(text);
 }
 
 function getLengthPrompt(wordCountGoal: string) {

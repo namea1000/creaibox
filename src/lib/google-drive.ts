@@ -90,3 +90,46 @@ export function isGoogleDriveConfigured(): boolean {
     process.env.GDRIVE_FOLDER_ID
   );
 }
+
+/**
+ * Lists all audio files in a designated Google Drive folder.
+ * 
+ * @param folderId - The Google Drive folder ID to search within
+ * @returns Array of file metadata objects (id, name, mimeType, size, createdTime)
+ */
+export async function listGoogleDriveMusic(folderId: string) {
+  const drive = getDriveClient();
+  const response = await drive.files.list({
+    q: `'${folderId}' in parents and (mimeType contains 'audio/' or name contains '.mp3' or name contains '.wav') and trashed = false`,
+    fields: "files(id, name, mimeType, size, createdTime)",
+    orderBy: "name",
+  });
+  return response.data.files || [];
+}
+
+/**
+ * Fetches the media stream of a Google Drive file, optionally with a Range header.
+ */
+export async function getGoogleDriveStream(fileId: string, rangeHeader?: string) {
+  const drive = getDriveClient();
+  const requestHeaders: Record<string, string> = {};
+  if (rangeHeader) {
+    requestHeaders["Range"] = rangeHeader;
+  }
+
+  const response = await drive.files.get(
+    { fileId, alt: "media" },
+    {
+      headers: requestHeaders,
+      responseType: "stream",
+    }
+  );
+
+  return {
+    status: response.status,
+    headers: response.headers as Record<string, any>,
+    stream: response.data,
+  };
+}
+
+

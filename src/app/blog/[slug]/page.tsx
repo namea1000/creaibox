@@ -119,18 +119,33 @@ async function fetchPublishedPost(slug: string) {
   const supabase = await createClient();
   const decodedSlug = decodeURIComponent(slug);
 
-  const { data, error } = await supabase
-    .from("writing_creaibox_posts")
-    .select("id, title, content, slug, meta_description, focus_keyword, canonical_url, seo_tags, created_at, updated_at, profiles!inner(role)")
-    .eq("slug", decodedSlug)
-    .eq("status", "published")
-    .eq("profiles.role", "ADMIN")
-    .order("created_at", { ascending: false })
-    .limit(1);
+  const { data: admins } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("role", "ADMIN");
+
+  const adminIds = (admins || []).map((a) => a.id);
+
+  let data: any[] = [];
+  let error: any = null;
+
+  if (adminIds.length > 0) {
+    const query = await supabase
+      .from("writing_creaibox_posts")
+      .select("id, title, content, slug, meta_description, focus_keyword, canonical_url, seo_tags, created_at, updated_at")
+      .eq("slug", decodedSlug)
+      .eq("status", "published")
+      .in("user_id", adminIds)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    data = query.data || [];
+    error = query.error;
+  }
 
   if (error || !data || data.length === 0) {
     return null;
   }
+
 
   const post = data[0] as PublishedPostDetail;
 

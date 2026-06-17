@@ -20,6 +20,7 @@ import {
 } from "@/lib/content-planner/options";
 
 import { createClient } from "@/utils/supabase/client";
+import { extractJsonString, robustParseJson } from "@/lib/utils";
 import {
   generateGeminiContentWithFallback,
   getPublicGeminiFallbackNotice,
@@ -316,20 +317,7 @@ function ContentPlannerPlanningPageContent() {
       });
 
       const text = generationResult.text;
-      
-      const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
-      let parsed;
-      try {
-        parsed = JSON.parse(cleaned);
-      } catch {
-        const firstBrace = cleaned.indexOf("{");
-        const lastBrace = cleaned.lastIndexOf("}");
-        if (firstBrace >= 0 && lastBrace > firstBrace) {
-          parsed = JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
-        } else {
-          throw new Error("AI 응답을 JSON으로 변환하지 못했습니다.");
-        }
-      }
+      const parsed = robustParseJson(text);
 
       const campaignPayload = {
         campaign: {
@@ -539,19 +527,7 @@ ${existingItemsText}
       });
 
       const text = generationResult.text;
-      const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
-      let parsed;
-      try {
-        parsed = JSON.parse(cleaned);
-      } catch {
-        const firstBrace = cleaned.indexOf("{");
-        const lastBrace = cleaned.lastIndexOf("}");
-        if (firstBrace >= 0 && lastBrace > firstBrace) {
-          parsed = JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
-        } else {
-          throw new Error("AI 응답을 JSON으로 변환하지 못했습니다.");
-        }
-      }
+      const parsed = robustParseJson(text);
 
       const newItemsPayload = (parsed.items || []).map((item: any, idx: number) => ({
         campaign_id: activeCampaign.id,

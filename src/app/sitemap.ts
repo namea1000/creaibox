@@ -6,16 +6,31 @@ export const dynamic = "force-dynamic";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = await createClient();
 
-  const { data: posts, error } = await supabase
-    .from("writing_creaibox_posts")
-    .select("slug, updated_at, profiles!inner(role)")
-    .eq("status", "published")
-    .eq("profiles.role", "ADMIN")
-    .not("slug", "is", null);
+  const { data: admins } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("role", "ADMIN");
+
+  const adminIds = (admins || []).map((a) => a.id);
+
+  let posts: any[] = [];
+  let error: any = null;
+
+  if (adminIds.length > 0) {
+    const query = await supabase
+      .from("writing_creaibox_posts")
+      .select("slug, updated_at")
+      .eq("status", "published")
+      .in("user_id", adminIds)
+      .not("slug", "is", null);
+    posts = query.data || [];
+    error = query.error;
+  }
 
   if (error) {
     console.error("Sitemap posts fetch error:", error.message);
   }
+
 
   const blogUrls =
     posts?.map((post) => ({

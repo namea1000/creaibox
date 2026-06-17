@@ -17,6 +17,8 @@
 * [tech-stack.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/tech-stack.md): Next.js 16 / React 19 코어 정보와 상태 관리, 스타일링 라이브러리 명세.
 * [ai-integration.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/ai-integration.md): 브라우저 내 개인 키 우선 통신 방식 및 백엔드 공용 풀 중계 가로채기 메커니즘 정리.
 * [google-drive-integration.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/google-drive-integration.md): 구글 드라이브 20TB 개인 요금제를 연동하기 위한 OAuth 2.0 리프레시 토큰 및 고속 CDN(lh3) 주소 체계 구축 가이드.
+* [cre-music.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/cre-music.md): Cre Music 스포티파이 스타일 오디오 플레이어 연동 운영 문서.
+* [cre-music-design-spec.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/cre-music-design-spec.md): Cre Music 오디오 CDN 우회 및 스트리밍 아키텍처 기술 사양서.
 
 ### 1-3. 데이터베이스 및 저장소 (`docs/database/`)
 * [schema.md](file:///Users/a1234/Local%20Sites/creaibox/docs/database/schema.md): `profiles`, `admin_api_vault`, `writing_naver_posts` 등 총 10개 이상 테이블 컬럼 상세 정의.
@@ -38,6 +40,7 @@
 
 ### 1-7. 웹 라우팅 명세 (`docs/pages/`)
 * [public.md](file:///Users/a1234/Local%20Sites/creaibox/docs/pages/public.md) / [admin.md](file:///Users/a1234/Local%20Sites/creaibox/docs/pages/admin.md) / [studio.md](file:///Users/a1234/Local%20Sites/creaibox/docs/pages/studio.md): 일반 홈/인증 라우트, 관리자 대시보드 라우트, 창작 스튜디오 라우트 및 매핑 구조화.
+* [cre-music.md](file:///Users/a1234/Local%20Sites/creaibox/docs/pages/studio/cre-music.md): Cre Music 플레이어 페이지 및 각 세부 패널/컨트롤러 UI 컴포넌트 기능 사양서.
 
 ---
 
@@ -95,6 +98,129 @@
 ### 4-3. 검증 상태
 * `npx tsc --noEmit`를 통해 **오류가 없음(0 compilation errors)**을 교차 검증 완료하였습니다.
 * 기존 DB에 저장되어 있던 24개 데이터 및 글 본문 HTML에 박혀있던 이미지 링크들을 전부 구글 드라이브 업로드 후 `lh3.googleusercontent.com/d/` 주소로 완벽하게 마이그레이션했습니다.
+
+---
+
+## 5. Google Imagen 3 & Veo 비디오 생성 API 연동 (Imagen 3 & Veo Integration)
+
+이미지 스튜디오에 구글의 최고 화질 이미지 모델인 **Imagen 3**를 연동하고, 비디오 에디터에 최첨단 숏폼 동영상 생성 AI인 **Veo**를 결합하는 고도화 작업을 완료했습니다.
+
+### 5-1. 주요 설계 및 특징
+* **Imagen 3 연동 (REST API)**:
+  * 구글 AI Studio의 `:predict` REST 엔드포인트를 활용하여 `imagen-3.0-generate-002` 모델을 직접 제어합니다.
+  * 입력된 프롬프트와 비율(`1:1`, `16:9`, `9:16` 등)을 분석하여 고화질 실사/일러스트를 생성한 뒤, Sharp로 WebP 압축 최적화를 거쳐 Supabase Storage에 업로드하고 DB 레코드를 자동으로 동기화합니다.
+* **Veo 비디오 연동 (Long Running Operation & Polling)**:
+  * 동영상 생성은 연산 시간이 기므로 구글의 `predictLongRunning` REST 규격을 사용해 작업을 시작합니다.
+  * 시작 즉시 고유 Operation ID를 발급받은 뒤, 백엔드 폴링 엔드포인트를 통해 5초 주기로 작업 진행 여부를 조회합니다.
+  * 완료(`done: true`)가 감지되면 구글 파일 스토어의 `downloadUri`를 획득하여 비디오 바이너리를 즉시 다운로드한 뒤, Supabase Storage `community` 버킷에 MP4 형식으로 영구 업로드하고 프론트엔드에 전달합니다.
+* **테스터 화이트리스트 검증 결합**:
+  * 구글 API 요금 및 트래픽 남용 방지를 위해 모든 비디오 생성 및 상태 확인 엔드포인트에 `ALLOWED_TESTER_EMAILS` 환경 변수를 사용한 이메일 검증 필터를 부착해 비로그인 사용자 및 일반 방문자의 접근을 안전하게 통제합니다.
+
+### 5-2. 변경 및 추가 파일 목록
+* **[MODIFY] [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/image-studio/generate/route.ts)**: Imagen 3 전용 REST API 호출기(`generateWithImagen3`) 및 비율 보정 유틸리티 구현. 요청 모델이 `imagen-`으로 시작할 경우 해당 모듈로 동적 라우팅되도록 설정.
+* **[MODIFY] [blogImageConstants.ts](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/shared/image-studio/blogImageConstants.ts)**: 이미지 생성 모델 선택 드롭다운에 `Google Imagen 3` 신규 추가.
+* **[NEW] [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/video-studio/generate/route.ts)**: 텍스트 프롬프트를 받아 구글 Veo `predictLongRunning` 호출 및 Operation ID를 발급하여 반환하는 엔드포인트 구현.
+* **[NEW] [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/video-studio/operations/[operationId]/route.ts)**: Operation ID 상태 체크, 비디오 바이너리 백엔드 스트리밍 다운로드, Supabase Storage 업로드 및 공개 경로 제공 통합 처리 엔드포인트 구현.
+* **[MODIFY] [VideoEditorAiAssetsPanel.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorAiAssetsPanel.tsx)**: 사이드바 상단에 "Google Veo AI 비디오 메이커" 입력 양식 및 화면 비율 선택기 컴포넌트 추가. 생성 중 폴링 애니메이션 노출 및 완료 시 생성된 클립을 타임라인 리스트에 즉시 주입시키는 연동 로직 작성.
+
+### 5-3. 검증 상태
+* `npx tsc --noEmit` 수행 결과 **에러 없음 (0 compilation errors)** 상태를 교차 검증하여 백엔드 REST 중계 및 프론트엔드 UI 컴포넌트 연동의 타이핑 안전성을 확인했습니다.
+
+---
+
+## 6. Cre Music 플레이어 및 구글 드라이브 음원 스트리밍 연동 (Cre Music & Google Drive Streaming)
+
+관리자가 업로드해 둔 보컬 트랜스 앨범(`Awakening`)의 트랙 목록을 구글 드라이브 지정 폴더(`1p68BWWuQVIdJF9pT9XSBS2kQOhnjOwGP`)로부터 스캔하여 실시간 스트리밍하고 감상할 수 있는 스포티파이 스타일의 웹 플레이어 페이지 및 연동 API 구축을 완료했습니다.
+
+### 6-1. 주요 설계 및 특징
+* **음원 목록 API (`/api/music-studio/list`)**:
+  * Supabase 로그인 세션 검증 및 `ALLOWED_TESTER_EMAILS` 화이트리스트 테스터 권한 검사를 결합하여, 인가된 계정만 음원 목록을 호출할 수 있게 보호합니다.
+  * 구글 드라이브 v3 REST API를 연동하여 대상 폴더 내에 수집된 오디오 음원(.mp3, .wav 등) 메타데이터를 정렬해 로드합니다.
+  * 프론트엔드가 Fife CDN 대신 보안 프록시 경로(`/api/music-studio/stream?id=[FILE_ID]`)를 호출하도록 매핑하여 응답합니다.
+* **보안 스트리밍 프록시 API (`/api/music-studio/stream`)**:
+  * `lh3.googleusercontent.com/d/[FILE_ID]` 다이렉트 주소는 대용량 오디오 로딩 시 브라우저 쿠키 체크, CORS/CORP 차단 및 구글의 HTML 에러 응답 변환에 의해 오디오 엑박(`The element has no supported sources`)이 나던 문제를 완전히 해결했습니다.
+  * 백엔드 서버에서 구글 `alt=media` API를 대리 호출하여 오디오 바이너리를 스트리밍하며, 브라우저가 부분 전송을 요청할 수 있도록 클라이언트의 `Range` 요청 헤더를 위임 포워딩하여 `206 Partial Content` 응답을 처리합니다. 이를 통해 지연 없는 오디오 탐색(Seeking)과 완벽한 모바일/iOS 재생성을 확보했습니다.
+* **스포티파이 스타일 UI & HTML5 플레이어**:
+  * 반응형 다크 테마 기반으로 왼쪽 사이드바, 앨범 히어로 배너, 곡 목록 테이블, 하단 글로벌 재생 제어바로 구성된 프리미엄 비주얼을 구축했습니다.
+  * HTML5 `<audio>` 태그 상태와 동기화하여 재생/일시정지, 이전곡/다음곡, Seek Bar 재생 상태 변경, 볼륨 조절 및 음소거를 안정적으로 연계했습니다.
+  * 활성화된 곡 순번 자리에 바운싱 애니메이션(Bounce Bar Effect)을 탑재하여 재생 상태를 시각화했습니다.
+  * 드라이브에 곡이 없거나 에러 발생 시, 플레이어가 중단되지 않고 데모 음원(SoundHelix 라이브러리)으로 폴백해 재생 가능한 사용자 경험을 제공합니다.
+* **통합 연동 및 빌드 오류 해결**:
+  * 뮤직 스튜디오 홈 페이지(`src/app/studio/music/page.tsx`)에 "Cre Music 플레이어" 카드 및 퀵 메뉴 링크를 탑재해 즉시 진입을 가능하게 했습니다.
+  * 로컬 `lucide-react` 패키지 버전에 존재하지 않던 `FolderMusic` 아이콘 가져오기 오류를 감지하여 `Music` 표준 아이콘으로 대체, 최종 TypeScript 컴파일 에러를 완벽하게 해결했습니다.
+
+### 6-2. 변경 및 추가 파일 목록
+* **[NEW] [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/music-studio/list/route.ts)**: 세션 검증, 테스터 화이트리스트 검사, 구글 드라이브 오디오 쿼리 및 프록시 스트리밍 API 주소 매핑을 처리하는 API 라우트.
+* **[NEW] [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/music-studio/stream/route.ts)**: 구글 드라이브 API `alt=media`를 호출하여 오디오 바이너리를 `Range` 헤더와 함께 `206 Partial Content`로 브라우저에 프록시 스트리밍하는 보안 엔드포인트.
+* **[NEW] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/music/cre-music/page.tsx)**: 스포티파이 테마 프리미엄 UI 및 HTML5 오디오 제어기를 갖춘 뮤직 플레이어 클라이언트 컴포넌트 페이지.
+* **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/music/page.tsx)**: 뮤직 스튜디오 홈 화면에 Cre Music 플레이어 카드 및 퀵 메뉴 링크 신설.
+* **[MODIFY] [google-drive.ts](file:///Users/a1234/Local%20Sites/creaibox/src/lib/google-drive.ts)**: `getGoogleDriveStream(fileId, rangeHeader)` 오디오 스트림 획득 전용 헬퍼 유틸리티 함수 신설.
+* **[MODIFY] [.env.local](file:///Users/a1234/Local%20Sites/creaibox/.env.local)**: 연동 대상 보컬 트랜스 구글 드라이브 폴더 ID `GDRIVE_MUSIC_FOLDER_ID` 추가.
+* **[NEW] [cre-music.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/cre-music.md)**: 플레이어 모듈 운영/가이드 문서.
+* **[NEW] [cre-music-design-spec.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/cre-music-design-spec.md)**: 플레이어 설계 사양서.
+* **[NEW] [cre-music.md (페이지 명세)](file:///Users/a1234/Local%20Sites/creaibox/docs/pages/studio/cre-music.md)**: 플레이어 화면 및 각 컴포넌트 스펙 정의서.
+* **[MODIFY] [endpoints.md](file:///Users/a1234/Local%20Sites/creaibox/docs/api/endpoints.md)**: API 엔드포인트에 `/api/music-studio/list` 및 `/api/music-studio/stream` 명세 추가 및 구체화.
+
+### 6-3. 검증 상태
+* `npx tsc --noEmit` 수행 결과 **에러 없음 (0 compilation errors)** 상태를 최종 검증 완료하여 빌드 안전성을 확보했습니다.
+
+---
+
+## 7. 콘텐츠 아이디어 허브 렌더링 꼬임 및 동기화 에러 해결 (Idea Hub Sync & Key Fix)
+
+상세 분야 카테고리를 변경하거나 검색어로 조회를 할 때, 우측의 "추천 시리즈" 사이드바 및 메인 키워드 주제가 새로고침 전에는 즉시 반영되지 않고, "운세" 등 매칭 결과가 없는 키워드 검색 시 UI가 멈추던 문제를 해결했습니다.
+
+### 7-1. 주요 원인 및 해결 방식
+* **React 중복 Key 경고로 인한 렌더링 트리 꼬임 해결**:
+  * `tax-saving`과 `autonomous-driving` 등의 상세 토픽이 서로 다른 카테고리에 중복 정의되어 있어, React 목록 렌더링 시 `key={sub.id}`가 중복되어 Reconciliation 엔진에 에러가 발생했습니다. 이로 인해 리렌더링 상태 갱신이 중단되었습니다.
+  * 이를 방지하기 위해 렌더링 Key를 `key={`${sub.categoryId}-${sub.id}`}` 형태의 **고유한 복합 키**로 변경하여 에러를 근본적으로 제거했습니다.
+* **카테고리 매칭 필터 및 카운터 정밀화**:
+  * 동일한 토픽 ID가 있더라도 사용자가 현재 선택한 상세 카테고리와 정확히 부합하는 시리즈만 매칭되도록 `filteredSeries`, `subTopics`, `selectedSubTopicName`에 `categoryId === selectedCategoryId` 조건 및 복합 쌍 매칭 방식을 추가했습니다.
+  * 추천 시리즈별 아이디어 개수 카운터인 `getSubTopicIdeaCount` 함수도 `categoryId`를 추가로 넘겨받아 특정 카테고리 아래에 있는 시리즈 개수만 단독으로 집계하도록 개선했습니다.
+  * 추천 시리즈 클릭 시, 해당 시리즈가 속한 `categoryId`와 대분류 그룹 상태도 같이 변경되도록 이벤트를 보강했습니다.
+* **비정상 검색어 ("운세") 대응**:
+  * 중복 키 제거 및 동기화 흐름 복구를 통해, 결과가 존재하지 않는 검색어 입력 시에도 렌더 루프가 중단되지 않고 `"추천 시리즈가 없습니다."` 및 `"메인 키워드 주제 기획안이 없습니다."` 예외 화면이 에러 메시지 없이 부드럽게 나타납니다.
+
+### 7-2. 변경 및 추가 파일 목록
+* **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/content-planner/idea-hub/page.tsx)**: 복합 키 전환, `useMemo` 필터 정밀화, 카운터 수정 및 클릭 핸들러 동기화 로직 통합 적용.
+* **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/content-planner/idea-hub/page.tsx)** (추가): 왼쪽 하단 '상세 정보' 영역에 현재 선택/조회된 키워드의 대분류 그룹과 상세 분야명을 이모티콘 및 제목 블록의 **밑으로 줄바꿈하여 각각 배정**함으로써 시각적인 뭉침 현상과 겹침 현상을 완벽하게 정리.
+
+### 7-3. 검증 상태
+* `npx tsc --noEmit` 수행 결과 **에러 없음 (0 compilation errors)** 상태를 확인하여 수정한 코드의 정적 타입 빌드 안정성을 검증 완료하였습니다.
+
+---
+
+## 8. 상세 분야 55개 확장 및 특정 카테고리 조정 (Fortune, YouTube Production, Chinese Characters, Meditation, Childcare, Hobbies)
+
+상세 분야 개수를 기존 50개에서 55개로 확장하고, 사용자의 비즈니스 니즈에 맞춰 특정 카테고리의 구성 및 연동 데이터를 대폭 보강했습니다.
+
+### 8-1. 주요 작업 내역
+* **상세 분야 5개 추가 (50개 -> 55개)**:
+  * `fortune-telling`: **사주 & 운세(Saju & Fortune)** 신규 추가 (대분류: 생활 & 문화).
+  * `youtube-production`: 기존의 일반 영상 제작에서 분리하여 **유튜브 영상제작(YouTube Production)** 단독 상세 분야로 추가 (대분류: 크리에이티브 & 예술).
+  * `chinese-characters`: **한자(Chinese Characters)** 신규 추가 (대분류: 교육 & 지식).
+  * `parenting-childcare`: **임신 & 육아(Parenting & Childcare)** 신규 추가 (대분류: 건강 & 라이프스타일).
+  * `hobbies-leisure`: **취미 & 레저(Hobbies & Leisure)** 신규 추가 (대분류: 생활 & 문화).
+* **사주 & 운세 추천 시리즈 10개 및 아이디어 보강**:
+  * 사주명리 입문, 타로 카드 해석, 신년 띠별 운세, 별자리 운세, 궁합 & 연애운, 풍수지리 인테리어, 성명학 & 작명, 재물운 & 사업운, 꿈해몽 대사전, 운세 앱 활용 등 10개 추천 시리즈(subTopic)를 설계하고 각각에 부합하는 메인 키워드 기획안 10개를 `new-subtopics.ts` 에 새로 창작하여 연동했습니다.
+* **명상 토픽의 카테고리 재배치 및 보강**:
+  * 명상(`meditation`)의 상위 상세 분야를 기존의 `religion-spirituality`(종교 & 영성)에서 **`wellness-mindfulness`(웰니스 & 마음챙김)**으로 재지정하여 현대적 마음치유 개념에 부합하도록 이동시켰습니다.
+  * 싱잉볼 명상, 5분 호흡 명상, 밤에 하는 바디스캔 명상 등 5가지 고품질 마음챙김 명상 아이디어를 보강 추가하였습니다.
+* **기타 카테고리 추천 시리즈 및 아이디어 보충**:
+  * 한자(고사성어, 급수한자), 육아(임신출산, 영유아발달, 긍정훈육), 취미(차박캠핑, 등산레저), 유튜브 영상제작(기획대본, 촬영장비, 편집기술)에 대응하는 추천 시리즈 및 관련 콘텐츠 아이디어들을 추가 9개 생성하여 깡통 카테고리가 없도록 무결하게 연계했습니다.
+
+### 8-2. 변경 및 추가 파일 목록
+* **[MODIFY] [topic-categories.ts](file:///Users/a1234/Local%20Sites/creaibox/src/lib/content-planner/topic-categories.ts)**: 신규 카테고리 5개 정의 추가, 명상 토픽 카테고리 이동, 사주/유튜브제작/한자/육아/취미 등 20개 신규 subTopic 명세 추가.
+* **[MODIFY] [new-subtopics.ts](file:///Users/a1234/Local%20Sites/creaibox/src/lib/content-planner/idea-series/new-subtopics.ts)**: 명상 보강 아이디어 5개 및 사주/유튜브제작/한자/육아/취미에 대응하는 신규 기획 아이디어 20개(총 25개) 데이터 추가.
+* **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/content-planner/idea-hub/page.tsx)**: 신규 5개 카테고리 ID의 categoryMapping 및 categoryLabelMap 추가, 푸터 카운터(55개 및 520+개) 반영.
+
+### 8-3. 검증 상태
+* `npx tsc --noEmit` 수행 결과 **에러 없음 (0 compilation errors)** 상태를 완벽 확인하여 데이터 및 라우팅 추가가 안정적으로 빌드됨을 검증했습니다.
+
+
+
+
+
 
 
 

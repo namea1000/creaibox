@@ -7,6 +7,7 @@ export const AUTH_RETRY_ATTEMPTS = 3;
 
 export const modelOptions = [
   { label: "⭐ OpenAI", value: "openai" },
+  { label: "⭐ Google Imagen 3", value: "imagen-3.0-generate-002" },
   { label: "⭐ Gemini Nano Banana2 - 3.1 Flash", value: "gemini-3.1-flash-image-preview" },
   { label: "⭐ Gemini Nano Banana - 2.5 Flash", value: "gemini-2.5-flash-image" },
   { label: "⭐ Gemini Nano Banana Pro - 3 Pro image", value: "gemini-3-pro-image-preview" },

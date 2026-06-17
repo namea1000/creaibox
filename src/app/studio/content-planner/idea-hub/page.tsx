@@ -35,6 +35,11 @@ const categoryLabelMap: Record<string, string> = {
   "game-esports": "게임 & e스포츠",
   "environment-esg": "환경 & ESG",
   "law-policy": "법률 & 정책",
+  "fortune-telling": "사주 & 운세",
+  "youtube-production": "유튜브 영상제작",
+  "chinese-characters": "한자",
+  "parenting-childcare": "임신 & 육아",
+  "hobbies-leisure": "취미 & 레저",
 };
 
 const categoryMapping: Record<string, string[]> = {
@@ -87,7 +92,14 @@ const categoryMapping: Record<string, string[]> = {
   "music-audio": ["music-audio", "design-creative"],
   "creator-platform": ["creator-platform", "digital-platform"],
   "future-mobility": ["future-mobility", "industry-manufacturing"],
-  "bio-healthcare": ["bio-healthcare", "health-medical"]
+  "bio-healthcare": ["bio-healthcare", "health-medical"],
+
+  // 5 New categories (Fortune, YouTube Production, Chinese Characters, Childcare, Hobbies)
+  "fortune-telling": ["fortune-telling"],
+  "youtube-production": ["youtube-production"],
+  "chinese-characters": ["chinese-characters"],
+  "parenting-childcare": ["parenting-childcare", "parenting-family-life"],
+  "hobbies-leisure": ["hobbies-leisure", "hobbies-lifestyle"]
 };
 
 function getCategoryMappedIds(id: string): string[] {
@@ -264,8 +276,8 @@ export default function IdeaHubPage() {
     return ideaHubSeries.filter((item) => mappedIds.has(item.categoryId)).length;
   }, []);
 
-  const getSubTopicIdeaCount = useCallback((subTopicId: string) => {
-    return ideaHubSeries.filter((item) => item.subTopicId === subTopicId).length;
+  const getSubTopicIdeaCount = useCallback((subTopicId: string, categoryId: string) => {
+    return ideaHubSeries.filter((item) => item.subTopicId === subTopicId && item.categoryId === categoryId).length;
   }, []);
 
   const filteredSeries = useMemo(() => {
@@ -274,7 +286,9 @@ export default function IdeaHubPage() {
     if (normalized) {
       // If the keyword exactly or partially matches the selected subtopic's name or keywords, filter directly by that subtopic ID.
       // This avoids 0 results for subtopics with symbols/multiple words (e.g. "달리기 (러닝)", "스키 & 스노보드", "제미나이").
-      const selectedSub = topicSubTopics.find((s) => s.id === selectedSubTopicId);
+      const selectedSub = topicSubTopics.find(
+        (s) => s.id === selectedSubTopicId && s.categoryId === selectedCategoryId
+      );
       if (selectedSub && (
         normalized === selectedSub.name.trim().toLowerCase() ||
         selectedSub.name.trim().toLowerCase().includes(normalized) ||
@@ -284,7 +298,9 @@ export default function IdeaHubPage() {
           return kwLow === normalized || kwLow.includes(normalized) || normalized.includes(kwLow);
         })
       )) {
-        return ideaHubSeries.filter((item) => item.subTopicId === selectedSubTopicId);
+        return ideaHubSeries.filter(
+          (item) => item.subTopicId === selectedSubTopicId && item.categoryId === selectedCategoryId
+        );
       }
 
       return ideaHubSeries.filter((item) => {
@@ -298,7 +314,9 @@ export default function IdeaHubPage() {
     }
 
     if (selectedSubTopicId) {
-      return ideaHubSeries.filter((item) => item.subTopicId === selectedSubTopicId);
+      return ideaHubSeries.filter(
+        (item) => item.subTopicId === selectedSubTopicId && item.categoryId === selectedCategoryId
+      );
     }
 
     const mappedIds = new Set(getCategoryMappedIds(selectedCategoryId));
@@ -309,7 +327,9 @@ export default function IdeaHubPage() {
     const normalized = keyword.trim().toLowerCase();
 
     if (normalized) {
-      const selectedSub = topicSubTopics.find((s) => s.id === selectedSubTopicId);
+      const selectedSub = topicSubTopics.find(
+        (s) => s.id === selectedSubTopicId && s.categoryId === selectedCategoryId
+      );
       // If the keyword exactly or partially matches the selected subtopic's name or keywords (user clicked or searched a subtopic),
       // show all subtopics of that subtopic's category.
       if (selectedSub && (
@@ -325,17 +345,25 @@ export default function IdeaHubPage() {
       }
 
       // Otherwise, filter subtopics by checking if they have matching ideas in the search results.
-      const matchingSubTopicIds = new Set(filteredSeries.map((item) => item.subTopicId));
-      return topicSubTopics.filter((sub) => matchingSubTopicIds.has(sub.id));
+      // Use compound match (both subTopicId and categoryId matching the filtered series) to retain uniqueness.
+      const matchingPairs = new Set(filteredSeries.map((item) => `${item.categoryId}-${item.subTopicId}`));
+      return topicSubTopics.filter((sub) => matchingPairs.has(`${sub.categoryId}-${sub.id}`));
     }
 
     return topicSubTopics.filter((sub) => sub.categoryId === selectedCategoryId);
   }, [keyword, filteredSeries, selectedCategoryId, selectedSubTopicId]);
 
   const selectedSubTopicName = useMemo(() => {
-    const sub = topicSubTopics.find((s) => s.id === selectedSubTopicId);
+    const sub = topicSubTopics.find(
+      (s) => s.id === selectedSubTopicId && s.categoryId === selectedCategoryId
+    );
     return sub ? sub.name : "추천 시리즈";
-  }, [selectedSubTopicId]);
+  }, [selectedSubTopicId, selectedCategoryId]);
+
+  const selectedCategoryGroup = useMemo(() => {
+    const cat = topicCategories.find((c) => c.id === selectedCategoryId);
+    return cat ? cat.group : "";
+  }, [selectedCategoryId]);
 
   const featuredSeriesCount = useMemo(
     () => ideaHubSeries.filter((item) => item.featured).length,
@@ -494,7 +522,7 @@ export default function IdeaHubPage() {
           </section>
         )}
 
-        {/* 대분류 (10개) & 상세 분야 탐색 (50개) */}
+        {/* 대분류 (10개) & 상세 분야 탐색 (55개) */}
         {keyword.trim() === "" && (
           <section className="space-y-5">
             <div className="flex flex-col px-1">
@@ -555,7 +583,7 @@ export default function IdeaHubPage() {
               })}
             </div>
 
-            {/* 상세 분야 탐색 (35개) Heading */}
+            {/* 상세 분야 탐색 (55개) Heading */}
             <div className="flex flex-col px-1 pt-2">
               <h2 className="text-sm font-black text-white flex items-center gap-2">
                 <Lightbulb className="text-violet-400" size={18} />
@@ -566,7 +594,7 @@ export default function IdeaHubPage() {
               </p>
             </div>
 
-            {/* 50 Category items Grid with highlight / dim animation */}
+            {/* 55 Category items Grid with highlight / dim animation */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {topicCategories.map((cat) => {
                 const isGroupActive = cat.group === selectedMainGroup;
@@ -636,13 +664,18 @@ export default function IdeaHubPage() {
                     </div>
                   ) : (
                     subTopics.map((sub) => {
-                      const isSelected = selectedSubTopicId === sub.id;
-                      const count = getSubTopicIdeaCount(sub.id);
+                      const isSelected = selectedSubTopicId === sub.id && selectedCategoryId === sub.categoryId;
+                      const count = getSubTopicIdeaCount(sub.id, sub.categoryId);
                       return (
                         <button
-                          key={sub.id}
+                          key={`${sub.categoryId}-${sub.id}`}
                           onClick={() => {
                             setSelectedSubTopicId(sub.id);
+                            setSelectedCategoryId(sub.categoryId);
+                            const cat = topicCategories.find((c) => c.id === sub.categoryId);
+                            if (cat) {
+                              setSelectedMainGroup(cat.group);
+                            }
                             if (keyword.trim() !== "") {
                               setKeyword(sub.name);
                             }
@@ -673,19 +706,33 @@ export default function IdeaHubPage() {
                 </h4>
                 {selectedSubTopicId ? (
                   <div className="space-y-2.5">
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-lg bg-violet-600/10 border border-violet-500/20 flex items-center justify-center text-lg shrink-0">
-                        {topicCategories.find(c => c.id === selectedCategoryId)?.emoji || "💡"}
+                    <div className="space-y-2">
+                      {/* 이모티콘 + 제목 */}
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-lg bg-violet-600/10 border border-violet-500/20 flex items-center justify-center text-lg shrink-0">
+                          {topicCategories.find(c => c.id === selectedCategoryId)?.emoji || "💡"}
+                        </div>
+                        <h4 className="text-xs font-black text-white truncate flex-1" title={selectedSubTopicName}>
+                          {selectedSubTopicName}
+                        </h4>
                       </div>
-                      <div className="min-w-0">
-                        <h4 className="text-xs font-black text-white truncate">{selectedSubTopicName}</h4>
-                        <p className="text-[9px] text-cyan-400 font-bold mt-0.5">{formatLabel(selectedCategoryId)}</p>
+                      
+                      {/* 대분류 + 상세 분야 정보 (이모티콘 밑으로) */}
+                      <div className="mt-1 space-y-0.5 text-[9px] font-bold text-zinc-400 pl-0.5">
+                        <p>
+                          <span>대분류 : </span>
+                          <span className="text-violet-400 font-black">{selectedCategoryGroup}</span>
+                        </p>
+                        <p>
+                          <span>상세 분야 : </span>
+                          <span className="text-cyan-400 font-black">{formatLabel(selectedCategoryId)}</span>
+                        </p>
                       </div>
                     </div>
                     
                     <div>
                       <p className="text-[10px] text-zinc-400 leading-relaxed font-bold line-clamp-2">
-                        {topicSubTopics.find(s => s.id === selectedSubTopicId)?.description || 
+                        {topicSubTopics.find(s => s.id === selectedSubTopicId && s.categoryId === selectedCategoryId)?.description || 
                          `${selectedSubTopicName} 기획 아이디어를 확인하세요.`}
                       </p>
                     </div>
@@ -944,11 +991,11 @@ export default function IdeaHubPage() {
                 </div>
                 <div className="h-4 w-px bg-white/20" />
                 <div>
-                  <span className="text-cyan-300 text-sm font-black">50</span> 상세 분야
+                  <span className="text-cyan-300 text-sm font-black">55</span> 상세 분야
                 </div>
                 <div className="h-4 w-px bg-white/20" />
                 <div>
-                  <span className="text-cyan-300 text-sm font-black">500+</span> 추천 시리즈
+                  <span className="text-cyan-300 text-sm font-black">520+</span> 추천 시리즈
                 </div>
                 <div className="h-4 w-px bg-white/20" />
                 <div>

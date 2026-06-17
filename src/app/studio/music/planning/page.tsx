@@ -31,6 +31,7 @@ import {
   getPublicGeminiFallbackNotice,
   getUserAiVaultConfig,
 } from "@/lib/client/api-vault";
+import { robustParseJson } from "@/lib/utils";
 
 const ALBUM_PLAN_TO_LYRICS_KEY = "creaibox:music:album-plan-to-lyrics:v1";
 const PRESET_STATUS = "option_preset";
@@ -211,18 +212,7 @@ function cleanOption(value: string) {
 }
 
 function extractJson(text: string): ParsedAlbumPlan {
-  const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
-
-  try {
-    return JSON.parse(cleaned) as ParsedAlbumPlan;
-  } catch {
-    const firstBrace = cleaned.indexOf("{");
-    const lastBrace = cleaned.lastIndexOf("}");
-    if (firstBrace >= 0 && lastBrace > firstBrace) {
-      return JSON.parse(cleaned.slice(firstBrace, lastBrace + 1)) as ParsedAlbumPlan;
-    }
-    throw new Error("AI 응답을 JSON으로 변환하지 못했습니다.");
-  }
+  return robustParseJson(text) as ParsedAlbumPlan;
 }
 
 function getErrorMessage(error: unknown) {

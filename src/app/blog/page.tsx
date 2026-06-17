@@ -32,17 +32,32 @@ function formatDate(value: string | null) {
 export default async function BlogPage() {
   const supabase = await createClient();
 
-  const { data: posts, error } = await supabase
-    .from("writing_creaibox_posts")
-    .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at, profiles!inner(role)")
-    .eq("status", "published")
-    .eq("profiles.role", "ADMIN")
-    .not("slug", "is", null)
-    .order("created_at", { ascending: false });
+  const { data: admins } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("role", "ADMIN");
+
+  const adminIds = (admins || []).map((a) => a.id);
+
+  let posts: any[] = [];
+  let error: any = null;
+
+  if (adminIds.length > 0) {
+    const query = await supabase
+      .from("writing_creaibox_posts")
+      .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at")
+      .eq("status", "published")
+      .in("user_id", adminIds)
+      .not("slug", "is", null)
+      .order("created_at", { ascending: false });
+    posts = query.data || [];
+    error = query.error;
+  }
 
   if (error) {
     console.error("공개 블로그 목록 조회 실패:", error.message);
   }
+
 
   const publishedPostsRaw = (((posts as any) as PublishedPost[] | null) || []).filter((post) => post.slug);
   let publishedPosts: PublishedPost[] = [];

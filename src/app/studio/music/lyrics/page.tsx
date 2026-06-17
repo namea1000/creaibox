@@ -17,6 +17,7 @@ import {
   getPublicGeminiFallbackNotice,
   getUserAiVaultConfig,
 } from "@/lib/client/api-vault";
+import { robustParseJson } from "@/lib/utils";
 
 import LyricsInputPanel from "@/components/music/lyrics/LyricsInputPanel";
 import LyricsControlPanel from "@/components/music/lyrics/LyricsControlPanel";
@@ -104,48 +105,7 @@ function getFriendlyAiErrorMessage(error: any) {
 }
 
 function extractJson(text: string) {
-  const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
-
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    const firstBrace = cleaned.indexOf("{");
-    if (firstBrace >= 0) {
-      let depth = 0;
-      let inString = false;
-      let escaped = false;
-
-      for (let index = firstBrace; index < cleaned.length; index += 1) {
-        const char = cleaned[index];
-
-        if (escaped) {
-          escaped = false;
-          continue;
-        }
-
-        if (char === "\\") {
-          escaped = true;
-          continue;
-        }
-
-        if (char === "\"") {
-          inString = !inString;
-          continue;
-        }
-
-        if (inString) continue;
-
-        if (char === "{") depth += 1;
-        if (char === "}") depth -= 1;
-
-        if (depth === 0) {
-          return JSON.parse(cleaned.slice(firstBrace, index + 1));
-        }
-      }
-    }
-
-    throw new Error("AI 응답을 JSON으로 변환하지 못했습니다.");
-  }
+  return robustParseJson(text);
 }
 
 function MusicLyricsPageContent() {

@@ -177,6 +177,24 @@ export const topicCategories: IdeaHubTopicCategory[] = [
     subTopicCount: 15,
     ideaCount: 1300,
   },
+  {
+    id: "fortune-telling",
+    group: "생활 & 문화",
+    name: "사주 & 운세(Saju & Fortune)",
+    emoji: "🔮",
+    description: "사주명리학, 별자리, 신년 운세, 타로 카드",
+    subTopicCount: 10,
+    ideaCount: 200,
+  },
+  {
+    id: "hobbies-leisure",
+    group: "생활 & 문화",
+    name: "취미 & 레저(Hobbies & Leisure)",
+    emoji: "⛺",
+    description: "캠핑, 차박, 등산, 낚시, DIY 취미 활동",
+    subTopicCount: 2,
+    ideaCount: 20,
+  },
 
   // ======================================================
   // 4. 건강 & 라이프스타일 (Health & Lifestyle)
@@ -236,6 +254,15 @@ export const topicCategories: IdeaHubTopicCategory[] = [
     subTopicCount: 10,
     ideaCount: 200,
   },
+  {
+    id: "parenting-childcare",
+    group: "건강 & 라이프스타일",
+    name: "임신 & 육아(Parenting & Childcare)",
+    emoji: "👶",
+    description: "임신 준비, 출산, 영유아 발달, 훈육 꿀팁",
+    subTopicCount: 3,
+    ideaCount: 30,
+  },
 
   // ======================================================
   // 5. 교육 & 지식 (Education & Knowledge)
@@ -282,9 +309,18 @@ export const topicCategories: IdeaHubTopicCategory[] = [
     group: "교육 & 지식",
     name: "종교 & 영성(Religion)",
     emoji: "🙏",
-    description: "종교, 명상, 영성",
+    description: "종교, 교리, 영성 및 역사",
     subTopicCount: 12,
     ideaCount: 800,
+  },
+  {
+    id: "chinese-characters",
+    group: "교육 & 지식",
+    name: "한자(Chinese Characters)",
+    emoji: "✍️",
+    description: "급수 한자, 고사성어, 한자 교육 및 일상 한자",
+    subTopicCount: 2,
+    ideaCount: 20,
   },
 
   // ======================================================
@@ -472,6 +508,15 @@ export const topicCategories: IdeaHubTopicCategory[] = [
     description: "유튜브, 틱톡, 인스타 등 플랫폼 알고리즘 공략",
     subTopicCount: 10,
     ideaCount: 200,
+  },
+  {
+    id: "youtube-production",
+    group: "크리에이티브 & 예술",
+    name: "유튜브 영상제작(YouTube Production)",
+    emoji: "🎬",
+    description: "유튜브 기획, 편집 기법, 촬영 장비, 썸네일 디자인",
+    subTopicCount: 3,
+    ideaCount: 30,
   },
 
   // ======================================================
@@ -2344,11 +2389,11 @@ export const topicSubTopics: IdeaHubSubTopic[] = [
 
   {
     id: "meditation",
-    categoryId: "religion-spirituality",
+    categoryId: "wellness-mindfulness",
     name: "명상(Meditation)",
     description: "Meditation",
     keywords: ["명상", "Meditation"],
-    ideaCount: 120,
+    ideaCount: 150,
   },
 
   {
@@ -3059,5 +3104,191 @@ export const topicSubTopics: IdeaHubSubTopic[] = [
     description: "Digital Healthcare",
     keywords: ["원격 의료", "웨어러블", "디지털 치료제", "헬스케어"],
     ideaCount: 100,
+  },
+
+  // ======================================================
+  // 사주 & 운세 (fortune-telling)
+  // ======================================================
+  {
+    id: "saju-basics",
+    categoryId: "fortune-telling",
+    name: "사주명리 입문",
+    description: "사주팔자와 만세력, 오행의 기초 분석법",
+    keywords: ["사주", "명리학", "만세력", "오행", "사주팔자"],
+    ideaCount: 20,
+    featured: true,
+  },
+  {
+    id: "tarot-reading",
+    categoryId: "fortune-telling",
+    name: "타로 카드 해석",
+    description: "타로 카드의 의미와 실전 배열법 리딩",
+    keywords: ["타로", "타로카드", "메이저 아르카나", "타로점"],
+    ideaCount: 20,
+    featured: true,
+  },
+  {
+    id: "zodiac-fortune",
+    categoryId: "fortune-telling",
+    name: "신년 띠별 운세",
+    description: "12지신 띠별로 알아보는 올해의 총체적 흐름",
+    keywords: ["띠별 운세", "신년운세", "12지신", "신년 운세"],
+    ideaCount: 20,
+  },
+  {
+    id: "horoscope",
+    categoryId: "fortune-telling",
+    name: "별자리 운세",
+    description: "황도12궁 점성술로 알아보는 나의 성격과 주간/월간 운세",
+    keywords: ["별자리", "점성술", "황도12궁", "별자리 운세"],
+    ideaCount: 20,
+  },
+  {
+    id: "compatibility",
+    categoryId: "fortune-telling",
+    name: "궁합 & 연애운",
+    description: "상대방과의 사주적 조화와 연애/결혼 타이밍 분석",
+    keywords: ["궁합", "속궁합", "연애운", "애정운", "결혼운"],
+    ideaCount: 20,
+  },
+  {
+    id: "feng-shui-living",
+    categoryId: "fortune-telling",
+    name: "풍수지리 인테리어",
+    description: "재물과 건강을 부르는 공간 인테리어와 가구 배치 꿀팁",
+    keywords: ["풍수지리", "풍수", "인테리어", "가구 배치"],
+    ideaCount: 20,
+  },
+  {
+    id: "naming-saju",
+    categoryId: "fortune-telling",
+    name: "성명학 & 작명 가이드",
+    description: "사주 오행에 기반한 아기 이름 짓기 및 개명 가이드",
+    keywords: ["작명", "이름풀이", "성명학", "아기이름", "개명"],
+    ideaCount: 20,
+  },
+  {
+    id: "wealth-business-saju",
+    categoryId: "fortune-telling",
+    name: "재물운 & 사업운 분석",
+    description: "사주로 풀어보는 재물의 흐름과 성공적인 창업/직업 선택",
+    keywords: ["재물운", "금전운", "사업운", "직업운", "사주 성공"],
+    ideaCount: 20,
+  },
+  {
+    id: "dream-meaning",
+    categoryId: "fortune-telling",
+    name: "꿈해몽 대사전",
+    description: "상황별 꿈의 상징성과 길몽, 흉몽, 태몽 등 직관적 분석",
+    keywords: ["꿈해몽", "길몽", "흉몽", "태몽", "꿈 분석"],
+    ideaCount: 20,
+  },
+  {
+    id: "fortune-app-guide",
+    categoryId: "fortune-telling",
+    name: "운세 앱 활용 가이드",
+    description: "스마트폰으로 사주와 타로를 간편하게 즐기는 인기 플랫폼 리뷰",
+    keywords: ["점신", "운세 앱", "포스텔러", "모바일 운세"],
+    ideaCount: 20,
+  },
+
+  // ======================================================
+  // 유튜브 영상제작 (youtube-production)
+  // ======================================================
+  {
+    id: "youtube-planning",
+    categoryId: "youtube-production",
+    name: "유튜브 기획 & 대본",
+    description: "채널 컨셉 기획, 매력적인 영상 시나리오 및 대본 작성 전략",
+    keywords: ["유튜브 기획", "대본", "시나리오", "채널 브랜딩"],
+    ideaCount: 10,
+    featured: true,
+  },
+  {
+    id: "youtube-shooting",
+    categoryId: "youtube-production",
+    name: "유튜브 촬영 & 장비",
+    description: "고품질 스마트폰 촬영 요령 및 조명, 마이크 가성비 장비 세팅법",
+    keywords: ["촬영 장비", "조명", "마이크", "카메라 세팅"],
+    ideaCount: 10,
+  },
+  {
+    id: "youtube-editing",
+    categoryId: "youtube-production",
+    name: "유튜브 편집 기술",
+    description: "프리미어 프로, 캡컷을 활용한 컷편집, 음향 및 자막 연출 기법",
+    keywords: ["컷편집", "자막 폰트", "프리미어 프로", "캡컷"],
+    ideaCount: 10,
+  },
+
+  // ======================================================
+  // 한자 (chinese-characters)
+  // ======================================================
+  {
+    id: "idioms-study",
+    categoryId: "chinese-characters",
+    name: "고사성어 & 사자성어",
+    description: "역사적 배경이 깃든 고사성어의 유래와 실생활 활용",
+    keywords: ["사자성어", "고사성어", "한자 성어"],
+    ideaCount: 10,
+    featured: true,
+  },
+  {
+    id: "chinese-exam",
+    categoryId: "chinese-characters",
+    name: "급수 한자 & 한문 기초",
+    description: "한자검정능력시험 대비 핵심 급수 한자 및 훈음 암기 비결",
+    keywords: ["한자 시험", "급수한자", "부수", "훈음"],
+    ideaCount: 10,
+  },
+
+  // ======================================================
+  // 임신 & 육아 (parenting-childcare)
+  // ======================================================
+  {
+    id: "pregnancy-birth",
+    categoryId: "parenting-childcare",
+    name: "임신 준비 & 출산",
+    description: "계획 임신부터 태교, 건강 관리, 안전한 분만 과정 가이드",
+    keywords: ["임산부", "태교", "출산 준비", "제왕절개", "자연분만"],
+    ideaCount: 10,
+    featured: true,
+  },
+  {
+    id: "baby-development",
+    categoryId: "parenting-childcare",
+    name: "영유아 성장 & 발달",
+    description: "시기별 신생아 및 영아 건강 관리, 이유식 식단 및 수면 교육법",
+    keywords: ["신생아", "이유식", "수면 교육", "아동 발달"],
+    ideaCount: 10,
+  },
+  {
+    id: "child-discipline",
+    categoryId: "parenting-childcare",
+    name: "아동 심리 & 훈육법",
+    description: "우리 아이의 심리 상태 이해와 현명한 훈육 및 긍정적 대화법",
+    keywords: ["훈육", "오은영", "아동심리", "감정 코칭"],
+    ideaCount: 10,
+  },
+
+  // ======================================================
+  // 취미 & 레저 (hobbies-leisure)
+  // ======================================================
+  {
+    id: "camping-lifestyle",
+    categoryId: "hobbies-leisure",
+    name: "캠핑 & 차박 가이드",
+    description: "초보 캠퍼를 위한 감성 텐트 장비 추천 및 전국 숨은 차박 명소",
+    keywords: ["캠핑 장비", "차박", "캠핑장 추천", "불멍"],
+    ideaCount: 10,
+    featured: true,
+  },
+  {
+    id: "leisure-sports",
+    categoryId: "hobbies-leisure",
+    name: "등산 & 아웃도어",
+    description: "안전 등산 장비 체크리스트와 난이도별 한국 명산 등반 코스",
+    keywords: ["등산 코스", "아웃도어", "하이킹", "트레킹"],
+    ideaCount: 10,
   },
 ];

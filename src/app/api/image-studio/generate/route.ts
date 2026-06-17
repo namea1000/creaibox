@@ -129,6 +129,7 @@ async function generateWithGemini({
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
       },
       body: JSON.stringify({
         contents: [
@@ -157,6 +158,78 @@ async function generateWithGemini({
   }
 
   return Buffer.from(imagePart.inlineData.data, "base64");
+}
+
+function getImagenAspectRatio(aspectRatio: string) {
+  switch (aspectRatio) {
+    case "16:9":
+      return "16:9";
+    case "9:16":
+      return "9:16";
+    case "1:1":
+      return "1:1";
+    case "4:3":
+      return "4:3";
+    case "3:4":
+      return "3:4";
+    case "3:2":
+      return "4:3"; // Map 3:2 to nearest 4:3
+    case "4:5":
+      return "3:4"; // Map 4:5 to nearest 3:4
+    default:
+      return "1:1";
+  }
+}
+
+async function generateWithImagen3({
+  prompt,
+  aspectRatio,
+  apiKey,
+  model,
+}: {
+  prompt: string;
+  aspectRatio: string;
+  apiKey: string;
+  model: string;
+}) {
+  const selectedModel = model || "imagen-3.0-generate-002";
+  const imagenAspectRatio = getImagenAspectRatio(aspectRatio);
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:predict?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        instances: [
+          {
+            prompt: prompt,
+          },
+        ],
+        parameters: {
+          sampleCount: 1,
+          aspectRatio: imagenAspectRatio,
+        },
+      }),
+    }
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error?.message || "Imagen 3 이미지 생성 실패");
+  }
+
+  const base64 = data.predictions?.[0]?.bytesBase64Encoded;
+
+  if (!base64) {
+    throw new Error("Imagen 3 이미지 결과가 없습니다.");
+  }
+
+  return Buffer.from(base64, "base64");
 }
 
 async function compressForStorage(imageBuffer: Buffer, aspectRatio: string) {
@@ -255,19 +328,27 @@ export async function POST(req: Request) {
     }
 
     for (let i = 0; i < safeCount; i += 1) {
+      const isImagenModel = model?.startsWith("imagen-");
       const imageBuffer =
         safeProvider === "gemini"
-          ? await generateWithGemini({
-            prompt: finalPrompt,
-            apiKey,
-            model: model || "gemini-2.5-flash-image",
-          })
+          ? isImagenModel
+            ? await generateWithImagen3({
+                prompt: finalPrompt,
+                aspectRatio,
+                apiKey,
+                model: model || "imagen-3.0-generate-002",
+              })
+            : await generateWithGemini({
+                prompt: finalPrompt,
+                apiKey,
+                model: model || "gemini-2.5-flash-image",
+              })
           : await generateWithOpenAI({
-            prompt: finalPrompt,
-            aspectRatio,
-            apiKey,
-            model: model || "gpt-image-1",
-          });
+              prompt: finalPrompt,
+              aspectRatio,
+              apiKey,
+              model: model || "gpt-image-1",
+            });
 
       const compressedImageBuffer = await compressForStorage(imageBuffer, aspectRatio);
       const fileName = `${Date.now()}-${i}.webp`;

@@ -10,6 +10,7 @@ import {
   getUserAiVaultConfig,
 } from "@/lib/client/api-vault";
 import { naverManuscriptStore } from "@/lib/stores/manuscripts";
+import { robustParseJson } from "@/lib/utils";
 
 interface SourceAnalysisResult {
   keywords: string[];
@@ -76,20 +77,7 @@ function getFriendlyAiErrorMessage(error: any) {
 }
 
 function parseGeminiJson(text: string) {
-  const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
-
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    const firstBrace = cleaned.indexOf("{");
-    const lastBrace = cleaned.lastIndexOf("}");
-
-    if (firstBrace >= 0 && lastBrace > firstBrace) {
-      return JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
-    }
-
-    throw new Error("AI 응답을 JSON으로 변환하지 못했습니다.");
-  }
+  return robustParseJson(text);
 }
 
 export default function NaverRecreatePage() {

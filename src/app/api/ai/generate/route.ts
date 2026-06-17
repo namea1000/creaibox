@@ -84,6 +84,7 @@ async function generateGeminiContent({
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
       },
       body: JSON.stringify(body),
     }
