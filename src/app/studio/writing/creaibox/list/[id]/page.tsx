@@ -382,7 +382,7 @@ export default function CreaiboxManuscriptDetailPage() {
   );
 
   const handleSave = useCallback(
-    async (status?: StudioManuscriptRecord["status"]) => {
+    async (status?: StudioManuscriptRecord["status"], isAutoSave = false) => {
       if (!data) return false;
 
       setIsSaving(true);
@@ -426,6 +426,8 @@ export default function CreaiboxManuscriptDetailPage() {
         word_count_goal: safeData.wordCountGoal ?? null,
         use_search: safeData.useSearch ?? false,
         post_type: safeData.detailLabel ?? "",
+        category_id: safeData.categoryId ?? null,
+        toc_enabled: safeData.tocEnabled ?? true,
       };
 
       const { error } = await supabase
@@ -436,7 +438,11 @@ export default function CreaiboxManuscriptDetailPage() {
       setIsSaving(false);
 
       if (error) {
-        window.alert(`저장 실패: ${error.message}`);
+        if (!isAutoSave) {
+          window.alert(`저장 실패: ${error.message}`);
+        } else {
+          console.error("Creaibox 자동 저장 실패:", error);
+        }
         return false;
       }
 
@@ -448,6 +454,8 @@ export default function CreaiboxManuscriptDetailPage() {
         updatedAt: now,
         displayId: safeData.displayId,
         wordCount: (safeData.content ?? "").replace(/\s+/g, "").length,
+        categoryId: safeData.categoryId,
+        tocEnabled: safeData.tocEnabled ?? true,
       };
 
       setData(nextRecord);
@@ -770,7 +778,7 @@ ${promptInstruction}
 
     const timer = setTimeout(() => {
       console.log("Creaibox 자동 저장 실행 중...");
-      void handleSave("saved");
+      void handleSave("saved", true);
     }, 1500);
 
     return () => clearTimeout(timer);

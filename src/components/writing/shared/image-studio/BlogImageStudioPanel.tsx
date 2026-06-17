@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import BlogImageMediaLibrarySection from "./BlogImageMediaLibrarySection";
+import MediaLibrarySelectModal from "./MediaLibrarySelectModal";
 import {
   ArrowDownToLine,
   Check,
@@ -18,6 +19,7 @@ import {
   UploadCloud,
   Wand2,
   Trash2,
+  Image as ImageIcon,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -99,6 +101,7 @@ export default function BlogImageStudioPanel({
   const [activePresetSlot, setActivePresetSlot] = useState<string | null>(null);
   const [stockSearchQuery, setStockSearchQuery] = useState("");
   const [isStockLoading, setIsStockLoading] = useState(false);
+  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
 
   const [imagePresets, setImagePresets] = useState<Record<string, BlogImagePreset | null>>({
     recent: null,
@@ -744,6 +747,79 @@ export default function BlogImageStudioPanel({
     }
   };
 
+  const handleSetFeaturedImage = async (selectedImage: any) => {
+    if (!activeSourceId) return;
+
+    try {
+      const userId = await resolveUserId();
+      if (!userId) {
+        alert("로그인 세션을 확인할 수 없습니다.");
+        return;
+      }
+
+      // 1. 기존 대표 썸네일 해제
+      const { error: clearError } = await supabase
+        .from("generated_images")
+        .update({ is_primary: false })
+        .eq("user_id", userId)
+        .eq("source_type", sourceType)
+        .eq("source_id", activeSourceId)
+        .eq("image_role", imageRole);
+
+      if (clearError) throw clearError;
+
+      // 2. 선택된 이미지 안전 복제하여 대표 설정
+      const { data: inserted, error: insertError } = await supabase
+        .from("generated_images")
+        .insert({
+          user_id: userId,
+          prompt: selectedImage.prompt || "복제된 대표 이미지",
+          image_url: selectedImage.image_url,
+          style: selectedImage.style || "manual",
+          aspect_ratio: selectedImage.aspect_ratio || "content",
+          provider: selectedImage.provider || "upload",
+          source_type: sourceType,
+          source_id: activeSourceId,
+          image_role: imageRole,
+          is_primary: true,
+          title: selectedImage.title || "대표 이미지",
+          caption: selectedImage.caption,
+          description: selectedImage.description,
+          alt_text: selectedImage.alt_text,
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // 3. gallery 상태 최신화
+      const formattedImg: GeneratedImage = {
+        id: String(inserted.id),
+        url: inserted.image_url,
+        style: inserted.style || "AI 이미지",
+        prompt: inserted.prompt || "",
+        type: "ai",
+        aspectRatio: inserted.aspect_ratio || selectedAspectRatio,
+        provider: inserted.provider || "gemini",
+        sourceType: inserted.source_type || sourceType,
+        sourceId: inserted.source_id || activeSourceId,
+        imageRole: inserted.image_role || imageRole,
+        isPrimary: Boolean(inserted.is_primary),
+      };
+
+      setGallery((prev) => [
+        formattedImg,
+        ...prev.map((item) => ({
+          ...item,
+          isPrimary: false,
+        })),
+      ]);
+    } catch (err) {
+      console.error("Failed to set featured image:", err);
+      throw err;
+    }
+  };
+
   const handleDeleteImage = async (image: GeneratedImage) => {
     const confirmed = window.confirm("이 이미지를 DB와 Storage에서 모두 삭제할까요?");
     if (!confirmed) return;
@@ -1119,6 +1195,16 @@ export default function BlogImageStudioPanel({
             {isGenerating ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
             {isGenerating ? "이미지 생성 및 저장 중..." : "AI 이미지 생성 시작"}
           </button>
+          {mode === "thumbnail" && (
+            <button
+              type="button"
+              onClick={() => setIsMediaModalOpen(true)}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-700 bg-zinc-800 py-3.5 font-black text-zinc-300 transition-all hover:bg-zinc-700 hover:text-white"
+            >
+              <ImageIcon size={14} className="text-blue-400" />
+              대표 이미지(썸네일) 설정
+            </button>
+          )}
           {layout === "side" && (
             <BlogImageMediaLibrarySection
               gallery={gallery}
@@ -1185,6 +1271,12 @@ export default function BlogImageStudioPanel({
           imageRole={imageRole}
           mode={mode}
           className="h-full min-w-0 border-l border-zinc-800/60"
+        />
+      )}
+      {isMediaModalOpen && (
+        <MediaLibrarySelectModal
+          onClose={() => setIsMediaModalOpen(false)}
+          onSelect={handleSetFeaturedImage}
         />
       )}
     </div>

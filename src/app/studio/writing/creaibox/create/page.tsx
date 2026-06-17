@@ -304,6 +304,8 @@ function CreaiboxEditorPageContent() {
   const [focusKeyword, setFocusKeyword] = useState("");
   const [canonicalUrl, setCanonicalUrl] = useState("");
   const [seoTags, setSeoTags] = useState<string[]>([]);
+  const [categoryId, setCategoryId] = useState("");
+  const [tocEnabled, setTocEnabled] = useState(true);
   const [itemId, setItemId] = useState<string | null>(null);
   const [campaignId, setCampaignId] = useState<string | null>(null);
 
@@ -404,6 +406,9 @@ function CreaiboxEditorPageContent() {
       metaDescription?: string;
       canonicalUrl?: string;
       useSearch?: boolean;
+      categoryId?: string;
+      tocEnabled?: boolean;
+      status?: string;
     }
   ) => {
     if (!currentContent || currentContent.length < 50) {
@@ -453,12 +458,16 @@ function CreaiboxEditorPageContent() {
         }
       }
 
+      const nextStatus = overrides?.status || "saved";
+      const nextCategoryId = overrides?.categoryId || categoryId || null;
+      const nextTocEnabled = overrides?.tocEnabled ?? tocEnabled ?? true;
+
       const payload = {
         user_id: user.id,
         user_nicename: userNickname || user.email?.split("@")[0],
         title: currentTitle,
         content: currentContent,
-        status: "saved",
+        status: nextStatus,
         post_type: postType || "AI 인사이트 포스팅",
         target_keyword: targetKeyword || null,
         selected_tone: selectedTone || null,
@@ -469,6 +478,8 @@ function CreaiboxEditorPageContent() {
         seo_tags: derivedSeoTags,
         word_count_goal: wordCountGoal,
         use_search: overrides?.useSearch ?? searchGroundingAvailable,
+        category_id: nextCategoryId,
+        toc_enabled: nextTocEnabled,
       };
 
       const { data: insertedRow, error } = await supabase
@@ -513,7 +524,7 @@ function CreaiboxEditorPageContent() {
           type: "create",
           detailLabel: "AI 인사이트 포스팅",
           selectedTone: selectedTone || "전문적이고 통찰력 있는 분석",
-          status: "saved",
+          status: nextStatus as any,
           wordCount: currentContent.length,
           updatedAt: insertedRow.created_at
             ? insertedRow.created_at.replace("T", " ").substring(0, 16)
@@ -524,6 +535,8 @@ function CreaiboxEditorPageContent() {
           canonicalUrl: payload.canonical_url || "",
           seoTags: derivedSeoTags || [],
           images: [],
+          categoryId: nextCategoryId || undefined,
+          tocEnabled: nextTocEnabled,
         });
       }
 
@@ -793,7 +806,7 @@ function CreaiboxEditorPageContent() {
         useSearch={searchGroundingAvailable}
         searchGroundingAvailable={searchGroundingAvailable}
         handleAiGenerateLive={handleAiGenerateLive}
-        handleSavePostToSupabase={() => saveToSupabase(content, title, true)}
+        handleSavePostToSupabase={() => saveToSupabase(content, title, true, { categoryId, tocEnabled })}
         handleResetGeneratedContent={handleResetGeneratedContent}
         editLink={editLink}
         generationStatusMessage={generationStatusMessage}
@@ -802,6 +815,10 @@ function CreaiboxEditorPageContent() {
         userBrandId={userBrandId}
         userBrandIds={userBrandIds}
         extraConfigs={extraConfigs}
+        categoryId={categoryId}
+        setCategoryId={setCategoryId}
+        tocEnabled={tocEnabled}
+        setTocEnabled={setTocEnabled}
       />
     </div>
   );

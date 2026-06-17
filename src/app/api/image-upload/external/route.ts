@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
     // 2. Parse request JSON
     const body = await req.json();
-    const { imageUrl, sourceType, sourceId, title, targetKeyword } = body;
+    const { imageUrl, sourceType, sourceId, title, targetKeyword, altText, caption, description } = body;
 
     if (!imageUrl) {
       return NextResponse.json(
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     try {
       compressedBuffer = await sharp(inputBuffer)
         .rotate()
-        .webp({ quality: 72, effort: 5 })
+        .webp({ quality: 92, effort: 5 })
         .toBuffer();
     } catch (sharpError: any) {
       console.error("External Sharp compression failed, uploading original buffer:", sharpError);
@@ -129,8 +129,12 @@ export async function POST(req: Request) {
         source_id: sourceId || null,
         image_role: "content_image",
         is_primary: false,
+        title: title || "외부 복사 이미지",
+        caption: caption || `${title || '원고'} 첨부 사진`,
+        description: description || `원본 이미지 주소: ${imageUrl}`,
+        alt_text: altText || title || "복사된 이미지",
       })
-      .select("id, image_url, prompt, style, aspect_ratio, provider, source_type, source_id, image_role, is_primary, created_at")
+      .select("id, image_url, prompt, style, aspect_ratio, provider, source_type, source_id, image_role, is_primary, created_at, title, caption, description, alt_text")
       .single();
 
     if (insertError) {

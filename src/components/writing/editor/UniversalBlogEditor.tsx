@@ -3,9 +3,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { EditorContent, useEditor } from "@tiptap/react";
+import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
-import Image from "@tiptap/extension-image";
+import { CustomImage } from "./extensions/CustomImageExtension";
 import Placeholder from "@tiptap/extension-placeholder";
 import Youtube from "@tiptap/extension-youtube";
 import { Table } from "@tiptap/extension-table";
@@ -17,10 +18,17 @@ import {
   AlignCenter,
   AlignLeft,
   AlignRight,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
   Bold,
+  Check,
   CheckCircle2,
+  ChevronDown,
   CirclePlay,
   Code2,
+  Combine,
   Copy,
   Cpu,
   Download,
@@ -40,6 +48,7 @@ import {
   RefreshCw,
   Save,
   Sparkles,
+  Split,
   Table2,
   Trash2,
   Type,
@@ -314,7 +323,7 @@ const convertImageFileToWebp = async (file: File) =>
           resolve(blob);
         },
         "image/webp",
-        0.82
+        0.92
       );
     };
 
@@ -426,13 +435,17 @@ export default function UniversalBlogEditor({
 }: UniversalBlogEditorProps) {
   const supabase = useMemo(() => createClient(), []);
   const [saveFeedback, setSaveFeedback] = useState<"idle" | "saved">("idle");
+  const [copyFeedback, setCopyFeedback] = useState<"idle" | "copied">("idle");
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [isContentDropdownOpen, setIsContentDropdownOpen] = useState(false);
   const [isTocDropdownOpen, setIsTocDropdownOpen] = useState(false);
   const [isPostTypeDropdownOpen, setIsPostTypeDropdownOpen] = useState(false);
+  const [activeTableDropdown, setActiveTableDropdown] = useState<"row" | "col" | null>(null);
   const contentDropdownRef = useRef<HTMLDivElement>(null);
   const tocDropdownRef = useRef<HTMLDivElement>(null);
   const postTypeDropdownRef = useRef<HTMLDivElement>(null);
+  const copyTimerRef = useRef<NodeJS.Timeout | null>(null);
+
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -445,6 +458,7 @@ export default function UniversalBlogEditor({
       if (postTypeDropdownRef.current && !postTypeDropdownRef.current.contains(event.target as Node)) {
         setIsPostTypeDropdownOpen(false);
       }
+      setActiveTableDropdown(null);
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
@@ -464,7 +478,7 @@ export default function UniversalBlogEditor({
     async (currentEditor: any) => {
       if (!currentEditor || !manuscriptId) return;
 
-      const externalUrls: string[] = [];
+      const externalImages: { url: string; alt: string; titleText: string }[] = [];
 
       currentEditor.state.doc.descendants((node: any) => {
         if (node.type.name === "image" && node.attrs?.src) {
@@ -480,21 +494,33 @@ export default function UniversalBlogEditor({
             !processingUrlsRef.current.has(src);
 
           if (isExternal) {
-            externalUrls.push(src);
+            if (!externalImages.some((img) => img.url === src)) {
+              externalImages.push({
+                url: src,
+                alt: node.attrs.alt || "",
+                titleText: node.attrs.title || "",
+              });
+            }
           }
         }
       });
 
-      if (externalUrls.length === 0) return;
+      if (externalImages.length === 0) return;
 
-      console.log("외부 이미지 자동 감지 및 업로드 시작:", externalUrls);
+      console.log("외부 이미지 자동 감지 및 업로드 시작:", externalImages);
 
-      for (const url of externalUrls) {
+      for (const imgData of externalImages) {
+        const { url, alt, titleText } = imgData;
         processingUrlsRef.current.add(url);
 
         // 백그라운드 비동기로 각 이미지 업로드 시도
         void (async () => {
           try {
+            const autoTitle = titleText || alt || (title ? `${title}_사진` : "외부 복사 이미지");
+            const autoAlt = alt || title || "복사된 이미지";
+            const autoCaption = targetKeyword ? `${targetKeyword} - ${autoTitle}` : `${title || "원고"} 관련 사진`;
+            const autoDescription = `원본 출처: ${url}`;
+
             const response = await fetch("/api/image-upload/external", {
               method: "POST",
               headers: {
@@ -504,8 +530,11 @@ export default function UniversalBlogEditor({
                 imageUrl: url,
                 sourceType: contentImageSourceType,
                 sourceId: String(manuscriptId),
-                title: title || "",
+                title: autoTitle,
                 targetKeyword: targetKeyword || "",
+                altText: autoAlt,
+                caption: autoCaption,
+                description: autoDescription,
               }),
             });
 
@@ -519,21 +548,29 @@ export default function UniversalBlogEditor({
 
             // 에디터가 언마운트되지 않았고 인스턴스가 존재할 때 해당 이미지 src 치환
             if (currentEditor && !currentEditor.isDestroyed) {
-              currentEditor.view.state.doc.descendants((node: any, pos: number) => {
+              const { view } = currentEditor;
+              const tr = view.state.tr;
+              let hasChange = false;
+
+              view.state.doc.descendants((node: any, pos: number) => {
                 if (node.type.name === "image" && node.attrs?.src === url) {
-                  const transaction = currentEditor.state.tr.setNodeMarkup(pos, undefined, {
+                  tr.setNodeMarkup(pos, undefined, {
                     ...node.attrs,
                     src: newUrl,
                   });
-                  currentEditor.view.dispatch(transaction);
+                  hasChange = true;
                 }
               });
 
-              // 업데이트 반영
-              const html = currentEditor.getHTML();
-              lastExternalContentRef.current = html;
-              setContent(html);
-              previousImageUrlsRef.current = extractImageUrlsFromEditor(currentEditor);
+              if (hasChange) {
+                view.dispatch(tr);
+
+                // 업데이트 반영
+                const html = currentEditor.getHTML();
+                lastExternalContentRef.current = html;
+                setContent(html);
+                previousImageUrlsRef.current = extractImageUrlsFromEditor(currentEditor);
+              }
             }
             console.log(`외부 이미지 치환 성공: ${url} -> ${newUrl}`);
           } catch (err) {
@@ -550,6 +587,90 @@ export default function UniversalBlogEditor({
   useEffect(() => {
     setIsClientReady(true);
   }, []);
+
+  const handleSetAsFeaturedImage = useCallback(
+    async (src: string) => {
+      if (!manuscriptId) {
+        alert("원고를 먼저 저장해주십시오. (원고 ID가 필요합니다)");
+        throw new Error("manuscriptId가 존재하지 않습니다.");
+      }
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        alert("로그인이 필요합니다.");
+        throw new Error("로그인 유저가 없습니다.");
+      }
+
+      // 1. 기존 이 포스트의 thumbnail들의 is_primary를 false로 일괄 업데이트
+      const { error: updateOldError } = await supabase
+        .from("generated_images")
+        .update({ is_primary: false })
+        .eq("user_id", user.id)
+        .eq("source_type", contentImageSourceType)
+        .eq("source_id", String(manuscriptId))
+        .eq("image_role", "thumbnail")
+        .eq("is_primary", true);
+
+      if (updateOldError) {
+        console.error("기존 대표 이미지 상태 변경 실패:", updateOldError);
+        throw updateOldError;
+      }
+
+      // 2. 현재 선택한 본문 이미지 url이 이미 generated_images에 이 포스트의 thumbnail로 존재하는지 확인
+      const { data: existingRows, error: findError } = await supabase
+        .from("generated_images")
+        .select("id, image_url")
+        .eq("user_id", user.id)
+        .eq("source_type", contentImageSourceType)
+        .eq("source_id", String(manuscriptId))
+        .eq("image_role", "thumbnail")
+        .eq("image_url", src);
+
+      if (findError) {
+        console.error("기존 대표 이미지 조회 실패:", findError);
+        throw findError;
+      }
+
+      if (existingRows && existingRows.length > 0) {
+        // 존재하면 해당 행의 is_primary만 true로 설정
+        const targetId = existingRows[0].id;
+        const { error: updateTargetError } = await supabase
+          .from("generated_images")
+          .update({ is_primary: true })
+          .eq("id", targetId);
+
+        if (updateTargetError) {
+          console.error("대표 이미지 업데이트 실패:", updateTargetError);
+          throw updateTargetError;
+        }
+      } else {
+        // 존재하지 않으면 신규 썸네일 행 생성 (is_primary = true)
+        const { error: insertError } = await supabase
+          .from("generated_images")
+          .insert({
+            user_id: user.id,
+            prompt: "대표 이미지 지정",
+            image_url: src,
+            source_type: contentImageSourceType,
+            source_id: String(manuscriptId),
+            image_role: "thumbnail",
+            is_primary: true,
+            title: title || "대표 이미지",
+            alt_text: title || "대표 이미지",
+          });
+
+        if (insertError) {
+          console.error("신규 대표 이미지 삽입 실패:", insertError);
+          throw insertError;
+        }
+      }
+    },
+    [manuscriptId, contentImageSourceType, supabase, title]
+  );
 
   const initialHtml = useMemo(() => markdownToHtml(content), []);
 
@@ -569,20 +690,21 @@ export default function UniversalBlogEditor({
           target: "_blank",
         },
       }),
-      Image.configure({
+      CustomImage.configure({
         inline: false,
         allowBase64: true,
         HTMLAttributes: {
-          class: "my-6 rounded-2xl border border-zinc-200 shadow-sm",
+          class: "my-6 border border-zinc-200 shadow-sm",
         },
-      }),
+        setAsFeatured: handleSetAsFeaturedImage,
+      } as any),
       Youtube.configure({
         width: 720,
         height: 405,
         controls: true,
         nocookie: true,
         HTMLAttributes: {
-          class: "my-6 overflow-hidden rounded-2xl border border-zinc-200",
+          class: "my-6 overflow-hidden rounded-md border border-zinc-200",
         },
       }),
       Table.configure({ resizable: true }),
@@ -601,6 +723,44 @@ export default function UniversalBlogEditor({
       attributes: {
         class: "min-h-[760px] w-full outline-none text-sm leading-8 text-zinc-800 prose-editor",
       },
+      transformPastedHTML(html) {
+        if (!html) return html;
+
+        try {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+          const iframes = doc.querySelectorAll("iframe");
+          let hasYoutube = false;
+
+          iframes.forEach((iframe) => {
+            const src = iframe.getAttribute("src") || "";
+            const isYoutube =
+              src.includes("youtube.com") ||
+              src.includes("youtu.be") ||
+              src.includes("youtube-nocookie.com");
+
+            if (isYoutube) {
+              let cleanSrc = src;
+              if (cleanSrc.startsWith("//")) {
+                cleanSrc = "https:" + cleanSrc;
+              }
+              iframe.setAttribute("src", cleanSrc);
+
+              const wrapper = doc.createElement("div");
+              wrapper.setAttribute("data-youtube-video", "");
+
+              iframe.parentNode?.insertBefore(wrapper, iframe);
+              wrapper.appendChild(iframe);
+              hasYoutube = true;
+            }
+          });
+
+          return hasYoutube ? doc.body.innerHTML : html;
+        } catch (err) {
+          console.error("transformPastedHTML 에러:", err);
+          return html;
+        }
+      },
       handleDrop(view, event) {
         const files = Array.from(event.dataTransfer?.files || []);
         const imageFile = files.find((file) => file.type.startsWith("image/"));
@@ -618,16 +778,33 @@ export default function UniversalBlogEditor({
         return true;
       },
       handlePaste(view, event) {
+        // 1. 이미지 파일 붙여넣기 처리
         const files = Array.from(event.clipboardData?.files || []);
         const imageFile = files.find((file) => file.type.startsWith("image/"));
 
-        if (!imageFile) return false;
+        if (imageFile) {
+          event.preventDefault();
+          const { from } = view.state.selection;
+          void insertContentImageFile(imageFile, from);
+          return true;
+        }
 
-        event.preventDefault();
+        // 2. 텍스트 복사-붙여넣기 시 유튜브 단일 링크(URL)가 들어왔을 때 플레이어로 즉시 변환
+        const text = event.clipboardData?.getData("text/plain")?.trim();
+        if (text) {
+          const isYoutubeLink =
+            /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/(watch\?v=|embed\/|v\/|shorts\/)?([a-zA-Z0-9_-]{11})/i.test(
+              text
+            );
 
-        const { from } = view.state.selection;
-        void insertContentImageFile(imageFile, from);
-        return true;
+          if (isYoutubeLink) {
+            event.preventDefault();
+            editor?.commands.setYoutubeVideo({ src: text, width: 720, height: 405 });
+            return true;
+          }
+        }
+
+        return false;
       },
     },
     onUpdate({ editor }) {
@@ -669,11 +846,16 @@ export default function UniversalBlogEditor({
     const nextHtml = markdownToHtml(content);
 
     if (nextHtml !== editor.getHTML()) {
-      editor.commands.setContent(nextHtml, { emitUpdate: false });
-      previousImageUrlsRef.current = extractImageUrlsFromEditor(editor);
-      lastExternalContentRef.current = content;
+      setTimeout(() => {
+        if (editor.isDestroyed) return;
+        editor.commands.setContent(nextHtml, { emitUpdate: false });
+        previousImageUrlsRef.current = extractImageUrlsFromEditor(editor);
+        lastExternalContentRef.current = content;
+      }, 0);
     }
   }, [content, editor]);
+
+
 
   useEffect(() => {
     if (saveFeedback !== "saved") return;
@@ -681,6 +863,26 @@ export default function UniversalBlogEditor({
     const timer = setTimeout(() => setSaveFeedback("idle"), 3000);
     return () => clearTimeout(timer);
   }, [saveFeedback]);
+
+  const handleLocalCopy = useCallback(() => {
+    if (handleCopy) {
+      handleCopy();
+    } else {
+      const copyText = `제목: ${title}\n\n${editor?.getHTML() ?? content}`;
+      navigator.clipboard.writeText(copyText);
+    }
+    setCopyFeedback("copied");
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = setTimeout(() => {
+      setCopyFeedback("idle");
+    }, 2000);
+  }, [handleCopy, title, editor, content]);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
   const stats = useMemo(() => getReadingStats(content), [content]);
 
@@ -845,6 +1047,16 @@ export default function UniversalBlogEditor({
     [contentImageSourceType, editor, manuscriptId, targetKeyword, title]
   );
 
+  useEffect(() => {
+    if (editor && uploadContentImageFile) {
+      editor.setOptions({
+        image: {
+          uploadImage: uploadContentImageFile,
+        },
+      } as any);
+    }
+  }, [editor, uploadContentImageFile]);
+
   const insertContentImageFile = useCallback(
     async (file: File, position?: number) => {
       if (!editor) return;
@@ -858,6 +1070,7 @@ export default function UniversalBlogEditor({
           src: uploaded.url,
           alt: title || targetKeyword || "본문 이미지",
           title: uploaded.fileName,
+          alignment: "center",
         },
       };
 
@@ -1074,13 +1287,13 @@ export default function UniversalBlogEditor({
             h3 { margin: 40px 0 16px; font-size: 1.35rem; line-height: 1.45; font-weight: 800; }
             p, li { font-size: 1.08rem; line-height: 2; }
             ul, ol { margin: 0 0 28px 24px; }
-            blockquote { margin: 32px 0; padding: 20px 24px; background: #f4f4f5; border-radius: 18px; color: #52525b; }
+            blockquote { margin: 32px 0; padding: 20px 24px; background: #f4f4f5; border-radius: 6px; color: #52525b; }
             table { width: 100%; border-collapse: collapse; margin: 28px 0; }
             th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
             th { background: #f4f4f5; }
             pre { background: #18181b; color: white; padding: 18px; border-radius: 16px; overflow-x: auto; }
-            img { max-width: 100%; height: auto; border-radius: 18px; }
-            iframe { width: 100%; max-width: 100%; border-radius: 18px; }
+            img { max-width: 100%; height: auto; border-radius: 6px; }
+            iframe { width: 100%; max-width: 100%; border-radius: 6px; }
           </style>
         </head>
         <body>
@@ -1135,10 +1348,22 @@ export default function UniversalBlogEditor({
 
         <div className="flex shrink-0 items-center gap-2">
           <button
-            onClick={handleCopy ? handleCopy : () => navigator.clipboard.writeText(`제목: ${title}\n\n${editor?.getHTML() ?? content}`)}
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:bg-zinc-800"
+            onClick={handleLocalCopy}
+            className={`flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-bold transition-all ${
+              copyFeedback === "copied"
+                ? "border-emerald-800 bg-emerald-950/20 text-emerald-400"
+                : "border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+            }`}
           >
-            <Copy size={13} /> 전체 복사
+            {copyFeedback === "copied" ? (
+              <>
+                <Check size={13} /> 복사 완료
+              </>
+            ) : (
+              <>
+                <Copy size={13} /> 전체 복사
+              </>
+            )}
           </button>
 
           <button onClick={handleDownload} className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:bg-zinc-800">
@@ -1155,7 +1380,7 @@ export default function UniversalBlogEditor({
             className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 px-3.5 py-2 text-xs font-black text-zinc-200 transition-all hover:bg-zinc-700 disabled:opacity-60"
           >
             {saveFeedback === "saved" ? <CheckCircle2 size={13} /> : <Save size={13} />}
-            {isSaving ? "저장중..." : saveFeedback === "saved" ? "저장완료" : "원고 다운로드"}
+            {isSaving ? "저장중..." : saveFeedback === "saved" ? "저장완료" : "원고 저장"}
           </button>
         </div>
       </div>
@@ -1478,7 +1703,7 @@ export default function UniversalBlogEditor({
             {images && images.length > 0 && (
               <div className="mb-6 grid grid-cols-1 gap-3 border-b border-zinc-200 pb-5 sm:grid-cols-2">
                 {images.map((img) => (
-                  <div key={img.id} className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 p-3 shadow-sm">
+                  <div key={img.id} className="group relative overflow-hidden rounded-md border border-zinc-200 bg-zinc-50 p-3 shadow-sm">
                     <div className="relative h-32 w-full overflow-hidden rounded-xl bg-zinc-100">
                       <img src={img.url} alt={img.caption || "Uploaded Block"} className="h-full w-full object-cover" />
                       <button onClick={() => handleDeleteImage(img.id)} className="absolute right-2 top-2 rounded-md bg-red-600 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100">
@@ -1500,6 +1725,183 @@ export default function UniversalBlogEditor({
 
             <div className="min-h-[760px] rounded-[10px] bg-transparent px-1 py-1 text-zinc-800 focus-within:bg-zinc-50/70">
               <EditorContent editor={editor} />
+              
+              {editor && (
+                <BubbleMenu
+                  editor={editor}
+                  options={{
+                    placement: "top-start",
+                  }}
+                  shouldShow={() => {
+                    return editor.isActive("table");
+                  }}
+                >
+                  <div className="relative flex items-center gap-1 rounded-xl border border-zinc-800 bg-[#0e111a]/95 px-3 py-1.5 shadow-2xl backdrop-blur-md text-white z-50">
+                    {/* Row operations */}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveTableDropdown(activeTableDropdown === "row" ? null : "row");
+                        }}
+                        className={`flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-zinc-400 hover:bg-zinc-800/80 hover:text-white transition ${
+                          activeTableDropdown === "row" ? "bg-zinc-800 text-white" : ""
+                        }`}
+                        title="행 작업"
+                      >
+                        <span>행 (Row)</span>
+                        <ChevronDown size={12} />
+                      </button>
+
+                      {activeTableDropdown === "row" && (
+                        <div className="absolute left-0 top-[110%] z-50 flex w-44 flex-col rounded-xl border border-zinc-850 bg-[#0e111a] p-1 shadow-2xl">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              editor.chain().focus().addRowBefore().run();
+                              setActiveTableDropdown(null);
+                            }}
+                            className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-zinc-300 hover:bg-zinc-900 hover:text-white transition"
+                          >
+                            <ArrowUp size={13} className="text-zinc-500" />
+                            위에 행 삽입
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              editor.chain().focus().addRowAfter().run();
+                              setActiveTableDropdown(null);
+                            }}
+                            className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-zinc-300 hover:bg-zinc-900 hover:text-white transition"
+                          >
+                            <ArrowDown size={13} className="text-zinc-500" />
+                            아래에 행 삽입
+                          </button>
+                          <div className="h-px bg-zinc-850 my-1" />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              editor.chain().focus().deleteRow().run();
+                              setActiveTableDropdown(null);
+                            }}
+                            className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-red-400 hover:bg-red-950/30 hover:text-red-350 transition"
+                          >
+                            <Trash2 size={13} className="text-red-500" />
+                            행 삭제
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Column operations */}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveTableDropdown(activeTableDropdown === "col" ? null : "col");
+                        }}
+                        className={`flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-zinc-400 hover:bg-zinc-800/80 hover:text-white transition ${
+                          activeTableDropdown === "col" ? "bg-zinc-800 text-white" : ""
+                        }`}
+                        title="열 작업"
+                      >
+                        <span>열 (Column)</span>
+                        <ChevronDown size={12} />
+                      </button>
+
+                      {activeTableDropdown === "col" && (
+                        <div className="absolute left-0 top-[110%] z-50 flex w-44 flex-col rounded-xl border border-zinc-850 bg-[#0e111a] p-1 shadow-2xl">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              editor.chain().focus().addColumnBefore().run();
+                              setActiveTableDropdown(null);
+                            }}
+                            className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-zinc-300 hover:bg-zinc-900 hover:text-white transition"
+                          >
+                            <ArrowLeft size={13} className="text-zinc-500" />
+                            왼쪽에 열 삽입
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              editor.chain().focus().addColumnAfter().run();
+                              setActiveTableDropdown(null);
+                            }}
+                            className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-zinc-300 hover:bg-zinc-900 hover:text-white transition"
+                          >
+                            <ArrowRight size={13} className="text-zinc-500" />
+                            오른쪽에 열 삽입
+                          </button>
+                          <div className="h-px bg-zinc-850 my-1" />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              editor.chain().focus().deleteColumn().run();
+                              setActiveTableDropdown(null);
+                            }}
+                            className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-red-400 hover:bg-red-950/30 hover:text-red-350 transition"
+                          >
+                            <Trash2 size={13} className="text-red-500" />
+                            열 삭제
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="h-4 w-[1px] bg-zinc-800 mx-1" />
+
+                    {/* Merge/Split */}
+                    <button
+                      type="button"
+                      onClick={() => editor.chain().focus().mergeCells().run()}
+                      disabled={!editor.can().mergeCells()}
+                      className="flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-zinc-400 hover:bg-zinc-800/80 hover:text-white disabled:opacity-40 disabled:hover:bg-transparent transition"
+                      title="셀 병합"
+                    >
+                      <Combine size={13} />
+                      <span>병합</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => editor.chain().focus().splitCell().run()}
+                      disabled={!editor.can().splitCell()}
+                      className="flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-zinc-400 hover:bg-zinc-800/80 hover:text-white disabled:opacity-40 disabled:hover:bg-transparent transition"
+                      title="셀 분할"
+                    >
+                      <Split size={13} />
+                      <span>분할</span>
+                    </button>
+
+                    <div className="h-4 w-[1px] bg-zinc-800 mx-1" />
+
+                    {/* Header Row Toggle */}
+                    <button
+                      type="button"
+                      onClick={() => editor.chain().focus().toggleHeaderRow().run()}
+                      className="flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-zinc-400 hover:bg-zinc-800/80 hover:text-white transition"
+                      title="헤더 행 설정/해제"
+                    >
+                      <Heading3 size={12} />
+                      <span>헤더</span>
+                    </button>
+
+                    <div className="h-4 w-[1px] bg-zinc-800 mx-1" />
+
+                    {/* Delete Table */}
+                    <button
+                      type="button"
+                      onClick={() => editor.chain().focus().deleteTable().run()}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-red-400 hover:bg-red-950/30 hover:text-red-350 transition"
+                      title="표 삭제"
+                    >
+                      <Trash2 size={13} className="text-red-500" />
+                    </button>
+                  </div>
+                </BubbleMenu>
+              )}
             </div>
           </div>
         )}
@@ -1613,28 +2015,92 @@ export default function UniversalBlogEditor({
           width: 100%;
           margin: 1.5rem 0;
           border-collapse: collapse;
-          overflow: hidden;
-          border-radius: 0.75rem;
+          border-radius: 0px !important;
+          border: 1px solid #191e23;
+          transition: box-shadow 0.2s ease-in-out;
         }
 
         .ProseMirror th {
-          background: #f4f4f5;
+          background: #f8fafc;
           font-weight: 900;
+          border: 1px solid #191e23;
         }
 
-        .ProseMirror th,
         .ProseMirror td {
+          border: 1px solid #191e23;
           min-width: 90px;
-          border: 1px solid #d4d4d8;
           padding: 0.65rem 0.75rem;
           vertical-align: top;
           font-size: 0.9rem;
           line-height: 1.7;
         }
 
+        /* 표 선택 또는 포커스 시 테두리 파란색 */
+        .ProseMirror table:focus-within,
+        .ProseMirror table:has(.selectedCell) {
+          box-shadow: 0 0 0 2px #2563eb;
+          border-color: #2563eb !important;
+        }
+
+        /* 드래그 셀 선택 시 파란색 배경 */
+        .ProseMirror td.selectedCell,
+        .ProseMirror th.selectedCell {
+          background: rgba(37, 99, 235, 0.08) !important;
+          border-color: #2563eb !important;
+        }
+
         .ProseMirror img {
           max-width: 100%;
           height: auto;
+        }
+
+        /* WordPress-style alignment & caption styles */
+        .ProseMirror .image-block {
+          display: block;
+          margin-top: 1.5rem;
+          margin-bottom: 1.5rem;
+          width: 100%;
+        }
+
+        .ProseMirror .image-block.align-center {
+          text-align: center;
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+        .ProseMirror .image-block.align-left {
+          float: left;
+          margin-right: 1.5rem;
+          margin-bottom: 1.5rem;
+          max-width: 50%;
+        }
+
+        .ProseMirror .image-block.align-right {
+          float: right;
+          margin-left: 1.5rem;
+          margin-bottom: 1.5rem;
+          max-width: 50%;
+        }
+
+        .ProseMirror .image-block.align-wide {
+          max-width: 1100px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+        .ProseMirror .image-block.align-full {
+          max-width: 100vw;
+          width: 100vw;
+          margin-left: calc(-50vw + 50%);
+          margin-right: calc(-50vw + 50%);
+        }
+
+        .ProseMirror .image-caption {
+          margin-top: 0.5rem;
+          font-size: 0.8rem;
+          color: #71717a;
+          text-align: center;
+          display: block;
         }
 
         .ProseMirror iframe {

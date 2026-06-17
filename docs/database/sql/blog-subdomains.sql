@@ -155,3 +155,8 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- ON public.blog_categories (user_id, COALESCE(brand_id, ''), slug);
 
 
+-- Add toc_enabled column to writing_creaibox_posts to support Table of Contents configuration
+ALTER TABLE public.writing_creaibox_posts
+ADD COLUMN IF NOT EXISTS toc_enabled BOOLEAN DEFAULT TRUE;
+
+

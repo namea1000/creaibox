@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     try {
       compressedBuffer = await sharp(inputBuffer)
         .rotate()
-        .webp({ quality: 72, effort: 5 })
+        .webp({ quality: 92, effort: 5 })
         .toBuffer();
     } catch (sharpError: any) {
       console.error("Sharp compression failed, uploading original buffer:", sharpError);
@@ -110,10 +110,14 @@ export async function POST(req: Request) {
         provider: "upload",
         source_type: sourceType || null,
         source_id: sourceId || null,
-        image_role: imageRole || "content",
+        image_role: imageRole || "gallery",
         is_primary: false,
+        title: title || file.name,
+        caption: formData.get("caption") as string | null,
+        description: formData.get("description") as string | null,
+        alt_text: (formData.get("altText") as string | null) || file.name,
       })
-      .select("id, image_url, prompt, style, aspect_ratio, provider, source_type, source_id, image_role, is_primary, created_at")
+      .select("id, image_url, prompt, style, aspect_ratio, provider, source_type, source_id, image_role, is_primary, created_at, title, caption, description, alt_text")
       .single();
 
     if (insertError) {

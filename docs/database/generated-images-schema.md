@@ -91,6 +91,10 @@ generated-images/
 | style        | 스타일         |
 | aspect_ratio | 비율          |
 | provider     | 생성 엔진       |
+| title        | 제목          |
+| caption      | 캡션          |
+| description  | 설명          |
+| alt_text     | 대체 텍스트      |
 
 ---
 

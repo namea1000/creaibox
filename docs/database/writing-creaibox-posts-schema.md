@@ -96,6 +96,8 @@ SEO 최적화를 위한 핵심 데이터 저장
 | focus_keyword    | 핵심 키워드      |
 | canonical_url    | 대표 URL      |
 | seo_tags         | SEO 태그 배열   |
+| category_id      | 카테고리 ID (UUID) |
+| toc_enabled      | 자동 목차 활성화 여부 (BOOLEAN) |
 
 ---
 

@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import StudioComingSoonPage from "@/components/studio/StudioComingSoonPage";
+import CreaiboxLibraryManager from "./components/CreaiboxLibraryManager";
 
 const sectionNames: Record<string, string> = {
   all: "전체 콘텐츠",
@@ -24,6 +25,10 @@ const sectionNames: Record<string, string> = {
 
 export default function LibrarySectionPage() {
   const { section } = useParams<{ section: string }>();
+
+  if (section === "creaibox") {
+    return <CreaiboxLibraryManager />;
+  }
 
   return (
     <StudioComingSoonPage

@@ -28,6 +28,11 @@ image_role text default 'generated',
 
 is_primary boolean default false,
 
+title text,
+caption text,
+description text,
+alt_text text,
+
 created_at timestamptz default now()
 );
 

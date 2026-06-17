@@ -55,6 +55,10 @@ interface CreaiboxCreateTabProps {
   userBrandId?: string;
   userBrandIds?: string[];
   extraConfigs?: any;
+  categoryId?: string;
+  setCategoryId?: React.Dispatch<React.SetStateAction<string>>;
+  tocEnabled?: boolean;
+  setTocEnabled?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export default function CreaiboxCreateTab({
@@ -72,6 +76,10 @@ export default function CreaiboxCreateTab({
   userBrandId,
   userBrandIds,
   extraConfigs,
+  categoryId = "",
+  setCategoryId,
+  tocEnabled = true,
+  setTocEnabled,
 }: CreaiboxCreateTabProps) {
 
   const supabase = useMemo(() => createClient(), []);
@@ -120,6 +128,8 @@ export default function CreaiboxCreateTab({
       wordCountGoal,
       useSearch,
       images: [],
+      categoryId: categoryId || undefined,
+      tocEnabled: tocEnabled ?? true,
     }),
     [
       canonicalUrl,
@@ -134,6 +144,8 @@ export default function CreaiboxCreateTab({
       title,
       useSearch,
       wordCountGoal,
+      categoryId,
+      tocEnabled,
     ]
   );
 
@@ -145,6 +157,8 @@ export default function CreaiboxCreateTab({
     if (typeof patch.focusKeyword === "string") setFocusKeyword(patch.focusKeyword);
     if (typeof patch.canonicalUrl === "string") setCanonicalUrl(patch.canonicalUrl);
     if (Array.isArray(patch.seoTags)) setSeoTags(patch.seoTags);
+    if (typeof patch.categoryId === "string") setCategoryId?.(patch.categoryId);
+    if (typeof patch.tocEnabled === "boolean") setTocEnabled?.(patch.tocEnabled);
   };
 
   const stripMarkdown = (value: string) =>

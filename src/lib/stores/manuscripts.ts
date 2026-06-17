@@ -29,6 +29,8 @@ export interface StudioManuscript {
   canonicalUrl?: string;
   seoTags?: string[];
   images: ImageBlock[];
+  categoryId?: string;
+  tocEnabled?: boolean;
 }
 
 interface StoreState {
@@ -281,6 +283,8 @@ interface WritingCreaiboxPostRecord {
   focus_keyword?: string | null;
   canonical_url?: string | null;
   seo_tags?: string[] | null;
+  category_id?: string | null;
+  toc_enabled?: boolean | null;
 }
 
 export const creaiboxManuscriptStore = createManuscriptStore<WritingCreaiboxPostRecord>({
@@ -323,6 +327,8 @@ export const creaiboxManuscriptStore = createManuscriptStore<WritingCreaiboxPost
     canonicalUrl: record.canonical_url || "",
     seoTags: record.seo_tags || [],
     images: [],
+    categoryId: record.category_id || undefined,
+    tocEnabled: record.toc_enabled ?? true,
   }),
   getRouteKey: (manuscript) => String(manuscript.displayId || ""),
   getIdentityKey: (manuscript) => manuscript.id,

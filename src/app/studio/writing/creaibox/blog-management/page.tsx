@@ -50,6 +50,7 @@ export default function BlogManagementPage() {
   const [newCatName, setNewCatName] = useState("");
   const [newCatSlug, setNewCatSlug] = useState("");
   const [isAddingCat, setIsAddingCat] = useState(false);
+  const [catSuccess, setCatSuccess] = useState(false);
 
   // Posts states (for statistics display)
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -309,10 +310,13 @@ export default function BlogManagementPage() {
 
       if (error) throw error;
 
-      alert(`✅ '${name}' 카테고리가 생성되었습니다.`);
       setCategories(prev => [...prev, data as BlogCategory]);
       setNewCatName("");
       setNewCatSlug("");
+      setCatSuccess(true);
+      setTimeout(() => {
+        setCatSuccess(false);
+      }, 2000);
     } catch (e: any) {
       alert(`카테고리 생성 실패: ${e.message}`);
     } finally {
@@ -922,10 +926,22 @@ export default function BlogManagementPage() {
 
                   <button
                     type="submit"
-                    disabled={isAddingCat}
-                    className="w-full rounded-2xl bg-blue-500 hover:bg-blue-600 py-4 text-xs font-black uppercase italic tracking-widest text-white transition-all shadow-[0_4px_12px_rgba(59,130,246,0.15)] flex items-center justify-center gap-1.5"
+                    disabled={isAddingCat || catSuccess}
+                    className={`w-full rounded-2xl py-4 text-xs font-black uppercase italic tracking-widest text-white transition-all flex items-center justify-center gap-1.5 ${
+                      catSuccess
+                        ? "bg-emerald-500 hover:bg-emerald-600 shadow-[0_4px_12px_rgba(16,185,129,0.15)]"
+                        : "bg-blue-500 hover:bg-blue-600 shadow-[0_4px_12px_rgba(59,130,246,0.15)]"
+                    }`}
                   >
-                    <Plus size={14} /> 카테고리 생성
+                    {catSuccess ? (
+                      <>
+                        <CheckCircle2 size={14} /> 카테고리가 생성되었습니다.
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={14} /> 카테고리 생성
+                      </>
+                    )}
                   </button>
                 </form>
 

@@ -50,6 +50,8 @@ export interface StudioManuscriptRecord {
   sourceText?: string;
   rewriteStrategy?: string;
   images: StudioImageBlock[];
+  categoryId?: string;
+  tocEnabled?: boolean;
 }
 
 interface WritingCreaiboxPostRecord {
@@ -70,6 +72,8 @@ interface WritingCreaiboxPostRecord {
   seo_tags?: string[] | null;
   word_count_goal?: string | number | null;
   source_mode?: string | null;
+  category_id?: string | null;
+  toc_enabled?: boolean | null;
 }
 
 interface WritingNaverPostRecord {
@@ -235,6 +239,8 @@ function mapCreaiboxRecord(record: WritingCreaiboxPostRecord): StudioManuscriptR
     seoTags: Array.isArray(record.seo_tags) ? record.seo_tags : [],
     sourceMode: record.source_mode || undefined,
     images: [],
+    categoryId: record.category_id || undefined,
+    tocEnabled: record.toc_enabled ?? true,
   };
 }
 

@@ -22,6 +22,7 @@ interface PublishedPostDetail {
   updated_at: string | null;
   category_id?: string | null;
   thumbnailUrl?: string | null;
+  toc_enabled?: boolean | null;
 }
 
 interface BlogCategory {
@@ -102,6 +103,162 @@ function normalizePublishedContent(content: string) {
     .trim();
 }
 
+function injectTableOfContents(htmlContent: string) {
+  let headingIndex = 0;
+  const headings: { id: string; text: string; level: number }[] = [];
+
+  // Handle Markdown content separately if it doesn't look like HTML
+  if (!looksLikeHtml(htmlContent)) {
+    let mdHeadingIndex = 0;
+    const mdHeadings: { id: string; text: string; level: number }[] = [];
+    const lines = htmlContent.split("\n");
+    const processedLines = lines.map((line) => {
+      const match = line.match(/^(#{2,4})\s+(.+)$/);
+      if (match) {
+        const level = match[1].length;
+        const text = match[2].trim();
+        mdHeadingIndex++;
+        const id = `toc-heading-${mdHeadingIndex}`;
+        mdHeadings.push({ id, text, level });
+        return `<h${level} id="${id}">${text}</h${level}>`;
+      }
+      return line;
+    });
+
+    if (mdHeadings.length === 0) {
+      return htmlContent;
+    }
+
+    let listHtml = "";
+    let h2Count = 0;
+    let h3Count = 0;
+    let h4Count = 0;
+
+    mdHeadings.forEach((heading) => {
+      let prefix = "";
+      let indentStyle = "";
+      
+      if (heading.level === 2) {
+        h2Count++;
+        h3Count = 0;
+        h4Count = 0;
+        prefix = `${h2Count}. `;
+        indentStyle = "padding-left: 0; font-weight: 700; color: #e4e4e7;";
+      } else if (heading.level === 3) {
+        h3Count++;
+        h4Count = 0;
+        prefix = `${h2Count}-${h3Count}) `;
+        indentStyle = "padding-left: 1rem; color: #a1a1aa; font-size: 0.875rem;";
+      } else if (heading.level === 4) {
+        h4Count++;
+        prefix = `${h2Count}-${h3Count}-${h4Count}. `;
+        indentStyle = "padding-left: 2rem; color: #71717a; font-size: 0.8125rem;";
+      }
+
+      listHtml += `
+        <li style="list-style: none; margin-bottom: 0.5rem; ${indentStyle}">
+          <a href="#${heading.id}" style="text-decoration: none; color: inherit; transition: color 150ms;">
+            ${prefix}${heading.text}
+          </a>
+        </li>
+      `;
+    });
+
+    const tocHtml = `
+<details open class="toc-container" style="margin: 2rem 0; border-radius: 16px; border: 1px solid #27272a; background-color: rgba(24, 24, 27, 0.3); padding: 1.5rem; max-width: 42rem;">
+  <summary class="toc-title" style="cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; font-size: 0.875rem; font-weight: 900; color: #d4d4d8; user-select: none;">
+    <span>- 목 차 -</span>
+    <span class="toc-toggle" style="font-size: 0.625rem; color: #71717a; font-weight: 700; border: 1px solid #27272a; padding: 0.125rem 0.5rem; border-radius: 6px; background-color: rgba(24, 24, 27, 0.5);">접기/펼치기</span>
+  </summary>
+  <ul class="toc-list" style="margin-top: 1rem; padding-left: 0; border-top: 1px solid #18181b; padding-top: 1rem; margin-bottom: 0;">
+    ${listHtml}
+  </ul>
+</details>
+    `;
+
+    const firstHeadingIdx = processedLines.findIndex(line => line.startsWith("<h2") || line.startsWith("<h3") || line.startsWith("<h4"));
+    if (firstHeadingIdx !== -1) {
+      processedLines.splice(firstHeadingIdx, 0, tocHtml);
+    }
+    return processedLines.join("\n");
+  }
+
+  // HTML content parsing
+  const processedHtml = htmlContent.replace(/<h(2|3|4)\b([^>]*)>([\s\S]*?)<\/h\1>/gi, (match, levelStr, attrs, content) => {
+    const level = parseInt(levelStr, 10);
+    const text = content.replace(/<[^>]*>/g, "").trim();
+    if (!text) return match;
+
+    headingIndex++;
+    const id = `toc-heading-${headingIndex}`;
+    headings.push({ id, text, level });
+
+    if (/id=["']/i.test(attrs)) {
+      return `<h${level} ${attrs}>${content}</h${level}>`;
+    }
+    return `<h${level} id="${id}" ${attrs}>${content}</h${level}>`;
+  });
+
+  if (headings.length === 0) {
+    return htmlContent;
+  }
+
+  let listHtml = "";
+  let h2Count = 0;
+  let h3Count = 0;
+  let h4Count = 0;
+
+  headings.forEach((heading) => {
+    let prefix = "";
+    let indentStyle = "";
+    
+    if (heading.level === 2) {
+      h2Count++;
+      h3Count = 0;
+      h4Count = 0;
+      prefix = `${h2Count}. `;
+      indentStyle = "padding-left: 0; font-weight: 700; color: #e4e4e7;";
+    } else if (heading.level === 3) {
+      h3Count++;
+      h4Count = 0;
+      prefix = `${h2Count}-${h3Count}) `;
+      indentStyle = "padding-left: 1rem; color: #a1a1aa; font-size: 0.875rem;";
+    } else if (heading.level === 4) {
+      h4Count++;
+      prefix = `${h2Count}-${h3Count}-${h4Count}. `;
+      indentStyle = "padding-left: 2rem; color: #71717a; font-size: 0.8125rem;";
+    }
+
+    listHtml += `
+      <li style="list-style: none; margin-bottom: 0.5rem; ${indentStyle}">
+        <a href="#${heading.id}" style="text-decoration: none; color: inherit; transition: color 150ms;">
+          ${prefix}${heading.text}
+        </a>
+      </li>
+    `;
+  });
+
+  const tocHtml = `
+<details open class="toc-container" style="margin: 2rem 0; border-radius: 16px; border: 1px solid #27272a; background-color: rgba(24, 24, 27, 0.3); padding: 1.5rem; max-width: 42rem;">
+  <summary class="toc-title" style="cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; font-size: 0.875rem; font-weight: 900; color: #d4d4d8; user-select: none;">
+    <span>- 목 차 -</span>
+    <span class="toc-toggle" style="font-size: 0.625rem; color: #71717a; font-weight: 700; border: 1px solid #27272a; padding: 0.125rem 0.5rem; border-radius: 6px; background-color: rgba(24, 24, 27, 0.5);">접기/펼치기</span>
+  </summary>
+  <ul class="toc-list" style="margin-top: 1rem; padding-left: 0; border-top: 1px solid #18181b; padding-top: 1rem; margin-bottom: 0;">
+    ${listHtml}
+  </ul>
+</details>
+  `;
+
+  const firstHeadingMatch = processedHtml.match(/<h[2-4]\b/i);
+  if (firstHeadingMatch && firstHeadingMatch.index !== undefined) {
+    const idx = firstHeadingMatch.index;
+    return processedHtml.slice(0, idx) + tocHtml + processedHtml.slice(idx);
+  }
+
+  return processedHtml;
+}
+
 function looksLikeHtml(content: string) {
   return /<\/?(p|h[1-6]|div|table|blockquote|ul|ol|li|img|iframe|hr|br|strong|em|a)\b/i.test(content);
 }
@@ -167,7 +324,7 @@ async function fetchPost(brandId: string, slug: string) {
   // 2. Fetch Post
   const { data: postData } = await supabase
     .from("writing_creaibox_posts")
-    .select("id, title, content, slug, meta_description, focus_keyword, canonical_url, seo_tags, created_at, updated_at, category_id")
+    .select("id, title, content, slug, meta_description, focus_keyword, canonical_url, seo_tags, created_at, updated_at, category_id, toc_enabled")
     .eq("user_id", profile.id)
     .eq("slug", decodedSlug)
     .eq("status", "published")
@@ -316,6 +473,10 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
   const contentWithoutSchemas = (post.content || "").replace(schemaRegex, "");
   let normalizedContent = normalizePublishedContent(contentWithoutSchemas);
 
+  if (post.toc_enabled ?? true) {
+    normalizedContent = injectTableOfContents(normalizedContent);
+  }
+
   const canonical = post.canonical_url || `https://${brand_id}.creaibox.com/${slug}`;
 
   // 🌟 Auto-inject Structured JSON-LD Data
@@ -370,6 +531,18 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white font-sans">
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            html {
+              scroll-behavior: smooth;
+            }
+            summary::-webkit-details-marker {
+              display: none;
+            }
+          `,
+        }}
+      />
       {/* Dynamic SEO JSON-LD scripts */}
       <script
         type="application/ld+json"
@@ -508,7 +681,7 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
             <div className="mx-auto max-w-[1100px] border-t border-zinc-900/80 pt-8">
               {looksLikeHtml(normalizedContent) ? (
                 <div
-                  className="blog-content text-[1.18rem] leading-[2.02] text-zinc-300 [&_a]:font-bold [&_a]:text-blue-400 [&_a]:underline [&_a]:decoration-blue-500 [&_a]:decoration-2 [&_a]:underline-offset-4 [&_blockquote]:my-8 [&_blockquote]:rounded-[18px] [&_blockquote]:border [&_blockquote]:border-zinc-800 [&_blockquote]:bg-zinc-900/20 [&_blockquote]:px-6 [&_blockquote]:py-5 [&_blockquote]:font-medium [&_br]:block [&_div[data-youtube-video]]:my-8 [&_h1]:mb-6 [&_h1]:border-b [&_h1]:border-zinc-800 [&_h1]:pb-4 [&_h1]:text-[1.75rem] [&_h1]:font-black [&_h1]:leading-[1.25] [&_h1]:tracking-[-0.03em] [&_h1]:text-white [&_h2]:mt-14 [&_h2]:mb-6 [&_h2]:text-[1.35rem] [&_h2]:font-black [&_h2]:leading-[1.35] [&_h2]:tracking-[-0.02em] [&_h2]:text-white [&_h3]:mt-10 [&_h3]:mb-4 [&_h3]:text-[1.05rem] [&_h3]:font-black [&_h3]:leading-[1.4] [&_h3]:text-zinc-200 [&_hr]:my-10 [&_hr]:border-zinc-800 [&_iframe]:aspect-video [&_iframe]:h-auto [&_iframe]:w-full [&_iframe]:rounded-[18px] [&_iframe]:border [&_iframe]:border-zinc-800 [&_img]:my-8 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-[18px] [&_img]:border [&_img]:border-zinc-900 [&_li]:pl-1 [&_li]:marker:text-blue-500 [&_ol]:text-[1.25rem] [&_ol]:mb-8 [&_ol]:ml-6 [&_ol]:list-decimal [&_ol]:space-y-3 [&_p]:mb-6 [&_p]:text-[1.18rem] [&_p]:leading-[2.02] [&_p]:text-zinc-300 [&_strong]:font-black [&_strong]:text-white [&_table]:my-8 [&_table]:w-full [&_table]:border-collapse [&_table]:overflow-hidden [&_table]:rounded-[16px] [&_td]:border [&_td]:border-zinc-800 [&_td]:px-4 [&_td]:py-3 [&_td]:align-top [&_th]:border [&_th]:border-zinc-800 [&_th]:bg-zinc-900/40 [&_th]:px-4 [&_th]:py-3 [&_th]:font-black [&_ul]:text-[1.25rem] [&_ul]:mb-8 [&_ul]:ml-6 [&_ul]:list-disc [&_ul]:space-y-3"
+                  className="blog-content text-[1.18rem] leading-[2.02] text-zinc-300 [&_a]:font-bold [&_a]:text-blue-400 [&_a]:underline [&_a]:decoration-blue-500 [&_a]:decoration-2 [&_a]:underline-offset-4 [&_blockquote]:my-8 [&_blockquote]:rounded-[6px] [&_blockquote]:border [&_blockquote]:border-zinc-800 [&_blockquote]:bg-zinc-900/20 [&_blockquote]:px-6 [&_blockquote]:py-5 [&_blockquote]:font-medium [&_br]:block [&_div[data-youtube-video]]:my-8 [&_h1]:mb-6 [&_h1]:border-b [&_h1]:border-zinc-800 [&_h1]:pb-4 [&_h1]:text-[1.75rem] [&_h1]:font-black [&_h1]:leading-[1.25] [&_h1]:tracking-[-0.03em] [&_h1]:text-white [&_h2]:mt-14 [&_h2]:mb-6 [&_h2]:text-[1.35rem] [&_h2]:font-black [&_h2]:leading-[1.35] [&_h2]:tracking-[-0.02em] [&_h2]:text-white [&_h3]:mt-10 [&_h3]:mb-4 [&_h3]:text-[1.05rem] [&_h3]:font-black [&_h3]:leading-[1.4] [&_h3]:text-zinc-200 [&_hr]:my-10 [&_hr]:border-zinc-800 [&_iframe]:aspect-video [&_iframe]:h-auto [&_iframe]:w-full [&_iframe]:rounded-[6px] [&_iframe]:border [&_iframe]:border-zinc-800 [&_img]:my-8 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-[6px] [&_img]:border [&_img]:border-zinc-900 [&_li]:pl-1 [&_li]:marker:text-blue-500 [&_ol]:text-[1.25rem] [&_ol]:mb-8 [&_ol]:ml-6 [&_ol]:list-decimal [&_ol]:space-y-3 [&_p]:mb-6 [&_p]:text-[1.18rem] [&_p]:leading-[2.02] [&_p]:text-zinc-300 [&_strong]:font-black [&_strong]:text-white [&_table]:my-8 [&_table]:w-full [&_table]:border-collapse [&_table]:rounded-none [&_table]:border [&_table]:border-zinc-800 [&_td]:border [&_td]:border-zinc-800 [&_td]:px-4 [&_td]:py-3 [&_td]:align-top [&_th]:border [&_th]:border-zinc-800 [&_th]:bg-zinc-900/40 [&_th]:px-4 [&_th]:py-3 [&_th]:font-black [&_ul]:text-[1.25rem] [&_ul]:mb-8 [&_ul]:ml-6 [&_ul]:list-disc [&_ul]:space-y-3"
                   dangerouslySetInnerHTML={{
                     __html: sanitizePublishedHtml(normalizedContent),
                   }}

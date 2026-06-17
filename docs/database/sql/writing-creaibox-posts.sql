@@ -33,6 +33,8 @@ meta_description text,
 focus_keyword text,
 canonical_url text,
 seo_tags text[],
+category_id uuid references public.blog_categories(id) on delete set null,
+toc_enabled boolean default true,
 
 -- Settings
 word_count_goal text,

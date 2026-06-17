@@ -99,9 +99,71 @@
 * **[MODIFY] [BlogImageStudioPanel.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/shared/image-studio/BlogImageStudioPanel.tsx)**: 이미지 스튜디오 내의 내 컴퓨터 사진 업로드 처리 시 마찬가지로 `/api/image-upload`를 호출하도록 수정했습니다.
 * **[MODIFY] [.env.local](file:///Users/a1234/Local%20Sites/creaibox/.env.local)**: Google Cloud 서비스 계정 키 대신 OAuth2 자격 증명(클라이언트 ID, 보안 비밀번호, 리프레시 토큰) 및 연동 폴더 ID 설정값 추가.
 
-### 4-3. 검증 상태
-* `npx tsc --noEmit`를 통해 **오류가 없음(0 compilation errors)**을 교차 검증 완료하였습니다.
-* 기존 DB에 저장되어 있던 24개 데이터 및 글 본문 HTML에 박혀있던 이미지 링크들을 전부 구글 드라이브 업로드 후 `lh3.googleusercontent.com/d/` 주소로 완벽하게 마이그레이션했습니다.
+### 안전성 검증
+- `npx tsc --noEmit` 타입 안전성 체크를 성공적으로 마쳐 0 errors 상태임을 확인 완료했습니다.
+
+---
+
+## 37. 워드프레스 스타일 "포스팅 기본 설정" 탭 및 자동 목차 (Easy Table of Contents) 구현
+
+우측 발행 패널의 `"CRE SNIPPET EDITOR"`와 `"CRE RANK MATH SEO"` 사이에 접고 펼칠 수 있는 `"포스팅 기본 설정"` 아코디언 섹션을 신설하고, 카테고리 지정 및 인라인 추가 기능, 자동 목차(TOC) 생성 기능을 통합 완료했습니다.
+
+### 변경 내역
+
+* **[CreaiboxSeoOptimizationPanel.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/creaibox/tabs/CreaiboxSeoOptimizationPanel.tsx)**
+  * **아코디언 섹션 신설**: 기존 "Cre Snippet Editor" 하단에 다크 글래스모피즘 테마의 "포스팅 기본 설정" 섹션을 구성했습니다.
+  * **카테고리 지정**: Supabase `blog_categories`에서 활성 브랜드의 카테고리를 로드하여 워드프레스와 유사한 체크박스 형태로 출력합니다. 단일 UUID 매핑 정책을 준수하기 위해 라디오 체크박스형 단일 선택 브랜치로 동작합니다.
+  * **인라인 카테고리 추가**: 입력창과 자동 슬러그 생성기를 활용해 즉시 Supabase `blog_categories` 테이블에 신규 카테고리를 등록하고 그 자리에서 자동 선택하도록 연동했습니다.
+  * **목차 자동 삽입 (TOC) 토글**: `toc_enabled` 필드와 바인딩된 토글 스위치를 배치하여 활성화 여부를 저장합니다.
+  * **게시 상태Dropdown**: `draft` / `saved` / `published` 중 선택할 수 있도록 바인딩했습니다.
+  * **실시간 본문 통계**: 공백 포함/제외 글자수, 소제목(H2~H4) 개수, 인용구(Quote) 개수, 이미지 개수를 실시간 정규식으로 계산해 고급스러운 인포 카드 그리드로 출력합니다.
+
+* **[page.tsx (src/app/brand/[brand_id]/[slug]/page.tsx)](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/%5Bslug%5D/page.tsx)**
+  * DB `writing_creaibox_posts` 조회 select 절에 `toc_enabled` 컬럼을 확장했습니다.
+  * **`injectTableOfContents` 파서**: 본문 HTML 및 마크다운 내 `<h2>`, `<h3>`, `<h4>` 태그를 분석하고 고유한 `id="toc-heading-N"` 속성을 자동 주입하여 스크롤 이동 앵커가 정확히 연동되도록 DOM을 치환합니다.
+  * **목차 박스 인라인 삽입**: 분석한 제목 목록을 기반으로 계층형 번호 매기기(예: `1.`, `1-1)`)가 포함된 TOC Box를 생성하고, 본문 내 첫 번째 제목 바로 직전에 자동으로 주입합니다.
+  * **부드러운 스크롤**: CSS 스타일 뷰에 `scroll-behavior: smooth` 및 Safari 요소를 보강하여 세련된 이동 인터랙션을 제공합니다.
+
+* **[create/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/create/page.tsx) & [list/[id]/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/list/%5Bid%5D/page.tsx)**
+  * Supabase `insert` 및 `update` 페이로드에 `category_id` 및 `toc_enabled` 컬럼 저장을 확장하여 사용자가 지정한 옵션이 유실되지 않고 영구 보존되도록 구현했습니다.
+
+* **[manuscripts.ts (Store)](file:///Users/a1234/Local%20Sites/creaibox/src/lib/stores/manuscripts.ts) & [CreaiboxCreateTab.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/creaibox/tabs/CreaiboxCreateTab.tsx)**
+  * `StudioManuscript` 및 `WritingCreaiboxPostRecord` 공용 타입에 `categoryId`, `tocEnabled` 필드를 반영하고 `mapRecord` 매핑을 보강했습니다.
+
+* **[writing-creaibox-posts.sql](file:///Users/a1234/Local%20Sites/creaibox/docs/database/sql/writing-creaibox-posts.sql)**
+  * DB 재생성 및 복구 무결성을 지키기 위해 SQL DDL 명세에 `category_id` 및 `toc_enabled` 컬럼 정의를 보강했습니다.
+
+### 안전성 검증 및 버그 픽스
+* **본문 이미지 위아래 이동 시 복제되는 현상 수정 ([ImageNodeView.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/editor/extensions/ImageNodeView.tsx))**:
+  * 기존 Tiptap command queue 체인의 위치 매핑 오작동으로 이미지 위아래 이동 시 이미지가 이동하지 않고 복제되는 오류가 있었습니다.
+  * 이를 해결하기 위해 두 노드 범위를 일괄 삭제하고 위치를 교환하여 재삽입하는 단일 atomic ProseMirror 트랜잭션(`editor.state.tr` 및 `editor.view.dispatch`)으로 `moveNode` 로직을 재설계하여 복제 버그를 완벽하게 제거했습니다.
+- `npx tsc --noEmit` 전체 빌드 타입 컴파일을 성공적으로 마쳐 0 errors 상태임을 확인 완료했습니다.
+
+---
+
+## 38. 워드프레스 스타일 표 (Table) 고도화 및 플로팅 컨텍스트 툴바 구현
+
+에디터 본문의 표(Table) 요소를 워드프레스와 동일하게 깔끔하고 직관적으로 편집할 수 있도록 스타일을 전면 재설계하고, 인터랙티브 플로팅 툴바(Bubble Menu)를 개발 완료했습니다.
+
+### 변경 내역
+
+* **디자인 및 비주얼 개선 ([UniversalBlogEditor.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/editor/UniversalBlogEditor.tsx) 및 [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/[brand_id]/[slug]/page.tsx))**
+  * **각진 테두리**: 기존의 둥근 모서리(`border-radius: 0.75rem`, `overflow: hidden`) 디자인을 전면 해제하고 각진 모서리로 스타일을 적용했습니다.
+  * **검은색 얇은 라인**: 기본 테두리 색상을 워드프레스의 표준 톤인 진한 차콜/블랙(`#191e23`)의 얇은 1px 테두리로 교체했습니다.
+  * **선택 시 파란색 아웃라인**: 표의 셀에 포커스가 들어가거나 드래그 선택이 수행될 때(`:focus-within` 또는 `.selectedCell` 포함 시), 표 전체 둘레에 **두께 2px의 파란색 활성 링(outline/shadow)**이 나타나도록 하여 편집 상태를 시각화했습니다.
+  * **셀 다중 선택 배경**: 드래그하여 다중 선택된 셀 범위는 연한 파란색 배경(`rgba(37,99,235,0.08)`)과 파란색 보더로 강조 표시됩니다.
+  * **퍼블릭 페이지 동기화**: 브랜드 상세페이지([page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/[brand_id]/[slug]/page.tsx))에서도 둥근 모서리가 제거되고 동일한 각진 모서리와 깔끔한 테두리로 표가 렌더링되도록 수정했습니다.
+
+* **인터랙티브 플로팅 툴바 (Table Bubble Menu) 구현 ([UniversalBlogEditor.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/editor/UniversalBlogEditor.tsx))**
+  * Tiptap 및 Floating UI 기반의 **Bubble Menu**를 연동하여 본문의 표 안에 커서가 들어올 때만 표 위에 툴바가 자동으로 생성되어 떠오릅니다.
+  * **행 작업 (Row Operations)**: 드롭다운을 통해 `위에 행 삽입`, `아래에 행 삽입`, `행 삭제`를 직관적으로 조작할 수 있습니다.
+  * **열 작업 (Column Operations)**: 드롭다운을 통해 `왼쪽에 열 삽입`, `오른쪽에 열 삽입`, `열 삭제`를 조작할 수 있습니다.
+  * **셀 병합 및 분할 (Merge & Split)**: Tiptap의 셀 상태 검사 API(`editor.can().mergeCells()`, `splitCell()`)와 연계하여 병합이나 분할이 가능할 때만 버튼이 활성화되어 안전하게 동작합니다.
+  * **헤더 행 설정 (Header Row Toggle)**: 첫 번째 행을 굵은 글씨의 `<th>` 헤더 행으로 토글 전환할 수 있습니다.
+  * **표 삭제 (Delete Table)**: 버튼 클릭 한 번으로 간편하게 전체 표를 삭제할 수 있습니다.
+
+### 안전성 검증
+- `npx tsc --noEmit` 전체 빌드 타입 컴파일을 성공적으로 마쳐 0 errors 상태임을 확인 완료했습니다.
 
 ---
 
