@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ArrowLeft, CalendarDays, Sparkles, Tag } from "lucide-react";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createAdminClient } from "@/utils/supabase/server";
 
 interface PublishedPostDetail {
   id: string;
@@ -121,7 +121,7 @@ function formatDate(value: string | null) {
 }
 
 async function fetchPost(brandId: string, slug: string) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
   const decodedSlug = decodeURIComponent(slug);
 
   // 1. Fetch Profile
@@ -242,7 +242,7 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
   }
 
   const { post, profile } = result;
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const blogTitle = profile.extra_configs?.blog_title || `${profile.nickname || brand_id} 블로그`;
   const accentColor = profile.extra_configs?.blog_accent_color || "#3b82f6";
