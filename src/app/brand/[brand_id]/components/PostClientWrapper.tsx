@@ -345,22 +345,6 @@ export default function PostClientWrapper({
           </header>
 
           <div className="px-8 py-12 md:px-12 space-y-8">
-            {post.thumbnailUrl && (
-              <div className={`w-full overflow-hidden rounded-[24px] border aspect-[16/9] ${imageBorder}`}>
-                <img
-                  src={post.thumbnailUrl}
-                  alt={post.title || "thumbnail"}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            )}
-
-            {post.meta_description && (
-              <div className={`rounded-[22px] border px-6 py-5 text-sm md:text-base font-bold leading-relaxed italic ${excerptBg}`}>
-                {post.meta_description}
-              </div>
-            )}
-
             <div className={`mx-auto max-w-[1100px] border-t pt-8 ${theme === "dark" ? "border-zinc-900/80" : "border-zinc-200/80"}`}>
               {looksLikeHtml(normalizedContent) ? (
                 <div

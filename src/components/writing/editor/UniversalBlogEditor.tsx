@@ -933,6 +933,29 @@ export default function UniversalBlogEditor({
     setContent(html);
   }, [editor, setContent]);
 
+  useEffect(() => {
+    const handleInsertImage = (e: Event) => {
+      const customEvent = e as CustomEvent<{ url: string; alt?: string; title?: string }>;
+      if (!editor || !customEvent.detail?.url) return;
+
+      const { url, alt, title: imgTitle } = customEvent.detail;
+      editor.chain().focus().setImage({
+        src: url,
+        alt: alt || title || targetKeyword || "본문 이미지",
+        title: imgTitle || "",
+        alignment: "center",
+      } as any).run();
+
+      syncLatestContent();
+      previousImageUrlsRef.current = extractImageUrlsFromEditor(editor);
+    };
+
+    window.addEventListener("insert-editor-image", handleInsertImage);
+    return () => {
+      window.removeEventListener("insert-editor-image", handleInsertImage);
+    };
+  }, [editor, title, targetKeyword, syncLatestContent]);
+
   const deleteGeneratedImageRows = useCallback(
     async (rows: GeneratedImageRow[]) => {
       const ids = uniqueValues(rows.map((row) => row.id));

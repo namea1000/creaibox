@@ -966,7 +966,7 @@ export default function CreaiboxCreateTab({
             )}
 
             {publishingPanelTab === "contentImage" && (
-              <CreaiboxContentImagePanel />
+              <CreaiboxContentImagePanel data={draftRecord} />
             )}
 
             {publishingPanelTab === "schema" && (

@@ -73,40 +73,30 @@ function injectTableOfContents(htmlContent: string) {
     let h4Count = 0;
 
     mdHeadings.forEach((heading) => {
-      let prefix = "";
       let indentStyle = "";
       
       if (heading.level === 2) {
-        h2Count++;
-        h3Count = 0;
-        h4Count = 0;
-        prefix = `${h2Count}. `;
         indentStyle = "padding-left: 0; font-weight: 700; color: var(--toc-h2);";
       } else if (heading.level === 3) {
-        h3Count++;
-        h4Count = 0;
-        prefix = `${h2Count}-${h3Count}) `;
         indentStyle = "padding-left: 1rem; color: var(--toc-h3); font-size: 0.875rem;";
       } else if (heading.level === 4) {
-        h4Count++;
-        prefix = `${h2Count}-${h3Count}-${h4Count}. `;
         indentStyle = "padding-left: 2rem; color: var(--toc-h4); font-size: 0.8125rem;";
       }
 
       listHtml += `
         <li style="list-style: none; margin-bottom: 0.5rem; ${indentStyle}">
           <a href="#${heading.id}" style="text-decoration: none; color: inherit; transition: color 150ms;">
-            ${prefix}${heading.text}
+            ${heading.text}
           </a>
         </li>
       `;
     });
 
     const tocHtml = `
-<details open class="toc-container" style="margin: 2rem 0; border-radius: 16px; border: 1px solid var(--toc-border); background-color: var(--toc-bg); padding: 1.5rem; max-width: 42rem;">
-  <summary class="toc-title" style="cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; font-size: 0.875rem; font-weight: 900; color: var(--toc-title-color); user-select: none;">
+<details open class="toc-container" style="margin: 2rem auto; border-radius: 16px; border: 1px solid var(--toc-border); background-color: var(--toc-bg); padding: 1.5rem; max-width: 42rem;">
+  <summary class="toc-title" style="cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: 900; color: var(--toc-title-color); user-select: none; position: relative;">
     <span>- 목 차 -</span>
-    <span class="toc-toggle" style="font-size: 0.625rem; color: var(--toc-toggle-color); font-weight: 700; border: 1px solid var(--toc-border); padding: 0.125rem 0.5rem; border-radius: 6px; background-color: var(--toc-toggle-bg);">접기/펼치기</span>
+    <span class="toc-toggle" style="position: absolute; right: 0; font-size: 0.625rem; color: var(--toc-toggle-color); font-weight: 700; border: 1px solid var(--toc-border); padding: 0.125rem 0.5rem; border-radius: 6px; background-color: var(--toc-toggle-bg);">접기/펼치기</span>
   </summary>
   <ul class="toc-list" style="margin-top: 1rem; padding-left: 0; border-top: 1px solid var(--toc-border-inner); padding-top: 1rem; margin-bottom: 0;">
     ${listHtml}
@@ -147,40 +137,30 @@ function injectTableOfContents(htmlContent: string) {
   let h4Count = 0;
 
   headings.forEach((heading) => {
-    let prefix = "";
     let indentStyle = "";
     
     if (heading.level === 2) {
-      h2Count++;
-      h3Count = 0;
-      h4Count = 0;
-      prefix = `${h2Count}. `;
       indentStyle = "padding-left: 0; font-weight: 700; color: var(--toc-h2);";
     } else if (heading.level === 3) {
-      h3Count++;
-      h4Count = 0;
-      prefix = `${h2Count}-${h3Count}) `;
       indentStyle = "padding-left: 1rem; color: var(--toc-h3); font-size: 0.875rem;";
     } else if (heading.level === 4) {
-      h4Count++;
-      prefix = `${h2Count}-${h3Count}-${h4Count}. `;
       indentStyle = "padding-left: 2rem; color: var(--toc-h4); font-size: 0.8125rem;";
     }
 
     listHtml += `
       <li style="list-style: none; margin-bottom: 0.5rem; ${indentStyle}">
         <a href="#${heading.id}" style="text-decoration: none; color: inherit; transition: color 150ms;">
-          ${prefix}${heading.text}
+          ${heading.text}
         </a>
       </li>
     `;
   });
 
   const tocHtml = `
-<details open class="toc-container" style="margin: 2rem 0; border-radius: 16px; border: 1px solid var(--toc-border); background-color: var(--toc-bg); padding: 1.5rem; max-width: 42rem;">
-  <summary class="toc-title" style="cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; font-size: 0.875rem; font-weight: 900; color: var(--toc-title-color); user-select: none;">
+<details open class="toc-container" style="margin: 2rem auto; border-radius: 16px; border: 1px solid var(--toc-border); background-color: var(--toc-bg); padding: 1.5rem; max-width: 42rem;">
+  <summary class="toc-title" style="cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: 900; color: var(--toc-title-color); user-select: none; position: relative;">
     <span>- 목 차 -</span>
-    <span class="toc-toggle" style="font-size: 0.625rem; color: var(--toc-toggle-color); font-weight: 700; border: 1px solid var(--toc-border); padding: 0.125rem 0.5rem; border-radius: 6px; background-color: var(--toc-toggle-bg);">접기/펼치기</span>
+    <span class="toc-toggle" style="position: absolute; right: 0; font-size: 0.625rem; color: var(--toc-toggle-color); font-weight: 700; border: 1px solid var(--toc-border); padding: 0.125rem 0.5rem; border-radius: 6px; background-color: var(--toc-toggle-bg);">접기/펼치기</span>
   </summary>
   <ul class="toc-list" style="margin-top: 1rem; padding-left: 0; border-top: 1px solid var(--toc-border-inner); padding-top: 1rem; margin-bottom: 0;">
     ${listHtml}

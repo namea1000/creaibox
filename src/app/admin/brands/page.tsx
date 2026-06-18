@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { 
   ShieldCheck, Globe, CheckCircle2, XCircle, Trash2, Plus, 
-  Search, RefreshCw, AlertCircle, Ban, CalendarDays 
+  Search, RefreshCw, AlertCircle, Ban, CalendarDays, AlertTriangle 
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -70,6 +70,15 @@ export default function AdminBrandsPage() {
   const [newReservedId, setNewReservedId] = useState("");
   const [newReservedReason, setNewReservedReason] = useState("");
   const [isAddingBlacklist, setIsAddingBlacklist] = useState(false);
+  
+  // Rejection modal states
+  const [rejectingItem, setRejectingItem] = useState<{
+    userId: string;
+    brandId: string;
+    type: "subdomain" | "customDomain";
+    value: string;
+  } | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   // 1. Authenticate user
   useEffect(() => {
@@ -195,34 +204,17 @@ export default function AdminBrandsPage() {
     }
   };
 
-  // 5. Action: Reject Request
-  const handleReject = async (e: React.MouseEvent, userId: string, requestedId: string) => {
+  // 5. Action: Reject Request (Trigger Rejection Modal)
+  const handleReject = (e: React.MouseEvent, userId: string, requestedId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    const reason = prompt(`'${requestedId}' 브랜드 ID 신청을 반려하는 사유를 입력해 주세요:`);
-    if (reason === null) return; // Cancelled
-    if (!reason.trim()) {
-      alert("반려 사유는 필수 입력 사항입니다.");
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          brand_id_status: "REJECTED",
-          brand_id_rejection_reason: reason.trim(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
-
-      if (error) throw error;
-
-      alert(`❌ '${requestedId}' 브랜드 ID 신청이 반려 처리되었습니다.`);
-      await fetchRequests();
-    } catch (e: any) {
-      alert(`반려 처리 실패: ${e.message}`);
-    }
+    setRejectionReason("");
+    setRejectingItem({
+      userId,
+      brandId: requestedId,
+      type: "subdomain",
+      value: `${requestedId}.creaibox.com`,
+    });
   };
 
   // 5.1 Action: Cancel Approval (승인/반려 취소하고 대기 상태로 변경)
@@ -327,50 +319,77 @@ export default function AdminBrandsPage() {
     }
   };
 
-  // 5-2. Action: Reject Custom Domain
-  const handleRejectCustomDomain = async (e: React.MouseEvent, userId: string, brandId: string, requestedDomain: string) => {
+  // 5-2. Action: Reject Custom Domain (Trigger Rejection Modal)
+  const handleRejectCustomDomain = (e: React.MouseEvent, userId: string, brandId: string, requestedDomain: string) => {
     e.preventDefault();
     e.stopPropagation();
-    const reason = prompt(`'${requestedDomain}' 독립 도메인 신청을 반려하는 사유를 입력해 주세요:`);
-    if (reason === null) return;
-    if (!reason.trim()) {
+    setRejectionReason("");
+    setRejectingItem({
+      userId,
+      brandId,
+      type: "customDomain",
+      value: requestedDomain,
+    });
+  };
+
+  // Submit Rejection from Modal
+  const submitRejection = async () => {
+    if (!rejectingItem) return;
+    const { userId, brandId, type, value } = rejectingItem;
+    const reason = rejectionReason.trim();
+    if (!reason) {
       alert("반려 사유는 필수 입력 사항입니다.");
       return;
     }
 
     try {
-      const { data: profile, error: fetchErr } = await supabase
-        .from("profiles")
-        .select("brand_id, extra_configs")
-        .eq("id", userId)
-        .single();
-      
-      if (fetchErr) throw fetchErr;
+      if (type === "subdomain") {
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            brand_id_status: "REJECTED",
+            brand_id_rejection_reason: reason,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", userId);
 
-      const isPrimary = profile.brand_id === brandId;
+        if (error) throw error;
+        alert(`❌ '${brandId}' 브랜드 ID 신청이 반려 처리되었습니다.`);
+      } else {
+        const { data: profile, error: fetchErr } = await supabase
+          .from("profiles")
+          .select("brand_id, extra_configs")
+          .eq("id", userId)
+          .single();
+        
+        if (fetchErr) throw fetchErr;
 
-      const nextExtraConfigs = {
-        ...(profile.extra_configs || {}),
-        [`custom_domain_status_${brandId}`]: "REJECTED",
-        [`custom_domain_rejection_reason_${brandId}`]: reason.trim(),
-      };
+        const isPrimary = profile.brand_id === brandId;
+        const nextExtraConfigs = {
+          ...(profile.extra_configs || {}),
+          [`custom_domain_status_${brandId}`]: "REJECTED",
+          [`custom_domain_rejection_reason_${brandId}`]: reason,
+        };
 
-      if (isPrimary) {
-        nextExtraConfigs.custom_domain_status = "REJECTED";
-        nextExtraConfigs.custom_domain_rejection_reason = reason.trim();
+        if (isPrimary) {
+          nextExtraConfigs.custom_domain_status = "REJECTED";
+          nextExtraConfigs.custom_domain_rejection_reason = reason;
+        }
+
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            extra_configs: nextExtraConfigs,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", userId);
+
+        if (error) throw error;
+        alert(`❌ '${value}' 독립 도메인 신청이 반려 처리되었습니다.`);
       }
 
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          extra_configs: nextExtraConfigs,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
-
-      if (error) throw error;
-
-      alert(`❌ '${requestedDomain}' 독립 도메인 신청이 반려 처리되었습니다.`);
+      setRejectingItem(null);
+      setRejectionReason("");
       await fetchRequests();
     } catch (e: any) {
       alert(`반려 처리 실패: ${e.message}`);
@@ -1132,6 +1151,58 @@ export default function AdminBrandsPage() {
           </div>
         )}
       </div>
+      {/* 🌟 Custom Rejection Reason Modal */}
+      {rejectingItem && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-[32px] border border-zinc-800 bg-[#0b0e14] p-8 shadow-2xl text-left space-y-6 animate-in fade-in zoom-in-95 duration-200">
+            <div className="space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500 flex items-center gap-1.5">
+                <AlertTriangle size={12} /> 신청 반려 심사
+              </span>
+              <h3 className="text-xl font-black text-white italic uppercase">
+                반려 사유 입력
+              </h3>
+              <p className="text-xs text-zinc-500 font-bold leading-relaxed">
+                대상: <span className="font-mono text-zinc-300 font-black italic">{rejectingItem.value}</span>
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="pl-1 text-[10px] font-black uppercase tracking-wider text-zinc-500">
+                반려 사유 (사용자에게 노출됩니다)
+              </label>
+              <textarea
+                required
+                rows={4}
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="예: 이미 등록된 도메인이거나, DNS 설정이 정상적으로 이루어지지 않았습니다. 설정을 확인해 주시기 바랍니다."
+                className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4 text-xs font-bold text-white outline-none focus:border-red-500 transition-colors resize-none placeholder:text-zinc-700 leading-relaxed"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setRejectingItem(null);
+                  setRejectionReason("");
+                }}
+                className="flex-1 rounded-2xl border border-zinc-850 bg-zinc-900 hover:bg-zinc-800 py-4 text-xs font-black text-zinc-400 hover:text-white transition-all font-bold"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={submitRejection}
+                className="flex-1 rounded-2xl bg-red-600 hover:bg-red-500 py-4 text-xs font-black text-white transition-all shadow-[0_4px_12px_rgba(220,38,38,0.2)] font-bold"
+              >
+                반려 완료
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

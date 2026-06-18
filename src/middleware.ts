@@ -74,13 +74,25 @@ export async function middleware(request: NextRequest) {
     } else {
       // 🌟 독립 도메인 (Custom Domain) 처리
       try {
+        const adminSupabase = createServerClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          {
+            cookies: {
+              get(name: string) { return ""; },
+              set(name: string, value: string, options: any) {},
+              remove(name: string, options: any) {},
+            }
+          }
+        );
+
         // 1. Try RPC lookup first
-        const { data: rpcBrandId, error: rpcErr } = await supabase.rpc("get_brand_id_by_custom_domain", { domain_name: cleanHost });
+        const { data: rpcBrandId, error: rpcErr } = await adminSupabase.rpc("get_brand_id_by_custom_domain", { domain_name: cleanHost });
         if (!rpcErr && rpcBrandId) {
           targetBrandId = rpcBrandId;
         } else {
           // 2. JS Fallback lookup (backward compatible + scan dynamic keys)
-          const { data: primaryProfile } = await supabase
+          const { data: primaryProfile } = await adminSupabase
             .from("profiles")
             .select("brand_id")
             .eq("extra_configs->>custom_domain", cleanHost)
@@ -90,7 +102,7 @@ export async function middleware(request: NextRequest) {
           if (primaryProfile?.brand_id) {
             targetBrandId = primaryProfile.brand_id;
           } else {
-            const { data: allProfiles } = await supabase
+            const { data: allProfiles } = await adminSupabase
               .from("profiles")
               .select("brand_id, extra_configs")
               .not("extra_configs", "is", null);

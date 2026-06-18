@@ -1048,7 +1048,7 @@ ${promptInstruction}
             {publishingPanelTab === "thumbnail" && (
               <CreaiboxThumbnailPanel data={data} />
             )}
-            {publishingPanelTab === "contentImage" && <CreaiboxContentImagePanel />}
+            {publishingPanelTab === "contentImage" && <CreaiboxContentImagePanel data={data} />}
             {publishingPanelTab === "schema" && (
               <CreaiboxSchemaPanel data={data} updateLocalData={updateLocalData} />
             )}

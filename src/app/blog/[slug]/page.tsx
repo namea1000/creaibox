@@ -275,15 +275,6 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   const contentWithoutSchemas = (post.content || "").replace(schemaRegex, "");
   let normalizedContent = normalizePublishedContent(contentWithoutSchemas);
 
-  // 썸네일 이미지가 존재하면 첫 번째 단락 다음에 삽입
-  if (post.thumbnailUrl) {
-    if (looksLikeHtml(normalizedContent)) {
-      normalizedContent = insertThumbnailIntoHtml(normalizedContent, post.thumbnailUrl, post.title || "thumbnail");
-    } else {
-      normalizedContent = insertThumbnailIntoMarkdown(normalizedContent, post.thumbnailUrl, post.title || "thumbnail");
-    }
-  }
-
   const canonical = post.canonical_url || `https://creaibox.com/blog/${post.slug || slug}`;
 
   const blogPostingJsonLd = {
@@ -408,12 +399,6 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
             </header>
 
             <div className="bg-white px-8 py-10 md:px-12">
-              {post.meta_description && (
-                <div className="mb-8 rounded-[24px] border border-zinc-200 bg-zinc-50 px-6 py-5 text-[1.02rem] font-medium leading-[1.8] text-zinc-700">
-                  {post.meta_description}
-                </div>
-              )}
-
               <div className="mx-auto max-w-[1100px]">
                 {looksLikeHtml(normalizedContent) ? (
                   <div

@@ -90,6 +90,13 @@ export default function MyPage() {
 
   const [selectedBrandForDomain, setSelectedBrandForDomain] = useState("");
 
+  // Custom confirmation modal state
+  const [confirmModal, setConfirmModal] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
+
   const approvedBrands = useMemo(() => {
     return [profile.brand_id, ...(profile.extra_configs?.brand_ids || [])].filter(Boolean);
   }, [profile.brand_id, profile.extra_configs?.brand_ids]);
@@ -344,11 +351,21 @@ export default function MyPage() {
     }
   };
 
-  const handleCancelBrand = async (brandIdToCancel: string) => {
-    if (!user || !profile) return;
+  const handleCancelBrand = (brandIdToCancel: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setConfirmModal({
+      title: "브랜드 ID 신청 취소",
+      message: "정말로 브랜드 ID 신청을 취소하시겠습니까? 취소하시면 등록된 모든 연동 정보가 자동 정리되며 새로 신청해야 합니다.",
+      onConfirm: () => executeCancelBrand(brandIdToCancel),
+    });
+  };
 
-    const msg = "정말로 신청을 취소하시겠습니까? 취소하시면 자동 취소가 되며 새로 신청 절차를 밟아야 합니다.";
-    if (!confirm(msg)) return;
+  const executeCancelBrand = async (brandIdToCancel: string) => {
+    setConfirmModal(null);
+    if (!user || !profile) return;
 
     setIsSaving(true);
     try {
@@ -366,6 +383,13 @@ export default function MyPage() {
       let brandIds: string[] = latestProfile.extra_configs?.brand_ids || [];
       let nextExtraConfigs = { ...(latestProfile.extra_configs || {}) };
 
+      // Handle canceling pending request
+      if (requestedBrandId === brandIdToCancel) {
+        requestedBrandId = null;
+        brandIdStatus = primaryBrandId ? "APPROVED" : "NONE";
+      }
+
+      // Handle canceling/deleting approved brand
       if (primaryBrandId === brandIdToCancel) {
         if (brandIds.length > 0) {
           primaryBrandId = brandIds[0];
@@ -497,9 +521,29 @@ export default function MyPage() {
     }
   };
 
-  const disconnectCustomDomain = async () => {
+  const handleOpenDisconnectModal = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (!user || !selectedBrandForDomain) return;
-    if (!confirm(`[${selectedBrandForDomain}] 브랜드에 연결된 독립 도메인을 해제하시겠습니까?`)) return;
+
+    const { status: currentDomainStatus } = getBrandDomainConfig(selectedBrandForDomain);
+    const isPending = currentDomainStatus === "PENDING";
+    const confirmMessage = isPending
+      ? `[${selectedBrandForDomain}] 브랜드에 신청된 독립 도메인 연결을 취소하시겠습니까?`
+      : `[${selectedBrandForDomain}] 브랜드에 연결된 독립 도메인을 해제하시겠습니까?`;
+
+    setConfirmModal({
+      title: isPending ? "독립 도메인 신청 취소" : "독립 도메인 연결 해제",
+      message: confirmMessage,
+      onConfirm: () => executeDisconnectCustomDomain(),
+    });
+  };
+
+  const executeDisconnectCustomDomain = async () => {
+    setConfirmModal(null);
+    if (!user || !selectedBrandForDomain) return;
 
     setIsSaving(true);
     try {
@@ -784,11 +828,19 @@ export default function MyPage() {
                               {profile.requested_brand_id}.creaibox.com
                             </span>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-3">
                             <span className="animate-pulse inline-block w-2 h-2 rounded-full bg-amber-500" />
                             <span className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-amber-400">
                               PENDING
                             </span>
+                            <button
+                              type="button"
+                              onClick={(e) => handleCancelBrand(profile.requested_brand_id, e)}
+                              disabled={isSaving}
+                              className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors font-bold"
+                            >
+                              신청 취소
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -993,11 +1045,18 @@ export default function MyPage() {
                                         {currentRequestedDomain}
                                       </span>
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-3">
                                       <span className="animate-pulse inline-block w-2 h-2 rounded-full bg-amber-500" />
                                       <span className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-amber-400">
                                         PENDING
                                       </span>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => handleOpenDisconnectModal(e)}
+                                        className="rounded-xl bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-zinc-300 transition-colors"
+                                      >
+                                        신청 취소
+                                      </button>
                                     </div>
                                   </div>
                                   <div className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-5 text-[11px] font-bold text-zinc-500 leading-relaxed text-left space-y-1">
@@ -1029,7 +1088,8 @@ export default function MyPage() {
                                         LIVE
                                       </span>
                                       <button
-                                        onClick={disconnectCustomDomain}
+                                        type="button"
+                                        onClick={(e) => handleOpenDisconnectModal(e)}
                                         className="rounded-xl bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-zinc-300 transition-colors"
                                       >
                                         연결 해제
@@ -1303,6 +1363,41 @@ export default function MyPage() {
           </div>
         </div>
       </div>
+      {/* 🌟 Custom Confirmation Modal */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-[32px] border border-zinc-800 bg-[#0b0e14] p-8 shadow-2xl text-left space-y-6 animate-in fade-in zoom-in-95 duration-200">
+            <div className="space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 flex items-center gap-1.5">
+                <CheckCircle size={12} className="text-blue-400" /> 확인
+              </span>
+              <h3 className="text-lg font-black text-white italic uppercase">
+                {confirmModal.title}
+              </h3>
+              <p className="text-xs text-zinc-400 font-bold leading-relaxed">
+                {confirmModal.message}
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmModal(null)}
+                className="flex-1 rounded-2xl border border-zinc-850 bg-zinc-900 hover:bg-zinc-800 py-3.5 text-xs font-black text-zinc-400 hover:text-white transition-all font-bold"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={confirmModal.onConfirm}
+                className="flex-1 rounded-2xl bg-blue-600 hover:bg-blue-500 py-3.5 text-xs font-black text-white transition-all shadow-[0_4px_12px_rgba(37,99,235,0.2)] font-bold"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
