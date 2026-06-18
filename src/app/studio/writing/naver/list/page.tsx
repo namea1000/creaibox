@@ -251,7 +251,7 @@ export default function NaverManuscriptListPage() {
       return;
     }
 
-    const normalized = (data ?? []).map((row, index) => normalizeNaverRecord(row, index));
+    const normalized = (data ?? []).map((row: any, index: number) => normalizeNaverRecord(row, index));
 
     setFallbackManuscripts(normalized);
     setCachedManuscripts(normalized);

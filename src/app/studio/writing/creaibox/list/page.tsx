@@ -260,7 +260,7 @@ export default function CreaiboxManuscriptListPage() {
       return;
     }
 
-    const normalized = (data ?? []).map((row, index) => normalizeCreaiboxRecord(row, index));
+    const normalized = (data ?? []).map((row: any, index: number) => normalizeCreaiboxRecord(row, index));
 
     setFallbackManuscripts(normalized);
     setCachedManuscripts(normalized);

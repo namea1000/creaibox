@@ -78,7 +78,7 @@ async function resolveUserId() {
 
     const sessionUserIdPromise = supabase.auth
       .getSession()
-      .then(({ data: { session } }) => session?.user?.id || null)
+      .then(({ data: { session } }: any) => session?.user?.id || null)
       .catch(() => null);
 
     const sessionUserId = await Promise.race([sessionUserIdPromise, timeout]);
@@ -86,7 +86,7 @@ async function resolveUserId() {
 
     const userPromise = supabase.auth
       .getUser()
-      .then(({ data: { user } }) => user?.id || null)
+      .then(({ data: { user } }: any) => user?.id || null)
       .catch(() => null);
 
     const userId = await Promise.race([userPromise, timeout]);

@@ -120,7 +120,7 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       void applyUser(session?.user ?? null);
     });
 

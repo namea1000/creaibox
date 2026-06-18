@@ -332,7 +332,7 @@ function MusicPlanningPageContent() {
 
       savedTitleSet = new Set(
         (savedSongs ?? [])
-          .map((song) => String(song.title || "").trim())
+          .map((song: any) => String(song.title || "").trim())
           .filter(Boolean)
       );
     }

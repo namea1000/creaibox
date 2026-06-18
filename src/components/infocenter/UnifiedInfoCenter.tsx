@@ -60,7 +60,7 @@ export default function UnifiedInfoCenter({
         .order("created_at", { ascending: false });
 
       if (!error && data) {
-        const formattedData = data.map((post) => ({
+        const formattedData = data.map((post: any) => ({
           ...post,
           comment_count: post.community_comments?.[0]?.count || 0,
         }));

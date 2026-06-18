@@ -182,7 +182,7 @@ export default function IdeaHubPage() {
       try {
         const { data } = await fetchContentPlannerCampaigns();
         if (data) {
-          const keywords = new Set(data.map((c: { main_keyword?: string | null }) => c.main_keyword?.trim().toLowerCase() || ""));
+          const keywords = new Set<string>(data.map((c: { main_keyword?: string | null }) => c.main_keyword?.trim().toLowerCase() || ""));
           setCreatedCampaignKeywords(keywords);
         }
       } catch (err) {

@@ -230,7 +230,7 @@ export default function APIVaultAdminPage() {
 
     const totalCalls = logs.length;
 
-    const monthlyCalls = logs.filter((log) => {
+    const monthlyCalls = logs.filter((log: any) => {
       const d = new Date(log.created_at);
       const now = new Date();
 
@@ -241,11 +241,11 @@ export default function APIVaultAdminPage() {
     }).length;
 
     const failCount = logs.filter(
-      (log) => log.status !== "success"
+      (log: any) => log.status !== "success"
     ).length;
 
     const estimatedCost = logs.reduce(
-      (sum, log) => sum + Number(log.estimated_cost || 0),
+      (sum: number, log: any) => sum + Number(log.estimated_cost || 0),
       0
     );
 
@@ -258,7 +258,7 @@ export default function APIVaultAdminPage() {
 
     const providerMap: Record<string, number> = {};
 
-    logs.forEach((log) => {
+    logs.forEach((log: any) => {
       providerMap[log.provider || "unknown"] =
         (providerMap[log.provider || "unknown"] || 0) + 1;
     });
@@ -272,7 +272,7 @@ export default function APIVaultAdminPage() {
 
     const studioMap: Record<string, number> = {};
 
-    logs.forEach((log) => {
+    logs.forEach((log: any) => {
       studioMap[log.studio_type || "unknown"] =
         (studioMap[log.studio_type || "unknown"] || 0) + 1;
     });
