@@ -142,7 +142,13 @@ export default function ImageNodeView(props: NodeViewProps) {
       await setAsFeatured(src);
       alert("대표 이미지로 지정되었습니다.");
     } catch (err: any) {
-      console.error(err);
+      console.error("대표 이미지 지정 처리 중 오류:", {
+        message: err.message,
+        code: err.code,
+        details: err.details,
+        hint: err.hint,
+        err
+      });
       alert(`대표 이미지 지정 중 오류가 발생했습니다: ${err.message || String(err)}`);
     } finally {
       setIsSettingFeatured(false);

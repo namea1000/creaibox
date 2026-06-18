@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import CreaiboxCreateTab from "@/components/writing/creaibox/tabs/CreaiboxCreateTab";
 import { createClient } from "@/utils/supabase/client";
 import type { User } from "@supabase/supabase-js";
@@ -258,6 +258,7 @@ export default function CreaiboxEditorPage() {
 }
 
 function CreaiboxEditorPageContent() {
+  const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
 
   const resolveAuthUser = React.useCallback(async (): Promise<User | null> => {
@@ -268,7 +269,7 @@ function CreaiboxEditorPageContent() {
 
       const sessionPromise = supabase.auth
         .getSession()
-        .then(({ data: { session } }) => session?.user || null)
+        .then((res: any) => res.data?.session?.user || null)
         .catch(() => null);
 
       const sessionUser = await Promise.race([sessionPromise, timeout]);
@@ -276,7 +277,7 @@ function CreaiboxEditorPageContent() {
 
       const userPromise = supabase.auth
         .getUser()
-        .then(({ data: { user } }) => user || null)
+        .then((res: any) => res.data?.user || null)
         .catch(() => null);
 
       const user = await Promise.race([userPromise, timeout]);
@@ -420,9 +421,9 @@ function CreaiboxEditorPageContent() {
       const user = activeUser || (await resolveAuthUser());
 
       if (!user) {
-        alert(
-          "로그인 세션을 확인하지 못해 저장을 진행하지 못했습니다. 다시 로그인 상태를 확인해 주세요."
-        );
+        if (confirm("저장 및 발행을 하려면 로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?")) {
+          router.push("/login?redirect=/studio/writing/creaibox/create");
+        }
         return;
       }
 

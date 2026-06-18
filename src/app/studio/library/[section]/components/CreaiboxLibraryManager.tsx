@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useParams } from "next/navigation";
 import { 
   Upload, 
   Search, 
@@ -55,6 +56,9 @@ function getStoragePathFromPublicUrl(url: string | null | undefined) {
 
 export default function CreaiboxLibraryManager() {
   const supabase = createClient();
+  const { section } = useParams<{ section: string }>();
+  const isImageSection = section === "image";
+
   const [images, setImages] = useState<GeneratedImageRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -74,11 +78,12 @@ export default function CreaiboxLibraryManager() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      const targetSourceType = isImageSection ? "image-studio" : "writing_creaibox_posts";
       let query = supabase
         .from("generated_images")
         .select("*")
         .eq("user_id", user.id)
-        .eq("source_type", "writing_creaibox_posts");
+        .eq("source_type", targetSourceType);
 
       if (sortBy === "newest") {
         query = query.order("created_at", { ascending: false });
@@ -95,7 +100,7 @@ export default function CreaiboxLibraryManager() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, sortBy]);
+  }, [supabase, sortBy, isImageSection]);
 
   useEffect(() => {
     void fetchImages();
@@ -141,7 +146,7 @@ export default function CreaiboxLibraryManager() {
       for (const file of validFiles) {
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("sourceType", "writing_creaibox_posts");
+        formData.append("sourceType", isImageSection ? "image-studio" : "writing_creaibox_posts");
         formData.append("imageRole", "gallery"); // 기본 본문 삽입용 gallery 역할 부여
         formData.append("title", file.name.replace(/\.[^/.]+$/, "")); // 확장자 제외 파일명
 
@@ -240,13 +245,15 @@ export default function CreaiboxLibraryManager() {
           <div>
             <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-3.5 py-1.5 text-xs font-black uppercase tracking-widest text-violet-400">
               <ImageIcon size={14} />
-              Creaibox Media Library
+              {isImageSection ? "Image Studio Library" : "Creaibox Media Library"}
             </div>
             <h1 className="text-2xl font-black tracking-tight text-white md:text-3xl">
-              크리에이박스 미디어 라이브러리
+              {isImageSection ? "이미지 스튜디오 미디어 라이브러리" : "크리에이박스 미디어 라이브러리"}
             </h1>
             <p className="mt-1 text-xs font-medium text-zinc-500">
-              글쓰기 에디터 및 첨부파일로 등록된 이미지 자산을 통합 관리하고 재사용합니다.
+              {isImageSection 
+                ? "이미지 스튜디오(디자인 편집기)에서 저장되거나 편집된 디자인 자산을 관리합니다." 
+                : "글쓰기 에디터 및 첨부파일로 등록된 이미지 자산을 통합 관리하고 재사용합니다."}
             </p>
           </div>
 

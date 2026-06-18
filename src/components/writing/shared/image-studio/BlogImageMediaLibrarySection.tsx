@@ -30,6 +30,7 @@ interface BlogImageMediaLibrarySectionProps {
   mode?: "thumbnail" | "content";
   className?: string;
   onInsertImage?: (image: GeneratedImage) => void;
+  onOpenMediaModal?: () => void;
 }
 
 export default function BlogImageMediaLibrarySection({
@@ -47,6 +48,7 @@ export default function BlogImageMediaLibrarySection({
   mode = "thumbnail",
   className = "",
   onInsertImage,
+  onOpenMediaModal,
 }: BlogImageMediaLibrarySectionProps) {
   const supabase = createClient();
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
@@ -138,31 +140,41 @@ export default function BlogImageMediaLibrarySection({
 
   return (
     <div className={`flex min-h-[520px] flex-col overflow-hidden ${className}`}>
+      <input
+        ref={uploadInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(event) => {
+          if (event.target.files) void handleUploadFiles(event.target.files);
+        }}
+      />
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-800/60 bg-slate-950/40 px-4">
         <h2 className="flex items-center gap-2 text-[13px] font-black text-zinc-300">
           <Grid size={16} className="text-blue-400" /> MEDIA LIBRARY
         </h2>
 
-        <input
-          ref={uploadInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          onChange={(event) => {
-            if (event.target.files) void handleUploadFiles(event.target.files);
-          }}
-        />
-
-        <button
-          type="button"
-          onClick={() => uploadInputRef.current?.click()}
-          disabled={isUploading}
-          className="flex items-center gap-1.5 border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-[13px] font-black text-emerald-300 transition hover:bg-emerald-500/20 disabled:opacity-60"
-        >
-          {isUploading ? <RefreshCw size={13} className="animate-spin" /> : <UploadCloud size={13} />}
-          파일 첨부
-        </button>
+        <div className="flex items-center gap-4">
+          {onOpenMediaModal && (
+            <button
+              type="button"
+              onClick={onOpenMediaModal}
+              className="text-[13px] font-black text-zinc-400 hover:text-white transition cursor-pointer"
+            >
+              교체
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => uploadInputRef.current?.click()}
+            disabled={isUploading}
+            className="flex items-center gap-1.5 text-[13px] font-black text-zinc-400 hover:text-white transition disabled:opacity-60 cursor-pointer"
+          >
+            {isUploading ? <RefreshCw size={13} className="animate-spin" /> : <UploadCloud size={13} />}
+            파일 첨부
+          </button>
+        </div>
       </div>
 
       <div

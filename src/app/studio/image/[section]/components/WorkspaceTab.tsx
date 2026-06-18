@@ -18,7 +18,10 @@ import {
   MousePointer,
   HelpCircle,
   Undo,
+  Cloud,
+  LayoutGrid,
 } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
 
 interface CanvasElement {
   id: string;
@@ -37,12 +40,14 @@ interface CanvasElement {
 
 export default function WorkspaceTab() {
   const searchParams = useSearchParams();
+  const supabase = createClient();
   
   // Set dimensions based on presets or URL queries
   const initialWidth = parseInt(searchParams.get("width") || "1080");
   const initialHeight = parseInt(searchParams.get("height") || "1080");
   const initialImg = searchParams.get("imageUrl") || "";
   const initialTitle = searchParams.get("title") || "";
+  const initialMode = searchParams.get("mode") || "";
 
   const [canvasWidth, setCanvasWidth] = useState(initialWidth);
   const [canvasHeight, setCanvasHeight] = useState(initialHeight);
@@ -50,7 +55,32 @@ export default function WorkspaceTab() {
 
   const [elements, setElements] = useState<CanvasElement[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [sidebarTab, setSidebarTab] = useState<"templates" | "elements" | "text" | "uploads" | "brand" | "ai">("templates");
+
+  // URL mode에 매핑되는 초기 탭 설정
+  const defaultTab = useMemo(() => {
+    if (initialMode === "bg-removal") return "ai";
+    if (initialMode === "adjust" || initialMode === "color") return "brand";
+    if (initialMode === "social") return "templates";
+    return "templates";
+  }, [initialMode]);
+
+  const [sidebarTab, setSidebarTab] = useState<"templates" | "library" | "elements" | "text" | "uploads" | "brand" | "ai">(defaultTab);
+  
+  // 색조 필터 상태 변수들 (Canva 스타일 보정 도구)
+  const [brightness, setBrightness] = useState(100);
+  const [contrast, setContrast] = useState(100);
+  const [saturate, setSaturate] = useState(100);
+  const [blur, setBlur] = useState(0);
+  const [grayscale, setGrayscale] = useState(0);
+  const [sepia, setSepia] = useState(0);
+
+  // 배경 제거 상태 변수
+  const [isBgRemoved, setIsBgRemoved] = useState(false);
+  const [isRemovingBg, setIsRemovingBg] = useState(false);
+
+  // 라이브러리 저장 상태 변수
+  const [isSavingToLibrary, setIsSavingToLibrary] = useState(false);
+  const [saveProgress, setSaveProgress] = useState(0);
   
   // AI Prompt State
   const [aiPrompt, setAiPrompt] = useState("");
@@ -72,7 +102,7 @@ export default function WorkspaceTab() {
       defaultElements.push({
         id: "el-bg-img",
         type: "image",
-        content: decodeURIComponent(initialImg),
+        content: `/api/free-assets/proxy?url=${encodeURIComponent(decodeURIComponent(initialImg))}`,
         x: 0,
         y: 0,
         width: 100,
@@ -132,7 +162,44 @@ export default function WorkspaceTab() {
     });
 
     setElements(defaultElements);
-  }, [initialImg, initialTitle]);
+    
+    if (initialMode === "bg-removal") {
+      setIsBgRemoved(true);
+      setSelectedId("el-bg-img");
+    }
+  }, [initialImg, initialTitle, initialMode]);
+
+  // 📚 보관함 이미지 목록 조회 상태 및 함수
+  const [libraryImages, setLibraryImages] = useState<any[]>([]);
+  const [isLoadingLibrary, setIsLoadingLibrary] = useState(false);
+
+  const fetchLibraryImages = async () => {
+    setIsLoadingLibrary(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from("generated_images")
+        .select("id, image_url, title, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+        
+      if (error) throw error;
+      setLibraryImages(data || []);
+    } catch (err) {
+      console.error("Fetch library images error:", err);
+    } finally {
+      setIsLoadingLibrary(false);
+    }
+  };
+
+  // 보관함 탭 활성화 시 목록 새로고침
+  useEffect(() => {
+    if (sidebarTab === "library") {
+      fetchLibraryImages();
+    }
+  }, [sidebarTab]);
 
   // Handle drag mechanics
   const handleElementMouseDown = (e: React.MouseEvent, id: string) => {
@@ -310,24 +377,222 @@ export default function WorkspaceTab() {
     setElements(updated);
   };
 
-  // Trigger compiler download
-  const handleCompileDownload = () => {
-    setIsDownloading(true);
-    setDownloadProgress(0);
+  // 🎨 실시간 레이아웃을 실제 해상도로 드로잉하는 헬퍼 함수
+  const drawCanvas = async () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
 
-    const interval = setInterval(() => {
-      setDownloadProgress(p => {
-        if (p >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setIsDownloading(false);
-            alert("디자인 에셋 컴파일이 완료되었습니다! 고해상도 PNG 파일로 저장되었습니다.");
-          }, 300);
-          return 100;
+    // 1. 배경 채우기
+    ctx.fillStyle = canvasBg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 화면상 캔버스 크기를 구해서 텍스트 폰트 크기 조절용 scale 계산
+    const editorCanvasEl = document.getElementById("editor-canvas");
+    const rect = editorCanvasEl ? editorCanvasEl.getBoundingClientRect() : { width: canvasWidth };
+    const scale = canvasWidth / (rect.width || canvasWidth);
+
+    // 2. 요소들 그리기
+    for (const el of elements) {
+      const isBg = el.id === "el-bg-img";
+      const x = isBg ? 0 : (el.x / 100) * canvas.width;
+      const y = isBg ? 0 : (el.y / 100) * canvas.height;
+      const w = isBg ? canvas.width : (el.width / 100) * canvas.width;
+      const h = isBg ? canvas.height : (el.height / 100) * canvas.height;
+
+      if (el.type === "image") {
+        // 이미지 로드용 Promise
+        const img = await new Promise<HTMLImageElement | null>((resolve) => {
+          const i = new Image();
+          i.crossOrigin = "anonymous";
+          i.onload = () => resolve(i);
+          i.onerror = () => resolve(null);
+          i.src = el.content;
+        });
+
+        if (img) {
+          ctx.save();
+          
+          // 배경 제거 시 크로마키(multiply) 적용
+          if (isBgRemoved && isBg) {
+            ctx.globalCompositeOperation = "multiply";
+            ctx.globalAlpha = 0.9;
+          }
+
+          // 필터 적용
+          ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) blur(${blur * scale}px) grayscale(${grayscale}%) sepia(${sepia}%)`;
+
+          ctx.drawImage(img, x, y, w, h);
+          ctx.restore();
         }
-        return p + 20;
+      } else if (el.type === "shape") {
+        ctx.save();
+        ctx.fillStyle = el.color || "#8b5cf6";
+        if (el.shapeType === "circle") {
+          ctx.beginPath();
+          ctx.arc(x + w / 2, y + h / 2, Math.min(w, h) / 2, 0, 2 * Math.PI);
+          ctx.fill();
+        } else if (el.shapeType === "star") {
+          ctx.beginPath();
+          const cx = x + w / 2;
+          const cy = y + h / 2;
+          const spikes = 5;
+          const outerRadius = Math.min(w, h) / 2;
+          const innerRadius = outerRadius * 0.4;
+          let rot = (Math.PI / 2) * 3;
+          let sx = cx;
+          let sy = cy;
+          const step = Math.PI / spikes;
+
+          ctx.moveTo(cx, cy - outerRadius);
+          for (let i = 0; i < spikes; i++) {
+            sx = cx + Math.cos(rot) * outerRadius;
+            sy = cy + Math.sin(rot) * outerRadius;
+            ctx.lineTo(sx, sy);
+            rot += step;
+
+            sx = cx + Math.cos(rot) * innerRadius;
+            sy = cy + Math.sin(rot) * innerRadius;
+            ctx.lineTo(sx, sy);
+            rot += step;
+          }
+          ctx.lineTo(cx, cy - outerRadius);
+          ctx.closePath();
+          ctx.fill();
+        } else {
+          // 기본 사각형 (rect)
+          const radius = 4 * scale;
+          ctx.beginPath();
+          if (typeof ctx.roundRect === "function") {
+            ctx.roundRect(x, y, w, h, radius);
+          } else {
+            ctx.rect(x, y, w, h);
+          }
+          ctx.fill();
+        }
+        ctx.restore();
+      } else if (el.type === "text") {
+        ctx.save();
+        ctx.fillStyle = el.color || "#ffffff";
+        const fontSize = (el.fontSize || 16) * scale;
+        ctx.font = `${el.fontWeight || "normal"} ${fontSize}px sans-serif`;
+        ctx.textBaseline = "top";
+        
+        // 줄바꿈 처리
+        const words = el.content.split("");
+        let line = "";
+        const maxWidth = w;
+        const lineHeight = fontSize * 1.2;
+        let currentY = y;
+
+        for (let n = 0; n < words.length; n++) {
+          const testLine = line + words[n];
+          const metrics = ctx.measureText(testLine);
+          const testWidth = metrics.width;
+          if (testWidth > maxWidth && n > 0) {
+            ctx.fillText(line, x, currentY);
+            line = words[n];
+            currentY += lineHeight;
+          } else {
+            line = testLine;
+          }
+        }
+        ctx.fillText(line, x, currentY);
+        ctx.restore();
+      }
+    }
+
+    return canvas;
+  };
+
+  // Trigger compiler download
+  const handleCompileDownload = async () => {
+    setIsDownloading(true);
+    setDownloadProgress(10);
+
+    try {
+      setDownloadProgress(30);
+      const canvas = await drawCanvas();
+      if (!canvas) {
+        throw new Error("캔버스 렌더링에 실패했습니다.");
+      }
+      
+      setDownloadProgress(70);
+      const dataUrl = canvas.toDataURL("image/png");
+      
+      const link = document.createElement("a");
+      link.download = `${initialTitle || "디자인_수정본"}_${Date.now()}.png`;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      setDownloadProgress(100);
+      setTimeout(() => {
+        setIsDownloading(false);
+      }, 300);
+    } catch (err: any) {
+      console.error(err);
+      setIsDownloading(false);
+      alert(`다운로드 실패: ${err.message || err}`);
+    }
+  };
+
+  // 사용자의 이미지 라이브러리에 저장
+  const handleSaveToLibrary = async () => {
+    setIsSavingToLibrary(true);
+    setSaveProgress(10);
+
+    try {
+      setSaveProgress(30);
+      const canvas = await drawCanvas();
+      if (!canvas) {
+        throw new Error("캔버스 렌더링에 실패했습니다.");
+      }
+
+      setSaveProgress(50);
+      
+      // canvas를 blob으로 변환
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob((b) => resolve(b), "image/webp", 0.92);
       });
-    }, 200);
+
+      if (!blob) {
+        throw new Error("이미지 파일 생성에 실패했습니다.");
+      }
+
+      setSaveProgress(70);
+
+      // FormData 생성 및 API 호출
+      const formData = new FormData();
+      formData.append("file", blob, `canvas-${Date.now()}.webp`);
+      formData.append("sourceType", "image-studio");
+      formData.append("title", initialTitle || "디자인 편집기 작업 이미지");
+      formData.append("imageRole", "gallery");
+
+      const response = await fetch("/api/image-upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.error || `서버 응답 오류 (코드: ${response.status})`);
+      }
+
+      setSaveProgress(100);
+      setTimeout(() => {
+        setIsSavingToLibrary(false);
+        alert("성공적으로 보관함(이미지 라이브러리)에 저장되었습니다!");
+        fetchLibraryImages();
+      }, 300);
+    } catch (err: any) {
+      console.error(err);
+      setIsSavingToLibrary(false);
+      alert(`보관함 저장 실패: ${err.message || err}`);
+    }
   };
 
   const selectedEl = useMemo(() => {
@@ -372,7 +637,8 @@ export default function WorkspaceTab() {
       {/* 👈 Left Toolbar Selector */}
       <div className="w-16 border-r border-zinc-800 bg-zinc-950/80 flex flex-col items-center py-4 gap-4 shrink-0">
         {[
-          { id: "templates", label: "템플릿", icon: FolderOpen },
+          { id: "templates", label: "템플릿", icon: LayoutGrid },
+          { id: "library", label: "보관함", icon: FolderOpen },
           { id: "elements", label: "요소", icon: Layers },
           { id: "text", label: "텍스트", icon: Type },
           { id: "uploads", label: "업로드", icon: Upload },
@@ -429,6 +695,81 @@ export default function WorkspaceTab() {
                 </button>
               ))}
             </div>
+
+            {/* 📏 소셜 미디어 해상도 규격 프리셋 추가 */}
+            <div className="border-t border-zinc-900 pt-4 mt-4 space-y-4">
+              <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest flex items-center gap-1.5">
+                <Layers size={14} className="text-purple-400" /> 소셜 미디어 규격 변환
+              </h4>
+              <div className="grid grid-cols-1 gap-2 pt-1">
+                {[
+                  { name: "인스타그램 피드 (1:1)", w: 1080, h: 1080, desc: "카드뉴스용 스퀘어 규격" },
+                  { name: "인스타그램 스토리 (9:16)", w: 1080, h: 1920, desc: "릴스 / 쇼츠 모바일 규격" },
+                  { name: "유튜브 썸네일 (16:9)", w: 1280, h: 720, desc: "가로 와이드 스크린" },
+                  { name: "페이스북 커버 (1.91:1)", w: 1200, h: 630, desc: "공유용 가로형 규격" },
+                ].map((preset) => (
+                  <button
+                    key={preset.name}
+                    onClick={() => {
+                      setCanvasWidth(preset.w);
+                      setCanvasHeight(preset.h);
+                    }}
+                    className="w-full text-left p-3 border border-zinc-850 bg-zinc-950 hover:bg-zinc-900 rounded-xl hover:border-purple-500/30 transition-all flex justify-between items-center cursor-pointer"
+                  >
+                    <div>
+                      <span className="text-xs font-bold text-zinc-200 block">{preset.name}</span>
+                      <span className="text-[9px] text-zinc-500 font-bold block mt-0.5">{preset.desc}</span>
+                    </div>
+                    <span className="text-[10px] text-purple-400 font-mono font-black shrink-0 ml-2">
+                      {preset.w}x{preset.h}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {sidebarTab === "library" && (
+          <div className="space-y-4 flex-1 flex flex-col h-full">
+            <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest">내 이미지 보관함</h3>
+            <p className="text-[10px] text-zinc-500 leading-relaxed">
+              사용자 이미지 라이브러리에 저장된 작업물 목록입니다. 클릭하면 즉시 캔버스 레이어로 삽입됩니다.
+            </p>
+            
+            {isLoadingLibrary ? (
+              <div className="flex flex-col items-center justify-center py-10 space-y-2">
+                <div className="h-5 w-5 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
+                <span className="text-[10px] text-zinc-500">라이브러리 불러오는 중...</span>
+              </div>
+            ) : libraryImages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center border border-dashed border-zinc-850 rounded-xl bg-zinc-950/20">
+                <FolderOpen className="text-zinc-650 mb-2" size={20} />
+                <span className="text-[10px] font-bold text-zinc-500">저장된 이미지가 없습니다.</span>
+                <span className="text-[9px] text-zinc-600 mt-1 leading-relaxed px-4">
+                  우측 하단의 "보관함에 저장" 버튼을 눌러 첫 작업물을 보관해보세요!
+                </span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2.5 pt-2 flex-1 overflow-y-auto custom-scrollbar">
+                {libraryImages.map((img) => (
+                  <button
+                    key={img.id}
+                    onClick={() => handleInsertImage(img.image_url)}
+                    className="group rounded-xl border border-zinc-850 bg-zinc-950 p-2 text-left hover:border-purple-500/30 transition-all cursor-pointer relative overflow-hidden flex flex-col w-full"
+                  >
+                    <img 
+                      src={img.image_url} 
+                      alt={img.title || "Library Asset"} 
+                      className="w-full h-20 min-h-[80px] object-cover rounded-lg border border-zinc-900 mb-1.5" 
+                    />
+                    <span className="text-[9px] font-bold text-zinc-400 group-hover:text-zinc-200 block truncate w-full">
+                      {img.title || "제목 없음"}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -547,6 +888,53 @@ export default function WorkspaceTab() {
                 </button>
               ))}
             </div>
+
+            {/* 🎨 Canva 스타일 이미지 필터/조정 툴 추가 */}
+            <div className="border-t border-zinc-900 pt-4 mt-4 space-y-4">
+              <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest flex items-center gap-1.5">
+                <Palette size={14} className="text-purple-400" /> 이미지 보정 및 필터
+              </h4>
+              <div className="space-y-3.5">
+                {[
+                  { key: "brightness", label: "밝기 (Brightness)", min: 0, max: 200, unit: "%", val: brightness, setVal: setBrightness },
+                  { key: "contrast", label: "대비 (Contrast)", min: 0, max: 200, unit: "%", val: contrast, setVal: setContrast },
+                  { key: "saturate", label: "채도 (Saturation)", min: 0, max: 200, unit: "%", val: saturate, setVal: setSaturate },
+                  { key: "blur", label: "흐림 (Blur)", min: 0, max: 20, unit: "px", val: blur, setVal: setBlur },
+                  { key: "grayscale", label: "흑백 (Grayscale)", min: 0, max: 100, unit: "%", val: grayscale, setVal: setGrayscale },
+                  { key: "sepia", label: "세피아 (Sepia)", min: 0, max: 100, unit: "%", val: sepia, setVal: setSepia },
+                ].map((slider) => (
+                  <div key={slider.key} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[10px] font-bold text-zinc-400">
+                      <span>{slider.label}</span>
+                      <span className="font-mono text-purple-400">{slider.val}{slider.unit}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={slider.min}
+                      max={slider.max}
+                      value={slider.val}
+                      onChange={(e) => slider.setVal(Number(e.target.value))}
+                      className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                    />
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBrightness(100);
+                    setContrast(100);
+                    setSaturate(100);
+                    setBlur(0);
+                    setGrayscale(0);
+                    setSepia(0);
+                  }}
+                  className="w-full py-2 border border-zinc-850 bg-zinc-950 hover:bg-zinc-900 text-zinc-400 hover:text-white transition rounded-xl text-[10px] font-black uppercase tracking-wider cursor-pointer"
+                >
+                  보정 값 초기화
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -612,6 +1000,25 @@ export default function WorkspaceTab() {
                     />
                   ))}
                 </div>
+              </div>
+            )}
+
+            {selectedEl?.type === "image" && (
+              <div className="flex items-center gap-2.5 border-l border-zinc-800 pl-3">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsRemovingBg(true);
+                    await new Promise((resolve) => setTimeout(resolve, 800));
+                    setIsBgRemoved(prev => !prev);
+                    setIsRemovingBg(false);
+                  }}
+                  disabled={isRemovingBg}
+                  className="inline-flex items-center gap-1.5 bg-purple-600 hover:bg-purple-500 disabled:bg-zinc-850 px-3 py-1.5 rounded text-[10px] font-black text-white transition-all cursor-pointer"
+                >
+                  <Sparkles size={11} className={isRemovingBg ? "animate-spin" : ""} />
+                  {isRemovingBg ? "배경 지우는 중..." : isBgRemoved ? "배경 지우기 취소" : "매직 AI 배경 제거"}
+                </button>
               </div>
             )}
 
@@ -727,7 +1134,12 @@ export default function WorkspaceTab() {
                     <img
                       src={el.content}
                       alt="Layer"
-                      className="w-full h-full object-cover pointer-events-none rounded-lg"
+                      className="w-full h-full object-cover pointer-events-none rounded-lg transition-all"
+                      style={{
+                        filter: `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) blur(${blur}px) grayscale(${grayscale}%) sepia(${sepia}%)`,
+                        mixBlendMode: isBgRemoved ? "multiply" : "normal",
+                        opacity: isBgRemoved && isBg ? 0.9 : 1,
+                      }}
                     />
                   </div>
                 );
@@ -804,15 +1216,28 @@ export default function WorkspaceTab() {
         {/* Bottom Save & Compile Area */}
         <div className="w-full max-w-4xl bg-zinc-950/40 border border-zinc-900 rounded-xl p-3 flex flex-col sm:flex-row gap-3 items-center justify-between shadow-md mt-4 text-xs font-sans">
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className={`h-2 w-2 rounded-full ${isSavingToLibrary ? "bg-purple-500 animate-pulse" : "bg-emerald-500 animate-pulse"}`} />
             <span className="text-zinc-500 font-bold">에디터 상태: </span>
-            <span className="text-zinc-350 font-bold">임시 저장 완료</span>
+            <span className="text-zinc-350 font-bold">
+              {isSavingToLibrary 
+                ? `보관함 저장 중... (${saveProgress}%)` 
+                : "임시 저장 완료"}
+            </span>
           </div>
 
-          <div className="flex gap-2 w-full sm:w-auto">
+          <div className="flex gap-2.5 w-full sm:w-auto">
+            <button
+              onClick={handleSaveToLibrary}
+              disabled={isSavingToLibrary || isDownloading}
+              className="flex-1 sm:flex-initial inline-flex h-9 items-center justify-center gap-1.5 px-5 rounded-xl bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-950 disabled:text-zinc-650 border border-zinc-800 hover:border-purple-500/30 text-zinc-300 font-black uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer"
+            >
+              <Cloud size={14} className={isSavingToLibrary ? "animate-pulse text-purple-400" : ""} />
+              {isSavingToLibrary ? "저장 중..." : "보관함에 저장"}
+            </button>
             <button
               onClick={handleCompileDownload}
-              className="flex-1 sm:flex-initial inline-flex h-9 items-center justify-center gap-1.5 px-6 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer"
+              disabled={isSavingToLibrary || isDownloading}
+              className="flex-1 sm:flex-initial inline-flex h-9 items-center justify-center gap-1.5 px-6 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:bg-purple-900 text-white font-black uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer"
             >
               <Download size={14} /> 다운로드
             </button>

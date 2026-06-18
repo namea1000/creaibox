@@ -26,7 +26,7 @@ const sectionNames: Record<string, string> = {
 export default function LibrarySectionPage() {
   const { section } = useParams<{ section: string }>();
 
-  if (section === "creaibox") {
+  if (section === "creaibox" || section === "image") {
     return <CreaiboxLibraryManager />;
   }
 

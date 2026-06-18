@@ -17,6 +17,31 @@ interface PublishedPost {
   thumbnailUrl?: string | null;
 }
 
+function isMainSitePost(canonicalUrl: string | null) {
+  if (!canonicalUrl) return true;
+  try {
+    const url = new URL(canonicalUrl);
+    const hostname = url.hostname.toLowerCase();
+    
+    if (hostname.endsWith("localhost")) {
+      const parts = hostname.split(".");
+      if (parts.length <= 1 || parts[0] === "www") return true;
+      return false;
+    }
+    
+    if (hostname.endsWith("creaibox.com")) {
+      const parts = hostname.split(".");
+      if (parts.length === 2) return true;
+      if (parts.length === 3 && parts[0] === "www") return true;
+      return false;
+    }
+
+    return false;
+  } catch (e) {
+    return true;
+  }
+}
+
 function buildExcerpt(post: PublishedPost) {
   const source = (post.meta_description || post.focus_keyword || "CreAibox 인사이트 포스팅").trim();
   return source.length > 150 ? `${source.slice(0, 150)}...` : source;
@@ -59,7 +84,7 @@ export default async function BlogPage() {
   }
 
 
-  const publishedPostsRaw = (((posts as any) as PublishedPost[] | null) || []).filter((post) => post.slug);
+  const publishedPostsRaw = (((posts as any) as PublishedPost[] | null) || []).filter((post) => post.slug && isMainSitePost(post.canonical_url));
   let publishedPosts: PublishedPost[] = [];
 
   if (publishedPostsRaw.length > 0) {

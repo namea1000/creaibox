@@ -115,6 +115,31 @@ function formatDate(value: string | null) {
   return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}.`;
 }
 
+function isMainSitePost(canonicalUrl: string | null) {
+  if (!canonicalUrl) return true;
+  try {
+    const url = new URL(canonicalUrl);
+    const hostname = url.hostname.toLowerCase();
+    
+    if (hostname.endsWith("localhost")) {
+      const parts = hostname.split(".");
+      if (parts.length <= 1 || parts[0] === "www") return true;
+      return false;
+    }
+    
+    if (hostname.endsWith("creaibox.com")) {
+      const parts = hostname.split(".");
+      if (parts.length === 2) return true;
+      if (parts.length === 3 && parts[0] === "www") return true;
+      return false;
+    }
+
+    return false;
+  } catch (e) {
+    return true;
+  }
+}
+
 async function fetchPublishedPost(slug: string) {
   const supabase = await createClient();
   const decodedSlug = decodeURIComponent(slug);
@@ -148,6 +173,9 @@ async function fetchPublishedPost(slug: string) {
 
 
   const post = data[0] as PublishedPostDetail;
+  if (!isMainSitePost(post.canonical_url)) {
+    return null;
+  }
 
   // Fetch thumbnail for this post
   const { data: images, error: imagesError } = await supabase

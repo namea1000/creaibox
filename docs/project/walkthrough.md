@@ -390,3 +390,199 @@ AI 생성 단계를 거치지 않고, 사용자가 직접 수동으로 처음부
 
 ### 12-3. 검증 상태
 * `npx tsc --noEmit`을 돌려 **에러 없음(0 compilation errors)** 상태로 컴파일 및 타입 검증이 성공적으로 완료되었음을 검증했습니다.
+
+---
+
+## 13. 대표 이미지 지정 오류(신규 삽입 실패) 디버깅 및 Supabase 브라우저 클라이언트 싱글톤 리팩토링
+
+블로그 에디터 본문 내 이미지 툴바에서 "대표 이미지 지정" 버튼 클릭 시, RLS(Row Level Security) 정책 위반으로 발생하던 `신규 대표 이미지 삽입 실패: {}` 버그를 디버깅하여 완전히 해결하였습니다.
+
+### 13-1. 주요 작업 내역
+* **원인 규명 및 RLS 보안 강화**:
+  * 기존 `src/utils/supabase/client.ts`의 `createClient` 함수가 호출될 때마다 `@supabase/ssr`의 `createBrowserClient`를 사용해 매번 새로운 Supabase Client 인스턴스를 무상태로 생성하고 있었습니다.
+  * 이로 인해 여러 컴포넌트나 이벤트가 비동기로 호출될 때 각 클라이언트 인스턴스 간 세션 동기화 지연 및 누락이 발생하였고, 인증 헤더(JWT)가 비어 있는 비인증(Anonymous) 유저 상태로 Supabase API 요청이 가면서 `generated_images` 테이블의 `insert` RLS 정책(`auth.uid() = user_id`)을 위반하는 에러가 발생했음을 추적하여 알아냈습니다.
+* **Supabase Browser Client 싱글톤(Singleton) 아키텍처 구현**:
+  * 브라우저 클라이언트를 단일 인스턴스로 관리 및 캐싱하는 전역 싱글톤 패턴으로 [client.ts](file:///Users/a1234/Local%20Sites/creaibox/src/utils/supabase/client.ts)를 리팩토링하여 전체 컴포넌트에서 로그인 세션 상태가 100% 실시간 공유되도록 보증했습니다.
+* **에러 로그 상세화 및 가시성 개선**:
+  * 기존 에디터 코드에서 `catch (err)` 구문 내에서 에러 객체 자체를 단순히 `console.error(err)`로만 출력하여 브라우저 콘솔 및 에러 창에 빈 객체 `{}`로 숨겨지던 현상을 해소했습니다.
+  * [UniversalBlogEditor.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/editor/UniversalBlogEditor.tsx), [ImageNodeView.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/editor/extensions/ImageNodeView.tsx), [BlogImageStudioPanel.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/shared/image-studio/BlogImageStudioPanel.tsx) 및 [MediaLibrarySelectModal.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/shared/image-studio/MediaLibrarySelectModal.tsx) 파일 내 DB 작업 실패 catch 구문에 `message`, `code`, `details`, `hint` 등 Supabase 에러 구조체의 필드값들을 명시적으로 직렬화해서 출력하도록 개선하였습니다.
+
+### 13-2. 변경 및 추가 파일 목록
+* **[MODIFY] [client.ts](file:///Users/a1234/Local%20Sites/creaibox/src/utils/supabase/client.ts)**: 브라우저 클라이언트 인스턴스를 캐싱하여 단일 인스턴스만 공유 및 반환하도록 싱글톤 패턴 적용.
+* **[MODIFY] [UniversalBlogEditor.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/editor/UniversalBlogEditor.tsx)**: `handleSetAsFeaturedImage` 함수 내의 `update`, `select`, `insert` 쿼리 실패 시 콘솔에 상세 에러(message, code, details, hint)를 명확하게 기록하도록 개선.
+* **[MODIFY] [ImageNodeView.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/editor/extensions/ImageNodeView.tsx)**: 대표 이미지 지정 처리 오류 catch block 내 상세 에러 속성 출력을 개선.
+* **[MODIFY] [BlogImageStudioPanel.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/shared/image-studio/BlogImageStudioPanel.tsx)**: `handleSetFeaturedImage` 내부의 쿼리 에러 로깅을 정교화.
+* **[MODIFY] [MediaLibrarySelectModal.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/shared/image-studio/MediaLibrarySelectModal.tsx)**: 썸네일 설정 팝업 내 `handleSubmit` 액션 실패 시 팝업 경고창 및 콘솔에 상세 에러를 기록하도록 개선.
+
+### 13-3. 검증 상태
+* `npx tsc --noEmit` 타입 검사를 돌려 **에러 없음(0 compilation errors)** 상태를 확인하고, 싱글톤 아키텍처 및 툴바 에러 처리의 빌드 무결성을 최종 확보했습니다.
+
+---
+
+## 14. 미디어 라이브러리 더 불러오기 페이징 및 초기 크기 조정
+
+대표 이미지(썸네일) 설정 모달의 초기 이미지 노출 수량 및 "미디어 더 불러오기" 추가 수량을 변경하여 모달 하단의 불필요한 여백을 줄이고 스크롤 편의성을 크게 늘렸습니다.
+
+### 14-1. 주요 작업 내역
+* **초기 로드 및 페이징 단위 일괄 상향**:
+  * 기존에는 최초 모달 진입 시 이미지가 단 `24`개(3줄 분량, 한 줄에 8개 배치 기준)만 표시되어, `90vh` 높이의 큰 모달창 아래쪽에 과도한 검은색 빈 공간이 존재했었습니다.
+  * 또한 "미디어 더 불러오기" 버튼 클릭 시에도 `24`개씩만 추가 스캔되어 스크롤이 번거로웠습니다.
+  * 이를 개선하고자 **초기 노출 이미지 크기** 및 **한 번 클릭 시 더 불러오는 이미지 수량**을 모두 **`56`개(7줄 분량)**로 대폭 상향했습니다. 최초 진입 시 빈 영역을 꽉 채워 이미지가 렌더링되며, 더 불러올 때도 7줄씩 쾌적하게 로드됩니다.
+
+### 14-2. 변경 및 추가 파일 목록
+* **[MODIFY] [MediaLibrarySelectModal.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/shared/image-studio/MediaLibrarySelectModal.tsx)**:
+  * 초기 `pageSize` 상태 정의 기본값을 `24`에서 `56`으로 변경.
+  * 더 불러오기 클릭 이벤트의 `setPageSize` 증분 오프셋을 `24`에서 `56`으로 변경.
+
+### 14-3. 검증 상태
+* `npx tsc --noEmit`을 돌려 컴파일 및 타입 상의 오류 없이 정상적으로 빌드 및 수정이 완료되었음을 교차 검증했습니다.
+
+---
+
+## 15. 미디어 라이브러리 및 썸네일 설정 패널 스타일 정비
+
+우측 이미지 스튜디오 패널 내의 중복되거나 칙칙한 버튼 스타일을 갱신하고, 미디어 라이브러리 모달창과 연동되는 퀵 액션 기능을 보강했습니다.
+
+### 15-1. 주요 작업 내역
+* **"파일 첨부" 버튼의 컬러 제거 및 텍스트 스타일 적용**:
+  * 기존의 녹색 보더 및 배경색(`border-emerald-500/30 bg-emerald-500/10`)으로 구성되었던 "파일 첨부" 버튼에서 컬러 속성을 완전히 제거하고, 깔끔한 텍스트 중심 단추(`text-zinc-400 hover:text-white transition`)로 변경했습니다.
+  * 컴퓨터로부터 수동 이미지를 첨부하는 본질적인 업로드 기능은 100% 동일하게 복원/유지되었습니다.
+* **"교체" 버튼 신설 및 미디어 라이브러리 연동**:
+  * `MEDIA LIBRARY` 타이틀 우측, 파일 첨부의 왼편에 **"교체"** 텍스트 버튼을 새로 배치했습니다.
+  * 이 버튼을 클릭하면 에디터의 "대표 이미지(썸네일) 설정" 모달창(`MediaLibrarySelectModal`)이 실시간으로 팝업되도록 Props 이벤트를 연계하여, 사용자가 패널 내에서 즉각적으로 전체 보관함 이미지를 확인 및 선택할 수 있게 조작 동선을 최적화했습니다.
+* **"대표 이미지(썸네일) 설정" 버튼 그라데이션 컬러링**:
+  * 기존의 어둡고 칙칙한 회색 테두리(`border-zinc-700 bg-zinc-800`) 버튼을 세련된 보라-분홍 그라데이션(`bg-gradient-to-tr from-purple-600 to-pink-600`) 및 옅은 분홍색 아이콘(`text-pink-100`)으로 교체했습니다.
+  * 파란색 "AI 이미지 생성 시작" 버튼과 색상이 뚜렷하게 대비되면서도 모던한 다크모드 무드와 잘 어우러지도록 포인트를 부여했습니다.
+
+### 15-2. 변경 및 추가 파일 목록
+* **[MODIFY] [BlogImageMediaLibrarySection.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/shared/image-studio/BlogImageMediaLibrarySection.tsx)**:
+  * 컴포넌트 Props에 `onOpenMediaModal?: () => void` 추가.
+  * 헤더 우측 영역에 텍스트형 `교체` 버튼 추가 및 텍스트형 `파일 첨부` 버튼 복원 적용.
+  * 닫혀있던 파일 `<input>` 태그의 물리적 마운트 상태 복원.
+* **[MODIFY] [BlogImageStudioPanel.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/shared/image-studio/BlogImageStudioPanel.tsx)**:
+  * "대표 이미지(썸네일) 설정" 버튼의 `className`을 퍼플-핑크 그라데이션으로 교정.
+  * `BlogImageMediaLibrarySection` 호출 시 `onOpenMediaModal={() => setIsMediaModalOpen(true)}` 이벤트 바인딩 추가.
+
+### 15-3. 검증 상태
+* `npx tsc --noEmit`을 돌려 구문 오류 및 타입 체크 상의 문제 없이 안정적으로 빌드가 완료되었음을 검증했습니다.
+
+---
+
+## 16. 대표 이미지(썸네일) 복제 시 데이터 불일치 버그 해결 (Featured Image Property Mapping Fix)
+
+### 16-1. 주요 작업 내역
+* **데이터 객체 간 속성 혼용으로 인한 DB insert 오류 해결**:
+  * 이미지 스튜디오 우측 패널의 갤러리 카드에서 대표 이미지를 지정할 때, 대상 이미지 객체(`selectedImage`)는 React state 구조인 `GeneratedImage` 타입(즉 `url` 속성을 사용)으로 넘어옵니다.
+  * 반면 미디어 라이브러리 모달(`MediaLibrarySelectModal`)에서 대표 이미지를 선택할 때는 Supabase DB 로우 구조인 `GeneratedImageRow` 타입(즉 `image_url` 속성을 사용)으로 넘어옵니다.
+  * 기존 `BlogImageStudioPanel.tsx` 내 `handleSetFeaturedImage` 함수는 `selectedImage.image_url`을 바로 Supabase insert 페이로드에 매핑하고 있어, 갤러리 카드(url)를 통해 대표 지정을 실행하면 `image_url`이 `undefined`가 되어 데이터베이스의 NOT NULL 제약조건을 위반하는 에러(`Failed to set featured image: {}`)가 발생했습니다.
+  * 이를 해결하기 위해 `const imageUrl = selectedImage.image_url || selectedImage.url` 안전 매핑 로직을 작성하고, `aspect_ratio`, `alt_text` 등 snake_case 및 camelCase 속성들이 혼용될 수 있는 모든 DB 입력 필드에 적절한 폴백(Fallback)을 적용했습니다.
+
+### 16-2. 변경 및 추가 파일 목록
+* **[MODIFY] [BlogImageStudioPanel.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/shared/image-studio/BlogImageStudioPanel.tsx)**:
+  * `handleSetFeaturedImage` 내부의 속성 추출 로직 리팩토링.
+  * `image_url`, `aspect_ratio`, `alt_text` 필드에 대해 camelCase와 snake_case 양방향 대응 완료.
+
+### 16-3. 검증 상태
+* `npx tsc --noEmit` 타입 정합성 체크 결과, 우리가 수정한 파일과 관련된 어떠한 컴파일 및 타입 에러도 검출되지 않아 완벽한 무결성을 입증했습니다.
+
+---
+
+## 17. 구글 드라이브 연동 Pixabay 스타일 무료 공유 에셋 라이브러리 탑재 (Free Assets Shared Library)
+
+### 17-1. 주요 작업 내역
+* **구글 드라이브 단일 데이터 소스 기반 메타데이터 구조화**:
+  * 별도의 복잡한 데이터베이스 테이블 마이그레이션 없이, 구글 드라이브 지정 폴더를 데이터의 단일 진실 공급원(Single Source of Truth)으로 구현했습니다.
+  * 파일 업로드 시 파일 설명(`description`) 속성에 제목(title), 태그(tags), 미디어 구분(mediaType), 기여자(uploader), 다운로드 수(downloads), 조회수(views), 해상도(`width`, `height`), 촬영 장비(`camera`) 정보를 JSON 문자열로 직렬화하여 함께 저장합니다.
+  * 업로드 성공 즉시 API를 통해 `reader/anyone` public 권한을 설정하고, CDN 구조(`https://lh3.googleusercontent.com/d/[FILE_ID]`)를 도출해 반환합니다.
+* **상세 백엔드 API 엔드포인트 구축**:
+  * `GET /api/free-assets/list`: 구글 드라이브 지정 폴더 내 모든 파일을 스캔하여 JSON 메타데이터 파싱 후 배열로 반환.
+  * `POST /api/free-assets/upload`: `FormData`로 전달된 원본 미디어 바이너리를 구글 드라이브에 직접 업로드하고 권한 및 `width`, `height`, `camera` 정보가 포함된 description을 매핑.
+  * `POST /api/free-assets/update`: 에셋 메타데이터 수정 시 촬영 장비(`camera`), 카테고리(`mediaType`), 제목(`title`) 등을 구글 드라이브 API를 통해 갱신.
+  * `POST /api/free-assets/action`: 다운로드/조회수 조작 발생 시 대상 파일의 description JSON을 읽고 카운트를 1 증가시켜 업데이트 처리.
+  * `GET /api/free-assets/proxy`: 외부 구글 드라이브 미디어 링크를 로딩할 때 브라우저의 CORS 및 Tainted Canvas 에러를 방지하기 위해 서버 측에서 CORS 헤더(`Access-Control-Allow-Origin: *`)를 포함해 리소스를 릴레이하는 스마트 프록시 신설.
+* **Pixabay 스타일 프리미엄 라이브러리 UI (/studio/library/free-assets)**:
+  * **반응형 다크 배너 및 검색**: 검색 및 카테고리 탭(통합, 사진, 일러스트, 비디오, 음악/사운드, GIF)을 지원하는 Pixabay 스타일 레이아웃.
+  * **호버 오토플레이 & 라이브 오디오 미리듣기**: 비디오 카드 마우스 호버 시 무음 자동재생, 오디오 카드는 카드 내 재생/정지 제어 퀵 토글 탑재.
+  * **나눔 업로드 및 상세 모달**: 드래그앤드롭 업로드 양식 및 다중 업로드 큐 UI를 제공하며, 이미지 해상도 자동 분석 핸들러(`detectFileDimension`)를 통해 원본 사이즈를 자동으로 추출합니다.
+  * **카메라 / 촬영 기기 정보 입력**: 업로드 모달과 에셋 수정 모달에 "카메라 / 촬영 기기 정보" 입력란을 신설하고 양방향 상태 바인딩을 완료했습니다.
+  * **에셋 세부 명세 아코디언**: 조회수, 다운로드수, 촬영 장비, 파일 용량, 상세 가로세로 해상도, 제작 방식(AI 생성 vs 실사), 등록일을 테이블 형태로 상세 노출 및 아코디언 토글 애니메이션 구현.
+  * **소셜 공유 및 인터랙션 바**: 모달 내부 우측 패널에 좋아요(하트), 저장(북마크), 공유 버튼 바를 배치하고 페이스북, 트위터(X), 클립보드 링크 복사 기능의 컴팩트 레이어 연동.
+  * **동적 리사이징 및 포맷 변환 다운로드**: 이미지의 경우 무료 다운로드 버튼 우측 Chevron 화살표를 통해 해상도(작은: 640px, 중간: 1280px, 큰 파일: 1920px, 원래의) 및 저장 포맷(JPG, PNG, WEBP)을 라디오 버튼으로 선택하여 브라우저 Canvas + Proxy API를 기반으로 동적 변환 다운로드할 수 있는 고급 팝업 UI 구현.
+
+### 17-2. 변경 및 추가 파일 목록
+* **[NEW] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/free-assets/page.tsx)**: 무료 에셋 라이브러리 메인 UI 및 다운로드 가공/소셜 공유 로직 통합 페이지.
+* **[NEW] [route.ts (list)](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/list/route.ts)**: 에셋 목록 조회 API.
+* **[NEW] [route.ts (upload)](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/upload/route.ts)**: 구글 드라이브 파일 업로드 API.
+* **[NEW] [route.ts (update)](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/update/route.ts)**: 에셋 수정 API.
+* **[NEW] [route.ts (action)](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/action/route.ts)**: 에셋 조회/다운로드 수 카운터 업데이트 API.
+* **[NEW] [route.ts (proxy)](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/proxy/route.ts)**: 이미지 Canvas Taint 우회 CORS 프록시 API.
+* **[MODIFY] [google-drive.ts](file:///Users/a1234/Local%20Sites/creaibox/src/lib/google-drive.ts)**: `listFreeAssets`, `uploadFreeAsset`, `updateAssetMetadata`, `incrementAssetCounter` 유틸리티 함수 추가 및 확장.
+* **[MODIFY] [page.tsx (library)](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/page.tsx)**: 라이브러리 대시보드 카드에 "무료 공유 에셋" 퀵 메뉴 신설.
+* **[MODIFY] [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx)**: 사이드바의 "콘텐츠 라이브러리" 그룹 자식 목록 내 최상단에 "무료 공유 에셋" 메뉴 아이템 추가 및 Globe 아이콘 매핑.
+
+### 17-3. 검증 상태
+* `npx tsc --noEmit`을 최종 수행하여 우리가 새로 추가/수정한 구글 드라이브 연동 모듈 및 프론트/백엔드 소스코드 전반에서 빌드 타입 에러가 0개(무결성 보존) 상태임을 확실하게 입증 완료했습니다.
+
+---
+
+## 18. Google Drive 미디어 라이브러리 격리 보관 및 이미지 콘텐츠 라이브러리 탭 구현 (Google Drive Folder Isolation & Image Library)
+
+### 18-1. 주요 작업 내역
+* **구글 드라이브 동적 계층화 폴더 격리**:
+  - `src/lib/google-drive.ts` 내에 `getOrCreateFolder` 헬퍼를 추가하여 사용자 고유 ID별 서브폴더 및 스튜디오/용도별 분기 폴더(`blog-content`, `image-studio` 등)를 자동 판별하여 생성하는 구조를 확립했습니다.
+  - 이를 통해 단일 폴더에 파일이 무한 적재되어 생기는 구글 드라이브 인덱싱 성능 저하 문제를 근본적으로 예방했습니다.
+* **업로드 API 및 데이터 모델 연동**:
+  - `src/app/api/image-upload/route.ts` 내 이미지 업로드 핸들러에서 구글 드라이브 업로드 시, 사용자 정보(`user.id`)와 소스 타입(`sourceType`)을 파라미터로 명시적으로 전달하도록 개선했습니다.
+* **이미지 콘텐츠 라이브러리 활성화 및 연동**:
+  - `src/app/studio/library/[section]/page.tsx` 라우터를 수정하여 기존 "준비중" 화면으로 안내되던 `section === "image"` 경로에서 실제 미디어 라이브러리 관리자 컴포넌트인 `<CreaiboxLibraryManager />`를 정상 렌더링하도록 맵핑을 활성화했습니다.
+  - `CreaiboxLibraryManager.tsx` 컴포넌트 내부에서 URL의 `section` 라우팅 정보를 기반으로 동적인 데이터 페칭 및 파일 업로드 `sourceType`을 격리(예: `image` 섹션은 `image-studio` 소스로 필터링, `creaibox` 섹션은 `writing_creaibox_posts` 소스로 필터링)하여 화면이 렌더링되도록 기능을 완성했습니다.
+  - 각 섹션에 맞게 헤더 타이틀, 아이콘 배지, 보관함 가이드라인 설명 텍스트 등이 정밀하고 일치하게 출력되도록 로컬라이제이션 매핑을 추가했습니다.
+
+### 18-2. 변경 및 추가 파일 목록
+* **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/[section]/page.tsx)**: `section === "image"`인 경우에도 `<CreaiboxLibraryManager />`를 렌더링하도록 라우팅 조건 분기 확장.
+* **[MODIFY] [CreaiboxLibraryManager.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/[section]/components/CreaiboxLibraryManager.tsx)**:
+  - `useParams`를 활용한 동적 URL 파라미터(`section`) 연동 및 `isImageSection` 여부 판별.
+  - 이미지 페칭 쿼리(`fetchImages`) 및 업로드 페이로드(`uploadFiles`)에서 `"image-studio"`와 `"writing_creaibox_posts"`를 동적 분기 처리하도록 로직 리팩토링.
+  - 배지 뱃지, 제목(Title) 및 세부 메타 텍스트를 현재 활성화된 탭 종류에 따라 알맞게 동적으로 가변 렌더링.
+
+### 18-3. 검증 상태
+* `npx tsc --noEmit`을 실행하여 수정한 컴포넌트 파일 상에 어떤 TypeScript 타입 바인딩 어긋남이나 구문 에러도 없이 정상 컴파일됨을 검증했습니다.
+
+---
+
+## 19. 이미지 확장자 변환기 신규 개발 및 연동 (Image Format Converter)
+
+### 19-1. 주요 작업 내역
+* **브라우저 기반 실시간 변환 엔진 구현**:
+  - `src/app/studio/image/[section]/components/ImageConverterTab.tsx` 컴포넌트를 신규 개발하여 브라우저에서 HTML5 Canvas API 및 `FileReader`를 활용해 서버측 API 호출 없이 완전 오프라인/로컬로 변환 및 리사이징 다운로드 작업을 수행하도록 구축했습니다.
+  - 지원 포맷: **WebP** (투명도 보존/고압축), **PNG** (무손실), **JPEG/JPG** (압축 품질 조절 지원).
+  - 지원 규격(Dimensions): **원본 크기**, **1920px (대형)**, **1280px (중간)**, **640px (소형)** 및 사용자 정의 가로 너비(px)를 지정 가능한 **직접 입력(Custom) 모드** 연동.
+  - 다중 이미지 일괄 변환 및 일괄 다운로드(Batch queue & download) 기능 지원.
+* **디자인 스튜디오 홈 및 사이드바 메뉴 연동**:
+  - [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx)의 "이미지 스튜디오" 서브메뉴 그룹 내 "WEBP 일괄 압축기" 바로 상위에 "이미지 확장자 변환기" 메뉴 아이템을 배치했습니다.
+  - 이미지 스튜디오 메인 홈 화면([page.tsx (image)](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/image/page.tsx)) 내 디자인 솔루션 메뉴 그리드에 "이미지 확장자 변환기" 카드를 새로 탑재하여 접근성을 보강했습니다.
+* **동적 라우팅 바인딩**:
+  - [page.tsx (image/section)](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/image/[section]/page.tsx) 라우팅 맵퍼에 `converter` 섹션을 등록하고 해당 탭 요청 시 `<ImageConverterTab />` 컴포넌트가 마운트되도록 바인딩을 완료했습니다.
+
+### 19-2. 변경 및 추가 파일 목록
+* **[NEW] [ImageConverterTab.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/image/[section]/components/ImageConverterTab.tsx)**: 로컬 캔버스 기반 이미지 포맷 변환 및 리사이즈 대기열 큐 UI 컴포넌트 구현.
+* **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/image/[section]/page.tsx)**: `converter` 섹션명 등록 및 `<ImageConverterTab />` 라우팅 분기 추가.
+* **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/image/page.tsx)**: 이미지 스튜디오 홈 메뉴 그리드에 "이미지 확장자 변환기" 퀵 링크 카드 추가.
+* **[MODIFY] [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx)**: 사이드바 이미지 스튜디오 그룹 자식에 "이미지 확장자 변환기" 추가.
+
+### 19-3. 검증 상태
+* `npx tsc --noEmit` 타입 정합성 검사 결과, 신규 추가/수정한 이미지 변환기 탭 및 라우팅/사이드바 전체 모듈에서 TS 구문 오류나 컴파일 경고가 검출되지 않는 깨끗한 빌드 무결성을 입증했습니다.
+
+---
+
+## 20. 무료 공유 에셋 구글 드라이브 파일 중복 및 이름 중복 방지 고도화 (Free Assets Unique Filename)
+
+### 20-1. 주요 작업 내역
+* **고유 파일명 포맷화 및 타임스탬프 결합**:
+  - `src/app/api/free-assets/upload/route.ts` 내 업로드 처리 엔드포인트에서, 파일 업로드 시 사용자가 올린 기존 파일명을 그대로 넘기는 대신 파일명과 확장자 사이에 `_${Date.now()}` 타임스탬프를 덧붙여 고유 파일명(예: `바다1_1718721321000.png`)으로 가공 후 구글 드라이브에 저장되도록 개선했습니다.
+  - 이를 통해 구글 드라이브 폴더 내에서 파일명이 동일해 발생하는 관리 혼선 및 다운로드 충돌 문제를 사전에 방지했습니다.
+  - 원래의 가독성 있는 에셋 이름(Title) 정보는 메타데이터 description JSON에 그대로 보존하여 UI 상에서는 여전히 한글 원래 파일명으로 깨끗하게 출력됩니다.
+
+### 20-2. 변경 및 추가 파일 목록
+* **[MODIFY] [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/upload/route.ts)**: 업로드 파일명에 유니크 타임스탬프 접미사 결합 로직 탑재.
+

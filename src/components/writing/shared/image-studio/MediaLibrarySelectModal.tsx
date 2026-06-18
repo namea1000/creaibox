@@ -36,7 +36,7 @@ export default function MediaLibrarySelectModal({
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedImage, setSelectedImage] = useState<GeneratedImageRow | null>(null);
-  const [pageSize, setPageSize] = useState(24);
+  const [pageSize, setPageSize] = useState(56);
   const [submitting, setSubmitting] = useState(false);
 
   // 이미지 목록 가져오기
@@ -88,9 +88,15 @@ export default function MediaLibrarySelectModal({
     try {
       await onSelect(selectedImage);
       onClose();
-    } catch (err) {
-      console.error("Failed to set featured image:", err);
-      alert("대표 이미지 설정 도중 오류가 발생했습니다.");
+    } catch (err: any) {
+      console.error("Failed to set featured image:", {
+        message: err.message,
+        code: err.code,
+        details: err.details,
+        hint: err.hint,
+        err
+      });
+      alert(`대표 이미지 설정 도중 오류가 발생했습니다: ${err.message || String(err)}`);
     } finally {
       setSubmitting(false);
     }
@@ -185,7 +191,7 @@ export default function MediaLibrarySelectModal({
               {showLoadMore && (
                 <div className="flex justify-center pt-2">
                   <button
-                    onClick={() => setPageSize((prev) => prev + 24)}
+                    onClick={() => setPageSize((prev) => prev + 56)}
                     className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-900 px-4 text-xs font-black text-zinc-300 hover:border-zinc-700 hover:text-white transition"
                   >
                     미디어 더 불러오기

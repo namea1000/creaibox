@@ -142,13 +142,13 @@ export default function Sidebar({
       }
     };
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(({ data: { user } }: any) => {
       void checkUser(user);
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       void checkUser(session?.user ?? null);
     });
 
@@ -195,6 +195,7 @@ export default function Sidebar({
         icon: Library,
         color: "text-sky-400",
         children: [
+          { name: "무료 공유 에셋", href: "/studio/library/free-assets", icon: Globe },
           { name: "전체 콘텐츠", href: "/studio/library/all", icon: Library },
 
           { name: "크리아이박스 콘텐츠", href: "/studio/library/creaibox", icon: PenTool },
@@ -305,13 +306,18 @@ export default function Sidebar({
         icon: ImageIcon,
         color: "text-purple-400",
         children: [
+          { name: "디자인 편집기", href: "/studio/image/workspace", icon: Wand2 },
+          { name: "템플릿 라이브러리", href: "/studio/image/templates", icon: Library },
+          { name: "AI 매직 디자인", href: "/studio/image/magic-design", icon: Sparkles },
+          { name: "브랜드 키트", href: "/studio/image/brand-kit", icon: Palette },
           { name: "프롬프트 라이브러리", href: "/studio/image/prompts", icon: Library },
           { name: "썸네일 메이커", href: "/studio/image/thumbnail", icon: ImageIcon },
           { name: "포스터 & 전단지", href: "/studio/image/poster", icon: FileText },
           { name: "디지털 명함", href: "/studio/image/business-card", icon: BadgeDollarSign },
           { name: "현수막 & 배너", href: "/studio/image/banner", icon: Megaphone },
-          { name: "WEBP 압축기", href: "/studio/image/webp", icon: Gauge },
-          { name: "이미지 편집기", href: "/studio/image/editor", icon: Wand2 },
+          { name: "이미지 확장자 변환기", href: "/studio/image/converter", icon: RefreshCw },
+          { name: "WEBP 일괄 압축기", href: "/studio/image/webp-compressor", icon: Gauge },
+          { name: "간편 이미지 편집기", href: "/studio/image/editor", icon: Wand2 },
         ],
       },
       {
@@ -481,25 +487,25 @@ export default function Sidebar({
       },
       ...(isAdmin
         ? [
-            {
-              key: "admin",
-              name: "관리자 센터",
-              href: "/admin",
-              icon: ShieldCheck,
-              color: "text-red-500",
-              children: [
-                { name: "사용자 관리", href: "/admin/usermanagement", icon: Users },
-                { name: "브랜드 ID 및 도메인 관리", href: "/admin/brands", icon: Globe },
-                { name: "API Vault", href: "/admin/apivault", icon: Database },
-                { name: "Google 연동", href: "/admin/google", icon: Settings },
-                { name: "SEO 관리", href: "/admin/seo", icon: Search },
-                { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-                { name: "결제 관리", href: "/admin/billing", icon: Settings },
-                { name: "콘텐츠 관리", href: "/admin/content", icon: FileText },
-                { name: "시스템 관리", href: "/admin/system", icon: Server },
-              ],
-            },
-          ]
+          {
+            key: "admin",
+            name: "관리자 센터",
+            href: "/admin",
+            icon: ShieldCheck,
+            color: "text-red-500",
+            children: [
+              { name: "사용자 관리", href: "/admin/usermanagement", icon: Users },
+              { name: "브랜드 ID 및 도메인 관리", href: "/admin/brands", icon: Globe },
+              { name: "API Vault", href: "/admin/apivault", icon: Database },
+              { name: "Google 연동", href: "/admin/google", icon: Settings },
+              { name: "SEO 관리", href: "/admin/seo", icon: Search },
+              { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+              { name: "결제 관리", href: "/admin/billing", icon: Settings },
+              { name: "콘텐츠 관리", href: "/admin/content", icon: FileText },
+              { name: "시스템 관리", href: "/admin/system", icon: Server },
+            ],
+          },
+        ]
         : []),
     ],
     [isAdmin]

@@ -71,6 +71,10 @@ export default function BlogManagementPage() {
   // Tab state
   const [activeSubTab, setActiveSubTab] = useState<"general" | "categories" | "seo" | "analytics" | "customDomain">("general");
 
+  // Real-time GA4 analytics states
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(false);
+
   // Fetch initial profile, categories, and posts
   useEffect(() => {
     let mounted = true;
@@ -79,7 +83,8 @@ export default function BlogManagementPage() {
         const { data: { user: currentUser } } = await supabase.auth.getUser();
         if (!mounted) return;
         if (!currentUser) {
-          router.replace("/login");
+          setUser(null);
+          setBrandId("");
           return;
         }
         setUser(currentUser);
@@ -215,6 +220,28 @@ export default function BlogManagementPage() {
     };
     void fetchCats();
   }, [activeBrandId, profile]);
+
+  // Fetch analytics data on demand (when analytics tab is active or brandId changes)
+  const fetchAnalytics = async () => {
+    if (!activeBrandId) return;
+    setIsAnalyticsLoading(true);
+    try {
+      const res = await fetch(`/api/studio/analytics/blog?brandId=${activeBrandId}`);
+      if (!res.ok) throw new Error("Failed to fetch analytics");
+      const data = await res.json();
+      setAnalyticsData(data);
+    } catch (err) {
+      console.error("Error loading analytics:", err);
+    } finally {
+      setIsAnalyticsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeSubTab === "analytics" && activeBrandId) {
+      void fetchAnalytics();
+    }
+  }, [activeSubTab, activeBrandId]);
 
   // 1. Action: Save Blog Profile & Customizer & SEO config
   const handleSaveConfigs = async () => {
@@ -526,6 +553,38 @@ export default function BlogManagementPage() {
 
   // If brand is not approved, show guide card
   if (approvedBrands.length === 0 || !activeBrandId) {
+    if (!user) {
+      return (
+        <div className="mx-auto max-w-[1600px] p-8 pb-32 lg:p-12 font-sans text-white flex items-center justify-center min-h-[60vh]">
+          <div className="max-w-md w-full text-center space-y-6 rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-10 backdrop-blur-xl shadow-2xl">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-500/10 text-blue-400">
+              <Shield size={32} />
+            </div>
+            <h1 className="text-2xl font-black uppercase italic tracking-tight text-white">
+              Login Required
+            </h1>
+            <p className="text-sm font-bold text-zinc-400 leading-relaxed">
+              공식 블로그 관리 및 커스텀 도메인 연동 기능을 사용하려면 로그인이 필요합니다.
+            </p>
+            <div className="pt-2 space-y-3">
+              <button
+                onClick={() => router.push("/login?redirect=/studio/writing/creaibox/blog-management")}
+                className="w-full rounded-2xl bg-blue-500 hover:bg-blue-600 py-4 text-xs font-black uppercase italic tracking-widest text-white transition-all shadow-[0_4px_12px_rgba(59,130,246,0.2)]"
+              >
+                로그인 하러 가기
+              </button>
+              <button
+                onClick={() => router.push("/register")}
+                className="w-full rounded-2xl border border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800/50 py-4 text-xs font-black uppercase italic tracking-widest text-zinc-400 hover:text-white transition-all"
+              >
+                회원가입
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="mx-auto max-w-[1600px] p-8 pb-32 lg:p-12 font-sans text-white flex items-center justify-center min-h-[60vh]">
         <div className="max-w-md w-full text-center space-y-6 rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-10 backdrop-blur-xl shadow-2xl">
@@ -1203,23 +1262,55 @@ export default function BlogManagementPage() {
             {activeSubTab === "analytics" && (
               <div className="space-y-8">
                 {/* Scorecards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                  {/* Card 1: Real-time Active Users */}
+                  <div className="rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-6 space-y-2 relative overflow-hidden">
+                    <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.03),transparent_50%)]" />
+                    <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                      실시간 동시 접속자
+                    </span>
+                    <h4 className="text-2xl font-black italic tracking-tight text-white">
+                      {isAnalyticsLoading ? (
+                        <span className="inline-block w-12 h-6 bg-zinc-850 rounded animate-pulse" />
+                      ) : (
+                        `${analyticsData?.realtimeUsers ?? 0} 명`
+                      )}
+                    </h4>
+                  </div>
+
+                  {/* Card 2: Today PV */}
                   <div className="rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-6 space-y-2">
                     <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 flex items-center gap-1">
                       <Eye size={12} className="text-blue-400" /> 오늘 페이지 뷰 (PV)
                     </span>
                     <h4 className="text-2xl font-black italic tracking-tight text-white">
-                      {posts.length > 0 ? "425 회" : "0 회"}
+                      {isAnalyticsLoading ? (
+                        <span className="inline-block w-12 h-6 bg-zinc-850 rounded animate-pulse" />
+                      ) : (
+                        `${analyticsData?.todayPv ?? 0} 회`
+                      )}
                     </h4>
                   </div>
+
+                  {/* Card 3: Today UV */}
                   <div className="rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-6 space-y-2">
                     <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 flex items-center gap-1">
                       <Users size={12} className="text-emerald-400" /> 오늘 고유 방문자 (UV)
                     </span>
                     <h4 className="text-2xl font-black italic tracking-tight text-white">
-                      {posts.length > 0 ? "134 명" : "0 명"}
+                      {isAnalyticsLoading ? (
+                        <span className="inline-block w-12 h-6 bg-zinc-850 rounded animate-pulse" />
+                      ) : (
+                        `${analyticsData?.todayUv ?? 0} 명`
+                      )}
                     </h4>
                   </div>
+
+                  {/* Card 4: Total Published Posts */}
                   <div className="rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-6 space-y-2">
                     <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 flex items-center gap-1">
                       <FileText size={12} className="text-purple-400" /> 누적 발행 포스트
@@ -1228,62 +1319,241 @@ export default function BlogManagementPage() {
                       {posts.length} 개
                     </h4>
                   </div>
+
+                  {/* Card 5: Average Duration */}
                   <div className="rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-6 space-y-2">
                     <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 flex items-center gap-1">
                       <TrendingUp size={12} className="text-amber-400" /> 평균 체류 시간
                     </span>
                     <h4 className="text-2xl font-black italic tracking-tight text-white">
-                      {posts.length > 0 ? "2분 45초" : "-"}
+                      {isAnalyticsLoading ? (
+                        <span className="inline-block w-16 h-6 bg-zinc-850 rounded animate-pulse" />
+                      ) : (
+                        analyticsData?.avgDuration ?? "0초"
+                      )}
                     </h4>
                   </div>
                 </div>
 
-                {/* Popular posts & chart mockups */}
+                {/* Popular posts & 7 days chart */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                  {/* Traffic flow chart mockup */}
+                  {/* Traffic flow chart */}
                   <div className="lg:col-span-2 rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-6 space-y-6">
-                    <h3 className="text-sm font-black uppercase italic tracking-wider text-white">
-                      일간 방문 흐름 (최근 7일)
-                    </h3>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-black uppercase italic tracking-wider text-white">
+                        일간 방문 흐름 (최근 7일)
+                      </h3>
+                      {isAnalyticsLoading && (
+                        <span className="text-[9px] font-black uppercase tracking-widest text-blue-400 animate-pulse">Syncing...</span>
+                      )}
+                    </div>
+
                     <div className="h-60 flex items-end gap-3 px-4 pt-10 border-b border-zinc-900">
-                      {[15, 30, 45, 25, 65, 80, 95].map((val, idx) => (
-                        <div key={idx} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer">
-                          <span className="text-[10px] text-zinc-600 font-bold group-hover:text-blue-400 transition-colors">
-                            {val * 5}
-                          </span>
-                          <div 
-                            className="w-full bg-blue-500/20 group-hover:bg-blue-500/40 rounded-t-lg transition-all duration-300"
-                            style={{ height: `${val}%` }}
-                          />
-                          <span className="text-[10px] text-zinc-600 font-bold mt-2">
-                            06.{10 + idx}
-                          </span>
-                        </div>
-                      ))}
+                      {isAnalyticsLoading || !analyticsData?.dailyTrend || analyticsData.dailyTrend.length === 0 ? (
+                        // Skeleton Chart Bars
+                        Array.from({ length: 7 }).map((_, idx) => (
+                          <div key={idx} className="flex-1 flex flex-col items-center gap-2 animate-pulse">
+                            <div className="w-full bg-zinc-900/30 rounded-t-lg h-20" />
+                            <span className="w-8 h-2 bg-zinc-900/30 rounded mt-2" />
+                          </div>
+                        ))
+                      ) : (
+                        // Live GA4 Chart Bars
+                        analyticsData.dailyTrend.map((item: any, idx: number) => {
+                          const maxViews = Math.max(...analyticsData.dailyTrend.map((t: any) => t.views), 10);
+                          const percentage = Math.min(Math.round((item.views / maxViews) * 100), 100);
+                          
+                          return (
+                            <div key={idx} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer">
+                              <span className="text-[9px] text-zinc-500 font-bold group-hover:text-blue-400 transition-colors">
+                                {item.views} PV
+                              </span>
+                              <div 
+                                className="w-full bg-blue-500/20 group-hover:bg-blue-500/40 rounded-t-lg transition-all duration-300"
+                                style={{ height: `${percentage}%` }}
+                              />
+                              <span className="text-[9px] text-zinc-600 font-bold mt-2">
+                                {item.date}
+                              </span>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
 
-                  {/* Top articles panel */}
+                  {/* Popular posts (GA4 Live Data backed) */}
                   <div className="rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-6 space-y-4">
                     <h3 className="text-sm font-black uppercase italic tracking-wider text-white flex items-center justify-between">
                       인기 글 순위 <TrendingUp size={14} className="text-blue-400" />
                     </h3>
 
-                    {posts.length === 0 ? (
+                    {isAnalyticsLoading ? (
+                      // Skeleton Loading
+                      <div className="space-y-3 py-4">
+                        {Array.from({ length: 3 }).map((_, idx) => (
+                          <div key={idx} className="flex items-center gap-3 animate-pulse">
+                            <div className="h-6 w-6 rounded bg-zinc-900/30" />
+                            <div className="flex-1 space-y-2">
+                              <div className="h-3 bg-zinc-900/30 rounded w-3/4" />
+                              <div className="h-2 bg-zinc-900/30 rounded w-1/2" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : !analyticsData?.popularPosts || analyticsData.popularPosts.length === 0 ? (
                       <div className="text-xs font-bold text-zinc-600 py-10 text-center">
                         통계를 집계할 포스트가 없습니다.
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {posts.slice(0, 5).map((post, idx) => (
-                          <div key={post.id} className="flex items-center gap-3 border-b border-zinc-900/50 pb-2.5 last:border-b-0 last:pb-0">
-                            <span className="flex h-6 w-6 items-center justify-center rounded bg-zinc-950 font-black text-xs text-blue-400 italic">
+                        {analyticsData.popularPosts.map((post: any, idx: number) => (
+                          <div key={idx} className="flex items-start gap-3 border-b border-zinc-900/50 pb-2.5 last:border-b-0 last:pb-0">
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-zinc-950 font-black text-xs text-blue-400 italic mt-0.5">
                               {idx + 1}
                             </span>
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-xs font-bold text-zinc-200">{post.title}</p>
-                              <p className="text-[10px] font-semibold text-zinc-600 mt-0.5">PV: {350 - idx * 60}</p>
+                              <p className="truncate text-xs font-bold text-zinc-200" title={post.title}>
+                                {post.title}
+                              </p>
+                              <div className="flex flex-wrap gap-1.5 mt-1">
+                                <span className="text-[9px] font-black text-zinc-500 bg-zinc-950/80 px-1.5 py-0.5 rounded">
+                                  PV: {post.pv}
+                                </span>
+                                <span className="text-[9px] font-black text-zinc-500 bg-zinc-950/80 px-1.5 py-0.5 rounded">
+                                  평균독서: {post.avgDuration}
+                                </span>
+                                <span className="text-[9px] font-black text-zinc-500 bg-zinc-950/80 px-1.5 py-0.5 rounded">
+                                  이탈: {post.bounceRate}
+                                </span>
+                              </div>
                             </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2단계: Marketing Analytics Panels */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  {/* Channel traffic sources */}
+                  <div className="rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-6 space-y-4">
+                    <h3 className="text-sm font-black uppercase italic tracking-wider text-white">
+                      유입 채널 분석 (Top Channels)
+                    </h3>
+                    
+                    {isAnalyticsLoading ? (
+                      <div className="space-y-4 py-6 animate-pulse">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <div key={i} className="space-y-2">
+                            <div className="h-2 bg-zinc-900/30 rounded w-1/3" />
+                            <div className="h-1.5 bg-zinc-900/30 rounded" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : !analyticsData?.channels || analyticsData.channels.length === 0 ? (
+                      <div className="text-xs font-bold text-zinc-600 py-10 text-center">
+                        유입 분석 데이터가 아직 없습니다.
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {analyticsData.channels.map((chan: any, idx: number) => {
+                          const total = analyticsData.channels.reduce((sum: number, c: any) => sum + c.value, 0);
+                          const percentage = Math.round((chan.value / (total || 1)) * 100);
+                          const colors = ["bg-blue-500", "bg-purple-500", "bg-emerald-500", "bg-amber-500", "bg-red-500"];
+                          const activeColor = colors[idx % colors.length];
+
+                          return (
+                            <div key={idx} className="space-y-1.5">
+                              <div className="flex justify-between text-xs font-bold">
+                                <span className="text-zinc-300">{chan.name}</span>
+                                <span className="text-zinc-500">{percentage}% ({chan.value}명)</span>
+                              </div>
+                              <div className="h-1.5 w-full bg-zinc-950 rounded-full overflow-hidden">
+                                <div className={`h-full ${activeColor}`} style={{ width: `${percentage}%` }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Device share */}
+                  <div className="rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-6 space-y-4">
+                    <h3 className="text-sm font-black uppercase italic tracking-wider text-white">
+                      접속 기기 분석 (Device Share)
+                    </h3>
+
+                    {isAnalyticsLoading ? (
+                      <div className="space-y-4 py-6 animate-pulse">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <div key={i} className="space-y-2">
+                            <div className="h-2 bg-zinc-900/30 rounded w-1/3" />
+                            <div className="h-1.5 bg-zinc-900/30 rounded animate-pulse" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : !analyticsData?.devices || analyticsData.devices.length === 0 ? (
+                      <div className="text-xs font-bold text-zinc-600 py-10 text-center">
+                        기기 분석 데이터가 아직 없습니다.
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {analyticsData.devices.map((dev: any, idx: number) => {
+                          const total = analyticsData.devices.reduce((sum: number, d: any) => sum + d.value, 0);
+                          const percentage = Math.round((dev.value / (total || 1)) * 100);
+                          const colors = ["bg-emerald-500", "bg-blue-500", "bg-purple-500"];
+                          const activeColor = colors[idx % colors.length];
+
+                          return (
+                            <div key={idx} className="space-y-1.5">
+                              <div className="flex justify-between text-xs font-bold">
+                                <span className="text-zinc-300 capitalize">{dev.name}</span>
+                                <span className="text-zinc-500">{percentage}%</span>
+                              </div>
+                              <div className="h-1.5 w-full bg-zinc-950 rounded-full overflow-hidden">
+                                <div className={`h-full ${activeColor}`} style={{ width: `${percentage}%` }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Regions distribution */}
+                  <div className="rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-6 space-y-4">
+                    <h3 className="text-sm font-black uppercase italic tracking-wider text-white">
+                      주요 방문 지역 (Regions)
+                    </h3>
+
+                    {isAnalyticsLoading ? (
+                      <div className="space-y-3.5 py-4 animate-pulse">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <div key={i} className="flex items-center gap-3">
+                            <div className="h-4 bg-zinc-900/30 rounded w-full" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : !analyticsData?.regions || analyticsData.regions.length === 0 ? (
+                      <div className="text-xs font-bold text-zinc-600 py-10 text-center">
+                        지역 분석 데이터가 아직 없습니다.
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {analyticsData.regions.map((reg: any, idx: number) => (
+                          <div key={idx} className="flex items-center justify-between border-b border-zinc-900/50 pb-2 last:border-0 last:pb-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-black bg-zinc-950 px-1.5 py-0.5 rounded text-zinc-400">
+                                {idx + 1}
+                              </span>
+                              <span className="text-xs font-bold text-zinc-200">{reg.name}</span>
+                            </div>
+                            <span className="text-xs font-black text-blue-400 italic">
+                              {reg.value} 명
+                            </span>
                           </div>
                         ))}
                       </div>

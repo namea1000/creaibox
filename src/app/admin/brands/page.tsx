@@ -63,6 +63,7 @@ export default function AdminBrandsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [diagnosticResult, setDiagnosticResult] = useState<any>({});
   const [isDiagnosing, setIsDiagnosing] = useState<string | null>(null);
+  const [approvingBrandId, setApprovingBrandId] = useState<string | null>(null);
 
   // Blacklist states
   const [blacklist, setBlacklist] = useState<ReservedBrand[]>([]);
@@ -154,54 +155,43 @@ export default function AdminBrandsPage() {
     }
   };
 
-  // 4. Action: Approve Request
+  // 4. Action: Approve Request (GA4 Web Data Stream Auto Creation via Backend API)
   const handleApprove = async (e: React.MouseEvent, userId: string, requestedId: string) => {
     e.preventDefault();
     e.stopPropagation();
 
+    if (approvingBrandId) return; // Prevent concurrent approvals
+
+    setApprovingBrandId(requestedId);
+
     try {
-      const { data: profile, error: fetchErr } = await supabase
-        .from("profiles")
-        .select("brand_id, extra_configs")
-        .eq("id", userId)
-        .single();
-      
-      if (fetchErr) throw fetchErr;
+      const response = await fetch("/api/admin/brands/approve", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId, requestedId }),
+      });
 
-      let primary_brand_id = profile.brand_id || "";
-      let brand_ids = profile.extra_configs?.brand_ids || [];
+      const result = await response.json();
 
-      if (!primary_brand_id) {
-        primary_brand_id = requestedId;
-      } else {
-        if (!brand_ids.includes(requestedId)) {
-          brand_ids.push(requestedId);
+      if (!response.ok) {
+        let errorMsg = result.error || "브랜드 승인 요청에 실패했습니다.";
+        if (result.details && typeof result.details === "object") {
+          errorMsg += `\n상세 정보: ${JSON.stringify(result.details)}`;
+        } else if (result.details) {
+          errorMsg += `\n상세 정보: ${result.details}`;
         }
+        throw new Error(errorMsg);
       }
 
-      const nextExtraConfigs = {
-        ...(profile.extra_configs || {}),
-        brand_ids: brand_ids
-      };
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          brand_id: primary_brand_id,
-          brand_id_status: "APPROVED",
-          requested_brand_id: null,
-          brand_id_rejection_reason: null,
-          extra_configs: nextExtraConfigs,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
-
-      if (error) throw error;
-
-      alert(`✅ '${requestedId}' 브랜드 ID 승인이 완료되었습니다.`);
+      alert(`✅ '${requestedId}' 브랜드 ID 승인 및 GA4 데이터 스트림 자동 연동이 완료되었습니다.\n측정 ID: ${result.measurementId}`);
       await fetchRequests();
     } catch (e: any) {
-      alert(`승인 실패: ${e.message}`);
+      console.error("Approval error:", e);
+      alert(`❌ 승인 실패: ${e.message}`);
+    } finally {
+      setApprovingBrandId(null);
     }
   };
 
@@ -802,15 +792,21 @@ export default function AdminBrandsPage() {
                                             </span>
                                             <button
                                               type="button"
+                                              disabled={approvingBrandId !== null}
                                               onClick={(e) => handleApprove(e, req.id, brandId)}
-                                              className="inline-flex items-center gap-0.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 px-2 py-1 text-[9px] font-black text-emerald-400 transition-colors"
+                                              className={`inline-flex items-center gap-0.5 rounded-lg border px-2 py-1 text-[9px] font-black transition-colors ${
+                                                approvingBrandId === brandId
+                                                  ? "bg-amber-500/15 border-amber-500/30 text-amber-400 animate-pulse"
+                                                  : "bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 disabled:opacity-40"
+                                              }`}
                                             >
-                                              승인
+                                              {approvingBrandId === brandId ? "승인 중..." : "승인"}
                                             </button>
                                             <button
                                               type="button"
+                                              disabled={approvingBrandId !== null}
                                               onClick={(e) => handleReject(e, req.id, brandId)}
-                                              className="inline-flex items-center gap-0.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 px-2 py-1 text-[9px] font-black text-red-400 transition-colors"
+                                              className="inline-flex items-center gap-0.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 px-2 py-1 text-[9px] font-black text-red-400 transition-colors disabled:opacity-40"
                                             >
                                               반려
                                             </button>

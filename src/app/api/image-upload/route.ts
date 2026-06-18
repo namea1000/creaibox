@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     // 4. Upload to Google Drive if configured, otherwise fallback to Supabase
     if (isGoogleDriveConfigured()) {
       try {
-        imageUrl = await uploadToGoogleDrive(compressedBuffer, fileName, "image/webp");
+        imageUrl = await uploadToGoogleDrive(compressedBuffer, fileName, "image/webp", user.id, sourceType || "creaibox");
         console.log("Uploaded successfully to Google Drive:", imageUrl);
       } catch (gdriveError: any) {
         console.error("Google Drive upload failed, falling back to Supabase storage:", gdriveError);

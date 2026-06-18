@@ -546,6 +546,16 @@ export default function BlogImageStudioPanel({
     };
 
     void loadImages();
+
+    // Listen to representative image update events from the editor body
+    const handleImagesUpdated = () => {
+      void loadImages();
+    };
+    window.addEventListener("generated-images-updated", handleImagesUpdated);
+
+    return () => {
+      window.removeEventListener("generated-images-updated", handleImagesUpdated);
+    };
   }, [activeSourceId, imageRole, resolveUserId, selectedAspectRatio, sourceType, supabase]);
 
   const handleCopyPrompt = async () => {
@@ -757,6 +767,21 @@ export default function BlogImageStudioPanel({
         return;
       }
 
+      // 지원되는 모든 속성명에 대해 안전하게 체크하여 URL 및 기타 필드 추출
+      const imageUrl = selectedImage.image_url || selectedImage.url;
+      if (!imageUrl) {
+        throw new Error("이미지 URL을 확인할 수 없습니다.");
+      }
+
+      const promptVal = selectedImage.prompt || "복제된 대표 이미지";
+      const styleVal = selectedImage.style || "manual";
+      const aspectRatioVal = selectedImage.aspect_ratio || selectedImage.aspectRatio || "content";
+      const providerVal = selectedImage.provider || "upload";
+      const titleVal = selectedImage.title || "대표 이미지";
+      const captionVal = selectedImage.caption || "";
+      const descriptionVal = selectedImage.description || "";
+      const altTextVal = selectedImage.alt_text || selectedImage.altText || "";
+
       // 1. 기존 대표 썸네일 해제
       const { error: clearError } = await supabase
         .from("generated_images")
@@ -773,19 +798,19 @@ export default function BlogImageStudioPanel({
         .from("generated_images")
         .insert({
           user_id: userId,
-          prompt: selectedImage.prompt || "복제된 대표 이미지",
-          image_url: selectedImage.image_url,
-          style: selectedImage.style || "manual",
-          aspect_ratio: selectedImage.aspect_ratio || "content",
-          provider: selectedImage.provider || "upload",
+          prompt: promptVal,
+          image_url: imageUrl,
+          style: styleVal,
+          aspect_ratio: aspectRatioVal,
+          provider: providerVal,
           source_type: sourceType,
           source_id: activeSourceId,
           image_role: imageRole,
           is_primary: true,
-          title: selectedImage.title || "대표 이미지",
-          caption: selectedImage.caption,
-          description: selectedImage.description,
-          alt_text: selectedImage.alt_text,
+          title: titleVal,
+          caption: captionVal,
+          description: descriptionVal,
+          alt_text: altTextVal,
         })
         .select()
         .single();
@@ -814,8 +839,14 @@ export default function BlogImageStudioPanel({
           isPrimary: false,
         })),
       ]);
-    } catch (err) {
-      console.error("Failed to set featured image:", err);
+    } catch (err: any) {
+      console.error("Failed to set featured image in panel handler:", {
+        message: err?.message || String(err),
+        code: err?.code,
+        details: err?.details,
+        hint: err?.hint,
+        err
+      });
       throw err;
     }
   };
@@ -1199,9 +1230,9 @@ export default function BlogImageStudioPanel({
             <button
               type="button"
               onClick={() => setIsMediaModalOpen(true)}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-700 bg-zinc-800 py-3.5 font-black text-zinc-300 transition-all hover:bg-zinc-700 hover:text-white"
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-600 py-3.5 font-black text-white shadow-lg shadow-purple-500/20 transition-all hover:from-purple-500 hover:to-pink-500 active:scale-[0.98]"
             >
-              <ImageIcon size={14} className="text-blue-400" />
+              <ImageIcon size={14} className="text-pink-100" />
               대표 이미지(썸네일) 설정
             </button>
           )}
@@ -1219,6 +1250,7 @@ export default function BlogImageStudioPanel({
               sourceId={activeSourceId}
               imageRole={imageRole}
               mode={mode}
+              onOpenMediaModal={() => setIsMediaModalOpen(true)}
               className="mt-4 border-t border-zinc-800/60"
             />
           )}

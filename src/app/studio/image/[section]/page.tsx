@@ -11,14 +11,22 @@ import BrandKitTab from "./components/BrandKitTab";
 import MagicDesignTab from "./components/MagicDesignTab";
 import WebpCompressorTab from "./components/WebpCompressorTab";
 import ImageEditorTab from "./components/ImageEditorTab";
+import PromptsTab from "./components/PromptsTab";
+import CategoryTemplatesTab from "./components/CategoryTemplatesTab";
+import ImageConverterTab from "./components/ImageConverterTab";
 
 const sectionNames: Record<string, string> = {
   templates: "템플릿 라이브러리",
   workspace: "디자인 편집기 (캔버스)",
   "brand-kit": "브랜드 키트",
   "magic-design": "AI 매직 디자인",
+  converter: "이미지 확장자 변환기",
   "webp-compressor": "WEBP 일괄 압축기",
   editor: "이미지 편집기",
+  prompts: "프롬프트 라이브러리",
+  poster: "포스터 & 전단지",
+  "business-card": "디지털 명함",
+  banner: "현수막 & 배너",
 };
 
 export default function ImageSectionPage() {
@@ -35,10 +43,18 @@ export default function ImageSectionPage() {
         return <BrandKitTab />;
       case "magic-design":
         return <MagicDesignTab />;
+      case "converter":
+        return <ImageConverterTab />;
       case "webp-compressor":
         return <WebpCompressorTab />;
       case "editor":
         return <ImageEditorTab />;
+      case "prompts":
+        return <PromptsTab />;
+      case "poster":
+      case "business-card":
+      case "banner":
+        return <CategoryTemplatesTab category={section} />;
       default:
         return (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-10 text-center text-zinc-400">

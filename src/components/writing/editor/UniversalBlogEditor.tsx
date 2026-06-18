@@ -616,7 +616,12 @@ export default function UniversalBlogEditor({
         .eq("is_primary", true);
 
       if (updateOldError) {
-        console.error("기존 대표 이미지 상태 변경 실패:", updateOldError);
+        console.error("기존 대표 이미지 상태 변경 실패:", {
+          message: updateOldError.message,
+          code: updateOldError.code,
+          details: updateOldError.details,
+          hint: updateOldError.hint
+        });
         throw updateOldError;
       }
 
@@ -631,7 +636,12 @@ export default function UniversalBlogEditor({
         .eq("image_url", src);
 
       if (findError) {
-        console.error("기존 대표 이미지 조회 실패:", findError);
+        console.error("기존 대표 이미지 조회 실패:", {
+          message: findError.message,
+          code: findError.code,
+          details: findError.details,
+          hint: findError.hint
+        });
         throw findError;
       }
 
@@ -644,7 +654,12 @@ export default function UniversalBlogEditor({
           .eq("id", targetId);
 
         if (updateTargetError) {
-          console.error("대표 이미지 업데이트 실패:", updateTargetError);
+          console.error("대표 이미지 업데이트 실패:", {
+            message: updateTargetError.message,
+            code: updateTargetError.code,
+            details: updateTargetError.details,
+            hint: updateTargetError.hint
+          });
           throw updateTargetError;
         }
       } else {
@@ -664,9 +679,19 @@ export default function UniversalBlogEditor({
           });
 
         if (insertError) {
-          console.error("신규 대표 이미지 삽입 실패:", insertError);
+          console.error("신규 대표 이미지 삽입 실패:", {
+            message: insertError.message,
+            code: insertError.code,
+            details: insertError.details,
+            hint: insertError.hint
+          });
           throw insertError;
         }
+      }
+
+      // Notify the right-side BlogImageStudioPanel to reload and display the new thumbnail
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("generated-images-updated"));
       }
     },
     [manuscriptId, contentImageSourceType, supabase, title]

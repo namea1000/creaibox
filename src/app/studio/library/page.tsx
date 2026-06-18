@@ -22,6 +22,7 @@ import {
   ArrowRight,
   Search,
   Plus,
+  Globe,
 } from "lucide-react";
 
 export default function LibraryHomePage() {
@@ -39,6 +40,7 @@ export default function LibraryHomePage() {
     { title: "음악 / 가사 콘텐츠", desc: "Suno, 가사, 음악 프로젝트", href: "/studio/library/music", icon: Music, color: "from-rose-600 to-pink-600" },
     { title: "이미지 콘텐츠", desc: "이미지, 썸네일, 커버 저장소", href: "/studio/library/image", icon: ImageIcon, color: "from-purple-600 to-fuchsia-600" },
     { title: "비디오 콘텐츠", desc: "영상, 쇼츠, 릴스 프로젝트", href: "/studio/library/video", icon: Video, color: "from-cyan-600 to-blue-600" },
+    { title: "무료 공유 에셋", desc: "사용자 나눔 무료 미디어 보관소", href: "/studio/library/free-assets", icon: Globe, color: "from-amber-500 to-yellow-600" },
     { title: "프롬프트 보관함", desc: "자주 쓰는 AI 프롬프트 저장", href: "/studio/library/prompts", icon: Sparkles, color: "from-amber-500 to-orange-600" },
     { title: "템플릿 라이브러리", desc: "콘텐츠 제작 템플릿 모음", href: "/studio/library/templates", icon: Layers, color: "from-slate-600 to-zinc-600" },
     { title: "즐겨찾기", desc: "중요 콘텐츠 빠른 접근", href: "/studio/library/favorites", icon: Star, color: "from-yellow-500 to-amber-600" },

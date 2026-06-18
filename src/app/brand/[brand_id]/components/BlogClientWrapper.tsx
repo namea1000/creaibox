@@ -39,8 +39,8 @@ export default function BlogClientWrapper({
   categories,
   initialPosts
 }: BlogClientWrapperProps) {
-  // 1. Theme State (default to dark as it is currently dark)
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  // 1. Theme State (default to light)
+  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [isThemeLoaded, setIsThemeLoaded] = useState(false);
 
   // 2. Search States
@@ -53,9 +53,7 @@ export default function BlogClientWrapper({
     if (savedTheme) {
       setTheme(savedTheme);
     } else {
-      // Default to dark or match media
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      setTheme(prefersDark ? "dark" : "light");
+      setTheme("light");
     }
     setIsThemeLoaded(true);
   }, [brand_id]);

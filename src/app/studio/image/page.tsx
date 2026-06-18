@@ -17,6 +17,7 @@ import {
   Search,
   Copy,
   Check,
+  RefreshCw,
 } from "lucide-react";
 
 export default function ImageStudioHomePage() {
@@ -62,6 +63,13 @@ export default function ImageStudioHomePage() {
       href: "/studio/image/magic-design",
       icon: Sparkles,
       color: "from-emerald-600 to-teal-600",
+    },
+    {
+      title: "이미지 확장자 변환기",
+      desc: "이미지를 업로드한 후 JPG, PNG, WebP 등 원하는 포맷과 용도에 맞는 크기로 즉시 변환합니다.",
+      href: "/studio/image/converter",
+      icon: RefreshCw,
+      color: "from-blue-600 to-cyan-600",
     },
     {
       title: "WEBP 일괄 압축기",
