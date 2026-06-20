@@ -14,6 +14,8 @@ import TableRow from "@tiptap/extension-table-row";
 import TableHeader from "@tiptap/extension-table-header";
 import TableCell from "@tiptap/extension-table-cell";
 import TextAlign from "@tiptap/extension-text-align";
+import { TextStyle } from "@tiptap/extension-text-style";
+import { FontFamily } from "@tiptap/extension-font-family";
 import {
   AlignCenter,
   AlignLeft,
@@ -583,6 +585,7 @@ export default function UniversalBlogEditor({
   const [recreateUrl, setRecreateUrl] = useState("");
   const [isFetchingOriginal, setIsFetchingOriginal] = useState(false);
   const [isRecreating, setIsRecreating] = useState(false);
+  const [activeAiTab, setActiveAiTab] = useState<"write" | "recreate" | "enhance">("write");
 
 
   useEffect(() => {
@@ -839,6 +842,8 @@ export default function UniversalBlogEditor({
 
   const editor = useEditor({
     extensions: [
+      TextStyle,
+      FontFamily,
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
         link: false,
@@ -1073,7 +1078,7 @@ export default function UniversalBlogEditor({
 
   const handleFetchOriginalText = async () => {
     if (!recreateUrl.trim()) {
-      alert("가져올 네이버 블로그 글 주소를 입력해 주세요 사장님!");
+      alert("가져올 글의 URL 주소를 입력해 주세요 사장님!");
       return;
     }
     setIsFetchingOriginal(true);
@@ -1084,7 +1089,7 @@ export default function UniversalBlogEditor({
       const extractedResult = await extractResponse.json();
 
       if (!extractResponse.ok) {
-        throw new Error(extractedResult?.error || "네이버 블로그 본문 추출에 실패했습니다.");
+        throw new Error(extractedResult?.error || "본문 추출에 실패했습니다.");
       }
 
       const { title: extTitle, content: extContent } = extractedResult;
@@ -1116,7 +1121,7 @@ export default function UniversalBlogEditor({
         const extractedResult = await extractResponse.json();
 
         if (!extractResponse.ok) {
-          throw new Error(extractedResult?.error || "네이버 블로그 본문 추출에 실패했습니다.");
+          throw new Error(extractedResult?.error || "본문 추출에 실패했습니다.");
         }
 
         titleToRecreate = extractedResult.title || "추출된 제목";
@@ -1710,541 +1715,447 @@ export default function UniversalBlogEditor({
         </div>
       </div>
 
-      <div className="shrink-0 border-b border-zinc-800 bg-[#0b0d12] px-4 py-2 flex flex-col gap-2">
-        {/* 1번째 줄 */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <input type="file" accept="image/*" ref={fileInputRef} onChange={handleEditorImageUpload} className="hidden" />
-
-          <ToolbarButton
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isImageUploading}
-            className="border border-zinc-800 bg-zinc-900/50 hover:bg-emerald-500/10 hover:text-emerald-400"
-          >
-            {isImageUploading ? <RefreshCw size={14} className="animate-spin" /> : <ImageIcon size={14} />}
-            {isImageUploading ? "업로드중" : "사진"}
-          </ToolbarButton>
-
-          <ToolbarButton onClick={handleInsertImageUrl}>
-            <ImageIcon size={14} /> URL이미지
-          </ToolbarButton>
-
-          <div className="mx-1 h-5 w-px bg-zinc-800" />
-
-          <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()} active={editor?.isActive("heading", { level: 1 })}>
-            <Heading1 size={15} />
-          </ToolbarButton>
-
-          <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive("heading", { level: 2 })}>
-            <Heading2 size={15} />
-          </ToolbarButton>
-
-          <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive("heading", { level: 3 })}>
-            <Heading3 size={15} />
-          </ToolbarButton>
-
-          <div className="mx-1 h-4 w-px bg-zinc-800" />
-
-          <ToolbarButton onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive("bold")}>
-            <Bold size={15} />
-          </ToolbarButton>
-
-          <ToolbarButton onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive("italic")}>
-            <Italic size={15} />
-          </ToolbarButton>
-
-          <ToolbarButton onClick={handleInsertLink} active={editor?.isActive("link")}>
-            <Link2 size={15} />
-          </ToolbarButton>
-
-          <div className="mx-1 h-4 w-px bg-zinc-800" />
-
-          <ToolbarButton onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive("bulletList")}>
-            <List size={15} />
-          </ToolbarButton>
-
-          <ToolbarButton onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive("orderedList")}>
-            <ListOrdered size={15} />
-          </ToolbarButton>
-
-          <ToolbarButton onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive("blockquote")}>
-            <Quote size={15} />
-          </ToolbarButton>
-
-          <div className="mx-1 h-4 w-px bg-zinc-800" />
-
-          <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign("left").run()}>
-            <AlignLeft size={15} />
-          </ToolbarButton>
-
-          <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign("center").run()}>
-            <AlignCenter size={15} />
-          </ToolbarButton>
-
-          <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign("right").run()}>
-            <AlignRight size={15} />
-          </ToolbarButton>
-
-          <div className="mx-1 h-4 w-px bg-zinc-800" />
-
-          <ToolbarButton onClick={handleGenerateToc}>
-            <FileText size={14} /> 목차
-          </ToolbarButton>
-
-          <ToolbarButton onClick={handleInsertTable}>
-            <Table2 size={14} /> 표
-          </ToolbarButton>
-
-          <ToolbarButton onClick={handleInsertYoutube}>
-            <CirclePlay size={14} /> 유튜브
-          </ToolbarButton>
-
-          <ToolbarButton onClick={() => editor?.chain().focus().setHorizontalRule().run()}>
-            <Minus size={14} /> 구분선
-          </ToolbarButton>
-        </div>
-
-        {/* 2번째 줄 */}
-        <div className="flex flex-wrap items-center gap-1.5 border-t border-zinc-800/40 pt-1.5">
-          <ToolbarButton onClick={() => editor?.chain().focus().toggleCodeBlock().run()} active={editor?.isActive("codeBlock")}>
-            <Code2 size={14} /> 코드
-          </ToolbarButton>
-
-          <ToolbarButton onClick={handleInsertCta}>CTA</ToolbarButton>
-
-          <div className="mx-1 h-4 w-px bg-zinc-800" />
-
-          <ToolbarButton onClick={() => handleEnhanceContent("correct")}>
-            <Type size={14} /> 맞춤법
-          </ToolbarButton>
-        </div>
-
-      {/* AI 포스팅 글쓰기 가로 제어 바 */}
-      <div className="shrink-0 border-b border-zinc-850 bg-[#0c101f] px-4 py-2 flex flex-col gap-2">
-        {/* 1번째 줄 */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1.5 shrink-0 text-cyan-300 text-xs font-black">
-            <Sparkles size={14} className="animate-pulse" />
-            <span>AI 포스팅 글쓰기</span>
-          </div>
-
-          <div className="h-4 w-px bg-zinc-800 shrink-0" />
-
-          {/* 1. 콘텐츠 유형 */}
-          <select
-            value={aiContentType}
-            onChange={(e) => setAiContentType?.(e.target.value)}
-            disabled={isAiGenerating || isFetchingOriginal || isRecreating}
-            className="h-9 w-44 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 text-center"
-          >
-            <option value="" disabled hidden>콘텐츠 유형</option>
-            {[
-              "멀티 플랫폼 콘텐츠 기획",
-              "블로그 글쓰기 콘텐츠",
-              "유튜브 쇼츠 기획",
-              "유튜브 롱폼 기획",
-              "틱톡 숏폼 기획",
-              "네이버 클립 기획",
-              "인스타그램 릴스 기획",
-              "SNS 카드뉴스 기획",
-              "뉴스레터 기획",
-              "브랜드 캠페인 기획"
-            ].map((item) => (
-              <option key={item} value={item} className="bg-slate-950">
-                {getContentTypeEmoji(item)} {item}
-              </option>
-            ))}
-          </select>
-
-          {/* 2. 포스트 타입 */}
-          <select
-            value={aiPostType}
-            onChange={(e) => setAiPostType?.(e.target.value)}
-            disabled={isAiGenerating || isFetchingOriginal || isRecreating}
-            className="h-9 w-48 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 text-center"
-          >
-            <option value="" disabled hidden>포스트 타입</option>
-            {postTypeOptions.map((item) => (
-              <option
-                key={item.label}
-                value={item.label}
-                disabled={item.disabled}
-                className={item.disabled ? "text-zinc-500 font-bold bg-zinc-900" : "bg-slate-950"}
-              >
-                {item.label}
-              </option>
-            ))}
-          </select>
-
-          {/* 3. 말투 선택 */}
-          <select
-            value={aiSelectedTone}
-            onChange={(e) => setAiSelectedTone?.(e.target.value)}
-            disabled={isAiGenerating || isFetchingOriginal || isRecreating}
-            className="h-9 w-60 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 text-center"
-          >
-            <option value="" disabled hidden>말투 선택</option>
-            {[
-              "💻 전문적이고 통찰력 있는 분석 (기술 블로그)",
-              "✍️ 친근하고 명확한 실무 설명 (가이드형 포스팅)",
-              "📢 브랜드 중심의 신뢰형 설명 (서비스 소개형)",
-              "📈 인사이트 리포트형 톤 (트렌드 분석)",
-              "✉️ 가볍고 설득력 있는 뉴스레터형 톤"
-            ].map((item) => (
-              <option key={item} value={item} className="bg-slate-950">
-                {item}
-              </option>
-            ))}
-          </select>
-
-          {/* 4. 목표 글자수 */}
-          <select
-            value={aiWordCountGoal}
-            onChange={(e) => setAiWordCountGoal?.(e.target.value)}
-            disabled={isAiGenerating || isFetchingOriginal || isRecreating}
-            className="h-9 w-36 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 text-center"
-          >
-            <option value="" disabled hidden>목표 글자수</option>
-            <option value="800" className="bg-slate-950">📰 짧게 (약 800자)</option>
-            <option value="1500" className="bg-slate-950">✍️ 보통 (약 1,500자)</option>
-            <option value="3000" className="bg-slate-950">🚀 길게 (약 3,000자)</option>
-            <option value="5000" className="bg-slate-950">📚 아주 길게 (약 5,000자)</option>
-            <option value="8000" className="bg-slate-950">💰 초장문 (약 8,000자)</option>
-          </select>
-
-          {/* 5. 전략 수준 */}
-          <select
-            value={aiStrategyLevel}
-            onChange={(e) => setAiStrategyLevel?.(e.target.value)}
-            disabled={isAiGenerating || isFetchingOriginal || isRecreating}
-            className="h-9 w-44 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 text-center"
-          >
-            <option value="" disabled hidden>전략 수준</option>
-            {[
-              "1. 기본 전략(대중적이고 상식적 수준의 정보성 글)",
-              "2. 고급 전략(검색 엔진 최적화 및 사용자 타겟 분석)",
-              "3. 전문가 전략(가장 고도화된 심층적 마케팅 구조 설계)"
-            ].map((item) => (
-              <option key={item} value={item} className="bg-slate-950">
-                {getStrategyLevelEmoji(item)} {item}
-              </option>
-            ))}
-          </select>
-
-          {/* 6. 결과 구성 */}
-          <select
-            value={aiResultFormat}
-            onChange={(e) => setAiResultFormat?.(e.target.value)}
-            disabled={isAiGenerating || isFetchingOriginal || isRecreating}
-            className="h-9 w-60 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 text-center"
-          >
-            <option value="" disabled hidden>결과 구성</option>
-            {[
-              "1. 기본 시리즈(키워드 연관 글감 병렬적 나열)",
-              "2. 기본 시리즈 + 배포 플랫폼별 적합성 키워드 향상",
-              "3. 2번 + 발행 순서 및 최적의 배포 타이밍 구성",
-            ].map((item) => (
-              <option key={item} value={item} className="bg-slate-950">
-                {getResultFormatEmoji(item)} {item}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* 2번째 줄 */}
-        <div className="flex flex-wrap items-center gap-3 border-t border-zinc-800/20 pt-1.5">
-          {/* 7. 대분류 */}
-          <select
-            value={aiLargeCategory}
-            onChange={(e) => {
-              const newGroup = e.target.value;
-              setAiLargeCategory?.(newGroup);
-              setIsCustomSubTopic(false);
-              const firstCat = topicCategories.find((c) => c.group === newGroup);
-              if (firstCat) {
-                setAiMainTopic?.(firstCat.name);
-                const firstSub = topicSubTopics.find((s) => s.categoryId === firstCat.id);
-                if (firstSub) {
-                  setAiSubTopic?.(firstSub.name);
-                } else {
-                  setAiSubTopic?.("");
-                }
-              } else {
-                setAiMainTopic?.("");
-                setAiSubTopic?.("");
-              }
-            }}
-            disabled={isAiGenerating || isFetchingOriginal || isRecreating}
-            className="h-9 w-36 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 text-center"
-          >
-            <option value="" disabled hidden>대분류</option>
-            <option value="" className="bg-slate-950">대분류 선택</option>
-            {mainGroups.map((group) => (
-              <option key={group} value={group} className="bg-slate-950">
-                {groupEmojis[group] || "📁"} {group}
-              </option>
-            ))}
-          </select>
-
-          {/* 8. 상세 분야 */}
-          <select
-            value={aiMainTopic}
-            onChange={(e) => {
-              const newTopicName = e.target.value;
-              setAiMainTopic?.(newTopicName);
-              setIsCustomSubTopic(false);
-              const cat = topicCategories.find((c) => c.name === newTopicName);
-              if (cat) {
-                const firstSub = topicSubTopics.find((s) => s.categoryId === cat.id);
-                if (firstSub) {
-                  setAiSubTopic?.(firstSub.name);
-                } else {
-                  setAiSubTopic?.("");
-                }
-              } else {
-                setAiSubTopic?.("");
-              }
-            }}
-            disabled={isAiGenerating || isFetchingOriginal || isRecreating || !aiLargeCategory}
-            className="h-9 w-44 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 disabled:cursor-not-allowed text-center"
-          >
-            <option value="" disabled hidden>상세 분야</option>
-            <option value="" className="bg-slate-950">
-              {aiLargeCategory ? "상세 분야 선택" : "대분류 필요"}
-            </option>
-            {topicCategories
-              .filter((cat) => cat.group === aiLargeCategory)
-              .map((cat) => (
-                <option key={cat.id} value={cat.name} className="bg-slate-950">
-                  {cat.emoji} {cat.name}
-                </option>
-              ))}
-          </select>
-
-          {/* 9. 추천 시리즈 */}
-          {(() => {
-            const currentCategory = topicCategories.find((c) => c.name === aiMainTopic);
-            const filteredSubTopics = currentCategory
-              ? topicSubTopics.filter((sub) => sub.categoryId === currentCategory.id)
-              : [];
-
-            const isPresetSubTopic = filteredSubTopics.some((sub) => sub.name === aiSubTopic);
-            const showCustomSubTopic = isCustomSubTopic || (aiSubTopic !== "" && !isPresetSubTopic);
-
-            if (showCustomSubTopic) {
-              return (
-                <div className="relative flex items-center h-9 w-44">
-                  <input
-                    value={aiSubTopic}
-                    onChange={(e) => setAiSubTopic?.(e.target.value)}
-                    placeholder="추천 시리즈 직접 입력"
-                    className="h-9 w-full rounded-lg border border-zinc-800 bg-black/40 pl-3 pr-12 text-xs text-white outline-none placeholder-zinc-500 focus:border-violet-500 font-bold"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsCustomSubTopic(false);
-                      const firstSub = filteredSubTopics[0];
-                      if (firstSub) {
-                        setAiSubTopic?.(firstSub.name);
-                      } else {
-                        setAiSubTopic?.("");
-                      }
-                    }}
-                    className="absolute right-2 text-cyan-400 hover:text-cyan-300 text-[10px] font-black"
-                  >
-                    선택 전환
-                  </button>
-                </div>
-              );
-            }
-
-            return (
-              <select
-                value={aiSubTopic}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === "__custom__") {
-                    setIsCustomSubTopic(true);
-                    setAiSubTopic?.("");
-                  } else {
-                    setAiSubTopic?.(val);
-                  }
-                }}
-                disabled={isAiGenerating || isFetchingOriginal || isRecreating || !aiMainTopic}
-                className="h-9 w-44 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 disabled:cursor-not-allowed text-center"
-              >
-                <option value="" disabled hidden>추천 시리즈</option>
-                <option value="" className="bg-slate-950">
-                  {aiMainTopic ? "시리즈 선택" : "상세분야 필요"}
-                </option>
-                {filteredSubTopics.map((sub) => (
-                  <option key={sub.id} value={sub.name} className="bg-slate-950">
-                    ⚡ {sub.name}
-                  </option>
-                ))}
-                {aiMainTopic && (
-                  <option value="__custom__" className="bg-slate-950">
-                    📝 직접 입력...
-                  </option>
-                )}
-              </select>
-            );
-          })()}
-
-          {/* 10. 메인 키워드 주제 */}
-          <input
-            type="text"
-            placeholder="메인 키워드 주제 입력"
-            value={aiTargetKeyword}
-            onChange={(e) => setAiTargetKeyword?.(e.target.value)}
-            disabled={isAiGenerating || isFetchingOriginal || isRecreating}
-            className="h-9 w-64 rounded-lg border border-zinc-800 bg-black/40 px-3 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 text-center"
-          />
-
-          {/* 11. 참고 사항 */}
-          <input
-            type="text"
-            placeholder="참고 사항 입력 (선택)"
-            value={aiReferenceNote}
-            onChange={(e) => setAiReferenceNote?.(e.target.value)}
-            disabled={isAiGenerating || isFetchingOriginal || isRecreating}
-            className="h-9 w-64 rounded-lg border border-zinc-800 bg-black/40 px-3 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 text-center"
-          />
-
-          {/* AI 생성 상태 알림 */}
-          {isAiGenerating && (
-            <div className="flex items-center gap-2 ml-2">
-              <span className="text-[11px] text-zinc-400 animate-pulse font-medium">
-                {aiStatusMessage || "생성 중..."}
-              </span>
-            </div>
-          )}
-
-          {/* 우측 정렬 영역: 최신 검색 + 시작 버튼 */}
-          <div className="flex items-center gap-3 ml-auto shrink-0 justify-center">
-            {/* Grounding 토글 (최신 검색) */}
-            <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs font-black text-zinc-300">
-              <input
-                type="checkbox"
-                checked={aiUseSearch}
-                onChange={(e) => setAiUseSearch?.(e.target.checked)}
-                disabled={isAiGenerating || isFetchingOriginal || isRecreating}
-                className="h-4.5 w-4.5 rounded border-zinc-800 bg-black/40 text-violet-600 focus:ring-violet-500 focus:ring-offset-0 disabled:opacity-50"
-              />
-              <span>최신 검색</span>
-            </label>
-
+      {/* AI 기능 선택 탭 바 */}
+      <div className="shrink-0 border-b border-white/10 bg-[#0b0f15] flex h-14 items-center">
+        {[
+          { key: "write", label: "AI 포스팅 글쓰기" },
+          { key: "recreate", label: "AI 포스팅 재창조" },
+          { key: "enhance", label: "AI 자동 수정보완" },
+        ].map((tab) => {
+          const active = activeAiTab === tab.key;
+          return (
             <button
+              key={tab.key}
               type="button"
-              onClick={() => handleAiGenerateInEditor?.(
-                aiTargetKeyword || targetKeyword,
-                aiContentType,
-                aiPostType,
-                aiSelectedTone,
-                aiWordCountGoal,
-                aiStrategyLevel,
-                aiResultFormat,
-                aiLargeCategory,
-                aiMainTopic,
-                aiSubTopic,
-                aiReferenceNote,
-                aiUseSearch
-              )}
-              disabled={isAiGenerating || isFetchingOriginal || isRecreating || !!(content && content.replace(/<[^>]*>/g, "").trim().length > 100)}
-              className="w-48 h-9 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-[0_8px_18px_rgba(124,58,237,0.15)] disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => setActiveAiTab(tab.key as any)}
+              className={`relative flex items-center justify-center px-6 h-full border-r border-white/10 text-sm font-black transition ${
+                active
+                  ? "bg-violet-500/8 text-violet-200"
+                  : "text-white/45 hover:bg-white/[0.025] hover:text-violet-100"
+              }`}
             >
-              {isAiGenerating ? (
-                <>
-                  <RefreshCw size={12} className="animate-spin" />
-                  <span>생성 중...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles size={12} />
-                  <span>AI 콘텐츠 생성 시작</span>
-                </>
+              <span>{tab.label}</span>
+              {active && (
+                <span className="absolute inset-x-0 bottom-0 h-0.5 bg-violet-400" />
               )}
             </button>
-          </div>
-        </div>
+          );
+        })}
       </div>
 
-      {/* AI 포스팅 재창조 가로 제어 바 */}
-      <div className="shrink-0 border-b border-zinc-850 bg-[#0c101f] px-4 py-2.5 flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1.5 shrink-0 text-fuchsia-400 text-xs font-black w-28">
-          <Zap size={14} className="animate-pulse" />
-          <span>AI 포스팅 재창조</span>
-        </div>
-        <div className="mx-1 h-4 w-px bg-zinc-850 shrink-0" />
+      {/* AI 포스팅 글쓰기 탭 콘텐츠 */}
+      {activeAiTab === "write" && (
+        <div className="shrink-0 border-b border-zinc-850 bg-[#0c101f] px-4 py-2.5 flex flex-col gap-2">
+          {/* 1번째 줄 */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* 1. 콘텐츠 유형 */}
+            <select
+              value={aiContentType}
+              onChange={(e) => setAiContentType?.(e.target.value)}
+              disabled={isAiGenerating || isFetchingOriginal || isRecreating}
+              className="h-9 w-44 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 text-center"
+            >
+              <option value="" disabled hidden>콘텐츠 유형</option>
+              {[
+                "멀티 플랫폼 콘텐츠 기획",
+                "블로그 글쓰기 콘텐츠",
+                "유튜브 쇼츠 기획",
+                "유튜브 롱폼 기획",
+                "틱톡 숏폼 기획",
+                "네이버 클립 기획",
+                "인스타그램 릴스 기획",
+                "SNS 카드뉴스 기획",
+                "뉴스레터 기획",
+                "브랜드 캠페인 기획"
+              ].map((item) => (
+                <option key={item} value={item} className="bg-slate-950">
+                  {getContentTypeEmoji(item)} {item}
+                </option>
+              ))}
+            </select>
 
-        <input
-          type="text"
-          value={recreateUrl}
-          onChange={(e) => setRecreateUrl(e.target.value)}
-          disabled={isAiGenerating || isFetchingOriginal || isRecreating}
-          placeholder="타겟 주소 입력 (https://blog.naver.com/...)"
-          className="h-9 flex-1 max-w-[400px] rounded-lg border border-zinc-800 bg-black/40 px-3 text-xs text-white outline-none focus:border-violet-500 font-bold text-center placeholder-zinc-500 disabled:opacity-50"
-        />
+            {/* 2. 포스트 타입 */}
+            <select
+              value={aiPostType}
+              onChange={(e) => setAiPostType?.(e.target.value)}
+              disabled={isAiGenerating || isFetchingOriginal || isRecreating}
+              className="h-9 w-48 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 text-center"
+            >
+              <option value="" disabled hidden>포스트 타입</option>
+              {postTypeOptions.map((item) => (
+                <option
+                  key={item.label}
+                  value={item.label}
+                  disabled={item.disabled}
+                  className={item.disabled ? "text-zinc-500 font-bold bg-zinc-900" : "bg-slate-950"}
+                >
+                  {item.label}
+                </option>
+              ))}
+            </select>
 
-        <button
-          type="button"
-          onClick={handleFetchOriginalText}
-          disabled={isAiGenerating || isFetchingOriginal || isRecreating}
-          className="w-48 h-9 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-[0_8px_18px_rgba(124,58,237,0.15)] disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isFetchingOriginal ? (
-            <>
-              <RefreshCw size={12} className="animate-spin" />
-              <span>가져오는 중...</span>
-            </>
-          ) : (
-            <>
-              <Download size={12} />
-              <span>URL 원본 글 가져오기</span>
-            </>
-          )}
-        </button>
+            {/* 3. 말투 선택 */}
+            <select
+              value={aiSelectedTone}
+              onChange={(e) => setAiSelectedTone?.(e.target.value)}
+              disabled={isAiGenerating || isFetchingOriginal || isRecreating}
+              className="h-9 w-60 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 text-center"
+            >
+              <option value="" disabled hidden>말투 선택</option>
+              {[
+                "💻 전문적이고 통찰력 있는 분석 (기술 블로그)",
+                "✍️ 친근하고 명확한 실무 설명 (가이드형 포스팅)",
+                "📢 브랜드 중심의 신뢰형 설명 (서비스 소개형)",
+                "📈 인사이트 리포트형 톤 (트렌드 분석)",
+                "✉️ 가볍고 설득력 있는 뉴스레터형 톤"
+              ].map((item) => (
+                <option key={item} value={item} className="bg-slate-950">
+                  {item}
+                </option>
+              ))}
+            </select>
 
-        <button
-          type="button"
-          onClick={handleStartRecreation}
-          disabled={isAiGenerating || isFetchingOriginal || isRecreating}
-          className="w-48 h-9 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-[0_8px_18px_rgba(124,58,237,0.15)] disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isRecreating ? (
-            <>
-              <RefreshCw size={12} className="animate-spin" />
-              <span>재창조 중...</span>
-            </>
-          ) : (
-            <>
-              <Zap size={12} />
-              <span>AI 글 재창조 시작</span>
-            </>
-          )}
-        </button>
-      </div>
+            {/* 4. 목표 글자수 */}
+            <select
+              value={aiWordCountGoal}
+              onChange={(e) => setAiWordCountGoal?.(e.target.value)}
+              disabled={isAiGenerating || isFetchingOriginal || isRecreating}
+              className="h-9 w-36 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 text-center"
+            >
+              <option value="" disabled hidden>목표 글자수</option>
+              <option value="800" className="bg-slate-950">📰 짧게 (약 800자)</option>
+              <option value="1500" className="bg-slate-950">✍️ 보통 (약 1,500자)</option>
+              <option value="3000" className="bg-slate-950">🚀 길게 (약 3,000자)</option>
+              <option value="5000" className="bg-slate-950">📚 아주 길게 (약 5,000자)</option>
+              <option value="8000" className="bg-slate-950">💰 초장문 (약 8,000자)</option>
+            </select>
 
-        {/* AI 수정보완 제어 바 */}
-        <div className="flex flex-wrap items-center gap-1.5 border-t border-zinc-800/40 pt-1.5">
-          <div className="flex items-center gap-1.5 shrink-0 text-emerald-400 text-xs font-black w-28">
-            <Wand2 size={14} />
-            <span>AI 수정보완</span>
+            {/* 5. 전략 수준 */}
+            <select
+              value={aiStrategyLevel}
+              onChange={(e) => setAiStrategyLevel?.(e.target.value)}
+              disabled={isAiGenerating || isFetchingOriginal || isRecreating}
+              className="h-9 w-44 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 text-center"
+            >
+              <option value="" disabled hidden>전략 수준</option>
+              {[
+                "1. 기본 전략(대중적이고 상식적 수준의 정보성 글)",
+                "2. 고급 전략(검색 엔진 최적화 및 사용자 타겟 분석)",
+                "3. 전문가 전략(가장 고도화된 심층적 마케팅 구조 설계)"
+              ].map((item) => (
+                <option key={item} value={item} className="bg-slate-950">
+                  {getStrategyLevelEmoji(item)} {item}
+                </option>
+              ))}
+            </select>
+
+            {/* 6. 결과 구성 */}
+            <select
+              value={aiResultFormat}
+              onChange={(e) => setAiResultFormat?.(e.target.value)}
+              disabled={isAiGenerating || isFetchingOriginal || isRecreating}
+              className="h-9 w-60 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 text-center"
+            >
+              <option value="" disabled hidden>결과 구성</option>
+              {[
+                "1. 기본 시리즈(키워드 연관 글감 병렬적 나열)",
+                "2. 기본 시리즈 + 배포 플랫폼별 적합성 키워드 향상",
+                "3. 2번 + 발행 순서 및 최적의 배포 타이밍 구성",
+              ].map((item) => (
+                <option key={item} value={item} className="bg-slate-950">
+                  {getResultFormatEmoji(item)} {item}
+                </option>
+              ))}
+            </select>
           </div>
-          <div className="mx-1 h-4 w-px bg-zinc-850 shrink-0" />
 
+          {/* 2번째 줄 */}
+          <div className="flex flex-wrap items-center gap-2 border-t border-zinc-800/20 pt-2">
+            {/* 7. 대분류 */}
+            <select
+              value={aiLargeCategory}
+              onChange={(e) => {
+                const newGroup = e.target.value;
+                setAiLargeCategory?.(newGroup);
+                setIsCustomSubTopic(false);
+                const firstCat = topicCategories.find((c) => c.group === newGroup);
+                if (firstCat) {
+                  setAiMainTopic?.(firstCat.name);
+                  const firstSub = topicSubTopics.find((s) => s.categoryId === firstCat.id);
+                  if (firstSub) {
+                    setAiSubTopic?.(firstSub.name);
+                  } else {
+                    setAiSubTopic?.("");
+                  }
+                } else {
+                  setAiMainTopic?.("");
+                  setAiSubTopic?.("");
+                }
+              }}
+              disabled={isAiGenerating || isFetchingOriginal || isRecreating}
+              className="h-9 w-36 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 text-center"
+            >
+              <option value="" disabled hidden>대분류</option>
+              <option value="" className="bg-slate-950">대분류 선택</option>
+              {mainGroups.map((group) => (
+                <option key={group} value={group} className="bg-slate-950">
+                  {groupEmojis[group] || "📁"} {group}
+                </option>
+              ))}
+            </select>
+
+            {/* 8. 상세 분야 */}
+            <select
+              value={aiMainTopic}
+              onChange={(e) => {
+                const newTopicName = e.target.value;
+                setAiMainTopic?.(newTopicName);
+                setIsCustomSubTopic(false);
+                const cat = topicCategories.find((c) => c.name === newTopicName);
+                if (cat) {
+                  const firstSub = topicSubTopics.find((s) => s.categoryId === cat.id);
+                  if (firstSub) {
+                    setAiSubTopic?.(firstSub.name);
+                  } else {
+                    setAiSubTopic?.("");
+                  }
+                } else {
+                  setAiSubTopic?.("");
+                }
+              }}
+              disabled={isAiGenerating || isFetchingOriginal || isRecreating || !aiLargeCategory}
+              className="h-9 w-44 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 disabled:cursor-not-allowed text-center"
+            >
+              <option value="" disabled hidden>상세 분야</option>
+              <option value="" className="bg-slate-950">
+                {aiLargeCategory ? "상세 분야 선택" : "대분류 필요"}
+              </option>
+              {topicCategories
+                .filter((cat) => cat.group === aiLargeCategory)
+                .map((cat) => (
+                  <option key={cat.id} value={cat.name} className="bg-slate-950">
+                    {cat.emoji} {cat.name}
+                  </option>
+                ))}
+            </select>
+
+            {/* 9. 추천 시리즈 */}
+            {(() => {
+              const currentCategory = topicCategories.find((c) => c.name === aiMainTopic);
+              const filteredSubTopics = currentCategory
+                ? topicSubTopics.filter((sub) => sub.categoryId === currentCategory.id)
+                : [];
+
+              const isPresetSubTopic = filteredSubTopics.some((sub) => sub.name === aiSubTopic);
+              const showCustomSubTopic = isCustomSubTopic || (aiSubTopic !== "" && !isPresetSubTopic);
+
+              if (showCustomSubTopic) {
+                return (
+                  <div className="relative flex items-center h-9 w-44">
+                    <input
+                      value={aiSubTopic}
+                      onChange={(e) => setAiSubTopic?.(e.target.value)}
+                      placeholder="추천 시리즈 직접 입력"
+                      className="h-9 w-full rounded-lg border border-zinc-800 bg-black/40 pl-3 pr-12 text-xs text-white outline-none placeholder-zinc-500 focus:border-violet-500 font-bold"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomSubTopic(false);
+                        const firstSub = filteredSubTopics[0];
+                        if (firstSub) {
+                          setAiSubTopic?.(firstSub.name);
+                        } else {
+                          setAiSubTopic?.("");
+                        }
+                      }}
+                      className="absolute right-2 text-cyan-400 hover:text-cyan-300 text-[10px] font-black"
+                    >
+                      선택 전환
+                    </button>
+                  </div>
+                );
+              }
+
+              return (
+                <select
+                  value={aiSubTopic}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "__custom__") {
+                      setIsCustomSubTopic(true);
+                      setAiSubTopic?.("");
+                    } else {
+                      setAiSubTopic?.(val);
+                    }
+                  }}
+                  disabled={isAiGenerating || isFetchingOriginal || isRecreating || !aiMainTopic}
+                  className="h-9 w-44 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 disabled:cursor-not-allowed text-center"
+                >
+                  <option value="" disabled hidden>추천 시리즈</option>
+                  <option value="" className="bg-slate-950">
+                    {aiMainTopic ? "시리즈 선택" : "상세분야 필요"}
+                  </option>
+                  {filteredSubTopics.map((sub) => (
+                    <option key={sub.id} value={sub.name} className="bg-slate-950">
+                      ⚡ {sub.name}
+                    </option>
+                  ))}
+                  {aiMainTopic && (
+                    <option value="__custom__" className="bg-slate-950">
+                      📝 직접 입력...
+                    </option>
+                  )}
+                </select>
+              );
+            })()}
+
+            {/* 10. 메인 키워드 주제 */}
+            <input
+              type="text"
+              placeholder="메인 키워드 주제 입력"
+              value={aiTargetKeyword}
+              onChange={(e) => setAiTargetKeyword?.(e.target.value)}
+              disabled={isAiGenerating || isFetchingOriginal || isRecreating}
+              className="h-9 w-64 rounded-lg border border-zinc-800 bg-black/40 px-3 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 text-center"
+            />
+
+            {/* 11. 참고 사항 */}
+            <input
+              type="text"
+              placeholder="참고 사항 입력 (선택)"
+              value={aiReferenceNote}
+              onChange={(e) => setAiReferenceNote?.(e.target.value)}
+              disabled={isAiGenerating || isFetchingOriginal || isRecreating}
+              className="h-9 w-64 rounded-lg border border-zinc-800 bg-black/40 px-3 text-xs text-white outline-none focus:border-violet-500 font-bold disabled:opacity-50 text-center"
+            />
+
+            {/* AI 생성 상태 알림 */}
+            {isAiGenerating && (
+              <div className="flex items-center gap-2 ml-2">
+                <span className="text-[11px] text-zinc-400 animate-pulse font-medium">
+                  {aiStatusMessage || "생성 중..."}
+                </span>
+              </div>
+            )}
+
+            {/* 우측 정렬 영역: 최신 검색 + 시작 버튼 */}
+            <div className="flex items-center gap-3 ml-auto shrink-0 justify-center">
+              {/* Grounding 토글 (최신 검색) */}
+              <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs font-black text-zinc-300">
+                <input
+                  type="checkbox"
+                  checked={aiUseSearch}
+                  onChange={(e) => setAiUseSearch?.(e.target.checked)}
+                  disabled={isAiGenerating || isFetchingOriginal || isRecreating}
+                  className="h-4.5 w-4.5 rounded border-zinc-800 bg-black/40 text-violet-600 focus:ring-violet-500 focus:ring-offset-0 disabled:opacity-50"
+                />
+                <span>최신 검색</span>
+              </label>
+
+              <button
+                type="button"
+                onClick={() => handleAiGenerateInEditor?.(
+                  aiTargetKeyword || targetKeyword,
+                  aiContentType,
+                  aiPostType,
+                  aiSelectedTone,
+                  aiWordCountGoal,
+                  aiStrategyLevel,
+                  aiResultFormat,
+                  aiLargeCategory,
+                  aiMainTopic,
+                  aiSubTopic,
+                  aiReferenceNote,
+                  aiUseSearch
+                )}
+                disabled={isAiGenerating || isFetchingOriginal || isRecreating || !!(content && content.replace(/<[^>]*>/g, "").trim().length > 100)}
+                className="w-48 h-9 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-[0_8px_18px_rgba(124,58,237,0.15)] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isAiGenerating ? (
+                  <>
+                    <RefreshCw size={12} className="animate-spin" />
+                    <span>생성 중...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={12} />
+                    <span>AI 콘텐츠 생성 시작</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI 포스팅 재창조 탭 콘텐츠 */}
+      {activeAiTab === "recreate" && (
+        <div className="shrink-0 border-b border-zinc-855 bg-[#0c101f] px-4 py-3 flex flex-wrap items-center gap-2">
+          <input
+            type="text"
+            value={recreateUrl}
+            onChange={(e) => setRecreateUrl(e.target.value)}
+            disabled={isAiGenerating || isFetchingOriginal || isRecreating}
+            placeholder="가져올 타겟 URL 주소 입력 (네이버 블로그, 뉴스 등)"
+            className="h-9 flex-1 max-w-[400px] rounded-lg border border-zinc-800 bg-black/40 px-3 text-xs text-white outline-none focus:border-violet-500 font-bold text-center placeholder-zinc-500 disabled:opacity-50"
+          />
+
+          <button
+            type="button"
+            onClick={handleFetchOriginalText}
+            disabled={isAiGenerating || isFetchingOriginal || isRecreating}
+            className="w-48 h-9 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-[0_8px_18px_rgba(124,58,237,0.15)] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isFetchingOriginal ? (
+              <>
+                <RefreshCw size={12} className="animate-spin" />
+                <span>가져오는 중...</span>
+              </>
+            ) : (
+              <>
+                <Download size={12} />
+                <span>URL 원본 글 가져오기</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleStartRecreation}
+            disabled={isAiGenerating || isFetchingOriginal || isRecreating}
+            className="w-48 h-9 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-[0_8px_18px_rgba(124,58,237,0.15)] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isRecreating ? (
+              <>
+                <RefreshCw size={12} className="animate-spin" />
+                <span>재창조 중...</span>
+              </>
+            ) : (
+              <>
+                <Zap size={12} />
+                <span>AI 글 재창조 시작</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* AI 자동 수정보완 탭 콘텐츠 */}
+      {activeAiTab === "enhance" && (
+        <div className="shrink-0 border-b border-zinc-800 bg-[#0b0d12] px-4 py-3 flex flex-wrap items-center gap-2">
           {/* AI 내용 보강 */}
           <div className="relative" ref={contentDropdownRef}>
             <button
               type="button"
               onClick={() => setIsContentDropdownOpen((prev) => !prev)}
               disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch}
-              className="flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-xs font-black transition-all text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-9 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-[0_8px_18px_rgba(124,58,237,0.15)] disabled:opacity-50 disabled:cursor-not-allowed px-4"
             >
               {isEnhancingContent ? (
-                <RefreshCw size={14} className="animate-spin" />
+                <RefreshCw size={12} className="animate-spin" />
               ) : (
-                <Wand2 size={14} />
+                <Wand2 size={12} />
               )}
               {isEnhancingContent ? "보강 중..." : "AI 내용 보강"}
             </button>
@@ -2276,12 +2187,12 @@ export default function UniversalBlogEditor({
               type="button"
               onClick={() => setIsTocDropdownOpen((prev) => !prev)}
               disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch}
-              className="flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-xs font-black transition-all text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-9 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-[0_8px_18px_rgba(124,58,237,0.15)] disabled:opacity-50 disabled:cursor-not-allowed px-4"
             >
               {isEnhancingToc ? (
-                <RefreshCw size={14} className="animate-spin" />
+                <RefreshCw size={12} className="animate-spin" />
               ) : (
-                <Wand2 size={14} />
+                <Wand2 size={12} />
               )}
               {isEnhancingToc ? "보강 중..." : "AI 목차 및 내용 보강"}
             </button>
@@ -2308,18 +2219,19 @@ export default function UniversalBlogEditor({
           </div>
 
           {/* AI 글 다듬기 */}
-          <ToolbarButton
+          <button
+            type="button"
             onClick={() => handleEnhanceContent("polish")}
             disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch}
-            className="text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
+            className="h-9 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-[0_8px_18px_rgba(124,58,237,0.15)] disabled:opacity-50 disabled:cursor-not-allowed px-4"
           >
             {isPolishing ? (
-              <RefreshCw size={14} className="animate-spin" />
+              <RefreshCw size={12} className="animate-spin" />
             ) : (
-              <Sparkles size={14} />
+              <Sparkles size={12} />
             )}
             {isPolishing ? "다듬는 중..." : "AI 글 다듬기"}
-          </ToolbarButton>
+          </button>
 
           {/* AI 포스트 타입 변경 */}
           <div className="relative" ref={postTypeDropdownRef}>
@@ -2327,12 +2239,12 @@ export default function UniversalBlogEditor({
               type="button"
               onClick={() => setIsPostTypeDropdownOpen((prev) => !prev)}
               disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch}
-              className="flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-xs font-black transition-all text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-9 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-[0_8px_18px_rgba(124,58,237,0.15)] disabled:opacity-50 disabled:cursor-not-allowed px-4"
             >
               {isChangingPostType ? (
-                <RefreshCw size={14} className="animate-spin" />
+                <RefreshCw size={12} className="animate-spin" />
               ) : (
-                <Wand2 size={14} />
+                <Wand2 size={12} />
               )}
               {isChangingPostType ? "변경 중..." : "AI 포스트 타입 변경"}
             </button>
@@ -2373,37 +2285,226 @@ export default function UniversalBlogEditor({
           </div>
 
           {/* Google Search 실시간 정보 반영 */}
-          <ToolbarButton
+          <button
+            type="button"
             onClick={() => handleEnhanceContent("apply_google_search")}
             disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch}
-            className="text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
+            className="h-9 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-[0_8px_18px_rgba(124,58,237,0.15)] disabled:opacity-50 disabled:cursor-not-allowed px-4"
           >
             {isApplyingSearch ? (
-              <RefreshCw size={14} className="animate-spin" />
+              <RefreshCw size={12} className="animate-spin" />
             ) : (
-              <Globe size={14} />
+              <Globe size={12} />
             )}
             {isApplyingSearch ? "실시간 검색 반영 중..." : "Google Search 실시간 정보 반영"}
-          </ToolbarButton>
+          </button>
 
           {onGenerateSeo && (
             <button
               type="button"
               onClick={onGenerateSeo}
               disabled={isGeneratingSeo || isSaving || !title}
-              className="flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-2 text-xs font-black text-emerald-300 transition-all hover:bg-emerald-500/20 disabled:opacity-40"
+              className="h-9 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-[0_8px_18px_rgba(124,58,237,0.15)] disabled:opacity-50 disabled:cursor-not-allowed px-4"
             >
               {isGeneratingSeo ? (
-                <RefreshCw size={14} className="animate-spin" />
+                <RefreshCw size={12} className="animate-spin" />
               ) : (
-                <Wand2 size={14} />
+                <Wand2 size={12} />
               )}
               {isGeneratingSeo ? "SEO 생성 중..." : "AI SEO최적화 생성"}
             </button>
           )}
         </div>
-      </div>
+      )}
 
+      {/* 공통 텍스트 서식 툴바 (H1 제외, 글꼴 추가, 항상 하단에 위치) */}
+      <div className="shrink-0 border-b border-zinc-800 bg-[#0b0d12] px-4 py-2 flex flex-wrap items-center gap-1.5">
+        <input type="file" accept="image/*" ref={fileInputRef} onChange={handleEditorImageUpload} className="hidden" />
+
+        <ToolbarButton
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isImageUploading}
+          className="border border-zinc-800 bg-zinc-900/50 hover:bg-emerald-500/10 hover:text-emerald-400"
+        >
+          {isImageUploading ? <RefreshCw size={14} className="animate-spin" /> : <ImageIcon size={14} />}
+          {isImageUploading ? "업로드중" : "사진"}
+        </ToolbarButton>
+
+        <ToolbarButton onClick={handleInsertImageUrl}>
+          <ImageIcon size={14} /> URL이미지
+        </ToolbarButton>
+
+        <div className="mx-1 h-5 w-px bg-zinc-800" />
+
+        {/* 프리미엄 글꼴 드롭다운 */}
+        <select
+          onChange={(e) => {
+            const font = e.target.value;
+            if (font === "default") {
+              editor?.chain().focus().unsetFontFamily().run();
+            } else {
+              editor?.chain().focus().setFontFamily(font).run();
+            }
+          }}
+          value={
+            editor?.getAttributes("textStyle").fontFamily || "default"
+          }
+          className="h-9 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold text-center"
+        >
+          <option value="default">기본 글꼴</option>
+          
+          {/* 한국어 글꼴 */}
+          <option disabled className="text-zinc-500 font-bold bg-zinc-900/40">--- 한국어 글꼴 ---</option>
+          <option value="Noto Sans KR">본고딕 (Noto Sans KR)</option>
+          <option value="Nanum Gothic">나눔고딕</option>
+          <option value="Nanum Myeongjo">나눔명조</option>
+          <option value="Noto Serif KR">본명조 (Noto Serif KR)</option>
+          <option value="Black Han Sans">검은고딕 (Black Han Sans)</option>
+          <option value="Do Hyeon">도현체</option>
+          <option value="Jua">주아체</option>
+          <option value="Dongle">동글체</option>
+          <option value="Gamja Flower">감자꽃체</option>
+          <option value="Gowun Batang">고운바탕</option>
+          <option value="Gowun Dodum">고운돋움</option>
+          <option value="Hahmlet">함렛</option>
+          <option value="Bagel Fat One">베이글펫원</option>
+          <option value="Nanum Brush Script">나눔붓글씨</option>
+          <option value="Nanum Pen Script">나눔펜글씨</option>
+          <option value="Single Day">싱글데이</option>
+          <option value="Song Myung">송명체</option>
+          <option value="Yeon Sung">연성체</option>
+          <option value="East Sea Dokdo">독도체 (East Sea Dokdo)</option>
+          <option value="Gaegu">개구체 (Gaegu)</option>
+          <option value="Stylish">스타일리시 (Stylish)</option>
+          <option value="Sunflower">해바라기 (Sunflower)</option>
+
+          {/* 영문 모던 고딕 */}
+          <option disabled className="text-zinc-500 font-bold bg-zinc-900/40">--- 영문 고딕 (Sans-serif) ---</option>
+          <option value="Inter">Inter</option>
+          <option value="Poppins">Poppins</option>
+          <option value="Roboto">Roboto</option>
+          <option value="Montserrat">Montserrat</option>
+          <option value="Raleway">Raleway</option>
+          <option value="Nunito">Nunito</option>
+          <option value="Lato">Lato</option>
+          <option value="Open Sans">Open Sans</option>
+          <option value="Source Sans 3">Source Sans 3</option>
+          <option value="Quicksand">Quicksand (라운드)</option>
+
+          {/* 영문 클래식 명조 */}
+          <option disabled className="text-zinc-500 font-bold bg-zinc-900/40">--- 영문 명조 (Serif) ---</option>
+          <option value="Playfair Display">Playfair Display</option>
+          <option value="Lora">Lora</option>
+          <option value="Merriweather">Merriweather</option>
+          <option value="Cinzel">Cinzel (로마풍)</option>
+          <option value="Bodoni Moda">Bodoni Moda</option>
+          <option value="EB Garamond">EB Garamond</option>
+          <option value="Cormorant Garamond">Cormorant Garamond</option>
+          <option value="Crimson Text">Crimson Text</option>
+          <option value="Libre Baskerville">Libre Baskerville</option>
+
+          {/* 영문 감성 필기체 */}
+          <option disabled className="text-zinc-500 font-bold bg-zinc-900/40">--- 영문 필기체 (Cursive/Script) ---</option>
+          <option value="Pacifico">Pacifico</option>
+          <option value="Great Vibes">Great Vibes</option>
+          <option value="Dancing Script">Dancing Script</option>
+          <option value="Alex Brush">Alex Brush</option>
+          <option value="Sacramento">Sacramento</option>
+          <option value="Yellowtail">Yellowtail</option>
+          <option value="Parisienne">Parisienne</option>
+          <option value="Allura">Allura</option>
+
+          {/* 영문 타이프 & 디스플레이 */}
+          <option disabled className="text-zinc-500 font-bold bg-zinc-900/40">--- 영문 타이프 & 디자인 ---</option>
+          <option value="Courier Prime">Courier Prime (타자기)</option>
+          <option value="Fira Code">Fira Code (코딩서체)</option>
+          <option value="Source Code Pro">Source Code Pro</option>
+          <option value="IBM Plex Mono">IBM Plex Mono</option>
+          <option value="Righteous">Righteous</option>
+          <option value="Limelight">Limelight</option>
+          <option value="Bungee">Bungee</option>
+        </select>
+
+        <div className="mx-1 h-5 w-px bg-zinc-800" />
+
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive("heading", { level: 2 })}>
+          <Heading2 size={15} />
+        </ToolbarButton>
+
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive("heading", { level: 3 })}>
+          <Heading3 size={15} />
+        </ToolbarButton>
+
+        <div className="mx-1 h-4 w-px bg-zinc-800" />
+
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive("bold")}>
+          <Bold size={15} />
+        </ToolbarButton>
+
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive("italic")}>
+          <Italic size={15} />
+        </ToolbarButton>
+
+        <ToolbarButton onClick={handleInsertLink} active={editor?.isActive("link")}>
+          <Link2 size={15} />
+        </ToolbarButton>
+
+        <div className="mx-1 h-4 w-px bg-zinc-800" />
+
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive("bulletList")}>
+          <List size={15} />
+        </ToolbarButton>
+
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive("orderedList")}>
+          <ListOrdered size={15} />
+        </ToolbarButton>
+
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive("blockquote")}>
+          <Quote size={15} />
+        </ToolbarButton>
+
+        <div className="mx-1 h-4 w-px bg-zinc-800" />
+
+        <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign("left").run()}>
+          <AlignLeft size={15} />
+        </ToolbarButton>
+
+        <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign("center").run()}>
+          <AlignCenter size={15} />
+        </ToolbarButton>
+
+        <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign("right").run()}>
+          <AlignRight size={15} />
+        </ToolbarButton>
+
+        <div className="mx-1 h-4 w-px bg-zinc-800" />
+
+        <ToolbarButton onClick={handleInsertTable}>
+          <Table2 size={14} /> 표
+        </ToolbarButton>
+
+        <ToolbarButton onClick={handleInsertYoutube}>
+          <CirclePlay size={14} /> 유튜브
+        </ToolbarButton>
+
+        <ToolbarButton onClick={() => editor?.chain().focus().setHorizontalRule().run()}>
+          <Minus size={14} /> 구분선
+        </ToolbarButton>
+
+        <div className="mx-1 h-4 w-px bg-zinc-800" />
+
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleCodeBlock().run()} active={editor?.isActive("codeBlock")}>
+          <Code2 size={14} /> 코드
+        </ToolbarButton>
+
+        <ToolbarButton onClick={handleInsertCta}>CTA</ToolbarButton>
+
+        <div className="mx-1 h-4 w-px bg-zinc-800" />
+
+        <ToolbarButton onClick={() => handleEnhanceContent("correct")}>
+          <Type size={14} /> 맞춤법
+        </ToolbarButton>
+      </div>
       <div className="flex-1 overflow-y-auto bg-white custom-scrollbar">
         {isLoading || !isClientReady ? (
           <div className="flex h-full w-full items-center justify-center gap-1.5 text-xs font-mono text-zinc-500">
