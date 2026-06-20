@@ -383,7 +383,7 @@ export default function IdeaHubPage() {
   const totalSubTopics = new Set(ideaHubSeries.map((item) => item.subTopicId)).size;
 
   return (
-    <div className="min-h-full bg-[#06080d] px-4 py-6 text-zinc-100 lg:px-8 lg:py-8">
+    <div className="min-h-full w-full bg-zinc-50 dark:bg-[#06080d] px-4 py-6 text-zinc-800 dark:text-zinc-100 lg:px-8 lg:py-8 transition-colors duration-300">
       <div className="mx-auto max-w-7xl space-y-8">
         
         {/* Hero Banner with floating glowing effects */}
@@ -468,7 +468,7 @@ export default function IdeaHubPage() {
                     <Icon size={20} />
                   </div>
                   <div>
-                    <p className="text-xl font-black text-white">{item.value}</p>
+                    <p className="text-xl font-black text-zinc-900 dark:text-white">{item.value}</p>
                     <p className="text-[10px] font-bold text-zinc-500">{item.label}</p>
                   </div>
                 </div>

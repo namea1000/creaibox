@@ -25,6 +25,10 @@ import {
   Clock,
   Sparkles,
   ChevronDown,
+  Copy,
+  Edit,
+  Trash2,
+  ImagePlus,
 } from "lucide-react";
 
 interface FreeAsset {
@@ -38,6 +42,7 @@ interface FreeAsset {
   tags: string[];
   mediaType: "photo" | "illustration" | "video" | "music" | "gif" | string;
   uploader: string;
+  uploaderEmail: string;
   downloads: number;
   views: number;
   aspectRatio?: string;
@@ -45,6 +50,8 @@ interface FreeAsset {
   width?: number;
   height?: number;
   camera?: string;
+  prompt?: string;
+  aiTool?: string;
 }
 
 export default function FreeAssetsLibraryPage() {
@@ -53,11 +60,25 @@ export default function FreeAssetsLibraryPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMediaType, setSelectedMediaType] = useState<string>("all");
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>("all");
+  const [selectedGenerationType, setSelectedGenerationType] = useState<string>("all");
   
   // Modal states
   const [selectedAsset, setSelectedAsset] = useState<FreeAsset | null>(null);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isRequestOpen, setIsRequestOpen] = useState(false);
+
+  // Request Form states
+  const [requestMediaType, setRequestMediaType] = useState("이미지");
+  const [requestDescription, setRequestDescription] = useState("");
+  const [submittingRequest, setSubmittingRequest] = useState(false);
+  const [requests, setRequests] = useState<any[]>([]);
+  const [requestsLoading, setRequestsLoading] = useState(true);
+
+  // Admin Comment states
+  const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
+  const [commentText, setCommentText] = useState("");
+  const [submittingComment, setSubmittingComment] = useState(false);
 
   // User session states
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
@@ -72,6 +93,8 @@ export default function FreeAssetsLibraryPage() {
   const [uploadTags, setUploadTags] = useState("");
   const [uploadMediaType, setUploadMediaType] = useState("photo");
   const [uploadGenerationType, setUploadGenerationType] = useState<"ai" | "real">("real");
+  const [uploadPrompt, setUploadPrompt] = useState("");
+  const [uploadAiTool, setUploadAiTool] = useState("미드져니");
   const [uploadCamera, setUploadCamera] = useState("");
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -82,6 +105,8 @@ export default function FreeAssetsLibraryPage() {
   const [editTags, setEditTags] = useState("");
   const [editMediaType, setEditMediaType] = useState("photo");
   const [editGenerationType, setEditGenerationType] = useState<"ai" | "real">("real");
+  const [editPrompt, setEditPrompt] = useState("");
+  const [editAiTool, setEditAiTool] = useState("");
   const [editAspectRatio, setEditAspectRatio] = useState("");
   const [editCamera, setEditCamera] = useState("");
   const [updatingAsset, setUpdatingAsset] = useState(false);
@@ -91,6 +116,7 @@ export default function FreeAssetsLibraryPage() {
   const [isDownloadDropdownOpen, setIsDownloadDropdownOpen] = useState(false);
   const [downloadTargetFormat, setDownloadTargetFormat] = useState<'jpeg' | 'png' | 'webp'>('jpeg');
   const [downloadingFormatText, setDownloadingFormatText] = useState("");
+  const [promptCopied, setPromptCopied] = useState(false);
   const [isShareDropdownOpen, setIsShareDropdownOpen] = useState(false);
   const [isSpecsExpanded, setIsSpecsExpanded] = useState(true);
   const [selectedSizeIndex, setSelectedSizeIndex] = useState(3);
@@ -121,9 +147,101 @@ export default function FreeAssetsLibraryPage() {
     }
   }, []);
 
+  // Fetch Requests List
+  const fetchRequests = useCallback(async () => {
+    setRequestsLoading(true);
+    try {
+      const response = await fetch("/api/free-assets/requests");
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setRequests(data.data || []);
+      } else {
+        console.error("Failed to load requests:", data.error);
+      }
+    } catch (err) {
+      console.error("Error fetching requests:", err);
+    } finally {
+      setRequestsLoading(false);
+    }
+  }, []);
+
+  // Submit Request
+  const handleRequestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUserEmail) {
+      if (confirm("이미지 제작 요청은 로그인이 필요한 기능입니다. 로그인 페이지로 이동하시겠습니까?")) {
+        window.location.href = "/login?redirect=/studio/library/free-assets";
+      }
+      return;
+    }
+    if (!requestDescription || requestDescription.trim().length < 5) {
+      alert("구체적인 요청 내용을 5자 이상 작성해주세요.");
+      return;
+    }
+
+    setSubmittingRequest(true);
+    try {
+      const response = await fetch("/api/free-assets/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mediaType: requestMediaType,
+          description: requestDescription.trim(),
+        }),
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        alert("이미지 제작 요청이 정상적으로 등록되었습니다.");
+        setRequestDescription("");
+        setIsRequestOpen(false);
+        void fetchRequests();
+      } else {
+        alert(data.error || "요청 등록에 실패했습니다.");
+      }
+    } catch (err: any) {
+      alert(`오류가 발생했습니다: ${err.message}`);
+    } finally {
+      setSubmittingRequest(false);
+    }
+  };
+
+  // Submit Admin Comment
+  const handleCommentSubmit = async (requestId: string) => {
+    if (!commentText.trim()) {
+      alert("답변 댓글 내용을 입력해주세요.");
+      return;
+    }
+
+    setSubmittingComment(true);
+    try {
+      const response = await fetch("/api/free-assets/requests/comment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requestId,
+          comment: commentText.trim(),
+        }),
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        alert("코멘트 작성 및 완료 처리가 완료되었습니다.");
+        setCommentText("");
+        setActiveCommentId(null);
+        void fetchRequests();
+      } else {
+        alert(data.error || "코멘트 등록에 실패했습니다.");
+      }
+    } catch (err: any) {
+      alert(`오류가 발생했습니다: ${err.message}`);
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
   useEffect(() => {
     void fetchAssets();
-  }, [fetchAssets]);
+    void fetchRequests();
+  }, [fetchAssets, fetchRequests]);
 
   // Load User Session
   useEffect(() => {
@@ -142,9 +260,21 @@ export default function FreeAssetsLibraryPage() {
             .eq("id", session.user.id)
             .maybeSingle();
           
-          if (profile?.role === "ADMIN") {
-            setIsAdmin(true);
+          let isUserAdmin = profile?.role === "ADMIN" || profile?.role === "STAFF";
+
+          // If not admin by profile, check admin_whitelist table
+          if (!isUserAdmin && session.user.email) {
+            const { data: whitelist } = await supabase
+              .from("admin_whitelist")
+              .select("email")
+              .eq("email", session.user.email)
+              .maybeSingle();
+            if (whitelist) {
+              isUserAdmin = true;
+            }
           }
+          
+          setIsAdmin(isUserAdmin);
         }
       } catch (err) {
         console.error("Failed to load user session:", err);
@@ -163,7 +293,20 @@ export default function FreeAssetsLibraryPage() {
             .eq("id", session.user.id)
             .maybeSingle();
           
-          setIsAdmin(profile?.role === "ADMIN");
+          let isUserAdmin = profile?.role === "ADMIN" || profile?.role === "STAFF";
+
+          if (!isUserAdmin && session.user.email) {
+            const { data: whitelist } = await supabase
+              .from("admin_whitelist")
+              .select("email")
+              .eq("email", session.user.email)
+              .maybeSingle();
+            if (whitelist) {
+              isUserAdmin = true;
+            }
+          }
+
+          setIsAdmin(isUserAdmin);
         } catch {
           setIsAdmin(false);
         }
@@ -253,6 +396,8 @@ export default function FreeAssetsLibraryPage() {
     setEditTags(asset.tags.join(", "));
     setEditMediaType(asset.mediaType);
     setEditGenerationType((asset.generationType as "ai" | "real") || "real");
+    setEditPrompt(asset.prompt || "");
+    setEditAiTool(asset.aiTool || "미드져니");
     setEditAspectRatio(asset.aspectRatio || "");
     setEditCamera(asset.camera || "촬영 정보 없음");
     setIsEditOpen(true);
@@ -280,6 +425,8 @@ export default function FreeAssetsLibraryPage() {
           generationType: editGenerationType,
           aspectRatio: editAspectRatio,
           camera: editCamera,
+          prompt: editGenerationType === "ai" ? editPrompt : "",
+          aiTool: editGenerationType === "ai" ? editAiTool : "",
         }),
       });
       
@@ -296,6 +443,8 @@ export default function FreeAssetsLibraryPage() {
             generationType: editGenerationType,
             aspectRatio: editAspectRatio,
             camera: editCamera,
+            prompt: editGenerationType === "ai" ? editPrompt : "",
+            aiTool: editGenerationType === "ai" ? editAiTool : "",
           });
         }
         
@@ -616,7 +765,7 @@ export default function FreeAssetsLibraryPage() {
     const mergedFiles = [...uploadFiles, ...newFiles];
     setUploadFiles(mergedFiles);
 
-    if (mergedFiles.length === 1 && !uploadTitle) {
+    if (mergedFiles.length >= 1 && !uploadTitle) {
       setUploadTitle(mergedFiles[0].name.replace(/\.[^/.]+$/, ""));
     }
 
@@ -667,10 +816,11 @@ export default function FreeAssetsLibraryPage() {
   const removeUploadFile = (indexToRemove: number) => {
     setUploadFiles((prev) => {
       const updated = prev.filter((_, idx) => idx !== indexToRemove);
-      if (updated.length === 1) {
-        setUploadTitle(updated[0].name.replace(/\.[^/.]+$/, ""));
-      } else if (updated.length === 0) {
+      if (updated.length === 0) {
         setUploadTitle("");
+      } else if (!uploadTitle) {
+        // 이미 제목이 비어있다면 남은 첫 번째 파일의 이름을 디폴트로 채워줌
+        setUploadTitle(updated[0].name.replace(/\.[^/.]+$/, ""));
       }
       return updated;
     });
@@ -745,8 +895,8 @@ export default function FreeAssetsLibraryPage() {
       const formData = new FormData();
       formData.append("file", file);
       
-      const fileTitle = uploadFiles.length === 1 
-        ? uploadTitle 
+      const fileTitle = uploadTitle.trim() !== ""
+        ? uploadTitle.trim()
         : file.name.replace(/\.[^/.]+$/, "");
       
       formData.append("title", fileTitle);
@@ -762,6 +912,10 @@ export default function FreeAssetsLibraryPage() {
         formData.append("height", height.toString());
       }
       formData.append("camera", uploadCamera || "촬영 정보 없음");
+      if (uploadGenerationType === "ai") {
+        formData.append("prompt", uploadPrompt);
+        formData.append("aiTool", uploadAiTool);
+      }
 
       try {
         const response = await fetch("/api/free-assets/upload", {
@@ -793,6 +947,8 @@ export default function FreeAssetsLibraryPage() {
       setUploadTags("");
       setUploadMediaType("photo");
       setUploadGenerationType("real");
+      setUploadPrompt("");
+      setUploadAiTool("미드져니");
       setUploadCamera("");
       void fetchAssets();
     } else {
@@ -811,16 +967,61 @@ export default function FreeAssetsLibraryPage() {
     const matchesType =
       selectedMediaType === "all" || asset.mediaType === selectedMediaType;
 
+    // 한/영 연관 검색어 매핑 정의
+    const query = searchQuery.trim().toLowerCase();
+    const relatedKeywords: string[] = [query];
+    
+    const tagTranslationMap: Record<string, string[]> = {
+      "바다": ["beach", "sea", "ocean"],
+      "beach": ["바다", "해변"],
+      "sea": ["바다"],
+      "ocean": ["바다", "대양"],
+      "자연": ["nature"],
+      "nature": ["자연"],
+      "배경": ["background", "wallpaper"],
+      "background": ["배경"],
+      "하늘": ["sky"],
+      "sky": ["하늘"],
+      "여행": ["travel", "trip"],
+      "travel": ["여행"],
+      "힐링": ["healing", "relax"],
+      "healing": ["힐링"],
+      "음악": ["music", "sound", "audio"],
+      "music": ["음악"],
+      "감성": ["emotional", "mood"],
+      "emotional": ["감성"],
+      "우주": ["space", "universe", "cosmos"],
+      "space": ["우주"],
+      "비즈니스": ["business", "office"],
+      "business": ["비즈니스"]
+    };
+
+    // 현재 검색어에 매핑되는 영문/한문 키워드가 있으면 검색 대상에 포함시킴
+    Object.keys(tagTranslationMap).forEach((key) => {
+      if (key.toLowerCase() === query) {
+        tagTranslationMap[key].forEach((val) => {
+          if (!relatedKeywords.includes(val.toLowerCase())) {
+            relatedKeywords.push(val.toLowerCase());
+          }
+        });
+      }
+    });
+
     const matchesQuery =
-      searchQuery.trim() === "" ||
-      asset.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      asset.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      asset.uploader.toLowerCase().includes(searchQuery.toLowerCase());
+      query === "" ||
+      relatedKeywords.some((keyword) => 
+        asset.title.toLowerCase().includes(keyword) ||
+        asset.tags.some((t) => t.toLowerCase().includes(keyword)) ||
+        asset.uploader.toLowerCase().includes(keyword)
+      );
 
     const matchesAspectRatio =
       selectedAspectRatio === "all" || asset.aspectRatio === selectedAspectRatio;
 
-    return matchesType && matchesQuery && matchesAspectRatio;
+    const matchesGenerationType =
+      selectedGenerationType === "all" || asset.generationType === selectedGenerationType;
+
+    return matchesType && matchesQuery && matchesAspectRatio && matchesGenerationType;
   });
 
   const popularTags = ["자연", "배경", "바다", "하늘", "여행", "힐링", "음악", "감성", "우주", "비즈니스"];
@@ -838,7 +1039,7 @@ export default function FreeAssetsLibraryPage() {
         {/* 라이브러리 홈으로 이동 버튼 (왼쪽 제일 위 절대 배치) */}
         <Link
           href="/studio/library"
-          className="absolute left-6 top-6 z-20 group inline-flex items-center gap-1.5 rounded-none border border-zinc-800 bg-zinc-950/80 px-4 py-1.5 text-xs font-bold text-zinc-400 hover:text-white transition shadow-lg"
+          className="absolute left-6 top-6 z-20 group inline-flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-950/80 px-4 py-1.5 text-xs font-bold text-zinc-400 hover:text-white transition shadow-lg"
         >
           <ArrowLeft size={13} className="transition group-hover:-translate-x-0.5" />
           라이브러리 홈으로
@@ -849,15 +1050,49 @@ export default function FreeAssetsLibraryPage() {
             크리에이박스 <span className="bg-gradient-to-r from-blue-400 via-emerald-400 to-amber-400 bg-clip-text text-transparent">무료 미디어</span> 라이브러리
           </h1>
 
+          {/* 픽사베이 스타일 상단 미디어 분류 탭 */}
+          <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1.5 mt-4 text-sm font-medium">
+            {[
+              { id: "all", label: "둘러보기" },
+              { id: "photo", label: "사진" },
+              { id: "illustration", label: "일러스트" },
+              { id: "vector", label: "벡터" },
+              { id: "video", label: "비디오" },
+              { id: "music", label: "음악" },
+              { id: "gif", label: "GIF" },
+            ].map((tab) => {
+              const isActive = selectedMediaType === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setSelectedMediaType(tab.id);
+                    if (audioRef.current) {
+                      audioRef.current.pause();
+                      setPlayingAudioId(null);
+                    }
+                  }}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
+                    isActive
+                      ? "bg-white text-zinc-950 shadow-lg shadow-white/10"
+                      : "text-zinc-300 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
           {/* 중앙 통합 검색 바 */}
-          <div className="relative w-full max-w-2xl mt-3">
+          <div className="relative w-full max-w-2xl mt-2">
             <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
             <input
               type="text"
               placeholder="무료 이미지, 비디오, 음악 등 키워드 검색..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-none border border-zinc-800/80 bg-zinc-950/80 py-4 pl-12 pr-6 text-sm text-white shadow-2xl backdrop-blur-md outline-none focus:border-blue-500/50"
+              className="w-full rounded-2xl border border-zinc-800/80 bg-zinc-950/80 py-4 pl-12 pr-6 text-sm text-white shadow-2xl backdrop-blur-md outline-none focus:border-blue-500/50"
             />
           </div>
 
@@ -867,7 +1102,7 @@ export default function FreeAssetsLibraryPage() {
               <button
                 key={tag}
                 onClick={() => setSearchQuery(tag)}
-                className="rounded-none border border-zinc-900 bg-zinc-900/40 px-3 py-1 text-xs font-bold text-zinc-400 hover:border-zinc-700 hover:text-white transition cursor-pointer"
+                className="rounded-full border border-zinc-900 bg-zinc-900/40 px-3 py-1 text-xs font-bold text-zinc-400 hover:border-zinc-700 hover:text-white transition cursor-pointer"
               >
                 #{tag}
               </button>
@@ -875,7 +1110,7 @@ export default function FreeAssetsLibraryPage() {
           </div>
 
           {/* 사진 비율 필터 */}
-          <div className="flex flex-wrap justify-center items-center gap-2 mt-3 pt-3 border-t border-zinc-800/45 w-full max-w-xl">
+          <div className="flex flex-wrap justify-center items-center gap-2 mt-3 pt-3 border-t border-zinc-800/45 w-full max-w-3xl">
             <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mr-2 select-none">비율 필터</span>
             {[
               { id: "all", label: "전체 비율" },
@@ -889,13 +1124,35 @@ export default function FreeAssetsLibraryPage() {
               <button
                 key={ratio.id}
                 onClick={() => setSelectedAspectRatio(ratio.id)}
-                className={`rounded-none px-3 py-1 text-xs font-bold transition cursor-pointer ${
+                className={`rounded-full px-3 py-1 text-xs font-bold transition cursor-pointer ${
                   selectedAspectRatio === ratio.id
                     ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
                     : "border border-zinc-900 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
                 }`}
               >
                 {ratio.label}
+              </button>
+            ))}
+          </div>
+
+          {/* 제작 방식 필터 */}
+          <div className="flex flex-wrap justify-center items-center gap-2 mt-3 pt-3 border-t border-zinc-800/45 w-full max-w-3xl">
+            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mr-2 select-none">제작 방식</span>
+            {[
+              { id: "all", label: "전체 이미지" },
+              { id: "ai", label: "AI 생성 이미지" },
+              { id: "real", label: "실제 사진 이미지" },
+            ].map((gen) => (
+              <button
+                key={gen.id}
+                onClick={() => setSelectedGenerationType(gen.id)}
+                className={`rounded-full px-3 py-1 text-xs font-bold transition cursor-pointer ${
+                  selectedGenerationType === gen.id
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                    : "border border-zinc-900 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                }`}
+              >
+                {gen.label}
               </button>
             ))}
           </div>
@@ -907,11 +1164,12 @@ export default function FreeAssetsLibraryPage() {
         
         {/* 미디어 유형 카테고리 탭 & 업로드 버튼 */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-900 pb-5">
-          <div className="flex flex-wrap gap-1 bg-zinc-950/40 border border-zinc-900 rounded-none p-1 shrink-0">
+          <div className="flex flex-wrap gap-1 bg-zinc-950/40 border border-zinc-900 rounded-2xl p-1 shrink-0">
             {[
               { id: "all", label: "통합 에셋", icon: ImageIcon },
-              { id: "photo", label: "사진", icon: ImageIcon },
+              { id: "photo", label: "이미지", icon: ImageIcon },
               { id: "illustration", label: "일러스트", icon: Sparkles },
+              { id: "vector", label: "벡터 (Vector)", icon: Sparkles },
               { id: "video", label: "비디오", icon: Video },
               { id: "music", label: "음악/사운드", icon: Music },
               { id: "gif", label: "GIF", icon: ImageIcon },
@@ -928,7 +1186,7 @@ export default function FreeAssetsLibraryPage() {
                       setPlayingAudioId(null);
                     }
                   }}
-                  className={`flex items-center gap-1.5 rounded-none px-4 py-2 text-xs font-black transition cursor-pointer ${
+                  className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-black transition cursor-pointer ${
                     isActive
                       ? "bg-zinc-800 text-white shadow-md shadow-black/20"
                       : "text-zinc-400 hover:bg-zinc-900/40 hover:text-zinc-200"
@@ -941,178 +1199,386 @@ export default function FreeAssetsLibraryPage() {
             })}
           </div>
 
-          <button
-            onClick={handleOpenUpload}
-            className="flex items-center justify-center gap-2 rounded-none bg-blue-600 hover:bg-blue-500 transition px-5 py-2.5 text-xs font-black text-white shadow-lg cursor-pointer"
-          >
-            <UploadCloud size={16} />
-            무료 에셋 나눔하기
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                if (!currentUserEmail) {
+                  if (confirm("이미지 제작 요청은 로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?")) {
+                    window.location.href = "/login?redirect=/studio/library/free-assets";
+                  }
+                  return;
+                }
+                setIsRequestOpen(true);
+              }}
+              className="flex items-center justify-center gap-2 rounded-xl border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 transition px-5 py-2.5 text-xs font-black text-zinc-300 shadow-md cursor-pointer"
+            >
+              <ImagePlus size={16} />
+              이미지 제작 요청
+            </button>
+            <button
+              onClick={handleOpenUpload}
+              className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 transition px-5 py-2.5 text-xs font-black text-white shadow-lg cursor-pointer"
+            >
+              <UploadCloud size={16} />
+              무료 에셋 나눔하기
+            </button>
+          </div>
         </div>
 
-        {/* 미디어 카드 에셋 그리드 */}
-        {loading ? (
-          <div className="flex h-64 flex-col items-center justify-center gap-3">
-            <Loader2 className="animate-spin text-blue-500" size={32} />
-            <p className="text-xs font-bold text-zinc-500">구글 드라이브로부터 무료 에셋 로딩 중...</p>
-          </div>
-        ) : filteredAssets.length === 0 ? (
-          <div className="flex h-64 flex-col items-center justify-center rounded-none border border-dashed border-zinc-800 bg-zinc-900/10 text-zinc-500">
-            <ImageIcon size={42} className="mb-3 text-zinc-700" />
-            <p className="text-sm font-black">검색 조건에 맞는 무료 에셋이 없습니다.</p>
-            <p className="mt-1 text-xs text-zinc-600">첫 번째 기여자로 무료 나눔 파일 업로드를 해보세요!</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filteredAssets.map((asset) => {
-              const isAudio = asset.mediaType === "music";
-              const isVideo = asset.mediaType === "video";
-              const isPlaying = playingAudioId === asset.id;
+        {/* 2단 메인 레이아웃 (에셋 그리드 + 우측 제작 요청 Aside) */}
+        <div className="flex flex-col lg:flex-row gap-8 items-start w-full mt-6">
+          
+          {/* 왼쪽: 메인 에셋 그리드 영역 */}
+          <div className="flex-1 w-full min-w-0">
+            {loading ? (
+              <div className="flex h-64 flex-col items-center justify-center gap-3">
+                <Loader2 className="animate-spin text-blue-500" size={32} />
+                <p className="text-xs font-bold text-zinc-500">구글 드라이브로부터 무료 에셋 로딩 중...</p>
+              </div>
+            ) : filteredAssets.length === 0 ? (
+              <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/10 text-zinc-500">
+                <ImageIcon size={42} className="mb-3 text-zinc-700" />
+                <p className="text-sm font-black">검색 조건에 맞는 무료 에셋이 없습니다.</p>
+                <p className="mt-1 text-xs text-zinc-600">첫 번째 기여자로 무료 나눔 파일 업로드를 해보세요!</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {filteredAssets.map((asset) => {
+                  const isAudio = asset.mediaType === "music";
+                  const isVideo = asset.mediaType === "video";
+                  const isPlaying = playingAudioId === asset.id;
 
-              return (
-                <div
-                  key={asset.id}
-                  onClick={() => openDetailModal(asset)}
-                  className="group relative flex flex-col overflow-hidden rounded-none border border-zinc-800/60 bg-zinc-950/80 transition hover:-translate-y-1 hover:border-zinc-700/80 hover:shadow-2xl hover:shadow-black/50 cursor-pointer"
-                >
-                  
-                  {/* 카드 미디어 프리뷰 영역 */}
-                  <div className="relative aspect-[3/2] w-full overflow-hidden bg-zinc-900/40">
-                    {isAudio ? (
-                      <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-indigo-950/50 to-slate-900 px-4">
-                        <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400 group-hover:scale-105 transition-transform">
-                          <Music size={26} />
-                          {isPlaying && (
-                            <span className="absolute inset-0 animate-ping rounded-full bg-indigo-500/10" />
-                          )}
+                  return (
+                    <div
+                      key={asset.id}
+                      onClick={() => openDetailModal(asset)}
+                      className="group relative aspect-[3/2] w-full overflow-hidden rounded-none border border-zinc-800/60 bg-zinc-950/80 transition hover:-translate-y-1 hover:border-zinc-700/80 hover:shadow-2xl hover:shadow-black/50 cursor-pointer"
+                    >
+                      {isAudio ? (
+                        <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-indigo-950/50 to-slate-900 px-4">
+                          <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400 group-hover:scale-105 transition-transform">
+                            <Music size={26} />
+                            {isPlaying && (
+                              <span className="absolute inset-0 animate-ping rounded-full bg-indigo-500/10" />
+                            )}
+                          </div>
+                          <p className="mt-3 text-center text-xs font-bold text-zinc-400 truncate w-full px-2">
+                            {asset.title}
+                          </p>
+                          <button
+                            onClick={(e) => toggleAudio(asset, e)}
+                            className="mt-3 flex items-center justify-center gap-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition px-3 py-1 text-[11px] font-black text-white cursor-pointer"
+                          >
+                            {isPlaying ? (
+                              <>
+                                <Pause size={10} /> 정지
+                              </>
+                            ) : (
+                              <>
+                                <Play size={10} /> 미리듣기
+                              </>
+                            )}
+                          </button>
                         </div>
-                        <p className="mt-3 text-center text-xs font-bold text-zinc-400 truncate w-full px-2">
-                          {asset.title}
-                        </p>
-                        <button
-                          onClick={(e) => toggleAudio(asset, e)}
-                          className="mt-3 flex items-center justify-center gap-1 rounded-none bg-indigo-600 hover:bg-indigo-500 transition px-3 py-1 text-[11px] font-black text-white cursor-pointer"
-                        >
-                          {isPlaying ? (
-                            <>
-                              <Pause size={10} /> 정지
-                            </>
-                          ) : (
-                            <>
-                              <Play size={10} /> 미리듣기
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    ) : isVideo ? (
-                      <div className="relative h-full w-full">
-                        {/* Video Element for autoplay on hover */}
-                        <video
+                      ) : isVideo ? (
+                        <div className="relative h-full w-full">
+                          {/* Video Element for autoplay on hover */}
+                          <video
+                            src={asset.url}
+                            muted
+                            loop
+                            playsInline
+                            className="h-full w-full object-cover"
+                            onMouseEnter={(e) => {
+                              void e.currentTarget.play();
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.pause();
+                              e.currentTarget.currentTime = 0;
+                            }}
+                          />
+                          <div className="absolute right-3 top-3 rounded-lg bg-black/60 px-1.5 py-0.5 text-[9px] font-bold text-white tracking-widest uppercase">
+                            Video
+                          </div>
+                        </div>
+                      ) : (
+                        <img
                           src={asset.url}
-                          muted
-                          loop
-                          playsInline
-                          className="h-full w-full object-cover"
-                          onMouseEnter={(e) => {
-                            void e.currentTarget.play();
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.pause();
-                            e.currentTarget.currentTime = 0;
-                          }}
+                          alt={asset.title}
+                          loading="lazy"
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
-                        <div className="absolute right-3 top-3 rounded-none bg-black/60 px-1.5 py-0.5 text-[9px] font-bold text-white tracking-widest uppercase">
-                          Video
+                      )}
+
+                      {/* 카드 호버 오버레이 (Pixabay style) */}
+                      <div className="absolute inset-0 flex flex-col justify-between bg-gradient-to-t from-black/90 via-black/20 to-black/35 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        
+                        {/* 상단 액션 바 */}
+                        <div className="flex justify-between items-start w-full">
+                          <div className="flex flex-col gap-1 items-start">
+                            {asset.aspectRatio && (
+                              <span className="rounded-full bg-blue-600/90 text-white px-2 py-0.5 text-[9px] font-black tracking-wider shadow select-none">
+                                {asset.aspectRatio}
+                              </span>
+                            )}
+                            {asset.generationType === "ai" ? (
+                              <span className="rounded-full bg-purple-600/90 text-white px-2 py-0.5 text-[9px] font-black tracking-wider shadow select-none">
+                                AI 제작
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-emerald-600/90 text-white px-2 py-0.5 text-[9px] font-black tracking-wider shadow select-none">
+                                실제 사진
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            {/* 수정 권한이 있는 경우 퀵 에디터 아이콘 표시 */}
+                            {currentUserEmail && (currentUserEmail.toLowerCase() === (asset.uploaderEmail || "").toLowerCase() || isAdmin) && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEditModal(asset);
+                                }}
+                                className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-zinc-300 hover:bg-black/90 hover:text-amber-400 transition cursor-pointer"
+                                title="정보 수정"
+                              >
+                                <Edit size={13} />
+                              </button>
+                            )}
+
+                            {/* 좋아요 (하트) */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                alert("좋아요가 반영되었습니다!");
+                              }}
+                              className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-zinc-300 hover:bg-black/90 hover:text-red-400 transition cursor-pointer"
+                              title="좋아요"
+                            >
+                              <Heart size={13} />
+                            </button>
+
+                            {/* 저장 (북마크/태그) */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                alert("에셋이 북마크에 보관되었습니다.");
+                              }}
+                              className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-zinc-300 hover:bg-black/90 hover:text-blue-400 transition cursor-pointer"
+                              title="저장"
+                            >
+                              <Tag size={13} />
+                            </button>
+
+                            {/* 즉시 다운로드 */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                triggerDownload(asset);
+                              }}
+                              className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-zinc-300 hover:bg-black/90 hover:text-white transition cursor-pointer"
+                              title="다운로드"
+                            >
+                              <Download size={13} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* 하단 정보 영역 & 이미지 편집 버튼 */}
+                        <div className="flex justify-between items-end gap-3 w-full">
+                          <div className="min-w-0 flex-1 space-y-1 text-left">
+                            <p className="truncate text-xs font-black text-white leading-tight">
+                              {asset.title}
+                            </p>
+                            <p className="text-[10px] text-zinc-400 font-bold leading-none">
+                              By {asset.uploader.split("@")[0]}
+                            </p>
+                            
+                            {/* 태그 리스트 */}
+                            <div className="flex flex-wrap gap-1 pt-0.5">
+                              {asset.tags.slice(0, 3).map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-bold text-zinc-300"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+
+                            {/* 조회수 & 다운로드 통계 */}
+                            <div className="flex items-center gap-2.5 mt-1 text-[9px] text-zinc-500 font-bold">
+                              <span className="flex items-center gap-0.5">
+                                <Eye size={10} /> {asset.views}
+                              </span>
+                              <span className="flex items-center gap-0.5">
+                                <Download size={10} /> {asset.downloads}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* 이미지 편집 바로가기 (사진/일러스트/움짤 등 이미지 타입만 노출) */}
+                          {asset.mediaType !== "music" && asset.mediaType !== "video" && (
+                            <button
+                              onClick={(e) => {
+                                  e.stopPropagation();
+                                  const importUrl = encodeURIComponent(asset.url);
+                                  const title = encodeURIComponent(asset.title);
+                                  window.location.href = `/studio/image/workspace?imageUrl=${importUrl}&title=${title}`;
+                              }}
+                              className="flex items-center gap-1.5 shrink-0 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition px-3 py-2 text-[10px] font-black shadow-lg cursor-pointer"
+                            >
+                              <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-white/20 text-white text-[8px] font-black font-mono">C</span>
+                              이미지 편집
+                            </button>
+                          )}
                         </div>
                       </div>
-                    ) : (
-                      <img
-                        src={asset.url}
-                        alt={asset.title}
-                        loading="lazy"
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* 오른쪽: 이미지 제작 요청 현황 aside 패널 */}
+          <aside className="w-full lg:w-[350px] shrink-0 border border-zinc-800 bg-zinc-950/60 rounded-2xl p-5 shadow-xl">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600/10 text-blue-400">
+                  <Sparkles size={14} />
+                </div>
+                <h3 className="text-xs font-black text-white uppercase tracking-wider">이미지 제작 요청 현황</h3>
+              </div>
+              <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-black text-zinc-400">
+                {requests.length}건
+              </span>
+            </div>
+
+            {requestsLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((n) => (
+                  <div key={n} className="animate-pulse rounded-xl border border-zinc-800 bg-zinc-900/20 p-4">
+                    <div className="flex justify-between">
+                      <div className="h-4 w-12 rounded bg-zinc-800" />
+                      <div className="h-4 w-10 rounded bg-zinc-800" />
+                    </div>
+                    <div className="h-3 w-3/4 rounded bg-zinc-800 mt-3" />
+                    <div className="h-3 w-1/2 rounded bg-zinc-800 mt-2" />
+                  </div>
+                ))}
+              </div>
+            ) : requests.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <HelpCircle size={28} className="text-zinc-600 mb-2" />
+                <p className="text-xs font-bold text-zinc-500">등록된 제작 요청이 없습니다.</p>
+                <p className="text-[10px] text-zinc-600 mt-1 max-w-[200px]">공용으로 필요한 에셋을 가장 먼저 요청해보세요!</p>
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-800">
+                {requests.map((req) => (
+                  <div
+                    key={req.id}
+                    className="relative rounded-xl border border-zinc-850 bg-[#0f1118]/60 p-4 hover:border-zinc-700/80 transition"
+                  >
+                    {/* 카드 헤더 */}
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[9px] font-bold text-zinc-300">
+                        {req.media_type}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[9px] text-zinc-500 font-bold">
+                          {req.user_nickname}
+                        </span>
+                        <span className="h-1 w-1 rounded-full bg-zinc-700" />
+                        <span className="text-[9px] text-zinc-650 font-bold">
+                          {new Date(req.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 카드 설명 */}
+                    <p className="text-xs text-zinc-300 leading-relaxed font-bold break-all">
+                      {req.description}
+                    </p>
+
+                    {/* 완료 및 배지 영역 */}
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-800/60">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[9px] font-black select-none ${
+                          req.status === "completed"
+                            ? "bg-emerald-500/10 text-emerald-450 border border-emerald-500/20"
+                            : "bg-amber-500/10 text-amber-450 border border-amber-500/20"
+                        }`}
+                      >
+                        {req.status === "completed" ? "제작완료" : "대기중"}
+                      </span>
+
+                      {/* 관리자 완료 처리 버튼 (인라인 토글) */}
+                      {isAdmin && req.status !== "completed" && activeCommentId !== req.id && (
+                        <button
+                          onClick={() => {
+                            setActiveCommentId(req.id);
+                            setCommentText("");
+                          }}
+                          className="rounded-lg bg-blue-600/15 hover:bg-blue-600/30 border border-blue-500/20 text-blue-400 px-2 py-1 text-[10px] font-black transition cursor-pointer"
+                        >
+                          답변 작성
+                        </button>
+                      )}
+                    </div>
+
+                    {/* 관리자 답변 말풍선 */}
+                    {req.comment && (
+                      <div className="mt-3 rounded-lg bg-zinc-950/60 border border-zinc-850 p-3 text-[11px] text-zinc-400 leading-relaxed relative">
+                        <div className="absolute -top-1.5 left-4 w-3 h-3 rotate-45 bg-[#0b0c10] border-t border-l border-zinc-850" />
+                        <p className="font-extrabold text-blue-400 text-[10px] mb-0.5 flex items-center gap-1">
+                          <Sparkles size={10} /> 관리자 답변
+                        </p>
+                        <p className="font-bold text-zinc-300">{req.comment}</p>
+                      </div>
                     )}
 
-                    {/* 카드 호버 오버레이 (Pixabay style) */}
-                    <div className="absolute inset-0 flex flex-col justify-between bg-gradient-to-t from-black/85 via-black/10 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="flex justify-end items-center gap-1.5">
-                        {asset.aspectRatio && (
-                          <span className="rounded-none bg-blue-600/90 text-white px-2 py-0.5 text-[9px] font-black tracking-wider shadow select-none">
-                            {asset.aspectRatio}
-                          </span>
-                        )}
-                        {asset.generationType === "ai" ? (
-                          <span className="rounded-none bg-purple-600/90 text-white px-2 py-0.5 text-[9px] font-black tracking-wider shadow select-none">
-                            AI 제작
-                          </span>
-                        ) : (
-                          <span className="rounded-none bg-emerald-600/90 text-white px-2 py-0.5 text-[9px] font-black tracking-wider shadow select-none">
-                            실제 사진
-                          </span>
-                        )}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            triggerDownload(asset);
-                          }}
-                          className="flex h-8 w-8 items-center justify-center rounded-none bg-zinc-950/80 text-zinc-300 hover:bg-zinc-900 hover:text-white transition cursor-pointer"
-                        >
-                          <Download size={14} />
-                        </button>
-                      </div>
-
-                      <div className="space-y-1">
-                        <p className="truncate text-xs font-bold text-white leading-normal">
-                          {asset.title}
-                        </p>
-                        <div className="flex flex-wrap gap-1">
-                          {asset.tags.slice(0, 3).map((tag) => (
-                            <span
-                              key={tag}
-                              className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-bold text-zinc-300"
-                            >
-                              {tag}
-                            </span>
-                          ))}
+                    {/* 관리자 답변 작성 폼 */}
+                    {isAdmin && activeCommentId === req.id && (
+                      <div className="mt-4 border-t border-zinc-800 pt-3 space-y-2">
+                        <textarea
+                          value={commentText}
+                          onChange={(e) => setCommentText(e.target.value)}
+                          placeholder="답변 내용을 작성해 주세요 (예: 요청하신 이미지를 제작하여 무료 공유 에셋에 업로드해 드렸습니다.)"
+                          className="w-full min-h-[60px] rounded-lg border border-zinc-800 bg-zinc-950 p-2 text-xs font-bold text-zinc-200 placeholder-zinc-650 focus:border-blue-500 focus:outline-none"
+                        />
+                        <div className="flex justify-end gap-1.5">
+                          <button
+                            onClick={() => setActiveCommentId(null)}
+                            className="rounded-lg bg-zinc-800 hover:bg-zinc-700 px-2 py-1 text-[10px] font-bold text-zinc-400 cursor-pointer"
+                          >
+                            취소
+                          </button>
+                          <button
+                            onClick={() => handleCommentSubmit(req.id)}
+                            disabled={submittingComment}
+                            className="rounded-lg bg-blue-600 hover:bg-blue-500 px-2.5 py-1 text-[10px] font-black text-white cursor-pointer disabled:opacity-50"
+                          >
+                            {submittingComment ? "제출중..." : "완료 처리"}
+                          </button>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
-
-                  {/* 카드 하단 메타 명세 */}
-                  <div className="flex items-center justify-between border-t border-zinc-900 bg-zinc-950/20 px-4 py-3">
-                    <div className="flex min-w-0 flex-col">
-                      <span className="truncate text-xs font-black text-zinc-300">
-                        {asset.title}
-                      </span>
-                      <span className="mt-0.5 truncate text-[10px] font-bold text-zinc-600">
-                        By {asset.uploader.split("@")[0]}
-                      </span>
-                    </div>
-
-                    <div className="flex shrink-0 items-center gap-2.5 text-[10px] font-bold text-zinc-600">
-                      <span className="flex items-center gap-1">
-                        <Eye size={12} /> {asset.views}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Download size={12} /> {asset.downloads}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                ))}
+              </div>
+            )}
+          </aside>
+        </div>
       </div>
 
       {/* 1. 상세보기 상세 모달 (Detail View Modal) */}
       {selectedAsset && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
-          <div className="relative flex h-[85vh] w-full max-w-5xl flex-col overflow-hidden rounded-none border border-zinc-800 bg-[#0c0f17] text-zinc-100">
+          <div className="relative flex h-[85vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-zinc-800 bg-[#0c0f17] text-zinc-100">
             
-            {/* 상단 닫기 단추 */}
             <button
               onClick={() => {
                 setSelectedAsset(null);
@@ -1121,18 +1587,17 @@ export default function FreeAssetsLibraryPage() {
                   setPlayingAudioId(null);
                 }
               }}
-              className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-none bg-zinc-950/80 border border-zinc-800 text-zinc-400 hover:text-white transition hover:scale-105 cursor-pointer"
+              className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-950/80 border border-zinc-800 text-zinc-400 hover:text-white transition hover:scale-105 cursor-pointer"
             >
               <X size={18} />
             </button>
 
             <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
               
-              {/* 왼쪽: 미디어 크게보기 영역 */}
               <div className="flex flex-1 items-center justify-center bg-zinc-950 p-6 min-h-[300px] lg:min-h-0">
                 {selectedAsset.mediaType === "music" ? (
                   <div className="flex flex-col items-center gap-6 max-w-sm w-full">
-                    <div className="flex h-28 w-28 items-center justify-center rounded-none bg-indigo-500/10 text-indigo-400">
+                    <div className="flex h-28 w-28 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-400">
                       <Music size={52} />
                     </div>
                     <div className="text-center">
@@ -1141,7 +1606,7 @@ export default function FreeAssetsLibraryPage() {
                     </div>
                     <button
                       onClick={(e) => toggleAudio(selectedAsset, e)}
-                      className="flex items-center gap-2 rounded-none bg-indigo-600 hover:bg-indigo-500 transition px-6 py-3 text-sm font-black text-white shadow-lg shadow-indigo-600/20 cursor-pointer"
+                      className="flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition px-6 py-3 text-sm font-black text-white shadow-lg shadow-indigo-600/20 cursor-pointer"
                     >
                       {playingAudioId === selectedAsset.id ? (
                         <>
@@ -1171,9 +1636,8 @@ export default function FreeAssetsLibraryPage() {
                 )}
               </div>
 
-              {/* 오른쪽: 상세 상세 스펙 정보 패널 */}
               <div className="flex w-full flex-col border-t border-zinc-900 bg-zinc-900/20 p-6 lg:w-80 lg:border-l lg:border-t-0">
-                <div className="flex-1 space-y-6 overflow-y-auto pr-1">
+                <div className="flex-1 space-y-3.5 overflow-y-auto pr-1">
                   <div>
                     <h2 className="text-lg font-black text-white leading-tight">
                       {selectedAsset.title}
@@ -1183,16 +1647,36 @@ export default function FreeAssetsLibraryPage() {
                     </p>
                   </div>
 
-                  {/* 기여 업로더 */}
-                  <div className="rounded-none border border-zinc-800 bg-zinc-950/40 p-4">
-                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">나눔 기여자</p>
-                    <p className="mt-1 text-sm font-black text-zinc-200">
+                  {currentUserEmail && (currentUserEmail.toLowerCase() === (selectedAsset.uploaderEmail || "").toLowerCase() || isAdmin) && (
+                    <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 py-2 px-3.5 flex items-center justify-between gap-4">
+                      <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider shrink-0">에셋 관리</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => openEditModal(selectedAsset)}
+                          className="flex items-center justify-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 transition py-1 px-2.5 text-[10px] font-black text-zinc-300 hover:text-white cursor-pointer"
+                        >
+                          <Edit size={10} />
+                          정보 수정
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAsset(selectedAsset.id)}
+                          className="flex items-center justify-center gap-1.5 rounded-lg border border-red-950/50 bg-red-950/20 hover:bg-red-900/30 text-red-400 hover:text-red-300 transition py-1 px-2.5 text-[10px] font-black cursor-pointer"
+                        >
+                          <Trash2 size={10} />
+                          에셋 삭제
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 py-2.5 px-3.5 flex items-center justify-between">
+                    <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">나눔 기여자</span>
+                    <span className="text-xs font-black text-zinc-200">
                       {selectedAsset.uploader}
-                    </p>
+                    </span>
                   </div>
 
-                  {/* 픽사베이 스타일 상단 인터랙션 단추바 (좋아요, 북마크, 공유) */}
-                  <div className="relative flex items-center justify-between border border-zinc-800 bg-zinc-950/30 p-2 select-none">
+                  <div className="relative flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950/30 p-2 select-none">
                     <button
                       onClick={() => alert("좋아요가 반영되었습니다!")}
                       className="flex-1 flex flex-col items-center justify-center py-2 text-zinc-400 hover:text-red-400 transition cursor-pointer"
@@ -1217,9 +1701,8 @@ export default function FreeAssetsLibraryPage() {
                       <span className="text-[10px] font-bold">공유</span>
                     </button>
 
-                    {/* 소셜 공유 드롭다운 */}
                     {isShareDropdownOpen && (
-                      <div ref={shareDropdownRef} className="absolute right-2 top-14 z-30 w-44 rounded-none border border-zinc-800 bg-zinc-950 p-2 shadow-2xl">
+                      <div ref={shareDropdownRef} className="absolute right-2 top-14 z-30 w-44 rounded-xl border border-zinc-800 bg-zinc-950 p-2 shadow-2xl">
                         <div className="text-[9px] font-black text-zinc-500 uppercase px-2 py-1 select-none border-b border-zinc-900 mb-1">
                           소셜 공유하기
                         </div>
@@ -1229,9 +1712,9 @@ export default function FreeAssetsLibraryPage() {
                             window.open(`https://sharer.kakao.com/talk/friends/picker/link?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(selectedAsset.title)}`, "_blank");
                             setIsShareDropdownOpen(false);
                           }}
-                          className="flex w-full items-center gap-2 rounded-none px-2 py-1.5 text-xs text-zinc-400 hover:bg-zinc-900 hover:text-white transition cursor-pointer"
+                          className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-zinc-400 hover:bg-zinc-900 hover:text-white transition cursor-pointer"
                         >
-                          <span className="w-2.5 h-2.5 bg-yellow-400 rounded-none shrink-0" />
+                          <span className="w-2.5 h-2.5 bg-yellow-400 rounded-full shrink-0" />
                           카카오톡 공유
                         </button>
                         <button
@@ -1240,9 +1723,9 @@ export default function FreeAssetsLibraryPage() {
                             window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, "_blank");
                             setIsShareDropdownOpen(false);
                           }}
-                          className="flex w-full items-center gap-2 rounded-none px-2 py-1.5 text-xs text-zinc-400 hover:bg-zinc-900 hover:text-white transition cursor-pointer"
+                          className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-zinc-400 hover:bg-zinc-900 hover:text-white transition cursor-pointer"
                         >
-                          <span className="w-2.5 h-2.5 bg-blue-600 rounded-none shrink-0" />
+                          <span className="w-2.5 h-2.5 bg-blue-600 rounded-full shrink-0" />
                           페이스북 공유
                         </button>
                         <button
@@ -1251,9 +1734,9 @@ export default function FreeAssetsLibraryPage() {
                             window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(selectedAsset.title)}`, "_blank");
                             setIsShareDropdownOpen(false);
                           }}
-                          className="flex w-full items-center gap-2 rounded-none px-2 py-1.5 text-xs text-zinc-400 hover:bg-zinc-900 hover:text-white transition cursor-pointer"
+                          className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-zinc-400 hover:bg-zinc-900 hover:text-white transition cursor-pointer"
                         >
-                          <span className="w-2.5 h-2.5 bg-zinc-400 rounded-none shrink-0" />
+                          <span className="w-2.5 h-2.5 bg-zinc-400 rounded-full shrink-0" />
                           트위터 (X) 공유
                         </button>
                         <button
@@ -1263,16 +1746,15 @@ export default function FreeAssetsLibraryPage() {
                             alert("공유 링크가 클립보드에 복사되었습니다!");
                             setIsShareDropdownOpen(false);
                           }}
-                          className="flex w-full items-center gap-2 rounded-none px-2 py-1.5 text-xs text-zinc-400 hover:bg-zinc-900 hover:text-white transition cursor-pointer"
+                          className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-zinc-400 hover:bg-zinc-900 hover:text-white transition cursor-pointer"
                         >
-                          <span className="w-2.5 h-2.5 bg-emerald-600 rounded-none shrink-0" />
+                          <span className="w-2.5 h-2.5 bg-emerald-600 rounded-full shrink-0" />
                           공유 링크 복사
                         </button>
                       </div>
                     )}
                   </div>
 
-                  {/* 픽사베이 스타일의 사이즈/포맷 조절 무료 다운로드 드롭다운 버튼 */}
                   <div className="relative">
                     <div className="flex w-full">
                       <button
@@ -1284,7 +1766,7 @@ export default function FreeAssetsLibraryPage() {
                           }
                         }}
                         disabled={!!downloadingFormatText}
-                        className="flex-1 flex items-center justify-center gap-2 rounded-none bg-emerald-600 hover:bg-emerald-500 transition py-3 text-xs font-black text-white shadow-lg cursor-pointer disabled:opacity-50"
+                        className="flex-1 flex items-center justify-center gap-2 rounded-l-xl bg-emerald-600 hover:bg-emerald-500 transition py-3 text-xs font-black text-white shadow-lg cursor-pointer disabled:opacity-50"
                       >
                         {downloadingFormatText ? (
                           <>
@@ -1299,7 +1781,7 @@ export default function FreeAssetsLibraryPage() {
                       {selectedAsset.mediaType !== "music" && selectedAsset.mediaType !== "video" && (
                         <button
                           onClick={() => setIsDownloadDropdownOpen(!isDownloadDropdownOpen)}
-                          className="px-3 border-l border-emerald-500 bg-emerald-600 hover:bg-emerald-500 text-white rounded-none transition cursor-pointer"
+                          className="px-3 border-l border-emerald-500 bg-emerald-600 hover:bg-emerald-500 text-white rounded-r-xl transition cursor-pointer"
                         >
                           <ChevronDown size={14} className={`transition-transform duration-200 ${isDownloadDropdownOpen ? "rotate-180" : ""}`} />
                         </button>
@@ -1307,9 +1789,8 @@ export default function FreeAssetsLibraryPage() {
                     </div>
 
                     {isDownloadDropdownOpen && selectedAsset.mediaType !== "music" && selectedAsset.mediaType !== "video" && (
-                      <div ref={downloadDropdownRef} className="absolute left-0 right-0 mt-2.5 z-30 rounded-none border border-zinc-800 bg-[#0a0d14] p-3.5 shadow-2xl space-y-3.5">
+                      <div ref={downloadDropdownRef} className="absolute left-0 right-0 mt-2.5 z-30 rounded-xl border border-zinc-800 bg-[#0a0d14] p-3.5 shadow-2xl space-y-3.5">
                         
-                        {/* 포맷 선택 */}
                         <div className="space-y-1">
                           <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest select-none">다운로드 확장자</span>
                           <div className="flex gap-4 pt-1.5">
@@ -1321,7 +1802,7 @@ export default function FreeAssetsLibraryPage() {
                                   value={fmt}
                                   checked={downloadTargetFormat === fmt}
                                   onChange={() => setDownloadTargetFormat(fmt)}
-                                  className="accent-emerald-500 rounded-none cursor-pointer"
+                                  className="accent-emerald-500 rounded-full cursor-pointer"
                                 />
                                 {fmt.toUpperCase()}
                               </label>
@@ -1329,10 +1810,9 @@ export default function FreeAssetsLibraryPage() {
                           </div>
                         </div>
 
-                        {/* 크기 조절 해상도 리스트 */}
                         <div className="space-y-1.5">
                           <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest select-none">크기 조절 (해상도)</span>
-                          <div className="space-y-1 rounded-none border border-zinc-900 bg-zinc-950/40 p-1.5 max-h-48 overflow-y-auto">
+                          <div className="space-y-1 rounded-xl border border-zinc-900 bg-zinc-950/40 p-1.5 max-h-48 overflow-y-auto">
                             {(() => {
                               const origW = selectedAsset.width || 1920;
                               const origH = selectedAsset.height || 1080;
@@ -1348,7 +1828,7 @@ export default function FreeAssetsLibraryPage() {
                               return sizes.map((sz, idx) => (
                                 <label
                                   key={idx}
-                                  className="flex items-center justify-between rounded-none hover:bg-zinc-900/60 px-2 py-1.5 text-xs font-bold text-zinc-300 cursor-pointer"
+                                  className="flex items-center justify-between rounded-lg hover:bg-zinc-900/60 px-2 py-1.5 text-xs font-bold text-zinc-300 cursor-pointer"
                                 >
                                   <div className="flex items-center gap-2 select-none">
                                     <input
@@ -1357,7 +1837,7 @@ export default function FreeAssetsLibraryPage() {
                                       value={idx}
                                       checked={selectedSizeIndex === idx}
                                       onChange={() => setSelectedSizeIndex(idx)}
-                                      className="accent-emerald-500 rounded-none cursor-pointer"
+                                      className="accent-emerald-500 rounded-full cursor-pointer"
                                     />
                                     <span>{sz.label}</span>
                                     <span className="text-[10px] font-bold text-zinc-500 uppercase">{downloadTargetFormat.toUpperCase()}</span>
@@ -1369,7 +1849,6 @@ export default function FreeAssetsLibraryPage() {
                           </div>
                         </div>
 
-                        {/* 다운로드 실행 단추 */}
                         <button
                           type="button"
                           onClick={() => {
@@ -1392,7 +1871,7 @@ export default function FreeAssetsLibraryPage() {
                             );
                             setIsDownloadDropdownOpen(false);
                           }}
-                          className="w-full flex items-center justify-center gap-1.5 rounded-none bg-emerald-600 hover:bg-emerald-500 transition py-2 text-xs font-black text-white shadow-md cursor-pointer"
+                          className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 transition py-2 text-xs font-black text-white shadow-md cursor-pointer"
                         >
                           <Download size={13} /> 다운로드
                         </button>
@@ -1400,19 +1879,18 @@ export default function FreeAssetsLibraryPage() {
                     )}
                   </div>
 
-                  {/* 🎨 이미지 편집 아코디언 (Canva Edit 연동) */}
                   {selectedAsset.mediaType !== "music" && selectedAsset.mediaType !== "video" && (
                     <div className="relative mt-2">
                       <button
                         onClick={() => setIsEditAccordionOpen(!isEditAccordionOpen)}
-                        className="w-full flex items-center justify-center gap-2 rounded-none border border-zinc-800 bg-[#090d16]/30 hover:bg-[#121824]/40 py-3 text-xs font-black text-zinc-300 hover:text-white transition cursor-pointer animate-pulse"
+                        className="w-full flex items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-[#090d16]/30 hover:bg-[#121824]/40 py-3 text-xs font-black text-zinc-300 hover:text-white transition cursor-pointer animate-pulse"
                       >
                         <span className="inline-flex h-4.5 w-4.5 items-center justify-center rounded-full bg-blue-500/20 text-blue-400 text-[10px] font-black font-mono">C</span>
                         이미지 편집 {isEditAccordionOpen ? "▲" : "▼"}
                       </button>
 
                       {isEditAccordionOpen && (
-                        <div className="absolute left-0 right-0 mt-1 z-30 rounded-none border border-zinc-800 bg-[#0c0f17] p-2 shadow-2xl space-y-1">
+                        <div className="absolute left-0 right-0 mt-1 z-30 rounded-xl border border-zinc-800 bg-[#0c0f17] p-2 shadow-2xl space-y-1">
                           {[
                             { mode: "bg-removal", label: "배경 제거하기", desc: "배경을 깔끔하게 지우기" },
                             { mode: "adjust", label: "보정하기", desc: "필터 및 특수 효과 적용" },
@@ -1427,7 +1905,7 @@ export default function FreeAssetsLibraryPage() {
                                 const title = encodeURIComponent(selectedAsset.title);
                                 window.location.href = `/studio/image/workspace?imageUrl=${importUrl}&title=${title}&mode=${item.mode}`;
                               }}
-                              className="flex w-full flex-col text-left rounded-none px-3 py-2 text-xs text-zinc-400 hover:bg-zinc-900/80 hover:text-white transition cursor-pointer"
+                              className="flex w-full flex-col text-left rounded-lg px-3 py-2 text-xs text-zinc-400 hover:bg-zinc-900/80 hover:text-white transition cursor-pointer"
                             >
                               <span className="font-black text-zinc-200">{item.label}</span>
                               <span className="text-[9px] text-zinc-500 font-bold mt-0.5">{item.desc}</span>
@@ -1438,7 +1916,6 @@ export default function FreeAssetsLibraryPage() {
                     </div>
                   )}
 
-                  {/* 픽사베이 스타일 메타 상세 스펙 테이블 */}
                   <div className="border-t border-zinc-900 pt-5 space-y-3.5">
                     <button
                       type="button"
@@ -1505,9 +1982,6 @@ export default function FreeAssetsLibraryPage() {
                     )}
                   </div>
 
-
-
-                  {/* 관련 태그 */}
                   <div className="border-t border-zinc-900 pt-5 space-y-2">
                     <p className="text-xs font-black text-zinc-400">태그</p>
                     <div className="flex flex-wrap gap-1.5">
@@ -1519,13 +1993,49 @@ export default function FreeAssetsLibraryPage() {
                             setSelectedAsset(null);
                             if (audioRef.current) audioRef.current.pause();
                           }}
-                          className="rounded-none border border-zinc-800 bg-zinc-950/40 px-2 py-1 text-[11px] font-bold text-zinc-400 hover:border-zinc-700 hover:text-white transition cursor-pointer"
+                          className="rounded-full border border-zinc-800 bg-zinc-950/40 px-2 py-1 text-[11px] font-bold text-zinc-400 hover:border-zinc-700 hover:text-white transition cursor-pointer"
                         >
                           #{tag}
                         </button>
                       ))}
                     </div>
                   </div>
+
+                  {selectedAsset.generationType === "ai" && selectedAsset.prompt && (
+                    <div className="border-t border-zinc-900 pt-5 space-y-2">
+                      <div className="flex justify-between items-center select-none">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-black text-zinc-400">이미지 프롬프트</p>
+                          {selectedAsset.aiTool && (
+                            <span className="rounded bg-purple-500/20 text-purple-400 px-2 py-0.5 text-[9px] font-black tracking-wider">
+                              {selectedAsset.aiTool}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(selectedAsset.prompt || "");
+                              setPromptCopied(true);
+                              setTimeout(() => setPromptCopied(false), 2000);
+                            } catch (err) {
+                              alert("클립보드 복사에 실패했습니다.");
+                            }
+                          }}
+                          className="flex items-center gap-1 rounded border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-white transition px-2 py-0.5 text-[10px] font-black cursor-pointer"
+                        >
+                          <Copy size={10} />
+                          {promptCopied ? "복사 완료!" : "복사"}
+                        </button>
+                      </div>
+                      <div className="relative rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
+                        <p className="text-[11.5px] font-mono text-zinc-350 whitespace-pre-wrap break-all leading-relaxed max-h-40 overflow-y-auto custom-scrollbar">
+                          {selectedAsset.prompt}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-5 border-t border-zinc-900 pt-4 text-center">
@@ -1540,12 +2050,101 @@ export default function FreeAssetsLibraryPage() {
         </div>
       )}
 
+      {/* 이미지 제작 요청 신청 모달 */}
+      {isRequestOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 backdrop-blur-md">
+          <div className="relative w-full max-w-lg rounded-3xl border border-zinc-800 bg-[#0c0f17] text-zinc-100 p-6 shadow-2xl">
+            
+            <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
+              <h2 className="text-base font-black text-white flex items-center gap-2">
+                <ImagePlus className="text-blue-400" size={18} />
+                공용 이미지 제작 요청하기
+              </h2>
+              <button
+                onClick={() => {
+                  setIsRequestOpen(false);
+                  setRequestDescription("");
+                }}
+                className="flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-900 text-zinc-400 hover:text-white transition cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* 주의 사항 경고 배너 */}
+            <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-xs text-red-400 leading-relaxed font-bold">
+              <p className="flex items-center gap-1.5 font-black text-red-400 mb-1">
+                ⚠️ 필독 주의 사항
+              </p>
+              <p className="pl-5 text-zinc-400">
+                개인적인 블로그나 비공개 프로젝트 용도의 사적이고 아주 세부적인 요청은 제작해 드리지 못합니다. 
+                <span className="text-red-400 ml-1">오직 모두가 공용으로 사용 가능한 범용 이미지 및 에셋</span>에 한해서만 심사 후 제작을 지원하오니 양해 부탁드립니다.
+              </p>
+            </div>
+
+            <form onSubmit={handleRequestSubmit} className="mt-5 space-y-4">
+              {/* 미디어 대분류 */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-zinc-400">미디어 분류</label>
+                <select
+                  value={requestMediaType}
+                  onChange={(e) => setRequestMediaType(e.target.value)}
+                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-xs font-bold text-zinc-200 focus:border-blue-500 focus:outline-none"
+                >
+                  <option value="이미지">이미지 (실사/사진)</option>
+                  <option value="일러스트">일러스트</option>
+                  <option value="벡터">벡터 (Vector)</option>
+                  <option value="비디오">비디오</option>
+                  <option value="GIF">GIF (움짤)</option>
+                </select>
+              </div>
+
+              {/* 요청 상세 설명 */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-zinc-400">구체적인 요청 사항</label>
+                <textarea
+                  value={requestDescription}
+                  onChange={(e) => setRequestDescription(e.target.value)}
+                  placeholder="예: 가을 하늘 아래 황금빛으로 물든 넓은 밀밭과 오두막집 실사 이미지 제작 요청합니다."
+                  rows={4}
+                  required
+                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-xs font-bold text-zinc-200 placeholder-zinc-700 focus:border-blue-500 focus:outline-none"
+                />
+                <span className="text-[10px] text-zinc-650 font-bold block text-right">
+                  최소 5자 이상 상세히 작성해 주세요.
+                </span>
+              </div>
+
+              {/* 버튼 그룹 */}
+              <div className="flex gap-2 pt-2 border-t border-zinc-900">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRequestOpen(false);
+                    setRequestDescription("");
+                  }}
+                  className="flex-1 rounded-xl bg-zinc-900 hover:bg-zinc-800 py-3 text-xs font-black text-zinc-400 transition cursor-pointer"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingRequest}
+                  className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-500 py-3 text-xs font-black text-white transition shadow-lg disabled:opacity-50 cursor-pointer"
+                >
+                  {submittingRequest ? "제출 중..." : "제작 요청하기"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* 2. 에셋 무료 업로드 나눔 신청 모달 */}
       {isUploadOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 backdrop-blur-md">
-          <div className="relative w-full max-w-xl rounded-none border border-zinc-800 bg-[#0c0f17] text-zinc-100 p-6 shadow-2xl">
+          <div className="relative w-full max-w-xl rounded-3xl border border-zinc-800 bg-[#0c0f17] text-zinc-100 p-6 shadow-2xl">
             
-            {/* 헤더 */}
             <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
               <h2 className="text-base font-black text-white flex items-center gap-2">
                 <UploadCloud className="text-blue-400" size={18} />
@@ -1557,23 +2156,21 @@ export default function FreeAssetsLibraryPage() {
                   setUploadFiles([]);
                   setFileAspectRatios({});
                 }}
-                className="flex h-8 w-8 items-center justify-center rounded-none bg-zinc-900 text-zinc-400 hover:text-white transition cursor-pointer"
+                className="flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-900 text-zinc-400 hover:text-white transition cursor-pointer"
               >
                 <X size={16} />
               </button>
             </div>
 
-            {/* 업로드 양식 */}
             <form onSubmit={handleUploadSubmit} className="mt-6 space-y-4">
               
-              {/* 드래그 앤 드롭 파일 존 */}
               <div
                 onDragEnter={handleDrag}
                 onDragOver={handleDrag}
                 onDragLeave={handleDrag}
                 onDrop={handleDrop}
                 onClick={() => uploadInputRef.current?.click()}
-                className={`flex h-28 flex-col items-center justify-center rounded-none border-2 border-dashed transition cursor-pointer p-4 text-center ${
+                className={`flex h-28 flex-col items-center justify-center rounded-2xl border-2 border-dashed transition cursor-pointer p-4 text-center ${
                   dragActive
                     ? "border-blue-500 bg-blue-500/10 text-blue-300"
                     : uploadFiles.length > 0
@@ -1594,7 +2191,6 @@ export default function FreeAssetsLibraryPage() {
                 <p className="text-[9px] text-zinc-600 mt-0.5 font-bold">이미지(PNG/JPG/WebP/GIF), 비디오(MP4), 사운드(MP3/WAV)</p>
               </div>
 
-              {/* 선택된 파일 목록 (Premium Queue UI) */}
               {uploadFiles.length > 0 && (
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center text-[10px] font-black text-zinc-500 uppercase select-none">
@@ -1611,24 +2207,24 @@ export default function FreeAssetsLibraryPage() {
                       전체 비우기
                     </button>
                   </div>
-                  <div className="max-h-36 overflow-y-auto rounded-none border border-zinc-900 bg-zinc-950/40 p-2 space-y-1.5 custom-scrollbar">
+                  <div className="max-h-36 overflow-y-auto rounded-2xl border border-zinc-900 bg-zinc-950/40 p-2 space-y-1.5 custom-scrollbar">
                     {uploadFiles.map((file, idx) => {
                       const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
                       const aspect = fileAspectRatios[file.name];
                       return (
                         <div
                           key={`${file.name}-${idx}`}
-                          className="flex items-center justify-between rounded-none bg-zinc-900/60 px-3 py-1.5 text-xs text-zinc-300"
+                          className="flex items-center justify-between rounded-xl bg-zinc-900/60 px-3 py-1.5 text-xs text-zinc-300"
                         >
                           <div className="flex items-center gap-2 min-w-0">
-                            <span className="shrink-0 text-[10px] font-black bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded-none select-none">
+                            <span className="shrink-0 text-[10px] font-black bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded-md select-none">
                               {idx + 1}
                             </span>
                             <span className="truncate font-medium text-zinc-200" title={file.name}>
                               {file.name}
                             </span>
                             {aspect && (
-                              <span className="shrink-0 text-[9px] font-black bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded-none select-none">
+                              <span className="shrink-0 text-[9px] font-black bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded-md select-none">
                                 {aspect}
                               </span>
                             )}
@@ -1653,7 +2249,6 @@ export default function FreeAssetsLibraryPage() {
                 </div>
               )}
 
-              {/* 제목 */}
               <div className="space-y-1">
                 <div className="flex justify-between items-center select-none">
                   <label className="text-[11px] font-black text-zinc-500 uppercase">에셋 제목</label>
@@ -1663,32 +2258,30 @@ export default function FreeAssetsLibraryPage() {
                 </div>
                 <input
                   type="text"
-                  placeholder={uploadFiles.length > 1 ? "각 파일의 파일명이 에셋 제목으로 저장됩니다." : "예: 조용하고 예쁜 제주도 모래사장"}
-                  required={uploadFiles.length <= 1}
-                  disabled={uploadFiles.length > 1}
-                  value={uploadFiles.length > 1 ? "" : uploadTitle}
+                  placeholder="예: 조용하고 예쁜 제주도 모래사장 (미입력 시 파일명이 제목으로 사용됩니다)"
+                  required={false}
+                  value={uploadTitle}
                   onChange={(e) => setUploadTitle(e.target.value)}
-                  className="w-full rounded-none border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50"
                 />
               </div>
 
-              {/* 미디어 분류 */}
               <div className="space-y-1">
                 <label className="text-[11px] font-black text-zinc-500 uppercase">미디어 분류</label>
                 <select
                   value={uploadMediaType}
                   onChange={(e) => setUploadMediaType(e.target.value)}
-                  className="w-full rounded-none border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50 cursor-pointer"
+                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50 cursor-pointer"
                 >
-                  <option value="photo">사진 (Photos)</option>
+                  <option value="photo">이미지 (Photos & Images)</option>
                   <option value="illustration">일러스트 (Illustrations)</option>
+                  <option value="vector">벡터 (Vectors)</option>
                   <option value="video">비디오 (Videos)</option>
                   <option value="music">음악 / 효과음 (Music & Audio)</option>
                   <option value="gif">움짤 (GIF)</option>
                 </select>
               </div>
 
-              {/* 태그 해시 */}
               <div className="space-y-1">
                 <label className="text-[11px] font-black text-zinc-500 uppercase">태그 해시 태그 (쉼표 구분)</label>
                 <input
@@ -1696,11 +2289,10 @@ export default function FreeAssetsLibraryPage() {
                   placeholder="예: 제주도, 바다, 풍경, 하늘, 여름"
                   value={uploadTags}
                   onChange={(e) => setUploadTags(e.target.value)}
-                  className="w-full rounded-none border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50"
+                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50"
                 />
               </div>
 
-              {/* 제작 방식 */}
               <div className="space-y-1.5 pt-1">
                 <label className="text-[11px] font-black text-zinc-500 uppercase select-none">제작 방식</label>
                 <div className="flex gap-6">
@@ -1711,7 +2303,7 @@ export default function FreeAssetsLibraryPage() {
                       value="real"
                       checked={uploadGenerationType === "real"}
                       onChange={() => setUploadGenerationType("real")}
-                      className="accent-blue-500 rounded-none cursor-pointer"
+                      className="accent-blue-500 rounded-full cursor-pointer"
                     />
                     실제 사진 / 촬영물
                   </label>
@@ -1722,24 +2314,60 @@ export default function FreeAssetsLibraryPage() {
                       value="ai"
                       checked={uploadGenerationType === "ai"}
                       onChange={() => setUploadGenerationType("ai")}
-                      className="accent-blue-500 rounded-none cursor-pointer"
                     />
                     AI 제작 에셋
                   </label>
                 </div>
               </div>
 
-              {/* 카메라 정보 */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-black text-zinc-500 uppercase">카메라 / 촬영 기기 정보 (선택)</label>
-                <input
-                  type="text"
-                  placeholder="예: Sony A7R V, iPhone 15 Pro, 또는 미입력 시 '촬영 정보 없음'"
-                  value={uploadCamera}
-                  onChange={(e) => setUploadCamera(e.target.value)}
-                  className="w-full rounded-none border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50"
-                />
-              </div>
+              {/* 카메라 정보 또는 AI 정보 */}
+              {uploadGenerationType === "real" ? (
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black text-zinc-500 uppercase">카메라 / 촬영 기기 정보 (선택)</label>
+                  <input
+                    type="text"
+                    placeholder="예: Sony A7R V, iPhone 15 Pro, 또는 미입력 시 '촬영 정보 없음'"
+                    value={uploadCamera}
+                    onChange={(e) => setUploadCamera(e.target.value)}
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50"
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-black text-zinc-500 uppercase">AI 제작 툴</label>
+                    <select
+                      value={uploadAiTool}
+                      onChange={(e) => setUploadAiTool(e.target.value)}
+                      className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50 cursor-pointer"
+                    >
+                      <option value="미드져니" className="bg-[#0c0f17]">미드져니 (Midjourney)</option>
+                      <option value="나노바나나" className="bg-[#0c0f17]">나노바나나 (NanoBanana)</option>
+                      <option value="ChatGPT" className="bg-[#0c0f17]">ChatGPT (DALL-E 3)</option>
+                      <option value="Google Flow" className="bg-[#0c0f17]">Google Flow</option>
+                      <option value="클링" className="bg-[#0c0f17]">클링 (Kling)</option>
+                      <option value="Grok" className="bg-[#0c0f17]">Grok</option>
+                      <option value="스테이블 디퓨전" className="bg-[#0c0f17]">스테이블 디퓨전 (Stable Diffusion)</option>
+                      <option value="이매진 3" className="bg-[#0c0f17]">이매진 3 (Imagen 3)</option>
+                      <option value="루마" className="bg-[#0c0f17]">루마 (Luma Dream Machine)</option>
+                      <option value="소라" className="bg-[#0c0f17]">소라 (Sora)</option>
+                      <option value="런웨이" className="bg-[#0c0f17]">런웨이 (Runway)</option>
+                      <option value="파이어플라이" className="bg-[#0c0f17]">파이어플라이 (Adobe Firefly)</option>
+                      <option value="기타" className="bg-[#0c0f17]">기타 (Other)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-black text-zinc-500 uppercase">이미지 프롬프트 (선택)</label>
+                    <textarea
+                      placeholder="이미지를 제작할 때 사용한 영문/국문 프롬프트를 입력해 주세요. 다른 사용자가 참고할 수 있습니다."
+                      value={uploadPrompt}
+                      onChange={(e) => setUploadPrompt(e.target.value)}
+                      rows={3}
+                      className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50 resize-none"
+                    />
+                  </div>
+                </>
+              )}
 
               {/* 제출 */}
               <div className="flex gap-3 pt-3 border-t border-zinc-900 mt-5">
@@ -1752,14 +2380,14 @@ export default function FreeAssetsLibraryPage() {
                     setFileAspectRatios({});
                     setUploadGenerationType("real");
                   }}
-                  className="flex-1 rounded-none border border-zinc-800 bg-zinc-900 py-3 text-xs font-black text-zinc-400 hover:text-white transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 rounded-xl border border-zinc-800 bg-zinc-900 py-3 text-xs font-black text-zinc-400 hover:text-white transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   취소
                 </button>
                 <button
                   type="submit"
                   disabled={uploading || uploadFiles.length === 0}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-none bg-blue-600 hover:bg-blue-500 transition py-3 text-xs font-black text-white shadow-lg disabled:opacity-50 cursor-pointer"
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 transition py-3 text-xs font-black text-white shadow-lg disabled:opacity-50 cursor-pointer"
                 >
                   {uploading ? (
                     <>
@@ -1781,7 +2409,7 @@ export default function FreeAssetsLibraryPage() {
       {/* 3. 에셋 수정 모달 */}
       {isEditOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 backdrop-blur-md">
-          <div className="relative w-full max-w-xl rounded-none border border-zinc-800 bg-[#0c0f17] text-zinc-100 p-6 shadow-2xl">
+          <div className="relative w-full max-w-xl rounded-3xl border border-zinc-800 bg-[#0c0f17] text-zinc-100 p-6 shadow-2xl">
             
             {/* 헤더 */}
             <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
@@ -1791,7 +2419,7 @@ export default function FreeAssetsLibraryPage() {
               </h2>
               <button
                 onClick={() => setIsEditOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-none bg-zinc-900 text-zinc-400 hover:text-white transition cursor-pointer"
+                className="flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-900 text-zinc-400 hover:text-white transition cursor-pointer"
               >
                 <X size={16} />
               </button>
@@ -1808,7 +2436,7 @@ export default function FreeAssetsLibraryPage() {
                   required
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full rounded-none border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50"
+                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50"
                 />
               </div>
 
@@ -1818,10 +2446,11 @@ export default function FreeAssetsLibraryPage() {
                 <select
                   value={editMediaType}
                   onChange={(e) => setEditMediaType(e.target.value)}
-                  className="w-full rounded-none border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50 cursor-pointer"
+                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50 cursor-pointer"
                 >
-                  <option value="photo">사진 (Photos)</option>
+                  <option value="photo">이미지 (Photos & Images)</option>
                   <option value="illustration">일러스트 (Illustrations)</option>
+                  <option value="vector">벡터 (Vectors)</option>
                   <option value="video">비디오 (Videos)</option>
                   <option value="music">음악 / 효과음 (Music & Audio)</option>
                   <option value="gif">움짤 (GIF)</option>
@@ -1834,7 +2463,7 @@ export default function FreeAssetsLibraryPage() {
                 <select
                   value={editAspectRatio}
                   onChange={(e) => setEditAspectRatio(e.target.value)}
-                  className="w-full rounded-none border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50 cursor-pointer"
+                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50 cursor-pointer"
                 >
                   <option value="">비율 없음 (또는 사운드)</option>
                   <option value="16:9">16:9 가로</option>
@@ -1854,7 +2483,7 @@ export default function FreeAssetsLibraryPage() {
                   placeholder="예: 제주도, 바다, 풍경, 여름"
                   value={editTags}
                   onChange={(e) => setEditTags(e.target.value)}
-                  className="w-full rounded-none border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50"
+                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50"
                 />
               </div>
 
@@ -1869,7 +2498,7 @@ export default function FreeAssetsLibraryPage() {
                       value="real"
                       checked={editGenerationType === "real"}
                       onChange={() => setEditGenerationType("real")}
-                      className="accent-blue-500 rounded-none cursor-pointer"
+                      className="accent-blue-500 cursor-pointer"
                     />
                     실제 사진 / 촬영물
                   </label>
@@ -1880,24 +2509,61 @@ export default function FreeAssetsLibraryPage() {
                       value="ai"
                       checked={editGenerationType === "ai"}
                       onChange={() => setEditGenerationType("ai")}
-                      className="accent-blue-500 rounded-none cursor-pointer"
+                      className="accent-blue-500 cursor-pointer"
                     />
                     AI 제작 에셋
                   </label>
                 </div>
               </div>
 
-              {/* 카메라 정보 */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-black text-zinc-500 uppercase">카메라 / 촬영 기기 정보 (선택)</label>
-                <input
-                  type="text"
-                  placeholder="예: Sony A7R V, iPhone 15 Pro, 또는 미입력 시 '촬영 정보 없음'"
-                  value={editCamera}
-                  onChange={(e) => setEditCamera(e.target.value)}
-                  className="w-full rounded-none border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50"
-                />
-              </div>
+              {/* 카메라 정보 또는 AI 정보 */}
+              {editGenerationType === "real" ? (
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black text-zinc-500 uppercase">카메라 / 촬영 기기 정보 (선택)</label>
+                  <input
+                    type="text"
+                    placeholder="예: Sony A7R V, iPhone 15 Pro, 또는 미입력 시 '촬영 정보 없음'"
+                    value={editCamera}
+                    onChange={(e) => setEditCamera(e.target.value)}
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50"
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-black text-zinc-500 uppercase">AI 제작 툴</label>
+                    <select
+                      value={editAiTool}
+                      onChange={(e) => setEditAiTool(e.target.value)}
+                      className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50 cursor-pointer"
+                    >
+                      <option value="미드져니" className="bg-[#0c0f17]">미드져니 (Midjourney)</option>
+                      <option value="나노바나나" className="bg-[#0c0f17]">나노바나나 (NanoBanana)</option>
+                      <option value="ChatGPT" className="bg-[#0c0f17]">ChatGPT (DALL-E 3)</option>
+                      <option value="Google Flow" className="bg-[#0c0f17]">Google Flow</option>
+                      <option value="클링" className="bg-[#0c0f17]">클링 (Kling)</option>
+                      <option value="Grok" className="bg-[#0c0f17]">Grok</option>
+                      <option value="스테이블 디퓨전" className="bg-[#0c0f17]">스테이블 디퓨전 (Stable Diffusion)</option>
+                      <option value="이매진 3" className="bg-[#0c0f17]">이매진 3 (Imagen 3)</option>
+                      <option value="루마" className="bg-[#0c0f17]">루마 (Luma Dream Machine)</option>
+                      <option value="소라" className="bg-[#0c0f17]">소라 (Sora)</option>
+                      <option value="런웨이" className="bg-[#0c0f17]">런웨이 (Runway)</option>
+                      <option value="파이어플라이" className="bg-[#0c0f17]">파이어플라이 (Adobe Firefly)</option>
+                      <option value="기타" className="bg-[#0c0f17]">기타 (Other)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-black text-zinc-500 uppercase">이미지 프롬프트 (선택)</label>
+                    <textarea
+                      placeholder="이미지를 제작할 때 사용한 영문/국문 프롬프트를 입력해 주세요."
+                      value={editPrompt}
+                      onChange={(e) => setEditPrompt(e.target.value)}
+                      rows={3}
+                      className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 py-2.5 px-4 text-xs text-white outline-none focus:border-blue-500/50 resize-none"
+                    />
+                  </div>
+                </>
+              )}
 
               {/* 제출 */}
               <div className="flex gap-3 pt-3 border-t border-zinc-900 mt-5">
@@ -1905,14 +2571,14 @@ export default function FreeAssetsLibraryPage() {
                   type="button"
                   disabled={updatingAsset}
                   onClick={() => setIsEditOpen(false)}
-                  className="flex-1 rounded-none border border-zinc-800 bg-zinc-900 py-3 text-xs font-black text-zinc-400 hover:text-white transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 rounded-xl border border-zinc-800 bg-zinc-900 py-3 text-xs font-black text-zinc-400 hover:text-white transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   취소
                 </button>
                 <button
                   type="submit"
                   disabled={updatingAsset}
-                  className="flex-1 flex items-center justify-center gap-1.5 rounded-none bg-blue-600 hover:bg-blue-500 transition py-3 text-xs font-black text-white shadow-lg disabled:opacity-50 cursor-pointer"
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 transition py-3 text-xs font-black text-white shadow-lg disabled:opacity-50 cursor-pointer"
                 >
                   {updatingAsset ? (
                     <>

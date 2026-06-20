@@ -23,20 +23,22 @@ export async function POST(req: NextRequest) {
     const width = formData.get("width") as string | null;
     const height = formData.get("height") as string | null;
     const camera = formData.get("camera") as string | null;
-
+    const prompt = formData.get("prompt") as string | null;
+    const aiTool = formData.get("aiTool") as string | null;
+ 
     if (!file) {
       return NextResponse.json({ error: "File is required" }, { status: 400 });
     }
-
+ 
     // Determine uploader from session if possible
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     const uploader = user?.email || "익명 기여자";
-
+ 
     // Convert file to buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-
+ 
     // Format tags
     const tags = tagsString
       ? tagsString
@@ -44,7 +46,7 @@ export async function POST(req: NextRequest) {
           .map((t) => t.trim())
           .filter((t) => t.length > 0)
       : [];
-
+ 
     const metadata = {
       title: title || file.name,
       tags,
@@ -57,6 +59,8 @@ export async function POST(req: NextRequest) {
       width: width ? parseInt(width, 10) : 0,
       height: height ? parseInt(height, 10) : 0,
       camera: camera || "촬영 정보 없음",
+      prompt: prompt || "",
+      aiTool: aiTool || "",
     };
 
     const description = JSON.stringify(metadata);
@@ -104,7 +108,7 @@ export async function POST(req: NextRequest) {
           storage_url: fileUrl,
           file_name: file.name,
           mime_type: file.type,
-          media_type: normMediaType,
+          media_type: metadata.mediaType || normMediaType,
           year_month: yearMonth,
           title: metadata.title || file.name,
           tags: metadata.tags || [],
@@ -116,6 +120,8 @@ export async function POST(req: NextRequest) {
           aspect_ratio: metadata.aspectRatio || "",
           generation_type: metadata.generationType || "real",
           camera: metadata.camera || "촬영 정보 없음",
+          prompt: metadata.prompt || "",
+          ai_tool: metadata.aiTool || "",
         });
 
       if (dbError) {

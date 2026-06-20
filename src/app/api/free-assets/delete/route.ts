@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Check if user is ADMIN in profiles table
+    // 2. Check if user is ADMIN in profiles table or admin_whitelist
     let isAdmin = false;
     const { data: profile } = await supabase
       .from("profiles")
@@ -24,8 +24,17 @@ export async function POST(req: NextRequest) {
       .eq("id", user.id)
       .maybeSingle();
     
-    if (profile?.role === "ADMIN") {
+    if (profile?.role === "ADMIN" || profile?.role === "STAFF") {
       isAdmin = true;
+    } else if (user.email) {
+      const { data: whitelist } = await supabase
+        .from("admin_whitelist")
+        .select("email")
+        .eq("email", user.email)
+        .maybeSingle();
+      if (whitelist) {
+        isAdmin = true;
+      }
     }
 
     // 3. Fetch file metadata from Google Drive to check the uploader
@@ -33,7 +42,8 @@ export async function POST(req: NextRequest) {
     const uploader = metadata.uploader || "";
 
     // 4. Authorization check: must be uploader or ADMIN
-    if (uploader !== user.email && !isAdmin) {
+    const isUploader = uploader.toLowerCase() === (user.email || "").toLowerCase();
+    if (!isUploader && !isAdmin) {
       return NextResponse.json(
         { error: "Forbidden: You do not have permission to delete this asset." },
         { status: 403 }

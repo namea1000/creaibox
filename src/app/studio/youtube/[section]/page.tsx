@@ -65,7 +65,7 @@ export default function YoutubeSectionPage() {
   };
 
   return (
-    <div className="min-h-full w-full bg-[#06080d] px-5 py-8 text-zinc-100 lg:px-8">
+    <div className="min-h-full w-full bg-zinc-50 dark:bg-[#06080d] px-5 py-8 text-zinc-800 dark:text-zinc-100 lg:px-8 transition-colors duration-300">
       <div className="mx-auto max-w-7xl space-y-6">
         {/* Navigation Breadcrumb */}
         <div className="flex items-center gap-3">
@@ -83,7 +83,7 @@ export default function YoutubeSectionPage() {
               <span>/</span>
               <span className="text-zinc-400">{name}</span>
             </div>
-            <h1 className="text-lg font-black text-white">{name}</h1>
+            <h1 className="text-lg font-black text-zinc-900 dark:text-white">{name}</h1>
           </div>
         </div>
 

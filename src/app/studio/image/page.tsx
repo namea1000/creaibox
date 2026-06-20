@@ -106,11 +106,11 @@ export default function ImageStudioHomePage() {
   };
 
   return (
-    <div className="min-h-full bg-[#06080d] px-5 py-8 text-zinc-100 lg:px-8">
+    <div className="min-h-full w-full bg-zinc-50 dark:bg-[#06080d] px-5 py-8 text-zinc-800 dark:text-zinc-100 lg:px-8 transition-colors duration-300">
       <div className="mx-auto max-w-7xl space-y-8">
         
         {/* 1. Canva-themed Top Header Hero Banner */}
-        <section className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 via-[#180f2d] to-[#12091f] p-7 shadow-2xl relative overflow-hidden">
+        <section className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-gradient-to-br dark:from-zinc-900 via-[#180f2d] to-[#12091f] p-7 shadow-2xl relative overflow-hidden">
           <div className="absolute right-0 top-0 h-64 w-64 rounded-full bg-purple-600/5 blur-3xl" />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center justify-between">
             <div className="space-y-4">
@@ -118,7 +118,7 @@ export default function ImageStudioHomePage() {
                 <ImageIcon size={15} />
                 MiriCanvas & Canva Upgraded Studio
               </div>
-              <h1 className="text-3xl font-black tracking-tight text-white md:text-5xl">
+              <h1 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white md:text-5xl">
                 오늘 어떤 디자인을 만들고 싶으신가요?
               </h1>
               <p className="max-w-2xl text-sm font-medium leading-relaxed text-zinc-400 md:text-base">
@@ -165,7 +165,7 @@ export default function ImageStudioHomePage() {
         {/* 3. MiriCanvas/Canva Grid Menu Tools */}
         <section>
           <div className="mb-4">
-            <h2 className="text-xl font-black text-white">디자인 솔루션 메뉴</h2>
+            <h2 className="text-xl font-black text-zinc-900 dark:text-white">디자인 솔루션 메뉴</h2>
             <p className="mt-1 text-sm text-zinc-500">
               콘텐츠에 맞는 제작 도구를 선택하여 드래그 앤 드롭으로 캔버스를 꾸며보세요.
             </p>
@@ -218,7 +218,7 @@ export default function ImageStudioHomePage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Clock className="text-purple-400" size={20} />
-                <h2 className="text-lg font-black text-white">최근 디자인 프로젝트</h2>
+                <h2 className="text-lg font-black text-zinc-900 dark:text-white">최근 디자인 프로젝트</h2>
               </div>
               <Link href="/studio/image/workspace" className="text-xs font-bold text-zinc-500 hover:text-purple-400 flex items-center gap-1">
                 전체보기 <ArrowRight size={12} />
@@ -257,7 +257,7 @@ export default function ImageStudioHomePage() {
           <div className="rounded-2xl border border-zinc-800 bg-[#090d16]/20 p-6 space-y-4">
             <div className="flex items-center gap-3">
               <Palette className="text-amber-400" size={20} />
-              <h2 className="text-lg font-black text-white">브랜드 키트 빠른 색상</h2>
+              <h2 className="text-lg font-black text-zinc-900 dark:text-white">브랜드 키트 빠른 색상</h2>
             </div>
             <p className="text-xs font-medium text-zinc-500 leading-relaxed">
               자주 사용하는 브랜드 컬러 팔레트입니다. 클릭하면 헥사코드가 즉시 클립보드에 복사됩니다.

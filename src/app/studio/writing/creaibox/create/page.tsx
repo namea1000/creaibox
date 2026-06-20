@@ -295,7 +295,7 @@ function CreaiboxEditorPageContent() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [selectedTone, setSelectedTone] = useState(
-    "전문적이고 통찰력 있는 분석 (기술 블로그)"
+    "💻 전문적이고 통찰력 있는 분석 (기술 블로그)"
   );
   const [postType, setPostType] = useState("AI 인사이트 포스팅");
   const [wordCountGoal, setWordCountGoal] = useState("1500");
@@ -382,16 +382,20 @@ function CreaiboxEditorPageContent() {
       const contentTypeParam = searchParams.get("contentType");
       const itemIdParam = searchParams.get("itemId");
       const campaignIdParam = searchParams.get("campaignId");
+      const toneParam = searchParams.get("selectedTone");
+      const wordCountParam = searchParams.get("wordCountGoal");
 
       if (itemIdParam) setItemId(itemIdParam);
       if (campaignIdParam) setCampaignId(campaignIdParam);
+      if (toneParam) setSelectedTone(toneParam);
+      if (wordCountParam) setWordCountGoal(wordCountParam);
 
       if (keyword && !hasAutoRun) {
         setTargetKeyword(keyword);
         if (titleParam) setTitle(titleParam);
         if (contentTypeParam) setPostType(contentTypeParam);
         setHasAutoRun(true);
-        void handleAiGenerateLive(keyword);
+        void handleAiGenerateLive(keyword, toneParam || undefined, wordCountParam || undefined);
       }
     }
   }, [searchParams, hasAutoRun]);
@@ -410,6 +414,8 @@ function CreaiboxEditorPageContent() {
       categoryId?: string;
       tocEnabled?: boolean;
       status?: string;
+      selectedTone?: string;
+      wordCountGoal?: string;
     }
   ) => {
     if (!currentContent || currentContent.length < 50) {
@@ -471,13 +477,13 @@ function CreaiboxEditorPageContent() {
         status: nextStatus,
         post_type: postType || "AI 인사이트 포스팅",
         target_keyword: targetKeyword || null,
-        selected_tone: selectedTone || null,
+        selected_tone: overrides?.selectedTone || selectedTone || null,
         slug: overrides?.slug || slug || null,
         meta_description: overrides?.metaDescription || metaDescription || null,
         focus_keyword: derivedFocusKeyword,
         canonical_url: finalCanonicalUrl,
         seo_tags: derivedSeoTags,
-        word_count_goal: wordCountGoal,
+        word_count_goal: overrides?.wordCountGoal || wordCountGoal,
         use_search: overrides?.useSearch ?? searchGroundingAvailable,
         category_id: nextCategoryId,
         toc_enabled: nextTocEnabled,
@@ -551,19 +557,26 @@ function CreaiboxEditorPageContent() {
     }
   };
 
-  const handleAiGenerateLive = async (overrideKeyword?: string) => {
+  const handleAiGenerateLive = async (
+    overrideKeyword?: string,
+    overrideTone?: string,
+    overrideWordCountGoal?: string
+  ) => {
     const activeKeyword = overrideKeyword || targetKeyword;
     if (!activeKeyword.trim()) {
       alert("타겟 키워드를 입력해 주세요.");
       return;
     }
 
+    const activeTone = overrideTone || selectedTone;
+    const activeWordCountGoal = overrideWordCountGoal || wordCountGoal;
+
     setIsAiLoading(true);
     setGenerationStatusMessage(`${PRIMARY_GEMINI_MODEL} 모델로 글을 생성하고 있습니다...`);
     setGenerationErrorMessage("");
 
     try {
-      const lengthPrompt = getLengthPrompt(wordCountGoal);
+      const lengthPrompt = getLengthPrompt(activeWordCountGoal);
       const vaultConfig = getUserAiVaultConfig();
       const shouldUseGoogleSearch = Boolean(vaultConfig && vaultConfig.provider === "gemini_postpay");
 
@@ -576,10 +589,10 @@ function CreaiboxEditorPageContent() {
       const prompt = `
         당신은 Creaibox의 전문 블로그 콘텐츠 에디터입니다. 
         - 주제: ${activeKeyword}
-        - 어조: ${selectedTone}
+        - 어조: ${activeTone}
         - 글 유형: ${postType}
         - 길이 규격: ${lengthPrompt.label}
-        - 목표 분량: 약 ${wordCountGoal}자
+        - 목표 분량: 약 ${activeWordCountGoal}자
         - 길이 작성 지침: ${lengthPrompt.instruction}
         - ${shouldUseGoogleSearch ? "Google Search를 활용해" : "내부 지식과 논리 전개를 활용해"} 2026년 최신 기술 트렌드와 인사이트를 반영하여 작성하십시오.
         - 제목은 클릭하고 싶게 만들되 과장하지 말고, 첫 문단에서 글의 핵심 가치를 빠르게 전달하십시오.
@@ -731,6 +744,8 @@ function CreaiboxEditorPageContent() {
           metaDescription: nextMetaDescription,
           canonicalUrl: buildCreaiboxCanonicalUrl(nextSlug, userRole, userBrandId),
           useSearch: generationUsedSearch,
+          selectedTone: activeTone,
+          wordCountGoal: activeWordCountGoal,
         });
       }, 100);
     } catch (error: unknown) {

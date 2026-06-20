@@ -108,21 +108,21 @@ export default function CreaiboxWritingHomePage() {
   ];
 
   return (
-    <div className="min-h-full bg-[#06080d] px-5 py-8 text-zinc-100 lg:px-8">
+    <div className="min-h-full bg-transparent px-5 py-8 text-zinc-800 dark:text-zinc-100 lg:px-8 transition-colors duration-300">
       <div className="mx-auto max-w-7xl space-y-8">
-        <section className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-[#12091f] p-7 shadow-2xl">
+        <section className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-gradient-to-br dark:from-zinc-900 dark:to-[#12091f] p-7 shadow-2xl transition-colors duration-300">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-violet-400">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-500/20 dark:border-violet-500/30 bg-violet-50 dark:bg-violet-500/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-violet-600 dark:text-violet-400">
                 <PenTool size={15} />
                 Creaibox Writing Studio
               </div>
 
-              <h1 className="text-3xl font-black md:text-5xl">
+              <h1 className="text-3xl font-black text-zinc-900 dark:text-white md:text-5xl">
                 크리아이박스 글쓰기
               </h1>
 
-              <p className="mt-4 max-w-3xl text-sm leading-relaxed text-zinc-400 md:text-base">
+              <p className="mt-4 max-w-3xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-400 md:text-base">
                 키워드 입력부터 SEO 블로그 글쓰기, 제목 생성, 메타데이터,
                 이미지 프롬프트, 아카이브 저장까지 콘텐츠 글쓰기 과정을 한 곳에서 관리합니다.
               </p>
@@ -131,7 +131,7 @@ export default function CreaiboxWritingHomePage() {
             <div className="flex gap-2">
               <Link
                 href="/studio/writing/creaibox/list"
-                className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-sm font-black text-zinc-200 hover:border-violet-500/50"
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 text-sm font-black text-zinc-700 dark:text-zinc-200 hover:border-violet-500/50 hover:text-violet-600 dark:hover:text-white cursor-pointer"
               >
                 <Archive size={17} />
                 아카이브 보기
@@ -155,15 +155,15 @@ export default function CreaiboxWritingHomePage() {
             return (
               <div
                 key={item.label}
-                className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5"
+                className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-5 shadow-sm dark:shadow-none transition-colors"
               >
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
                   <Icon size={20} />
                 </div>
 
-                <p className="text-2xl font-black">{item.value}</p>
+                <p className="text-2xl font-black text-zinc-900 dark:text-white">{item.value}</p>
 
-                <p className="mt-1 text-xs font-bold text-zinc-500">
+                <p className="mt-1 text-xs font-bold text-zinc-550 dark:text-zinc-500">
                   {item.label}
                 </p>
               </div>
@@ -173,8 +173,8 @@ export default function CreaiboxWritingHomePage() {
 
         <section>
           <div className="mb-4">
-            <h2 className="text-xl font-black">글쓰기 작업 메뉴</h2>
-            <p className="mt-1 text-sm text-zinc-500">
+            <h2 className="text-xl font-black text-zinc-900 dark:text-white">글쓰기 작업 메뉴</h2>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-500">
               글쓰기 생성, 편집, 저장, 트렌드 분석까지 순서대로 사용할 수 있습니다.
             </p>
           </div>
@@ -187,19 +187,19 @@ export default function CreaiboxWritingHomePage() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="group rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5 transition hover:-translate-y-1 hover:border-violet-500/40"
+                  className="group rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-5 transition hover:-translate-y-1 hover:border-violet-500/40 hover:shadow-xl hover:shadow-black/5 dark:hover:shadow-none"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex gap-4">
                       <div
-                        className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${item.color}`}
+                        className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${item.color} text-white`}
                       >
                         <Icon size={22} />
                       </div>
 
                       <div>
-                        <h3 className="font-black">{item.title}</h3>
-                        <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                        <h3 className="font-black text-zinc-900 dark:text-white">{item.title}</h3>
+                        <p className="mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-550">
                           {item.desc}
                         </p>
                       </div>
@@ -207,7 +207,7 @@ export default function CreaiboxWritingHomePage() {
 
                     <ArrowRight
                       size={18}
-                      className="text-zinc-600 transition group-hover:translate-x-1 group-hover:text-violet-400"
+                      className="text-zinc-400 dark:text-zinc-600 transition group-hover:translate-x-1 group-hover:text-violet-550 dark:group-hover:text-violet-400"
                     />
                   </div>
                 </Link>
@@ -217,17 +217,17 @@ export default function CreaiboxWritingHomePage() {
         </section>
 
         <section className="grid gap-4 lg:grid-cols-3">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-6 shadow-sm dark:shadow-none transition-colors">
             <div className="flex items-center gap-3">
-              <Sparkles className="text-violet-400" size={20} />
-              <h2 className="text-lg font-black">빠른 시작</h2>
+              <Sparkles className="text-violet-500 dark:text-violet-400" size={20} />
+              <h2 className="text-lg font-black text-zinc-900 dark:text-white">빠른 시작</h2>
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
               {quickActions.map((item) => (
                 <button
                   key={item}
-                  className="rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs font-bold text-zinc-300 hover:border-violet-500/40 hover:text-violet-400"
+                  className="rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 px-3 py-1.5 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:border-violet-500/45 hover:text-violet-600 dark:hover:text-violet-400 cursor-pointer"
                 >
                   {item}
                 </button>
@@ -235,24 +235,24 @@ export default function CreaiboxWritingHomePage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-6 shadow-sm dark:shadow-none transition-colors">
             <div className="flex items-center gap-3">
-              <Clock className="text-blue-400" size={20} />
-              <h2 className="text-lg font-black">최근 작업</h2>
+              <Clock className="text-blue-500 dark:text-blue-400" size={20} />
+              <h2 className="text-lg font-black text-zinc-900 dark:text-white">최근 작업</h2>
             </div>
 
-            <p className="mt-3 text-sm text-zinc-500">
+            <p className="mt-3 text-sm text-zinc-650 dark:text-zinc-500">
               최근 생성하거나 저장한 글쓰기 원고가 여기에 표시됩니다.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-6 shadow-sm dark:shadow-none transition-colors">
             <div className="flex items-center gap-3">
-              <Target className="text-emerald-400" size={20} />
-              <h2 className="text-lg font-black">추천 워크플로우</h2>
+              <Target className="text-emerald-500 dark:text-emerald-400" size={20} />
+              <h2 className="text-lg font-black text-zinc-900 dark:text-white">추천 워크플로우</h2>
             </div>
 
-            <div className="mt-3 space-y-2 text-sm text-zinc-400">
+            <div className="mt-3 space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
               <div className="flex items-center gap-2">
                 <Search size={15} />
                 키워드 선정
@@ -281,13 +281,13 @@ export default function CreaiboxWritingHomePage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-violet-500/20 bg-violet-500/5 p-6">
+        <section className="rounded-2xl border border-violet-500/20 bg-violet-500/5 p-6 transition-colors">
           <div className="flex items-center gap-3">
-            <Home className="text-violet-400" size={20} />
-            <h2 className="text-lg font-black text-white">제작 팁</h2>
+            <Home className="text-violet-500 dark:text-violet-400" size={20} />
+            <h2 className="text-lg font-black text-zinc-900 dark:text-white">제작 팁</h2>
           </div>
 
-          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+          <p className="mt-3 text-sm leading-relaxed text-zinc-650 dark:text-zinc-400">
             크리아이박스 글쓰기는 키워드, 글 길이, 문체, SEO 메타데이터,
             이미지 프롬프트를 하나의 흐름으로 묶어 저장하면 이후 블로그 발행과 재활용이 쉬워집니다.
           </p>

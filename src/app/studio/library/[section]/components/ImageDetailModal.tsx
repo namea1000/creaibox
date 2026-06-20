@@ -141,7 +141,7 @@ export default function ImageDetailModal({
         {/* 우측: 세부 정보 및 편집 폼 */}
         <div className="flex w-full flex-col border-t border-zinc-800 bg-[#0c0f17] p-6 md:w-[400px] md:border-l md:border-t-0 md:h-full overflow-y-auto">
           <div className="mb-6 mt-2">
-            <h2 className="text-lg font-black text-white">첨부 파일 세부 사항</h2>
+            <h2 className="text-lg font-black text-zinc-900 dark:text-white">첨부 파일 세부 사항</h2>
             <div className="mt-4 space-y-2.5 text-xs text-zinc-400">
               <div className="flex items-center gap-2">
                 <Calendar size={14} className="text-zinc-500" />

@@ -106,10 +106,10 @@ export default function VideoStudioHomePage() {
   ];
 
   return (
-    <div className="min-h-full bg-[#06080d] px-5 py-8 text-zinc-100 lg:px-8">
+    <div className="min-h-full w-full bg-zinc-50 dark:bg-[#06080d] px-5 py-8 text-zinc-800 dark:text-zinc-100 lg:px-8 transition-colors duration-300">
       <div className="mx-auto max-w-7xl space-y-8">
         {/* Hero */}
-        <section className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-[#07111f] p-7 shadow-2xl">
+        <section className="rounded-2xl border border-zinc-800 bg-white dark:bg-gradient-to-br dark:from-zinc-900 dark:to-[#07111f] p-7 shadow-sm dark:shadow-2xl transition-colors duration-300">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-cyan-400">
@@ -155,7 +155,7 @@ export default function VideoStudioHomePage() {
             return (
               <div
                 key={item.label}
-                className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5"
+                className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-5 shadow-sm dark:shadow-none transition-colors duration-300"
               >
                 <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400">
                   <Icon size={20} />
@@ -220,7 +220,7 @@ export default function VideoStudioHomePage() {
 
         {/* Bottom Widgets */}
         <section className="grid gap-4 lg:grid-cols-3">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-6 shadow-sm dark:shadow-none transition-colors duration-300">
             <div className="flex items-center gap-3">
               <Clapperboard className="text-cyan-400" size={20} />
               <h2 className="text-lg font-black">빠른 시작</h2>
@@ -238,7 +238,7 @@ export default function VideoStudioHomePage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-6 shadow-sm dark:shadow-none transition-colors duration-300">
             <div className="flex items-center gap-3">
               <Clock className="text-blue-400" size={20} />
               <h2 className="text-lg font-black">최근 작업</h2>
@@ -249,7 +249,7 @@ export default function VideoStudioHomePage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-6 shadow-sm dark:shadow-none transition-colors duration-300">
             <div className="flex items-center gap-3">
               <TrendingUp className="text-emerald-400" size={20} />
               <h2 className="text-lg font-black">추천 워크플로우</h2>

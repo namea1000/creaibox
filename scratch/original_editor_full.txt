@@ -1,0 +1,115 @@
+Created At: 2026-06-20T07:10:44Z
+Completed At: 2026-06-20T07:10:44Z
+File Path: `file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/editor/UniversalBlogEditor.tsx`
+Total Lines: 2676
+Total Bytes: 100994
+Showing lines 1 to 800
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: "use client";
+2: 
+3: import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+4: import { createClient } from "@/utils/supabase/client";
+5: import { EditorContent, useEditor } from "@tiptap/react";
+6: import { BubbleMenu } from "@tiptap/react/menus";
+7: import StarterKit from "@tiptap/starter-kit";
+8: import Link from "@tiptap/extension-link";
+9: import { CustomImage } from "./extensions/CustomImageExtension";
+10: import Placeholder from "@tiptap/extension-placeholder";
+11: import Youtube from "@tiptap/extension-youtube";
+12: import { Table } from "@tiptap/extension-table";
+13: import TableRow from "@tiptap/extension-table-row";
+14: import TableHeader from "@tiptap/extension-table-header";
+15: import TableCell from "@tiptap/extension-table-cell";
+16: import TextAlign from "@tiptap/extension-text-align";
+17: import {
+18:   AlignCenter,
+19:   AlignLeft,
+20:   AlignRight,
+21:   ArrowDown,
+22:   ArrowLeft,
+23:   ArrowRight,
+24:   ArrowUp,
+25:   Bold,
+26:   Check,
+27:   CheckCircle2,
+28:   ChevronDown,
+29:   CirclePlay,
+30:   Code2,
+31:   Combine,
+32:   Copy,
+33:   Cpu,
+34:   Download,
+35:   Eye,
+36:   FileText,
+37:   Globe,
+38:   Heading1,
+39:   Heading2,
+40:   Heading3,
+41:   ImageIcon,
+42:   Italic,
+43:   Link2,
+44:   List,
+45:   ListOrdered,
+46:   Minus,
+47:   Quote,
+48:   RefreshCw,
+49:   Save,
+50:   Sparkles,
+51:   Split,
+52:   Table2,
+53:   Trash2,
+54:   Type,
+55:   Wand2,
+56: } from "lucide-react";
+57: import { topicCategories, topicSubTopics } from "@/lib/content-planner/topic-categories";
+58: 
+59: const postT
+<truncated 26643 bytes>
+c);
+755: 
+756:       if (findError) {
+757:         console.error("기존 대표 이미지 조회 실패:", {
+758:           message: findError.message,
+759:           code: findError.code,
+760:           details: findError.details,
+761:           hint: findError.hint
+762:         });
+763:         throw findError;
+764:       }
+765: 
+766:       if (existingRows && existingRows.length > 0) {
+767:         // 존재하면 해당 행의 is_primary만 true로 설정
+768:         const targetId = existingRows[0].id;
+769:         const { error: updateTargetError } = await supabase
+770:           .from("generated_images")
+771:           .update({ is_primary: true })
+772:           .eq("id", targetId);
+773: 
+774:         if (updateTargetError) {
+775:           console.error("대표 이미지 업데이트 실패:", {
+776:             message: updateTargetError.message,
+777:             code: updateTargetError.code,
+778:             details: updateTargetError.details,
+779:             hint: updateTargetError.hint
+780:           });
+781:           throw updateTargetError;
+782:         }
+783:       } else {
+784:         // 존재하지 않으면 신규 썸네일 행 생성 (is_primary = true)
+785:         const { error: insertError } = await supabase
+786:           .from("generated_images")
+787:           .insert({
+788:             user_id: user.id,
+789:             prompt: "대표 이미지 지정",
+790:             image_url: src,
+791:             source_type: contentImageSourceType,
+792:             source_id: String(manuscriptId),
+793:             image_role: "thumbnail",
+794:             is_primary: true,
+795:             title: title || "대표 이미지",
+796:             alt_text: title || "대표 이미지",
+797:           });
+798: 
+799:         if (insertError) {
+800:           console.error("신규 대표 이미지 삽입 실패:", {
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

@@ -124,7 +124,7 @@ function MusicLyricsIdeaHubContent() {
   }, [keyword, selectedCategoryId, selectedSubTopicId]);
 
   return (
-    <div className="min-h-full bg-[#06080d] px-4 py-6 text-zinc-100 lg:px-8 lg:py-8">
+    <div className="min-h-full w-full bg-zinc-50 dark:bg-[#06080d] px-4 py-6 text-zinc-800 dark:text-zinc-100 lg:px-8 lg:py-8 transition-colors duration-300">
       <div className="mx-auto max-w-7xl space-y-8">
         <IdeaHubHero
           keyword={keyword}

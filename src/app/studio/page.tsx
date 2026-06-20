@@ -126,7 +126,7 @@ export default function StudioPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#06080d] text-zinc-100">
+    <div className="min-h-screen bg-transparent text-zinc-800 dark:text-zinc-100 transition-colors duration-300">
       <div className="flex min-h-screen">
 
         {isMobileOpen && (
@@ -143,24 +143,24 @@ export default function StudioPage() {
             <main className="min-w-0 flex-1">
               <div className="px-5 py-8 lg:px-8">
                 {/* HERO */}
-                <section className="relative overflow-hidden rounded-[24px] border border-zinc-800 bg-gradient-to-br from-zinc-950 via-[#0b1020] to-[#111827] p-8 shadow-2xl">
+                <section className="relative overflow-hidden rounded-[24px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-gradient-to-br dark:from-zinc-950 dark:via-[#0b1020] dark:to-[#111827] p-8 shadow-2xl transition-colors duration-300">
                   <div className="absolute right-0 top-0 h-80 w-80 rounded-full bg-blue-600/20 blur-3xl" />
                   <div className="absolute bottom-0 left-20 h-72 w-72 rounded-full bg-violet-600/20 blur-3xl" />
 
                   <div className="relative grid gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
                     <div>
-                      <div className="mb-5 inline-flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-xs font-black text-blue-300">
+                      <div className="mb-5 inline-flex items-center gap-2 rounded-lg border border-blue-500/20 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 px-4 py-2 text-xs font-black text-blue-600 dark:text-blue-300">
                         <Sparkles size={15} />
                         CreAIbox AI Workspace
                       </div>
 
-                      <h2 className="break-keep text-4xl font-black leading-tight tracking-tight text-white md:text-6xl">
+                      <h2 className="break-keep text-4xl font-black leading-tight tracking-tight text-zinc-900 dark:text-white md:text-6xl">
                         오늘 만들 콘텐츠를
                         <br />
                         여기서 바로 시작하세요
                       </h2>
 
-                      <p className="mt-5 max-w-2xl break-keep text-base font-medium leading-relaxed text-zinc-400">
+                      <p className="mt-5 max-w-2xl break-keep text-base font-medium leading-relaxed text-zinc-600 dark:text-zinc-400">
                         상단 입력창에 만들고 싶은 콘텐츠를 바로 입력하거나,
                         아래 스튜디오 카드에서 원하는 작업을 선택하세요.
                       </p>
@@ -170,7 +170,7 @@ export default function StudioPage() {
                           onClick={() =>
                             router.push("/studio/writing/creaibox/create")
                           }
-                          className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-4 text-sm font-black text-zinc-950 transition hover:scale-[1.02]"
+                          className="inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-950 dark:bg-white px-6 py-4 text-sm font-black text-white dark:text-zinc-950 transition hover:scale-[1.02] hover:bg-zinc-850 dark:hover:bg-zinc-100 cursor-pointer"
                         >
                           AI 글쓰기 시작
                           <ArrowRight size={17} />
@@ -178,7 +178,7 @@ export default function StudioPage() {
 
                         <button
                           onClick={() => router.push("/apivault")}
-                          className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900/80 px-6 py-4 text-sm font-black text-zinc-200 transition hover:border-blue-500/40 hover:text-white"
+                          className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/80 px-6 py-4 text-sm font-black text-zinc-700 dark:text-zinc-200 transition hover:border-blue-500/40 hover:text-blue-600 dark:hover:text-white cursor-pointer"
                         >
                           API 키 연결
                         </button>
@@ -214,15 +214,15 @@ export default function StudioPage() {
                         return (
                           <div
                             key={item.label}
-                            className="rounded-[18px] border border-white/10 bg-white/[0.04] p-5 backdrop-blur"
+                            className="rounded-[18px] border border-zinc-200 dark:border-white/10 bg-zinc-100/50 dark:bg-white/[0.04] p-5 backdrop-blur transition-colors"
                           >
-                            <Icon size={22} className="mb-4 text-blue-400" />
+                            <Icon size={22} className="mb-4 text-blue-600 dark:text-blue-400" />
 
-                            <p className="text-2xl font-black text-white">
+                            <p className="text-2xl font-black text-zinc-900 dark:text-white">
                               {item.value}
                             </p>
 
-                            <p className="mt-1 text-xs font-bold text-zinc-500">
+                            <p className="mt-1 text-xs font-bold text-zinc-550 dark:text-zinc-500">
                               {item.label}
                             </p>
                           </div>
@@ -245,7 +245,7 @@ export default function StudioPage() {
                           setActiveMenu(item.key);
                           router.push(item.href);
                         }}
-                        className="group rounded-[20px] border border-zinc-800 bg-zinc-950/70 p-6 text-left transition hover:-translate-y-1 hover:border-blue-500/30 hover:bg-zinc-900"
+                        className="group rounded-[20px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/70 p-6 text-left transition hover:-translate-y-1 hover:border-blue-500/30 dark:hover:bg-zinc-900 hover:shadow-xl hover:shadow-black/5 dark:hover:shadow-none cursor-pointer"
                       >
                         <div
                           className={`mb-5 flex h-14 w-14 items-center justify-center rounded-[14px] bg-gradient-to-r ${item.color} text-white shadow-lg shadow-black/30`}
@@ -253,15 +253,15 @@ export default function StudioPage() {
                           <Icon size={25} />
                         </div>
 
-                        <h3 className="text-xl font-black text-white">
+                        <h3 className="text-xl font-black text-zinc-900 dark:text-white">
                           {item.title}
                         </h3>
 
-                        <p className="mt-2 break-keep text-sm font-medium leading-relaxed text-zinc-500">
+                        <p className="mt-2 break-keep text-sm font-medium leading-relaxed text-zinc-550 dark:text-zinc-500">
                           {item.desc}
                         </p>
 
-                        <div className="mt-5 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-blue-400 opacity-0 transition group-hover:translate-x-1 group-hover:opacity-100">
+                        <div className="mt-5 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 opacity-0 transition group-hover:translate-x-1 group-hover:opacity-100">
                           Open Tool
                           <ArrowRight size={15} />
                         </div>
@@ -272,19 +272,19 @@ export default function StudioPage() {
 
                 {/* QUICK ACTIONS */}
                 <section className="mt-8 grid gap-6 xl:grid-cols-[1fr_0.8fr]">
-                  <div className="rounded-[20px] border border-zinc-800 bg-zinc-950/70 p-6">
+                  <div className="rounded-[20px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/70 p-6 shadow-sm dark:shadow-none">
                     <div className="mb-6 flex items-center justify-between">
                       <div>
                         <p className="text-xs font-black uppercase tracking-widest text-zinc-500">
                           Quick Actions
                         </p>
 
-                        <h3 className="mt-1 text-2xl font-black text-white">
+                        <h3 className="mt-1 text-2xl font-black text-zinc-900 dark:text-white">
                           빠른 실행
                         </h3>
                       </div>
 
-                      <BarChart3 className="text-blue-400" />
+                      <BarChart3 className="text-blue-600 dark:text-blue-400" />
                     </div>
 
                     <div className="grid gap-3 md:grid-cols-2">
@@ -295,14 +295,14 @@ export default function StudioPage() {
                           <button
                             key={item.title}
                             onClick={() => router.push(item.href)}
-                            className="group flex items-center gap-4 rounded-[16px] border border-zinc-800 bg-zinc-900/60 p-4 text-left transition hover:border-blue-500/30 hover:bg-blue-500/10"
+                            className="group flex items-center gap-4 rounded-[16px] border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/60 p-4 text-left transition hover:border-blue-500/30 hover:bg-blue-500/10 cursor-pointer"
                           >
-                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-zinc-800 text-blue-400 transition group-hover:bg-blue-600 group-hover:text-white">
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-zinc-200/50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 transition group-hover:bg-blue-600 group-hover:text-white">
                               <Icon size={20} />
                             </div>
 
                             <div>
-                              <p className="text-sm font-black text-zinc-100">
+                              <p className="text-sm font-black text-zinc-800 dark:text-zinc-100">
                                 {item.title}
                               </p>
 
@@ -317,13 +317,13 @@ export default function StudioPage() {
                   </div>
 
                   {/* RECENT WORKS */}
-                  <div className="rounded-[20px] border border-zinc-800 bg-zinc-950/70 p-6">
+                  <div className="rounded-[20px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/70 p-6 shadow-sm dark:shadow-none">
                     <div className="mb-6">
                       <p className="text-xs font-black uppercase tracking-widest text-zinc-500">
                         Recent Works
                       </p>
 
-                      <h3 className="mt-1 text-2xl font-black text-white">
+                      <h3 className="mt-1 text-2xl font-black text-zinc-900 dark:text-white">
                         최근 작업
                       </h3>
                     </div>
@@ -332,11 +332,11 @@ export default function StudioPage() {
                       {recentWorks.map((work) => (
                         <div
                           key={work.title}
-                          className="rounded-[16px] border border-zinc-800 bg-zinc-900/60 p-4"
+                          className="rounded-[16px] border border-zinc-200 dark:border-zinc-850 bg-zinc-50/50 dark:bg-zinc-900/60 p-4"
                         >
                           <div className="flex items-center justify-between gap-3">
                             <div>
-                              <p className="text-sm font-black text-zinc-100">
+                              <p className="text-sm font-black text-zinc-800 dark:text-zinc-100">
                                 {work.title}
                               </p>
 
@@ -345,7 +345,7 @@ export default function StudioPage() {
                               </p>
                             </div>
 
-                            <span className="shrink-0 rounded-md bg-zinc-800 px-3 py-1 text-[10px] font-black text-zinc-400">
+                            <span className="shrink-0 rounded-md bg-zinc-200/60 dark:bg-zinc-800 px-3 py-1 text-[10px] font-black text-zinc-600 dark:text-zinc-400">
                               {work.time}
                             </span>
                           </div>

@@ -43,9 +43,9 @@ export default function CommunityHomePage() {
   ];
 
   return (
-    <div className="min-h-full w-full bg-[#06080d] px-5 py-8 text-zinc-100 lg:px-8">
+    <div className="min-h-full w-full bg-zinc-50 dark:bg-[#06080d] px-5 py-8 text-zinc-800 dark:text-zinc-100 lg:px-8 transition-colors duration-300">
       <div className="mx-auto max-w-7xl space-y-8">
-        <section className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-[#111827] p-7 shadow-2xl">
+        <section className="rounded-2xl border border-zinc-800 bg-white dark:bg-gradient-to-br dark:from-zinc-900 dark:to-[#111827] p-7 shadow-sm dark:shadow-2xl transition-colors duration-300">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-pink-500/30 bg-pink-500/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-pink-400">
@@ -53,7 +53,7 @@ export default function CommunityHomePage() {
                 Creator Community
               </div>
 
-              <h1 className="text-3xl font-black tracking-tight text-white md:text-5xl">
+              <h1 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white md:text-5xl">
                 커뮤니티
               </h1>
 
@@ -65,7 +65,7 @@ export default function CommunityHomePage() {
             <div className="flex gap-2">
               <Link
                 href="/studio/community/chat"
-                className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-sm font-black text-zinc-200 transition hover:border-pink-500/50 hover:text-white"
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 text-sm font-black text-zinc-700 dark:text-zinc-200 transition hover:border-pink-500/50 hover:text-zinc-900 dark:hover:text-white"
               >
                 <MessageCircle size={17} />
                 채팅 로비
@@ -87,11 +87,11 @@ export default function CommunityHomePage() {
             const Icon = item.icon;
 
             return (
-              <div key={item.label} className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5">
+              <div key={item.label} className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-5 shadow-sm dark:shadow-none transition-colors duration-300">
                 <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-pink-500/10 text-pink-400">
                   <Icon size={20} />
                 </div>
-                <p className="text-2xl font-black text-white">{item.value}</p>
+                <p className="text-2xl font-black text-zinc-900 dark:text-white">{item.value}</p>
                 <p className="mt-1 text-xs font-bold text-zinc-500">{item.label}</p>
               </div>
             );
@@ -101,7 +101,7 @@ export default function CommunityHomePage() {
         <section>
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-black text-white">실시간 채팅방</h2>
+              <h2 className="text-xl font-black text-zinc-900 dark:text-white">실시간 채팅방</h2>
               <p className="mt-1 text-sm font-medium text-zinc-500">
                 스튜디오별 주제에 맞춰 대화하고, 정보와 작업물을 공유하세요.
               </p>
@@ -116,7 +116,7 @@ export default function CommunityHomePage() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="group rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5 transition hover:-translate-y-0.5 hover:border-pink-500/40 hover:bg-zinc-900"
+                  className="group rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-5 transition hover:-translate-y-0.5 hover:border-pink-500/40 hover:bg-zinc-100/50 dark:hover:bg-zinc-900 shadow-sm dark:shadow-none hover:shadow-md transition-all duration-300"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 gap-4">
@@ -125,7 +125,7 @@ export default function CommunityHomePage() {
                       </div>
 
                       <div className="min-w-0">
-                        <h3 className="truncate text-base font-black text-white">
+                        <h3 className="truncate text-base font-black text-zinc-900 dark:text-white">
                           {item.title}
                         </h3>
                         <p className="mt-1 line-clamp-2 text-xs font-medium leading-relaxed text-zinc-500">
@@ -146,20 +146,20 @@ export default function CommunityHomePage() {
         </section>
 
         <section className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-6 shadow-sm dark:shadow-none transition-colors duration-300">
             <div className="flex items-center gap-3">
               <Sparkles className="text-violet-400" size={20} />
-              <h2 className="text-lg font-black text-white">커뮤니티 활용 팁</h2>
+              <h2 className="text-lg font-black text-zinc-900 dark:text-white">커뮤니티 활용 팁</h2>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-zinc-400">
               작업 중 막히는 부분은 해당 스튜디오 채팅방에 질문하고, 좋은 프롬프트나 제작 노하우는 다른 크리에이터들과 공유하세요.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-6 shadow-sm dark:shadow-none transition-colors duration-300">
             <div className="flex items-center gap-3">
               <Clock className="text-blue-400" size={20} />
-              <h2 className="text-lg font-black text-white">최근 활동</h2>
+              <h2 className="text-lg font-black text-zinc-900 dark:text-white">최근 활동</h2>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-zinc-500">
               아직 표시할 활동이 없습니다. 채팅방과 협업 프로젝트가 활성화되면 이곳에 최근 활동이 표시됩니다.

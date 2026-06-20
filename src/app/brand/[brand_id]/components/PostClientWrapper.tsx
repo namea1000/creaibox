@@ -345,7 +345,7 @@ export default function PostClientWrapper({
           </header>
 
           <div className="px-8 py-12 md:px-12 space-y-8">
-            <div className={`mx-auto max-w-[1100px] border-t pt-8 ${theme === "dark" ? "border-zinc-900/80" : "border-zinc-200/80"}`}>
+            <div className="mx-auto max-w-[1100px]">
               {looksLikeHtml(normalizedContent) ? (
                 <div
                   className={blogContentClass}

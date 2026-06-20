@@ -20,6 +20,8 @@ create table if not exists public.free_assets (
     aspect_ratio varchar(50) default '',
     generation_type varchar(50) default 'real',
     camera varchar(255) default '촬영 정보 없음',
+    prompt text default '',
+    ai_tool varchar(100) default '',
     created_at timestamptz default now() not null
 );
 
@@ -44,14 +46,16 @@ on public.free_assets
 for select
 using (true);
 
--- 2. ALL: 어드민 또는 스태프에게 쓰기/수정/삭제 허용
--- admin_whitelist 테이블의 이메일 또는 profiles 테이블의 role이 ADMIN/STAFF인 경우 허용
+-- 2. ALL: 어드민, 스태프 또는 업로더 본인에게 쓰기/수정/삭제 허용
 drop policy if exists "Allow write access to admin or staff only" on public.free_assets;
-create policy "Allow write access to admin or staff only"
+drop policy if exists "Allow write access to authorized users" on public.free_assets;
+create policy "Allow write access to authorized users"
 on public.free_assets
 for all
 to authenticated
 using (
+  (uploader = auth.jwt() ->> 'email')
+  or
   exists (
     select 1 from public.admin_whitelist
     where email = auth.jwt() ->> 'email'
@@ -64,6 +68,8 @@ using (
   )
 )
 with check (
+  (uploader = auth.jwt() ->> 'email')
+  or
   exists (
     select 1 from public.admin_whitelist
     where email = auth.jwt() ->> 'email'
@@ -75,3 +81,9 @@ with check (
       and role in ('ADMIN', 'STAFF')
   )
 );
+
+-- =====================================================
+-- Migration commands to update existing tables
+-- =====================================================
+-- ALTER TABLE public.free_assets ADD COLUMN IF NOT EXISTS prompt TEXT DEFAULT '';
+-- ALTER TABLE public.free_assets ADD COLUMN IF NOT EXISTS ai_tool VARCHAR(100) DEFAULT '';

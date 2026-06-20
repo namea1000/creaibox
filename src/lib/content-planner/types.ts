@@ -75,8 +75,14 @@ export type ContentPlannerFormState = {
   itemCount: number;
   mainKeyword: string;
   referenceNote: string;
-  strategyLevel: "기본 전략" | "고급 전략" | "전문가 전략";
-  resultFormat: "시리즈만" | "시리즈 + 채널별 제작안" | "콘텐츠 캘린더 포함";
+  strategyLevel:
+    | "1. 기본 전략(대중적이고 상식적 수준의 정보성 글)"
+    | "2. 고급 전략(검색 엔진 최적화 및 사용자 타겟 분석)"
+    | "3. 전문가 전략(가장 고도화된 심층적 마케팅 구조 설계)";
+  resultFormat:
+    | "1. 기본 시리즈(키워드 연관 글감 병렬적 나열)"
+    | "2. 기본 시리즈 + 배포 플랫폼별 적합성 키워드 향상"
+    | "3. 2번 + 발행 순서 및 최적의 배포 타이밍 구성";
   keywordSource: KeywordSource;
   trendPeriod: "7d" | "30d" | "90d" | "12m";
   trendRegion: "KR" | "GLOBAL";

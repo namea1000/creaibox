@@ -241,7 +241,10 @@ export default function CreateTab({
 
           <button
             onClick={onStartGenerate}
-            disabled={loading}
+            disabled={
+              loading ||
+              !!(content && content.replace(/<[^>]*>/g, "").trim().length > 0)
+            }
             className="w-full h-16 bg-blue-600 hover:bg-blue-500 rounded-2xl relative overflow-hidden transition-all shadow-xl shadow-blue-900/40 active:scale-[0.98] disabled:opacity-80"
           >
             {loading && (

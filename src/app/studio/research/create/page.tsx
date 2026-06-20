@@ -295,9 +295,9 @@ export default function ResearchCreatePage() {
   }
 
   return (
-    <div className="min-h-full bg-[#06080d] px-5 py-8 text-zinc-100 lg:px-8">
+    <div className="min-h-full w-full bg-zinc-50 dark:bg-[#06080d] px-5 py-8 text-zinc-800 dark:text-zinc-100 lg:px-8 transition-colors duration-300">
       <div className="mx-auto max-w-7xl space-y-8">
-        <section className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-[#12091f] p-7 shadow-2xl">
+        <section className="rounded-2xl border border-zinc-800 bg-white dark:bg-gradient-to-br dark:from-zinc-900 dark:to-[#12091f] p-7 shadow-sm dark:shadow-2xl transition-colors duration-300">
           <div>
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-violet-400">
               <Database size={15} />
@@ -313,7 +313,7 @@ export default function ResearchCreatePage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5">
+        <section className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-5 shadow-sm dark:shadow-none transition-colors duration-300">
           <h2 className="mb-4 text-lg font-black">프로젝트 이름</h2>
 
           <input
@@ -325,7 +325,7 @@ export default function ResearchCreatePage() {
           />
         </section>
 
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5">
+        <section className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-5 shadow-sm dark:shadow-none transition-colors duration-300">
           <h2 className="mb-4 text-lg font-black">분석 대상 선택</h2>
 
           <div className="flex flex-wrap gap-2">

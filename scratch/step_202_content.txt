@@ -1,0 +1,74 @@
+Created At: 2026-06-20T07:10:49Z
+Completed At: 2026-06-20T07:10:49Z
+File Path: `file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/editor/UniversalBlogEditor.tsx`
+Total Lines: 2676
+Total Bytes: 100994
+Showing lines 1500 to 1700
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1500:   return (
+1501:     <div className="flex h-full min-h-[750px] flex-col overflow-hidden bg-[#0a0c10]">
+1502:       <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-zinc-800 bg-gradient-to-r from-[#131722] via-[#141926] to-[#10141f] px-4">
+1503:         <div className="flex min-w-0 items-center gap-3">
+1504:           <div className="flex shrink-0 items-center gap-1.5">
+1505:             <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+1506:             <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+1507:             <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+1508:           </div>
+1509:           <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]" />
+1510:           <span className="truncate text-[0.78rem] font-black uppercase tracking-[0.24em] text-zinc-300">
+1511:             Creaibox Tiptap Blog Editor
+1512:           </span>
+1513:         </div>
+1514: 
+1515:         <div className="flex shrink-0 items-center gap-2">
+1516:           <button
+1517:             onClick={handleLocalCopy}
+1518:             className={`flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-bold transition-all ${
+1519:               copyFeedback === "copied"
+1520:                 ? "border-emerald-800 bg-emerald-950/20 text-emerald-400"
+1521:                 : "border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+1522:             }`}
+1523:           >
+1524:             {copyFeedback === "copied" ? (
+
+<truncated 7436 bytes>
+{item}
+1663:               </option>
+1664:             ))}
+1665:           </select>
+1666: 
+1667:           {/* 6. 결과 구성 */}
+1668:           <select
+1669:             value={aiResultFormat}
+1670:             onChange={(e) => setAiResultFormat?.(e.target.value)}
+1671:             disabled={isAiGenerating}
+1672:             className="h-9 w-60 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-cyan-500 font-bold disabled:opacity-50 text-center"
+1673:           >
+1674:             <option value="" disabled hidden>결과 구성</option>
+1675:             {[
+1676:               "1. 기본 시리즈(키워드 연관 글감 병렬적 나열)",
+1677:               "2. 기본 시리즈 + 배포 플랫폼별 적합성 키워드 향상",
+1678:               "3. 2번 + 발행 순서 및 최적의 배포 타이밍 구성",
+1679:             ].map((item) => (
+1680:               <option key={item} value={item} className="bg-slate-950">
+1681:                 {getResultFormatEmoji(item)} {item}
+1682:               </option>
+1683:             ))}
+1684:           </select>
+1685:         </div>
+1686: 
+1687:         {/* 2번째 줄 */}
+1688:         <div className="flex flex-wrap items-center gap-3">
+1689:           {/* 7. 대분류 */}
+1690:           <select
+1691:             value={aiLargeCategory}
+1692:             onChange={(e) => {
+1693:               const newGroup = e.target.value;
+1694:               setAiLargeCategory?.(newGroup);
+1695:               setIsCustomSubTopic(false);
+1696:               const firstCat = topicCategories.find((c) => c.group === newGroup);
+1697:               if (firstCat) {
+1698:                 setAiMainTopic?.(firstCat.name);
+1699:                 const firstSub = topicSubTopics.find((s) => s.categoryId === firstCat.id);
+1700:                 if (firstSub) {
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

@@ -462,7 +462,7 @@ export default function NaverKeywordAnalysisPage() {
                 <>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <h3 className="text-lg font-black text-white">연관 키워드 클러스터</h3>
+                      <h3 className="text-lg font-black text-zinc-900 dark:text-white">연관 키워드 클러스터</h3>
                       <p className="mt-1 text-[13px] text-zinc-500">메인 키워드와 함께 쓰기 좋은 롱테일, 질문형, 비교형 조합입니다.</p>
                     </div>
                     <button onClick={handleCopyRelatedKeywords} className="rounded-2xl border border-zinc-800 bg-zinc-900/70 px-4 py-2 text-[12px] font-black text-zinc-300 transition-all hover:text-white">

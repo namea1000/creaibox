@@ -34,7 +34,7 @@ export default function ImageEditorTab() {
       <div className="rounded-2xl border border-zinc-800 bg-[#090d16]/20 p-6 space-y-5">
         <div className="flex items-center gap-3 border-b border-zinc-800/60 pb-3">
           <Sliders className="text-purple-400" size={20} />
-          <h2 className="text-lg font-black text-white">이미지 편집 조작</h2>
+          <h2 className="text-lg font-black text-zinc-900 dark:text-white">이미지 편집 조작</h2>
         </div>
 
         {/* Filter configuration */}

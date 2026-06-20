@@ -1,0 +1,73 @@
+Created At: 2026-06-20T06:50:31Z
+Completed At: 2026-06-20T06:50:31Z
+File Path: `file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/editor/UniversalBlogEditor.tsx`
+Total Lines: 2672
+Total Bytes: 100644
+Showing lines 1476 to 2275
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1476:   const ToolbarButton = ({
+1477:     onClick,
+1478:     children,
+1479:     active = false,
+1480:     disabled = false,
+1481:     className = "",
+1482:   }: {
+1483:     onClick: () => void;
+1484:     children: React.ReactNode;
+1485:     active?: boolean;
+1486:     disabled?: boolean;
+1487:     className?: string;
+1488:   }) => (
+1489:     <button
+1490:       type="button"
+1491:       onClick={onClick}
+1492:       disabled={disabled || !editor}
+1493:       className={`flex items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-bold transition-all disabled:cursor-not-allowed disabled:opacity-40 ${active ? "bg-blue-500/15 text-blue-300" : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
+1494:         } ${className}`}
+1495:     >
+1496:       {children}
+1497:     </button>
+1498:   );
+1499: 
+1500:   return (
+1501:     <div className="flex h-full min-h-[750px] flex-col overflow-hidden bg-[#0a0c10]">
+1502:       <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-zinc-800 bg-gradient-to-r from-[#131722] via-[#141926] to-[#10141f] px-4">
+1503:         <div className="flex min-w-0 items-center gap-3">
+1504:           <div className="flex shrink-0 items-center gap-1.5">
+1505:             <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+1506:             <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+1507:             <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+1508:           </div>
+1509:           <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 shad
+<truncated 38799 bytes>
+246:                 </div>
+2247:               </div>
+2248: 
+2249:               <span className="shrink-0 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[10px] font-mono text-zinc-500">
+2250:                 Chars: <strong className="text-emerald-500">{stats.chars || charCount}</strong>
+2251:               </span>
+2252:             </div>
+2253: 
+2254:             {images && images.length > 0 && (
+2255:               <div className="mb-6 grid grid-cols-1 gap-3 border-b border-zinc-200 pb-5 sm:grid-cols-2">
+2256:                 {images.map((img) => (
+2257:                   <div key={img.id} className="group relative overflow-hidden rounded-md border border-zinc-200 bg-zinc-50 p-3 shadow-sm">
+2258:                     <div className="relative h-32 w-full overflow-hidden rounded-xl bg-zinc-100">
+2259:                       <img src={img.url} alt={img.caption || "Uploaded Block"} className="h-full w-full object-cover" />
+2260:                       <button onClick={() => handleDeleteImage(img.id)} className="absolute right-2 top-2 rounded-md bg-red-600 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100">
+2261:                         <Trash2 size={12} />
+2262:                       </button>
+2263:                     </div>
+2264: 
+2265:                     <input
+2266:                       type="text"
+2267:                       value={img.caption}
+2268:                       onChange={(e) => handleUpdateCaption(img.id, e.target.value)}
+2269:                       placeholder="이미지 캡션 또는 alt 설명"
+2270:                       className="mt-3 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 focus:outline-none"
+2271:                     />
+2272:                   </div>
+2273:                 ))}
+2274:               </div>
+2275:             )}
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

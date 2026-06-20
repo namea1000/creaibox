@@ -116,15 +116,15 @@ export default function Aside() {
   return (
     <aside
       className={`
-        hidden xl:flex h-[calc(100vh-5rem)] shrink-0 flex-col border-l border-zinc-800/80
-        bg-[#090e15] transition-all duration-300 ease-in-out
+        hidden xl:flex h-[calc(100vh-5rem)] shrink-0 flex-col border-l border-zinc-200 dark:border-zinc-800/80
+        bg-zinc-50 dark:bg-[#090e15] transition-all duration-300 ease-in-out
         ${isExpanded ? "w-56" : "w-14"}
       `}
     >
       <div className="flex-1 overflow-y-auto px-2.5 py-4">
         <button
           onClick={() => setIsExpanded((prev) => !prev)}
-          className="mb-4 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-300 transition hover:border-blue-500/50 hover:bg-zinc-800 hover:text-white"
+          className="mb-4 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:border-blue-500/50 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-white"
           title={isExpanded ? "오른쪽 패널 접기" : "오른쪽 패널 펼치기"}
         >
           {isExpanded ? <PanelRightClose size={15} /> : <PanelRightOpen size={15} />}

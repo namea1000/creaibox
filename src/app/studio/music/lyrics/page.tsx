@@ -922,7 +922,7 @@ ${albumPlanText || "별도 앨범 기획 없음"}
 
         <div className="rounded-3xl border border-zinc-800 bg-[#101014] p-4">
           <div className="mb-3">
-            <h3 className="text-lg font-black text-white">다음 작업</h3>
+            <h3 className="text-lg font-black text-zinc-900 dark:text-white">다음 작업</h3>
             <p className="mt-1 text-[11px] leading-4 text-zinc-500">
               생성 결과를 다음 제작 단계로 연결합니다.
             </p>

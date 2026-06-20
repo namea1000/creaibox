@@ -48,6 +48,11 @@ type Props = {
   postType: string;
   onChangePostType: (value: string) => void;
 
+  selectedTone: string;
+  onChangeSelectedTone: (value: string) => void;
+  wordCountGoal: string;
+  onChangeWordCountGoal: (value: string) => void;
+
   strategyLevel: ContentPlannerFormState["strategyLevel"];
   resultFormat: ContentPlannerFormState["resultFormat"];
   onChangeStrategyLevel: (value: ContentPlannerFormState["strategyLevel"]) => void;
@@ -93,24 +98,25 @@ const getItemCountEmoji = (count: number) => {
 
 const getStrategyLevelEmoji = (level: string) => {
   const map: Record<string, string> = {
-    "기본 전략": "⚡",
-    "고급 전략": "💎",
-    "전문가 전략": "👑",
+    "1. 기본 전략(대중적이고 상식적 수준의 정보성 글)": "⚡",
+    "2. 고급 전략(검색 엔진 최적화 및 사용자 타겟 분석)": "💎",
+    "3. 전문가 전략(가장 고도화된 심층적 마케팅 구조 설계)": "👑",
   };
   return map[level] || "⚙️";
 };
 
 const getResultFormatEmoji = (format: string) => {
   const map: Record<string, string> = {
-    "시리즈만": "📦",
-    "시리즈 + 채널별 제작안": "📢",
-    "콘텐츠 캘린더 포함": "📅",
+    "기본 시리즈(키워드 연관 글감 병렬적 나열)": "📦",
+    "기본 시리즈 + 배포 플랫폼별 적합성 키워드 향상": "📢",
+    "2번 + 발행 순서 및 최적의 배포 타이밍 구성": "📅",
   };
   return map[format] || "⚙️";
 };
 
 const postTypeOptions = [
   { label: "① 인사이트 & 트렌드", disabled: true },
+  { label: "🤖 AI 자동 포스팅", disabled: false },
   { label: "🧠 AI 인사이트 포스팅", disabled: false },
   { label: "📈 트렌드 브리프", disabled: false },
   { label: "📊 시장/기술 분석 리포트", disabled: false },
@@ -140,7 +146,6 @@ const postTypeOptions = [
   { label: "📱 앱 설치 및 상세 가이드", disabled: false },
   { label: "🤖 AI 툴 및 웹 서비스 가이드", disabled: false },
   { label: "⚙️ 유틸리티 설치/사용 방법", disabled: false },
-  { label: "🤖 AI 자동 포스팅", disabled: false },
   { label: "🔗 바로가기 버튼 생성", disabled: false },
 
   { label: "⑥ 실무형 가이드", disabled: true },
@@ -182,6 +187,10 @@ export default function ContentConditionPanel({
   onChangeReferenceNote,
   postType,
   onChangePostType,
+  selectedTone,
+  onChangeSelectedTone,
+  wordCountGoal,
+  onChangeWordCountGoal,
   strategyLevel,
   resultFormat,
   onChangeStrategyLevel,
@@ -289,6 +298,50 @@ export default function ContentConditionPanel({
           </div>
         </div>
 
+        {/* 말투 */}
+        <label className="grid grid-cols-[86px_minmax(0,1fr)] items-center gap-3">
+          <span className="text-xs font-bold text-slate-400">말투</span>
+          <select
+            value={selectedTone}
+            onChange={(e) => onChangeSelectedTone(e.target.value)}
+            className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none focus:border-cyan-400 font-bold"
+          >
+            {[
+              "💻 전문적이고 통찰력 있는 분석 (기술 블로그)",
+              "✍️ 친근하고 명확한 실무 설명 (가이드형 포스팅)",
+              "📢 브랜드 중심의 신뢰형 설명 (서비스 소개형)",
+              "📈 인사이트 리포트형 톤 (트렌드 분석)",
+              "✉️ 가볍고 설득력 있는 뉴스레터형 톤",
+            ].map((tone) => (
+              <option key={tone} value={tone} className="bg-slate-950">
+                {tone}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {/* 길이 */}
+        <label className="grid grid-cols-[86px_minmax(0,1fr)] items-center gap-3">
+          <span className="text-xs font-bold text-slate-400">길이</span>
+          <select
+            value={wordCountGoal}
+            onChange={(e) => onChangeWordCountGoal(e.target.value)}
+            className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none focus:border-cyan-400 font-bold"
+          >
+            {[
+              { value: "800", label: "📰 짧게 (약 800자)" },
+              { value: "1500", label: "✍️ 보통 (약 1,500자)" },
+              { value: "3000", label: "🚀 길게 (약 3,000자)" },
+              { value: "5000", label: "📚 아주 길게 (약 5,000자)" },
+              { value: "8000", label: "💰 초장문 (약 8,000자)" },
+            ].map((opt) => (
+              <option key={opt.value} value={opt.value} className="bg-slate-950">
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
         {/* 3. 생성 개수 */}
         <label className="grid grid-cols-[86px_minmax(0,1fr)] items-center gap-3">
           <span className="text-xs font-bold text-slate-400">생성 개수</span>
@@ -313,7 +366,11 @@ export default function ContentConditionPanel({
             onChange={(e) => onChangeStrategyLevel(e.target.value as ContentPlannerFormState["strategyLevel"])}
             className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none focus:border-cyan-400"
           >
-            {["기본 전략", "고급 전략", "전문가 전략"].map((item) => (
+            {[
+              "1. 기본 전략(대중적이고 상식적 수준의 정보성 글)",
+              "2. 고급 전략(검색 엔진 최적화 및 사용자 타겟 분석)",
+              "3. 전문가 전략(가장 고도화된 심층적 마케팅 구조 설계)",
+            ].map((item) => (
               <option key={item} value={item} className="bg-slate-950">
                 {getStrategyLevelEmoji(item)} {item}
               </option>
@@ -329,7 +386,11 @@ export default function ContentConditionPanel({
             onChange={(e) => onChangeResultFormat(e.target.value as ContentPlannerFormState["resultFormat"])}
             className="h-11 w-full rounded-xl border border-white/10 bg-black/40 px-4 text-xs text-white outline-none focus:border-cyan-400"
           >
-            {["시리즈만", "시리즈 + 채널별 제작안", "콘텐츠 캘린더 포함"].map((item) => (
+            {[
+              "1. 기본 시리즈(키워드 연관 글감 병렬적 나열)",
+              "2. 기본 시리즈 + 배포 플랫폼별 적합성 키워드 향상",
+              "3. 2번 + 발행 순서 및 최적의 배포 타이밍 구성",
+            ].map((item) => (
               <option key={item} value={item} className="bg-slate-950">
                 {getResultFormatEmoji(item)} {item}
               </option>

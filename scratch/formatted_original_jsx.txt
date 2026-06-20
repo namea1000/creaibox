@@ -1,0 +1,46 @@
+"      </div>
+ 
+      {/* AI 포스팅 글쓰기 가로 제어 바 */}
+      <div className="shrink-0 border-b border-zinc-850 bg-[#0c101f] px-4 py-2 flex flex-col gap-2">
+        {/* 1번째 줄 */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5 shrink-0 text-cyan-300 text-xs font-black">
+            <Sparkles size={14} className="animate-pulse" />
+            <span>AI 포스팅 글쓰기</span>
+          </div>
+ 
+          <div className="h-4 w-px bg-zinc-800 shrink-0" />
+ 
+          {/* 1. 콘텐츠 유형 */}
+          <select
+            value={aiContentType}
+            onChange={(e) => setAiContentType?.(e.target.value)}
+            disabled={isAiGenerating}
+            className="h-9 w-44 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-cyan-500 font-bold disabled:opacity-50 text-center"
+          >
+            <option value="" disabled hidden>콘텐츠 유형</option>
+            {[
+              "멀티 플랫폼 콘텐츠 기획",
+              "블로그 글쓰기 콘텐츠",
+              "유튜브 쇼츠 기획",
+              "유튜브 롱폼 기획",
+              "틱톡 숏폼 기획",
+              "네이버 클립 기획",
+              "인스타그램 릴스 기획",
+              "SNS 카드뉴스 기획",
+              "뉴스레터 기획",
+              "브랜드 캠페인 기획"
+            ].map((item) => (
+              <option key={item} value={item} className="bg-slate-950">
+                {getContentTypeEmoji(item)} {item}
+              </option>
+            ))}
+          </select>
+ 
+          {/* 2. 포스트 타입 */}
+          <select
+            value={aiPostType}
+            onChange={(e) => setAiPostType?.(e.target.value)}
+            disabled={isAiGenerating}
+            className="h-9 w-48 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none fo
+<truncated 28833 bytes>

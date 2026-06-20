@@ -586,3 +586,163 @@ AI 생성 단계를 거치지 않고, 사용자가 직접 수동으로 처음부
 ### 20-2. 변경 및 추가 파일 목록
 * **[MODIFY] [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/upload/route.ts)**: 업로드 파일명에 유니크 타임스탬프 접미사 결합 로직 탑재.
 
+---
+
+## 21. 무료 공유 에셋 라이브러리 레이아웃 보강 및 롤백 (Free Assets Layout Optimization & Sharp Card Corners)
+
+### 21-1. 주요 작업 내역
+* **비율 필터 1줄 정렬**:
+  - 비율 필터 및 생성 유형 필터를 둘러싼 부모 컨테이너의 너비 제한을 `max-w-xl`에서 `max-w-3xl`로 확장했습니다.
+  - 이를 통해 화면 크기가 좁아졌을 때 "기타 비율" 버튼이 혼자 아랫줄로 줄바꿈되어 떨어지는 레이아웃 문제를 해결하고, "1:1 정방향" 오른쪽에 깔끔하게 1줄로 정렬되도록 개선했습니다.
+* **카드 모서리 각지게 롤백 (Sharp Card Corners)**:
+  - 사용자 피드백에 맞춰 무료 공유 에셋의 그리드 리스트 내 개별 미디어 카드 컨테이너의 라운딩 처리(`rounded-2xl`)를 제거하고 날카롭고 각진 스타일(`rounded-none`)로 원복 적용했습니다.
+
+### 21-2. 변경 및 추가 파일 목록
+* **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/free-assets/page.tsx)**: 부모 컨테이너 width 제한 확장 (`max-w-xl` -> `max-w-3xl`) 및 카드 컴포넌트 모서리 스타일 변경 (`rounded-none`).
+
+---
+
+## 22. 비로그인 방문자 대상 스튜디오 시작 버튼 상시 노출 및 Spotify 스타일 헤더 개편 (Always-Visible Studio Button & Spotify Style Header)
+
+### 22-1. 주요 작업 내역
+* **스튜디오 시작 버튼 상시 노출**:
+  - 비로그인 상태인 방문객도 메인 페이지에서 스튜디오의 존재를 즉시 인지하고 가입할 수 있도록, 로그인 상태에 상관없이 "AI 스튜디오 시작하기" gradient button이 항상 우측 상단에 노출되도록 변경했습니다.
+* **Spotify 스타일 회원가입/로그인 텍스트 메뉴**:
+  - 기존의 단추형 로그인/회원가입 버튼 구조를 Spotify에서 볼 수 있는 세련되고 깔끔한 텍스트 링크 형태(`text-slate-600 transition hover:bg-slate-100 hover:text-slate-900`)로 리뉴얼하여, 그라데이션 시작 버튼 옆에 자연스럽게 배치했습니다.
+* **헤더 레이아웃 흔들림(Visual Jump) 방지**:
+  - 로그인 세션이 생성되는 비동기 검증 시점이나 로그인 전후 상태 전환 시, 헤더의 요소들(로고, 메뉴 탭, 우측 버튼군)이 미세하게 흔들리거나 높이가 튀는 시각적 흔들림 현상을 제거했습니다.
+  - 로그인/비로그인 영역의 높이(`h-14`)와 정렬 방식을 통일하여 흔들림 없는 완벽한 레이아웃 무결성을 실현했습니다.
+
+### 22-2. 변경 및 추가 파일 목록
+* **[MODIFY] [Header.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Header.tsx)**: "AI 스튜디오 시작하기" 버튼 무조건 렌더링, 비로그인 상태일 때 회원가입/로그인 텍스트 링크 배치, 크기 및 정렬 통일을 통해 레이아웃 흔들림 현상 방지.
+
+### 22-3. 검증 상태
+* `npx tsc --noEmit` 전체 컴파일 검증을 성공적으로 통과하여 0 errors 상태를 보존했습니다.
+
+---
+
+## 23. Supabase SSR 청크 쿠키(Chunked Cookie) 유실 및 로그인 세션 지연 오류 수정 (Middleware Cookies Fix)
+
+### 23-1. 주요 작업 내역
+* **청크 쿠키 유실 문제 해결**:
+  - JWT 토큰 크기가 커서 Supabase가 다중 청크 쿠키로 분할(chunked cookie)해서 쓸 때, 기존 미들웨어(`middleware.ts`)의 개별 `set` 및 `remove` 로직이 호출될 때마다 매번 `NextResponse.next()`를 새롭게 재생성하면서 이전 청크 데이터들을 덮어쓰고 최종 청크만 반환하는 버그를 해결했습니다.
+  - 이로 인해 브라우저 콘솔에서 `@supabase/ssr: chunked cookie decoded to invalid JSON, treating as absent` 경고가 발생하며 서버 사이드 렌더링(SSR)에서 세션이 정상 로드되지 않아 새로고침(F5)을 해야만 로컬스토리지 복구 값을 통해 로그인 세션이 인식되던 현상을 수정했습니다.
+* **getAll / setAll 메서드 전환**:
+  - 공식 `@supabase/ssr` 가이드에 따라 개별 `get`/`set`/`remove` 핸들러 대신 `getAll()`과 `setAll()` 구조로 변경하여, 여러 청크 쿠키가 단일한 `NextResponse` 응답 인스턴스에 누락 없이 온전히 담겨 서빙되도록 구조를 개편했습니다.
+
+### 23-2. 변경 및 추가 파일 목록
+* **[MODIFY] [middleware.ts](file:///Users/a1234/Local%20Sites/creaibox/src/middleware.ts)**: Supabase 브라우저 쿠키 관리 메커니즘을 개별 get/set/remove에서 getAll/setAll로 전환하여 청크 데이터 무결성 보존.
+
+### 23-3. 검증 상태
+* `npx tsc --noEmit` 전체 컴파일 검증을 성공적으로 통과하여 0 errors 상태를 보존했습니다.
+
+---
+
+## 24. 무료 공유 에셋 업로더 활동명(닉네임) 동적 연동 및 이메일 표시 버그 수정 (Free Assets Uploader Dynamic Nickname Mapping)
+
+### 24-1. 주요 작업 내역
+* **동적 닉네임 리졸버 구현**:
+  - `free_assets` 테이블은 업로더 식별을 위해 고유 이메일(`uploader: 'jenam7720@gmail.com'`)을 저장하고 있었으나, 기존 목록 API가 해당 이메일을 그대로 내보내고 프론트엔드가 단순히 `@` 앞자리를 잘라 `by Jenam7720`으로 고정 노출하던 문제를 해결했습니다.
+  - 목록 API(`/api/free-assets/list/route.ts`) 내부에서 `free_assets` 테이블을 스캔한 뒤, 업로더 이메일 목록을 가지고 `profiles` 테이블의 실시간 `nickname` 값을 1회 일괄 조회(IN 쿼리)하여 매핑하도록 개선했습니다.
+  - 이로 인해 마이페이지(`mypage`)에서 활동 닉네임을 변경하면 과거 이미지 및 신규 이미지의 업로더 이름이 실시간으로 동기화되어 올바르게 `CreAibox` 등으로 표시됩니다.
+
+### 24-2. 변경 및 추가 파일 목록
+* **[MODIFY] [route.ts (list)](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/list/route.ts)**: 목록 조회 시 업로더 이메일들을 `profiles` 테이블의 닉네임과 동적 조회 매핑하여 응답하도록 개편.
+
+### 24-3. 검증 상태
+* `npx tsc --noEmit` 전체 컴파일 검증을 성공적으로 통과하여 0 errors 상태를 보존했습니다.
+
+---
+
+## 25. 무료 공유 에셋 라이브러리 가로 이미지 개수 조정 (Free Assets Grid Columns Adjustment)
+
+### 25-1. 주요 작업 내역
+* **그리드 컬럼 수 변경**:
+  - 무료 공유 에셋 화면의 그리드 레이아웃 컬럼 수를 기존 3개에서 4개로 조정하여 가로로 더 많은 이미지를 동시에 탐색할 수 있도록 공간 효율을 높였습니다.
+  - 반응형 동작을 위해 중간 화면 크기인 `md` 브레이크포인트에서는 3개, 일반 모바일 및 태블릿 등에서는 각각 1개 및 2개로 단계별 배치되도록 최적화했습니다.
+
+### 25-2. 변경 및 추가 파일 목록
+* **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/free-assets/page.tsx)**: 그리드 레이아웃의 `lg:grid-cols-3`를 `md:grid-cols-3 lg:grid-cols-4`로 컬럼 클래스 변경.
+
+### 25-3. 검증 상태
+* `npx tsc --noEmit` 전체 컴파일 검증을 성공적으로 통과하여 0 errors 상태를 보존했습니다.
+
+---
+
+## 26. 무료 공유 에셋 AI 생성 정보(프롬프트 및 생성 툴) 입력 및 조회 연동 (AI Free Asset Prompts & Tools Metadata)
+
+### 26-1. 주요 작업 내역
+* **데이터베이스 및 문서 정비**:
+  - `free_assets` 테이블에 AI 프롬프트와 제작 도구명을 적재할 수 있도록 `prompt` (TEXT) 및 `ai_tool` (VARCHAR(100)) 컬럼을 생성하고, 관련 DDL 문서([free-assets.sql](file:///Users/a1234/Local%20Sites/creaibox/docs/database/sql/free-assets.sql))와 스키마 명세([free-assets-schema.md](file:///Users/a1234/Local%20Sites/creaibox/docs/database/free-assets-schema.md))를 최신화했습니다.
+* **백엔드 API 및 Google Drive 메타 동기화**:
+  - 업로드 및 수정 API가 클라이언트 측의 prompt와 aiTool 필드를 파싱하고, 이를 Google Drive 파일 설명(JSON string)과 Supabase `free_assets` 테이블 레코드 양쪽에 동시에 적재하도록 업그레이드했습니다.
+  - 리스트 조회 API(`list/route.ts`)에서 DB로부터 두 컬럼을 읽어와 응답 규격 포맷에 바인딩하여 클라이언트에 내려주도록 수정했습니다.
+* **업로드 및 수정 양식 고도화**:
+  - 에셋 나눔 업로드 및 에셋 수정 모달에서 제작 방식을 "AI 제작 에셋"으로 선택할 경우에 한해, 이미지 생성에 활용된 AI 도구(미드져니, 나노바나나, ChatGPT 등 11개 주요 선택 프리셋 제공) 및 텍스트 프롬프트를 입력할 수 있는 필드가 동적으로 표출되는 분기를 완성했습니다.
+* **상세 뷰어 내 프롬프트 조회 및 복사 탑재**:
+  - 미디어 카드 클릭 시 팝업되는 상세 모달 우측 하단의 "태그" 목록 아래에 AI 프롬프트 구역을 신설했습니다.
+  - 프롬프트 영역 내에 사용 모델 배지와 프롬프트 텍스트를 출력하고, 원클릭 클립보드 복사(Copy) 단추를 배치하여 복사 시 "복사 완료!"로 문구가 전환되는 사용자 인터랙션을 결합했습니다.
+
+### 26-2. 변경 및 추가 파일 목록
+* **[MODIFY] [free-assets.sql](file:///Users/a1234/Local%20Sites/creaibox/docs/database/sql/free-assets.sql)**: prompt/ai_tool 컬럼 정의 및 기존 테이블 업데이트용 ALTER TABLE 마이그레이션 SQL 주석 추가.
+* **[MODIFY] [free-assets-schema.md](file:///Users/a1234/Local%20Sites/creaibox/docs/database/free-assets-schema.md)**: 데이터베이스 컬럼 일람에 prompt, ai_tool 설명 추가.
+* **[MODIFY] [google-drive.ts](file:///Users/a1234/Local%20Sites/creaibox/src/lib/google-drive.ts)**: `updateAssetMetadata` 유틸 함수 내 prompt 및 aiTool 병합/업데이트 매개변수 적용.
+* **[MODIFY] [upload/route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/upload/route.ts)**: formData 수신 처리 및 Google Drive 메타 / Supabase insert 결합.
+* **[MODIFY] [list/route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/list/route.ts)**: 목록 응답 형식에 prompt, aiTool 속성 맵 바인딩.
+* **[MODIFY] [update/route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/update/route.ts)**: JSON payload 수신 매개변수 바인딩 및 Google Drive 메타 / Supabase update 결합.
+* **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/free-assets/page.tsx)**: FreeAsset 인터페이스 갱신, 복사/업로드/수정 폼 관련 신규 state hooks 추가, Upload/Edit 모달 내 AI 입력 필드 조건부 렌더링, 상세 보기 모달 내 프롬프트 카드 뷰 및 클립보드 복사 단추 연동.
+
+### 26-3. 검증 상태
+* `npx tsc --noEmit` 전체 컴파일 검증을 성공적으로 통과하여 0 errors 상태를 보존했습니다.
+
+---
+
+## 27. 무료 공유 에셋 UI 라운딩 디자인 고도화, 생성 필터 복원 및 이미지 박스 직각화
+
+무료 공유 에셋 페이지의 이미지 카드를 Pixabay 스타일의 직각(Square) 이미지 박스로 재조정하고, 비율 필터 하단에 누락되었던 생성 방식 필터("AI 생성 이미지" 및 "실제 사진 이미지")를 복원했습니다. 아울러 에셋 상세 정보 및 에셋 수정 모달 등 모든 대화상자/입력 도구를 콘텐츠 아이디어 허브 규격의 세련된 라운드 디자인으로 통일했습니다.
+
+### 27-1. 주요 작업 내역
+* **이미지 박스 직각화 (Pixabay Style)**:
+  * 그리드 내의 미디어 카드(`div`) 모서리 및 상세보기 상세 모달 내 프리뷰 이미지/비디오(`img`, `video`) 모서리를 기존 `rounded-2xl` 및 `rounded-xl`에서 `rounded-none`으로 수정하여 픽사베이와 유사한 직각(Square) 레이아웃으로 교정했습니다.
+* **제작 방식 필터 복원**:
+  * `selectedGenerationType` 필터 상태를 추가하여 비율 필터 바로 아래에 "전체 이미지", "AI 생성 이미지", "실제 사진 이미지" 버튼 탭을 신설하고 데이터 필터링(`filteredAssets`)을 완벽하게 재연동했습니다.
+* **모달 및 입력 UI 라운딩 전면 반영 (Idea Hub Style)**:
+  * 이미지 상세 모달(`rounded-3xl`), 수정 모달(`rounded-3xl`), 닫기 버튼(`rounded-xl`), 수정 폼(제목, 분류, 비율, 태그, 카메라 정보, AI 생성 도구, 프롬프트 입력창 등)에 사용되던 각진 `rounded-none` 테두리를 모두 지우고 콘텐츠 아이디어 허브 규격의 부드러운 라운드(`rounded-xl`, `rounded-lg`) 디자인을 적용 완료했습니다.
+
+### 27-2. 변경 및 추가 파일 목록
+* **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/free-assets/page.tsx)**:
+  * `selectedGenerationType` state 추가 및 filter 연동.
+  * 미디어 카드 컨테이너 및 상세 모달 내 프리뷰 요소를 `rounded-none`으로 수정.
+  * 제작 방식 필터 마크업 추가.
+  * 상세 보기 및 수정 모달의 전체 래퍼를 `rounded-none`에서 `rounded-3xl`로 변경.
+  * 폼 컨트롤(인풋, 셀렉트, 텍스트에어리어 등)과 기타 버튼을 `rounded-none`에서 `rounded-xl` / `rounded-lg`로 변경.
+
+### 27-3. 검증 상태
+* `npx tsc --noEmit` 수행 결과 컴파일 오류가 전혀 없는 0 errors 상태를 완벽 검증했습니다.
+
+---
+
+## 28. 무료 공유 에셋 업로더 및 관리자(ADMIN) 대상 편집/삭제 권한 부여 및 UI 연동
+
+무료 공유 에셋의 본인 업로드분 혹은 관리자 계정인 경우 에셋을 수정하고 삭제할 수 있도록 프론트엔드/백엔드 권한 연동 및 UI 동작을 완료했습니다.
+
+### 28-1. 주요 작업 내역
+* **백엔드 API uploaderEmail 노출**:
+  * 목록 API(`/api/free-assets/list/route.ts`) 응답에 데이터베이스 원본 이메일인 `uploaderEmail`을 추가하여 프론트엔드에서 세션 이메일과 비교할 수 있도록 개선했습니다.
+* **프론트엔드 권한 비교 연동**:
+  * `src/app/studio/library/free-assets/page.tsx`에서 `currentUserEmail`과 에셋의 `uploaderEmail` 매칭 혹은 `isAdmin` 여부를 확인하는 권한 판별 로직을 완성했습니다.
+* **그리드 카드 퀵 에딧(Quick Edit) 탑재**:
+  * 본인 업로드 및 어드민 권한 에셋에 대해 마우스 호버 오버레이 시 우측 상단 액션 바에 연동된 돋보기/좋아요 등 옆에 `Edit` (정보 수정) 아이콘 버튼을 즉각 노출하여 빠른 편집이 가능하도록 설계했습니다.
+* **상세 모달 "에셋 관리" 영역 추가**:
+  * 상세보기 모달의 우측 사이드바 패널 상단에 권한 보유자 전용 "에셋 관리" 카드를 신설하고, "정보 수정" 및 "에셋 삭제" 버튼을 결합하여 기존에 구현된 백엔드 메타데이터 업데이트/구글드라이브 삭제 흐름(`handleEditSubmit`, `handleDeleteAsset`)에 매핑했습니다.
+
+### 28-2. 변경 및 추가 파일 목록
+* **[MODIFY] [list/route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/list/route.ts)**: 목록 응답 데이터셋에 `uploaderEmail` 컬럼 매핑 추가.
+* **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/free-assets/page.tsx)**:
+  * `FreeAsset` 인터페이스 내 `uploaderEmail` 필드 정의 추가.
+  * `lucide-react`로부터 `Edit`, `Trash2` 아이콘 추가 임포트.
+  * 에셋 카드 호버 액션 레이어 내 퀵 에딧(`Edit`) 버튼 추가.
+  * 상세 보기 사이드 패널에 조건부 "에셋 관리" 카드 마크업 설계.
+
+### 28-3. 검증 상태
+* `npx tsc --noEmit` 수행 결과 컴파일 오류가 전혀 없는 0 errors 상태를 완벽 검증했습니다.

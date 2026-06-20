@@ -1,0 +1,39 @@
+Created At: 2026-06-20T07:09:51Z
+Completed At: 2026-06-20T07:09:51Z
+File Path: `file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/editor/UniversalBlogEditor.tsx`
+Total Lines: 2676
+Total Bytes: 100994
+Showing lines 980 to 1010
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+980:   useEffect(() => {
+981:     if (!editor) return;
+982:     previousImageUrlsRef.current = extractImageUrlsFromEditor(editor);
+983:   }, [editor, manuscriptId]);
+984: 
+985:   useEffect(() => {
+986:     if (!editor) return;
+987:     if (content === lastExternalContentRef.current) return;
+988: 
+989:     const nextHtml = markdownToHtml(content);
+990: 
+991:     if (nextHtml !== editor.getHTML()) {
+992:       setTimeout(() => {
+993:         if (editor.isDestroyed) return;
+994:         editor.commands.setContent(nextHtml, { emitUpdate: false });
+995:         previousImageUrlsRef.current = extractImageUrlsFromEditor(editor);
+996:         lastExternalContentRef.current = content;
+997:       }, 0);
+998:     }
+999:   }, [content, editor]);
+1000: 
+1001: 
+1002: 
+1003:   useEffect(() => {
+1004:     if (saveFeedback !== "saved") return;
+1005: 
+1006:     const timer = setTimeout(() => setSaveFeedback("idle"), 3000);
+1007:     return () => clearTimeout(timer);
+1008:   }, [saveFeedback]);
+1009: 
+1010:   const handleLocalCopy = useCallback(() => {
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

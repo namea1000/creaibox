@@ -547,8 +547,8 @@ export default function Sidebar({
         className={`
           group relative flex items-center rounded-lg border px-2.5 py-2 text-[13px] font-bold transition-all
           ${isActive
-            ? "border-blue-400/25 bg-blue-500/15 text-white shadow-[inset_0_0_0_1px_rgba(59,130,246,0.10),0_10px_24px_rgba(37,99,235,0.10)]"
-            : "border-transparent text-zinc-100 hover:border-blue-400/15 hover:bg-blue-500/10 hover:text-white"
+            ? "border-blue-400/25 bg-blue-500/15 text-blue-600 dark:text-white shadow-[inset_0_0_0_1px_rgba(59,130,246,0.10),0_10px_24px_rgba(37,99,235,0.10)]"
+            : "border-transparent text-zinc-650 dark:text-zinc-100 hover:border-blue-400/15 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-white"
           }
           ${isCollapsed ? "lg:justify-center lg:px-0" : "gap-2.5"}
         `}
@@ -585,8 +585,8 @@ export default function Sidebar({
           className={`
             relative flex items-center rounded-lg border px-2.5 py-2 text-[13px] font-bold transition-all
             ${isActive
-              ? "border-blue-400/25 bg-blue-500/15 text-white shadow-[inset_0_0_0_1px_rgba(59,130,246,0.10),0_10px_24px_rgba(37,99,235,0.10)]"
-              : "border-transparent text-zinc-100 hover:border-blue-400/15 hover:bg-blue-500/10 hover:text-white"
+              ? "border-blue-400/25 bg-blue-500/15 text-blue-600 dark:text-white shadow-[inset_0_0_0_1px_rgba(59,130,246,0.10),0_10px_24px_rgba(37,99,235,0.10)]"
+              : "border-transparent text-zinc-650 dark:text-zinc-100 hover:border-blue-400/15 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-white"
             }
           `}
         >
@@ -603,7 +603,7 @@ export default function Sidebar({
               e.stopPropagation();
               toggleGroup(group.key);
             }}
-            className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-700 hover:text-white"
+            className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 hover:text-zinc-700 dark:hover:text-white transition-colors duration-300"
           >
             {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           </button>
@@ -623,8 +623,8 @@ export default function Sidebar({
                   className={`
                     relative flex items-center gap-2 rounded-md border px-2.5 py-2 text-[13px] font-bold transition
                     ${childActive
-                      ? "border-blue-400/20 bg-blue-500/15 text-white shadow-[inset_0_0_0_1px_rgba(59,130,246,0.08)]"
-                      : "border-transparent text-zinc-300 hover:border-blue-400/15 hover:bg-blue-500/10 hover:text-white"
+                      ? "border-blue-400/20 bg-blue-500/15 text-blue-600 dark:text-white shadow-[inset_0_0_0_1px_rgba(59,130,246,0.08)]"
+                      : "border-transparent text-zinc-500 dark:text-zinc-300 hover:border-blue-400/15 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-white"
                     }
                   `}
                 >
@@ -655,15 +655,15 @@ export default function Sidebar({
   return (
     <aside
       className={`
-        fixed left-0 top-0 z-[70] flex h-screen flex-col border-r border-zinc-800/80
-        bg-[#090e15] transition-all duration-300 ease-in-out lg:sticky
+        fixed left-0 top-0 z-[70] flex h-screen flex-col border-r border-zinc-200 dark:border-zinc-800/80
+        bg-white dark:bg-[#090e15] transition-all duration-300 ease-in-out lg:sticky
         ${isCollapsed ? "lg:w-14" : "lg:w-[220px]"}
         ${isMobileOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"}
       `}
     >
-      <div className="flex h-20 items-center border-b border-zinc-800/80 px-3">
+      <div className="flex h-20 items-center border-b border-zinc-200 dark:border-zinc-800/80 px-3">
         <Link href="/" className="flex min-w-0 items-center gap-2.5">
-          <div className="flex h-[46px] w-[46px] shrink-0 items-center justify-center overflow-hidden rounded-xl shadow-lg shadow-blue-950/30">
+          <div className="flex h-[46px] w-[46px] shrink-0 items-center justify-center overflow-hidden rounded-xl shadow-lg shadow-blue-950/5 dark:shadow-blue-950/30">
             <Image
               src="/icon.png"
               alt="Creaibox"
@@ -676,7 +676,7 @@ export default function Sidebar({
 
           {!isCollapsed && (
             <div className="flex min-w-0 items-center">
-              <p className="truncate text-2xl font-black leading-none tracking-tight text-white">
+              <p className="truncate text-2xl font-black leading-none tracking-tight text-zinc-800 dark:text-white">
                 Creaibox
               </p>
             </div>

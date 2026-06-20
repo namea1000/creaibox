@@ -353,9 +353,9 @@ export default function NaverWritingHomePage() {
   ];
 
   return (
-    <div className="min-h-full bg-[#06080d] px-5 py-8 text-zinc-100 lg:px-8">
+    <div className="min-h-full w-full bg-zinc-50 dark:bg-[#06080d] px-5 py-8 text-zinc-800 dark:text-zinc-100 lg:px-8 transition-colors duration-300">
       <div className="mx-auto max-w-7xl space-y-8">
-        <section className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-[#061914] p-7 shadow-2xl">
+        <section className="rounded-2xl border border-zinc-800 bg-white dark:bg-gradient-to-br dark:from-zinc-900 dark:to-[#061914] p-7 shadow-sm dark:shadow-2xl transition-colors duration-300">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-emerald-400">
@@ -400,13 +400,13 @@ export default function NaverWritingHomePage() {
             return (
               <div
                 key={item.label}
-                className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5"
+                className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-5 shadow-sm dark:shadow-none transition-colors duration-300"
               >
                 <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
                   <Icon size={20} />
                 </div>
 
-                <p className="text-xl font-black text-white">{item.value}</p>
+                <p className="text-xl font-black text-zinc-900 dark:text-white">{item.value}</p>
 
                 <p className="mt-1 text-xs font-bold text-zinc-500">
                   {item.label}
@@ -417,10 +417,10 @@ export default function NaverWritingHomePage() {
         </section>
 
         <section className="grid gap-4 xl:grid-cols-[1.05fr_1.95fr]">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-5 shadow-sm dark:shadow-none transition-colors duration-300">
             <div className="mb-4 flex items-center gap-3">
               <Home className="text-emerald-400" size={20} />
-              <h2 className="text-lg font-black text-white">
+              <h2 className="text-lg font-black text-zinc-900 dark:text-white">
                 네이버 블로그 연결
               </h2>
             </div>
@@ -453,10 +453,10 @@ export default function NaverWritingHomePage() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-5 shadow-sm dark:shadow-none transition-colors duration-300">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-black text-white">
+                <h2 className="text-lg font-black text-zinc-900 dark:text-white">
                   실시간 키워드 분석
                 </h2>
                 <p className="mt-1 text-sm text-zinc-500">
@@ -549,7 +549,7 @@ export default function NaverWritingHomePage() {
         </section>
 
         <section className="grid gap-4 lg:grid-cols-3">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-6 shadow-sm dark:shadow-none transition-colors duration-300">
             <div className="flex items-center gap-3">
               <Target className="text-emerald-400" size={20} />
               <h2 className="text-lg font-black">빠른 시작</h2>
@@ -567,7 +567,7 @@ export default function NaverWritingHomePage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-6 shadow-sm dark:shadow-none transition-colors duration-300">
             <div className="flex items-center gap-3">
               <Clock className="text-blue-400" size={20} />
               <h2 className="text-lg font-black">최근 작업</h2>
@@ -578,7 +578,7 @@ export default function NaverWritingHomePage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-6 shadow-sm dark:shadow-none transition-colors duration-300">
             <div className="flex items-center gap-3">
               <BookOpen className="text-yellow-400" size={20} />
               <h2 className="text-lg font-black">추천 워크플로우</h2>

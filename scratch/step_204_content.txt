@@ -1,0 +1,82 @@
+Created At: 2026-06-20T07:10:51Z
+Completed At: 2026-06-20T07:10:51Z
+File Path: `file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/editor/UniversalBlogEditor.tsx`
+Total Lines: 2676
+Total Bytes: 100994
+Showing lines 1700 to 1850
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1700:                 if (firstSub) {
+1701:                   setAiSubTopic?.(firstSub.name);
+1702:                 } else {
+1703:                   setAiSubTopic?.("");
+1704:                 }
+1705:               } else {
+1706:                 setAiMainTopic?.("");
+1707:                 setAiSubTopic?.("");
+1708:               }
+1709:             }}
+1710:             disabled={isAiGenerating}
+1711:             className="h-9 w-36 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-cyan-500 font-bold disabled:opacity-50 text-center"
+1712:           >
+1713:             <option value="" disabled hidden>대분류</option>
+1714:             <option value="" className="bg-slate-950">대분류 선택</option>
+1715:             {[
+1716:               "기술 & 디지털",
+1717:               "경제 & 비즈니스",
+1718:               "생활 & 문화",
+1719:               "건강 & 라이프스타일",
+1720:               "교육 & 지식",
+1721:               "사회 & 국제",
+1722:               "법률 & 정책 & 복지",
+1723:               "환경 & 지구과학",
+1724:               "크리에이티브 & 예술",
+1725:               "산업 & 미래",
+1726:             ].map((group) => (
+1727:               <option key={group} value={group} className="bg-slate-950">
+1728:                 {groupEmojis[group] || "📁"} {group}
+1729:               </option>
+1730:             ))}
+1731:           </select>
+1732: 
+1733:           {/* 8. 상세 분야 */}
+1734:           <select
+1735:            
+<truncated 4022 bytes>
+e);
+1815:                      setAiSubTopic?.("");
+1816:                   } else {
+1817:                     setAiSubTopic?.(val);
+1818:                   }
+1819:                 }}
+1820:                 disabled={isAiGenerating || !aiMainTopic}
+1821:                 className="h-9 w-44 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-cyan-500 font-bold disabled:opacity-50 disabled:cursor-not-allowed text-center"
+1822:               >
+1823:                 <option value="" disabled hidden>추천 시리즈</option>
+1824:                 <option value="" className="bg-slate-950">
+1825:                   {aiMainTopic ? "시리즈 선택" : "상세분야 필요"}
+1826:                 </option>
+1827:                 {filteredSubTopics.map((sub) => (
+1828:                   <option key={sub.id} value={sub.name} className="bg-slate-950">
+1829:                     ⚡ {sub.name}
+1830:                   </option>
+1831:                 ))}
+1832:                 {aiMainTopic && (
+1833:                   <option value="__custom__" className="bg-slate-950">
+1834:                     📝 직접 입력...
+1835:                   </option>
+1836:                 )}
+1837:               </select>
+1838:             );
+1839:           })()}
+1840: 
+1841:           {/* 10. 메인 키워드 주제 (구 타겟 키워드) */}
+1842:           <input
+1843:             type="text"
+1844:             placeholder="메인 키워드 주제 입력"
+1845:             value={aiTargetKeyword}
+1846:             onChange={(e) => setAiTargetKeyword?.(e.target.value)}
+1847:             disabled={isAiGenerating}
+1848:             className="h-9 w-64 rounded-lg border border-zinc-800 bg-black/40 px-3 text-xs text-white outline-none focus:border-cyan-500 font-bold disabled:opacity-50 text-center"
+1849:           />
+1850: 
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

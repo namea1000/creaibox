@@ -202,147 +202,143 @@ export default function Header() {
         </nav>
 
         <div className="hidden w-[390px] shrink-0 items-center justify-end gap-3 lg:flex">
+          <Link
+            href="/studio"
+            className="inline-flex h-14 items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 text-sm font-black text-white shadow-lg shadow-violet-500/20 transition hover:scale-[1.02]"
+          >
+            <Sparkles size={16} />
+            AI 스튜디오 시작하기
+          </Link>
+
           {user ? (
-            <>
-              <Link
-                href="/studio"
-                className="inline-flex h-14 items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 text-sm font-black text-white shadow-lg shadow-violet-500/20 transition hover:scale-[1.02]"
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setIsProfileOpen((prev) => !prev)}
+                className="flex h-14 min-w-[172px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 shadow-sm transition hover:border-violet-200 hover:bg-violet-50"
               >
-                <Sparkles size={16} />
-                AI 스튜디오 시작하기
-              </Link>
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-xs font-black text-white">
+                  {initials}
+                </div>
 
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={() => setIsProfileOpen((prev) => !prev)}
-                  className="flex h-14 min-w-[172px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 shadow-sm transition hover:border-violet-200 hover:bg-violet-50"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-xs font-black text-white">
-                    {initials}
-                  </div>
+                <div className="min-w-0 flex-1 text-left">
+                  <p className="truncate text-sm font-black leading-tight text-slate-800">
+                    {displayName}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs font-bold leading-tight text-slate-400">
+                    {planName}
+                  </p>
+                </div>
 
-                  <div className="min-w-0 flex-1 text-left">
-                    <p className="truncate text-sm font-black leading-tight text-slate-800">
-                      {displayName}
-                    </p>
-                    <p className="mt-0.5 truncate text-xs font-bold leading-tight text-slate-400">
-                      {planName}
-                    </p>
-                  </div>
+                <ChevronDown
+                  size={15}
+                  className={`shrink-0 text-slate-400 transition-transform ${isProfileOpen ? "rotate-180" : ""
+                    }`}
+                />
+              </button>
 
-                  <ChevronDown
-                    size={15}
-                    className={`shrink-0 text-slate-400 transition-transform ${isProfileOpen ? "rotate-180" : ""
-                      }`}
-                  />
-                </button>
-
-                {isProfileOpen && (
-                  <div className="absolute right-0 mt-3 w-72 overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-2xl">
-                    <div className="border-b border-slate-100 bg-slate-50 px-5 py-5">
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-sm font-black text-white">
-                          {initials}
-                        </div>
-
-                        <div className="min-w-0">
-                          <p className="truncate text-lg font-black text-slate-800">
-                            {displayName}
-                          </p>
-                          <p className="mt-0.5 text-sm font-bold text-slate-500">
-                            {planName}
-                          </p>
-                        </div>
+              {isProfileOpen && (
+                <div className="absolute right-0 mt-3 w-72 overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-2xl">
+                  <div className="border-b border-slate-100 bg-slate-50 px-5 py-5">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-sm font-black text-white">
+                        {initials}
                       </div>
 
-                      <p className="mt-4 truncate border-t border-slate-200 pt-4 text-xs font-bold text-slate-400">
-                        {user.email}
-                      </p>
+                      <div className="min-w-0">
+                        <p className="truncate text-lg font-black text-slate-800">
+                          {displayName}
+                        </p>
+                        <p className="mt-0.5 text-sm font-bold text-slate-500">
+                          {planName}
+                        </p>
+                      </div>
                     </div>
 
-                    <Link
-                      href="/studio"
-                      onClick={() => setIsProfileOpen(false)}
-                      className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
-                    >
-                      <LayoutDashboard size={18} />
-                      스튜디오로 이동
-                    </Link>
-
-                    <Link
-                      href="/pricing"
-                      onClick={() => setIsProfileOpen(false)}
-                      className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
-                    >
-                      <Sparkles size={18} />
-                      요금제 업그레이드
-                    </Link>
-
-                    <Link
-                      href="/pricing"
-                      onClick={() => setIsProfileOpen(false)}
-                      className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
-                    >
-                      <CreditCard size={18} />
-                      요금제 관리
-                    </Link>
-
-                    <Link
-                      href="/mypage"
-                      onClick={() => setIsProfileOpen(false)}
-                      className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
-                    >
-                      <UserIcon size={18} />
-                      프로필
-                    </Link>
-
-                    <Link
-                      href="/apivault"
-                      onClick={() => setIsProfileOpen(false)}
-                      className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
-                    >
-                      <Settings size={18} />
-                      설정 / API 키 관리
-                    </Link>
-
-                    <Link
-                      href="/help"
-                      onClick={() => setIsProfileOpen(false)}
-                      className="flex items-center gap-4 border-t border-slate-100 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
-                    >
-                      <HelpCircle size={18} />
-                      도움말
-                    </Link>
-
-                    <button
-                      onClick={handleLogout}
-                      disabled={isLoggingOut}
-                      className="flex w-full items-center gap-4 border-t border-slate-100 px-5 py-3 text-left text-sm font-black text-red-500 transition hover:bg-red-50 disabled:opacity-50"
-                    >
-                      <LogOut size={18} />
-                      {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
-                    </button>
+                    <p className="mt-4 truncate border-t border-slate-200 pt-4 text-xs font-bold text-slate-400">
+                      {user.email}
+                    </p>
                   </div>
-                )}
-              </div>
-            </>
+
+                  <Link
+                    href="/studio"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
+                  >
+                    <LayoutDashboard size={18} />
+                    스튜디오로 이동
+                  </Link>
+
+                  <Link
+                    href="/pricing"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
+                  >
+                    <Sparkles size={18} />
+                    요금제 업그레이드
+                  </Link>
+
+                  <Link
+                    href="/pricing"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
+                  >
+                    <CreditCard size={18} />
+                    요금제 관리
+                  </Link>
+
+                  <Link
+                    href="/mypage"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
+                  >
+                    <UserIcon size={18} />
+                    프로필
+                  </Link>
+
+                  <Link
+                    href="/apivault"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
+                  >
+                    <Settings size={18} />
+                    설정 / API 키 관리
+                  </Link>
+
+                  <Link
+                    href="/help"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="flex items-center gap-4 border-t border-slate-100 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
+                  >
+                    <HelpCircle size={18} />
+                    도움말
+                  </Link>
+
+                  <button
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className="flex w-full items-center gap-4 border-t border-slate-100 px-5 py-3 text-left text-sm font-black text-red-500 transition hover:bg-red-50 disabled:opacity-50"
+                  >
+                    <LogOut size={18} />
+                    {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
-            <>
+            <div className="flex items-center gap-1 pl-2">
+              <Link
+                href="/signup"
+                className="rounded-xl px-3.5 py-2 text-sm font-extrabold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+              >
+                회원가입
+              </Link>
               <Link
                 href="/login"
-                className="rounded-xl px-4 py-2 text-sm font-extrabold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                className="rounded-xl px-3.5 py-2 text-sm font-extrabold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
               >
                 로그인
               </Link>
-
-              <Link
-                href="/signup"
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-violet-500/20 transition hover:scale-[1.02]"
-              >
-                <Sparkles size={16} />
-                무료로 시작하기
-              </Link>
-            </>
+            </div>
           )}
         </div>
 
@@ -398,11 +394,11 @@ export default function Header() {
                 </Link>
 
                 <Link
-                  href="/signup"
+                  href="/studio"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 px-4 py-3 text-center text-sm font-black text-white"
                 >
-                  무료 시작
+                  AI 스튜디오 시작하기
                 </Link>
               </>
             )}

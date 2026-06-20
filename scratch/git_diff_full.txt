@@ -1,0 +1,459 @@
+diff --git a/src/components/writing/editor/UniversalBlogEditor.tsx b/src/components/writing/editor/UniversalBlogEditor.tsx
+index d0727af..4454c87 100644
+--- a/src/components/writing/editor/UniversalBlogEditor.tsx
++++ b/src/components/writing/editor/UniversalBlogEditor.tsx
+@@ -53,7 +53,10 @@ import {
+   Trash2,
+   Type,
+   Wand2,
++  Zap,
+ } from "lucide-react";
++import { generateGeminiContentWithFallback } from "@/lib/client/api-vault";
++import { robustParseJson } from "@/lib/utils";
+ 
+ const postTypeOptions = [
+   { label: "① 인사이트 & 트렌드", disabled: true },
+@@ -164,6 +167,47 @@ interface UniversalBlogEditorProps {
+   contentImageSourceType?: string;
+   onGenerateSeo?: () => Promise<void>;
+   isGeneratingSeo?: boolean;
++  aiTargetKeyword?: string;
++  setAiTargetKeyword?: (v: string) => void;
++  aiContentType?: string;
++  setAiContentType?: (v: string) => void;
++  aiPostType?: string;
++  setAiPostType?: (v: string) => void;
++  aiSelectedTone?: string;
++  setAiSelectedTone?: (v: string) => void;
++  aiWordCountGoal?: string;
++  setAiWordCountGoal?: (v: string) => void;
++  aiStrategyLevel?: string;
++  setAiStrategyLevel?: (v: string) => void;
++  aiResultFormat?: string;
++  setAiResultFormat?: (v: string) => void;
++  aiLargeCategory?: string;
++  setAiLargeCategory?: (v: string) => void;
++  aiMainTopic?: string;
++  setAiMainTopic?: (v: string) => void;
++  aiSubTopic?: string;
++  setAiSubTopic?: (v: string) => void;
++  aiReferenceNote?: string;
++  setAiReferenceNote?: (v: string) => void;
++  aiUseSearch?: boolean;
++  setAiUseSearch?: (v: boolean) => void;
++  isAiGenerating?: boolean;
++  aiStatusMessage?: string;
++  aiErrorMessage?: string;
++  handleAiGenerateInEditor?: (
++    targetKeyword: string,
++    contentType: string,
++    postType: string,
++    selectedTone: string,
++    wordCountGoal: string,
++    strategyLevel: string,
++    resultFormat: string,
++    largeCategory: string,
++    mainTopic: string,
++    subTopic: string,
++    referenceNote: string,
++    useSearch: boolean
++  ) => Promise<void>;
+ }
+ 
+ function escapeHtml(value: string) {
+@@ -432,6 +476,34 @@ export default function UniversalBlogEditor({
+   contentImageSourceType = DEFAULT_CONTENT_IMAGE_SOURCE_TYPE,
+   onGenerateSeo,
+   isGeneratingSeo = false,
++  aiTargetKeyword = "",
++  setAiTargetKeyword,
++  aiContentType = "",
++  setAiContentType,
++  aiPostType = "",
++  setAiPostType,
++  aiSelectedTone = "",
++  setAiSelectedTone,
++  aiWordCountGoal = "",
++  setAiWordCountGoal,
++  aiStrategyLevel = "",
++  setAiStrategyLevel,
++  aiResultFormat = "",
++  setAiResultFormat,
++  aiLargeCategory = "",
++  setAiLargeCategory,
++  aiMainTopic = "",
++  setAiMainTopic,
++  aiSubTopic = "",
++  setAiSubTopic,
++  aiReferenceNote = "",
++  setAiReferenceNote,
++  aiUseSearch = false,
++  setAiUseSearch,
++  isAiGenerating = false,
++  aiStatusMessage = "",
++  aiErrorMessage = "",
++  handleAiGenerateInEditor,
+ }: UniversalBlogEditorProps) {
+   const supabase = useMemo(() => createClient(), []);
+   const [saveFeedback, setSaveFeedback] = useState<"idle" | "saved">("idle");
+@@ -446,6 +518,11 @@ export default function UniversalBlogEditor({
+   const postTypeDropdownRef = useRef<HTMLDivElement>(null);
+   const copyTimerRef = useRef<NodeJS.Timeout | null>(null);
+ 
++  const [isCustomSubTopic, setIsCustomSubTopic] = useState(false);
++  const [recreateUrl, setRecreateUrl] = useState("");
++  const [isFetchingOriginal, setIsFetchingOriginal] = useState(false);
++  const [isRecreating, setIsRecreating] = useState(false);
++
+ 
+   useEffect(() => {
+     function handleClickOutside(event: MouseEvent) {
+@@ -933,6 +1010,145 @@ export default function UniversalBlogEditor({
+     setContent(html);
+   }, [editor, setContent]);
+ 
++  const handleFetchOriginalText = async () => {
++    if (!recreateUrl.trim()) {
++      alert("가져올 네이버 블로그 글 주소를 입력해 주세요 사장님!");
++      return;
++    }
++    setIsFetchingOriginal(true);
++    try {
++      const extractResponse = await fetch(
++        `/api/naver-extract?url=${encodeURIComponent(recreateUrl.trim())}`
++      );
++      const extractedResult = await extractResponse.json();
++
++      if (!extractResponse.ok) {
++        throw new Error(extractedResult?.error || "네이버 블로그 본문 추출에 실패했습니다.");
++      }
++
++      const { title: extTitle, content: extContent } = extractedResult;
++      
++      if (setTitle) setTitle(extTitle || "추출된 제목");
++      if (setContent) setContent(extContent || "");
++      
++      alert("원글 제목과 본문을 성공적으로 가져왔습니다!");
++    } catch (error: any) {
++      console.error(error);
++      alert(error.message || "원글을 가져오는 도중 오류가 발생했습니다.");
++    } finally {
++      setIsFetchingOriginal(false);
++    }
++  };
++
++  const handleStartRecreation = async () => {
++    let textToRecreate = editor ? editor.getHTML() : content;
++    let titleToRecreate = title || "";
++
++    // If recreateUrl is provided, fetch original text first if the editor is empty
++    const plainText = textToRecreate.replace(/<[^>]*>/g, "").trim();
++    if (!plainText && recreateUrl.trim()) {
++      setIsFetchingOriginal(true);
++      try {
++        const extractResponse = await fetch(
++          `/api/naver-extract?url=${encodeURIComponent(recreateUrl.trim())}`
++        );
++        const extractedResult = await extractResponse.json();
++
++        if (!extractResponse.ok) {
++          throw new Error(extractedResult?.error || "네이버 블로그 본문 추출에 실패했습니다.");
++        }
++
++        titleToRecreate = extractedResult.title || "추출된 제목";
++        textToRecreate = extractedResult.content || "";
++        
++        if (setTitle) setTitle(titleToRecreate);
++        if (setContent) setContent(textToRecreate);
++      } catch (error: any) {
++        console.error(error);
++        alert(error.message || "원글을 가져오는 도중 오류가 발생했습니다.");
++        setIsFetchingOriginal(false);
++        return;
++      } finally {
++        setIsFetchingOriginal(false);
++      }
++    }
++
++    if (!textToRecreate.replace(/<[^>]*>/g, "").trim()) {
++      alert("재창조할 본문 내용이 없습니다. 먼저 타겟 글 주소를 입력하거나 본문을 작성해 주세요.");
++      return;
++    }
++
++    setIsRecreating(true);
++
++    try {
++      const {
++        data: { user },
++      } = await supabase.auth.getUser();
++
++      const selectedTone = aiSelectedTone || "💻 전문적이고 통찰력 있는 분석 (기술 블로그)";
++      
++      const keywordInstruction = aiTargetKeyword?.trim()
++        ? `새로 탄생할 원고의 집중 공략 타겟 키워드는 '${aiTargetKeyword.trim()}'이며, 반드시 이 키워드를 중심으로 최적화하라.`
++        : `원본 글을 분석해 검색성과 문맥 적합성이 가장 높은 대표 타겟 키워드 1개를 스스로 선정하고, 그 키워드로 최적화하라.`;
++
++      const lengthInstruction =
++        !aiWordCountGoal || aiWordCountGoal === "same"
++          ? `본문 길이는 원본과 대략 같은 길이로 맞추되, 정보량และ 문단 구조는 유지하라.`
++          : `본문 길이는 공백 포함 약 ${aiWordCountGoal}자 수준으로 충분히 길고 풍부하게 작성하라.`;
++
++      const rawInputContext = `
++        [실제 추출된 원본 제목]: ${titleToRecreate}
++        [실제 추출된 원본 본문]
++        ${textToRecreate}
++      `;
++
++      const prompt = `
++        너는 네이버 스마트블록 C-Rank 및 DIA+ 로봇의 문서 유사도 카피캣 탐지기 필터를 완벽하게 우회 분쇄하는 원고 재창조 엔진이다.
++        주어진 [기반 정보 영역]의 데이터 가치와 핵심 정보는 고스란히 계승하되, 문장의 어순, 형태소 수식 관계, 단어 배열을 180도 전면 파괴하여 완전히 최초로 창작된 오리지널 문서처럼 보이게 가공하라.
++
++        [기반 정보 영역]
++        ${rawInputContext}
++
++        [빌드 조건 마스트 공정]
++        1. ${keywordInstruction}
++        2. 최종 선정한 타겟 키워드를 본문 안에 3회~5회 내외로 자연스럽게 배치하라.
++        3. 말투는 반드시 '${selectedTone}'에 맞춰 유지하라.
++        4. ${lengthInstruction}
++        5. 마크다운의 대제목 및 소제목 구조(##, ###)를 반드시 3개 이상 쪼개어 가독성 벨트를 형성하라.
++        6. 동시에 원본 글의 핵심 키워드, 핵심 주제, 핵심 내용을 사람이 한눈에 파악할 수 있게 별도 분석하라.
++        7. 결과물은 부연설명이나 마크다운 코드 블록 선언부 기호 없이 오직 순수한 JSON 형식 데이터 규격으로만 정확하게 배출하라.
++        
++        [JSON 반환 양식 필수 규격]
++        { "targetKeyword": "최종 선정된 대표 타겟 키워드 1개", "title": "유사도를 회피하고 시선을 강탈하는 고품질 새 제목", "content": "새로 전면 재창조된 풍부한 내용의 마크다운 본문", "sourceAnalysis": { "keywords": ["원본 핵심 키워드1", "원본 핵심 키워드2", "원본 핵심 키워드3"], "topic": "원본 글의 핵심 주제를 한 문장으로 정리한 결과", "summaryPoints": ["원본 핵심 내용 요약 1", "원본 핵심 내용 요약 2", "원본 핵심 내용 요약 3"] } }
++      `;
++
++      const generationResult = await generateGeminiContentWithFallback({
++        prompt,
++        responseMimeType: "application/json",
++        type: "naver_recreate",
++        userId: user?.id || null,
++        userEmail: user?.email || null,
++      });
++
++      const parsedData = robustParseJson(generationResult.text);
++      const finalTitle = parsedData.title || `[오리지널] ${parsedData.targetKeyword || "핵심 키워드"} 최적화 보고서`;
++      const finalContent = parsedData.content || "";
++
++      if (setTitle) setTitle(finalTitle);
++      if (setContent) setContent(finalContent);
++      if (parsedData.targetKeyword && setAiTargetKeyword) {
++        setAiTargetKeyword(parsedData.targetKeyword);
++      }
++
++      alert("AI 글 재창조가 완료되었습니다!");
++    } catch (error: any) {
++      console.error(error);
++      alert(error.message || "AI 글 재창조 가동 도중 오류가 발생했습니다.");
++    } finally {
++      setIsRecreating(false);
++    }
++  };
++
+   useEffect(() => {
+     const handleInsertImage = (e: Event) => {
+       const customEvent = e as CustomEvent<{ url: string; alt?: string; title?: string }>;
+@@ -1541,8 +1757,201 @@ export default function UniversalBlogEditor({
+           </ToolbarButton>
+         </div>
+ 
+-        {/* 3번째 줄 - AI 관련 도구 */}
++        {/* AI 포스팅 글쓰기 가로 제어 바 */}
++        <div className="flex flex-wrap items-center gap-2 border-t border-zinc-800/40 pt-1.5">
++          <div className="flex items-center gap-1.5 shrink-0 text-cyan-400 text-xs font-black w-28">
++            <Sparkles size={14} className="animate-pulse" />
++            <span>AI 포스팅 글쓰기</span>
++          </div>
++          <div className="mx-1 h-4 w-px bg-zinc-850 shrink-0" />
++          
++          <select
++            value={aiContentType}
++            onChange={(e) => setAiContentType?.(e.target.value)}
++            disabled={isAiGenerating || isFetchingOriginal || isRecreating}
++            className="h-9 w-44 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold text-center disabled:opacity-50"
++          >
++            <option value="" disabled hidden>콘텐츠 유형</option>
++            <option value="멀티 플랫폼 콘텐츠 기획" className="bg-slate-950">📰 멀티 플랫폼 콘텐츠 기획</option>
++            <option value="블로그 글쓰기 콘텐츠" className="bg-slate-950">✍️ 블로그 글쓰기 콘텐츠</option>
++            <option value="유튜브 쇼츠 기획" className="bg-slate-950">🎥 유튜브 쇼츠 기획</option>
++            <option value="유튜브 롱폼 기획" className="bg-slate-950">📺 유튜브 롱폼 기획</option>
++            <option value="틱톡 숏폼 기획" className="bg-slate-950">🎵 틱톡 숏폼 기획</option>
++            <option value="네이버 클립 기획" className="bg-slate-950">📎 네이버 클립 기획</option>
++            <option value="인스타그램 릴스 기획" className="bg-slate-950">📸 인스타그램 릴스 기획</option>
++            <option value="SNS 카드뉴스 기획" className="bg-slate-950">🖼️ SNS 카드뉴스 기획</option>
++            <option value="뉴스레터 기획" className="bg-slate-950">✉️ 뉴스레터 기획</option>
++            <option value="브랜드 캠페인 기획" className="bg-slate-950">📢 브랜드 캠페인 기획</option>
++          </select>
++
++          <select
++            value={aiPostType}
++            onChange={(e) => setAiPostType?.(e.target.value)}
++            disabled={isAiGenerating || isFetchingOriginal || isRecreating}
++            className="h-9 w-48 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold text-center disabled:opacity-50"
++          >
++            <option value="" disabled hidden>포스트 타입</option>
++            <optgroup label="1️⃣ 인사이트 & 트렌드" className="bg-zinc-950">
++              <option value="AI 자동 포스팅">🤖 AI 자동 포스팅</option>
++              <option value="AI 인사이트 포스팅">🧠 AI 인사이트 포스팅</option>
++              <option value="트렌드 브리프">📈 트렌드 브리프</option>
++              <option value="시장/기술 분석 리포트">🔬 시장/기술 분석 리포트</option>
++            </optgroup>
++            <optgroup label="2️⃣ 마케팅 & 브랜드" className="bg-zinc-950">
++              <option value="브랜드 스토리텔링">📖 브랜드 스토리텔링</option>
++              <option value="제품/서비스 리뷰">⭐ 제품/서비스 리뷰</option>
++              <option value="공식 보도자료">📰 공식 보도자료</option>
++              <option value="이벤트 & 프로모션 홍보">🎉 이벤트 & 프로모션 홍보</option>
++            </optgroup>
++            <optgroup label="3️⃣ 정보 & 교육" className="bg-zinc-950">
++              <option value="How-To 가이드">💡 How-To 가이드</option>
++              <option value="용어/개념 정리">📘 용어/개념 정리</option>
++              <option value="뉴스 & 시사 평론">🎙️ 뉴스 & 시사 평론</option>
++              <option value="FAQ & QnA 정리">❓ FAQ & QnA 정리</option>
++            </optgroup>
++            <optgroup label="4️⃣ 대중 & SNS" className="bg-zinc-950">
++              <option value="에세이 & 칼럼">📝 에세이 & 칼럼</option>
++              <option value="인스타그램 연계 홍보글">📱 인스타그램 연계 홍보글</option>
++              <option value="유튜브 대본용 요약본">🎬 유튜브 대본용 요약본</option>
++            </optgroup>
++          </select>
++
++          <select
++            value={aiSelectedTone}
++            onChange={(e) => setAiSelectedTone?.(e.target.value)}
++            disabled={isAiGenerating || isFetchingOriginal || isRecreating}
++            className="h-9 w-60 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold text-center disabled:opacity-50"
++          >
++            <option value="" disabled hidden>말투 선택</option>
++            <option value="💻 전문적이고 통찰력 있는 분석 (기술 블로그)" className="bg-slate-950">💻 전문 분석 (기술 블로그)</option>
++            <option value="✍️ 친근하고 명확한 실무 설명 (가이드형 포스팅)" className="bg-slate-950">✍️ 친근 설명 (가이드형)</option>
++            <option value="📢 브랜드 중심의 신뢰형 설명 (서비스 소개형)" className="bg-slate-950">📢 브랜드 신뢰 (서비스 소개)</option>
++            <option value="📈 인사이트 리포트형 톤 (트렌드 분석)" className="bg-slate-950">📈 리포트형 (트렌드 분석)</option>
++            <option value="✉️ 가볍고 설득력 있는 뉴스레터형 톤" className="bg-slate-950">✉️ 뉴스레터형 (설득 톤)</option>
++          </select>
++
++          <select
++            value={aiWordCountGoal}
++            onChange={(e) => setAiWordCountGoal?.(e.target.value)}
++            disabled={isAiGenerating || isFetchingOriginal || isRecreating}
++            className="h-9 w-36 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold text-center disabled:opacity-50"
++          >
++            <option value="" disabled hidden>목표 글자수</option>
++            <option value="800" className="bg-slate-950">📰 짧게 (약 800자)</option>
++            <option value="1500" className="bg-slate-950">✍️ 보통 (약 1,500자)</option>
++            <option value="3000" className="bg-slate-950">🚀 길게 (약 3,000자)</option>
++            <option value="5000" className="bg-slate-950">📚 아주 길게 (약 5,000자)</option>
++            <option value="8000" className="bg-slate-950">💰 초장문 (약 8,000자)</option>
++          </select>
++
++          <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs font-black text-zinc-300">
++            <input
++              type="checkbox"
++              checked={aiUseSearch}
++              onChange={(e) => setAiUseSearch?.(e.target.checked)}
++              disabled={isAiGenerating || isFetchingOriginal || isRecreating}
++              className="h-4.5 w-4.5 rounded border-zinc-800 bg-black/40 text-violet-600 focus:ring-violet-500 focus:ring-offset-0 disabled:opacity-50"
++            />
++            <span>최신 검색</span>
++          </label>
++
++          <button
++            type="button"
++            onClick={() => handleAiGenerateInEditor?.(
++              targetKeyword,
++              aiContentType,
++              aiPostType,
++              aiSelectedTone,
++              aiWordCountGoal,
++              aiStrategyLevel,
++              aiResultFormat,
++              aiLargeCategory,
++              aiMainTopic,
++              aiSubTopic,
++              aiReferenceNote,
++              aiUseSearch
++            )}
++            disabled={isAiGenerating || isFetchingOriginal || isRecreating || !!(content && content.replace(/<[^>]*>/g, "").trim().length > 100)}
++            className="w-48 h-9 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-[0_8px_18px_rgba(124,58,237,0.15)] disabled:opacity-50 disabled:cursor-not-allowed"
++          >
++            {isAiGenerating ? (
++              <>
++                <RefreshCw size={12} className="animate-spin" />
++                <span>생성 중...</span>
++              </>
++            ) : (
++              <>
++                <Sparkles size={12} />
++                <span>AI 콘텐츠 생성 시작</span>
++              </>
++            )}
++          </button>
++        </div>
++
++        {/* AI 포스팅 재창조 가로 제어 바 */}
++        <div className="flex flex-wrap items-center gap-2 border-t border-zinc-800/40 pt-1.5">
++          <div className="flex items-center gap-1.5 shrink-0 text-fuchsia-400 text-xs font-black w-28">
++            <Zap size={14} className="animate-pulse" />
++            <span>AI 포스팅 재창조</span>
++          </div>
++          <div className="mx-1 h-4 w-px bg-zinc-850 shrink-0" />
++
++          <input
++            type="text"
++            value={recreateUrl}
++            onChange={(e) => setRecreateUrl(e.target.value)}
++            disabled={isAiGenerating || isFetchingOriginal || isRecreating}
++            placeholder="타겟 주소 입력 (https://blog.naver.com/...)"
++            className="h-9 flex-1 max-w-[400px] rounded-lg border border-zinc-800 bg-black/40 px-3 text-xs text-white outline-none focus:border-violet-500 font-bold text-center placeholder-zinc-500 disabled:opacity-50"
++          />
++
++          <button
++            type="button"
++            onClick={handleFetchOriginalText}
++            disabled={isAiGenerating || isFetchingOriginal || isRecreating}
++            className="w-48 h-9 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-[0_8px_18px_rgba(124,58,237,0.15)] disabled:opacity-50 disabled:cursor-not-allowed"
++          >
++            {isFetchingOriginal ? (
++              <>
++                <RefreshCw size={12} className="animate-spin" />
++                <span>가져오는 중...</span>
++              </>
++            ) : (
++              <>
++                <Download size={12} />
++                <span>URL 원본 글 가져오기</span>
++              </>
++            )}
++          </button>
++
++          <button
++            type="button"
++            onClick={handleStartRecreation}
++            disabled={isAiGenerating || isFetchingOriginal || isRecreating}
++            className="w-48 h-9 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-[0_8px_18px_rgba(124,58,237,0.15)] disabled:opacity-50 disabled:cursor-not-allowed"
++          >
++            {isRecreating ? (
++              <>
++                <RefreshCw size={12} className="animate-spin" />
++                <span>재창조 중...</span>
++              </>
++            ) : (
++              <>
++                <Zap size={12} />
++                <span>AI 글 재창조 시작</span>
++              </>
++            )}
++          </button>
++        </div>
++
++        {/* AI 수정보완 제어 바 */}
+         <div className="flex flex-wrap items-center gap-1.5 border-t border-zinc-800/40 pt-1.5">
++          <div className="flex items-center gap-1.5 shrink-0 text-emerald-400 text-xs font-black w-28">
++            <Wand2 size={14} />
++            <span>AI 수정보완</span>
++          </div>
++          <div className="mx-1 h-4 w-px bg-zinc-850 shrink-0" />
++
+           {/* AI 내용 보강 */}
+           <div className="relative" ref={contentDropdownRef}>
+             <button

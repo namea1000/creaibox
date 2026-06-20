@@ -50,5 +50,11 @@
 * **메인 제어 센터 (`page.tsx`)**: 유튜브 연구소 홈. 누적 채널/영상 통계 카드 및 10개 세부 연동 도구 네비게이션 그리드 제공.
 * **상세 분석 도구 (`[section]/page.tsx`)**: dynamic routing을 통해 채널분석(`channel`), 인기급상승(`rising`), 경쟁채널비교(`compare`), 광고계산기(`cpm`), SEO진단(`seo`), 쇼츠바이럴(`shorts`), 썸네일CTR(`thumbnail`), AI제목추천(`title`), 전략리포트(`report`), 일괄워크플로우(`workflow`) 마운트.
 
+### 2-8. 콘텐츠 라이브러리 (`/studio/library`)
+* **메인 대시보드 (`page.tsx`)**: 무료 공유 에셋, 이미지 콘텐츠, 비디오 콘텐츠, 블로그 포스트 보관함 카드로 구성된 대시보드.
+* **무료 공유 에셋 라이브러리 (`free-assets/page.tsx`)**: Pixabay 스타일의 고해상도 무료 공유 미디어 에셋 탐색 및 개별 해상도/확장자 변환 다운로드 제공.
+* **세부 섹션 관리자 (`[section]/page.tsx`)**: Dynamic Routing을 통해 이미지 콘텐츠(`image`), 크리에이박스 콘텐츠(`creaibox`) 등 데이터베이스 보관함 목록을 조회 및 관리하는 `<CreaiboxLibraryManager />` 마운트.
+
+
 
 

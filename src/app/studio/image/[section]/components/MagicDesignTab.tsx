@@ -74,7 +74,7 @@ export default function MagicDesignTab() {
       <div className="rounded-2xl border border-zinc-800 bg-[#090d16]/20 p-6 space-y-4 shadow-xl">
         <div className="flex items-center gap-3">
           <Sparkles className="text-purple-400 animate-pulse" size={20} />
-          <h2 className="text-lg font-black text-white">AI 매직 디자인 생성기</h2>
+          <h2 className="text-lg font-black text-zinc-900 dark:text-white">AI 매직 디자인 생성기</h2>
         </div>
         <p className="text-xs font-medium text-zinc-500">
           홍보하고자 하는 문구나 주제를 한두 줄로 입력해 보세요. AI가 문구에 맞는 맞춤형 레이아웃 시안들을 3가지 비율로 자동 설계해 줍니다.

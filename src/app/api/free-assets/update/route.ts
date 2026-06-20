@@ -4,7 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const { fileId, title, tags, mediaType, generationType, aspectRatio, width, height, camera } = await req.json();
+    const { fileId, title, tags, mediaType, generationType, aspectRatio, width, height, camera, prompt, aiTool } = await req.json();
     
     if (!fileId) {
       return NextResponse.json({ error: "File ID is required" }, { status: 400 });
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Check if user is ADMIN in profiles table
+    // 2. Check if user is ADMIN in profiles table or admin_whitelist
     let isAdmin = false;
     const { data: profile } = await supabase
       .from("profiles")
@@ -28,8 +28,17 @@ export async function POST(req: NextRequest) {
       .eq("id", user.id)
       .maybeSingle();
     
-    if (profile?.role === "ADMIN") {
+    if (profile?.role === "ADMIN" || profile?.role === "STAFF") {
       isAdmin = true;
+    } else if (user.email) {
+      const { data: whitelist } = await supabase
+        .from("admin_whitelist")
+        .select("email")
+        .eq("email", user.email)
+        .maybeSingle();
+      if (whitelist) {
+        isAdmin = true;
+      }
     }
 
     // 3. Fetch file metadata to check the uploader
@@ -37,7 +46,8 @@ export async function POST(req: NextRequest) {
     const uploader = metadata.uploader || "";
 
     // 4. Authorization check: must be uploader or ADMIN
-    if (uploader !== user.email && !isAdmin) {
+    const isUploader = uploader.toLowerCase() === (user.email || "").toLowerCase();
+    if (!isUploader && !isAdmin) {
       return NextResponse.json(
         { error: "Forbidden: You do not have permission to update this asset." },
         { status: 403 }
@@ -54,6 +64,8 @@ export async function POST(req: NextRequest) {
       width: width !== undefined ? parseInt(width, 10) : undefined,
       height: height !== undefined ? parseInt(height, 10) : undefined,
       camera: camera !== undefined ? camera : undefined,
+      prompt: prompt !== undefined ? prompt : undefined,
+      aiTool: aiTool !== undefined ? aiTool : undefined,
     });
 
     // 6. Update record in Supabase DB
@@ -75,12 +87,14 @@ export async function POST(req: NextRequest) {
       .update({
         title,
         tags: Array.isArray(tags) ? tags : [],
-        media_type: normMediaType,
+        media_type: mediaType || normMediaType,
         generation_type: generationType || "real",
         aspect_ratio: aspectRatio || "",
         width: width !== undefined ? parseInt(width, 10) : undefined,
         height: height !== undefined ? parseInt(height, 10) : undefined,
         camera: camera !== undefined ? camera : undefined,
+        prompt: prompt !== undefined ? prompt : undefined,
+        ai_tool: aiTool !== undefined ? aiTool : undefined,
       })
       .eq("gdrive_file_id", fileId);
 
@@ -100,6 +114,8 @@ export async function POST(req: NextRequest) {
         width: width !== undefined ? parseInt(width, 10) : metadata.width || 0,
         height: height !== undefined ? parseInt(height, 10) : metadata.height || 0,
         camera: camera !== undefined ? camera : metadata.camera || "촬영 정보 없음",
+        prompt: prompt !== undefined ? prompt : metadata.prompt || "",
+        aiTool: aiTool !== undefined ? aiTool : metadata.aiTool || "",
       }
     });
   } catch (error: any) {

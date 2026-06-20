@@ -237,20 +237,20 @@ export default function CreaiboxLibraryManager() {
   const showLoadMore = filteredImages.length > pageSize;
 
   return (
-    <div className="min-h-full w-full bg-[#06080d] px-5 py-8 text-zinc-100 lg:px-8">
+    <div className="min-h-full w-full bg-transparent px-5 py-8 text-zinc-800 dark:text-zinc-100 lg:px-8 transition-colors duration-300">
       <div className="mx-auto max-w-7xl space-y-6">
         
         {/* 상단 헤더 영역 */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-3.5 py-1.5 text-xs font-black uppercase tracking-widest text-violet-400">
+            <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-violet-500/20 dark:border-violet-500/30 bg-violet-50 dark:bg-violet-500/10 px-3.5 py-1.5 text-xs font-black uppercase tracking-widest text-violet-600 dark:text-violet-400">
               <ImageIcon size={14} />
               {isImageSection ? "Image Studio Library" : "Creaibox Media Library"}
             </div>
-            <h1 className="text-2xl font-black tracking-tight text-white md:text-3xl">
+            <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-white md:text-3xl">
               {isImageSection ? "이미지 스튜디오 미디어 라이브러리" : "크리에이박스 미디어 라이브러리"}
             </h1>
-            <p className="mt-1 text-xs font-medium text-zinc-500">
+            <p className="mt-1 text-xs font-medium text-zinc-650 dark:text-zinc-500">
               {isImageSection 
                 ? "이미지 스튜디오(디자인 편집기)에서 저장되거나 편집된 디자인 자산을 관리합니다." 
                 : "글쓰기 에디터 및 첨부파일로 등록된 이미지 자산을 통합 관리하고 재사용합니다."}
@@ -261,7 +261,7 @@ export default function CreaiboxLibraryManager() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-xs font-black text-white transition hover:bg-blue-500 disabled:opacity-50"
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-xs font-black text-white transition hover:bg-blue-500 disabled:opacity-50 cursor-pointer"
             >
               {uploading ? (
                 <RefreshCw size={14} className="animate-spin" />
@@ -290,17 +290,17 @@ export default function CreaiboxLibraryManager() {
           onClick={() => fileInputRef.current?.click()}
           className={`flex h-36 w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed transition ${
             dragActive
-              ? "border-blue-500 bg-blue-500/5 text-blue-400"
-              : "border-zinc-800 bg-zinc-900/30 hover:border-zinc-700 hover:bg-zinc-900/50 text-zinc-400"
+              ? "border-blue-500 bg-blue-500/5 text-blue-500 dark:text-blue-400"
+              : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/30 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 text-zinc-500 dark:text-zinc-400"
           }`}
         >
           <Upload size={24} className="mb-2 transition group-hover:scale-105" />
           <p className="text-xs font-black">이미지 파일을 여기에 끌어다 놓거나 클릭하여 선택하세요.</p>
-          <p className="mt-1 text-[10px] text-zinc-600">지원 파일: PNG, JPG, WebP, GIF</p>
+          <p className="mt-1 text-[10px] text-zinc-550 dark:text-zinc-650">지원 파일: PNG, JPG, WebP, GIF</p>
         </div>
 
         {/* 검색 & 필터 헤더 */}
-        <div className="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-900/20 p-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/20 p-4 md:flex-row md:items-center md:justify-between shadow-sm dark:shadow-none">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
             <input
@@ -308,18 +308,18 @@ export default function CreaiboxLibraryManager() {
               placeholder="이미지 제목, 대체 텍스트, 설명으로 검색..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-zinc-800 bg-[#0c0e14] py-2 pl-10 pr-4 text-xs text-white outline-none focus:border-blue-500/50"
+              className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-[#0c0e14] py-2 pl-10 pr-4 text-xs text-zinc-800 dark:text-white outline-none focus:border-blue-500/50"
             />
           </div>
 
           <div className="flex flex-wrap items-center gap-3 text-xs">
             {/* 역할 필터 */}
             <div className="flex items-center gap-1.5">
-              <span className="font-bold text-zinc-500">역할군:</span>
+              <span className="font-bold text-zinc-550 dark:text-zinc-500">역할군:</span>
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="rounded-lg border border-zinc-800 bg-[#0c0e14] px-2.5 py-1.5 outline-none focus:border-blue-500/50"
+                className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0c0e14] px-2.5 py-1.5 outline-none focus:border-blue-500/50 text-zinc-800 dark:text-zinc-100"
               >
                 <option value="all">전체 역할군</option>
                 <option value="gallery">gallery (본문)</option>
@@ -331,11 +331,11 @@ export default function CreaiboxLibraryManager() {
 
             {/* 정렬 방식 */}
             <div className="flex items-center gap-1.5">
-              <span className="font-bold text-zinc-500">정렬:</span>
+              <span className="font-bold text-zinc-550 dark:text-zinc-500">정렬:</span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="rounded-lg border border-zinc-800 bg-[#0c0e14] px-2.5 py-1.5 outline-none focus:border-blue-500/50"
+                className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0c0e14] px-2.5 py-1.5 outline-none focus:border-blue-500/50 text-zinc-800 dark:text-zinc-100"
               >
                 <option value="newest">최신 업로드순</option>
                 <option value="oldest">오래된 업로드순</option>
@@ -350,10 +350,10 @@ export default function CreaiboxLibraryManager() {
             <RefreshCw size={24} className="animate-spin text-blue-500" />
           </div>
         ) : displayedImages.length === 0 ? (
-          <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900/10 text-zinc-500">
-            <ImageIcon size={32} className="mb-2 text-zinc-600" />
+          <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/10 text-zinc-500">
+            <ImageIcon size={32} className="mb-2 text-zinc-400 dark:text-zinc-650" />
             <p className="text-xs font-black">라이브러리에 이미지가 없습니다.</p>
-            <p className="mt-1 text-[11px] text-zinc-600">위 드롭존에 첫 이미지를 첨부하여 업로드해 보세요.</p>
+            <p className="mt-1 text-[11px] text-zinc-550 dark:text-zinc-650">위 드롭존에 첫 이미지를 첨부하여 업로드해 보세요.</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -362,7 +362,7 @@ export default function CreaiboxLibraryManager() {
                 <div
                   key={img.id}
                   onClick={() => setSelectedImage(img)}
-                  className="group relative aspect-square cursor-pointer overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 transition-all hover:scale-[1.02] hover:border-zinc-700 hover:shadow-xl"
+                  className="group relative aspect-square cursor-pointer overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 transition-all hover:scale-[1.02] hover:border-blue-500/40 dark:hover:border-zinc-700 hover:shadow-xl"
                 >
                   <img
                     src={img.image_url}
@@ -387,7 +387,7 @@ export default function CreaiboxLibraryManager() {
               <div className="flex justify-center pt-2">
                 <button
                   onClick={() => setPageSize(prev => prev + 24)}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-900 px-5 text-xs font-black text-zinc-300 hover:border-zinc-700 hover:text-white transition"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-5 text-xs font-black text-zinc-700 dark:text-zinc-300 hover:border-zinc-350 dark:hover:border-zinc-700 hover:text-zinc-900 dark:hover:text-white transition cursor-pointer"
                 >
                   더 많은 미디어 보기
                   <ChevronDown size={14} />

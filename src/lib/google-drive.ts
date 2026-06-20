@@ -386,6 +386,8 @@ export async function updateAssetMetadata(
     width?: number;
     height?: number;
     camera?: string;
+    prompt?: string;
+    aiTool?: string;
   }
 ): Promise<void> {
   const drive = getDriveClient();
@@ -416,6 +418,8 @@ export async function updateAssetMetadata(
     width: newMetadata.width !== undefined ? newMetadata.width : metadata.width || 0,
     height: newMetadata.height !== undefined ? newMetadata.height : metadata.height || 0,
     camera: newMetadata.camera !== undefined ? newMetadata.camera : metadata.camera || "촬영 정보 없음",
+    prompt: newMetadata.prompt !== undefined ? newMetadata.prompt : metadata.prompt || "",
+    aiTool: newMetadata.aiTool !== undefined ? newMetadata.aiTool : metadata.aiTool || "",
   };
   
   // 3. Update on Google Drive

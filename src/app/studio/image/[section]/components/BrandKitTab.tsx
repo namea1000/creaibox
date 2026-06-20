@@ -54,7 +54,7 @@ export default function BrandKitTab() {
       <div className="lg:col-span-2 rounded-2xl border border-zinc-800 bg-[#090d16]/20 p-6 space-y-5">
         <div className="flex items-center gap-3 border-b border-zinc-800/60 pb-3">
           <Palette className="text-purple-400" size={20} />
-          <h2 className="text-lg font-black text-white">브랜드 색상 팔레트</h2>
+          <h2 className="text-lg font-black text-zinc-900 dark:text-white">브랜드 색상 팔레트</h2>
         </div>
         
         <div className="space-y-4">
@@ -113,7 +113,7 @@ export default function BrandKitTab() {
         <div className="rounded-2xl border border-zinc-800 bg-[#090d16]/20 p-6 space-y-4">
           <div className="flex items-center gap-3 border-b border-zinc-800/60 pb-3">
             <FileText className="text-rose-400" size={20} />
-            <h2 className="text-lg font-black text-white">공식 브랜드 로고</h2>
+            <h2 className="text-lg font-black text-zinc-900 dark:text-white">공식 브랜드 로고</h2>
           </div>
           <p className="text-[10px] text-zinc-500 leading-relaxed">
             디자인 편집기에서 클릭 한 번으로 바로 삽입할 수 있는 투명 로고 파일입니다.
@@ -144,7 +144,7 @@ export default function BrandKitTab() {
         <div className="rounded-2xl border border-zinc-800 bg-[#090d16]/20 p-6 space-y-4">
           <div className="flex items-center gap-3 border-b border-zinc-800/60 pb-3">
             <Type className="text-blue-400" size={20} />
-            <h2 className="text-lg font-black text-white">서체 가이드라인</h2>
+            <h2 className="text-lg font-black text-zinc-900 dark:text-white">서체 가이드라인</h2>
           </div>
           <p className="text-[10px] text-zinc-500 leading-relaxed">
             브랜드의 표준 폰트 구성입니다. 디자인 일관성을 높이기 위해 본 구성을 추천합니다.

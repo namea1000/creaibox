@@ -107,6 +107,11 @@ function ContentPlannerPlanningPageContent() {
   const [mainKeyword, setMainKeyword] = useState("");
   const [referenceNote, setReferenceNote] = useState("");
 
+  const [selectedTone, setSelectedTone] = useState(
+    "💻 전문적이고 통찰력 있는 분석 (기술 블로그)"
+  );
+  const [wordCountGoal, setWordCountGoal] = useState("1500");
+
   const [largeCategory, setLargeCategory] = useState("");
   const [mainTopic, setMainTopic] = useState("");
   const [subTopic, setSubTopic] = useState("");
@@ -131,13 +136,12 @@ function ContentPlannerPlanningPageContent() {
       setSubTopic(recommendedSeriesParam);
     }
   }, [searchParams]);
-
   const [strategyLevel, setStrategyLevel] =
-    useState<ContentPlannerFormState["strategyLevel"]>("전문가 전략");
+    useState<ContentPlannerFormState["strategyLevel"]>("3. 전문가 전략(가장 고도화된 심층적 마케팅 구조 설계)");
 
   const [resultFormat, setResultFormat] =
     useState<ContentPlannerFormState["resultFormat"]>(
-      "시리즈 + 채널별 제작안"
+      "2. 기본 시리즈 + 배포 플랫폼별 적합성 키워드 향상"
     );
 
   const selectedPlatformSummary = useMemo(
@@ -259,6 +263,8 @@ function ContentPlannerPlanningPageContent() {
 - 배포 플랫폼: ${purePlatforms}
 - 콘텐츠 유형: ${contentType}
 - 포스트 타입: ${postType}
+- 말투: ${selectedTone}
+- 글자 수 목표: 약 ${wordCountGoal}자
 - 목표 콘텐츠 수: ${itemCount}개
 - 대분류: ${largeCategory || "없음"}
 - 상세 분야: ${mainTopic || "없음"}
@@ -337,7 +343,9 @@ function ContentPlannerPlanningPageContent() {
           moneyKeywords: [],
           targetAudience: "Creator",
           brandTone: "전문적",
-          status: "generated" as const
+          status: "generated" as const,
+          selectedTone: selectedTone,
+          wordCountGoal: wordCountGoal
         },
         items: (parsed.items || []).map((item: any, idx: number) => ({
           itemOrder: item.itemOrder || idx + 1,
@@ -361,7 +369,9 @@ function ContentPlannerPlanningPageContent() {
           monetizationScore: item.monetizationScore || 80,
           difficultyScore: item.difficultyScore || 40,
           opportunityScore: item.opportunityScore || 85,
-          status: "planned" as const
+          status: "planned" as const,
+          selectedTone: selectedTone,
+          wordCountGoal: wordCountGoal
         })),
         outputs: []
       };
@@ -478,6 +488,8 @@ function ContentPlannerPlanningPageContent() {
 - 배포 플랫폼: ${activeCampaign.target_platforms?.join(", ") || activeCampaign.platforms?.join(", ") || ""}
 - 콘텐츠 유형: ${activeCampaign.content_type || ""}
 - 포스트 타입: ${activeCampaign.raw_ai_response?.campaign?.postType || ""}
+- 말투: ${activeCampaign.raw_ai_response?.campaign?.selectedTone || "전문적이고 통찰력 있는 분석 (기술 블로그)"}
+- 글자 수 목표: 약 ${activeCampaign.raw_ai_response?.campaign?.wordCountGoal || "1500"}자
 - 전략 수준: ${activeCampaign.strategy_level || activeCampaign.strategyLevel || "전문가 전략"}
 
 [이미 생성된 기존 아이템 리스트 (중복 회피 대상)]
@@ -554,7 +566,11 @@ ${existingItemsText}
         difficulty_score: item.difficultyScore || 40,
         opportunity_score: item.opportunityScore || 85,
         status: "planned" as const,
-        raw_ai_response: item,
+        raw_ai_response: {
+          ...item,
+          selectedTone: activeCampaign.raw_ai_response?.campaign?.selectedTone || "전문적이고 통찰력 있는 분석 (기술 블로그)",
+          wordCountGoal: activeCampaign.raw_ai_response?.campaign?.wordCountGoal || "1500"
+        },
       }));
 
       const { data: insertedItems, error: insertError } = await supabase
@@ -654,6 +670,10 @@ ${existingItemsText}
             onChangeReferenceNote={setReferenceNote}
             postType={postType}
             onChangePostType={setPostType}
+            selectedTone={selectedTone}
+            onChangeSelectedTone={setSelectedTone}
+            wordCountGoal={wordCountGoal}
+            onChangeWordCountGoal={setWordCountGoal}
             strategyLevel={strategyLevel}
             resultFormat={resultFormat}
             onChangeStrategyLevel={setStrategyLevel}
@@ -701,7 +721,7 @@ ${existingItemsText}
           <div className="max-h-[88vh] w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-[#101014] shadow-2xl flex flex-col">
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
               <div>
-                <h2 className="text-2xl font-black text-white">생성한 콘텐츠 기획 불러오기</h2>
+                <h2 className="text-2xl font-black text-zinc-900 dark:text-white">생성한 콘텐츠 기획 불러오기</h2>
                 <p className="mt-1 text-sm text-zinc-500">
                   기획 라이브러리에 저장된 콘텐츠 기획안을 불러와 상세 내용 및 채널별 제작 상태를 확인합니다.
                 </p>

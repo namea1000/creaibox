@@ -196,7 +196,7 @@ export default function ImageConverterTab() {
       <div className="lg:col-span-2 rounded-2xl border border-zinc-800 bg-[#090d16]/20 p-6 space-y-6">
         <div className="flex items-center gap-3 border-b border-zinc-800/60 pb-3">
           <RefreshCw className="text-purple-400" size={20} />
-          <h2 className="text-lg font-black text-white">이미지 확장자 변환기</h2>
+          <h2 className="text-lg font-black text-zinc-900 dark:text-white">이미지 확장자 변환기</h2>
         </div>
 
         {/* 1. Format Selection */}
@@ -318,7 +318,7 @@ export default function ImageConverterTab() {
         <div className="flex items-center justify-between border-b border-zinc-800/60 pb-3 shrink-0">
           <div className="flex items-center gap-3">
             <Layers className="text-emerald-400" size={20} />
-            <h2 className="text-lg font-black text-white">변환 대기열 ({filesQueue.length})</h2>
+            <h2 className="text-lg font-black text-zinc-900 dark:text-white">변환 대기열 ({filesQueue.length})</h2>
           </div>
           {filesQueue.length > 0 && (
             <button

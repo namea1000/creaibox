@@ -67,14 +67,14 @@ export default function ImageSectionPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[400px] w-full items-center justify-center bg-[#06080d]">
+        <div className="flex min-h-[400px] w-full items-center justify-center bg-zinc-50 dark:bg-[#06080d] text-zinc-800 dark:text-zinc-100 transition-colors duration-300">
           <div className="text-purple-500 animate-pulse font-black italic uppercase tracking-widest text-xs">
             Loading Canva Studio...
           </div>
         </div>
       }
     >
-      <div className="min-h-full w-full bg-[#06080d] px-5 py-8 text-zinc-100 lg:px-8">
+      <div className="min-h-full w-full bg-zinc-50 dark:bg-[#06080d] px-5 py-8 text-zinc-800 dark:text-zinc-100 lg:px-8 transition-colors duration-300">
         <div className="mx-auto max-w-7xl space-y-6">
           {/* Navigation Breadcrumb */}
           <div className="flex items-center gap-3">
@@ -92,7 +92,7 @@ export default function ImageSectionPage() {
                 <span>/</span>
                 <span className="text-zinc-400">{name}</span>
               </div>
-              <h1 className="text-lg font-black text-white">{name}</h1>
+              <h1 className="text-lg font-black text-zinc-900 dark:text-white">{name}</h1>
             </div>
           </div>
 

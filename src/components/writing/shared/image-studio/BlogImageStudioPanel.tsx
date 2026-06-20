@@ -99,8 +99,6 @@ export default function BlogImageStudioPanel({
   const [isPromptCopied, setIsPromptCopied] = useState(false);
   const [isPresetPanelOpen, setIsPresetPanelOpen] = useState(true);
   const [activePresetSlot, setActivePresetSlot] = useState<string | null>(null);
-  const [stockSearchQuery, setStockSearchQuery] = useState("");
-  const [isStockLoading, setIsStockLoading] = useState(false);
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
 
   const [imagePresets, setImagePresets] = useState<Record<string, BlogImagePreset | null>>({
@@ -663,36 +661,7 @@ export default function BlogImageStudioPanel({
     }
   };
 
-  const handleSearchStockImages = () => {
-    if (!stockSearchQuery.trim()) {
-      alert("키워드를 입력하세요.");
-      return;
-    }
 
-    setIsStockLoading(true);
-
-    setTimeout(() => {
-      const stockImages: GeneratedImage[] = [
-        {
-          id: `stock-${Date.now()}-1`,
-          url: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=900&q=80",
-          style: "무료 스톡 이미지",
-          styleDetail: "Unsplash",
-          prompt: stockSearchQuery,
-          type: "stock",
-          aspectRatio: selectedAspectRatio,
-          provider: "stock",
-          sourceType,
-          sourceId: activeSourceId,
-          imageRole,
-          isPrimary: false,
-        },
-      ];
-
-      setGallery((prev) => [...stockImages, ...prev]);
-      setIsStockLoading(false);
-    }, 700);
-  };
 
   const handleUploadFiles = async (fileList: FileList | File[]) => {
     const files = Array.from(fileList).filter((file) => file.type.startsWith("image/"));
@@ -1256,29 +1225,7 @@ export default function BlogImageStudioPanel({
           )}
         </div>
 
-        <div className="space-y-3 shrink-0 border-t border-zinc-800/50 px-4 pt-4">
-          <h3 className="flex h-10 items-center gap-1.5 border-b border-zinc-800/60 text-[13px] font-black uppercase tracking-[0.15em] text-emerald-400">
-            <Globe size={13} /> Free Stock Finder
-          </h3>
 
-          <div className="relative text-[13px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
-            <input
-              type="text"
-              value={stockSearchQuery}
-              onChange={(e) => setStockSearchQuery(e.target.value)}
-              placeholder="무료 실사 이미지 검색"
-              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 py-3 pl-10 pr-16 text-zinc-200"
-            />
-            <button
-              onClick={handleSearchStockImages}
-              disabled={isStockLoading}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-zinc-800 px-4 py-1.5 text-[13px] font-black text-emerald-400"
-            >
-              {isStockLoading ? "조회중" : "찾기"}
-            </button>
-          </div>
-        </div>
 
         <BlogImagePromptBlueprintHub
           isOpen={isBlueprintHubOpen}

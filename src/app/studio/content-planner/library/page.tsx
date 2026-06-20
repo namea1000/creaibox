@@ -50,6 +50,9 @@ type CampaignItemRow = {
   main_keyword: string | null;
   opportunity_score: number | null;
   status: string | null;
+  selectedTone?: string;
+  wordCountGoal?: string;
+  raw_ai_response?: any;
 };
 
 function formatDisplayDate(value?: string | null) {
@@ -225,7 +228,7 @@ export default function ContentPlannerLibraryPage() {
         <div className="space-y-5">
           <div className="flex flex-col gap-3 rounded-3xl border border-white/10 bg-white/[0.04] p-5 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="text-lg font-black text-white">
+              <h2 className="text-lg font-black text-zinc-900 dark:text-white">
                 저장된 콘텐츠 기획
               </h2>
               <p className="mt-1 text-sm text-slate-500">
@@ -273,7 +276,7 @@ export default function ContentPlannerLibraryPage() {
                         <Badge>{campaign.generated_count || campaign.item_count || 0}개</Badge>
                       </div>
 
-                      <h3 className="text-xl font-black text-white">
+                      <h3 className="text-xl font-black text-zinc-900 dark:text-white">
                         {campaign.title}
                       </h3>
 
@@ -415,7 +418,7 @@ export default function ContentPlannerLibraryPage() {
                           <div className="mt-3 grid grid-cols-2 gap-2">
                             <ActionButton
                               label="블로그 제작"
-                              href={`/studio/writing/creaibox/create?source=content-planner&itemId=${item.id}&title=${encodeURIComponent(item.title)}&keyword=${encodeURIComponent(item.main_keyword || "")}&contentType=${encodeURIComponent(item.content_type || "")}`}
+                              href={`/studio/writing/creaibox/create?source=content-planner&itemId=${item.id}&title=${encodeURIComponent(item.title)}&keyword=${encodeURIComponent(item.main_keyword || "")}&contentType=${encodeURIComponent(item.content_type || "")}&selectedTone=${encodeURIComponent(item.selectedTone || item.raw_ai_response?.selectedTone || "전문적이고 통찰력 있는 분석 (기술 블로그)")}&wordCountGoal=${encodeURIComponent(item.wordCountGoal || item.raw_ai_response?.wordCountGoal || "1500")}`}
                             />
                             <ActionButton
                               label="네이버 제작"

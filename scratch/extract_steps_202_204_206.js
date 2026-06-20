@@ -1,0 +1,23 @@
+const fs = require('fs');
+
+const logPath = '/Users/a1234/.gemini/antigravity-ide/brain/a6e391c1-3460-4765-a760-c651c0009136/.system_generated/logs/transcript.jsonl';
+const lines = fs.readFileSync(logPath, 'utf8').split('\n');
+
+for (const line of lines) {
+  if (!line) continue;
+  try {
+    const obj = JSON.parse(line);
+    if (obj.step_index === 202) {
+      fs.writeFileSync('scratch/step_202_content.txt', obj.content);
+      console.log('Wrote step_202_content.txt');
+    } else if (obj.step_index === 204) {
+      fs.writeFileSync('scratch/step_204_content.txt', obj.content);
+      console.log('Wrote step_204_content.txt');
+    } else if (obj.step_index === 206) {
+      fs.writeFileSync('scratch/step_206_content.txt', obj.content);
+      console.log('Wrote step_206_content.txt');
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}

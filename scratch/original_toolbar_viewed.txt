@@ -1,0 +1,75 @@
+Created At: 2026-06-20T07:22:16Z
+Completed At: 2026-06-20T07:22:16Z
+File Path: `file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/editor/UniversalBlogEditor.tsx`
+Total Lines: 2385
+Total Bytes: 88133
+Showing lines 1750 to 1935
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1750: 
+1751:           <ToolbarButton onClick={handleInsertCta}>CTA</ToolbarButton>
+1752: 
+1753:           <div className="mx-1 h-4 w-px bg-zinc-800" />
+1754: 
+1755:           <ToolbarButton onClick={() => handleEnhanceContent("correct")}>
+1756:             <Type size={14} /> 맞춤법
+1757:           </ToolbarButton>
+1758:         </div>
+1759: 
+1760:         {/* 3번째 줄 - AI 관련 도구 */}
+1761:         <div className="flex flex-wrap items-center gap-1.5 border-t border-zinc-800/40 pt-1.5">
+1762:           {/* AI 내용 보강 */}
+1763:           <div className="relative" ref={contentDropdownRef}>
+1764:             <button
+1765:               type="button"
+1766:               onClick={() => setIsContentDropdownOpen((prev) => !prev)}
+1767:               disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch}
+1768:               className="flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-xs font-black transition-all text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
+1769:             >
+1770:               {isEnhancingContent ? (
+1771:                 <RefreshCw size={14} className="animate-spin" />
+1772:               ) : (
+1773:                 <Wand2 size={14} />
+1774:               )}
+1775:               {isEnhancingContent ? "보강 중..." : "AI 내용 보강"}
+1776:             </button>
+1777:             {isContentDropdownOpen && (
+1778:               <div className="absolute left-0 mt-1.5 w-44 round
+<truncated 6826 bytes>
+/div>
+1900: 
+1901:           {/* Google Search 실시간 정보 반영 */}
+1902:           <ToolbarButton
+1903:             onClick={() => handleEnhanceContent("apply_google_search")}
+1904:             disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch}
+1905:             className="text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
+1906:           >
+1907:             {isApplyingSearch ? (
+1908:               <RefreshCw size={14} className="animate-spin" />
+1909:             ) : (
+1910:               <Globe size={14} />
+1911:             )}
+1912:             {isApplyingSearch ? "실시간 검색 반영 중..." : "Google Search 실시간 정보 반영"}
+1913:           </ToolbarButton>
+1914: 
+1915:           {onGenerateSeo && (
+1916:             <button
+1917:               type="button"
+1918:               onClick={onGenerateSeo}
+1919:               disabled={isGeneratingSeo || isSaving || !title}
+1920:               className="flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-2 text-xs font-black text-emerald-300 transition-all hover:bg-emerald-500/20 disabled:opacity-40"
+1921:             >
+1922:               {isGeneratingSeo ? (
+1923:                 <RefreshCw size={14} className="animate-spin" />
+1924:               ) : (
+1925:                 <Wand2 size={14} />
+1926:               )}
+1927:               {isGeneratingSeo ? "SEO 생성 중..." : "AI SEO최적화 생성"}
+1928:             </button>
+1929:           )}
+1930:         </div>
+1931:       </div>
+1932: 
+1933:       <div className="flex-1 overflow-y-auto bg-white custom-scrollbar">
+1934:         {isLoading || !isClientReady ? (
+1935:           <div className="flex h-full w-full items-center justify-center gap-1.5 text-xs font-mono text-zinc-500">
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

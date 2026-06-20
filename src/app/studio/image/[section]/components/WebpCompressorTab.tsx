@@ -73,7 +73,7 @@ export default function WebpCompressorTab() {
       <div className="lg:col-span-2 rounded-2xl border border-zinc-800 bg-[#090d16]/20 p-6 space-y-5">
         <div className="flex items-center gap-3 border-b border-zinc-800/60 pb-3">
           <Upload className="text-purple-400" size={20} />
-          <h2 className="text-lg font-black text-white">WEBP 일괄 압축기</h2>
+          <h2 className="text-lg font-black text-zinc-900 dark:text-white">WEBP 일괄 압축기</h2>
         </div>
 
         <div className="space-y-4">
@@ -123,7 +123,7 @@ export default function WebpCompressorTab() {
       <div className="rounded-2xl border border-zinc-800 bg-[#090d16]/20 p-6 space-y-4 flex flex-col h-[400px]">
         <div className="flex items-center gap-3 border-b border-zinc-800/60 pb-3 shrink-0">
           <Layers className="text-emerald-400" size={20} />
-          <h2 className="text-lg font-black text-white">압축 변환 결과 ({compressedList.length})</h2>
+          <h2 className="text-lg font-black text-zinc-900 dark:text-white">압축 변환 결과 ({compressedList.length})</h2>
         </div>
 
         {compressedList.length > 0 ? (

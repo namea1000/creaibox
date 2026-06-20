@@ -4,6 +4,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { Sparkles, ChevronLeft, ChevronRight, Library, Calendar, Wand2, Pencil, Trash2, Eye, X } from "lucide-react";
 import { SiNaver, SiYoutube } from "react-icons/si";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
+import { createContentPlannerOutput, updateContentPlannerItemStatus } from "@/lib/content-planner/supabase";
 
 interface CampaignResultPanelProps {
   campaign: any | null;
@@ -43,6 +46,117 @@ export default function CampaignResultPanel({
   const [isSavingItem, setIsSavingItem] = useState(false);
   const [isExpandMenuOpen, setIsExpandMenuOpen] = useState(false);
   const [previewItem, setPreviewItem] = useState<any | null>(null);
+
+  const router = useRouter();
+  const supabase = React.useMemo(() => createClient(), []);
+  const [isGeneratingBlog, setIsGeneratingBlog] = useState<string | null>(null);
+
+  const handleCreateBlog = async (item: any) => {
+    if (isGeneratingBlog) return;
+    setIsGeneratingBlog(item.id);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        window.alert("로그인 정보를 확인할 수 없습니다.");
+        return;
+      }
+
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("nickname")
+        .eq("id", user.id)
+        .single();
+
+      const userNicename = prof?.nickname || user.email?.split("@")[0] || "User";
+
+      // 1. 임시 포스트 생성
+      const payload = {
+        user_id: user.id,
+        user_nicename: userNicename,
+        title: item.title || "직접 작성한 새 글",
+        content: "",
+        status: "draft",
+        post_type: "create",
+        target_keyword: item.main_keyword || item.mainKeyword || "",
+        selected_tone: item.selectedTone || item.raw_ai_response?.selectedTone || "💻 전문적이고 통찰력 있는 분석 (기술 블로그)",
+        slug: null,
+        meta_description: item.meta_description || item.metaDescription || "",
+        focus_keyword: item.main_keyword || item.mainKeyword || "",
+        canonical_url: null,
+        seo_tags: item.seoTags || item.seo_tags || [],
+        word_count_goal: item.wordCountGoal || item.raw_ai_response?.wordCountGoal || "1500",
+        source_mode: "content-planner",
+      };
+
+      const { data: insertedPost, error: insertError } = await supabase
+        .from("writing_creaibox_posts")
+        .insert([payload])
+        .select("*")
+        .single();
+
+      if (insertError) {
+        throw new Error(insertError.message);
+      }
+
+      const routeId = insertedPost.display_id || insertedPost.id;
+
+      // 2. planner output 생성 및 아이템 상태 변경
+      try {
+        const outputPayload = {
+          campaignId: item.campaign_id || item.campaignId || "",
+          itemId: item.id || "",
+          outputType: "creaibox_blog" as const,
+          platform: "Creaibox 블로그" as const,
+          targetRoute: `/studio/writing/creaibox/list/${routeId}`,
+          title: item.title,
+          status: "generated" as const,
+          generatedPostId: insertedPost.id,
+          metadata: { display_id: routeId }
+        };
+        await createContentPlannerOutput(outputPayload);
+        await updateContentPlannerItemStatus(item.id, "generated");
+      } catch (linkErr) {
+        console.error("Failed to link planner output:", linkErr);
+      }
+
+      // 3. 에디터 리스트/[id] 로 기획 쿼리 파라미터를 달아서 리다이렉트
+      let largeCategory = "";
+      let mainTopic = "";
+      const contentCat = campaign?.content_category || campaign?.contentCategory || "";
+      if (contentCat.includes(" > ")) {
+        const parts = contentCat.split(" > ");
+        largeCategory = parts[0]?.trim() || "";
+        mainTopic = parts[1]?.trim() || "";
+      } else {
+        largeCategory = contentCat?.trim() || "";
+      }
+
+      const query = new URLSearchParams({
+        source: "content-planner",
+        itemId: item.id || "",
+        campaignId: item.campaign_id || item.campaignId || "",
+        title: item.title || "",
+        keyword: item.main_keyword || item.mainKeyword || "",
+        contentType: campaign?.content_type || campaign?.contentType || "블로그 글쓰기 콘텐츠",
+        postType: item.postType || item.raw_ai_response?.postType || campaign?.post_type || campaign?.postType || "🧠 AI 인사이트 포스팅",
+        selectedTone: item.selectedTone || item.raw_ai_response?.selectedTone || campaign?.brand_tone || campaign?.brandTone || "💻 전문적이고 통찰력 있는 분석 (기술 블로그)",
+        wordCountGoal: item.wordCountGoal || item.raw_ai_response?.wordCountGoal || "1500",
+        strategyLevel: campaign?.strategy_level || campaign?.strategyLevel || "1. 기본 전략(대중적이고 상식적 수준의 정보성 글)",
+        resultFormat: campaign?.result_format || campaign?.resultFormat || "1. 기본 시리즈(키워드 연관 글감 병렬적 나열)",
+        largeCategory,
+        mainTopic,
+        subTopic: campaign?.campaign_type || campaign?.campaignType || "",
+        referenceNote: campaign?.reference_note || campaign?.referenceNote || "",
+      }).toString();
+
+      router.push(`/studio/writing/creaibox/list/${routeId}?${query}`);
+    } catch (err: any) {
+      window.alert(`블로그 글 생성 중 오류가 발생했습니다: ${err.message}`);
+    } finally {
+      setIsGeneratingBlog(null);
+    }
+  };
 
   const handleSaveClick = async (itemId: string) => {
     if (!editTitle.trim()) {
@@ -123,11 +237,11 @@ export default function CampaignResultPanel({
         campaign.strategyLevel ||
           campaign.strategy_level ||
           campaign.raw_ai_response?.campaign?.strategyLevel ||
-          "전문가 전략",
+          "3. 전문가 전략(가장 고도화된 심층적 마케팅 구조 설계)",
         campaign.resultFormat ||
           campaign.result_format ||
           campaign.raw_ai_response?.campaign?.resultFormat ||
-          "시리즈 + 채널별 제작안",
+          "2. 기본 시리즈 + 배포 플랫폼별 적합성 키워드 향상",
       ].filter(Boolean)
     : [];
 
@@ -393,7 +507,8 @@ export default function CampaignResultPanel({
                           <div className="flex flex-col gap-1.5 items-center justify-center">
                             <ActionButton
                               label="블로그 글 생성"
-                              href={`/studio/writing/creaibox/create?source=content-planner&itemId=${item.id || ""}&campaignId=${item.campaign_id || item.campaignId || ""}&title=${encodeURIComponent(item.title)}&keyword=${encodeURIComponent(item.main_keyword || item.mainKeyword || "")}&contentType=${encodeURIComponent(item.content_type || item.contentType || "")}`}
+                              onClick={() => void handleCreateBlog(item)}
+                              isLoading={isGeneratingBlog === item.id}
                             />
                             <ActionButton
                               label="네이버 글 생성"
@@ -672,12 +787,41 @@ export default function CampaignResultPanel({
   );
 }
 
-function ActionButton({ label, href }: { label: string; href: string }) {
+function ActionButton({
+  label,
+  href,
+  onClick,
+  disabled,
+  isLoading,
+}: {
+  label: string;
+  href?: string;
+  onClick?: () => void;
+  disabled?: boolean;
+  isLoading?: boolean;
+}) {
+  const className =
+    "inline-flex items-center justify-center w-28 rounded-full border border-white/10 bg-white/[0.04] py-1.5 text-[11px] font-bold text-slate-300 hover:border-cyan-300/50 hover:text-cyan-200 transition-all duration-200 hover:bg-white/10 text-center disabled:opacity-40 disabled:cursor-not-allowed";
+
+  if (isLoading) {
+    return (
+      <button disabled className={className}>
+        <span className="mr-1 h-2.5 w-2.5 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent"></span>
+        준비중...
+      </button>
+    );
+  }
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} disabled={disabled} className={className}>
+        {label}
+      </button>
+    );
+  }
+
   return (
-    <Link
-      href={href}
-      className="inline-flex items-center justify-center w-28 rounded-full border border-white/10 bg-white/[0.04] py-1.5 text-[11px] font-bold text-slate-300 hover:border-cyan-300/50 hover:text-cyan-200 transition-all duration-200 hover:bg-white/10 text-center"
-    >
+    <Link href={href || "#"} className={className}>
       {label}
     </Link>
   );

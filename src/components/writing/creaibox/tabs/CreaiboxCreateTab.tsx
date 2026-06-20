@@ -665,7 +665,7 @@ export default function CreaiboxCreateTab({
                   value={targetKeyword}
                   onChange={(e) => setTargetKeyword(e.target.value)}
                   placeholder="원하시는 주제를 입력해 주세요."
-                  className="w-full px-3 py-2.5 text-[16px] rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-200 font-bold focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2.5 text-[16px] rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-200 font-bold focus:outline-none focus:border-blue-500 text-center"
                 />
               </div>
 
@@ -675,9 +675,10 @@ export default function CreaiboxCreateTab({
                   <select
                     value={postType}
                     onChange={(e) => setPostType(e.target.value)}
-                    className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none"
+                    className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none text-center"
                   >
                     <optgroup label="1️⃣ 인사이트 & 트렌드">
+                      <option>AI 자동 포스팅</option>
                       <option>AI 인사이트 포스팅</option>
                       <option>트렌드 브리프</option>
                       <option>시장/기술 분석 리포트</option>
@@ -703,13 +704,13 @@ export default function CreaiboxCreateTab({
                   <select
                     value={selectedTone}
                     onChange={(e) => setSelectedTone(e.target.value)}
-                    className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none"
+                    className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none text-center"
                   >
-                    <option>전문적이고 통찰력 있는 분석 (기술 블로그)</option>
-                    <option>친근하고 명확한 실무 설명 (가이드형 포스팅)</option>
-                    <option>브랜드 중심의 신뢰형 설명 (서비스 소개형)</option>
-                    <option>인사이트 리포트형 톤 (트렌드 분석)</option>
-                    <option>가볍고 설득력 있는 뉴스레터형 톤</option>
+                    <option>💻 전문적이고 통찰력 있는 분석 (기술 블로그)</option>
+                    <option>✍️ 친근하고 명확한 실무 설명 (가이드형 포스팅)</option>
+                    <option>📢 브랜드 중심의 신뢰형 설명 (서비스 소개형)</option>
+                    <option>📈 인사이트 리포트형 톤 (트렌드 분석)</option>
+                    <option>✉️ 가볍고 설득력 있는 뉴스레터형 톤</option>
                   </select>
                   <ChevronDown size={14} className="text-zinc-500 shrink-0 ml-1" />
                 </div>
@@ -721,7 +722,7 @@ export default function CreaiboxCreateTab({
                   <select
                     value={wordCountGoal}
                     onChange={(e) => setWordCountGoal(e.target.value)}
-                    className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none"
+                    className="w-full bg-transparent text-[13px] font-bold outline-none cursor-pointer text-zinc-300 appearance-none text-center"
                   >
                     <option value="800">📰 짧게 (약 800자)</option>
                     <option value="1500">✍️ 보통 (약 1,500자)</option>
@@ -736,7 +737,11 @@ export default function CreaiboxCreateTab({
 
             <button
               onClick={handleAiGenerateLive}
-              disabled={isAiLoading}
+              disabled={
+                isAiLoading ||
+                !!(title && title.trim().length > 0) ||
+                !!(content && content.replace(/<[^>]*>/g, "").trim().length > 0)
+              }
               className="w-full h-16 bg-blue-600 hover:bg-blue-500 rounded-2xl relative overflow-hidden transition-all shadow-xl shadow-blue-900/40 active:scale-[0.98] disabled:opacity-80"
             >
               {isAiLoading && (
@@ -921,7 +926,7 @@ export default function CreaiboxCreateTab({
           </div>
 
           <section className="border-b border-zinc-800 text-white">
-            <div className="grid h-14 grid-cols-4 border-b border-white/10 bg-transparent">
+            <div className="sticky top-14 z-20 grid h-14 grid-cols-4 border-b border-white/10 bg-[#0b0f15]">
               {[
                 { key: "seo", label: "SEO 최적화" },
                 { key: "thumbnail", label: "썸네일" },

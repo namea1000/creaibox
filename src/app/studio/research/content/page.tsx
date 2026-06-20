@@ -281,9 +281,9 @@ export default function ResearchContentPage() {
   }
 
   return (
-    <div className="min-h-full bg-[#06080d] px-5 py-8 text-zinc-100 lg:px-8">
+    <div className="min-h-full w-full bg-zinc-50 dark:bg-[#06080d] px-5 py-8 text-zinc-800 dark:text-zinc-100 lg:px-8 transition-colors duration-300">
       <div className="mx-auto max-w-7xl space-y-8">
-        <section className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-[#12091f] p-7 shadow-2xl">
+        <section className="rounded-2xl border border-zinc-800 bg-white dark:bg-gradient-to-br dark:from-zinc-900 dark:to-[#12091f] p-7 shadow-sm dark:shadow-2xl transition-colors duration-300">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-violet-400">
@@ -313,7 +313,7 @@ export default function ResearchContentPage() {
 
         <section className="grid gap-4 lg:grid-cols-[320px_1fr]">
           <aside className="space-y-4">
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5">
+            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-5 shadow-sm dark:shadow-none transition-colors duration-300">
               <div className="flex items-center gap-3">
                 <FolderOpen className="text-violet-400" size={20} />
                 <h2 className="text-lg font-black">프로젝트 선택</h2>
@@ -337,7 +337,7 @@ export default function ResearchContentPage() {
               </select>
             </div>
 
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5">
+            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-5 shadow-sm dark:shadow-none transition-colors duration-300">
               <div className="flex items-center gap-3">
                 <Database className="text-blue-400" size={20} />
                 <h2 className="text-lg font-black">자료 선택</h2>
@@ -361,7 +361,7 @@ export default function ResearchContentPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5">
+            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-5 shadow-sm dark:shadow-none transition-colors duration-300">
               <div className="flex items-center gap-3">
                 <FileText className="text-emerald-400" size={20} />
                 <h2 className="text-lg font-black">제목</h2>
@@ -478,7 +478,7 @@ export default function ResearchContentPage() {
               generated.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5"
+                  className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-5 shadow-sm dark:shadow-none transition-colors duration-300"
                 >
                   <h3 className="font-black">{item.title || "제목 없음"}</h3>
                   <div className="mt-1 flex flex-wrap gap-3 text-xs text-zinc-500">
@@ -497,7 +497,7 @@ export default function ResearchContentPage() {
         <section className="rounded-2xl border border-violet-500/20 bg-violet-500/5 p-6">
           <div className="flex items-center gap-3">
             <Sparkles className="text-violet-400" size={20} />
-            <h2 className="text-lg font-black text-white">현재 연결 상태</h2>
+            <h2 className="text-lg font-black text-zinc-900 dark:text-white">현재 연결 상태</h2>
           </div>
 
           <p className="mt-3 text-sm leading-relaxed text-zinc-400">

@@ -50,21 +50,21 @@ export default function LibraryHomePage() {
   ];
 
   return (
-    <div className="min-h-full w-full bg-[#06080d] px-5 py-8 text-zinc-100 lg:px-8">
+    <div className="min-h-full w-full bg-transparent px-5 py-8 text-zinc-800 dark:text-zinc-100 lg:px-8 transition-colors duration-300">
       <div className="mx-auto max-w-7xl space-y-8">
-        <section className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-900 to-[#0b1120] p-7 shadow-2xl">
+        <section className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-gradient-to-br dark:from-zinc-900 dark:to-[#0b1120] p-7 shadow-2xl transition-colors duration-300">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-blue-400">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-blue-500 dark:text-blue-400">
                 <Library size={15} />
                 Content Library
               </div>
 
-              <h1 className="text-3xl font-black tracking-tight text-white md:text-5xl">
+              <h1 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white md:text-5xl">
                 콘텐츠 라이브러리
               </h1>
 
-              <p className="mt-4 max-w-2xl text-sm font-medium leading-relaxed text-zinc-400 md:text-base">
+              <p className="mt-4 max-w-2xl text-sm font-medium leading-relaxed text-zinc-600 dark:text-zinc-400 md:text-base">
                 CreAIbox에서 생성한 글쓰기, 음악, 이미지, 영상, 프롬프트를 한 곳에서 관리하는 통합 콘텐츠 저장소입니다.
               </p>
             </div>
@@ -72,7 +72,7 @@ export default function LibraryHomePage() {
             <div className="flex gap-2">
               <Link
                 href="/studio/library/all"
-                className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-sm font-black text-zinc-200 transition hover:border-blue-500/50 hover:text-white"
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 text-sm font-black text-zinc-700 dark:text-zinc-200 transition hover:border-blue-500/50 hover:text-blue-600 dark:hover:text-white"
               >
                 <Search size={17} />
                 전체 검색
@@ -96,13 +96,13 @@ export default function LibraryHomePage() {
             return (
               <div
                 key={item.label}
-                className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5"
+                className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-5 shadow-sm dark:shadow-none transition-colors"
               >
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
                   <Icon size={20} />
                 </div>
-                <p className="text-2xl font-black text-white">{item.value}</p>
-                <p className="mt-1 text-xs font-bold text-zinc-500">{item.label}</p>
+                <p className="text-2xl font-black text-zinc-900 dark:text-white">{item.value}</p>
+                <p className="mt-1 text-xs font-bold text-zinc-500 dark:text-zinc-500">{item.label}</p>
               </div>
             );
           })}
@@ -111,8 +111,8 @@ export default function LibraryHomePage() {
         <section>
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-black text-white">라이브러리 카테고리</h2>
-              <p className="mt-1 text-sm font-medium text-zinc-500">
+              <h2 className="text-xl font-black text-zinc-900 dark:text-white">라이브러리 카테고리</h2>
+              <p className="mt-1 text-sm font-medium text-zinc-500 dark:text-zinc-500">
                 제작 유형별로 콘텐츠를 정리하고 다시 활용하세요.
               </p>
             </div>
@@ -126,7 +126,7 @@ export default function LibraryHomePage() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="group rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5 transition hover:-translate-y-0.5 hover:border-blue-500/40 hover:bg-zinc-900"
+                  className="group rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-5 transition hover:-translate-y-0.5 hover:border-blue-500/40 dark:hover:bg-zinc-900 hover:shadow-xl hover:shadow-black/5 dark:hover:shadow-none"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 gap-4">
@@ -135,10 +135,10 @@ export default function LibraryHomePage() {
                       </div>
 
                       <div className="min-w-0">
-                        <h3 className="truncate text-base font-black text-white">
+                        <h3 className="truncate text-base font-black text-zinc-900 dark:text-white">
                           {item.title}
                         </h3>
-                        <p className="mt-1 line-clamp-2 text-xs font-medium leading-relaxed text-zinc-500">
+                        <p className="mt-1 line-clamp-2 text-xs font-medium leading-relaxed text-zinc-500 dark:text-zinc-550">
                           {item.desc}
                         </p>
                       </div>
@@ -146,7 +146,7 @@ export default function LibraryHomePage() {
 
                     <ArrowRight
                       size={18}
-                      className="shrink-0 text-zinc-600 transition group-hover:translate-x-1 group-hover:text-blue-400"
+                      className="shrink-0 text-zinc-400 dark:text-zinc-600 transition group-hover:translate-x-1 group-hover:text-blue-500 dark:group-hover:text-blue-400"
                     />
                   </div>
                 </Link>
@@ -155,13 +155,13 @@ export default function LibraryHomePage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+        <section className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-6 shadow-sm dark:shadow-none transition-colors">
           <div className="flex items-center gap-3">
-            <Sparkles className="text-violet-400" size={20} />
-            <h2 className="text-lg font-black text-white">빠른 활용 팁</h2>
+            <Sparkles className="text-violet-500 dark:text-violet-400" size={20} />
+            <h2 className="text-lg font-black text-zinc-900 dark:text-white">빠른 활용 팁</h2>
           </div>
 
-          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+          <p className="mt-3 text-sm leading-relaxed text-zinc-650 dark:text-zinc-400">
             자주 쓰는 프롬프트는 프롬프트 보관함에 저장하고, 완성된 글·이미지·영상은 즐겨찾기에 추가하면 다음 작업에서 빠르게 재사용할 수 있습니다.
           </p>
         </section>
