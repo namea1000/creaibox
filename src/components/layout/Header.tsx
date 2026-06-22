@@ -201,10 +201,10 @@ export default function Header() {
           ))}
         </nav>
 
-        <div className="hidden w-[390px] shrink-0 items-center justify-end gap-3 lg:flex">
+        <div className="hidden shrink-0 items-center justify-end gap-3 lg:flex">
           <Link
             href="/studio"
-            className="inline-flex h-14 items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 text-sm font-black text-white shadow-lg shadow-violet-500/20 transition hover:scale-[1.02]"
+            className="inline-flex h-14 items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 text-sm font-black text-white shadow-lg shadow-violet-500/20 transition hover:scale-[1.02] whitespace-nowrap"
           >
             <Sparkles size={16} />
             AI 스튜디오 시작하기

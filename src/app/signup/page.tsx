@@ -99,14 +99,6 @@ export default function SignupPage() {
             카카오톡으로 시작하기
           </button>
 
-          <button
-            type="button"
-            onClick={() => handleSocialLogin("naver" as Provider)}
-            className="w-full flex items-center justify-center gap-3 bg-[#03C75A] hover:bg-[#02b351] text-white py-3 rounded-full font-bold text-sm transition-all"
-          >
-            <span className="font-black text-lg">N</span>
-            네이버로 시작하기
-          </button>
         </div>
 
         <div className="flex items-center gap-4 py-2">

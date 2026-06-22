@@ -6,6 +6,7 @@ import {
   recordVaultSuccess,
   supabaseAdmin,
 } from "@/lib/server/get-free-gemini-key";
+import { createClient } from "@/utils/supabase/server";
 
 type GenerateBody = {
   type: string;
@@ -213,6 +214,17 @@ async function logUsage({
 }
 
 export async function POST(req: NextRequest) {
+  // 0. Verify user session to block unregistered/anonymous access
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  }
+
   const ipAddress = getClientIp(req);
 
   try {
@@ -229,6 +241,9 @@ export async function POST(req: NextRequest) {
     const userId = body.userId || null;
     const userEmail = body.userEmail || null;
 
+    // Temporarily disabled individual user free daily limits to let all users utilize public keys for early testing.
+    // Total key usage check (today_count >= daily_limit) is still active to protect API quota.
+    /*
     const todayUsage = await countTodayUsage({
       userId,
       ipAddress,
@@ -244,6 +259,7 @@ export async function POST(req: NextRequest) {
         { status: 429 }
       );
     }
+    */
 
     const vaultKeys = await getActiveVaultKeys("gemini");
 

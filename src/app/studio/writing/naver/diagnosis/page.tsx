@@ -138,7 +138,7 @@ export default function RealtimeDiagnosisPage() {
     ];
   }, []);
 
-  const handleStartDiagnosis = () => {
+  const handleStartDiagnosis = async () => {
     if (!targetUrl.trim()) {
       alert('진단할 네이버 블로그 포스팅 URL을 입력해 주세요!');
       return;
@@ -151,16 +151,30 @@ export default function RealtimeDiagnosisPage() {
 
     setIsScanning(true);
 
-    setTimeout(() => {
-      const nextRank = Math.floor(Math.random() * 14) + 1;
-      const previousRank = Math.floor(Math.random() * 12) + 3;
-      const nextTotal = Math.floor(Math.random() * 14) + 82;
-      const nextBounce = parseFloat((Math.random() * 12 + 18).toFixed(1));
-      const nextStayTime = Math.floor(Math.random() * 55) + 110;
-      const nextIndexScore = Math.floor(Math.random() * 11) + 86;
-      const nextSnippetScore = Math.floor(Math.random() * 18) + 74;
-      const nextFreshnessScore = Math.floor(Math.random() * 24) + 66;
-      const status: DiagnosisHistory['status'] = nextRank < previousRank ? 'up' : nextRank > previousRank ? 'down' : 'stable';
+    try {
+      const res = await fetch(
+        `/api/naver/diagnosis?url=${encodeURIComponent(targetUrl.trim())}&keyword=${encodeURIComponent(targetKeyword.trim())}`
+      );
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          alert('인증이 만료되었습니다. 다시 로그인해 주세요.');
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          alert(errData.error || '실시간 노출 진단 중 오류가 발생했습니다.');
+        }
+        setIsScanning(false);
+        return;
+      }
+
+      const data = await res.json();
+
+      const previousRank = rankNow;
+      const nextRank = data.rank;
+      const status: DiagnosisHistory['status'] = 
+        nextRank === 101 ? 'out' : 
+        nextRank < previousRank ? 'up' : 
+        nextRank > previousRank ? 'down' : 'stable';
 
       const newDiagnosis: DiagnosisHistory = {
         id: String(Date.now()),
@@ -169,21 +183,25 @@ export default function RealtimeDiagnosisPage() {
         rank: nextRank,
         prevRank: previousRank,
         status,
-        date: new Date().toISOString().split('T')[0]
+        date: data.date
       };
 
       setRankNow(nextRank);
       setPrevRank(previousRank);
-      setTotalScore(nextTotal);
-      setBounceRate(nextBounce);
-      setStayTime(nextStayTime);
-      setIndexScore(nextIndexScore);
-      setSnippetScore(nextSnippetScore);
-      setFreshnessScore(nextFreshnessScore);
+      setTotalScore(data.totalScore);
+      setBounceRate(data.bounceRate);
+      setStayTime(data.stayTime);
+      setIndexScore(data.indexScore);
+      setSnippetScore(data.snippetScore);
+      setFreshnessScore(data.freshnessScore);
       setHistoryList((prev) => [newDiagnosis, ...prev]);
       setActiveTab('summary');
+    } catch (e) {
+      console.error(e);
+      alert('서버와의 통신 중 오류가 발생했습니다.');
+    } finally {
       setIsScanning(false);
-    }, 1500);
+    }
   };
 
   const handleCopyReport = () => {

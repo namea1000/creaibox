@@ -1,72 +1,149 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/server/get-free-gemini-key";
+import { supabaseAdmin, recordVaultSuccess, recordVaultFailure } from "@/lib/server/get-free-gemini-key";
 import { decryptApiKey } from "@/lib/server/api-vault-crypto";
+import { createClient } from "@/utils/supabase/server";
 
 // Unified proxy endpoint for YouTube Data API v3
 export async function GET(req: NextRequest) {
+  // 0. Verify user session to block unregistered/anonymous access
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  }
+
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type");
+  const referer = req.headers.get("referer") || "http://localhost:3000/";
+  let vaultId: number | null = null;
   
   try {
-    // 1. Get decrypted key from vault
-    const { data: vaultData, error: vaultError } = await supabaseAdmin
+    // 1. Get active YouTube keys sorted by priority and today_count
+    const { data: vaultKeys, error: vaultError } = await supabaseAdmin
       .from("admin_api_vault")
-      .select("key")
+      .select("id, key, today_count, daily_limit")
       .eq("provider", "youtube")
       .eq("status", "active")
-      .limit(1)
-      .single();
+      .order("priority", { ascending: true })
+      .order("today_count", { ascending: true });
 
-    if (vaultError || !vaultData?.key) {
-      console.warn("YouTube API key not found in vault. Falling back to mock data.");
+    if (vaultError || !vaultKeys || vaultKeys.length === 0) {
+      console.warn("YouTube API keys not found in vault. Falling back to mock data.");
       return NextResponse.json(getMockData(type, searchParams));
     }
 
-    const apiKey = decryptApiKey(vaultData.key);
+    let selectedVault = null;
+    for (const vault of vaultKeys) {
+      if ((vault.today_count || 0) < (vault.daily_limit || 1000)) {
+        selectedVault = vault;
+        break;
+      }
+    }
+
+    if (!selectedVault) {
+      console.warn("No active YouTube API key with available quota found in vault. Falling back to mock data.");
+      return NextResponse.json(getMockData(type, searchParams));
+    }
+
+    const apiKey = decryptApiKey(selectedVault.key);
     if (!apiKey) {
       console.warn("YouTube API key decryption failed. Falling back to mock data.");
       return NextResponse.json(getMockData(type, searchParams));
     }
 
+    vaultId = selectedVault.id;
+
     // 2. Route request to appropriate Google API calls
     switch (type) {
       case "trending": {
         const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular&regionCode=KR&maxResults=10&key=${apiKey}`;
-        const response = await fetch(url);
+        const response = await fetch(url, { headers: { Referer: referer } });
         if (!response.ok) throw new Error(`Google API returned ${response.status}`);
         const data = await response.json();
+        if (vaultId !== null) {
+          await recordVaultSuccess(vaultId);
+        }
         return NextResponse.json({ source: "youtube-api", data: data.items || [] });
       }
 
       case "channel": {
-        const query = searchParams.get("query") || "";
+        let query = searchParams.get("query") || "";
         if (!query) return NextResponse.json({ error: "Missing query parameter" }, { status: 400 });
 
-        // Step 2a: Search for the channel to find its ID
-        const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=channel&maxResults=1&key=${apiKey}`;
-        const searchRes = await fetch(searchUrl);
-        if (!searchRes.ok) throw new Error("Google search API call failed");
-        const searchData = await searchRes.json();
-        const channelItem = searchData.items?.[0];
+        let channelId = "";
 
-        if (!channelItem) {
-          return NextResponse.json({ error: "Channel not found" }, { status: 404 });
+        // Check if query is a URL
+        if (query.includes("youtube.com") || query.includes("youtu.be")) {
+          // 1. Check if it's a direct channel ID URL: /channel/UC...
+          const channelIdMatch = query.match(/\/channel\/(UC[a-zA-Z0-9_-]{22})/);
+          if (channelIdMatch) {
+            channelId = channelIdMatch[1];
+          } 
+          // 2. Check if it's a handle URL: /@username
+          else if (query.includes("/@")) {
+            const handleMatch = query.match(/\/(@[a-zA-Z0-9_.-]+)/);
+            if (handleMatch) {
+              query = handleMatch[1]; // Set query to the handle (e.g. "@suno") to let search find it
+            }
+          } 
+          // 3. Otherwise, check if it's a video URL
+          else {
+            let videoId = "";
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = query.match(regExp);
+            if (match && match[2].length === 11) {
+              videoId = match[2];
+            }
+
+            if (videoId) {
+              // Fetch video details to find channelId
+              const videoUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${apiKey}`;
+              const videoRes = await fetch(videoUrl, { headers: { Referer: referer } });
+              if (videoRes.ok) {
+                const videoData = await videoRes.json();
+                const videoItem = videoData.items?.[0];
+                if (videoItem?.snippet?.channelId) {
+                  channelId = videoItem.snippet.channelId;
+                }
+              }
+            }
+          }
         }
 
-        const channelId = channelItem.id.channelId;
+        // If we didn't extract a direct channelId, search for the channel using the query
+        if (!channelId) {
+          const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=channel&maxResults=1&key=${apiKey}`;
+          const searchRes = await fetch(searchUrl, { headers: { Referer: referer } });
+          if (!searchRes.ok) throw new Error("Google search API call failed");
+          const searchData = await searchRes.json();
+          const channelItem = searchData.items?.[0];
+
+          if (!channelItem) {
+            return NextResponse.json({ error: "Channel not found" }, { status: 404 });
+          }
+
+          channelId = channelItem.id.channelId;
+        }
 
         // Step 2b: Get channel statistics and snippet details
         const channelUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${channelId}&key=${apiKey}`;
-        const channelRes = await fetch(channelUrl);
+        const channelRes = await fetch(channelUrl, { headers: { Referer: referer } });
         if (!channelRes.ok) throw new Error("Google channels API call failed");
         const channelData = await channelRes.json();
         const channelStats = channelData.items?.[0];
 
         // Step 2c: Get channel's recent videos
         const videosUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&order=date&type=video&maxResults=5&key=${apiKey}`;
-        const videosRes = await fetch(videosUrl);
+        const videosRes = await fetch(videosUrl, { headers: { Referer: referer } });
         const videosData = videosRes.ok ? await videosRes.json() : { items: [] };
 
+        if (vaultId !== null) {
+          await recordVaultSuccess(vaultId);
+        }
         return NextResponse.json({
           source: "youtube-api",
           channel: channelStats || null,
@@ -87,7 +164,7 @@ export async function GET(req: NextRequest) {
         }
 
         const detailUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,topicDetails&id=${videoId}&key=${apiKey}`;
-        const detailRes = await fetch(detailUrl);
+        const detailRes = await fetch(detailUrl, { headers: { Referer: referer } });
         if (!detailRes.ok) throw new Error("Google videos API call failed");
         const detailData = await detailRes.json();
         const videoDetails = detailData.items?.[0];
@@ -96,6 +173,9 @@ export async function GET(req: NextRequest) {
           return NextResponse.json({ error: "Video not found" }, { status: 404 });
         }
 
+        if (vaultId !== null) {
+          await recordVaultSuccess(vaultId);
+        }
         return NextResponse.json({
           source: "youtube-api",
           video: videoDetails,
@@ -107,6 +187,9 @@ export async function GET(req: NextRequest) {
     }
   } catch (error: any) {
     console.error("YouTube API call failed: ", error.message);
+    if (vaultId) {
+      await recordVaultFailure(vaultId, error.message || "Unknown YouTube API error");
+    }
     // Graceful fallback to mock data on rate limits/quota limits/network failure
     return NextResponse.json(getMockData(type, searchParams));
   }

@@ -87,28 +87,6 @@ export async function GET(req: Request) {
       headers["Content-Range"] = String(contentRange);
     }
 
-    // Write debug log to file
-    try {
-      const fs = require("fs");
-      const logData = {
-        timestamp: new Date().toISOString(),
-        rangeHeader,
-        resStatus: res.status,
-        resHeadersType: typeof res.headers,
-        resHeadersIsInstance: res.headers && typeof res.headers.get === "function",
-        resHeadersKeys: res.headers ? Object.keys(res.headers) : [],
-        extractedContentLength: contentLength,
-        extractedContentRange: contentRange,
-        computedHeaders: headers
-      };
-      fs.writeFileSync(
-        "/Users/a1234/.gemini/antigravity-ide/brain/a6e391c1-3460-4765-a760-c651c0009136/scratch/api_debug.json",
-        JSON.stringify(logData, null, 2)
-      );
-    } catch (e) {
-      console.error("Failed to write api_debug.json", e);
-    }
-
     return new NextResponse(new Uint8Array(res.data) as any, {
       status: res.status,
       headers,

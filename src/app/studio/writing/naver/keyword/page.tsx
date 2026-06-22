@@ -187,7 +187,7 @@ export default function NaverKeywordAnalysisPage() {
     };
   }, [activeRecord, scanKeyword]);
 
-  const handleStartKeywordScan = () => {
+  const handleStartKeywordScan = async () => {
     if (!scanKeyword.trim()) {
       alert('추적 스캔할 타겟 키워드를 입력해 주세요!');
       return;
@@ -195,34 +195,41 @@ export default function NaverKeywordAnalysisPage() {
 
     setIsAnalyzing(true);
 
-    setTimeout(() => {
-      const searchVolume = Math.floor(Math.random() * 90000) + 8000;
-      const docCount = Math.floor(Math.random() * 60000) + 800;
-      const calculatedSaturation = parseFloat(((docCount / searchVolume) * 100).toFixed(1));
-      const finalGrade = getGradeFromSaturation(calculatedSaturation);
+    try {
+      const res = await fetch(`/api/naver/keyword?keyword=${encodeURIComponent(scanKeyword.trim())}`);
+      
+      if (!res.ok) {
+        if (res.status === 401) {
+          alert('인증이 만료되었습니다. 다시 로그인해 주세요.');
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          alert(errData.error || '키워드 분석 중 오류가 발생했습니다.');
+        }
+        setIsAnalyzing(false);
+        return;
+      }
+
+      const data = await res.json();
 
       const newKeywordRow: GoldenKeyword = {
         id: String(Date.now()),
-        keyword: scanKeyword.trim(),
-        monthlySearch: searchVolume,
-        totalDocs: docCount,
-        saturation: calculatedSaturation,
-        grade: finalGrade,
-        createdAt: new Date().toISOString().split('T')[0]
+        keyword: data.keyword,
+        monthlySearch: data.monthlySearch,
+        totalDocs: data.totalDocs,
+        saturation: data.saturation,
+        grade: data.grade,
+        createdAt: data.createdAt
       };
 
-      setGoldenList((prev) => [newKeywordRow, ...prev.filter((item) => item.keyword !== scanKeyword.trim())]);
-      setRelatedList([
-        { keyword: `${scanKeyword} 전망 분석`, docCount: Math.floor(Math.random() * 40000) + 10000, intent: '정보성', tip: '핵심 질문형 제목과 함께 쓰면 체류시간이 길어집니다.' },
-        { keyword: `${scanKeyword} 최신 뉴스`, docCount: Math.floor(Math.random() * 30000) + 5000, intent: '급상승', tip: '실시간 이슈 연결형 본문으로 빠르게 발행하는 것이 중요합니다.' },
-        { keyword: `${scanKeyword} 비교`, docCount: Math.floor(Math.random() * 18000) + 3000, intent: '상업성', tip: '대체재나 경쟁 대상을 함께 묶으면 클릭률이 높아집니다.' },
-        { keyword: `${scanKeyword} 장단점`, docCount: Math.floor(Math.random() * 12000) + 1500, intent: '정보성', tip: '후기형 말투와 궁합이 좋아 블로그 문체에 잘 맞습니다.' },
-        { keyword: `${scanKeyword} 추천`, docCount: Math.floor(Math.random() * 15000) + 2200, intent: '상업성', tip: '목록형 구성과 썸네일 조합이 특히 잘 먹히는 키워드입니다.' },
-        { keyword: `${scanKeyword} 2026`, docCount: Math.floor(Math.random() * 9000) + 1000, intent: '급상승', tip: '연도 키워드를 붙이면 최신성 신호를 강조하기 좋습니다.' }
-      ]);
+      setGoldenList((prev) => [newKeywordRow, ...prev.filter((item) => item.keyword !== data.keyword)]);
+      setRelatedList(data.relatedList);
       setActiveTab('opportunity');
+    } catch (e) {
+      console.error(e);
+      alert('서버와의 통신 중 오류가 발생했습니다.');
+    } finally {
       setIsAnalyzing(false);
-    }, 1100);
+    }
   };
 
   const handleCopyRelatedKeywords = () => {
