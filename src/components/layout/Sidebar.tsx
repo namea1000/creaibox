@@ -664,24 +664,28 @@ export default function Sidebar({
         ${isMobileOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"}
       `}
     >
-      <div className="flex h-20 items-center border-b border-zinc-200 dark:border-zinc-800/80 px-3">
-        <Link href="/" className="flex min-w-0 items-center gap-2.5">
-          <div className="flex h-[46px] w-[46px] shrink-0 items-center justify-center overflow-hidden rounded-xl shadow-lg shadow-blue-950/5 dark:shadow-blue-950/30">
-            <Image
-              src="/icon.png"
-              alt="CreAibox"
-              width={70}
-              height={70}
-              className="h-full w-full object-cover"
-              priority
-            />
-          </div>
-
-          {!isCollapsed && (
-            <div className="flex min-w-0 items-center">
-              <p className="truncate text-2xl font-black leading-none tracking-tight text-zinc-800 dark:text-white">
-                CreAibox
-              </p>
+      <div className="flex h-20 items-center border-b border-zinc-200 dark:border-zinc-800/80 px-3 dark:bg-[#02030a]">
+        <Link href="/" className="flex min-w-0 items-center justify-center w-full">
+          {isCollapsed ? (
+            <div className="flex h-[46px] w-[46px] shrink-0 items-center justify-center overflow-hidden rounded-xl shadow-lg shadow-blue-950/5 dark:shadow-blue-950/30">
+              <Image
+                src="/icon.png"
+                alt="CreAibox"
+                width={70}
+                height={70}
+                className="h-full w-full object-cover"
+                priority
+              />
+            </div>
+          ) : (
+            <div className="relative h-[40px] w-[190px] shrink-0 flex items-center justify-center">
+              <Image
+                src="/creaibox_studio_logo.webp"
+                alt="CreAibox Studio"
+                fill
+                className="object-contain scale-[1.9]"
+                priority
+              />
             </div>
           )}
         </Link>

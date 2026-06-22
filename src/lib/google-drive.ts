@@ -198,6 +198,31 @@ export async function getGoogleDriveStream(fileId: string, rangeHeader?: string)
 }
 
 /**
+ * Fetches the media buffer of a Google Drive file, optionally with a Range header.
+ */
+export async function getGoogleDriveBuffer(fileId: string, rangeHeader?: string) {
+  const drive = getDriveClient();
+  const requestHeaders: Record<string, string> = {};
+  if (rangeHeader) {
+    requestHeaders["Range"] = rangeHeader;
+  }
+
+  const response = await drive.files.get(
+    { fileId, alt: "media" },
+    {
+      headers: requestHeaders,
+      responseType: "arraybuffer",
+    }
+  );
+
+  return {
+    status: response.status,
+    headers: response.headers as Record<string, any>,
+    data: Buffer.from(response.data as ArrayBuffer),
+  };
+}
+
+/**
  * Lists files in the free assets Google Drive folder.
  */
 export async function listFreeAssets(folderId: string) {

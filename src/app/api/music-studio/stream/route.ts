@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { getGoogleDriveStream } from "@/lib/google-drive";
+import { getGoogleDriveBuffer } from "@/lib/google-drive";
 import { Readable } from "stream";
 import { createHmac } from "crypto";
 
@@ -58,29 +58,60 @@ export async function GET(req: Request) {
     // 3. Range 헤더 파싱 및 전달
     const rangeHeader = req.headers.get("range") || undefined;
 
-    // 4. Google Drive 스트림 가져오기
-    const res = await getGoogleDriveStream(fileId, rangeHeader);
+    // 4. Google Drive 버퍼 가져오기
+    const res = await getGoogleDriveBuffer(fileId, rangeHeader);
+
+    // Helper to get headers safely regardless of whether it's a plain object or Headers instance
+    const getHeader = (h: any, key: string): string | undefined => {
+      if (!h) return undefined;
+      if (typeof h.get === "function") {
+        return h.get(key) || undefined;
+      }
+      return h[key] || h[key.toLowerCase()] || h[key.toUpperCase()] || undefined;
+    };
 
     // 5. 응답 헤더 구성
-    const responseHeaders = new Headers();
-    if (res.headers["content-type"]) {
-      responseHeaders.set("Content-Type", res.headers["content-type"]);
-    }
-    if (res.headers["content-length"]) {
-      responseHeaders.set("Content-Length", res.headers["content-length"]);
-    }
-    if (res.headers["content-range"]) {
-      responseHeaders.set("Content-Range", res.headers["content-range"]);
-    }
-    responseHeaders.set("Accept-Ranges", "bytes");
-    responseHeaders.set("Cache-Control", "private, max-age=3600");
+    const contentType = getHeader(res.headers, "Content-Type") || "audio/mpeg";
+    const headers: Record<string, string> = {
+      "Content-Type": contentType,
+      "Accept-Ranges": "bytes",
+      "Cache-Control": "private, max-age=3600",
+    };
 
-    // 6. Node.js Readable 스트림을 Web ReadableStream으로 변환
-    const webStream = Readable.toWeb(res.stream as any);
+    const contentLength = getHeader(res.headers, "Content-Length");
+    if (contentLength) {
+      headers["Content-Length"] = String(contentLength);
+    }
+    const contentRange = getHeader(res.headers, "Content-Range");
+    if (contentRange) {
+      headers["Content-Range"] = String(contentRange);
+    }
 
-    return new Response(webStream as any, {
+    // Write debug log to file
+    try {
+      const fs = require("fs");
+      const logData = {
+        timestamp: new Date().toISOString(),
+        rangeHeader,
+        resStatus: res.status,
+        resHeadersType: typeof res.headers,
+        resHeadersIsInstance: res.headers && typeof res.headers.get === "function",
+        resHeadersKeys: res.headers ? Object.keys(res.headers) : [],
+        extractedContentLength: contentLength,
+        extractedContentRange: contentRange,
+        computedHeaders: headers
+      };
+      fs.writeFileSync(
+        "/Users/a1234/.gemini/antigravity-ide/brain/a6e391c1-3460-4765-a760-c651c0009136/scratch/api_debug.json",
+        JSON.stringify(logData, null, 2)
+      );
+    } catch (e) {
+      console.error("Failed to write api_debug.json", e);
+    }
+
+    return new NextResponse(new Uint8Array(res.data) as any, {
       status: res.status,
-      headers: responseHeaders,
+      headers,
     });
   } catch (error: any) {
     console.error("Stream route error:", error);
