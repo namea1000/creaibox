@@ -669,7 +669,7 @@ export default function Sidebar({
           <div className="flex h-[46px] w-[46px] shrink-0 items-center justify-center overflow-hidden rounded-xl shadow-lg shadow-blue-950/5 dark:shadow-blue-950/30">
             <Image
               src="/icon.png"
-              alt="Creaibox"
+              alt="CreAibox"
               width={70}
               height={70}
               className="h-full w-full object-cover"
@@ -680,7 +680,7 @@ export default function Sidebar({
           {!isCollapsed && (
             <div className="flex min-w-0 items-center">
               <p className="truncate text-2xl font-black leading-none tracking-tight text-zinc-800 dark:text-white">
-                Creaibox
+                CreAibox
               </p>
             </div>
           )}

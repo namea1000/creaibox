@@ -180,7 +180,7 @@ export default function Header() {
           <Link href="/" className="block">
             <Image
               src="/logobg.webp"
-              alt="CreAIbox"
+              alt="CreAibox"
               width={190}
               height={40}
               className="object-contain"

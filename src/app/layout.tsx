@@ -16,21 +16,21 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   metadataBase: new URL("https://creaibox.com"),
-  title: "크리에이박스(CreAIbox) | 올인원 AI 콘텐츠 스튜디오",
+  title: "크리에이박스(CreAibox) | 올인원 AI 콘텐츠 스튜디오",
   description:
-    "글쓰기, 블로그, 이미지, 음악, 영상, 뉴스, 트렌드 분석까지 한 번에. CreAIbox는 크리에이터를 위한 올인원 AI 콘텐츠 제작 플랫폼입니다.",
+    "글쓰기, 블로그, 이미지, 음악, 영상, 뉴스, 트렌드 분석까지 한 번에. CreAibox는 크리에이터를 위한 올인원 AI 콘텐츠 제작 플랫폼입니다.",
   openGraph: {
-    title: "크리에이박스(CreAIbox) | 올인원 AI 콘텐츠 스튜디오",
+    title: "크리에이박스(CreAibox) | 올인원 AI 콘텐츠 스튜디오",
     description:
-      "글쓰기, 블로그, 이미지, 음악, 영상, 뉴스, 트렌드 분석까지 한 번에. CreAIbox는 크리에이터를 위한 올인원 AI 콘텐츠 제작 플랫폼입니다.",
+      "글쓰기, 블로그, 이미지, 음악, 영상, 뉴스, 트렌드 분석까지 한 번에. CreAibox는 크리에이터를 위한 올인원 AI 콘텐츠 제작 플랫폼입니다.",
     url: "https://creaibox.com",
-    siteName: "CreAIbox",
+    siteName: "CreAibox",
     images: [
       {
         url: "/logothumbnail.webp",
         width: 1200,
         height: 630,
-        alt: "CreAIbox Logo",
+        alt: "CreAibox Logo",
       },
     ],
     locale: "ko_KR",
@@ -38,9 +38,9 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "크리에이박스(CreAIbox) | 올인원 AI 콘텐츠 스튜디오",
+    title: "크리에이박스(CreAibox) | 올인원 AI 콘텐츠 스튜디오",
     description:
-      "글쓰기, 블로그, 이미지, 음악, 영상, 뉴스, 트렌드 분석까지 한 번에. CreAIbox는 크리에이터를 위한 올인원 AI 콘텐츠 제작 플랫폼입니다.",
+      "글쓰기, 블로그, 이미지, 음악, 영상, 뉴스, 트렌드 분석까지 한 번에. CreAibox는 크리에이터를 위한 올인원 AI 콘텐츠 제작 플랫폼입니다.",
     images: ["/logothumbnail.webp"],
   },
 };

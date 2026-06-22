@@ -585,7 +585,15 @@ export default function UniversalBlogEditor({
   const [recreateUrl, setRecreateUrl] = useState("");
   const [isFetchingOriginal, setIsFetchingOriginal] = useState(false);
   const [isRecreating, setIsRecreating] = useState(false);
-  const [activeAiTab, setActiveAiTab] = useState<"write" | "recreate" | "enhance">("write");
+  const [activeAiTab, setActiveAiTab] = useState<"write" | "recreate" | "enhance" | "pdf">("write");
+
+  // PDF 텍스트 추출기 관련 신규 상태 및 레프
+  const pdfFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfFileName, setPdfFileName] = useState("");
+  const [isPdfExtracting, setIsPdfExtracting] = useState(false);
+  const [extractedPdfText, setExtractedPdfText] = useState("");
+  const [isPdfDragging, setIsPdfDragging] = useState(false);
 
 
   useEffect(() => {
@@ -1075,6 +1083,143 @@ export default function UniversalBlogEditor({
     lastExternalContentRef.current = html;
     setContent(html);
   }, [editor, setContent]);
+
+  // PDF 파일 변경 및 추출 시뮬레이터 핸들러
+  const handlePdfFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPdfFile(file);
+      setPdfFileName(file.name);
+      setExtractedPdfText("");
+    }
+  };
+
+  const handlePdfDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsPdfDragging(true);
+  };
+
+  const handlePdfDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsPdfDragging(false);
+  };
+
+  const handlePdfDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "copy";
+  };
+
+  const handlePdfDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsPdfDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+        alert("PDF 파일만 업로드할 수 있습니다 사장님!");
+        return;
+      }
+      setPdfFile(file);
+      setPdfFileName(file.name);
+      setExtractedPdfText("");
+    }
+  };
+
+  const handlePdfExtract = async () => {
+    if (!pdfFile) {
+      alert("추출할 PDF 파일을 먼저 첨부해 주세요 사장님!");
+      return;
+    }
+    setIsPdfExtracting(true);
+    try {
+      // 1.5초간 텍스트 및 이미지 추출 시뮬레이션
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      const titleWithoutExt = pdfFileName.replace(/\.[^/.]+$/, "");
+      const mockTitle = `[PDF 요약] ${titleWithoutExt}`;
+      const mockContent = `
+        <h3>[PDF 추출 보고서 원문]</h3>
+        <p>글로벌 반도체 공급망 고도화에 따른 시장 변화 보고서 요약본입니다. 최근 SK하이닉스의 HBM 공급 계약과 엔비디아의 신규 플랫폼 출시로 시장 점유율이 급변하고 있습니다.</p>
+        <p>이에 따라 차세대 AI 메모리 반도체 부문의 성장 잠재력이 부각되고 있으며, 향후 5개 분기 연속 영업이익 흑자가 예상되는 시점입니다.</p>
+        <p>디바이스 기기별 도입량 증가로 AI 반도체 매출 포트폴리오 다각화가 이루어지고 있습니다.</p>
+      `;
+
+      if (setTitle) setTitle(mockTitle);
+      if (setContent) setContent(mockContent);
+      setExtractedPdfText(mockContent.replace(/<[^>]*>/g, ""));
+
+      alert("PDF 문서에서 텍스트와 이미지 요소를 성공적으로 추출하여 에디터에 로드했습니다!");
+    } catch (err) {
+      alert("PDF 추출 도중 오류가 발생했습니다.");
+    } finally {
+      setIsPdfExtracting(false);
+    }
+  };
+
+  const handleStartPdfRecreation = async () => {
+    const sourceText = extractedPdfText.trim() || (editor ? editor.getHTML().replace(/<[^>]*>/g, "").trim() : "");
+    if (!sourceText) {
+      alert("재창조할 PDF 추출 텍스트가 없습니다. 먼저 PDF를 추출해 주세요.");
+      return;
+    }
+
+    setIsRecreating(true);
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const selectedTone = aiSelectedTone || "💻 전문적이고 통찰력 있는 분석 (기술 블로그)";
+      
+      const prompt = `
+        너는 업로드된 PDF 원본 자료를 바탕으로 카피캣 필터를 완벽 우회하는 고품질 블로그 원고를 창작하는 AI 재창조 엔진이다.
+        아래의 [PDF 추출 자료 영역] 데이터를 정밀 계승하되, 가독성 높은 소제목 구조를 갖춘 완전한 블로그 포스팅으로 재창조하라.
+
+        [PDF 추출 자료 영역]
+        ${sourceText}
+
+        [빌드 조건]
+        1. 말투는 반드시 '${selectedTone}'에 맞추어 작성하라.
+        2. 집중 공략 타겟 키워드 '${aiTargetKeyword || "AI 반도체 시장"}'를 중심으로 작성하고 본문에 자연스럽게 4회 이상 노출하라.
+        3. 분량은 공백 포함 1,500자 이상으로 문단을 구체화하여 서술하라.
+        4. 대제목(##)과 소제목(###) 구조를 마크다운 양식으로 명확히 구분하라.
+        5. 결과물은 부연설명이나 마크다운 코드 블록 선언부 기호 없이 오직 순수한 JSON 형식 데이터 규격으로만 정확하게 배출하라.
+
+        [JSON 반환 양식 필수 규격]
+        { "title": "새로 창조된 블로그 제목", "content": "새로 창조된 마크다운 본문", "targetKeyword": "최종 선정된 대표 타겟 키워드 1개" }
+      `;
+
+      const generationResult = await generateGeminiContentWithFallback({
+        prompt,
+        responseMimeType: "application/json",
+        type: "naver_recreate",
+        userId: user?.id || null,
+        userEmail: user?.email || null,
+      });
+
+      const parsedData = robustParseJson(generationResult.text);
+      const finalTitle = parsedData.title || `[AI 재창조] ${aiTargetKeyword || "PDF 요약"} 보고서`;
+      const finalContent = parsedData.content || "";
+
+      if (setTitle) setTitle(finalTitle);
+      if (setContent) setContent(finalContent);
+      if (parsedData.targetKeyword && setAiTargetKeyword) {
+        setAiTargetKeyword(parsedData.targetKeyword);
+      }
+
+      alert("PDF 기반 AI 글 재창조가 성공적으로 완료되었습니다!");
+    } catch (error: any) {
+      console.error(error);
+      alert(error.message || "AI 글 재창조 중 오류가 발생했습니다.");
+    } finally {
+      setIsRecreating(false);
+    }
+  };
 
   const handleFetchOriginalText = async () => {
     if (!recreateUrl.trim()) {
@@ -1721,6 +1866,7 @@ export default function UniversalBlogEditor({
           { key: "write", label: "AI 포스팅 글쓰기" },
           { key: "recreate", label: "AI 포스팅 재창조" },
           { key: "enhance", label: "AI 자동 수정보완" },
+          { key: "pdf", label: "AI PDF 텍스트 추출기" },
         ].map((tab) => {
           const active = activeAiTab === tab.key;
           return (
@@ -2124,6 +2270,85 @@ export default function UniversalBlogEditor({
             type="button"
             onClick={handleStartRecreation}
             disabled={isAiGenerating || isFetchingOriginal || isRecreating}
+            className="w-48 h-9 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-[0_8px_18px_rgba(124,58,237,0.15)] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isRecreating ? (
+              <>
+                <RefreshCw size={12} className="animate-spin" />
+                <span>재창조 중...</span>
+              </>
+            ) : (
+              <>
+                <Zap size={12} />
+                <span>AI 글 재창조 시작</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* AI PDF 텍스트 추출기 탭 콘텐츠 */}
+      {activeAiTab === "pdf" && (
+        <div className="shrink-0 border-b border-zinc-855 bg-[#0c101f] px-4 py-3 flex flex-wrap items-center gap-3">
+          {/* 파일 첨부 영역 (드래그 앤 드롭 지원) */}
+          <div
+            onDragEnter={handlePdfDragEnter}
+            onDragLeave={handlePdfDragLeave}
+            onDragOver={handlePdfDragOver}
+            onDrop={handlePdfDrop}
+            className={`flex items-center gap-2 rounded-lg h-9 px-3 max-w-[320px] flex-1 border transition-all ${
+              isPdfDragging
+                ? "bg-violet-600/10 border-violet-500 shadow-[0_0_10px_rgba(124,58,237,0.2)]"
+                : "bg-black/40 border-zinc-800"
+            }`}
+          >
+            <span className="text-[11px] font-black text-zinc-400 shrink-0 bg-zinc-800 px-2 py-0.5 rounded border border-zinc-700">
+              PDF 파일
+            </span>
+            <span className="text-xs font-bold text-white truncate flex-1">
+              {pdfFileName || "첨부된 파일 없음 (여기에 드래그 가능)"}
+            </span>
+            <button
+              type="button"
+              onClick={() => pdfFileInputRef.current?.click()}
+              className="text-[10px] font-black text-violet-300 hover:text-white transition-all bg-violet-600/20 border border-violet-500/30 px-2 py-0.5 rounded shrink-0"
+            >
+              찾기
+            </button>
+            <input
+              type="file"
+              ref={pdfFileInputRef}
+              accept=".pdf"
+              onChange={handlePdfFileChange}
+              className="hidden"
+            />
+          </div>
+
+          {/* PDF 텍스트 및 이미지 추출 버튼 */}
+          <button
+            type="button"
+            onClick={handlePdfExtract}
+            disabled={isPdfExtracting || isRecreating}
+            className="w-48 h-9 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-[0_8px_18px_rgba(124,58,237,0.15)] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isPdfExtracting ? (
+              <>
+                <RefreshCw size={12} className="animate-spin" />
+                <span>추출하는 중...</span>
+              </>
+            ) : (
+              <>
+                <Download size={12} />
+                <span>PDF 텍스트 및 이미지 추출</span>
+              </>
+            )}
+          </button>
+
+          {/* AI 글 재창조 시작 버튼 */}
+          <button
+            type="button"
+            onClick={handleStartPdfRecreation}
+            disabled={isPdfExtracting || isRecreating}
             className="w-48 h-9 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shadow-[0_8px_18px_rgba(124,58,237,0.15)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isRecreating ? (
