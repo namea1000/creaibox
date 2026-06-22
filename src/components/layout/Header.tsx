@@ -177,13 +177,13 @@ export default function Header() {
     <header className="fixed left-0 right-0 top-0 z-[100] border-b border-slate-200/70 bg-white/80 backdrop-blur-xl">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 lg:px-8">
         <div className="flex w-[240px] shrink-0 items-center">
-          <Link href="/" className="flex items-center">
+          <Link href="/" className="flex h-12 items-center overflow-hidden">
             <Image
               src="/logobg.webp"
               alt="CreAibox"
               width={228}
               height={48}
-              className="object-contain"
+              className="object-contain translate-y-[2px]"
               priority
             />
           </Link>
