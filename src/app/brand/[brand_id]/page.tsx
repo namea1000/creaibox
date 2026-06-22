@@ -117,10 +117,24 @@ export async function generateMetadata({ params }: BrandPageProps): Promise<Meta
   const blogTitle = profile.extra_configs?.blog_title || `${profile.nickname || brand_id} 블로그`;
   const blogDesc = profile.extra_configs?.blog_description || "CreAibox에서 생성한 고품질 콘텐츠 블로그입니다.";
 
+  const configs = profile.extra_configs || {};
+  const customDomain = configs[`custom_domain_${brand_id}`] || 
+    (brand_id === profile.brand_id ? configs.custom_domain : "");
+  const customDomainStatus = configs[`custom_domain_status_${brand_id}`] || 
+    (brand_id === profile.brand_id ? configs.custom_domain_status : "NONE");
+
+  const canonicalUrl = (customDomain && customDomainStatus === "APPROVED")
+    ? `https://${customDomain}`
+    : `https://${brand_id.toLowerCase()}.creaibox.com`;
+
   const meta: Metadata = {
     title: blogTitle,
     description: blogDesc,
+    alternates: {
+      canonical: canonicalUrl,
+    },
   };
+
 
   if (profile.extra_configs?.naver_advisor_key) {
     meta.other = {

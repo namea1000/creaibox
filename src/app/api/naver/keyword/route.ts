@@ -4,7 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 export async function GET(req: NextRequest) {
   try {
     // 1. 사용자 로그인 인증 세션 체크 (보안 강화)
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {

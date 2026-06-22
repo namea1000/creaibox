@@ -25,7 +25,7 @@ function extractNaverBlogKeys(url: string) {
 export async function GET(req: NextRequest) {
   try {
     // 1. 사용자 로그인 인증 세션 체크
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
@@ -145,10 +145,9 @@ export async function GET(req: NextRequest) {
     const indexScore = actualRank <= 100 ? 95 : 60;
     const totalScore = Math.round((rankScore * 0.4) + (snippetScore * 0.3) + (freshnessScore * 0.3));
 
-    // 7. 결과 반환
     return NextResponse.json({
       targetUrl,
-      targetKeyword,
+      targetKeyword: keyword,
       rank: actualRank,
       totalScore,
       bounceRate,
