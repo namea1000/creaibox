@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, usePathname } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Search, ArrowLeft, Check } from "lucide-react";
 import UniversalBlogEditor from "@/components/writing/editor/UniversalBlogEditor";
@@ -20,6 +20,7 @@ const supabase = createClient();
 export default function NaverManuscriptDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const pathname = usePathname();
   const queryClient = useQueryClient();
   const manuscriptId = String(params?.id ?? "");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -45,6 +46,21 @@ export default function NaverManuscriptDetailPage() {
       setIsMounted(true);
     });
   }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.");
+          router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+        }
+      }
+    };
+    void checkAuth();
+  }, [isMounted, pathname, router]);
 
   useEffect(() => {
     if (!isMounted) return;
@@ -94,6 +110,14 @@ export default function NaverManuscriptDetailPage() {
 
   const handleSave = useCallback(async () => {
     if (!data) return false;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.");
+      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+      return false;
+    }
+
     setIsSaving(true);
     try {
       const payload = {
@@ -109,7 +133,7 @@ export default function NaverManuscriptDetailPage() {
         word_count_goal: data.wordCountGoal ?? null,
       };
 
-      const { error } = await supabase.from("writing_naver_posts").update(payload).eq("id", data.id);
+      const { error } = await supabase.from("writing_naver_posts").update(payload).eq("id", data.id).eq("user_id", user.id);
       if (error) throw error;
       persistCaches({
         ...data,
@@ -123,7 +147,7 @@ export default function NaverManuscriptDetailPage() {
     } finally {
       setIsSaving(false);
     }
-  }, [data, persistCaches]);
+  }, [data, persistCaches, pathname, router]);
 
   const handleEnhanceContent = useCallback(
     async (option: string) => {

@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ArrowLeft, Check, RotateCcw, Search, Send } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/utils/supabase/client";
@@ -326,6 +326,7 @@ function normalizeCreaiboxRecord(row: CreaiboxRow): StudioManuscriptRecord {
 export default function CreaiboxManuscriptDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const pathname = usePathname();
   const supabase = useMemo(() => createClient(), []);
   const queryClient = useQueryClient();
 
@@ -504,6 +505,21 @@ export default function CreaiboxManuscriptDetailPage() {
   }, []);
 
   useEffect(() => {
+    if (!isMounted) return;
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.");
+          router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+        }
+      }
+    };
+    void checkAuth();
+  }, [isMounted, pathname, router, supabase.auth]);
+
+  useEffect(() => {
     queueMicrotask(() => {
       setActiveRouteId(manuscriptId);
     });
@@ -559,8 +575,14 @@ export default function CreaiboxManuscriptDetailPage() {
 
     setIsDirectLoading(true);
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setIsDirectLoading(false);
+      return;
+    }
+
     const isNumeric = /^\d+$/.test(activeRouteId);
-    let queryBuilder = supabase.from("writing_creaibox_posts").select("*");
+    let queryBuilder = supabase.from("writing_creaibox_posts").select("*").eq("user_id", user.id);
 
     if (isNumeric) {
       queryBuilder = queryBuilder.eq("display_id", parseInt(activeRouteId, 10));
@@ -658,6 +680,15 @@ export default function CreaiboxManuscriptDetailPage() {
       const activeRecord = overrideRecord || data;
       if (!activeRecord) return false;
 
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        if (!isAutoSave) {
+          window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.");
+          router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+        }
+        return false;
+      }
+
       setIsSaving(true);
 
       const safeData = activeRecord as StudioManuscriptRecordWithOptionalFields;
@@ -706,7 +737,8 @@ export default function CreaiboxManuscriptDetailPage() {
       const { error } = await supabase
         .from("writing_creaibox_posts")
         .update(updatePayload)
-        .eq("id", safeData.id);
+        .eq("id", safeData.id)
+        .eq("user_id", user.id);
 
       setIsSaving(false);
 
@@ -737,7 +769,7 @@ export default function CreaiboxManuscriptDetailPage() {
 
       return true;
     },
-    [data, persistCaches, supabase, userRole, userBrandId]
+    [data, persistCaches, supabase, userRole, userBrandId, pathname, router]
   );
 
   const handleAiGenerateInEditor = useCallback(async (

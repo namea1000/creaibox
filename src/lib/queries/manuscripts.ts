@@ -286,21 +286,16 @@ function mapNaverRecord(record: WritingNaverPostRecord): StudioManuscriptRecord 
 }
 
 async function fetchCreaiboxManuscripts(): Promise<StudioManuscriptRecord[]> {
-  let { supabase, userId } = await waitForAuthenticatedUser();
+  const { supabase, userId } = await waitForAuthenticatedUser();
 
   if (!userId) {
-    const cached = safeReadList(CREAIBOX_LIST_CACHE_KEY);
-    if (cached) return cached;
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    ({ supabase, userId } = await waitForAuthenticatedUser());
-
-    if (!userId) return [];
+    return [];
   }
 
   const { data, error } = await supabase
     .from("writing_creaibox_posts")
     .select("*")
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -321,22 +316,17 @@ async function fetchCreaiboxManuscripts(): Promise<StudioManuscriptRecord[]> {
 async function fetchCreaiboxManuscriptDetail(
   displayId: string | number
 ): Promise<StudioManuscriptRecord | null> {
-  let { supabase, userId } = await waitForAuthenticatedUser();
+  const { supabase, userId } = await waitForAuthenticatedUser();
+
+  if (!userId) {
+    return null;
+  }
 
   const cached =
     safeReadDetail(CREAIBOX_DETAIL_CACHE_PREFIX, displayId) ??
     safeReadList(CREAIBOX_LIST_CACHE_KEY)?.find(
       (item) => String(item.displayId) === String(displayId) || String(item.id) === String(displayId)
     );
-
-  if (!userId) {
-    if (cached) return cached;
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    ({ supabase, userId } = await waitForAuthenticatedUser());
-
-    if (!userId) return null;
-  }
 
   const numericDisplayId = Number(displayId);
 
@@ -347,6 +337,7 @@ async function fetchCreaiboxManuscriptDetail(
       .from("writing_creaibox_posts")
       .select("*")
       .eq("display_id", numericDisplayId)
+      .eq("user_id", userId)
       .maybeSingle();
 
     if (byDisplayId.error && byDisplayId.error.code !== "PGRST116") {
@@ -361,6 +352,7 @@ async function fetchCreaiboxManuscriptDetail(
       .from("writing_creaibox_posts")
       .select("*")
       .eq("id", displayId)
+      .eq("user_id", userId)
       .maybeSingle();
 
     if (byId.error && byId.error.code !== "PGRST116") {
@@ -382,21 +374,16 @@ async function fetchCreaiboxManuscriptDetail(
 }
 
 async function fetchNaverManuscripts(): Promise<StudioManuscriptRecord[]> {
-  let { supabase, userId } = await waitForAuthenticatedUser();
+  const { supabase, userId } = await waitForAuthenticatedUser();
 
   if (!userId) {
-    const cached = safeReadList(NAVER_LIST_CACHE_KEY);
-    if (cached) return cached;
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    ({ supabase, userId } = await waitForAuthenticatedUser());
-
-    if (!userId) return [];
+    return [];
   }
 
   const { data, error } = await supabase
     .from("writing_naver_posts")
     .select("*")
+    .eq("user_id", userId)
     .order("updated_at", { ascending: false });
 
   if (error) throw error;
@@ -412,25 +399,21 @@ async function fetchNaverManuscripts(): Promise<StudioManuscriptRecord[]> {
 async function fetchNaverManuscriptDetail(
   id: string | number
 ): Promise<StudioManuscriptRecord | null> {
-  let { supabase, userId } = await waitForAuthenticatedUser();
+  const { supabase, userId } = await waitForAuthenticatedUser();
+
+  if (!userId) {
+    return null;
+  }
 
   const cached =
     safeReadDetail(NAVER_DETAIL_CACHE_PREFIX, id) ??
     safeReadList(NAVER_LIST_CACHE_KEY)?.find((item) => String(item.id) === String(id));
 
-  if (!userId) {
-    if (cached) return cached;
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    ({ supabase, userId } = await waitForAuthenticatedUser());
-
-    if (!userId) return null;
-  }
-
   const { data, error } = await supabase
     .from("writing_naver_posts")
     .select("*")
     .eq("id", Number(id))
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (error && error.code !== "PGRST116") throw error;

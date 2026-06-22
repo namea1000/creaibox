@@ -299,6 +299,7 @@ export default function Sidebar({
           { name: "설정", href: "/studio/music/settings", icon: Settings },
         ],
       },
+
       {
         key: "image",
         name: "이미지 스튜디오",
@@ -315,11 +316,13 @@ export default function Sidebar({
           { name: "포스터 & 전단지", href: "/studio/image/poster", icon: FileText },
           { name: "디지털 명함", href: "/studio/image/business-card", icon: BadgeDollarSign },
           { name: "현수막 & 배너", href: "/studio/image/banner", icon: Megaphone },
+          { name: "이미지 AI 업스케일러", href: "/studio/image/upscaler", icon: Sparkles },
           { name: "이미지 확장자 변환기", href: "/studio/image/converter", icon: RefreshCw },
           { name: "WEBP 일괄 압축기", href: "/studio/image/webp-compressor", icon: Gauge },
           { name: "간편 이미지 편집기", href: "/studio/image/editor", icon: Wand2 },
         ],
       },
+
       {
         key: "video",
         name: "비디오 스튜디오",
@@ -395,7 +398,7 @@ export default function Sidebar({
       {
         key: "report",
         name: "AI 리포트",
-        href: "/studio/report",
+        href: "/studio/aireport",
         icon: FileText,
         color: "text-indigo-400",
         children: [

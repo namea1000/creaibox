@@ -15,6 +15,7 @@ This document details the route pages, visual elements, layout wrappers, and sty
 | `/studio/image/magic-design` | `MagicDesignTab` | AI text-to-layout generator drafts. |
 | `/studio/image/webp-compressor` | `WebpCompressorTab` | WebP batch compressor file dropzone. |
 | `/studio/image/editor` | `ImageEditorTab` | Quick adjustments, filters, and watermark overlay preview. |
+| `/studio/image/upscaler` | `ImageUpscalerPage` | AI-assisted super-resolution upscaler using local Canvas and 3x3 convolution sharpen filter. |
 
 ---
 
@@ -42,8 +43,20 @@ This document details the route pages, visual elements, layout wrappers, and sty
 * **Export controls**:
   - Prompts compile compression dialog with progress percentages on click.
 
+### C. AI Image Upscaler Page (`/studio/image/upscaler`)
+* **Interactive Control Settings**:
+  - Users select scale multipliers (2x, 4x for 4K UHD, 8x for super resolution), AI profiles (Photo, Art, Text), and fine-grain details (Denoise level, Sharpen strength slider).
+* **Double Canvas Comparison Slider**:
+  - Left canvas renders a blurred preview representing original low-res pixel boundaries.
+  - Right canvas applies the live convolution kernel algorithm, displaying the enhanced edge contours.
+  - Dragging the middle handle slides the pixel clip-path threshold in real-time.
+* **Pure Client-Side Computation**:
+  - Fully computed locally inside the user's browser, preventing external API usage costs.
+  - Generates actual high-resolution data URLs from 4K-scaled Canvas contexts for final PNG downloads.
+
 ---
 
 ## 3. Styling & Aesthetics
 * **Theme**: Deep dark backgrounds (`#06080d` page, `#090d16` cards) offset by signature Canva-like violet and purple highlights (`text-purple-400`, `border-purple-500/20`, `bg-purple-600`).
 * **Animations**: Immediate fade effects (`animate-in fade-in duration-200`) and compile progress spin animations.
+

@@ -11,6 +11,76 @@ interface NewsItem {
 
 const parser = new Parser();
 
+// 🌟 batchexecute API를 호출하여 구글 뉴스의 새로운 인코딩 주소(AU_yq)를 리졸브
+async function callBatchExecute(base64Str: string, signature: string, timestamp: string): Promise<string | null> {
+  try {
+    const payload = [
+      "Fbv4je",
+      `["garturlreq",[["X","X",["X","X"],null,null,1,1,"US:en",null,1,null,null,null,null,null,0,1],"X","X",1,[1,1,1],1,1,null,0,0,null,0],"${base64Str}",${timestamp},"${signature}"]`
+    ];
+
+    const body = `f.req=${encodeURIComponent(JSON.stringify([[payload]]))}`;
+    const res = await fetch("https://news.google.com/_/DotsSplashUi/data/batchexecute", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      },
+      body
+    });
+
+    if (res.ok) {
+      const text = await res.text();
+      const splitText = text.split("\n\n");
+      if (splitText.length > 1) {
+        const parsedData = JSON.parse(splitText[1]);
+        const innerData = JSON.parse(parsedData[0][2]);
+        if (innerData && innerData[1]) {
+          return innerData[1];
+        }
+      }
+    }
+  } catch (e) {
+    console.error("callBatchExecute error:", e);
+  }
+  return null;
+}
+
+// 🌟 구글 뉴스 중간 경로에서 signature와 timestamp를 긁어 진짜 URL을 역추적하는 최종 해석 엔진
+async function resolveGoogleNewsUrl(googleUrl: string): Promise<string> {
+  try {
+    if (!googleUrl.includes("articles/")) return googleUrl;
+    const urlObj = new URL(googleUrl);
+    const pathParts = urlObj.pathname.split('/');
+    const articlesIndex = pathParts.indexOf('articles');
+    if (articlesIndex === -1 || articlesIndex === pathParts.length - 1) return googleUrl;
+
+    const base64Str = pathParts[articlesIndex + 1];
+
+    const res = await fetch(`https://news.google.com/articles/${base64Str}`, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      },
+      next: { revalidate: 3600 } // 1시간 캐싱
+    });
+    if (!res.ok) return googleUrl;
+    const html = await res.text();
+
+    const sgMatch = html.match(/data-n-a-sg="([^"]+)"/) || html.match(/data-n-a-sg='([^']+)'/);
+    const tsMatch = html.match(/data-n-a-ts="([^"]+)"/) || html.match(/data-n-a-ts='([^']+)'/);
+
+    if (!sgMatch || !tsMatch) {
+      return googleUrl;
+    }
+
+    const decoded = await callBatchExecute(base64Str, sgMatch[1], tsMatch[1]);
+    return decoded || googleUrl;
+  } catch (e) {
+    console.error("resolveGoogleNewsUrl error:", e);
+    return googleUrl;
+  }
+}
+
 export async function getGoogleNewsWithImages(keyword: string): Promise<NewsItem[]> {
   try {
     const targetUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(keyword)}&hl=ko&gl=KR&ceid=KR:ko`;
@@ -25,26 +95,31 @@ export async function getGoogleNewsWithImages(keyword: string): Promise<NewsItem
       const title = titleParts[0];
       const source = titleParts[1] || '주요뉴스';
       const googleLink = item.link || '';
+      
+      // 진짜 언론사 주소로 디코딩 (batchexecute API 호출)
+      const realUrl = await resolveGoogleNewsUrl(googleLink);
 
       // 1. 기본 백업 이미지 및 설명 기본값 정의
-      let imageUrl = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=500';
+      let imageUrl = '';
       let description = '기사 원문에서 실시간 데이터를 분석하는 중입니다. 하단의 원문 전체보기 버튼을 클릭하시면 언론사 전용 레이아웃으로 상세 내용을 확인할 수 있습니다.';
 
+      // AbortController 기반 1.2초 타임아웃 구성 (개별 언론사 지연 방지)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1200);
+
       try {
-        // 2. 🔥 [CORS 억까 우회] 서버사이드에서 원문 뉴스 주소로 다이렉트 침투 연산 가동
-        // 일반 크롬 브라우저로 완벽히 위장하여 언론사 방화벽을 우회합니다.
-        const res = await fetch(googleLink, {
+        const res = await fetch(realUrl, {
+          signal: controller.signal,
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
           },
-          next: { revalidate: 300 } // 5분간 서버 캐싱으로 속도 극대화
+          next: { revalidate: 300 } // 5분간 서버 캐싱
         });
 
         if (res.ok) {
           const html = await res.text();
 
-          // 3. 🎯 오픈그래프(OG Tag) 파싱 엔진 정규식 구동
-          // 원문 HTML 코드 속에 숨겨진 '진짜 기사 사진 주소' 추출
+          // 3. 오픈그래프(OG Tag) 파싱 엔진 정규식 구동
           const ogImgMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
                              html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
           
@@ -52,12 +127,11 @@ export async function getGoogleNewsWithImages(keyword: string): Promise<NewsItem
             imageUrl = ogImgMatch[1];
           }
 
-          // 4. 📝 [본문 요약 추출 엔진] 원문 HTML 속 '진짜 기사 첫 줄/요약 내용' 추출
+          // 4. 본문 요약 추출 엔진
           const ogDescMatch = html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i) ||
                               html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:description["']/i);
           
           if (ogDescMatch && ogDescMatch[1]) {
-            // HTML 엔티티 기호 깨짐 처리 
             description = ogDescMatch[1]
               .replace(/&quot;/g, '"')
               .replace(/&amp;/g, '&')
@@ -67,10 +141,12 @@ export async function getGoogleNewsWithImages(keyword: string): Promise<NewsItem
           }
         }
       } catch (e) {
-        console.error(`원문 데이터 스크래핑 우회 실패 (${source}):`, e);
+        console.warn(`원문 데이터 스크래핑 실패/타임아웃 (${source}):`, e);
+      } finally {
+        clearTimeout(timeoutId);
       }
 
-      // 5. 만약 원문 사이트가 너무 빡세게 막아서 사진 파싱이 튕겼을 때만 카테고리별 매거진 테마 월페이퍼로 안전하게 보정
+      // 5. 이미지가 비어있거나 구글 뉴스 기본 월페이퍼일 경우 테마 월페이퍼로 안전하게 보정
       if (!imageUrl || imageUrl.includes('news.google.com') || imageUrl.includes('photo-1518770660439')) {
         if (keyword.includes('세계') || keyword.includes('국제')) imageUrl = 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=500';
         else if (keyword.includes('경제') || keyword.includes('금융')) imageUrl = 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=500';
@@ -82,7 +158,7 @@ export async function getGoogleNewsWithImages(keyword: string): Promise<NewsItem
 
       return {
         title,
-        link: googleLink,
+        link: realUrl,
         pubDate: item.pubDate || new Date().toISOString(),
         source,
         imageUrl,

@@ -197,6 +197,7 @@ export default function CreaiboxManuscriptListPage() {
     contentType: "all",
     tone: "all",
   });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   const {
     data: queryManuscripts = [],
@@ -206,34 +207,49 @@ export default function CreaiboxManuscriptListPage() {
   } = useCreaiboxManuscriptsQuery();
 
   const visibleQueryManuscripts = useMemo(
-    () => (isMounted ? queryManuscripts : []),
-    [isMounted, queryManuscripts]
+    () => (isMounted && isAuthenticated !== false ? queryManuscripts : []),
+    [isMounted, isAuthenticated, queryManuscripts]
   );
   const visibleIsLoading = isMounted && isLoading;
   const visibleIsFetching = isMounted && isFetching;
 
   useEffect(() => {
-    queueMicrotask(() => {
+    queueMicrotask(async () => {
       setIsMounted(true);
 
-      const cachedList = readCachedList();
-      if (cachedList.length > 0) {
-        setCachedManuscripts(cachedList);
-        queryClient.setQueryData(creaiboxManuscriptKeys.list, cachedList);
+      const { data: { session } } = await supabase.auth.getSession();
+      let user = session?.user ?? null;
+      if (!user) {
+        const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+        user = supabaseUser;
+      }
+
+      if (!user) {
+        setIsAuthenticated(false);
+        setCachedManuscripts([]);
+        setFallbackManuscripts([]);
+        window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.");
+      } else {
+        setIsAuthenticated(true);
+        const cachedList = readCachedList();
+        if (cachedList.length > 0) {
+          setCachedManuscripts(cachedList);
+          queryClient.setQueryData(creaiboxManuscriptKeys.list, cachedList);
+        }
       }
     });
-  }, [queryClient]);
+  }, [queryClient, supabase.auth]);
 
   useEffect(() => {
-    if (!isMounted) return;
+    if (!isMounted || isAuthenticated === false) return;
 
     if (cachedManuscripts.length > 0) {
       queryClient.setQueryData(creaiboxManuscriptKeys.list, cachedManuscripts);
     }
-  }, [cachedManuscripts, isMounted, queryClient]);
+  }, [cachedManuscripts, isMounted, queryClient, isAuthenticated]);
 
   useEffect(() => {
-    if (!isMounted) return;
+    if (!isMounted || isAuthenticated === false) return;
 
     if (visibleQueryManuscripts.length > 0) {
       queueMicrotask(() => {
@@ -242,15 +258,22 @@ export default function CreaiboxManuscriptListPage() {
         writeCachedList(visibleQueryManuscripts);
       });
     }
-  }, [isMounted, visibleQueryManuscripts]);
+  }, [isMounted, visibleQueryManuscripts, isAuthenticated]);
 
   const fetchDirectlyFromSupabase = useCallback(async () => {
     setIsFallbackLoading(true);
     setFallbackError(null);
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setIsFallbackLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase
       .from("writing_creaibox_posts")
       .select("*")
+      .eq("user_id", user.id)
       .order("updated_at", { ascending: false });
 
     setIsFallbackLoading(false);
@@ -313,10 +336,11 @@ export default function CreaiboxManuscriptListPage() {
   }, [isMounted, refetch]);
 
   const manuscripts = useMemo(() => {
+    if (isAuthenticated === false) return [];
     if (visibleQueryManuscripts.length > 0) return visibleQueryManuscripts;
     if (fallbackManuscripts.length > 0) return fallbackManuscripts;
     return cachedManuscripts;
-  }, [cachedManuscripts, fallbackManuscripts, visibleQueryManuscripts]);
+  }, [cachedManuscripts, fallbackManuscripts, isAuthenticated, visibleQueryManuscripts]);
 
   const isTrashView = statusTab === "trash";
 
@@ -437,12 +461,18 @@ export default function CreaiboxManuscriptListPage() {
   );
 
   const handleOpenManuscript = useCallback(
-    (manuscript: StudioManuscriptRecord, index: number) => {
+    async (manuscript: StudioManuscriptRecord, index: number) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.");
+        router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+        return;
+      }
       const routeId = getRouteId(manuscript, index);
       queryClient.setQueryData(creaiboxManuscriptKeys.detail(routeId), manuscript);
       router.push(`/studio/writing/creaibox/list/${routeId}`);
     },
-    [queryClient, router]
+    [pathname, queryClient, router, supabase.auth]
   );
 
   const handleMoveToTrash = useCallback(
@@ -646,7 +676,8 @@ export default function CreaiboxManuscriptListPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      window.alert("로그인 정보를 확인할 수 없습니다.");
+      window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.");
+      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
 
@@ -921,7 +952,15 @@ export default function CreaiboxManuscriptListPage() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => router.push("/studio/writing/creaibox/create")}
+            onClick={async () => {
+              const { data: { session } } = await supabase.auth.getSession();
+              if (!session?.user) {
+                window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.");
+                router.push(`/login?redirect=${encodeURIComponent("/studio/writing/creaibox/create")}`);
+              } else {
+                router.push("/studio/writing/creaibox/create");
+              }
+            }}
             className="inline-flex items-center gap-2 border border-blue-600 bg-white px-3 py-1.5 text-[14px] font-semibold text-[#135e96] hover:bg-blue-50"
           >
             <FilePlus2 className="h-4 w-4" />
