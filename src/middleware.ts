@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { CUSTOM_CLIENT_SITES } from './lib/constants/clientSites'
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -141,7 +142,12 @@ export async function middleware(request: NextRequest) {
     }
 
     if (targetBrandId && !excludedSubdomains.includes(targetBrandId.toLowerCase())) {
-      const rewriteUrl = new URL(`/brand/${targetBrandId.toLowerCase()}${path}`, request.url);
+      const isCustomClient = CUSTOM_CLIENT_SITES.includes(targetBrandId.toLowerCase());
+      const rewritePath = isCustomClient
+        ? `/clients/${targetBrandId.toLowerCase()}${path}`
+        : `/brand/${targetBrandId.toLowerCase()}${path}`;
+        
+      const rewriteUrl = new URL(rewritePath, request.url);
       
       const rewriteResponse = NextResponse.rewrite(rewriteUrl, {
         request: {
