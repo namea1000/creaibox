@@ -1,13 +1,7 @@
 "use client";
 
-import StudioComingSoonPage from "@/components/studio/StudioComingSoonPage";
+import StudioOperationalSectionPage from "@/components/studio/StudioOperationalSectionPage";
 
 export default function AutomationWorkflowComingSoon() {
-  return (
-    <StudioComingSoonPage
-      studioName="AI 콘텐츠 플래너"
-      sectionName="자동화 워크플로우"
-      homeHref="/studio/content-planner"
-    />
-  );
+  return <StudioOperationalSectionPage area="planner" section="workflow" title="자동화 워크플로우" />;
 }

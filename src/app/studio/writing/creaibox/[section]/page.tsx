@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import StudioComingSoonPage from "@/components/studio/StudioComingSoonPage";
+import StudioOperationalSectionPage from "@/components/studio/StudioOperationalSectionPage";
 
 const sectionNames: Record<string, string> = {
   image: "AI 이미지 워크샵",
@@ -13,10 +13,6 @@ export default function CreaiboxWritingSectionPage() {
   const { section } = useParams<{ section: string }>();
 
   return (
-    <StudioComingSoonPage
-      studioName="크리아이박스 글쓰기"
-      sectionName={sectionNames[section] || "크리아이박스 글쓰기"}
-      homeHref="/studio/writing/creaibox"
-    />
+    <StudioOperationalSectionPage area="creaibox" section={section} title={sectionNames[section] || "크리아이박스 글쓰기"} />
   );
 }

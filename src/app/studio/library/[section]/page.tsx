@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import StudioComingSoonPage from "@/components/studio/StudioComingSoonPage";
+import StudioOperationalSectionPage from "@/components/studio/StudioOperationalSectionPage";
 import CreaiboxLibraryManager from "./components/CreaiboxLibraryManager";
 
 const sectionNames: Record<string, string> = {
@@ -31,10 +31,6 @@ export default function LibrarySectionPage() {
   }
 
   return (
-    <StudioComingSoonPage
-      studioName="콘텐츠 라이브러리"
-      sectionName={sectionNames[section] || "콘텐츠 라이브러리"}
-      homeHref="/studio/library"
-    />
+    <StudioOperationalSectionPage area="library" section={section} title={sectionNames[section] || "콘텐츠 라이브러리"} />
   );
 }

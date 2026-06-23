@@ -88,6 +88,8 @@ src/
 * **`reserved_brand_ids` (New)**:
   * `id`: UUID Primary Key.
   * `brand_id`: Reserved subdomain keyword (e.g. apple, admin).
+  * `category`: Reservation taxonomy such as `SYSTEM`, `TRADEMARK`, `PAYMENT_SECURITY`, `COMMON_SERVICE`.
   * `reason`: Text reasoning.
+  * Large seed source and import guidance: `docs/database/reserved-brand-ids.md`.
 * **`writing_creaibox_posts` (Modified)**:
   * `category_id`: Links posts to user blog categories.

@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import StudioComingSoonPage from "@/components/studio/StudioComingSoonPage";
+import StudioOperationalSectionPage from "@/components/studio/StudioOperationalSectionPage";
 
 const sectionNames: Record<string, string> = {
   "style-format": "스타일 포맷",
@@ -21,10 +21,6 @@ export default function MusicSectionPage() {
   const { section } = useParams<{ section: string }>();
 
   return (
-    <StudioComingSoonPage
-      studioName="뮤직 스튜디오"
-      sectionName={sectionNames[section] || "뮤직 스튜디오"}
-      homeHref="/studio/music"
-    />
+    <StudioOperationalSectionPage area="music" section={section} title={sectionNames[section] || "뮤직 스튜디오"} />
   );
 }

@@ -19,6 +19,7 @@ import {
   Sparkles,
   Search,
   ShieldCheck,
+  ShieldAlert,
   Server,
   Image as ImageIcon,
   Video,
@@ -499,6 +500,7 @@ export default function Sidebar({
             children: [
               { name: "사용자 관리", href: "/admin/usermanagement", icon: Users },
               { name: "브랜드 ID 및 도메인 관리", href: "/admin/brands", icon: Globe },
+              { name: "예약어 관리", href: "/admin/reserved-words", icon: ShieldAlert },
               { name: "API Vault", href: "/admin/apivault", icon: Database },
               { name: "Google 연동", href: "/admin/google", icon: Settings },
               { name: "SEO 관리", href: "/admin/seo", icon: Search },

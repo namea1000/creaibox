@@ -64,8 +64,13 @@ Stores blacklisted/reserved subdomain keywords managed by admins.
 | --- | --- | --- | --- |
 | `id` | `uuid` | `PRIMARY KEY`, default `gen_random_uuid()` | Unique reservation identifier |
 | `brand_id` | `text` | `UNIQUE` | Reserved subdomain name (e.g., apple, admin) |
+| `category` | `text` | Recommended check constraint | Reservation category (e.g., SYSTEM, TRADEMARK, PAYMENT_SECURITY) |
 | `reason` | `text` | | Optional description (e.g., Trademark protection) |
 | `created_at` | `timestamptz` | default `now()` | Creation timestamp |
+
+Large seed source: `src/lib/constants/reservedBrandsData.json`.
+
+Operational handoff: see `docs/database/reserved-brand-ids.md` for the current 22-category taxonomy, 77,985-record seed status, DB import guidance, and validation commands.
 
 ---
 
@@ -89,4 +94,3 @@ Stores blacklisted/reserved subdomain keywords managed by admins.
 ### `get_brand_id_by_custom_domain(domain_name TEXT)`
 - **Purpose**: Maps a custom domain host name to its matching brand subdomain (Brand ID).
 - **Behavior**: Scans `extra_configs` dynamically for keys starting with `custom_domain_` matching the requested host and having status `APPROVED`. Returns the corresponding brand ID or `NULL` if not found.
-

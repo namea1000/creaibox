@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import StudioComingSoonPage from "@/components/studio/StudioComingSoonPage";
+import StudioOperationalSectionPage from "@/components/studio/StudioOperationalSectionPage";
 
 const sectionNames: Record<string, string> = {
   editor: "영상 편집기",
@@ -19,10 +19,6 @@ export default function VideoSectionPage() {
   const { section } = useParams<{ section: string }>();
 
   return (
-    <StudioComingSoonPage
-      studioName="비디오 스튜디오"
-      sectionName={sectionNames[section] || "비디오 스튜디오"}
-      homeHref="/studio/video"
-    />
+    <StudioOperationalSectionPage area="video" section={section} title={sectionNames[section] || "비디오 스튜디오"} />
   );
 }

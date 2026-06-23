@@ -1,13 +1,7 @@
 "use client";
 
-import StudioComingSoonPage from "@/components/studio/StudioComingSoonPage";
+import StudioOperationalSectionPage from "@/components/studio/StudioOperationalSectionPage";
 
 export default function PlannerSettingsComingSoon() {
-  return (
-    <StudioComingSoonPage
-      studioName="AI 콘텐츠 플래너"
-      sectionName="플래너 설정"
-      homeHref="/studio/content-planner"
-    />
-  );
+  return <StudioOperationalSectionPage area="planner" section="settings" title="플래너 설정" />;
 }

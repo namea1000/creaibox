@@ -15,6 +15,7 @@ import {
   Server,
   Settings,
   ShieldCheck,
+  ShieldAlert,
   Globe,
   type LucideIcon,
 } from "lucide-react";
@@ -105,6 +106,13 @@ const adminMenus: AdminMenu[] = [
     href: "/admin/settings",
     icon: Settings,
     iconColor: "text-zinc-400",
+  },
+  {
+    title: "예약어 및 블랙리스트 관리",
+    description: "브랜드 ID 예약어, 금지어 조회 및 사용자별 도메인 배포 관리",
+    href: "/admin/reserved-words",
+    icon: ShieldAlert,
+    iconColor: "text-red-400",
   },
 ];
 

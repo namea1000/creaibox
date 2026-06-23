@@ -2,7 +2,65 @@
 
 이 문서는 CreAIbox 프로젝트의 일자별 개발 내역, 핵심 아키텍처 결정 사항을 기록합니다.
 
-### 🗓️ 2026-06-20 (토) - 오늘
+### 🗓️ 2026-06-23 (화) - 오늘
+#### 1. 브랜드 ID 블랙리스트(예약어) 대량 시딩 및 실서비스 검증 연동 완수
+* **구현 요약**: 다른 에이전트가 생성한 77,985개의 대용량 블랙리스트 원천 데이터를 Supabase 실서비스 DB에 반영하고, 예약어 유효성 검사 헬퍼 및 마이페이지 맞춤 피드백을 연동하여 아키텍처 구현을 마무리했습니다.
+* **작업 상세**:
+  * **DB 스키마 마이그레이션 및 트리거 설정**: [`brand-id-blacklist-patch.sql`](file:///Users/a1234/Local%20Sites/creaibox/docs/database/sql/brand-id-blacklist-patch.sql) 패치를 적용하여 `reserved_brand_ids` 테이블에 `category` 컬럼을 신설(22개 체크 제약조건 포함)하고, 백엔드 우회 신청 시도를 물리적으로 차단하는 DB 검증 트리거(`check_brand_id_reservation`)를 profiles 테이블에 완비했습니다.
+  * **77,985건 데이터 일괄 적재**: [`seed_reserved_brands.js`](file:///Users/a1234/Local%20Sites/creaibox/scratch/seed_reserved_brands.js) 배치 스크립트를 재실행하여 200개 단위 chunk로 나누어 77,985개의 데이터를 DB에 100% 무결하게 업서트 완료하였습니다. (성공: 77,985건 / 실패: 0건)
+  * **프론트엔드 정적 예약어 필터링 신설**: [`reservedWords.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/lib/constants/reservedWords.ts)를 작성하여, 시스템 필수 키워드는 1차적으로 브라우저 단에서 즉시 필터링되도록 처리해 API 트래픽 부하를 줄였습니다.
+  * **마이페이지 22개 그룹별 안내 피드백 연동**: [`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/mypage/page.tsx)에서 DB 검사 결과 반환 시 `category` 값을 확인하여, 사칭 사기, 상표권 보호, 피싱 예방, 유해 사이트 방지 등 사유에 상응하는 22종 맞춤형 경고창 팝업을 띄우는 UX 고도화를 완료했습니다.
+  * **품질 검증**: `npx tsc --noEmit`을 통해 수정된 모든 React 페이지 및 헬퍼 함수의 TypeScript 빌드 무결성을 검증했습니다.
+
+#### 2. 관리자 센터 예약어 종합 관리 페이지(`/admin/reserved-words`) 개발 완료
+* **구현 요약**: 관리자 권한을 가진 운영자가 22개 카테고리별 예약어 목록을 조회/검색하고 수동 추가/삭제할 수 있는 UI를 신설하였으며, 예약어를 특정 일반 유저에게 강제로 할당 및 활성화해 줄 수 있는 배포 워크플로우를 완비했습니다. 또한 어드민 대시보드 메인 화면의 우측 하단 빈 슬롯에 "예약어 및 블랙리스트 관리" 바로가기 카드 버튼을 연결했습니다.
+* **작업 상세**:
+  * **사이드바 메뉴 추가**: [`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx)에 `ShieldAlert` 아이콘과 함께 "예약어 관리" 메뉴를 어드민 영역에 연동했습니다.
+  * **종합 통제 UI 개발**: [`page.tsx (admin/reserved-words)`](file:///Users/a1234/Local%20Sites/creaibox/src/app/admin/reserved-words/page.tsx) 페이지를 신설하여 30개 단위 더 불러오기 페이징, 키워드 부분 검색, 카테고리 필터링 테이블을 구축했습니다.
+  * **어드민 메인 대시보드 연동**: [`page.tsx (admin/page.tsx)`](file:///Users/a1234/Local%20Sites/creaibox/src/app/admin/page.tsx)의 `adminMenus` 데이터 구조에 '예약어 및 블랙리스트 관리' 항목을 결합하여, 우측 하단의 비어 있던 12번째 슬롯 공간에 대칭적이고 정렬된 프리미엄 바로가기 카드가 나타나도록 연동을 완료했습니다.
+  * **예약어 수동 CRUD 구현**: 영문 소문자/숫자 규격 검증을 동반한 추가 모달과 confirm 모달이 연결된 수동 삭제 액션을 개발했습니다.
+  * **유저 대상 강제 배포(Deploy) 워크플로우 구현**: 특정 예약어를 클릭하고 대상 유저를 실시간 검색/선택해 배정하면, `reserved_brand_ids` 에서 레코드를 제거한 후 해당 유저 `profiles` 레코드의 `brand_id = '${brand}'`, `brand_id_status = 'APPROVED'` 로 즉시 갱신하는 2단계 연속 쿼리 로직을 연계하여 관리 기능의 완결성을 확보했습니다.
+
+### 🗓️ 2026-06-22 (월)
+#### 0. 브랜드 ID 예약어 대량 데이터셋 및 운영 인계 문서 정리
+* **구현 요약**: 개인 브랜드 서브도메인(`{brand_id}.creaibox.com`) 신청 악용을 막기 위한 예약어 원천 JSON을 22개 카테고리, 총 77,985개 레코드로 확장하고, 후속 DB seed/import 절차를 문서화했습니다.
+* **작업 상세**:
+  * **대량 예약어 JSON 구축**: [`src/lib/constants/reservedBrandsData.json`](file:///Users/a1234/Local%20Sites/creaibox/src/lib/constants/reservedBrandsData.json)에 시스템 경로, 공공기관, 금융/결제, 글로벌 기업/상표, IT 서비스, 크립토, 의료, 도메인/인프라, 성인/도박, 악성 행위, 고가치 일반 명사 및 짧은 프리미엄 단어를 포함한 예약어 데이터를 적재했습니다.
+  * **22개 카테고리 체계 확장**: 기존 12개 분류에 `TRADEMARK`, `PAYMENT_SECURITY`, `CRYPTO`, `HEALTHCARE`, `RELIGION_POLITICS`, `MILITARY_SECURITY`, `INFRASTRUCTURE`, `DOMAIN_BRAND`, `PUBLIC_SERVICE`, `HIGH_RISK_COMMERCE`를 추가했습니다.
+  * **검증 완료**: 전체 77,985건에 대해 `brand_id` 정규식(`^[a-z0-9]{2,15}$`), 중복, 카테고리, reason 누락 검증을 통과했으며 `./node_modules/.bin/tsc --noEmit --pretty false`도 통과했습니다.
+  * **운영 인계 문서 추가**: [`docs/database/reserved-brand-ids.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/database/reserved-brand-ids.md)에 JSON의 현재 상태, 카테고리별 분포, DB 반영 절차, 검증 명령, 운영 주의사항을 정리했습니다. 실제 차단 반영을 위해서는 Supabase `reserved_brand_ids` 테이블에 JSON을 배치 업서트해야 합니다.
+
+#### 1. 네이버 키워드 분석 & 실시간 노출 진단 실시간 API 및 UI 연동
+* **구현 요약**: `/studio/writing/naver/keyword`와 `naver/diagnosis` 페이지의 `setTimeout` 모의 난수 로직을 걷어내고, 실제 네이버 검색 및 데이터랩 API를 호출하는 백엔드 프록시와 프론트엔드 실시간 렌더링을 구현했습니다.
+* **작업 상세**:
+  * **키워드 분석 API 신설**: [`api/naver/keyword/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/naver/keyword/route.ts)에서 네이버 블로그 검색 API로 총 문서 발행량(`total`)을 조회하고, 네이버 데이터랩 API로 최근 6개월의 트렌드 변화량을 종합해 절대 검색수와 문서 포화도를 실시간 역산하여 기회 등급을 판정합니다.
+  * **실시간 노출 진단 API 신설**: [`api/naver/diagnosis/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/naver/diagnosis/route.ts)에서 입력받은 타겟 포스팅 URL과 키워드로 블로그 검색 100건을 질의한 뒤, 블로그 ID 및 포스트 번호를 정규식으로 유연하게 매칭하여 100위 내 **실제 검색 노출 순위**를 정확하게 판정해냅니다.
+  * **프론트엔드 실제 API 바인딩**: `NaverKeywordAnalysisPage` 및 `RealtimeDiagnosisPage` 내 모의 데이터 바인딩을 fetch 호출 구조로 완전 교체하였습니다.
+  * **TypeScript 빌드 트러블슈팅**: Supabase createClient 호출부의 비동기 `await` 누락 에러 및 `diagnosis/route.ts` 내 변수 오타(`targetKeyword` ➡️ `keyword`)를 수정하여 컴파일 오류를 완벽히 픽스했습니다.
+
+#### 2. 네이버 검색 노출 오류 및 캐노니컬 URL 메타데이터 패치
+* **구현 요약**: 크리에이박스 메인 랜딩 페이지와 사용자 브랜드 도메인의 중복 문서(Duplicate Content) 오인으로 인해 네이버 검색창에 `creaibox.com` 대신 사용자 도메인이 노출되던 검색 최적화(SEO) 오류를 전격 수정했습니다.
+* **작업 상세**:
+  * **메인 레이아웃 canonical 지정**: [`src/app/layout.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/layout.tsx)에 `alternates: { canonical: "/" }`를 주입하여 크리에이박스 메인의 유일한 대표 주소가 `https://creaibox.com`임을 지정했습니다.
+  * **브랜드 홈 canonical 지정**: [`src/app/brand/[brand_id]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/page.tsx)에 alternates.canonical를 동적 구현하여 사용자의 독립 도메인 또는 `{brandId}.creaibox.com` 서브도메인이 정상 캐노니컬 대표 주소로 매핑되도록 보강하였습니다.
+  * **사용자 도메인 DB 오타 수정**: 프로필 DB에 `"custom_domain_downhubs": "dawnhubs.com"`으로 오염 적재되어 `downhubs.com` 진입 시 리라이트 오류를 유발하던 철자를 스크립트를 통해 정상으로 수정 조치했습니다.
+  * **미들웨어 진단 경로 패치**: `src/middleware.ts`의 `isStaticOrApi` 조건에서 경로 내 마침표(`.`)를 감지해 정적 리소스로 오판하던 문제로 인해 진단 경로(`/.well-known/creaibox-diagnostics`)가 작동하지 않던 버그를 예외 처리를 통해 수정했습니다.
+
+#### 3. 네이버 소셜 로그인 버튼 UI 제거
+* **구현 요약**: Supabase 비활성 프로바이더 정책에 발맞추어 로그인 및 회원가입 페이지에서 더 이상 지원하지 않는 네이버 로그인 옵션 레이아웃을 삭제했습니다.
+* **작업 상세**:
+  * [`src/app/login/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/login/page.tsx) 및 [`src/app/signup/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/signup/page.tsx)에서 네이버 로그인 버튼 코드를 전면 걷어내고 컴파일 세이프티를 완비했습니다.
+
+#### 4. 유튜브 데이터 API URL 파싱 고도화 및 RAG 세션 보안 강화 (이전 차수 작업분 반영)
+* **구현 요약**: 유튜브 검색 기능에 동영상 URL, 핸들(@이름), 채널 ID 주소를 모두 호환 파싱하는 로직을 심고, API 남용을 방지하기 위해 사용자 세션 체크를 탑재했습니다.
+* **작업 상세**:
+  * `/api/youtube` 및 `/api/ai/generate` 진입점에 Supabase `getUser()` 세션 확인을 추가하여 외부 비회원의 소모성 호출을 원천 차단했습니다.
+  * 닉네임이 길어질 경우 헤더의 시작 버튼이 두 줄로 튕기던 반응형 에러를 `whitespace-nowrap`을 적용해 해결했습니다.
+
+---
+
+### 🗓️ 2026-06-20 (토)
+
 #### 1. 무료 공유 에셋 라이브러리 Pixabay 스타일 상단 미디어 분류 탭 추가
 * **구현 요약**: 무료 공유 에셋 페이지의 검색바 상단 영역에 픽사베이(Pixabay) 감성의 미디어 분류 선택 탭(`둘러보기`, `사진`, `일러스트`, `벡터`, `비디오`, `음악`, `GIF`)을 탑재하고 필터링 및 오디오 제어 동작을 동기화시켰습니다.
 * **작업 상세**:
@@ -276,4 +334,3 @@
 * **관련 문서**:
   * [walkthrough.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/walkthrough.md) (작업 히스토리 상세)
   * [blog-subdomains-schema.md](file:///Users/a1234/Local%20Sites/creaibox/docs/database/blog-subdomains-schema.md) 및 [blog-subdomains.sql](file:///Users/a1234/Local%20Sites/creaibox/docs/database/sql/blog-subdomains.sql) (서브도메인 스키마 및 마이그레이션 SQL)
-

@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import Aside from "@/components/layout/Aside";
 import StudioTopbar from "@/components/studio/StudioTopbar";
+import { isReservedBrandId } from "@/lib/constants/reservedWords";
 
 type WpSite = {
   siteName: string;
@@ -234,6 +235,13 @@ export default function MyPage() {
       return;
     }
 
+    // 1차 필터링: 클라이언트 단 정적 예약어 검증
+    if (isReservedBrandId(brand)) {
+      setBrandAvailable(false);
+      alert("❌ 시스템 예약어 또는 사용이 금지된 브랜드 ID입니다. (SYSTEM)");
+      return;
+    }
+
     setIsBrandChecking(true);
     setBrandAvailable(null);
     setCheckingBrandName("");
@@ -276,9 +284,10 @@ export default function MyPage() {
         return;
       }
 
+      // 2차 필터링: reserved_brand_ids DB 조회 (category 추가 조회)
       const { data: reservedData, error: reservedError } = await supabase
         .from("reserved_brand_ids")
-        .select("id")
+        .select("id, category")
         .eq("brand_id", brand)
         .maybeSingle();
 
@@ -286,7 +295,78 @@ export default function MyPage() {
 
       if (reservedData) {
         setBrandAvailable(false);
-        alert("❌ 시스템 예약어 또는 사용이 금지된 브랜드 ID입니다.");
+        
+        let errorMsg = "❌ 시스템 예약어 또는 사용이 금지된 브랜드 ID입니다.";
+        switch (reservedData.category) {
+          case "SYSTEM":
+            errorMsg = "❌ 시스템 예약 경로로 사용 중인 브랜드 ID입니다.";
+            break;
+          case "GOVERNMENT":
+            errorMsg = "❌ 정부 기관, 공공기관 및 지자체 사칭 방지를 위해 사용할 수 없습니다.";
+            break;
+          case "MEDIA":
+            errorMsg = "❌ 뉴스 및 언론 매체 사칭 예방을 위해 사용할 수 없는 브랜드 ID입니다.";
+            break;
+          case "FINANCE":
+            errorMsg = "❌ 금융기관 사칭 및 피싱 사기 예방을 위해 사용할 수 없는 브랜드 ID입니다.";
+            break;
+          case "COMPANY":
+            errorMsg = "❌ 해당 기업체 상표권 보호를 위해 사용할 수 없는 브랜드 ID입니다.";
+            break;
+          case "IT_SERVICE":
+            errorMsg = "❌ 주요 글로벌 IT 서비스 및 플랫폼 명칭 보호를 위해 사용할 수 없습니다.";
+            break;
+          case "INFLUENCER":
+            errorMsg = "❌ 유명 크리에이터/인플루언서 사칭 방지를 위해 사용할 수 없습니다.";
+            break;
+          case "EDUCATION":
+            errorMsg = "❌ 대학 및 교육기관 사칭 예방을 위해 사용할 수 없는 브랜드 ID입니다.";
+            break;
+          case "GEOGRAPHY":
+            errorMsg = "❌ 주요 지자체 및 도시/지역명 선점 방지를 위해 사용할 수 없습니다.";
+            break;
+          case "COMMON_SERVICE":
+            errorMsg = "❌ 공용 서비스 및 상업적 일반 명사 선점 방지를 위해 사용할 수 없습니다.";
+            break;
+          case "ADULT_GAMBLING":
+            errorMsg = "❌ 불법 및 사행성/유해 서비스 개설 방지를 위해 사용할 수 없습니다.";
+            break;
+          case "ABUSE":
+            errorMsg = "❌ 유해 단어 또는 비속어가 포함되어 사용할 수 없습니다.";
+            break;
+          case "TRADEMARK":
+            errorMsg = "❌ 상표권 또는 제품명 보호를 위해 사용할 수 없는 브랜드 ID입니다.";
+            break;
+          case "PAYMENT_SECURITY":
+            errorMsg = "❌ 결제, 보안 및 금융인증 피싱 방지를 위해 사용할 수 없습니다.";
+            break;
+          case "CRYPTO":
+            errorMsg = "❌ 가상자산 및 암호화폐 거래소 사칭 예방을 위해 사용할 수 없습니다.";
+            break;
+          case "HEALTHCARE":
+            errorMsg = "❌ 의료기관 및 의약품 브랜드 사칭 방지를 위해 사용할 수 없습니다.";
+            break;
+          case "RELIGION_POLITICS":
+            errorMsg = "❌ 정치, 종교적 목적 및 공인 사칭 방지를 위해 사용할 수 없습니다.";
+            break;
+          case "MILITARY_SECURITY":
+            errorMsg = "❌ 군사, 안보 및 정보기관 사칭 예방을 위해 사용할 수 없습니다.";
+            break;
+          case "INFRASTRUCTURE":
+            errorMsg = "❌ DNS, API 등 인프라 시스템 예약어로 사용할 수 없습니다.";
+            break;
+          case "DOMAIN_BRAND":
+            errorMsg = "❌ 도메인 및 호스팅 서비스 사칭 방지를 위해 사용할 수 없습니다.";
+            break;
+          case "PUBLIC_SERVICE":
+            errorMsg = "❌ 공공서비스 및 행정 민원 사칭 예방을 위해 사용할 수 없습니다.";
+            break;
+          case "HIGH_RISK_COMMERCE":
+            errorMsg = "❌ 상품권, 투자 유도 등 고위험 거래 사기 방지를 위해 사용할 수 없습니다.";
+            break;
+        }
+        
+        alert(errorMsg);
         return;
       }
 
