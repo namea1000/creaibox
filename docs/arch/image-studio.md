@@ -1,6 +1,6 @@
 # Image Studio - Operational Architecture
 
-Purpose: This document describes the Canva/MiriCanvas-themed Image Studio architecture, page hierarchy, and component relationships in the CreAIbox project.
+Purpose: This document describes the Canva/MiriCanvas-themed Image Studio architecture, page hierarchy, and component relationships in the CreAibox project.
 
 ---
 

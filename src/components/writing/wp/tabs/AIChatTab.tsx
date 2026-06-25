@@ -15,7 +15,7 @@ export default function AIChatTab() {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('creaibox_chat_history');
       return saved ? (JSON.parse(saved) as Message[]) : [
-        { role: 'assistant', content: '안녕하세요 사장님!\nCreAIbox AI 어시스턴트입니다.\n무엇을 도와드릴까요?' }
+        { role: 'assistant', content: '안녕하세요 사장님!\nCreAibox AI 어시스턴트입니다.\n무엇을 도와드릴까요?' }
       ];
     }
     return [{ role: 'assistant', content: '안녕하세요 사장님!' }];
@@ -72,7 +72,7 @@ export default function AIChatTab() {
       const model = genAI.getGenerativeModel({ 
         model: selectedModel,
         tools: [{ googleSearch: {} }] as any, 
-        systemInstruction: `당신은 'CreAIbox 어시스턴트'입니다. 규칙: 강조 기호(**) 사용 금지, 단락 단위 답변.`
+        systemInstruction: `당신은 'CreAibox 어시스턴트'입니다. 규칙: 강조 기호(**) 사용 금지, 단락 단위 답변.`
       });
 
       const result = await model.generateContent(input);
@@ -100,7 +100,7 @@ export default function AIChatTab() {
       <div className="sticky top-0 z-10 p-6 border-b border-zinc-800 flex items-center justify-between bg-[#05070a]/95 backdrop-blur-md">
         <div className="flex flex-col gap-2">
           <h2 className="text-xl font-black text-white italic uppercase flex items-center gap-2 tracking-tighter">
-            <Sparkles className="w-5 h-5 text-yellow-400" /> CreAIbox AI Assistant
+            <Sparkles className="w-5 h-5 text-yellow-400" /> CreAibox AI Assistant
           </h2>
           <div className="relative">
             <select 

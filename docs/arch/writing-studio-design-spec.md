@@ -1,6 +1,6 @@
 # Writing Studio Design Specification
 
-This document records the architectural and design decisions for the CreAIbox Writing Studio, with a focus on the AI PDF Text Extractor module.
+This document records the architectural and design decisions for the CreAibox Writing Studio, with a focus on the AI PDF Text Extractor module.
 
 ## 1. Architecture Decisions
 * **Rich Text Editing Engine**: Selected TipTap for its extensible schema structure, allowing custom node controls (such as customized local canvas image elements, YouTube embeds, and tables).
@@ -16,7 +16,7 @@ This document records the architectural and design decisions for the CreAIbox Wr
 * **Image WebP Converter**: All uploaded image blocks are intercepted on the client side and converted to lightweight WebP formats (max width 1600px, 92% quality) to optimize user bandwidth and CDN delivery costs.
 
 ## 4. UI/UX Decisions
-* **Loading-Free Flow**: Adheres strictly to the CreAIbox UI/UX principles by rendering layouts immediately. We use localized loaders (`추출하는 중...`, `재창조 중...`) instead of global blocking overlays.
+* **Loading-Free Flow**: Adheres strictly to the CreAibox UI/UX principles by rendering layouts immediately. We use localized loaders (`추출하는 중...`, `재창조 중...`) instead of global blocking overlays.
 * **Ref separation**: To avoid input element conflicts, the image uploader (`fileInputRef`) and the PDF attachment uploader (`pdfFileInputRef`) use completely distinct refs.
 * **Visual Theme Harmony**: Integrates cohesive colors (`bg-violet-600/20`, `text-violet-300`) to match the platform's Zinc styling tone.
 

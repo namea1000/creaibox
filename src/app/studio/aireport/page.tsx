@@ -129,7 +129,7 @@ export default function AIReportHomePage() {
 
               <p className="mt-4 max-w-2xl text-sm font-medium leading-relaxed text-zinc-400 md:text-base">
                 AI 시장, 산업, 투자, 생산성, 툴 비교, 뉴스 브리핑까지.
-                CreAIbox에서 AI 기반 리포트를 빠르게 생성하고 콘텐츠로 확장하세요.
+                CreAibox에서 AI 기반 리포트를 빠르게 생성하고 콘텐츠로 확장하세요.
               </p>
             </div>
 

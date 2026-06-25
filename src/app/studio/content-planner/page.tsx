@@ -163,7 +163,7 @@ export default function ContentPlannerHomePage() {
               </h1>
 
               <p className="mt-4 max-w-3xl text-sm leading-relaxed text-zinc-400 md:text-base">
-                콘텐츠 플래너는 CreAIbox 전체 콘텐츠 제작의 출발점입니다.
+                콘텐츠 플래너는 CreAibox 전체 콘텐츠 제작의 출발점입니다.
                 하나의 키워드와 전략에서 블로그, 네이버, 쇼츠, 롱폼, SNS 콘텐츠까지 확장합니다.
               </p>
             </div>

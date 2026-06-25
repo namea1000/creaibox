@@ -65,7 +65,7 @@ export default function Footer() {
 
             <p className="max-w-sm break-keep text-sm font-medium leading-relaxed text-slate-600">
               글쓰기, 이미지, 음악, 영상, 뉴스, 트렌드 분석까지 한 번에.
-              CreAIbox는 크리에이터를 위한 올인원 AI 콘텐츠 스튜디오입니다.
+              CreAibox는 크리에이터를 위한 올인원 AI 콘텐츠 스튜디오입니다.
             </p>
 
             <Link

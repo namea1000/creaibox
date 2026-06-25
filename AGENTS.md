@@ -1,4 +1,4 @@
-# CreAIbox Agent Rules
+# CreAibox Agent Rules
 
 Before writing code, modifying code, or creating new files,
 always review:

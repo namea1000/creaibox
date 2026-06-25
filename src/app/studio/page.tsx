@@ -151,7 +151,7 @@ export default function StudioPage() {
                     <div>
                       <div className="mb-5 inline-flex items-center gap-2 rounded-lg border border-blue-500/20 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 px-4 py-2 text-xs font-black text-blue-600 dark:text-blue-300">
                         <Sparkles size={15} />
-                        CreAIbox AI Workspace
+                        CreAibox AI Workspace
                       </div>
 
                       <h2 className="break-keep text-4xl font-black leading-tight tracking-tight text-zinc-900 dark:text-white md:text-6xl">

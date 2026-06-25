@@ -14,7 +14,7 @@ https://creaibox.com/robots.txt
 
 현재 우선순위
 
-내가 CreAIbox라면 순서 이렇게 함.
+내가 CreAibox라면 순서 이렇게 함.
 
 오늘
 1. Search Console 완료 ✅
@@ -28,7 +28,7 @@ app/blog/[slug]/page.tsx 수정 완료
 5. Google Indexing API 자동화 : 이건 일반 블로그 글에는 하지 않는 게 맞아.
 Google 공식 문서상 Indexing API는 일반 블로그용이 아니라 채용공고(JobPosting) 또는 라이브 방송 페이지(BroadcastEvent + VideoObject) 용도야
 
-현재 CreAIbox SEO 상태를 점수로 보면
+현재 CreAibox SEO 상태를 점수로 보면
 
 도메인 인증         100%
 robots.txt         100%
@@ -142,7 +142,7 @@ JSON-LD 스키마 자동 출력
 회원 전용 페이지
 
 
-4. CreAIbox 기준 추천
+4. CreAibox 기준 추천
 현재라면
 
 /
@@ -173,7 +173,7 @@ SEO 허브를 만들 예정이라면
 대형 사이트들이 쓰는 방식.
 
 
-그리고 CreAIbox SEO 쪽은 사실상 끝났어.
+그리고 CreAibox SEO 쪽은 사실상 끝났어.
 현재 상태:
 ✅ 도메인 인증
 ✅ Search Console 등록

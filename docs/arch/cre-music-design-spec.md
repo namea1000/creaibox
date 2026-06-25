@@ -3,7 +3,7 @@
 ## 1. Architecture Decisions
 
 ### 1-1. Google Drive Bypass Storage
-* **배경**: Supabase Storage는 대용량 오디오 및 동영상 콘텐츠를 지속적으로 저장하고 전송하기에 용량 및 네트워크 트래픽 사용 비용이 발생합니다. 반면, CreAIbox 플랫폼 관리자는 구글 드라이브 20TB 요금제 공간을 소유하고 있어, 이를 활용하여 트래픽 및 오디오 미디어 스토리지 인프라 비용을 전적으로 절감하는 아키텍처를 결정했습니다.
+* **배경**: Supabase Storage는 대용량 오디오 및 동영상 콘텐츠를 지속적으로 저장하고 전송하기에 용량 및 네트워크 트래픽 사용 비용이 발생합니다. 반면, CreAibox 플랫폼 관리자는 구글 드라이브 20TB 요금제 공간을 소유하고 있어, 이를 활용하여 트래픽 및 오디오 미디어 스토리지 인프라 비용을 전적으로 절감하는 아키텍처를 결정했습니다.
 * **해결책**: OAuth 2.0 클라이언트 인증 정보 및 관리자 Refresh Token을 서버 환경 변수로 구성하고, 백엔드 API에서 사용자 요청을 대리하여 구글 드라이브에 접근 및 음원을 서빙하도록 구성합니다.
 
 ### 1-2. Secure Backend Stream Proxy & Range Requests (Alternative to Fife CDN)

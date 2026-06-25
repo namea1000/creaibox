@@ -170,7 +170,7 @@ export default function UnifiedInfoCenter({
           <div>
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-blue-400">
               <Sparkles size={15} />
-              CreAIbox Strategic Hub
+              CreAibox Strategic Hub
             </div>
             <h1 className="text-3xl font-black tracking-tight text-white md:text-5xl">
               정보센터 (Info Center)

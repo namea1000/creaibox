@@ -103,7 +103,7 @@ export default function MainLandingPage() {
               </h1>
 
               <p className="mt-6 max-w-xl break-keep text-lg font-medium leading-relaxed text-slate-600">
-                CreAIbox는 글쓰기, 이미지, 음악, 영상, 뉴스, 트렌드 분석까지
+                CreAibox는 글쓰기, 이미지, 음악, 영상, 뉴스, 트렌드 분석까지
                 크리에이터에게 필요한 AI 제작 도구를 한 곳에 모은 올인원 콘텐츠
                 스튜디오입니다.
               </p>
@@ -148,7 +148,7 @@ export default function MainLandingPage() {
                   <div className="mb-5 flex items-center justify-between">
                     <div>
                       <p className="text-xs font-black uppercase tracking-widest text-violet-300">
-                        CreAIbox Studio
+                        CreAibox Studio
                       </p>
                       <h3 className="mt-1 text-xl font-black">
                         콘텐츠 작업실
@@ -203,7 +203,7 @@ export default function MainLandingPage() {
             </h2>
             <p className="mt-5 break-keep text-lg font-medium text-slate-600">
               여러 AI 서비스와 작업 도구를 오가며 낭비하던 시간을 줄이고,
-              CreAIbox 안에서 기획, 생성, 저장, 발행 준비까지 이어갈 수 있습니다.
+              CreAibox 안에서 기획, 생성, 저장, 발행 준비까지 이어갈 수 있습니다.
             </p>
           </div>
 
@@ -306,7 +306,7 @@ export default function MainLandingPage() {
               </h3>
               <p className="mt-4 break-keep text-base font-medium leading-relaxed text-slate-300">
                 설정이 끝나지 않아도 먼저 콘텐츠 작업실을 둘러보고,
-                CreAIbox의 제작 흐름을 확인할 수 있습니다.
+                CreAibox의 제작 흐름을 확인할 수 있습니다.
               </p>
               <button
                 onClick={() => router.push("/studio")}
@@ -329,7 +329,7 @@ export default function MainLandingPage() {
               아이디어를 콘텐츠로 바꾸는 가장 빠른 방법
             </h2>
             <p className="mx-auto mt-5 max-w-2xl break-keep text-lg font-medium text-white/80">
-              CreAIbox에서 글쓰기, 이미지, 음악, 영상, 트렌드 분석을 하나의
+              CreAibox에서 글쓰기, 이미지, 음악, 영상, 트렌드 분석을 하나의
               작업 흐름으로 연결해보세요.
             </p>
             <button

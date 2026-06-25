@@ -109,7 +109,7 @@ export default function Footer({ companyName, phone, address, extraConfigs = {} 
                 </li>
               )}
               <li>
-                <span className="text-slate-500 mr-2">호스팅제공</span> CreAIbox
+                <span className="text-slate-500 mr-2">호스팅제공</span> CreAibox
               </li>
             </ul>
           </div>
@@ -117,7 +117,7 @@ export default function Footer({ companyName, phone, address, extraConfigs = {} 
 
         {/* Copy Line */}
         <div className="mt-12 pt-8 border-t border-slate-800 text-center text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} {companyName}. All Rights Reserved. Built with CreAIbox.</p>
+          <p>© {new Date().getFullYear()} {companyName}. All Rights Reserved. Built with CreAibox.</p>
         </div>
       </div>
     </footer>

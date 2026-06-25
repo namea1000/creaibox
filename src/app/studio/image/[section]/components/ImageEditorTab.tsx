@@ -102,7 +102,7 @@ export default function ImageEditorTab() {
           <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">텍스트 워터마크 삽입</label>
           <input
             type="text"
-            placeholder="예: © 2026 CreAIbox"
+            placeholder="예: © 2026 CreAibox"
             value={watermark}
             onChange={(e) => setWatermark(e.target.value)}
             className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs text-zinc-200 placeholder-zinc-700 outline-none focus:border-purple-500/50"

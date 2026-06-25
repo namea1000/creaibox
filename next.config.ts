@@ -5,8 +5,16 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/supabase/:path*",
-        destination: "https://dkblalbnykgpksurdace.supabase.co/:path*",
+        source: "/auth/v1/:path*",
+        destination: "https://dkblalbnykgpksurdace.supabase.co/auth/v1/:path*",
+      },
+      {
+        source: "/rest/v1/:path*",
+        destination: "https://dkblalbnykgpksurdace.supabase.co/rest/v1/:path*",
+      },
+      {
+        source: "/storage/v1/:path*",
+        destination: "https://dkblalbnykgpksurdace.supabase.co/storage/v1/:path*",
       },
     ];
   },

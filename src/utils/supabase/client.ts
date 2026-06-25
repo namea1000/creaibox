@@ -6,7 +6,7 @@ export function createClient() {
   if (client) return client;
 
   const url = typeof window !== 'undefined'
-    ? window.location.origin + '/supabase'
+    ? window.location.origin
     : process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
   client = createBrowserClient(

@@ -84,7 +84,7 @@ export default function CommufillLayout({
           </div>
           <div className="mt-12 border-t border-zinc-900 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] font-black uppercase tracking-widest text-zinc-600">
             <p>&copy; {new Date().getFullYear()} Commufill. All rights reserved.</p>
-            <p>Powered by CreAIbox System</p>
+            <p>Powered by CreAibox System</p>
           </div>
         </div>
       </footer>

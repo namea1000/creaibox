@@ -76,7 +76,7 @@ export default function Footer() {
         {/* copyright */}
         <div className="mt-16 border-t border-slate-800 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] font-black uppercase tracking-widest text-slate-600">
           <p>&copy; {new Date().getFullYear()} {COMPANY_INFO.name}. All rights reserved.</p>
-          <p>Powered by CreAIbox Academic Platform</p>
+          <p>Powered by CreAibox Academic Platform</p>
         </div>
       </div>
     </footer>

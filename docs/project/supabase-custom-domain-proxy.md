@@ -1,87 +1,61 @@
-# Supabase Custom Domain Proxy Guide (Vercel Hybrid Proxy)
+# Supabase Custom Domain Proxy Guide (Vercel Standard Proxy)
 
-This document explains the architecture, implementation, and external configuration for the **Vercel Hybrid Proxy** setup. This architecture maps Supabase authentication and API requests to your own brand domain (`creaibox.com`) for free without requiring a Supabase Pro Plan or changing your DNS nameservers.
+This document explains the architecture, implementation, and external configuration for the **Vercel Standard Proxy** setup. This architecture maps Supabase authentication, database, and storage requests directly to your own brand domain (`creaibox.com`) for free, mirroring Supabase's native custom domain feature without requiring a Supabase Pro Plan or changing your DNS nameservers.
 
 ---
 
 ## Architecture Overview
 
-To achieve perfect branding on the Google/Kakao OAuth consent screens (showing **"Logging in to creaibox.com"** instead of `supabase.co`) at **$0 cost**, the project implements a **Vercel Hybrid Proxy**:
+To achieve perfect branding on the Google/Kakao OAuth consent screens (showing **"Logging in to creaibox.com"** instead of `supabase.co`) at **$0 cost**, the project implements a **Vercel Standard Proxy**:
 
 ```mermaid
 graph TD
-    Browser[Browser] -->|Auth Request to /supabase/auth| Middleware[Next.js Middleware]
-    Browser -->|DB/Storage Request to /supabase/*| NextRewrite[Next.js Rewrites]
+    Browser[Browser] -->|Auth Request to /auth/v1| NextRewrite[Next.js Rewrites]
+    Browser -->|DB/Storage Request to /rest/v1 or /storage/v1| NextRewrite
     
-    Middleware -->|Intercept & Rewrite redirect_uri| SupabaseAuth[Supabase GoTrue API]
-    NextRewrite -->|Direct High-Speed Forwarding| SupabaseREST[Supabase REST/Storage API]
+    NextRewrite -->|Direct High-Speed Forwarding| SupabaseGoTrue[Supabase Auth/Database/Storage APIs]
     
-    ServerSide[Server Components / API Routes] -->|Direct Connection - Max Speed| SupabaseREST
+    ServerSide[Server Components / API Routes] -->|Direct Connection - Max Speed| SupabaseGoTrue
 ```
 
-### Why We Chose This Over Cloudflare Workers
-1. **Zero DNS / Nameserver Changes**: Since the domain `creaibox.com` was purchased and is managed on Vercel, using Cloudflare would require transferring nameservers. This hybrid proxy runs 100% inside Vercel.
-2. **Zero Extra Latency for Server Queries**: All server-side queries (Server Components, Server Actions, API Routes) continue to talk **directly** to the Supabase endpoint (`https://dkblalbnykgpksurdace.supabase.co`).
-3. **No Storage/Payload Bottlenecks**: Only the lightweight OAuth authentication endpoint is intercepted by the Next.js Middleware. Large file uploads and heavy database queries bypass the middleware and are routed at the infrastructure level via `next.config.ts` rewrites.
+### Why This is the Ultimate Solution
+1. **Zero DNS / Nameserver Changes**: Runs 100% inside Vercel without transferring your domain nameservers away from Vercel.
+2. **Standard Host Header Consistency**: By mapping standard endpoints (`/auth/v1`, `/rest/v1`, `/storage/v1`) directly on the root of your domain (without path prefixes like `/supabase`), Vercel automatically forwards the correct, standard `X-Forwarded-Host` header (`creaibox.com` or `localhost:3000`). This ensures that Google/Kakao token exchanges succeed with zero errors.
+3. **Zero Middleware Overhead**: Eliminates the need to intercept and modify redirects in Next.js Middleware. Vercel's infrastructure-level rewrites handle everything at maximum speed with zero CPU overhead.
+4. **Zero Extra Latency for Server Queries**: All server-side queries (Server Components, Server Actions, API Routes) continue to talk **directly** to the Supabase endpoint (`https://dkblalbnykgpksurdace.supabase.co`).
 
 ---
 
 ## Implementation Details
 
-The hybrid proxy is fully implemented in the codebase across three files:
+The proxy is fully implemented in the codebase across two files:
 
 ### 1. Route Forwarding ([next.config.ts](file:///Users/a1234/Local%20Sites/creaibox/next.config.ts))
-Rewrites all `/supabase/:path*` requests to the actual Supabase project endpoint at the infrastructure routing layer:
+Maps the standard Supabase endpoints directly at the infrastructure routing layer:
 ```typescript
 async rewrites() {
   return [
     {
-      source: "/supabase/:path*",
-      destination: "https://dkblalbnykgpksurdace.supabase.co/:path*",
+      source: "/auth/v1/:path*",
+      destination: "https://dkblalbnykgpksurdace.supabase.co/auth/v1/:path*",
+    },
+    {
+      source: "/rest/v1/:path*",
+      destination: "https://dkblalbnykgpksurdace.supabase.co/rest/v1/:path*",
+    },
+    {
+      source: "/storage/v1/:path*",
+      destination: "https://dkblalbnykgpksurdace.supabase.co/storage/v1/:path*",
     },
   ];
 }
 ```
 
-### 2. Redirect Interception ([src/middleware.ts](file:///Users/a1234/Local%20Sites/creaibox/src/middleware.ts))
-Intercepts the OAuth initialization redirect (302) and rewrites the `redirect_uri` parameter from `supabase.co` to `creaibox.com/supabase`:
-```typescript
-if (request.nextUrl.pathname.startsWith("/supabase/auth/v1/authorize")) {
-  const supabaseHost = "dkblalbnykgpksurdace.supabase.co";
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-forwarded-host", request.headers.get("host") || "");
-  requestHeaders.set("host", supabaseHost);
-
-  const realPath = request.nextUrl.pathname.replace(/^\/supabase/, "");
-  const targetUrl = new URL(realPath + request.nextUrl.search, `https://${supabaseHost}`);
-
-  const proxyResponse = await fetch(targetUrl.toString(), {
-    method: request.method,
-    headers: requestHeaders,
-    redirect: "manual",
-  });
-
-  if (proxyResponse.status === 302) {
-    const location = proxyResponse.headers.get("location");
-    if (location && location.includes(supabaseHost)) {
-      const currentHost = request.headers.get("host") || "";
-      const newLocation = location.replace(supabaseHost, `${currentHost}/supabase`);
-      
-      const responseHeaders = new Headers(proxyResponse.headers);
-      responseHeaders.set("location", newLocation);
-
-      return new NextResponse(null, { status: 302, headers: responseHeaders });
-    }
-  }
-  return proxyResponse;
-}
-```
-
-### 3. Dynamic Client Targeting ([src/utils/supabase/client.ts](file:///Users/a1234/Local%20Sites/creaibox/src/utils/supabase/client.ts))
-Automatically detects the environment. The browser client targets the local `/supabase` proxy path, while Server Components continue to connect directly to the high-speed Supabase URL:
+### 2. Dynamic Client Targeting ([src/utils/supabase/client.ts](file:///Users/a1234/Local%20Sites/creaibox/src/utils/supabase/client.ts))
+Automatically detects the environment. The browser client targets the standard paths on the current origin, while Server Components connect directly to the high-speed Supabase URL:
 ```typescript
 const url = typeof window !== 'undefined'
-  ? window.location.origin + '/supabase'
+  ? window.location.origin
   : process.env.NEXT_PUBLIC_SUPABASE_URL!;
 ```
 
@@ -94,16 +68,16 @@ To complete the setup, you must register the new callback URLs in your developer
 ### 1. Google Cloud Console (OAuth 2.0)
 1. Go to [Google Cloud Console](https://console.cloud.google.com/) -> **APIs & Services** -> **Credentials**.
 2. Edit your OAuth 2.0 Client ID.
-3. In **Authorized redirect URIs**, add both local and production proxied callback URLs:
-   * **Local Development**: `http://localhost:3000/supabase/auth/v1/callback`
-   * **Production**: `https://creaibox.com/supabase/auth/v1/callback`
+3. In **Authorized redirect URIs**, add both local and production callback URLs:
+   * **Local Development**: `http://localhost:3000/auth/v1/callback`
+   * **Production**: `https://creaibox.com/auth/v1/callback`
 4. Save the changes.
 
 ### 2. Kakao Developers Console
-1. Go to [Kakao Developers](https://developers.kakao.com/) -> **My Application** -> **Product Settings** -> **Kakao Login**.
-2. In the **Redirect URI** section, register:
-   * **Local Development**: `http://localhost:3000/supabase/auth/v1/callback`
-   * **Production**: `https://creaibox.com/supabase/auth/v1/callback`
+1. Go to [Kakao Developers](https://developers.kakao.com/) -> **My Application** -> **Product Settings** -> **Kakao Login** -> **플랫폼 키**.
+2. Under your **REST API Key** details, register both callback URLs:
+   * **Local Development**: `http://localhost:3000/auth/v1/callback`
+   * **Production**: `https://creaibox.com/auth/v1/callback`
 3. Save the changes.
 
 ### 3. Supabase Dashboard
@@ -116,8 +90,6 @@ To complete the setup, you must register the new callback URLs in your developer
 ---
 
 ## Environmental Variables (No Changes Needed)
-
-Because of the **Dynamic Client Targeting** implementation, you **do not** need to change the environment variables. 
 
 Keep them pointing directly to the Supabase endpoint in both your local `.env.local` and your Vercel Dashboard:
 ```env

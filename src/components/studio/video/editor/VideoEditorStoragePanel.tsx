@@ -103,7 +103,7 @@ const sampleStorageItems: StorageItem[] = [
     name: "drive-project-footage.mp4",
     type: "video",
     provider: "google-drive",
-    path: "Google Drive / CreAIbox / footage.mp4",
+    path: "Google Drive / CreAibox / footage.mp4",
     sizeMb: 64.5,
     createdAt: "Soon",
     status: "locked",

@@ -11,7 +11,7 @@ export async function generateGroqText(prompt: string) {
       {
         role: "system",
         content:
-          "You are CreAIbox AI assistant. Generate high-quality Korean content for creators.",
+          "You are CreAibox AI assistant. Generate high-quality Korean content for creators.",
       },
       {
         role: "user",

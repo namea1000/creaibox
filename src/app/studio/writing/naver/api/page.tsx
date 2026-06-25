@@ -36,7 +36,7 @@ export default function EngineConfigPage() {
     setIsSaving(true);
     setTimeout(() => {
       setIsSaving(false);
-      alert("CreAIbox 인프라 코어 세팅 데이터가 암호화 저장 및 동기화 완료되었습니다!");
+      alert("CreAibox 인프라 코어 세팅 데이터가 암호화 저장 및 동기화 완료되었습니다!");
     }, 1200);
   };
 
@@ -140,8 +140,8 @@ export default function EngineConfigPage() {
                   <div className="space-y-1.5">
                     <label className="block text-zinc-400 font-bold">1. 메인 AI 초안 작성 모델</label>
                     <select value={aiModel} onChange={(e)=>setAiModel(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-300 font-bold focus:outline-none">
-                      <option value="gpt-4o-mini">CreAIbox Turbo (Fast & Cheap)</option>
-                      <option value="gpt-4o">CreAIbox Deep-Thinking Pro (High Quality)</option>
+                      <option value="gpt-4o-mini">CreAibox Turbo (Fast & Cheap)</option>
+                      <option value="gpt-4o">CreAibox Deep-Thinking Pro (High Quality)</option>
                     </select>
                   </div>
                 </div>

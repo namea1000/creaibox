@@ -1,6 +1,6 @@
 # Reserved Brand IDs 운영 인계 문서
 
-이 문서는 CreAIbox 브랜드 ID(`{brand_id}.creaibox.com`) 예약어/블랙리스트 데이터 작업 현황과 다음 작업자가 이어받아야 할 DB 반영 절차를 정리한다.
+이 문서는 CreAibox 브랜드 ID(`{brand_id}.creaibox.com`) 예약어/블랙리스트 데이터 작업 현황과 다음 작업자가 이어받아야 할 DB 반영 절차를 정리한다.
 
 ## 현재 상태
 

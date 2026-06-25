@@ -1,6 +1,6 @@
 # Writing Studio Page Specification
 
-This document details the route and page layout specifications for the Writing Studio within the CreAIbox platform.
+This document details the route and page layout specifications for the Writing Studio within the CreAibox platform.
 
 ## 1. Page Routes
 * **Post List Page**: `src/app/studio/writing/creaibox/list/page.tsx`

@@ -70,13 +70,13 @@ export default function BetaPage() {
           <h1 className="mx-auto max-w-4xl text-5xl font-extrabold leading-tight tracking-tight md:text-7xl">
             AI 콘텐츠 제작의 모든 것을
             <span className="block bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-400 bg-clip-text text-transparent">
-              CreAIbox 하나로
+              CreAibox 하나로
             </span>
           </h1>
 
           <p className="mx-auto mt-8 max-w-3xl text-lg leading-8 text-slate-300 md:text-xl">
             글쓰기, 리서치, 이미지, 음악, API 연결, 프로젝트 관리를 하나의 워크스페이스에서 제공합니다.
-            CreAIbox는 7월 베타 오픈을 앞두고 초기 사용자 1,000명을 모집합니다.
+            CreAibox는 7월 베타 오픈을 앞두고 초기 사용자 1,000명을 모집합니다.
           </p>
 
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -92,7 +92,7 @@ export default function BetaPage() {
               href="/about"
               className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-8 py-4 text-base font-bold text-white transition hover:bg-white/10"
             >
-              CreAIbox 더 알아보기
+              CreAibox 더 알아보기
             </Link>
           </div>
 
@@ -122,7 +122,7 @@ export default function BetaPage() {
       <section className="px-6 py-20">
         <div className="mx-auto max-w-6xl rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 md:p-12">
           <p className="mb-4 text-sm font-bold uppercase tracking-[0.3em] text-blue-300">
-            Why CreAIbox
+            Why CreAibox
           </p>
 
           <h2 className="text-3xl font-black md:text-5xl">
@@ -132,7 +132,7 @@ export default function BetaPage() {
           <p className="mt-6 max-w-4xl text-lg leading-8 text-slate-300">
             글은 ChatGPT에서 만들고, 이미지는 다른 서비스에서 만들고, 음악은 또 다른 플랫폼에서 만들고,
             자료 정리는 별도 노트에 저장하는 방식은 콘텐츠 생산 속도를 떨어뜨립니다.
-            CreAIbox는 이 과정을 하나의 제작 흐름으로 연결합니다.
+            CreAibox는 이 과정을 하나의 제작 흐름으로 연결합니다.
           </p>
         </div>
       </section>
@@ -181,7 +181,7 @@ export default function BetaPage() {
               초기 사용자에게 먼저 열립니다.
             </h2>
             <p className="mt-6 text-lg leading-8 text-slate-300">
-              CreAIbox 베타는 단순 체험판이 아니라 실제 콘텐츠 제작자와 함께 제품을 완성해가는 단계입니다.
+              CreAibox 베타는 단순 체험판이 아니라 실제 콘텐츠 제작자와 함께 제품을 완성해가는 단계입니다.
               초기 사용자 피드백은 정식 서비스 기능 개선에 우선 반영됩니다.
             </p>
           </div>
@@ -201,12 +201,12 @@ export default function BetaPage() {
       <section className="px-6 py-24">
         <div className="mx-auto max-w-5xl rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-blue-600/25 via-purple-600/20 to-cyan-500/20 p-10 text-center md:p-16">
           <h2 className="text-4xl font-black md:text-6xl">
-            CreAIbox Beta 1000
+            CreAibox Beta 1000
           </h2>
 
           <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-slate-200">
             AI 콘텐츠 제작을 더 빠르고, 더 체계적으로, 더 강력하게.
-            7월 베타 오픈과 함께 CreAIbox의 첫 번째 사용자 그룹에 참여하세요.
+            7월 베타 오픈과 함께 CreAibox의 첫 번째 사용자 그룹에 참여하세요.
           </p>
 
           <div className="mt-10">

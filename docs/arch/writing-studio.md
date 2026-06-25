@@ -1,6 +1,6 @@
 # Writing Studio Operational Architecture
 
-This document describes the operational architecture of the Writing Studio within the CreAIbox platform.
+This document describes the operational architecture of the Writing Studio within the CreAibox platform.
 
 ## 1. Purpose
 The Writing Studio is designed to empower content creators with advanced, AI-driven blog editing tools. It helps users generate high-quality SEO-optimized articles, recreate posts from URLs or PDF text inputs, and perform structural content enhancement in a seamless, loading-free dark-mode editor.

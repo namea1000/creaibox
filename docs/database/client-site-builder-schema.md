@@ -1,6 +1,6 @@
 # AI 홈페이지 빌더 & CMS 데이터베이스 설계서
 
-본 문서는 CreAIbox AI 홈페이지 빌더 및 기업 전용 CMS 서비스를 위한 데이터베이스 테이블 구조와 RLS(Row Level Security) 정책을 상세히 설명합니다.
+본 문서는 CreAibox AI 홈페이지 빌더 및 기업 전용 CMS 서비스를 위한 데이터베이스 테이블 구조와 RLS(Row Level Security) 정책을 상세히 설명합니다.
 
 ---
 

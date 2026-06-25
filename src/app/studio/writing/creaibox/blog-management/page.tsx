@@ -1792,7 +1792,7 @@ export default function BlogManagementPage() {
                     <div className="space-y-1.5">
                       <p className="text-white font-black text-xs">🔒 2. SSL/TLS 보안 인증서 동적 발급</p>
                       <p>
-                        도메인 연결이 승인되면 CreAIbox의 인프라(Vercel 에지 프록시 네트워크)가 사용자 도메인을 위해 **Let's Encrypt**보안 SSL 인증서를 동적으로 실시간 발급합니다.
+                        도메인 연결이 승인되면 CreAibox의 인프라(Vercel 에지 프록시 네트워크)가 사용자 도메인을 위해 **Let's Encrypt**보안 SSL 인증서를 동적으로 실시간 발급합니다.
                       </p>
                       <p className="text-zinc-500">
                         이를 통해 사용자는 별도의 SSL 구매 없이 `https://`로 안전하게 블로그를 운영할 수 있습니다.
@@ -1802,7 +1802,7 @@ export default function BlogManagementPage() {
                     <div className="space-y-1.5">
                       <p className="text-white font-black text-xs">🚀 3. 호스트 분석 및 내부 리다이렉트</p>
                       <p>
-                        블로그 시스템은 Next.js Edge Middleware 기술을 기반으로 작동합니다. 방문자가 본인의 독립 도메인으로 접속하면, 주소창 주소는 본인 도메인 그대로 유지한 채 서버 내부적으로 CreAIbox에 매핑된 브랜드 글들을 실시간 로드해 줍니다.
+                        블로그 시스템은 Next.js Edge Middleware 기술을 기반으로 작동합니다. 방문자가 본인의 독립 도메인으로 접속하면, 주소창 주소는 본인 도메인 그대로 유지한 채 서버 내부적으로 CreAibox에 매핑된 브랜드 글들을 실시간 로드해 줍니다.
                       </p>
                     </div>
 

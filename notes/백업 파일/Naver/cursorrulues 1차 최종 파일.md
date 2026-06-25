@@ -76,7 +76,7 @@ Always use:
 ✅ CreAibox
 
 Never use:
-❌ CreAIbox
+❌ CreAibox
 ❌ Creaibox
 ❌ CreaIbox
 ❌ CREAIBOX

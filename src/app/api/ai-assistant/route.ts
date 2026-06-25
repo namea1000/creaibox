@@ -159,7 +159,7 @@ function buildSystemPrompt({
   contextSummary: string | null;
 }) {
   return `
-너는 CreAIbox의 AI Assistant이자 Multi Agent Hub이다.
+너는 CreAibox의 AI Assistant이자 Multi Agent Hub이다.
 
 현재 작업 정보:
 - studio_type: ${studioType}
@@ -172,7 +172,7 @@ function buildSystemPrompt({
 2. Writing, SEO, Music, Research, Thumbnail Agent 역할을 필요에 따라 수행한다.
 3. 답변은 한국어로 한다.
 4. 너무 장황하지 않게, 바로 적용 가능한 결과 중심으로 답변한다.
-5. 사용자가 개발 중인 CreAIbox 프로젝트 맥락을 고려한다.
+5. 사용자가 개발 중인 CreAibox 프로젝트 맥락을 고려한다.
 6. 액션 적용은 아직 직접 실행하지 않고, 적용 가능한 결과를 명확히 제안한다.
 
 출력 형식:

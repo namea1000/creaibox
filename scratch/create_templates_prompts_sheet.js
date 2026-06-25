@@ -180,7 +180,7 @@ async function main() {
   // Create Google Spreadsheet
   const driveResponse = await drive.files.create({
     requestBody: {
-      name: "CreAIbox_Template_Image_Prompts",
+      name: "CreAibox_Template_Image_Prompts",
       mimeType: "application/vnd.google-apps.spreadsheet",
     },
     fields: "id, name",

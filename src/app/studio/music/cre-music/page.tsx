@@ -381,7 +381,7 @@ export default function CreMusicPlayerPage() {
                 Awakening
               </h1>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-zinc-400 font-bold">
-                <span className="text-white">CreAIbox Studio</span>
+                <span className="text-white">CreAibox Studio</span>
                 <span>•</span>
                 <span>2026</span>
                 <span>•</span>

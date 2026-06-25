@@ -1,6 +1,6 @@
-# CreAIbox 개발일지 (Development Log)
+# CreAibox 개발일지 (Development Log)
 
-이 문서는 CreAIbox 프로젝트의 일자별 개발 내역, 핵심 아키텍처 결정 사항을 기록합니다.
+이 문서는 CreAibox 프로젝트의 일자별 개발 내역, 핵심 아키텍처 결정 사항을 기록합니다.
 
 ### 🗓️ 2026-06-24 (수) - 오늘
 #### 1. Next.js 개발 모드 빌드 표시기(devIndicators) 비활성화 및 성능 개선

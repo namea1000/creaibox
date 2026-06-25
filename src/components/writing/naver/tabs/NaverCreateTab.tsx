@@ -319,7 +319,7 @@ export default function NaverCreateTab({
           <body>
             <h1>${title || '제목 없음'}</h1>
             <div>${content}</div>
-            <footer>본 원고는 CreAIbox Contents Studio에서 생성되었습니다.</footer>
+            <footer>본 원고는 CreAibox Contents Studio에서 생성되었습니다.</footer>
             <script>window.onload = function() { window.print(); }</script>
           </body>
         </html>

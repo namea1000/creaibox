@@ -65,7 +65,7 @@ export default function LibraryHomePage() {
               </h1>
 
               <p className="mt-4 max-w-2xl text-sm font-medium leading-relaxed text-zinc-600 dark:text-zinc-400 md:text-base">
-                CreAIbox에서 생성한 글쓰기, 음악, 이미지, 영상, 프롬프트를 한 곳에서 관리하는 통합 콘텐츠 저장소입니다.
+                CreAibox에서 생성한 글쓰기, 음악, 이미지, 영상, 프롬프트를 한 곳에서 관리하는 통합 콘텐츠 저장소입니다.
               </p>
             </div>
 

@@ -40,7 +40,7 @@ export default function AboutPage() {
         {/* 🚀 SECTION 1: HERO VIEW (상단 타이틀 & 슬로건) */}
         <div className="text-center max-w-3xl mx-auto space-y-6 mb-24">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/5 text-blue-400 text-xs font-bold tracking-widest uppercase mb-2">
-            <Sparkles size={12} /> Introducing CreAIbox
+            <Sparkles size={12} /> Introducing CreAibox
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter leading-tight">
             상상력을 현실로 만드는 <br />
@@ -71,7 +71,7 @@ export default function AboutPage() {
               </p>
             </div>
             <div className="bg-zinc-950/80 rounded-xl p-5 border border-zinc-850 font-mono text-xs md:text-sm text-blue-400/90 space-y-2 shadow-inner">
-              <p><span className="text-zinc-600">1</span> <span className="text-purple-400">const</span> platform = <span className="text-emerald-400">"CreAIbox"</span>;</p>
+              <p><span className="text-zinc-600">1</span> <span className="text-purple-400">const</span> platform = <span className="text-emerald-400">"CreAibox"</span>;</p>
               <p><span className="text-zinc-600">2</span> <span className="text-purple-400">const</span> coreTech = [<span className="text-emerald-400">"Text"</span>, <span className="text-emerald-400">"Image"</span>, <span className="text-emerald-400">"Video"</span>, <span className="text-emerald-400">"Music"</span>];</p>
               <p><span className="text-zinc-600">3</span> </p>
               <p><span className="text-zinc-600">4</span> <span className="text-purple-400">function</span> <span className="text-yellow-400">generateCreativity</span>() &#123;</p>

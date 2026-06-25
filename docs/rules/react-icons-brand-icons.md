@@ -2,7 +2,7 @@
 
 ## 목적
 
-CreAIbox 프로젝트에서는 Google, YouTube, Instagram, TikTok 등 외부 서비스의 브랜드 아이콘을 표시할 때 `lucide-react` 대신 `react-icons`를 사용한다.
+CreAibox 프로젝트에서는 Google, YouTube, Instagram, TikTok 등 외부 서비스의 브랜드 아이콘을 표시할 때 `lucide-react` 대신 `react-icons`를 사용한다.
 
 브랜드 아이콘은 공식 로고와 최대한 유사한 형태를 유지해야 하므로 `react-icons/si`(Simple Icons)를 기본 표준으로 사용한다.
 

@@ -134,7 +134,7 @@ export default function AdminDashboardPage() {
           </h1>
 
           <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-            CreAIbox 통합 관리자 센터 · 전체 서비스 운영 현황 관리
+            CreAibox 통합 관리자 센터 · 전체 서비스 운영 현황 관리
           </p>
         </div>
       </header>

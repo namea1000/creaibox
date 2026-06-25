@@ -17,7 +17,7 @@
 
 ## 2. 시스템 아키텍처 & 라우팅 설계
 
-개별 기업 홈페이지는 CreAIbox의 기본 레이아웃이나 스타일시트(블로그용 다크 UI 등)의 영향을 받지 않고 독자적인 테마를 표현해야 하므로, **격리형 Rewrite 전략**을 취했습니다.
+개별 기업 홈페이지는 CreAibox의 기본 레이아웃이나 스타일시트(블로그용 다크 UI 등)의 영향을 받지 않고 독자적인 테마를 표현해야 하므로, **격리형 Rewrite 전략**을 취했습니다.
 
 ### 2-1. 정적 클라이언트 레지스트리 바인딩
 *   [clientSites.ts](file:///Users/a1234/Local%20Sites/creaibox/src/lib/constants/clientSites.ts)에 `"sotongcheum"` 브랜드 ID를 정적으로 등록했습니다.

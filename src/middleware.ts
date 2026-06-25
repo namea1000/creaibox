@@ -3,52 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { CUSTOM_CLIENT_SITES } from './lib/constants/clientSites'
 
 export async function middleware(request: NextRequest) {
-  // 🌟 Supabase Auth 커스텀 도메인 OAuth 리디렉션 가로채기 (Vercel 하이브리드 프록시)
-  if (request.nextUrl.pathname.startsWith("/supabase/auth/v1/authorize")) {
-    const supabaseHost = "dkblalbnykgpksurdace.supabase.co";
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set("x-forwarded-host", request.headers.get("host") || "");
-    requestHeaders.set("host", supabaseHost);
 
-    const realPath = request.nextUrl.pathname.replace(/^\/supabase/, "");
-    const targetUrl = new URL(
-      realPath + request.nextUrl.search,
-      `https://${supabaseHost}`
-    );
-
-    try {
-      const proxyResponse = await fetch(targetUrl.toString(), {
-        method: request.method,
-        headers: requestHeaders,
-        redirect: "manual",
-      });
-
-      if (proxyResponse.status === 302) {
-        const location = proxyResponse.headers.get("location");
-        if (location && location.includes(supabaseHost)) {
-          const currentHost = request.headers.get("host") || "";
-          let newLocation = location.replace(supabaseHost, `${currentHost}/supabase`);
-          
-          // 🌟 로컬 개발 환경(localhost)인 경우 리디렉션 프로토콜을 https에서 http로 치환하여 mismatch 에러를 방지합니다.
-          if (currentHost.includes("localhost")) {
-            newLocation = newLocation.replace("https%3A%2F%2Flocalhost", "http%3A%2F%2Flocalhost");
-            newLocation = newLocation.replace("https://localhost", "http://localhost");
-          }
-          
-          const responseHeaders = new Headers(proxyResponse.headers);
-          responseHeaders.set("location", newLocation);
-
-          return new NextResponse(null, {
-            status: 302,
-            headers: responseHeaders,
-          });
-        }
-      }
-      return proxyResponse;
-    } catch (err) {
-      console.error("Supabase Auth proxy error:", err);
-    }
-  }
 
   let response = NextResponse.next({
     request: {

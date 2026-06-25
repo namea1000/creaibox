@@ -1,6 +1,6 @@
 # Image Studio - Design Specification
 
-Purpose: This document details the design specifications, state architectures, and implementation rationale for the Canva/MiriCanvas-themed Image Studio in the CreAIbox project.
+Purpose: This document details the design specifications, state architectures, and implementation rationale for the Canva/MiriCanvas-themed Image Studio in the CreAibox project.
 
 ---
 

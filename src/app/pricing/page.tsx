@@ -85,7 +85,7 @@ export default function PricingPage() {
           <div className="mx-auto max-w-7xl text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-white px-4 py-2 text-sm font-black text-violet-700 shadow-sm">
               <Sparkles size={16} />
-              CreAIbox Pricing
+              CreAibox Pricing
             </div>
 
             <h1 className="mt-6 break-keep text-4xl font-black tracking-tight text-slate-950 md:text-6xl">
@@ -97,7 +97,7 @@ export default function PricingPage() {
             </h1>
 
             <p className="mx-auto mt-6 max-w-2xl break-keep text-lg font-medium leading-relaxed text-slate-600">
-              CreAIbox는 현재 베타 서비스로 운영 중입니다. 정식 요금제는 추후
+              CreAibox는 현재 베타 서비스로 운영 중입니다. 정식 요금제는 추후
               공개 예정이며, 현재는 주요 스튜디오 기능을 무료로 체험할 수
               있습니다.
             </p>

@@ -55,7 +55,7 @@ async function main() {
   // 1. Google Spreadsheet 파일 생성
   const driveResponse = await drive.files.create({
     requestBody: {
-      name: "CreAIbox AI 콘텐츠 카테고리 및 이미지 프롬프트 설계서",
+      name: "CreAibox AI 콘텐츠 카테고리 및 이미지 프롬프트 설계서",
       mimeType: "application/vnd.google-apps.spreadsheet",
       parents: [process.env.GDRIVE_FREE_ASSETS_FOLDER_ID] // 무료 에셋 루트 폴더 하위에 생성하여 정리
     },

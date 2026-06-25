@@ -48,7 +48,7 @@ export default function GoogleSearchTab() {
       </div>
 
       <footer className="mt-8 text-[9px] font-black text-zinc-800 uppercase tracking-[0.4em] text-center italic">
-        Global Data Intelligence Unit — CreAIbox Studio
+        Global Data Intelligence Unit — CreAibox Studio
       </footer>
     </div>
   );

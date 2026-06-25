@@ -383,7 +383,7 @@ Webhook 연결
 
 
 /admin/system 은
-단순 시스템 페이지가 아니라 CreAIbox NOC(Network Operations Center) 느낌으로 가야 해.
+단순 시스템 페이지가 아니라 CreAibox NOC(Network Operations Center) 느낌으로 가야 해.
 ✅ Supabase 상태
 ✅ DB 상태
 ✅ Storage 사용량
@@ -405,7 +405,7 @@ Webhook 연결
 
 
 /admin/settings.
-이 페이지는 단순 설정이 아니라 CreAIbox Control Panel 개념으로 가는 게 맞아.
+이 페이지는 단순 설정이 아니라 CreAibox Control Panel 개념으로 가는 게 맞아.
 ✅ 사이트 기본 설정
 ✅ 회원 정책
 ✅ 무료 사용량 제한
