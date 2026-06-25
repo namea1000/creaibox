@@ -27,7 +27,13 @@ export async function middleware(request: NextRequest) {
         const location = proxyResponse.headers.get("location");
         if (location && location.includes(supabaseHost)) {
           const currentHost = request.headers.get("host") || "";
-          const newLocation = location.replace(supabaseHost, `${currentHost}/supabase`);
+          let newLocation = location.replace(supabaseHost, `${currentHost}/supabase`);
+          
+          // 🌟 로컬 개발 환경(localhost)인 경우 리디렉션 프로토콜을 https에서 http로 치환하여 mismatch 에러를 방지합니다.
+          if (currentHost.includes("localhost")) {
+            newLocation = newLocation.replace("https%3A%2F%2Flocalhost", "http%3A%2F%2Flocalhost");
+            newLocation = newLocation.replace("https://localhost", "http://localhost");
+          }
           
           const responseHeaders = new Headers(proxyResponse.headers);
           responseHeaders.set("location", newLocation);
