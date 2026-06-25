@@ -3,6 +3,47 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { CUSTOM_CLIENT_SITES } from './lib/constants/clientSites'
 
 export async function middleware(request: NextRequest) {
+  // 🌟 Supabase Auth 커스텀 도메인 OAuth 리디렉션 가로채기 (Vercel 하이브리드 프록시)
+  if (request.nextUrl.pathname.startsWith("/supabase/auth/v1/authorize")) {
+    const supabaseHost = "dkblalbnykgpksurdace.supabase.co";
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-forwarded-host", request.headers.get("host") || "");
+    requestHeaders.set("host", supabaseHost);
+
+    const realPath = request.nextUrl.pathname.replace(/^\/supabase/, "");
+    const targetUrl = new URL(
+      realPath + request.nextUrl.search,
+      `https://${supabaseHost}`
+    );
+
+    try {
+      const proxyResponse = await fetch(targetUrl.toString(), {
+        method: request.method,
+        headers: requestHeaders,
+        redirect: "manual",
+      });
+
+      if (proxyResponse.status === 302) {
+        const location = proxyResponse.headers.get("location");
+        if (location && location.includes(supabaseHost)) {
+          const currentHost = request.headers.get("host") || "";
+          const newLocation = location.replace(supabaseHost, `${currentHost}/supabase`);
+          
+          const responseHeaders = new Headers(proxyResponse.headers);
+          responseHeaders.set("location", newLocation);
+
+          return new NextResponse(null, {
+            status: 302,
+            headers: responseHeaders,
+          });
+        }
+      }
+      return proxyResponse;
+    } catch (err) {
+      console.error("Supabase Auth proxy error:", err);
+    }
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -143,9 +184,44 @@ export async function middleware(request: NextRequest) {
 
     if (targetBrandId && !excludedSubdomains.includes(targetBrandId.toLowerCase())) {
       const isCustomClient = CUSTOM_CLIENT_SITES.includes(targetBrandId.toLowerCase());
-      const rewritePath = isCustomClient
-        ? `/clients/${targetBrandId.toLowerCase()}${path}`
-        : `/brand/${targetBrandId.toLowerCase()}${path}`;
+      
+      let rewritePath = "";
+      if (isCustomClient) {
+        rewritePath = `/clients/${targetBrandId.toLowerCase()}${path}`;
+      } else {
+        // DB-driven Dynamic Website Builder Check
+        let isDynamicClient = false;
+        try {
+          const adminSupabase = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            {
+              cookies: {
+                get(name: string) { return ""; },
+                set(name: string, value: string, options: any) {},
+                remove(name: string, options: any) {},
+              }
+            }
+          );
+          
+          const { data: siteData } = await adminSupabase
+            .from("client_sites")
+            .select("id")
+            .eq("brand_id", targetBrandId.toLowerCase())
+            .eq("status", "ACTIVE")
+            .maybeSingle();
+            
+          if (siteData?.id) {
+            isDynamicClient = true;
+          }
+        } catch (dbErr) {
+          console.error("Middleware dynamic client lookup failed:", dbErr);
+        }
+        
+        rewritePath = isDynamicClient
+          ? `/clients/dynamic-renderer/${targetBrandId.toLowerCase()}${path}`
+          : `/brand/${targetBrandId.toLowerCase()}${path}`;
+      }
         
       const rewriteUrl = new URL(rewritePath, request.url);
       

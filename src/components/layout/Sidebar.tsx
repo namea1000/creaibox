@@ -176,6 +176,21 @@ export default function Sidebar({
         color: "text-blue-400",
       },
       {
+        key: "client-site-builder",
+        name: "AI 홈페이지 제작",
+        href: "/studio/client-site-builder",
+        icon: Globe,
+        color: "text-emerald-400",
+        children: [
+          { name: "스튜디오 홈", href: "/studio/client-site-builder", icon: LayoutDashboard },
+          { name: "AI 홈페이지 빌더", href: "/studio/client-site-builder/builder", icon: Wand2 },
+          { name: "디자인 테마 라이브러리", href: "/studio/client-site-builder/themes", icon: Palette },
+          { name: "고객 문의 관리", href: "/studio/client-site-builder/inquiries", icon: MessageSquare },
+          { name: "페이지 & 글 관리", href: "/studio/client-site-builder/posts", icon: FileText },
+          { name: "홈페이지 설정", href: "/studio/client-site-builder/settings", icon: Settings },
+        ],
+      },
+      {
         key: "shortcuts",
         name: "바로가기",
         href: "/studio/content-planner/idea-hub",

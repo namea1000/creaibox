@@ -2,7 +2,23 @@
 
 이 문서는 CreAIbox 프로젝트의 일자별 개발 내역, 핵심 아키텍처 결정 사항을 기록합니다.
 
-### 🗓️ 2026-06-23 (화) - 오늘
+### 🗓️ 2026-06-24 (수) - 오늘
+#### 1. Next.js 개발 모드 빌드 표시기(devIndicators) 비활성화 및 성능 개선
+* **구현 요약**: 개발 모드(`npm run dev`)에서 페이지 전환 및 온디맨드 컴파일 시 화면 왼쪽 아래에 노출되던 "Rendering..", "Complete..." 표시기(`devIndicators`)를 비활성화하여 UI 플리커링과 화면 가림을 해소하고 체감 렌더링 부하를 해소했습니다.
+* **작업 상세**:
+  - **설정 파일 변경**: [`next.config.ts`](file:///Users/a1234/Local%20Sites/creaibox/next.config.ts)를 수정하여 기존의 `devIndicators: { position: "bottom-left" }` 설정을 `devIndicators: false`로 전환하고 표시기를 완전히 해제했습니다.
+  - **체감 성능 개선 및 영향도**: Next.js 개발 서버의 Lazy Compilation(온디맨드 실시간 컴파일) 특성상 개발 단계의 최초 로딩 지연은 완전히 배제할 수 없으나, 렌더링 상태를 알리는 오버레이가 깜빡이며 시각적으로 방해하던 요소를 제거하여 전반적인 탭 메뉴간 전환 피드백을 한층 더 부드럽고 쾌적하게 개선했습니다. 프로덕션 빌드 배포 환경(`next build` 및 `next start`)에서는 원래부터 이 표시기가 비활성화되며, 모든 페이지가 사전 컴파일되어 로딩 없이 초고속으로 전환됨을 확인했습니다.
+
+#### 2. 무료 공유 에셋 내 "홈페이지 제작용 프리미엄 테마 갤러리" 및 비즈니스 등급 다운로드 제어 시스템 구축
+* **구현 요약**: 무료 공유 에셋 메뉴 내에 공식 테마 전용 디자인 이미지를 감상할 수 있는 테마 갤러리를 구축하고, 다운로드 시 사용자의 등급(membership_level)을 판단하여 비즈니스 전용 자산 다운로드를 차단/안내하는 비즈니스 정책을 완비했습니다.
+* **작업 상세**:
+  - **DB 확장 및 성능 튜닝**: `free_assets` 테이블에 프리미엄 공식 테마 에셋 식별 및 다운로드 제한을 위한 `is_official_theme_asset`, `theme_category`, `is_business_only` 컬럼을 신설하고 복합 인덱스(`idx_free_assets_theme_filter`)를 구축했습니다. 스키마 세부 사양을 [`free-assets-schema.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/database/free-assets-schema.md)에 동기화 완료했습니다.
+  - **API 명세 연동**: [`route.ts (api/free-assets/list)`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/list/route.ts)를 수정하여 신규 컬럼 값을 JSON 프로퍼티로 정상 추출 및 매핑하여 반환하도록 기능을 추가했습니다.
+  - **프리미엄 갤러리 UI 및 15대 카테고리 필터 개발**: [`page.tsx (library/free-assets)`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/free-assets/page.tsx)에 금빛 그라데이션이 빛나는 `"👑 홈페이지 제작용 프리미엄 테마 갤러리"` 전용 탭을 개설하고, 탭 활성화 시 즉시 15개 테마 카테고리 단독 필터바로 전환 노출되는 구조를 구현했습니다.
+  - **다운로드 통제 및 프리미엄 업그레이드 모달**: 다운로드 트리거 및 캔버스 리사이징 처리기 양축에 사용자 권한 판단 로직(`checkDownloadPermission`)을 삽입하여 무단 다운로드를 차단했습니다. 권한이 없는 Free/Pro 회원의 시도 시 다크 글래스모피즘 디자인 기반의 업그레이드 안내 팝업을 띄우고 마이페이지 연동을 구성했으며, 상세 팝업 내부의 기본 다운로드 단추를 상황에 맞추어 `"👑 비즈니스 등급 다운로드"` 황금 그라데이션 버튼으로 동적 전환되도록 설계했습니다.
+  - **구글 시트 템플릿 프롬프트 라이브러리 연동**: 전체 304개 테마의 HSL 대표 색상, 지정 폰트 사양, 영어 이미지 생성 프롬프트 및 배포 상태를 기록한 고품질 디자인 시트를 구글 드라이브에 [생성 및 공유](https://docs.google.com/spreadsheets/d/11AQ7HfO7tpjeU2FDLW3u85q015yWJ09Navoh4ryklpM) 완료했습니다.
+
+### 🗓️ 2026-06-23 (화)
 #### 1. 브랜드 ID 블랙리스트(예약어) 대량 시딩 및 실서비스 검증 연동 완수
 * **구현 요약**: 다른 에이전트가 생성한 77,985개의 대용량 블랙리스트 원천 데이터를 Supabase 실서비스 DB에 반영하고, 예약어 유효성 검사 헬퍼 및 마이페이지 맞춤 피드백을 연동하여 아키텍처 구현을 마무리했습니다.
 * **작업 상세**:

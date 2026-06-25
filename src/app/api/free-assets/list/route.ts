@@ -66,6 +66,9 @@ export async function GET() {
         camera: file.camera || "촬영 정보 없음",
         prompt: file.prompt || "",
         aiTool: file.ai_tool || "",
+        isOfficialThemeAsset: file.is_official_theme_asset || false,
+        themeCategory: file.theme_category || "",
+        isBusinessOnly: file.is_business_only || false,
       };
     });
 

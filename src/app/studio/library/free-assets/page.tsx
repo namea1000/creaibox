@@ -52,6 +52,9 @@ interface FreeAsset {
   camera?: string;
   prompt?: string;
   aiTool?: string;
+  isOfficialThemeAsset?: boolean;
+  themeCategory?: string;
+  isBusinessOnly?: boolean;
 }
 
 export default function FreeAssetsLibraryPage() {
@@ -61,12 +64,14 @@ export default function FreeAssetsLibraryPage() {
   const [selectedMediaType, setSelectedMediaType] = useState<string>("all");
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>("all");
   const [selectedGenerationType, setSelectedGenerationType] = useState<string>("all");
+  const [selectedThemeCategory, setSelectedThemeCategory] = useState<string>("all");
   
   // Modal states
   const [selectedAsset, setSelectedAsset] = useState<FreeAsset | null>(null);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isRequestOpen, setIsRequestOpen] = useState(false);
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
 
   // Request Form states
   const [requestMediaType, setRequestMediaType] = useState("이미지");
@@ -83,6 +88,7 @@ export default function FreeAssetsLibraryPage() {
   // User session states
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [membershipLevel, setMembershipLevel] = useState<string>("free");
 
   // Upload Form states
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
@@ -253,12 +259,16 @@ export default function FreeAssetsLibraryPage() {
         if (session?.user) {
           setCurrentUserEmail(session.user.email || null);
           
-          // Fetch admin role from profiles table
+          // Fetch admin role and membership_level from profiles table
           const { data: profile } = await supabase
             .from("profiles")
-            .select("role")
+            .select("role, membership_level")
             .eq("id", session.user.id)
             .maybeSingle();
+          
+          if (profile) {
+            setMembershipLevel(profile.membership_level || "free");
+          }
           
           let isUserAdmin = profile?.role === "ADMIN" || profile?.role === "STAFF";
 
@@ -289,9 +299,13 @@ export default function FreeAssetsLibraryPage() {
         try {
           const { data: profile } = await supabase
             .from("profiles")
-            .select("role")
+            .select("role, membership_level")
             .eq("id", session.user.id)
             .maybeSingle();
+          
+          if (profile) {
+            setMembershipLevel(profile.membership_level || "free");
+          }
           
           let isUserAdmin = profile?.role === "ADMIN" || profile?.role === "STAFF";
 
@@ -541,8 +555,23 @@ export default function FreeAssetsLibraryPage() {
     void registerAction(asset.id, "views");
   };
 
+  const checkDownloadPermission = (asset: FreeAsset): boolean => {
+    const isBusinessOrAbove = 
+      membershipLevel === "business" || 
+      membershipLevel === "enterprise" || 
+      membershipLevel === "admin" || 
+      isAdmin;
+
+    if (asset.isBusinessOnly && !isBusinessOrAbove) {
+      setIsUpgradeModalOpen(true);
+      return false;
+    }
+    return true;
+  };
+
   // File Download trigger
   const triggerDownload = (asset: FreeAsset) => {
+    if (!checkDownloadPermission(asset)) return;
     void registerAction(asset.id, "downloads");
     
     // Create temporary link to trigger native browser download
@@ -686,6 +715,7 @@ export default function FreeAssetsLibraryPage() {
   };
 
   const downloadResizedImage = async (imageUrl: string, fileName: string, targetWidth: number, targetHeight: number, targetFormat: 'jpeg' | 'png' | 'webp') => {
+    if (selectedAsset && !checkDownloadPermission(selectedAsset)) return;
     setDownloadingFormatText("이미지 변환 중...");
     try {
       const img = new Image();
@@ -964,8 +994,17 @@ export default function FreeAssetsLibraryPage() {
 
   // Filter Assets
   const filteredAssets = assets.filter((asset) => {
-    const matchesType =
-      selectedMediaType === "all" || asset.mediaType === selectedMediaType;
+    if (selectedMediaType === "premium-theme") {
+      if (!asset.isOfficialThemeAsset) return false;
+      if (selectedThemeCategory !== "all" && asset.themeCategory !== selectedThemeCategory) {
+        return false;
+      }
+    } else {
+      if (asset.isOfficialThemeAsset) return false;
+      const matchesType =
+        selectedMediaType === "all" || asset.mediaType === selectedMediaType;
+      if (!matchesType) return false;
+    }
 
     // 한/영 연관 검색어 매핑 정의
     const query = searchQuery.trim().toLowerCase();
@@ -1021,7 +1060,7 @@ export default function FreeAssetsLibraryPage() {
     const matchesGenerationType =
       selectedGenerationType === "all" || asset.generationType === selectedGenerationType;
 
-    return matchesType && matchesQuery && matchesAspectRatio && matchesGenerationType;
+    return matchesQuery && matchesAspectRatio && matchesGenerationType;
   });
 
   const popularTags = ["자연", "배경", "바다", "하늘", "여행", "힐링", "음악", "감성", "우주", "비즈니스"];
@@ -1054,6 +1093,7 @@ export default function FreeAssetsLibraryPage() {
           <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1.5 mt-4 text-sm font-medium">
             {[
               { id: "all", label: "둘러보기" },
+              { id: "premium-theme", label: "👑 홈페이지 제작용 프리미엄 테마 갤러리" },
               { id: "photo", label: "사진" },
               { id: "illustration", label: "일러스트" },
               { id: "vector", label: "벡터" },
@@ -1067,6 +1107,7 @@ export default function FreeAssetsLibraryPage() {
                   key={tab.id}
                   onClick={() => {
                     setSelectedMediaType(tab.id);
+                    setSelectedThemeCategory("all"); // Reset theme category filter
                     if (audioRef.current) {
                       audioRef.current.pause();
                       setPlayingAudioId(null);
@@ -1074,8 +1115,12 @@ export default function FreeAssetsLibraryPage() {
                   }}
                   className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
                     isActive
-                      ? "bg-white text-zinc-950 shadow-lg shadow-white/10"
-                      : "text-zinc-300 hover:text-white hover:bg-white/5"
+                      ? tab.id === "premium-theme"
+                        ? "bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-zinc-950 shadow-lg shadow-yellow-500/25 font-black"
+                        : "bg-white text-zinc-950 shadow-lg shadow-white/10"
+                      : tab.id === "premium-theme"
+                        ? "text-amber-400 border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/15"
+                        : "text-zinc-300 hover:text-white hover:bg-white/5"
                   }`}
                 >
                   {tab.label}
@@ -1084,78 +1129,125 @@ export default function FreeAssetsLibraryPage() {
             })}
           </div>
 
-          {/* 중앙 통합 검색 바 */}
-          <div className="relative w-full max-w-2xl mt-2">
-            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
-            <input
-              type="text"
-              placeholder="무료 이미지, 비디오, 음악 등 키워드 검색..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-2xl border border-zinc-800/80 bg-zinc-950/80 py-4 pl-12 pr-6 text-sm text-white shadow-2xl backdrop-blur-md outline-none focus:border-blue-500/50"
-            />
-          </div>
+          {selectedMediaType === "premium-theme" ? (
+            /* 프리미엄 테마 카테고리 필터바 */
+            <div className="flex flex-col items-center w-full max-w-4xl space-y-3.5 mt-6 pt-6 border-t border-zinc-800/60">
+              <span className="text-[10px] font-black text-amber-400 uppercase tracking-[0.25em] select-none">
+                15대 비즈니스 테마 카테고리 필터
+              </span>
+              <div className="flex flex-wrap justify-center gap-2.5 max-w-3xl">
+                {[
+                  { id: "all", label: "전체 테마" },
+                  { id: "Restaurant", label: "Restaurant (음식점)" },
+                  { id: "Music", label: "Music (음악)" },
+                  { id: "Travel & Lifestyle", label: "Travel (여행)" },
+                  { id: "Fashion & Beauty", label: "Fashion (뷰티)" },
+                  { id: "Community & Non-Profit", label: "Community (비영리)" },
+                  { id: "Magazine", label: "Magazine (잡지)" },
+                  { id: "Art & Design", label: "Art & Design (미술)" },
+                  { id: "Business", label: "Business (기업)" },
+                  { id: "Store", label: "Store (쇼핑몰)" },
+                  { id: "Real Estate", label: "Real Estate (부동산)" },
+                  { id: "Health & Wellness", label: "Health (웰빙)" },
+                  { id: "Education", label: "Education (교육)" },
+                  { id: "Entertainment", label: "Entertainment (문화)" },
+                  { id: "Portfolio", label: "Portfolio (작가)" },
+                  { id: "Blog", label: "Blog (블로그)" },
+                ].map((cat) => {
+                  const isCatActive = selectedThemeCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => setSelectedThemeCategory(cat.id)}
+                      className={`rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
+                        isCatActive
+                          ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-zinc-950 shadow-md shadow-yellow-500/15"
+                          : "border border-zinc-800 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            /* 기존 일반 나눔 관 검색 및 필터링 영역 */
+            <>
+              {/* 중앙 통합 검색 바 */}
+              <div className="relative w-full max-w-2xl mt-2">
+                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
+                <input
+                  type="text"
+                  placeholder="무료 이미지, 비디오, 음악 등 키워드 검색..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full rounded-2xl border border-zinc-800/80 bg-zinc-950/80 py-4 pl-12 pr-6 text-sm text-white shadow-2xl backdrop-blur-md outline-none focus:border-blue-500/50"
+                />
+              </div>
 
-          {/* 인기 태그 해시 */}
-          <div className="flex flex-wrap justify-center gap-2 mt-2">
-            {popularTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => setSearchQuery(tag)}
-                className="rounded-full border border-zinc-900 bg-zinc-900/40 px-3 py-1 text-xs font-bold text-zinc-400 hover:border-zinc-700 hover:text-white transition cursor-pointer"
-              >
-                #{tag}
-              </button>
-            ))}
-          </div>
+              {/* 인기 태그 해시 */}
+              <div className="flex flex-wrap justify-center gap-2 mt-2">
+                {popularTags.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => setSearchQuery(tag)}
+                    className="rounded-full border border-zinc-900 bg-zinc-900/40 px-3 py-1 text-xs font-bold text-zinc-400 hover:border-zinc-700 hover:text-white transition cursor-pointer"
+                  >
+                    #{tag}
+                  </button>
+                ))}
+              </div>
 
-          {/* 사진 비율 필터 */}
-          <div className="flex flex-wrap justify-center items-center gap-2 mt-3 pt-3 border-t border-zinc-800/45 w-full max-w-3xl">
-            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mr-2 select-none">비율 필터</span>
-            {[
-              { id: "all", label: "전체 비율" },
-              { id: "16:9", label: "16:9 가로" },
-              { id: "9:16", label: "9:16 세로" },
-              { id: "4:3", label: "4:3 표준" },
-              { id: "3:4", label: "3:4 세로" },
-              { id: "1:1", label: "1:1 정방향" },
-              { id: "기타", label: "기타 비율" },
-            ].map((ratio) => (
-              <button
-                key={ratio.id}
-                onClick={() => setSelectedAspectRatio(ratio.id)}
-                className={`rounded-full px-3 py-1 text-xs font-bold transition cursor-pointer ${
-                  selectedAspectRatio === ratio.id
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                    : "border border-zinc-900 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
-                }`}
-              >
-                {ratio.label}
-              </button>
-            ))}
-          </div>
+              {/* 사진 비율 필터 */}
+              <div className="flex flex-wrap justify-center items-center gap-2 mt-3 pt-3 border-t border-zinc-800/45 w-full max-w-3xl">
+                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mr-2 select-none">비율 필터</span>
+                {[
+                  { id: "all", label: "전체 비율" },
+                  { id: "16:9", label: "16:9 가로" },
+                  { id: "9:16", label: "9:16 세로" },
+                  { id: "4:3", label: "4:3 표준" },
+                  { id: "3:4", label: "3:4 세로" },
+                  { id: "1:1", label: "1:1 정방향" },
+                  { id: "기타", label: "기타 비율" },
+                ].map((ratio) => (
+                  <button
+                    key={ratio.id}
+                    onClick={() => setSelectedAspectRatio(ratio.id)}
+                    className={`rounded-full px-3 py-1 text-xs font-bold transition cursor-pointer ${
+                      selectedAspectRatio === ratio.id
+                        ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                        : "border border-zinc-900 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                    }`}
+                  >
+                    {ratio.label}
+                  </button>
+                ))}
+              </div>
 
-          {/* 제작 방식 필터 */}
-          <div className="flex flex-wrap justify-center items-center gap-2 mt-3 pt-3 border-t border-zinc-800/45 w-full max-w-3xl">
-            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mr-2 select-none">제작 방식</span>
-            {[
-              { id: "all", label: "전체 이미지" },
-              { id: "ai", label: "AI 생성 이미지" },
-              { id: "real", label: "실제 사진 이미지" },
-            ].map((gen) => (
-              <button
-                key={gen.id}
-                onClick={() => setSelectedGenerationType(gen.id)}
-                className={`rounded-full px-3 py-1 text-xs font-bold transition cursor-pointer ${
-                  selectedGenerationType === gen.id
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                    : "border border-zinc-900 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
-                }`}
-              >
-                {gen.label}
-              </button>
-            ))}
-          </div>
+              {/* 제작 방식 필터 */}
+              <div className="flex flex-wrap justify-center items-center gap-2 mt-3 pt-3 border-t border-zinc-800/45 w-full max-w-3xl">
+                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mr-2 select-none">제작 방식</span>
+                {[
+                  { id: "all", label: "전체 이미지" },
+                  { id: "ai", label: "AI 생성 이미지" },
+                  { id: "real", label: "실제 사진 이미지" },
+                ].map((gen) => (
+                  <button
+                    key={gen.id}
+                    onClick={() => setSelectedGenerationType(gen.id)}
+                    className={`rounded-full px-3 py-1 text-xs font-bold transition cursor-pointer ${
+                      selectedGenerationType === gen.id
+                        ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                        : "border border-zinc-900 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                    }`}
+                  >
+                    {gen.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </section>
 
@@ -1254,6 +1346,11 @@ export default function FreeAssetsLibraryPage() {
                       onClick={() => openDetailModal(asset)}
                       className="group relative aspect-[3/2] w-full overflow-hidden rounded-none border border-zinc-800/60 bg-zinc-950/80 transition hover:-translate-y-1 hover:border-zinc-700/80 hover:shadow-2xl hover:shadow-black/50 cursor-pointer"
                     >
+                      {asset.isBusinessOnly && (
+                        <div className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 px-2 py-1 text-[9px] font-black text-zinc-950 shadow-md uppercase tracking-wider select-none">
+                          👑 Business
+                        </div>
+                      )}
                       {isAudio ? (
                         <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-indigo-950/50 to-slate-900 px-4">
                           <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400 group-hover:scale-105 transition-transform">
@@ -1766,11 +1863,19 @@ export default function FreeAssetsLibraryPage() {
                           }
                         }}
                         disabled={!!downloadingFormatText}
-                        className="flex-1 flex items-center justify-center gap-2 rounded-l-xl bg-emerald-600 hover:bg-emerald-500 transition py-3 text-xs font-black text-white shadow-lg cursor-pointer disabled:opacity-50"
+                        className={`flex-1 flex items-center justify-center gap-2 rounded-l-xl transition py-3 text-xs font-black shadow-lg cursor-pointer disabled:opacity-50 ${
+                          selectedAsset.isBusinessOnly && !(membershipLevel === "business" || membershipLevel === "enterprise" || membershipLevel === "admin" || isAdmin)
+                            ? "bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-yellow-400 text-zinc-950"
+                            : "bg-emerald-600 hover:bg-emerald-500 text-white"
+                        }`}
                       >
                         {downloadingFormatText ? (
                           <>
                             <Loader2 className="animate-spin" size={14} /> {downloadingFormatText}
+                          </>
+                        ) : selectedAsset.isBusinessOnly && !(membershipLevel === "business" || membershipLevel === "enterprise" || membershipLevel === "admin" || isAdmin) ? (
+                          <>
+                            <Download size={14} /> 👑 비즈니스 등급 다운로드
                           </>
                         ) : (
                           <>
@@ -1781,7 +1886,11 @@ export default function FreeAssetsLibraryPage() {
                       {selectedAsset.mediaType !== "music" && selectedAsset.mediaType !== "video" && (
                         <button
                           onClick={() => setIsDownloadDropdownOpen(!isDownloadDropdownOpen)}
-                          className="px-3 border-l border-emerald-500 bg-emerald-600 hover:bg-emerald-500 text-white rounded-r-xl transition cursor-pointer"
+                          className={`px-3 border-l transition cursor-pointer rounded-r-xl ${
+                            selectedAsset.isBusinessOnly && !(membershipLevel === "business" || membershipLevel === "enterprise" || membershipLevel === "admin" || isAdmin)
+                              ? "border-amber-400 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-zinc-950"
+                              : "border-emerald-500 bg-emerald-600 hover:bg-emerald-500 text-white"
+                          }`}
                         >
                           <ChevronDown size={14} className={`transition-transform duration-200 ${isDownloadDropdownOpen ? "rotate-180" : ""}`} />
                         </button>
@@ -2593,6 +2702,73 @@ export default function FreeAssetsLibraryPage() {
               </div>
 
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 프리미엄 요금제 업그레이드 제한 모달 */}
+      {isUpgradeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 backdrop-blur-md">
+          <div className="relative w-full max-w-md rounded-3xl border border-amber-500/20 bg-[#0c0f17] text-zinc-100 p-6 shadow-2xl shadow-yellow-500/5">
+            
+            <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
+              <h2 className="text-base font-black text-amber-400 flex items-center gap-2">
+                <Sparkles size={18} />
+                비즈니스 등급 전용 프리미엄 에셋
+              </h2>
+              <button
+                onClick={() => setIsUpgradeModalOpen(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-900 text-zinc-400 hover:text-white transition cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="mt-5 text-center space-y-4">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10 text-amber-400">
+                <Download size={28} />
+              </div>
+              
+              <div className="space-y-1">
+                <h3 className="text-sm font-black text-white">무제한 다운로드 권한이 필요합니다</h3>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  "홈페이지 제작용 프리미엄 테마 갤러리"의 고해상도 이미지는 <span className="text-amber-400 font-bold">비즈니스(Business) 등급 이상의 회원</span>만 다운로드할 수 있습니다.
+                </p>
+              </div>
+
+              {/* 혜택 안내 */}
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/40 p-4 text-left space-y-2.5 text-xs text-zinc-300">
+                <p className="font-black text-zinc-400 border-b border-zinc-900 pb-1.5 select-none">비즈니스 등급 특별 혜택:</p>
+                <div className="flex items-start gap-2">
+                  <span className="text-amber-400">✓</span>
+                  <span>15대 비즈니스 카테고리별 테마 맞춤형 미드저니 고화질 이미지 무제한 다운로드</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-amber-400">✓</span>
+                  <span>AI 기획안 수립 및 AI 홈페이지 빌더 무제한 연결/제작 권한</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-amber-400">✓</span>
+                  <span>독립 도메인 무제한 연결 및 페이지 & 글 관리 기능 탑재</span>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-3.5">
+                <button
+                  onClick={() => setIsUpgradeModalOpen(false)}
+                  className="flex-1 rounded-xl border border-zinc-800 bg-zinc-900 py-3 text-xs font-black text-zinc-300 transition cursor-pointer"
+                >
+                  닫기
+                </button>
+                <Link
+                  href="/mypage"
+                  className="flex-1 flex items-center justify-center rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 py-3 text-xs font-black text-zinc-950 shadow-lg shadow-yellow-500/10 transition"
+                >
+                  비즈니스 요금제 변경
+                </Link>
+              </div>
+            </div>
+
           </div>
         </div>
       )}
