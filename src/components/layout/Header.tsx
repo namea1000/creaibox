@@ -20,11 +20,31 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function Header() {
-  const [user, setUser] = useState<User | null>(null);
-  const [nickname, setNickname] = useState("");
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("creaibox_cached_user");
+        return cached ? JSON.parse(cached) : null;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+  const [nickname, setNickname] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("creaibox_cached_nickname") || "";
+    }
+    return "";
+  });
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [isAuthReady, setIsAuthReady] = useState(() => {
+    if (typeof window !== "undefined") {
+      return !!localStorage.getItem("creaibox_cached_user");
+    }
+    return false;
+  });
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [planName] = useState("Plus");
 
@@ -55,14 +75,39 @@ export default function Header() {
     const applyUser = async (nextUser: User | null) => {
       if (cancelled) return;
 
-      setUser(nextUser);
-
       if (nextUser?.id) {
+        // Apply cached nickname first to avoid flickering
+        let cachedNickname = "";
+        if (typeof window !== "undefined") {
+          cachedNickname = localStorage.getItem("creaibox_cached_nickname") || "";
+        }
+        
+        setUser(nextUser);
+        if (cachedNickname) {
+          setNickname(cachedNickname);
+        }
+
+        // Fetch the fresh nickname in the background
         const nextNickname = await fetchNickname(nextUser.id);
-        if (!cancelled) setNickname(nextNickname);
+        if (!cancelled) {
+          setNickname(nextNickname);
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem("creaibox_cached_user", JSON.stringify(nextUser));
+              localStorage.setItem("creaibox_cached_nickname", nextNickname);
+            } catch (e) {
+              console.warn("Failed to cache user session:", e);
+            }
+          }
+        }
       } else {
+        setUser(null);
         setNickname("");
         setIsProfileOpen(false);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("creaibox_cached_user");
+          localStorage.removeItem("creaibox_cached_nickname");
+        }
       }
 
       if (!cancelled) setIsAuthReady(true);
@@ -129,6 +174,11 @@ export default function Header() {
       setIsProfileOpen(false);
       setIsMobileMenuOpen(false);
 
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("creaibox_cached_user");
+        localStorage.removeItem("creaibox_cached_nickname");
+      }
+
       router.replace("/");
       router.refresh();
     } catch (err) {
@@ -181,7 +231,7 @@ export default function Header() {
             <Image
               src="/logobg.webp"
               alt="CreAibox"
-              width={185}
+              width={198}
               height={32}
               className="object-contain"
               priority
@@ -210,11 +260,14 @@ export default function Header() {
             AI 스튜디오 시작하기
           </Link>
 
-          {user ? (
+          {!isAuthReady ? (
+            // Placeholder skeleton with exact matching size (180px) to prevent layout shift
+            <div className="h-14 w-[180px] rounded-2xl border border-slate-200/50 bg-slate-50/50 animate-pulse shrink-0" />
+          ) : user ? (
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsProfileOpen((prev) => !prev)}
-                className="flex h-14 min-w-[172px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 shadow-sm transition hover:border-violet-200 hover:bg-violet-50"
+                className="flex h-14 w-[180px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 shadow-sm transition hover:border-violet-200 hover:bg-violet-50 shrink-0"
               >
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-xs font-black text-white">
                   {initials}
@@ -325,7 +378,7 @@ export default function Header() {
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-1 pl-2">
+            <div className="flex w-[180px] items-center justify-end gap-1 pl-2 shrink-0">
               <Link
                 href="/signup"
                 className="rounded-xl px-3.5 py-2 text-sm font-extrabold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"

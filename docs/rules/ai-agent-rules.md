@@ -536,9 +536,10 @@ General UI icons must use lucide-react.
 
 ---
 
-## UI/UX 로딩 설계 규칙 (Loading-Free & Instant Rendering UX)
+## UI/UX 로딩 설계 및 레이아웃 안정화 규칙 (Layout Stabilization & Caching UX)
 
-앞으로 추가로 만드는 모든 페이지 및 기능 개발 시, 사용자의 흐름을 가로막는 전체 화면 로딩 스피너/화면(Loading blocking UI) 설계를 절대 금지합니다. 다음 원칙에 따라 화면을 즉시 렌더링하도록 설계하십시오.
+* **필독 규격**: 레이아웃 쉬프트 및 인증 세션 깜빡임(Flicker)을 방지하기 위해 다음 개별 가이드를 반드시 사전에 준수해야 합니다.
+  → `@docs/rules/ui-layout-stabilization.md`
 
 ### 1. 전체 화면 로딩 가림막 금지 (No Full-Screen Spinner)
 * `isLoading` 상태가 `true`일 때 페이지 전체(또는 레이아웃 껍데기까지 포함하여)를 가리고 로딩 스피너만 빙글빙글 도는 페이지 구조를 만들지 마십시오.

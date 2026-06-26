@@ -56,7 +56,7 @@ export default function Footer() {
               <Image
                 src="/logobg.webp"
                 alt="Creaibox Logo"
-                width={162}
+                width={173}
                 height={28}
                 className="object-contain"
                 priority
