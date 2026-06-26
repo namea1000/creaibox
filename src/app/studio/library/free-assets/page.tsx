@@ -25,6 +25,8 @@ import {
   Clock,
   Sparkles,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   Edit,
   Trash2,
@@ -68,6 +70,58 @@ export default function FreeAssetsLibraryPage() {
   
   // Modal states
   const [selectedAsset, setSelectedAsset] = useState<FreeAsset | null>(null);
+
+  const currentAssetIndex = assets.findIndex((item) => item.id === selectedAsset?.id);
+
+  const handlePrevAsset = () => {
+    if (currentAssetIndex > 0) {
+      setSelectedAsset(assets[currentAssetIndex - 1]);
+    }
+  };
+
+  const handleNextAsset = () => {
+    if (currentAssetIndex < assets.length - 1) {
+      setSelectedAsset(assets[currentAssetIndex + 1]);
+    }
+  };
+
+  // 에셋 변경 시(이전/다음 이동 시) 기존 사운드 중복 겹침 방지
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setPlayingAudioId(null);
+    }
+  }, [selectedAsset?.id]);
+
+  // 키보드 단축키 바인딩 (ESC 닫기, 좌우 방향키 이동)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedAsset) return;
+
+      if (e.key === "Escape") {
+        setSelectedAsset(null);
+        return;
+      }
+
+      // 텍스트 필드 타이핑 중에는 방향키 이동 예외 처리
+      const activeEl = document.activeElement;
+      const isTyping =
+        activeEl &&
+        (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA");
+      if (isTyping) return;
+
+      if (e.key === "ArrowLeft" || e.key === "Left") {
+        handlePrevAsset();
+      } else if (e.key === "ArrowRight" || e.key === "Right") {
+        handleNextAsset();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedAsset, currentAssetIndex, assets]);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isRequestOpen, setIsRequestOpen] = useState(false);
@@ -1691,7 +1745,38 @@ export default function FreeAssetsLibraryPage() {
 
             <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
               
-              <div className="flex flex-1 items-center justify-center bg-zinc-950 p-6 min-h-[300px] lg:min-h-0">
+              <div className="relative flex flex-1 items-center justify-center bg-zinc-950 p-6 min-h-[300px] lg:min-h-0">
+                {/* 이미지/미디어 영역 상단 네비게이션 바 */}
+                {assets.length > 1 && currentAssetIndex !== -1 && (
+                  <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20">
+                    {/* 현재 인덱스 표시 */}
+                    <span className="text-[11px] font-black text-zinc-400 bg-zinc-900/85 px-3 py-1.5 rounded-xl border border-zinc-800/80 backdrop-blur-sm shadow-md">
+                      {currentAssetIndex + 1} / {assets.length}
+                    </span>
+                    
+                    {/* 좌우 이동 버튼 */}
+                    <div className="flex items-center gap-1.5 bg-zinc-900/85 p-1 rounded-xl border border-zinc-800/80 backdrop-blur-sm shadow-md">
+                      <button
+                        onClick={handlePrevAsset}
+                        disabled={currentAssetIndex === 0}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-zinc-500 transition cursor-pointer disabled:cursor-not-allowed"
+                        title="이전 미디어 (Left Arrow)"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      <div className="w-[1px] h-3 bg-zinc-800" />
+                      <button
+                        onClick={handleNextAsset}
+                        disabled={currentAssetIndex === assets.length - 1}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-zinc-500 transition cursor-pointer disabled:cursor-not-allowed"
+                        title="다음 미디어 (Right Arrow)"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {selectedAsset.mediaType === "music" ? (
                   <div className="flex flex-col items-center gap-6 max-w-sm w-full">
                     <div className="flex h-28 w-28 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-400">
