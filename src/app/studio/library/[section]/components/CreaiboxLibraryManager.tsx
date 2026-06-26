@@ -72,18 +72,14 @@ export default function CreaiboxLibraryManager() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 1. 이미지 데이터 가져오기
-  const fetchImages = useCallback(async () => {
+  const fetchImages = useCallback(async (userId: string) => {
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user;
-      if (!user) return;
-
       const targetSourceType = isImageSection ? "image-studio" : "writing_creaibox_posts";
       let query = supabase
         .from("generated_images")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .eq("source_type", targetSourceType);
 
       if (sortBy === "newest") {
@@ -104,15 +100,22 @@ export default function CreaiboxLibraryManager() {
   }, [supabase, sortBy, isImageSection]);
 
   useEffect(() => {
-    void fetchImages();
+    let mounted = true;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
-      if (session?.user) {
-        void fetchImages();
+      if (!mounted) return;
+      
+      const user = session?.user;
+      if (user) {
+        void fetchImages(user.id);
+      } else {
+        setImages([]);
+        setLoading(false);
       }
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [fetchImages, supabase]);
@@ -414,6 +417,8 @@ export default function CreaiboxLibraryManager() {
       {selectedImage && (
         <ImageDetailModal
           image={selectedImage}
+          imagesList={displayedImages}
+          onSelectImage={setSelectedImage}
           onClose={() => setSelectedImage(null)}
           onUpdate={handleImageUpdate}
           onDelete={handleImageDelete}

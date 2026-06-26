@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
 import { getGoogleDriveBuffer } from "@/lib/google-drive";
-import sharp from "sharp";
 
 export const runtime = "nodejs";
 
@@ -67,7 +66,12 @@ export async function GET(req: NextRequest) {
       // Apply image resizing and WebP conversion for caching optimization
       if (contentType.startsWith("image/") && contentType !== "image/svg+xml" && (w || h)) {
         try {
-          let sharpInstance = sharp(buffer);
+          // Dynamically import sharp to prevent route-level crash if native binary loading fails on production serverless environments
+          const { default: sharp } = await import("sharp");
+          
+          // Guarantee a standard Node.js Buffer instance is passed to sharp
+          const imageBuffer = Buffer.from(buffer);
+          let sharpInstance = sharp(imageBuffer);
           sharpInstance = sharpInstance.resize({
             width: w || undefined,
             height: h || undefined,
@@ -80,6 +84,7 @@ export async function GET(req: NextRequest) {
           contentType = "image/webp";
         } catch (resizeError) {
           console.error("Failed to resize Google Drive image, serving original:", resizeError);
+          // Fallback to original image if sharp is missing, fails, or cannot load in the environment
         }
       }
       
@@ -125,6 +130,9 @@ export async function GET(req: NextRequest) {
       // Apply image resizing and WebP conversion for caching optimization
       if (contentType.startsWith("image/") && contentType !== "image/svg+xml" && (w || h)) {
         try {
+          // Dynamically import sharp to prevent route-level crash if native binary loading fails on production serverless environments
+          const { default: sharp } = await import("sharp");
+          
           let sharpInstance = sharp(Buffer.from(rawBuffer));
           sharpInstance = sharpInstance.resize({
             width: w || undefined,
@@ -137,6 +145,7 @@ export async function GET(req: NextRequest) {
           contentType = "image/webp";
         } catch (resizeError) {
           console.error("Failed to resize external image, serving original:", resizeError);
+          // Fallback to original image if sharp is missing, fails, or cannot load in the environment
         }
       }
 

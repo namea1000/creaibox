@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { X, Copy, Check, Trash2, Calendar, HardDrive, FileText, Image as ImageIcon } from "lucide-react";
+import { X, Copy, Check, Trash2, Calendar, HardDrive, FileText, Image as ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
 interface GeneratedImageRow {
@@ -27,6 +27,8 @@ interface ImageDetailModalProps {
   onClose: () => void;
   onUpdate: (updatedImage: GeneratedImageRow) => void;
   onDelete: (imageId: string) => Promise<void>;
+  imagesList?: GeneratedImageRow[];
+  onSelectImage?: (image: GeneratedImageRow) => void;
 }
 
 export default function ImageDetailModal({
@@ -34,6 +36,8 @@ export default function ImageDetailModal({
   onClose,
   onUpdate,
   onDelete,
+  imagesList = [],
+  onSelectImage,
 }: ImageDetailModalProps) {
   const supabase = createClient();
   const [title, setTitle] = useState(image.title || "");
@@ -45,6 +49,20 @@ export default function ImageDetailModal({
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const currentIndex = imagesList.findIndex((img) => img.id === image.id);
+
+  const handlePrev = () => {
+    if (onSelectImage && currentIndex > 0) {
+      onSelectImage(imagesList[currentIndex - 1]);
+    }
+  };
+
+  const handleNext = () => {
+    if (onSelectImage && currentIndex < imagesList.length - 1) {
+      onSelectImage(imagesList[currentIndex + 1]);
+    }
+  };
+
   // image가 변경될 때 로컬 상태 동기화
   useEffect(() => {
     setTitle(image.title || "");
@@ -52,6 +70,34 @@ export default function ImageDetailModal({
     setCaption(image.caption || "");
     setDescription(image.description || "");
   }, [image]);
+
+  // 키보드 탐색 및 닫기 이벤트 핸들러
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+
+      // 입력 영역에서 타이핑 중인 경우 방향키를 통한 이미지 전환 방지
+      const activeEl = document.activeElement;
+      const isTyping =
+        activeEl &&
+        (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA");
+      if (isTyping) return;
+
+      if (e.key === "ArrowLeft" || e.key === "Left") {
+        handlePrev();
+      } else if (e.key === "ArrowRight" || e.key === "Right") {
+        handleNext();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [currentIndex, imagesList, onSelectImage, onClose]);
 
   const updateMetadata = async (fields: Partial<GeneratedImageRow>) => {
     setSaveStatus("saving");
@@ -123,12 +169,45 @@ export default function ImageDetailModal({
         <button
           onClick={onClose}
           className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-zinc-900/80 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+          title="닫기 (ESC)"
         >
           <X size={18} />
         </button>
 
-        {/* 좌측: 이미지 뷰어 */}
-        <div className="flex flex-1 items-center justify-center bg-zinc-950 p-6 md:h-full">
+        {/* 좌측: 이미지 뷰어 및 상단 네비게이션 */}
+        <div className="relative flex flex-1 flex-col items-center justify-center bg-zinc-950 p-6 md:h-full">
+          {/* 이미지 영역 상단 네비게이션 바 */}
+          {imagesList.length > 1 && currentIndex !== -1 && (
+            <div className="absolute top-4 left-4 right-16 flex items-center justify-between z-20">
+              {/* 현재 인덱스 표시 */}
+              <span className="text-[11px] font-black text-zinc-400 bg-zinc-900/85 px-3 py-1.5 rounded-xl border border-zinc-800/80 backdrop-blur-sm shadow-md">
+                {currentIndex + 1} / {imagesList.length}
+              </span>
+              
+              {/* 좌우 이동 버튼 */}
+              <div className="flex items-center gap-1.5 bg-zinc-900/85 p-1 rounded-xl border border-zinc-800/80 backdrop-blur-sm shadow-md">
+                <button
+                  onClick={handlePrev}
+                  disabled={currentIndex === 0}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-zinc-500 transition cursor-pointer disabled:cursor-not-allowed"
+                  title="이전 이미지 (Left Arrow)"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <div className="w-[1px] h-3 bg-zinc-800" />
+                <button
+                  onClick={handleNext}
+                  disabled={currentIndex === imagesList.length - 1}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-white disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-zinc-500 transition cursor-pointer disabled:cursor-not-allowed"
+                  title="다음 이미지 (Right Arrow)"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 이미지 뷰어 */}
           <div className="relative flex max-h-full items-center justify-center">
             <img
               src={(image.image_url.includes("drive.google.com") || image.image_url.includes("googleusercontent.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(image.image_url)}` : image.image_url}
