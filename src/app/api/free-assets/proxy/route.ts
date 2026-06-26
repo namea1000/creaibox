@@ -32,12 +32,6 @@ export async function GET(req: NextRequest) {
   const url = searchParams.get("url");
   const id = searchParams.get("id");
 
-  // Thumbnail dimensions
-  const wStr = searchParams.get("w") || searchParams.get("width");
-  const hStr = searchParams.get("h") || searchParams.get("height");
-  const w = wStr ? parseInt(wStr, 10) : null;
-  const h = hStr ? parseInt(hStr, 10) : null;
-
   // Determine the target Google Drive File ID (either passed directly or parsed from a URL)
   let fileId: string | null = id || null;
   if (!fileId && url) {
@@ -60,51 +54,21 @@ export async function GET(req: NextRequest) {
         return h[key] || h[key.toLowerCase()] || h[key.toUpperCase()] || undefined;
       };
 
-      let contentType = getHeader(res.headers, "Content-Type") || "application/octet-stream";
-      let buffer = new Uint8Array(res.data);
-
-      // Apply image resizing and WebP conversion for caching optimization
-      if (contentType.startsWith("image/") && contentType !== "image/svg+xml" && (w || h)) {
-        try {
-          // Dynamically import sharp to prevent route-level crash if native binary loading fails on production serverless environments
-          const { default: sharp } = await import("sharp");
-          
-          // Guarantee a standard Node.js Buffer instance is passed to sharp
-          const imageBuffer = Buffer.from(buffer);
-          let sharpInstance = sharp(imageBuffer);
-          sharpInstance = sharpInstance.resize({
-            width: w || undefined,
-            height: h || undefined,
-            fit: "inside",
-            withoutEnlargement: true,
-          });
-          
-          const resizedBuffer = await sharpInstance.webp({ quality: 80 }).toBuffer();
-          buffer = new Uint8Array(resizedBuffer);
-          contentType = "image/webp";
-        } catch (resizeError) {
-          console.error("Failed to resize Google Drive image, serving original:", resizeError);
-          // Fallback to original image if sharp is missing, fails, or cannot load in the environment
-        }
-      }
+      const contentType = getHeader(res.headers, "Content-Type") || "application/octet-stream";
+      const buffer = new Uint8Array(res.data);
       
       const headers: Record<string, string> = {
         "Content-Type": contentType,
         "Access-Control-Allow-Origin": "*",
         "Accept-Ranges": "bytes",
         // Force Vercel Edge Network CDN and browser to cache this permanently (1 year)
-        // Since Google Drive assets do not change under the same file ID/dimensions
+        // Since Google Drive assets do not change under the same file ID
         "Cache-Control": "public, max-age=31536000, immutable",
       };
 
-      // Only set Content-Length for non-resized assets since resized buffer length has changed
-      if (!(contentType === "image/webp" && (w || h))) {
-        const contentLength = getHeader(res.headers, "Content-Length");
-        if (contentLength) {
-          headers["Content-Length"] = String(contentLength);
-        }
-      } else {
-        headers["Content-Length"] = String(buffer.byteLength);
+      const contentLength = getHeader(res.headers, "Content-Length");
+      if (contentLength) {
+        headers["Content-Length"] = String(contentLength);
       }
       
       const contentRange = getHeader(res.headers, "Content-Range");
@@ -123,38 +87,15 @@ export async function GET(req: NextRequest) {
         return new Response("Failed to fetch target asset", { status: response.status });
       }
 
-      let contentType = response.headers.get("content-type") || "application/octet-stream";
-      const rawBuffer = await response.arrayBuffer();
-      let buffer: ArrayBuffer | Buffer = rawBuffer;
-
-      // Apply image resizing and WebP conversion for caching optimization
-      if (contentType.startsWith("image/") && contentType !== "image/svg+xml" && (w || h)) {
-        try {
-          // Dynamically import sharp to prevent route-level crash if native binary loading fails on production serverless environments
-          const { default: sharp } = await import("sharp");
-          
-          let sharpInstance = sharp(Buffer.from(rawBuffer));
-          sharpInstance = sharpInstance.resize({
-            width: w || undefined,
-            height: h || undefined,
-            fit: "inside",
-            withoutEnlargement: true,
-          });
-          
-          buffer = await sharpInstance.webp({ quality: 80 }).toBuffer();
-          contentType = "image/webp";
-        } catch (resizeError) {
-          console.error("Failed to resize external image, serving original:", resizeError);
-          // Fallback to original image if sharp is missing, fails, or cannot load in the environment
-        }
-      }
+      const contentType = response.headers.get("content-type") || "application/octet-stream";
+      const buffer = await response.arrayBuffer();
 
       return new Response(new Uint8Array(buffer), {
         headers: {
           "Content-Type": contentType,
           "Access-Control-Allow-Origin": "*",
-          // Cache external assets permanently if resized, otherwise for 1 day
-          "Cache-Control": w || h ? "public, max-age=31536000, immutable" : "public, max-age=86400",
+          // Cache external assets for 1 day
+          "Cache-Control": "public, max-age=86400",
         },
       });
     } else {
