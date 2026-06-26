@@ -181,9 +181,9 @@ export default function Header() {
             <Image
               src="/logobg.webp"
               alt="CreAibox"
-              width={228}
-              height={48}
-              className="object-contain translate-y-[2px]"
+              width={185}
+              height={32}
+              className="object-contain"
               priority
             />
           </Link>
