@@ -1978,5 +1978,287 @@ export const EDUCATION_TEMPLATES: Record<string, TemplateConfig> = {
         }
       }
     ]
+  },
+
+  stem_robotics_academy: {
+    templateId: "stem_robotics_academy",
+    name: "코딩앤로봇 융합 미래 아카데미",
+    category: "Education",
+    description: "미래 지향적인 네온 사이언 시안과 퀀텀 바이올렛 보라색, 그리고 매트한 아لوم늄 차콜 차크 톤 조화로 초중고 코딩 및 미래형 AI 로봇 하드웨어 메이커 교육을 선사하는 아카데미 테마입니다.",
+    image: "/templates/stem_robotics_academy.png",
+    theme: {
+      fontFamily: "Space Grotesk, Outfit, sans-serif",
+      colors: {
+        primary: "#0891b2",     // 에너제틱 일렉트릭 시안
+        secondary: "#cffafe",   // 네온 레이저 사이언 아우라
+        accent: "#8b5cf6",      // 미래형 퀀텀 바이올렛 퍼플
+        background: "#090d16",  // 테크놀로지 심해 다크블루
+        surface: "#111827",     // 알루미늄 메탈 프레임 차콜
+        text: "#ffffff"         // 발광 네온 레이저 화이트
+      },
+      borderRadius: "rounded-lg",
+      glassmorphism: true
+    },
+    defaultSections: [
+      {
+        section_type: "hero",
+        title: "화면 속 지루한 문자 코딩을 넘어, 나의 코드로 직접 로봇 바퀴를 굴리는 미래의 창조주",
+        subtitle: "키보드만 두드리는 단조로운 이론 교육을 거부합니다. 블록 기반 기초 스크래치부터 C언어, 파이썬 기반 AI 자율주행 알고리즘 설계와, 아두이노·모터 하드웨어 융합 조립까지 아울러 내 생각을 물리적인 기어로 즉각 작동시키는 주니어 STEM 혁신 아카데미입니다.",
+        content_data: {
+          backgroundImage: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1200&q=80",
+          ctaText: "미래 인재 코스 무료 체험",
+          ctaLink: "#contact",
+          features: [
+            { text: "글로벌 코딩 공인 큐레이션 표준에 발맞춘 자율 구동 모터 및 센서 하드웨어 전 교구 무상 대여" },
+            { text: "한국창의학회 로봇 경진대회 메달리스트 코칭 스탭이 이끄는 정밀 1:1 디렉션 캠프 가동" }
+          ]
+        }
+      },
+      {
+        section_type: "services",
+        title: "STEM 사이언스 커리큘럼",
+        subtitle: "컴퓨팅 이성과 하드웨어 정비를 조화롭게 융합하여 미래 지능을 깨우는 고정밀 세션입니다.",
+        content_data: {
+          items: [
+            {
+              title: "임베디드 아두이노 로봇 제작",
+              description: "빵판(Breadboard)에 회로를 직접 꼽고 온습도 센서와 모터를 연결해 장애물을 스스로 우회하는 스마트 카를 프로그래밍합니다.",
+              icon: "Zap"
+            },
+            {
+              title: "파이썬 AI 머신러닝 자율주행",
+              description: "소형 라즈베리파이 카메라가 트랙 차선을 정밀 이미지 추적하여 핸들 모터 각도를 제어하는 최상급 메카트로닉스 캠프입니다.",
+              icon: "Compass"
+            },
+            {
+              title: "창의 융합 과학 축제 및 메달 공략",
+              description: "국가 주관 청소년 과학 탐구대회, 세계 로봇 올림피아드 출품을 위해 피치 데크 구성과 영문 시놉시스 제작을 컨설팅합니다.",
+              icon: "Award"
+            }
+          ]
+        }
+      },
+      {
+        section_type: "about",
+        title: "미래 교육은 단순히 정답을 외우는 암기가 아닌, 현실 세계의 문제를 나의 창의적 알고리즘 코드로 직접 해킹하고 작동시키는 물리적 뺄셈입니다",
+        subtitle: "모든 코딩 실습실은 정밀 납땜 안전 연기 흡입 필터 시스템을 갖추어 아이들의 호흡기 건강을 사수합니다.",
+        content_data: {
+          description: "안녕하십니까. 코딩앤로봇 융합 아카데미의 원장 마스터입니다. 우리는 코딩 자격증 기출문제를 스크린에 띄워 암기시키며 흥미를 완전히 떨어뜨리는 흔한 아날로그 학원들을 단호히 거부합니다. 우리는 아이들이 직접 기어를 손으로 맞물리고 스파크를 일으키며 물리적 물리학 법칙을 오감으로 체험하게 합니다. 페달과 모터 휠이 스스로 굴러가는 전율의 순간, 아이들의 뇌파는 이미 미래의 스티브 잡스로 각성됩니다.",
+          stats: [
+            { label: "경진대회 누적 수상 실적", value: "85회 돌파" },
+            { label: "원내 실물 임베디드 키트", value: "240세트" }
+          ]
+        }
+      },
+      {
+        section_type: "portfolio",
+        title: "코딩 하드웨어 메이킹 & AI 자율 활주",
+        subtitle: "네온 시안 빛 레이저와 은빛 기어들이 세련되게 어우러진 활기찬 에듀 테크 룸입니다.",
+        content_data: {
+          items: [
+            { title: "자율 주행 AI 로봇 주행 트랙", description: "바닥에 그려진 회색 아스팔트 차선을 따라 시안 빛 바퀴를 단 로봇이 장애물을 피하며 급회전 주행하는 찰나", image: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=600&q=80" },
+            { title: "아두이노 브레드보드 회로 배선 작업", description: "어린이 수강생이 실리콘 안경을 쓰고 주황색 점퍼 와이어를 소형 기판 구멍에 정교하게 배치하는 미캐닉 룸", image: "https://images.unsplash.com/photo-1519699047748-de8e457a634e?auto=format&fit=crop&w=600&q=80" },
+            { title: "로봇 대항전 대회 골드 컵 메달 소감", description: "대회 시상대 위에서 로봇을 안고 빛나는 트로피를 들어올리며 기쁨을 만끽하는 미래의 과학 영재 소년 스냅", image: "https://images.unsplash.com/photo-1599447421416-3414500d18a5?auto=format&fit=crop&w=600&q=80" }
+          ]
+        }
+      },
+      {
+        section_type: "contact",
+        title: "체험 강습 및 레벨 테스트 예약",
+        subtitle: "어린이의 나이, 평소 레고나 코딩 접해본 경험 유무, 주말 1일 무료 임베디드 로봇 체험 희망 여부를 보내주세요.",
+        content_data: {
+          fields: ["name", "email", "phone", "message"],
+          buttonText: "코딩 로봇 강습 신청"
+        }
+      }
+    ]
+  },
+
+  professional_writing_studio: {
+    templateId: "professional_writing_studio",
+    name: "베스트셀러 에세이 소설 창작 스튜디오",
+    category: "Education",
+    description: "정통적이고 기품 있는 클래식 북 포레스트 그린과 은은한 양장 종이 크림 베이지, 그리고 황동 만년필 골드 포인트 배합이 소설과 시나리오 창작의 기품을 전하는 테마입니다.",
+    image: "/templates/professional_writing_studio.png",
+    theme: {
+      fontFamily: "Noto Serif KR, Georgia, serif",
+      colors: {
+        primary: "#14532d",     // 책장 숲속 포레스트 그린
+        secondary: "#f5f5f4",   // 묵직한 돌 그레이
+        accent: "#b45309",      // 오래된 책 표지 앰버 골드
+        background: "#fafaf6",  // 질감 있는 원고 양장 종이 화이트
+        surface: "#ffffff",     // 맑은 독서 책상 화이트
+        text: "#1c1917"         // 묵직한 서재 잉크 블랙
+      },
+      borderRadius: "rounded-sm",
+      glassmorphism: false
+    },
+    defaultSections: [
+      {
+        section_type: "hero",
+        title: "내 안의 고요한 침묵을 흔드는 한 문장의 힘, 나만의 책 한 권을 빚어내다",
+        subtitle: "블로그나 SNS에 가볍게 휘발되는 정크 텍스트에 지치셨나요? 20년 경력 문학 작가의 오프라인 비밀 집필 살롱 매뉴얼을 바탕으로, 내 삶의 묵직한 흔적을 소설, 자서전, 그리고 에세이로 엮어내어 메이저 출판사 투고를 완성하는 작가 사관학교 스튜디오입니다.",
+        content_data: {
+          backgroundImage: "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1200&q=80",
+          ctaText: "소설 창작 살롱 일정 및 모집",
+          ctaLink: "#services",
+          features: [
+            { text: "소설 시놉시스 갈등 구조, 영화 시나리오 신 구성(Scene Break)을 1:1 첨삭 지도하는 도서관 아카데미" },
+            { text: "완독 후 매력적인 독립출판 크라우드펀딩 텀블벅 개설과 디자인 표지 유통까지 올인원 통합 지원" }
+          ]
+        }
+      },
+      {
+        section_type: "services",
+        title: "크리에이티브 라이팅 세션",
+        subtitle: "생각의 먼지를 털어내고 아름다운 활자의 옷을 입히는 지적인 창작 프로그램입니다.",
+        content_data: {
+          items: [
+            {
+              title: "베스트셀러 에세이 기획전",
+              description: "내 삶의 결핍과 상처를 유머러스하고 울림 있는 일상 수필로 승화시켜 출판 투고용 10편의 글을 탈고합니다.",
+              icon: "BookOpen"
+            },
+            {
+              title: "소설 갈등 플롯 & 캐릭터 메이킹",
+              description: "주인공에게 극단적 시련을 안기고 미스터리를 해소하는 장편 소설 입체적 아크 구조 기법을 배웁니다.",
+              icon: "Compass"
+            },
+            {
+              title: "신진 작가 오프라인 투고 살롱",
+              description: "출판 기획서 작성법과 매력적인 첫 페이지 3줄 서두를 가꾸어 출판사 편집장의 눈길을 사로잡는 마스터링입니다.",
+              icon: "Award"
+            }
+          ]
+        }
+      },
+      {
+        section_type: "about",
+        title: "작문은 화려한 수식어를 덧칠하는 화장술이 아닌, 내면의 불필요한 위선과 가식을 예리한 활자의 펜끝으로 도려내는 뺄셈의 성찰입니다",
+        subtitle: "모든 집필 클래스는 조용한 독서 아우라를 사수하기 위해 오직 주중 야간 한정으로 소수 정예 가동됩니다.",
+        content_data: {
+          description: "안녕하십니까. 작가 창작 스튜디오의 수석 문학 코치입니다. 우리는 인터넷상의 조각 글이나 가짜 어그로 제목으로 단기 조회수를 구걸하는 저품질 작문 학원들을 혐오합니다. 우리는 밤하늘 은하수가 쏟아지는 듯한 종이 냄새 가득한 서재 속에서, 내 영혼의 고요한 심연을 정직하게 흔드는 단 한 줄의 묵직한 문장을 탈고하는 진정한 창작의 성찰을 응원합니다.",
+          stats: [
+            { label: "배출한 정식 출판 작가 수", value: "32명 배출" },
+            { label: "누적 텀블벅 펀딩 달성액", value: "1.2억 원" }
+          ]
+        }
+      },
+      {
+        section_type: "portfolio",
+        title: "양장지 책 표지 & 아날로그 펜끝",
+        subtitle: "묵직한 책장 나무와 빛나는 황동 펜들이 지적으로 조화를 이루는 아늑한 서재 전경입니다.",
+        content_data: {
+          items: [
+            { title: "황동 만년필과 낡은 양장 일기장", description: "앤티크 책상 스탠드 빛 아래에서 사각사각 소리를 내며 검은 잉크 활자를 적어 내려가는 고요한 밤의 찰나", image: "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=600&q=80" },
+            { title: "메이저 출판사 정식 계약 도서들", description: "서재 선반에 초록 포레스트 그린 띠지를 두른 정갈한 단편 소설책들이 일렬로 기품 있게 보존된 서가 컷", image: "https://images.unsplash.com/photo-1519699047748-de8e457a634e?auto=format&fit=crop&w=600&q=80" },
+            { title: "작가 북토크 사인회 스케치 현장", description: "하얀 목조 테이블 너머로 작가가 미소를 띠고 독자의 책 첫 면에 따뜻한 만년필 친필 서명을 찍어내는 스냅", image: "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80" }
+          ]
+        }
+      },
+      {
+        section_type: "contact",
+        title: "창작 클래스 신청 및 시놉시스 문의",
+        subtitle: "집필 희망 분야(소설/수필/자서전/시나리오), 기존에 써두신 원고 분량, 평소 좋아하는 작가 이름을 적어 입학 신청해 주세요.",
+        content_data: {
+          fields: ["name", "email", "phone", "message"],
+          buttonText: "작가와 향긋하게 통화하기"
+        }
+      }
+    ]
+  },
+
+  kids_forest_kindergarten: {
+    templateId: "kids_forest_kindergarten",
+    name: "초록 숲 자연 놀이 유치원",
+    category: "Education",
+    description: "생기 넘치는 천연 새싹 초록과 화사한 커스터드 노랑, 그리고 장난꾸러기 여우 오렌지 배합이 친환경 숲속 자연 학습 유치원의 상쾌함을 전하는 아동 테마입니다.",
+    image: "/templates/kids_forest_kindergarten.png",
+    theme: {
+      fontFamily: "Outfit, Poppins, sans-serif",
+      colors: {
+        primary: "#16a34a",     // 싱그러운 새싹 잔디 그린
+        secondary: "#fef08a",   // 다정한 커스터드 크림 옐로우
+        accent: "#f97316",      // 오렌지 발바닥 여우 주황
+        background: "#fafdfa",  // 상쾌한 아침 이슬 백그라운드
+        surface: "#ffffff",     // 위생적이고 안전한 화이트보드
+        text: "#1f2937"         // 눈이 편안한 올리브 차콜 블랙
+      },
+      borderRadius: "rounded-3xl",
+      glassmorphism: false
+    },
+    defaultSections: [
+      {
+        section_type: "hero",
+        title: "시멘트 아파트 벽 너머, 흙을 밟고 지렁이와 뛰노는 아이들의 해맑은 영혼 살롱",
+        subtitle: "영어 단어 스펠링을 기계적으로 주입하고 태블릿 화면만 보며 시력을 해치는 회색 유아원 문화를 단호히 거부합니다. 하루 종일 목줄 없이 천연 편백 숲을 맨발로 질주하고, 직접 유기농 토마토를 수확해 텃밭 요리를 만들며 자율성과 자연 지능을 100% 힐링하는 대한민국 최고 아웃도어 숲속 놀이유치원입니다.",
+        content_data: {
+          backgroundImage: "https://images.unsplash.com/photo-1587654780291-39c9404d746b?auto=format&fit=crop&w=1200&q=80",
+          ctaText: "숲속 체험 교실 및 입학 설명회",
+          ctaLink: "#contact",
+          features: [
+            { text: "아동 심리 상담 라이선스를 갖춘 베테랑 유아 숲 지도사 전격 1:5 소수 밀착 안심 케어 보증" },
+            { text: "모든 실내 가구와 장난감을 무독성 천연 편백나무와 유기농 황토로만 시공 완료한 에코 룸" }
+          ]
+        }
+      },
+      {
+        section_type: "services",
+        title: "네이처 액티비티 프로그램",
+        subtitle: "아이들의 감각과 호기심을 대자연 속에서 다채롭게 피워내는 숲속 커리큘럼 요강입니다.",
+        content_data: {
+          items: [
+            {
+              title: "맨발 흙놀이 & 황토 머드 풀장",
+              description: "황토 풀에서 진흙 팩을 바르며 흙의 안락하고 촉촉한 촉감을 온몸으로 느껴 면역력을 키우는 자율 세션입니다.",
+              icon: "Smile"
+            },
+            {
+              title: "유기농 주말 텃밭 & 멍푸드 요리",
+              description: "내가 직접 심은 상추와 방울토마토 잎사귀를 키우고 수확해 샐러드와 수제 영양 잼을 직접 요리하는 미식 교육입니다.",
+              icon: "Heart"
+            },
+            {
+              title: "편백나무 오두막 메이킹 하우스",
+              description: "대나무와 나무 나뭇가지로 친구들과 협동하여 비밀 기지를 짓고 들꽃 화관을 엮어 숲속 요정이 되는 창의 훈련입니다.",
+              icon: "Leaf"
+            }
+          ]
+        }
+      },
+      {
+        section_type: "about",
+        title: "유년 시절의 교육은 똑똑한 정답을 주입하는 성취가 아닌, 평생 마르지 않는 자연 감성과 정서의 단단한 주춧돌을 세워내는 다정함입니다",
+        subtitle: "모든 급식과 간식은 농가 직송 100% 친환경 한우와 유기농 무농약 국산 채소로만 정직하게 조리됩니다.",
+        content_data: {
+          description: "안녕하세요. 초록 숲 유치원의 빌리지 캡틴 마스터 원장입니다. 우리는 영어 스펠링 3개를 더 외우느라 눈에 생기를 잃고 회색 실내 벽면에 갇혀 스트레스를 받는 차가운 유아 학습법을 혐오합니다. 우리는 자연 속에서 옷과 뺨에 흙을 잔뜩 묻히며 호탕하게 웃고 벌레와 대화하는 다정한 아이들을 원합니다. 대자연 속에서 뛰어놀며 단단해진 몸과 밝은 영혼은 훗날 아이들이 어떤 폭풍우를 만나도 꺾이지 않는 거목으로 자라게 도울 것입니다.",
+          stats: [
+            { label: "배출한 숲속 꼬마 탐험가 수", value: "850명 돌파" },
+            { label: "매주 탐방하는 편백 숲 면적", value: "30,000평" }
+          ]
+        }
+      },
+      {
+        section_type: "portfolio",
+        title: "해맑은 꼬마 대장들의 편백 숲 어드벤처",
+        subtitle: "보기만 해도 상쾌한 바람 소리와 숲의 피톤치드 향이 번지는 청정 힐링 갤러리입니다.",
+        content_data: {
+          items: [
+            { title: "숲속 통나무 다리 건너기 훈련", description: "초록 잔디밭 위에서 안전 헬멧을 쓰고 통나무 외나무다리를 조심조심 균형을 잡으며 건너가는 사랑스러운 아이의 찰나", image: "https://images.unsplash.com/photo-1587654780291-39c9404d746b?auto=format&fit=crop&w=600&q=80" },
+            { title: "유기농 토마토 텃밭 물주기 놀이", description: "빨갛게 잘 익은 방울토마토 줄기에 노란 물뿌리개로 하하호호 웃으며 투명한 물방울을 뿜어주는 아이들의 안심 주말", image: "https://images.unsplash.com/photo-1519699047748-de8e457a634e?auto=format&fit=crop&w=600&q=80" },
+            { title: "실내 편백나무 오감 가드닝 볼풀", description: "천연 편백 조각이 수만 개 깔린 방에서 숲속 향기를 호흡하며 나무 블럭을 쌓아올리는 깨끗한 위생 위생 룸", image: "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80" }
+          ]
+        }
+      },
+      {
+        section_type: "contact",
+        title: "숲속 유치원 입학 상담 및 참관 신청",
+        subtitle: "자녀분의 만나이, 평소 알레르기가 있는 식품 정보, 그리고 부모님 대리 설명회 동반 참석 인원수를 보내주세요.",
+        content_data: {
+          fields: ["name", "email", "phone", "message"],
+          buttonText: "원장실과 다정하게 소통하기"
+        }
+      }
+    ]
   }
 };

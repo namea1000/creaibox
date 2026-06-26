@@ -1970,5 +1970,287 @@ export const PORTFOLIO_TEMPLATES: Record<string, TemplateConfig> = {
         }
       }
     ]
+  },
+
+  architect_space_portfolio: {
+    templateId: "architect_space_portfolio",
+    name: "스페이스아치 건축 공간 포트폴리오",
+    category: "Portfolio",
+    description: "묵직한 매트 현무암 차콜 그레이와 거친 콘크리트 실버, 그리고 따뜻한 점토 토기 테라코타 오렌지 포인트 배합이 구조물과 입체 공간의 깊이를 전하는 건축가 포트폴리오 테마입니다.",
+    image: "/templates/architect_space_portfolio.png",
+    theme: {
+      fontFamily: "Space Grotesk, Noto Serif KR, sans-serif",
+      colors: {
+        primary: "#27272a",     // 매트한 질감의 스톤 차콜
+        secondary: "#f4f4f5",   // 매끄러운 아노다이징 알루미늄 그레이
+        accent: "#d97706",      // 점토 오렌지 테라코타
+        background: "#fafaf9",  // 정갈한 석고 보드 오프화이트
+        surface: "#ffffff",     // 정돈된 백색 아크릴 도판
+        text: "#18181b"         // 가독성 높은 다크 슬레이트 차콜
+      },
+      borderRadius: "rounded-none",
+      glassmorphism: false
+    },
+    defaultSections: [
+      {
+        section_type: "hero",
+        title: "선과 면의 정밀한 비례 속에 자연의 햇살을 채워 넣는 입체 공간 포트폴리오",
+        subtitle: "장식적 가식을 제거한 미니멀리즘 건축 아키텍처입니다. 대지의 성격 분석부터 노출 콘크리트, 황동, 유리의 본연의 물성을 드러내어 시간의 흐름에 따라 변화하는 빛의 그림자 궤적을 기록한 건축가의 엄선된 작품집입니다.",
+        content_data: {
+          backgroundImage: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
+          ctaText: "설계 준공 프로젝트 보기",
+          ctaLink: "#portfolio",
+          features: [
+            { text: "빛과 바람의 통로를 과학적으로 추적 시뮬레이션한 입체 3D BIM 설계 기술" },
+            { text: "수령 100년 전통 한옥 한옥 고목재와 현대 콘크리트의 조화로운 오가닉 매칭" }
+          ]
+        }
+      },
+      {
+        section_type: "services",
+        title: "스파셜 디자인 영역",
+        subtitle: "인간이 머무는 자리를 가장 정직하고 풍요로운 사색의 아우라로 채우는 설계 범주입니다.",
+        content_data: {
+          items: [
+            {
+              title: "하이엔드 주거 단독주택 설계",
+              description: "도시 소음을 차단하고 정원을 내부로 품은 모노리스 단독주택의 평면 비례와 입면을 구성합니다.",
+              icon: "Compass"
+            },
+            {
+              title: "친환경 패시브 빌딩 디자인",
+              description: "외벽 삼중단열과 열교환 공조 시스템을 융합하여 화석 연료 없이 사계절 쾌적함을 사수하는 에너지 설계입니다.",
+              icon: "Zap"
+            },
+            {
+              title: "재생 한옥 및 공간 리노베이션",
+              description: "오래된 구옥의 서까래와 철골 H빔을 세련되게 크로스 매칭하여 아날로그 카페/갤러리 공간으로 튜닝합니다.",
+              icon: "Award"
+            }
+          ]
+        }
+      },
+      {
+        section_type: "portfolio",
+        title: "콘크리트와 빛의 이중주",
+        subtitle: "형태는 기능을 따르며 여백 속에서 기품을 품는 아키텍트 준공작 목록입니다.",
+        content_data: {
+          items: [
+            { title: "숲속 미니멀 노출 콘크리트 빌라", description: "하얀 화강암 옹벽 사이로 대형 통유리창을 내어 사계절 숲속 수목이 한 폭의 그림처럼 실내에 투영되는 단독주택", image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80" },
+            { title: "종로 가옥 한옥 서까래 재생 갤러리", description: "낡은 나무 대들보 아래 검은 실버 메탈 테이블을 매칭하여 고풍스럽고 모던한 아우라를 뿜는 상업 공간 쇼룸", image: "https://images.unsplash.com/photo-1519699047748-de8e457a634e?auto=format&fit=crop&w=600&q=80" },
+            { title: "테라코타 파사드 빌딩 외관 스케치", description: "황토 벽돌 타일이 햇살의 각도에 따라 온화한 주황색과 짙은 브라운 색상의 그라데이션 음영을 자아내는 건물 파사드", image: "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80" }
+          ]
+        }
+      },
+      {
+        section_type: "about",
+        title: "건축은 형태의 사치가 아닌, 인간의 존엄을 보호하며 머무는 이에게 침묵의 휴식을 선물하는 물리적 주춧돌입니다",
+        subtitle: "모든 설계는 대지 고유의 정령과 바람 소리를 방해하지 않는 흐름의 미학을 엄수합니다.",
+        content_data: {
+          description: "안녕하세요. 스페이스아치 건축 공간 포트폴리오의 파트너 건축가입니다. 저는 벽지를 두껍게 발라 공간의 정직한 물성을 숨기는 기성 인테리어를 지양합니다. 돌, 철, 콘크리트, 유리가 지닌 본래의 거칠고 매끄러운 텍스처를 그대로 노출하여, 매일 아침 거실 깊숙이 들어오는 아침 햇살과 긴 그림자가 만드는 시간의 아름다움을 정직하게 담아내고 있습니다.",
+          stats: [
+            { label: "시공 준공 완료 작품 수", value: "24개 건축물" },
+            { label: "공간 디자인 수상 경력", value: "6회 골드메달" }
+          ]
+        }
+      },
+      {
+        section_type: "contact",
+        title: "건축 설계 및 공간 자문 신청",
+        subtitle: "신축 예정 대지의 지번, 주 용도(단독주택/상업 빌딩/카페 리뉴얼), 원하시는 공간 설계 방향을 남겨주시면 조용히 노크하겠습니다.",
+        content_data: {
+          fields: ["name", "email", "phone", "message"],
+          buttonText: "건축가와 직접 상담하기"
+        }
+      }
+    ]
+  },
+
+  fashion_lookbook_portfolio: {
+    templateId: "fashion_lookbook_portfolio",
+    name: "보그핏 하이엔드 패션 디렉터 포트폴리오",
+    category: "Portfolio",
+    description: "압도적인 스튜디오 보그 블랙과 세련된 오키드 핑크, 그리고 강렬한 벨벳 레드 포인트 조화로 런웨이 하이 패션 화보와 컬렉션 디렉팅을 대담하게 전하는 템플릿입니다.",
+    image: "/templates/fashion_lookbook_portfolio.png",
+    theme: {
+      fontFamily: "Outfit, Inter, sans-serif",
+      colors: {
+        primary: "#111827",     // 하이패션 보그 다크 블랙
+        secondary: "#fae8ff",   // 시크한 오키드 라이트 핑크
+        accent: "#b91c1c",      // 관능적인 벨벳 로즈 레드
+        background: "#fafaf9",  // 정갈한 스튜디오 석고 오프화이트
+        surface: "#ffffff",     // 맑은 아크릴 캔버스 화이트
+        text: "#1f2937"         // 시인성 높은 스톤 슬레이트 차콜
+      },
+      borderRadius: "rounded-none",
+      glassmorphism: false
+    },
+    defaultSections: [
+      {
+        section_type: "hero",
+        title: "획일화된 의류 룩북의 구도를 단호히 탈피하고, 옷의 실루엣이 쓰는 전율의 무대 페르소나",
+        subtitle: "공장에서 찍어내듯 가볍게 소비되는 쇼핑몰 사진을 혐오합니다. 우리는 패션 디렉터로서의 대담한 연출 기획과, 벨벳 실크 실크 질감 극대화 조명 컨트롤, 그리고 모델의 강렬한 눈빛이 조화를 이루어 브랜드를 동경의 아이콘으로 끌어올리는 하이엔드 런웨이 아카이브입니다.",
+        content_data: {
+          backgroundImage: "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=80",
+          ctaText: "컬렉션 포트폴리오 열람",
+          ctaLink: "#portfolio",
+          features: [
+            { text: "글로벌 패션위크 런웨이 및 하이패션 화보집 총괄 메이저 룩북 기획 시뮬레이션 탑재" },
+            { text: "패브릭 원단 고유의 유기적인 드레이핑 텍스처를 고대비 조명으로 살려내는 특수 포토 촬영" }
+          ]
+        }
+      },
+      {
+        section_type: "services",
+        title: "패션 디렉션 에센셜",
+        subtitle: "패션 브랜드의 아이덴티티를 동경의 아이콘으로 가꾸어내는 연출 프로그램입니다.",
+        content_data: {
+          items: [
+            {
+              title: "시즌 런웨이 콘셉트 큐레이팅",
+              description: "브랜드 철학에 맞는 시즌 스토리를 시각화합니다. 모델 캐스팅부터 런웨이 동선, 무대 샹들리에 음영까지 총괄 설계합니다.",
+              icon: "Sparkles"
+            },
+            {
+              title: "하이패션 브랜드 화보 룩북",
+              description: "오키드 핑크 톤과 벨벳 레드의 보색 조화를 활용하여, 잡지 지면에 수록될 강렬하고 매혹적인 아트 화보를 디렉팅합니다.",
+              icon: "Heart"
+            },
+            {
+              title: "비주얼 아이덴티티 브랜드 컨설팅",
+              description: "신진 패션 디자이너 브랜드의 클래식 가치를 조명하고 로고 디자인, 패키지 백, 폰트 규격을 통합 제안합니다.",
+              icon: "Award"
+            }
+          ]
+        }
+      },
+      {
+        section_type: "portfolio",
+        title: "런웨이 화보 & 아티스틱 컷",
+        subtitle: "시각적 소음을 완벽 차단하고 오직 의상의 강렬한 아우라에만 집중하게 돕는 갤러리입니다.",
+        content_data: {
+          items: [
+            { title: "벨벳 드레스를 입은 모델의 동선", description: "어두운 스튜디오 음영 속에서 선홍빛 롱 드레스 자락이 나비 날개처럼 휘날리는 관능적이고 대담한 스틸 샷", image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=600&q=80" },
+            { title: "해체주의적 실크 재킷 피팅 전경", description: "화이트 행거 위에 불규칙한 드레이핑의 네이비 실크 셔츠와 실버 금속 장식 단추들이 클로즈업된 작업실 무드 스냅", image: "https://images.unsplash.com/photo-1519699047748-de8e457a634e?auto=format&fit=crop&w=600&q=80" },
+            { title: "패션 비엔날레 쇼룸 디렉팅 전경", description: "하얀 석고 조각상 옆에 대담하게 비대칭 핏의 블랙 모직 코트를 마네킹에 코디하여 공간의 예술성을 살려낸 전시 컷", image: "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80" }
+          ]
+        }
+      },
+      {
+        section_type: "about",
+        title: "패션은 몸을 가리는 단순한 직물의 조각이 아닌, 나라는 인간의 고유한 철학과 선언을 대외적으로 선포하는 가장 강력하고 우아한 시각적 무기입니다",
+        subtitle: "모든 기획 화보는 단순한 유행을 거부하고, 10년 뒤에 꺼내 보아도 기품이 훼손되지 않는 오리지널 가치를 지향합니다.",
+        content_data: {
+          description: "안녕하세요. 하이엔드 패션 디렉터이자 비주얼 아티스트입니다. 저는 싼 티가 나는 기성 트렌드 상품의 단순한 나열을 혐오합니다. 의상은 인간의 신체를 매개로 완성되는 입체적인 조각 예술입니다. 저는 원단의 작은 주름 하나, 단추 하나의 유기적인 비례, 그리고 모델이 뿜어내는 깊은 아우라를 조화롭게 연출하여 브랜드 고유의 동경과 신화를 대중의 뇌리에 깊숙이 각인시키고 있습니다.",
+          stats: [
+            { label: "디렉팅 완료 패션 브랜드", value: "18개 브랜드" },
+            { label: "총괄 참여 글로벌 패션쇼", value: "35회 개최" }
+          ]
+        }
+      },
+      {
+        section_type: "contact",
+        title: "룩북 촬영 기획 및 비주얼 제휴 문의",
+        subtitle: "브랜드명 및 콘셉트 설명, 시즌 화보 촬영 희망 일정, 혹은 패션쇼 총괄 연출 의뢰 신청서를 보내주시면 정중히 상담하겠습니다.",
+        content_data: {
+          fields: ["name", "email", "phone", "message"],
+          buttonText: "디렉터와 기품 있게 소통하기"
+        }
+      }
+    ]
+  },
+
+  "3d_motion_graphic_portfolio": {
+    templateId: "3d_motion_graphic_portfolio",
+    name: "네온웨이브 3D 모션 아티스트 포트폴리오",
+    category: "Portfolio",
+    description: "가상 우주의 딥 옵시디언 블랙과 발광 마젠타 핑크, 그리고 가상 레이저 네온 사이언 배합이 화려한 CGI 애니메이션과 3D 그래픽 렌더링 웍스를 전하는 테마입니다.",
+    image: "/templates/3d_motion_graphic_portfolio.png",
+    theme: {
+      fontFamily: "Space Grotesk, Outfit, sans-serif",
+      colors: {
+        primary: "#ec4899",     // 발광 마젠타 핑크
+        secondary: "#a78bfa",   // 사이버 바이올렛 퍼플
+        accent: "#06b6d4",      // 가상 네온 레이저 시안
+        background: "#050508",  // 딥 가상 우주 블랙
+        surface: "#0e0e16",     // 슬레이트 퓨처 메탈 실버
+        text: "#f8fafc"         // 시인성 높은 은빛 오프화이트
+      },
+      borderRadius: "rounded-2xl",
+      glassmorphism: true
+    },
+    defaultSections: [
+      {
+        section_type: "hero",
+        title: "현실의 차원과 중력의 족쇄를 완전히 벗어나, 무한한 상상이 빚어내는 가상 공간의 3D 역동성",
+        subtitle: "밋밋한 2D 플랫 그래픽의 지루함을 거부합니다. Blender와 Cinema4D 툴을 극단으로 다루어, 미세한 유리 질감의 굴절부터 액체의 유동성 크래쉬, 그리고 메탈의 찬란한 크롬 광원 효과를 동기화하여 초현실적인 몰입감을 극대화하는 3D 모션 그래픽 아티스트의 작업 아카이브입니다.",
+        content_data: {
+          backgroundImage: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80",
+          ctaText: "쇼릴 영상 및 3D 렌더스",
+          ctaLink: "#portfolio",
+          features: [
+            { text: "물리 엔진 기반 0.01초 단위의 리얼한 액체 크래쉬 시뮬레이션 및 다이내믹 중력 모션 그래픽" },
+            { text: "크롬 메탈 반사 질감과 광선 추적(Ray-Tracing) 옥테인 렌더러 기반 8K 초고화질 출력" }
+          ]
+        }
+      },
+      {
+        section_type: "services",
+        title: "CGI & 모션 디자인 스택",
+        subtitle: "지상의 물리적 중력을 무시하고 시각적 전율을 가상 공간에 빚어내는 크리에이티브 파이프라인입니다.",
+        content_data: {
+          items: [
+            {
+              title: "3D 시그니처 옥테인 렌더링",
+              description: "크롬 금속 질감, 투명한 글래스 굴절, 모래 입자 폭풍 등 하이엔드 물성 셰이딩 데이터를 정밀 렌더링합니다.",
+              icon: "Zap"
+            },
+            {
+              title: "브랜드 시네마틱 모션 쇼릴",
+              description: "마젠타 핑크와 네온 시안 레이저의 세련된 아우라 조화를 활용하여, 브랜드의 오프닝 로고 타이틀과 시네마틱 트레일러 영상을 연출합니다.",
+              icon: "Compass"
+            },
+            {
+              title: "메타버스 스파셜 룸 디자인",
+              description: "VR 공간이나 가상 전시 플랫폼에 사용될 초현실적인 유기적 곡선 건축 구조와 홀로그램 샹들리에 셋업을 설계합니다.",
+              icon: "Award"
+            }
+          ]
+        }
+      },
+      {
+        section_type: "portfolio",
+        title: "가상 차원의 크롬 렌더스",
+        subtitle: "모든 렌더링 샷은 마젠타 핑크와 시안 레이저 조명이 역동적으로 교차하는 사이버 아우라 갤러리입니다.",
+        content_data: {
+          items: [
+            { title: "유기적으로 회전하는 크롬 메탈 구체", description: "블랙 홀 공간 위에 핑크빛 홀로그램 레이저를 반사하며 미끄러지듯 팽창 수축하는 미래형 추상 모션 그래픽", image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80" },
+            { title: "글래스 조각들이 폭발하며 굴절하는 찰나", description: "투명한 강화유리 파편 속으로 네온 시안 불빛이 산란 굴절되어 만화경처럼 영롱한 광원을 뿜는 정밀 렌더링 컷", image: "https://images.unsplash.com/photo-1519699047748-de8e457a634e?auto=format&fit=crop&w=600&q=80" },
+            { title: "사이버펑크 네온 로드 자율 질주 씬", description: "옵시디언 블랙 메탈 차량이 젖은 아스팔트 위 핑크색 웅덩이를 가르며 스피드 꼬리를 남기고 질주하는 가상 영상 샷", image: "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80" }
+          ]
+        }
+      },
+      {
+        section_type: "about",
+        title: "3D 모션 그래픽은 가상의 좌표 위에 뼈대를 세우고 텍스처를 이식하여, 존재하지 않던 꿈의 시각적 파편을 대중의 뇌리에 강렬히 폭발시키는 미래의 시각 마술입니다",
+        subtitle: "모든 모션 연출은 옥테인/레드시프트 등 최고 사양 GPU 렌더 팜을 통해 딜레이 없이 8K로 추출됩니다.",
+        content_data: {
+          description: "안녕하세요. 네온웨이브 3D 모션 아티스트입니다. 저는 2차원 화면의 평범함과 제한에 타협하지 않습니다. 3차원 가상 엔진은 상상력의 경계를 무한대로 무너뜨리는 훌륭한 해방의 도구입니다. 저는 차가운 크롬 금속에 다정한 핑크빛 온기를 불어넣고, 투명한 유리에 레이저 시안 빛을 굴절시켜 눈이 시리도록 상쾌한 비주얼 임팩트를 설계합니다. 당신의 브랜드 스토리를 다이내믹한 미래의 영상으로 가치 상승시키겠습니다.",
+          stats: [
+            { label: "총괄 참여 상업 광고 영상", value: "48편 제작" },
+            { label: "비핸스 베스트 크리에이티브 선정", value: "12회 수상" }
+          ]
+        }
+      },
+      {
+        section_type: "contact",
+        title: "3D 모션 웍스 의뢰 및 콜라보레이션",
+        subtitle: "의뢰하고자 하시는 브랜드 로고 오프닝/홍보 영상 타겟 기간, 연출 콘셉트 레퍼런스 링크, 예산 규모를 적어 전송해 주십시오.",
+        content_data: {
+          fields: ["name", "email", "phone", "message"],
+          buttonText: "아티스트와 미래형 소통하기"
+        }
+      }
+    ]
   }
 };

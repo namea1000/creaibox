@@ -1342,7 +1342,9 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
 
             const seekCountKey = `seek_count_${media.id}`;
             let seekCount = (videoCache as any).get(seekCountKey) || 0;
-            const maxSeekCount = isExport ? 150 : 20;
+            // 내보내기 중에는 비디오 엘리먼트를 재성성하지 않음 (재생성 시 데코더 리셋/딜레이로 인해 3초 이후 프레임 프리징 현상 발생)
+            // 프리뷰 중에도 잦은 재생성으로 인한 끊김을 방지하기 위해 임계값을 1000으로 상향 조정
+            const maxSeekCount = isExport ? 999999 : 1000;
             if (video && seekCount >= maxSeekCount) {
               video.src = "";
               video.load();
@@ -1365,13 +1367,28 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
               time - clip.startTime + (clip.trimStart ?? 0)
             );
 
+            // 전체 영상을 잘라내는 버그성 trimEnd 값 방어 코드 (오차가 있을 경우 0으로 복구)
+            const actualTrimEnd = (clip.trimEnd ?? 0) >= (video.duration || 0) - 0.05
+              ? 0
+              : (clip.trimEnd ?? 0);
+
             video.currentTime = Number.isFinite(video.duration)
-              ? Math.min(localTime, Math.max(video.duration - 0.05 - (clip.trimEnd ?? 0), 0))
+              ? Math.min(localTime, Math.max(video.duration - 0.05 - actualTrimEnd, 0))
               : localTime;
 
+            // 내보내기(isExport) 시에는 정확한 프레임 렌더링을 보장하기 위해 최대 5초까지 탐색 대기
+            // 프리뷰 중에는 지연 방지를 위해 기존처럼 80ms 타임아웃 유지
             await new Promise<void>((resolve) => {
-              video!.onseeked = () => resolve();
-              window.setTimeout(resolve, 80);
+              let resolved = false;
+              const finish = () => {
+                if (!resolved) {
+                  resolved = true;
+                  if (video) video.onseeked = null;
+                  resolve();
+                }
+              };
+              video!.onseeked = finish;
+              window.setTimeout(finish, isExport ? 5000 : 80);
             });
 
             await drawMediaClip(
@@ -1819,6 +1836,7 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
           await convertWebmBlobToMp4({
             webmBlob,
             title: options?.snapshot?.projectTitle ?? projectTitle,
+            duration: options?.snapshot?.duration ?? totalDuration,
             signal: options?.signal,
             fileName: options?.fileName,
             directoryHandle: options?.directoryHandle,
@@ -1887,6 +1905,7 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
             await convertWebmBlobToMp4({
               webmBlob,
               title: `${renderTitle}-direct-${format}`,
+              duration: renderDuration,
               signal: options?.signal,
               fileName: options?.fileName,
               directoryHandle: options?.directoryHandle,

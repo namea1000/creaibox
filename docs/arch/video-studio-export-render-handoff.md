@@ -239,8 +239,10 @@ Be careful when editing:
 
 - `VideoEditorRenderCanvas.tsx`
   - It is the central export path for Quick WebM, Compatible MP4, Direct MP4, and fallback WebCodecs rendering.
+  - **중요 고차(Gotcha)**: 내보내기 진행 중 3초 부근 프레임이 멈추는 프리징 현상을 막기 위해, 내보내기 도중에는 비디오 엘리먼트를 절대 강제 파괴/재생성하지 마십시오 (`maxSeekCount`는 `999999`로 해제됨). 또한, 프레임 디코딩 대기시간(`onseeked`) 타임아웃은 내보내기 시 최대 `5000ms`로 설정하여 100% 프레임 정확도를 확보하고, 프리뷰 시에는 UI 반응성을 위해 `80ms`로 별도 처리해야 합니다.
 - `VideoEditorPreviewPlayer.tsx`
   - Manages real-time DOM layers and playback sync. Completely disables active sync (seeking) during playback for both video and audio to ensure native smooth rendering, bypassing AudioContext routing for silent videos. Do not apply active sync to playing elements to prevent stutters.
+  - **중요 고차(Gotcha)**: 스페이스바 등으로 비디오를 일시정지할 때 화면이 미세하게 튀거나 뒤흔들리는 현상을 막기 위해, 정지 상태(`!isPlaying`) 조건으로 강제 seek를 유도하지 마십시오. 대신 플레이헤드와 비디오의 절대 시간 오차가 `0.03초`(1프레임 규격) 이상 벌어졌을 때만 seek를 유도하여 이중 탐색 플리커링을 예방하십시오.
 - `render/renderFramePlan.ts`
   - Preview/export ordering depends on it.
 - `export/audioMixdown.ts`

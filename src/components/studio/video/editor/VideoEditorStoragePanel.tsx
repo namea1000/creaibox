@@ -49,8 +49,8 @@ const storageProviders: {
   },
   {
     id: "google-drive",
-    label: "Google Drive",
-    desc: "외부 드라이브 연동",
+    label: "외부 클라우드",
+    desc: "외부 저장소 연동",
     icon: Cloud,
   },
   {
@@ -103,7 +103,7 @@ const sampleStorageItems: StorageItem[] = [
     name: "drive-project-footage.mp4",
     type: "video",
     provider: "google-drive",
-    path: "Google Drive / CreAibox / footage.mp4",
+    path: "클라우드 저장소 / CreAibox / footage.mp4",
     sizeMb: 64.5,
     createdAt: "Soon",
     status: "locked",
@@ -120,7 +120,7 @@ export default function VideoEditorStoragePanel() {
 
   const handleAddStorageItem = (item: StorageItem) => {
     if (item.status === "locked") {
-      alert("이 항목은 잠겨 있어 불러올 수 없습니다. Google Drive 계정 연결이 완료되어야 합니다.");
+      alert("이 항목은 잠겨 있어 불러올 수 없습니다. 외부 클라우드 계정 연결이 완료되어야 합니다.");
       return;
     }
     let mockUrl = "";
@@ -175,7 +175,7 @@ export default function VideoEditorStoragePanel() {
       <PanelHeader
         icon={Database}
         title="Storage"
-        desc="Supabase Storage, Google Drive, Dropbox, Local 파일을 통합 관리하는 저장소 허브입니다."
+        desc="Supabase 저장소, 외부 클라우드, Dropbox, 브라우저 임시 파일을 통합 관리하는 저장소 허브입니다."
       />
 
       <div className="rounded-md border border-emerald-400/20 bg-emerald-400/10 p-4">

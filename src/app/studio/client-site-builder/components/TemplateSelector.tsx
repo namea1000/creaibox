@@ -199,7 +199,7 @@ export default function TemplateSelector({
             <div
               key={template.templateId}
               onClick={() => onSelect(template.templateId)}
-              className={`group relative overflow-hidden bg-white dark:bg-[#0b0f19] border rounded-2xl p-5 shadow-sm hover:shadow-md cursor-pointer transition-all duration-200 ${
+              className={`group relative overflow-hidden bg-white dark:bg-[#0b0f19] border rounded-none p-5 shadow-sm hover:shadow-md cursor-pointer transition-all duration-200 ${
                 isSelected
                   ? "border-[var(--primary)] dark:border-emerald-500 ring-2 ring-emerald-500/20"
                   : "border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-700"

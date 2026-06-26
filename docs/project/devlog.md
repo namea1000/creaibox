@@ -2,7 +2,50 @@
 
 이 문서는 CreAibox 프로젝트의 일자별 개발 내역, 핵심 아키텍처 결정 사항을 기록합니다.
 
-### 🗓️ 2026-06-24 (수) - 오늘
+### 🗓️ 2026-06-26 (금) - 오늘
+#### 1. 비디오 에디터 내보내기 프레임 프리징(3초 이후 멈춤) 및 프리뷰 실시간 동기화 개선
+* **구현 요약**: 비디오 에디터에서 재생 멈춤/일시정지 시 화면이 미세하게 튀는 현상(이중 탐색 버그)을 해결하고, 내보내기 시 3초(150프레임) 부근부터 화면이 정지되던 디코더 병목 및 타임아웃 문제를 해결했습니다.
+* **작업 상세**:
+  - **내보내기 엔진 비디오 캐시 재성성 로직 개선**: [`VideoEditorRenderCanvas.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorRenderCanvas.tsx)에서 내보내기 중 비디오 엘리먼트 탐색 횟수가 150회를 초과할 때 엘리먼트를 파괴하고 새로 로드하는 로직을 제거했습니다. (`maxSeekCount`를 `150`에서 `999999`로 상향). 이로 인해 브라우저 하드웨어 디코더가 강제 리셋되면서 3초 이후 프레임이 얼어붙던 병목 현상이 완벽히 해소되었습니다.
+  - **프리뷰 성능 및 탐색 한도 최적화**: 프리뷰 스크러빙 시에도 잦은 재생성으로 인해 화면이 버벅이던 문제를 개선하기 위해 기존 `20회` 제한을 `1000회`로 대폭 늘렸습니다.
+  - **정적/동적 탐색 대기시간 분리**: 프레임 렌더링 루프의 탐색 대기(`onseeked`) 타임아웃을 프리뷰와 내보내기 상황별로 이원화했습니다. 실시간 프리뷰에서는 화면 끊김 방지를 위해 기존 `80ms`를 유지하고, 정확성이 극대화되어야 하는 내보내기 단계에서는 최대 `5000ms`까지 디코더의 완료를 기다리도록 보강하여 100% 프레임 정확도를 확보했습니다.
+  - **일시정지 화면 튐 및 중복 Seek 해결**: [`VideoEditorPreviewPlayer.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorPreviewPlayer.tsx)의 일시정지(`!isPlaying`) 상태 동기화 처리기에서 강제 탐색 조건을 제거하고 오차 범위를 `0.03초`(1프레임 규격)로 단일화했습니다. 이로 인해 스페이스바로 플레이/정지 시 화면이 미세하게 앞뒤로 출렁이며 바뀌는 중복 탐색 플리커링이 사라지고 즉각적으로 정밀 멈춤이 실행됩니다.
+  - **타입 안정성 검증**: `npx tsc --noEmit` 검사를 완료하여 무결성을 확보했습니다.
+
+#### 2. 가져온 미디어 UX 편의성 강화 및 기능 안정성 종합 2차 개선 패치
+* **구현 요약**: 가져온 미디어의 조작 편의성을 극대화하고, 역재생 영상의 내보내기 오류, 복사/붙여넣기 시 트랙 배치 붕괴 현상, 영상 종료 시의 미세 오버슈트 및 2프레임 공백 밀림 오차를 완전히 정조준하여 해소했습니다.
+* **작업 상세**:
+  - **미디어 액션 버튼 상시 노출**: [`VideoEditorUnifiedLibrary.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorUnifiedLibrary.tsx)의 `SidebarMediaItemRow` 내 추가(`+`) 및 삭제(휴지통) 버튼을 기존 호버 전용 상태에서 상시 노출 구조로 변경하여 미디어 조작 직관성을 대폭 향상했습니다.
+  - **역재생 영상 내보내기 프리징 완벽 해결**:
+    - **원인 해결**: [`VideoEditorContext.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorContext.tsx) 내 역재생 클립 생성기에서 `trimEnd`를 전체 영상 길이로 잘못 설정하던 수학적 버그를 `0`으로 바르게 매핑되도록 수정했습니다.
+    - **자가 치유 (Self-Healing)**: 기존 데이터베이스나 유저 세션에 저장된 오류 사양 클립을 실시간으로 감지하고 복구하는 로직을 `normalizeClip` 함수에 이식하여, 유저가 기존에 만들어 둔 역재생 클립도 새로고침 즉시 자동으로 정상 복구되도록 처리했습니다.
+    - **방어 인코딩**: [`VideoEditorRenderCanvas.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorRenderCanvas.tsx)에 잘못된 잘라내기 경계값 유입 시 영상이 멈추지 않고 끝까지 인코딩되도록 최대 안전 경계 검증식을 탑재했습니다.
+  - **다중 복사/붙여넣기 트랙 어긋남 방지**:
+    - **스냅 도입**: 붙여넣기 시 플레이헤드 미세 오차로 인한 겹침(Overlap) 판정으로 클립이 2트랙으로 튕기는 문제를 예방하기 위해, 붙여넣기 시에도 `0.15초` 규격의 마그네틱 스냅핑을 결합했습니다.
+    - **배치 충돌 회피**: 복제 배치 내의 충돌을 추적하기 위해 `findAvailableTrack` 질의 시 현재 맵핑 중인 임시 배치 리스트(`[...clips, ...pastedClips]`)를 연속 피딩함으로써, 복사본들이 기존 정렬 상태를 흐트러뜨리지 않고 같은 트랙 상에 완벽히 정렬되도록 최적화했습니다.
+  - **재생 완료 프레임 오버슈트 차단 및 2프레임 꼬리 오차 수정**:
+    - **관성 정지 해결**: [`VideoEditorPlaybackController.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorPlaybackController.tsx)의 재생 루프가 타임아웃으로 자연 종료될 때, 렌더링 스레드 지연으로 인해 프레임이 밀리던 현상을 마지막 정렬 이벤트 강제 트리거(`isSeek: true`)를 통해 해소했습니다.
+    - **정밀도 격상**: 프로젝트 전체 길이를 구하는 `calculateTotalDuration`의 반올림 단위를 100ms 수준인 `toFixed(1)`에서 프레임 단위 경계인 10ms 수준인 `toFixed(2)`로 상향하여, 반올림 왜곡으로 발생하던 끝부분 2프레임(0.06초) 공백 영역을 완벽히 소거하여 비디오의 영상 물리 종점인 `31:07`에 정확하게 딱 멈추도록 종결했습니다.
+  - **TypeScript 타입 무결성 검증**: 수정 사항이 복잡함에 따라 `npx tsc --noEmit` 검증 프로세스를 가동하여 100% 컴파일 성공을 확정했습니다.
+
+#### 3. 비디오 에디터 내보내기 영상 꼬리 검은 화면(블랙 프레임) 제거 및 타임라인 동기화 정밀화 패치
+* **구현 요약**: 사용자의 타임라인 상에서는 영상과 오디오가 정확히 플레이헤드 끝인 `31:07`에 맞춰져 있으나, 내보내기 된 영상(MP4)은 `31:09`까지 늘어나며 마지막 2프레임이 검은색 화면으로 노출되는 현상을 발견하고 이를 근본적으로 해결했습니다.
+* **원인 분석**:
+  1. **MediaRecorder 정지 지연**: 실시간 캔버스 녹화본(`webmBlob`) 렌더링 루프가 끝난 뒤 `recorder.stop()`이 비동기식으로 호출 및 완료되는 과정에서 브라우저 렌더링 스레드 지연에 따라 1~2프레임의 여분/정지 프레임이 WebM 파일 끝에 추가로 기록될 수 있습니다.
+  2. **AAC 인코더 딜레이 패딩**: WebM을 MP4로 트랜스코딩할 때 사용하는 FFmpeg AAC 오디오 인코더가 오디오 트랙 프라이밍 딜레이(1024 샘플, 약 21.3ms)를 맨 앞에 인입하고 오디오 프레임 규격 단위로 뒷부분을 라운딩 업(Rounding-up)하면서 컨테이너 전체 재생 길이를 약 `0.06`초 가량(30fps 기준 2프레임) 자연 연장시킵니다. 이 연장된 시간 동안 비디오 스트림 패킷이 없으므로 플레이어는 최종본 끝 단을 검은 화면으로 처리하게 됩니다.
+* **작업 상세**:
+  - **FFmpeg 정밀 타임아웃 컷팅(`-t`) 매핑**: [`convertWebmToMp4.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/ffmpeg/convertWebmToMp4.ts)의 `convertWebmBlobToMp4` 함수에 `duration` 옵션을 도입했습니다. FFmpeg이 WebM에서 MP4로 최종 인코딩할 때 `-t <duration>` 옵션을 넘겨받은 실제 타임라인 총 길이로 셋업하도록 설계하여, MediaRecorder의 정지 지연이나 AAC 프레임 끝 패딩으로 늘어난 미세 꼬리 영역을 칼같이 잘라내고 비디오와 오디오 트랙이 완벽히 동일한 실제 타임라인 한계점에서 끝나도록 규제했습니다.
+  - **렌더링 캔버스 호출부 보강**: [`VideoEditorRenderCanvas.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorRenderCanvas.tsx) 내 `exportMp4` 비디오 인코더 및 `exportDirectMp4` 내 compatible fallback 트래커가 WebM에서 MP4 변환 명령을 개시할 때, 스냅샷의 실제 렌더 기간(`totalDuration` 혹은 `renderDuration`)을 인자(`duration`)로 완벽히 제공하도록 주입하여 오차의 발생 소지를 차단했습니다.
+  - **무결성 검증**: `npx tsc --noEmit` 타입 정밀 컴파일 테스트를 거쳐 100% 무결점을 확인했습니다.
+
+#### 4. 비디오 에디터 내 'IndexedDB 지우기' 원클릭 캐시 청소 및 경고 팝업 기능 구현
+* **구현 요약**: 역재생, 오디오 추출 등 비디오 스튜디오 사용에 따라 로컬 브라우저 IndexedDB의 용량이 수십~수백 기가바이트(GB) 수준으로 기하급수적으로 축적되는 현상을 해결하기 위해, 사용자가 복잡한 브라우저 설정을 거치지 않고 에디터 내부에서 원클릭으로 안전하게 디스크 공간을 비우고 가용성을 확보할 수 있는 편리한 정리 도구와 친절한 안내용 다크 팝업 모달을 전격 추가했습니다.
+* **작업 상세**:
+  - **IndexedDB 원클릭 청소 액션 개발**: [`VideoEditorContext.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorContext.tsx) 내에 `clearIndexedDBCache` 비동기 액션을 설계 및 탑재했습니다. 해당 액션은 로컬 비디오 캐시 데이터베이스(`creaibox-video-editor-db`) 내의 `media-files` 및 `media-waveforms` 데이터 스토어를 안전하고 신속하게 비워(`.clear()`) 용량을 확보하며, 찌꺼기가 남아 메모리 누수가 발생하지 않도록 활성화되어 있던 브라우저 Blob URL 객체들을 전부 명시적으로 해제(`URL.revokeObjectURL`)하고, 데이터 충돌을 원천 예방하기 위해 타임라인 및 미디어 상태를 정밀하게 정리합니다.
+  - **직관적인 비우기 버튼 및 팝업 모달 탑재**: [`VideoEditorCanvas.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorCanvas.tsx) 캔버스 우측 상단의 "내보내기" 버튼 바로 왼쪽에 "IndexDB 지우기" 버튼을 추가했습니다. 클릭 시 해당 버튼의 역할과 하드디스크 용량 확보 효과를 친절히 안내하고, 프로젝트 초기화 및 미디어 재로드 필요성 등의 부작용과 핵심 주의사항을 직관적으로 보여주는 세련된 다크 테마 팝업 모달과 확인 절차를 이식했습니다.
+  - **TypeScript 타입 체크**: `npx tsc --noEmit` 검증을 완료하여 성공을 보장했습니다.
+
+### 🗓️ 2026-06-24 (수)
 #### 1. Next.js 개발 모드 빌드 표시기(devIndicators) 비활성화 및 성능 개선
 * **구현 요약**: 개발 모드(`npm run dev`)에서 페이지 전환 및 온디맨드 컴파일 시 화면 왼쪽 아래에 노출되던 "Rendering..", "Complete..." 표시기(`devIndicators`)를 비활성화하여 UI 플리커링과 화면 가림을 해소하고 체감 렌더링 부하를 해소했습니다.
 * **작업 상세**:

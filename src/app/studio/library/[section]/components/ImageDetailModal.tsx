@@ -131,7 +131,7 @@ export default function ImageDetailModal({
         <div className="flex flex-1 items-center justify-center bg-zinc-950 p-6 md:h-full">
           <div className="relative flex max-h-full items-center justify-center">
             <img
-              src={image.image_url}
+              src={(image.image_url.includes("drive.google.com") || image.image_url.includes("googleusercontent.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(image.image_url)}` : image.image_url}
               alt={altText || "미디어 미리보기"}
               className="max-h-[75vh] max-w-full rounded-lg object-contain shadow-2xl"
             />

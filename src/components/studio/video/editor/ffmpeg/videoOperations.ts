@@ -45,34 +45,73 @@ export async function reverseVideo({
 
       const duration = trimEnd !== undefined ? trimEnd - trimStart : undefined;
 
-      // Try with audio first if hasAudio is true
+      // Define a tiered list of configurations to try sequentially.
+      // High-resolution videos (1080p, 4K) easily cause OOM in 32-bit WASM during reversal
+      // because the 'reverse' filter buffers all uncompressed frames in memory.
+      // If full resolution fails, we fall back to downscaling to ensure successful completion.
+      const configs = [
+        // 1. Full Resolution + Audio (Original)
+        { name: "원본 해상도 (오디오 포함)", vf: "reverse", af: hasAudio ? "areverse" : undefined },
+        // 2. Full Resolution (Video Only)
+        { name: "원본 해상도 (비디오 전용)", vf: "reverse", af: undefined },
+        // 3. 720p Scale + Audio (optimized for memory)
+        { name: "720p 최적화 해상도 (오디오 포함)", vf: "scale=-2:720,reverse", af: hasAudio ? "areverse" : undefined },
+        // 4. 720p Scale (Video Only)
+        { name: "720p 최적화 해상도 (비디오 전용)", vf: "scale=-2:720,reverse", af: undefined },
+        // 5. 480p Scale + Audio (standard quality fallback)
+        { name: "480p 최적화 해상도 (오디오 포함)", vf: "scale=-2:480,reverse", af: hasAudio ? "areverse" : undefined },
+        // 6. 480p Scale (Video Only)
+        { name: "480p 최적화 해상도 (비디오 전용)", vf: "scale=-2:480,reverse", af: undefined },
+        // 7. 360p Scale (Video Only, maximum safety fallback)
+        { name: "360p 최적화 해상도 (비디오 전용)", vf: "scale=-2:360,reverse", af: undefined },
+      ];
+
       let success = false;
-      if (hasAudio) {
+      let lastError: any = null;
+
+      for (const config of configs) {
+        // Skip if this config requires audio but the source doesn't have it
+        if (config.af && !hasAudio) continue;
+
         try {
+          console.log(`[reverseVideo] Attempting reverse: ${config.name}`);
+          
           const args = [];
           if (trimStart > 0) args.push("-ss", String(trimStart));
           if (duration !== undefined && duration > 0) args.push("-t", String(duration));
           args.push("-i", inputName);
-          
+
+          args.push("-vf", config.vf);
+          if (config.af) {
+            args.push("-af", config.af);
+            args.push("-c:a", "aac");
+          } else {
+            args.push("-an");
+          }
+
           args.push(
-            "-vf", "reverse",
-            "-af", "areverse",
             "-c:v", "libx264",
-            "-c:a", "aac",
             "-preset", "veryfast",
             "-pix_fmt", "yuv420p",
             outputName
           );
-          
-          console.log("[reverseVideo] Executing FFmpeg reverse with audio (input seek):", args.join(" "));
+
+          console.log(`[reverseVideo] Executing FFmpeg: ${args.join(" ")}`);
           const exitCode = await ffmpeg.exec(args);
+          
           if (exitCode === 0) {
+            console.log(`[reverseVideo] Successfully reversed video using config: ${config.name}`);
             success = true;
+            break;
           } else {
-            console.warn(`[reverseVideo] FFmpeg failed with exit code ${exitCode}`);
+            console.warn(`[reverseVideo] FFmpeg exit code ${exitCode} for config: ${config.name}`);
+            try {
+              await ffmpeg.deleteFile(outputName);
+            } catch {}
           }
         } catch (e) {
-          console.warn("[reverseVideo] Reversing with audio failed, falling back to video-only reverse:", e);
+          console.warn(`[reverseVideo] Failed with error for config "${config.name}":`, e);
+          lastError = e;
           try {
             await ffmpeg.deleteFile(outputName);
           } catch {}
@@ -80,25 +119,7 @@ export async function reverseVideo({
       }
 
       if (!success) {
-        const args = [];
-        if (trimStart > 0) args.push("-ss", String(trimStart));
-        if (duration !== undefined && duration > 0) args.push("-t", String(duration));
-        args.push("-i", inputName);
-
-        args.push(
-          "-vf", "reverse",
-          "-an",
-          "-c:v", "libx264",
-          "-preset", "veryfast",
-          "-pix_fmt", "yuv420p",
-          outputName
-        );
-
-        console.log("[reverseVideo] Executing FFmpeg reverse (video-only, input seek):", args.join(" "));
-        const exitCode = await ffmpeg.exec(args);
-        if (exitCode !== 0) {
-          throw new Error(`FFmpeg reverse failed with exit code ${exitCode}`);
-        }
+        throw lastError || new Error("모든 역재생 변환 시도가 실패했습니다. 비디오 파일이 너무 크거나 포맷이 호환되지 않습니다.");
       }
 
       const data = await ffmpeg.readFile(outputName);

@@ -681,7 +681,7 @@ export default function Sidebar({
         ${isMobileOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"}
       `}
     >
-      <div className="flex h-20 items-center border-b border-zinc-200 dark:border-zinc-800/80 px-3 dark:bg-[#02030a]">
+      <div className="flex h-20 items-center border-b border-zinc-200 dark:border-zinc-800/80 px-3 bg-[#02030a]">
         <Link href="/" className="flex min-w-0 items-center justify-center w-full">
           {isCollapsed ? (
             <div className="flex h-[46px] w-[46px] shrink-0 items-center justify-center overflow-hidden rounded-xl shadow-lg shadow-blue-950/5 dark:shadow-blue-950/30">

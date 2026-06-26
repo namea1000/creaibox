@@ -27,12 +27,11 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 
-import { useVideoEditor, type CanvasRatio, type VideoEditorClip } from "./VideoEditorContext";
+import { useVideoEditor, type CanvasRatio, type VideoEditorClip, type VideoEditorMediaItem } from "./VideoEditorContext";
 import type { VideoEditorTab, TimelineTrack } from "./types";
 import { DEFAULT_TIMELINE_TRACKS } from "./constants";
 import VideoEditorMediaLibrary from "./VideoEditorMediaLibrary";
 import VideoEditorStockPanel from "./VideoEditorStockPanel";
-import VideoEditorStoragePanel from "./VideoEditorStoragePanel";
 import VideoEditorVisualizerPanel from "./VideoEditorVisualizerPanel";
 import VideoEditorAddTextPanel from "./VideoEditorAddTextPanel";
 
@@ -50,11 +49,10 @@ const SUB_CATEGORIES = {
   project: [], // Managed by ProjectFolderTree in Column 1
   media: [
     { id: "uploads", label: "내 미디어 (Uploads)", icon: Upload },
-    { id: "ai-images", label: "AI 이미지 생성", icon: Sparkles },
-    { id: "ai-videos", label: "AI 비디오 생성", icon: Film },
-    { id: "music", label: "생성 음악 (Music)", icon: Music },
-    { id: "stock", label: "스톡 소스 (Stock)", icon: Library },
-    { id: "storage", label: "저장소 (Storage)", icon: Database },
+    { id: "free-assets", label: "무료 공유 에셋", icon: Library },
+    { id: "creaibox-content", label: "크리에이박스 콘텐츠", icon: FolderOpen },
+    { id: "image-content", label: "이미지 콘텐츠", icon: Sparkles },
+    { id: "music", label: "생성 음악 & 오디오", icon: Music },
   ],
   visualizer: [
     { id: "spectrum", label: "오디오 스펙트럼", icon: Waves },
@@ -149,36 +147,54 @@ export default function VideoEditorUnifiedLibrary({
   mediaPanelWidth: _mediaPanelWidth,
   onProjectPanelResize,
 }: VideoEditorUnifiedLibraryProps) {
-  const { activeTab, setActiveTab, mediaItems, clips, tracks, selectedClipId, projectTitle, setProjectTitle, setTracks, setClips } =
-    useVideoEditor();
+  const {
+    activeTab,
+    setActiveTab,
+    mediaItems,
+    clips,
+    tracks,
+    selectedClipId,
+    projectTitle,
+    setProjectTitle,
+    setTracks,
+    setClips,
+    removeMediaItem,
+    addClipFromMedia,
+    selectedMediaId,
+    selectMedia,
+    setIsClearCacheOpen,
+  } = useVideoEditor();
 
-  const [libraries, setLibraries] = useState<string[]>(() =>
-    readStoredValue("creaibox-video-editor-libraries", initialLibraries)
-  );
-  const [events, setEvents] = useState<EventItem[]>(() =>
-    readStoredValue("creaibox-video-editor-events", initialEvents)
-  );
-  const [projects, setProjects] = useState<ProjectItem[]>(() =>
-    readStoredValue("creaibox-video-editor-projects", initialProjects)
-  );
+  const [libraries, setLibraries] = useState<string[]>(initialLibraries);
+  const [events, setEvents] = useState<EventItem[]>(initialEvents);
+  const [projects, setProjects] = useState<ProjectItem[]>(initialProjects);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Save libraries to localStorage when they change
+  // Load from localStorage after mount to prevent hydration mismatch
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    setLibraries(readStoredValue("creaibox-video-editor-libraries", initialLibraries));
+    setEvents(readStoredValue("creaibox-video-editor-events", initialEvents));
+    setProjects(readStoredValue("creaibox-video-editor-projects", initialProjects));
+    setIsLoaded(true);
+  }, []);
+
+  // Save libraries to localStorage when they change, only after loading is complete
+  useEffect(() => {
+    if (!isLoaded) return;
     localStorage.setItem("creaibox-video-editor-libraries", JSON.stringify(libraries));
-  }, [libraries]);
+  }, [libraries, isLoaded]);
 
-  // Save events to localStorage when they change
+  // Save events to localStorage when they change, only after loading is complete
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (!isLoaded) return;
     localStorage.setItem("creaibox-video-editor-events", JSON.stringify(events));
-  }, [events]);
+  }, [events, isLoaded]);
 
-  // Save projects to localStorage when they change
+  // Save projects to localStorage when they change, only after loading is complete
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (!isLoaded) return;
     localStorage.setItem("creaibox-video-editor-projects", JSON.stringify(projects));
-  }, [projects]);
+  }, [projects, isLoaded]);
 
   // Sync active project's timeline state (clips and tracks) from context to projects list
   useEffect(() => {
@@ -212,6 +228,7 @@ export default function VideoEditorUnifiedLibrary({
   const [activeCategory, setActiveCategory] = useState<string>(() =>
     getDefaultCategory(activeTab)
   );
+  const [sidebarFilter, setSidebarFilter] = useState<"all" | "image" | "audio" | "video">("all");
 
   const [openLibraries, setOpenLibraries] = useState<Record<string, boolean>>({
     "YouTube Shorts": true,
@@ -505,7 +522,9 @@ export default function VideoEditorUnifiedLibrary({
       <div className="flex flex-1 min-h-0">
         {/* Column 1: Folder Tree / Categories */}
         <div
-          className="shrink-0 flex flex-col min-h-0 border-r border-white/5 bg-[#18181c] p-2 overflow-y-auto"
+          className={`shrink-0 flex flex-col min-h-0 border-r border-white/5 bg-[#18181c] p-2 ${
+            currentTab === "project" ? "overflow-y-auto" : ""
+          }`}
           style={{ width: projectPanelWidth }}
         >
           {currentTab === "project" ? (
@@ -534,31 +553,97 @@ export default function VideoEditorUnifiedLibrary({
               onDeleteEvent={handleDeleteEvent}
             />
           ) : (
-            <div className="space-y-1">
-              <span className="px-2 pb-2 block text-[9px] font-bold tracking-wider text-zinc-600 uppercase">
-                구분 항목
-              </span>
-              {currentCategories.map((cat) => {
-                const Icon = cat.icon;
-                const isActive = activeCategory === cat.id;
+            <>
+              <div className="shrink-0 space-y-1">
+                <span className="px-2 pb-2 block text-[9px] font-bold tracking-wider text-zinc-600 uppercase">
+                  구분 항목
+                </span>
+                {currentCategories.map((cat) => {
+                  const Icon = cat.icon;
+                  const isActive = activeCategory === cat.id;
 
-                return (
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setActiveCategory(cat.id)}
+                      className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-xs font-bold transition outline-none ${
+                        isActive
+                          ? "bg-cyan-400/10 text-cyan-200 border-l-2 border-cyan-400 font-black"
+                          : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                      }`}
+                    >
+                      <Icon size={14} className={isActive ? "text-cyan-400" : "text-zinc-500"} />
+                      <span className="truncate">{cat.label}</span>
+                    </button>
+                  );
+                })}
+
+                {currentTab === "media" && (
                   <button
-                    key={cat.id}
                     type="button"
-                    onClick={() => setActiveCategory(cat.id)}
-                    className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-xs font-bold transition outline-none ${
-                      isActive
-                        ? "bg-cyan-400/10 text-cyan-200 border-l-2 border-cyan-400 font-black"
-                        : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
-                    }`}
+                    onClick={() => setIsClearCacheOpen(true)}
+                    className="flex w-full items-center gap-2.5 rounded-md border border-red-500/20 bg-red-950/10 px-3 py-2 text-left text-xs font-bold text-red-300 hover:border-red-500/45 hover:bg-red-950/20 hover:text-red-200 transition outline-none mt-2 shadow-[0_0_8px_rgba(239,68,68,0.05)]"
+                    title="브라우저 캐시 용량 비우기"
                   >
-                    <Icon size={14} className={isActive ? "text-cyan-400" : "text-zinc-500"} />
-                    <span className="truncate">{cat.label}</span>
+                    <Database size={14} className="text-red-400 shrink-0" />
+                    <span className="truncate font-black">IndexedDB 용량 정리</span>
                   </button>
-                );
-              })}
-            </div>
+                )}
+              </div>
+
+              {currentTab === "media" && (
+                <>
+                  <div className="my-3 border-t border-white/5 mx-1 shrink-0" />
+                  <div className="flex-1 min-h-0 flex flex-col space-y-2">
+                    <span className="px-2 pb-1 block text-[9px] font-bold tracking-wider text-zinc-600 uppercase shrink-0">
+                      가져온 미디어 ({mediaItems.length})
+                    </span>
+
+                    {/* Sidebar Filter Tabs */}
+                    <div className="grid grid-cols-4 gap-1 px-1 mt-1 mb-2 shrink-0">
+                      {(["all", "image", "audio", "video"] as const).map((type) => {
+                        const labels = {
+                          all: "전체",
+                          image: "이미지",
+                          audio: "오디오",
+                          video: "비디오",
+                        };
+                        const active = sidebarFilter === type;
+                        return (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => setSidebarFilter(type)}
+                            className={`rounded py-1 text-center text-[9px] font-black transition-all outline-none ${
+                              active
+                                ? "bg-cyan-400/10 text-cyan-200 border border-cyan-400/30"
+                                : "bg-white/[0.02] text-zinc-500 hover:text-zinc-300 border border-transparent"
+                            }`}
+                          >
+                            {labels[type]}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-1.5 scrollbar-thin">
+                      {mediaItems.filter((item) => sidebarFilter === "all" || item.type === sidebarFilter).length === 0 ? (
+                        <div className="py-6 text-center text-[10px] text-zinc-600 italic">
+                          {sidebarFilter === "all" ? "가져온 미디어가 없습니다." : "해당 타입의 미디어가 없습니다."}
+                        </div>
+                      ) : (
+                        mediaItems
+                          .filter((item) => sidebarFilter === "all" || item.type === sidebarFilter)
+                          .map((item) => (
+                            <SidebarMediaItemRow key={item.id} item={item} />
+                          ))
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </>
           )}
         </div>
 
@@ -575,7 +660,7 @@ export default function VideoEditorUnifiedLibrary({
 
         {/* Column 2: Content display */}
         <div className="flex-1 min-h-0 flex flex-col p-4 overflow-y-auto bg-transparent">
-          {currentTab === "project" && (
+          <div className={currentTab === "project" ? "block flex-1 min-h-0 flex flex-col" : "hidden"}>
             <ProjectDetailContent
               selectedEvent={events.find((e) => e.id === selectedEventId) || null}
               projects={projects}
@@ -590,24 +675,25 @@ export default function VideoEditorUnifiedLibrary({
               onAddProject={handleAddProject}
               onSelectProject={handleSelectProject}
             />
-          )}
+          </div>
 
-          {currentTab === "media" && (
-            <>
-              {activeCategory === "uploads" && <VideoEditorMediaLibrary forcedTab="uploads" />}
-              {activeCategory === "ai-images" && <VideoEditorMediaLibrary forcedTab="ai-images" />}
-              {activeCategory === "ai-videos" && <VideoEditorMediaLibrary forcedTab="ai-videos" />}
-              {activeCategory === "music" && <VideoEditorMediaLibrary forcedTab="music" />}
-              {activeCategory === "stock" && <VideoEditorStockPanel />}
-              {activeCategory === "storage" && <VideoEditorStoragePanel />}
-            </>
-          )}
+          <div className={currentTab === "media" ? "block flex-1 min-h-0 flex flex-col" : "hidden"}>
+            <div className={["uploads", "free-assets", "creaibox-content", "image-content", "music"].includes(activeCategory) ? "block flex-1 min-h-0 flex flex-col" : "hidden"}>
+              <VideoEditorMediaLibrary forcedTab={activeCategory as any} />
+            </div>
+          </div>
 
-          {currentTab === "visualizer" && <VideoEditorVisualizerPanel />}
+          <div className={currentTab === "visualizer" ? "block flex-1 min-h-0 flex flex-col" : "hidden"}>
+            <VideoEditorVisualizerPanel />
+          </div>
 
-          {currentTab === "text" && <VideoEditorAddTextPanel />}
+          <div className={currentTab === "text" ? "block flex-1 min-h-0 flex flex-col" : "hidden"}>
+            <VideoEditorAddTextPanel />
+          </div>
 
-          {currentTab === "settings" && <SettingsContent />}
+          <div className={currentTab === "settings" ? "block flex-1 min-h-0 flex flex-col" : "hidden"}>
+            <SettingsContent />
+          </div>
         </div>
       </div>
 
@@ -1062,7 +1148,7 @@ function ProjectDetailContent({
             가져온 미디어 파일이 없습니다. 상단 &apos;미디어&apos; 탭에서 파일을 추가해 주세요.
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 items-start">
             {mediaItems.map((item) => {
               const isSelected = clickedPreviewMediaItem?.id === item.id;
               const isHovered = hoveredMediaId === item.id;
@@ -1105,7 +1191,9 @@ function ProjectDetailContent({
                     const scrubTime = pct * duration;
                     setClickedPreviewMedia(item, scrubTime);
                   }}
-                  className={`group/item relative flex flex-col aspect-video rounded-md border overflow-hidden cursor-grab active:cursor-grabbing select-none transition-all duration-150 ${
+                  className={`group/item relative flex flex-col ${
+                    item.width && item.height && item.height > item.width ? "aspect-[9/16]" : "aspect-video"
+                  } rounded-md border overflow-hidden cursor-grab active:cursor-grabbing select-none transition-all duration-150 ${
                     isSelected
                       ? "border-yellow-500 ring-2 ring-yellow-500/50 shadow-[0_0_12px_rgba(234,179,8,0.3)] bg-yellow-950/20"
                       : "border-white/10 hover:border-white/30 bg-black/30"
@@ -1360,4 +1448,135 @@ function safeFileName(value: string) {
     .replace(/[\\/:*?"<>|]/g, "")
     .replace(/\s+/g, "-")
     .slice(0, 80);
+}
+
+function SidebarMediaItemRow({ item }: { item: VideoEditorMediaItem }) {
+  const { selectedMediaId, selectMedia, addClipFromMedia, removeMediaItem } = useVideoEditor();
+  const [isVertical, setIsVertical] = useState(false);
+
+  const isActive = selectedMediaId === item.id;
+  const isOffline = !item.url;
+
+  useEffect(() => {
+    if (item.width && item.height) {
+      setIsVertical(item.height > item.width);
+    }
+  }, [item.width, item.height]);
+
+  const thumbSizeClass = isVertical ? "w-7 h-10 mx-1.5" : "w-10 h-7";
+
+  return (
+    <div
+      draggable={!isOffline}
+      onDragStart={(event) => {
+        if (isOffline) {
+          event.preventDefault();
+          return;
+        }
+        event.dataTransfer.setData("media-id", item.id);
+        event.dataTransfer.effectAllowed = "copy";
+      }}
+      onClick={() => selectMedia(item.id)}
+      className={`group flex items-center gap-2 rounded-md border p-1.5 transition cursor-pointer select-none ${
+        isActive
+          ? "border-cyan-500 bg-cyan-500/10"
+          : isOffline
+            ? "border-red-500/30 bg-red-950/10 hover:border-red-500/50"
+            : "border-white/5 bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.04]"
+      }`}
+    >
+      {/* Thumbnail */}
+      {(() => {
+        if (isOffline) {
+          return (
+            <div className="w-10 h-7 rounded bg-red-950/20 flex items-center justify-center text-red-400 shrink-0 border border-red-500/20">
+              <Upload size={12} />
+            </div>
+          );
+        }
+
+        if (item.type === "image") {
+          return (
+            <img
+              src={item.url}
+              alt={item.name}
+              onLoad={(e) => {
+                const img = e.currentTarget;
+                if (img.naturalHeight > img.naturalWidth) {
+                  setIsVertical(true);
+                }
+              }}
+              className={`${thumbSizeClass} rounded object-cover shrink-0 bg-black/40 border border-white/5`}
+            />
+          );
+        }
+
+        if (item.type === "video") {
+          if (item.thumbnailUrl) {
+            return (
+              <img
+                src={item.thumbnailUrl}
+                alt={item.name}
+                onLoad={(e) => {
+                  const img = e.currentTarget;
+                  if (img.naturalHeight > img.naturalWidth) {
+                    setIsVertical(true);
+                  }
+                }}
+                className={`${thumbSizeClass} rounded object-cover shrink-0 bg-black/40 border border-white/5`}
+              />
+            );
+          }
+          return (
+            <div className={`${thumbSizeClass} rounded bg-cyan-950/20 flex items-center justify-center text-cyan-400 shrink-0 border border-cyan-500/10`}>
+              <Film size={12} />
+            </div>
+          );
+        }
+
+        // Audio
+        return (
+          <div className="w-10 h-7 rounded bg-emerald-950/20 flex items-center justify-center text-emerald-400 shrink-0 border border-emerald-500/10">
+            <Music size={12} />
+          </div>
+        );
+      })()}
+
+      {/* Info */}
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[11px] font-bold text-zinc-200 group-hover:text-white" title={item.name}>
+          {item.name}
+        </div>
+        <div className="text-[9px] text-zinc-500 uppercase mt-0.5">
+          {item.type}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-0.5 shrink-0">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            addClipFromMedia(item);
+          }}
+          className="p-1 rounded text-zinc-400 hover:text-cyan-400 hover:bg-white/5 transition"
+          title="타임라인에 추가"
+        >
+          <Plus size={13} />
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            removeMediaItem(item.id);
+          }}
+          className="p-1 rounded text-zinc-400 hover:text-red-400 hover:bg-white/5 transition"
+          title="삭제"
+        >
+          <Trash2 size={12} />
+        </button>
+      </div>
+    </div>
+  );
 }

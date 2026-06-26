@@ -269,7 +269,7 @@ export default function ThemeLibraryPage() {
             <div
               key={temp.templateId}
               onClick={() => setSelectedThemeId(temp.templateId)}
-              className={`group bg-white dark:bg-[#0b0f19] border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between cursor-pointer relative ${
+              className={`group bg-white dark:bg-[#0b0f19] border rounded-none overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between cursor-pointer relative ${
                 isCurrentlyActive
                   ? "border-emerald-500 ring-2 ring-emerald-500/20"
                   : "border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-750"

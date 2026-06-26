@@ -60,7 +60,8 @@ export default function VideoEditorPlaybackController() {
 
   useEffect(() => {
     const timeDiff = Math.abs(currentTime - playbackTimeRef.current);
-    const isManualSeek = timeDiff > 0.3;
+    // 일시정지 상태에서는 방향키 0.1초 등의 미세 이동을 포함한 모든 시간 변경이 수동 탐색(Seek)이므로 강제 싱크 신호를 보냄
+    const isManualSeek = !isPlaying || timeDiff > 0.3;
 
     if (isPlaying && !isManualSeek) {
       lastUiPublishRef.current = currentTime;
@@ -70,7 +71,6 @@ export default function VideoEditorPlaybackController() {
     playbackTimeRef.current = currentTime;
     lastUiPublishRef.current = currentTime;
 
-    // 자동으로 흐르는 재생 틱이 아니라, 사용자가 실제로 클릭하거나 조작하여 0.3초 이상 급격한 타임점프가 일어났을 때만 강제 싱크 신호를 쏨
     if (isManualSeek) {
       window.dispatchEvent(
         new CustomEvent("creaibox-video-editor-playback-frame", {
@@ -106,6 +106,16 @@ export default function VideoEditorPlaybackController() {
         playbackTimeRef.current = totalDuration;
         setCurrentTime(totalDuration);
         setIsPlaying(false);
+        // 영상 끝에 도달했을 때 비디오 엘리먼트들을 정확한 최종 위치로 강제 정렬(Seek)시키기 위해 이벤트 디스패치
+        window.dispatchEvent(
+          new CustomEvent("creaibox-video-editor-playback-frame", {
+            detail: {
+              currentTime: totalDuration,
+              totalDuration,
+              isSeek: true,
+            },
+          })
+        );
         return;
       }
 

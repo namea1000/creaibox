@@ -457,7 +457,7 @@ export default function SiteCreationWizard({ onSuccess, onCancel, initialTemplat
                         setProposal({ ...proposal, templateId: temp.templateId });
                         setShowTemplateModal(false);
                       }}
-                      className={`group border rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-lg ${
+                      className={`group border rounded-none overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-lg ${
                         proposal.templateId === temp.templateId
                           ? "border-emerald-500 ring-2 ring-emerald-500/30 bg-emerald-550/5"
                           : "border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-700 bg-white dark:bg-[#0b0f19]"

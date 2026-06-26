@@ -417,7 +417,7 @@ export default function CreMusicPlayerPage() {
             {isLoading ? (
               <div className="flex h-48 items-center justify-center text-zinc-500 text-sm">
                 <Loader2 size={24} className="animate-spin mr-2" />
-                구글 드라이브 음원을 로드하고 있습니다...
+                라이브러리 음원을 로드하고 있습니다...
               </div>
             ) : (
               <div className="overflow-x-auto">

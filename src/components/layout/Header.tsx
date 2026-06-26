@@ -140,8 +140,8 @@ export default function Header() {
   };
 
   const menuItems = [
-    { label: "기능", href: "#features" },
-    { label: "사용방법", href: "#how-it-works" },
+    { label: "기능", href: "/#features" },
+    { label: "사용방법", href: "/#how-it-works" },
     { label: "가격", href: "/pricing" },
     { label: "블로그", href: "/blog" },
     { label: "가이드", href: "/about" },

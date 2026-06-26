@@ -1976,5 +1976,287 @@ export const RESTAURANT_TEMPLATES: Record<string, TemplateConfig> = {
         }
       }
     ]
+  },
+
+  artisan_sourdough_bakery: {
+    templateId: "artisan_sourdough_bakery",
+    name: "라방브 천연효모 사워도우 베이커리",
+    category: "Restaurant",
+    description: "프랑스 전통 돌오븐에서 구워낸 시골풍 천연 발효 사워도우와 바게트, 그리고 정성껏 키운 천연 액종 효모의 따뜻한 브라운 가치를 전하는 베이커리 테마입니다.",
+    image: "/templates/artisan_sourdough_bakery.png",
+    theme: {
+      fontFamily: "Outfit, Inter, sans-serif",
+      colors: {
+        primary: "#7c2d12",     // 따스한 황토 화덕 오렌지 브라운
+        secondary: "#ffedd5",   // 고소한 밀가루 피치 베이지
+        accent: "#ea580c",      // 바삭하게 구워진 크러스트 오렌지
+        background: "#faf8f5",  // 오가닉 밀가루 크림 오프화이트
+        surface: "#ffffff",     // 위생적인 나무 빵 도마 화이트
+        text: "#2c1810"         // 깊은 카카오 오븐 크러스트 브라운
+      },
+      borderRadius: "rounded-md",
+      glassmorphism: true
+    },
+    defaultSections: [
+      {
+        section_type: "hero",
+        title: "돌오븐 속에서 타닥타닥 구워지는 소리, 매일 아침 살아 숨 쉬는 천연 발효종의 향긋함",
+        subtitle: "상업용 이스트와 화학 보존제를 전혀 쓰지 않습니다. 프랑스산 유기농 통밀 och 호밀, 그리고 72시간 장기 저온 발효 공법을 거쳐 400도 돌오븐의 복사열로 겉은 바삭하고 속은 촉촉하게 구워낸 유럽 정통 아날로그 사워도우 브레드 랩입니다.",
+        content_data: {
+          backgroundImage: "https://images.unsplash.com/photo-1549931319-a545dcf3baa7?auto=format&fit=crop&w=1200&q=80",
+          ctaText: "갓 구워진 빵 나오는 시간",
+          ctaLink: "#services",
+          features: [
+            { text: "12년 동안 매일 온도와 습도를 체크하며 키워온 자생 천연 효모 르뱅(Levain) 스타터 사용" },
+            { text: "천연 무가당, 무버터, 무우유 공정으로 당뇨와 소화 불량 걱정 없는 무농약 건강 호밀빵" }
+          ]
+        }
+      },
+      {
+        section_type: "services",
+        title: "오븐 프레시 베이커리",
+        subtitle: "화학 첨가물 없이 오직 밀, 물, 소금, 그리고 시간만이 빚어낸 명품 식사 빵 라인업입니다.",
+        content_data: {
+          items: [
+            {
+              title: "시골풍 정통 사워도우 (Campagne)",
+              description: "호밀의 고소함과 천연 효모 특유의 화사하고 시큼한 풍미가 어우러져 속을 편안하게 해주는 시그니처 시골 빵입니다.",
+              icon: "Award"
+            },
+            {
+              title: "돌오븐 바게트 & 사브레",
+              description: "돌 화덕 바닥에 직접 닿아 구워져 바삭한 소리가 맑게 귀를 울리고, 속은 스폰지처럼 촉촉한 오리지널 프랑스식 바게트입니다.",
+              icon: "Heart"
+            },
+            {
+              title: "무농약 무화과 피칸 호밀빵",
+              description: "설탕 없이 반건조 무화과 열매의 자연스러운 단맛과 고소한 피칸 견과류를 듬뿍 넣어 씹을수록 풍미가 번지는 건강 빵입니다.",
+              icon: "Compass"
+            }
+          ]
+        }
+      },
+      {
+        section_type: "about",
+        title: "사워도우는 빵을 부풀리는 기술이 아닌, 유익균과 밀가루가 쓰는 기나긴 인내의 화학적 대화입니다",
+        subtitle: "매일 아침 6시, 오븐 문이 열릴 때 퍼지는 고소한 향은 인공 향료가 흉내 낼 수 없는 대자연의 선물입니다.",
+        content_data: {
+          description: "안녕하십니까. 라방브 사워도우 베이커리의 총괄 마스터 제빵사입니다. 우리는 공장식 대량 생산을 위해 이스트를 들이붓고 설탕과 버터로 눈속임하여 위장에 부담을 주는 양산형 밀가루 빵을 단호히 거부합니다. 우리는 온도 24도, 습도 65%의 발효실에서 천연 르뱅 균이 스스로 호흡하고 젖산을 뿜어낼 때까지 기다립니다. 속이 거북하지 않고 씹을수록 깊은 단맛이 도는 정직한 빵을 당신의 아침 식탁에 올리겠습니다.",
+          stats: [
+            { label: "유지해온 천연 효모 나이", value: "12년째 가동" },
+            { label: "당일 한정 구워내는 사워도우", value: "80개 한정" }
+          ]
+        }
+      },
+      {
+        section_type: "portfolio",
+        title: "밀가루 먼지와 아날로그 돌 화덕",
+        subtitle: "장인의 거친 손끝과 오븐의 붉은 열기가 따뜻하게 어우러진 주방 전경입니다.",
+        content_data: {
+          items: [
+            { title: "발효 가스가 꽉 찬 르뱅 반죽 성형", description: "나무 도마 위에서 제빵사가 캔버스 천에 반죽을 올리고 예리한 칼로 칼집 쿠프를 넣는 장인의 찰나", image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80" },
+            { title: "돌오븐 속에서 부풀어 오르는 바게트", description: "붉은 열선 조명이 번지는 화덕 내부에서 스팀 세례를 받으며 빵 크러스트가 황금빛 오렌지 색상으로 찢어지는 컷", image: "https://images.unsplash.com/photo-1549931319-a545dcf3baa7?auto=format&fit=crop&w=600&q=80" },
+            { title: "원목 바스켓에 담긴 컨트리 브레드", description: "짚 바구니 위로 김이 모락모락 피어오르는 커다란 원형 사워도우 빵들이 정갈하게 디스플레이된 스냅", image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80" }
+          ]
+        }
+      },
+      {
+        section_type: "contact",
+        title: "빵 단체 주문 및 베이킹 클래스 예약",
+        subtitle: "유치원/회사 간식용 사워도우 대량 주문, 비건 호밀빵 정기 배송 정기 구독, 혹은 천연 효모 르뱅 키우기 클래스 예약을 남겨주세요.",
+        content_data: {
+          fields: ["name", "email", "phone", "message"],
+          buttonText: "건강 빵 문의 신청"
+        }
+      }
+    ]
+  },
+
+  teppanyaki_omakase_dining: {
+    templateId: "teppanyaki_omakase_dining",
+    name: "데판야끼 야생 철판 오마카세",
+    category: "Restaurant",
+    description: "묵직한 미드나잇 스틸 블루와 철판 불꽃 로즈 핑크 색상 배합으로 400도 고온 철판 화력 쇼와 최고급 해산물 다이닝의 아우라를 전하는 테마입니다.",
+    image: "/templates/teppanyaki_omakase_dining.png",
+    theme: {
+      fontFamily: "Outfit, Noto Serif KR, sans-serif",
+      colors: {
+        primary: "#1e1b4b",     // 미드나잇 철판 딥블루
+        secondary: "#fee2e2",   // 부드러운 사쿠라 로즈 핑크
+        accent: "#f43f5e",      // 강렬한 철판 불꽃 크림슨 로즈
+        background: "#0f0f15",  // 묵직한 카본 블랙 슬레이트
+        surface: "#1a1a24",     // 철판 바 테이블 그레이
+        text: "#f3f4f6"         // 시인성 극대화 실버 화이트
+      },
+      borderRadius: "rounded-md",
+      glassmorphism: true
+    },
+    defaultSections: [
+      {
+        section_type: "hero",
+        title: "두께 30mm 황동 철판 위에서 피어오르는 400도 불꽃 쇼와 육즙의 시각 예술",
+        subtitle: "평범한 그릴 구이에 싫증나셨나요? 데판야끼 오마카세 방식으로, 눈앞에서 화려하게 불타오르는 랍스터 버터구이와 1++ 최고 등급 한우 안심의 육즙을 가두는 고온 시어링 마술을 오감으로 즐기는 프리미엄 사교 다이닝 랩입니다.",
+        content_data: {
+          backgroundImage: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80",
+          ctaText: "오마카세 좌석 예약 및 코스",
+          ctaLink: "#services",
+          features: [
+            { text: "열전도율 극대화를 위해 특수 제작된 일본제 3cm 두께 초고가 특수 철판 플레이트 가동" },
+            { text: "프랑스산 코냑 플람베(Flambé) 불꽃 쇼로 해산물 비린내를 날리고 깊은 향을 가두는 테이블 쇼" }
+          ]
+        }
+      },
+      {
+        section_type: "services",
+        title: "철판 오마카세 라인업",
+        subtitle: "최고의 식재료를 고온 철판 위에서 찰나의 온도로 요리해 접시에 올려드리는 시그니처 코스입니다.",
+        content_data: {
+          items: [
+            {
+              title: "라이브 캐나다산 활 바닷가재",
+              description: "수조에서 갓 꺼낸 랍스터를 철판 위에서 꼬리부터 머리까지 버터를 끼얹으며 화려하게 찌듯이 구워내는 랍스터 테일 요리입니다.",
+              icon: "Award"
+            },
+            {
+              title: "최상급 1++ 한우 안심 시어링",
+              description: "표면은 고온 철판으로 크리스피하게 굽고 속은 선홍빛 육즙을 가득 채워 마늘 칩과 생와사비를 얹어 혀끝에 녹여내는 극상의 비프입니다.",
+              icon: "Flame"
+            },
+            {
+              title: "스페셜 트러플 갈릭 라이스",
+              description: "철판 위에서 주걱 두 개로 밥알 하나하나를 코팅하듯 볶아내고 이탈리아산 블랙 트러플 오일 향을 입혀 빚어낸 볶음밥입니다.",
+              icon: "Compass"
+            }
+          ]
+        }
+      },
+      {
+        section_type: "about",
+        title: "데판야끼는 식재료의 단순한 조리가 아닌, 철판의 두께와 셰프의 주겁 소리가 만들어내는 다이내믹한 미식 오페라입니다",
+        subtitle: "카운터 바에 앉는 순간, 셰프와의 1:1 교감과 화려한 나이프 연출 쇼가 시작됩니다.",
+        content_data: {
+          description: "안녕하십니까. 데판야끼 야생 철판 오마카세의 오너 총괄 셰프입니다. 우리는 고기를 주방 구석에서 대충 구워 접시에 서빙하는 영혼 없는 스테이크 문화를 거부합니다. 우리는 손님의 시야 정중앙에 위치한 특수 황동 철판 위에서, 식재료가 익어가는 지글거리는 청각적 전율과 화려한 연기, 그리고 코냑 향기를 선사하며 입안 가득 감동을 선사합니다.",
+          stats: [
+            { label: "카운터 좌석 수량", value: "12석 한정 가동" },
+            { label: "보유 최고급 싱글 몰트 위스키", value: "24종 완비" }
+          ]
+        }
+      },
+      {
+        section_type: "portfolio",
+        title: "붉은 플람베 불꽃 쇼 & 철판 카운터바",
+        subtitle: "고급스러운 인디고 조명 아래 뜨거운 철판의 불길이 대담하게 춤추는 미식 전경입니다.",
+        content_data: {
+          items: [
+            { title: "코냑을 뿌려 타오르는 거대한 플람베", description: "셰프가 철판 위에 술을 붓는 순간 1미터 높이의 붉은 장미 빛 불꽃이 아우라 가득하게 피어오르는 전율의 찰나", image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80" },
+            { title: "철판 위 지글거리는 활 전복과 새우", description: "로즈 핑크 빛 새우 껍질이 익어가고 전복 옆에 아스파라거스 야채들이 정교하게 정렬된 시각 요리 컷", image: "https://images.unsplash.com/photo-1519699047748-de8e457a634e?auto=format&fit=crop&w=600&q=80" },
+            { title: "한우 안심 큐브 스테이 플레이팅", description: "철판 나이프로 얇게 썰어낸 고기와 황금빛 구운 마늘 편 슬라이스가 사기 그릇 위에 정갈하게 안착된 스냅", image: "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80" }
+          ]
+        }
+      },
+      {
+        section_type: "contact",
+        title: "오마카세 예약 및 단체 대관 신청",
+        subtitle: "방문 예정 일시, 예약 룸 혹은 카운터 바 좌석 선택, 알레르기가 있는 식재료 정보, 기념일 레터링 요청을 보내주세요.",
+        content_data: {
+          fields: ["name", "email", "phone", "message"],
+          buttonText: "실시간 오마카세 예약"
+        }
+      }
+    ]
+  },
+
+  cocktail_whiskey_speakeasy: {
+    templateId: "cocktail_whiskey_speakeasy",
+    name: "언더그라운드 스피크이지 바",
+    category: "Restaurant",
+    description: "벨벳 같은 미드나잇 슬레이트 블랙과 빈티지 오크통 옐로우 골드, 그리고 황동 브라스 조명 어둠 배합이 비밀스럽고 고풍스러운 싱글몰트 위스키 바를 연출하는 테마입니다.",
+    image: "/templates/cocktail_whiskey_speakeasy.png",
+    theme: {
+      fontFamily: "Outfit, Noto Serif KR, sans-serif",
+      colors: {
+        primary: "#0f172a",     // 벨벳 미드나잇 다크네이비
+        secondary: "#fef3c7",   // 숙성된 싱글몰트 앰버 골드
+        accent: "#d97706",      // 아날로그 오크통 샌드 브라운
+        background: "#070a13",  // 비밀 다크 쉐도우 블랙
+        surface: "#111827",     // 가죽 소파 슬레이트 차콜
+        text: "#e2e8f0"         // 투명 얼음빛 크리스탈 화이트
+      },
+      borderRadius: "rounded-lg",
+      glassmorphism: true
+    },
+    defaultSections: [
+      {
+        section_type: "hero",
+        title: "책장 뒤 숨겨진 문 너머, 시간의 소음이 완전히 멈추는 비밀 아날로그 기지",
+        subtitle: "시끄러운 네온사인 클럽이나 흔한 대량 판매 펍을 단호히 거부합니다. 간판도 없이, 책장이나 오래된 공중전화 부스를 밀어야만 열리는 스피크이지 입구를 지나, 1920년대 미국 금주법 시대의 아늑한 재즈 멜로디 속에 핸드컷 카빙 구형 얼음과 수제 클래식 칵테일을 즐기는 사색가들의 은신처입니다.",
+        content_data: {
+          backgroundImage: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=1200&q=80",
+          ctaText: "이달의 스페셜 수제 칵테일",
+          ctaLink: "#services",
+          features: [
+            { text: "스코틀랜드 아일라 섬 피트 향이 가득한 희귀 싱글몰트 위스키 독점 라인업 확보" },
+            { text: "손님이 고른 베이스 스피릿과 기분에 따라 바텐더가 즉석 배합하는 무메뉴 비스포크 칵테일" }
+          ]
+        }
+      },
+      {
+        section_type: "services",
+        title: "비스포크 드링크 리스트",
+        subtitle: "유리잔의 얼음 부딪히는 맑은 소리와 함께 깊은 영혼의 이완을 선사하는 한 잔의 위로입니다.",
+        content_data: {
+          items: [
+            {
+              title: "핸드컷 크리스탈 아이스 볼 위스키",
+              description: "거대한 직사각형 얼음 덩어리를 바텐더가 송곳으로 깎아 완벽한 구형으로 만들어, 싱글몰트 원액의 맛을 해치지 않고 천천히 녹여내는 명품 온더락입니다.",
+              icon: "Compass"
+            },
+            {
+              title: "스모키 시그니처 네그로니 (Negroni)",
+              description: "오크통 내부를 불로 태워 향을 극대화한 오크 칩 연기를 진(Gin)과 캄파리 칵테일 잔 속에 가두어 마시는 스모키 믹솔로지 세션입니다.",
+              icon: "Flame"
+            },
+            {
+              title: "무알콜 오가닉 허브 하이볼",
+              description: "술을 드시지 못하는 분들을 위해 당일 수확한 로즈마리와 바질을 레몬 라임 원액과 탄산수 탄산수 탄산수 탄산수 탄산수에 믹싱한 웰빙 칵테일입니다.",
+              icon: "Leaf"
+            }
+          ]
+        }
+      },
+      {
+        section_type: "about",
+        title: "한 잔의 칵테일은 단순한 에탄올 알코올의 혼합이 아닌, 바텐더의 정교한 셰이킹 리듬이 쓰는 침묵의 문장입니다",
+        subtitle: "모든 칵테일 가니쉬는 무농약 레몬 껍질 오렌지 제스트만을 엄격 오일 추출하여 사용합니다.",
+        content_data: {
+          description: "안녕하십니까. 언더그라운드 스피크이지 바의 수석 믹솔로지스트이자 헤드 바텐더입니다. 우리는 번쩍이는 클럽의 시끄러운 EDM 소리와 싸구려 리큐르 시럽을 잔뜩 섞어 머리를 아프게 하는 불량 칵테일 문화를 혐오합니다. 우리는 황동 지거로 0.1ml 단위 정밀 도주량을 계량하고, 얼음 표면의 물기를 깨끗하게 닦아 셰이킹 벨에 담습니다. 당신의 젖어드는 영혼을 위해 세계 최고 수준의 한 잔을 대접하겠습니다.",
+          stats: [
+            { label: "보유 희귀 싱글몰트 위스키", value: "85종" },
+            { label: "카운터 황동 바 좌석", value: "8석 한정" }
+          ]
+        }
+      },
+      {
+        section_type: "portfolio",
+        title: "황동 카운터바 & 크리스탈 얼음 카빙",
+        subtitle: "은은한 촛불 조명 아래 오렌지 껍질 향과 에센셜 오일이 안개처럼 번지는 바 공간입니다.",
+        content_data: {
+          items: [
+            { title: "바텐더의 실버 쉐이커 핸들링 쇼", description: "실버 코팅된 믹싱 틴 쉐이커 위로 차가운 서리가 얼어붙고 공중에서 바텐더가 리드미컬하게 흔드는 역동적 순간", image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=600&q=80" },
+            { title: "크리스탈 아이스볼 위스키 온더락", description: "유리잔 속에 투명하고 단단한 원형 구체 얼음이 담겨있고 갈색 앰버 골드 빛 위스키 원액이 채워진 스케치", image: "https://images.unsplash.com/photo-1519699047748-de8e457a634e?auto=format&fit=crop&w=600&q=80" },
+            { title: "오래된 가죽 책장 비밀 대문", description: "서재 책장 가운데 특정 고서적을 손으로 당기면 스르륵 소리를 내며 열리는 어둡고 고풍스러운 바 입구 스냅", image: "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80" }
+          ]
+        }
+      },
+      {
+        section_type: "contact",
+        title: "바 카운터 좌석 실시간 예약 신청",
+        subtitle: "방문 예정 시간, 동반 인원수, 선호하시는 술 베이스(위스키/진/럼/논알콜), 바텐더와 가벼운 스몰토크 희망 여부를 보내주세요.",
+        content_data: {
+          fields: ["name", "email", "phone", "message"],
+          buttonText: "비밀 바 좌석 예약"
+        }
+      }
+    ]
   }
 };

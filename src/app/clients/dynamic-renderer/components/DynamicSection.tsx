@@ -80,7 +80,7 @@ export default function DynamicSection({
               <div className="lg:col-span-5 relative w-full aspect-square flex items-center justify-center animate-fade-in">
                 {bgImage ? (
                   <img
-                    src={bgImage}
+                    src={(bgImage.includes("drive.google.com") || bgImage.includes("googleusercontent.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(bgImage)}` : bgImage}
                     alt={title}
                     className="w-full h-full object-cover shadow-2xl"
                     style={{ borderRadius: "var(--border-radius)" }}
@@ -202,7 +202,11 @@ export default function DynamicSection({
                 >
                   <div className="aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 relative flex items-center justify-center">
                     {item.image ? (
-                      <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                      <img
+                        src={(item.image.includes("drive.google.com") || item.image.includes("googleusercontent.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(item.image)}` : item.image}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <LucideIcons.Image className="h-10 w-10 text-slate-400" />
                     )}

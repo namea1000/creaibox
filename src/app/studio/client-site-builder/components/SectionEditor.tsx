@@ -230,7 +230,7 @@ export default function SectionEditor({ siteId }: SectionEditorProps) {
                           <span>업로드 중...</span>
                         </>
                       ) : (
-                        <span>구글 드라이브 업로드</span>
+                        <span>클라우드 업로드</span>
                       )}
                       <input
                         type="file"
@@ -240,7 +240,7 @@ export default function SectionEditor({ siteId }: SectionEditorProps) {
                         disabled={uploadingIdx !== null}
                       />
                     </label>
-                    <span className="text-[10px] text-slate-400 mt-1">* 구글드라이브 내의 클라이언트 격리 폴더로 자동 업로드됩니다.</span>
+                    <span className="text-[10px] text-slate-400 mt-1">* 클라이언트 격리 저장소로 자동 업로드됩니다.</span>
                   </div>
                 </div>
 

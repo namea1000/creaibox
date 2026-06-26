@@ -477,8 +477,8 @@ function PreviewMediaLayer({
         ? Math.min(liveTimeRef.current, trimStart + effectiveDuration)
         : liveTimeRef.current;
 
-    // 재생이 멈춰있거나 오차가 클 때만 싱크 맞추기
-    if (!isPlaying || Math.abs(video.currentTime - safeTime) > 0.45) {
+    // 재생이 멈춰있거나 오차가 클 때 싱크 맞추기 (불필요한 중복 Seek를 방지하기 위해 !isPlaying 조건 제거 및 허용 오차를 0.03초로 설정)
+    if (Math.abs(video.currentTime - safeTime) > 0.03) {
       video.currentTime = safeTime;
     }
 
@@ -527,8 +527,8 @@ function PreviewMediaLayer({
         ? Math.min(liveTimeRef.current, trimStart + effectiveDuration)
         : liveTimeRef.current;
 
-    // 재생이 멈춰있거나 오차가 클 때만 싱크 맞추기
-    if (!isPlaying || Math.abs(audio.currentTime - safeTime) > 0.45) {
+    // 재생이 멈춰있거나 오차가 클 때 싱크 맞추기 (불필요한 중복 Seek를 방지하기 위해 !isPlaying 조건 제거 및 허용 오차를 0.03초로 설정)
+    if (Math.abs(audio.currentTime - safeTime) > 0.03) {
       audio.currentTime = safeTime;
     }
 
@@ -933,6 +933,12 @@ function VisualizerPlaceholder({
       const isSeek = Boolean(customEvent.detail.isSeek);
       const nextTime = customEvent.detail.currentTime;
 
+      const trimStart = activeOverlayClip.trimStart ?? 0;
+      const trimEnd = activeOverlayClip.trimEnd ?? 0;
+      const effectiveDuration = Math.max(0, activeOverlayClip.duration - trimEnd);
+      const clipTime = Math.max(0, nextTime - activeOverlayClip.startTime + trimStart);
+      const safeTime = effectiveDuration > 0 ? Math.min(clipTime, trimStart + effectiveDuration) : clipTime;
+
       if (isSeek || !isPlaying) {
         const trimStart = activeOverlayClip.trimStart ?? 0;
         const trimEnd = activeOverlayClip.trimEnd ?? 0;
@@ -961,7 +967,7 @@ function VisualizerPlaceholder({
     const clipTime = Math.max(0, currentTime - activeOverlayClip.startTime + trimStart);
     const safeTime = effectiveDuration > 0 ? Math.min(clipTime, trimStart + effectiveDuration) : clipTime;
 
-    if (Math.abs(video.currentTime - safeTime) > 0.15) {
+    if (Math.abs(video.currentTime - safeTime) > 0.1) {
       video.currentTime = safeTime;
     }
 

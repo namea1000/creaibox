@@ -67,6 +67,28 @@ function getDesignDetails(category, templateId) {
     details = "Sleek luxury yacht deck under sunset, deep ocean wave accents, yacht charter pricing tables, nautical map iconography.";
   } else if (templateId.includes("dj")) {
     details = "Glow-in-the-dark synthesizer board, neon wave frequency charts, music track waveforms, vinyl deck controller closeups.";
+  } else if (templateId === "artisan_sourdough_bakery") {
+    details = "Rustic French bakery, stone bread oven, warm glowing oven light, wooden cutting boards with sourdough loaves, flour dusting, rustic baskets, traditional baker tools, natural earthy wood textures.";
+  } else if (templateId === "teppanyaki_omakase_dining") {
+    details = "Sleek modern Teppanyaki restaurant, hot iron griddle plate with sizzling Hanwoo beef and lobster, chef performing a fiery flambé show with giant flame, elegant dark stone counter bar seating, high-end luxury dark mood.";
+  } else if (templateId === "cocktail_whiskey_speakeasy") {
+    details = "Mysterious dark Speakeasy bar, secret bookshelf door entrance, dim warm candle light, bartenders hand-carving a crystal clear ice ball, amber whiskey glasses on dark leather cushion bar counters, elegant velvet textures.";
+  } else if (templateId === "stem_robotics_academy") {
+    details = "Futuristic STEM and robotics lab for kids, colorful LEGO robotics, glowing computer screens with block coding and code lines, electronic circuit boards, small robotic cars driving on a track, electric neon cyan and violet lighting.";
+  } else if (templateId === "professional_writing_studio") {
+    details = "Classic library and creative writing study, mahogany wood bookshelves, vintage fountain pen on thick novel paper, leather-bound books, brass desk lamp casting warm light, cozy intellectual writer salon atmosphere.";
+  } else if (templateId === "kids_forest_kindergarten") {
+    details = "Outdoor forest kindergarten, children playing happily in a fresh green pine forest, wooden treehouses, organic vegetable garden patches, raw wood log bridges, safe natural toys, bright sunny day meadow vibes.";
+  } else if (templateId === "venture_capital_investment") {
+    details = "Corporate landing page for venture capital, modern executive boardroom overlooking a city skyline, corporate charts, professional pitch deck consulting slides, sleek slate navy and amber gold color highlights.";
+  } else if (templateId === "esg_green_consulting") {
+    details = "Pristine corporate ESG consulting landing page, clean green energy wind turbines and solar panels in the background, eco-friendly green leaves, carbon neutral charts, professional clean grid layout with teal and mint tones.";
+  } else if (templateId === "architecture_design_studio" || templateId === "architect_space_portfolio") {
+    details = "Sleek minimalist architectural portfolio showcase, monolithic raw concrete structures, terracotta clay tile walls, large glass facades reflecting a green forest, geometric architectural forms, dramatic shadows and bright sunlight.";
+  } else if (templateId === "fashion_lookbook_portfolio") {
+    details = "High-fashion runway lookbook portfolio, professional photography studio with high-contrast shadows, haute couture models wearing bold velvet red and black outfits, sleek minimalist layout with a velvet rose red accent.";
+  } else if (templateId === "3d_motion_graphic_portfolio") {
+    details = "Avant-garde 3D motion graphic artist portfolio, ultra-modern obsidian dark background, abstract 3D CGI spheres with glowing magenta pink and neon cyan light reflections, liquid metallic gold splashes, futuristic cyber vibes.";
   }
 
   return details;

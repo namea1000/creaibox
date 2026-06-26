@@ -45,19 +45,20 @@ The logo shown on the Google OAuth consent screen has unique rendering constrain
 
 ---
 
-## 3. Domain & Redirect URI Management
+## 3. Domain & Redirect URI Management (중요 제한 사항 및 경고)
 
-When implementing a custom domain proxy (like the Vercel Hybrid Proxy), clean up your Google Cloud Console configurations to maintain security and brand integrity:
+> [!WARNING]
+> **Supabase 무료 티어에서 커스텀 도메인 우회 프록시 구축은 불가능합니다 (시도 금지)**
+> 
+> 로그인 화면의 `supabase.co` 주소를 숨기기 위해 Vercel 리라이트(Rewrites), Cloudflare 프록시, Next.js 미들웨어 등을 활용하여 자체 커스텀 도메인 프록시를 구축하는 방식은 **토큰 교환(Token Exchange) 단계에서 최종 실패**하게 됩니다.
 
-### A. Authorized Domains (승인된 도메인)
-* **What to include**: Only include the primary domain(s) that initiate the OAuth flow (e.g., `creaibox.com`). 
-* **What to exclude**: Once a proxy is active, the old direct Supabase endpoint (e.g., `dkblalbnykgpksurdace.supabase.co`) is **no longer needed** and should be deleted to prevent bypasses and keep the console secure.
-* *Note: `localhost` is automatically allowed for local testing and does not need to be registered under Authorized Domains.*
+### 실패 원인 (기술적 배경)
+1. **Supabase 인프라 단의 헤더 차단**: Supabase Cloud의 API 게이트웨이(Kong) 및 인증 서버(GoTrue)는 무료 티어 상태에서 신뢰할 수 없는 임의의 도메인으로부터 들어오는 `X-Forwarded-Host` 등의 프록시 헤더를 무시하고 강제로 초기화(Strip)합니다.
+2. **리디렉션 URI 불일치 에러 (`redirect_uri_mismatch`)**: Supabase 인증 서버는 헤더가 초기화됨에 따라 콜백 주소를 원래의 기본 주소(`https://dkblalbnykgpksurdace.supabase.co/auth/v1/callback`)로 강제 인식하여 토큰 교환을 시도합니다. 이 경우 사용자가 로그인 요청 시 사용한 도메인(예: `https://creaibox.com/auth/callback`)과 토큰을 교환하는 주소가 일치하지 않아 구글/카카오 인증 서버로부터 **"Unable to exchange external code"** 오류가 반환되며 로그인이 실패합니다.
 
-### B. Authorized Redirect URIs (승인된 리디렉션 URI)
-* **Strict Match**: Google performs a character-for-character match on redirect URIs. 
-* Keep the production callback (`https://creaibox.com/supabase/auth/v1/callback`) and local callback (`http://localhost:3000/supabase/auth/v1/callback`).
-* Delete the old direct Supabase callback to enforce that all logins pass through your branded proxy.
+### 해결 대안 및 권장 설계
+* **무료 티어 (현재 방식)**: 구글 및 카카오 개발자 콘솔에 Supabase 직접 주소(`https://dkblalbnykgpksurdace.supabase.co/auth/v1/callback`)를 리디렉션 URI로 등록하여 사용합니다. 베타 서비스 및 초기 운영 단계에서는 이 방식으로 로그인 화면에 Supabase 주소가 노출되는 것을 허용하는 것이 표준입니다.
+* **유료 티어 전환 (추천)**: 서비스 규모가 커지고 브랜드 일관성이 필수가 되는 시점에 **Supabase Pro 요금제 ($25/월) + Custom Domain Add-on ($10/월)**을 활성화하여, Supabase 클라우드 인프라에 공식적으로 커스텀 도메인을 등록해 연동해야만 완벽한 브랜드 도메인 로그인이 가능합니다.
 
 ---
 
@@ -118,5 +119,5 @@ Slack: Slack 글자 대신, 알록달록한 격자 모양 심볼을 사용합니
 문서의 핵심 요약
 인증의 핵심 가치: 유저 유입의 최대 장벽인 '안전하지 않은 앱' 경고창을 제거하고, 회원가입 100명 제한을 해제하며, 공식 로고를 로그인 화면에 노출시키는 필수 프로세스임을 명시.
 로고 권장 규칙: 구글 로그인 창의 소형 원형(1:1) 프레임 특성상, 가로가 긴 텍스트 로고보다 현재 사용하신 심볼형 파비콘(예: CAI 로고)이 최적의 포맷임을 가이드라인화.
-도메인 관리: 프록시 구축 후 불필요해진 기존 Supabase 도메인은 '승인된 도메인' 및 '리디렉션 URI'에서 모두 삭제하여 보안 및 브랜드 일관성을 지키는 아키텍처 정리법 수록.
+도메인 관리 제약: Supabase 무료 티어에서는 자체 프록시를 통한 브랜드 도메인 우회가 불가능함을 확인. 로그인 주소를 완전히 숨기려면 추후 Supabase 공식 유료 커스텀 도메인 요금제($35/월)로 업그레이드해야 함을 명시.
 심사 대처법: 구글 Trust & Safety 팀과의 이메일 소통 요령 및 소요 기간(영업일 2~3일) 안내.

@@ -13,6 +13,8 @@ import {
   Square,
   Monitor,
   Download,
+  Database,
+  AlertTriangle,
 } from "lucide-react";
 
 import { useVideoEditor, type CanvasRatio } from "./VideoEditorContext";
@@ -41,6 +43,7 @@ export default function VideoEditorCanvas({
   const ratioMenuRef = useRef<HTMLDivElement | null>(null);
   const [isRatioMenuOpen, setIsRatioMenuOpen] = useState(false);
   const [audioMeter, setAudioMeter] = useState({ low: 0, mid: 0, high: 0 });
+  const [isClearing, setIsClearing] = useState(false);
   const {
     currentTime,
     totalDuration,
@@ -52,7 +55,44 @@ export default function VideoEditorCanvas({
     togglePlayback,
     projectTitle,
     setProjectTitle,
+    clearIndexedDBCache,
+    isClearCacheOpen,
+    setIsClearCacheOpen,
   } = useVideoEditor();
+
+  const handleClearCache = async (mode: "smart" | "all") => {
+    setIsClearing(true);
+    try {
+      await clearIndexedDBCache(mode);
+      setIsClearCacheOpen(false);
+      if (mode === "smart") {
+        alert("현재 사용 중인 파일을 제외한 나머지 미사용 임시 캐시 용량이 성공적으로 정리되었습니다.");
+      } else {
+        alert("모든 브라우저 캐시 용량이 성공적으로 정리되었습니다. 타임라인 편집 구조와 자산 목록은 그대로 유지되며, 미디어 파일들은 '재연결'을 클릭해 언제든지 복원할 수 있습니다.");
+      }
+    } catch (err) {
+      alert("용량 정리 중 오류가 발생했습니다: " + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
+  // Close IndexedDB cache cleaner panel on Escape key press
+  useEffect(() => {
+    if (!isClearCacheOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setIsClearCacheOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isClearCacheOpen, setIsClearCacheOpen]);
 
   const canvasClass =
     canvasRatio === "16:9"
@@ -268,6 +308,83 @@ export default function VideoEditorCanvas({
           </button>
         </div>
       </div>
+
+      {isClearCacheOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4">
+          <div className="w-full max-w-2xl rounded-xl border border-zinc-800 bg-[#121214] p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-950/50 border border-cyan-500/30 text-cyan-400">
+                <Database size={20} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-black text-white">IndexedDB 브라우저 캐시 용량 정리</h3>
+                
+                <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+                  비디오 편집 중 브라우저 로컬 저장소에 쌓인 대용량 파일 데이터(IndexedDB 캐시)를 안전하게 정돈하여 
+                  <strong>컴퓨터 하드디스크의 보이지 않는 용량을 즉각 확보</strong>합니다. 원하시는 정리 수준을 선택해 주세요.
+                </p>
+
+                <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Option A: Smart Clean */}
+                  <div className="flex flex-col rounded-lg border border-cyan-500/30 bg-cyan-950/10 p-4 relative overflow-hidden">
+                    <div className="absolute top-2 right-2 rounded bg-cyan-400/20 border border-cyan-400/30 px-1 py-0.5 text-[8px] font-black text-cyan-300">
+                      추천 (안전)
+                    </div>
+                    <h4 className="text-xs font-black text-cyan-300 flex items-center gap-1">
+                      ✨ 스마트 정리
+                    </h4>
+                    <p className="mt-2 text-[11px] leading-relaxed text-zinc-400 flex-1">
+                      현재 타임라인에 올려서 편집 중인 동영상/오디오 파일은 <strong>그대로 안전하게 보존</strong>하고, 이전에 삭제했던 미사용 파일이나 옛날 프로젝트의 찌꺼기 파일들만 선별하여 깨끗이 지웁니다.
+                    </p>
+                    <div className="mt-3 text-[9px] text-emerald-400 bg-emerald-950/30 px-2 py-1 rounded border border-emerald-500/20 whitespace-nowrap text-center">
+                      ✅ 현재 작업 중인 영상에 영향 없음 (재연결 필요 없음)
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isClearing}
+                      onClick={() => handleClearCache("smart")}
+                      className="mt-4 w-full rounded-md bg-cyan-400 hover:bg-cyan-300 disabled:bg-cyan-800 text-black px-3 py-2 text-xs font-black transition outline-none"
+                    >
+                      {isClearing ? "정리 중..." : "스마트 정리 시작"}
+                    </button>
+                  </div>
+
+                  {/* Option B: Deep Clean */}
+                  <div className="flex flex-col rounded-lg border border-red-500/20 bg-red-950/5 p-4 relative">
+                    <h4 className="text-xs font-black text-red-400 flex items-center gap-1">
+                      🔥 전체 비우기
+                    </h4>
+                    <p className="mt-2 text-[11px] leading-relaxed text-zinc-400 flex-1">
+                      <strong>타임라인 편집선(자르고 붙인 위치, 효과, 텍스트)은 100% 완벽 보존</strong>하되, 로컬에 임시 복사된 모든 미디어 데이터 파일들만 완전 삭제하여 하드 용량을 최대로 확보합니다.
+                    </p>
+                    <div className="mt-3 text-[9px] text-amber-400 bg-amber-950/30 px-2 py-1 rounded border border-amber-500/20 whitespace-nowrap text-center">
+                      ⚠️ 다음 편집 시 파일 <strong>'재연결'</strong>을 클릭해 원본을 올려주면 즉시 복원
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isClearing}
+                      onClick={() => handleClearCache("all")}
+                      className="mt-4 w-full rounded-md border border-red-500/30 hover:border-red-500/50 hover:bg-red-950/20 text-red-400 px-3 py-2 text-xs font-bold transition outline-none"
+                    >
+                      {isClearing ? "비우는 중..." : "전체 비우기 시작"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsClearCacheOpen(false)}
+                    className="rounded-md border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 px-4 py-2 text-xs font-bold text-zinc-400 transition outline-none"
+                  >
+                    닫기
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

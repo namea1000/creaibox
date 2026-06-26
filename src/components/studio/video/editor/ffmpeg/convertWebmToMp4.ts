@@ -93,6 +93,7 @@ export async function convertWebmBlobToMp4({
   fileName,
   directoryHandle,
   videoFormat = "mp4",
+  duration,
 }: {
   webmBlob: Blob;
   title: string;
@@ -101,6 +102,7 @@ export async function convertWebmBlobToMp4({
   fileName?: string;
   directoryHandle?: any;
   videoFormat?: "mp4" | "mov";
+  duration?: number;
 }) {
   throwIfAborted(signal);
 
@@ -142,9 +144,14 @@ export async function convertWebmBlobToMp4({
       // Yield execution to allow GC
       await new Promise<void>((resolve) => setTimeout(resolve, 100));
 
-      await ffmpeg.exec([
-        "-i",
-        inputName,
+      const args = ["-i", inputName];
+      
+      // Limit output duration to prevent trailing black frames from MediaRecorder timing variance & AAC delay
+      if (duration !== undefined && duration > 0) {
+        args.push("-t", duration.toFixed(3));
+      }
+
+      args.push(
         "-c:v",
         "libx264",
         "-preset",
@@ -155,8 +162,10 @@ export async function convertWebmBlobToMp4({
         "yuv420p",
         "-movflags",
         "faststart",
-        outputName,
-      ]);
+        outputName
+      );
+
+      await ffmpeg.exec(args);
       throwIfAborted(signal);
 
       const data = await ffmpeg.readFile(outputName);

@@ -181,6 +181,8 @@ export type VideoEditorMediaItem = {
   thumbnailUrl?: string;
   waveform?: number[];
   hasAudio?: boolean;
+  width?: number;
+  height?: number;
 };
 
 export type VideoTextStyle = {
@@ -358,6 +360,7 @@ type VideoEditorState = {
 
   processingClipId: string | null;
   processingMessage: string;
+  isClearCacheOpen: boolean;
 };
 
 type VideoEditorActions = {
@@ -442,6 +445,8 @@ type VideoEditorActions = {
   detectScenesAndSplitClip: (clipId: string) => Promise<void>;
   splitClipAtTimes: (id: string, splitTimes: number[]) => void;
   selectClipIds: (ids: string[]) => void;
+  clearIndexedDBCache: (mode?: "smart" | "all") => Promise<void>;
+  setIsClearCacheOpen: (value: boolean) => void;
 };
 
 type VideoEditorContextValue = VideoEditorState & VideoEditorActions;
@@ -553,7 +558,8 @@ function calculateTotalDuration(clips: VideoEditorClip[]) {
     MIN_TIMELINE_DURATION
   );
 
-  return Math.max(MIN_TIMELINE_DURATION, Number(maxEnd.toFixed(1)));
+  // 30fps(1프레임당 약 0.033초)의 미세한 프레임 경계를 완벽히 반영하기 위해 소수점 둘째짜리(toFixed(2))로 정밀도 상향 조정
+  return Math.max(MIN_TIMELINE_DURATION, Number(maxEnd.toFixed(2)));
 }
 
 function leftToTime(left: number) {
@@ -576,7 +582,9 @@ function intervalsOverlap(
 ) {
   const endA = startA + durationA;
   const endB = startB + durationB;
-  return startA < endB && endA > startB;
+  // Use a tiny epsilon/tolerance (0.01 seconds) to prevent floating-point precision issues from causing false overlaps
+  const epsilon = 0.01;
+  return startA < (endB - epsilon) && (endA - epsilon) > startB;
 }
 
 function hasTrackOverlap(
@@ -713,11 +721,22 @@ function clampStartToPreviousTrackGap(
 }
 
 function normalizeClip(rawClip: VideoEditorClip): VideoEditorClip {
+  let trimEnd = rawClip.trimEnd ?? 0;
+  // 역재생 버그 자가치유 (Self-Healing): trimStart가 0이고 trimEnd가 duration과 거의 일치하여 전체를 잘라내는 버그성 상태인 경우 trimEnd를 0으로 복구
+  if (
+    (rawClip.type === "video" || rawClip.type === "audio") &&
+    (rawClip.trimStart ?? 0) === 0 &&
+    trimEnd > 0 &&
+    Math.abs(trimEnd - rawClip.duration) < 0.05
+  ) {
+    trimEnd = 0;
+  }
+
   return {
     ...rawClip,
 
     trimStart: rawClip.trimStart ?? 0,
-    trimEnd: rawClip.trimEnd ?? 0,
+    trimEnd,
 
     volume: rawClip.volume ?? 1,
     muted: rawClip.muted ?? false,
@@ -818,6 +837,7 @@ export function VideoEditorProvider({ children }: { children: React.ReactNode })
 
   const [processingClipId, setProcessingClipId] = useState<string | null>(null);
   const [processingMessage, setProcessingMessage] = useState("");
+  const [isClearCacheOpen, setIsClearCacheOpen] = useState(false);
 
   const totalDuration = calculateTotalDuration(clips);
 
@@ -1035,7 +1055,23 @@ async function getOrCreateAudioWaveform(file: File) {
   return waveform;
 }
 
-function getVideoThumbnail(file: File): Promise<string> {
+function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      resolve({ width: img.width, height: img.height });
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => {
+      resolve({ width: 0, height: 0 });
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  });
+}
+
+function getVideoThumbnail(file: File): Promise<{ url: string; width: number; height: number }> {
   return new Promise((resolve) => {
     const video = document.createElement("video");
     const url = URL.createObjectURL(file);
@@ -1051,19 +1087,28 @@ function getVideoThumbnail(file: File): Promise<string> {
     video.onseeked = () => {
       try {
         const canvas = document.createElement("canvas");
-        canvas.width = 120;
-        canvas.height = 68;
+        const videoWidth = video.videoWidth || 120;
+        const videoHeight = video.videoHeight || 68;
+
+        if (videoHeight > videoWidth) {
+          canvas.height = 120;
+          canvas.width = Math.round(120 * (videoWidth / videoHeight));
+        } else {
+          canvas.width = 120;
+          canvas.height = Math.round(120 * (videoHeight / videoWidth));
+        }
+
         const ctx = canvas.getContext("2d");
         if (ctx) {
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
           const dataUrl = canvas.toDataURL("image/jpeg", 0.5);
-          resolve(dataUrl);
+          resolve({ url: dataUrl, width: videoWidth, height: videoHeight });
         } else {
-          resolve("");
+          resolve({ url: "", width: videoWidth, height: videoHeight });
         }
       } catch (e) {
         console.error("Thumbnail extraction failed:", e);
-        resolve("");
+        resolve({ url: "", width: 0, height: 0 });
       } finally {
         URL.revokeObjectURL(url);
       }
@@ -1071,7 +1116,7 @@ function getVideoThumbnail(file: File): Promise<string> {
 
     video.onerror = () => {
       URL.revokeObjectURL(url);
-      resolve("");
+      resolve({ url: "", width: 0, height: 0 });
     };
 
     video.src = url;
@@ -1148,12 +1193,20 @@ function getMediaDuration(file: File): Promise<number> {
         }
 
         let thumbnailUrl = "";
+        let width = 0;
+        let height = 0;
         let waveform: number[] = [];
 
         if (type === "image") {
           thumbnailUrl = URL.createObjectURL(file);
+          const dims = await getImageDimensions(file);
+          width = dims.width;
+          height = dims.height;
         } else if (type === "video") {
-          thumbnailUrl = await getVideoThumbnail(file);
+          const thumbResult = await getVideoThumbnail(file);
+          thumbnailUrl = thumbResult.url;
+          width = thumbResult.width;
+          height = thumbResult.height;
         }
 
         if (type === "audio" || type === "video") {
@@ -1172,6 +1225,8 @@ function getMediaDuration(file: File): Promise<number> {
           thumbnailUrl,
           waveform,
           hasAudio,
+          width,
+          height,
         };
       })
     );
@@ -1230,10 +1285,18 @@ function getMediaDuration(file: File): Promise<number> {
     }
 
     let newThumbnailUrl = "";
+    let width = 0;
+    let height = 0;
     if (type === "image") {
       newThumbnailUrl = newUrl;
+      const dims = await getImageDimensions(file);
+      width = dims.width;
+      height = dims.height;
     } else if (type === "video") {
-      newThumbnailUrl = await getVideoThumbnail(file);
+      const thumbResult = await getVideoThumbnail(file);
+      newThumbnailUrl = thumbResult.url;
+      width = thumbResult.width;
+      height = thumbResult.height;
     }
 
     setMediaItems((prev) =>
@@ -1247,6 +1310,8 @@ function getMediaDuration(file: File): Promise<number> {
               file,
               size: file.size,
               thumbnailUrl: newThumbnailUrl || item.thumbnailUrl,
+              width: width || item.width,
+              height: height || item.height,
               hasAudio,
             }
           : item
@@ -1279,11 +1344,39 @@ function getMediaDuration(file: File): Promise<number> {
                   const cachedFile = await getFileFromCache(item.id);
                   if (cachedFile) {
                     const newUrl = URL.createObjectURL(cachedFile);
+                    
+                    // Background healing: If the item was uploaded before the ratio patch
+                    // and is missing its dimensions or has a horizontal thumbnail for a vertical media,
+                    // we dynamically detect dimensions and update its thumbnail.
+                    let width = item.width;
+                    let height = item.height;
+                    let thumbUrl = item.thumbnailUrl;
+
+                    if (!width || !height) {
+                      try {
+                        if (item.type === "image") {
+                          const dims = await getImageDimensions(cachedFile);
+                          width = dims.width;
+                          height = dims.height;
+                          thumbUrl = newUrl;
+                        } else if (item.type === "video") {
+                          const thumbResult = await getVideoThumbnail(cachedFile);
+                          width = thumbResult.width;
+                          height = thumbResult.height;
+                          thumbUrl = thumbResult.url;
+                        }
+                      } catch (e) {
+                        console.warn("[VideoEditorContext] Restored item healing failed:", item.name, e);
+                      }
+                    }
+
                     return {
                       ...item,
                       url: newUrl,
                       file: cachedFile,
-                      thumbnailUrl: item.type === "image" ? newUrl : item.thumbnailUrl,
+                      thumbnailUrl: thumbUrl || item.thumbnailUrl,
+                      width,
+                      height,
                     };
                   }
                 }
@@ -1404,8 +1497,30 @@ function getMediaDuration(file: File): Promise<number> {
     const duration = media.type === "image" ? 5 : media.duration || 10;
     const requestedStartTime = Number((options?.startTime ?? currentTime).toFixed(2));
     const trackType = getTrackTypeByClipType(media.type);
-    const requestedTrack = options?.trackId
-      ? tracks.find((track) => track.id === options.trackId)
+
+    // Magnetic Timeline Snapping:
+    // If the playhead is very close (within 0.15s) to the end of an existing clip of the same track type,
+    // automatically snap the new clip to start exactly at the end of that clip and use its track.
+    const snapThreshold = 0.15;
+    let finalStartTime = requestedStartTime;
+    let finalTrackId = options?.trackId || null;
+
+    if (!options?.startTime && !options?.trackId) {
+      const sameTypeClips = clips.filter((c) => getTrackTypeByClipType(c.type) === trackType);
+      const closeClip = sameTypeClips.find((c) => {
+        const clipEnd = c.startTime + c.duration;
+        return Math.abs(requestedStartTime - clipEnd) <= snapThreshold;
+      });
+
+      if (closeClip) {
+        finalStartTime = Number((closeClip.startTime + closeClip.duration).toFixed(2));
+        finalTrackId = closeClip.trackId;
+        console.log(`[VideoEditorContext] Magnetic Snap: Snapped new clip to end of ${closeClip.name} at ${finalStartTime}s on track ${finalTrackId}`);
+      }
+    }
+
+    const requestedTrack = finalTrackId
+      ? tracks.find((track) => track.id === finalTrackId)
       : null;
     const canUseRequestedTrack = requestedTrack?.type === trackType;
     const availableTrack = canUseRequestedTrack
@@ -1417,7 +1532,7 @@ function getMediaDuration(file: File): Promise<number> {
           tracks,
           clips,
           trackType,
-          requestedStartTime,
+          finalStartTime,
           duration
         );
     const targetTrack = availableTrack.targetTrack;
@@ -1427,10 +1542,10 @@ function getMediaDuration(file: File): Promise<number> {
           clips,
           "",
           targetTrack.id,
-          requestedStartTime,
+          finalStartTime,
           duration
         )
-      : requestedStartTime;
+      : finalStartTime;
 
     if (shouldCreateTrack) {
       setTracks((prev) => insertTrackAfterSameType(prev, targetTrack, trackType));
@@ -1672,17 +1787,33 @@ function getMediaDuration(file: File): Promise<number> {
     if (activeCopiedClips.length === 0) return;
 
     const minCopiedStartTime = Math.min(...activeCopiedClips.map((c) => c.startTime));
-    const baseStartTime = typeof startTime === "number" ? startTime : currentTime;
+    let baseStartTime = typeof startTime === "number" ? startTime : currentTime;
 
-    const pastedClips = activeCopiedClips.map((copied) => {
+    // 마그네틱 스냅핑 (Magnetic Snapping for Paste):
+    // 붙여넣기 기준 위치가 기존 클립의 끝자락(0.15초 이내)에 있으면 해당 클립 끝으로 정확하게 정렬하여 중복 오차 방지
+    const snapThreshold = 0.15;
+    const closeClip = clips.find((c) => {
+      const clipEnd = c.startTime + c.duration;
+      return Math.abs(baseStartTime - clipEnd) <= snapThreshold;
+    });
+    if (closeClip) {
+      baseStartTime = Number((closeClip.startTime + closeClip.duration).toFixed(2));
+      console.log(`[VideoEditorContext] Paste Magnetic Snap: Snapped paste start time to end of ${closeClip.name} at ${baseStartTime}s`);
+    }
+
+    const pastedClips: VideoEditorClip[] = [];
+
+    for (const copied of activeCopiedClips) {
       const offset = copied.startTime - minCopiedStartTime;
       const maxStartTime = Math.max(0, TIMELINE_BASE_DURATION - copied.duration);
       const safeStartTime = clamp(baseStartTime + offset, 0, maxStartTime);
       const left = timeToLeft(safeStartTime);
       const trackType = getTrackTypeByClipType(copied.type);
+
+      // 중요: 같은 배치로 붙여넣기 되는 클립들끼리의 충돌을 방지하기 위해 [...clips, ...pastedClips]를 전달
       const { targetTrack } = findAvailableTrack(
         tracks,
-        clips,
+        [...clips, ...pastedClips],
         trackType,
         safeStartTime,
         copied.duration
@@ -1694,16 +1825,18 @@ function getMediaDuration(file: File): Promise<number> {
         100 - left
       );
 
-      return normalizeClip({
-        ...copied,
-        id: createId("clip-paste"),
-        trackId: targetTrack.id,
-        name: `${copied.name} 복사본`,
-        startTime: Number(safeStartTime.toFixed(2)),
-        left,
-        width,
-      });
-    });
+      pastedClips.push(
+        normalizeClip({
+          ...copied,
+          id: createId("clip-paste"),
+          trackId: targetTrack.id,
+          name: `${copied.name} 복사본`,
+          startTime: Number(safeStartTime.toFixed(2)),
+          left,
+          width,
+        })
+      );
+    }
 
     setClipsWithHistory((prev) => [...prev, ...pastedClips]);
     setSelectedClipIds(pastedClips.map((c) => c.id));
@@ -2026,7 +2159,7 @@ function getMediaDuration(file: File): Promise<number> {
                 mediaId: newMediaItem.id,
                 name: `역재생_${c.name}`,
                 trimStart: 0,
-                trimEnd: newMediaItem.duration ?? 0,
+                trimEnd: 0,
               })
             : c
         )
@@ -2091,6 +2224,83 @@ function getMediaDuration(file: File): Promise<number> {
       setProcessingMessage("");
     }
   }, [clips, mediaItems, splitClipAtTimes]);
+
+  const clearIndexedDBCache = useCallback(async (mode: "smart" | "all" = "smart"): Promise<void> => {
+    try {
+      const db = await openDB();
+
+      if (mode === "smart") {
+        // Collect all active media IDs in the current project
+        const activeMediaIds = new Set<string>();
+        mediaItems.forEach((item) => {
+          activeMediaIds.add(item.id);
+          activeMediaIds.add("audio-extract-" + item.id);
+        });
+
+        // Open a transaction to scan and delete unused keys
+        const transaction = db.transaction([STORE_NAME], "readwrite");
+        const store = transaction.objectStore(STORE_NAME);
+        
+        await new Promise<void>((resolve, reject) => {
+          const request = store.openKeyCursor();
+          request.onsuccess = (event) => {
+            const cursor = (event.target as IDBRequest<IDBCursor | null>).result;
+            if (cursor) {
+              const key = cursor.key as string;
+              if (!activeMediaIds.has(key)) {
+                store.delete(key);
+                console.log(`[clearIndexedDBCache] Deleted unused cache key: ${key}`);
+              }
+              cursor.continue();
+            } else {
+              resolve();
+            }
+          };
+          request.onerror = () => reject(request.error);
+        });
+        
+        console.log("[VideoEditorContext] Smart IndexedDB cleanup complete.");
+      } else {
+        // Mode "all" - Clear all files, but KEEP timeline metadata (clips and mediaItems)!
+        const transaction = db.transaction([STORE_NAME, WAVEFORM_STORE_NAME], "readwrite");
+        const filesStore = transaction.objectStore(STORE_NAME);
+        const waveformsStore = transaction.objectStore(WAVEFORM_STORE_NAME);
+
+        filesStore.clear();
+        waveformsStore.clear();
+
+        await new Promise<void>((resolve, reject) => {
+          transaction.oncomplete = () => resolve();
+          transaction.onerror = () => reject(transaction.error);
+        });
+
+        // Revoke Object URLs to free memory
+        mediaItems.forEach((item) => {
+          if (item.url && item.url.startsWith("blob:")) {
+            try { URL.revokeObjectURL(item.url); } catch {}
+          }
+          if (item.thumbnailUrl && item.thumbnailUrl.startsWith("blob:")) {
+            try { URL.revokeObjectURL(item.thumbnailUrl); } catch {}
+          }
+        });
+
+        // Keep timeline clips and media items metadata, but clear the cached File/blob references.
+        // The clips will enter an offline/missing state with a "Relink" button.
+        setMediaItems((prev) =>
+          prev.map((item) => ({
+            ...item,
+            file: undefined,
+            url: "", // Force to reload/relink
+          }))
+        );
+        
+        console.log("[VideoEditorContext] Deep IndexedDB clean complete. Metadata preserved.");
+      }
+    } catch (e) {
+      console.error("[VideoEditorContext] Failed to clear IndexedDB cache:", e);
+      throw e;
+    }
+  }, [mediaItems]);
 
   const updateClipName = (id: string, name: string) => {
     updateClip(id, { name });
@@ -2509,6 +2719,9 @@ function getMediaDuration(file: File): Promise<number> {
       undo,
       redo,
 
+      isClearCacheOpen,
+      setIsClearCacheOpen,
+
       exportProjectJson,
       importProjectJson,
       relinkMediaFile,
@@ -2522,6 +2735,7 @@ function getMediaDuration(file: File): Promise<number> {
       detectScenesAndSplitClip,
       splitClipAtTimes,
       selectClipIds,
+      clearIndexedDBCache,
     }),
     [
       projectTitle,
@@ -2561,6 +2775,9 @@ function getMediaDuration(file: File): Promise<number> {
       detectScenesAndSplitClip,
       splitClipAtTimes,
       selectClipIds,
+      clearIndexedDBCache,
+      isClearCacheOpen,
+      setIsClearCacheOpen,
     ]
   );
 

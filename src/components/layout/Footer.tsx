@@ -49,18 +49,18 @@ export default function Footer() {
 
   return (
     <footer className="w-full border-t border-slate-200 bg-gradient-to-b from-white to-slate-50">
-      <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
-        <div className="mb-14 grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-5">
-          <div className="space-y-6 lg:col-span-2">
-            <Link href="/" className="flex items-center gap-3">
-              <div className="relative h-50 w-80">
-                <Image
-                  src="/logobg.webp"
-                  alt="Creaibox Logo"
-                  fill
-                  className="object-contain object-left"
-                />
-              </div>
+      <div className="mx-auto max-w-7xl px-6 py-6 lg:px-8">
+        <div className="mb-6 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-5">
+          <div className="space-y-4 lg:col-span-2">
+            <Link href="/" className="flex h-10 items-center overflow-hidden">
+              <Image
+                src="/logobg.webp"
+                alt="Creaibox Logo"
+                width={190}
+                height={40}
+                className="object-contain object-left"
+                priority
+              />
             </Link>
 
             <p className="max-w-sm break-keep text-sm font-medium leading-relaxed text-slate-600">
@@ -68,34 +68,44 @@ export default function Footer() {
               CreAibox는 크리에이터를 위한 올인원 AI 콘텐츠 스튜디오입니다.
             </p>
 
-            <Link
-              href="/studio"
-              className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-violet-500/20 transition hover:scale-[1.02]"
-            >
-              <Sparkles size={16} />
-              스튜디오 시작하기
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href="/studio"
+                className="inline-flex h-11 items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 px-5 text-sm font-black text-white shadow-lg shadow-violet-500/20 transition hover:scale-[1.02] shrink-0"
+              >
+                <Sparkles size={16} />
+                스튜디오 시작하기
+              </Link>
 
-            <div className="flex gap-3">
-              {[Globe, MessageSquare, Video, Mail].map((Icon, idx) => (
-                <button
-                  key={idx}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-600"
-                  type="button"
-                >
-                  <Icon size={18} />
-                </button>
-              ))}
+              {/* 카카오톡 1:1 문의 채널 */}
+              <a
+                href="https://pf.kakao.com/_RxdxmsX/chat"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="카카오톡 1:1 문의"
+                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-yellow-400 hover:bg-yellow-50 hover:text-yellow-600"
+              >
+                <MessageSquare size={18} fill="currentColor" className="stroke-none translate-y-[0.5px]" />
+              </a>
+
+              {/* 이메일 문의 채널 */}
+              <a
+                href="mailto:contact@creaibox.com"
+                title="이메일 문의"
+                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600"
+              >
+                <Mail size={18} />
+              </a>
             </div>
           </div>
 
           {footerSections.map((section) => (
-            <div key={section.title} className="space-y-5">
+            <div key={section.title} className="space-y-3">
               <h4 className="text-xs font-black uppercase tracking-[0.22em] text-slate-900">
                 {section.title}
               </h4>
 
-              <ul className="space-y-3.5">
+              <ul className="space-y-2">
                 {section.links.map((link) => (
                   <li key={link.label}>
                     <Link
@@ -115,9 +125,9 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="flex flex-col items-center justify-between gap-5 border-t border-slate-200 pt-8 md:flex-row">
+        <div className="flex flex-col items-center justify-between gap-5 border-t border-slate-200 pt-4 md:flex-row">
           <div className="text-xs font-bold text-slate-500">
-            © {currentYear} <span className="text-slate-800">CreAI Labs</span>.
+            © {currentYear} <span className="text-slate-800">크리에이박스(CreAibox)</span>.
             All rights reserved.
           </div>
 

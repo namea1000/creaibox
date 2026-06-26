@@ -1719,5 +1719,251 @@ export const BUSINESS_TEMPLATES: Record<string, TemplateConfig> = {
         }
       }
     ]
+  },
+
+  venture_capital_investment: {
+    templateId: "venture_capital_investment",
+    name: "블루칩 벤처스 액셀러레이터",
+    category: "Business",
+    description: "정통적인 신뢰와 안정감을 전하는 프리미엄 로열 네이비 블루와 스타트업 성장을 상징하는 오렌지 골드 액센트가 지적이고 권위 있는 투자 및 액셀러레이팅 그룹 템플릿입니다.",
+    image: "/templates/venture_capital_investment.png",
+    theme: {
+      fontFamily: "Pretendard, Inter, sans-serif",
+      colors: {
+        primary: "#1e3a8a",     // 신뢰도 높은 기업형 로열 블루
+        secondary: "#dbeafe",   // 확장형 스카이 라이트 블루
+        accent: "#f59e0b",      // 스타트업 도약의 골드 앰버
+        background: "#fafbfc",  // 최고급 대리석 미색 오프화이트
+        surface: "#ffffff",     // 정갈한 사업 계획 보고서 화이트
+        text: "#0f172a"         // 가독성 높은 다크 슬레이트 차콜
+      },
+      borderRadius: "rounded-lg",
+      glassmorphism: false
+    },
+    defaultSections: [
+      {
+        section_type: "hero",
+        title: "혁신적 스타트업의 시드 투자부터, 글로벌 유니콘 스케일업까지의 투자 동반자",
+        subtitle: "단순히 자금만 지원하는 재무적 투자자를 거부합니다. 우리는 실리콘밸리식 고밀도 성장 액셀러레이팅 패키지와, 대기업 사업 제휴 파이프라인, 그리고 200억 원 규모의 시드/시리즈 A 전용 펀드를 매칭하여 창업가의 위대한 도전을 확실한 성공 궤도로 이끕니다.",
+        content_data: {
+          backgroundImage: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80",
+          ctaText: "스타트업 투자 유치 제안 (IR)",
+          ctaLink: "#contact",
+          features: [
+            { text: "예비창업자 및 초기 스타트업 전용 배치(Batch) 프로그램 정기 가동 및 팁스(TIPS) 매칭률 95%" },
+            { text: "글로벌 유니콘 창업자 출신의 밀착 파트너 멘토링 세션 주 1회 단독 지원 보증" }
+          ]
+        }
+      },
+      {
+        section_type: "services",
+        title: "스타트업 스케일업 솔루션",
+        subtitle: "아이디어를 실제 비즈니스 모델로 정밀 설계하여 폭발적으로 성장시키는 핵심 액셀러레이팅 라인업입니다.",
+        content_data: {
+          items: [
+            {
+              title: "시드 & 프리 A 지분 직접 투자",
+              description: "창업 초기 5천만 원에서 10억 원 규모의 시드 자금을 신속 집행하고 정밀 밸류에이션 튜닝을 지원합니다.",
+              icon: "Zap"
+            },
+            {
+              title: "팁스(TIPS) 국가 연구 자금 연계",
+              description: "중기부 주관 기술 창업 지원 사업 팁스에 창업팀을 추천하여 최대 7억 원의 매칭 지원금을 수령하도록 올인원 준비합니다.",
+              icon: "Award"
+            },
+            {
+              title: "글로벌 VC 네트워킹 & 피치 데크",
+              description: "해외 후속 투자를 유치하기 위한 영문 사업계획서 설계, 실리콘밸리 주요 파트너들과의 1:1 매칭 IR 데이를 개최합니다.",
+              icon: "Compass"
+            }
+          ]
+        }
+      },
+      {
+        section_type: "about",
+        title: "투자는 단순히 주식을 매입하는 거래가 아닌, 세상을 혁신하려는 창업가의 무모한 도전을 정직한 기술과 자금으로 보좌하는 동반자 관계입니다",
+        subtitle: "성공하는 창업팀의 공통된 지표는 제품의 시장 적합성(PMF)을 6개월 이내에 검증해 내는 민첩함입니다.",
+        content_data: {
+          description: "안녕하십니까. 블루칩 벤처스 파트너스 그룹의 대표 파트너입니다. 우리는 유행에 편승하여 거품만 가득한 좀비 스타트업을 양산하는 투기적 행태를 단호히 배제합니다. 우리는 정직한 원천 기술과 시장의 진짜 결핍을 해결하려는 단단한 비즈니스를 발굴합니다. 우리가 투자한 스타트업들이 사회적 책임을 다하며 세상을 더 이롭고 편리하게 바꿀 때까지, 우리는 창업가의 등 뒤에서 든든한 등대 역할을 수행하겠습니다.",
+          stats: [
+            { label: "누적 운용 자산 (AUM)", value: "3,200억 원 돌파" },
+            { label: "육성한 포트폴리오 스타트업", value: "120개 기업+" }
+          ]
+        }
+      },
+      {
+        section_type: "contact",
+        title: "IR 사업 제안서 투고 및 파트너십 제휴",
+        subtitle: "사업 개요 및 혁신성 요약, IR 피치덱 첨부 여부, 그리고 투자 희망 단계(시드/프리A/시리즈A)를 기재해 보내주십시오.",
+        content_data: {
+          fields: ["name", "email", "phone", "message"],
+          buttonText: "IR 제안서 제출 완료"
+        }
+      }
+    ]
+  },
+
+  esg_green_consulting: {
+    templateId: "esg_green_consulting",
+    name: "에코넷 ESG 친환경 컨설팅 그룹",
+    category: "Business",
+    description: "정화의 에너지를 전하는 청량한 오션 민트 그린과 청결한 퓨어 틸 그린, 그리고 탄소 중립 친환경을 상징하는 에코 에메랄드 그린 포인트가 조화로운 ESG 컨설팅 테마입니다.",
+    image: "/templates/esg_green_consulting.png",
+    theme: {
+      fontFamily: "Pretendard, Inter, sans-serif",
+      colors: {
+        primary: "#0f766e",     // 정화의 청량한 틸 그린
+        secondary: "#ccfbf1",   // 맑고 깨끗한 오션 민트
+        accent: "#10b981",      // 친환경 에코 에메랄드 그린
+        background: "#fafdfc",  // 에코 퓨어 화이트
+        surface: "#ffffff",     // 깨끗한 재생지 크라프트 화이트
+        text: "#111827"         // 눈이 편안한 탄소 제로 차콜
+      },
+      borderRadius: "rounded-xl",
+      glassmorphism: true
+    },
+    defaultSections: [
+      {
+        section_type: "hero",
+        title: "기업의 생존을 결정짓는 규제 리스크, 완벽한 탄소 배출 저감과 ESG 비즈니스 전략 설계",
+        subtitle: "말뿐인 친환경 그린워싱(Greenwashing) 쇼를 배제합니다. 우리는 EU 탄소 국경 조정 제도(CBAM) 완벽 분석, 스코프 3 온실가스 배출량 정밀 산정 시스템 구축, 그리고 에코 가치 사슬 혁신을 동기화하여 글로벌 수출 강소기업들의 생존과 성장을 이끄는 실무 ESG 전략 파트너입니다.",
+        content_data: {
+          backgroundImage: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=1200&q=80",
+          ctaText: "ESG 진단 무료 컨설팅",
+          ctaLink: "#contact",
+          features: [
+            { text: "글로벌 인증 기관 표준에 완벽 부합하는 전사적 탄소 회계 관리 시스템 솔루션 가동" },
+            { text: "친환경 ESG 우수 인증 및 정부 지원 저금리 금융 대출 패키지 연계 지원 보증" }
+          ]
+        }
+      },
+      {
+        section_type: "services",
+        title: "ESG 전략 파이프라인",
+        subtitle: "기후 변화 위기를 기업의 지속 가능한 경쟁 우위로 뒤바꾸는 핵심 컨설팅 라인업입니다.",
+        content_data: {
+          items: [
+            {
+              title: "전사 탄소 회계 & 스코프 1, 2, 3 산정",
+              description: "공장 생산라인부터 원자재 공급망 전체의 온실가스 배출량을 정밀 모니터링하여 데이터를 구조화합니다.",
+              icon: "Zap"
+            },
+            {
+              title: "EU CBAM 탄소 규제 완벽 리스크 진단",
+              description: "글로벌 수출 시 가해지는 관세 장벽과 기후 변화 부담금을 분석하여 친환경 우회 통로를 구축합니다.",
+              icon: "Compass"
+            },
+            {
+              title: "지속가능경영 보고서 공식 발간",
+              description: "해외 투자사와 고객사들이 요구하는 글로벌 GRI 표준에 입각한 정보 공시 보고서를 대행 발간합니다.",
+              icon: "Award"
+            }
+          ]
+        }
+      },
+      {
+        section_type: "about",
+        title: "친환경 경영은 기업의 일시적 마케팅 포장이 아닌, 자원의 선순환 아키텍처 구축을 통해 미래 지구 환경과 주주의 가치를 동시에 사수하는 지고한 생존의 비즈니스입니다",
+        subtitle: "글로벌 바이어들의 92%는 향후 ESG 평가 등급 미달 기업과의 납품 거래를 거부하겠다고 공표했습니다.",
+        content_data: {
+          description: "안녕하십니까. 에코넷 ESG 컨설팅 파트너스의 대표 컨설턴트입니다. 우리는 실무 개선 없이 브로셔 문구만 친환경으로 도배하여 고객과 투자사를 속이는 그린워싱 행태를 단호히 비판합니다. 우리는 제조 공정의 폐열 회수 시스템 도입, 생분해성 재생 패키지 전환, 지배구조 윤리 강령 확립 등 실질적인 탄소 중립 액션 플랜을 설계하고 기업의 지속 가능성 지표를 정직하게 상승시키겠습니다.",
+          stats: [
+            { label: "컨설팅 완료 대기업/강소기업", value: "85개사" },
+            { label: "배출권 거래제 절감 누적액", value: "48억 원" }
+          ]
+        }
+      },
+      {
+        section_type: "contact",
+        title: "ESG 무료 진단 상담 및 사업 의뢰",
+        subtitle: "회사명, 영위하시는 제조업/서비스업 종류, 현재 직면하신 수출 규제 장벽 및 탄소세 문의 사항을 기재해 주세요.",
+        content_data: {
+          fields: ["name", "email", "phone", "message"],
+          buttonText: "ESG 전문 매니저와 상담하기"
+        }
+      }
+    ]
+  },
+
+  architecture_design_studio: {
+    templateId: "architecture_design_studio",
+    name: "아키텍츠 미니멀 건축 설계 사무소",
+    category: "Business",
+    description: "순수 노출 콘크리트의 지적인 다크 차콜 그레이와 메탈릭 실버, 그리고 녹슨 철제 러스트 오렌지 포인트 배합이 모던하고 입체적인 공간을 연출하는 프리미엄 건축 테마입니다.",
+    image: "/templates/architecture_design_studio.png",
+    theme: {
+      fontFamily: "Space Grotesk, Outfit, sans-serif",
+      colors: {
+        primary: "#111827",     // 콘크리트 다크그레이 슬레이트
+        secondary: "#f3f4f6",   // 실버 알루미늄 그레이
+        accent: "#ea580c",      // 녹슨 산화 철 코텐스틸 오렌지
+        background: "#fafaf9",  // 정갈한 석고 화이트 미색
+        surface: "#ffffff",     // 맑은 캔버스 화이트
+        text: "#1f2937"         // 시인성 높은 스톤 슬레이트 차콜
+      },
+      borderRadius: "rounded-none",
+      glassmorphism: false
+    },
+    defaultSections: [
+      {
+        section_type: "hero",
+        title: "장식적 사치를 걷어내고, 빛과 여백의 비례로 빚어내는 모노리스 공간 아우라",
+        subtitle: "흔하고 획일화된 아파트식 평면 구조를 거부합니다. 우리는 자연의 햇살이 드리우는 시간별 그림자의 각도, 노출 콘크리트와 유리, 그리고 철제가 만들어내는 기하학적 비례를 바탕으로, 머무는 이의 영혼에 투명한 사색을 선사하는 하이엔드 주거 및 오피스 건축 설계 디자인 그룹입니다.",
+        content_data: {
+          backgroundImage: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
+          ctaText: "설계 포트폴리오 및 가이드북",
+          ctaLink: "#services",
+          features: [
+            { text: "3D BIM 가상 현실 시뮬레이션을 통해 시공 전 공간의 음영과 통풍 정밀 입체 투영" },
+            { text: "시공 품질의 극대화를 위해 수년간 호흡을 맞춘 최고 등급 직영 시공 크루 독점 연계 가동" }
+          ]
+        }
+      },
+      {
+        section_type: "services",
+        title: "공간 디자인 스택",
+        subtitle: "형태는 기능을 따르며, 여백 속에서 삶의 본질을 되찾는 아키텍트 프로세스입니다.",
+        content_data: {
+          items: [
+            {
+              title: "하이엔드 단독주택 기획 설계",
+              description: "가족의 동선과 취향을 0.1mm 단위로 밀착 인터뷰하여 대지 분석부터 마감재 선정까지 단독 주거의 아늑함을 빚어냅니다.",
+              icon: "Compass"
+            },
+            {
+              title: "상업 빌딩 & 복합 문화 공간 브랜딩",
+              description: "브랜드 철학을 공간에 이식합니다. 유동 인구 분석과 자연광 투영 설계를 융합하여 랜드마크 스페이스를 구축합니다.",
+              icon: "Zap"
+            },
+            {
+              title: "친환경 패시브 제로 하우스 컨설팅",
+              description: "화석 연료 에너지를 쓰지 않고 외벽 단열과 삼중 유리의 정밀 열 교차 제어로 연간 공조 비용을 80% 차단하는 미래형 설계입니다.",
+              icon: "Award"
+            }
+          ]
+        }
+      },
+      {
+        section_type: "about",
+        title: "건축은 외부에 보여주기 위한 화려한 장식품의 나열이 아닌, 머무는 이가 비바람을 피해 침묵 속에서 나만의 사색을 사수하는 정직한 철근과 콘크리트의 물리적 시입니다",
+        subtitle: "모든 도면과 입면 비례는 전통 모듈러 황금비를 준수하여 시각적 안정감을 극대화합니다.",
+        content_data: {
+          description: "안녕하십니까. 아키텍츠 미니멀 설계 사무소의 파트너 건축가입니다. 우리는 인스턴트식으로 대충 벽지를 바르고 저품질 나무 자재로 포장하여 유독 물질을 뿜어내는 기성 평면 가옥들을 혐오합니다. 우리는 자연에서 가져온 돌, 쇠, 흙, 유리의 본연의 물성을 그대로 노출시키는 모노크롬 공간을 지향합니다. 빛이 거실 바닥에 비스듬히 쏟아지는 사색의 아침, 공간의 위대한 침묵이 당신을 치유하게 돕겠습니다.",
+          stats: [
+            { label: "설계 및 준공 완료 빌딩", value: "35개 빌라/빌딩" },
+            { label: "국제 우수 건축 디자인 상 수상", value: "8회 수상" }
+          ]
+        }
+      },
+      {
+        section_type: "contact",
+        title: "신축 설계 및 리모델링 자문 의뢰",
+        subtitle: "보유하신 대지 지번 및 면적, 주 용도(단독주택/상가주택/사무실), 예상 시공 예산 규모를 적어 전송해 주세요.",
+        content_data: {
+          fields: ["name", "email", "phone", "message"],
+          buttonText: "건축가와 조용히 상담하기"
+        }
+      }
+    ]
   }
 };

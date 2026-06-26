@@ -183,6 +183,22 @@ export default function VideoEditorExportPanel({
   const [exportVideoFormat, setExportVideoFormat] = useState<"mp4" | "mov">("mp4");
   const [isQueueDrawerOpen, setIsQueueDrawerOpen] = useState<boolean>(false);
 
+  // Close export panel on Escape key press
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, onClose]);
 
   // Sync exportFileName with projectTitle
   useEffect(() => {

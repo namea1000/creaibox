@@ -75,7 +75,8 @@ export default function CreaiboxLibraryManager() {
   const fetchImages = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return;
 
       const targetSourceType = isImageSection ? "image-studio" : "writing_creaibox_posts";
@@ -104,7 +105,17 @@ export default function CreaiboxLibraryManager() {
 
   useEffect(() => {
     void fetchImages();
-  }, [fetchImages]);
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
+      if (session?.user) {
+        void fetchImages();
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [fetchImages, supabase]);
 
   // 2. 드래그 앤 드롭 이벤트 핸들러
   const handleDrag = (e: React.DragEvent) => {
@@ -365,7 +376,7 @@ export default function CreaiboxLibraryManager() {
                   className="group relative aspect-square cursor-pointer overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 transition-all hover:scale-[1.02] hover:border-blue-500/40 dark:hover:border-zinc-700 hover:shadow-xl"
                 >
                   <img
-                    src={img.image_url}
+                    src={(img.image_url.includes("drive.google.com") || img.image_url.includes("googleusercontent.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(img.image_url)}` : img.image_url}
                     alt={img.alt_text || img.title || "미디어"}
                     className="h-full w-full object-cover transition duration-300 group-hover:opacity-85"
                   />

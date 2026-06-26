@@ -379,7 +379,7 @@ export default function FreeAssetsLibraryPage() {
   };
 
   const handleDeleteAsset = async (fileId: string) => {
-    if (!confirm("이 에셋을 영구 삭제하시겠습니까? 구글 드라이브에서도 완전히 삭제되며 복구할 수 없습니다.")) return;
+    if (!confirm("이 에셋을 영구 삭제하시겠습니까? 클라우드 저장소에서도 완전히 삭제되며 복구할 수 없습니다.")) return;
     
     setDeletingAsset(true);
     try {
@@ -1325,7 +1325,7 @@ export default function FreeAssetsLibraryPage() {
             {loading ? (
               <div className="flex h-64 flex-col items-center justify-center gap-3">
                 <Loader2 className="animate-spin text-blue-500" size={32} />
-                <p className="text-xs font-bold text-zinc-500">구글 드라이브로부터 무료 에셋 로딩 중...</p>
+                <p className="text-xs font-bold text-zinc-500">라이브러리로부터 무료 에셋 로딩 중...</p>
               </div>
             ) : filteredAssets.length === 0 ? (
               <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/10 text-zinc-500">
