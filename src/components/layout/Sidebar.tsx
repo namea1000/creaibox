@@ -168,13 +168,7 @@ export default function Sidebar({
         icon: LayoutDashboard,
         color: "text-blue-400",
       },
-      {
-        key: "dashboard",
-        name: "관리 대시보드",
-        href: "/studio/dashboard",
-        icon: LayoutDashboard,
-        color: "text-blue-400",
-      },
+
       {
         key: "client-site-builder",
         name: "AI 홈페이지 제작",
@@ -190,20 +184,7 @@ export default function Sidebar({
           { name: "홈페이지 설정", href: "/studio/client-site-builder/settings", icon: Settings },
         ],
       },
-      {
-        key: "shortcuts",
-        name: "바로가기",
-        href: "/studio/content-planner/idea-hub",
-        icon: Star,
-        color: "text-amber-400",
-        children: [
-          { name: "가사 소재 허브", href: "/studio/music/lyrics/idea-hub", icon: Lightbulb },
-          { name: "콘텐츠 아이디어 허브", href: "/studio/content-planner/idea-hub", icon: Lightbulb },
-          { name: "AI 콘텐츠 기획", href: "/studio/content-planner/planning", icon: Sparkles },
-          { name: "AI 앨범 기획", href: "/studio/music/planning", icon: Sparkles },
-          { name: "가사 & SUNO", href: "/studio/music/lyrics", icon: Mic2 },
-        ],
-      },
+
       {
         key: "library",
         name: "콘텐츠 라이브러리",
@@ -504,6 +485,13 @@ export default function Sidebar({
           { name: "Q&A", href: "/studio/infocenter/list/qna", icon: MessageCircle },
         ],
       },
+      {
+        key: "dashboard",
+        name: "관리 대시보드",
+        href: "/studio/dashboard",
+        icon: LayoutDashboard,
+        color: "text-blue-400",
+      },
       ...(isAdmin
         ? [
           {
@@ -554,9 +542,56 @@ export default function Sidebar({
     );
   };
 
-  const renderSimpleMenu = (item: MenuItem, color = "text-blue-400") => {
+  const getActiveStyles = (key?: string) => {
+    switch (key) {
+      case "client-site-builder":
+        return "border-emerald-500/20 bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-lg shadow-emerald-500/20";
+      case "planner":
+        return "border-purple-500/20 bg-gradient-to-r from-purple-600 to-indigo-500 text-white shadow-lg shadow-purple-500/20";
+      case "writing":
+        return "border-violet-500/20 bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow-lg shadow-violet-500/20";
+      case "naver":
+        return "border-green-500/20 bg-gradient-to-r from-green-600 to-emerald-500 text-white shadow-lg shadow-green-500/20";
+      case "music":
+        return "border-pink-500/20 bg-gradient-to-r from-pink-600 to-rose-500 text-white shadow-lg shadow-pink-500/20";
+      case "image":
+        return "border-fuchsia-500/20 bg-gradient-to-r from-fuchsia-600 to-pink-500 text-white shadow-lg shadow-fuchsia-500/20";
+      case "video":
+        return "border-cyan-500/20 bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/20";
+      case "data":
+        return "border-indigo-500/20 bg-gradient-to-r from-indigo-600 to-violet-500 text-white shadow-lg shadow-indigo-500/20";
+      case "keyword":
+        return "border-teal-500/20 bg-gradient-to-r from-teal-600 to-emerald-500 text-white shadow-lg shadow-teal-500/20";
+      case "youtube":
+        return "border-red-500/20 bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-lg shadow-red-500/20";
+      case "report":
+        return "border-blue-500/20 bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/20";
+      case "news":
+        return "border-orange-500/20 bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/20";
+      case "tools":
+        return "border-amber-500/20 bg-gradient-to-r from-amber-500 to-yellow-500 text-white shadow-lg shadow-amber-500/20";
+      case "community":
+        return "border-pink-500/20 bg-gradient-to-r from-pink-500 to-rose-400 text-white shadow-lg shadow-pink-500/20";
+      case "infocenter":
+        return "border-sky-500/20 bg-gradient-to-r from-sky-500 to-blue-400 text-white shadow-lg shadow-sky-500/20";
+      case "dashboard":
+        return "border-blue-500/20 bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/20";
+      case "admin":
+        return "border-red-700/20 bg-gradient-to-r from-red-700 to-rose-600 text-white shadow-lg shadow-red-700/20";
+      case "studio-home":
+      default:
+        return "border-sky-500/20 bg-gradient-to-r from-sky-500 to-indigo-500 text-white shadow-lg shadow-sky-500/20";
+    }
+  };
+
+  const renderSimpleMenu = (item: MenuItem & { key?: string }, color = "text-blue-400") => {
     const Icon = item.icon || PenTool;
     const isActive = isPathActive(item.href);
+    const activeStyles = getActiveStyles(item.key);
+
+    const baseClass = isCollapsed
+      ? "h-9 w-9 justify-center items-center px-0 py-0 mx-auto"
+      : "w-full px-3 py-2 gap-2.5 justify-start";
 
     return (
       <Link
@@ -565,18 +600,15 @@ export default function Sidebar({
         onClick={() => setIsMobileOpen(false)}
         title={isCollapsed ? item.name : undefined}
         className={`
-          group relative flex items-center rounded-lg border px-2.5 py-2 text-[13px] font-bold transition-all
+          group relative flex items-center rounded-xl border text-[13px] font-bold transition-all duration-300
           ${isActive
-            ? "border-blue-400/25 bg-blue-500/15 text-blue-600 dark:text-white shadow-[inset_0_0_0_1px_rgba(59,130,246,0.10),0_10px_24px_rgba(37,99,235,0.10)]"
-            : "border-transparent text-zinc-650 dark:text-zinc-100 hover:border-blue-400/15 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-white"
+            ? activeStyles
+            : "border-slate-300 bg-slate-50 text-slate-900 dark:border-white/15 dark:bg-[#0c0d12]/45 dark:text-zinc-100 hover:border-slate-400 hover:bg-zinc-100/50 dark:hover:border-white/30 dark:hover:bg-[#141622]/80 dark:hover:text-white"
           }
-          ${isCollapsed ? "lg:justify-center lg:px-0" : "gap-2.5"}
+          ${baseClass}
         `}
       >
-        {isActive && (
-          <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-blue-300" />
-        )}
-        <Icon size={16} className={`shrink-0 ${isActive ? "text-blue-300" : color}`} />
+        <Icon size={15} className={`shrink-0 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-white" : color}`} />
         {!isCollapsed && <span className="truncate">{item.name}</span>}
       </Link>
     );
@@ -587,33 +619,31 @@ export default function Sidebar({
     const hasChildren = !!group.children?.length;
     const isExpanded = expandedGroups.includes(group.key);
     const isActive = isPathActive(group.href);
+    const activeStyles = getActiveStyles(group.key);
 
     if (isCollapsed || !hasChildren) {
       return renderSimpleMenu(
-        { name: group.name, href: group.href, icon: group.icon },
+        { name: group.name, href: group.href, icon: group.icon, key: group.key },
         group.color
       );
     }
 
     return (
-      <div key={group.key} className="space-y-1">
+      <div key={group.key} className="space-y-1.5">
         <Link
           href={group.href}
           onClick={() => {
             setIsMobileOpen(false);
           }}
           className={`
-            relative flex items-center rounded-lg border px-2.5 py-2 text-[13px] font-bold transition-all
+            group relative flex items-center rounded-xl border px-3 py-2 text-[13px] font-bold transition-all duration-300
             ${isActive
-              ? "border-blue-400/25 bg-blue-500/15 text-blue-600 dark:text-white shadow-[inset_0_0_0_1px_rgba(59,130,246,0.10),0_10px_24px_rgba(37,99,235,0.10)]"
-              : "border-transparent text-zinc-650 dark:text-zinc-100 hover:border-blue-400/15 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-white"
+              ? activeStyles
+              : "border-slate-300 bg-slate-50 text-slate-900 dark:border-white/15 dark:bg-[#0c0d12]/45 dark:text-zinc-100 hover:border-slate-400 hover:bg-zinc-100/50 dark:hover:border-white/30 dark:hover:bg-[#141622]/80 dark:hover:text-white"
             }
           `}
         >
-          {isActive && (
-            <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-blue-300" />
-          )}
-          <Icon size={16} className={`shrink-0 ${isActive ? "text-blue-300" : group.color}`} />
+          <Icon size={15} className={`shrink-0 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-white" : group.color}`} />
           <span className="ml-2.5 min-w-0 flex-1 truncate">{group.name}</span>
 
           <button
@@ -623,14 +653,20 @@ export default function Sidebar({
               e.stopPropagation();
               toggleGroup(group.key);
             }}
-            className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 hover:text-zinc-700 dark:hover:text-white transition-colors duration-300"
+            className={`
+              ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-all duration-300
+              ${isActive
+                ? "text-white/80 hover:bg-white/15 hover:text-white"
+                : "text-zinc-400 hover:bg-zinc-150 dark:hover:bg-zinc-800 hover:text-zinc-750 dark:hover:text-zinc-300"
+              }
+            `}
           >
-            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
           </button>
         </Link>
 
         {isExpanded && (
-          <div className="ml-4 space-y-1 border-l border-zinc-800/80 pl-2">
+          <div className="ml-2.5 mt-1.5 p-1.5 space-y-1 rounded-xl bg-zinc-50/40 dark:bg-zinc-950/30 border border-zinc-200/40 dark:border-zinc-900/30">
             {group.children?.map((child) => {
               const ChildIcon = child.icon || FileText;
               const childActive = isPathActive(child.href);
@@ -641,19 +677,16 @@ export default function Sidebar({
                   href={child.href}
                   onClick={() => setIsMobileOpen(false)}
                   className={`
-                    relative flex items-center gap-2 rounded-md border px-2.5 py-2 text-[13px] font-bold transition
+                    relative flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[12px] font-bold transition duration-250
                     ${childActive
-                      ? "border-blue-400/20 bg-blue-500/15 text-blue-600 dark:text-white shadow-[inset_0_0_0_1px_rgba(59,130,246,0.08)]"
-                      : "border-transparent text-zinc-500 dark:text-zinc-300 hover:border-blue-400/15 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-white"
+                      ? "border-blue-400/20 bg-blue-500/10 text-blue-600 dark:text-cyan-400 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.05)]"
+                      : "border-transparent text-slate-700 dark:text-zinc-200 hover:border-zinc-300/40 dark:hover:border-zinc-800/40 hover:bg-zinc-100/40 dark:hover:bg-zinc-900/40 hover:text-slate-900 dark:hover:text-white"
                     }
                   `}
                 >
-                  {childActive && (
-                    <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-blue-300" />
-                  )}
                   <ChildIcon
-                    size={14}
-                    className={`shrink-0 ${childActive ? "text-blue-300" : group.color}`}
+                    size={13}
+                    className={`shrink-0 ${childActive ? "text-blue-500 dark:text-cyan-400" : "text-slate-400 dark:text-zinc-300"}`}
                   />
                   <span className="truncate">{child.name}</span>
                 </Link>
@@ -667,7 +700,7 @@ export default function Sidebar({
 
   const sectionTitle = (label: string) =>
     !isCollapsed && (
-      <p className="mb-2 ml-1.5 text-[11px] font-black tracking-[0.16em] text-blue-400/90">
+      <p className="text-[16px] font-black tracking-wider text-center w-full text-blue-600 dark:text-cyan-400 uppercase">
         {label}
       </p>
     );
@@ -709,19 +742,19 @@ export default function Sidebar({
       </div>
 
       <div className="flex-1 overflow-y-auto px-2.5 py-4">
-        <div className="mb-3 flex items-center justify-between">
-          {sectionTitle("AI Creator Workspace")}
+        <div className="relative mb-4 flex items-center justify-center min-h-[28px]">
+          {sectionTitle("AI Studio")}
 
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-300 transition hover:border-blue-500/50 hover:bg-zinc-800 hover:text-white lg:flex"
+            className="absolute right-0.5 top-1/2 -translate-y-1/2 hidden h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:border-blue-500/50 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-white lg:flex"
             title={isCollapsed ? "사이드바 펼치기" : "사이드바 접기"}
           >
             {isCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
           </button>
         </div>
 
-        <nav className="space-y-1">{menuGroups.map(renderGroup)}</nav>
+        <nav className="space-y-2">{menuGroups.map(renderGroup)}</nav>
       </div>
 
       {!isCollapsed && (
