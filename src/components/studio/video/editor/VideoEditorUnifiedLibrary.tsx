@@ -163,6 +163,8 @@ export default function VideoEditorUnifiedLibrary({
     selectedMediaId,
     selectMedia,
     setIsClearCacheOpen,
+    canvasRatio,
+    setCanvasRatio,
   } = useVideoEditor();
 
   const [libraries, setLibraries] = useState<string[]>(initialLibraries);
@@ -196,7 +198,7 @@ export default function VideoEditorUnifiedLibrary({
     localStorage.setItem("creaibox-video-editor-projects", JSON.stringify(projects));
   }, [projects, isLoaded]);
 
-  // Sync active project's timeline state (clips and tracks) from context to projects list
+  // Sync active project's timeline state (clips, tracks, and ratio) from context to projects list
   useEffect(() => {
     if (!projectTitle) return;
     const timeout = window.setTimeout(() => {
@@ -204,8 +206,12 @@ export default function VideoEditorUnifiedLibrary({
         const activeProj = prev.find((p) => p.title === projectTitle);
         if (!activeProj) return prev;
 
-        // Prevent redundant renders if clips and tracks match
-        if (activeProj.clips === clips && activeProj.tracks === tracks) {
+        // Prevent redundant renders if clips, tracks, and ratio match
+        if (
+          activeProj.clips === clips &&
+          activeProj.tracks === tracks &&
+          activeProj.ratio === canvasRatio
+        ) {
           return prev;
         }
         return prev.map((p) => {
@@ -214,6 +220,7 @@ export default function VideoEditorUnifiedLibrary({
               ...p,
               clips,
               tracks,
+              ratio: canvasRatio,
             };
           }
           return p;
@@ -222,7 +229,7 @@ export default function VideoEditorUnifiedLibrary({
     }, 0);
 
     return () => window.clearTimeout(timeout);
-  }, [projectTitle, clips, tracks]);
+  }, [projectTitle, clips, tracks, canvasRatio]);
 
   const [selectedEventId, setSelectedEventId] = useState<string | null>("event-1");
   const [activeCategory, setActiveCategory] = useState<string>(() =>
@@ -376,7 +383,7 @@ export default function VideoEditorUnifiedLibrary({
     setProjects((prev) => {
       const savedPrev = prev.map((p) => {
         if (p.title === projectTitle) {
-          return { ...p, clips: clips, tracks: tracks };
+          return { ...p, clips: clips, tracks: tracks, ratio: canvasRatio };
         }
         return p;
       });
@@ -386,6 +393,7 @@ export default function VideoEditorUnifiedLibrary({
     setProjectTitle(newTitle);
     setClips([]);
     setTracks(DEFAULT_TIMELINE_TRACKS);
+    setCanvasRatio("16:9");
     setEditingProjectId(id);
     setEditTitle(newTitle);
   };
@@ -444,6 +452,7 @@ export default function VideoEditorUnifiedLibrary({
             ...p,
             clips: clips,
             tracks: tracks,
+            ratio: canvasRatio,
           };
         }
         return p;
@@ -453,13 +462,15 @@ export default function VideoEditorUnifiedLibrary({
     // 2. Set new active project title
     setProjectTitle(project.title);
 
-    // 3. Load selected project's clips & tracks
+    // 3. Load selected project's clips, tracks, and ratio
     if (project.clips && project.tracks) {
       setClips(project.clips);
       setTracks(project.tracks);
+      setCanvasRatio(project.ratio || "16:9");
     } else {
       setClips([]);
       setTracks(DEFAULT_TIMELINE_TRACKS);
+      setCanvasRatio(project.ratio || "16:9");
     }
   };
 

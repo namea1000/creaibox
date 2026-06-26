@@ -20,31 +20,11 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function Header() {
-  const [user, setUser] = useState<User | null>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem("creaibox_cached_user");
-        return cached ? JSON.parse(cached) : null;
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  });
-  const [nickname, setNickname] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("creaibox_cached_nickname") || "";
-    }
-    return "";
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [nickname, setNickname] = useState("");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isAuthReady, setIsAuthReady] = useState(() => {
-    if (typeof window !== "undefined") {
-      return !!localStorage.getItem("creaibox_cached_user");
-    }
-    return false;
-  });
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [planName] = useState("Plus");
 
@@ -70,6 +50,24 @@ export default function Header() {
   );
 
   useEffect(() => {
+    // Restore cache safely on mount to prevent SSR Hydration Mismatch
+    if (typeof window !== "undefined") {
+      try {
+        const cachedUser = localStorage.getItem("creaibox_cached_user");
+        const cachedNickname = localStorage.getItem("creaibox_cached_nickname");
+        
+        if (cachedUser) {
+          setUser(JSON.parse(cachedUser));
+          if (cachedNickname) {
+            setNickname(cachedNickname);
+          }
+          setIsAuthReady(true);
+        }
+      } catch (e) {
+        console.warn("Failed to restore cached auth session:", e);
+      }
+    }
+
     let cancelled = false;
 
     const applyUser = async (nextUser: User | null) => {
