@@ -31,6 +31,25 @@
   - **어드민 권한 우회 적용**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/page.tsx) 및 [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/[slug]/page.tsx)의 데이터를 가져오는 Supabase 클라이언트를 `createAdminClient()`로 교체하여, 서버 사이드 렌더링 단계에서 안전하게 RLS를 우회하고 어드민이 발행한 공개 포스팅을 정상적으로 불러오도록 조치했습니다.
   - **SEO 및 접근 가용성 확보**: 이로써 로그인 세션이 없는 외부 방문자 및 크롤러 봇도 완벽하게 공개 블로그 목록 및 콘텐츠를 크롤링하고 탐색할 수 있도록 구조적 가용성을 확립했습니다.
 
+#### 5. 실서버 구글 드라이브 API 인증 유실로 인한 이미지 액박 및 업로드 오류 해결
+* **구현 요약**: Supabase-Vercel 공식 재연동 과정에서 유실된 구글 드라이브 환경 변수 6종을 복원하여 개인 라이브러리 이미지 액박 현상과 무료 공유 에셋 업로드 실패 오류를 전격 해결했습니다.
+* **작업 상세**:
+  - **원인 분석 및 검증**: 실서버 프록시 호출 통신 진단(`curl`)을 수행하여 `GCP OAuth2 credentials are not fully configured` 에러가 원인임을 규명했습니다. "무료 공유 에셋"의 경우 구글 드라이브 상에서 전체 공개로 풀려 있어 무인증 CDN 캐시 서빙이 되었으나, "크리에이박스 콘텐츠(개인 라이브러리)"는 비공개 폴더로 관리되어 마스터 인증키가 필수였기에 액박이 났던 인프라 정합성 문제를 찾아냈습니다.
+  - **환경 변수 복원 및 재배포**: Vercel 프로젝트 환경 변수에 마스터 인증 정보 3종(`GCP_OAUTH_CLIENT_ID`, `GCP_OAUTH_CLIENT_SECRET`, `GCP_OAUTH_REFRESH_TOKEN`) 및 구글 폴더 ID 3종(`GDRIVE_FOLDER_ID`, `GDRIVE_FREE_ASSETS_FOLDER_ID`, `GDRIVE_MUSIC_FOLDER_ID`)을 수동 복원 후 Redeploy를 완료하여 정상 노출 및 업로드 가동을 완수했습니다.
+  - **운영 명세 가이드라인 최신화**: [google-drive-caching-proxy.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/google-drive-caching-proxy.md)에 본 트러블슈팅 내역, 구글 드라이브 전체 환경 변수 명세, 그리고 향후 구글 드라이브 새로운 폴더를 신설하고 연동할 때 밟아야 하는 상세 실무 작업 가이드(공유 권한 설정 및 ID 갱신 요령)를 영구 기록했습니다.
+
+#### 6. 무료 공유 에셋 페이지 내 이미지 제작 요청 기능 일시 제거 및 그리드 4열 확장
+* **구현 요약**: 무료 공유 에셋 페이지의 가시 공간을 늘려 사용자 경험을 향상하기 위해, 우측의 "이미지 제작 요청 현황" 위젯과 관련 기능을 삭제하고 에셋 그리드를 가로 4열 출력 구조로 최적화했습니다.
+* **작업 상세**:
+  - **이미지 제작 요청 일시 제거**: [free-assets/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/free-assets/page.tsx)에서 우측의 `이미지 제작 요청 현황 aside 패널` 영역(라인 1596~1724), 상단 헤더의 `이미지 제작 요청` 트리거 버튼(라인 1349~1363), 그리고 하단의 `이미지 제작 요청 신청 모달` 렌더링 구문(라인 2247~2335)을 전격 제거했습니다.
+  - **4열 그리드 가로 폭 배치**: 메인 에셋 리스트 렌더링 그리드의 비율 클래스를 기존의 `grid-cols-1 sm:grid-cols-2 md:grid-cols-3`에서 `grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6`으로 확장하여 1열에 4개의 에셋이 채워져 크게 배치되도록 교정했습니다.
+
+#### 7. 클라이언트 사이드 Supabase 로그아웃 무한 펜딩 해결
+* **구현 요약**: 메인 홈페이지 헤더 및 스튜디오 상단 바에서 로그아웃 버튼을 눌렀을 때, Supabase Auth API와 Next.js 미들웨어 간의 경쟁 조건으로 인해 "로그아웃 중..." 텍스트에 머물러 진행이 멈추던 현상을 3초 타임아웃 세이프티 가드로 완치했습니다.
+* **작업 상세**:
+  - **원인 추적**: 클라이언트에서 `supabase.auth.signOut({ scope: "global" })` 호출 시, Next.js Middleware의 세션 갱신 로직과 쿠키 처리 타이밍이 충돌하여 인증 파기 프로미스가 영구히 Pending 상태에 잠기는 Supabase Auth JS SDK의 특이 이슈로 판단되었습니다.
+  - **타임아웃 세이프 가드 적용**: [Header.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Header.tsx) 및 [StudioTopbar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/StudioTopbar.tsx)의 로그아웃 핸들러에 `Promise.race`를 구성하여, 최장 3초가 지나면 API 네트워크 응답 상태와 무관하게 로컬의 캐시 토큰 및 세션 데이터를 강제 파기(Local Storage 및 Memory User 정보 파괴)하고 첫 화면으로 리디렉션하도록 우회 가드를 견고하게 설계하여 즉각적이고 안정적인 로그아웃 흐름을 완성했습니다.
+
 ### 🗓️ 2026-06-26 (금)
 #### 1. 스튜디오 좌측 사이드바 로고 타이틀 개편 및 수평 정렬 최적화
 * **구현 요약**: 사이드바 로고 하단의 타이틀을 `AI Studio`로 개편하고, 폰트 시인성 확보 및 수평 정중앙 정렬을 구현했습니다.

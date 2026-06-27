@@ -189,7 +189,11 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
       setIsLoggingOut(true);
       setIsProfileOpen(false);
 
-      await supabase.auth.signOut({ scope: "global" });
+      // 3초 타임아웃 세이프티 가드: Supabase API 로그아웃 통신이 펜딩되더라도 로컬 세션을 강제 파괴하고 로그아웃 완료
+      await Promise.race([
+        supabase.auth.signOut({ scope: "global" }),
+        new Promise((resolve) => setTimeout(resolve, 3000)),
+      ]);
 
       setUser(null);
       setNickname("");

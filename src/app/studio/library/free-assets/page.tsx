@@ -1347,21 +1347,6 @@ export default function FreeAssetsLibraryPage() {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => {
-                if (!currentUserEmail) {
-                  if (confirm("이미지 제작 요청은 로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?")) {
-                    window.location.href = "/login?redirect=/studio/library/free-assets";
-                  }
-                  return;
-                }
-                setIsRequestOpen(true);
-              }}
-              className="flex items-center justify-center gap-2 rounded-xl border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 transition px-5 py-2.5 text-xs font-black text-zinc-300 shadow-md cursor-pointer"
-            >
-              <ImagePlus size={16} />
-              이미지 제작 요청
-            </button>
-            <button
               onClick={handleOpenUpload}
               className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 transition px-5 py-2.5 text-xs font-black text-white shadow-lg cursor-pointer"
             >
@@ -1371,25 +1356,22 @@ export default function FreeAssetsLibraryPage() {
           </div>
         </div>
 
-        {/* 2단 메인 레이아웃 (에셋 그리드 + 우측 제작 요청 Aside) */}
-        <div className="flex flex-col lg:flex-row gap-8 items-start w-full mt-6">
-          
-          {/* 왼쪽: 메인 에셋 그리드 영역 */}
-          <div className="flex-1 w-full min-w-0">
-            {loading ? (
-              <div className="flex h-64 flex-col items-center justify-center gap-3">
-                <Loader2 className="animate-spin text-blue-500" size={32} />
-                <p className="text-xs font-bold text-zinc-500">라이브러리로부터 무료 에셋 로딩 중...</p>
-              </div>
-            ) : filteredAssets.length === 0 ? (
-              <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/10 text-zinc-500">
-                <ImageIcon size={42} className="mb-3 text-zinc-700" />
-                <p className="text-sm font-black">검색 조건에 맞는 무료 에셋이 없습니다.</p>
-                <p className="mt-1 text-xs text-zinc-600">첫 번째 기여자로 무료 나눔 파일 업로드를 해보세요!</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {filteredAssets.map((asset) => {
+        {/* 메인 에셋 그리드 영역 (4열 배치) */}
+        <div className="w-full mt-6">
+          {loading ? (
+            <div className="flex h-64 flex-col items-center justify-center gap-3">
+              <Loader2 className="animate-spin text-blue-500" size={32} />
+              <p className="text-xs font-bold text-zinc-500">라이브러리로부터 무료 에셋 로딩 중...</p>
+            </div>
+          ) : filteredAssets.length === 0 ? (
+            <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/10 text-zinc-500">
+              <ImageIcon size={42} className="mb-3 text-zinc-700" />
+              <p className="text-sm font-black">검색 조건에 맞는 무료 에셋이 없습니다.</p>
+              <p className="mt-1 text-xs text-zinc-600">첫 번째 기여자로 무료 나눔 파일 업로드를 해보세요!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {filteredAssets.map((asset) => {
                   const isAudio = asset.mediaType === "music";
                   const isVideo = asset.mediaType === "video";
                   const isPlaying = playingAudioId === asset.id;
@@ -1592,138 +1574,8 @@ export default function FreeAssetsLibraryPage() {
               </div>
             )}
           </div>
-
-          {/* 오른쪽: 이미지 제작 요청 현황 aside 패널 */}
-          <aside className="w-full lg:w-[350px] shrink-0 border border-zinc-800 bg-zinc-950/60 rounded-2xl p-5 shadow-xl">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3 mb-4">
-              <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600/10 text-blue-400">
-                  <Sparkles size={14} />
-                </div>
-                <h3 className="text-xs font-black text-white uppercase tracking-wider">이미지 제작 요청 현황</h3>
-              </div>
-              <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-black text-zinc-400">
-                {requests.length}건
-              </span>
-            </div>
-
-            {requestsLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((n) => (
-                  <div key={n} className="animate-pulse rounded-xl border border-zinc-800 bg-zinc-900/20 p-4">
-                    <div className="flex justify-between">
-                      <div className="h-4 w-12 rounded bg-zinc-800" />
-                      <div className="h-4 w-10 rounded bg-zinc-800" />
-                    </div>
-                    <div className="h-3 w-3/4 rounded bg-zinc-800 mt-3" />
-                    <div className="h-3 w-1/2 rounded bg-zinc-800 mt-2" />
-                  </div>
-                ))}
-              </div>
-            ) : requests.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-center">
-                <HelpCircle size={28} className="text-zinc-600 mb-2" />
-                <p className="text-xs font-bold text-zinc-500">등록된 제작 요청이 없습니다.</p>
-                <p className="text-[10px] text-zinc-600 mt-1 max-w-[200px]">공용으로 필요한 에셋을 가장 먼저 요청해보세요!</p>
-              </div>
-            ) : (
-              <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-800">
-                {requests.map((req) => (
-                  <div
-                    key={req.id}
-                    className="relative rounded-xl border border-zinc-850 bg-[#0f1118]/60 p-4 hover:border-zinc-700/80 transition"
-                  >
-                    {/* 카드 헤더 */}
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[9px] font-bold text-zinc-300">
-                        {req.media_type}
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[9px] text-zinc-500 font-bold">
-                          {req.user_nickname}
-                        </span>
-                        <span className="h-1 w-1 rounded-full bg-zinc-700" />
-                        <span className="text-[9px] text-zinc-650 font-bold">
-                          {new Date(req.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* 카드 설명 */}
-                    <p className="text-xs text-zinc-300 leading-relaxed font-bold break-all">
-                      {req.description}
-                    </p>
-
-                    {/* 완료 및 배지 영역 */}
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-800/60">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[9px] font-black select-none ${
-                          req.status === "completed"
-                            ? "bg-emerald-500/10 text-emerald-450 border border-emerald-500/20"
-                            : "bg-amber-500/10 text-amber-450 border border-amber-500/20"
-                        }`}
-                      >
-                        {req.status === "completed" ? "제작완료" : "대기중"}
-                      </span>
-
-                      {/* 관리자 완료 처리 버튼 (인라인 토글) */}
-                      {isAdmin && req.status !== "completed" && activeCommentId !== req.id && (
-                        <button
-                          onClick={() => {
-                            setActiveCommentId(req.id);
-                            setCommentText("");
-                          }}
-                          className="rounded-lg bg-blue-600/15 hover:bg-blue-600/30 border border-blue-500/20 text-blue-400 px-2 py-1 text-[10px] font-black transition cursor-pointer"
-                        >
-                          답변 작성
-                        </button>
-                      )}
-                    </div>
-
-                    {/* 관리자 답변 말풍선 */}
-                    {req.comment && (
-                      <div className="mt-3 rounded-lg bg-zinc-950/60 border border-zinc-850 p-3 text-[11px] text-zinc-400 leading-relaxed relative">
-                        <div className="absolute -top-1.5 left-4 w-3 h-3 rotate-45 bg-[#0b0c10] border-t border-l border-zinc-850" />
-                        <p className="font-extrabold text-blue-400 text-[10px] mb-0.5 flex items-center gap-1">
-                          <Sparkles size={10} /> 관리자 답변
-                        </p>
-                        <p className="font-bold text-zinc-300">{req.comment}</p>
-                      </div>
-                    )}
-
-                    {/* 관리자 답변 작성 폼 */}
-                    {isAdmin && activeCommentId === req.id && (
-                      <div className="mt-4 border-t border-zinc-800 pt-3 space-y-2">
-                        <textarea
-                          value={commentText}
-                          onChange={(e) => setCommentText(e.target.value)}
-                          placeholder="답변 내용을 작성해 주세요 (예: 요청하신 이미지를 제작하여 무료 공유 에셋에 업로드해 드렸습니다.)"
-                          className="w-full min-h-[60px] rounded-lg border border-zinc-800 bg-zinc-950 p-2 text-xs font-bold text-zinc-200 placeholder-zinc-650 focus:border-blue-500 focus:outline-none"
-                        />
-                        <div className="flex justify-end gap-1.5">
-                          <button
-                            onClick={() => setActiveCommentId(null)}
-                            className="rounded-lg bg-zinc-800 hover:bg-zinc-700 px-2 py-1 text-[10px] font-bold text-zinc-400 cursor-pointer"
-                          >
-                            취소
-                          </button>
-                          <button
-                            onClick={() => handleCommentSubmit(req.id)}
-                            disabled={submittingComment}
-                            className="rounded-lg bg-blue-600 hover:bg-blue-500 px-2.5 py-1 text-[10px] font-black text-white cursor-pointer disabled:opacity-50"
-                          >
-                            {submittingComment ? "제출중..." : "완료 처리"}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </aside>
         </div>
-      </div>
+
 
       {/* 1. 상세보기 상세 모달 (Detail View Modal) */}
       {selectedAsset && (
@@ -2240,96 +2092,6 @@ export default function FreeAssetsLibraryPage() {
               </div>
 
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* 이미지 제작 요청 신청 모달 */}
-      {isRequestOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 backdrop-blur-md">
-          <div className="relative w-full max-w-lg rounded-3xl border border-zinc-800 bg-[#0c0f17] text-zinc-100 p-6 shadow-2xl">
-            
-            <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
-              <h2 className="text-base font-black text-white flex items-center gap-2">
-                <ImagePlus className="text-blue-400" size={18} />
-                공용 이미지 제작 요청하기
-              </h2>
-              <button
-                onClick={() => {
-                  setIsRequestOpen(false);
-                  setRequestDescription("");
-                }}
-                className="flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-900 text-zinc-400 hover:text-white transition cursor-pointer"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* 주의 사항 경고 배너 */}
-            <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-xs text-red-400 leading-relaxed font-bold">
-              <p className="flex items-center gap-1.5 font-black text-red-400 mb-1">
-                ⚠️ 필독 주의 사항
-              </p>
-              <p className="pl-5 text-zinc-400">
-                개인적인 블로그나 비공개 프로젝트 용도의 사적이고 아주 세부적인 요청은 제작해 드리지 못합니다. 
-                <span className="text-red-400 ml-1">오직 모두가 공용으로 사용 가능한 범용 이미지 및 에셋</span>에 한해서만 심사 후 제작을 지원하오니 양해 부탁드립니다.
-              </p>
-            </div>
-
-            <form onSubmit={handleRequestSubmit} className="mt-5 space-y-4">
-              {/* 미디어 대분류 */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-black text-zinc-400">미디어 분류</label>
-                <select
-                  value={requestMediaType}
-                  onChange={(e) => setRequestMediaType(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-xs font-bold text-zinc-200 focus:border-blue-500 focus:outline-none"
-                >
-                  <option value="이미지">이미지 (실사/사진)</option>
-                  <option value="일러스트">일러스트</option>
-                  <option value="벡터">벡터 (Vector)</option>
-                  <option value="비디오">비디오</option>
-                  <option value="GIF">GIF (움짤)</option>
-                </select>
-              </div>
-
-              {/* 요청 상세 설명 */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-black text-zinc-400">구체적인 요청 사항</label>
-                <textarea
-                  value={requestDescription}
-                  onChange={(e) => setRequestDescription(e.target.value)}
-                  placeholder="예: 가을 하늘 아래 황금빛으로 물든 넓은 밀밭과 오두막집 실사 이미지 제작 요청합니다."
-                  rows={4}
-                  required
-                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-xs font-bold text-zinc-200 placeholder-zinc-700 focus:border-blue-500 focus:outline-none"
-                />
-                <span className="text-[10px] text-zinc-650 font-bold block text-right">
-                  최소 5자 이상 상세히 작성해 주세요.
-                </span>
-              </div>
-
-              {/* 버튼 그룹 */}
-              <div className="flex gap-2 pt-2 border-t border-zinc-900">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsRequestOpen(false);
-                    setRequestDescription("");
-                  }}
-                  className="flex-1 rounded-xl bg-zinc-900 hover:bg-zinc-800 py-3 text-xs font-black text-zinc-400 transition cursor-pointer"
-                >
-                  취소
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingRequest}
-                  className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-500 py-3 text-xs font-black text-white transition shadow-lg disabled:opacity-50 cursor-pointer"
-                >
-                  {submittingRequest ? "제출 중..." : "제작 요청하기"}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}
