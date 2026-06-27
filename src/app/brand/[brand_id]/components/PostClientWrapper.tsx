@@ -36,6 +36,8 @@ interface PostClientWrapperProps {
   categories: BlogCategory[];
   publishedDate: string;
   normalizedContent: string;
+  prevPost?: any;
+  nextPost?: any;
 }
 
 function looksLikeHtml(content: string) {
@@ -134,7 +136,9 @@ export default function PostClientWrapper({
   category,
   categories,
   publishedDate,
-  normalizedContent
+  normalizedContent,
+  prevPost,
+  nextPost
 }: PostClientWrapperProps) {
   // 1. Theme State (default to light)
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -198,6 +202,12 @@ export default function PostClientWrapper({
 
   const imageBorder = theme === "dark" ? "border-zinc-900" : "border-zinc-200";
 
+  const cardBg = theme === "dark"
+    ? "border-zinc-800 bg-[#1e222b]/40 hover:bg-[#1e222b]/70 hover:border-zinc-700"
+    : "border-zinc-200 bg-white hover:bg-zinc-50/50 hover:border-zinc-300/60";
+
+  const cardText = theme === "dark" ? "text-white" : "text-[#1e293b]";
+
   const excerptBg = theme === "dark"
     ? "border-zinc-800 bg-zinc-900/30 text-zinc-400"
     : "border-zinc-200 bg-zinc-50/50 text-[#475569]";
@@ -214,7 +224,7 @@ export default function PostClientWrapper({
   const visibleClass = isThemeLoaded ? "opacity-100" : "opacity-0";
 
   return (
-    <div className={`min-h-screen transition-all duration-300 font-sans selection:bg-blue-500/30 selection:text-blue-200 theme-${theme} ${bgStyle} ${visibleClass}`}>
+    <div className={`flex flex-col min-h-screen transition-all duration-300 font-sans selection:bg-blue-500/30 selection:text-blue-200 theme-${theme} ${bgStyle} ${visibleClass}`}>
       <style
         dangerouslySetInnerHTML={{
           __html: `
@@ -306,7 +316,7 @@ export default function PostClientWrapper({
       </header>
 
       {/* Main post container */}
-      <main className="mx-auto max-w-7xl px-6 py-12">
+      <main className="mx-auto max-w-7xl px-6 py-12 flex-1 w-full">
         <Link
           href="/"
           className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-xs font-black transition ${backBtnStyle}`}
@@ -334,14 +344,6 @@ export default function PostClientWrapper({
               {post.title}
             </h1>
 
-            <div className={`mt-6 flex flex-wrap items-center gap-4 text-xs font-bold ${metaColor}`}>
-              <span className="inline-flex items-center gap-1.5">
-                <CalendarDays size={14} />
-                {publishedDate}
-              </span>
-              <span>•</span>
-              <span>By {profile.nickname || brand_id}</span>
-            </div>
           </header>
 
           <div className="px-8 py-12 md:px-12 space-y-8">
@@ -361,7 +363,7 @@ export default function PostClientWrapper({
             </div>
 
             {tags.length > 0 && (
-              <div className={`border-t pt-8 mt-12 ${theme === "dark" ? "border-zinc-900" : "border-zinc-200"}`}>
+              <div className="pt-8 mt-12">
                 <h2 className="text-xs font-black uppercase tracking-[0.24em] text-zinc-500">
                   SEO Tags
                 </h2>
@@ -379,6 +381,73 @@ export default function PostClientWrapper({
             )}
           </div>
         </article>
+
+        {/* 🌟 이전 글 / 다음 글 내비게이션 카드 */}
+        {(prevPost || nextPost) && (
+          <div className={`mt-16 grid grid-cols-1 gap-6 md:grid-cols-2 border-t pt-10 ${theme === "dark" ? "border-zinc-900" : "border-zinc-200"}`}>
+            {prevPost ? (
+              <Link
+                href={`/${prevPost.slug}`}
+                className={`group flex items-center gap-4 rounded-2xl border p-4 transition-all hover:border-blue-400 hover:shadow-md ${cardBg}`}
+              >
+                <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-zinc-950">
+                  {prevPost.thumbnailUrl ? (
+                    <img
+                      src={prevPost.thumbnailUrl}
+                      alt={prevPost.title || "thumbnail"}
+                      className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className={`absolute inset-0 flex items-center justify-center ${theme === "dark" ? "bg-zinc-900 text-zinc-700" : "bg-zinc-100 text-zinc-400"}`}>
+                      <Sparkles size={16} />
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-blue-400">
+                    &larr; 이전 글
+                  </span>
+                  <h4 className={`mt-1 truncate text-sm font-black transition-colors group-hover:text-blue-400 ${cardText}`}>
+                    {prevPost.title}
+                  </h4>
+                </div>
+              </Link>
+            ) : (
+              <div />
+            )}
+
+            {nextPost ? (
+              <Link
+                href={`/${nextPost.slug}`}
+                className={`group flex items-center gap-4 rounded-2xl border p-4 transition-all hover:border-blue-400 hover:shadow-md ${cardBg}`}
+              >
+                <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-zinc-950">
+                  {nextPost.thumbnailUrl ? (
+                    <img
+                      src={nextPost.thumbnailUrl}
+                      alt={nextPost.title || "thumbnail"}
+                      className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className={`absolute inset-0 flex items-center justify-center ${theme === "dark" ? "bg-zinc-900 text-zinc-700" : "bg-zinc-100 text-zinc-400"}`}>
+                      <Sparkles size={16} />
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-blue-400 text-right">
+                    다음 글 &rarr;
+                  </span>
+                  <h4 className={`mt-1 truncate text-sm font-black transition-colors group-hover:text-blue-400 ${cardText}`}>
+                    {nextPost.title}
+                  </h4>
+                </div>
+              </Link>
+            ) : (
+              <div />
+            )}
+          </div>
+        )}
       </main>
 
       {/* Footer */}

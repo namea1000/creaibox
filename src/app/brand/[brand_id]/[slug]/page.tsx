@@ -33,6 +33,27 @@ interface PostDetailPageProps {
   params: Promise<{ brand_id: string; slug: string }>;
 }
 
+function isPostForBrand(postCanonicalUrl: string | null, targetBrandId: string, profileConfigs: any) {
+  if (!postCanonicalUrl) return false;
+  const canonicalLower = postCanonicalUrl.toLowerCase();
+  
+  const isSubdomain = 
+    canonicalLower.includes(`://${targetBrandId.toLowerCase()}.creaibox.com`) ||
+    canonicalLower.includes(`://${targetBrandId.toLowerCase()}.localhost:3000`);
+  if (isSubdomain) return true;
+
+  const customDomain = profileConfigs?.[`custom_domain_${targetBrandId}`] || 
+    (targetBrandId === profileConfigs?.brand_id ? profileConfigs?.custom_domain : "");
+  
+  if (customDomain) {
+    const isCustom = canonicalLower.includes(`://${customDomain.toLowerCase()}/`) || 
+                     canonicalLower.endsWith(`://${customDomain.toLowerCase()}`);
+    if (isCustom) return true;
+  }
+  
+  return false;
+}
+
 function normalizePublishedContent(content: string) {
   return content
     .replace(/^\s*---+\s*$/gm, "")
@@ -375,6 +396,54 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
     });
   }
 
+  // Fetch Sibling Posts for Prev/Next navigation
+  const { data: postsData } = await supabase
+    .from("writing_creaibox_posts")
+    .select("id, title, slug, created_at, canonical_url")
+    .eq("user_id", profile.id)
+    .eq("status", "published")
+    .not("slug", "is", null)
+    .order("created_at", { ascending: false });
+
+  const postsRaw = postsData || [];
+  let brandPosts: any[] = [];
+  
+  if (postsRaw.length > 0) {
+    const isPrimary = brand_id === profile.brand_id;
+    const filteredRaw = postsRaw.filter((p) => {
+      if (!p.canonical_url) return isPrimary;
+      return isPostForBrand(p.canonical_url, brand_id, profile.extra_configs);
+    });
+
+    if (filteredRaw.length > 0) {
+      const filteredIds = filteredRaw.map((p) => p.id);
+      
+      const { data: images } = await supabase
+        .from("generated_images")
+        .select("source_id, image_url, is_primary")
+        .eq("source_type", "writing_creaibox_posts")
+        .eq("image_role", "thumbnail")
+        .in("source_id", filteredIds);
+
+      const imageMap: Record<string, string> = {};
+      (images || []).forEach((img) => {
+        if (!img.source_id) return;
+        if (!imageMap[img.source_id] || img.is_primary) {
+          imageMap[img.source_id] = img.image_url;
+        }
+      });
+
+      brandPosts = filteredRaw.map((p) => ({
+        ...p,
+        thumbnailUrl: imageMap[p.id] || null
+      }));
+    }
+  }
+
+  const currentIndex = brandPosts.findIndex((p) => p.id === post.id);
+  const prevPost = currentIndex !== -1 && currentIndex < brandPosts.length - 1 ? brandPosts[currentIndex + 1] : null;
+  const nextPost = currentIndex !== -1 && currentIndex > 0 ? brandPosts[currentIndex - 1] : null;
+
   const tags = post.seo_tags || [];
   const publishedDate = formatDate(post.created_at);
 
@@ -505,6 +574,8 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
         categories={categories}
         publishedDate={publishedDate}
         normalizedContent={normalizedContent}
+        prevPost={prevPost}
+        nextPost={nextPost}
       />
     </>
   );

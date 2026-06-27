@@ -43,9 +43,16 @@ export default function BlogClientWrapper({
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [isThemeLoaded, setIsThemeLoaded] = useState(false);
 
-  // 2. Search States
+  // 2. Search & Pagination States
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const postsPerPage = 20;
+
+  // Reset pagination on search query change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   // Load theme preference on mount
   useEffect(() => {
@@ -87,6 +94,11 @@ export default function BlogClientWrapper({
     return titleMatch || descMatch || tagMatch;
   });
 
+  const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
+  const indexOfLastPost = currentPage * postsPerPage;
+  const indexOfFirstPost = indexOfLastPost - postsPerPage;
+  const currentPosts = filteredPosts.slice(indexOfFirstPost, indexOfLastPost);
+
   const blogTitle = profile.extra_configs?.blog_title || `${profile.nickname || brand_id} 블로그`;
   const blogDesc = profile.extra_configs?.blog_description || "CreAibox에서 생성한 고품질 콘텐츠 블로그입니다.";
   const template = profile.extra_configs?.blog_template || "card";
@@ -121,7 +133,7 @@ export default function BlogClientWrapper({
   const visibleClass = isThemeLoaded ? "opacity-100" : "opacity-0";
 
   return (
-    <div className={`min-h-screen transition-all duration-300 font-sans selection:bg-blue-500/30 selection:text-blue-200 ${bgStyle} ${visibleClass}`}>
+    <div className={`flex flex-col min-h-screen transition-all duration-300 font-sans selection:bg-blue-500/30 selection:text-blue-200 ${bgStyle} ${visibleClass}`}>
       {/* Google Analytics Integration */}
       {gaId && (
         <>
@@ -254,9 +266,9 @@ export default function BlogClientWrapper({
       </section>
 
       {/* 🌟 Main content body */}
-      <main className="mx-auto max-w-7xl px-6 py-16">
-        {filteredPosts.length === 0 ? (
-          <div className={`border px-8 py-24 text-center space-y-4 rounded-none ${theme === "dark" ? "border-zinc-900 bg-zinc-900/10" : "border-zinc-200 bg-white"}`}>
+      <main className="mx-auto max-w-7xl px-6 py-16 flex-1 w-full">
+        {currentPosts.length === 0 ? (
+          <div className={`border px-8 py-24 text-center space-y-4 rounded-2xl ${theme === "dark" ? "border-zinc-900 bg-zinc-900/10" : "border-zinc-200 bg-white"}`}>
             <p className={`text-lg font-black ${theme === "dark" ? "text-white" : "text-zinc-800"}`}>
               {searchQuery ? "검색 결과에 맞는 글이 없습니다." : "아직 발행된 글이 없습니다."}
             </p>
@@ -271,7 +283,7 @@ export default function BlogClientWrapper({
             {/* 1. NEWS Template */}
             {template === "news" && (
               <div className="space-y-6 max-w-4xl mx-auto">
-                {filteredPosts.map((post) => {
+                {currentPosts.map((post) => {
                   const excerpt = buildExcerpt(post);
                   const postCategory = categories.find(c => c.id === post.category_id);
                   return (
@@ -308,16 +320,16 @@ export default function BlogClientWrapper({
             {/* 2. LIST Template */}
             {template === "list" && (
               <div className="space-y-6 max-w-5xl mx-auto">
-                {filteredPosts.map((post) => {
+                {currentPosts.map((post) => {
                   const excerpt = buildExcerpt(post);
                   const postCategory = categories.find(c => c.id === post.category_id);
                   return (
                     <Link
                       key={post.id}
                       href={`/${post.slug}`}
-                      className={`group flex flex-col md:flex-row gap-6 rounded-none border p-5 transition-all hover:-translate-y-0.5 ${cardBg}`}
+                      className={`group flex flex-col md:flex-row gap-6 rounded-2xl border p-5 transition-all hover:-translate-y-0.5 ${cardBg}`}
                     >
-                      <div className="relative aspect-[16/10] md:w-[260px] shrink-0 overflow-hidden rounded-none bg-zinc-950">
+                      <div className="relative aspect-[16/10] md:w-[260px] shrink-0 overflow-hidden rounded-xl bg-zinc-950">
                         {post.thumbnailUrl ? (
                           <img
                             src={post.thumbnailUrl}
@@ -330,7 +342,7 @@ export default function BlogClientWrapper({
                           </div>
                         )}
                       </div>
-                      <div className="flex flex-col justify-between py-1">
+                      <div className="flex flex-col justify-center py-1">
                         <div className="space-y-3">
                           <div className="flex items-center gap-2 text-xs font-bold text-zinc-500">
                             {postCategory && (
@@ -339,15 +351,12 @@ export default function BlogClientWrapper({
                             {postCategory && <span>•</span>}
                             <span>{formatDate(post.created_at)}</span>
                           </div>
-                          <h2 className={`text-2xl font-black transition-colors group-hover:text-blue-400 line-clamp-2 ${cardText}`}>
+                          <h2 className={`text-lg font-black transition-colors group-hover:text-blue-400 line-clamp-2 ${cardText}`}>
                             {post.title}
                           </h2>
                           <p className={`text-sm font-bold leading-relaxed line-clamp-2 ${cardDesc}`}>
                             {excerpt}
                           </p>
-                        </div>
-                        <div className="mt-4 flex items-center gap-1.5 text-xs font-black uppercase italic tracking-wider text-blue-400 group-hover:text-blue-300">
-                          Read Post <ArrowRight size={12} />
                         </div>
                       </div>
                     </Link>
@@ -359,14 +368,14 @@ export default function BlogClientWrapper({
             {/* 3. CARD Template (Default) */}
             {template === "card" && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredPosts.map((post) => {
+                {currentPosts.map((post) => {
                   const excerpt = buildExcerpt(post);
                   const postCategory = categories.find(c => c.id === post.category_id);
                   return (
                     <Link
                       key={post.id}
                       href={`/${post.slug}`}
-                      className={`group flex flex-col overflow-hidden rounded-none border transition-all duration-300 hover:-translate-y-1 ${cardBg}`}
+                      className={`group flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 hover:-translate-y-1 ${cardBg}`}
                     >
                       <div className="relative aspect-[16/10] overflow-hidden bg-zinc-950">
                         {post.thumbnailUrl ? (
@@ -392,21 +401,51 @@ export default function BlogClientWrapper({
                           <CalendarDays size={13} />
                           {formatDate(post.created_at)}
                         </div>
-                        <h2 className={`line-clamp-2 text-xl font-black leading-tight transition-colors group-hover:text-blue-400 ${cardText}`}>
+                        <h2 className={`line-clamp-2 text-lg font-black leading-tight transition-colors group-hover:text-blue-400 ${cardText}`}>
                           {post.title}
                         </h2>
                         <p className={`line-clamp-3 text-sm font-bold leading-relaxed ${cardDesc}`}>
                           {excerpt}
                         </p>
-                        <div className={`mt-auto pt-4 border-t flex items-center justify-between text-xs font-black text-zinc-500 ${cardBorder}`}>
-                          <span className="flex items-center gap-1 text-blue-400 group-hover:text-blue-300">
-                            자세히 보기 <ArrowRight size={12} />
-                          </span>
-                        </div>
                       </div>
                     </Link>
                   );
                 })}
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-12 flex items-center justify-center gap-4">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className={`flex items-center gap-1 rounded-full border px-4 py-2 text-xs font-black transition-colors ${
+                    currentPage === 1
+                      ? "cursor-not-allowed border-zinc-200/40 text-zinc-400/50"
+                      : theme === "dark"
+                      ? "border-zinc-800 bg-[#1e222b] text-zinc-300 hover:border-blue-400 hover:text-white"
+                      : "border-zinc-200 bg-white text-zinc-600 hover:border-blue-400 hover:text-blue-700"
+                  }`}
+                >
+                  <ArrowLeft size={12} /> 이전
+                </button>
+                <span className={`text-xs font-bold ${theme === "dark" ? "text-zinc-400" : "text-zinc-500"}`}>
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className={`flex items-center gap-1 rounded-full border px-4 py-2 text-xs font-black transition-colors ${
+                    currentPage === totalPages
+                      ? "cursor-not-allowed border-zinc-200/40 text-zinc-400/50"
+                      : theme === "dark"
+                      ? "border-zinc-800 bg-[#1e222b] text-zinc-300 hover:border-blue-400 hover:text-white"
+                      : "border-zinc-200 bg-white text-zinc-600 hover:border-blue-400 hover:text-blue-700"
+                  }`}
+                >
+                  다음 <ArrowRight size={12} />
+                </button>
               </div>
             )}
 
