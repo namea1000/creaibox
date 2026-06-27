@@ -230,6 +230,17 @@
   - **이미지 선언 완벽 제거 및 텍스트 롤백**: 본문 텍스트 내에서 줄 바꿈 파싱 오류를 야기하던 HTML 이미지 블록 태그들을 전부 제거했습니다.
   - **드래프트 DB 덮어쓰기**: Supabase `writing_creaibox_posts` 테이블의 기존 드래프트 행에 줄 바꿈과 제목 서식이 안전하게 복원된 순수 마크다운 본문을 업데이트하여 적재했습니다.
 
+#### 38. 해외 뉴스 번역 및 가공 기사 작성 마크다운 가이드북 수립
+* **구현 요약**: 해외 미디어 뉴스 수집을 통한 크리에이박스 뉴스 기사 작성 시, 저작권 리스크를 차단하고 전문성을 높이기 위한 전략 명세 가이드북을 구축했습니다.
+* **작업 상세**:
+  - **가이드북 신설**: [overseas-news-translation-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/overseas-news-translation-guide.md) 가이드를 신설하여 5대 해외 미디어(TechCrunch, VentureBeat 등) 바로가기 링크 주소 목록과 저작권 복제 침해 회피 요령(팩트 수집 및 재작성 기법), 크리에이박스 AI 에디터 활용 4단계 프로세스, 그리고 E-E-A-T 확보용 출처 표기/캐노니컬 URL 설정 표준을 완벽히 수록했습니다.
+
+#### 39. 브랜드 블로그 로딩 속도 튜닝 및 진입 깜빡임(Flicker) 제거 최적화
+* **구현 요약**: 브랜드 블로그 상세페이지 진입 시 발생하는 DB 대기 병목(TTFB)을 최소화하고, 초기 로딩 시 레이아웃 뚝 끊김 및 깜빡임 현상을 완치했습니다.
+* **작업 상세**:
+  - **데이터베이스 조회 병렬화 및 캐싱**: [[slug]/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/[brand_id]/[slug]/page.tsx)에서 순차적으로 돌던 카테고리 정보, 카테고리 목록, 형제 포스트 DB 요청을 `Promise.all`로 묶어 병렬화했습니다. 또한 Metadata와 Page 렌더러의 이중 호출을 억제하기 위해 `fetchPost` 함수를 `React.cache`로 메모이징 처리하여 DB 부담을 절반으로 낮췄습니다.
+  - **깜빡임 필터링 및 트랜지션 축소**: [BlogClientWrapper.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/[brand_id]/components/BlogClientWrapper.tsx) 및 [PostClientWrapper.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/[brand_id]/components/PostClientWrapper.tsx)에서 테마 로드 전까지 화면을 opacity-0으로 감추어 깜빡임을 유발하던 상태 전환 코드를 제거하고, 초기 반응 부하를 높이는 `transition-all`을 `transition-colors duration-150`으로 정밀 제한하여 쾌적한 로딩 속도를 달성했습니다.
+
 ### 🗓️ 2026-06-26 (금)
 #### 1. 스튜디오 좌측 사이드바 로고 타이틀 개편 및 수평 정렬 최적화
 * **구현 요약**: 사이드바 로고 하단의 타이틀을 `AI Studio`로 개편하고, 폰트 시인성 확보 및 수평 정중앙 정렬을 구현했습니다.

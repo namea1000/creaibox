@@ -221,10 +221,10 @@ export default function PostClientWrapper({
   const footerDivider = theme === "dark" ? "text-zinc-800" : "text-zinc-350";
 
   // Prevent flicker on load
-  const visibleClass = isThemeLoaded ? "opacity-100" : "opacity-0";
+  const visibleClass = "opacity-100";
 
   return (
-    <div className={`flex flex-col min-h-screen transition-all duration-300 font-sans selection:bg-blue-500/30 selection:text-blue-200 theme-${theme} ${bgStyle} ${visibleClass}`}>
+    <div className={`flex flex-col min-h-screen transition-colors duration-150 font-sans selection:bg-blue-500/30 selection:text-blue-200 theme-${theme} ${bgStyle} ${visibleClass}`}>
       <style
         dangerouslySetInnerHTML={{
           __html: `

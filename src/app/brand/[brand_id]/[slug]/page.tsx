@@ -1,4 +1,4 @@
-import React from "react";
+import React, { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -218,7 +218,7 @@ function formatDate(value: string | null) {
   return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}.`;
 }
 
-async function fetchPost(brandId: string, slug: string) {
+const fetchPost = cache(async (brandId: string, slug: string) => {
   const supabase = await createAdminClient();
   const decodedSlug = decodeURIComponent(slug);
 
@@ -288,7 +288,7 @@ async function fetchPost(brandId: string, slug: string) {
     post,
     profile,
   };
-}
+});
 
 export async function generateMetadata({ params }: PostDetailPageProps): Promise<Metadata> {
   const { brand_id, slug } = await params;
@@ -360,26 +360,28 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
   const accentColor = profile.extra_configs?.blog_accent_color || "#3b82f6";
   const gaId = profile.extra_configs?.ga_id;
 
-  // Fetch Category details if attached
-  let category: BlogCategory | null = null;
-  if (post.category_id) {
-    const { data: catData } = await supabase
+  // Fetch Category details, categories list, and sibling posts list in parallel for speed optimization
+  const [categoryResult, categoriesResult, siblingPostsResult] = await Promise.all([
+    post.category_id
+      ? supabase.from("blog_categories").select("*").eq("id", post.category_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase
       .from("blog_categories")
       .select("*")
-      .eq("id", post.category_id)
-      .maybeSingle();
-    category = catData as BlogCategory | null;
-  }
+      .eq("user_id", profile.id)
+      .or(`brand_id.eq.${brand_id},brand_id.is.null`)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("writing_creaibox_posts")
+      .select("id, title, slug, created_at, canonical_url")
+      .eq("user_id", profile.id)
+      .eq("status", "published")
+      .not("slug", "is", null)
+      .order("created_at", { ascending: false })
+  ]);
 
-  // Fetch Categories for Header Nav (filtering by active brand_id or null for legacy)
-  const { data: categoriesData } = await supabase
-    .from("blog_categories")
-    .select("*")
-    .eq("user_id", profile.id)
-    .or(`brand_id.eq.${brand_id},brand_id.is.null`)
-    .order("created_at", { ascending: true });
-
-  const categories = (categoriesData as BlogCategory[] | null) || [];
+  const category = categoryResult.data as BlogCategory | null;
+  const categories = (categoriesResult.data as BlogCategory[] | null) || [];
 
   // Sort categories based on brand_id category order
   const primaryId = profile.brand_id || "";
@@ -396,16 +398,7 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
     });
   }
 
-  // Fetch Sibling Posts for Prev/Next navigation
-  const { data: postsData } = await supabase
-    .from("writing_creaibox_posts")
-    .select("id, title, slug, created_at, canonical_url")
-    .eq("user_id", profile.id)
-    .eq("status", "published")
-    .not("slug", "is", null)
-    .order("created_at", { ascending: false });
-
-  const postsRaw = postsData || [];
+  const postsRaw = siblingPostsResult.data || [];
   let brandPosts: any[] = [];
   
   if (postsRaw.length > 0) {

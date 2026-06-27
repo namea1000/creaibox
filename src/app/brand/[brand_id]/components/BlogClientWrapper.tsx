@@ -130,10 +130,10 @@ export default function BlogClientWrapper({
   const toggleBtnBg = theme === "dark" ? "bg-[#15171d]" : "bg-zinc-100";
 
   // Prevent flicker on load by using a loader-free placeholder state or empty class during load
-  const visibleClass = isThemeLoaded ? "opacity-100" : "opacity-0";
+  const visibleClass = "opacity-100";
 
   return (
-    <div className={`flex flex-col min-h-screen transition-all duration-300 font-sans selection:bg-blue-500/30 selection:text-blue-200 ${bgStyle} ${visibleClass}`}>
+    <div className={`flex flex-col min-h-screen transition-colors duration-150 font-sans selection:bg-blue-500/30 selection:text-blue-200 ${bgStyle} ${visibleClass}`}>
       {/* Google Analytics Integration */}
       {gaId && (
         <>
