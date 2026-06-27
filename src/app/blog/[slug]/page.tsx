@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ArrowLeft, CalendarDays, Sparkles } from "lucide-react";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createAdminClient } from "@/utils/supabase/server";
 
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -141,7 +141,7 @@ function isMainSitePost(canonicalUrl: string | null) {
 }
 
 async function fetchPublishedPost(slug: string) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
   const decodedSlug = decodeURIComponent(slug);
 
   const { data: admins } = await supabase

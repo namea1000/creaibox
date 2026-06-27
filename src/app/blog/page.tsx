@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CalendarDays, Sparkles, Star, ArrowRight } from "lucide-react";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createAdminClient } from "@/utils/supabase/server";
 
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -55,7 +55,7 @@ function formatDate(value: string | null) {
 }
 
 export default async function BlogPage() {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { data: admins } = await supabase
     .from("profiles")
