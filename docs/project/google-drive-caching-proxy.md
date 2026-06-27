@@ -66,10 +66,12 @@ sequenceDiagram
 ### 3.1 백엔드 캐싱 프록시 라우트
 * **파일 경로**: `src/app/api/free-assets/proxy/route.ts`
 * **주요 기능**:
-  * **Google Drive URL & ID 자동 판별 및 추출**: `url` 또는 `id` 매개변수를 유연하게 처리하며, `/file/d/[FILE_ID]/view` 및 `?id=[FILE_ID]`와 같은 모든 구글 드라이브 주소 포맷에서 `fileId`를 자동 추출합니다. 일반 외부 URL의 경우 기존의 일반 프록시(CORS 우회)로 자동 동작합니다.
+  * **Google Drive URL & ID 자동 판별 및 추출**: `url` 또는 `id` 매개변수를 유연하게 처리하며, `/file/d/[FILE_ID]/view` 및 `?id=[FILE_ID]`와 같은 모든 구글 드라이브 주소 포맷에서 `fileId`를 자동 추출합니다.
+  * **Supabase Storage 연동 및 최적화**: 일반 외부 URL 중 Supabase Storage 도메인(`supabase.co/storage/v1/object` 등)이 포함된 요청을 선제적으로 자동 감지합니다.
   * **서버 보안 OAuth2 통신**: 백엔드 서버 단에서 `.env.local`에 보관된 OAuth2 Credentials를 사용하여 안전하게 Google API와 통신합니다.
-  * **HTTP 영구 캐싱 전략**: 구글 드라이브 원본 에셋의 불변성을 활용하여 응답 헤더에 `Cache-Control: public, max-age=31536000, immutable` (1년 영구 캐시)를 주입합니다.
-  * **오디오 스트리밍을 위한 Range 헤더 지원**: 오디오 재생기에서 타임라인 이동(Seeking)이 가능하도록 `Range` 요청을 처리하고 부분 데이터(`Content-Range`, `206 Partial Content`)를 반환합니다.
+  * **HTTP 영구 캐싱 전략 (구글 드라이브 & Supabase Storage 공통)**: 원본 에셋의 불변성을 활용하여 응답 헤더에 `Cache-Control: public, max-age=31536000, immutable` (1년 영구 캐시)를 주입합니다. 이로써 Supabase Storage를 타겟 저장소로 사용할 때 Egress(전송 대역폭) 트래픽 요금을 원격 차단(0원화)하고 초고속 응답을 확보합니다.
+  * **오디오/비디오 스트리밍을 위한 Range 헤더 지원**: 오디오 및 비디오 재생기에서 타임라인 이동(Seeking)이 원활히 가능하도록 `Range` 요청을 원본 스토리지(구글 드라이브 및 Supabase Storage)로 안전하게 토글 및 포워딩하여 부분 데이터(`Content-Range`, `206 Partial Content`)를 중계 반환합니다.
+
 
 ### 3.2 프론트엔드 이미지 렌더링 통합
 구글 드라이브 직접 링크 호출로 인한 엑박(차단) 현상을 완벽히 차단하기 위해, 프론트엔드 라이브러리 목록 및 모달 뷰어 컴포넌트에도 이 캐싱 프록시를 전면 적용하였습니다.

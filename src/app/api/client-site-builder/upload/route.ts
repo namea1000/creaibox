@@ -75,44 +75,29 @@ export async function POST(req: Request) {
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.webp`;
     let imageUrl = "";
 
-    // 5. Upload to Google Drive under client-isolated folder
-    if (isGoogleDriveConfigured()) {
-      try {
-        imageUrl = await uploadToGoogleDrive(
-          compressedBuffer,
-          fileName,
-          "image/webp",
-          user.id,
-          "client-site-builder"
-        );
-        console.log("Uploaded successfully to isolated Google Drive folder:", imageUrl);
-      } catch (gdriveError: any) {
-        console.error("Google Drive isolated upload failed, falling back to Supabase storage:", gdriveError);
-      }
+    // 5. Upload to Supabase storage bucket directly (as per the hybrid storage design strategy)
+    const safeSourceId = sourceId ? String(sourceId) : "builder-assets";
+    const filePath = `${user.id}/client-site-builder/${safeSourceId}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("generated-images")
+      .upload(filePath, compressedBuffer, {
+        contentType: "image/webp",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      throw new Error(`Supabase storage upload failed: ${uploadError.message}`);
     }
 
-    // Fallback: If Google Drive is not configured or failed, upload to Supabase storage bucket
-    if (!imageUrl) {
-      const safeSourceId = sourceId ? String(sourceId) : "builder-assets";
-      const filePath = `${user.id}/client-site-builder/${safeSourceId}/${fileName}`;
+    const { data: publicUrlData } = supabase.storage
+      .from("generated-images")
+      .getPublicUrl(filePath);
 
-      const { error: uploadError } = await supabase.storage
-        .from("generated-images")
-        .upload(filePath, compressedBuffer, {
-          contentType: "image/webp",
-          upsert: false,
-        });
+    const supabaseUrl = publicUrlData.publicUrl;
 
-      if (uploadError) {
-        throw new Error(`Supabase storage upload fallback failed: ${uploadError.message}`);
-      }
-
-      const { data: publicUrlData } = supabase.storage
-        .from("generated-images")
-        .getPublicUrl(filePath);
-
-      imageUrl = publicUrlData.publicUrl;
-    }
+    // Wrap with Supabase Storage CDN Caching Proxy to guarantee 1-year Vercel Edge caching and 0-cost bandwidth Egress
+    imageUrl = `/api/supabase-assets/proxy?url=${encodeURIComponent(supabaseUrl)}`;
 
     // 6. Optional: Insert a log in generated_images to make it visible in platform media studio
     try {

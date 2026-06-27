@@ -81,22 +81,47 @@ export async function GET(req: NextRequest) {
         headers,
       });
     } else if (url) {
-      // Fallback: Proxy non-Google-Drive URLs (existing logic)
-      const response = await fetch(url);
-      if (!response.ok) {
+      // Fallback: Proxy non-Google-Drive URLs (with Supabase Storage optimization and streaming support)
+      const isSupabaseStorage = url.includes("supabase.co/storage/v1/object") || url.includes("/storage/v1/object/public");
+
+      const fetchHeaders: HeadersInit = {};
+      if (rangeHeader) {
+        fetchHeaders["Range"] = rangeHeader;
+      }
+
+      const response = await fetch(url, { headers: fetchHeaders });
+      if (!response.ok && response.status !== 206) {
         return new Response("Failed to fetch target asset", { status: response.status });
       }
 
       const contentType = response.headers.get("content-type") || "application/octet-stream";
       const buffer = await response.arrayBuffer();
 
+      const headers: Record<string, string> = {
+        "Content-Type": contentType,
+        "Access-Control-Allow-Origin": "*",
+      };
+
+      const acceptRanges = response.headers.get("accept-ranges");
+      if (acceptRanges) headers["Accept-Ranges"] = acceptRanges;
+
+      const contentRange = response.headers.get("content-range");
+      if (contentRange) headers["Content-Range"] = contentRange;
+
+      const contentLength = response.headers.get("content-length");
+      if (contentLength) headers["Content-Length"] = contentLength;
+
+      if (isSupabaseStorage) {
+        // Force Vercel Edge Network CDN and browser to cache Supabase assets permanently (1 year) to save bandwidth costs
+        headers["Cache-Control"] = "public, max-age=31536000, immutable";
+      } else {
+        // Cache external general assets for 1 day
+        headers["Cache-Control"] = "public, max-age=86400";
+      }
+
       return new Response(new Uint8Array(buffer), {
-        headers: {
-          "Content-Type": contentType,
-          "Access-Control-Allow-Origin": "*",
-          // Cache external assets for 1 day
-          "Cache-Control": "public, max-age=86400",
-        },
+        status: response.status,
+        headers,
       });
     } else {
       return new Response("Missing url or id parameter", { status: 400 });

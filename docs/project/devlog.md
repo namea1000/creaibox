@@ -50,6 +50,64 @@
   - **원인 추적**: 클라이언트에서 `supabase.auth.signOut({ scope: "global" })` 호출 시, Next.js Middleware의 세션 갱신 로직과 쿠키 처리 타이밍이 충돌하여 인증 파기 프로미스가 영구히 Pending 상태에 잠기는 Supabase Auth JS SDK의 특이 이슈로 판단되었습니다.
   - **타임아웃 세이프 가드 적용**: [Header.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Header.tsx) 및 [StudioTopbar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/StudioTopbar.tsx)의 로그아웃 핸들러에 `Promise.race`를 구성하여, 최장 3초가 지나면 API 네트워크 응답 상태와 무관하게 로컬의 캐시 토큰 및 세션 데이터를 강제 파기(Local Storage 및 Memory User 정보 파괴)하고 첫 화면으로 리디렉션하도록 우회 가드를 견고하게 설계하여 즉각적이고 안정적인 로그아웃 흐름을 완성했습니다.
 
+#### 8. 구글 스프레드시트 12개 템플릿의 N~S열 데이터 자동 업데이트
+* **구현 요약**: 구글 드라이브 내 "CreAIbox_Template_Image_Prompts" 스프레드시트에서 비어있던 12개 테마 템플릿의 N~S열(한/영 테마 설명 및 미드져니용 섹션별 이미지 생성 프롬프트 4종)을 각 테마 스펙에 맞춰 일괄 업데이트했습니다.
+* **작업 상세**:
+  - **대상 식별**: [find_and_read_sheet.js](file:///Users/a1234/Local%20Sites/creaibox/scratch/find_and_read_sheet.js) 임시 스크립트를 작성하여 구글 시트 API를 통해 빈 셀이 감지된 12개 행(Row 63, 64, 65, 97, 103, 109, 211, 213, 221, 254, 258, 273)의 테마 명세를 정확히 추출했습니다.
+  - **프롬프트 및 번역 이식**: 각 테마의 색상 코드(Colors) 및 글꼴(Font) 명세를 기반으로 미드져니/DALL-E 이미지 생성용 영어 프롬프트(Hero, Portfolio, About, Subpage)와 한국어/영어 테마 소개 텍스트를 구성했습니다.
+  - **일괄 업로드 수행**: [update_sheet_prompts.js](file:///Users/a1234/Local%20Sites/creaibox/scratch/update_sheet_prompts.js) 일괄 업데이트 스크립트를 작성 및 가동하여 기존 스프레드시트 내 대상 셀 범위에 값을 직접 덮어쓰고 실시간 데이터 동기화 검증을 완수했습니다.
+
+#### 9. Supabase Storage CDN 캐싱 프록시 및 스트리밍 파이프라인 확장 설계
+* **구현 요약**: 향후 타 저장소 용도로 Supabase Storage를 병행 사용할 것을 대비하여, 기존 구글 드라이브 캐싱 프록시 라우터에 Supabase Storage 연동 및 글로벌 CDN 캐시 자동 최적화 로직을 결합 확장했습니다.
+* **작업 상세**:
+  - **Supabase 도메인 감지 및 캐시 설정**: [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/proxy/route.ts) API 분기에서 타겟 URL에 `supabase.co/storage/v1/object`가 포함되었는지 지능적으로 판별하여, Vercel CDN 및 브라우저 캐싱 규칙에 `Cache-Control: public, max-age=31536000, immutable` (1년 영구 캐시) 헤더가 주입되도록 설계했습니다. 이를 통해 대용량 미디어 서빙 시 Supabase 스토리지 Egress 비용을 0원 수준으로 방어합니다.
+  - **오디오/비디오 스트리밍 Seeking 지원**: 부분 범위 요청(`Range` 헤더)을 감지하고 원본 Supabase Storage 버킷으로 중계 포워딩함으로써, 플레이어 타임라인 이동 시 `Content-Range` 및 `206 Partial Content` 스트리밍 응답이 정상 중계되도록 연동했습니다.
+  - **설계 명세 문서화**: [google-drive-caching-proxy.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/google-drive-caching-proxy.md)의 3.1 백엔드 프록시 사양 문서에 본 Supabase Storage 캐싱 기법 및 1년 영구 저장 대역폭 세이프가드 구조를 아키텍처 명세로 공식 추가했습니다.
+
+#### 10. 독립된 Supabase Storage 캐싱 프록시 전용 API 라우트 및 아키텍처 구축
+* **구현 요약**: 구글 드라이브와 별도로 독립된 Supabase Storage만을 위한 전용 초고속 CDN 캐싱 프록시 API 파일과 아키텍처 명세 문서를 단독 구축했습니다.
+* **작업 상세**:
+  - **전용 라우트 생성**: 구글 API 계정 크레덴셜에 독립적으로 동작하며 Supabase Storage Public URL만을 타겟팅하는 [supabase-assets/proxy/route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/supabase-assets/proxy/route.ts) 전용 라우터 파일을 새롭게 신설하여 코드를 독립 적재했습니다.
+  - **단독 아키텍처 설계 문서 추가**: Supabase Storage를 타 스토리지로 사용할 때 전송 요금 폭탄을 방지하기 위한 캐싱 흐름 시퀀스 다이어그램 및 실무 가이드를 포함하는 [supabase-storage-caching-proxy.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/supabase-storage-caching-proxy.md) 상세 아키텍처 사양서를 `docs/project/`에 신설했습니다.
+
+#### 11. 구글 드라이브 블로그 템플릿 미드져니 에셋 자동 분류 및 리네임 자동화
+* **구현 요약**: 구글 드라이브 내 `creaibox-homepage-thema-images/blog` 폴더에 업로드된 미드져니 원본 이미지 조각들(총 20장)을 분석하여, 지정 템플릿 명명 규칙에 맞춰 자동으로 이름을 변경하고 불필요한 이미지 조각들을 별도 격리 정리했습니다.
+* **작업 상세**:
+  - **에셋 매칭 분석 및 자동화**: [rename_blog_assets.js](file:///Users/a1234/Local%20Sites/creaibox/scratch/rename_blog_assets.js) 자동 분류 스크립트를 작성하여 구글 드라이브 API로 폴더 내 파일명 패턴(cityscape, archives, close-up 등)을 추적했습니다.
+  - **리네임 규칙 수행**: `art_design_minimal` 템플릿 ID를 기준으로, 각 프롬프트의 4개 슬라이스 후보 중 1순위를 선별해 썸네일(`art_design_minimal.png`), 히어로(`art_design_minimal_hero.png`), 프로필(`art_design_minimal_about.png`), 서브배너(`art_design_minimal_sub.png`)로 리네임하고, 포트폴리오 에셋 3종(`art_design_minimal_portfolio_1~3.png`)을 세트로 안전하게 매핑 및 업데이트했습니다.
+  - **불필요 조각 격리**: 미선택된 나머지 13개의 미드져니 이미지 슬라이스들을 하위에 신설한 `unused` 폴더 내부로 자동 이동 격리하여 메인 폴더를 정형화했습니다.
+
+#### 12. 고객 사이트 이미지 저장소 분할(하이브리드) 아키텍처 결정
+* **구현 요약**: AI 홈페이지 빌더 시스템의 확장성과 보안성을 극대화하기 위해 테마 원본과 가입 고객 업로드 에셋의 스토리지 저장 역할을 하이브리드로 이중화했습니다.
+* **작업 상세**:
+  - **역할 및 보안 격리**: 마스터 테마 이미지 자산은 Google Drive로 유지하여 관리 편의와 비용 제로 혜택을 챙기고, 가입 고객이 사이트 빌더에서 교체 및 업로드하는 개별 커스텀 이미지들은 Supabase Storage의 RLS 보안 정책 아래 사용자 격리 폴더에 분할 보관하도록 아키텍처 가이드를 수립했습니다.
+  - **아키텍처 가이드 반영**: [supabase-storage-caching-proxy.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/supabase-storage-caching-proxy.md)의 5번 섹션에 저장소 분할 전략 및 에지 CDN Egress 대역폭 요금 0원 방어 메커니즘을 명문화하여 적용했습니다.
+
+#### 13. 홈페이지 빌더 업로드 API의 Supabase Storage 직접 저장 및 CDN 프록시 융합 연동
+* **구현 요약**: 가입 고객이 홈페이지 제작 화면(client-site-builder)에서 이미지를 업로드할 때, 기존 구글 드라이브 업로드를 차단하고 곧바로 Supabase Storage로 직접 업로드하도록 강제한 뒤, 이를 새로 구축한 CDN 캐싱 프록시 경로로 자동 래핑하여 리턴되도록 API 구조를 고도화했습니다.
+* **작업 상세**:
+  - **업로드 파이프라인 리다이렉트**: [upload/route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/client-site-builder/upload/route.ts) 파일의 저장 로직을 개편하여 기존 구글 드라이브 업로드 단계를 스킵하고 곧바로 Supabase Storage `generated-images` 버킷의 사용자 격리 경로에 저장되도록 수정했습니다.
+  - **CDN 프록시 래핑 반환**: Supabase 업로드 완료 후 반환되는 Public URL을 직접 반환하는 대신, 우리가 구축한 캐싱 프록시 URL(`/api/supabase-assets/proxy?url=...`)로 즉시 인코딩 래핑하여 데이터베이스 및 컴포넌트로 전달되도록 처리했습니다. 이를 통해 빌더 업로드 이미지 서빙 시 전송 요금을 무료화하고 에지 캐시 성능을 즉각 확보했습니다.
+
+
+#### 14. 구글 드라이브 카테고리별 템플릿 ID 하위 폴더 300종 일괄 생성 및 격리 구조화
+* **구현 요약**: 관리자(본인)의 프리미엄 에셋 관리를 편리하게 자동화하기 위해, 구글 드라이브 내 15개 카테고리 폴더 하위에 존재하는 총 300개의 모든 템플릿 ID 전용 폴더를 일괄 탐색하여 미생성된 하위 폴더를 완전 자동 생성해냈습니다.
+* **작업 상세**:
+  - **카테고리 매핑 및 TS 파싱**: [create_template_folders.js](file:///Users/a1234/Local%20Sites/creaibox/scratch/create_template_folders.js) 자동화 폴더 제너레이터 스크립트를 작성하여 구글 드라이브의 실제 한글/영어 폴더(heanth, potfolio, artndesign 등)와 로컬 템플릿 구성 정의 파일(.ts)들을 정교하게 1:1 매핑하고 templateId 목록을 추출했습니다.
+  - **하위 폴더 중복 배제 생성**: 드라이브 내에 이미 수동 생성해 둔 폴더들(`art_design_minimal`, `cozy_cafe_cream` 등)은 `[EXISTS]`로 감지하여 보존하고, 나머지 미생성된 298개 템플릿 ID 폴더를 API를 통해 각 카테고리 폴더 내부 경로에 구조적으로 일괄 동적 생성했습니다.
+
+#### 15. 지능형 범용 템플릿 폴더 리네이머 구축 및 cozy_cafe_cream 테마 에셋 자동 정리
+* **구현 요약**: 구글 드라이브 내 임의의 템플릿 폴더에 업로드된 미드져니 원본 이미지 조각들(16~20장)을 지능형 분류 알고리즘을 통해 파싱하여 규격 명칭으로 자동 변환하고 불필요한 슬라이스 조각들을 하위 격리하는 범용 정리 프로세스를 완성했습니다.
+* **작업 상세**:
+  - **지능형 파일명 분류기 도입**: [rename_template_assets.js](file:///Users/a1234/Local%20Sites/creaibox/scratch/rename_template_assets.js) 범용 에셋 정리 도구를 작성했습니다. 파일명에 포함된 텍스트 키워드들(interconnected_coffee_bean, workspace_with_a_few_scattered_coffee_cu, beautifully_crafted_cup_of_coffee 등)을 통해 hero, portfolio, about, sub, thumbnail 등의 각 페이지 섹션을 기계적으로 유추하는 지능형 스캔 로직을 완성했습니다.
+  - **cozy_cafe_cream 테마 에셋 정리**: 유저가 업로드한 `cozy_cafe_cream` 폴더 내 16장의 원본 이미지를 대상으로 작동을 개시하여, 필수 6종 규격 이미지(`cozy_cafe_cream_hero.png`, `cozy_cafe_cream_portfolio_1~3.png`, `cozy_cafe_cream_about.png`, `cozy_cafe_cream_sub.png`)로 정확하게 리네임하고 나머지 미사용 슬라이스 10장은 하위 `unused` 폴더로 일괄 격리 이동 완료했습니다.
+
+#### 16. 구글 및 네이버 통합 검색 노출(SEO) 상세 가이드 문서 완성
+* **구현 요약**: 구글과 네이버 검색창에 "크리에이박스" 브랜드 키워드 검색 시 공식 홈페이지가 최상단에 올바르게 분류/노출될 수 있도록 돕는 실무 전략 문서를 통합 보존했습니다.
+* **작업 상세**:
+  - **구글 서치 콘솔 가이드 보강 및 문서 통합**: 기존 네이버 가이드를 통합 개편한 [search-engine-seo-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/search-engine-seo-guide.md) 가이드라인 문서를 `docs/project/`에 신설(기존 naver 단독 문서는 폐기)했습니다.
+  - **구글 전용 연동 전략 추가**: 구글 서치 콘솔 등록 방법, 소유권 인증용 HTML 파일 업로드 기법, 구글 비즈니스 프로필(구글 맵 노출) 연동 가이드를 문헌에 공식 탑재했습니다.
+
 ### 🗓️ 2026-06-26 (금)
 #### 1. 스튜디오 좌측 사이드바 로고 타이틀 개편 및 수평 정렬 최적화
 * **구현 요약**: 사이드바 로고 하단의 타이틀을 `AI Studio`로 개편하고, 폰트 시인성 확보 및 수평 정중앙 정렬을 구현했습니다.
