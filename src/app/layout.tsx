@@ -18,7 +18,7 @@ export const metadata = {
   metadataBase: new URL("https://creaibox.com"),
   title: "크리에이박스(CreAibox) | 올인원 AI 콘텐츠 스튜디오",
   description:
-    "글쓰기, 블로그, 이미지, 음악, 영상, 뉴스, 트렌드 분석까지 한 번에. CreAibox는 크리에이터를 위한 올인원 AI 콘텐츠 제작 플랫폼입니다.",
+    "AI 글쓰기부터 이미지 생성, 음악, 홈페이지 제작까지. 크리에이박스는 크리에이터를 위한 올인원 AI 콘텐츠 스튜디오입니다.",
   alternates: {
     canonical: "/",
   },
@@ -26,7 +26,7 @@ export const metadata = {
   openGraph: {
     title: "크리에이박스(CreAibox) | 올인원 AI 콘텐츠 스튜디오",
     description:
-      "글쓰기, 블로그, 이미지, 음악, 영상, 뉴스, 트렌드 분석까지 한 번에. CreAibox는 크리에이터를 위한 올인원 AI 콘텐츠 제작 플랫폼입니다.",
+      "AI 글쓰기부터 이미지 생성, 음악, 홈페이지 제작까지. 크리에이박스는 크리에이터를 위한 올인원 AI 콘텐츠 스튜디오입니다.",
     url: "https://creaibox.com",
     siteName: "CreAibox",
     images: [
@@ -44,7 +44,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "크리에이박스(CreAibox) | 올인원 AI 콘텐츠 스튜디오",
     description:
-      "글쓰기, 블로그, 이미지, 음악, 영상, 뉴스, 트렌드 분석까지 한 번에. CreAibox는 크리에이터를 위한 올인원 AI 콘텐츠 제작 플랫폼입니다.",
+      "AI 글쓰기부터 이미지 생성, 음악, 홈페이지 제작까지. 크리에이박스는 크리에이터를 위한 올인원 AI 콘텐츠 스튜디오입니다.",
     images: ["/logothumbnail.webp"],
   },
 };
@@ -62,6 +62,27 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-white text-slate-900 selection:bg-violet-200/70">
         <QueryProvider>{children}</QueryProvider>
+        
+        {/* 공식 사이트 정보 구조화 데이터 (SEO 최적화) */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "크리에이박스",
+              "alternateName": "CreAibox",
+              "url": "https://creaibox.com",
+              "description": "올인원 AI 콘텐츠 스튜디오 및 프리미엄 홈페이지 빌더",
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://creaibox.com/search?q={search_term_string}",
+                "query-input": "required name=search_term_string"
+              }
+            })
+          }}
+        />
+
         <GoogleAnalytics gaId="G-SRBFXMN9XQ" />
       </body>
     </html>
