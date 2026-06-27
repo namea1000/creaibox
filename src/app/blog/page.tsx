@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, Sparkles, Star, ArrowRight } from "lucide-react";
+import { Sparkles, Star } from "lucide-react";
 import { createClient, createAdminClient } from "@/utils/supabase/server";
 
 import Header from "@/components/layout/Header";
@@ -54,7 +54,13 @@ function formatDate(value: string | null) {
   return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}.`;
 }
 
-export default async function BlogPage() {
+export default async function BlogPage(props: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const searchParams = await props.searchParams;
+  const currentPage = searchParams.page ? Math.max(1, parseInt(searchParams.page, 10)) : 1;
+  const postsPerPage = 20;
+
   const supabase = await createAdminClient();
 
   const { data: admins } = await supabase
@@ -123,23 +129,22 @@ export default async function BlogPage() {
   }
   const bestPosts = publishedPosts.slice(0, 5);
 
+  const totalPages = Math.ceil(publishedPosts.length / postsPerPage);
+  const indexOfLastPost = currentPage * postsPerPage;
+  const indexOfFirstPost = indexOfLastPost - postsPerPage;
+  const currentPosts = publishedPosts.slice(indexOfFirstPost, indexOfLastPost);
+
   return (
-    <div className="min-h-screen bg-white text-zinc-950">
+    <div className="flex flex-col min-h-screen bg-white text-zinc-950">
       <Header />
 
-      <main className="pt-15">
-        <section className="mx-auto max-w-7xl px-6 py-12">
-          <div className="mb-10 flex items-end justify-between gap-6 border-b border-zinc-200 pb-8">
+      <main className="pt-24 flex-1">
+        <section className="mx-auto max-w-7xl px-6 py-4">
+          <div className="mb-6 flex items-end justify-between gap-6">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-blue-600">
-                CreAibox Blog
-              </p>
-              <h1 className="mt-2 text-4xl font-black tracking-tight text-zinc-950">
-                AI 인사이트 블로그
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-zinc-950">
+                CreAibox 인사이트 블로그
               </h1>
-              <p className="mt-3 text-sm font-bold text-zinc-500">
-                최신 발행 원고와 인기 콘텐츠를 한눈에 확인하세요.
-              </p>
             </div>
           </div>
 
@@ -151,10 +156,10 @@ export default async function BlogPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,2fr)_380px]">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,2fr)_380px]">
               {/* 왼쪽 2/3 글 목록 */}
               <section className="space-y-6">
-                {publishedPosts.map((post) => {
+                {currentPosts.map((post) => {
                   const keyword = post.focus_keyword || "CreAibox";
                   const excerpt = buildExcerpt(post);
                   const tags = (post.seo_tags || []).slice(0, 3);
@@ -163,9 +168,9 @@ export default async function BlogPage() {
                     <Link
                       key={post.id}
                       href={`/blog/${post.slug}`}
-                      className="group flex gap-7 rounded-none border border-zinc-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-xl"
+                      className="group flex gap-7 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-xl"
                     >
-                      <div className="relative h-[170px] w-[270px] shrink-0 overflow-hidden rounded-none bg-zinc-100">
+                      <div className="relative h-[170px] w-[270px] shrink-0 overflow-hidden rounded-lg bg-zinc-100">
                         {post.thumbnailUrl ? (
                           <>
                             <img
@@ -205,42 +210,58 @@ export default async function BlogPage() {
                       </div>
 
                       <div className="flex min-w-0 flex-1 flex-col">
-                        <h2 className="line-clamp-2 text-[1.85rem] font-black leading-[1.25] tracking-[-0.02em] text-zinc-950 transition-colors group-hover:text-blue-600">
+                        <h2 className="line-clamp-2 text-xl md:text-[1.35rem] font-black leading-[1.3] tracking-[-0.02em] text-zinc-950 transition-colors group-hover:text-blue-600">
                           {post.title}
                         </h2>
 
-                        <p className="mt-4 line-clamp-3 text-[1.08rem] leading-[1.85] text-zinc-600">
+                        <p className="mt-4 line-clamp-3 text-[1.05rem] leading-[1.8] text-zinc-600">
                           {excerpt}
                         </p>
 
-                        <div className="mt-auto border-t border-zinc-200 pt-4">
-                          <div className="mb-3 flex flex-wrap gap-3 text-sm font-semibold text-zinc-600">
-                            {(tags.length > 0 ? tags : [keyword]).map((tag) => (
-                              <span key={tag} className="inline-flex items-center gap-2">
-                                <span className="h-2 w-2 rounded-full bg-blue-500" />
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
 
-                          <div className="flex items-center justify-between text-sm font-semibold text-zinc-500">
-                            <span className="inline-flex items-center gap-2">
-                              <CalendarDays size={15} />
-                              {formatDate(post.created_at)}
-                            </span>
-                            <span className="inline-flex items-center gap-1 text-blue-600 group-hover:text-blue-500">
-                              상세 보기 <ArrowRight size={15} />
-                            </span>
-                          </div>
-                        </div>
                       </div>
                     </Link>
                   );
                 })}
+
+                {/* 🌟 20개 기준 좌우 페이지 이동 버튼 */}
+                {totalPages > 1 && (
+                  <div className="mt-10 flex items-center justify-center gap-4">
+                    {currentPage > 1 ? (
+                      <Link
+                        href={`/blog?page=${currentPage - 1}`}
+                        className="flex h-10 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-sm font-bold text-zinc-700 transition hover:border-blue-300 hover:text-blue-600 shadow-sm"
+                      >
+                        이전
+                      </Link>
+                    ) : (
+                      <div className="flex h-10 items-center justify-center rounded-xl border border-zinc-100 bg-zinc-50 px-4 text-sm font-bold text-zinc-400 cursor-not-allowed">
+                        이전
+                      </div>
+                    )}
+
+                    <span className="text-sm font-black text-zinc-500">
+                      {currentPage} / {totalPages}
+                    </span>
+
+                    {currentPage < totalPages ? (
+                      <Link
+                        href={`/blog?page=${currentPage + 1}`}
+                        className="flex h-10 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-sm font-bold text-zinc-700 transition hover:border-blue-300 hover:text-blue-600 shadow-sm"
+                      >
+                        다음
+                      </Link>
+                    ) : (
+                      <div className="flex h-10 items-center justify-center rounded-xl border border-zinc-100 bg-zinc-50 px-4 text-sm font-bold text-zinc-400 cursor-not-allowed">
+                        다음
+                      </div>
+                    )}
+                  </div>
+                )}
               </section>
 
               {/* 오른쪽 1/3 베스트 글 위젯 */}
-              <aside className="lg:sticky lg:top-28 h-fit rounded-none border border-zinc-200 bg-zinc-50 p-6 shadow-sm">
+              <aside className="lg:sticky lg:top-28 h-fit rounded-xl border border-zinc-200 bg-zinc-50 p-6 shadow-sm">
                 <div className="mb-5 flex items-center justify-between border-b border-zinc-200 pb-5">
                   <div>
                     <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-600">
@@ -261,7 +282,7 @@ export default async function BlogPage() {
                         href={`/blog/${post.slug}`}
                         className="group flex items-center gap-4 rounded-none px-2 py-3 transition hover:bg-white border-b border-zinc-200/60 last:border-b-0"
                       >
-                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-none border border-zinc-200 bg-zinc-50 flex items-center justify-center">
+                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center">
                           {post.thumbnailUrl ? (
                             <img
                               src={post.thumbnailUrl}
