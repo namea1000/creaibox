@@ -66,29 +66,9 @@ export default function YoutubeSectionPage() {
 
   return (
     <div className="min-h-full w-full bg-zinc-50 dark:bg-[#06080d] px-5 py-8 text-zinc-800 dark:text-zinc-100 lg:px-8 transition-colors duration-300">
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Navigation Breadcrumb */}
-        <div className="flex items-center gap-3">
-          <Link
-            href="/studio/youtube"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white hover:border-zinc-700 transition"
-          >
-            <ArrowLeft size={16} />
-          </Link>
-          <div>
-            <div className="flex items-center gap-1.5 text-[10px] font-bold text-zinc-500">
-              <Link href="/studio/youtube" className="hover:text-zinc-350 transition">
-                유튜브 트렌드 분석
-              </Link>
-              <span>/</span>
-              <span className="text-zinc-400">{name}</span>
-            </div>
-            <h1 className="text-lg font-black text-zinc-900 dark:text-white">{name}</h1>
-          </div>
-        </div>
-
+      <div className="mx-auto max-w-7xl">
         {/* Dynamic Tool Component */}
-        <div className="pt-2">{renderContent()}</div>
+        <div>{renderContent()}</div>
       </div>
     </div>
   );

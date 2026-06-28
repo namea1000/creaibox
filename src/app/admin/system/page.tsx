@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -109,6 +110,68 @@ const monitoringModules = [
 ];
 
 export default function SystemAdminPage() {
+  const [cronSyncing, setCronSyncing] = useState(false);
+  const [cronResult, setCronResult] = useState<any>(null);
+  const [cronError, setCronError] = useState<string | null>(null);
+  const [cronActive, setCronActive] = useState<boolean>(true);
+
+  React.useEffect(() => {
+    fetchCronStatus();
+  }, []);
+
+  const fetchCronStatus = async () => {
+    try {
+      const res = await fetch("/api/admin/system/settings?key=cron_trending_status");
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.value) {
+          setCronActive(data.value.active !== false);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch cron status settings:", err);
+    }
+  };
+
+  const handleToggleCronActive = async (targetState: boolean) => {
+    try {
+      const res = await fetch("/api/admin/system/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: "cron_trending_status",
+          value: { active: targetState }
+        })
+      });
+      if (res.ok) {
+        setCronActive(targetState);
+        // Reset execution feedback on toggles
+        setCronResult(null);
+        setCronError(null);
+      }
+    } catch (err) {
+      console.error("Failed to toggle cron active state:", err);
+    }
+  };
+
+  const handleTriggerCron = async () => {
+    setCronSyncing(true);
+    setCronResult(null);
+    setCronError(null);
+    try {
+      const res = await fetch("/api/cron/sync-trending");
+      if (!res.ok) {
+        throw new Error("스케줄러 강제 구동 요청이 실패했습니다.");
+      }
+      const data = await res.json();
+      setCronResult(data);
+    } catch (err: any) {
+      setCronError(err.message || "에러가 발생했습니다.");
+    } finally {
+      setCronSyncing(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-[1600px] p-8 pb-32 lg:p-12">
       {/* Header */}
@@ -304,41 +367,135 @@ export default function SystemAdminPage() {
 
       {/* System Logs */}
       <section className="mb-10 grid gap-6 xl:grid-cols-3">
-        {[
-          {
-            title: "User Activity",
-            icon: Users,
-          },
-          {
-            title: "Error Logs",
-            icon: Bug,
-          },
-          {
-            title: "Cron Jobs",
-            icon: Clock3,
-          },
-        ].map((item) => {
-          const Icon = item.icon;
+        {/* User Activity */}
+        <div className="rounded-[30px] border border-zinc-800 bg-zinc-900/40 p-7">
+          <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-zinc-900 text-cyan-400">
+            <Users size={18} />
+          </div>
 
-          return (
-            <div
-              key={item.title}
-              className="rounded-[30px] border border-zinc-800 bg-zinc-900/40 p-7"
-            >
-              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-zinc-900 text-cyan-400">
-                <Icon size={18} />
-              </div>
+          <h3 className="text-lg font-black italic text-white">
+            User Activity
+          </h3>
 
+          <div className="mt-6 flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-zinc-800 text-sm font-bold text-zinc-600">
+            로그 연결 예정
+          </div>
+        </div>
+
+        {/* Error Logs */}
+        <div className="rounded-[30px] border border-zinc-800 bg-zinc-900/40 p-7">
+          <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-zinc-900 text-cyan-400">
+            <Bug size={18} />
+          </div>
+
+          <h3 className="text-lg font-black italic text-white">
+            Error Logs
+          </h3>
+
+          <div className="mt-6 flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-zinc-800 text-sm font-bold text-zinc-600">
+            로그 연결 예정
+          </div>
+        </div>
+
+        {/* Cron Jobs - Real-time Trigger Control Panel */}
+        <div className="rounded-[30px] border border-zinc-800 bg-zinc-900/40 p-7 flex flex-col justify-between min-h-[285px]">
+          <div>
+            <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-zinc-900 text-cyan-400">
+              <Clock3 size={18} />
+            </div>
+
+            <div className="flex items-center justify-between">
               <h3 className="text-lg font-black italic text-white">
-                {item.title}
+                Cron Jobs
               </h3>
+              <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${cronActive ? "text-emerald-400 bg-emerald-950/20 border-emerald-900/40" : "text-amber-500 bg-amber-950/20 border-amber-900/40"}`}>
+                ● {cronActive ? "활성" : "중지됨"}
+              </span>
+            </div>
 
-              <div className="mt-6 flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-zinc-800 text-sm font-bold text-zinc-600">
-                로그 연결 예정
+            {/* Active Cron list from registry guide */}
+            <div className="mt-4 space-y-3">
+              <div className="rounded-xl border border-zinc-850 bg-zinc-950/30 p-4 space-y-1.5">
+                <div className="flex justify-between items-center text-[10px]">
+                  <span className="text-zinc-300 font-extrabold">유튜브 급상승 자동 수집</span>
+                  <span className="text-cyan-400 font-black">매일 KST 05:00</span>
+                </div>
+                <p className="text-[10px] text-zinc-500 font-bold leading-normal">
+                  8개 카테고리 스크래핑, 숏폼 자동 판별, Supabase DB 및 구글 스프레드 시트 누적 적재.
+                </p>
+                <div className="text-[9px] text-zinc-500 font-mono">
+                  Path: /api/cron/sync-trending
+                </div>
               </div>
             </div>
-          );
-        })}
+
+            {/* Results display panel */}
+            {(cronResult || cronError) && (
+              <div className="mt-3 p-3 rounded-xl border border-zinc-850 bg-zinc-950/20 text-[10px] font-bold">
+                {cronResult && (
+                  <div className="text-emerald-400 space-y-1">
+                    <div className="flex items-center gap-1">
+                      <CheckCircle2 size={12} />
+                      <span>동기화 트리거 {cronResult.skipped ? "우회 완료" : "성공"}</span>
+                    </div>
+                    {cronResult.skipped ? (
+                      <p className="text-[9px] text-zinc-400 font-bold leading-relaxed mt-1">
+                        관리자 설정이 중지 상태이므로 수집을 건너뛰었습니다.
+                      </p>
+                    ) : (
+                      <div className="text-[9px] text-zinc-400 font-mono mt-1 leading-relaxed">
+                        적재날짜: {cronResult.date} <br/>
+                        결과요약: {cronResult.summary?.success}/{cronResult.summary?.total} 개 카테고리 완료
+                      </div>
+                    )}
+                  </div>
+                )}
+                {cronError && (
+                  <div className="text-red-400 flex items-center gap-1.5 leading-relaxed">
+                    <AlertTriangle size={12} className="flex-shrink-0" />
+                    <span>실행 실패: {cronError}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-5 space-y-2">
+            {cronActive ? (
+              <button
+                onClick={() => handleToggleCronActive(false)}
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-800/40 bg-red-950/25 px-4 py-2.5 text-xs font-black text-red-400 hover:bg-red-900/30 transition"
+              >
+                <span>스케줄 실행 중지 (Pause)</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => handleToggleCronActive(true)}
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-800/40 bg-emerald-950/25 px-4 py-2.5 text-xs font-black text-emerald-400 hover:bg-emerald-900/30 transition"
+              >
+                <span>스케줄 실행 활성화 (Resume)</span>
+              </button>
+            )}
+
+            <button
+              onClick={handleTriggerCron}
+              disabled={cronSyncing}
+              className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-cyan-800/40 bg-cyan-950/25 px-4 py-2.5 text-xs font-black text-cyan-400 hover:bg-cyan-900/30 transition disabled:opacity-50"
+            >
+              {cronSyncing ? (
+                <>
+                  <RefreshCw size={12} className="animate-spin" />
+                  <span>동기화 수집 진행 중...</span>
+                </>
+              ) : (
+                <>
+                  <RefreshCw size={12} />
+                  <span>스케줄러 강제 즉시 실행</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </section>
 
       {/* AI Insight */}

@@ -53,18 +53,11 @@ export default function StudioToolsHomePage() {
       color: "from-emerald-600 to-teal-600",
     },
     {
-      title: "AI 프롬프트 개선기",
-      desc: "짧은 입력을 고급 AI 프롬프트로 확장",
-      href: "/studio/tools/prompt-enhancer",
+      title: "AI 프롬프트 스튜디오",
+      desc: "프롬프트 영어 정밀 번역 및 파라미터 최적화",
+      href: "/studio/tools/prompt-studio",
       icon: Sparkles,
-      color: "from-amber-500 to-orange-600",
-    },
-    {
-      title: "AI 프롬프트 번역기",
-      desc: "Midjourney, Suno, 영상용 프롬프트 번역",
-      href: "/studio/tools/prompt-translator",
-      icon: Languages,
-      color: "from-pink-600 to-rose-600",
+      color: "from-amber-500 to-pink-600",
     },
     {
       title: "해시태그 생성기",

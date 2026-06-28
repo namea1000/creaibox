@@ -1,25 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Search, Loader2, Copy, Check, Sparkles, CheckCircle2, AlertTriangle, Eye, ThumbsUp } from "lucide-react";
 
-export default function YoutubeSeo() {
+function YoutubeSeoContent() {
+  const searchParams = useSearchParams();
+  const urlParam = searchParams.get("url");
+
   const [videoUrl, setVideoUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copiedTag, setCopiedTag] = useState<string | null>(null);
 
-  const handleAudit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!videoUrl.trim()) return;
+  const runAudit = useCallback(async (targetUrl: string) => {
+    if (!targetUrl.trim()) return;
 
     setLoading(true);
     setError(null);
     setData(null);
 
     try {
-      const res = await fetch(`/api/youtube?type=seo&url=${encodeURIComponent(videoUrl)}`);
+      const res = await fetch(`/api/youtube?type=seo&url=${encodeURIComponent(targetUrl)}`);
       if (!res.ok) throw new Error("동영상 정보를 가져오는데 실패했습니다.");
       const result = await res.json();
       if (result.error) throw new Error(result.error);
@@ -71,7 +74,21 @@ export default function YoutubeSeo() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const handleAudit = (e: React.FormEvent) => {
+    e.preventDefault();
+    runAudit(videoUrl);
   };
+
+  // Trigger auto audit on mount/param change if query has url
+  useEffect(() => {
+    if (urlParam) {
+      const decodedUrl = decodeURIComponent(urlParam);
+      setVideoUrl(decodedUrl);
+      runAudit(decodedUrl);
+    }
+  }, [urlParam, runAudit]);
 
   const handleCopyTag = (tag: string) => {
     navigator.clipboard.writeText(tag);
@@ -96,12 +113,12 @@ export default function YoutubeSeo() {
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
             placeholder="유튜브 동영상 링크 입력 (예: https://www.youtube.com/watch?v=dQw4w9WgXcQ)"
-            className="flex-1 h-11 rounded-xl border border-zinc-800 bg-zinc-950 px-4 text-xs font-semibold text-white outline-none placeholder:text-zinc-650 focus:border-emerald-500/50 transition"
+            className="flex-1 h-11 rounded-xl border border-zinc-800 bg-zinc-950 px-4 text-xs font-semibold text-white outline-none placeholder:text-zinc-650 focus:border-emerald-500/50 transition-all"
           />
           <button
             type="submit"
             disabled={loading || !videoUrl.trim()}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 text-xs font-black text-white hover:bg-emerald-500 disabled:opacity-50 transition shadow-lg shadow-emerald-600/10 shrink-0"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 text-xs font-black text-white hover:bg-emerald-500 disabled:opacity-50 transition-all shadow-lg shadow-emerald-600/10 shrink-0"
           >
             {loading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
             SEO 진단 시작
@@ -213,5 +230,20 @@ export default function YoutubeSeo() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function YoutubeSeo() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <Loader2 className="animate-spin text-emerald-400" size={32} />
+          <p className="text-xs font-bold text-zinc-500">SEO 분석기 준비 중...</p>
+        </div>
+      }
+    >
+      <YoutubeSeoContent />
+    </Suspense>
   );
 }

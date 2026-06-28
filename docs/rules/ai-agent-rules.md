@@ -575,3 +575,17 @@ General UI icons must use lucide-react.
 * **상태 감지**: 팝업/모달이 화면에 열려 있는 상태(`isOpen === true` 등)일 때, 전역 키보드 이벤트 리스너(`keydown`)를 등록하여 `Escape` 키 입력 시 팝업이 즉시 닫히도록 제어해야 합니다.
 * **이벤트 정리**: 컴포넌트가 언마운트되거나 팝업이 닫힐 때, 불필요한 이벤트 리스너가 누적되거나 메모리 누수가 발생하지 않도록 등록한 이벤트 리스너를 반드시 정리(`removeEventListener`)해야 합니다.
 * **기본 동작 차단**: 필요할 경우 `event.preventDefault()`를 호출하여 다른 의도치 않은 브라우저 기본 단축키 동작과의 간섭을 예방합니다.
+
+---
+
+## Vercel Cron 스케줄러 관리 및 갱신 규칙 (Vercel Cron Registry Maintenance Rule)
+
+* **필독 규격**: 플랫폼 내에 무인 자동화 배치(Vercel Cron) 작업이 신설되거나 스케줄링 주기가 변동되는 모든 개발 태스크는 반드시 공식 대장 문서에 이력을 기록해야 합니다.
+  → `@docs/project/vercel-cron-scheduler-registry.md`
+
+### 1. 신규 크론 추가 시 대장 작성 의무
+* `vercel.json` 설정에 신규 스케줄러를 추가하거나, 크론 트리거 API 라우터(`src/app/api/cron/...`)를 신설하는 작업은 **대장 문서 등록이 완료될 때까지 구현 완료(Done)로 판정할 수 없습니다.**
+* 크론 스케줄러 이름, 주기(UTC/KST), 실행 경로, 보안 가드 사양을 대장 테이블과 세부 명세에 누적 기입해야 합니다.
+
+### 2. 크론 API 보안 수립 원칙
+* 신설되는 모든 크론 엔드포인트는 악의적인 쿼터 고갈 및 디도스 유입을 방지하기 위해 헤더의 `Authorization: Bearer ${process.env.CRON_SECRET}` 토큰을 대조 검증하는 가드 로직을 무조건 장착해야 합니다.

@@ -507,6 +507,243 @@
 * **작업 상세**:
   - **초기 타이틀 치환**: [creaibox/list/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/list/page.tsx) 및 [new-post/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/new-post/page.tsx) 내에서 새 포스트 insert 시 전송되는 페이로드의 `title` 속성 값을 기존 "직접 작성한 새 글"에서 "새글 제목을 수정해 주세요" 로 변경했습니다.
 
+#### 86. AI 프롬프트 개선기 및 번역기 통합 PromptStudio 컴포넌트 론칭
+* **구현 요약**: 분산되어 있던 프롬프트 개선 및 번역 도구를 탭 기반 단일 대시보드로 통합하고 부가 유틸리티 기능을 전면 업그레이드했습니다.
+* **작업 상세**:
+  - **PromptStudio 컴포넌트 설계**: [PromptStudio.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/tools/%5Bsection%5D/components/PromptStudio.tsx)를 신규 생성하여 탭 스위처 바, 롤(Role) 프리셋 주입기, 실시간 글자수/예상토큰 뱃지, Before & After 듀얼 대조 패널, 파일 다운로드(`.txt`) 및 복사 토스트 피드백 시스템을 탑재했습니다.
+
+#### 87. 스튜디오 도구 parametric router 및 path 유연화 갱신
+* **구현 요약**: parametric 라우터 페이지에 통합 PromptStudio를 연결하고, 구형 링크 유입 시에도 탭이 올바르게 사전 로드되도록 개편했습니다.
+* **작업 상세**:
+  - **라우터 연결 변경**: [tools/[section]/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/tools/%5Bsection%5D/page.tsx)에서 기존 `PromptEnhancer` 및 `PromptTranslator` 컴포넌트 호출을 걷어내고, `PromptStudio` 통합 뷰를 연결했습니다. `section` 파라미터 값(`prompt-enhancer`, `prompt-translator`, `prompt-studio`)에 대응해 기본 선택 탭을 바인딩해 주는 라우팅 마커를 구축했습니다.
+
+#### 88. 스튜디오 사이드바 프롬프트 서브 메뉴 Consolidate
+* **구현 요약**: 사이드바 서브 메뉴 목록의 메뉴 두 개를 단일 탭 페이지로 통합 기획함에 따라 사이드바 구성을 간소화했습니다.
+* **작업 상세**:
+  - **메뉴 통폐합**: [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx)에서 기존 두 메뉴를 삭제하고, "AI 프롬프트 스튜디오" (`/studio/tools/prompt-studio`) 단일 항목으로 개명 통합했습니다.
+
+#### 89. 스튜디오 도구 종합 오버뷰 카드 합병
+* **구현 요약**: 도구 홈 뷰의 카드를 하나로 융합하여 정돈했습니다.
+* **작업 상세**:
+  - **카드 목록 갱신**: [tools/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/tools/page.tsx)에서 2개 카드 사양을 1개의 "AI 프롬프트 스튜디오" 카드로 축약 및 병합 쇄신했습니다.
+
+#### 90. 급상승 영상 트렌드 카드 유튜브 재생 다이렉트 앵커 장착
+* **구현 요약**: 인기 영상 썸네일 및 제목 클릭 시 새 탭으로 즉시 유튜브를 시청할 수 있는 링크를 부여하고 마우스 오버용 플레이어 오버레이 UI를 신설했습니다.
+* **작업 상세**:
+  - **유튜브 링크 매핑**: [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx) 내의 썸네일 이미지 및 비디오 제목 부분을 `a` 태그(`target="_blank"`, `rel="noopener noreferrer"`)로 감싸 `https://youtube.com/watch?v={videoId}` 워치 주소로 다이렉트 바인딩했습니다.
+  - **재생 유도 오버레이 추가**: 썸네일 컨테이너 위에 마우스 포인터를 대면 반투명 연무 레이아웃과 함께 유튜브 고유의 빨간색 재생 원형 아이콘이 커지며 팝업되는 호버 애니메이션을 입혔습니다.
+
+#### 91. 유튜브 SEO 분석기 쿼리 스트링 연동 및 진단 프리 로딩 적용
+* **구현 요약**: 외부 페이지에서 전달한 유튜브 주소를 감지하여 검색창에 자동 입력하고 진단까지 100% 논스톱 프리 패치하는 기능을 완성했습니다.
+* **작업 상세**:
+  - **오토 바인딩 및 진단**: [YoutubeSeo.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/YoutubeSeo.tsx) 내부에서 `useSearchParams`를 불러와 쿼리 스트링의 `url`을 파싱 및 `videoUrl` 상태에 세팅하고, 곧바로 진단 구동 함수(`runAudit`)를 자동 트리거했습니다.
+  - **Suspense 안전망 구축**: Next.js 빌드 파이프라인 정적 컴파일 deopt 예방을 위해 컴파일 단위 컴포넌트 전체를 `<Suspense>` 바운더리로 래핑해 안전성을 확보했습니다.
+
+#### 92. 급상승 영상 카드 내 유튜브 링크 복사 단추 추가
+* **구현 요약**: 분석기 진단 외에 동영상 URL 주소를 클립보드에 바로 복사해 주는 편의 버튼을 장착했습니다.
+* **작업 상세**:
+  - **복사 상태 및 피드백**: [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx) 내에서 `copiedVideoId` 상태와 `handleCopyLink` 헬퍼 함수를 신설하고, "SEO 분석" 단추 바로 왼쪽에 배치하여 클릭 시 1.5초간 녹색 체크마크와 함께 "복사 완료" 텍스트가 팝업 노출되게 개선했습니다.
+
+#### 93. 유튜브 급상승 영상 API 및 카테고리 탭 스위처 연동
+* **구현 요약**: 대한민국 유튜브 인기 차트 내 8대 장르별 대분류 필터 탭 바를 론칭하고 실시간 페칭을 연동했습니다.
+* **작업 상세**:
+  - **카테고리 탭 렌더링**: [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx) 내에 전체, 뮤직, 게임, 엔터테인먼트, 영화/애니, 테크/IT, 스포츠, 뉴스/시사 등 8대 탭 바를 설계하여 전환 시 `activeCategory` 상태 스왑 및 `/api/youtube?type=trending&categoryId=[ID]` 쿼리 페칭 연동을 구축했습니다.
+  - **백엔드 쿼리 바인딩**: [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/youtube/route.ts) API 라우터 내에서 `categoryId`를 낚아채 구글 API `videoCategoryId` 규격으로 변환 및 바인딩 처리를 수행했습니다.
+
+#### 94. 유튜브 폴백 Mock 데이터 카테고리별 분기 확충
+* **구현 요약**: API 쿼터 고갈 및 접속 에러로 인해 폴백 모크 데이터 공급 시에도 탭 선택에 매치되는 실감 나는 테마 비디오가 출력되도록 데이터를 확장했습니다.
+* **작업 상세**:
+  - **장르별 Mock 리포지토리 구축**: [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/youtube/route.ts)의 `getMockData` 헬퍼 함수 내에 에스파(음악), LCK 결승(게임), 갤럭시 S27(테크), 금리 인하 뉴스(뉴스/시사) 등 각 8대 카테고리 번호별 특화된 더미 비디오 리스트 명세를 다각도로 기입했습니다.
+
+#### 95. 일반 영상/쇼츠 구분용 3단 서브 필터링 및 뱃지/재생시간 오버레이 탑재
+* **구현 요약**: 유튜브 숏폼과 롱폼 콘텐츠의 상이한 트렌드를 개별 분석할 수 있도록 서브 필터 토글 바를 이식하고 썸네일 정보층을 개선했습니다.
+* **작업 상세**:
+  - **3단 토글 스위치 및 로컬 정렬**: [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx) 내에 `[전체 형식] [일반 영상] [쇼츠만]` 필터 버튼군을 도입하고, 로딩된 리스트 중에서 조건에 해당하는 영상 수량을 동적으로 산정하여 노출했습니다.
+  - **재생 시간 파서 & 뱃지 오버레이**: ISO 8601 포맷으로 유입되는 재생 시간 문자열(duration)을 파싱하여 60초 이하는 쇼츠(`▶ SHORTS` 빨간색 뱃지)로 판정하고, 썸네일 우측 하단에 정돈된 시간 표식을 마스크 오버레이 형태로 표현했습니다.
+
+#### 96. 백엔드 모크 비디오 데이터 contentDetails duration 정보 보강
+* **구현 요약**: 구글 API 쿼터 한계 시 가동되는 모크 폴백 상황에서도 숏폼/롱폼 필터가 원활하게 전환되도록 개체 속성을 보완했습니다.
+* **작업 상세**:
+  - **속성 갱신**: [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/youtube/route.ts)의 `getMockData` 함수 내부의 모든 모의 비디오 개체에 `contentDetails: { duration: "PT..." }` 값을 다양하게 주입하여 장르별 롱폼/숏폼이 고르게 분포하도록 리포지토리를 확장했습니다.
+
+#### 97. 진짜 쇼츠 검출용 리다이렉트 HEAD 체커 기능 도입
+* **구현 요약**: 1분 미만 티저/예고편 등 가로 비율 롱폼 영상을 숏폼 쇼츠 필터에서 엄격하게 배제하기 위해 백엔드에서 유튜브 리다이렉션을 추적하는 검증 필터를 이식했습니다.
+* **작업 상세**:
+  - **HEAD 통신 2차 검증**: [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/youtube/route.ts)의 `trending` 분기 내에서 1분 미만 동영상에 한해 `https://www.youtube.com/shorts/{videoId}` 주소로 HEAD 조회를 병렬로 수행하여, 최종 매칭 주소에 `/shorts/` 규격이 유지되는 진짜 세로형 쇼츠만 `isRealShorts: true` 로 표기되게 로직을 수립했습니다.
+
+#### 98. 프론트엔드 실시간 Shorts 판정 필드 동기화 개편
+* **구현 요약**: 프론트엔드의 숏폼 필터링 및 뱃지 부착 방식을 백엔드 정밀 검출 플래그와 연결했습니다.
+* **작업 상세**:
+  - **플래그 최우선 동기화**: [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx) 내에서 재생 시간 파서의 결과 대신 백엔드가 전송한 `video.isRealShorts` 데이터 유무를 1순위로 검증하여 카드 뱃지 노출 및 토글바 개수 통계 처리가 이루어지도록 판정식을 개편했습니다.
+
+#### 99. 서버 자동 스케줄러(Cron) 3대 대안 분석 및 자동화 로드맵 가이드 작성
+* **구현 요약**: 크리에이박스 플랫폼 내 향후 무인 자동화 파이프라인(AI 블로그 자동 발행, 뉴스레터 발송, 라이벌 채널 트래킹)의 안정적 정착을 위한 기술적 기초 비교 가이드를 정비했습니다.
+* **작업 상세**:
+  - **문서화**: [server-cron-scheduler-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/server-cron-scheduler-guide.md) 가이드를 생성하여 Vercel Cron, Supabase pg_net/pg_cron, Supabase Edge Functions의 아키텍처적 특성을 기술하고, 향후 추진할 수 있는 비즈니스 자동화 확장 시나리오 4종을 구체화했습니다.
+
+
+#### 100. 유튜브 급상승 영상 AI 데이터 분석 리포트 시스템 설계서 및 가이드 배포
+* **구현 요약**: 크리에이터들의 시청자 반응 지수 시각화 및 Gemini AI 분석 보고서 연동 기전의 기술적 무결성을 명시한 시스템 설계 가이드를 작성했습니다.
+* **작업 상세**:
+  - **가이드 문서화**: [youtube-ai-trending-analysis-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/youtube-ai-trending-analysis-guide.md) 문서를 생성하여 2중 캐싱 기전(In-Memory + Supabase DB), 좋아요/댓글 반응 지수 연산 공식, Gemini AI 프롬프트 구성 영역, 그리고 브라우저 F12 네트워크 패널을 통한 중복 호출 검증 방식을 정립했습니다.
+
+
+#### 101. Vercel Cron 스케줄러 통합 관리 대장 신설 및 가이드라인 정립
+* **구현 요약**: 크리에이박스 플랫폼 내 활성화 및 증설될 무인 자동화 배치(Cron) 목록을 체계적으로 감시하고 추적 관리하기 위한 공식 레지스트리 대장을 배포했습니다.
+* **작업 상세**:
+  - **대장 작성**: [vercel-cron-scheduler-registry.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/vercel-cron-scheduler-registry.md) 문서를 신설하여 유튜브 급상승 랭킹 자동 수집기(`/api/cron/sync-trending`, UTC 20:00 KST 05:00 실행)의 주기를 박제하고, 향후 개발 시 vercel.json 선언 및 API CRON_SECRET 보안 규격 이식 절차 가이드를 정의했습니다.
+
+
+#### 102. 관리자 센터 내 실시간 크론 모니터 및 수동 트리거 대시보드 이식
+* **구현 요약**: 관리자 센터 "시스템 관리" 페이지의 Cron Jobs 카드 슬롯을 실데이터 제어 모듈로 리팩토링하여 크론 스펙 시각화 및 강제 동기화 실행 인터페이스를 제공했습니다.
+* **작업 상세**:
+  - **대시보드 리팩토링**: [system/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/admin/system/page.tsx) 내에서 정적이었던 Cron Jobs 로그 영역을 8대 카테고리 주기 사양 표기 및 `/api/cron/sync-trending` 호출 트리거 버튼으로 개편했습니다.
+  - **피드백 연동**: 수집 실행 중 휠 로더 렌더링 및 완료 시 수집 일자 및 8개 카테고리 정밀 적재 완료 상태를 실시간 연동 표기하도록 구성했습니다.
+
+
+#### 103. 크론 스케줄 활성/중지 On-Off 제어 스위치 및 시스템 설정 레이어 통합
+* **구현 요약**: 관리자 대시보드에서 Vercel Cron의 일일 실행 주기를 실시간으로 일시 중지(Pause)하거나 재개(Resume)할 수 있는 어플리케이션 레이어 제어 스위치와 설정 DB 레이어를 구축했습니다.
+* **작업 상세**:
+  - **설정 DB 및 API 신설**: 글로벌 제어 설정을 관장하는 [system-settings.sql](file:///Users/a1234/Local%20Sites/creaibox/docs/database/sql/system-settings.sql) 마이그레이션 스크립트를 배포하여 `system_settings` 테이블을 신설하고, 설정을 조회/갱신하는 [settings/route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/admin/system/settings/route.ts) REST API를 빌드했습니다.
+  - **크론 실행 우회 분기**: [sync-trending/route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/cron/sync-trending/route.ts) 진입 시 시스템 설정을 스캔하여 비활성(`active === false`) 상태로 판별되면 유튜브 수집을 생략하고 우회 리턴하는 분기를 추가했습니다.
+  - **토글 대시보드 마운트**: [system/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/admin/system/page.tsx) 내에 활성/중지 배지 및 스케줄러 일시 중지/재개 단추를 결합하여 수동 제어를 완성했습니다.
+
+
+#### 104. 유튜브 급상승 트렌드 헤더 가이드 설명 추가 및 폰트 격상
+* **구현 요약**: 사용자들이 플랫폼 내 무인 자동 수집 기전(Cron)과 AI 데이터 분석 리포트 버튼의 역할을 직관적으로 이해할 수 있도록 가이드를 보강하고 폰트 크기를 키웠습니다.
+* **작업 상세**:
+  - **설명 및 스타일 보완**: [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx) 내 헤더 패널의 소형 설명을 고대비의 `text-sm font-black` 및 `text-xs font-bold text-zinc-400` 로 격상시키고, "매일 새벽 05시 AI 자동 크론 수집 기능"과 "AI 데이터 분석 리포트 버튼 클릭 시의 시청자 참여도/바이럴 요약 상세 보고서가 팝업된다"는 상세 서비스 사용 안내를 통합했습니다.
+
+
+#### 105. 유튜브 분석 세부 디테일 뷰 상단 중복 내비게이션 헤더 소거
+* **구현 요약**: 세부 분석 페이지 진입 시 중복 노출되어 화면 세로 영역을 크게 낭비하던 뒤로가기 버튼과 브레드크럼 타이틀 영역을 전면 삭제했습니다.
+* **작업 상세**:
+  - **헤더 소거**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/page.tsx)에서 불필요하게 낭비되던 Navigation Breadcrumb과 중복 `h1` 헤더 태그 컨테이너를 삭제하고, `{renderContent()}` 컴포넌트만 바로 마운트되도록 구성하여 화면 공간 효율성을 극대화했습니다.
+
+
+#### 106. 비디오 카드 썸네일 내부 2중 테두리 선 삭제 및 비주얼 플랫화
+* **구현 요약**: 카드 외곽선 내부에서 썸네일 이미지 외각에 감싸져 있어 2중으로 선이 중복 렌더링되던 답답한 구조를 소거하고 디자인을 플랫화했습니다.
+* **작업 상세**:
+  - **테두리 소거**: [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx) 내 개별 비디오 썸네일 컨테이너의 `border border-zinc-850` 클래스를 제거하여, 카드 전체 외곽선과의 시각적 간섭을 원천 배제하고 다크 모드 특유의 미니멀리즘 썸네일 노출을 유도했습니다.
+
+
+#### 107. 비디오 카드 썸네일 꽉 채우기(Edge-to-Edge) 레이아웃 교정
+* **구현 요약**: 썸네일이 카드의 상단, 좌우 테두리 경계면에 빈틈없이 꽉 채워지도록 카드 패딩을 분해 재정렬하고 비주얼 밀도를 끌어올렸습니다.
+* **작업 상세**:
+  - **패딩 정렬 개편**: [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx) 내 비디오 카드 컨테이너에서 사방 패딩(`p-4`)을 제거하고 `overflow-hidden` 클래스를 더했습니다.
+  - **이너 패딩 탑재**: 비디오 정보 텍스트 영역에는 `px-4 pt-4` 패딩을 배정하고, 하단 푸터 버튼 및 메트릭 구분선에는 `mx-4 mb-4 pt-3`을 개별 부여하여 대칭 균형을 이루면서 썸네일은 카드 최외각 선에 맞춰 꽉 차게 렌더링되게 리팩토링했습니다.
+
+
+#### 108. 비디오 카드 레이아웃 3줄 통일 규격 리팩토링
+* **구현 요약**: 각 급상승 비디오 카드가 텍스트 길이와 무관하게 정확히 수직 3개 라인으로 균일 대칭을 이루도록 내부 데이터 정렬 설계를 개편했습니다.
+* **작업 상세**:
+  - **3줄 레이아웃 조율**: [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx) 내에서 1번째 줄(제목)을 `text-sm font-black text-white line-clamp-1` 로 규정해 1줄로 한정했고, 2번째 줄(메타)에 채널명과 조회수, 좋아요 통계를 점(`·`)으로 엮어 1줄 스트립으로 합산했으며, 3번째 줄(액션)은 구분선 하단에 AI 분석, 복사, SEO 3개 버튼을 수평 나열하도록 마크업 구조를 전격 쇄신했습니다.
+
+
+#### 109. 인페이지(In-page) 유튜브 재생 기능 및 재생 세모 뱃지 이식
+* **구현 요약**: 사용자가 사이트 내부에서 이탈 없이 실시간 동영상을 관람할 수 있도록 카드 썸네일 영역에 임베드 플레이어를 이식하고 호버 아이콘을 고도화했습니다.
+* **작업 상세**:
+  - **인페이지 재생 제어**: [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx)에 `playingVideoId` 상태를 주입해, 썸네일 클릭 시 즉각 YouTube `iframe` 플레이어(`autoplay=1`)가 안착 렌더링되게 구성했습니다.
+  - **플레이 배지 업그레이드**: 호버 효과 가림막에 탑재된 아이콘을 원형 `PlayCircle`에서 컴팩트한 유튜브 스타일의 직사각형 둥근 레드 플레이 단추(삼각형 세모 재생 기호 내장)로 쇄신하여 미학적 일관성을 확보했습니다.
+
+
+#### 110. 최근 분석된 AI 리포트 뉴스 피드 신설 및 선제 캐시 연계
+* **구현 요약**: 사용자들이 이전에 분석했거나 이미 분석 완료되어 Supabase에 축적된 동영상 리포트 목록을 뉴스 기사 피드 포맷으로 한눈에 열람할 수 있는 신규 섹션을 마운트했습니다.
+* **작업 상세**:
+  - **백엔드 캐시 연계**: [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/youtube/route.ts)에서 카테고리 데이터 수령 시, 해당 비디오들의 ID를 추출하여 `youtube_video_analysis` 테이블에 이미 캐싱된 분석문이 있는지를 일괄 사전 쿼리(`analyzedVideoIds`)하도록 수정했습니다.
+  - **뉴스 피드 렌더러 추가**: [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx) 최하단에 썸네일을 동반한 뉴스 형 가로행 리스트를 빌드하고, 초기 로딩 시 분석 캐시 목록을 자동 적재(Prepopulate)했으며 카드 단추 클릭 시 실시간 누적(Prepend) 및 행 클릭 시 보고서 모달 팝업 제어를 완료했습니다.
+
+
+#### 111. 우측 Sticky 어사이드(Aside) AI 리포트 뉴스 피드 2분할 레이아웃 교정
+* **구현 요약**: 최하단에 수평으로 흐르던 뉴스 피드를 데스크톱 화면 기준 우측 세로 사이드바 영역으로 고정 정렬하여 레이아웃 몰입도를 보강했습니다.
+* **작업 상세**:
+  - **2분할 래퍼 도입**: [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx)에 `grid lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_380px] items-start` 컬럼 구조를 이식했습니다.
+  - **좌측 카드 그리드 축소**: 화면 분할에 비디오 카드가 좁아지지 않도록 기존 3열 그리드에서 데스크톱 2열 그리드(`xl:grid-cols-2 grid-cols-1`)로 앙상블을 조율했습니다.
+  - **우측 Sticky Sidebar 빌드**: 뉴스 피드 목록을 `<aside>` 영역으로 감싸 `lg:sticky lg:top-6` 속성과 `max-h-[82vh] overflow-y-auto`를 주어, 콘텐츠의 높이 제약과 스크롤 고정 추적 기전을 완결했습니다.
+
+
+#### 112. 글로벌 통합 로컬스토리지 영구 보존 및 우측 어사이드(Aside) 상시 노출 레이아웃 가드
+* **구현 요약**: 사용자가 다른 탭으로 이동하거나 날짜를 바꿔도 이전에 분석했던 다른 카테고리의 결과까지 포함한 종합 분석 리스트가 영구 누적 유지되도록 구조를 쇄신하고, 어사이드 상시 노출을 구현했습니다.
+* **작업 상세**:
+  - **어사이드 상시 노출 및 안내문**: [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx) 내에서 어사이드의 렌더 조건문을 제거하여 상시 노출을 확보(레이아웃 격동 방어)하고, 분석 목록이 없을 때는 세련된 다크 점선 플레이스홀더로 안내를 띄웠습니다.
+  - **글로벌 통합(Unified Merge) 및 로컬스토리지 복원**:
+    - `fetchTrending` 성공 시 타 카테고리 영상 정보가 유실되지 않도록 **합집합(Union by id)** 방식으로 상태에 추가 병합하여 통합 리스트를 유지했습니다.
+    - 컴포넌트 마운트 시 브라우저 `localStorage`(`creaibox_recent_analyzed_videos`)에 아카이빙된 최근 분석 비디오 15개 정보를 자동으로 스캔 복원하여, 언제 페이지를 이탈하거나 새로고침해도 영구 유지되도록 마감했습니다.
+
+
+#### 113. AI 분석 리포트 모달 내 이전/다음 슬라이드 단추 및 키보드(Arrow/ESC) 단축키 연동
+* **구현 요약**: 정밀 보고서 모달 창 내부에서 다른 비디오로 직접 전환할 수 있도록 제어 화살표를 마운트하고, 단축키 수신기(Arrow/ESC)를 통합 탑재했습니다.
+* **작업 상세**:
+  - **헤더 내비게이션 슬라이더 추가**: [VideoAnalysisModal.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/VideoAnalysisModal.tsx) 내 닫기 단추 좌측에 `ChevronLeft` 및 `ChevronRight` 단추를 마운트하고, 전체 비디오 목록과 인덱스 범위를 연계하여 이전/다음 영상 전환 메서드를 연결했습니다.
+  - **상위 프로퍼티 바인딩**: [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx) 내에서 모달 선언 시 `videos`와 `onVideoSelect` 콜백을 주입해, 모달 안에서 영상이 바뀔 때마다 상위 데이터 분석 트리거 및 최근 피드 영속 스토리지 누적 처리가 매끄럽게 연동되도록 조립했습니다.
+  - **키보드 단축키 리스너 바인딩**: 모달 활성 시 전역 `keydown` 이벤트 수신기를 걸어 `ArrowLeft`(이전 리포트), `ArrowRight`(다음 리포트) 스위칭 및 `Escape`(모달 닫기) 기전을 연동하고 컴포넌트 정리 시 안전하게 해제 해제시켰습니다.
+
+
+#### 114. AI 분석 API 연송 통신 JSON payload 구조 규격 및 content 키 바인딩 교정
+* **구현 요약**: 백엔드 API가 요청 시 기대하는 변수 해체 구조에 맞게 프론트엔드 전송 JSON 스키마를 정합화하고, 리포트 결과 렌더링에 필요한 응답 필드 키를 완벽히 일치시켜 리포트 연동 실패 예외를 교정했습니다.
+* **작업 상세**:
+  - **JSON 전송 페이로드 정합성 조율**: [VideoAnalysisModal.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/VideoAnalysisModal.tsx) 내 `fetchAnalysis` 메서드에서, 기존 `{ video }` 라는 단일 부모 키 구조로 객체를 던지던 것을 백엔드 API가 기대하는 루트 레벨 필드들(`videoId`, `title`, `channelTitle`, `description`, `tags`, `statistics`)로 완벽하게 풀어서 발송하도록 리팩토링했습니다.
+  - **응답 텍스트 키 매핑 동기화**: API 응답 수신 파싱 부에서 백엔드가 분석문을 담아 리턴하는 `result.content` 필드명을 프론트엔드가 정확히 조준해 읽어내도록 `result.analysis` 대신 `result.content` 로 바인딩하여 렌더링 정상화를 완료했습니다.
+
+
+#### 115. 트렌드 분석 헤더 브랜딩 개명 및 구글 AI Gemini Pro 주황색 고대비 시인성 하이라이트
+* **구현 요약**: 메인 가이드라인 타이틀을 더욱 가치 있는 브랜드인 "AI 급상승 영상 트렌드"로 개명하고, 설명문 내 구글 거대 언어 모델인 "AI Gemini Pro"의 명칭을 찐한 주황색 굵은 텍스트로 보강하여 대고객 신뢰도를 높였습니다.
+* **작업 상세**:
+  - **헤더 타이틀 쇄신**: [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx) 내 헤더 타이틀 텍스트를 `"AI 급상승 영상 트렌드"` 로 한 단계 개편했습니다.
+  - **Gemini Pro 하이라이팅**: 설명 문구 내의 `"AI Gemini Pro"` 및 `"AI 데이터 분석 리포트"`에 각각 `text-orange-600 font-black` 및 `text-orange-500 font-black` 테일윈드 태그를 부여하여 어두운 배경 카드 판넬 위에서 주황색 광원으로 선명하게 발색되도록 디자인을 다듬었습니다.
+
+
+#### 116. 헤더 설명문 내 핵심 키워드 강조 색상 통일 조율
+* **구현 요약**: 메인 가이드라인 설명문에 사용된 두 하이라이트 문구인 "AI 데이터 분석 리포트"와 "AI Gemini Pro"의 색상을 동일한 주황색 채도로 조율하여 일관성을 높였습니다.
+* **작업 상세**:
+  - **폰트 색상 통일**: [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx) 내에서 기존 `text-orange-600` 으로 분리되어 어긋나 있던 `"AI Gemini Pro"` 명칭의 텍스트 클래스를 `"AI 데이터 분석 리포트"`와 완벽하게 일치하는 `text-orange-500 font-black` 으로 교정 완료했습니다.
+
+
+#### 117. 트렌드 리포트 메인 타이틀 명칭 개정 및 3xl 스케일업 조율
+* **구현 요약**: 다른 스튜디오 도구의 크기 비율과 통일되도록 메인 헤더의 폰트를 `3xl` 수준으로 격상하고 이름을 보완했습니다.
+* **작업 상세**:
+  - **폰트 크기 및 아이콘 확대**: [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx) 내에서 헤더 타이틀 문구를 `"AI 급상승 영상 트렌드 분석 리포트"` 로 교정하고, 기존 `text-lg` 이던 스타일을 `text-xl sm:text-3xl` 로 폰트 스케일업했습니다. 이에 발맞춰 장식 불꽃 아이콘의 크기도 `size={20}` 에서 `size={26}` 으로 동시 조정하여 미학적 균형을 이식했습니다.
+
+
+#### 118. 유튜브 트렌드 분석 아코디언 드롭다운 자식 메뉴 순서 조정
+* **구현 요약**: 사용자들이 트렌드 분석 메뉴를 사용할 때 가장 가치 있는 정보인 "급상승 영상 트렌드"를 아코디언 드롭다운의 최상단 1순위로 조정하여 사용자 편의성을 높였습니다.
+* **작업 상세**:
+  - **서브 메뉴 정렬 및 대메뉴 그룹 경로 교정**: [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx) 내의 `"youtube"` 그룹children 배열 안에서 `"급상승 영상 트렌드"`와 `"채널 상세 분석"`의 순서를 스왑하여 최상단 노출을 완료했습니다. 대메뉴 그룹 클릭 시 바로 홈 화면 분석으로 안착되게 경로도 `/studio/youtube/rising` 으로 조정했습니다.
+
+
+#### 119. 우측 AI 리포트 뉴스 피드 최대 표시 한도 12개로 축소 제한
+* **구현 요약**: 어사이드 세로 영역의 과도한 스크롤 발생을 억제하고 UI 격조를 맞추기 위해 최근 분석 이력 보존 슬롯을 12개로 축소했습니다.
+* **작업 상세**:
+  - **슬라이스 바운더리 조정**: [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx) 내 최근 분석 목록 누적 상태 함수 및 API 머지 구문에서 `slice(0, 15)` 제한을 모두 `slice(0, 12)` 로 일괄 튠하여, 최대 12개의 AI 리포트 뉴스 피드만 상시 보존 및 최적 노출되도록 개선했습니다.
+
+
+#### 120. 우측 어사이드 박스 높이 스케일업 및 데이터 분석 한도 30개 확장
+* **구현 요약**: 어사이드 세로 박스 높이를 키워 12개 아이템이 화면에 잘림 없이 온전히 나오도록 조율하고, 백그라운드 데이터 적재 최대 슬롯을 30개로 대폭 격상시켰습니다.
+* **작업 상세**:
+  - **어사이드 레이아웃 높이 확장**: [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx) 내 우측 `<aside>` 컨테이너의 최대 높이 제한 스타일을 `max-h-[82vh]` 에서 `max-h-[89vh]` 로 늘려, 12번째 리스트 아이템이 하단 경계선에 묻히지 않고 완전히 100% 한눈에 노출되도록 튜닝했습니다.
+  - **누적 한도 30개 연동**: 상태 업데이트 및 로컬 스토리지 보존을 위한 슬라이스 범위를 기존 `slice(0, 12)` 에서 `slice(0, 30)` 으로 확장해 최대 30개까지 풍성하게 축적되도록 설정하고, 31번째가 들어오면 선입선출(FIFO)로 가장 하단이 제거되게 교정했습니다.
+
+
+#### 121. "급상승 영상 분석 리포트" 보관함 및 뮤직 라이브러리 양식 통일
+* **구현 요약**: 사용자가 지금까지 분석한 모든 AI 리포트 내역을 음악 라이브러리 테마와 동일하게 다크 골드 표 형식으로 관리하는 전용 보관함 페이지를 새로 구축했습니다.
+* **작업 상세**:
+  - **사이드바 메뉴 기입**: [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx) 내의 유튜브 아코디언 노드 안에서 `"급상승 영상 트렌드"` 직하단에 `"급상승 영상 분석 리포트"`(경로 `/studio/youtube/reports`) 메뉴를 신설했습니다.
+  - **통합 API 구축**: [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/youtube/reports/route.ts)를 생성해 분석 완료된 `youtube_video_analysis` 데이터베이스 정보와 `youtube_trending_archive` 의 원천 비디오 메타데이터를 결합 및 캐싱 서빙하도록 설계했습니다.
+  - **뮤직 테마 라이브러리 뷰 포팅**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/reports/page.tsx)를 구축해 황금색 테이블 헤더 구조와 마우스 호버 주황색 반응형 이펙트를 이식했으며, 제목 클릭 시 방향키 슬라이드를 지원하는 AI 분석 모달을 연계시켰습니다. 수정/삭제가 불필요한 보관함 요건에 부합하게 우측 '관리' 제어 열은 완벽히 제거했습니다.
+
+
+#### 122. 기분석 리포트 팝업 시 API 재호출 차단 및 즉시 렌더링 최적화
+* **구현 요약**: 이미 분석문 본문 데이터를 동봉하고 있는 보관함 리스트 등을 클릭할 때, API 통신을 전면 우회(Bypass)하여 로딩 대기 시간(`0초`)만에 리포트를 즉시 노출하도록 튠했습니다.
+* **작업 상세**:
+  - **로컬 캐시 바이패스 가드 구현**: [VideoAnalysisModal.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/VideoAnalysisModal.tsx) 내 `fetchAnalysis` 로드 로직 초입부에 전달받은 `video` 객체 내 `analysis_content` 가 이미 포함되어 있는지 탐색하는 조건문을 삽입했습니다. 해당 필드가 포착되면 추가적인 HTTP POST API 호출을 차단하고 곧바로 로컬 상태로 분석 본문을 주입 렌더링하여 인공지능 자원 낭비를 원천 방어했습니다.
+
+
+#### 123. 분석 리포트 보관함 카테고리 열 신설 및 4대 다차원 조회 필터 연동
+* **구현 요약**: 보관함 테이블 내에 "카테고리" 열을 추가하고, 음악 라이브러리와 완벽히 동일한 테두리 양식의 4대 다차원 정밀 필터링(카테고리, 조회수, 좋아요수, 분석 기간) 기능을 포팅했습니다.
+* **작업 상세**:
+  - **카테고리 정보 테이블 결합**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/reports/page.tsx)의 영상 제목 우측에 `"카테고리"` 헤더 및 열 데이터를 신설하고, YouTube 카테고리 ID를 한국어 명칭(예: `"게임"`, `"뮤직"` 등)으로 맵핑하여 렌더링했습니다.
+  - **4대 조회 옵션 이식**: 음악 라이브러리와 매칭되는 `border border-white/10 bg-[#0d0d12]` 테마의 select 필터바를 장착하고, 각 옵션(카테고리별 분할, 조회수 구간 필터링, 좋아요수 구간 필터링, 분석일 기준 기간 정렬)에 따른 고속 클라이언트 사이드 데이터 슬라이싱 연동을 완벽히 구축했습니다.
+
 ### 🗓️ 2026-06-26 (금)
 #### 1. 스튜디오 좌측 사이드바 로고 타이틀 개편 및 수평 정렬 최적화
 * **구현 요약**: 사이드바 로고 하단의 타이틀을 `AI Studio`로 개편하고, 폰트 시인성 확보 및 수평 정중앙 정렬을 구현했습니다.

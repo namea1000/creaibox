@@ -8,8 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import BgRemover from "./components/BgRemover";
 import PdfAnalyzer from "./components/PdfAnalyzer";
 import OcrExtractor from "./components/OcrExtractor";
-import PromptEnhancer from "./components/PromptEnhancer";
-import PromptTranslator from "./components/PromptTranslator";
+import PromptStudio from "./components/PromptStudio";
 import HashtagGenerator from "./components/HashtagGenerator";
 import YoutubeThumbnail from "./components/YoutubeThumbnail";
 import ColorPicker from "./components/ColorPicker";
@@ -22,8 +21,9 @@ const sectionNames: Record<string, string> = {
   "bg-remover": "AI 누끼 제거",
   "pdf-analyzer": "PDF 문서 분석",
   ocr: "AI OCR 문자 추출",
-  "prompt-enhancer": "AI 프롬프트 개선기",
-  "prompt-translator": "AI 프롬프트 번역기",
+  "prompt-enhancer": "AI 프롬프트 스튜디오",
+  "prompt-translator": "AI 프롬프트 스튜디오",
+  "prompt-studio": "AI 프롬프트 스튜디오",
   hashtag: "해시태그 생성기",
   "youtube-thumbnail": "유튜브 썸네일 다운로더",
   "color-picker": "색상 추출기",
@@ -46,9 +46,11 @@ export default function ToolsSectionPage() {
       case "ocr":
         return <OcrExtractor />;
       case "prompt-enhancer":
-        return <PromptEnhancer />;
+        return <PromptStudio defaultTab="enhancer" />;
       case "prompt-translator":
-        return <PromptTranslator />;
+        return <PromptStudio defaultTab="translator" />;
+      case "prompt-studio":
+        return <PromptStudio defaultTab="enhancer" />;
       case "hashtag":
         return <HashtagGenerator />;
       case "youtube-thumbnail":
