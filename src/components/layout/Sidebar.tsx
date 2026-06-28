@@ -33,12 +33,14 @@ import {
   Users,
   Folder,
   Edit3,
+  PenLine,
   Archive,
   Lightbulb,
   Database,
   Settings,
   Wand2,
   RefreshCw,
+  Eraser,
   FileArchive,
   Eye,
   CircleHelp,
@@ -65,6 +67,7 @@ import {
   Waves,
   CalendarDays,
   Target,
+  Maximize,
   type LucideIcon,
 } from "lucide-react";
 
@@ -192,30 +195,20 @@ export default function Sidebar({
         icon: Library,
         color: "text-sky-400",
         children: [
-          { name: "무료 공유 에셋", href: "/studio/library/free-assets", icon: Globe },
-          { name: "전체 콘텐츠", href: "/studio/library/all", icon: Library },
-
-          { name: "크리아이박스 콘텐츠", href: "/studio/library/creaibox", icon: PenTool },
+          { name: "크리에이박스 콘텐츠", href: "/studio/library/creaibox", icon: PenTool },
           { name: "네이버 콘텐츠", href: "/studio/library/naver", icon: SiNaver },
           { name: "뉴스 콘텐츠", href: "/studio/library/news", icon: Rss },
-
           { name: "음악 / 가사 콘텐츠", href: "/studio/library/music", icon: Music },
           { name: "이미지 콘텐츠", href: "/studio/library/image", icon: ImageIcon },
           { name: "비디오 콘텐츠", href: "/studio/library/video", icon: Video },
-
-          { name: "프롬프트 보관함", href: "/studio/library/prompts", icon: Sparkles },
-          { name: "템플릿 라이브러리", href: "/studio/library/templates", icon: Layers },
-
-          { name: "즐겨찾기", href: "/studio/library/favorites", icon: BadgeDollarSign },
-          { name: "최근 작업물", href: "/studio/library/recent", icon: Clock },
-          { name: "임시저장", href: "/studio/library/drafts", icon: Save },
-          { name: "발행 완료", href: "/studio/library/published", icon: Archive },
-
-          { name: "AI 생성 이력", href: "/studio/library/history", icon: Bot },
-          { name: "사용량 통계", href: "/studio/library/analytics", icon: BarChart3 },
-
-          { name: "휴지통", href: "/studio/library/trash", icon: FileArchive },
         ],
+      },
+      {
+        key: "creassetbox",
+        name: "크리에셋박스",
+        href: "/studio/library/free-assets",
+        icon: Archive,
+        color: "text-amber-400",
       },
       {
         key: "content-planner",
@@ -228,30 +221,22 @@ export default function Sidebar({
           { name: "AI 콘텐츠 기획", href: "/studio/content-planner/planning", icon: Sparkles },
           { name: "기획 라이브러리", href: "/studio/content-planner/library", icon: Library },
           { name: "콘텐츠 캘린더", href: "/studio/content-planner/calendar", icon: CalendarDays },
-          { name: "트렌드 키워드", href: "/studio/content-planner/trends", icon: TrendingUp },
-          { name: "전략 및 타겟 분석", href: "/studio/content-planner/strategy", icon: Target },
           { name: "자동화 워크플로우", href: "/studio/content-planner/workflow", icon: Bot },
-          { name: "플래너 설정", href: "/studio/content-planner/settings", icon: Settings },
         ],
       },
       {
         key: "creaibox-writing",
-        name: "크리아이박스 글쓰기",
+        name: "크리에이박스 글쓰기",
         href: "/studio/writing/creaibox",
         icon: PenTool,
         color: "text-violet-400",
         children: [
-          { name: "AI 포스팅 기획", href: "/studio/writing/creaibox/plan", icon: Sparkles },
           { name: "AI 포스팅 글쓰기", href: "/studio/writing/creaibox/create", icon: Edit3 },
-          { name: "AI 포스팅 에디터", href: "/studio/writing/creaibox/editor", icon: FileText },
+          { name: "블로그 새글 쓰기", href: "/studio/writing/creaibox/new-post", icon: PenLine },
           { name: "발행 원고 관리", href: "/studio/writing/creaibox/list", icon: Archive },
           { name: "블로그 관리", href: "/studio/writing/creaibox/blog-management", icon: Settings },
           { name: "크리아이박스 썸네일", href: "/studio/writing/creaibox/thumbnail", icon: ImageIcon },
-          { name: "아이디어 제너레이터", href: "/studio/writing/creaibox/ideagenerator", icon: Lightbulb },
-          { name: "트렌드 대시보드", href: "/studio/writing/creaibox/analytics", icon: BarChart3 },
-          { name: "AI 이미지 워크샵", href: "/studio/writing/creaibox/image", icon: ImageIcon },
-          { name: "지식 베이스", href: "/studio/writing/creaibox/knowledge", icon: Database },
-          { name: "엔진 커스텀 세팅", href: "/studio/writing/creaibox/settings", icon: Settings },
+          { name: "지식 & 페르소나", href: "/studio/writing/creaibox/knowledge", icon: Database },
         ],
       },
       {
@@ -315,6 +300,8 @@ export default function Sidebar({
           { name: "현수막 & 배너", href: "/studio/image/banner", icon: Megaphone },
           { name: "이미지 AI 업스케일러", href: "/studio/image/upscaler", icon: Sparkles },
           { name: "이미지 확장자 변환기", href: "/studio/image/converter", icon: RefreshCw },
+          { name: "이미지 배경 제거기", href: "/studio/image/bg-remover", icon: Eraser },
+          { name: "이미지 크기 조절기", href: "/studio/image/resizer", icon: Maximize },
           { name: "WEBP 일괄 압축기", href: "/studio/image/webp-compressor", icon: Gauge },
           { name: "간편 이미지 편집기", href: "/studio/image/editor", icon: Wand2 },
         ],
@@ -371,6 +358,7 @@ export default function Sidebar({
           { name: "AI 키워드 전략 생성", href: "/studio/keyword/strategy", icon: Bot },
           { name: "자동 콘텐츠 연결", href: "/studio/keyword/workflow", icon: Sparkles },
           { name: "트렌드 대시보드", href: "/studio/keyword/dashboard", icon: BarChart3 },
+          { name: "트렌드 키워드", href: "/studio/content-planner/trends", icon: TrendingUp },
         ],
       },
       {
@@ -521,6 +509,9 @@ export default function Sidebar({
 
   const isPathActive = (href: string) => {
     if (href === "/studio") return pathname === "/studio";
+    if (href === "/studio/library" && pathname.startsWith("/studio/library/free-assets")) {
+      return false;
+    }
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 

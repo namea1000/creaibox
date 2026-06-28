@@ -241,6 +241,272 @@
   - **데이터베이스 조회 병렬화 및 캐싱**: [[slug]/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/[brand_id]/[slug]/page.tsx)에서 순차적으로 돌던 카테고리 정보, 카테고리 목록, 형제 포스트 DB 요청을 `Promise.all`로 묶어 병렬화했습니다. 또한 Metadata와 Page 렌더러의 이중 호출을 억제하기 위해 `fetchPost` 함수를 `React.cache`로 메모이징 처리하여 DB 부담을 절반으로 낮췄습니다.
   - **깜빡임 필터링 및 트랜지션 축소**: [BlogClientWrapper.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/[brand_id]/components/BlogClientWrapper.tsx) 및 [PostClientWrapper.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/[brand_id]/components/PostClientWrapper.tsx)에서 테마 로드 전까지 화면을 opacity-0으로 감추어 깜빡임을 유발하던 상태 전환 코드를 제거하고, 초기 반응 부하를 높이는 `transition-all`을 `transition-colors duration-150`으로 정밀 제한하여 쾌적한 로딩 속도를 달성했습니다.
 
+#### 40. AI 이미지 배경 제거(Remove Bg) 스튜디오 도구 및 사이드바 통합
+* **구현 요약**: 사용자가 손쉽게 이미지 배경을 투명하게 지우고 다른 단색/그라데이션 배경을 합성할 수 있는 누끼 전문 작업 스페이스를 추가했습니다.
+* **작업 상세**:
+  - **사이드바 메뉴 이식**: [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx)에 `Eraser` 아이콘 임포트 선언을 엮고 "이미지 확장자 변환기" 바로 하위에 "이미지 배경 제거기" 메뉴 라우팅 경로를 연계시켰습니다.
+  - **Canvas 누끼 가공 엔진 코딩**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/image/bg-remover/page.tsx) 스튜디오 페이지를 신설하고 유클리드 RGB 거리 연산 방식의 실시간 크로마키 알고리즘을 이식했습니다. 모퉁이 컬러 군집을 자동 획득해 투명 처리하는 AI 자동 모드와 스포이트 컬러 검출 모드를 각각 빌드하고, 단색 및 5대 그라데이션 가상 배경 합성 기능 및 원본 대조용 Before/After 슬라이더, 투명 PNG 저장을 완수했습니다.
+
+#### 41. 이미지 배경 제거(Remove Bg) 기능 정의서 및 작동 가이드북 구축
+* **구현 요약**: 배경 제거 도구의 픽셀 연산 수학적 공식, 모드별 작동 세부 사양, 그리고 차후 홍보 및 마케팅 소스로 활용할 핵심 셀링 포인트를 수록한 마스터 가이드북을 개설했습니다.
+* **작업 상세**:
+  - **가이드북 신설**: [image-background-remover-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/image-background-remover-guide.md) 가이드를 제작하여 페이지 접근 경로 및 AI 자동/크로마키 모드 세부 동작 원리(유클리드 RGB 차이 거리 판별식, 페더링 알파 가중치 감쇄 공식), 그리고 외부 딥러닝 API 대비 강점(무비용, 보안 기밀성, 딜레이 제로)과 SNS 카드뉴스 마케팅 가이드라인을 상세하게 수록했습니다.
+
+#### 42. 이미지 배경 제거 스튜디오 수동 편집 브러시 도구 업그레이드
+* **구현 요약**: 배경 제거 작업의 정밀도를 향상하기 위해, 마우스로 지우거나 원본을 복원하고 색을 칠할 수 있는 고급 브러시 시스템을 완성했습니다.
+* **작업 상세**:
+  - **3대 브러시 필터링 구현**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/image/bg-remover/page.tsx)에서 `destination-out` 합성을 적용한 지우개(Erase), 드래그 궤적 클리핑(`ctx.clip()`) 후 원본 드로잉을 통한 픽셀 복원(Restore), 지정 색상을 칠하는 스트로크(Color) 엔진을 코딩했습니다.
+  - **오버레이 가이드 및 조절판 탑재**: 프리뷰 캔버스 위에 마우스가 지나갈 때 지우개/복원 반경을 실시간 서클 모양 링으로 노출하는 UI를 구현하고, 브러시 두께(2px~100px) 및 드로잉 색상 선택 제어판을 컨트롤러에 이식했습니다.
+  - **명세 문서 고도화**: [image-background-remover-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/image-background-remover-guide.md#L61-L67) 기술 문서에 수동 브러시 3종의 Canvas 픽셀 클리핑 및 합성 기술 사양 단락(3.4)을 추가 기록했습니다.
+  - **메뉴 명칭 간결화**: 최종 사이드바 메뉴 이름을 "이미지 배경 제거기"로 보다 간결하고 직관적으로 개편했습니다.
+
+#### 43. 이미지 배경 제거기 실행 취소(Undo) 히스토리 도입 및 원본 복구 패턴 브러시 결함 수정
+* **구현 요약**: 브러시 지우기 작업 오류 발생 시 이전으로 되돌릴 수 있는 실행 취소(Undo) 히스토리 엔진을 완성하고, 작동하지 않던 원본 복구 브러시의 픽셀 전사 알고리즘 버그를 해결했습니다.
+* **작업 상세**:
+  - **실행 취소(Undo) 스택 설계**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/image/bg-remover/page.tsx)에 `ImageData` 기반의 최근 25개 편집 히스토리 보관 스택을 신설했습니다. 마우스 드로잉 다운 시점 및 AI 처리/스포이트 작동 시작 직전 상태를 백업하여 UI의 되돌리기 버튼 클릭 혹은 `Ctrl + Z` / `Cmd + Z` 키보드 단축키 입력 시 완벽하게 직전 단계로 복구되도록 설계했습니다.
+  - **패턴 기반 복구 브러시 교체**: 기존 clip 방식의 면적 부재 오작동을 극복하기 위해 `ctx.createPattern(originalImage, "no-repeat")` 방식을 적용했습니다. 선 스트로크의 색상 값으로 원본 이미지 패턴을 주어 지워진 궤적을 문지를 때 원본의 절대 좌표 픽셀이 기하학적 뭉개짐 없이 부분 원상 복원되도록 로직을 수정했습니다.
+  - **직관적 용어 리팩토링**: 수동 툴 내 "복원" 단어 명칭을 "원본 복구"로 구체화하여 실행 취소(Undo)와의 용어 혼선을 완전히 해소했습니다.
+
+#### 44. 이미지 크기 조절기(ResizePixel 클론) 상단 탭 레이아웃 스튜디오 구축
+* **구현 요약**: 사용자가 손쉽게 웹 브라우저 단에서 이미지 가로세로 조절, 압축, 자르기 등 8대 조작을 수행할 수 있는 크기 조절기 유틸리티 스튜디오를 개발했습니다.
+* **작업 상세**:
+  - **상단 가로형 탐색 탭 설계**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/image/resizer/page.tsx) 스튜디오 페이지를 신설하고 크기, 자르기(3x3 눈금 드래그 오버레이), 반전, 회전, 압축(타겟 KB 도달형 퀄리티 이진 탐색 계산), 변환, 픽셀화, 흑백 등 8대 도구의 가로 탭 바 네비게이션을 상단에 아름답게 매핑했습니다.
+  - **사이드바 메뉴 이식**: [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx)에 `Maximize` 아이콘 임포트 선언을 엮고 "이미지 배경 제거기" 바로 하위에 "이미지 크기 조절기" 메뉴 항목을 연계 이식했습니다.
+  - **히스토리 및 가이드북 수립**: Ctrl+Z / Ctrl+Y 가 작동하는 25단계 Undo/Redo 편집 스택을 탑재하고, 필터링 기술 공식 및 SNS 마케팅 홍보 소스를 수록한 가이드북 문서([image-resizer-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/image-resizer-guide.md))를 제작했습니다.
+
+#### 45. 이미지 크기 조절기 레이아웃 노출 및 전역 메모리 상태 보존 기능 고도화
+* **구현 요약**: 이미지 업로드 전에도 스튜디오 조작판 뼈대를 상시 노출하여 디자인 안정성을 높이고, 메뉴 전환 라우팅 이동 시 가공 상태를 유지하는 인메모리 캐시를 장착했습니다.
+* **작업 상세**:
+  - **뼈대 프레임 상시 렌더링 및 글자 가독성 고도화**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/image/resizer/page.tsx)에서 이미지가 없을 때도 8대 기능 탭바 및 상세 설정판을 상시 유지 노출하되, 딤드 투명도를 `opacity-75`로 선명하게 끌어올렸으며 설정 레이블 글자색들을 `text-slate-200` 및 `text-slate-300` 고휘도 흰색 계열로 개편하여 다크 모드에서의 시인성을 최상으로 상향했습니다.
+  - **글로벌 캐시 버퍼 보존 및 레이스 컨디션 해결**: Next.js SPA 클라이언트 라우팅 이동으로 컴포넌트가 언마운트되더라도 데이터가 유실되지 않도록 모듈 전역 변수 `cachedResizerState`를 구축했습니다. `imageSrc` 변경 감지 훅에서 비동기로 미러링할 때 초기화 전 빈 데이터가 캐시에 덮어씌워져 `img.onload` 신규 로드 로직을 스킵하던 레이스 컨디션 문제를 완전히 해결하기 위해, 자동 `useEffect` 감지를 제거하고 수동 조작 완료 시점(`apply`, `undo/redo`, `initCanvas` 직후)에 정밀 바인딩하도록 고도화하여 이미지의 다이렉트 업로드 렌더링이 무결히 구동되도록 해결했습니다.
+
+#### 46. 콘텐츠 라이브러리 및 사이드바 10대 비활성 메뉴 일괄 삭제 및 보관 체계 단일화
+* **구현 요약**: 사용 빈도가 낮거나 AI 글쓰기 노선 전환으로 인해 잔존하던 10종의 비활성 카테고리를 완전히 삭제하여 대시보드 구조를 단순화하고 사용성을 강화했습니다.
+* **작업 상세**:
+  - **사이드바 메뉴 최적화**: [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx)의 라이브러리 서브메뉴에서 `전체 콘텐츠`, `프롬프트 보관함`, `템플릿 라이브러리`, `즐겨찾기`, `최근 작업물`, `임시저장`, `발행 완료`, `AI 생성 이력`, `사용량 통계`, `휴지통` 등 10개 비활성 항목을 완전히 제거하고 핵심 7종 보관함(크리아이박스, 네이버, 뉴스, 음악, 이미지, 비디오 콘텐츠, 무료 공유 에셋)으로 단일화했습니다.
+  - **대시보드 화면 정돈**: 라이브러리 메인 페이지([page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/page.tsx)) 내 상단 통계 수치 카드(stats)와 10종의 카드 메뉴를 들어내고, 빠른 팁 정보의 잔존 텍스트를 연계 정돈했습니다.
+  - **라우팅 유효성 싱크**: 동적 라우팅 유효성 검사 파일([page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/%5Bsection%5D/page.tsx)) 및 보조 라우팅 페이지([StudioOperationalSectionPage.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/StudioOperationalSectionPage.tsx))에 남아있던 삭제 대상 section overrides 및 action 바인딩을 청소했습니다.
+
+#### 47. 크리에셋박스(CreAssetBox) 최상위 대메뉴 승격 및 크리에이박스 정식 명칭 전면 정정
+* **구현 요약**: 무료 공유 에셋을 플랫폼 독립 정체성을 나타내는 최상위 대메뉴 "크리에셋박스"로 승격 노출하고, 스튜디오 내 오타 라벨을 일괄 정정했습니다.
+* **작업 상세**:
+  - **크리에셋박스 독립 승격**: [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx)의 콘텐츠 라이브러리 자식 서브메뉴에서 에셋 항목을 들어내고, `Archive` 아이콘을 매핑해 "콘텐츠 라이브러리" 바로 아랫줄에 단독 최상위 메뉴인 `크리에셋박스`를 성공적으로 이식했습니다. 또한 라이브러리 대시보드([page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/page.tsx))에서도 카드를 제거하여 보관함을 6종으로 압축 정돈했습니다.
+  - **오타 일괄 정정**: 사이드바, 라이브러리 대시보드 카드, 동적 라우팅 유효성 검증 목록([page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/%5Bsection%5D/page.tsx)), 보조 레이아웃 설정([StudioOperationalSectionPage.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/StudioOperationalSectionPage.tsx))에 남아있던 오표기(크리아이박스 콘텐츠, 크리아이박스 글쓰기)를 정식 표기인 `크리에이박스 콘텐츠` 및 `크리에이박스 글쓰기`로 전수 수정 완료했습니다.
+
+#### 48. 콘텐츠 기획 라이브러리 레이아웃 대폭 압축 및 50:50 대칭 구조화와 자동 로드 구현
+* **구현 요약**: 저장된 기획 목록 카드의 공간 낭비를 최소화하고 화면을 50:50으로 정확히 양분하는 대칭 레이아웃으로 변경하였으며, 진입 시 최상단 기획서를 자동 활성화하도록 수정했습니다.
+* **작업 상세**:
+  - **첫 기획 자동 상세 로드**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/content-planner/library/page.tsx)에서 사용자가 수동으로 상세 보기를 누르지 않아도, 비동기 목록 로드 직후 또는 검색 필터링 시 최상단의 첫 번째 기획서 데이터를 자동으로 감지하여 우측 상세 패널 및 기획 아이템 10종 리스트를 렌더링하는 `useEffect` 및 `useCallback` 기반 감시 로직을 적용했습니다.
+  - **대칭형 좌우 50:50 분할**: 고정 너비 기반의 비대칭 레이아웃을 양쪽 컬럼이 균등하게 50%씩 공간을 차지하는 그리드(`lg:grid-cols-2`)로 개편했습니다.
+  - **카드 컴포넌트 콤팩트화**: 기획 리스트 카드의 불필요한 크기와 높이를 반 수준으로 줄이기 위해, 패딩을 축소하고 뱃지/폰트 크기를 아담하게 변경하였으며 카드 몸체 영역 전체를 클릭 가능 영역으로 지정하고 거대했던 개별 '상세 보기' 단추를 지웠습니다. 우상단에는 삭제용 휴지통 단추만 소형화하여 독립 배치했습니다.
+
+#### 49. 콘텐츠 기획 라이브러리 우측 상세 패널 및 기획 아이템의 초슬림 가로 1줄화 개편
+* **구현 요약**: 우측 상세 패널의 세로 낭비 요소를 통폐합하고 10종 기획 아이템 카드를 테두리 없는 가로 1행(Row) 리스트 형태로 압축하여 스크롤 없는 올인원 뷰를 제공했습니다.
+* **작업 상세**:
+  - **상세 메타 정보 가로 1줄화**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/content-planner/library/page.tsx)에서 기존의 큰 기획명 텍스트 및 6개 DetailBox 컴포넌트를 소멸시키고, `유형 • 키워드 • 상태 • 아이템 수` 데이터를 한눈에 흐르는 가로 메타데이터 라인으로 대체하여 세로 높이를 200px 이상 절감했습니다.
+  - **기획 아이템 1줄 가로 리스트화**: 아이템을 둘러싼 거대 보더 박스를 해제하고, 가로 정렬 플렉스(`flex-row items-center justify-between`)와 구분선(`divide-y divide-white/5`) 스타일로 교체했습니다. 아이템의 Opportunity Score 및 타이틀을 가로 정렬로 노출하고 우측에는 소형화된 4종 액션 링크(`블로그`, `네이버`, `쇼츠`, `SNS`) 버튼 세트를 탑재해 세로 마크업을 극단적으로 축소하여 한눈에 모든 항목이 들어오게 완성했습니다.
+
+#### 50. 콘텐츠 기획 라이브러리 상세 패널 헤더 통합 및 AI 글 생성 동기화와 3종 관리 아이콘 추가
+* **구현 요약**: 기획 상세 패널 헤더 명칭을 선택된 기획서명과 병합하고, 리스트 내 가이드 열 헤더 신설, 액션 버튼 명칭/상태 싱크 및 개별 제어용 3종 관리 단추를 가로 배열 수립했습니다.
+* **작업 상세**:
+  - **헤더 기획명 결합 및 열 가이드 신설**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/content-planner/library/page.tsx)의 우측 타이틀을 `선택한 기획 상세 : {title}` 구조로 1줄 병합하고, 기획 아이템 10종 리스트 위에 `기획 주제 및 키워드 | AI 글 생성 | 관리` 구분 열 가이드 라인을 추가하여 정돈된 데이터 그리드를 형성했습니다.
+  - **4대 글 생성 액션 명칭 및 비활성화 상태 싱크**: 액션 링크 버튼명을 `블로그 글 생성, 네이버 글 생성, 쇼츠 제작, SNS 제작`으로 개명하고, 이미 작성이 완료된 아이템(`item.status === 'completed'`)은 버튼이 은은하게 딤드(`opacity-30 pointer-events-none`)되도록 비활성화 속성을 적용해 이중 작성을 통제했습니다.
+  - **개별 관리용 3종 아이콘 단추 배치**: 각 행 우측 "관리" 열 영역에 `보기(Eye)`, `수정(Edit2)`, `삭제(Trash2)` 초소형 아이콘 버튼들을 수평 가로 정렬 결합하여, 개별 기획 주제의 세부 조회 및 수정을 독립적으로 관리하도록 보정했습니다.
+
+#### 51. 콘텐츠 기획 라이브러리 우측 4대 글 생성 제작 액션 버튼 2줄 줄바꿈 구조화
+* **구현 요약**: 글 생성 액션 버튼들의 국문 명칭이 길어짐에 따라 레이아웃이 찌그러지거나 넘치는 현상을 제거하기 위해 버튼군을 2줄(2x2 그리드형 세트)로 분할 정렬했습니다.
+* **작업 상세**:
+  - **2줄 분할 그리드 마크업 적용**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/content-planner/library/page.tsx)에서 `w-[260px]` 너비를 가지는 액션 컬럼 노드를 flex 컬럼으로 전환한 뒤, 1행(`블로그 글 생성`, `네이버 글 생성`)과 2행(`쇼츠 제작`, `SNS 제작`)으로 나누어 배치하고 자식에 `flex-1`을 지정하여 너비를 반분(50%)시켰습니다.
+  - **ActionButton 레이아웃 교정**: `ActionButton` 컴포넌트 내부에서 `w-full text-center flex items-center justify-center` 클래스를 보강하여 부모 컨테이너 크기에 유기적으로 늘어나며 텍스트 정중앙 정렬을 완벽하게 확보하도록 개선했습니다.
+
+#### 52. 콘텐츠 기획 라이브러리 상단 3대 통계 카드 삭제 및 서브 타이틀 바 인라인 뱃지 이식
+* **구현 요약**: 불필요하게 영역을 차지하던 상단 3개 통계 카드 박스(StatCard)를 삭제하여 시인성을 높이고, 해당 수치 통계를 서브 타이틀 바 옆에 콤팩트한 뱃지 형태로 재배치했습니다.
+* **작업 상세**:
+  - **대형 카드 제거 및 밀착 렌더링**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/content-planner/library/page.tsx)에서 세로 120px 가량의 높이를 소모하던 3종의 StatCard 섹션을 완전히 삭제하여, 대메뉴 바로 아래에 2분할 라이브러리 목록이 즉각 밀착 표시되도록 디자인을 압축했습니다.
+  - **인라인 수치 뱃지 결합**: 기존 수치 정보(기획 수, 아이템 수, 활성 플랫폼 수)를 `"저장된 콘텐츠 기획"` 라벨 바로 옆에 `기획 {total}`, `아이템 {items}`, `플랫폼 {platforms}` 등의 소형 뱃지 묶음으로 매핑 및 렌더링하여 데이터 유실 없이 화면의 공간 효율성을 극대화했습니다.
+
+#### 53. 콘텐츠 기획 라이브러리 목록 카드 내 기획 생성 조건 메타 정보 요약 출력 추가
+* **구현 요약**: 저장된 기획 목록 카드 하단에 기획 생성 당시 설정한 세부 조건 정보들을 요약 표시하여 기획 간의 변별력을 확보했습니다.
+* **작업 상세**:
+  - **기획 조건 꼬리표 결합**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/content-planner/library/page.tsx)의 각 캠페인 카드 하단 정보 라인 아래에 얇은 border 구분선을 더하고, `유형 • 대분류 • 소분류 • 플랫폼` 변수를 가로 1줄로 나열하는 10px 콤팩트 라벨 그룹을 신설하여, 상세 분석 없이도 목록 자체에서 주요 생성 조건을 즉각 검증하도록 보강했습니다.
+
+#### 54. 콘텐츠 기획 라이브러리 목록 카드 하단 메타/조건 정보 단일 행 통합
+* **구현 요약**: 카드 세로 높이를 극도로 축소하기 위해 날짜/해시태그 정보와 기획 생성 메타 정보 등 2행을 단일 1행으로 병합했습니다.
+* **작업 상세**:
+  - **정보 라인 수평 통폐합**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/content-planner/library/page.tsx)의 목록 렌더러 내부에서 이전의 구분선 및 2줄 구조를 철거하고, 날짜, 해시태그, 생성 유형, 대/중/소분류, 플랫폼 정보들을 단일 flex-wrap 컨테이너 안에 수평 점(•)으로 이어붙여 한 줄에 노출시킴으로써 카드 세로 공간을 극적으로 아꼈습니다.
+
+#### 55. 콘텐츠 기획 라이브러리 목록 카드 내 플랫폼 삭제 및 포스트 타입 • 말투 속성 추가
+* **구현 요약**: 중복적이고 가독성이 떨어지던 플랫폼 속성 꼬리표를 제거하고, 생성 조건인 '포스트 타입(타입)'과 '말투(brand_tone)' 정보를 추가하여 카드 정보성을 상향했습니다.
+* **작업 상세**:
+  - **인라인 꼬리표 속성 데이터 튜닝**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/content-planner/library/page.tsx)의 각 기획 카드 하단 1줄 정보 라인에서 기존 `플랫폼:` 항목을 들어내고, `타입(raw_ai_response.campaign.postType)` 및 `말투(brand_tone)` 항목을 신규 바인딩했습니다.
+  - **긴 텍스트 찌그러짐 차단**: 말투(`brand_tone`) 데이터가 길어질 경우 레이아웃이 침범당하는 현상을 차단하기 위해 `truncate max-w-[150px]` 및 마우스 호버 시 툴팁을 띄워주는 `title` 속성을 매핑하여 미관을 보전했습니다.
+
+#### 56. 콘텐츠 기획 라이브러리 목록 카드 내 메인 키워드 해시태그 배치 우측 끝 이동
+* **구현 요약**: 카드 요약 정보 라인의 메인 키워드 해시태그 위치를 우측 끝으로 이동시켜 시각적 가독성 흐름을 최적화했습니다.
+* **작업 상세**:
+  - **해시태그 위치 재조정**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/content-planner/library/page.tsx)의 목록 렌더러 내 단일 1줄 컨테이너에서 날짜 바로 우측에 놓여있던 `#main_keyword` 해시태그 텍스트 노드를 목록 요약 배열의 가장 우측 끝(말투 뒤)으로 위치 이동하여 정보 탐색 편의성을 한층 강화했습니다.
+
+#### 57. 콘텐츠 기획 라이브러리 목록 카드 내 뱃지 명칭 및 정렬 순서 동기화
+* **구현 요약**: 카드 요약 정보 라인의 메타 데이터 이름과 정렬 순서를 "콘텐츠 생성 조건" 입력 패널과 동일하게 동기화해 화면의 정밀도를 조율했습니다.
+* **작업 상세**:
+  - **이름 및 순서 동기화**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/content-planner/library/page.tsx)의 목록 렌더러 내 단일 1줄 컨테이너에서 꼬리표 명칭들을 `콘텐츠 유형`, `포스트 타입`, `상세 분야`, `메인 키워드 주제` 명칭으로 일제히 교정하고, 속성들의 순서를 날짜 바로 뒤에 이어지도록 `콘텐츠 유형 • 포스트 타입 • 말투 • 대분류 • 상세 분야 • 메인 키워드 주제` 순으로 정렬을 동기화했습니다.
+
+#### 58. 콘텐츠 기획 라이브러리 우측 상세 패널 기획명 폰트 확대 및 중복 조건 요약 제거
+* **구현 요약**: 상세 패널 머리에 기획서의 제목을 큰 제목 폰트로 독립 표시하고 중복으로 노출되던 생성 요약 조건을 제거했습니다.
+* **작업 상세**:
+  - **기획명 폰트 격상**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/content-planner/library/page.tsx)의 우측 상세 블록 최상단 헤더 타이틀을 `text-xl font-black` 클래스를 가지는 h2 노드로 교체하여 선택된 기획서 제목이 강조되어 맺히도록 구조화했습니다.
+  - **중복 요약 바 제거**: 왼쪽 카드에서 다 제공되고 있는 생성 요약 바(`유형 • 키워드 • 상태 • 아이템 수`) 라인을 완전 철거하여 노이즈 없는 직관적인 대시보드 구조를 수립했습니다.
+
+#### 59. 콘텐츠 플래너 사이드바 미사용 메뉴 정리 및 트렌드 키워드 이관
+* **구현 요약**: 사용도가 떨어지는 미활성 메뉴를 철거하여 사이드바의 공간 효율성을 확보하고 메뉴 범주를 체계화했습니다.
+* **작업 상세**:
+  - **메뉴 리팩토링**: [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx)의 `content-planner` 노드 자식 배열에서 `전략 및 타겟 분석`, `플래너 설정` 메뉴를 제거했습니다.
+  - **카테고리 일치 조치**: 플래너 아래에 겉돌던 `트렌드 키워드` 메뉴를 대분류 메뉴인 `키워드 트렌드 분석` 하위로 위치를 변경 배치했습니다.
+
+#### 60. Supabase 데이터베이스 연계 기반 완성형 콘텐츠 캘린더 모듈 개발
+* **구현 요약**: Coming Soon 상태였던 콘텐츠 캘린더 화면을 Supabase 데이터와 연동하고 월별 달력 조회 대시보드로 개발했습니다.
+* **작업 상세**:
+  - **데이터 통합 패치**: [calendar/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/content-planner/calendar/page.tsx)를 신설해 Supabase `content_planner_campaigns` 와 `content_planner_outputs` 에서 기획 완료 이력 및 발행 완료 이력을 날짜별로 통합 패치해 Grid 달력에 뿌렸습니다.
+  - **상세조회 팝업 모달 제공**: 달력의 이벤트를 클릭하면 모달 팝업이 나타나 상세한 날짜, 제목, 플랫폼, 키워드, 상태를 제공하며 원문으로 가는 "발행 본문 보기" 배포 링크를 연결했습니다.
+
+#### 61. 시뮬레이터 및 노드 매개변수 설정 탑재 인터랙티브 자동화 워크플로우 모듈 개발
+* **구현 요약**: 콘텐츠 발행 무인화 워크플로우를 가상 및 실시간으로 제어해 볼 수 있는 플로우차트 제어 대시보드를 신설했습니다.
+* **작업 상세**:
+  - **노드 플로우 캔버스 렌더링**: [workflow/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/content-planner/workflow/page.tsx)를 신설하고 CSS Grid/Flex 및 SVG 커넥터 라인을 통해 트리거, 필터, AI, 액션 노드를 계통도로 시각화했습니다.
+  - **매개변수 설정 및 시뮬레이터 연동**: 노드를 선택하면 우측 패널에서 세부 옵션을 수정해 일시 저장할 수 있게 폼을 연동하고, "테스트 작동 실행" 시 노드 연결선을 따라 순차적으로 초록색 로딩 효과가 돌며 최종 성공 시 우측 하단에 알림 토스트를 출력하도록 설계했습니다.
+
+#### 62. 콘텐츠 캘린더 및 자동화 워크플로우 마케팅 홍보 가이드라인 신규 구축
+* **구현 요약**: 신규 개발 완료된 콘텐츠 캘린더와 자동화 워크플로우에 대한 마케팅 핵심 셀링 포인트 및 홍보 카피 문구를 별도 가이드라인 문서로 작성하여 적재했습니다.
+* **작업 상세**:
+  - **캘린더 가이드 개설**: [content-calendar-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/content-calendar-guide.md)를 신설하여 캘린더의 다채널 관리 효율성, Supabase 연동성, 1클릭 추적 이동성 분석 및 마케팅 소구 카피 템플릿을 내장했습니다.
+  - **워크플로우 가이드 개설**: [automation-workflow-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/automation-workflow-guide.md)를 신설하여 24시간 작동 무인 공장의 비즈니스적 혜택, 노드 맵의 조작 편의성, 시뮬레이터 애니메이션 가치 및 소구 카피 템플릿을 구비했습니다.
+
+#### 63. 콘텐츠 캘린더 및 자동화 워크플로우 개발 설계 계획서 백업 보관 문서 신설
+* **구현 요약**: 신규 개발 작업 진행에 앞서 수립했던 설계 계획 명세를 보관용 마크다운 파일로 개설하여 백업을 수립했습니다.
+* **작업 상세**:
+  - **계획서 파일 저장**: [calendar-workflow-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/calendar-workflow-implementation-plan.md)를 신설하고, 캘린더/워크플로우의 기능 아키텍처 상세 사양, 노드 파이프라인 애니메이션 작동 가이드, 변경 파일 경로, TypeScript 무결성 빌드 검증 이력 사양들을 온전히 영구 아카이빙했습니다.
+
+#### 64. 크리에이박스 글쓰기 사이드바 서브 메뉴 정리 및 동적 라우터 소거
+* **구현 요약**: 사용성이 모호한 글쓰기 서브 메뉴 6종을 삭제해 사이드바를 슬림화하고 충돌 가능성이 있는 동적 라우터를 정리했습니다.
+* **작업 상세**:
+  - **사이드바 메뉴 소거**: [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx)의 `creaibox-writing` children 노드 배열에서 `AI 포스팅 기획`, `AI 포스팅 에디터`, `아이디어 제너레이터`, `트렌드 대시보드`, `AI 이미지 워크숍`, `엔진 커스텀 세팅` 메뉴를 삭제했습니다.
+  - **동적 디렉토리 철거**: Next.js 라우터 간섭 문제를 원천 차단하기 위해 `src/app/studio/writing/creaibox/[section]` 동적 라우트 디렉토리를 완전히 철거했습니다.
+
+#### 65. 로컬 영속 기반 완성형 지식 베이스(Knowledge Base) 모듈 신규 개발
+* **구현 요약**: AI 글쓰기 참조용 나만의 문서 보관함인 지식 베이스 페이지를 CRUD 연동 완성형 대시보드로 개발했습니다.
+* **작업 상세**:
+  - **지식 베이스 구축**: [knowledge/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/knowledge/page.tsx)를 신설해 브라우저 `localStorage` 연동 기반의 실시간 등록(C), 조회(R), 수정(U), 삭제(D) 시스템을 구현했습니다.
+  - **대시보드 메트릭스 및 검색 필터**: 상단에 총 용량 및 글자 수 점유 메트릭 카드를 배치하고, 키워드 검색 입력창과 유니크 태그 필터 버튼 바를 매핑했습니다. 
+  - **샘플 데이터 제공**: 서비스 가이드 및 SEO 최적화 가이드 등 3종의 디폴트 템플릿 지식을 적재하여 사용자 사용성을 보강했습니다.
+
+#### 66. 크리에이박스 글쓰기 메뉴 정리 및 지식 베이스 설계 계획서 백업 신설
+* **구현 요약**: 글쓰기 하위 서브메뉴 정리 및 지식 베이스 설계 사양을 담은 개발 설계 계획 마일리지를 docs 폴더에 보관했습니다.
+* **작업 상세**:
+  - **계획서 마크다운 저장**: [knowledge-base-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/knowledge-base-implementation-plan.md)를 신설하고, 글쓰기 서브메뉴 철거 내역, 지식 베이스 페이지의 CRUD 데이터 흐름 설계 사양을 온전히 보존했습니다.
+
+#### 67. 사이드바 메뉴 활성 경로 판정 접두사 충돌 예외 조치
+* **구현 요약**: 독립 메뉴인 크리에셋박스 클릭 시 접두사가 겹치는 콘텐츠 라이브러리 메뉴까지 동시에 활성 색상으로 변하는 매칭 충돌 버그를 수정했습니다.
+* **작업 상세**:
+  - **접두사 예외 적용**: [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx)의 `isPathActive` 판단 함수 내부에서 판정 기준 주소가 `"/studio/library"` 이고 현재 활성화 경로가 `"/studio/library/free-assets"` (크리에셋박스) 일 때에는 active 판정에서 제외(`return false`)하도록 예외를 선언하여 활성 버그를 완벽하게 제거했습니다.
+
+#### 68. 지식 베이스 및 작가 페르소나 탭 기반 통합 매니저 신설 개발
+* **구현 요약**: AI가 참고할 팩트 지식(What)과 작가의 톤앤매너 페르소나(How) 설정을 한 공간에서 유기적으로 동기화할 수 있는 통합 대시보드를 수립했습니다.
+* **작업 상세**:
+  - **탭 제어 구조 도입**: [knowledge/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/knowledge/page.tsx)를 탭 제어판으로 리팩토링하여 '작가 페르소나 설정'과 '참조 지식 아카이브'를 100% 매끄럽게 교차 렌더링했습니다.
+  - **페르소나 폼 및 프로필 프리뷰 카드 빌드**: 필명, 전문 카테고리, 말투 톤앤매너, 타겟 고객 기입용 폼과 우측에 실시간으로 반영되는 사이버네틱 카드 프리뷰를 탑재하고 로컬 스토리지에 프로필 데이터가 영속하도록 바인딩했습니다.
+  - **지식 연동**: 기존의 정밀한 지식 CRUD 및 검색 필터를 두 번째 탭 하위로 연계 이식했습니다.
+
+#### 69. 사이드바 메뉴 명칭 '지식 & 페르소나' 개명 및 설계 계획서 백업 갱신
+* **구현 요약**: 사이드바 레이블을 기합의 명칭으로 동기화하고 변경된 기획안 백업 명세서를 docs 폴더에 업데이트했습니다.
+* **작업 상세**:
+  - **사이드바 명칭 개명**: [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx) 내에서 기존의 `지식 베이스` 레이블을 `지식 & 페르소나` 로 동기화 갱신했습니다.
+  - **계획서 리비전 백업**: [knowledge-base-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/knowledge-base-implementation-plan.md) 파일에 탭 구조 및 페르소나 데이터 바인딩 폼의 리팩토링 설계 사항을 동기화하여 아카이빙했습니다.
+
+#### 70. 다중 작가 페르소나 CRUD 및 로컬 스토리지 동기화 시스템 구축
+* **구현 요약**: 사용자가 다양한 어조로 다중 블로그 채널을 운영할 수 있게 페르소나를 복수로 등록, 관리하는 CRUD 카드 대시보드를 론칭했습니다.
+* **작업 상세**:
+  - **다중 카드형 UI 리팩토링**: [knowledge/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/knowledge/page.tsx)의 1탭을 고정 폼에서 그리드형 카드 나열 뷰로 교체하고, `새 페르소나 등록` 단추 및 카드별 수정/삭제 조작 바를 장착했습니다.
+  - **로컬 스토리지 데이터 마이그레이션**: 다중 배열 스토리지 키(`creaibox_persona_list`)를 매핑하고, 진입 시 기존 10차 빌드에 있던 단일 프로필이 감지되면 배열로 자동 병합 변환해 연동해주는 마이그레이션 코드를 적용했습니다.
+  - **디폴트 템플릿 공급**: "IT 전문 분석가 민호", "일상 에세이스트 은지" 등 2종의 완성형 페르소나 카드를 디폴트로 제공하여 작성 편의를 증강했습니다.
+
+#### 71. 지식 & 페르소나 다중화 설계 계획서 백업 갱신
+* **구현 요약**: 고도화된 다중 페르소나 설계 내용을 이력 보존용 마크다운 파일에 갱신 수립했습니다.
+* **작업 상세**:
+  - **계획서 최종 업데이트**: [knowledge-base-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/knowledge-base-implementation-plan.md) 파일에 다중 페르소나 동적 배열 처리 및 슬라이드인 CRUD 폼 구조를 갱신 적용했습니다.
+
+#### 72. 작가 페르소나 세부 인격 지침 20선 템플릿 로더 모듈 탑재
+* **구현 요약**: 페르소나 프로필 작성 시 가이드를 제공하기 위해 5대 카테고리별 20종의 고품질 문체 템플릿을 신설하고 원클릭 자동 바인딩을 구현했습니다.
+* **작업 상세**:
+  - **템플릿 선택기 빌드**: [knowledge/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/knowledge/page.tsx)의 페르소나 입력 양식 하단에 카테고리 필터링 드롭다운 및 스크롤 샘플 리스트를 설계했습니다.
+  - **상태 주입 바인딩**: 특정 템플릿 카드를 누르면 상단 Bio `textarea` 공간으로 내용이 즉시 오토 매핑되도록 이벤트를 결합하고 토스트 피드백 알림을 송출하도록 구축했습니다.
+
+#### 73. 템플릿 로더 사양 설계 계획서 백업 갱신
+* **구현 요약**: 20선 인격 지침 템플릿 데이터를 저장하고 상태 동기화 처리하는 기획안을 이력 보존용 마크다운 계획서에 적용했습니다.
+* **작업 상세**:
+  - **계획서 최종 업데이트**: [knowledge-base-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/knowledge-base-implementation-plan.md) 파일에 템플릿 로더 모듈 및 선택 데이터 주입 연동 스키마를 동기화했습니다.
+
+#### 74. 콘텐츠 플래너 7대 포스트 타입 카테고리 연동 및 35종 작가 페르소나 샘플 적재
+* **구현 요약**: "AI 콘텐츠 플래너"의 핵심 장르 사양과 연계하여 7대 포스트 타입 카테고리별 5개씩 총 35종의 고품질 작가 페르소나 상수 데이터를 구축했습니다.
+* **작업 상세**:
+  - **35선 페르소나 데이터 설계**: [knowledge/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/knowledge/page.tsx) 내에 브랜드 스토리, 서비스 소개, 기업 안내, 뉴스레터, 앱 가이드, AI 가이드, 유틸리티 등 장르별 어조와 바이오 사양이 정교하게 짜인 35선 인격 상수를 셋업했습니다.
+
+#### 75. 작가 페르소나 설정 좌우 분할(Split Layout) 및 1클릭 가져오기 개발
+* **구현 요약**: 페르소나 스튜디오 탭 화면을 2:3 분할 구조로 대개편하고, 클릭 한 번으로 샘플 사양 전체가 우측 등록 폼으로 전입 주입되는 인터랙션을 개발했습니다.
+* **작업 상세**:
+  - **분할 레이아웃 설계**: 좌측 2열에는 포스트 타입별 탭과 샘플 리스트가 노출되며, 우측 3열에는 사용자가 소유한 페르소나 CRUD 목록이 병렬 나열되도록 레이아웃을 획기적으로 변모시켰습니다.
+  - **자동 바인딩 액션 매핑**: 좌측의 `이 페르소나 가져오기`를 누르면, 해당 카드의 닉네임, 말투, 독자층, 카테고리, 바이오가 우측 슬라이드인 패널 폼으로 즉각 대입 바인딩되며 패널이 열리도록 구현했습니다.
+
+#### 76. 7대 포스트 타입 및 35선 스튜디오 설계 계획서 백업 갱신
+* **구현 요약**: 분할 레이아웃 및 35종 페르소나 동적 수렴 기획안을 이력 보존용 계획서에 최종 동기화했습니다.
+* **작업 상세**:
+  - **계획서 리비전**: [knowledge-base-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/knowledge-base-implementation-plan.md) 파일에 7대 장르 탭 매칭 사양과 가져오기 데이터 흐름 아키텍처를 최종 수립했습니다.
+
+#### 77. 작가 페르소나 설정 좌측 스크롤 제거 및 폰트 시인성 쇄신
+* **구현 요약**: 답답하게 가로막혀 있던 좌측 샘플 카드 높이 제한을 풀고, 모바일 및 고해상도 환경에 대응해 모든 텍스트 글꼴 크기를 크게 격상시켰습니다.
+* **작업 상세**:
+  - **스크롤 영역 제거**: [knowledge/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/knowledge/page.tsx)에서 기존의 `max-h-[580px] overflow-y-auto` 클래스를 제거하여 5종의 포스트 타입별 카드가 종단으로 시원하게 올-렌더링되게 개선했습니다.
+  - **시인성 폰트 확대**: 샘플 작가명(`text-lg font-black`), 대표 말투 및 Bio(`text-sm`), 탭 버튼(`text-xs`) 등을 전체 상향 조율하고, 우측 내 작가 페르소나 카드들 또한 대칭 가독성을 맞추기 위해 폰트 스펙을 획기적으로 격상 적용했습니다.
+
+#### 78. 가독성 고도화 스튜디오 설계 계획서 백업 갱신
+* **구현 요약**: 스크롤 제거 정책 및 글자 크기 증대 세부 내역을 이력 보존용 마크다운 계획서에 적용했습니다.
+* **작업 상세**:
+  - **계획서 최종 업데이트**: [knowledge-base-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/knowledge-base-implementation-plan.md) 파일에 폰트 사이즈 인덱스 격상 사양과 레이아웃 배치 변경점을 아카이빙했습니다.
+
+#### 79. Creaibox 발행 원고 관리 AI로 새글 쓰기 버튼 소거
+* **구현 요약**: 중복되거나 모호한 버튼 동선을 제거하여 발행 원고 리스트 뷰를 정돈했습니다.
+* **작업 상세**:
+  - **버튼 마크업 삭제**: [creaibox/list/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/list/page.tsx)에서 불필요했던 "AI로 새글 쓰기" 버튼 마크업과 라우팅 링크 동작 코드를 영구 삭제했습니다.
+
+#### 80. Creaibox 발행 원고 관리 새글 쓰기 단추 명칭 및 보라색 고대비 스타일 쇄신
+* **구현 요약**: 단독 조작용 새글 쓰기 단추 레이블을 간결하게 개정하고 시각적 인지성을 높이는 브랜드 컬러로 스타일을 개편했습니다.
+* **작업 상세**:
+  - **텍스트 개정 및 보라색 주입**: [creaibox/list/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/list/page.tsx)에서 기존의 "수기 직접 새글 쓰기" 문구를 "새글 쓰기" 로 축약하고, `bg-violet-650` 및 테두리 `border-violet-600`, 클릭 가능한 그림자 효과(`shadow-lg`)를 부여했습니다.
+
+#### 81. Creaibox 발행 원고 관리 새글 쓰기 단추 배경색 및 글꼴 고대비 적용
+* **구현 요약**: 비표준 배경색 코드로 인해 투명해진 배경 위로 흰색 글씨가 겹쳐 보이지 않던 대조 오류를 교정했습니다.
+* **작업 상세**:
+  - **표준 색상 치환**: [creaibox/list/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/list/page.tsx)에서 비표준 `bg-violet-650` 대신 Tailwind 기본 표준인 `bg-violet-600` 으로 보정하고 글자 대비용 `text-white` 및 아이콘 `text-white` 를 강제 주입해 시인성을 완전히 확보했습니다.
+
+#### 82. Creaibox 사이드바 블로그 새글 쓰기 하위 메뉴 추가
+* **구현 요약**: "AI 포스팅 글쓰기" 바로 아래에 직접 에디터 글쓰기로 연결되는 신규 단축 동선 메뉴를 배치했습니다.
+* **작업 상세**:
+  - **아이콘 임포트 및 메뉴 선언**: [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx) 내에서 `PenLine` 아이콘을 `lucide-react` 에서 확보하고, 크리에이박스 글쓰기 하위 그룹의 2번째 자식으로 "블로그 새글 쓰기" 메뉴를 안전하게 정의했습니다.
+
+#### 83. 블로그 새글 작성 브릿지 라우터 셋업
+* **구현 요약**: 사이드바 신규 메뉴 클릭 시, 백그라운드에서 임시 글을 Supabase에 적재하고 에디터 주소로 즉각 넘겨주는 브릿지 페이지를 신설했습니다.
+* **작업 상세**:
+  - **브릿지 페이지 구현**: [new-post/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/new-post/page.tsx) 주소를 신설하여 세션 체크, `writing_creaibox_posts` 에 direct 작성 형태의 빈 draft 포스트 insert, 성공 시 생성된 id 기반으로 `/studio/writing/creaibox/list/[routeId]` 로 매끄럽게 redirection 처리되도록 로직을 탑재했습니다.
+
+#### 84. 글쓰기 에디터 좌측 원고 목록 쿼리에 휴지통 상태 제외 필터 추가
+* **구현 요약**: 발행 원고 관리에서 휴지통으로 지운 유령 글들이 에디터 상세 페이지 좌측 사이드 목록에 계속 노출되는 동기화 버그를 해결했습니다.
+* **작업 상세**:
+  - **neq trash 필터 적용**: [manuscripts.ts](file:///Users/a1234/Local%20Sites/creaibox/src/lib/queries/manuscripts.ts) 파일의 `fetchCreaiboxManuscripts` 및 `fetchNaverManuscripts` 데이터 수렴 함수 내 Supabase select 구문에 `.neq("status", "trash")` 조건을 명시적으로 삽입하여 삭제된 포스트가 에디터 내부 좌측 목록에서도 자연스럽게 소거되도록 교정했습니다.
+
+#### 85. 새글 쓰기 임시 생성 포스트의 디폴트 타이틀 명칭 개정
+* **구현 요약**: 새글 작성 시 생성되는 임시 글의 초기 제목 명칭을 더 직관적으로 유도하도록 문구를 바꿨습니다.
+* **작업 상세**:
+  - **초기 타이틀 치환**: [creaibox/list/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/list/page.tsx) 및 [new-post/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/new-post/page.tsx) 내에서 새 포스트 insert 시 전송되는 페이로드의 `title` 속성 값을 기존 "직접 작성한 새 글"에서 "새글 제목을 수정해 주세요" 로 변경했습니다.
+
 ### 🗓️ 2026-06-26 (금)
 #### 1. 스튜디오 좌측 사이드바 로고 타이틀 개편 및 수평 정렬 최적화
 * **구현 요약**: 사이드바 로고 하단의 타이틀을 `AI Studio`로 개편하고, 폰트 시인성 확보 및 수평 정중앙 정렬을 구현했습니다.

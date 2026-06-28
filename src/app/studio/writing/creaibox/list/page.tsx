@@ -687,7 +687,7 @@ export default function CreaiboxManuscriptListPage() {
       const payload = {
         user_id: user.id,
         user_nicename: user.email?.split("@")[0] ?? null,
-        title: "직접 작성한 새 글",
+        title: "새글 제목을 수정해 주세요",
         content: "",
         status: "draft",
         post_type: "create",
@@ -952,29 +952,12 @@ export default function CreaiboxManuscriptListPage() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={async () => {
-              const { data: { session } } = await supabase.auth.getSession();
-              if (!session?.user) {
-                window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.");
-                router.push(`/login?redirect=${encodeURIComponent("/studio/writing/creaibox/create")}`);
-              } else {
-                router.push("/studio/writing/creaibox/create");
-              }
-            }}
-            className="inline-flex items-center gap-2 border border-blue-600 bg-white px-3 py-1.5 text-[14px] font-semibold text-[#135e96] hover:bg-blue-50"
-          >
-            <FilePlus2 className="h-4 w-4" />
-            AI로 새글 쓰기
-          </button>
-
-          <button
-            type="button"
             disabled={isCreatingDirect}
             onClick={handleCreateDirect}
-            className="inline-flex items-center gap-2 border border-slate-300 bg-white px-3 py-1.5 text-[14px] font-semibold text-slate-700 hover:border-slate-500 hover:bg-slate-50 disabled:opacity-50"
+            className="inline-flex items-center gap-2 border border-transparent bg-violet-600 hover:bg-violet-700 px-4 py-2 text-[14px] font-black text-white rounded-xl transition shadow-lg shadow-violet-950/20 disabled:opacity-50"
           >
-            <FilePlus2 className="h-4 w-4" />
-            {isCreatingDirect ? "생성 중..." : "수기 직접 새글 쓰기"}
+            <FilePlus2 className="h-4 w-4 text-white" />
+            {isCreatingDirect ? "생성 중..." : "새글 쓰기"}
           </button>
 
           {isTrashView && (

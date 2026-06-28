@@ -296,6 +296,7 @@ async function fetchCreaiboxManuscripts(): Promise<StudioManuscriptRecord[]> {
     .from("writing_creaibox_posts")
     .select("*")
     .eq("user_id", userId)
+    .neq("status", "trash")
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -384,6 +385,7 @@ async function fetchNaverManuscripts(): Promise<StudioManuscriptRecord[]> {
     .from("writing_naver_posts")
     .select("*")
     .eq("user_id", userId)
+    .neq("status", "trash")
     .order("updated_at", { ascending: false });
 
   if (error) throw error;

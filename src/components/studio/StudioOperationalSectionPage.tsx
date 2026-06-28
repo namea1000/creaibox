@@ -48,14 +48,13 @@ const accentClasses: Record<string, { box: string; text: string }> = {
 
 const fallbackActions = [
   { label: "스튜디오 홈", href: "/studio", icon: LayoutGrid },
-  { label: "최근 작업물", href: "/studio/library/recent", icon: Clock },
   { label: "설정", href: "/studio/dashboard", icon: Settings },
 ];
 
 const areaDefaults: Record<StudioArea, Omit<SectionConfig, "title">> = {
   library: {
     eyebrow: "콘텐츠 라이브러리",
-    description: "콘텐츠, 프롬프트, 템플릿, 발행 상태를 한 화면에서 정리합니다.",
+    description: "콘텐츠, 음악, 비디오, 무료 공유 에셋을 정돈하고 관리합니다.",
     accent: "sky",
     icon: Library,
     stats: [
@@ -64,17 +63,14 @@ const areaDefaults: Record<StudioArea, Omit<SectionConfig, "title">> = {
       { label: "보관함", value: "156", tone: "text-violet-300" },
     ],
     actions: [
-      { label: "무료 에셋", href: "/studio/library/free-assets", icon: Archive },
-      { label: "전체 콘텐츠", href: "/studio/library/all", icon: Library },
-      { label: "최근 작업물", href: "/studio/library/recent", icon: Clock },
+      { label: "무료 공유 에셋", href: "/studio/library/free-assets", icon: Archive },
     ],
     items: [
       { title: "브랜드 블로그 초안 묶음", type: "문서", status: "정리 필요", meta: "7개 항목" },
       { title: "썸네일 후보 이미지", type: "이미지", status: "검토 중", meta: "12개 파일" },
-      { title: "SEO 프롬프트 세트", type: "프롬프트", status: "사용 가능", meta: "4개 템플릿" },
     ],
     checklist: ["중복 콘텐츠 병합", "대표 썸네일 지정", "발행 채널 태그 정리"],
-    filters: ["전체", "문서", "이미지", "프롬프트", "발행"],
+    filters: ["전체", "문서", "이미지", "비디오"],
   },
   video: {
     eyebrow: "비디오 스튜디오",
@@ -123,7 +119,7 @@ const areaDefaults: Record<StudioArea, Omit<SectionConfig, "title">> = {
     filters: ["전체", "앨범", "가사", "커버", "영상"],
   },
   creaibox: {
-    eyebrow: "크리아이박스 글쓰기",
+    eyebrow: "크리에이박스 글쓰기",
     description: "지식 베이스, 이미지 워크샵, 엔진 설정을 포스팅 제작 흐름에 연결합니다.",
     accent: "violet",
     icon: Wand2,
@@ -177,9 +173,7 @@ const sectionOverrides: Record<string, Partial<SectionConfig>> = {
   workflow: { title: "자동화 워크플로우", icon: Sparkles },
   settings: { title: "설정", icon: Settings },
   shorts: { title: "쇼츠 & 릴스 제작" },
-  prompts: { title: "프롬프트 보관함" },
   subtitle: { title: "자막 & 음성" },
-  templates: { title: "템플릿 라이브러리" },
   thumbnail: { title: "썸네일 메이커" },
   projects: { title: "프로젝트 관리", icon: Folder },
   render: { title: "렌더 / 저장 관리" },
@@ -193,17 +187,10 @@ const sectionOverrides: Record<string, Partial<SectionConfig>> = {
   history: { title: "작업 내역", icon: Clock },
   knowledge: { title: "지식 베이스" },
   image: { title: "AI 이미지 워크샵" },
-  all: { title: "전체 콘텐츠" },
   naver: { title: "네이버 콘텐츠" },
   news: { title: "뉴스 콘텐츠" },
   music: { title: "음악 / 가사 콘텐츠" },
   video: { title: "비디오 콘텐츠" },
-  favorites: { title: "즐겨찾기" },
-  recent: { title: "최근 작업물", icon: Clock },
-  drafts: { title: "임시저장" },
-  published: { title: "발행 완료" },
-  analytics: { title: "사용량 통계", icon: BarChart3 },
-  trash: { title: "휴지통" },
 };
 
 function buildConfig(area: StudioArea, section: string, title?: string): SectionConfig {
