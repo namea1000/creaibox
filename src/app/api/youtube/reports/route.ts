@@ -63,6 +63,23 @@ export async function GET(req: NextRequest) {
       const dbMeta = (analysis as any).video_metadata;
       const matchedVideo = dbMeta || videoMap.get(videoId);
 
+      // Fix broken mock photo ID url in video_metadata snippet
+      if (matchedVideo?.snippet?.thumbnails?.medium?.url) {
+        let thumbUrl = matchedVideo.snippet.thumbnails.medium.url;
+        if (thumbUrl.includes("photo-161800518") || thumbUrl.includes("photo-1618005")) {
+          const unsplashIds = [
+            "1498050108023-c5249f4df085",
+            "1518770660439-4636190af475",
+            "1542751371-adc38448a05e",
+            "1470225620780-dba8ba36b745",
+            "1508098682722-e99c43a406b2"
+          ];
+          const hashIndex = Math.abs(videoId.split("").reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0));
+          const photoId = unsplashIds[hashIndex % unsplashIds.length];
+          matchedVideo.snippet.thumbnails.medium.url = `https://images.unsplash.com/photo-${photoId}?w=400&h=225&fit=crop`;
+        }
+      }
+
       // Extract country from dbMeta or default to KR
       let country = matchedVideo?.country || matchedVideo?.snippet?.country || "";
       if (!country) {

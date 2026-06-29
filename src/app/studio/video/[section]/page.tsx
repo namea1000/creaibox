@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import StudioOperationalSectionPage from "@/components/studio/StudioOperationalSectionPage";
+import VideoTemplateMarketplace from "../components/VideoTemplateMarketplace";
 
 const sectionNames: Record<string, string> = {
   editor: "영상 편집기",
@@ -17,6 +18,10 @@ const sectionNames: Record<string, string> = {
 
 export default function VideoSectionPage() {
   const { section } = useParams<{ section: string }>();
+
+  if (section === "templates") {
+    return <VideoTemplateMarketplace />;
+  }
 
   return (
     <StudioOperationalSectionPage area="video" section={section} title={sectionNames[section] || "비디오 스튜디오"} />

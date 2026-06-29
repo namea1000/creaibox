@@ -33,6 +33,7 @@ export type VideoExportOptions = {
   snapshot?: RenderJobSnapshot;
   fileName?: string;
   directoryHandle?: any;
+  fileHandle?: any;
   audioFormat?: "mp3" | "wav" | "aac";
   videoFormat?: "mp4" | "mov";
 };

@@ -964,6 +964,28 @@ export default function VideoEditorExportPanel({
 
   const activeQueueItems = renderQueue.slice(0, 5);
 
+  const getRemainingTimeText = () => {
+    if (!exportJob.startedAt || exportProgress.progress <= 3 || exportProgress.progress >= 99) {
+      return null;
+    }
+    const elapsedMs = Date.now() - exportJob.startedAt;
+    const estimatedTotalMs = (elapsedMs / exportProgress.progress) * 100;
+    const remainingMs = Math.max(0, estimatedTotalMs - elapsedMs);
+    const remainingSec = Math.ceil(remainingMs / 1000);
+
+    if (remainingSec < 60) {
+      return `약 ${remainingSec}초`;
+    }
+    const mins = Math.floor(remainingSec / 60);
+    const secs = remainingSec % 60;
+    if (mins >= 60) {
+      const hours = Math.floor(mins / 60);
+      const remainingMins = mins % 60;
+      return `약 ${hours}시간 ${remainingMins}분`;
+    }
+    return `약 ${mins}분 ${secs}초`;
+  };
+
   if (!open) return null;
 
   return (
@@ -1476,23 +1498,30 @@ export default function VideoEditorExportPanel({
                 {isExporting ? (
                   <div className="rounded-xl border border-white/5 bg-cyan-950/10 p-3">
                     <div className="mb-2 flex items-center justify-between text-xs">
-                      <span className="font-black text-zinc-300">
-                        {exportProgress.stage === "idle"
-                          ? "대기 중"
-                          : exportProgress.stage === "worker-preflight"
-                            ? "Worker 확인"
-                          : exportProgress.stage === "encoding-webcodecs"
-                            ? "오디오/비디오 인코딩"
-                          : exportProgress.stage === "rendering-webm"
-                            ? "WebM 렌더링"
-                          : exportProgress.stage === "converting-mp4"
-                            ? "MP4 변환"
-                          : exportProgress.stage === "completed"
-                            ? "완료"
-                            : exportProgress.stage === "cancelled"
-                              ? "취소됨"
-                              : "실패"}
-                      </span>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-black text-zinc-300">
+                          {exportProgress.stage === "idle"
+                            ? "대기 중"
+                            : exportProgress.stage === "worker-preflight"
+                              ? "Worker 확인"
+                            : exportProgress.stage === "encoding-webcodecs"
+                              ? "오디오/비디오 인코딩"
+                            : exportProgress.stage === "rendering-webm"
+                              ? "WebM 렌더링"
+                            : exportProgress.stage === "converting-mp4"
+                              ? "MP4 변환"
+                            : exportProgress.stage === "completed"
+                              ? "완료"
+                              : exportProgress.stage === "cancelled"
+                                ? "취소됨"
+                                : "실패"}
+                        </span>
+                        {getRemainingTimeText() && (
+                          <span className="text-[10px] text-zinc-400 font-bold">
+                            남은 시간: {getRemainingTimeText()}
+                          </span>
+                        )}
+                      </div>
                       <span className="font-mono text-cyan-300 font-bold">
                         {Math.round(exportProgress.progress)}%
                       </span>

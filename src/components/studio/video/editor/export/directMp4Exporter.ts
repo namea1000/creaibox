@@ -1,6 +1,7 @@
 import {
   AudioBufferSource,
   BufferTarget,
+  StreamTarget,
   CanvasSource,
   Mp4OutputFormat,
   Output,
@@ -41,11 +42,21 @@ export async function exportDirectMp4VideoOnly({
   const signal = options?.signal;
   throwIfAborted(signal);
 
-  const target = new BufferTarget();
+  let target: any;
+  let writableStream: any = null;
+
+  if (options?.fileHandle) {
+    writableStream = await options.fileHandle.createWritable();
+    target = new StreamTarget(writableStream);
+  } else {
+    target = new BufferTarget();
+  }
+
   const output = new Output({
-    format: new Mp4OutputFormat({ fastStart: "in-memory" }),
+    format: new Mp4OutputFormat({ fastStart: options?.fileHandle ? false : "in-memory" }),
     target,
   });
+
   const videoSource = new CanvasSource(canvas, {
     codec: "avc",
     bitrate,
@@ -110,7 +121,11 @@ export async function exportDirectMp4VideoOnly({
 
       if (frame % 5 === 0) {
         if (typeof document !== "undefined" && document.hidden) {
-          await new Promise((resolve) => setTimeout(resolve, 4));
+          await new Promise<void>((resolve) => {
+            const channel = new MessageChannel();
+            channel.port1.onmessage = () => resolve();
+            channel.port2.postMessage(null);
+          });
         } else {
           await new Promise((resolve) => requestAnimationFrame(resolve));
         }
@@ -120,6 +135,11 @@ export async function exportDirectMp4VideoOnly({
     await output.finalize();
     throwIfAborted(signal);
 
+    if (options?.fileHandle && writableStream) {
+      await writableStream.close().catch(() => undefined);
+      return null;
+    }
+
     if (!target.buffer) {
       throw new Error("Direct MP4 출력 버퍼가 생성되지 않았습니다.");
     }
@@ -128,6 +148,9 @@ export async function exportDirectMp4VideoOnly({
   } catch (error) {
     if (output.state !== "canceled" && output.state !== "finalized") {
       await output.cancel().catch(() => undefined);
+    }
+    if (writableStream) {
+      await writableStream.close().catch(() => undefined);
     }
     throw error;
   }

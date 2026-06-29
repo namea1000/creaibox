@@ -78,6 +78,7 @@ async function saveBlob(blob: Blob, fileName: string, directoryHandle?: any) {
       const fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
       await writeBlobToHandleInChunks(fileHandle, blob);
       console.log(`[saveBlob] Successfully saved ${fileName} to directory`);
+      alert(`내보내기가 완료되었습니다!\n파일이 [${directoryHandle.name}] 폴더에 [${fileName}] 이름으로 안전하게 저장되었습니다.`);
       return;
     } catch (err) {
       console.warn("[saveBlob] Directory write failed, falling back to download:", err);
@@ -89,6 +90,7 @@ async function saveBlob(blob: Blob, fileName: string, directoryHandle?: any) {
   a.download = fileName;
   a.click();
   URL.revokeObjectURL(url);
+  alert(`내보내기가 완료되었습니다!\n파일이 [브라우저 기본 다운로드] 폴더에 [${fileName}] 이름으로 안전하게 저장되었습니다.`);
 }
 
 function audioBufferToWav(buffer: AudioBuffer): ArrayBuffer {
@@ -1544,7 +1546,11 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
             await new Promise((resolve) => window.setTimeout(resolve, waitMs));
           } else {
             if (typeof document !== "undefined" && document.hidden) {
-              await new Promise((resolve) => setTimeout(resolve, 4));
+              await new Promise<void>((resolve) => {
+                const channel = new MessageChannel();
+                channel.port1.onmessage = () => resolve();
+                channel.port2.postMessage(null);
+              });
             } else {
               await new Promise((resolve) => requestAnimationFrame(resolve));
             }
@@ -1949,6 +1955,36 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
 
           try {
             throwIfAborted(options?.signal);
+
+            const format = options?.videoFormat || "mp4";
+            let fileHandle: any = null;
+
+            if (format === "mp4" && typeof window !== "undefined" && "showSaveFilePicker" in window) {
+              try {
+                const suggestedName = options?.fileName
+                  ? (options.fileName.endsWith(".mp4") ? options.fileName : `${options.fileName}.mp4`)
+                  : `${safeFileName(renderTitle)}-direct-mp4.mp4`;
+
+                fileHandle = await (window as any).showSaveFilePicker({
+                  suggestedName,
+                  types: [
+                    {
+                      description: "MP4 Video File",
+                      accept: { "video/mp4": [".mp4"] },
+                    },
+                  ],
+                });
+              } catch (err) {
+                console.warn("showSaveFilePicker cancelled or failed:", err);
+                options?.onProgress?.({
+                  stage: "failed",
+                  progress: 0,
+                  message: "내보내기가 취소되었습니다 (파일 저장 위치 미선택).",
+                });
+                return;
+              }
+            }
+
             let audioBuffer: AudioBuffer | undefined;
 
             if (audioSources.length > 0) {
@@ -2007,17 +2043,31 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
                 targetCanvasRatio,
                 true // isExport
               ),
-              options,
+              options: {
+                ...options,
+                fileHandle,
+              },
             });
 
             throwIfAborted(options?.signal);
-            const format = options?.videoFormat || "mp4";
+
+            if (fileHandle) {
+              options?.onProgress?.({
+                stage: "completed",
+                progress: 100,
+                message: "Direct MP4 파일 저장이 성공적으로 완료되었습니다.",
+              });
+              alert(`내보내기가 완료되었습니다!\n파일이 [${fileHandle.name}] 경로에 실시간 스트리밍으로 안전하게 저장되었습니다.`);
+              return;
+            }
+
             if (format === "mov") {
               options?.onProgress?.({
                 stage: "converting-mp4",
                 progress: 0,
                 message: "MOV 형식 변환 중...",
               });
+              if (!blob) throw new Error("비디오 Blob 데이터가 생성되지 않았습니다.");
               await convertMp4BlobToMov({
                 mp4Blob: blob,
                 title: renderTitle,
@@ -2040,6 +2090,7 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
               const finalFileName = options?.fileName
                 ? (options.fileName.endsWith(".mp4") ? options.fileName : `${options.fileName}.mp4`)
                 : `${safeFileName(renderTitle)}-direct-mp4.mp4`;
+              if (!blob) throw new Error("비디오 Blob 데이터가 생성되지 않았습니다.");
               await saveBlob(blob, finalFileName, options?.directoryHandle);
               options?.onProgress?.({
                 stage: "completed",

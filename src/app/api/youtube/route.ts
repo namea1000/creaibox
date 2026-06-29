@@ -285,15 +285,45 @@ export async function GET(req: NextRequest) {
             if (elapsedHours < 168) { // Extended to 7 days (168 hours) for maximum quota efficiency
               const cachedVideos = cached.videos_data || [];
               const countryCode = cached.channel_data?.snippet?.country || "KR";
-              const videosWithCountry = cachedVideos.map((v: any) => ({
-                country: countryCode,
-                ...v
-              }));
-              return NextResponse.json({
-                source: "database-cache",
-                channel: cached.channel_data,
-                recentVideos: videosWithCountry,
-              });
+
+              // Check if it's a mock benchmarking channel with less than 30 videos (needs regeneration)
+              const isMockChannel = queryKey.match(/^@?([a-z]{2})_([a-z_]+)_rival_(\d+)$/);
+              if (isMockChannel && cachedVideos.length < 30) {
+                // Bypass cache to regenerate 30 videos
+              } else {
+                const videosWithCountry = cachedVideos.map((v: any, i: number) => {
+                  let thumbUrl = v.snippet?.thumbnails?.medium?.url || "";
+                  if (thumbUrl.includes("photo-161800518") || thumbUrl.includes("photo-1618005")) {
+                    const unsplashIds = [
+                      "1498050108023-c5249f4df085",
+                      "1518770660439-4636190af475",
+                      "1542751371-adc38448a05e",
+                      "1470225620780-dba8ba36b745",
+                      "1508098682722-e99c43a406b2"
+                    ];
+                    const photoId = unsplashIds[i % unsplashIds.length];
+                    thumbUrl = `https://images.unsplash.com/photo-${photoId}?w=400&h=225&fit=crop`;
+                  }
+                  return {
+                    country: countryCode,
+                    ...v,
+                    snippet: {
+                      ...v.snippet,
+                      thumbnails: {
+                        ...v.snippet?.thumbnails,
+                        medium: {
+                          url: thumbUrl
+                        }
+                      }
+                    }
+                  };
+                });
+                return NextResponse.json({
+                  source: "database-cache",
+                  channel: cached.channel_data,
+                  recentVideos: videosWithCountry,
+                });
+              }
             }
           }
         } catch (dbErr) {
@@ -406,26 +436,39 @@ export async function GET(req: NextRequest) {
             ]
           };
 
+          const unsplashIds = [
+            "1498050108023-c5249f4df085",
+            "1518770660439-4636190af475",
+            "1542751371-adc38448a05e",
+            "1470225620780-dba8ba36b745",
+            "1508098682722-e99c43a406b2"
+          ];
           const templates = videoTemplates[categoryEng] || videoTemplates.channel;
-          const mockVideos = templates.map((template, i) => {
+          const mockVideos = Array.from({ length: 30 }).map((_, i) => {
+            const template = templates[i % templates.length];
             const videoId = `video_mock_${country.toLowerCase()}_${categoryEng}_${rivalId}_${i}`;
-            const vCount = Math.round(viewsCount / (i + 1.5));
+            const vCount = Math.round(viewsCount / (i + 1.2));
+            const photoId = unsplashIds[i % unsplashIds.length];
+            
+            const setNum = Math.floor(i / templates.length) + 1;
+            const titleSuffix = setNum > 1 ? ` (파트 ${setNum})` : "";
+            
             return {
               id: videoId,
               snippet: {
-                title: `[${country}] ${template}`,
+                title: `[${country}] ${template}${titleSuffix}`,
                 description: `해당 채널의 최신 인기 영상 콘텐츠입니다. 크리에이박스 벤치마킹 분석.`,
-                publishedAt: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
+                publishedAt: new Date(Date.now() - i * 12 * 60 * 60 * 1000).toISOString(),
                 thumbnails: {
                   medium: {
-                    url: `https://images.unsplash.com/photo-${1618005180 + i * 100}?w=400&h=225&fit=crop`
+                    url: `https://images.unsplash.com/photo-${photoId}?w=400&h=225&fit=crop`
                   }
                 }
               },
               statistics: {
                 viewCount: String(vCount),
-                likeCount: String(Math.round(vCount * 0.05)),
-                commentCount: String(Math.round(vCount * 0.005))
+                likeCount: String(Math.round(vCount * (0.04 + Math.random() * 0.03))),
+                commentCount: String(Math.round(vCount * (0.003 + Math.random() * 0.004)))
               }
             };
           });
@@ -460,6 +503,12 @@ export async function GET(req: NextRequest) {
         }
 
         let query = rawQuery;
+
+        // Clean query to strip custom country suffix for benchmark channels
+        const suffixMatch = query.match(/^(@?[a-zA-Z0-9_.-]+)_(kr|us|jp|gb|vn|in|br|ca)$/i);
+        if (suffixMatch) {
+          query = suffixMatch[1];
+        }
         let channelId = "";
 
         // Check if query is a URL
@@ -892,24 +941,24 @@ function getMockData(type: string | null, searchParams: URLSearchParams) {
             videoCount: "148",
           },
         },
-        recentVideos: [
-          {
-            id: { videoId: "mock-v-1" },
-            snippet: {
-              title: `${query}와 함께하는 5분 완성 AI 작곡 가이드`,
-              publishedAt: "2026-06-01T12:00:00Z",
-              thumbnails: { medium: { url: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=320&q=80" } },
-            },
-          },
-          {
-            id: { videoId: "mock-v-2" },
-            snippet: {
-              title: "조회수 100만 쇼츠 영상 기획 템플릿 배포",
-              publishedAt: "2026-05-25T09:00:00Z",
-              thumbnails: { medium: { url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=320&q=80" } },
-            },
-          },
-        ],
+        recentVideos: Array.from({ length: 30 }).map((_, i) => ({
+          id: { videoId: `mock-v-${i}` },
+          snippet: {
+            title: `${query}의 인기 추천 영상 파트 ${i + 1}`,
+            publishedAt: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
+            thumbnails: {
+              medium: {
+                url: `https://images.unsplash.com/photo-${[
+                  "1498050108023-c5249f4df085",
+                  "1518770660439-4636190af475",
+                  "1542751371-adc38448a05e",
+                  "1470225620780-dba8ba36b745",
+                  "1508098682722-e99c43a406b2"
+                ][i % 5]}?w=320&q=80`
+              }
+            }
+          }
+        }))
       };
     }
 

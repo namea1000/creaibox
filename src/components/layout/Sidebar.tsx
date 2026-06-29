@@ -63,6 +63,7 @@ import {
   Bell,
   MessageSquare,
   Share2,
+  Send,
   Disc3,
   Waves,
   CalendarDays,
@@ -380,6 +381,19 @@ export default function Sidebar({
           { name: "AI 제목 생성기", href: "/studio/youtube/title", icon: Sparkles },
           { name: "콘텐츠 전략 리포트", href: "/studio/youtube/report", icon: FileText },
           { name: "유튜브 자동 제작 연결", href: "/studio/youtube/workflow", icon: Bot },
+        ],
+      },
+      {
+        key: "publish",
+        name: "채널 배포 스튜디오",
+        href: "/studio/publish",
+        icon: Share2,
+        color: "text-rose-400",
+        children: [
+          { name: "AI 쇼츠 자동 생성기", href: "/studio/publish", icon: Sparkles },
+          { name: "SNS 통합 발행", href: "/studio/publish/posts", icon: Send },
+          { name: "채널 연동 관리", href: "/studio/publish/channels", icon: Settings },
+          { name: "발행 이력 및 통계", href: "/studio/publish/history", icon: BarChart3 },
         ],
       },
       {

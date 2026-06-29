@@ -268,7 +268,11 @@ export async function exportWebCodecsVideoOnly({
 
       if (frame % 30 === 0) {
         if (typeof document !== "undefined" && document.hidden) {
-          await new Promise((resolve) => setTimeout(resolve, 4));
+          await new Promise<void>((resolve) => {
+            const channel = new MessageChannel();
+            channel.port1.onmessage = () => resolve();
+            channel.port2.postMessage(null);
+          });
         } else {
           await new Promise((resolve) => requestAnimationFrame(resolve));
         }
