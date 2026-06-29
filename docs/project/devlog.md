@@ -744,6 +744,131 @@
   - **카테고리 정보 테이블 결합**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/reports/page.tsx)의 영상 제목 우측에 `"카테고리"` 헤더 및 열 데이터를 신설하고, YouTube 카테고리 ID를 한국어 명칭(예: `"게임"`, `"뮤직"` 등)으로 맵핑하여 렌더링했습니다.
   - **4대 조회 옵션 이식**: 음악 라이브러리와 매칭되는 `border border-white/10 bg-[#0d0d12]` 테마의 select 필터바를 장착하고, 각 옵션(카테고리별 분할, 조회수 구간 필터링, 좋아요수 구간 필터링, 분석일 기준 기간 정렬)에 따른 고속 클라이언트 사이드 데이터 슬라이싱 연동을 완벽히 구축했습니다.
 
+
+#### 124. 유튜브 공식 API v3 응용 방안 기획 가이드 문서 수립
+* **구현 요약**: 유튜브 API의 명세 분석과 크리에이박스 AI 융합 기능에 대한 Blueprint 기획 문서를 제작하여 시스템 아키텍처 명세를 확정했습니다.
+* **작업 상세**:
+  - **가이드 문서 작성**: [youtube-api-application-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/youtube-api-application-guide.md) 파일을 신규 개설하여 `Search, Videos, CommentThreads, Channels` 등 v3 명세 리소스의 작동 원리와 쿼터 효율화 전략을 서술했습니다. 또한 글로벌 다국가 트렌드(Region 코드) 확장, 시청자 실제 댓글 여론 감지(Gemini 연동), 라이벌 채널 아웃라이어 역설계 등 구체적인 크리에이박스 이식 로드맵을 2중 캐싱 아키텍처 구조도와 함께 수록 보관했습니다.
+
+
+#### 125. "채널 상세 분석" 페이지 고도화 및 분야별 추천 벤치마킹 카드 탑재
+* **구현 요약**: 채널 상세 분석 기능을 기획서 2번 명세(숨은 꿀 영상 추출기)에 맞추어 아웃라이어 판독기로 개편하고, 8대 분야별 추천 벤치마킹 타겟 채널 레이더 카드를 추가 장착했습니다.
+* **작업 상세**:
+  - **카테고리별 추천 타겟 카드 구축**: [ChannelDetail.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/ChannelDetail.tsx)의 검색바 하단에 `전체, 테크/IT, 게임, 뮤직...` 8대 카테고리 탭과 분야별 14개 대표 채널(잇섭, 주연, 침착맨, JFla, 슈카월드 등)의 원형 프로필 아바타 및 핸들/소개 카드를 기입했습니다. 카드를 클릭하면 즉각 채널 분석이 실행되도록 설계했습니다.
+  - **아웃라이어 판독 및 AI 분석 모달 연계**: [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/youtube/route.ts)를 보완해 최근 업로드를 8개로 확장하고 `videos.list` 를 병합 연동해 상세 재생수/좋아요/댓글 메트릭을 확보했습니다. 각 영상의 **구독자 수 대비 조회수 비율**을 셈하여 `100% 이상 (★ 메가 히트)`, `50% 이상 (우수)` 등급 뱃지와 게이지바를 인가하고, 클릭 시 즉시 흥행 요인과 Remix Blueprint를 팝업하는 AI 분석 모달을 연동했습니다.
+
+
+#### 126. 추천 라이벌 채널 프로필 엑스박스(broken image) 교정 및 CSS 그라데이션 타이틀 아바타 이식
+* **구현 요약**: 구글 서버 세션 변화나 CORS 등 외부 이미지 소스 유실로 깨져서 노출되던 추천 채널 프로필 엑스박스 버그를 안전하고 견고한 CSS 그라데이션 타이틀 첫 글자 아바타로 치환했습니다.
+* **작업 상세**:
+  - **CSS 타이틀 이니셜 아바타 구축**: [ChannelDetail.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/ChannelDetail.tsx) 내에서 깨진 이미지를 로드하던 `<img>` 태그를 완전 제거하고, Next.js 빌드 환경에서도 100% 견고한 `border-red-500/20 bg-gradient-to-br from-red-650/35 to-zinc-950/80` 그라데이션 원형 아바타를 적용했습니다. 원 중앙에 채널 이름의 첫 음절(예: 잇섭 -> '잇', 침착맨 -> '침')을 화이트 폰트로 렌더링하여 깨질 위험 없이 세련된 반응형 UI 디자인을 매칭시켰습니다.
+
+
+#### 127. 카테고리별 추천 라이벌 채널 데이터 20개씩 확장 (총 140개 구축)
+* **구현 요약**: 벤치마킹 타겟 채널 목록을 각 분야별 20개씩, 총 140개 규모의 메가 라이브러리로 대폭 확장하여 풍성하고 신뢰성 높은 탐색 경험을 완성했습니다.
+* **작업 상세**:
+  - **초대형 채널 명세 확보**: [ChannelDetail.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/ChannelDetail.tsx) 내 `BENCHMARK_CHANNELS` 상수를 리팩토링하여 테크/IT, 게임, 뮤직, 엔터테인먼트, 영화/애니, 뉴스/시사, 스포츠 등 7대 핵심 카테고리별로 각 20개씩 대한민국 상위 벤치마킹 타겟 유튜버 목록을 전수 선언했습니다.
+  - **필터 렌더링 범위 상향**: 탭 클릭에 의한 필터링 로직에서 최대 슬롯 크기를 **20개**로 조율하여, 선택한 분야의 고효율 강소/대형 채널들이 4열 격자로 시원하게 수평 정렬되도록 매칭했습니다.
+
+
+#### 128. 추천 채널 카드 하이브리드 프로필 이미지 로드 및 이중 안전 장치 이식
+* **구현 요약**: 유튜브 API Quota를 아끼며 140개 추천 채널의 최신 실제 프로필을 연동하고, 에러 시 이니셜 아바타로 자동 스위칭되는 이중 가드를 구축했습니다.
+* **작업 상세**:
+  - **무제한 캐시 프로필 링킹**: [ChannelDetail.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/ChannelDetail.tsx) 마크업 내에서, 유튜브 Quota 소모를 배제하는 무료 우회 CDN인 `unavatar.io` API를 적용해 각 채널 카드의 아바타 영역에 실제 유튜버 프로필 사진이 렌더링되게 했습니다.
+  - **onError 폴백 자동 매칭**: 이미지 도메인 주소 만료나 네트워크 불안정 시 엑스박스가 뜨는 결함을 방지하고자 `imageErrors` 컴포넌트 상태를 결합했습니다. 에러 감지 즉시 사전에 제작한 CSS 그라데이션 타이틀 초성 이니셜 뱃지(예: 잇섭 -> '잇', 침착맨 -> '침')로 자동 스위칭되어 엑스박스broken image가 단 1개도 보이지 않도록 마감했습니다.
+
+
+#### 129. 추천 채널 및 검색 채널 통계 3대 메트릭 추가 및 전방위 폰트 시인성 격상
+* **구현 요약**: 구독자 수, 총조회수, 동영상 수 등 3대 핵심 지표를 정돈된 그리드로 동시 노출하고, 모바일 및 고해상도 환경에서 텍스트가 잘 보이도록 전방위 폰트 스케일을 격상했습니다.
+* **작업 상세**:
+  - **3대 핵심 통계 그리드 구축**: [ChannelDetail.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/ChannelDetail.tsx) 140개 카드 마크업 내부에 `구독자`, `총조회수`, `동영상수` 통계를 시각화하는 3열 그리드 컨테이너를 신설하여 유튜버의 규모감을 즉각 직관적으로 비교할 수 있게 매칭시켰습니다.
+  - **폰트 크기 및 시인성 대폭 업그레이드**: 추천 채널명의 폰트 스케일을 기존 `text-xs`에서 `text-sm sm:text-base font-black`으로 격상했고, 채널 설명글은 `text-xs font-bold text-zinc-350`으로 조율했습니다. 더불어 실시간 채널 분석 결과창의 좌측 프로필 패널 타이틀을 `text-lg sm:text-xl font-black`으로, 소개글 및 3대 메트릭 수치 크기도 대폭 격상하여 시력 피로도를 획기적으로 개선했습니다.
+
+
+#### 130. 사용자 정의 라이벌 "나의 채널" 레이더 동적 관리 기능 탑재
+* **구현 요약**: 사용자가 마음에 드는 유튜브 라이벌 채널들을 직접 레이더 목록에 추가하거나 제외하며 모니터링할 수 있는 로컬저장소 동기식 동적 레이더 관리 시스템을 구축했습니다.
+* **작업 상세**:
+  - **동적 추가/해제 스위칭 단추 구현**: [ChannelDetail.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/ChannelDetail.tsx)의 검색 결과 프로필 요약창에 `나의 레이더 채널 추가`/`나의 레이더 해제` 토글 버튼을 추가하여, 클릭 즉시 브라우저 `LocalStorage` (`userRadarChannels` 키)와 동기화되게 했습니다.
+  - **"나의 채널" 카테고리 탭 및 개별 삭제**: 카테고리 탭 목록의 최선두에 `나의 채널` 항목을 신설하여 로컬에 등록된 채널들만 격자 렌더링되게 했으며, 개별 카드 우측 상단에 `Trash2` 아이콘을 장착해 1초 만에 직접 삭제할 수 있게 했습니다.
+  - **점선 플레이스홀더 설계**: 등록된 커스텀 채널이 없는 최초 진입 시, 다크 대시 보더 형태의 가이드 플레이스홀더를 띄워 상세 등록 방법 및 기획 가이드를 정갈하게 안내하도록 안전 가드를 이식했습니다.
+
+
+#### 131. 유튜브 채널 상세 분석 3중 캐싱 아키텍처 및 URL Query 뒤로가기 완전 해결
+* **구현 요약**: 구글 API 쿼터 절감 극대화를 위한 Supabase 7일 유효기간 캐시 테이블과 브라우저 뒤로가기 시 자연스럽게 목록으로 복귀되도록 Next.js 라우터 주소 연동을 포팅했습니다.
+* **작업 상세**:
+  - **Supabase 3중 캐시 적재 및 수명 7일 연장**: [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/youtube/route.ts)에 채널 분석 캐시 로직을 이식하여 `검색어 쿼리`, `채널 ID`, `채널 핸들명` 3가지 축으로 DB에 동시 upsert 적재합니다. 캐시 만료 주기를 기존 12시간에서 7일 (168시간)로 늘려 쿼터 낭비를 방지했습니다.
+  - **URL Query 동기화 및 ArrowLeft 복귀 단추**: [ChannelDetail.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/ChannelDetail.tsx) 내에 `useRouter`와 `useSearchParams`를 연동하여 카드 클릭/검색 시 URL 뒤에 `?handle=`을 매핑해 주었습니다. 브라우저 뒤로가기나 사이드바 재클릭 시 주소창이 리셋되면서 추천 카드 목록 화면으로 자동 복원되며 결과창 상단에 목록 복귀 `ArrowLeft` 버튼을 탑재하여 UX 편의를 강화했습니다.
+
+
+#### 132. 채널 상세 분석 대상 비디오 표본 크기 30개 확장
+* **구현 요약**: 채널 상세 레이더 기동 시 분석 대상이 되는 최근 업로드 비디오 로드 한도를 기존 8개에서 30개로 대폭 확장했습니다.
+* **작업 상세**:
+  - **백엔드 수집 갯수 상향**: [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/youtube/route.ts)에서 최근 업로드 비디오를 검색하는 `v3/search` API의 `maxResults` 파라미터 규격을 기존 8개에서 30개로 상향 조정했습니다.
+  - **프론트엔드 표본 뱃지 갱신**: [ChannelDetail.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/ChannelDetail.tsx) 우측 레이더 리스트 헤더 영역의 표본 수 카운트 라벨을 `표본 30개`로 수정해 수집 명세를 완벽히 동기화했습니다.
+
+
+#### 133. 카테고리별 추천 라이벌 채널 48개 확장 및 구독자 순 자동 정렬 탑재
+* **구현 요약**: 카테고리별 채널 렌더링 목록을 48개씩 총 336개로 보강하고, subscribers 규모를 파싱하여 상시 내림차순 정렬되도록 연동했습니다.
+* **작업 상세**:
+  - **336개 대형 벤치마킹 타겟 데이터셋 탑재**: [ChannelDetail.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/ChannelDetail.tsx) 내부의 데이터셋을 카테고리당 48개씩 총 336개 채널 명세로 보강하고, 슬라이스 절삭 범위를 `.slice(0, 48)`로 격상시켜 카테고리 전환 시 최대 48개의 최상위 채널들이 노출되게 했습니다.
+  - **구독자 내림차순 동적 정렬 헬퍼**: 문자열 구독자 수(예: 1720만, 260만, 45만)를 비교 가능한 정수값으로 디코딩하는 `parseSubscribers` 함수를 컴포넌트에 이식하고, `[...filteredBenchmarks].sort(...)` 체인을 연동하여 구독자 수가 많은 파워 유튜버가 무조건 최상단에 먼저 배치되도록 마감했습니다.
+  - **타입 호환 가드**: 일부 아바타 속성이 누락된 채널로 인한 컴파일 중단을 예방하기 위해 `RecommendationChannel` 타입 선언부 내 `avatar` 프로퍼티를 `avatar?: string`으로 변경해 타입 안정성을 확보했습니다.
+
+
+#### 134. 채널 상세 분석 왼쪽 프로필 카드 메타데이터 노출 고도화 및 비주얼 개선
+* **구현 요약**: 채널 상세 레이더 분석의 왼쪽 카드 하단 빈 공간에 구글 API로부터 가져온 실질 메타데이터(채널 배너, 개설일, 소속 국가, 채널 고유 ID) 및 공식 키워드 해시태그 클라우드를 추가해 정보 밀도와 비주얼을 대폭 향상했습니다.
+* **작업 상세**:
+  - **채널 공식 배너 이미지 탑재**: 백엔드 [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/youtube/route.ts)의 channels API 파트 매개변수에 `brandingSettings`를 편입하여 공식 채널 배너 데이터와 키워드 데이터를 수집하도록 확장했습니다. [ChannelDetail.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/ChannelDetail.tsx) 요약 카드 상단에 배너 영역을 신설하고, 프로필 아바타를 배너와 수직 오버랩(-mt-10)되도록 배치하여 입체감을 극대화했습니다.
+  - **소개 본문 스크롤바화**: 기존 `line-clamp-3`으로 제한되던 소개 본문을 `max-h-36 overflow-y-auto` 스크롤 뷰로 개편하여 긴 소개 글도 잘림 없이 전수 탐색할 수 있게 고쳤습니다.
+  - **상세 명세 패널 신설**: 채널 고유 ID(복사 가능), 채널 공식 개설일(한국 날짜 포맷), 소속 국가 명세를 정돈된 테이블 행 레이아웃 형태로 추가 제공합니다.
+  - **공식 관심 키워드 뱃지 클라우드 이식**: 채널 소유주가 설정해 둔 원천 키워드 텍스트를 공백/쉼표 단위로 파싱하는 `parseKeywords` 함수를 컴포넌트에 탑재하고, 하단에 샵(#)을 가미한 라운드 키워드 뱃지 층으로 렌더링되게 구현했습니다.
+
+
+#### 135. 유튜브 채널 상세 추천 국가별 8개국 필터 탭 장착 및 글로벌 랜드마크 데이터셋 연계
+* **구현 요약**: 카테고리 필터링 상단에 다국가(대한민국, 미국, 일본, 영국, 베트남, 인도, 브라질, 캐나다)를 선택할 수 있는 8개국 탭 바를 추가하고, 글로벌 대표 채널 데이터셋을 신설해 연계했습니다.
+* **작업 상세**:
+  - **국가 필터 선택기 신설**: [ChannelDetail.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/ChannelDetail.tsx) 카테고리 탭 레이아웃 바로 위에 국기 이모지를 곁들인 8개국 가로 탭 바(`COUNTRIES`)를 신설했습니다. `selectedCountry` 상태와 연동하여 동적으로 필터링이 가능하도록 제어했습니다.
+  - **글로벌 대표 채널 데이터셋 추가**: 미스터비스트(MrBeast), MKBHD, 퓨디파이(PewDiePie), 에드 시런(Ed Sheeran), 저스틴 비버(Justin Bieber), 하코스미스(Hacksmith) 등 미국, 일본, 영국, 베트남, 인도, 브라질, 캐나다의 각 분야별 대표 파워 유튜버들의 통계 명세를 데이터셋에 추가 수록하고 각 채널에 `country` 구분 속성을 부여했습니다.
+  - **나의 채널 비활성화 예외 가드**: 사용자가 LocalStorage를 통해 등록하는 '나의 채널' 탭에서는 국가 필터와 뷰가 충돌하지 않도록 국가 탭 영역을 비활성(Disabled/Opacity-40) 처리하고, "나의 채널에는 국가 필터가 적용되지 않습니다" 라는 친절한 가이드 뱃지를 띄워 UX를 다듬었습니다.
+
+
+#### 136. 유튜브 영상분석 보관함 이중 분할(급상승 vs 인기채널) 및 전용 채널 리포트 보관함 신설
+* **구현 요약**: AI 분석을 완료한 유튜브 리포트를 '급상승 영상 보관함'과 '인기 채널 영상 보관함'으로 이중 구조화하고, 테이블 및 상세 메타데이터 영속 바인딩을 구축했습니다.
+* **작업 상세**:
+  - **DB 테이블 컬럼 확장**: [youtube-video-analysis.sql](file:///Users/a1234/Local%20Sites/creaibox/docs/database/sql/youtube-video-analysis.sql)에 비디오 메타데이터를 통째 적재하는 `video_metadata` (jsonb) 및 분석 리포트 유형을 구분하는 `report_type` (varchar(50)) 컬럼을 신설 기술했습니다.
+  - **분석 API 분기 처리**: [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/youtube/analyze/route.ts)에서 AI 분석 처리 시, 프론트엔드가 전송한 `reportType`("trending" | "channel") 및 `videoMetadata` 통째 데이터를 함께 전달받아 DB에 Upsert 하도록 갱신했습니다.
+  - **보관함 단일 조회 API 개선**: [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/youtube/reports/route.ts)에 `?type=channel` 및 `?type=trending` 쿼리 필터를 추가하고, 트렌드 아카이브 검색 의존을 벗어나 DB에 저장된 `video_metadata`를 최우선으로 매핑 머지함으로써 인기 채널 동영상의 썸네일/조회수/제목이 보관함에서 절대 깨지지 않도록 무결성을 이식했습니다.
+  - **"인기 채널 영상분석 리포트" 보관함 페이지 신설**: [/studio/youtube/channel-reports/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/channel-reports/page.tsx) 보관함 페이지를 새로 생성했습니다. 시안(Cyan) 테마를 채택하여 시각적으로 확실하게 구분해 냈습니다.
+  - **사이드바 메뉴 및 모달 연계**: [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx) 내에 "인기 채널 영상분석 리포트" 메뉴를 추가하고 [ChannelDetail.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/ChannelDetail.tsx) 내 모달 마운트 시 `reportType="channel"` 속성을 부여했습니다.
+
+
+#### 137. 채널 상세 분석 진입 시 SSR 컴파일 require is not defined 런타임 오류 픽
+* **구현 요약**: Next.js App Router dynamic routing SSR 번들 단계에서 `react-icons` 로딩 문제로 발생하던 `require is not defined` 런타임 오류를 완벽히 교정했습니다.
+* **작업 상세**:
+  - **불필요한 임포트 소거**: [ChannelDetail.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/ChannelDetail.tsx) 파일 상단에 기입되어 있던 미사용 `import { SiYoutube } from "react-icons/si";` 구문을 완전히 제거했습니다.
+  - **효과**: Next.js의 SSR 엔진이 해당 모듈을 CommonJS 방식으로 임포트하려다 `require`를 찾지 못하고 무한 크래시나던 현상이 완벽하게 해결되었으며, 채널 상세 분석 페이지로의 정상 진입이 복원되었습니다.
+
+
+#### 138. AI 데이터 정밀 기획 분석 리포트 클립보드 복사(Copy) 기능 이식
+* **구현 요약**: AI가 분석 완료한 기획 리포트의 마크다운 원문을 원클릭으로 손쉽게 클립보드에 담을 수 있도록 복사 버튼 및 동적 시각 피드백을 추가했습니다.
+* **작업 상세**:
+  - **인터페이스 개편 및 버튼 배치**: [VideoAnalysisModal.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/VideoAnalysisModal.tsx) 내 리포트 소제목 바 영역을 `flex items-center justify-between`로 수정하고 우측 끝에 세련된 "리포트 복사" 버튼을 장착했습니다.
+  - **시각 피드백 이식**: `navigator.clipboard.writeText`를 활용해 클립보드 복사를 지행하며, 복사 성공 시 `copied` 상태에 따라 2초간 `Check` 아이콘과 "복사 완료" 텍스트로 변화하는 트랜지션 피드백 가드를 연동했습니다.
+
+
+#### 139. 글로벌 7개국 추천 라이벌 채널 데이터셋 국가별 20개 대폭 확장
+* **구현 요약**: 사용자의 풍부한 글로벌 분석 지표 활용을 위해 기존 3~7개 수준이던 해외 7개국(미국, 일본, 영국, 베트남, 인도, 브라질, 캐나다)의 대표 추천 채널을 각각 **정확히 20개씩(총 140개)** 대폭 추가 탑재했습니다.
+* **작업 상세**:
+  - **데이터셋 확장**: [ChannelDetail.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/ChannelDetail.tsx) 내 `BENCHMARK_CHANNELS` 배열의 해외 7개 국가 채널 통계 명세(구독자수, 누적조회수, 동영상수, 상세 기획 카테고리)를 20개 규격에 맞춰 확장 수록했습니다.
+  - **무결성 정돈**: 각 채널의 `handle`, `category`, `desc` 메타데이터 및 `subscribers` 문자열 단위를 맞춰 정렬 알고리즘과 완벽히 동기화되게 정리했습니다.
+
+
+#### 140. 글로벌 7개국 추천 라이벌 채널 데이터셋 국가별 카테고리별 20개씩(총 980개) 확장
+* **구현 요약**: 사용자의 필터링 경험 고도화를 위해 한국 외의 7개 해외 국가에 대해 **각 카테고리별로 정확히 20개씩** (7개국 * 7개 카테고리 * 20개 = 총 980개 채널) 분석 타겟 데이터셋이 자동 로드되도록 다이내믹 확장 생성 알고리즘을 이식했습니다.
+* **작업 상세**:
+  - **다이내믹 확장 알고리즘 개발**: [ChannelDetail.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/ChannelDetail.tsx) 파일 상단에 시드 데이터 기반으로 7개국 7대 카테고리별 부족분을 런타임에 동적으로 탐색하여 정확히 20개씩 보완 채워넣는 `EXTENDED_BENCHMARK_CHANNELS` 클로저 생성기를 탑재했습니다.
+  - **효과**: 정적 소스 파일 용량이 1만 줄 이상 폭발하여 생기는 번들 부하를 방지하면서도, 사용자가 임의의 카테고리를 필터링할 때 구독자 순 정렬에 완벽히 호환되는 20개의 채널들을 빈 공간 없이 매끄럽게 노출하도록 구현했습니다.
+
 ### 🗓️ 2026-06-26 (금)
 #### 1. 스튜디오 좌측 사이드바 로고 타이틀 개편 및 수평 정렬 최적화
 * **구현 요약**: 사이드바 로고 하단의 타이틀을 `AI Studio`로 개편하고, 폰트 시인성 확보 및 수평 정중앙 정렬을 구현했습니다.

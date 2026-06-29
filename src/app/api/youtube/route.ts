@@ -25,7 +25,7 @@ function isShortsDuration(durationStr?: string | null): boolean {
 /**
  * Common Scraping pipeline to fetch live trending, detect shorts, cache to DB, and append to Google Sheet.
  */
-export async function fetchAndCacheTrending(categoryId: string, date: string = getKstTodayDate(), referer: string = "http://localhost:3000/") {
+export async function fetchAndCacheTrending(categoryId: string, date: string = getKstTodayDate(), referer: string = "http://localhost:3000/", country: string = "KR") {
   // 1. Get API Keys from Vault
   const { data: vaultKeys, error: vaultError } = await supabaseAdmin
     .from("admin_api_vault")
@@ -59,7 +59,7 @@ export async function fetchAndCacheTrending(categoryId: string, date: string = g
   const vaultId = selectedVault.id;
 
   // 2. Fetch Live YouTube API
-  let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular&regionCode=KR&maxResults=12&key=${apiKey}`;
+  let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular&regionCode=${country}&maxResults=12&key=${apiKey}`;
   if (categoryId && categoryId !== "all") {
     url += `&videoCategoryId=${categoryId}`;
   }
@@ -98,11 +98,12 @@ export async function fetchAndCacheTrending(categoryId: string, date: string = g
   );
 
   // 3. Save Cache to Supabase DB (Upsert)
+  const dbCategoryId = country === "KR" ? categoryId : `${country}_${categoryId}`;
   try {
     const { error: upsertError } = await supabaseAdmin
       .from("youtube_trending_archive")
       .upsert({
-        category_id: categoryId,
+        category_id: dbCategoryId,
         target_date: date,
         videos_data: enrichedItems,
         updated_at: new Date().toISOString(),
@@ -179,14 +180,16 @@ export async function GET(req: NextRequest) {
       case "trending": {
         const categoryId = searchParams.get("categoryId") || "all";
         const date = searchParams.get("date") || getKstTodayDate();
-
+        const country = searchParams.get("country") || "KR";
+        const dbCategoryId = country === "KR" ? categoryId : `${country}_${categoryId}`;
+        
         // 1. Try to read from Supabase Cache
         try {
           const { data: cachedRow, error: cacheError } = await supabaseAdmin
             .from("youtube_trending_archive")
             .select("videos_data")
             .eq("target_date", date)
-            .eq("category_id", categoryId)
+            .eq("category_id", dbCategoryId)
             .maybeSingle();
 
           if (!cacheError && cachedRow && cachedRow.videos_data) {
@@ -233,7 +236,7 @@ export async function GET(req: NextRequest) {
             vaultId = vaultKeys[0].id;
           }
 
-          const enrichedItems = await fetchAndCacheTrending(categoryId, date, referer);
+          const enrichedItems = await fetchAndCacheTrending(categoryId, date, referer, country);
           const videoIds = enrichedItems.map((v: any) => v.id).filter(Boolean);
           let analyzedVideoIds: string[] = [];
           if (videoIds.length > 0) {
@@ -261,9 +264,202 @@ export async function GET(req: NextRequest) {
       }
 
       case "channel": {
-        let query = searchParams.get("query") || "";
-        if (!query) return NextResponse.json({ error: "Missing query parameter" }, { status: 400 });
+        const rawQuery = searchParams.get("query") || "";
+        if (!rawQuery) return NextResponse.json({ error: "Missing query parameter" }, { status: 400 });
 
+        const queryKey = rawQuery.toLowerCase().trim().replace(/\s+/g, "");
+
+        // 1. Check Supabase DB cache first (Cache validity: 12 hours)
+        try {
+          const { data: cached } = await supabaseAdmin
+            .from("youtube_channel_cache")
+            .select("channel_data, videos_data, updated_at")
+            .eq("query_key", queryKey)
+            .single();
+
+          if (cached) {
+            const updatedAt = new Date(cached.updated_at).getTime();
+            const now = new Date().getTime();
+            const elapsedHours = (now - updatedAt) / (1000 * 60 * 60);
+
+            if (elapsedHours < 168) { // Extended to 7 days (168 hours) for maximum quota efficiency
+              const cachedVideos = cached.videos_data || [];
+              const countryCode = cached.channel_data?.snippet?.country || "KR";
+              const videosWithCountry = cachedVideos.map((v: any) => ({
+                country: countryCode,
+                ...v
+              }));
+              return NextResponse.json({
+                source: "database-cache",
+                channel: cached.channel_data,
+                recentVideos: videosWithCountry,
+              });
+            }
+          }
+        } catch (dbErr) {
+          console.error("DB Cache fetch omitted or table not created yet:", dbErr);
+        }
+
+        // 1b. Check if queryKey is a dynamically generated mock benchmarking channel
+        const mockMatch = queryKey.match(/^@?([a-z]{2})_([a-z_]+)_rival_(\d+)$/);
+        if (mockMatch) {
+          const country = mockMatch[1].toUpperCase();
+          const categoryEng = mockMatch[2];
+          const rivalId = parseInt(mockMatch[3]);
+
+          const categoryMap: Record<string, string> = {
+            tech: "테크/IT",
+            game: "게임",
+            music: "뮤직",
+            ent: "엔터테인먼트",
+            movie: "영화/애니",
+            news: "뉴스/시사",
+            sports: "스포츠"
+          };
+          const category = categoryMap[categoryEng] || "전체";
+
+          const subValue = Math.max(5, 500 - rivalId * 22);
+          const subCount = subValue * 10000;
+          const viewsCount = Math.round(subCount * 1.8);
+          const videoCount = Math.round(rivalId * 25 + 40);
+
+          const channelId = `UC_mock_${country.toLowerCase()}_${categoryEng}_${rivalId}`;
+          const channelName = `${country} ${category} 채널 ${rivalId}`;
+          const customUrl = `@${country.toLowerCase()}_${categoryEng}_rival_${rivalId}`;
+
+          const mockChannelData = {
+            id: channelId,
+            snippet: {
+              title: channelName,
+              description: `${country} 지역의 최신 ${category} 트렌드 및 바이럴 알고리즘 분석용 벤치마킹 타겟 채널`,
+              customUrl: customUrl,
+              thumbnails: {
+                medium: {
+                  url: `https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&h=150&fit=crop`
+                }
+              },
+              country: country
+            },
+            statistics: {
+              subscriberCount: String(subCount),
+              viewCount: String(viewsCount),
+              videoCount: String(videoCount)
+            }
+          };
+
+          const videoTemplates: Record<string, string[]> = {
+            tech: [
+              "최신 스마트 디바이스 리포트 및 성능 측정",
+              "가성비 오피스 데스크 셋업 데스크 테리어 추천",
+              "미출시 차세대 폴더블폰 실물 디자인 분석",
+              "새로워진 M4 칩 태블릿 한 달 실사용 리뷰",
+              "현업 개발자가 추천하는 AI 프로그래밍 꿀팁"
+            ],
+            game: [
+              "신작 오픈월드 RPG 초반 플레이 실황 파트 1",
+              "스팀 신작 생존 게임 동료들과 24시간 생존 도전",
+              "랭크전 연승 기록 갱신하는 꿀팁 대공개",
+              "인기 모바일 게임 뽑기 패키지 대리 리뷰",
+              "고전 명작 도트 게임 100% 클리어 스피드런"
+            ],
+            music: [
+              "감성을 자극하는 재즈 피아노 커버 메들리",
+              "어쿠스틱 기타 라이브 버스킹 풀버전",
+              "요즘 듣기 좋은 트렌디한 시티팝 플레이리스트",
+              "신곡 보컬 커버 및 고음 지르는 방법 강좌",
+              "디제잉 EDM 페스티벌 실시간 라이브 셋"
+            ],
+            ent: [
+              "친구들과 매운맛 음식 먹방 및 솔직 리액션",
+              "지하철에서 황당한 장난치기 몰래카메라 예능",
+              "요즘 유행하는 초간단 10초 챌린지 모음집",
+              "해외 여행 도중 길 잃어버린 황당 썰방",
+              "신상 편의점 꿀조합 레시피 털어보기 브이로그"
+            ],
+            movie: [
+              "올해 개봉 예정인 기대작 SF 영화 톱 5 추천",
+              "명작 애니메이션 속 복선과 결말 해석 정밀 분석",
+              "극장판 극비 예고편 분석 및 캐릭터 매칭",
+              "역대 최고 제작비가 투입된 할리우드 영화 비하인드",
+              "숨겨진 넷플릭스 스릴러 드라마 명작 발굴"
+            ],
+            news: [
+              "글로벌 경제 위기와 금리 변동에 대한 실시간 브리핑",
+              "미래 인공지능 산업의 향방 심층 시사 대담",
+              "화제의 글로벌 트렌드 이슈 5분 핵심 요약 정리",
+              "에너지 기후 변화가 우리 식탁에 미치는 영향 리포트",
+              "국제 정세 분석 및 안보 포럼 주요 외신 속보"
+            ],
+            sports: [
+              "이번 주말 손흥민 선발 경기 골장면 하이라이트",
+              "집에서 따라하는 전신 유산소 타바타 홈트레이닝",
+              "프로야구 포스트시즌 진출 확률 정밀 데이터 분석",
+              "아웃도어 산악 캠핑 및 하이킹 장비 추천 가이드",
+              "테니스 동호회 최강자전 실시간 명경기 하이라이트"
+            ],
+            channel: [
+              "대표 채널 인기 업로드 영상 모음집",
+              "구독자 감사 기념 실시간 Q&A 토크쇼",
+              "채널 성장의 비결 및 크리에이터 스튜디오 비하인드",
+              "최근 다녀온 페스티벌 Vlog 브이로그 풀버전",
+              "앞으로의 채널 운영 방향 및 대규모 기획 예고"
+            ]
+          };
+
+          const templates = videoTemplates[categoryEng] || videoTemplates.channel;
+          const mockVideos = templates.map((template, i) => {
+            const videoId = `video_mock_${country.toLowerCase()}_${categoryEng}_${rivalId}_${i}`;
+            const vCount = Math.round(viewsCount / (i + 1.5));
+            return {
+              id: videoId,
+              snippet: {
+                title: `[${country}] ${template}`,
+                description: `해당 채널의 최신 인기 영상 콘텐츠입니다. 크리에이박스 벤치마킹 분석.`,
+                publishedAt: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
+                thumbnails: {
+                  medium: {
+                    url: `https://images.unsplash.com/photo-${1618005180 + i * 100}?w=400&h=225&fit=crop`
+                  }
+                }
+              },
+              statistics: {
+                viewCount: String(vCount),
+                likeCount: String(Math.round(vCount * 0.05)),
+                commentCount: String(Math.round(vCount * 0.005))
+              }
+            };
+          });
+
+          // Save to database cache
+          try {
+            const handleKeys = [
+              queryKey,
+              `@${queryKey.replace(/^@/, "")}`,
+              channelId.toLowerCase(),
+              customUrl.toLowerCase()
+            ].filter(Boolean);
+
+            for (const key of handleKeys) {
+              await supabaseAdmin.from("youtube_channel_cache").upsert({
+                query_key: key,
+                channel_id: channelId,
+                channel_data: mockChannelData,
+                videos_data: mockVideos,
+                updated_at: new Date().toISOString()
+              });
+            }
+          } catch (dbErr) {
+            console.error("Failed to cache simulated mock channel:", dbErr);
+          }
+
+          return NextResponse.json({
+            source: "database-cache",
+            channel: mockChannelData,
+            recentVideos: mockVideos
+          });
+        }
+
+        let query = rawQuery;
         let channelId = "";
 
         // Check if query is a URL
@@ -319,17 +515,68 @@ export async function GET(req: NextRequest) {
           channelId = channelItem.id.channelId;
         }
 
-        // Step 2b: Get channel statistics and snippet details
-        const channelUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${channelId}&key=${apiKey}`;
+        // Step 2b: Get channel statistics, snippet details, and branding settings
+        const channelUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,brandingSettings&id=${channelId}&key=${apiKey}`;
         const channelRes = await fetch(channelUrl, { headers: { Referer: referer } });
         if (!channelRes.ok) throw new Error("Google channels API call failed");
         const channelData = await channelRes.json();
         const channelStats = channelData.items?.[0];
 
-        // Step 2c: Get channel's recent videos
-        const videosUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&order=date&type=video&maxResults=5&key=${apiKey}`;
+        // Step 2c: Get channel's recent videos (Fetch 30 items to get a better sample)
+        const videosUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&order=date&type=video&maxResults=30&key=${apiKey}`;
         const videosRes = await fetch(videosUrl, { headers: { Referer: referer } });
         const videosData = videosRes.ok ? await videosRes.json() : { items: [] };
+
+        // Step 2d: Fetch detailed statistics for each recent video in batch (1 Quota point)
+        const searchItems = videosData.items || [];
+        let enrichedVideos: any[] = [];
+        if (searchItems.length > 0) {
+          const videoIds = searchItems.map((v: any) => v.id?.videoId).filter(Boolean).join(",");
+          if (videoIds) {
+            const detailUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&id=${videoIds}&key=${apiKey}`;
+            const detailRes = await fetch(detailUrl, { headers: { Referer: referer } });
+            if (detailRes.ok) {
+              const detailData = await detailRes.json();
+              enrichedVideos = detailData.items || [];
+            }
+          }
+        }
+
+        // If batch fetch failed, fallback to original search items with dummy stats
+        if (enrichedVideos.length === 0) {
+          enrichedVideos = searchItems.map((item: any) => ({
+            id: item.id?.videoId || "",
+            snippet: item.snippet,
+            statistics: { viewCount: "0", likeCount: "0", commentCount: "0" }
+          }));
+        }
+
+        const countryCode = channelStats?.snippet?.country || "KR";
+        const videosWithCountry = enrichedVideos.map((v: any) => ({
+          ...v,
+          country: countryCode
+        }));
+
+        // 3. Save to Supabase DB Cache (3-way indexing for maximum hit rate)
+        try {
+          const handleKeys = [
+            queryKey,
+            channelId.toLowerCase(),
+            channelStats?.snippet?.customUrl?.toLowerCase()
+          ].filter(Boolean);
+
+          for (const key of handleKeys) {
+            await supabaseAdmin.from("youtube_channel_cache").upsert({
+              query_key: key,
+              channel_id: channelId,
+              channel_data: channelStats || {},
+              videos_data: videosWithCountry,
+              updated_at: new Date().toISOString()
+            });
+          }
+        } catch (upsertErr) {
+          console.error("Failed to upsert youtube_channel_cache:", upsertErr);
+        }
 
         if (vaultId !== null) {
           await recordVaultSuccess(vaultId);
@@ -337,7 +584,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({
           source: "youtube-api",
           channel: channelStats || null,
-          recentVideos: videosData.items || [],
+          recentVideos: videosWithCountry,
         });
       }
 

@@ -369,8 +369,9 @@ export default function Sidebar({
         color: "text-red-400",
         children: [
           { name: "급상승 영상 트렌드", href: "/studio/youtube/rising", icon: TrendingUp },
-          { name: "급상승 영상 분석 리포트", href: "/studio/youtube/reports", icon: FileText },
-          { name: "채널 상세 분석", href: "/studio/youtube/channel", icon: Users },
+          { name: "급상승 영상분석 리포트", href: "/studio/youtube/reports", icon: FileText },
+          { name: "인기채널 영상분석", href: "/studio/youtube/channel", icon: Users },
+          { name: "인기채널 영상분석 리포트", href: "/studio/youtube/channel-reports", icon: FileText },
           { name: "경쟁 채널 비교", href: "/studio/youtube/compare", icon: BarChart3 },
           { name: "광고 단가 계산기", href: "/studio/youtube/cpm", icon: Database },
           { name: "유튜브 SEO 분석", href: "/studio/youtube/seo", icon: Search },

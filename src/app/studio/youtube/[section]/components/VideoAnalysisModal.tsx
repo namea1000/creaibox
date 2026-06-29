@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Loader2, Sparkles, AlertCircle, Eye, ThumbsUp, MessageSquare, Tag, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, Loader2, Sparkles, AlertCircle, Eye, ThumbsUp, MessageSquare, Tag, ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
 
 interface VideoAnalysisModalProps {
   isOpen: boolean;
@@ -9,6 +9,7 @@ interface VideoAnalysisModalProps {
   video: any;
   videos?: any[];
   onVideoSelect?: (video: any) => void;
+  reportType?: "trending" | "channel";
 }
 
 /**
@@ -82,10 +83,22 @@ function formatBoldText(text: string) {
   });
 }
 
-export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onVideoSelect }: VideoAnalysisModalProps) {
+export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onVideoSelect, reportType = "trending" }: VideoAnalysisModalProps) {
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    if (!analysis) return;
+    try {
+      await navigator.clipboard.writeText(analysis);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy report:", err);
+    }
+  };
 
   const currentIndex = videos ? videos.findIndex((v) => v.id === video?.id) : -1;
   const prevDisabled = currentIndex <= 0;
@@ -165,7 +178,9 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
           channelTitle: video.snippet?.channelTitle,
           description: video.snippet?.description,
           tags: video.snippet?.tags,
-          statistics: video.statistics
+          statistics: video.statistics,
+          reportType,
+          videoMetadata: video
         }),
       });
       if (!res.ok) throw new Error("분석 리포트를 불러오는데 실패했습니다.");
@@ -344,10 +359,32 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
 
           {/* Section 4: AI Analysis Output Report */}
           <div className="rounded-2xl border border-zinc-800/80 bg-zinc-950/15 p-5 space-y-4">
-            <h3 className="text-xs font-black text-zinc-300 flex items-center gap-2">
-              <Sparkles size={13} className="text-orange-500 animate-pulse" />
-              Gemini Pro 데이터 정밀 기획 분석 리포트
-            </h3>
+            <div className="flex items-center justify-between gap-4 border-b border-zinc-900 pb-2.5">
+              <h3 className="text-xs font-black text-zinc-300 flex items-center gap-2">
+                <Sparkles size={13} className="text-orange-500 animate-pulse" />
+                Gemini Pro 데이터 정밀 기획 분석 리포트
+              </h3>
+              
+              {analysis && !loading && (
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-[10px] font-black text-zinc-400 hover:text-white px-2.5 py-1.5 transition shrink-0 select-none shadow-sm"
+                >
+                  {copied ? (
+                    <>
+                      <Check size={11} className="text-green-400" />
+                      <span>복사 완료</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={11} />
+                      <span>리포트 복사</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
             
             {loading ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3">

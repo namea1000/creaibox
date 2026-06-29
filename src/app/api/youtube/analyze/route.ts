@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { videoId, title, channelTitle, description, tags, statistics } = body;
+    const { videoId, title, channelTitle, description, tags, statistics, reportType, videoMetadata } = body;
 
     if (!videoId) {
       return NextResponse.json({ error: "videoId 파라미터가 누락되었습니다." }, { status: 400 });
@@ -161,6 +161,8 @@ ${description ? description.substring(0, 1500) : "본문 설명 없음"}
         {
           video_id: cleanVideoId,
           analysis_content: generatedText,
+          video_metadata: videoMetadata || null,
+          report_type: reportType || "trending",
           created_at: new Date().toISOString(),
         },
         { onConflict: "video_id" }

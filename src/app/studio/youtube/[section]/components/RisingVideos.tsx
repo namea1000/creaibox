@@ -51,12 +51,24 @@ const CATEGORIES = [
   { label: "뉴스/시사", id: "25" },
 ];
 
+const COUNTRIES = [
+  { code: "KR", name: "대한민국", flag: "🇰🇷" },
+  { code: "US", name: "미국", flag: "🇺🇸" },
+  { code: "JP", name: "일본", flag: "🇯🇵" },
+  { code: "GB", name: "영국", flag: "🇬🇧" },
+  { code: "VN", name: "베트남", flag: "🇻🇳" },
+  { code: "IN", name: "인도", flag: "🇮🇳" },
+  { code: "BR", name: "브라질", flag: "🇧🇷" },
+  { code: "CA", name: "캐나다", flag: "🇨🇦" }
+];
+
 export default function RisingVideos() {
   const [loading, setLoading] = useState(false);
   const [videos, setVideos] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState("all");
   const [selectedDate, setSelectedDate] = useState(() => getKstTodayDateStr());
+  const [selectedCountry, setSelectedCountry] = useState("KR");
   const [source, setSource] = useState("api");
   const [copiedVideoId, setCopiedVideoId] = useState<string | null>(null);
   const [selectedVideoForAnalysis, setSelectedVideoForAnalysis] = useState<any>(null);
@@ -95,12 +107,12 @@ export default function RisingVideos() {
     setTimeout(() => setCopiedVideoId(null), 1500);
   };
 
-  const fetchTrending = useCallback(async (catId = activeCategory, targetDate = selectedDate) => {
+  const fetchTrending = useCallback(async (catId = activeCategory, targetDate = selectedDate, country = selectedCountry) => {
     setPlayingVideoId(null);
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/youtube?type=trending&categoryId=${catId}&date=${targetDate}`);
+      const res = await fetch(`/api/youtube?type=trending&categoryId=${catId}&date=${targetDate}&country=${country}`);
       if (!res.ok) throw new Error("급상승 비디오 리스트를 가져오는데 실패했습니다.");
       const result = await res.json();
       setVideos(result.data || []);
@@ -124,20 +136,30 @@ export default function RisingVideos() {
     } finally {
       setLoading(false);
     }
-  }, [activeCategory, selectedDate]);
+  }, [activeCategory, selectedDate, selectedCountry]);
 
   useEffect(() => {
-    fetchTrending("all", getKstTodayDateStr());
+    fetchTrending("all", getKstTodayDateStr(), "KR");
   }, []);
 
   const handleCategoryChange = (catId: string) => {
     setActiveCategory(catId);
-    fetchTrending(catId, selectedDate);
+    fetchTrending(catId, selectedDate, selectedCountry);
   };
 
   const handleDateChange = (dateStr: string) => {
     setSelectedDate(dateStr);
-    fetchTrending(activeCategory, dateStr);
+    fetchTrending(activeCategory, dateStr, selectedCountry);
+  };
+
+  const handleCountryChange = (countryCode: string) => {
+    setSelectedCountry(countryCode);
+    fetchTrending(activeCategory, selectedDate, countryCode);
+  };
+
+  const getCountryName = (code: string) => {
+    const c = COUNTRIES.find((x) => x.code === code);
+    return c ? `${c.name}(${c.code})` : "대한민국(KR)";
   };
 
   // Timeline navigation shift helper
@@ -175,7 +197,7 @@ export default function RisingVideos() {
           </h2>
           <div className="space-y-1.5">
             <p className="text-sm text-zinc-200 leading-relaxed font-black">
-              현재 유튜브 대한민국(KR) 급상승 트렌드 리스트에 등록된 상위 인기 동영상 리스트를 가져와 조회수 분석을 제공합니다.
+              현재 유튜브 {getCountryName(selectedCountry)} 급상승 트렌드 리스트에 등록된 상위 인기 동영상 리스트를 가져와 조회수 분석을 제공합니다.
             </p>
             <p className="text-xs text-zinc-400 leading-relaxed font-bold">
               매일 오전 05시에 AI가 자동으로 급상승 트렌드 영상을 수집하는 자동 아카이브 시스템입니다. <br/>
@@ -185,7 +207,7 @@ export default function RisingVideos() {
         </div>
 
         <button
-          onClick={() => fetchTrending(activeCategory, selectedDate)}
+          onClick={() => fetchTrending(activeCategory, selectedDate, selectedCountry)}
           disabled={loading || !isTodaySelected}
           className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-orange-600 hover:bg-orange-500 disabled:opacity-30 disabled:hover:bg-orange-600 px-5 text-xs font-black text-white transition shrink-0 self-start sm:self-center"
         >
@@ -194,67 +216,44 @@ export default function RisingVideos() {
         </button>
       </div>
 
-      {/* Category Tabs & DatePicker Control Row */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-zinc-900 pb-4">
-        {/* Category Tabs Selection */}
-        <div className="flex flex-wrap gap-2 overflow-x-auto scrollbar-hide flex-1">
+      {/* 🌐 Central Filter Hub (Global Country + Category Selectors) */}
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-950/20 p-6 backdrop-blur-md space-y-3.5 shadow-2xl shadow-black/25 flex flex-col items-center w-full">
+        {/* 1. Country Selector (Large & Centered) */}
+        <div className="flex flex-wrap justify-center gap-2 max-w-5xl w-full">
+          {COUNTRIES.map((ct) => (
+            <button
+              key={ct.code}
+              onClick={() => handleCountryChange(ct.code)}
+              className={`px-4.5 py-2.5 text-xs font-black rounded-xl transition flex items-center gap-1.5 border-2 ${
+                selectedCountry === ct.code
+                  ? "bg-orange-950/30 border-orange-500/70 text-white shadow-lg shadow-orange-950/40 transform scale-105"
+                  : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+              }`}
+            >
+              <span className="text-lg leading-none">{ct.flag}</span>
+              <span>{ct.name}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Separator Divider */}
+        <div className="h-[1px] w-full bg-zinc-850/60" />
+
+        {/* 2. Category Selector & Tabs (Centered) */}
+        <div className="flex flex-wrap justify-center gap-2 w-full">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               onClick={() => handleCategoryChange(cat.id)}
-              className={`px-4 h-9 rounded-xl text-xs font-black transition-all ${
+              className={`px-4 py-2 text-xs font-black rounded-lg transition border-2 ${
                 activeCategory === cat.id
-                  ? "bg-orange-600 text-white shadow-md shadow-orange-950/20"
-                  : "border border-zinc-800 bg-zinc-950/40 text-zinc-400 hover:text-white hover:border-zinc-700"
+                  ? "bg-orange-650 border-orange-500 text-white shadow-md shadow-orange-650/15"
+                  : "bg-zinc-900 border-zinc-850 text-zinc-400 hover:bg-zinc-800 hover:text-white"
               }`}
             >
               {cat.label}
             </button>
           ))}
-        </div>
-
-        {/* Date Selector & Mode status */}
-        <div className="flex items-center gap-2 shrink-0 self-end lg:self-center">
-          {!isTodaySelected && (
-            <span className="inline-flex h-8 items-center rounded-xl bg-cyan-950/40 border border-cyan-850 px-3 text-[9px] font-black text-cyan-400 tracking-wider">
-              아카이브 모드
-            </span>
-          )}
-          
-          {/* Timeline shift and date selector container */}
-          <div className="flex items-center bg-zinc-950/45 p-1 rounded-xl border border-zinc-900">
-            {/* Shift Day Back */}
-            <button
-              onClick={() => shiftDate(-1)}
-              disabled={loading}
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/60 disabled:opacity-20 transition"
-              title="하루 전"
-            >
-              <ChevronLeft size={15} />
-            </button>
-
-            {/* Input Calendar Picker */}
-            <div className="relative flex items-center">
-              <Calendar size={12} className="absolute left-2.5 text-zinc-500 pointer-events-none" />
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => handleDateChange(e.target.value)}
-                max={getKstTodayDateStr()}
-                className="h-7 w-32 rounded-lg border-0 bg-transparent pl-8 pr-1 text-[10px] font-black text-zinc-300 outline-none cursor-pointer"
-              />
-            </div>
-
-            {/* Shift Day Forward */}
-            <button
-              onClick={() => shiftDate(1)}
-              disabled={loading || isTodaySelected}
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/60 disabled:opacity-20 transition"
-              title="하루 후"
-            >
-              <ChevronRight size={15} />
-            </button>
-          </div>
         </div>
       </div>
 
@@ -356,14 +355,12 @@ export default function RisingVideos() {
                       <div className="px-4 pt-4">
                         {/* Line 1: Title Link to YouTube */}
                         {videoId ? (
-                          <a
-                            href={`https://youtube.com/watch?v=${videoId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block text-sm font-black text-white line-clamp-1 truncate leading-normal hover:text-orange-400 transition"
+                          <button
+                            onClick={() => setPlayingVideoId(videoId)}
+                            className="block text-left w-full text-sm font-black text-white line-clamp-1 truncate leading-normal hover:text-orange-400 transition cursor-pointer"
                           >
                             {title}
-                          </a>
+                          </button>
                         ) : (
                           <h3 className="text-sm font-black text-white line-clamp-1 truncate leading-normal">
                             {title}
@@ -435,6 +432,60 @@ export default function RisingVideos() {
 
         {/* Right Column: Sticky Aside AI Report News Feed (Always Rendered) */}
         <aside className="lg:sticky lg:top-6 rounded-2xl border border-zinc-800 bg-zinc-900/10 p-5 space-y-5 max-h-[89vh] overflow-y-auto backdrop-blur-sm self-start w-full">
+          {/* 📅 Date Selector Control Row (Moved from Filters) */}
+          <div className="flex flex-col gap-2 pb-3.5 border-b border-zinc-800/80">
+            <span className="text-[10px] text-zinc-500 font-bold tracking-wider">분석 기준일 선택</span>
+            <div className="flex items-center justify-between w-full">
+              {/* Archive Mode Status */}
+              <div className="min-h-8 flex items-center">
+                {!isTodaySelected ? (
+                  <span className="inline-flex h-8 items-center rounded-xl bg-cyan-950/40 border border-cyan-850 px-3 text-[9px] font-black text-cyan-400 tracking-wider">
+                    아카이브 모드
+                  </span>
+                ) : (
+                  <span className="inline-flex h-8 items-center rounded-xl bg-emerald-950/40 border border-emerald-850 px-3 text-[9px] font-black text-emerald-400 tracking-wider animate-pulse">
+                    실시간 트렌드
+                  </span>
+                )}
+              </div>
+              
+              {/* Timeline shift and date selector container */}
+              <div className="flex items-center bg-zinc-950/45 p-1 rounded-xl border border-zinc-900">
+                {/* Shift Day Back */}
+                <button
+                  onClick={() => shiftDate(-1)}
+                  disabled={loading}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/60 disabled:opacity-20 transition"
+                  title="하루 전"
+                >
+                  <ChevronLeft size={15} />
+                </button>
+
+                {/* Input Calendar Picker */}
+                <div className="relative flex items-center">
+                  <Calendar size={12} className="absolute left-2.5 text-zinc-500 pointer-events-none" />
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => handleDateChange(e.target.value)}
+                    max={getKstTodayDateStr()}
+                    className="h-7 w-32 rounded-lg border-0 bg-transparent pl-8 pr-1 text-[10px] font-black text-zinc-300 outline-none cursor-pointer"
+                  />
+                </div>
+
+                {/* Shift Day Forward */}
+                <button
+                  onClick={() => shiftDate(1)}
+                  disabled={loading || isTodaySelected}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/60 disabled:opacity-20 transition"
+                  title="하루 후"
+                >
+                  <ChevronRight size={15} />
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div>
             <h2 className="text-sm font-black text-white italic flex items-center gap-2">
               <BarChart2 className="text-orange-400" size={15} />
