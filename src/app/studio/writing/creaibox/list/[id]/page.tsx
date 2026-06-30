@@ -1368,6 +1368,30 @@ ${promptInstruction}
     return "bg-sky-500/10 text-sky-300";
   }, [data?.status, hasUnpublishedChanges]);
 
+  const triggerRevalidation = useCallback(async (targetSlug: string) => {
+    if (!data) return;
+    const bid = userBrandId || (data.canonicalUrl ? data.canonicalUrl.replace("https://", "").split(".")[0] : "");
+    if (!bid) return;
+
+    const catIds = data.categoryIds || (data.categoryId ? [data.categoryId] : []);
+    
+    try {
+      await fetch("/api/revalidate-blog", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          slug: targetSlug,
+          brandId: bid,
+          categoryIds: catIds,
+        }),
+      });
+    } catch (error) {
+      console.error("Revalidation trigger failed:", error);
+    }
+  }, [data, userBrandId]);
+
   const handlePublish = useCallback(async () => {
     const isCurrentlyPublished = data?.status === "published";
 
@@ -1380,19 +1404,7 @@ ${promptInstruction}
     const published = await handleSave("published");
 
     if (published) {
-      try {
-        await fetch("/api/revalidate-blog", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            slug: publishedSlug,
-          }),
-        });
-      } catch {
-        // revalidate 실패는 발행 자체를 막지 않음
-      }
+      await triggerRevalidation(publishedSlug);
 
       if (isCurrentlyPublished) {
         showPublishFeedback("블로그 재발행(업데이트)이 완료되었습니다.");
@@ -1400,15 +1412,22 @@ ${promptInstruction}
         showPublishFeedback("블로그 발행이 완료되었습니다.");
       }
     }
-  }, [data, handleSave, showPublishFeedback]);
+  }, [data, handleSave, showPublishFeedback, triggerRevalidation]);
 
   const handleCancelPublish = useCallback(async () => {
+    const targetSlug = data?.slug || buildPublicBlogSlug(
+      data?.title,
+      data?.focusKeyword,
+      data?.targetKeyword
+    );
+
     const canceled = await handleSave("saved");
 
     if (canceled) {
+      await triggerRevalidation(targetSlug);
       showPublishFeedback("발행이 취소되었습니다.");
     }
-  }, [handleSave, showPublishFeedback]);
+  }, [data, handleSave, showPublishFeedback, triggerRevalidation]);
 
   if (!isMounted || (!data && (isDetailLoading || isDirectLoading))) {
     return (
