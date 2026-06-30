@@ -168,6 +168,15 @@ export default function PostClientWrapper({
   const accentColor = profile.extra_configs?.blog_accent_color || "#3b82f6";
   const tags = post.seo_tags || [];
 
+  const configs = profile.extra_configs || {};
+  const primaryId = profile.brand_id || "";
+  let adsensePubId = "";
+  if (configs[`adsense_pub_id_${brand_id}`]) {
+    adsensePubId = configs[`adsense_pub_id_${brand_id}`];
+  } else if (brand_id === primaryId && configs.adsense_pub_id) {
+    adsensePubId = configs.adsense_pub_id;
+  }
+
   // Theme styling helpers based on active state
   const bgStyle = theme === "dark" 
     ? "bg-[#181a20] text-[#e2e8f0]" 
@@ -181,6 +190,10 @@ export default function PostClientWrapper({
   const inactiveHeaderLink = theme === "dark" ? "text-zinc-400 hover:text-white" : "text-zinc-500 hover:text-black";
 
   const backBtnStyle = theme === "dark"
+    ? "border-zinc-850 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:bg-zinc-900"
+    : "border-zinc-200 bg-white text-zinc-650 hover:border-zinc-300 hover:bg-zinc-50/50";
+
+  const sidebarBtnStyle = theme === "dark"
     ? "border-zinc-850 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:bg-zinc-900"
     : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-350 hover:bg-zinc-50";
 
@@ -226,8 +239,22 @@ export default function PostClientWrapper({
   // Prevent flicker on load
   const visibleClass = "opacity-100";
 
+  // Format AdSense client ID correctly
+  const adsenseClient = adsensePubId
+    ? `ca-${adsensePubId.startsWith("ca-") ? adsensePubId.replace("ca-", "") : adsensePubId.replace("pub-", "")}`
+    : "";
+
   return (
     <div className={`flex flex-col min-h-screen transition-colors duration-150 font-sans selection:bg-blue-500/30 selection:text-blue-200 theme-${theme} ${bgStyle} ${visibleClass}`}>
+      {/* Google AdSense Integration */}
+      {adsenseClient && (
+        <script
+          async
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
+          crossOrigin="anonymous"
+        />
+      )}
+
       <style
         dangerouslySetInnerHTML={{
           __html: `

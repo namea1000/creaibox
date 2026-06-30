@@ -93,6 +93,16 @@ export default function CategoryClientWrapper({
   const blogTitle = profile.extra_configs?.blog_title || `${profile.nickname || brand_id} 블로그`;
   const template = profile.extra_configs?.blog_template || "card";
   const accentColor = profile.extra_configs?.blog_accent_color || "#3b82f6";
+  const gaId = profile.extra_configs?.ga_id;
+
+  const configs = profile.extra_configs || {};
+  const primaryId = profile.brand_id || "";
+  let adsensePubId = "";
+  if (configs[`adsense_pub_id_${brand_id}`]) {
+    adsensePubId = configs[`adsense_pub_id_${brand_id}`];
+  } else if (brand_id === primaryId && configs.adsense_pub_id) {
+    adsensePubId = configs.adsense_pub_id;
+  }
 
   // Theme styling helpers based on active state
   const bgStyle = theme === "dark" 
@@ -126,8 +136,38 @@ export default function CategoryClientWrapper({
 
   const visibleClass = "opacity-100";
 
+  // Format AdSense client ID correctly
+  const adsenseClient = adsensePubId
+    ? `ca-${adsensePubId.startsWith("ca-") ? adsensePubId.replace("ca-", "") : adsensePubId.replace("pub-", "")}`
+    : "";
+
   return (
     <div className={`flex flex-col min-h-screen transition-colors duration-150 font-sans selection:bg-blue-500/30 selection:text-blue-200 ${bgStyle} ${visibleClass}`}>
+      {/* Google AdSense Integration */}
+      {adsenseClient && (
+        <script
+          async
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
+          crossOrigin="anonymous"
+        />
+      )}
+
+      {/* Google Analytics Integration */}
+      {gaId && (
+        <>
+          <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} />
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${gaId}');
+              `,
+            }}
+          />
+        </>
+      )}
       
       {/* 🌟 Premium Header (Matching Main and Detail) */}
       <header className={`sticky top-0 z-50 border-b transition-colors ${headerBg}`}>
