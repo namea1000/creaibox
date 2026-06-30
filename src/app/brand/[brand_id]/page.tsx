@@ -180,15 +180,25 @@ export default async function BrandBlogHome({ params }: BrandPageProps) {
     );
   }
 
-  // 2. Fetch Categories (filtering by active brand_id or null for legacy)
-  const { data: categoriesData } = await supabase
-    .from("blog_categories")
-    .select("*")
-    .eq("user_id", profile.id)
-    .or(`brand_id.eq.${brand_id},brand_id.is.null`)
-    .order("created_at", { ascending: true });
+  // 2. Fetch Categories and Published Posts in parallel
+  const [categoriesResult, postsResult] = await Promise.all([
+    supabase
+      .from("blog_categories")
+      .select("*")
+      .eq("user_id", profile.id)
+      .or(`brand_id.eq.${brand_id},brand_id.is.null`)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("writing_creaibox_posts")
+      .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at, category_id, published_snapshot")
+      .eq("user_id", profile.id)
+      .eq("status", "published")
+      .not("slug", "is", null)
+      .order("created_at", { ascending: false })
+  ]);
 
-  const categories = (categoriesData as BlogCategory[] | null) || [];
+  const categories = (categoriesResult.data as BlogCategory[] | null) || [];
+  const postsRaw = (postsResult.data as PublishedPost[] | null) || [];
 
   // Sort categories based on brand_id category order
   const primaryId = profile.brand_id || "";
@@ -204,17 +214,6 @@ export default async function BrandBlogHome({ params }: BrandPageProps) {
       return aIdx - bIdx;
     });
   }
-
-  // 3. Fetch Published Posts
-  const { data: postsData } = await supabase
-    .from("writing_creaibox_posts")
-    .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at, category_id, published_snapshot")
-    .eq("user_id", profile.id)
-    .eq("status", "published")
-    .not("slug", "is", null)
-    .order("created_at", { ascending: false });
-
-  const postsRaw = (postsData as PublishedPost[] | null) || [];
   let posts: PublishedPost[] = [];
 
   if (postsRaw.length > 0) {

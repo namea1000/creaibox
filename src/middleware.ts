@@ -37,14 +37,22 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // 🌟 세션 정보 동기화 (이게 없으면 로그인이 자꾸 풀립니다)
-  await supabase.auth.getUser()
-
   // 🌟 서브도메인 및 독립 도메인 라우팅 처리
   const host = request.headers.get("host") || "";
   const hostLower = host.toLowerCase();
   const cleanHost = hostLower.split(":")[0];
   const path = request.nextUrl.pathname;
+
+  // 🌟 세션 정보 동기화 (대중 공개용 브랜드 블로그 페이지는 세션 체크를 스킵하여 속도를 획기적으로 개선합니다)
+  const isTenantBlog = 
+    (!cleanHost.endsWith("creaibox.com") && !cleanHost.endsWith("localhost") && cleanHost !== "127.0.0.1") || // 독립 도메인
+    (cleanHost.split(".").length === 3 && cleanHost.split(".")[0] !== "www") || // 서브도메인
+    (cleanHost.split(".").length === 2 && cleanHost.split(".")[0] !== "localhost" && cleanHost.endsWith("localhost")) || // 로컬 서브도메인
+    path.startsWith("/brand");
+
+  if (!isTenantBlog) {
+    await supabase.auth.getUser();
+  }
 
   // static assets, api, nextJS internals 제외
   const isStaticOrApi = 

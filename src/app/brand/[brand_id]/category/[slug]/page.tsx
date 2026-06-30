@@ -147,28 +147,37 @@ export default async function BrandCategoryPage({ params }: CategoryPageProps) {
     notFound();
   }
 
-  // 2. Fetch Category detail (filtering by active brand_id or null for legacy)
-  const { data: category } = await supabase
-    .from("blog_categories")
-    .select("*")
-    .eq("user_id", profile.id)
-    .eq("slug", decodedSlug)
-    .or(`brand_id.eq.${brand_id},brand_id.is.null`)
-    .maybeSingle();
+  // 2. Fetch Category detail, Categories nav, and Published Posts in parallel
+  const [categoryResult, categoriesResult, postsResult] = await Promise.all([
+    supabase
+      .from("blog_categories")
+      .select("*")
+      .eq("user_id", profile.id)
+      .eq("slug", decodedSlug)
+      .or(`brand_id.eq.${brand_id},brand_id.is.null`)
+      .maybeSingle(),
+    supabase
+      .from("blog_categories")
+      .select("*")
+      .eq("user_id", profile.id)
+      .or(`brand_id.eq.${brand_id},brand_id.is.null`)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("writing_creaibox_posts")
+      .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at, category_id, category_ids, published_snapshot")
+      .eq("user_id", profile.id)
+      .eq("status", "published")
+      .not("slug", "is", null)
+      .order("created_at", { ascending: false })
+  ]);
 
+  const category = categoryResult.data as BlogCategory | null;
   if (!category) {
     notFound();
   }
 
-  // 3. Fetch Categories for Header Nav (filtering by active brand_id or null for legacy)
-  const { data: categoriesData } = await supabase
-    .from("blog_categories")
-    .select("*")
-    .eq("user_id", profile.id)
-    .or(`brand_id.eq.${brand_id},brand_id.is.null`)
-    .order("created_at", { ascending: true });
-
-  const categories = (categoriesData as BlogCategory[] | null) || [];
+  const categories = (categoriesResult.data as BlogCategory[] | null) || [];
+  const postsRaw = (postsResult.data as PublishedPost[] | null) || [];
 
   // Sort categories based on brand_id category order
   const primaryId = profile.brand_id || "";
@@ -185,16 +194,6 @@ export default async function BrandCategoryPage({ params }: CategoryPageProps) {
     });
   }
 
-  // 4. Fetch Published Posts
-  const { data: postsData } = await supabase
-    .from("writing_creaibox_posts")
-    .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at, category_id, category_ids, published_snapshot")
-    .eq("user_id", profile.id)
-    .eq("status", "published")
-    .not("slug", "is", null)
-    .order("created_at", { ascending: false });
-
-  const postsRaw = (postsData as PublishedPost[] | null) || [];
   let posts: PublishedPost[] = [];
 
   if (postsRaw.length > 0) {
