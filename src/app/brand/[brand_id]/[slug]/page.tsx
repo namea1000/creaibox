@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/utils/supabase/server";
+import { cookies } from "next/headers";
 import PostClientWrapper from "../components/PostClientWrapper";
 
 export const dynamic = "force-dynamic";
@@ -362,17 +363,21 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
 }
 
 export default async function BrandPostDetailPage({ params }: PostDetailPageProps) {
-  const { brand_id, slug } = await params;
-  const result = await fetchPost(brand_id, slug);
+  try {
+    const { brand_id, slug } = await params;
+    const cookieStore = await cookies();
+    const initialTheme = (cookieStore.get(`blog_theme_${brand_id}`)?.value || "light") as "light" | "dark";
 
-  if (!result) {
-    notFound();
-  }
+    const result = await fetchPost(brand_id, slug);
 
-  const { post, profile } = result;
-  const supabase = await createAdminClient();
+    if (!result) {
+      notFound();
+    }
 
-  const blogTitle = profile.extra_configs?.blog_title || `${profile.nickname || brand_id} 블로그`;
+    const { post, profile } = result;
+    const supabase = await createAdminClient();
+
+    const blogTitle = profile.extra_configs?.blog_title || `${profile.nickname || brand_id} 블로그`;
   const accentColor = profile.extra_configs?.blog_accent_color || "#3b82f6";
   const gaId = profile.extra_configs?.ga_id;
 
@@ -558,6 +563,8 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
         }
       })}
 
+
+
       {/* Google Analytics */}
       {gaId && (
         <>
@@ -586,7 +593,12 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
         prevPost={prevPost}
         nextPost={nextPost}
         bestPosts={brandPosts.slice(0, 5)}
+        initialTheme={initialTheme}
       />
     </>
   );
+  } catch (err) {
+    console.error("Failed to render post detail page:", err);
+    return notFound();
+  }
 }

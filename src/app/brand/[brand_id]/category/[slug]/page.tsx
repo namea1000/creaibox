@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { CalendarDays, Sparkles, ArrowRight, Rss, ArrowLeft, Tag } from "lucide-react";
 import { createClient, createAdminClient } from "@/utils/supabase/server";
+import { cookies } from "next/headers";
 import CategoryClientWrapper from "../../components/CategoryClientWrapper";
 
 export const dynamic = "force-dynamic";
@@ -255,6 +256,9 @@ export default async function BrandCategoryPage({ params }: CategoryPageProps) {
     return isPostForBrand(post.canonical_url, brand_id, profile.extra_configs);
   });
 
+  const cookieStore = await cookies();
+  const initialTheme = (cookieStore.get(`blog_theme_${brand_id}`)?.value || "light") as "light" | "dark";
+
   return (
     <CategoryClientWrapper
       brand_id={brand_id}
@@ -262,6 +266,7 @@ export default async function BrandCategoryPage({ params }: CategoryPageProps) {
       category={category}
       categories={categories}
       initialPosts={posts}
+      initialTheme={initialTheme}
     />
   );
 }

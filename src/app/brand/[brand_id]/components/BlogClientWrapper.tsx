@@ -31,16 +31,18 @@ interface BlogClientWrapperProps {
   profile: any;
   categories: BlogCategory[];
   initialPosts: PublishedPost[];
+  initialTheme?: "light" | "dark";
 }
 
 export default function BlogClientWrapper({
   brand_id,
   profile,
   categories,
-  initialPosts
+  initialPosts,
+  initialTheme
 }: BlogClientWrapperProps) {
-  // 1. Theme State (default to light)
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  // 1. Theme State (default to initialTheme or light)
+  const [theme, setTheme] = useState<"light" | "dark">(initialTheme || "light");
   const [isThemeLoaded, setIsThemeLoaded] = useState(false);
 
   // 2. Search & Pagination States
@@ -57,10 +59,8 @@ export default function BlogClientWrapper({
   // Load theme preference on mount
   useEffect(() => {
     const savedTheme = localStorage.getItem(`blog_theme_${brand_id}`) as "light" | "dark" | null;
-    if (savedTheme) {
+    if (savedTheme && savedTheme !== theme) {
       setTheme(savedTheme);
-    } else {
-      setTheme("light");
     }
     setIsThemeLoaded(true);
   }, [brand_id]);
@@ -69,6 +69,7 @@ export default function BlogClientWrapper({
     const nextTheme = theme === "dark" ? "light" : "dark";
     setTheme(nextTheme);
     localStorage.setItem(`blog_theme_${brand_id}`, nextTheme);
+    document.cookie = `blog_theme_${brand_id}=${nextTheme}; path=/; max-age=31536000; SameSite=Lax`;
   };
 
   // Helper formatting functions
