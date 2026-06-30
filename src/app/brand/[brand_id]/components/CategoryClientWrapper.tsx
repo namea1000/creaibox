@@ -221,24 +221,21 @@ export default function CategoryClientWrapper({
       </header>
 
       {/* Category Intro Section */}
-      <section className={`relative py-16 ${introBg}`}>
+      <section className={`relative py-4 ${introBg}`}>
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.05),transparent_40%)]" />
         
-        <div className="mx-auto max-w-7xl px-6 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-3">
+        <div className="mx-auto max-w-7xl px-6 text-center">
+          <div className="space-y-2 flex flex-col items-center">
             <Link 
               href="/"
               className={`inline-flex items-center gap-1.5 text-xs font-bold ${introText} hover:opacity-80 transition-opacity`}
             >
               <ArrowLeft size={12} /> 블로그 홈
             </Link>
-            <h1 className={`text-4xl font-black tracking-tight flex items-center gap-3 ${cardText}`}>
-              <Tag className="text-blue-500 shrink-0" size={32} />
+            <h1 className={`text-3xl md:text-4xl font-black tracking-tight flex items-center justify-center gap-3 ${cardText}`}>
+              <Tag className="text-blue-500 shrink-0" size={24} />
               {category.name}
             </h1>
-            <p className={`text-sm font-bold ${introText}`}>
-              {category.name} 카테고리에 등록된 {filteredPosts.length}개의 글
-            </p>
           </div>
         </div>
       </section>

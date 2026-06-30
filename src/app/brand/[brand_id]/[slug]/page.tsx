@@ -569,6 +569,7 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
         normalizedContent={normalizedContent}
         prevPost={prevPost}
         nextPost={nextPost}
+        bestPosts={brandPosts.slice(0, 5)}
       />
     </>
   );
