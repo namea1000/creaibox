@@ -240,7 +240,7 @@ export default function BlogClientWrapper({
       </header>
 
       {/* 🌟 Premium Gradient Banner Section */}
-      <section className={`relative overflow-hidden border-b transition-colors ${theme === "dark" ? "border-[#2a2f3a] bg-zinc-900/10 py-8" : "border-[#e2e8f0] bg-zinc-200/20 py-8"}`}>
+      <section className={`relative overflow-hidden border-b transition-colors ${theme === "dark" ? "border-[#2a2f3a] bg-zinc-900/10 py-4" : "border-[#e2e8f0] bg-zinc-200/20 py-4"}`}>
         {/* Colorful backgrounds */}
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.06),transparent_50%)]" />
         <div 
@@ -248,7 +248,7 @@ export default function BlogClientWrapper({
           style={{ "--accent": accentColor } as React.CSSProperties}
         />
         
-        <div className="mx-auto max-w-7xl px-6 text-center space-y-6">
+        <div className="mx-auto max-w-7xl px-6 text-center space-y-3">
           <div className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-black uppercase tracking-wider backdrop-blur-sm ${
             theme === "dark" 
               ? "border-zinc-800 bg-[#1e222b]/60 text-zinc-300" 
@@ -256,12 +256,9 @@ export default function BlogClientWrapper({
           }`}>
             <Sparkles size={12} className="text-yellow-400" /> Professional AI Publisher
           </div>
-          <h1 className={`text-4xl md:text-6xl font-black tracking-tight leading-none ${theme === "dark" ? "text-white" : "text-zinc-900"}`}>
+          <h1 className={`text-4xl md:text-5xl font-black tracking-tight leading-none ${theme === "dark" ? "text-white" : "text-zinc-900"}`}>
             {blogTitle}
           </h1>
-          <p className={`max-w-2xl mx-auto text-sm md:text-base font-bold leading-relaxed ${theme === "dark" ? "text-zinc-400" : "text-zinc-500"}`}>
-            {blogDesc}
-          </p>
         </div>
       </section>
 
