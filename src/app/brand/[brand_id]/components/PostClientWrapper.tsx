@@ -395,7 +395,7 @@ export default function PostClientWrapper({
                     <img
                       src={prevPost.thumbnailUrl}
                       alt={prevPost.title || "thumbnail"}
-                      className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   ) : (
                     <div className={`absolute inset-0 flex items-center justify-center ${theme === "dark" ? "bg-zinc-900 text-zinc-700" : "bg-zinc-100 text-zinc-400"}`}>
@@ -426,7 +426,7 @@ export default function PostClientWrapper({
                     <img
                       src={nextPost.thumbnailUrl}
                       alt={nextPost.title || "thumbnail"}
-                      className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   ) : (
                     <div className={`absolute inset-0 flex items-center justify-center ${theme === "dark" ? "bg-zinc-900 text-zinc-700" : "bg-zinc-100 text-zinc-400"}`}>

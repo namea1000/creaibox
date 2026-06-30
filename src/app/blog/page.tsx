@@ -287,7 +287,7 @@ export default async function BlogPage(props: {
                             <img
                               src={post.thumbnailUrl}
                               alt={post.title || "thumbnail"}
-                              className="h-full w-full object-contain"
+                              className="h-full w-full object-cover"
                             />
                           ) : (
                             <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 via-blue-50 to-cyan-100" />
