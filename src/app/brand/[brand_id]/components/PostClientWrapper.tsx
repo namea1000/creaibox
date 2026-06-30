@@ -457,7 +457,7 @@ export default function PostClientWrapper({
           </div>
 
           {/* 오른쪽 1/3 베스트 글 위젯 (Sticky 적용) */}
-          <aside className={`lg:sticky lg:top-28 h-fit rounded-[32px] border p-6 transition-all duration-300 ${theme === "dark" ? "border-zinc-800 bg-[#1e222b]/40" : "border-zinc-200 bg-zinc-50"}`}>
+          <aside className={`lg:sticky lg:top-28 h-fit rounded-xl border p-6 transition-all duration-300 ${theme === "dark" ? "border-zinc-800 bg-[#1e222b]/40" : "border-zinc-200 bg-zinc-50"}`}>
             <div className="mb-5 flex items-center justify-between border-b pb-5 border-zinc-200 dark:border-zinc-800">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-500">
@@ -478,7 +478,7 @@ export default function PostClientWrapper({
                     href={`/${bestPost.slug}`}
                     className="group flex items-center gap-4 rounded-none px-2 py-3 transition hover:bg-white/5 border-b border-zinc-200 dark:border-zinc-800/60 last:border-b-0"
                   >
-                    <div className="relative w-16 aspect-[16/9] shrink-0 overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
+                    <div className="relative w-16 aspect-[16/9] shrink-0 overflow-hidden rounded-none border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
                       {bestPost.thumbnailUrl ? (
                         <img
                           src={bestPost.thumbnailUrl}
