@@ -318,19 +318,19 @@ export default function PostClientWrapper({
       </header>
 
       {/* Main post container */}
-      <main className="mx-auto max-w-7xl px-6 py-12 flex-1 w-full">
+      <main className="mx-auto max-w-7xl px-6 py-4 flex-1 w-full">
         <Link
           href="/"
-          className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-xs font-black transition ${backBtnStyle}`}
+          className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-black transition ${backBtnStyle}`}
         >
-          <ArrowLeft size={14} /> 블로그 홈으로 돌아가기
+          <ArrowLeft size={16} /> 블로그 홈으로 돌아가기
         </Link>
 
-        <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,2fr)_380px]">
+        <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,2fr)_380px]">
           {/* Left 2/3 Content column */}
           <div className="space-y-8">
-            <article className={`overflow-hidden rounded-[32px] border transition-all duration-300 ${articleBg}`}>
-              <header className={`px-8 py-12 md:px-12 transition-all duration-300 ${articleHeaderBg}`}>
+            <article className={`overflow-hidden rounded-xl border transition-all duration-300 ${articleBg}`}>
+              <header className={`px-6 py-6 md:px-8 md:py-8 transition-all duration-300 ${articleHeaderBg}`}>
                 <div className="flex flex-wrap items-center gap-2">
                   {category && (
                     <Link
@@ -350,8 +350,8 @@ export default function PostClientWrapper({
                 </h1>
               </header>
 
-              <div className="px-8 py-12 md:px-12 space-y-8">
-                <div className="mx-auto max-w-[1100px]">
+              <div className="px-6 py-8 md:px-8 space-y-8">
+                <div className="w-full">
                   {looksLikeHtml(normalizedContent) ? (
                     <div
                       className={blogContentClass}
@@ -383,75 +383,77 @@ export default function PostClientWrapper({
                     </div>
                   </div>
                 )}
+
+                {/* 🌟 이전 글 / 다음 글 내비게이션 카드 (아티클 내부 하단 배치) */}
+                <div className={`w-full mt-12 border-t pt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 ${theme === "dark" ? "border-zinc-800" : "border-zinc-200"}`}>
+                  {prevPost ? (
+                    <Link
+                      href={`/${prevPost.slug}`}
+                      className={`group flex items-center gap-4 rounded-xl border p-4 transition-all hover:border-blue-400 hover:shadow-md ${cardBg}`}
+                    >
+                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-zinc-950">
+                        {prevPost.thumbnailUrl ? (
+                          <img
+                            src={prevPost.thumbnailUrl}
+                            alt={prevPost.title || "thumbnail"}
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className={`absolute inset-0 flex items-center justify-center ${theme === "dark" ? "bg-zinc-900 text-zinc-700" : "bg-zinc-100 text-zinc-400"}`}>
+                            <Sparkles size={16} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
+                          이전 글
+                        </p>
+                        <h4 className={`mt-1 line-clamp-2 text-sm font-black leading-snug transition-colors group-hover:text-blue-500 ${cardText}`}>
+                          {prevPost.title}
+                        </h4>
+                      </div>
+                    </Link>
+                  ) : (
+                    <div className={`flex items-center justify-center rounded-xl border border-dashed p-4 text-center text-xs font-bold text-zinc-400 min-h-[98px] ${theme === "dark" ? "border-zinc-800" : "border-zinc-200"}`}>
+                      이전 글이 존재하지 않습니다
+                    </div>
+                  )}
+
+                  {nextPost ? (
+                    <Link
+                      href={`/${nextPost.slug}`}
+                      className={`group flex items-center gap-4 rounded-xl border p-4 transition-all hover:border-blue-400 hover:shadow-md ${cardBg}`}
+                    >
+                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-zinc-950">
+                        {nextPost.thumbnailUrl ? (
+                          <img
+                            src={nextPost.thumbnailUrl}
+                            alt={nextPost.title || "thumbnail"}
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className={`absolute inset-0 flex items-center justify-center ${theme === "dark" ? "bg-zinc-900 text-zinc-700" : "bg-zinc-100 text-zinc-400"}`}>
+                            <Sparkles size={16} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
+                          다음 글
+                        </p>
+                        <h4 className={`mt-1 line-clamp-2 text-sm font-black leading-snug transition-colors group-hover:text-blue-500 ${cardText}`}>
+                          {nextPost.title}
+                        </h4>
+                      </div>
+                    </Link>
+                  ) : (
+                    <div className={`flex items-center justify-center rounded-xl border border-dashed p-4 text-center text-xs font-bold text-zinc-400 min-h-[98px] ${theme === "dark" ? "border-zinc-800" : "border-zinc-200"}`}>
+                      다음 글이 존재하지 않습니다
+                    </div>
+                  )}
+                </div>
               </div>
             </article>
-
-            {/* 🌟 이전 글 / 다음 글 내비게이션 카드 */}
-            {(prevPost || nextPost) && (
-              <div className={`grid grid-cols-1 gap-6 md:grid-cols-2 border-t pt-10 ${theme === "dark" ? "border-zinc-900" : "border-zinc-200"}`}>
-                {prevPost ? (
-                  <Link
-                    href={`/${prevPost.slug}`}
-                    className={`group flex items-center gap-4 rounded-2xl border p-4 transition-all hover:border-blue-400 hover:shadow-md ${cardBg}`}
-                  >
-                    <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-zinc-950">
-                      {prevPost.thumbnailUrl ? (
-                        <img
-                          src={prevPost.thumbnailUrl}
-                          alt={prevPost.title || "thumbnail"}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className={`absolute inset-0 flex items-center justify-center ${theme === "dark" ? "bg-zinc-900 text-zinc-700" : "bg-zinc-100 text-zinc-400"}`}>
-                          <Sparkles size={16} />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-blue-400">
-                        &larr; 이전 글
-                      </span>
-                      <h4 className={`mt-1 truncate text-sm font-black transition-colors group-hover:text-blue-400 ${cardText}`}>
-                        {prevPost.title}
-                      </h4>
-                    </div>
-                  </Link>
-                ) : (
-                  <div />
-                )}
-
-                {nextPost ? (
-                  <Link
-                    href={`/${nextPost.slug}`}
-                    className={`group flex items-center gap-4 rounded-2xl border p-4 transition-all hover:border-blue-400 hover:shadow-md ${cardBg}`}
-                  >
-                    <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-zinc-950">
-                      {nextPost.thumbnailUrl ? (
-                        <img
-                          src={nextPost.thumbnailUrl}
-                          alt={nextPost.title || "thumbnail"}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className={`absolute inset-0 flex items-center justify-center ${theme === "dark" ? "bg-zinc-900 text-zinc-700" : "bg-zinc-100 text-zinc-400"}`}>
-                          <Sparkles size={16} />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-blue-400 text-right">
-                        다음 글 &rarr;
-                      </span>
-                      <h4 className={`mt-1 truncate text-sm font-black transition-colors group-hover:text-blue-400 ${cardText}`}>
-                        {nextPost.title}
-                      </h4>
-                    </div>
-                  </Link>
-                ) : (
-                  <div />
-                )}
-              </div>
-            )}
           </div>
 
           {/* 오른쪽 1/3 베스트 글 위젯 (Sticky 적용) */}
@@ -476,7 +478,7 @@ export default function PostClientWrapper({
                     href={`/${bestPost.slug}`}
                     className="group flex items-center gap-4 rounded-none px-2 py-3 transition hover:bg-white/5 border-b border-zinc-200 dark:border-zinc-800/60 last:border-b-0"
                   >
-                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-none border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
+                    <div className="relative w-16 aspect-[16/9] shrink-0 overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
                       {bestPost.thumbnailUrl ? (
                         <img
                           src={bestPost.thumbnailUrl}

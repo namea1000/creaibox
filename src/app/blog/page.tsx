@@ -282,7 +282,7 @@ export default async function BlogPage(props: {
                         href={`/blog/${post.slug}`}
                         className="group flex items-center gap-4 rounded-none px-2 py-3 transition hover:bg-white border-b border-zinc-200/60 last:border-b-0"
                       >
-                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center">
+                        <div className="relative w-16 aspect-[16/9] shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center">
                           {post.thumbnailUrl ? (
                             <img
                               src={post.thumbnailUrl}
