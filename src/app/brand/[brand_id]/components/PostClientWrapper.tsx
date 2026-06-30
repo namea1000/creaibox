@@ -173,8 +173,8 @@ export default function PostClientWrapper({
     : "bg-[#f4f6fa] text-[#1e293b]";
 
   const headerBg = theme === "dark"
-    ? "bg-[#1e222b]/80 border-[#2a2f3a]"
-    : "bg-white/80 border-[#e2e8f0]";
+    ? "bg-[#1e222b] border-[#2a2f3a]"
+    : "bg-white border-[#e2e8f0]";
 
   const activeHeaderLink = theme === "dark" ? "text-white" : "text-zinc-900";
   const inactiveHeaderLink = theme === "dark" ? "text-zinc-400 hover:text-white" : "text-zinc-500 hover:text-black";
@@ -263,7 +263,7 @@ export default function PostClientWrapper({
       />
 
       {/* Header */}
-      <header className={`sticky top-0 z-50 border-b backdrop-blur-md transition-colors ${headerBg}`}>
+      <header className={`sticky top-0 z-50 border-b transition-colors ${headerBg}`}>
         <div className="mx-auto max-w-7xl px-6 h-20 flex items-center justify-between">
           <Link href="/" className="group flex items-center gap-3">
             <span 
