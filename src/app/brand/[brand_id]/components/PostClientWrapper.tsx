@@ -123,7 +123,7 @@ const getBlogMarkdownComponents = (theme: "light" | "dark"): Components => ({
     <img
       src={src}
       alt={alt || "이미지"}
-      className={`my-8 w-full h-auto rounded-[24px] border ${
+      className={`my-8 w-full h-auto rounded-[6px] border ${
         theme === "dark" ? "border-zinc-900" : "border-zinc-200"
       }`}
     />

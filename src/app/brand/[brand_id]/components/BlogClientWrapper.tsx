@@ -324,9 +324,9 @@ export default function BlogClientWrapper({
                     <Link
                       key={post.id}
                       href={`/${post.slug}`}
-                      className={`group flex flex-col md:flex-row gap-6 rounded-2xl border p-5 transition-all hover:-translate-y-0.5 ${cardBg}`}
+                      className={`group flex flex-col md:flex-row gap-6 rounded-xl border p-5 transition-all hover:-translate-y-0.5 ${cardBg}`}
                     >
-                      <div className="relative aspect-[16/10] md:w-[260px] shrink-0 overflow-hidden rounded-xl bg-zinc-950">
+                      <div className="relative aspect-[16/10] md:w-[260px] shrink-0 overflow-hidden rounded-[6px] bg-zinc-950">
                         {post.thumbnailUrl ? (
                           <img
                             src={post.thumbnailUrl}
@@ -372,7 +372,7 @@ export default function BlogClientWrapper({
                     <Link
                       key={post.id}
                       href={`/${post.slug}`}
-                      className={`group flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 hover:-translate-y-1 ${cardBg}`}
+                      className={`group flex flex-col overflow-hidden rounded-xl border transition-all duration-300 hover:-translate-y-1 ${cardBg}`}
                     >
                       <div className="relative aspect-[16/10] overflow-hidden bg-zinc-950">
                         {post.thumbnailUrl ? (
