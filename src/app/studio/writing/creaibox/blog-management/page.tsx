@@ -40,6 +40,7 @@ export default function BlogManagementPage() {
   const [blogAccentColor, setBlogAccentColor] = useState("#3b82f6");
   const [gaId, setGaId] = useState("");
   const [naverKey, setNaverKey] = useState("");
+  const [adsensePubId, setAdsensePubId] = useState("");
   const [seoTitleTemplate, setSeoTitleTemplate] = useState("%title% | %blog_title%");
   const [seoDescTemplate, setSeoDescTemplate] = useState("%description%");
   
@@ -183,6 +184,7 @@ export default function BlogManagementPage() {
     setBlogAccentColor(getConfigValue("blog_accent_color", "#3b82f6"));
     setGaId(getConfigValue("ga_id", ""));
     setNaverKey(getConfigValue("naver_advisor_key", ""));
+    setAdsensePubId(getConfigValue("adsense_pub_id", ""));
     setSeoTitleTemplate(getConfigValue("seo_template_title", "%title% | %blog_title%"));
     setSeoDescTemplate(getConfigValue("seo_template_desc", "%description%"));
 
@@ -270,6 +272,7 @@ export default function BlogManagementPage() {
         [`blog_accent_color_${activeBrandId}`]: blogAccentColor,
         [`ga_id_${activeBrandId}`]: gaId.trim(),
         [`naver_advisor_key_${activeBrandId}`]: naverKey.trim(),
+        [`adsense_pub_id_${activeBrandId}`]: adsensePubId.trim(),
         [`seo_template_title_${activeBrandId}`]: seoTitleTemplate.trim(),
         [`seo_template_desc_${activeBrandId}`]: seoDescTemplate.trim(),
       };
@@ -282,6 +285,7 @@ export default function BlogManagementPage() {
         mergedConfigs.blog_accent_color = blogAccentColor;
         mergedConfigs.ga_id = gaId.trim();
         mergedConfigs.naver_advisor_key = naverKey.trim();
+        mergedConfigs.adsense_pub_id = adsensePubId.trim();
         mergedConfigs.seo_template_title = seoTitleTemplate.trim();
         mergedConfigs.seo_template_desc = seoDescTemplate.trim();
       }
@@ -1205,6 +1209,22 @@ export default function BlogManagementPage() {
                           placeholder="예: 3e7c8d92..."
                           className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4 text-xs font-bold font-mono text-white outline-none focus:border-blue-500 transition-colors"
                         />
+                      </div>
+
+                      <div className="space-y-1.5 md:col-span-2 border-t border-zinc-900/50 pt-4">
+                        <label className="pl-1 text-[10px] font-black uppercase tracking-wider text-zinc-500">
+                          구글 애드센스 (Google AdSense) 게시자 ID
+                        </label>
+                        <input
+                          type="text"
+                          value={adsensePubId}
+                          onChange={(e) => setAdsensePubId(e.target.value)}
+                          placeholder="예: pub-XXXXXXXXXXXXXXXX"
+                          className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4 text-xs font-bold font-mono text-white outline-none focus:border-blue-500 transition-colors"
+                        />
+                        <p className="text-[10px] text-zinc-500 pl-1 leading-relaxed">
+                          애드센스 게시자 ID(pub-으로 시작하는 16자리 숫자)를 입력하면 <b>ads.txt 파일이 해당 도메인에 자동으로 생성 및 서비스</b>되며, 광고 게재 권한이 즉시 활성화됩니다.
+                        </p>
                       </div>
                     </div>
 

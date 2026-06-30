@@ -59,7 +59,7 @@ export async function middleware(request: NextRequest) {
     path.startsWith("/_next") ||
     path.startsWith("/api") ||
     path.startsWith("/brand") || // 🌟 무한/중복 리라이트 방지: 내부 리라이트된 경로는 재라우팅하지 않음
-    (path.includes(".") && path !== "/.well-known/creaibox-diagnostics");
+    (path.includes(".") && path !== "/.well-known/creaibox-diagnostics" && path !== "/ads.txt");
 
   if (!isStaticOrApi) {
     const isCreaiboxDomain = cleanHost.endsWith("creaibox.com");
