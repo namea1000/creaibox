@@ -160,20 +160,44 @@ export async function middleware(request: NextRequest) {
             }
           );
           
-          const { data: profile } = await adminSupabase
+          // 1. Try primary brand_id match
+          let { data: profile } = await adminSupabase
             .from("profiles")
-            .select("extra_configs")
+            .select("brand_id, extra_configs")
             .eq("brand_id", targetBrandId.toLowerCase())
             .maybeSingle();
 
-          const configs = profile?.extra_configs || {};
-          const customDomain = configs.custom_domain;
-          const customDomainStatus = configs.custom_domain_status;
+          // 2. Try secondary brand_ids list match if not found
+          if (!profile) {
+            const { data: allProfiles } = await adminSupabase
+              .from("profiles")
+              .select("brand_id, extra_configs")
+              .not("extra_configs", "is", null);
 
-          if (customDomainStatus === "APPROVED" && customDomain) {
-            const redirectUrl = `https://${customDomain.toLowerCase()}${path}${request.nextUrl.search}`;
-            console.log(`Redirecting subdomain ${cleanHost} to approved custom domain: ${redirectUrl}`);
-            return NextResponse.redirect(new URL(redirectUrl, request.url));
+            if (allProfiles) {
+              profile = allProfiles.find((p: any) => {
+                const configs = p.extra_configs || {};
+                const list = [p.brand_id, ...(configs.brand_ids || [])].filter(Boolean);
+                return list.some(bid => bid.toLowerCase() === targetBrandId.toLowerCase());
+              }) || null;
+            }
+          }
+
+          if (profile) {
+            const configs = profile.extra_configs || {};
+            const isPrimary = targetBrandId.toLowerCase() === (profile.brand_id || "").toLowerCase();
+            const customDomain = isPrimary 
+              ? configs.custom_domain 
+              : configs[`custom_domain_${targetBrandId.toLowerCase()}`];
+            const customDomainStatus = isPrimary 
+              ? configs.custom_domain_status 
+              : configs[`custom_domain_status_${targetBrandId.toLowerCase()}`];
+
+            if (customDomainStatus === "APPROVED" && customDomain) {
+              const redirectUrl = `https://${customDomain.toLowerCase()}${path}${request.nextUrl.search}`;
+              console.log(`Redirecting subdomain ${cleanHost} to approved custom domain: ${redirectUrl}`);
+              return NextResponse.redirect(new URL(redirectUrl, request.url));
+            }
           }
         } catch (redirectLookupErr) {
           console.error("Subdomain to custom domain redirect check failed:", redirectLookupErr);
