@@ -10,6 +10,7 @@ type GenerateThumbnailBody = {
   prompt?: string;
   count?: number;
   aspectRatio?: string;
+  apiKey?: string;
 };
 
 type GeminiInlinePart = {
@@ -94,94 +95,68 @@ export async function POST(req: NextRequest) {
     const requestedCount = Number(body.count || 1);
     const count = Math.min(Math.max(requestedCount, 1), MAX_IMAGE_COUNT);
     const aspectRatio = body.aspectRatio || "3:2";
+    const apiKey = body.apiKey?.trim();
 
     if (!prompt) {
       return NextResponse.json({ error: "프롬프트가 필요합니다." }, { status: 400 });
     }
 
-    const vaultKeys = await getActiveVaultKeys("gemini");
-
-    if (vaultKeys.length === 0) {
+    if (!apiKey) {
       return NextResponse.json(
-        { error: "사용 가능한 Gemini API Key가 없습니다." },
-        { status: 503 }
+        { error: "사용자 API Key가 없습니다. APIVault에서 API Key를 먼저 저장해 주세요." },
+        { status: 400 }
       );
     }
 
-    let lastError: unknown = null;
+    const images: string[] = [];
 
-    for (const vault of vaultKeys) {
-      try {
-        if ((vault.today_count || 0) >= (vault.daily_limit || 1000)) {
-          continue;
+    for (let index = 0; index < count; index += 1) {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_IMAGE_MODEL}:generateContent`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": apiKey,
+          },
+          body: JSON.stringify(
+            buildGeminiBody(`${prompt}\nVariation ${index + 1}`, aspectRatio)
+          ),
         }
+      );
 
-        const apiKey = decryptVaultKey(vault);
-        const images: string[] = [];
+      const data = (await response.json()) as GeminiImageResponse;
 
-        for (let index = 0; index < count; index += 1) {
-          const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_IMAGE_MODEL}:generateContent`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-goog-api-key": apiKey,
-              },
-              body: JSON.stringify(
-                buildGeminiBody(`${prompt}\nVariation ${index + 1}`, aspectRatio)
-              ),
-            }
-          );
-
-          const data = (await response.json()) as GeminiImageResponse;
-
-          if (!response.ok) {
-            throw new Error(
-              `${GEMINI_IMAGE_MODEL}: ${data.error?.message || "Gemini 이미지 생성에 실패했습니다."}`
-            );
-          }
-
-          const generatedImages = extractImageData(data);
-
-          if (generatedImages.length === 0) {
-            const textResponse = extractTextData(data);
-            throw new Error(
-              `${GEMINI_IMAGE_MODEL}: 이미지 데이터가 없습니다.${
-                textResponse ? ` Gemini 응답: ${textResponse.slice(0, 300)}` : ""
-              }`
-            );
-          }
-
-          images.push(...generatedImages);
-        }
-
-        await recordVaultSuccess(vault.id);
-
-        return NextResponse.json({
-          ok: true,
-          images: images.slice(0, count),
-          model: GEMINI_IMAGE_MODEL,
-          vaultId: vault.id,
-        });
-      } catch (error) {
-        lastError = error;
-        await recordVaultFailure(vault.id, String(error instanceof Error ? error.message : error));
+      if (!response.ok) {
+        throw new Error(
+          `${GEMINI_IMAGE_MODEL}: ${data.error?.message || "Gemini 이미지 생성에 실패했습니다."}`
+        );
       }
+
+      const generatedImages = extractImageData(data);
+
+      if (generatedImages.length === 0) {
+        const textResponse = extractTextData(data);
+        throw new Error(
+          `${GEMINI_IMAGE_MODEL}: 이미지 데이터가 없습니다.${
+            textResponse ? ` Gemini 응답: ${textResponse.slice(0, 300)}` : ""
+          }`
+        );
+      }
+
+      images.push(...generatedImages);
     }
 
+    return NextResponse.json({
+      ok: true,
+      images: images.slice(0, count),
+      model: GEMINI_IMAGE_MODEL,
+    });
+  } catch (error: any) {
     return NextResponse.json(
       {
-        error: "Nano Banana 이미지 생성에 실패했습니다.",
-        rawError: String(lastError instanceof Error ? lastError.message : lastError || ""),
-      },
-      { status: 503 }
-    );
-  } catch (error) {
-    return NextResponse.json(
-      {
-        error: "썸네일 생성 요청 처리 중 문제가 발생했습니다.",
-        rawError: String(error instanceof Error ? error.message : error),
+        error: error.message || "썸네일 생성 요청 처리 중 문제가 발생했습니다.",
+        rawError: String(error),
       },
       { status: 500 }
     );

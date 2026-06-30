@@ -21,6 +21,8 @@ import {
   Search,
   PieChart,
   DollarSign,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -114,7 +116,7 @@ const MODEL_OPTIONS: Record<string, string[]> = {
 
 const PLAN_OPTIONS = [
   { value: "free", label: "Free Trial" },
-  { value: "starter", label: "Starter" },
+  { value: "creator", label: "Creator" },
   { value: "pro", label: "Pro" },
   { value: "business", label: "Business" },
   { value: "admin", label: "Admin Only" },
@@ -210,7 +212,7 @@ export default function APIVaultAdminPage() {
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || "API 키 목록을 불러오지 못했습니다.");
 
-        setApiKeys(result || []);
+        setApiKeys((result || []).filter((item: any) => item.provider !== "system"));
       } catch (err) {
         console.error("데이터 로드 실패:", err);
         setApiKeys([]);
@@ -220,6 +222,51 @@ export default function APIVaultAdminPage() {
     },
     [adminEmail]
   );
+
+  const [planLimits, setPlanLimits] = useState<Record<string, number>>({
+    free: 20,
+    creator: 50,
+    pro: 100,
+    business: 200,
+    admin: 1000,
+  });
+  const [limitsLoading, setLimitsLoading] = useState(false);
+
+  const fetchPlanLimits = useCallback(async (email: string) => {
+    try {
+      const response = await fetch("/api/admin/plan-limits", {
+        method: "GET",
+        headers: { "x-admin-email": email },
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setPlanLimits(result);
+      }
+    } catch (err) {
+      console.error("Plan limits fetch failed:", err);
+    }
+  }, []);
+
+  const handleSavePlanLimits = async () => {
+    setLimitsLoading(true);
+    try {
+      const response = await fetch("/api/admin/plan-limits", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-email": adminEmail,
+        },
+        body: JSON.stringify(planLimits),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "수정 실패");
+      alert("✅ 요금제별 일일 사용 제한이 수정되었습니다.");
+    } catch (err: any) {
+      alert(`수정 실패: ${err.message}`);
+    } finally {
+      setLimitsLoading(false);
+    }
+  };
 
   const fetchUsageAnalytics = useCallback(async () => {
     const { data } = await supabase
@@ -305,6 +352,7 @@ export default function APIVaultAdminPage() {
       setIsAdmin(true);
       setAdminEmail(email);
       await fetchKeys(email);
+      await fetchPlanLimits(email);
       await fetchUsageAnalytics();
     };
 
@@ -313,7 +361,7 @@ export default function APIVaultAdminPage() {
     return () => {
       isMounted = false;
     };
-  }, [supabase, router, fetchKeys]);
+  }, [supabase, router, fetchKeys, fetchPlanLimits]);
 
   const filteredKeys = useMemo(
     () => apiKeys.filter((key) => (key.provider_type || "ai") === activeType),
@@ -360,7 +408,7 @@ export default function APIVaultAdminPage() {
     setIsAdding(true);
   };
 
-  const handleEditClick = (item: ApiVaultItem) => {
+  const handleEditClick = useCallback((item: ApiVaultItem) => {
     setNewKey({
       key: "",
       label: item.label || "",
@@ -385,13 +433,61 @@ export default function APIVaultAdminPage() {
 
     setEditingId(item.id);
     setIsAdding(true);
-  };
+  }, []);
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setIsAdding(false);
     setEditingId(null);
     setNewKey(emptyKey);
-  };
+  }, []);
+
+  const handlePrevKey = useCallback(() => {
+    if (!editingId || filteredKeys.length <= 1) return;
+    const currentIndex = filteredKeys.findIndex((k) => k.id === editingId);
+    if (currentIndex === -1) return;
+
+    const prevIndex = (currentIndex - 1 + filteredKeys.length) % filteredKeys.length;
+    handleEditClick(filteredKeys[prevIndex]);
+  }, [editingId, filteredKeys, handleEditClick]);
+
+  const handleNextKey = useCallback(() => {
+    if (!editingId || filteredKeys.length <= 1) return;
+    const currentIndex = filteredKeys.findIndex((k) => k.id === editingId);
+    if (currentIndex === -1) return;
+
+    const nextIndex = (currentIndex + 1) % filteredKeys.length;
+    handleEditClick(filteredKeys[nextIndex]);
+  }, [editingId, filteredKeys, handleEditClick]);
+
+  useEffect(() => {
+    if (!isAdding) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeModal();
+      } else if (event.key === "ArrowLeft") {
+        // Prevent arrow key default behavior to avoid text cursor jumping when typing in inputs
+        const activeEl = document.activeElement;
+        const isTyping = activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA");
+        if (!isTyping) {
+          event.preventDefault();
+          handlePrevKey();
+        }
+      } else if (event.key === "ArrowRight") {
+        const activeEl = document.activeElement;
+        const isTyping = activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA");
+        if (!isTyping) {
+          event.preventDefault();
+          handleNextKey();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isAdding, handlePrevKey, handleNextKey, closeModal]);
 
   const handleSaveKey = async () => {
     if (!newKey.label.trim() || !newKey.display_name.trim()) {
@@ -467,89 +563,127 @@ export default function APIVaultAdminPage() {
   const issueKeys = apiKeys.filter((key) => key.status !== "active" || key.last_error).length;
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#020406] font-sans text-slate-100">
-      <div className="flex flex-1 overflow-hidden pt-20 text-left">
-        <main className="custom-scrollbar flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-[1800px] p-8 pb-32 lg:p-12">
-            <header className="mb-10">
-              <h1 className="flex items-center gap-3 text-4xl font-black uppercase italic tracking-tighter text-white">
-                <ShieldAlert className="h-10 w-10 text-red-500" />
-                Admin <span className="text-red-500">API Gateway Vault</span>
-              </h1>
-              <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                AI · Image · Video · Voice · Search API 통합 관리 / DB는 하나, 화면은 카테고리별 분리
-              </p>
-            </header>
+    <div className="mx-auto max-w-[1800px] p-6 pb-24 text-left font-sans text-slate-100">
+      <header className="mb-6">
+        <h1 className="flex items-center gap-2.5 text-2xl font-black uppercase italic tracking-tighter text-white">
+          <ShieldAlert className="h-7 w-7 text-red-500" />
+          Admin <span className="text-red-500">API Gateway Vault</span>
+        </h1>
+        <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-slate-500">
+          AI · Image · Video · Voice · Search API 통합 관리 / DB는 하나, 화면은 카테고리별 분리
+        </p>
+      </header>
 
-            <section className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-4">
-              {[
-                ["API Keys", apiKeys.length, Database, "text-white"],
+      <section className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-6">
+        {[
+          ["API Keys", apiKeys.length, Database, "text-white"],
 
-                ["AI Calls", usageStats.totalCalls, Activity, "text-blue-400"],
+          ["AI Calls", usageStats.totalCalls, Activity, "text-blue-400"],
 
-                ["Monthly Calls", usageStats.monthlyCalls, Zap, "text-emerald-400"],
+          ["Monthly Calls", usageStats.monthlyCalls, Zap, "text-emerald-400"],
 
-                [
-                  "Estimated Cost",
-                  `$${usageStats.estimatedCost.toFixed(2)}`,
-                  DollarSign,
-                  "text-yellow-400",
-                ],
-              ].map(([label, value, Icon, color]: any) => (
-                <div key={label} className="rounded-3xl border border-zinc-800 bg-zinc-900/40 p-6">
-                  <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                    <Icon size={14} />
-                    {label}
-                  </p>
-                  <p className={`mt-2 text-3xl font-black ${color}`}>{value}</p>
+          [
+            "Estimated Cost",
+            `$${usageStats.estimatedCost.toFixed(2)}`,
+            DollarSign,
+            "text-yellow-400",
+          ],
+        ].map(([label, value, Icon, color]: any) => (
+          <div key={label} className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4">
+            <p className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-zinc-500">
+              <Icon size={12} />
+              {label}
+            </p>
+            <p className={`mt-1.5 text-xl font-black ${color}`}>{value}</p>
+          </div>
+        ))}
+
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4">
+          <h3 className="mb-2 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-blue-400">
+            <BarChart3 size={12} />
+            Provider Analytics
+          </h3>
+          <div className="space-y-1 text-xs">
+            {providerUsage.length === 0 ? (
+              <p className="text-[10px] text-zinc-600 font-bold">No data</p>
+            ) : (
+              providerUsage.slice(0, 2).map((item) => (
+                <div key={item.provider} className="flex justify-between">
+                  <span className="text-zinc-400 font-bold truncate max-w-[70px]">{item.provider}</span>
+                  <span className="font-black text-blue-400">{item.count}</span>
                 </div>
-              ))}
-            </section>
+              ))
+            )}
+          </div>
+        </div>
 
-            <section className="mb-8 grid gap-6 lg:grid-cols-2">
-
-              <div className="rounded-3xl border border-zinc-800 bg-zinc-900/40 p-6">
-                <h3 className="mb-4 flex items-center gap-2 text-sm font-black uppercase text-blue-400">
-                  <BarChart3 size={16} />
-                  Provider Analytics
-                </h3>
-
-                <div className="space-y-2">
-                  {providerUsage.map((item) => (
-                    <div
-                      key={item.provider}
-                      className="flex justify-between text-sm"
-                    >
-                      <span>{item.provider}</span>
-                      <span className="font-black text-blue-400">
-                        {item.count}
-                      </span>
-                    </div>
-                  ))}
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4">
+          <h3 className="mb-2 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-400">
+            <PieChart size={12} />
+            Studio Analytics
+          </h3>
+          <div className="space-y-1 text-xs">
+            {studioUsage.length === 0 ? (
+              <p className="text-[10px] text-zinc-600 font-bold">No data</p>
+            ) : (
+              studioUsage.slice(0, 2).map((item) => (
+                <div key={item.studio} className="flex justify-between">
+                  <span className="text-zinc-400 font-bold truncate max-w-[70px]">{item.studio}</span>
+                  <span className="font-black text-emerald-400">{item.count}</span>
                 </div>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="mb-4 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 shadow-2xl backdrop-blur-xl">
+        <h3 className="mb-3 flex items-center gap-2 text-xs font-black uppercase italic text-white">
+          <ShieldAlert className="text-red-500" size={14} />
+          요금제별 일일 사용 제한 설정 (Plan Daily Limits)
+        </h3>
+        
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
+          <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-5">
+            {[
+              ["free", "Free Trial (무료체험)"],
+              ["creator", "Creator (크리에이터)"],
+              ["pro", "Pro (프로)"],
+              ["business", "Business (비즈니스)"],
+              ["admin", "Admin (관리자)"],
+            ].map(([key, label]) => (
+              <div key={key} className="space-y-1">
+                <label className="ml-1 text-[9px] font-black uppercase tracking-widest text-blue-500">
+                  {label}
+                </label>
+                <input
+                  type="number"
+                  value={planLimits[key] ?? ""}
+                  onChange={(e) =>
+                    setPlanLimits({
+                      ...planLimits,
+                      [key]: Number(e.target.value),
+                    })
+                  }
+                  className="input-vault !py-2 !px-3 text-xs"
+                  placeholder="한도 입력"
+                />
               </div>
+            ))}
+          </div>
 
-              <div className="rounded-3xl border border-zinc-800 bg-zinc-900/40 p-6">
-                <h3 className="mb-4 flex items-center gap-2 text-sm font-black uppercase text-emerald-400">
-                  <PieChart size={16} />
-                  Studio Analytics
-                </h3>
-
-                <div className="space-y-2">
-                  {studioUsage.map((item) => (
-                    <div
-                      key={item.studio}
-                      className="flex justify-between text-sm"
-                    >
-                      <span>{item.studio}</span>
-                      <span className="font-black text-emerald-400">
-                        {item.count}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
+          <div className="lg:w-auto">
+            <button
+              type="button"
+              onClick={handleSavePlanLimits}
+              disabled={limitsLoading}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-xs font-black uppercase text-white transition-all hover:bg-blue-500 disabled:opacity-60"
+            >
+              {limitsLoading ? "Saving..." : "Save Limits"}
+            </button>
+          </div>
+        </div>
+      </section>
 
             <section className="mb-6 flex flex-wrap gap-3">
               {PROVIDER_TYPE_OPTIONS.map((type) => {
@@ -615,7 +749,6 @@ export default function APIVaultAdminPage() {
                         <th className="px-5 py-5">Type</th>
                         <th className="px-5 py-5">Provider</th>
                         <th className="px-5 py-5">Model / API</th>
-                        <th className="px-5 py-5">Plan</th>
                         <th className="px-5 py-5 text-center">Usage</th>
                         <th className="px-5 py-5 text-center">Daily</th>
                         <th className="px-5 py-5 text-center">Monthly</th>
@@ -628,7 +761,7 @@ export default function APIVaultAdminPage() {
                     <tbody className="divide-y divide-zinc-800/30">
                       {filteredKeys.length === 0 ? (
                         <tr>
-                          <td colSpan={12} className="px-8 py-20 text-center text-xs font-bold uppercase tracking-widest text-zinc-600">
+                          <td colSpan={11} className="px-8 py-20 text-center text-xs font-bold uppercase tracking-widest text-zinc-600">
                             No keys found in this provider pool.
                           </td>
                         </tr>
@@ -653,12 +786,6 @@ export default function APIVaultAdminPage() {
 
                             <td className="px-5 py-6 text-xs font-bold text-zinc-300">{item.provider}</td>
                             <td className="px-5 py-6 text-xs font-bold text-zinc-400">{item.model}</td>
-
-                            <td className="px-5 py-6">
-                              <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[10px] font-black uppercase text-blue-300">
-                                {item.allowed_plan || "free"}
-                              </span>
-                            </td>
 
                             <td className="px-5 py-6 text-center">
                               <span className="font-black text-emerald-500">{item.today_count ?? 0}</span>
@@ -706,9 +833,6 @@ export default function APIVaultAdminPage() {
                 )}
               </div>
             </div>
-          </div>
-        </main>
-      </div>
 
       {isAdding && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/90 p-4 text-zinc-100 backdrop-blur-md">
@@ -718,9 +842,31 @@ export default function APIVaultAdminPage() {
                 <Key className="text-blue-500" size={18} />
                 {editingId ? "Update API Gateway Key" : "Add New API Gateway Key"}
               </h3>
-              <button type="button" onClick={closeModal} className="text-zinc-500 hover:text-white">
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-3">
+                {editingId && filteredKeys.length > 1 && (
+                  <div className="flex items-center gap-1 border-r border-zinc-800 pr-3">
+                    <button
+                      type="button"
+                      onClick={handlePrevKey}
+                      className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-white transition-colors"
+                      title="이전 키 (Left Arrow)"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleNextKey}
+                      className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-white transition-colors"
+                      title="다음 키 (Right Arrow)"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                )}
+                <button type="button" onClick={closeModal} className="text-zinc-500 hover:text-white transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             <div className="max-h-[75vh] space-y-5 overflow-y-auto p-8 text-left">
@@ -775,7 +921,7 @@ export default function APIVaultAdminPage() {
                 />
               </Field>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <Field label="Status">
                   <select value={newKey.status} onChange={(event) => setNewKey({ ...newKey, status: event.target.value })} className="input-vault">
                     <option value="active">active</option>
@@ -785,22 +931,12 @@ export default function APIVaultAdminPage() {
                   </select>
                 </Field>
 
-                <Field label="Allowed Plan">
-                  <select value={newKey.allowed_plan} onChange={(event) => setNewKey({ ...newKey, allowed_plan: event.target.value })} className="input-vault">
-                    {PLAN_OPTIONS.map((plan) => (
-                      <option key={plan.value} value={plan.value}>
-                        {plan.label}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-
                 <Field label="Usage Unit">
                   <input value={newKey.usage_unit} onChange={(event) => setNewKey({ ...newKey, usage_unit: event.target.value })} placeholder="request / token / image / second" className="input-vault" />
                 </Field>
               </div>
 
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <Field label="Daily Limit">
                   <input type="number" value={newKey.daily_limit} onChange={(event) => setNewKey({ ...newKey, daily_limit: Number(event.target.value) })} className="input-vault" />
                 </Field>
@@ -811,10 +947,6 @@ export default function APIVaultAdminPage() {
 
                 <Field label="Priority">
                   <input type="number" value={newKey.priority} onChange={(event) => setNewKey({ ...newKey, priority: Number(event.target.value) })} className="input-vault" />
-                </Field>
-
-                <Field label="Cost Weight">
-                  <input type="number" value={newKey.cost_weight} onChange={(event) => setNewKey({ ...newKey, cost_weight: Number(event.target.value) })} className="input-vault" />
                 </Field>
               </div>
 

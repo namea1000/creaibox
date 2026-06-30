@@ -5,6 +5,7 @@ import {
   recordVaultFailure,
   recordVaultSuccess,
   supabaseAdmin,
+  checkAndResetDailyCounts,
 } from "@/lib/server/get-free-gemini-key";
 import { createClient } from "@/utils/supabase/server";
 
@@ -146,11 +147,9 @@ function getClientIp(req: NextRequest) {
 async function countTodayUsage({
   userId,
   ipAddress,
-  featureType,
 }: {
   userId?: string | null;
   ipAddress: string;
-  featureType: string;
 }) {
   const since = new Date();
   since.setHours(0, 0, 0, 0);
@@ -158,7 +157,6 @@ async function countTodayUsage({
   let query = supabaseAdmin
     .from("ai_generation_usage_logs")
     .select("id", { count: "exact", head: true })
-    .eq("feature_type", featureType)
     .gte("created_at", since.toISOString());
 
   if (userId) {
@@ -221,6 +219,9 @@ export async function POST(req: NextRequest) {
     error: userError,
   } = await supabase.auth.getUser();
 
+  // Run daily count reset checks asynchronously or synchronously before processing
+  await checkAndResetDailyCounts();
+
   if (userError || !user) {
     return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
   }
@@ -241,54 +242,126 @@ export async function POST(req: NextRequest) {
     const userId = body.userId || null;
     const userEmail = body.userEmail || null;
 
-    // Temporarily disabled individual user free daily limits to let all users utilize public keys for early testing.
-    // Total key usage check (today_count >= daily_limit) is still active to protect API quota.
-    /*
+    // Fetch user's membership level to match keys
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("membership_level")
+      .eq("id", user.id)
+      .single();
+
+    const userPlan = (profile?.membership_level || "free").toLowerCase();
+
+    // Query today's usage for the user across all features
     const todayUsage = await countTodayUsage({
       userId,
       ipAddress,
-      featureType,
     });
 
-    if (todayUsage >= FREE_DAILY_LIMIT) {
+    // Fetch global plan limits from admin_api_vault
+    const { data: limitsData } = await supabaseAdmin
+      .from("admin_api_vault")
+      .select("note")
+      .eq("provider", "system")
+      .eq("model", "plan_limits")
+      .maybeSingle();
+
+    let planLimits: Record<string, number> = {
+      free: 20,
+      creator: 50,
+      pro: 100,
+      business: 200,
+      admin: 1000,
+    };
+
+    if (limitsData?.note) {
+      try {
+        planLimits = JSON.parse(limitsData.note);
+      } catch (e) {
+        console.error("Failed to parse plan limits from vault note:", e);
+      }
+    }
+
+    // Get the limit for the current user's plan
+    const userDailyLimit = Number(planLimits[userPlan] ?? planLimits["free"] ?? 20);
+
+    if (todayUsage >= userDailyLimit) {
       return NextResponse.json(
         {
-          error: `공용 API 일일 사용량 ${FREE_DAILY_LIMIT}회를 초과했습니다. 사용자 정보 > API 키 관리 메뉴에서 본인의 API 키를 입력하면 개인 키로 계속 생성할 수 있습니다.`,
-          code: "FREE_DAILY_LIMIT_EXCEEDED",
+          error: `공용 API 일일 사용량 ${userDailyLimit}회를 초과했습니다. 마이페이지(APIVault)에서 개인 API Key를 등록하시면 CreAibox 의 서비스를 무제한으로 이용하실 수 있습니다.`,
+          code: "USER_DAILY_LIMIT_EXCEEDED",
         },
         { status: 429 }
       );
     }
-    */
 
-    const vaultKeys = await getActiveVaultKeys("gemini");
-
-    if (vaultKeys.length === 0) {
-      return NextResponse.json(
-        { error: "사용 가능한 공용 Gemini API Key가 없습니다." },
-        { status: 503 }
-      );
-    }
-
+    const keysToUse = await getActiveVaultKeys("gemini");
     let lastError: unknown = null;
 
-    for (const vault of vaultKeys) {
-      try {
-        if ((vault.today_count || 0) >= (vault.daily_limit || 1000)) {
+    if (keysToUse.length > 0) {
+      for (const vault of keysToUse) {
+        try {
+          // Check daily limit of the key itself
+          if ((vault.today_count || 0) >= (vault.daily_limit || 1000)) {
+            continue;
+          }
+
+          const apiKey = decryptVaultKey(vault);
+          const modelName = body.model || vault.model || DEFAULT_GEMINI_MODEL;
+          const text = await generateGeminiContent({
+            apiKey,
+            modelName,
+            prompt: body.prompt,
+            useSearch: Boolean(body.useSearch),
+            responseMimeType: body.responseMimeType,
+          });
+
+          await recordVaultSuccess(vault.id);
+
+          await logUsage({
+            userId,
+            userEmail,
+            ipAddress,
+            featureType,
+            provider: "gemini",
+            model: modelName,
+            vaultId: vault.id,
+            status: "success",
+          });
+
+          return NextResponse.json({
+            ok: true,
+            text,
+            provider: "gemini",
+            model: modelName,
+            vaultId: vault.id,
+            usedSearch: Boolean(body.useSearch),
+          });
+        } catch (error: unknown) {
+          lastError = error;
+          await recordVaultFailure(vault.id, getErrorMessage(error));
+
+          if (!isHighDemandError(error)) {
+            continue;
+          }
+
           continue;
         }
+      }
+    }
 
-        const apiKey = decryptVaultKey(vault);
-        const modelName = body.model || vault.model || DEFAULT_GEMINI_MODEL;
+    // Fall back to .env.local GEMINI_API_KEY if vault keys are exhausted, fail, or empty
+    const systemApiKey = process.env.GEMINI_API_KEY;
+
+    if (systemApiKey) {
+      try {
+        const modelName = body.model || DEFAULT_GEMINI_MODEL;
         const text = await generateGeminiContent({
-          apiKey,
+          apiKey: systemApiKey,
           modelName,
           prompt: body.prompt,
           useSearch: Boolean(body.useSearch),
           responseMimeType: body.responseMimeType,
         });
-
-        await recordVaultSuccess(vault.id);
 
         await logUsage({
           userId,
@@ -297,7 +370,6 @@ export async function POST(req: NextRequest) {
           featureType,
           provider: "gemini",
           model: modelName,
-          vaultId: vault.id,
           status: "success",
         });
 
@@ -306,18 +378,11 @@ export async function POST(req: NextRequest) {
           text,
           provider: "gemini",
           model: modelName,
-          vaultId: vault.id,
           usedSearch: Boolean(body.useSearch),
         });
       } catch (error: unknown) {
         lastError = error;
-        await recordVaultFailure(vault.id, getErrorMessage(error));
-
-        if (!isHighDemandError(error)) {
-          continue;
-        }
-
-        continue;
+        console.error("System Gemini API Key execution failed:", error);
       }
     }
 
@@ -328,13 +393,13 @@ export async function POST(req: NextRequest) {
       featureType,
       provider: "gemini",
       status: "error",
-      errorMessage: getErrorMessage(lastError) || "unknown error",
+      errorMessage: getErrorMessage(lastError) || "No available Gemini API Keys",
     });
 
     return NextResponse.json(
       {
-        error: getFriendlyAiErrorMessage(lastError),
-        rawError: getErrorMessage(lastError),
+        error: getFriendlyAiErrorMessage(lastError || "No available keys"),
+        rawError: getErrorMessage(lastError || "No available keys"),
       },
       { status: 503 }
     );

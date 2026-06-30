@@ -75,7 +75,10 @@ export async function GET(req: NextRequest) {
         user.user_metadata?.full_name ||
         user.user_metadata?.name ||
         "Unknown",
+      nickname: profile?.nickname || null,
+      brandId: profile?.brand_id || null,
       role: profile?.role || "FREE",
+      membershipLevel: profile?.membership_level || "free",
       status: profile?.status || "ACTIVE",
       todayUsage,
       totalUsage: logs.length,
@@ -124,8 +127,8 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // 역할이 ADMIN에서 다른 권한(FREE, PAID 등)으로 강제 강등될 때, 화이트리스트에서도 자동 탈락시킴 (안전장치)
-  if (body.role !== undefined && body.role !== "ADMIN") {
+  // 역할이 ADMIN에서 다른 권한으로 강제 강등될 때, 화이트리스트에서도 자동 탈락시킴 (안전장치)
+  if (body.membershipLevel !== undefined && body.membershipLevel.toLowerCase() !== "admin") {
     const { data: targetUser } = await supabaseAdmin.auth.admin.getUserById(body.id);
     const targetEmail = targetUser?.user?.email;
     if (targetEmail) {
@@ -138,16 +141,15 @@ export async function PATCH(req: NextRequest) {
     updated_at: new Date().toISOString(),
   };
 
-  if (body.role !== undefined) {
-    updateData.role = body.role;
-    updateData.membership_level =
-      body.role === "PAID"
-        ? "pro"
-        : body.role === "ADMIN"
-          ? "admin"
-          : body.role === "MANAGER"
-            ? "manager"
-            : "free";
+  if (body.membershipLevel !== undefined) {
+    const ml = body.membershipLevel.toLowerCase();
+    updateData.membership_level = ml;
+    updateData.role =
+      ml === "admin"
+        ? "ADMIN"
+        : ml === "free"
+          ? "FREE"
+          : "PAID";
   }
 
   if (body.status !== undefined) {

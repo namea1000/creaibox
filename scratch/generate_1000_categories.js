@@ -605,24 +605,29 @@ function generateCategories() {
     });
   });
 
-  // 봄/여름(SS) 및 가을/겨울(FW) 시즌 바리에이션 결합하여 정확히 2,400개 행으로 확장
-  const variations = [
-    { suffix: " (봄/여름 시즌)" },
-    { suffix: " (가을/겨울 시즌)" }
-  ];
-
   const finalCategories = [];
   let finalId = 1;
+  const seasonalPrimaries = ["자연 & 풍경", "동식물 & 자연생태", "시즌 & 기념일"];
+  const seasons = [" (봄)", " (여름)", " (가을)", " (겨울)"];
 
   categories.forEach((item) => {
-    variations.forEach((v) => {
+    if (seasonalPrimaries.includes(item.primary)) {
+      seasons.forEach((season) => {
+        finalCategories.push({
+          id: finalId++,
+          primary: item.primary,
+          secondary: item.secondary,
+          tertiary: item.tertiary + season
+        });
+      });
+    } else {
       finalCategories.push({
         id: finalId++,
         primary: item.primary,
         secondary: item.secondary,
-        tertiary: item.tertiary + v.suffix
+        tertiary: item.tertiary
       });
-    });
+    }
   });
 
   console.log(`Generated exactly ${finalCategories.length} category items!`);
@@ -631,7 +636,7 @@ function generateCategories() {
   const targetPath = path.join(__dirname, "categories_1000.json");
   fs.writeFileSync(targetPath, JSON.stringify(finalCategories, null, 2), "utf8");
 
-  console.log(`Successfully wrote 2,400 categories data to: ${targetPath}`);
+  console.log(`Successfully wrote ${finalCategories.length} categories data to: ${targetPath}`);
 }
 
 generateCategories();

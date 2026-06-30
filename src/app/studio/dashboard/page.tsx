@@ -209,106 +209,100 @@ export default function UserDashboardPage() {
   const todayLimit = plan === "free" ? 3 : plan === "pro" ? 100 : "∞";
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#05070a] font-sans text-zinc-100">
-      <div className="flex flex-1 overflow-hidden pt-20">
-        <main className="custom-scrollbar flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-[1500px] p-8 pb-32 lg:p-12">
-            <header className="mb-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-              <div>
-                <h1 className="flex items-center gap-3 text-4xl font-black uppercase italic tracking-tighter text-white">
-                  <LayoutDashboard className="h-10 w-10 text-blue-500" />
-                  My <span className="text-blue-500">Dashboard</span>
-                </h1>
-                <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                  내 콘텐츠 · AI 사용량 · API 연결 상태 통합 현황
+    <div className="mx-auto max-w-[1500px] p-6 pb-24 text-left font-sans text-slate-100">
+      <header className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+        <div>
+          <h1 className="flex items-center gap-2.5 text-2xl font-black uppercase italic tracking-tighter text-white">
+            <LayoutDashboard className="h-7 w-7 text-blue-500" />
+            My <span className="text-blue-500">Dashboard</span>
+          </h1>
+          <p className="mt-1 text-[9px] font-black uppercase tracking-widest text-zinc-500">
+            내 콘텐츠 · AI 사용량 · API 연결 상태 통합 현황
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={loadDashboard}
+          className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2 text-xs font-black uppercase text-zinc-300 hover:text-white"
+        >
+          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+          새로고침
+        </button>
+      </header>
+
+      <section className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard icon={FileText} label="전체 글쓰기 콘텐츠" value={stats.creaiboxPosts + stats.naverPosts + stats.wordpressPosts} color="text-blue-400" />
+        <StatCard icon={Music} label="음악 / 가사 프로젝트" value={stats.musicProjects} color="text-rose-400" />
+        <StatCard icon={Zap} label="오늘 AI 사용량" value={`${stats.todayUsage} / ${todayLimit}`} color="text-amber-400" />
+        <StatCard icon={Key} label="개인 API 연결" value={stats.apiKeys} color="text-emerald-400" />
+      </section>
+
+      <section className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
+          <h2 className="mb-3.5 flex items-center gap-2 text-base font-black uppercase italic text-white">
+            <Database className="text-blue-500" size={16} />
+            콘텐츠 현황
+          </h2>
+
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <MiniCard label="Creaibox 블로그" value={stats.creaiboxPosts} />
+            <MiniCard label="네이버 글쓰기" value={stats.naverPosts} />
+            <MiniCard label="워드프레스 글쓰기" value={stats.wordpressPosts} />
+            <MiniCard label="이미지 프로젝트" value={stats.imageProjects} />
+            <MiniCard label="비디오 프로젝트" value={stats.videoProjects} />
+            <MiniCard label="전체 AI 사용" value={stats.totalUsage} />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 p-5">
+          <h2 className="mb-3.5 flex items-center gap-2 text-base font-black uppercase italic text-white">
+            <ShieldCheck className="text-blue-400" size={16} />
+            계정 상태
+          </h2>
+
+          <div className="space-y-2 text-xs">
+            <InfoRow label="닉네임" value={profile?.nickname || user?.email?.split("@")[0] || "-"} />
+            <InfoRow label="플랜" value={String(plan).toUpperCase()} />
+            <InfoRow label="이메일" value={user?.email || "-"} />
+            <InfoRow label="가입일" value={user?.created_at ? new Date(user.created_at).toLocaleDateString("ko-KR") : "-"} />
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
+        <h2 className="mb-3.5 flex items-center gap-2 text-base font-black uppercase italic text-white">
+          <Clock className="text-purple-400" size={16} />
+          최근 작업
+        </h2>
+
+        {loading ? (
+          <div className="py-12 text-center text-zinc-500 text-xs">불러오는 중...</div>
+        ) : recentItems.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-zinc-800 py-12 text-center text-xs font-bold text-zinc-600">
+            아직 생성한 콘텐츠가 없습니다.
+          </div>
+        ) : (
+          <div className="divide-y divide-zinc-800/50">
+            {recentItems.map((item) => (
+              <div key={`${item.type}-${item.id}`} className="flex items-center justify-between py-2.5">
+                <div>
+                  <p className="text-xs font-black text-white">{item.title}</p>
+                  <p className="mt-0.5 text-[10px] font-bold text-zinc-500">{item.type}</p>
+                </div>
+                <p className="text-[10px] font-bold text-zinc-600">
+                  {item.created_at
+                    ? new Date(item.created_at).toLocaleString("ko-KR")
+                    : "-"}
                 </p>
               </div>
-
-              <button
-                type="button"
-                onClick={loadDashboard}
-                className="flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-3 text-xs font-black uppercase text-zinc-300 hover:text-white"
-              >
-                <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-                새로고침
-              </button>
-            </header>
-
-            <section className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-              <StatCard icon={FileText} label="전체 글쓰기 콘텐츠" value={stats.creaiboxPosts + stats.naverPosts + stats.wordpressPosts} color="text-blue-400" />
-              <StatCard icon={Music} label="음악 / 가사 프로젝트" value={stats.musicProjects} color="text-rose-400" />
-              <StatCard icon={Zap} label="오늘 AI 사용량" value={`${stats.todayUsage} / ${todayLimit}`} color="text-amber-400" />
-              <StatCard icon={Key} label="개인 API 연결" value={stats.apiKeys} color="text-emerald-400" />
-            </section>
-
-            <section className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-              <div className="rounded-[32px] border border-zinc-800 bg-zinc-900/40 p-7">
-                <h2 className="mb-5 flex items-center gap-2 text-xl font-black uppercase italic text-white">
-                  <Database className="text-blue-500" size={22} />
-                  콘텐츠 현황
-                </h2>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                  <MiniCard label="Creaibox 블로그" value={stats.creaiboxPosts} />
-                  <MiniCard label="네이버 글쓰기" value={stats.naverPosts} />
-                  <MiniCard label="워드프레스 글쓰기" value={stats.wordpressPosts} />
-                  <MiniCard label="이미지 프로젝트" value={stats.imageProjects} />
-                  <MiniCard label="비디오 프로젝트" value={stats.videoProjects} />
-                  <MiniCard label="전체 AI 사용" value={stats.totalUsage} />
-                </div>
-              </div>
-
-              <div className="rounded-[32px] border border-blue-500/20 bg-blue-500/10 p-7">
-                <h2 className="mb-5 flex items-center gap-2 text-xl font-black uppercase italic text-white">
-                  <ShieldCheck className="text-blue-400" size={22} />
-                  계정 상태
-                </h2>
-
-                <div className="space-y-4 text-sm">
-                  <InfoRow label="닉네임" value={profile?.nickname || user?.email?.split("@")[0] || "-"} />
-                  <InfoRow label="플랜" value={String(plan).toUpperCase()} />
-                  <InfoRow label="이메일" value={user?.email || "-"} />
-                  <InfoRow label="가입일" value={user?.created_at ? new Date(user.created_at).toLocaleDateString("ko-KR") : "-"} />
-                </div>
-              </div>
-            </section>
-
-            <section className="rounded-[32px] border border-zinc-800 bg-zinc-900/40 p-7">
-              <h2 className="mb-5 flex items-center gap-2 text-xl font-black uppercase italic text-white">
-                <Clock className="text-purple-400" size={22} />
-                최근 작업
-              </h2>
-
-              {loading ? (
-                <div className="py-20 text-center text-zinc-500">불러오는 중...</div>
-              ) : recentItems.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-zinc-800 py-16 text-center text-sm font-bold text-zinc-600">
-                  아직 생성한 콘텐츠가 없습니다.
-                </div>
-              ) : (
-                <div className="divide-y divide-zinc-800/50">
-                  {recentItems.map((item) => (
-                    <div key={`${item.type}-${item.id}`} className="flex items-center justify-between py-4">
-                      <div>
-                        <p className="text-sm font-black text-white">{item.title}</p>
-                        <p className="mt-1 text-[11px] font-bold text-zinc-500">{item.type}</p>
-                      </div>
-                      <p className="text-[11px] font-bold text-zinc-600">
-                        {item.created_at
-                          ? new Date(item.created_at).toLocaleString("ko-KR")
-                          : "-"}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-            <footer className="mt-16 pb-10 text-center text-[10px] font-black uppercase italic tracking-[0.4em] text-zinc-800">
-              Creaibox Personal AI Workspace Dashboard
-            </footer>
+            ))}
           </div>
-        </main>
-      </div>
+        )}
+      </section>
+      <footer className="mt-8 pb-4 text-center text-[9px] font-black uppercase italic tracking-[0.4em] text-zinc-800">
+        Creaibox Personal AI Workspace Dashboard
+      </footer>
     </div>
   );
 }
@@ -325,28 +319,30 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="rounded-[28px] border border-zinc-800 bg-zinc-900/40 p-6 shadow-xl">
-      <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-800 ${color}`}>
-        <Icon size={22} />
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 shadow-xl">
+      <div className="flex items-center gap-2.5 mb-2">
+        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-800/80 ${color}`}>
+          <Icon size={16} />
+        </div>
+        <p className="text-[9px] font-black uppercase tracking-[0.15em] text-zinc-500">{label}</p>
       </div>
-      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-600">{label}</p>
-      <p className="mt-2 text-3xl font-black italic tracking-tighter text-white">{value}</p>
+      <p className="mt-1 text-xl font-black italic tracking-tighter text-white">{value}</p>
     </div>
   );
 }
 
 function MiniCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-black/30 p-5">
-      <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600">{label}</p>
-      <p className="mt-2 text-2xl font-black text-white">{value}</p>
+    <div className="rounded-xl border border-zinc-800 bg-black/20 p-3.5">
+      <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">{label}</p>
+      <p className="mt-1 text-lg font-black text-white">{value}</p>
     </div>
   );
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between gap-4 border-b border-white/10 pb-3 last:border-b-0">
+    <div className="flex justify-between gap-4 border-b border-white/5 pb-2 last:border-b-0">
       <span className="font-bold text-zinc-400">{label}</span>
       <span className="text-right font-black text-white">{value}</span>
     </div>

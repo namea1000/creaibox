@@ -6,6 +6,7 @@ import {
   recordVaultSuccess,
   supabaseAdmin,
 } from "@/lib/server/get-free-gemini-key";
+import { decryptApiKey } from "@/lib/server/api-vault-crypto";
 import { createClient } from "@/utils/supabase/server";
 
 const DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite";
@@ -96,32 +97,114 @@ export async function POST(req: NextRequest) {
       throw new Error("가용한 Gemini API 키가 존재하지 않습니다. (관리자 금고 또는 로컬 환경변수 확인 필요)");
     }
 
-    // 4. Construct Prompt matching 수석 컨설턴트 톤앤매너
-    const prompt = `너는 급상승하는 유튜브 트렌드 영상을 날카롭게 분석하는 전문 수석 크리에이터 컨설턴트이다.
-다음 유튜브 영상의 상세 메타데이터를 보고, 크리에이터들에게 인사이트를 주는 고품격 분석 보고서를 작성해줘.
+    // 4. Retrieve YouTube Key from Vault to fetch Channel Info and Comments
+    let youtubeApiKey = "";
+    try {
+      const { data: vaultKeys, error: vaultError } = await supabaseAdmin
+        .from("admin_api_vault")
+        .select("key")
+        .eq("provider", "youtube")
+        .eq("status", "active")
+        .order("priority", { ascending: true })
+        .order("today_count", { ascending: true })
+        .limit(1);
 
-[영상 메타데이터]
+      if (!vaultError && vaultKeys && vaultKeys.length > 0) {
+        youtubeApiKey = decryptApiKey(vaultKeys[0].key);
+      }
+    } catch (err) {
+      console.warn("Failed to retrieve YouTube key from vault for additional analysis:", err);
+    }
+
+    // 5. Fetch Channel Statistics
+    let channelStats: any = null;
+    const channelId = videoMetadata?.snippet?.channelId;
+    if (youtubeApiKey && channelId) {
+      try {
+        const channelUrl = `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelId}&key=${youtubeApiKey}`;
+        const channelRes = await fetch(channelUrl);
+        if (channelRes.ok) {
+          const channelData = await channelRes.json();
+          channelStats = channelData.items?.[0]?.statistics || null;
+        }
+      } catch (err) {
+        console.warn("Failed to fetch channel statistics for analysis:", err);
+      }
+    }
+
+    // 6. Download and convert the video's thumbnail image to Base64 in-memory for Multimodal Vision Analysis
+    let base64Image = "";
+    const thumbnailUrl = videoMetadata?.snippet?.thumbnails?.high?.url || videoMetadata?.snippet?.thumbnails?.medium?.url || videoMetadata?.snippet?.thumbnails?.default?.url;
+    if (thumbnailUrl) {
+      try {
+        const imgRes = await fetch(thumbnailUrl);
+        if (imgRes.ok) {
+          const buffer = await imgRes.arrayBuffer();
+          base64Image = Buffer.from(buffer).toString("base64");
+        }
+      } catch (err) {
+        console.warn("Failed to convert thumbnail image for multimodal analysis:", err);
+      }
+    }
+
+    // 7. Calculate Statistics & Outlier Ratio
+    const viewCount = Number(statistics?.viewCount || 0);
+    const likeCount = Number(statistics?.likeCount || 0);
+    const commentCount = Number(statistics?.commentCount || 0);
+    const subscriberCount = channelStats ? Number(channelStats.subscriberCount || 0) : 0;
+
+    let outlierRatioStr = "계산 불가 (채널 데이터 부족)";
+    if (subscriberCount > 0) {
+      const ratio = viewCount / subscriberCount;
+      outlierRatioStr = `${ratio.toFixed(1)}배 (${viewCount.toLocaleString()}회 조회 / 구독자 ${subscriberCount.toLocaleString()}명)`;
+    }
+
+    // 8. Build Prompt with rich statistics and instructions
+    const prompt = `너는 유튜브 알고리즘과 크리에이터 기획 분석 전문가이자 수석 컨설턴트이다.
+다음 유튜브 트렌드 영상의 메타데이터, 채널 통계, 그리고 전달된 썸네일 이미지(멀티모달)를 종합적으로 분석하여 최고의 인사이트를 제공하는 보고서를 작성하라.
+
+[1. 영상 기본 정보]
 - 제목: ${title || "제목 없음"}
 - 채널명: ${channelTitle || "채널 정보 없음"}
 - 태그: ${tags && tags.length > 0 ? tags.join(", ") : "지정된 태그 없음"}
-- 조회수: ${Number(statistics?.viewCount || 0).toLocaleString()}회
-- 좋아요수: ${Number(statistics?.likeCount || 0).toLocaleString()}개
-- 댓글수: ${Number(statistics?.commentCount || 0).toLocaleString()}개
-- 본문 설명글 요약:
-${description ? description.substring(0, 1500) : "본문 설명 없음"}
+- 조회수: ${viewCount.toLocaleString()}회
+- 좋아요수: ${likeCount.toLocaleString()}개
+- 댓글수: ${commentCount.toLocaleString()}개
+- 설명글 요약:
+${description ? description.substring(0, 800) : "본문 설명 없음"}
+
+[2. 채널 성과 & 아웃라이어 파워]
+- 채널 구독자 수: ${subscriberCount > 0 ? subscriberCount.toLocaleString() + "명" : "정보 없음"}
+- 총 업로드 동영상 수: ${channelStats?.videoCount ? Number(channelStats.videoCount).toLocaleString() + "개" : "정보 없음"}
+- 구독자 대비 조회수 배수 (Outlier Ratio): ${outlierRatioStr}
+* 분석 가이드: 배수가 1.0배 미만이면 일반적인 기존 팬층(구독자) 기반의 노출이며, 3배~10배 이상일 경우 채널 파워보다 '영상 기획 및 썸네일'이 압도적이어서 외부 탐색 홈피드 알고리즘의 대폭 추천을 받아 떡상한 '순수 기획 흥행작'입니다.
 
 [보고서 작성 규칙]
-아래 3가지 항목에 대해 명확한 소제목 마크다운 서식을 사용하여 한국어로 구체적이고 전문적으로 분석해줘.
-어조는 프로페셔널하며 신뢰감 있는 톤앤매너로 작성하고, 불필요한 서론(인사말이나 "네, 분석해드리겠습니다" 같은 단어)은 완전히 배제하고 즉시 마크다운 소제목으로 내용을 시작해줘.
+소제목 마크다운 서식을 사용하여 한국어로 구체적이고 전문적으로 분석해줘.
+인사말이나 "네, 분석해 드리겠습니다" 같은 서론은 완전히 배제하고 즉시 1번 항목 소제목으로 보고서를 바로 시작하라.
+
+아래 3가지 항목을 깊이 있게 다뤄라:
 
 1. **시청자를 매료한 핵심 바이럴 요인 (Viral Code)**
-   - 이 영상이 어떤 대중 심리, 썸네일/제목 어그로 공식, 또는 이슈 타이밍을 파고들어 바이럴 흥행을 일으켰는지 크리에이터 관점에서 그 기획 코드를 날카롭게 짚어줘.
+   - 영상의 전체적인 바이럴 코드 및 흥행 기획 요소를 분석하라.
+   - 특히, 함께 전달된 썸네일 이미지의 시각적 요소(구도, 캐릭터 표정, 강조 텍스트, 색 대비 등)가 클릭율(CTR)을 높이는데 어떻게 기여했는지 멀티모달(시각 분석) 관점에서 전문적으로 평가하라.
 
 2. **타겟 키워드 및 태그의 알고리즘 유효성 (Keyword & Tag Engine)**
-   - 영상의 제목과 태그, 본문 설명글에 기입된 키워드가 유튜브 알고리즘(추천/검색)에 어떻게 매핑되어 노출 가치를 획득했는지 유용성을 분석해줘.
+   - 검색 노출 및 추천 피드(Home Feed) 선점을 이끈 키워드 전략 분석.
+   - 위에서 계산된 **구독자 대비 조회수 배수 (Outlier Ratio)**를 토대로 이 영상의 '순수 기획 파괴력'을 정밀 진단하라.
 
 3. **내 채널을 위한 크리에이박스 변형 기획안 (Remix Blueprint)**
-   - 일반 크리에이터가 이 대박 기획(영상 구성, 후킹 방법, 앵글 스위칭)을 자신의 채널 테마에 맞춰 안전하고 독창적으로 모방/변형하여 2차 제작할 수 있는 기획 청사진을 구체적 시나리오 예시와 함께 제시해줘.`;
+   - 이 영상의 흥행 공식을 벤치마킹하여 일반 크리에이터가 자신의 채널 성격에 맞게 2차 변형/Remix하여 안전하게 제작할 수 있는 기획 청사진 및 구체적 오프닝/후킹 스크립트 시나리오 예시 제시.`;
+
+    const promptParts: any[] = [{ text: prompt }];
+    if (base64Image) {
+      promptParts.push({
+        inlineData: {
+          mimeType: "image/jpeg",
+          data: base64Image,
+        },
+      });
+    }
 
     const modelPath = `models/${DEFAULT_GEMINI_MODEL}`;
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/${modelPath}:generateContent?key=${apiKey}`;
@@ -133,7 +216,7 @@ ${description ? description.substring(0, 1500) : "본문 설명 없음"}
         contents: [
           {
             role: "user",
-            parts: [{ text: prompt }],
+            parts: promptParts,
           },
         ],
       }),
@@ -151,10 +234,10 @@ ${description ? description.substring(0, 1500) : "본문 설명 없음"}
       await recordVaultSuccess(vaultId);
     }
 
-    // 5. Store Cache to Memory first (100% reliable fallback)
+    // 10. Store Cache to Memory first (100% reliable fallback)
     memoryCache.set(cleanVideoId, { content: generatedText, timestamp: Date.now() });
 
-    // 6. Store Cache to DB (using upsert to avoid primary key duplicate exceptions)
+    // 11. Store Cache to DB (using upsert to avoid primary key duplicate exceptions)
     let dbUpsertErrorMsg = null;
     try {
       const { error: upsertErr } = await supabaseAdmin.from("youtube_video_analysis").upsert(

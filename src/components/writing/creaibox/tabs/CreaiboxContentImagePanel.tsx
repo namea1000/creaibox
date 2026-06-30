@@ -413,7 +413,7 @@ export default function CreaiboxContentImagePanel({ data }: CreaiboxContentImage
                       className="group relative aspect-square rounded-lg border border-zinc-800 bg-zinc-950 overflow-hidden cursor-pointer"
                       onClick={() => addToQueue(img)}
                     >
-                      <img src={img.url} alt="shared" className="w-full h-full object-cover transition group-hover:scale-105" />
+                      <img src={(img.url.includes("googleusercontent.com") || img.url.includes("drive.google.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(img.url)}` : img.url} alt="shared" className="w-full h-full object-cover transition group-hover:scale-105" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
                         <PlusCircle size={18} className="text-sky-300" />
                       </div>
@@ -702,7 +702,7 @@ export default function CreaiboxContentImagePanel({ data }: CreaiboxContentImage
                 className="group relative h-16 w-16 rounded-lg border border-zinc-800 bg-zinc-950 overflow-hidden shrink-0 cursor-pointer hover:border-sky-500 transition shadow-md"
                 title={`${item.title} (클릭하여 커서 위치 삽입 / 드래그 지원)`}
               >
-                <img src={item.url} alt="queue-thumb" className="w-full h-full object-cover" />
+                <img src={(item.url.includes("googleusercontent.com") || item.url.includes("drive.google.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(item.url)}` : item.url} alt="queue-thumb" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition flex flex-col items-center justify-center text-[9px] font-black text-zinc-300">
                   <Check size={12} className="text-emerald-400" />
                   <span>본문 삽입</span>

@@ -43,7 +43,7 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
   const [prompt, setPrompt] = useState("");
   const [user, setUser] = useState<User | null>(null);
   const [nickname, setNickname] = useState("");
-  const [planName] = useState("Plus");
+  const [planName, setPlanName] = useState("Free");
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -95,18 +95,21 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
     return name.slice(0, 2).toUpperCase();
   }, [getDisplayName]);
 
-  const fetchNickname = useCallback(
+  const fetchProfile = useCallback(
     async (userId: string) => {
       try {
         const { data } = await supabase
           .from("profiles")
-          .select("nickname")
+          .select("nickname, membership_level")
           .eq("id", userId)
           .maybeSingle();
 
-        return data?.nickname ?? "";
+        return {
+          nickname: data?.nickname ?? "",
+          membershipLevel: data?.membership_level ?? "free",
+        };
       } catch {
-        return "";
+        return { nickname: "", membershipLevel: "free" };
       }
     },
     [supabase]
@@ -121,10 +124,26 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
       setUser(nextUser);
 
       if (nextUser?.id) {
-        const nextNickname = await fetchNickname(nextUser.id);
-        if (!cancelled) setNickname(nextNickname);
+        const profileData = await fetchProfile(nextUser.id);
+        if (!cancelled) {
+          setNickname(profileData.nickname);
+          
+          const rawLevel = String(profileData.membershipLevel || "free").toLowerCase();
+          const mappedLevel = rawLevel === "admin"
+            ? "Admin"
+            : rawLevel === "creator"
+            ? "Creator"
+            : rawLevel === "pro"
+            ? "Pro"
+            : rawLevel === "business"
+            ? "Business"
+            : "Free";
+            
+          setPlanName(mappedLevel);
+        }
       } else {
         setNickname("");
+        setPlanName("Free");
         setIsProfileOpen(false);
       }
 
@@ -167,7 +186,7 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
       subscription.unsubscribe();
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [fetchNickname, supabase]);
+  }, [fetchProfile, supabase]);
 
   const handlePromptSubmit = (e: React.FormEvent) => {
     e.preventDefault();

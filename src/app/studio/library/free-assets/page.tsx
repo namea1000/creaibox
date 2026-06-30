@@ -67,6 +67,7 @@ export default function FreeAssetsLibraryPage() {
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>("all");
   const [selectedGenerationType, setSelectedGenerationType] = useState<string>("all");
   const [selectedThemeCategory, setSelectedThemeCategory] = useState<string>("all");
+  const [selectedStyle, setSelectedStyle] = useState<string>("all");
   
   // Modal states
   const [selectedAsset, setSelectedAsset] = useState<FreeAsset | null>(null);
@@ -1114,7 +1115,30 @@ export default function FreeAssetsLibraryPage() {
     const matchesGenerationType =
       selectedGenerationType === "all" || asset.generationType === selectedGenerationType;
 
-    return matchesQuery && matchesAspectRatio && matchesGenerationType;
+    const matchesStyle = (() => {
+      if (selectedStyle === "all") return true;
+      
+      const styleKeywordsMap: Record<string, string[]> = {
+        photorealistic: ["photorealistic", "실사", "촬영", "photo", "cinematic", "photography", "photograph", "camera", "시네마틱"],
+        illustration: ["illustration", "일러스트", "watercolor illustration"],
+        vector: ["vector", "벡터", "icon"],
+        "3d_render": ["3d", "render", "isometric", "blender", "렌더"],
+        anime: ["anime", "애니메이션", "scenery", "shinkai"],
+        pixel_art: ["pixel", "픽셀"],
+        watercolor: ["watercolor", "수채화"],
+        line_art: ["line", "라인"],
+        seamless_pattern: ["seamless", "pattern", "패턴"],
+        retro_pop_art: ["retro", "pop", "vintage", "팝아트"]
+      };
+
+      const keywords = styleKeywordsMap[selectedStyle] || [];
+      return keywords.some(kw => 
+        asset.title.toLowerCase().includes(kw) ||
+        asset.tags.some(t => t.toLowerCase().includes(kw))
+      );
+    })();
+
+    return matchesQuery && matchesAspectRatio && matchesGenerationType && matchesStyle;
   });
 
   const popularTags = ["자연", "배경", "바다", "하늘", "여행", "힐링", "음악", "감성", "우주", "비즈니스"];
@@ -1162,6 +1186,7 @@ export default function FreeAssetsLibraryPage() {
                   onClick={() => {
                     setSelectedMediaType(tab.id);
                     setSelectedThemeCategory("all"); // Reset theme category filter
+                    setSelectedStyle("all"); // Reset style filter
                     if (audioRef.current) {
                       audioRef.current.pause();
                       setPlayingAudioId(null);
@@ -1300,6 +1325,36 @@ export default function FreeAssetsLibraryPage() {
                   </button>
                 ))}
               </div>
+
+              {/* 스타일 필터 */}
+              <div className="flex flex-wrap justify-center items-center gap-2 mt-3 pt-3 border-t border-zinc-800/45 w-full max-w-3xl">
+                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mr-2 select-none">스타일 필터</span>
+                {[
+                  { id: "all", label: "전체 스타일" },
+                  { id: "photorealistic", label: "실사 (Photorealistic)" },
+                  { id: "illustration", label: "일러스트 (Illustration)" },
+                  { id: "vector", label: "벡터 (Vector)" },
+                  { id: "3d_render", label: "3D 렌더 (3D Render)" },
+                  { id: "anime", label: "애니메이션 (Anime)" },
+                  { id: "pixel_art", label: "픽셀 아트 (Pixel Art)" },
+                  { id: "watercolor", label: "수채화 (Watercolor)" },
+                  { id: "line_art", label: "라인 아트 (Line Art)" },
+                  { id: "seamless_pattern", label: "패턴 (Seamless Pattern)" },
+                  { id: "retro_pop_art", label: "레트로 팝아트 (Retro Pop)" },
+                ].map((style) => (
+                  <button
+                    key={style.id}
+                    onClick={() => setSelectedStyle(style.id)}
+                    className={`rounded-full px-3 py-1 text-xs font-bold transition cursor-pointer ${
+                      selectedStyle === style.id
+                        ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                        : "border border-zinc-900 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                    }`}
+                  >
+                    {style.label}
+                  </button>
+                ))}
+              </div>
             </>
           )}
         </div>
@@ -1417,7 +1472,7 @@ export default function FreeAssetsLibraryPage() {
                         <div className="relative h-full w-full">
                           {/* Video Element for autoplay on hover */}
                           <video
-                            src={asset.url}
+                            src={(asset.url.includes("googleusercontent.com") || asset.url.includes("drive.google.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(asset.url)}` : asset.url}
                             muted
                             loop
                             playsInline
@@ -1436,7 +1491,7 @@ export default function FreeAssetsLibraryPage() {
                         </div>
                       ) : (
                         <img
-                          src={asset.url}
+                          src={(asset.url.includes("googleusercontent.com") || asset.url.includes("drive.google.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(asset.url)}` : asset.url}
                           alt={asset.title}
                           loading="lazy"
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1655,7 +1710,7 @@ export default function FreeAssetsLibraryPage() {
                   </div>
                 ) : selectedAsset.mediaType === "video" ? (
                   <video
-                    src={selectedAsset.url}
+                    src={(selectedAsset.url.includes("googleusercontent.com") || selectedAsset.url.includes("drive.google.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(selectedAsset.url)}` : selectedAsset.url}
                     controls
                     autoPlay
                     loop
@@ -1663,7 +1718,7 @@ export default function FreeAssetsLibraryPage() {
                   />
                 ) : (
                   <img
-                    src={selectedAsset.url}
+                    src={(selectedAsset.url.includes("googleusercontent.com") || selectedAsset.url.includes("drive.google.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(selectedAsset.url)}` : selectedAsset.url}
                     alt={selectedAsset.title}
                     className="max-h-full max-w-full rounded-none object-contain shadow-2xl"
                   />

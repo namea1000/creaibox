@@ -25,6 +25,7 @@ interface UserProfile {
   email: string;
   name: string;
   role: UserRole;
+  membershipLevel: string;
   status: UserStatus;
   todayUsage: number;
   totalUsage: number;
@@ -140,9 +141,10 @@ export default function UserManagementPage() {
   const stats = useMemo(() => {
     return {
       total: users.length,
-      admin: users.filter((u) => u.role === "ADMIN").length,
-      manager: users.filter((u) => u.role === "MANAGER").length,
-      premium: users.filter((u) => u.role === "PAID").length,
+      admin: users.filter((u) => (u.membershipLevel || "").toLowerCase() === "admin").length,
+      pro: users.filter((u) => (u.membershipLevel || "").toLowerCase() === "pro").length,
+      creator: users.filter((u) => (u.membershipLevel || "").toLowerCase() === "creator").length,
+      free: users.filter((u) => (u.membershipLevel || "").toLowerCase() === "free").length,
       banned: users.filter((u) => u.status === "BANNED").length,
     };
   }, [users]);
@@ -186,12 +188,12 @@ export default function UserManagementPage() {
 
   const updateUser = async (
     userId: string,
-    patch: Partial<Pick<UserProfile, "role" | "status">>
+    patch: Partial<Pick<UserProfile, "membershipLevel" | "status">>
   ) => {
     const target = users.find((u) => u.id === userId);
     if (!target) return;
 
-    const nextRole = patch.role || target.role;
+    const nextMembershipLevel = patch.membershipLevel || target.membershipLevel || "free";
     const nextStatus = patch.status || target.status;
 
     setSavingId(userId);
@@ -205,7 +207,7 @@ export default function UserManagementPage() {
         },
         body: JSON.stringify({
           id: userId,
-          role: nextRole,
+          membershipLevel: nextMembershipLevel,
           status: nextStatus,
         }),
       });
@@ -219,7 +221,17 @@ export default function UserManagementPage() {
       setUsers((prev) =>
         prev.map((user) =>
           user.id === userId
-            ? { ...user, role: nextRole, status: nextStatus }
+            ? {
+                ...user,
+                membershipLevel: nextMembershipLevel,
+                status: nextStatus,
+                role:
+                  nextMembershipLevel === "admin"
+                    ? "ADMIN"
+                    : nextMembershipLevel === "free"
+                    ? "FREE"
+                    : "PAID",
+              }
             : user
         )
       );
@@ -277,21 +289,17 @@ export default function UserManagementPage() {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#05070a] font-sans text-slate-100">
-      <div className="flex flex-1 overflow-hidden pt-20">
-
-        <main className="custom-scrollbar flex-1 overflow-y-auto transition-all duration-300">
-          <div className="mx-auto max-w-[1600px] p-8 pb-32 lg:p-12">
-            <header className="mb-10 flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-end">
-              <div>
-                <h1 className="flex items-center gap-3 text-4xl font-black uppercase italic tracking-tighter text-white">
-                  <ShieldCheck className="h-10 w-10 text-blue-500" />
-                  Command <span className="text-blue-500">Center</span>
-                </h1>
-                <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-                  사용자 권한 · 무료 체험 사용량 · 계정 상태 통합 관리
-                </p>
-              </div>
+    <div className="mx-auto max-w-[1600px] p-6 pb-24 text-left font-sans text-slate-100">
+      <header className="mb-6 flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-end">
+        <div>
+          <h1 className="flex items-center gap-2.5 text-2xl font-black uppercase italic tracking-tighter text-white">
+            <ShieldCheck className="h-7 w-7 text-blue-500" />
+            Command <span className="text-blue-500">Center</span>
+          </h1>
+          <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-zinc-500">
+            사용자 권한 · 무료 체험 사용량 · 계정 상태 통합 관리
+          </p>
+        </div>
 
               <div className="flex w-full gap-3 lg:w-auto">
                 <div className="relative w-full lg:w-auto">
@@ -336,22 +344,22 @@ export default function UserManagementPage() {
                   color: "text-red-500",
                 },
                 {
-                  label: "Manager",
-                  value: stats.manager,
-                  icon: Briefcase,
-                  color: "text-purple-500",
-                },
-                {
-                  label: "Premium",
-                  value: stats.premium,
+                  label: "Pro / Business",
+                  value: stats.pro + users.filter((u) => (u.membershipLevel || "").toLowerCase() === "business").length,
                   icon: Crown,
                   color: "text-yellow-500",
                 },
                 {
-                  label: "Banned",
-                  value: stats.banned,
-                  icon: Ban,
-                  color: "text-zinc-600",
+                  label: "Creator",
+                  value: stats.creator,
+                  icon: Briefcase,
+                  color: "text-purple-500",
+                },
+                {
+                  label: "Free Trial",
+                  value: stats.free,
+                  icon: Users,
+                  color: "text-zinc-500",
                 },
               ].map((stat) => (
                 <div
@@ -414,14 +422,15 @@ export default function UserManagementPage() {
                             <td className="px-8 py-6">
                               <div className="flex items-center gap-4">
                                 <div
-                                  className={`flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-black ${user.role === "ADMIN"
-                                    ? "bg-red-500/20 text-red-500"
-                                    : user.role === "MANAGER"
+                                  className={`flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-black ${
+                                    (user.membershipLevel || "").toLowerCase() === "admin"
+                                      ? "bg-red-500/20 text-red-500"
+                                      : (user.membershipLevel || "").toLowerCase() === "creator"
                                       ? "bg-purple-500/20 text-purple-500"
-                                      : user.role === "PAID"
-                                        ? "bg-yellow-500/20 text-yellow-500"
-                                        : "bg-zinc-800 text-zinc-500"
-                                    }`}
+                                      : ((user.membershipLevel || "").toLowerCase() === "pro" || (user.membershipLevel || "").toLowerCase() === "business")
+                                      ? "bg-yellow-500/20 text-yellow-500"
+                                      : "bg-zinc-800 text-zinc-500"
+                                  }`}
                                 >
                                   {user.name[0]?.toUpperCase() || "U"}
                                 </div>
@@ -439,29 +448,33 @@ export default function UserManagementPage() {
                             <td className="px-8 py-6">
                               <div className="flex flex-col gap-2">
                                 <select
-                                  value={user.role}
+                                  value={user.membershipLevel || "free"}
                                   disabled={savingId === user.id}
                                   onChange={(e) =>
                                     updateUser(user.id, {
-                                      role: e.target.value as UserRole,
+                                      membershipLevel: e.target.value,
                                     })
                                   }
-                                  className={`rounded-lg border px-3 py-2 text-[10px] font-black uppercase tracking-widest outline-none ${user.role === "ADMIN"
-                                    ? "border-red-500/20 bg-red-500/10 text-red-400"
-                                    : user.role === "MANAGER"
+                                  className={`rounded-lg border px-3 py-2 text-[10px] font-black uppercase tracking-widest outline-none ${
+                                    (user.membershipLevel || "").toLowerCase() === "admin"
+                                      ? "border-red-500/20 bg-red-500/10 text-red-400"
+                                      : (user.membershipLevel || "").toLowerCase() === "pro"
+                                      ? "border-yellow-500/20 bg-yellow-500/10 text-yellow-400"
+                                      : (user.membershipLevel || "").toLowerCase() === "business"
+                                      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                                      : (user.membershipLevel || "").toLowerCase() === "creator"
                                       ? "border-purple-500/20 bg-purple-500/10 text-purple-400"
-                                      : user.role === "PAID"
-                                        ? "border-yellow-500/20 bg-yellow-500/10 text-yellow-400"
-                                        : "border-zinc-700 bg-zinc-800/50 text-zinc-400"
-                                    }`}
+                                      : "border-zinc-700 bg-zinc-800/50 text-zinc-400"
+                                  }`}
                                 >
-                                  <option value="ADMIN">ADMIN</option>
-                                  <option value="MANAGER">MANAGER</option>
-                                  <option value="PAID">PAID</option>
-                                  <option value="FREE">FREE</option>
+                                  <option value="free">FREE TRIAL</option>
+                                  <option value="creator">CREATOR</option>
+                                  <option value="pro">PRO</option>
+                                  <option value="business">BUSINESS</option>
+                                  <option value="admin">ADMIN</option>
                                 </select>
-                                
-                                {user.role === "ADMIN" && (
+
+                                {(user.membershipLevel || "").toLowerCase() === "admin" && (
                                   <button
                                     type="button"
                                     disabled={savingId === user.id}
@@ -482,19 +495,21 @@ export default function UserManagementPage() {
                               <div className="flex flex-col gap-1.5">
                                 <div className="flex w-32 justify-between text-[9px] font-black uppercase italic text-zinc-600">
                                   <span>{user.todayUsage} Units</span>
-                                  <span>{user.role === "FREE" ? "Max 3" : "∞"}</span>
+                                  <span>{(user.membershipLevel || "").toLowerCase() === "free" ? "Max 3" : "∞"}</span>
                                 </div>
                                 <div className="h-1 w-32 overflow-hidden rounded-full bg-zinc-800">
                                   <div
-                                    className={`h-full ${user.todayUsage >= 3 && user.role === "FREE"
-                                      ? "bg-red-500 shadow-[0_0_8px_#ef4444]"
-                                      : "bg-blue-500 shadow-[0_0_8px_#3b82f6]"
-                                      }`}
+                                    className={`h-full ${
+                                      user.todayUsage >= 3 && (user.membershipLevel || "").toLowerCase() === "free"
+                                        ? "bg-red-500 shadow-[0_0_8px_#ef4444]"
+                                        : "bg-blue-500 shadow-[0_0_8px_#3b82f6]"
+                                    }`}
                                     style={{
-                                      width: `${user.role === "FREE"
-                                        ? Math.min((user.todayUsage / 3) * 100, 100)
-                                        : Math.min((user.todayUsage / 100) * 100, 100)
-                                        }%`,
+                                      width: `${
+                                        (user.membershipLevel || "").toLowerCase() === "free"
+                                          ? Math.min((user.todayUsage / 3) * 100, 100)
+                                          : Math.min((user.todayUsage / 100) * 100, 100)
+                                      }%`,
                                     }}
                                   />
                                 </div>
@@ -570,10 +585,6 @@ export default function UserManagementPage() {
             <footer className="mt-16 pb-10 text-center text-[10px] font-black uppercase italic tracking-[0.4em] text-zinc-800">
               Strategic Hierarchy Management — Core System Admin
             </footer>
-          </div>
-
-        </main>
-      </div>
 
       {/* Admin Memo Modal */}
       {selectedUserForMemo && (

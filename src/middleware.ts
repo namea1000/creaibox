@@ -144,6 +144,42 @@ export async function middleware(request: NextRequest) {
     }
 
     if (targetBrandId && !excludedSubdomains.includes(targetBrandId.toLowerCase())) {
+      // 🌟 만약 *.creaibox.com 서브도메인으로 접근했는데, 독립 도메인이 이미 승인(APPROVED)되어 연동되어 있다면
+      // 사용자를 독립 도메인 주소로 리다이렉트 시켜 강제로 주소창 주소를 통일합니다.
+      if (isCreaiboxDomain) {
+        try {
+          const adminSupabase = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            {
+              cookies: {
+                get(name: string) { return ""; },
+                set(name: string, value: string, options: any) {},
+                remove(name: string, options: any) {},
+              }
+            }
+          );
+          
+          const { data: profile } = await adminSupabase
+            .from("profiles")
+            .select("extra_configs")
+            .eq("brand_id", targetBrandId.toLowerCase())
+            .maybeSingle();
+
+          const configs = profile?.extra_configs || {};
+          const customDomain = configs.custom_domain;
+          const customDomainStatus = configs.custom_domain_status;
+
+          if (customDomainStatus === "APPROVED" && customDomain) {
+            const redirectUrl = `https://${customDomain.toLowerCase()}${path}${request.nextUrl.search}`;
+            console.log(`Redirecting subdomain ${cleanHost} to approved custom domain: ${redirectUrl}`);
+            return NextResponse.redirect(new URL(redirectUrl, request.url));
+          }
+        } catch (redirectLookupErr) {
+          console.error("Subdomain to custom domain redirect check failed:", redirectLookupErr);
+        }
+      }
+
       const isCustomClient = CUSTOM_CLIENT_SITES.includes(targetBrandId.toLowerCase());
       
       let rewritePath = "";

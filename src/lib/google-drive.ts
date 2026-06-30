@@ -326,19 +326,37 @@ export async function uploadFreeAsset(
   return `https://lh3.googleusercontent.com/d/${fileId}`;
 }
 
+function cleanTitle(filename: string): string {
+  const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.')) || filename;
+  let name = nameWithoutExt.replace(/^Namu_/i, '');
+  const uuidRegex = /_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(_(\d))?$/i;
+  name = name.replace(uuidRegex, '');
+  return name
+    .replace(/[_\-]+/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .trim();
+}
+
 /**
  * Increments the views or downloads counter stored in the description of a Google Drive file.
  */
 export async function incrementAssetCounter(fileId: string, field: "downloads" | "views") {
   const drive = getDriveClient();
 
-  // 1. Get current description
+  // 1. Get current description and name
   const fileInfo = await drive.files.get({
     fileId,
-    fields: "description",
+    fields: "description, name",
   });
 
-  let metadata: any = { downloads: 0, views: 0, tags: [], uploader: "익명", title: "무명 에셋" };
+  const rawName = fileInfo.data.name || "";
+  let metadata: any = { 
+    downloads: 0, 
+    views: 0, 
+    tags: [], 
+    uploader: "익명", 
+    title: cleanTitle(rawName || "무명 에셋") 
+  };
   const rawDesc = fileInfo.data.description;
 
   if (rawDesc) {

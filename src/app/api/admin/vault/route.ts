@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { encryptApiKey, maskApiKey } from "@/lib/server/api-vault-crypto";
-import { supabaseAdmin } from "@/lib/server/get-free-gemini-key";
+import { supabaseAdmin, checkAndResetDailyCounts } from "@/lib/server/get-free-gemini-key";
 
 async function checkIsAdminEmail(email?: string | null) {
   if (!email) return false;
@@ -75,6 +75,9 @@ export async function GET(req: NextRequest) {
   if (!(await checkIsAdminEmail(email))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Trigger daily usage reset check on load
+  await checkAndResetDailyCounts();
 
   const { data, error } = await supabaseAdmin
     .from("admin_api_vault")

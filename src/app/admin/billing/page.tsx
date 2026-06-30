@@ -53,7 +53,7 @@ const plans = [
     color: "text-zinc-400",
   },
   {
-    name: "STARTER",
+    name: "CREATOR",
     price: "$9",
     users: "-",
     color: "text-blue-400",
