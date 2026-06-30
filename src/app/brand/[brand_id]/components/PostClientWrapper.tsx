@@ -230,9 +230,6 @@ export default function PostClientWrapper({
       <style
         dangerouslySetInnerHTML={{
           __html: `
-            html {
-              scroll-behavior: smooth;
-            }
             summary::-webkit-details-marker {
               display: none;
             }

@@ -320,6 +320,11 @@ function normalizeCreaiboxRecord(row: CreaiboxRow): StudioManuscriptRecord {
         ? wordCountGoal
         : undefined,
     images: [],
+    publishedSnapshot: row.published_snapshot || undefined,
+    categoryId: toStringValue(row.category_id),
+    categoryIds: Array.isArray(row.category_ids)
+      ? row.category_ids.filter((id): id is string => typeof id === "string")
+      : (row.category_id ? [toStringValue(row.category_id)] : []),
   };
 }
 
@@ -387,6 +392,36 @@ export default function CreaiboxManuscriptDetailPage() {
 
   const [isMounted, setIsMounted] = useState(false);
   const [data, setData] = useState<StudioManuscriptRecord | null>(null);
+
+  const hasUnpublishedChanges = useMemo(() => {
+    if (!data || data.status !== "published") return false;
+    const snap = data.publishedSnapshot;
+    if (!snap) return true;
+
+    if ((data.title || "제목 없음") !== (snap.title || "제목 없음")) return true;
+    if ((data.content || "") !== (snap.content || "")) return true;
+    if ((data.slug || "") !== (snap.slug || "")) return true;
+    if ((data.metaDescription || "") !== (snap.meta_description || "")) return true;
+    if ((data.focusKeyword || "") !== (snap.focus_keyword || "")) return true;
+    if ((data.tocEnabled ?? true) !== (snap.toc_enabled ?? true)) return true;
+
+    const currentTags = data.seoTags || [];
+    const snapTags = snap.seo_tags || [];
+    if (currentTags.length !== snapTags.length) return true;
+    for (let i = 0; i < currentTags.length; i++) {
+      if (currentTags[i] !== snapTags[i]) return true;
+    }
+
+    const currentCats = data.categoryIds || [];
+    const snapCats = snap.category_ids || [];
+    if (currentCats.length !== snapCats.length) return true;
+    for (let i = 0; i < currentCats.length; i++) {
+      if (currentCats[i] !== snapCats[i]) return true;
+    }
+
+    return false;
+  }, [data]);
+
   const [userRole, setUserRole] = useState<string>("");
   const [userBrandId, setUserBrandId] = useState<string>("");
   const [userBrandIds, setUserBrandIds] = useState<string[]>([]);
@@ -716,7 +751,8 @@ export default function CreaiboxManuscriptDetailPage() {
       const now = new Date().toISOString();
       const nextStatus = (status ?? safeData.status ?? "draft") as StudioManuscriptRecord["status"];
 
-      const updatePayload = {
+      let publishedSnapshotToSave = safeData.publishedSnapshot;
+      const updatePayload: Record<string, any> = {
         title: safeData.title ?? "",
         content: safeData.content ?? "",
         target_keyword: safeData.targetKeyword ?? "",
@@ -730,9 +766,30 @@ export default function CreaiboxManuscriptDetailPage() {
         word_count_goal: safeData.wordCountGoal ?? null,
         use_search: safeData.useSearch ?? false,
         post_type: safeData.detailLabel ?? safeData.postType ?? "",
-        category_id: safeData.categoryId ?? null,
+        category_id: safeData.categoryIds?.[0] || safeData.categoryId || null,
+        category_ids: safeData.categoryIds || (safeData.categoryId ? [safeData.categoryId] : []),
         toc_enabled: safeData.tocEnabled ?? true,
       };
+
+      if (status === "published") {
+        const snapshot = {
+          title: safeData.title ?? "",
+          content: safeData.content ?? "",
+          slug,
+          meta_description: safeData.metaDescription ?? "",
+          focus_keyword: safeData.focusKeyword ?? "",
+          canonical_url: canonicalUrl,
+          seo_tags: toTagList(safeData.seoTags),
+          category_id: safeData.categoryIds?.[0] || safeData.categoryId || null,
+          category_ids: safeData.categoryIds || (safeData.categoryId ? [safeData.categoryId] : []),
+          toc_enabled: safeData.tocEnabled ?? true,
+        };
+        updatePayload.published_snapshot = snapshot;
+        publishedSnapshotToSave = snapshot;
+      } else if (status === "saved") {
+        updatePayload.published_snapshot = null;
+        publishedSnapshotToSave = undefined;
+      }
 
       const { error } = await supabase
         .from("writing_creaibox_posts")
@@ -759,8 +816,10 @@ export default function CreaiboxManuscriptDetailPage() {
         updatedAt: now,
         displayId: safeData.displayId,
         wordCount: (safeData.content ?? "").replace(/\s+/g, "").length,
-        categoryId: safeData.categoryId,
+        categoryId: safeData.categoryIds?.[0] || safeData.categoryId,
+        categoryIds: safeData.categoryIds || (safeData.categoryId ? [safeData.categoryId] : []),
         tocEnabled: safeData.tocEnabled ?? true,
+        publishedSnapshot: publishedSnapshotToSave,
       };
 
       setData(nextRecord);
@@ -935,7 +994,7 @@ export default function CreaiboxManuscriptDetailPage() {
 
       setAiStatusMessage("생성이 완료되었습니다. 아카이브에 자동 저장 중입니다...");
       
-      const saveSuccess = await handleSave("saved", true, updatedRecord);
+      const saveSuccess = await handleSave(undefined, true, updatedRecord);
       
       if (saveSuccess) {
         if (aiItemId && aiCampaignId) {
@@ -1023,7 +1082,7 @@ export default function CreaiboxManuscriptDetailPage() {
       const nextPath = `/studio/writing/creaibox/list/${routeId}`;
 
       if (hasLocalEdits) {
-        void handleSave("saved");
+        void handleSave();
       }
 
       setData(manuscript);
@@ -1283,7 +1342,7 @@ ${promptInstruction}
 
     const timer = setTimeout(() => {
       console.log("Creaibox 자동 저장 실행 중...");
-      void handleSave("saved", true);
+      void handleSave(undefined, true);
     }, 1500);
 
     return () => clearTimeout(timer);
@@ -1292,22 +1351,25 @@ ${promptInstruction}
   const publishingStatus = useMemo(() => {
     if (!data) return "대기 중";
 
-    if (data.status === "published") return "발행 완료";
+    if (data.status === "published") {
+      return hasUnpublishedChanges ? "수정 중 (미반영)" : "발행 완료";
+    }
     if (data.status === "trash") return "휴지통";
     return "저장 완료";
-  }, [data]);
+  }, [data, hasUnpublishedChanges]);
 
   const publishingStatusClass = useMemo(() => {
-    if (data?.status === "published") return "bg-emerald-500/10 text-emerald-300";
+    if (data?.status === "published") {
+      return hasUnpublishedChanges
+        ? "bg-amber-500/10 text-amber-300 border border-amber-500/25"
+        : "bg-emerald-500/10 text-emerald-300";
+    }
     if (data?.status === "trash") return "bg-rose-500/10 text-rose-300";
     return "bg-sky-500/10 text-sky-300";
-  }, [data?.status]);
+  }, [data?.status, hasUnpublishedChanges]);
 
   const handlePublish = useCallback(async () => {
-    if (data?.status === "published") {
-      showPublishFeedback("이미 발행이 완료된 글입니다.");
-      return;
-    }
+    const isCurrentlyPublished = data?.status === "published";
 
     const publishedSlug = buildPublicBlogSlug(
       data?.title,
@@ -1332,7 +1394,11 @@ ${promptInstruction}
         // revalidate 실패는 발행 자체를 막지 않음
       }
 
-      showPublishFeedback("블로그 발행이 완료되었습니다.");
+      if (isCurrentlyPublished) {
+        showPublishFeedback("블로그 재발행(업데이트)이 완료되었습니다.");
+      } else {
+        showPublishFeedback("블로그 발행이 완료되었습니다.");
+      }
     }
   }, [data, handleSave, showPublishFeedback]);
 
@@ -1386,7 +1452,7 @@ ${promptInstruction}
             type="button"
             onClick={() => {
               if (hasLocalEdits) {
-                void handleSave("saved");
+                void handleSave();
               }
               router.push("/studio/writing/creaibox/list");
             }}
@@ -1468,7 +1534,7 @@ ${promptInstruction}
             handleUpdateCaption={() => { }}
             handleDeleteImage={() => { }}
             handleEnhanceContent={handleEnhanceContent}
-            handleSavePostToSupabase={() => handleSave("saved")}
+            handleSavePostToSupabase={() => handleSave()}
             isDetailMode
             targetKeyword={data.targetKeyword ?? ""}
             manuscriptId={data.id}
@@ -1516,7 +1582,7 @@ ${promptInstruction}
                 className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#4f46e5] via-[#7c3aed] to-[#ec4899] px-3.5 py-2 text-xs font-black text-white shadow-[0_8px_18px_rgba(124,58,237,0.18)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Send className="h-3.5 w-3.5" />
-                {isSaving ? "처리 중..." : "블로그 발행"}
+                {isSaving ? "처리 중..." : data?.status === "published" ? "블로그 재발행" : "블로그 발행"}
               </button>
               <button
                 onClick={() => void handleCancelPublish()}

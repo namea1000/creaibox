@@ -59,29 +59,24 @@ export default function BlogImageMediaLibrarySection({
     if (!sourceId) return;
 
     try {
-      const userId = await resolveUserId();
-      if (!userId) {
-        alert("로그인 세션을 확인할 수 없습니다.");
-        return;
+      const response = await fetch("/api/image-studio/update-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "set-primary",
+          imageId: image.id,
+          sourceType,
+          sourceId,
+          imageRole,
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "대표 이미지 지정에 실패했습니다.");
       }
-
-      const { error: clearError } = await supabase
-        .from("generated_images")
-        .update({ is_primary: false })
-        .eq("user_id", userId)
-        .eq("source_type", sourceType)
-        .eq("source_id", sourceId)
-        .eq("image_role", imageRole);
-
-      if (clearError) throw clearError;
-
-      const { error: setError } = await supabase
-        .from("generated_images")
-        .update({ is_primary: true })
-        .eq("user_id", userId)
-        .eq("id", image.id);
-
-      if (setError) throw setError;
 
       setGallery((prev) =>
         prev
@@ -90,49 +85,37 @@ export default function BlogImageMediaLibrarySection({
       );
     } catch (error) {
       console.error("대표 이미지 지정 실패:", error);
-      alert("대표 이미지 지정에 실패했습니다.");
+      alert(error instanceof Error ? error.message : "대표 이미지 지정에 실패했습니다.");
     }
   };
 
   const handleDeleteImage = async (image: GeneratedImage) => {
-    const confirmed = window.confirm("이 이미지를 DB와 Storage에서 모두 삭제할까요?");
+    const confirmed = window.confirm("이 이미지를 현재 원고의 이미지 목록에서 제외하시겠습니까?\n(연결만 해제되며 이미지 라이브러리에는 보관됩니다)");
     if (!confirmed) return;
 
     setDeletingId(image.id);
 
     try {
-      const userId = await resolveUserId();
-      if (!userId) {
-        alert("로그인 세션을 확인할 수 없습니다.");
-        return;
-      }
+      const response = await fetch("/api/image-studio/update-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "unlink",
+          imageId: image.id,
+        }),
+      });
 
-      const storagePath = getStoragePathFromPublicUrl(image.url);
-
-      if (storagePath) {
-        const { error: storageError } = await supabase.storage
-          .from(IMAGE_BUCKET)
-          .remove([storagePath]);
-
-        if (storageError) {
-          throw new Error(`Storage 삭제 실패: ${storageError.message}`);
-        }
-      }
-
-      const { error: deleteError } = await supabase
-        .from("generated_images")
-        .delete()
-        .eq("user_id", userId)
-        .eq("id", image.id);
-
-      if (deleteError) {
-        throw new Error(`DB 삭제 실패: ${deleteError.message}`);
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "이미지 연결 해제에 실패했습니다.");
       }
 
       setGallery((prev) => prev.filter((item) => item.id !== image.id));
     } catch (error) {
-      console.error("이미지 삭제 실패:", error);
-      alert(error instanceof Error ? error.message : "이미지 삭제에 실패했습니다.");
+      console.error("이미지 연결 해제 실패:", error);
+      alert(error instanceof Error ? error.message : "이미지 연결 해제에 실패했습니다.");
     } finally {
       setDeletingId(null);
     }

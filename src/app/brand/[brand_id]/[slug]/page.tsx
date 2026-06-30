@@ -21,6 +21,7 @@ interface PublishedPostDetail {
   category_id?: string | null;
   thumbnailUrl?: string | null;
   toc_enabled?: boolean | null;
+  published_snapshot?: any;
 }
 
 interface BlogCategory {
@@ -263,7 +264,7 @@ const fetchPost = cache(async (brandId: string, slug: string) => {
   // 2. Fetch Post
   const { data: postData } = await supabase
     .from("writing_creaibox_posts")
-    .select("id, title, content, slug, meta_description, focus_keyword, canonical_url, seo_tags, created_at, updated_at, category_id, toc_enabled")
+    .select("id, title, content, slug, meta_description, focus_keyword, canonical_url, seo_tags, created_at, updated_at, category_id, toc_enabled, published_snapshot")
     .eq("user_id", profile.id)
     .eq("slug", decodedSlug)
     .eq("status", "published")
@@ -272,6 +273,21 @@ const fetchPost = cache(async (brandId: string, slug: string) => {
   if (!postData) return null;
 
   const post = postData as PublishedPostDetail;
+
+  if (post.published_snapshot) {
+    const snapshot = post.published_snapshot as any;
+    post.title = snapshot.title ?? post.title;
+    post.content = snapshot.content ?? post.content;
+    post.slug = snapshot.slug ?? post.slug;
+    post.meta_description = snapshot.meta_description ?? post.meta_description;
+    post.focus_keyword = snapshot.focus_keyword ?? post.focus_keyword;
+    post.canonical_url = snapshot.canonical_url ?? post.canonical_url;
+    post.seo_tags = snapshot.seo_tags ?? post.seo_tags;
+    post.category_id = snapshot.category_id ?? post.category_id;
+    if (snapshot.toc_enabled !== undefined) {
+      post.toc_enabled = snapshot.toc_enabled;
+    }
+  }
 
   // 3. Fetch Thumbnail
   const { data: images } = await supabase

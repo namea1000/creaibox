@@ -212,20 +212,44 @@ export default function CreaiboxSeoOptimizationPanel({
     }
   }, [data.seoTags]);
 
+  // Resolve the active brand for this post based on its canonical URL or available brands
+  const activeBrandForPost = useMemo(() => {
+    const canonical = data.canonicalUrl || "";
+    const brands = userBrandIds || (userBrandId ? [userBrandId] : []);
+    if (brands.length === 0) return "blog";
+
+    // 1. Try to find if canonical URL matches standard subdomain: https://{brand_id}.creaibox.com
+    for (const bid of brands) {
+      if (canonical.includes(`://${bid}.creaibox.com`)) {
+        return bid;
+      }
+    }
+
+    // 2. Try to find if canonical URL matches custom domains in extraConfigs
+    if (extraConfigs) {
+      for (const bid of brands) {
+        const isPrimary = bid === userBrandId;
+        const customDom = extraConfigs[`custom_domain_${bid}`] || (isPrimary ? extraConfigs.custom_domain : "");
+        const customDomStatus = extraConfigs[`custom_domain_status_${bid}`] || (isPrimary ? extraConfigs.custom_domain_status : "NONE");
+        if (customDomStatus === "APPROVED" && customDom && canonical.includes(`://${customDom}`)) {
+          return bid;
+        }
+      }
+    }
+
+    // 3. Fallback to primary brand ID
+    return userBrandId || brands[0] || "blog";
+  }, [data.canonicalUrl, userBrandId, userBrandIds, extraConfigs]);
+
   // Load categories
   useEffect(() => {
     const loadCategories = async () => {
-      if (!userBrandId) return;
       setIsLoadingCategories(true);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
         const { data: cats, error } = await supabase
           .from("blog_categories")
           .select("*")
-          .eq("user_id", user.id)
-          .or(`brand_id.eq.${userBrandId},brand_id.is.null`)
+          .eq("brand_id", activeBrandForPost)
           .order("created_at", { ascending: true });
 
         if (error) throw error;
@@ -239,15 +263,21 @@ export default function CreaiboxSeoOptimizationPanel({
       }
     };
     loadCategories();
-  }, [supabase, userBrandId]);
+  }, [supabase, activeBrandForPost]);
 
   // Handle category selection
   const handleSelectCategory = (catId: string) => {
-    if (data.categoryId === catId) {
-      updateLocalData({ categoryId: undefined });
+    const currentIds = data.categoryIds || (data.categoryId ? [data.categoryId] : []);
+    let nextIds: string[];
+    if (currentIds.includes(catId)) {
+      nextIds = currentIds.filter((id) => id !== catId);
     } else {
-      updateLocalData({ categoryId: catId });
+      nextIds = [...currentIds, catId];
     }
+    updateLocalData({
+      categoryIds: nextIds,
+      categoryId: nextIds[0] || undefined,
+    });
   };
 
   const generateSlugFromName = (name: string) => {
@@ -296,7 +326,7 @@ export default function CreaiboxSeoOptimizationPanel({
         .from("blog_categories")
         .insert({
           user_id: user.id,
-          brand_id: userBrandId || null,
+          brand_id: activeBrandForPost || null,
           name,
           slug: slugVal,
         })
@@ -688,9 +718,9 @@ export default function CreaiboxSeoOptimizationPanel({
               ) : categories.length === 0 ? (
                 <p className="text-xs text-zinc-600 py-1">등록된 카테고리가 없습니다.</p>
               ) : (
-                <div className="max-h-36 overflow-y-auto space-y-1.5 p-3 rounded-lg border border-zinc-850 bg-zinc-950/40 custom-scrollbar">
+                <div className="space-y-1.5 p-3 rounded-lg border border-zinc-850 bg-zinc-950/40">
                   {categories.map((cat) => {
-                    const isChecked = data.categoryId === cat.id;
+                    const isChecked = (data.categoryIds || (data.categoryId ? [data.categoryId] : [])).includes(cat.id);
                     return (
                       <label key={cat.id} className="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-zinc-300 hover:text-white select-none">
                         <input

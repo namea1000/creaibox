@@ -640,6 +640,9 @@ export default function UniversalBlogEditor({
             !src.includes("googleapis.com") &&
             !src.includes("googleusercontent.com") &&
             !src.includes("localhost:") &&
+            !src.includes(".wp.com") &&
+            !src.includes("golfgosu.net") &&
+            !src.includes("creaibox.com") &&
             !processingUrlsRef.current.has(src);
 
           if (isExternal) {
@@ -722,8 +725,8 @@ export default function UniversalBlogEditor({
               }
             }
             console.log(`외부 이미지 치환 성공: ${url} -> ${newUrl}`);
-          } catch (err) {
-            console.error("외부 이미지 자동 업로드 실패:", err);
+          } catch (err: any) {
+            console.warn("외부 이미지 자동 업로드 실패 (경고):", err?.message || String(err));
           } finally {
             processingUrlsRef.current.delete(url);
           }
@@ -744,98 +747,31 @@ export default function UniversalBlogEditor({
         throw new Error("manuscriptId가 존재하지 않습니다.");
       }
 
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+      // API를 호출하여 서버사이드 서비스롤(Service Role)로 RLS 권한 우회 및 안전 복제 진행
+      const response = await fetch("/api/image-studio/set-featured", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          imageUrl: src,
+          prompt: "대표 이미지 지정",
+          style: "manual",
+          aspectRatio: "content",
+          provider: "upload",
+          sourceType: contentImageSourceType,
+          sourceId: String(manuscriptId),
+          imageRole: "thumbnail",
+          title: title || "대표 이미지",
+          altText: title || "대표 이미지",
+        }),
+      });
 
-      if (userError || !user) {
-        alert("로그인이 필요합니다.");
-        throw new Error("로그인 유저가 없습니다.");
-      }
-
-      // 1. 기존 이 포스트의 thumbnail들의 is_primary를 false로 일괄 업데이트
-      const { error: updateOldError } = await supabase
-        .from("generated_images")
-        .update({ is_primary: false })
-        .eq("user_id", user.id)
-        .eq("source_type", contentImageSourceType)
-        .eq("source_id", String(manuscriptId))
-        .eq("image_role", "thumbnail")
-        .eq("is_primary", true);
-
-      if (updateOldError) {
-        console.error("기존 대표 이미지 상태 변경 실패:", {
-          message: updateOldError.message,
-          code: updateOldError.code,
-          details: updateOldError.details,
-          hint: updateOldError.hint
-        });
-        throw updateOldError;
-      }
-
-      // 2. 현재 선택한 본문 이미지 url이 이미 generated_images에 이 포스트의 thumbnail로 존재하는지 확인
-      const { data: existingRows, error: findError } = await supabase
-        .from("generated_images")
-        .select("id, image_url")
-        .eq("user_id", user.id)
-        .eq("source_type", contentImageSourceType)
-        .eq("source_id", String(manuscriptId))
-        .eq("image_role", "thumbnail")
-        .eq("image_url", src);
-
-      if (findError) {
-        console.error("기존 대표 이미지 조회 실패:", {
-          message: findError.message,
-          code: findError.code,
-          details: findError.details,
-          hint: findError.hint
-        });
-        throw findError;
-      }
-
-      if (existingRows && existingRows.length > 0) {
-        // 존재하면 해당 행의 is_primary만 true로 설정
-        const targetId = existingRows[0].id;
-        const { error: updateTargetError } = await supabase
-          .from("generated_images")
-          .update({ is_primary: true })
-          .eq("id", targetId);
-
-        if (updateTargetError) {
-          console.error("대표 이미지 업데이트 실패:", {
-            message: updateTargetError.message,
-            code: updateTargetError.code,
-            details: updateTargetError.details,
-            hint: updateTargetError.hint
-          });
-          throw updateTargetError;
-        }
-      } else {
-        // 존재하지 않으면 신규 썸네일 행 생성 (is_primary = true)
-        const { error: insertError } = await supabase
-          .from("generated_images")
-          .insert({
-            user_id: user.id,
-            prompt: "대표 이미지 지정",
-            image_url: src,
-            source_type: contentImageSourceType,
-            source_id: String(manuscriptId),
-            image_role: "thumbnail",
-            is_primary: true,
-            title: title || "대표 이미지",
-            alt_text: title || "대표 이미지",
-          });
-
-        if (insertError) {
-          console.error("신규 대표 이미지 삽입 실패:", {
-            message: insertError.message,
-            code: insertError.code,
-            details: insertError.details,
-            hint: insertError.hint
-          });
-          throw insertError;
-        }
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        const errorMsg = result.error || "대표 이미지 설정에 실패했습니다.";
+        console.error("대표 이미지 설정 API 오류:", errorMsg);
+        throw new Error(errorMsg);
       }
 
       // Notify the right-side BlogImageStudioPanel to reload and display the new thumbnail
@@ -843,7 +779,7 @@ export default function UniversalBlogEditor({
         window.dispatchEvent(new CustomEvent("generated-images-updated"));
       }
     },
-    [manuscriptId, contentImageSourceType, supabase, title]
+    [manuscriptId, contentImageSourceType, title]
   );
 
   const initialHtml = useMemo(() => markdownToHtml(content), []);
@@ -3162,7 +3098,8 @@ export default function UniversalBlogEditor({
         .ProseMirror .image-caption {
           margin-top: 0.5rem;
           font-size: 0.8rem;
-          color: #71717a;
+          color: #09090b;
+          font-weight: bold;
           text-align: center;
           display: block;
         }

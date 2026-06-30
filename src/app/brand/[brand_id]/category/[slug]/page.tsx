@@ -17,8 +17,10 @@ interface PublishedPost {
   seo_tags: string[] | null;
   created_at: string | null;
   category_id?: string | null;
+  category_ids?: string[] | null;
   thumbnailUrl?: string | null;
   canonical_url?: string | null;
+  published_snapshot?: any;
 }
 
 interface BlogCategory {
@@ -182,12 +184,11 @@ export default async function BrandCategoryPage({ params }: CategoryPageProps) {
     });
   }
 
-  // 4. Fetch Published Posts in Category
+  // 4. Fetch Published Posts
   const { data: postsData } = await supabase
     .from("writing_creaibox_posts")
-    .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at, category_id")
+    .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at, category_id, category_ids, published_snapshot")
     .eq("user_id", profile.id)
-    .eq("category_id", category.id)
     .eq("status", "published")
     .not("slug", "is", null)
     .order("created_at", { ascending: false });
@@ -217,10 +218,31 @@ export default async function BrandCategoryPage({ params }: CategoryPageProps) {
     posts = postsRaw.map((post) => {
       const postImages = imageMap[post.id] || [];
       const primaryImg = postImages.find((img) => img.is_primary) || postImages[0];
-      return {
+      
+      const finalPost = {
         ...post,
         thumbnailUrl: primaryImg ? primaryImg.url : null,
       };
+
+      if (post.published_snapshot) {
+        const snapshot = post.published_snapshot as any;
+        finalPost.title = snapshot.title ?? finalPost.title;
+        finalPost.slug = snapshot.slug ?? finalPost.slug;
+        finalPost.meta_description = snapshot.meta_description ?? finalPost.meta_description;
+        finalPost.focus_keyword = snapshot.focus_keyword ?? finalPost.focus_keyword;
+        finalPost.seo_tags = snapshot.seo_tags ?? finalPost.seo_tags;
+        finalPost.canonical_url = snapshot.canonical_url ?? finalPost.canonical_url;
+        finalPost.category_id = snapshot.category_id ?? finalPost.category_id;
+        finalPost.category_ids = snapshot.category_ids ?? finalPost.category_ids;
+      }
+
+      return finalPost;
+    });
+
+    // Filter in-memory by category (supporting both single and multiple categories in drafts & snapshots)
+    posts = posts.filter((post) => {
+      const catIds = post.category_ids || (post.category_id ? [post.category_id] : []);
+      return catIds.includes(category.id);
     });
   }
 

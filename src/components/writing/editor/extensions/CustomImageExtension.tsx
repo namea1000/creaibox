@@ -1,5 +1,6 @@
 import Image from "@tiptap/extension-image";
 import { ReactNodeViewRenderer } from "@tiptap/react";
+import { NodeSelection } from "@tiptap/pm/state";
 import ImageNodeView from "./ImageNodeView";
 
 export const CustomImage = Image.extend({
@@ -156,5 +157,66 @@ export const CustomImage = Image.extend({
 
   addNodeView() {
     return ReactNodeViewRenderer(ImageNodeView);
+  },
+
+  addKeyboardShortcuts() {
+    return {
+      Backspace: () => {
+        const { state, view } = this.editor;
+        const { selection } = state;
+
+        if (!selection.empty) return false;
+
+        const { $from } = selection;
+
+        // Case 1: Cursor is inside the same block, immediately to the right of the image (inline case)
+        const nodeBeforeCursor = $from.nodeBefore;
+        if (nodeBeforeCursor && nodeBeforeCursor.type.name === this.name) {
+          const imagePos = $from.pos - nodeBeforeCursor.nodeSize;
+          const nodeSelection = NodeSelection.create(state.doc, imagePos);
+          view.dispatch(state.tr.setSelection(nodeSelection).scrollIntoView());
+          return true;
+        }
+
+        // Case 2: Cursor is at the start of a paragraph (parentOffset === 0),
+        // and the previous block contains or is an image.
+        if ($from.parentOffset === 0) {
+          const posBeforeParent = $from.before();
+          if (posBeforeParent <= 1) return false;
+
+          const posBefore = posBeforeParent - 1;
+          const resolvedPosBefore = state.doc.resolve(posBefore);
+          const nodeBefore = resolvedPosBefore.nodeBefore;
+
+          if (nodeBefore) {
+            // Case 2A: Preceding node is block image
+            if (nodeBefore.type.name === this.name) {
+              const imagePos = posBefore - nodeBefore.nodeSize;
+              const nodeSelection = NodeSelection.create(state.doc, imagePos);
+              view.dispatch(state.tr.setSelection(nodeSelection).scrollIntoView());
+              return true;
+            }
+
+            // Case 2B: Preceding block contains an image (e.g. paragraph wrapping an image)
+            let foundImagePos = -1;
+            nodeBefore.descendants((node, pos) => {
+              if (node.type.name === this.name) {
+                const absoluteImagePos = (posBefore - nodeBefore.nodeSize) + pos + 1;
+                foundImagePos = absoluteImagePos;
+              }
+              return true;
+            });
+
+            if (foundImagePos !== -1) {
+              const nodeSelection = NodeSelection.create(state.doc, foundImagePos);
+              view.dispatch(state.tr.setSelection(nodeSelection).scrollIntoView());
+              return true;
+            }
+          }
+        }
+
+        return false;
+      },
+    };
   },
 });

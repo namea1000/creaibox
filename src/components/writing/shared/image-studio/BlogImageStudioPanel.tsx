@@ -730,12 +730,6 @@ export default function BlogImageStudioPanel({
     if (!activeSourceId) return;
 
     try {
-      const userId = await resolveUserId();
-      if (!userId) {
-        alert("로그인 세션을 확인할 수 없습니다.");
-        return;
-      }
-
       // 지원되는 모든 속성명에 대해 안전하게 체크하여 URL 및 기타 필드 추출
       const imageUrl = selectedImage.image_url || selectedImage.url;
       if (!imageUrl) {
@@ -751,40 +745,34 @@ export default function BlogImageStudioPanel({
       const descriptionVal = selectedImage.description || "";
       const altTextVal = selectedImage.alt_text || selectedImage.altText || "";
 
-      // 1. 기존 대표 썸네일 해제
-      const { error: clearError } = await supabase
-        .from("generated_images")
-        .update({ is_primary: false })
-        .eq("user_id", userId)
-        .eq("source_type", sourceType)
-        .eq("source_id", activeSourceId)
-        .eq("image_role", imageRole);
-
-      if (clearError) throw clearError;
-
-      // 2. 선택된 이미지 안전 복제하여 대표 설정
-      const { data: inserted, error: insertError } = await supabase
-        .from("generated_images")
-        .insert({
-          user_id: userId,
+      // API를 호출하여 서버사이드 서비스롤(Service Role)로 RLS 권한 우회 및 안전 복제 진행
+      const response = await fetch("/api/image-studio/set-featured", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          imageUrl,
           prompt: promptVal,
-          image_url: imageUrl,
           style: styleVal,
-          aspect_ratio: aspectRatioVal,
+          aspectRatio: aspectRatioVal,
           provider: providerVal,
-          source_type: sourceType,
-          source_id: activeSourceId,
-          image_role: imageRole,
-          is_primary: true,
+          sourceType,
+          sourceId: activeSourceId,
+          imageRole,
           title: titleVal,
           caption: captionVal,
           description: descriptionVal,
-          alt_text: altTextVal,
-        })
-        .select()
-        .single();
+          altText: altTextVal,
+        }),
+      });
 
-      if (insertError) throw insertError;
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "대표 이미지 설정 요청이 실패했습니다.");
+      }
+
+      const inserted = result.data;
 
       // 3. gallery 상태 최신화
       const formattedImg: GeneratedImage = {
@@ -809,55 +797,36 @@ export default function BlogImageStudioPanel({
         })),
       ]);
     } catch (err: any) {
-      console.error("Failed to set featured image in panel handler:", {
-        message: err?.message || String(err),
-        code: err?.code,
-        details: err?.details,
-        hint: err?.hint,
-        err
-      });
+      console.error("Failed to set featured image in panel handler:", err);
       throw err;
     }
   };
 
   const handleDeleteImage = async (image: GeneratedImage) => {
-    const confirmed = window.confirm("이 이미지를 DB와 Storage에서 모두 삭제할까요?");
+    const confirmed = window.confirm("이 이미지를 현재 원고의 썸네일 목록에서 제외하시겠습니까?\n(연결만 해제되며 이미지 라이브러리에는 보관됩니다)");
     if (!confirmed) return;
 
     try {
-      const userId = await resolveUserId();
+      const response = await fetch("/api/image-studio/update-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "unlink",
+          imageId: image.id,
+        }),
+      });
 
-      if (!userId) {
-        alert("로그인 세션을 확인할 수 없습니다.");
-        return;
-      }
-
-      const storagePath = getStoragePathFromPublicUrl(image.url);
-
-      if (storagePath) {
-        const { error: storageError } = await supabase.storage
-          .from(IMAGE_BUCKET)
-          .remove([storagePath]);
-
-        if (storageError) {
-          throw new Error(`Storage 삭제 실패: ${storageError.message}`);
-        }
-      }
-
-      const { error: deleteError } = await supabase
-        .from("generated_images")
-        .delete()
-        .eq("user_id", userId)
-        .eq("id", image.id);
-
-      if (deleteError) {
-        throw new Error(`DB 삭제 실패: ${deleteError.message}`);
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "이미지 연결 해제에 실패했습니다.");
       }
 
       setGallery((prev) => prev.filter((item) => item.id !== image.id));
     } catch (error) {
-      console.error("이미지 삭제 실패:", error);
-      alert(error instanceof Error ? error.message : "이미지 삭제에 실패했습니다.");
+      console.error("이미지 연결 해제 실패:", error);
+      alert(error instanceof Error ? error.message : "이미지 연결 해제에 실패했습니다.");
     }
   };
 
@@ -865,24 +834,24 @@ export default function BlogImageStudioPanel({
     if (!activeSourceId) return;
 
     try {
-      const userId = await resolveUserId();
-      if (!userId) return alert("로그인 세션을 확인할 수 없습니다.");
+      const response = await fetch("/api/image-studio/update-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "set-primary",
+          imageId: image.id,
+          sourceType,
+          sourceId: activeSourceId,
+          imageRole,
+        }),
+      });
 
-      await supabase
-        .from("generated_images")
-        .update({ is_primary: false })
-        .eq("user_id", userId)
-        .eq("source_type", sourceType)
-        .eq("source_id", activeSourceId)
-        .eq("image_role", imageRole);
-
-      const { error } = await supabase
-        .from("generated_images")
-        .update({ is_primary: true })
-        .eq("user_id", userId)
-        .eq("id", image.id);
-
-      if (error) throw error;
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "대표 이미지 지정에 실패했습니다.");
+      }
 
       setGallery((prev) =>
         prev
@@ -890,7 +859,8 @@ export default function BlogImageStudioPanel({
           .sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary))
       );
     } catch (error) {
-      alert("대표 이미지 지정에 실패했습니다.");
+      console.error("대표 설정 실패:", error);
+      alert(error instanceof Error ? error.message : "대표 설정에 실패했습니다.");
     }
   };
 

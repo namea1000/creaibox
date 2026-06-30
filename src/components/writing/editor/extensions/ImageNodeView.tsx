@@ -692,7 +692,7 @@ export default function ImageNodeView(props: NodeViewProps) {
             value={caption}
             placeholder="캡션 추가..."
             onChange={(e) => updateAttributes({ caption: e.target.value })}
-            className="mx-auto block w-full max-w-[80%] text-center text-xs text-zinc-500 dark:text-zinc-400 bg-transparent border-none outline-none focus:text-zinc-800 dark:focus:text-zinc-200 transition-colors"
+            className="mx-auto block w-full max-w-[80%] text-center text-xs text-zinc-950 font-bold bg-transparent border-none outline-none focus:text-black transition-colors placeholder:text-zinc-500"
           />
         ) : null}
       </div>
