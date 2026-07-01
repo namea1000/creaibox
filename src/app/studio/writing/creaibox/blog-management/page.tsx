@@ -23,6 +23,64 @@ interface BlogPost {
   created_at: string;
 }
 
+function ScoreRing({ score, label }: { score: number; label: string }) {
+  const strokeDashoffset = 251.2 - (251.2 * score) / 100;
+  let colorClass = "text-rose-500 stroke-rose-500 bg-rose-500/5";
+  if (score >= 90) {
+    colorClass = "text-emerald-500 stroke-emerald-500 bg-emerald-500/5";
+  } else if (score >= 50) {
+    colorClass = "text-amber-500 stroke-amber-500 bg-amber-500/5";
+  }
+  
+  return (
+    <div className="flex flex-col items-center p-6 rounded-[24px] border border-zinc-900 bg-zinc-950/40 text-center space-y-4">
+      <div className="relative w-24 h-24">
+        {/* Background circle */}
+        <svg className="w-full h-full transform -rotate-90">
+          <circle
+            cx="48"
+            cy="48"
+            r="40"
+            className="stroke-zinc-800"
+            strokeWidth="8"
+            fill="transparent"
+          />
+          {/* Foreground circle */}
+          <circle
+            cx="48"
+            cy="48"
+            r="40"
+            className={colorClass}
+            strokeWidth="8"
+            fill="transparent"
+            strokeDasharray="251.2"
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-2xl font-black italic tracking-tighter text-white">
+            {score}
+          </span>
+        </div>
+      </div>
+      <span className="text-xs font-black uppercase text-zinc-400 tracking-wider">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function MetricCard({ title, value, description }: { title: string; value: string; description: string }) {
+  return (
+    <div className="p-5 rounded-2xl border border-zinc-900 bg-zinc-950/30 text-left space-y-1">
+      <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500">{title}</span>
+      <p className="text-lg font-black text-white italic tracking-tight">{value}</p>
+      <p className="text-[10px] text-zinc-500 leading-relaxed font-bold">{description}</p>
+    </div>
+  );
+}
+
 export default function BlogManagementPage() {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
@@ -70,7 +128,14 @@ export default function BlogManagementPage() {
   const [activeBrandId, setActiveBrandId] = useState<string>("");
 
   // Tab state
-  const [activeSubTab, setActiveSubTab] = useState<"general" | "categories" | "seo" | "analytics" | "customDomain">("general");
+  const [activeSubTab, setActiveSubTab] = useState<"general" | "categories" | "seo" | "analytics" | "customDomain" | "pagespeed">("general");
+
+  // PageSpeed states
+  const [pagespeedUrl, setPagespeedUrl] = useState("");
+  const [pagespeedStrategy, setPagespeedStrategy] = useState<"desktop" | "mobile">("desktop");
+  const [pagespeedLoading, setPagespeedLoading] = useState(false);
+  const [pagespeedResult, setPagespeedResult] = useState<any>(null);
+  const [pagespeedError, setPagespeedError] = useState("");
 
   // Real-time GA4 analytics states
   const [analyticsData, setAnalyticsData] = useState<any>(null);
@@ -251,6 +316,81 @@ export default function BlogManagementPage() {
       void fetchAnalytics();
     }
   }, [activeSubTab, activeBrandId]);
+
+  // PageSpeed URL auto-sync based on activeBrandId / customDomain
+  useEffect(() => {
+    if (activeBrandId) {
+      const url = customDomainStatus === "APPROVED" && customDomain
+        ? `https://${customDomain}`
+        : `https://${activeBrandId}.creaibox.com`;
+      setPagespeedUrl(url);
+    }
+  }, [activeBrandId, customDomain, customDomainStatus]);
+
+  const runPagespeedAudit = async () => {
+    if (!pagespeedUrl) {
+      setPagespeedError("URL을 입력해 주세요.");
+      return;
+    }
+    if (!pagespeedUrl.startsWith("http://") && !pagespeedUrl.startsWith("https://")) {
+      setPagespeedError("URL은 http:// 또는 https://로 시작해야 합니다.");
+      return;
+    }
+
+    setPagespeedLoading(true);
+    setPagespeedError("");
+    setPagespeedResult(null);
+
+    try {
+      const apiKey = process.env.NEXT_PUBLIC_PAGESPEED_API_KEY;
+      const target = encodeURIComponent(pagespeedUrl);
+      const apiEndpoint = `https://pagespeedonline.googleapis.com/pagespeedonline/v5/runPagespeed?url=${target}&category=performance&category=accessibility&category=best-practices&category=seo&strategy=${pagespeedStrategy}${apiKey ? `&key=${apiKey}` : ""}`;
+      
+      const res = await fetch(apiEndpoint);
+      if (!res.ok) {
+        let errMsg = "PageSpeed API 호출 중 오류가 발생했습니다.";
+        try {
+          const errData = await res.json();
+          if (errData.error?.message) {
+            if (errData.error.message.includes("Quota exceeded") || errData.error.message.includes("limit")) {
+              errMsg = "PageSpeed API 오류: Google PageSpeed의 기본 익명 일일 호출 한도가 초과되었습니다. 안정적인 측정을 위해 본인의 Google Cloud Console에서 PageSpeed Insights API를 활성화한 뒤, API 키를 무료로 생성하여 .env.local 파일에 NEXT_PUBLIC_PAGESPEED_API_KEY 값으로 등록해 주세요.";
+            } else {
+              errMsg = `PageSpeed API 오류: ${errData.error.message}`;
+            }
+          }
+        } catch (_) {}
+        throw new Error(errMsg);
+      }
+      
+      const data = await res.json();
+      if (!data.lighthouseResult) {
+        throw new Error("Lighthouse 결과를 읽을 수 없습니다.");
+      }
+      
+      const lh = data.lighthouseResult;
+      const scores = {
+        performance: Math.round((lh.categories.performance?.score || 0) * 100),
+        accessibility: Math.round((lh.categories.accessibility?.score || 0) * 100),
+        bestPractices: Math.round((lh.categories["best-practices"]?.score || 0) * 100),
+        seo: Math.round((lh.categories.seo?.score || 0) * 100),
+      };
+
+      const metrics = {
+        fcp: lh.audits["first-contentful-paint"]?.displayValue || "N/A",
+        lcp: lh.audits["largest-contentful-paint"]?.displayValue || "N/A",
+        tbt: lh.audits["total-blocking-time"]?.displayValue || "N/A",
+        cls: lh.audits["cumulative-layout-shift"]?.displayValue || "N/A",
+        si: lh.audits["speed-index"]?.displayValue || "N/A",
+      };
+
+      setPagespeedResult({ scores, metrics });
+    } catch (err: any) {
+      console.error(err);
+      setPagespeedError(err.message || "속도 측정 중 예상치 못한 에러가 발생했습니다.");
+    } finally {
+      setPagespeedLoading(false);
+    }
+  };
 
   // 1. Action: Save Blog Profile & Customizer & SEO config
   const handleSaveConfigs = async () => {
@@ -731,6 +871,16 @@ export default function BlogManagementPage() {
                 }`}
               >
                 방문 통계 리포트
+              </button>
+              <button
+                onClick={() => setActiveSubTab("pagespeed")}
+                className={`px-6 py-4 text-xs font-black uppercase tracking-wider transition-all border-b-2 ${
+                  activeSubTab === "pagespeed"
+                    ? "border-blue-500 text-blue-400 bg-blue-500/5"
+                    : "border-transparent text-zinc-500 hover:text-zinc-300"
+                }`}
+              >
+                PageSpeed Insights 성능 측정
               </button>
             </div>
 
@@ -1836,6 +1986,141 @@ export default function BlogManagementPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT: PageSpeed Insights Audit */}
+            {activeSubTab === "pagespeed" && (
+              <div className="rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-8 space-y-8 text-left">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <h3 className="text-md font-black uppercase italic tracking-wider text-white flex items-center gap-2">
+                      <TrendingUp size={18} className="text-blue-400" /> PageSpeed Insights 성능 분석
+                    </h3>
+                    <p className="text-xs font-bold text-zinc-400">
+                      Google Lighthouse 엔진을 통해 블로그의 실시간 속도, 최적화 상태 및 코어 웹 바이탈 점수를 측정합니다.
+                    </p>
+                  </div>
+                  <a
+                    href={`https://pagespeed.web.dev/analysis?url=${encodeURIComponent(pagespeedUrl)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:text-white transition-colors"
+                  >
+                    Google 공식 페이지에서 보기 <Globe size={11} />
+                  </a>
+                </div>
+
+                {/* Search Bar / Input console */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                  <div className="md:col-span-2 space-y-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500">측정 대상 블로그 주소 (외부 공개용 주소 필수)</span>
+                    <input
+                      type="text"
+                      value={pagespeedUrl}
+                      onChange={(e) => setPagespeedUrl(e.target.value)}
+                      className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-4.5 text-sm font-bold text-white shadow-inner outline-none transition-all focus:border-blue-500"
+                      placeholder="https://example.com"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="flex-1 space-y-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500">측정 모드</span>
+                      <select
+                        value={pagespeedStrategy}
+                        onChange={(e) => setPagespeedStrategy(e.target.value as "desktop" | "mobile")}
+                        className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-4.5 text-sm font-bold text-zinc-350 outline-none cursor-pointer focus:border-blue-500"
+                      >
+                        <option value="desktop" className="bg-zinc-950 text-zinc-300 font-bold">🖥️ 데스크톱</option>
+                        <option value="mobile" className="bg-zinc-950 text-zinc-300 font-bold">📱 휴대전화</option>
+                      </select>
+                    </div>
+                    <button
+                      onClick={runPagespeedAudit}
+                      disabled={pagespeedLoading}
+                      className="rounded-2xl bg-blue-500 hover:bg-blue-600 px-6 text-xs font-black uppercase italic tracking-widest text-white transition-all shadow-[0_4px_12px_rgba(59,130,246,0.2)] disabled:opacity-50 font-bold flex items-center justify-center gap-2"
+                      style={{ height: "54px" }}
+                    >
+                      {pagespeedLoading ? (
+                        <>
+                          <RefreshCw size={14} className="animate-spin" /> 측정 중
+                        </>
+                      ) : (
+                        "성능 측정"
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {pagespeedError && (
+                  <div className="rounded-2xl border border-red-500/10 bg-red-600/5 p-5 text-xs font-bold text-red-400 text-left">
+                    ⚠️ {pagespeedError}
+                  </div>
+                )}
+
+                {/* Loading state skeleton */}
+                {pagespeedLoading && (
+                  <div className="rounded-3xl border border-zinc-900 bg-zinc-950/20 p-8 space-y-6 text-center animate-pulse">
+                    <div className="flex justify-center">
+                      <RefreshCw size={36} className="text-blue-500 animate-spin" />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm font-black text-white">Google Lighthouse에서 모바일/데스크톱 속도 정보를 수집 중입니다...</p>
+                      <p className="text-xs text-zinc-500">실시간 원격 서버에서 네트워크 환경과 렌더링 성능을 테스트하므로 약 10~15초 정도 소요될 수 있습니다.</p>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+                      {[...Array(4)].map((_, i) => (
+                        <div key={i} className="h-32 bg-zinc-900/30 rounded-2xl border border-zinc-900/50" />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* PageSpeed Audit Results */}
+                {pagespeedResult && (
+                  <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <div className="rounded-3xl border border-zinc-900 bg-zinc-950/20 p-8 space-y-6">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-zinc-400">📊 Lighthouse 진단 스코어 ({pagespeedStrategy === "desktop" ? "🖥️ 데스크톱" : "📱 휴대전화"})</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <ScoreRing score={pagespeedResult.scores.performance} label="성능" />
+                        <ScoreRing score={pagespeedResult.scores.accessibility} label="접근성" />
+                        <ScoreRing score={pagespeedResult.scores.bestPractices} label="권장사항" />
+                        <ScoreRing score={pagespeedResult.scores.seo} label="검색엔진 최적화" />
+                      </div>
+                    </div>
+
+                    <div className="rounded-3xl border border-zinc-900 bg-zinc-950/20 p-8 space-y-6">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-zinc-400">⚡ 코어 웹 바이탈 핵심 항목 (Core Web Vitals)</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                        <MetricCard
+                          title="First Contentful Paint (FCP)"
+                          value={pagespeedResult.metrics.fcp}
+                          description="페이지 첫 텍스트/이미지가 보이기 시작하는 시간입니다."
+                        />
+                        <MetricCard
+                          title="Largest Contentful Paint (LCP)"
+                          value={pagespeedResult.metrics.lcp}
+                          description="가장 큰 메인 이미지가 다 나타나는 데 걸린 시간입니다."
+                        />
+                        <MetricCard
+                          title="Total Blocking Time (TBT)"
+                          value={pagespeedResult.metrics.tbt}
+                          description="마우스 클릭/입력이 반응하기까지의 지연 대기시간입니다."
+                        />
+                        <MetricCard
+                          title="Cumulative Layout Shift (CLS)"
+                          value={pagespeedResult.metrics.cls}
+                          description="화면 로딩 시 갑자기 글이나 이미지가 밀리는 현상 지수입니다."
+                        />
+                        <MetricCard
+                          title="Speed Index"
+                          value={pagespeedResult.metrics.si}
+                          description="콘텐츠들이 화면을 채우는 속도를 계산한 평균치입니다."
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
       </div>
