@@ -822,6 +822,13 @@ AI 생성 단계를 거치지 않고, 사용자가 직접 수동으로 처음부
   * 기존 3개 행을 차지하여 세로 공간 낭비가 컸던 상세 필터(비율, 제작 방식, 스타일 필터) 영역을 **가로 1개 행의 트리거 버튼 그룹**으로 통합하고, 버튼 클릭 시 하단으로 옵션이 아코디언 형태로 슬라이딩되어 노출되는 접이식 구조로 UI 개편. 각 버튼에는 현재 적용된 필터 상태를 요약 표시하도록 개선.
 * **[MODIFY] [google-drive-caching-proxy.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/google-drive-caching-proxy.md)**:
   * 음악 스트리밍 프록시 아키텍처 및 Supabase Egress 영향도 제로 설계 명세를 4.4절로 추가 작성.
+* **[MODIFY] [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/youtube/route.ts)**:
+  * 급상승 영상 트렌드(`type=trending`) 조회 시 `categoryId`가 `"all"`인 경우, 단순 12개 조회가 아닌 등록된 전체 8개 카테고리(`all`, `10`, `20`, `24`, `1`, `28`, `17`, `25`)의 캐시 데이터(혹은 실시간 신규 스캔 데이터)를 비동기 병렬 결합(Promise.all)하여 하나의 통합 데이터 세트로 결합하고 중복 영상 ID 제거 처리.
+  * 기존 카테고리별 최대 조회수(`maxResults`) 값을 12개에서 **20개**로 상향하여 더 폭넓은 인기 동영상 트렌드를 커버하도록 수정.
+* **[MODIFY] [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx)**:
+  * 전체(`all`) 탭 선택 시 수집된 대량의 통합 비디오 리스트를 클라이언트에서 한 번에 렌더링할 때의 오버헤드를 막기 위해 `visibleCount` 상태를 도입(기본 20개 노출).
+  * 윈도우 스크롤이 아닌 레이아웃 내부의 실제 스크롤 가능 컨테이너(`main`)를 타겟으로 감지하여, 화면 하단에 도달할 때마다 20개씩 영상을 점진적으로 덧붙여 보여주는 **무한 스크롤(Infinite Scroll)** 로직 구현 및 카테고리 전환 시 뷰 카운트 초기화 적용.
+  * API 서버로부터 받아오는 데이터 피드 레이블이 통합 DB 리스트 주소(`supabase-db-combined`)로 반환될 때에도 "Supabase Table Cache"로 정상 매핑 표시되도록 정정.
 
 ### 30-3. 검증 상태
 * `npx tsc --noEmit`을 실행하여 전체 프로젝트 컴파일 에러가 없는 상태를 최종 검증 완료했습니다.

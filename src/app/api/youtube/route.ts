@@ -59,7 +59,7 @@ export async function fetchAndCacheTrending(categoryId: string, date: string = g
   const vaultId = selectedVault.id;
 
   // 2. Fetch Live YouTube API
-  let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular&regionCode=${country}&maxResults=12&key=${apiKey}`;
+  let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular&regionCode=${country}&maxResults=20&key=${apiKey}`;
   if (categoryId && categoryId !== "all") {
     url += `&videoCategoryId=${categoryId}`;
   }
@@ -181,6 +181,72 @@ export async function GET(req: NextRequest) {
         const categoryId = searchParams.get("categoryId") || "all";
         const date = searchParams.get("date") || getKstTodayDate();
         const country = searchParams.get("country") || "KR";
+
+        if (categoryId === "all") {
+          const TARGET_CATEGORIES = ["all", "10", "20", "24", "1", "28", "17", "25"];
+          const promises = TARGET_CATEGORIES.map(async (catId) => {
+            const dbCategoryId = country === "KR" ? catId : `${country}_${catId}`;
+            try {
+              const { data: cachedRow } = await supabaseAdmin
+                .from("youtube_trending_archive")
+                .select("videos_data")
+                .eq("target_date", date)
+                .eq("category_id", dbCategoryId)
+                .maybeSingle();
+
+              if (cachedRow && cachedRow.videos_data) {
+                return cachedRow.videos_data as any[];
+              }
+            } catch (e) {
+              console.error(`Failed to load category ${catId} from cache:`, e);
+            }
+
+            const todayDate = getKstTodayDate();
+            if (date === todayDate) {
+              try {
+                const enriched = await fetchAndCacheTrending(catId, date, referer, country);
+                return enriched;
+              } catch (e) {
+                console.error(`Failed to fetch live category ${catId}:`, e);
+              }
+            }
+            return [];
+          });
+
+          const results = await Promise.all(promises);
+          const combinedVideos: any[] = [];
+          const seenIds = new Set<string>();
+
+          for (const list of results) {
+            if (Array.isArray(list)) {
+              for (const video of list) {
+                if (video && video.id && !seenIds.has(video.id)) {
+                  seenIds.add(video.id);
+                  combinedVideos.push(video);
+                }
+              }
+            }
+          }
+
+          const videoIds = combinedVideos.map((v) => v.id).filter(Boolean);
+          let analyzedVideoIds: string[] = [];
+          if (videoIds.length > 0) {
+            try {
+              const { data: analyzedRows } = await supabaseAdmin
+                .from("youtube_video_analysis")
+                .select("video_id")
+                .in("video_id", videoIds);
+              if (analyzedRows) {
+                analyzedVideoIds = analyzedRows.map((r) => r.video_id);
+              }
+            } catch (analysisErr) {
+              console.error("Failed to query analyzed rows in combined path:", analysisErr);
+            }
+          }
+
+          return NextResponse.json({ source: "supabase-db-combined", data: combinedVideos, analyzedVideoIds });
+        }
+
         const dbCategoryId = country === "KR" ? categoryId : `${country}_${categoryId}`;
         
         // 1. Try to read from Supabase Cache

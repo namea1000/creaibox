@@ -198,13 +198,13 @@ async function main() {
   const imageFolder = files.find(f => f.name === 'image' && f.mimeType === 'application/vnd.google-apps.folder');
   const musicFolder = files.find(f => f.name === 'music' && f.mimeType === 'application/vnd.google-apps.folder');
 
-  const filesToSync: { id: string; name: string; mimeType: string; size: string; createdTime: string; description: string; mediaType: 'video' | 'image' | 'music' }[] = [];
+  const filesToSync: { id: string; name: string; mimeType: string; size: string; createdTime: string; description: string; mediaType: 'video' | 'image' | 'music'; imageMediaMetadata?: any; videoMediaMetadata?: any }[] = [];
 
   if (videoFolder) {
     console.log(`\nDetected 'video' folder. Fetching files inside (ID: ${videoFolder.id})...`);
     const subListRes = await drive.files.list({
       q: `'${videoFolder.id}' in parents and trashed = false`,
-      fields: "files(id, name, mimeType, size, createdTime, description)",
+      fields: "files(id, name, mimeType, size, createdTime, description, videoMediaMetadata)",
     });
     const subFiles = subListRes.data.files || [];
     subFiles.forEach((f: any) => {
@@ -216,7 +216,8 @@ async function main() {
           size: f.size || '0',
           createdTime: f.createdTime || new Date().toISOString(),
           description: f.description || '',
-          mediaType: 'video'
+          mediaType: 'video',
+          videoMediaMetadata: f.videoMediaMetadata
         });
       }
     });
@@ -263,7 +264,7 @@ async function main() {
         do {
           const listRes: any = await drive.files.list({
             q: `'${catFolder.id}' in parents and trashed = false`,
-            fields: "nextPageToken, files(id, name, mimeType, size, createdTime, description)",
+            fields: "nextPageToken, files(id, name, mimeType, size, createdTime, description, imageMediaMetadata)",
             pageSize: 100,
             pageToken: pageToken
           });
@@ -277,7 +278,8 @@ async function main() {
                 size: f.size || '0',
                 createdTime: f.createdTime || new Date().toISOString(),
                 description: f.description || '',
-                mediaType: 'image'
+                mediaType: 'image',
+                imageMediaMetadata: f.imageMediaMetadata
               });
             }
           });
@@ -288,7 +290,7 @@ async function main() {
       console.log(`'creassets-library' not found. Fetching files directly inside 'image' folder...`);
       const subListRes = await drive.files.list({
         q: `'${imageFolder.id}' in parents and trashed = false`,
-        fields: "files(id, name, mimeType, size, createdTime, description)",
+        fields: "files(id, name, mimeType, size, createdTime, description, imageMediaMetadata)",
       });
       const subFiles = subListRes.data.files || [];
       subFiles.forEach(f => {
@@ -300,7 +302,8 @@ async function main() {
             size: f.size || '0',
             createdTime: f.createdTime || new Date().toISOString(),
             description: f.description || '',
-            mediaType: 'image'
+            mediaType: 'image',
+            imageMediaMetadata: f.imageMediaMetadata
           });
         }
       });
@@ -343,6 +346,46 @@ async function main() {
     let title = file.name.replace(/\.[^/.]+$/, "");
     let englishTitle = file.name.replace(/\.[^/.]+$/, "");
     let aspectRatio = parsedMidjourney.ratio;
+    
+    // Override aspect ratio using actual Google Drive image/video metadata if available
+    if (file.mediaType === 'image' && file.imageMediaMetadata?.width && file.imageMediaMetadata?.height) {
+      const w = file.imageMediaMetadata.width;
+      const h = file.imageMediaMetadata.height;
+      const ratio = w / h;
+      
+      if (Math.abs(ratio - 9/16) < 0.1) {
+        aspectRatio = '9:16';
+      } else if (Math.abs(ratio - 16/9) < 0.1) {
+        aspectRatio = '16:9';
+      } else if (Math.abs(ratio - 1/1) < 0.1) {
+        aspectRatio = '1:1';
+      } else if (Math.abs(ratio - 3/4) < 0.1) {
+        aspectRatio = '3:4';
+      } else if (Math.abs(ratio - 4/3) < 0.1) {
+        aspectRatio = '4:3';
+      } else {
+        if (w > h) {
+          aspectRatio = '16:9';
+        } else if (h > w) {
+          aspectRatio = '9:16';
+        } else {
+          aspectRatio = '1:1';
+        }
+      }
+      console.log(`[Drive Metadata] Detected aspect ratio from image dimensions: ${w}x${h} (${aspectRatio})`);
+    } else if (file.mediaType === 'video' && file.videoMediaMetadata?.width && file.videoMediaMetadata?.height) {
+      const w = file.videoMediaMetadata.width;
+      const h = file.videoMediaMetadata.height;
+      if (w > h) {
+        aspectRatio = '16:9';
+      } else if (h > w) {
+        aspectRatio = '9:16';
+      } else {
+        aspectRatio = '1:1';
+      }
+      console.log(`[Drive Metadata] Detected aspect ratio from video dimensions: ${w}x${h} (${aspectRatio})`);
+    }
+
     let generationType = parsedMidjourney.genType;
     let tags: string[] = [file.mediaType === 'video' ? 'Video' : (file.mediaType === 'music' ? 'Music' : 'Image')];
 

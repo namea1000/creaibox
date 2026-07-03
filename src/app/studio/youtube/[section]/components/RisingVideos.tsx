@@ -75,6 +75,7 @@ export default function RisingVideos() {
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
   const [analyzedVideos, setAnalyzedVideos] = useState<any[]>([]);
+  const [visibleCount, setVisibleCount] = useState(20);
 
   // 1. Recover recent analyzed reports from localStorage on mount
   useEffect(() => {
@@ -87,6 +88,39 @@ export default function RisingVideos() {
       }
     }
   }, []);
+
+  // Infinite scroll listener to progressively reveal videos as user scrolls down
+  useEffect(() => {
+    const mainContainer = document.querySelector("main");
+    const target = mainContainer || window;
+
+    const handleScroll = () => {
+      if (loading) return;
+      if (visibleCount >= videos.length) return;
+
+      let scrollHeight = 0;
+      let scrollTop = 0;
+      let clientHeight = 0;
+
+      if (mainContainer) {
+        scrollHeight = mainContainer.scrollHeight;
+        scrollTop = mainContainer.scrollTop;
+        clientHeight = mainContainer.clientHeight;
+      } else {
+        scrollHeight = document.documentElement.scrollHeight;
+        scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+        clientHeight = document.documentElement.clientHeight;
+      }
+
+      // Trigger load more when user scrolls past 85% of page
+      if (scrollTop + clientHeight >= scrollHeight - 500) {
+        setVisibleCount((prev) => Math.min(prev + 20, videos.length));
+      }
+    };
+
+    target.addEventListener("scroll", handleScroll);
+    return () => target.removeEventListener("scroll", handleScroll);
+  }, [loading, visibleCount, videos.length]);
 
   // 2. Add or prepend video to list and synchronize with localStorage
   const handleTriggerAnalysis = (video: any) => {
@@ -111,6 +145,7 @@ export default function RisingVideos() {
     setPlayingVideoId(null);
     setLoading(true);
     setError(null);
+    setVisibleCount(20); // Reset page count on new fetch
     try {
       const res = await fetch(`/api/youtube?type=trending&categoryId=${catId}&date=${targetDate}&country=${country}`);
       if (!res.ok) throw new Error("급상승 비디오 리스트를 가져오는데 실패했습니다.");
@@ -184,6 +219,7 @@ export default function RisingVideos() {
   };
 
   const filteredVideos = videos;
+  const displayedVideos = filteredVideos.slice(0, visibleCount);
   const isTodaySelected = selectedDate === getKstTodayDateStr();
 
   return (
@@ -278,7 +314,7 @@ export default function RisingVideos() {
             </div>
           ) : (
             <div className="grid gap-4 grid-cols-1 xl:grid-cols-2">
-              {filteredVideos.map((video, idx) => {
+              {displayedVideos.map((video, idx) => {
                 const videoId = video.id;
                 const title = video.snippet?.title || "제목 없음";
                 const channel = video.snippet?.channelTitle || "채널 정보 없음";
@@ -425,7 +461,7 @@ export default function RisingVideos() {
 
           {!loading && videos.length > 0 && (
             <div className="text-[10px] text-zinc-650 font-bold text-right mt-4">
-              데이터 피드: {source === "youtube-api" ? "YouTube Live Data API" : source === "supabase-db" ? "Supabase Table Cache" : "Vault Fallback System"}
+              데이터 피드: {source === "youtube-api" ? "YouTube Live Data API" : source.startsWith("supabase-db") ? "Supabase Table Cache" : "Vault Fallback System"}
             </div>
           )}
         </div>
