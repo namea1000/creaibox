@@ -807,6 +807,9 @@ AI 생성 단계를 거치지 않고, 사용자가 직접 수동으로 처음부
   * 미드저니 `--ar_` 비율 파싱 정교화 및 `Namu_` 접두사 제거 로직 반영.
   * 오디오 에셋을 위한 맞춤 파일명 및 데이터베이스 필드 바인딩 최적화.
   * 동기화 스크립트 실행 시 파일명에서 프롬프트를 추출하여 삽입하던 기존 방식을 일시 중단하고, 빈 문자열(`''`)을 할당하여 나중에 구글 드라이브 내 정확한 메타데이터 원본으로부터 일괄 주입받도록 구조 수정.
+  * 이미지와 동일하게 구글 드라이브 `video/` 폴더 하위에 위치한 카테고리별 서브 디렉토리(예: `wealth_money`, `motivation`, `knowledge_Sci_Fi` 등)를 재귀 탐색하도록 구조를 확장하여, 하위 폴더에 있는 모든 비디오 파일들이 빠짐없이 스캔되어 R2 업로드 및 DB 동기화되도록 수정.
+* **[NEW] [fix_aspect_ratios.ts](file:///Users/a1234/Local%20Sites/creaibox/scripts/fix_aspect_ratios.ts)**:
+  * Google Drive의 `image/` 및 `video/` 내의 전체 카테고리 하위 폴더 구조를 재귀적으로 스캔하여 실제 픽셀과 불일치하는 DB 가로/세로 배율을 일괄 자동 수정 및 원격 드라이브 파일 개명 처리하는 일련의 메인 마이그레이션 모듈 구현.
 * **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/free-assets/page.tsx)**:
   * 무료 라이브러리 오디오 재생(`toggleAudio`) 시 구글 드라이브 직링크에 대해 `/api/free-assets/proxy?url=` 보안 중계 주소를 바인딩하도록 수정.
   * 비디오 카드에 `onPointerMove` 및 `onPointerLeave` 리스너를 결합하고 내포된 비디오 태그에 `pointer-events-none`을 부여하여 정밀한 **비주얼 호버 스크러빙 및 오토플레이** 탑재.
@@ -829,6 +832,9 @@ AI 생성 단계를 거치지 않고, 사용자가 직접 수동으로 처음부
   * 전체(`all`) 탭 선택 시 수집된 대량의 통합 비디오 리스트를 클라이언트에서 한 번에 렌더링할 때의 오버헤드를 막기 위해 `visibleCount` 상태를 도입(기본 20개 노출).
   * 윈도우 스크롤이 아닌 레이아웃 내부의 실제 스크롤 가능 컨테이너(`main`)를 타겟으로 감지하여, 화면 하단에 도달할 때마다 20개씩 영상을 점진적으로 덧붙여 보여주는 **무한 스크롤(Infinite Scroll)** 로직 구현 및 카테고리 전환 시 뷰 카운트 초기화 적용.
   * API 서버로부터 받아오는 데이터 피드 레이블이 통합 DB 리스트 주소(`supabase-db-combined`)로 반환될 때에도 "Supabase Table Cache"로 정상 매핑 표시되도록 정정.
+* **[MODIFY] [Header.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Header.tsx)**:
+  * 기존에 메인 페이지 헤더의 유저 프로필 드롭다운 메뉴에서 `planName` 상태가 `"Plus"`로 하드코딩되어 있던 문제를 개선.
+  * `fetchProfile` 함수를 도입하여 Supabase `profiles` 테이블의 실제 `membership_level`을 비동기 조회 및 매핑(`Admin`, `Creator`, `Pro`, `Business`, `Free` 등)하고, 화면 깜빡임 차단을 위해 `localStorage`에 세션 정보와 캐싱 연동 처리.
 
 ### 30-3. 검증 상태
 * `npx tsc --noEmit`을 실행하여 전체 프로젝트 컴파일 에러가 없는 상태를 최종 검증 완료했습니다.

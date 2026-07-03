@@ -201,26 +201,73 @@ async function main() {
   const filesToSync: { id: string; name: string; mimeType: string; size: string; createdTime: string; description: string; mediaType: 'video' | 'image' | 'music'; imageMediaMetadata?: any; videoMediaMetadata?: any }[] = [];
 
   if (videoFolder) {
-    console.log(`\nDetected 'video' folder. Fetching files inside (ID: ${videoFolder.id})...`);
-    const subListRes = await drive.files.list({
-      q: `'${videoFolder.id}' in parents and trashed = false`,
-      fields: "files(id, name, mimeType, size, createdTime, description, videoMediaMetadata)",
+    console.log(`\nDetected 'video' folder. Scanning for subfolders and direct files inside (ID: ${videoFolder.id})...`);
+    
+    // 1. Fetch direct files under 'video' folder
+    let pageToken: string | undefined = undefined;
+    do {
+      const res: any = await drive.files.list({
+        q: `'${videoFolder.id}' in parents and trashed = false`,
+        fields: "nextPageToken, files(id, name, mimeType, size, createdTime, description, videoMediaMetadata)",
+        pageSize: 100,
+        pageToken
+      });
+      const files = res.data.files || [];
+      files.forEach((f: any) => {
+        if (f.id && f.name) {
+          if (f.mimeType?.startsWith('video/')) {
+            filesToSync.push({
+              id: f.id,
+              name: f.name,
+              mimeType: f.mimeType,
+              size: f.size || '0',
+              createdTime: f.createdTime || new Date().toISOString(),
+              description: f.description || '',
+              mediaType: 'video',
+              videoMediaMetadata: f.videoMediaMetadata
+            });
+          }
+        }
+      });
+      pageToken = res.data.nextPageToken;
+    } while (pageToken);
+
+    // 2. Scan subfolders inside 'video' folder for nested files
+    const subFoldersRes = await drive.files.list({
+      q: `'${videoFolder.id}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+      fields: "files(id, name)",
     });
-    const subFiles = subListRes.data.files || [];
-    subFiles.forEach((f: any) => {
-      if (f.id && f.name && f.mimeType?.startsWith('video/')) {
-        filesToSync.push({
-          id: f.id,
-          name: f.name,
-          mimeType: f.mimeType,
-          size: f.size || '0',
-          createdTime: f.createdTime || new Date().toISOString(),
-          description: f.description || '',
-          mediaType: 'video',
-          videoMediaMetadata: f.videoMediaMetadata
+    const subFolders = subFoldersRes.data.files || [];
+    console.log(`Found ${subFolders.length} category subfolders inside 'video' folder.`);
+
+    for (const folder of subFolders) {
+      console.log(`Scanning video category subfolder: ${folder.name} (ID: ${folder.id})...`);
+      let subPageToken: string | undefined = undefined;
+      do {
+        const res: any = await drive.files.list({
+          q: `'${folder.id}' in parents and trashed = false`,
+          fields: "nextPageToken, files(id, name, mimeType, size, createdTime, description, videoMediaMetadata)",
+          pageSize: 100,
+          pageToken: subPageToken
         });
-      }
-    });
+        const files = res.data.files || [];
+        files.forEach((f: any) => {
+          if (f.id && f.name && f.mimeType?.startsWith('video/')) {
+            filesToSync.push({
+              id: f.id,
+              name: f.name,
+              mimeType: f.mimeType,
+              size: f.size || '0',
+              createdTime: f.createdTime || new Date().toISOString(),
+              description: f.description || '',
+              mediaType: 'video',
+              videoMediaMetadata: f.videoMediaMetadata
+            });
+          }
+        });
+        subPageToken = res.data.nextPageToken;
+      } while (subPageToken);
+    }
   }
 
   if (musicFolder) {

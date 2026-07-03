@@ -26,24 +26,27 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [planName] = useState("Plus");
+  const [planName, setPlanName] = useState("Free");
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
 
-  const fetchNickname = useCallback(
+  const fetchProfile = useCallback(
     async (userId: string) => {
       try {
         const { data } = await supabase
           .from("profiles")
-          .select("nickname")
+          .select("nickname, membership_level")
           .eq("id", userId)
           .maybeSingle();
 
-        return data?.nickname ?? "";
+        return {
+          nickname: data?.nickname ?? "",
+          membershipLevel: data?.membership_level ?? "free",
+        };
       } catch {
-        return "";
+        return { nickname: "", membershipLevel: "free" };
       }
     },
     [supabase]
@@ -55,11 +58,15 @@ export default function Header() {
       try {
         const cachedUser = localStorage.getItem("creaibox_cached_user");
         const cachedNickname = localStorage.getItem("creaibox_cached_nickname");
+        const cachedPlanName = localStorage.getItem("creaibox_cached_planname");
         
         if (cachedUser) {
           setUser(JSON.parse(cachedUser));
           if (cachedNickname) {
             setNickname(cachedNickname);
+          }
+          if (cachedPlanName) {
+            setPlanName(cachedPlanName);
           }
           setIsAuthReady(true);
         }
@@ -74,25 +81,44 @@ export default function Header() {
       if (cancelled) return;
 
       if (nextUser?.id) {
-        // Apply cached nickname first to avoid flickering
+        // Apply cached profile first to avoid flickering
         let cachedNickname = "";
+        let cachedPlanName = "Free";
         if (typeof window !== "undefined") {
           cachedNickname = localStorage.getItem("creaibox_cached_nickname") || "";
+          cachedPlanName = localStorage.getItem("creaibox_cached_planname") || "Free";
         }
         
         setUser(nextUser);
         if (cachedNickname) {
           setNickname(cachedNickname);
         }
+        if (cachedPlanName) {
+          setPlanName(cachedPlanName);
+        }
 
-        // Fetch the fresh nickname in the background
-        const nextNickname = await fetchNickname(nextUser.id);
+        // Fetch the fresh profile in the background
+        const profileData = await fetchProfile(nextUser.id);
         if (!cancelled) {
-          setNickname(nextNickname);
+          setNickname(profileData.nickname);
+          
+          const rawLevel = String(profileData.membershipLevel || "free").toLowerCase();
+          const mappedLevel = rawLevel === "admin"
+            ? "Admin"
+            : rawLevel === "creator"
+            ? "Creator"
+            : rawLevel === "pro"
+            ? "Pro"
+            : rawLevel === "business"
+            ? "Business"
+            : "Free";
+            
+          setPlanName(mappedLevel);
           if (typeof window !== "undefined") {
             try {
               localStorage.setItem("creaibox_cached_user", JSON.stringify(nextUser));
-              localStorage.setItem("creaibox_cached_nickname", nextNickname);
+              localStorage.setItem("creaibox_cached_nickname", profileData.nickname);
+              localStorage.setItem("creaibox_cached_planname", mappedLevel);
             } catch (e) {
               console.warn("Failed to cache user session:", e);
             }
@@ -101,10 +127,12 @@ export default function Header() {
       } else {
         setUser(null);
         setNickname("");
+        setPlanName("Free");
         setIsProfileOpen(false);
         if (typeof window !== "undefined") {
           localStorage.removeItem("creaibox_cached_user");
           localStorage.removeItem("creaibox_cached_nickname");
+          localStorage.removeItem("creaibox_cached_planname");
         }
       }
 
@@ -147,7 +175,7 @@ export default function Header() {
       subscription.unsubscribe();
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [fetchNickname, supabase]);
+  }, [fetchProfile, supabase]);
 
   useEffect(() => {
     document.body.style.overflow = isMobileMenuOpen ? "hidden" : "";
