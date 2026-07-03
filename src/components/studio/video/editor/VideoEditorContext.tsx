@@ -374,7 +374,7 @@ type VideoEditorActions = {
   addClipFromMedia: (
     media: VideoEditorMediaItem,
     options?: { trackId?: string; startTime?: number }
-  ) => void;
+  ) => Promise<void> | void;
   addTextClip: () => void;
   addSubtitleClip: () => void;
   addSubtitleCues: (cues: SubtitleImportCue[]) => void;
@@ -1478,7 +1478,7 @@ function getMediaDuration(file: File): Promise<number> {
     tracks,
   ]);
 
-  const addClipFromMedia = (
+  const addClipFromMedia = async (
     media: VideoEditorMediaItem,
     options?: { trackId?: string; startTime?: number }
   ) => {
@@ -1494,7 +1494,31 @@ function getMediaDuration(file: File): Promise<number> {
       return prev;
     });
 
-    const duration = media.type === "image" ? 5 : media.duration || 10;
+    let resolvedDuration = media.duration;
+
+    // Dynamically resolve media duration if it's missing for video or audio
+    if ((media.type === "video" || media.type === "audio") && !resolvedDuration) {
+      console.log(`[VideoEditorContext] Resolving remote media duration for: ${media.name}`);
+      resolvedDuration = await new Promise<number>((resolve) => {
+        const tempEl = document.createElement(media.type) as HTMLMediaElement;
+        tempEl.src = media.url;
+        tempEl.preload = "metadata";
+        tempEl.onloadedmetadata = () => {
+          console.log(`[VideoEditorContext] Resolved duration: ${tempEl.duration}s for ${media.name}`);
+          resolve(tempEl.duration);
+        };
+        tempEl.onerror = () => {
+          console.warn(`[VideoEditorContext] Failed to resolve metadata for ${media.name}`);
+          resolve(media.type === "video" ? 10 : 30);
+        };
+        setTimeout(() => {
+          resolve(media.type === "video" ? 10 : 30);
+        }, 3000);
+      });
+      media.duration = resolvedDuration;
+    }
+
+    const duration = media.type === "image" ? 5 : resolvedDuration || 10;
     const requestedStartTime = Number((options?.startTime ?? currentTime).toFixed(2));
     const trackType = getTrackTypeByClipType(media.type);
 

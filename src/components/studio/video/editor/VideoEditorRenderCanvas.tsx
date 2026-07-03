@@ -48,12 +48,18 @@ function safeFileName(value: string) {
 }
 
 function downloadBlob(blob: Blob, fileName: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = fileName;
-  a.click();
-  URL.revokeObjectURL(url);
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function getFetchUrl(url: string): string {
+  if (!url) return "";
+  if (url.startsWith("blob:") || url.startsWith("data:")) return url;
+  const cb = `_cb=${Date.now()}`;
+  return url.includes("?") ? `${url}&${cb}` : `${url}?${cb}`;
 }
 
 async function writeBlobToHandleInChunks(fileHandle: any, blob: Blob) {
@@ -287,7 +293,7 @@ async function decodeAudioBufferForRender(
         }
         if (!fileOrBlob && url) {
           console.log("[decodeAudioBufferForRender] Fetching video URL as Blob reference:", url);
-          const response = await fetch(url);
+          const response = await fetch(getFetchUrl(url));
           fileOrBlob = await response.blob();
         }
         if (fileOrBlob) {
@@ -325,7 +331,7 @@ async function decodeAudioBufferForRender(
             throw new Error("미디어 파일의 URL 또는 파일 데이터가 존재하지 않습니다. 미디어 파일을 재연결해 주세요.");
           }
           console.log("[decodeAudioBufferForRender] Fetching video URL:", url);
-          const response = await fetch(url);
+          const response = await fetch(getFetchUrl(url));
           arrayBuffer = await response.arrayBuffer();
         }
         const decoded = await tempCtx.decodeAudioData(arrayBuffer);
@@ -355,7 +361,7 @@ async function decodeAudioBufferForRender(
             throw new Error("미디어 파일의 URL 또는 파일 데이터가 존재하지 않습니다. 미디어 파일을 재연결해 주세요.");
           }
           console.log("[decodeAudioBufferForRender] Fallback: Fetching video URL fallback:", url);
-          const response = await fetch(url);
+          const response = await fetch(getFetchUrl(url));
           return new Uint8Array(await response.arrayBuffer());
         };
 
@@ -390,7 +396,7 @@ async function decodeAudioBufferForRender(
 
       if (!arrayBuffer) {
         console.log("[decodeAudioBufferForRender] Fetching audio URL:", url);
-        const response = await fetch(url);
+        const response = await fetch(getFetchUrl(url));
         arrayBuffer = await response.arrayBuffer();
       }
 
@@ -412,7 +418,7 @@ async function decodeAudioBufferForRender(
               return new Uint8Array(await cachedFile.arrayBuffer());
             }
           } catch (err) {}
-          const fallbackResponse = await fetch(url);
+          const fallbackResponse = await fetch(getFetchUrl(url));
           return new Uint8Array(await fallbackResponse.arrayBuffer());
         };
 

@@ -1188,11 +1188,25 @@ function ProjectDetailContent({
                     const duration = item.duration || 5;
                     const scrubTime = pct * duration;
                     setPreviewMedia(item, scrubTime);
+
+                    const videoEl = e.currentTarget.querySelector("video");
+                    if (videoEl) {
+                      const videoDuration = videoEl.duration || duration;
+                      const targetTime = pct * videoDuration;
+                      if (!isNaN(targetTime)) {
+                        videoEl.currentTime = targetTime;
+                      }
+                    }
                   }}
-                  onPointerLeave={() => {
+                  onPointerLeave={(e) => {
                     setHoveredMediaId(null);
                     setHoveredMediaX(0);
                     setPreviewMedia(clickedPreviewMediaItem, clickedPreviewMediaTime);
+
+                    const videoEl = e.currentTarget.querySelector("video");
+                    if (videoEl) {
+                      videoEl.currentTime = 0;
+                    }
                   }}
                   onClick={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
@@ -1248,6 +1262,14 @@ function ProjectDetailContent({
                           src={item.thumbnailUrl}
                           alt={item.name}
                           className="h-full w-full object-cover pointer-events-none select-none"
+                        />
+                      ) : item.type === "video" && item.url ? (
+                        <video
+                          src={item.url}
+                          className="h-full w-full object-cover pointer-events-none select-none"
+                          muted
+                          playsInline
+                          preload="metadata"
                         />
                       ) : item.type === "video" ? (
                         <div className="flex flex-col items-center gap-1.5 text-zinc-500">
@@ -1535,6 +1557,23 @@ function SidebarMediaItemRow({ item }: { item: VideoEditorMediaItem }) {
                   }
                 }}
                 className={`${thumbSizeClass} rounded object-cover shrink-0 bg-black/40 border border-white/5`}
+              />
+            );
+          }
+          if (item.url) {
+            return (
+              <video
+                src={item.url}
+                className={`${thumbSizeClass} rounded object-cover shrink-0 bg-black/40 border border-white/5`}
+                muted
+                playsInline
+                preload="metadata"
+                onLoadedMetadata={(e) => {
+                  const video = e.currentTarget;
+                  if (video.videoHeight > video.videoWidth) {
+                    setIsVertical(true);
+                  }
+                }}
               />
             );
           }

@@ -381,7 +381,7 @@ export default function VideoEditorClip({
       {/* Bottom Area: Image Filmstrip or Audio Waveform */}
       <div className="relative flex-1 w-full min-h-0 overflow-hidden bg-black/10 z-10 pointer-events-none">
         {/* Filmstrip Background for Video/Image */}
-        {thumbnailUrl && (clip.type === "video" || clip.type === "image") && (
+        {thumbnailUrl ? (
           <div
             className="absolute inset-0 z-0 bg-repeat bg-cover pointer-events-none opacity-85"
             style={{
@@ -390,7 +390,15 @@ export default function VideoEditorClip({
               backgroundSize: "auto 100%",
             }}
           />
-        )}
+        ) : clip.type === "video" && media?.url ? (
+          <video
+            src={media.url}
+            className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity-85 z-0"
+            muted
+            playsInline
+            preload="metadata"
+          />
+        ) : null}
 
         {/* Waveform for Video containing audio */}
         {clip.type === "video" && clip.waveform && clip.waveform.length > 0 && (

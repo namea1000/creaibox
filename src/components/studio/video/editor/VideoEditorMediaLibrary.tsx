@@ -13,6 +13,7 @@ import {
   Video,
   FolderOpen,
   Database,
+  HelpCircle,
 } from "lucide-react";
 
 import { useMemo, useState, useEffect } from "react";
@@ -140,6 +141,38 @@ const fallbackCreaiboxAssets = [
     prompt: "luxury cruise travel ocean golden hour sunset scenic",
     created_at: new Date().toISOString(),
     is_fallback: true
+  },
+  {
+    id: "fallback-cre-5",
+    image_url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800",
+    title: "스타트업 창의적 기획 브레인스토밍.jpg",
+    prompt: "creative team brainstorming session startup office dynamic collaboration",
+    created_at: new Date().toISOString(),
+    is_fallback: true
+  },
+  {
+    id: "fallback-cre-6",
+    image_url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800",
+    title: "카페에서의 여유로운 맥북 코딩 작업.jpg",
+    prompt: "cozy workspace laptop coffee tech coding setup cafe",
+    created_at: new Date().toISOString(),
+    is_fallback: true
+  },
+  {
+    id: "fallback-cre-7",
+    image_url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800",
+    title: "도심 속 랜드마크 빌딩 스카이라인.jpg",
+    prompt: "modern skyscraper architecture building facade city center glass window reflective",
+    created_at: new Date().toISOString(),
+    is_fallback: true
+  },
+  {
+    id: "fallback-cre-8",
+    image_url: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800",
+    title: "디지털 빅데이터 추상 인공지능 네트워크.jpg",
+    prompt: "futuristic global network connections big data visual abstract graphic science technology",
+    created_at: new Date().toISOString(),
+    is_fallback: true
   }
 ];
 
@@ -173,6 +206,38 @@ const fallbackImageStudioAssets = [
     image_url: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800",
     title: "밤하늘을 물들인 판타지 그린 오로라.jpg",
     prompt: "dreamy magical green northern lights aurora borealis starry night",
+    created_at: new Date().toISOString(),
+    is_fallback: true
+  },
+  {
+    id: "fallback-img-5",
+    image_url: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800",
+    title: "네온 라이트로 물든 미니멀 거실 룸 데코.jpg",
+    prompt: "neon illuminated living room synthwave vaporwave warm glow",
+    created_at: new Date().toISOString(),
+    is_fallback: true
+  },
+  {
+    id: "fallback-img-6",
+    image_url: "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=800",
+    title: "아침 안개로 덮인 숲속 비밀 호수 정원.jpg",
+    prompt: "misty forest secret lake tranquil fantasy woodland morning light",
+    created_at: new Date().toISOString(),
+    is_fallback: true
+  },
+  {
+    id: "fallback-img-7",
+    image_url: "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800",
+    title: "드넓게 펼쳐진 푸른 산맥의 지평선.jpg",
+    prompt: "wide mountain landscape range scenic green valley aerial view sky",
+    created_at: new Date().toISOString(),
+    is_fallback: true
+  },
+  {
+    id: "fallback-img-8",
+    image_url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800",
+    title: "신비롭고 몽환적인 벚꽃길 터널.jpg",
+    prompt: "dreamy cherry blossom path pink sakura tree tunnel fantasy anime aesthetics",
     created_at: new Date().toISOString(),
     is_fallback: true
   }
@@ -223,6 +288,8 @@ export default function VideoEditorMediaLibrary({ forcedTab }: { forcedTab?: Lib
   const [freeMediaType, setFreeMediaType] = useState<"all" | "premium-theme" | "photo" | "illust" | "vector" | "video" | "music">("all");
   const [freeAspectRatio, setFreeAspectRatio] = useState<"all" | "16:9" | "9:16" | "4:3" | "1:1">("all");
   const [freeGenType, setFreeGenType] = useState<"all" | "ai" | "real">("all");
+  const [freeCategoryTab, setFreeCategoryTab] = useState<"all" | "image" | "video" | "audio">("all");
+  const [freeImageStyle, setFreeImageStyle] = useState<string>("all");
 
   useEffect(() => {
     let active = true;
@@ -389,88 +456,134 @@ export default function VideoEditorMediaLibrary({ forcedTab }: { forcedTab?: Lib
         </div>
       ) : libraryTab === "free-assets" ? (
         <div className="space-y-4">
-          <div className="rounded-md border border-white/10 bg-black/30 p-3 space-y-3">
-            {/* Search Input */}
-            <div className="flex items-center gap-2 rounded-md border border-white/10 bg-black/40 px-3 py-2">
-              <Search size={15} className="text-zinc-500" />
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="무료 이미지, 비디오, 음악 등 키워드 검색..."
-                className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-zinc-600"
-              />
+          {/* Category Tabs */}
+          <div className="flex border-b border-white/10 -mx-4 px-4">
+            {[
+              { id: "all", label: "전체" },
+              { id: "image", label: "이미지" },
+              { id: "video", label: "비디오" },
+              { id: "audio", label: "음악" },
+            ].map((tab) => {
+              const isActive = freeCategoryTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => {
+                    setFreeCategoryTab(tab.id as any);
+                    if (tab.id !== "image") {
+                      setFreeImageStyle("all");
+                    }
+                  }}
+                  className={`flex-1 pb-2.5 text-xs font-black text-center border-b-2 transition-all duration-150 ${
+                    isActive
+                      ? "border-cyan-400 text-cyan-200 font-extrabold"
+                      : "border-transparent text-zinc-500 hover:text-zinc-300"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Search Input */}
+          <div className="flex items-center gap-2 rounded-md border border-white/10 bg-black/40 px-3 py-2">
+            <Search size={15} className="text-zinc-500" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="무료 이미지, 비디오, 음악 등 키워드 검색..."
+              className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-zinc-600"
+            />
+          </div>
+
+          {/* Popular Tags */}
+          <div className="flex flex-wrap gap-1.5 pt-0.5">
+            {["자연", "배경", "바다", "하늘", "여행", "힐링", "음악", "감성", "우주", "비즈니스"].map((tag) => {
+              const isActive = search.trim().toLowerCase() === tag.toLowerCase();
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setSearch(isActive ? "" : tag)}
+                  className={`rounded-full px-2 py-0.5 text-[9px] font-black border transition ${
+                    isActive
+                      ? "border-cyan-400 bg-cyan-400/10 text-cyan-200"
+                      : "border-white/5 bg-white/[0.02] text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
+                  }`}
+                >
+                  #{tag}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Advanced Filters */}
+          <div className="border-t border-white/10 -mx-4"></div>
+          <div className={`grid gap-2 ${
+            (freeCategoryTab === "all" || freeCategoryTab === "image") ? "grid-cols-3" : "grid-cols-2"
+          }`}>
+            {/* Style Filter (Only for All or Image tabs) */}
+            {(freeCategoryTab === "all" || freeCategoryTab === "image") && (
+              <div className="space-y-1">
+                <label className="text-[8px] font-bold text-zinc-500 uppercase tracking-wider block">스타일 필터</label>
+                <select
+                  value={freeImageStyle}
+                  onChange={(e) => setFreeImageStyle(e.target.value)}
+                  className="w-full rounded border border-white/10 bg-black/50 px-1.5 py-1 text-[10px] font-bold text-white outline-none"
+                >
+                  <option value="all">스타일 필터</option>
+                  <option value="photorealistic">실사 (Photo)</option>
+                  <option value="illustration">일러스트</option>
+                  <option value="vector">벡터 (Vector)</option>
+                  <option value="3d_render">3D 렌더</option>
+                  <option value="anime">애니메이션</option>
+                  <option value="pixel_art">픽셀 아트</option>
+                  <option value="watercolor">수채화</option>
+                  <option value="line_art">라인 아트</option>
+                  <option value="seamless_pattern">패턴</option>
+                  <option value="retro_pop_art">레트로 팝</option>
+                </select>
+              </div>
+            )}
+
+            {/* Aspect Ratio */}
+            <div className="space-y-1">
+              <label className="text-[8px] font-bold text-zinc-500 uppercase tracking-wider block">비율 필터</label>
+              <select
+                value={freeAspectRatio}
+                onChange={(e) => setFreeAspectRatio(e.target.value as any)}
+                className="w-full rounded border border-white/10 bg-black/50 px-1.5 py-1 text-[10px] font-bold text-white outline-none"
+              >
+                <option value="all">비율 필터</option>
+                <option value="16:9">16:9 가로</option>
+                <option value="9:16">9:16 세로</option>
+                <option value="4:3">4:3 표준</option>
+                <option value="1:1">1:1 정방향</option>
+              </select>
             </div>
 
-            {/* Popular Tags */}
-            <div className="flex flex-wrap gap-1.5 pt-0.5">
-              {["자연", "배경", "바다", "하늘", "여행", "힐링", "음악", "감성", "우주", "비즈니스"].map((tag) => {
-                const isActive = search.trim().toLowerCase() === tag.toLowerCase();
-                return (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => setSearch(isActive ? "" : tag)}
-                    className={`rounded-full px-2 py-0.5 text-[9px] font-black border transition ${
-                      isActive
-                        ? "border-cyan-400 bg-cyan-400/10 text-cyan-200"
-                        : "border-white/5 bg-white/[0.02] text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
-                    }`}
-                  >
-                    #{tag}
-                  </button>
-                );
-              })}
+            {/* Generation Type */}
+            <div className="space-y-1">
+              <label className="text-[8px] font-bold text-zinc-500 uppercase tracking-wider block">제작 방식</label>
+              <select
+                value={freeGenType}
+                onChange={(e) => setFreeGenType(e.target.value as any)}
+                className="w-full rounded border border-white/10 bg-black/50 px-1.5 py-1 text-[10px] font-bold text-white outline-none"
+              >
+                <option value="all">제작 방식</option>
+                <option value="ai">AI 생성 이미지</option>
+                <option value="real">실제 사진/미디어</option>
+              </select>
             </div>
+          </div>
 
-            {/* Advanced Filters */}
-            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/5">
-              {/* Media Type */}
-              <div className="space-y-1">
-                <label className="text-[8px] font-bold text-zinc-500 uppercase tracking-wider block">미디어 타입</label>
-                <select
-                  value={freeMediaType}
-                  onChange={(e) => setFreeMediaType(e.target.value as any)}
-                  className="w-full rounded border border-white/10 bg-black/50 px-1.5 py-1 text-[10px] font-bold text-white outline-none"
-                >
-                  <option value="all">전체 둘러보기</option>
-                  <option value="premium-theme">테마 갤러리</option>
-                  <option value="photo">사진 (Photos)</option>
-                  <option value="illust">일러스트 (Illust)</option>
-                  <option value="vector">벡터 (Vectors)</option>
-                  <option value="video">비디오 (Videos)</option>
-                  <option value="music">음악 (Music)</option>
-                </select>
-              </div>
-
-              {/* Aspect Ratio */}
-              <div className="space-y-1">
-                <label className="text-[8px] font-bold text-zinc-500 uppercase tracking-wider block">비율 필터</label>
-                <select
-                  value={freeAspectRatio}
-                  onChange={(e) => setFreeAspectRatio(e.target.value as any)}
-                  className="w-full rounded border border-white/10 bg-black/50 px-1.5 py-1 text-[10px] font-bold text-white outline-none"
-                >
-                  <option value="all">전체 비율</option>
-                  <option value="16:9">16:9 가로</option>
-                  <option value="9:16">9:16 세로</option>
-                  <option value="4:3">4:3 표준</option>
-                  <option value="1:1">1:1 정방향</option>
-                </select>
-              </div>
-
-              {/* Generation Type */}
-              <div className="space-y-1">
-                <label className="text-[8px] font-bold text-zinc-500 uppercase tracking-wider block">제작 방식</label>
-                <select
-                  value={freeGenType}
-                  onChange={(e) => setFreeGenType(e.target.value as any)}
-                  className="w-full rounded border border-white/10 bg-black/50 px-1.5 py-1 text-[10px] font-bold text-white outline-none"
-                >
-                  <option value="all">전체 방식</option>
-                  <option value="ai">AI 생성 이미지</option>
-                  <option value="real">실제 사진/미디어</option>
-                </select>
-              </div>
+          {/* 💡 YouTube Reused Content Guide Tooltip */}
+          <div className="rounded-md border border-cyan-500/20 bg-cyan-500/5 p-2.5 text-[10px] text-cyan-200/90 leading-relaxed flex gap-2">
+            <HelpCircle size={14} className="text-cyan-400 shrink-0 mt-0.5" />
+            <div>
+              <strong>유튜브 업로드 팁:</strong> 무료 에셋을 편집 없이 그대로 올리면 유튜브 AI에 의해 <strong>'재사용된 콘텐츠'</strong>로 오인되어 수익 창출이 거절될 수 있습니다. <strong>텍스트 자막, AI 나레이션</strong>을 더해 독창적인 2차 가공물로 만들어 올리세요!
             </div>
           </div>
 
@@ -483,9 +596,45 @@ export default function VideoEditorMediaLibrary({ forcedTab }: { forcedTab?: Lib
               보관된 무료 공유 에셋이 없습니다.
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 max-h-[450px] overflow-y-auto pr-1 scrollbar-thin">
+            <div className="grid grid-cols-2 gap-3 max-h-[660px] overflow-y-auto pr-1 scrollbar-thin">
               {freeAssets
                 .filter((item) => {
+                  // 0. High-level category tab filter
+                  let calculatedType: "image" | "video" | "audio" = "image";
+                  if (item.mediaType === "video") {
+                    calculatedType = "video";
+                  } else if (item.mediaType === "music" || item.mediaType === "audio") {
+                    calculatedType = "audio";
+                  }
+                  
+                  if (freeCategoryTab !== "all" && calculatedType !== freeCategoryTab) {
+                    return false;
+                  }
+
+                  // 0.5. Image Style Filter (only applicable for all or image category)
+                  if ((freeCategoryTab === "all" || freeCategoryTab === "image") && freeImageStyle !== "all") {
+                    const styleKeywordsMap: Record<string, string[]> = {
+                      photorealistic: ["photorealistic", "실사", "촬영", "photo", "cinematic", "photography", "photograph", "camera", "시네마틱"],
+                      illustration: ["illustration", "일러스트", "watercolor illustration"],
+                      vector: ["vector", "벡터", "icon"],
+                      "3d_render": ["3d", "render", "isometric", "blender", "렌더"],
+                      anime: ["anime", "애니메이션", "scenery", "shinkai"],
+                      pixel_art: ["pixel", "픽셀"],
+                      watercolor: ["watercolor", "수채화"],
+                      line_art: ["line", "라인"],
+                      seamless_pattern: ["seamless", "pattern", "패턴"],
+                      retro_pop_art: ["retro", "pop", "vintage", "팝아트"]
+                    };
+                    const keywords = styleKeywordsMap[freeImageStyle] || [];
+                    const matchesStyle = keywords.some(kw => 
+                      (item.title || "").toLowerCase().includes(kw) ||
+                      (item.name || "").toLowerCase().includes(kw) ||
+                      (Array.isArray(item.tags) && item.tags.some((t: string) => t.toLowerCase().includes(kw))) ||
+                      (item.prompt || "").toLowerCase().includes(kw)
+                    );
+                    if (!matchesStyle) return false;
+                  }
+
                   // 1. Media Type / Theme Filter
                   if (freeMediaType === "premium-theme") {
                     if (!item.isOfficialThemeAsset) return false;
@@ -576,6 +725,27 @@ export default function VideoEditorMediaLibrary({ forcedTab }: { forcedTab?: Lib
                         event.dataTransfer.setData("media-id", item.id);
                         event.dataTransfer.effectAllowed = "copy";
                       }}
+                      onPointerMove={(e) => {
+                        if (type !== "video") return;
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const pct = Math.max(0, Math.min(1, x / rect.width));
+                        const videoEl = e.currentTarget.querySelector("video");
+                        if (videoEl) {
+                          const duration = videoEl.duration || 5;
+                          const targetTime = pct * duration;
+                          if (!isNaN(targetTime)) {
+                            videoEl.currentTime = targetTime;
+                          }
+                        }
+                      }}
+                      onPointerLeave={(e) => {
+                        if (type !== "video") return;
+                        const videoEl = e.currentTarget.querySelector("video");
+                        if (videoEl) {
+                          videoEl.currentTime = 0;
+                        }
+                      }}
                       className="group overflow-hidden rounded-md border border-white/10 bg-black/30 transition hover:border-cyan-400/50"
                     >
                       <div className="relative flex aspect-video items-center justify-center bg-zinc-950">
@@ -584,6 +754,14 @@ export default function VideoEditorMediaLibrary({ forcedTab }: { forcedTab?: Lib
                             src={proxiedUrl}
                             alt={title}
                             className="h-full w-full object-cover pointer-events-none select-none"
+                          />
+                        ) : type === "video" && proxiedUrl ? (
+                          <video
+                            src={proxiedUrl}
+                            className="h-full w-full object-cover pointer-events-none select-none"
+                            muted
+                            playsInline
+                            preload="metadata"
                           />
                         ) : type === "video" ? (
                           <div className="flex flex-col items-center gap-0.5 text-cyan-400 bg-cyan-950/20 w-full h-full justify-center">
@@ -646,7 +824,7 @@ export default function VideoEditorMediaLibrary({ forcedTab }: { forcedTab?: Lib
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 max-h-[450px] overflow-y-auto pr-1 scrollbar-thin">
+            <div className="grid grid-cols-2 gap-3 max-h-[660px] overflow-y-auto pr-1 scrollbar-thin">
               {(creaiboxImages.length > 0 ? creaiboxImages : fallbackCreaiboxAssets)
                 .filter(img => !search || (img.title && img.title.toLowerCase().includes(search.toLowerCase())) || (img.prompt && img.prompt.toLowerCase().includes(search.toLowerCase())))
                 .map((img) => {
@@ -718,7 +896,7 @@ export default function VideoEditorMediaLibrary({ forcedTab }: { forcedTab?: Lib
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 max-h-[450px] overflow-y-auto pr-1 scrollbar-thin">
+            <div className="grid grid-cols-2 gap-3 max-h-[660px] overflow-y-auto pr-1 scrollbar-thin">
               {(imageContentImages.length > 0 ? imageContentImages : fallbackImageStudioAssets)
                 .filter(img => !search || (img.title && img.title.toLowerCase().includes(search.toLowerCase())) || (img.prompt && img.prompt.toLowerCase().includes(search.toLowerCase())))
                 .map((img) => {

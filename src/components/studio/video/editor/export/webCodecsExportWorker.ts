@@ -165,7 +165,12 @@ export function createWebCodecsExportWorker() {
       if (imageCache.has(media.id)) return imageCache.get(media.id);
 
       try {
-        var response = await fetch(media.url);
+        var fetchUrl = media.url;
+        if (fetchUrl && !fetchUrl.startsWith("blob:") && !fetchUrl.startsWith("data:")) {
+          var cb = "_cb=" + Date.now();
+          fetchUrl = fetchUrl.indexOf("?") !== -1 ? fetchUrl + "&" + cb : fetchUrl + "?" + cb;
+        }
+        var response = await fetch(fetchUrl);
         var blob = await response.blob();
         var bitmap = await createImageBitmap(blob);
         imageCache.set(media.id, bitmap);

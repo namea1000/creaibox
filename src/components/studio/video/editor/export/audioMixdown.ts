@@ -6,6 +6,13 @@ import {
 import { getFFmpeg, runWithFFmpegLock } from "../ffmpeg/convertWebmToMp4";
 import { extractAudioWithMediabunny } from "./audioExtractor";
 
+function getFetchUrl(url: string): string {
+  if (!url) return "";
+  if (url.startsWith("blob:") || url.startsWith("data:")) return url;
+  const cb = `_cb=${Date.now()}`;
+  return url.includes("?") ? `${url}&${cb}` : `${url}?${cb}`;
+}
+
 export type AudioMixSource = {
   clipId: string;
   mediaId: string;
@@ -197,7 +204,7 @@ async function decodeAudioBufferWithTimeout(
         }
         if (!fileOrBlob && url) {
           console.log("[AudioMixdown] Fetching video URL as Blob reference:", url);
-          const response = await fetch(url, { signal });
+          const response = await fetch(getFetchUrl(url), { signal });
           fileOrBlob = await response.blob();
         }
         if (fileOrBlob) {
@@ -235,7 +242,7 @@ async function decodeAudioBufferWithTimeout(
             throw new Error("미디어 파일의 URL 또는 파일 데이터가 존재하지 않습니다. 미디어 파일을 재연결해 주세요.");
           }
           console.log("[AudioMixdown] Fetching video URL:", url);
-          const response = await fetch(url, { signal });
+          const response = await fetch(getFetchUrl(url), { signal });
           arrayBuffer = await response.arrayBuffer();
         }
         const decoded = await tempCtx.decodeAudioData(arrayBuffer);
@@ -265,7 +272,7 @@ async function decodeAudioBufferWithTimeout(
             throw new Error("미디어 파일의 URL 또는 파일 데이터가 존재하지 않습니다. 미디어 파일을 재연결해 주세요.");
           }
           console.log("[AudioMixdown] Fallback: Fetching video URL fallback:", url);
-          const response = await fetch(url, { signal });
+          const response = await fetch(getFetchUrl(url), { signal });
           return new Uint8Array(await response.arrayBuffer());
         };
 
@@ -300,7 +307,7 @@ async function decodeAudioBufferWithTimeout(
 
       if (!arrayBuffer) {
         console.log("[AudioMixdown] Fetching audio URL:", url);
-        const response = await fetch(url, { signal });
+        const response = await fetch(getFetchUrl(url), { signal });
         arrayBuffer = await response.arrayBuffer();
       }
 

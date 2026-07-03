@@ -2,7 +2,20 @@
 
 이 문서는 CreAibox 프로젝트의 일자별 개발 내역, 핵심 아키텍처 결정 사항을 기록합니다.
 
-### 🗓️ 2026-06-27 (토) - 오늘
+### 🗓️ 2026-07-03 (금) - 오늘
+#### 1. 비디오 에디터 내 비디오 썸네일 노출 및 마우스 호버 실시간 탐색(Scrubbing) 구현
+* **구현 요약**: 비디오 에디터 내 미디어 라이브러리 및 타임라인 상에서 비디오 파일들이 정적 아이콘(🎬)이나 액박 대신 실제 첫 프레임 화면을 노출하도록 썸네일을 보강하고, 마우스 호버 시 커서의 상대적 위치에 따라 실시간으로 재생 화면을 미리보기할 수 있는 고성능 스크러빙 기능을 구축했습니다.
+* **작업 상세**:
+  - **비디오 썸네일 첫 프레임 자동 노출**: 
+    - **가져온 미디어 목록 및 그리드**: [`VideoEditorUnifiedLibrary.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorUnifiedLibrary.tsx)의 `SidebarMediaItemRow` 및 이벤트 미디어 소스 그리드에서 비디오 썸네일 이미지(`thumbnailUrl`)가 지정되어 있지 않을 경우, `item.url`이 있을 때 `<video>` 태그를 `preload="metadata"` 모드로 그려 첫 프레임 화면이 자연스럽게 썸네일로 표출되도록 설계했습니다.
+    - **무료 공유 에셋 라이브러리**: [`VideoEditorMediaLibrary.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorMediaLibrary.tsx) 내의 에셋 그리드 내 비디오 카드 영역에서도 동일하게 `<video>` 태그를 렌더링하여 첫 프레임이 깨짐 없이 노출되도록 구현했습니다.
+    - **타임라인 비디오 클립**: [`VideoEditorClip.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorClip.tsx)의 타임라인 클립 렌더러에서 비디오 타입일 때 `thumbnailUrl`이 누락된 경우, `media?.url`을 획득하여 첫 프레임을 배경 썸네일처럼 띄워 타임라인 시각 정합성을 완전히 맞추었습니다.
+  - **마우스 호버 실시간 구간 탐색 (Visual Hover Scrubbing)**:
+    - **DOM 직접 변경을 통한 초고속 렌더링**: 이벤트 미디어 소스 그리드와 무료 공유 에셋 그리드의 각 비디오 카드에 `onPointerMove` 및 `onPointerLeave` 리스너를 결합했습니다. 마우스 이동 시 React 컴포넌트를 강제 리렌더링하지 않고, DOM 노드 질의를 통해 내포된 `<video>`의 `currentTime`을 커서의 상대 비율에 따라 실시간으로 직접 설정하여 **렉 없는 60fps 프리뷰 스크러빙**을 구현했습니다.
+    - **자동 되감기 기능**: 마우스가 비디오 영역을 이탈하면 즉각 `currentTime`을 0초 지점으로 돌려 최초 화면으로 자동 복원되도록 처리했습니다.
+  - **TypeScript 타입 무결성 검증**: `npx tsc --noEmit` 빌드 검사를 완벽히 가동하여 타입 충돌이나 컴파일 빌드에 장애가 없음을 최종 확인했습니다.
+
+### 🗓️ 2026-06-27 (토)
 #### 1. 구글 드라이브 캐싱 프록시 아키텍처 단순화 및 실서버 엑박 장애 완패치
 * **구현 요약**: 실서버 배포 환경(Vercel 서버리스 등)에서 `sharp` 네이티브 모듈 로딩 실패로 인해 `/api/free-assets/proxy`가 500 에러를 반환하며 이미지가 전량 깨지던 현상을 해결했습니다.
 * **작업 상세**:

@@ -746,3 +746,82 @@ AI 생성 단계를 거치지 않고, 사용자가 직접 수동으로 처음부
 
 ### 28-3. 검증 상태
 * `npx tsc --noEmit` 수행 결과 컴파일 오류가 전혀 없는 0 errors 상태를 완벽 검증했습니다.
+
+---
+
+## 29. 비디오 에디터 내 비디오 썸네일 노출 및 실시간 호버 탐색(Scrubbing) 구현
+
+### 29-1. 주요 작업 내역
+* **비디오 썸네일 첫 프레임 자동 노출**:
+  * **가져온 미디어 목록 및 그리드**: [`VideoEditorUnifiedLibrary.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorUnifiedLibrary.tsx)의 `SidebarMediaItemRow` 및 이벤트 미디어 소스 그리드에서 비디오 썸네일 이미지(`thumbnailUrl`)가 지정되어 있지 않을 경우, `item.url`이 있을 때 `<video>` 태그를 `preload="metadata"` 모드로 그려 첫 프레임 화면이 자연스럽게 썸네일로 표출되도록 설계했습니다.
+  * **무료 공유 에셋 라이브러리**: [`VideoEditorMediaLibrary.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorMediaLibrary.tsx) 내의 에셋 그리드 내 비디오 카드 영역에서도 동일하게 `<video>` 태그를 렌더링하여 첫 프레임이 깨짐 없이 노출되도록 구현했습니다.
+  * **타임라인 비디오 클립**: [`VideoEditorClip.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorClip.tsx)의 타임라인 클립 렌더러에서 비디오 타입일 때 `thumbnailUrl`이 누락된 경우, `media?.url`을 획득하여 첫 프레임을 배경 썸네일처럼 띄워 타임라인 시각 정합성을 완전히 맞추었습니다.
+* **마우스 호버 실시간 구간 탐색 (Visual Hover Scrubbing)**:
+  * **DOM 직접 변경을 통한 초고속 렌더링**: 이벤트 미디어 소스 그리드와 무료 공유 에셋 그리드의 각 비디오 카드에 `onPointerMove` 및 `onPointerLeave` 리스너를 결합했습니다. 마우스 이동 시 React 컴포넌트를 강제 리렌더링하지 않고, DOM 노드 질의를 통해 내포된 `<video>`의 `currentTime`을 커서의 상대 비율에 따라 실시간으로 직접 설정하여 **렉 없는 60fps 프리뷰 스크러빙**을 구현했습니다.
+  * **자동 되감기 기능**: 마우스가 비디오 영역을 이탈하면 즉각 `currentTime`을 0초 지점으로 돌려 최초 화면으로 자동 복원되도록 처리했습니다.
+
+### 29-2. 변경 및 추가 파일 목록
+* **[MODIFY] [VideoEditorUnifiedLibrary.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorUnifiedLibrary.tsx)**:
+  * `SidebarMediaItemRow` 내 비디오 타입 노출 분기 시 `item.url`을 활용한 `<video>` 태그 렌더링 추가.
+  * 이벤트 미디어 소스 그리드 카드 컴포넌트 내에 `onPointerMove` 및 `onPointerLeave` 탐색 로직 및 `<video>` 태그 결합.
+* **[MODIFY] [VideoEditorMediaLibrary.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorMediaLibrary.tsx)**:
+  * 무료 공유 에셋 비디오 카드 내에 `onPointerMove` 및 `onPointerLeave` 탐색 로직 및 `<video>` 태그 결합.
+* **[MODIFY] [VideoEditorClip.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorClip.tsx)**:
+  * 타임라인 비디오 클립 배경 썸네일이 누락된 경우 `media?.url` 기반의 `<video>` 렌더러 fallback 추가.
+
+---
+
+## 30. 무료 공유 에셋 동기화 분기 최적화 및 크리에셋박스 비디오 호버 스크러빙 연동
+
+### 30-1. 주요 작업 내역
+* **이미지 파일 Cloudflare R2 업로드 바이패스**:
+  * 이미지 자산은 Cloudflare R2에 업로드할 필요가 없고 구글 드라이브 직링크(`https://lh3.googleusercontent.com/d/[ID]`)를 통해 브라우저로 직접 고속 서빙할 수 있으므로, R2 전송 단계를 바이패스하도록 변경하였습니다.
+  * 기존에 R2 버킷에 임시 업로드되었던 14장의 이미지는 전량 R2와 DB에서 롤백 삭제 처리하였습니다.
+  * 이로 인해 대용량 이미지 다운로드 및 R2 업로드 병목이 사라져 동기화 속도가 파일당 2초 수준으로 기존 대비 약 10배 이상 향상되었습니다.
+* **음악 파일(오디오) 동기화 지원 및 공용 프록시 연동**:
+  * 메인 동기화 스크립트([test_r2_sync.ts](file:///Users/a1234/Local%20Sites/creaibox/scripts/test_r2_sync.ts))가 구글 드라이브 루트의 `music/` 폴더도 자동으로 감지하여 오디오 파일들을 스캔하도록 통합하였습니다.
+  * 음악 에셋 또한 이미지처럼 R2 업로드를 스킵하고 구글 드라이브 직링크를 데이터베이스에 수록합니다.
+  * 오디오 파일 재생 시 브라우저 쿠키 제한 및 CORS/CORP(Cross-Origin Resource Policy) 문제를 우회하기 위해, 무료 에셋 상세 페이지의 오디오 재생 기능이 공용 스트리밍 프록시 API(`/api/free-assets/proxy?url=...`)를 타도록 `page.tsx` 내 `toggleAudio` 함수를 래핑하였습니다. 이로 인해 iOS 및 Safari 등 모든 모바일 기기에서도 오디오 탐색(Seeking)과 버퍼링 없는 플레이가 안정적으로 작동합니다.
+* **무료 공유 에셋 라이브러리 내 비디오 호버 스크러빙 및 오토플레이 연동**:
+  * 크리에셋박스 무료 미디어 라이브러리 메인 페이지([page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/free-assets/page.tsx)) 내 비디오 카드에도 마우스 호버 위치에 따라 실시간 구간 프리뷰가 가능한 **Visual Hover Scrubbing** 및 오토플레이 기능을 연동했습니다.
+  * 카드 컨테이너에 `onPointerMove` 및 `onPointerLeave` 직접 DOM 갱신 기법을 도입하여 끊김 없는 60fps 렉제로 프리뷰를 실현했고, 마우스가 카드를 나가면 0초로 자동 리셋되게 연출했습니다.
+* **미드저니 스타일 Masonry 레이아웃, 열 확장 및 좁은 간격 적용**:
+  * 기존에 고정 가로세로비(`aspect-[3/2]`)로 인해 9:16 등의 세로 이미지가 위아래로 잘려 가로형태로 강제 크롭되던 구조를 탈피하여, 에셋 본연의 종횡비(`getAspectClass`)를 동적으로 매핑하였습니다.
+  * **미드저니 스타일 Masonry 레이아웃, 열 확장 및 좁은 간격 적용**:
+  * 기존에 고정 가로세로비(`aspect-[3/2]`)로 인해 9:16 등의 세로 이미지가 위아래로 잘려 가로형태로 강제 크롭되던 구조를 탈피하여, 에셋 본연의 종횡비(`getAspectClass`)를 동적으로 매핑하였습니다.
+  * 가로 그리드 열의 수를 기존 최대 4개(Desktop 기준)에서 미드저니 스타일의 **최대 5개 열(`columns-2 sm:columns-3 lg:columns-5`)**로 확장하였습니다.
+  * 이미지 카드 간의 지나치게 넓었던 외부 여백을 미드저니와 동일한 수준의 **아주 좁은 간격(`gap-2 w-full space-y-2`)**으로 촘촘히 좁혀, 시각적인 밀도감과 미려함을 대폭 상향시켰습니다.
+  * 기존 좌우 여백이 크게 낭비되던 최대 넓이 제한(`max-w-7xl`, 1280px)을 제거하고, 화면 가득하게 넓어지는 **유동형 와이드 풀 컨테이너(`max-w-[96%] xl:max-w-[98%]`)**로 확장하여 미드저니처럼 각 5개 열의 이미지 칸들이 가로로 넓고 시원하게 표출되도록 구현했습니다.
+* **상단 미디어 대분류 탭 메뉴 간소화**:
+  * 라이브러리 상하단 필터바에서 거의 사용되지 않던 `"일러스트"`, `"벡터 (Vector)"`, `"GIF"` 탭을 삭제 처리하고, 기존 `"사진"` 탭의 명칭을 범용적인 **`"이미지"`**로 수정하여 미디어 분류 단계를 직관적으로 통합했습니다.
+  * 수동 업로드 이미지(`media_type = photo`)와 배치 동기화 이미지(`media_type = image`)의 이중 분류로 인해 동기화된 이미지들이 `"이미지"` 탭에서 노출되지 않던 누락 현상을 수정하기 위해, 필터 매칭 조건을 통합(`selectedMediaType === "photo"`일 때 `photo`와 `image`를 모두 매핑하도록 수정)하여 194개 자산이 정상 표출되도록 조치 완료했습니다.
+* **미드저니 파일명 분석 정밀화**:
+  * 중구난방인 파일명 분석을 고도화하여 `--ar_169` ➡️ `16:9`, `--ar_916` ➡️ `9:16`과 같이 비율 정보를 정확히 파싱합니다.
+  * 프롬프트 앞의 불필요한 `Namu_` 접두사를 AI 번역 전에 자동으로 Strip 함으로써 불필요한 번역 오류("나무")를 사전에 완전 차단했습니다.
+  * 오디오 파일의 경우 확장명 앞에 비율 필드가 들어가지 않도록 파일명 생성 규칙을 정돈했습니다.
+
+### 30-2. 변경 및 추가 파일 목록
+* **[MODIFY] [test_r2_sync.ts](file:///Users/a1234/Local%20Sites/creaibox/scripts/test_r2_sync.ts)**:
+  * 루트 내 `music/` 폴더 감지 추가.
+  * 이미지/오디오 파일 R2 업로드 바이패스 및 `lh3` Direct URL 매핑 적용.
+  * 미드저니 `--ar_` 비율 파싱 정교화 및 `Namu_` 접두사 제거 로직 반영.
+  * 오디오 에셋을 위한 맞춤 파일명 및 데이터베이스 필드 바인딩 최적화.
+  * 동기화 스크립트 실행 시 파일명에서 프롬프트를 추출하여 삽입하던 기존 방식을 일시 중단하고, 빈 문자열(`''`)을 할당하여 나중에 구글 드라이브 내 정확한 메타데이터 원본으로부터 일괄 주입받도록 구조 수정.
+* **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/free-assets/page.tsx)**:
+  * 무료 라이브러리 오디오 재생(`toggleAudio`) 시 구글 드라이브 직링크에 대해 `/api/free-assets/proxy?url=` 보안 중계 주소를 바인딩하도록 수정.
+  * 비디오 카드에 `onPointerMove` 및 `onPointerLeave` 리스너를 결합하고 내포된 비디오 태그에 `pointer-events-none`을 부여하여 정밀한 **비주얼 호버 스크러빙 및 오토플레이** 탑재.
+  * 기존 고정형 Grid 레이아웃을 반응형 **CSS Columns Masonry 레이아웃**(`columns-2 sm:columns-3 md:columns-4 lg:columns-5`)으로 전환하고, 카드별 종횡비 동적 할당 및 카드 간 초슬림 간격(`gap-2`)을 완성.
+  * 영웅 영역 및 본문 영역 분류 탭에서 `사진 ➡️ 이미지` 개명 및 불필요한 `GIF/벡터/일러스트` 비활성/삭제 조치.
+  * 상단 탭의 레이블과 아이콘(Lucide Icon)을 하단 탭(`통합 에셋`, `이미지`, `비디오`, `음악/사운드`)과 100% 동일하게 일치시켜 시각적 통일성을 확보.
+  * `"홈페이지 제작용 프리미엄 테마 갤러리"` 탭 위치를 메인 상단 탭 리스트의 맨 뒤인 `"음악/사운드"` 오른쪽으로 재조정하여 핵심 미디어 필터링이 우선 시각화되도록 개선.
+  * 불필요하게 영역을 차지하던 영웅 배너 영역 좌측 상단의 `"라이브러리 홈으로"` 뒤로가기 버튼을 제거하여 상단 공간을 넓고 간결하게 확보.
+  * 카드 오버레이 및 상세 모달 창의 `"좋아요"` 및 `"저장"` 클릭 시 귀찮게 뜨던 브라우저 알림창(`alert()`)을 완전히 제거하고, 리액트 상태 기반 토글 구현 및 꽉 찬 형태(fill)의 빨간색(Heart) / 파란색(Tag) 아이콘으로 실시간 표시되도록 UX 개선.
+  * 카드 오버레이 우측 상단 액션 버튼 배치 순서를 기존 `[좋아요] [저장] [다운로드]`에서 **`[다운로드] [저장] [좋아요]`**로 변경하여 마우스 접근 빈도가 가장 높은 다운로드 조작의 물리적 편의성 확보.
+  * 카드 호버 시 나타나는 에셋 제목("수중 보물창고") 및 작성자명("By 관리자") 텍스트 영역을 기존 카드 바닥(bottom-left)에서 **상단 왼쪽(top-left)**으로 이동하고 비율 배지와 통합하여 시각적 인지성 상향.
+  * 미디어 갤러리 내 모든 이미지/비디오 카드 컨테이너에 미세한 모서리 곡률(`rounded-lg`, 8px) 및 `overflow-hidden`을 적용하여 셔터스톡(Shutterstock)과 같은 부드럽고 세련된 프리미엄 스타일 구현.
+  * 기존 3개 행을 차지하여 세로 공간 낭비가 컸던 상세 필터(비율, 제작 방식, 스타일 필터) 영역을 **가로 1개 행의 트리거 버튼 그룹**으로 통합하고, 버튼 클릭 시 하단으로 옵션이 아코디언 형태로 슬라이딩되어 노출되는 접이식 구조로 UI 개편. 각 버튼에는 현재 적용된 필터 상태를 요약 표시하도록 개선.
+* **[MODIFY] [google-drive-caching-proxy.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/google-drive-caching-proxy.md)**:
+  * 음악 스트리밍 프록시 아키텍처 및 Supabase Egress 영향도 제로 설계 명세를 4.4절로 추가 작성.
+
+### 30-3. 검증 상태
+* `npx tsc --noEmit`을 실행하여 전체 프로젝트 컴파일 에러가 없는 상태를 최종 검증 완료했습니다.

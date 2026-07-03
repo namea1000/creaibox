@@ -31,6 +31,7 @@ import {
   Edit,
   Trash2,
   ImagePlus,
+  SlidersHorizontal,
 } from "lucide-react";
 
 interface FreeAsset {
@@ -59,10 +60,67 @@ interface FreeAsset {
   isBusinessOnly?: boolean;
 }
 
+interface AutoplayVideoProps {
+  src: string;
+  className?: string;
+}
+
+const AutoplayVideo: React.FC<AutoplayVideoProps> = ({ src, className }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+              playPromise.catch(() => {
+                // Safe catch for browser abort exceptions
+              });
+            }
+          } else {
+            video.pause();
+          }
+        });
+      },
+      {
+        threshold: 0.1,
+      }
+    );
+
+    observer.observe(video);
+
+    return () => {
+      if (video) {
+        observer.unobserve(video);
+      }
+      observer.disconnect();
+    };
+  }, [src]);
+
+  return (
+    <video
+      ref={videoRef}
+      src={src}
+      muted
+      loop
+      playsInline
+      className={className}
+    />
+  );
+};
+
 export default function FreeAssetsLibraryPage() {
   const [assets, setAssets] = useState<FreeAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [likedAssetIds, setLikedAssetIds] = useState<Set<string>>(new Set());
+  const [bookmarkedAssetIds, setBookmarkedAssetIds] = useState<Set<string>>(new Set());
+  const [activeFilterTab, setActiveFilterTab] = useState<"ratio" | "generation" | "style" | null>(null);
   const [selectedMediaType, setSelectedMediaType] = useState<string>("all");
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>("all");
   const [selectedGenerationType, setSelectedGenerationType] = useState<string>("all");
@@ -1057,7 +1115,10 @@ export default function FreeAssetsLibraryPage() {
     } else {
       if (asset.isOfficialThemeAsset) return false;
       const matchesType =
-        selectedMediaType === "all" || asset.mediaType === selectedMediaType;
+        selectedMediaType === "all" ||
+        (selectedMediaType === "photo"
+          ? (asset.mediaType === "photo" || asset.mediaType === "image")
+          : asset.mediaType === selectedMediaType);
       if (!matchesType) return false;
     }
 
@@ -1152,15 +1213,6 @@ export default function FreeAssetsLibraryPage() {
         
         {/* 장식용 그리드 패턴 */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f29370a_1px,transparent_1px),linear-gradient(to_bottom,#1f29370a_1px,transparent_1px)] bg-[size:24px_24px] opacity-30" />
-        
-        {/* 라이브러리 홈으로 이동 버튼 (왼쪽 제일 위 절대 배치) */}
-        <Link
-          href="/studio/library"
-          className="absolute left-6 top-6 z-20 group inline-flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-950/80 px-4 py-1.5 text-xs font-bold text-zinc-400 hover:text-white transition shadow-lg"
-        >
-          <ArrowLeft size={13} className="transition group-hover:-translate-x-0.5" />
-          라이브러리 홈으로
-        </Link>
 
         <div className="relative z-10 flex w-full max-w-3xl flex-col items-center px-6 text-center space-y-4">
           <h1 className="text-3xl font-black md:text-5xl leading-tight tracking-tight text-white drop-shadow-md">
@@ -1170,16 +1222,14 @@ export default function FreeAssetsLibraryPage() {
           {/* 픽사베이 스타일 상단 미디어 분류 탭 */}
           <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1.5 mt-4 text-sm font-medium">
             {[
-              { id: "all", label: "둘러보기" },
+              { id: "all", label: "통합 에셋", icon: ImageIcon },
+              { id: "photo", label: "이미지", icon: ImageIcon },
+              { id: "video", label: "비디오", icon: Video },
+              { id: "music", label: "음악/사운드", icon: Music },
               { id: "premium-theme", label: "👑 홈페이지 제작용 프리미엄 테마 갤러리" },
-              { id: "photo", label: "사진" },
-              { id: "illustration", label: "일러스트" },
-              { id: "vector", label: "벡터" },
-              { id: "video", label: "비디오" },
-              { id: "music", label: "음악" },
-              { id: "gif", label: "GIF" },
             ].map((tab) => {
               const isActive = selectedMediaType === tab.id;
+              const TabIcon = tab.icon;
               return (
                 <button
                   key={tab.id}
@@ -1192,7 +1242,7 @@ export default function FreeAssetsLibraryPage() {
                       setPlayingAudioId(null);
                     }
                   }}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
                     isActive
                       ? tab.id === "premium-theme"
                         ? "bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-zinc-950 shadow-lg shadow-yellow-500/25 font-black"
@@ -1202,7 +1252,8 @@ export default function FreeAssetsLibraryPage() {
                         : "text-zinc-300 hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  {tab.label}
+                  {TabIcon && <TabIcon size={12} />}
+                  <span>{tab.label}</span>
                 </button>
               );
             })}
@@ -1278,90 +1329,200 @@ export default function FreeAssetsLibraryPage() {
                 ))}
               </div>
 
-              {/* 사진 비율 필터 */}
-              <div className="flex flex-wrap justify-center items-center gap-2 mt-3 pt-3 border-t border-zinc-800/45 w-full max-w-3xl">
-                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mr-2 select-none">비율 필터</span>
-                {[
-                  { id: "all", label: "전체 비율" },
-                  { id: "16:9", label: "16:9 가로" },
-                  { id: "9:16", label: "9:16 세로" },
-                  { id: "4:3", label: "4:3 표준" },
-                  { id: "3:4", label: "3:4 세로" },
-                  { id: "1:1", label: "1:1 정방향" },
-                  { id: "기타", label: "기타 비율" },
-                ].map((ratio) => (
-                  <button
-                    key={ratio.id}
-                    onClick={() => setSelectedAspectRatio(ratio.id)}
-                    className={`rounded-full px-3 py-1 text-xs font-bold transition cursor-pointer ${
-                      selectedAspectRatio === ratio.id
-                        ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                        : "border border-zinc-900 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
+              {/* 필터 대시보드 트리거 버튼들 */}
+              <div className="flex flex-wrap justify-center gap-3 mt-4 pt-3 border-t border-zinc-800/40 w-full max-w-3xl">
+                {/* 비율 필터 버튼 */}
+                <button
+                  onClick={() => setActiveFilterTab(activeFilterTab === "ratio" ? null : "ratio")}
+                  className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
+                    activeFilterTab === "ratio"
+                      ? "border-blue-500 bg-blue-600/10 text-blue-400"
+                      : selectedAspectRatio !== "all"
+                        ? "border-blue-500 bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                        : "border-zinc-800 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                  }`}
+                >
+                  <SlidersHorizontal size={12} />
+                  <span>
+                    비율 필터
+                    {selectedAspectRatio !== "all" && (
+                      <span className="ml-1 text-[11px] font-black opacity-90">
+                        ({selectedAspectRatio})
+                      </span>
+                    )}
+                  </span>
+                  <ChevronDown
+                    size={12}
+                    className={`transition-transform duration-200 ${
+                      activeFilterTab === "ratio" ? "rotate-180 text-blue-400" : "text-zinc-500"
                     }`}
-                  >
-                    {ratio.label}
-                  </button>
-                ))}
+                  />
+                </button>
+
+                {/* 제작 방식 필터 버튼 */}
+                <button
+                  onClick={() => setActiveFilterTab(activeFilterTab === "generation" ? null : "generation")}
+                  className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
+                    activeFilterTab === "generation"
+                      ? "border-blue-500 bg-blue-600/10 text-blue-400"
+                      : selectedGenerationType !== "all"
+                        ? "border-blue-500 bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                        : "border-zinc-800 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                  }`}
+                >
+                  <SlidersHorizontal size={12} />
+                  <span>
+                    제작 방식
+                    {selectedGenerationType !== "all" && (
+                      <span className="ml-1 text-[11px] font-black opacity-90">
+                        ({selectedGenerationType === "ai" ? "AI 제작" : "실제 사진"})
+                      </span>
+                    )}
+                  </span>
+                  <ChevronDown
+                    size={12}
+                    className={`transition-transform duration-200 ${
+                      activeFilterTab === "generation" ? "rotate-180 text-blue-400" : "text-zinc-500"
+                    }`}
+                  />
+                </button>
+
+                {/* 스타일 필터 버튼 */}
+                <button
+                  onClick={() => setActiveFilterTab(activeFilterTab === "style" ? null : "style")}
+                  className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
+                    activeFilterTab === "style"
+                      ? "border-blue-500 bg-blue-600/10 text-blue-400"
+                      : selectedStyle !== "all"
+                        ? "border-blue-500 bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                        : "border-zinc-800 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                  }`}
+                >
+                  <SlidersHorizontal size={12} />
+                  <span>
+                    스타일 필터
+                    {selectedStyle !== "all" && (
+                      <span className="ml-1 text-[11px] font-black opacity-90">
+                        ({
+                          selectedStyle === "photorealistic" ? "실사" :
+                          selectedStyle === "illustration" ? "일러스트" :
+                          selectedStyle === "vector" ? "벡터" :
+                          selectedStyle === "3d_render" ? "3D 렌더" :
+                          selectedStyle === "anime" ? "애니" :
+                          selectedStyle === "pixel_art" ? "픽셀" :
+                          selectedStyle === "watercolor" ? "수채화" :
+                          selectedStyle === "line_art" ? "라인" :
+                          selectedStyle === "seamless_pattern" ? "패턴" :
+                          selectedStyle === "retro_pop_art" ? "레트로" : selectedStyle
+                        })
+                      </span>
+                    )}
+                  </span>
+                  <ChevronDown
+                    size={12}
+                    className={`transition-transform duration-200 ${
+                      activeFilterTab === "style" ? "rotate-180 text-blue-400" : "text-zinc-500"
+                    }`}
+                  />
+                </button>
               </div>
 
-              {/* 제작 방식 필터 */}
-              <div className="flex flex-wrap justify-center items-center gap-2 mt-3 pt-3 border-t border-zinc-800/45 w-full max-w-3xl">
-                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mr-2 select-none">제작 방식</span>
-                {[
-                  { id: "all", label: "전체 이미지" },
-                  { id: "ai", label: "AI 생성 이미지" },
-                  { id: "real", label: "실제 사진 이미지" },
-                ].map((gen) => (
-                  <button
-                    key={gen.id}
-                    onClick={() => setSelectedGenerationType(gen.id)}
-                    className={`rounded-full px-3 py-1 text-xs font-bold transition cursor-pointer ${
-                      selectedGenerationType === gen.id
-                        ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                        : "border border-zinc-900 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
-                    }`}
-                  >
-                    {gen.label}
-                  </button>
-                ))}
-              </div>
+              {/* 펼쳐지는 필터 콘텐츠 영역 */}
+              {activeFilterTab && (
+                <div className="w-full max-w-3xl mt-3 p-4 rounded-2xl border border-zinc-800/80 bg-zinc-950/60 backdrop-blur-md transition-all duration-300">
+                  
+                  {/* 1. 비율 필터 콘텐츠 */}
+                  {activeFilterTab === "ratio" && (
+                    <div className="flex flex-wrap justify-center items-center gap-2">
+                      <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mr-2 select-none">비율 선택</span>
+                      {[
+                        { id: "all", label: "전체 비율" },
+                        { id: "16:9", label: "16:9 가로" },
+                        { id: "9:16", label: "9:16 세로" },
+                        { id: "4:3", label: "4:3 표준" },
+                        { id: "3:4", label: "3:4 세로" },
+                        { id: "1:1", label: "1:1 정방향" },
+                        { id: "기타", label: "기타 비율" },
+                      ].map((ratio) => (
+                        <button
+                          key={ratio.id}
+                          onClick={() => setSelectedAspectRatio(ratio.id)}
+                          className={`rounded-full px-3 py-1 text-xs font-bold transition cursor-pointer ${
+                            selectedAspectRatio === ratio.id
+                              ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                              : "border border-zinc-900 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                          }`}
+                        >
+                          {ratio.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
-              {/* 스타일 필터 */}
-              <div className="flex flex-wrap justify-center items-center gap-2 mt-3 pt-3 border-t border-zinc-800/45 w-full max-w-3xl">
-                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mr-2 select-none">스타일 필터</span>
-                {[
-                  { id: "all", label: "전체 스타일" },
-                  { id: "photorealistic", label: "실사 (Photorealistic)" },
-                  { id: "illustration", label: "일러스트 (Illustration)" },
-                  { id: "vector", label: "벡터 (Vector)" },
-                  { id: "3d_render", label: "3D 렌더 (3D Render)" },
-                  { id: "anime", label: "애니메이션 (Anime)" },
-                  { id: "pixel_art", label: "픽셀 아트 (Pixel Art)" },
-                  { id: "watercolor", label: "수채화 (Watercolor)" },
-                  { id: "line_art", label: "라인 아트 (Line Art)" },
-                  { id: "seamless_pattern", label: "패턴 (Seamless Pattern)" },
-                  { id: "retro_pop_art", label: "레트로 팝아트 (Retro Pop)" },
-                ].map((style) => (
-                  <button
-                    key={style.id}
-                    onClick={() => setSelectedStyle(style.id)}
-                    className={`rounded-full px-3 py-1 text-xs font-bold transition cursor-pointer ${
-                      selectedStyle === style.id
-                        ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                        : "border border-zinc-900 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
-                    }`}
-                  >
-                    {style.label}
-                  </button>
-                ))}
-              </div>
+                  {/* 2. 제작 방식 필터 콘텐츠 */}
+                  {activeFilterTab === "generation" && (
+                    <div className="flex flex-wrap justify-center items-center gap-2">
+                      <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mr-2 select-none">제작 방식</span>
+                      {[
+                        { id: "all", label: "전체 이미지" },
+                        { id: "ai", label: "AI 생성 이미지" },
+                        { id: "real", label: "실제 사진 이미지" },
+                      ].map((gen) => (
+                        <button
+                          key={gen.id}
+                          onClick={() => setSelectedGenerationType(gen.id)}
+                          className={`rounded-full px-3 py-1 text-xs font-bold transition cursor-pointer ${
+                            selectedGenerationType === gen.id
+                              ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                              : "border border-zinc-900 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                          }`}
+                        >
+                          {gen.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 3. 스타일 필터 콘텐츠 */}
+                  {activeFilterTab === "style" && (
+                    <div className="flex flex-wrap justify-center items-center gap-2">
+                      <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mr-2 select-none">스타일 선택</span>
+                      {[
+                        { id: "all", label: "전체 스타일" },
+                        { id: "photorealistic", label: "실사 (Photorealistic)" },
+                        { id: "illustration", label: "일러스트 (Illustration)" },
+                        { id: "vector", label: "벡터 (Vector)" },
+                        { id: "3d_render", label: "3D 렌더 (3D Render)" },
+                        { id: "anime", label: "애니메이션 (Anime)" },
+                        { id: "pixel_art", label: "픽셀 아트 (Pixel Art)" },
+                        { id: "watercolor", label: "수채화 (Watercolor)" },
+                        { id: "line_art", label: "라인 아트 (Line Art)" },
+                        { id: "seamless_pattern", label: "패턴 (Seamless Pattern)" },
+                        { id: "retro_pop_art", label: "레트로 팝아트 (Retro Pop)" },
+                      ].map((style) => (
+                        <button
+                          key={style.id}
+                          onClick={() => setSelectedStyle(style.id)}
+                          className={`rounded-full px-3 py-1 text-xs font-bold transition cursor-pointer ${
+                            selectedStyle === style.id
+                              ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                              : "border border-zinc-900 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                          }`}
+                        >
+                          {style.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>
       </section>
 
       {/* 메인 콘텐츠 바디 */}
-      <div className="mx-auto max-w-7xl px-5 lg:px-8 mt-10 space-y-8">
+      <div className="mx-auto max-w-[96%] xl:max-w-[98%] px-5 lg:px-8 mt-10 space-y-8">
         
         {/* 미디어 유형 카테고리 탭 & 업로드 버튼 */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-900 pb-5">
@@ -1369,11 +1530,8 @@ export default function FreeAssetsLibraryPage() {
             {[
               { id: "all", label: "통합 에셋", icon: ImageIcon },
               { id: "photo", label: "이미지", icon: ImageIcon },
-              { id: "illustration", label: "일러스트", icon: Sparkles },
-              { id: "vector", label: "벡터 (Vector)", icon: Sparkles },
               { id: "video", label: "비디오", icon: Video },
               { id: "music", label: "음악/사운드", icon: Music },
-              { id: "gif", label: "GIF", icon: ImageIcon },
             ].map((tab) => {
               const TabIcon = tab.icon;
               const isActive = selectedMediaType === tab.id;
@@ -1411,7 +1569,7 @@ export default function FreeAssetsLibraryPage() {
           </div>
         </div>
 
-        {/* 메인 에셋 그리드 영역 (4열 배치) */}
+        {/* 메인 에셋 그리드 영역 (Masonry 스타일) */}
         <div className="w-full mt-6">
           {loading ? (
             <div className="flex h-64 flex-col items-center justify-center gap-3">
@@ -1425,17 +1583,58 @@ export default function FreeAssetsLibraryPage() {
               <p className="mt-1 text-xs text-zinc-600">첫 번째 기여자로 무료 나눔 파일 업로드를 해보세요!</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-2 w-full">
               {filteredAssets.map((asset) => {
                   const isAudio = asset.mediaType === "music";
                   const isVideo = asset.mediaType === "video";
                   const isPlaying = playingAudioId === asset.id;
+                  const assetUrl = asset.url || "";
+                  
+                  const getAspectClass = (ratio: string) => {
+                    if (ratio === "16:9") return "aspect-[16/9]";
+                    if (ratio === "9:16") return "aspect-[9/16]";
+                    if (ratio === "4:3") return "aspect-[4/3]";
+                    if (ratio === "3:4") return "aspect-[3/4]";
+                    if (ratio === "1:1") return "aspect-square";
+                    return isVideo ? "aspect-[16/9]" : "aspect-square";
+                  };
 
                   return (
                     <div
                       key={asset.id}
                       onClick={() => openDetailModal(asset)}
-                      className="group relative aspect-[3/2] w-full overflow-hidden rounded-none border border-zinc-800/60 bg-zinc-950/80 transition hover:-translate-y-1 hover:border-zinc-700/80 hover:shadow-2xl hover:shadow-black/50 cursor-pointer"
+                      onPointerMove={isVideo ? (e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const pct = Math.max(0, Math.min(1, x / rect.width));
+                        const video = e.currentTarget.querySelector("video");
+                        if (video) {
+                          const duration = video.duration || 5;
+                          const targetTime = pct * duration;
+                          if (!isNaN(targetTime)) {
+                            video.currentTime = targetTime;
+                          }
+                          if (video.paused) {
+                            const playPromise = video.play();
+                            if (playPromise !== undefined) {
+                              playPromise.catch(() => {});
+                            }
+                          }
+                        }
+                      } : undefined}
+                      onPointerLeave={isVideo ? (e) => {
+                        const video = e.currentTarget.querySelector("video");
+                        if (video) {
+                          video.currentTime = 0;
+                          if (video.paused) {
+                            const playPromise = video.play();
+                            if (playPromise !== undefined) {
+                              playPromise.catch(() => {});
+                            }
+                          }
+                        }
+                      } : undefined}
+                      className={`break-inside-avoid mb-2 group relative w-full overflow-hidden rounded-lg border border-zinc-800/60 bg-zinc-950/80 transition hover:-translate-y-1 hover:border-zinc-700/80 hover:shadow-2xl hover:shadow-black/50 cursor-pointer ${getAspectClass(asset.aspectRatio || "")}`}
                     >
                       {asset.isBusinessOnly && (
                         <div className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 px-2 py-1 text-[9px] font-black text-zinc-950 shadow-md uppercase tracking-wider select-none">
@@ -1470,20 +1669,9 @@ export default function FreeAssetsLibraryPage() {
                         </div>
                       ) : isVideo ? (
                         <div className="relative h-full w-full">
-                          {/* Video Element for autoplay on hover */}
-                          <video
-                            src={(asset.url.includes("googleusercontent.com") || asset.url.includes("drive.google.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(asset.url)}` : asset.url}
-                            muted
-                            loop
-                            playsInline
-                            className="h-full w-full object-cover"
-                            onMouseEnter={(e) => {
-                              void e.currentTarget.play();
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.pause();
-                              e.currentTarget.currentTime = 0;
-                            }}
+                          <AutoplayVideo
+                            src={(assetUrl.includes("googleusercontent.com") || assetUrl.includes("drive.google.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(assetUrl)}` : assetUrl}
+                            className="h-full w-full object-cover pointer-events-none"
                           />
                           <div className="absolute right-3 top-3 rounded-lg bg-black/60 px-1.5 py-0.5 text-[9px] font-bold text-white tracking-widest uppercase">
                             Video
@@ -1491,7 +1679,7 @@ export default function FreeAssetsLibraryPage() {
                         </div>
                       ) : (
                         <img
-                          src={(asset.url.includes("googleusercontent.com") || asset.url.includes("drive.google.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(asset.url)}` : asset.url}
+                          src={(assetUrl.includes("googleusercontent.com") || assetUrl.includes("drive.google.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(assetUrl)}` : assetUrl}
                           alt={asset.title}
                           loading="lazy"
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -1501,27 +1689,37 @@ export default function FreeAssetsLibraryPage() {
                       {/* 카드 호버 오버레이 (Pixabay style) */}
                       <div className="absolute inset-0 flex flex-col justify-between bg-gradient-to-t from-black/90 via-black/20 to-black/35 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         
-                        {/* 상단 액션 바 */}
+                        {/* 상단 텍스트 및 버튼 영역 */}
                         <div className="flex justify-between items-start w-full">
-                          <div className="flex flex-col gap-1 items-start">
-                            {asset.aspectRatio && (
-                              <span className="rounded-full bg-blue-600/90 text-white px-2 py-0.5 text-[9px] font-black tracking-wider shadow select-none">
-                                {asset.aspectRatio}
-                              </span>
-                            )}
-                            {asset.generationType === "ai" ? (
-                              <span className="rounded-full bg-purple-600/90 text-white px-2 py-0.5 text-[9px] font-black tracking-wider shadow select-none">
-                                AI 제작
-                              </span>
-                            ) : (
-                              <span className="rounded-full bg-emerald-600/90 text-white px-2 py-0.5 text-[9px] font-black tracking-wider shadow select-none">
-                                실제 사진
-                              </span>
-                            )}
+                          
+                          {/* 상단 좌측: 제목 & 작가 & 비율 배지 */}
+                          <div className="min-w-0 flex-1 text-left space-y-1">
+                            <p className="truncate text-xs font-black text-white leading-tight">
+                              {asset.title}
+                            </p>
+                            <p className="text-[10px] text-zinc-400 font-bold leading-none mb-1.5">
+                              By {asset.uploader.split("@")[0]}
+                            </p>
+                            <div className="flex flex-wrap gap-1 items-center">
+                              {asset.aspectRatio && (
+                                <span className="rounded-full bg-blue-600/90 text-white px-2 py-0.5 text-[9px] font-black tracking-wider shadow select-none">
+                                  {asset.aspectRatio}
+                                </span>
+                              )}
+                              {asset.generationType === "ai" ? (
+                                <span className="rounded-full bg-purple-600/90 text-white px-2 py-0.5 text-[9px] font-black tracking-wider shadow select-none">
+                                  AI 제작
+                                </span>
+                              ) : (
+                                <span className="rounded-full bg-emerald-600/90 text-white px-2 py-0.5 text-[9px] font-black tracking-wider shadow select-none">
+                                  실제 사진
+                                </span>
+                              )}
+                            </div>
                           </div>
 
-                          <div className="flex items-center gap-1">
-                            {/* 수정 권한이 있는 경우 퀵 에디터 아이콘 표시 */}
+                          {/* 상단 우측: 액션 버튼바 */}
+                          <div className="flex items-center gap-1 shrink-0">
                             {currentUserEmail && (currentUserEmail.toLowerCase() === (asset.uploaderEmail || "").toLowerCase() || isAdmin) && (
                               <button
                                 onClick={(e) => {
@@ -1535,31 +1733,6 @@ export default function FreeAssetsLibraryPage() {
                               </button>
                             )}
 
-                            {/* 좋아요 (하트) */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                alert("좋아요가 반영되었습니다!");
-                              }}
-                              className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-zinc-300 hover:bg-black/90 hover:text-red-400 transition cursor-pointer"
-                              title="좋아요"
-                            >
-                              <Heart size={13} />
-                            </button>
-
-                            {/* 저장 (북마크/태그) */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                alert("에셋이 북마크에 보관되었습니다.");
-                              }}
-                              className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-zinc-300 hover:bg-black/90 hover:text-blue-400 transition cursor-pointer"
-                              title="저장"
-                            >
-                              <Tag size={13} />
-                            </button>
-
-                            {/* 즉시 다운로드 */}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1570,20 +1743,58 @@ export default function FreeAssetsLibraryPage() {
                             >
                               <Download size={13} />
                             </button>
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setBookmarkedAssetIds((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(asset.id)) {
+                                    next.delete(asset.id);
+                                  } else {
+                                    next.add(asset.id);
+                                  }
+                                  return next;
+                                });
+                              }}
+                              className={`flex h-7 w-7 items-center justify-center rounded-full bg-black/60 transition cursor-pointer ${
+                                bookmarkedAssetIds.has(asset.id)
+                                  ? "text-blue-500 hover:bg-black/90"
+                                  : "text-zinc-300 hover:bg-black/90 hover:text-blue-400"
+                              }`}
+                              title="저장"
+                            >
+                              <Tag size={13} className={bookmarkedAssetIds.has(asset.id) ? "fill-blue-500 text-blue-500" : ""} />
+                            </button>
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setLikedAssetIds((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(asset.id)) {
+                                    next.delete(asset.id);
+                                  } else {
+                                    next.add(asset.id);
+                                  }
+                                  return next;
+                                });
+                              }}
+                              className={`flex h-7 w-7 items-center justify-center rounded-full bg-black/60 transition cursor-pointer ${
+                                likedAssetIds.has(asset.id)
+                                  ? "text-red-500 hover:bg-black/90"
+                                  : "text-zinc-300 hover:bg-black/90 hover:text-red-400"
+                              }`}
+                              title="좋아요"
+                            >
+                              <Heart size={13} className={likedAssetIds.has(asset.id) ? "fill-red-500 text-red-500" : ""} />
+                            </button>
                           </div>
                         </div>
 
-                        {/* 하단 정보 영역 & 이미지 편집 버튼 */}
+                        {/* 하단 태그 정보 & 이미지 편집 버튼 */}
                         <div className="flex justify-between items-end gap-3 w-full">
                           <div className="min-w-0 flex-1 space-y-1 text-left">
-                            <p className="truncate text-xs font-black text-white leading-tight">
-                              {asset.title}
-                            </p>
-                            <p className="text-[10px] text-zinc-400 font-bold leading-none">
-                              By {asset.uploader.split("@")[0]}
-                            </p>
-                            
-                            {/* 태그 리스트 */}
                             <div className="flex flex-wrap gap-1 pt-0.5">
                               {asset.tags.slice(0, 3).map((tag) => (
                                 <span
