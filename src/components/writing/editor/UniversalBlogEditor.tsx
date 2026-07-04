@@ -55,6 +55,7 @@ import {
   Trash2,
   Type,
   Wand2,
+  X,
   Zap,
 } from "lucide-react";
 import { generateGeminiContentWithFallback } from "@/lib/client/api-vault";
@@ -184,6 +185,12 @@ const postTypeOptions = [
 const DEFAULT_CONTENT_IMAGE_SOURCE_TYPE = "writing_creaibox_posts";
 const CONTENT_IMAGE_ROLE = "content_image";
 const IMAGE_BUCKET = "generated-images";
+
+const cleanContentComment = (htmlOrMd: string) => {
+  if (!htmlOrMd) return "";
+  const regex = /<!-- CREAIBOX_EDITORIAL_START ([\s\S]*?) CREAIBOX_EDITORIAL_END -->/;
+  return htmlOrMd.replace(regex, "").trim();
+};
 
 type GeneratedImageRow = {
   id: string;
@@ -594,7 +601,58 @@ export default function UniversalBlogEditor({
   const [isPdfExtracting, setIsPdfExtracting] = useState(false);
   const [extractedPdfText, setExtractedPdfText] = useState("");
   const [isPdfDragging, setIsPdfDragging] = useState(false);
+  // 🌟 에디토리얼 설정 모달 관련 상태 및 레프
+  const [isEditorialModalOpen, setIsEditorialModalOpen] = useState(false);
+  const [editorialEnabled, setEditorialEnabled] = useState(true);
+  const [editorialBgColor, setEditorialBgColor] = useState("#f8f8f9");
+  const [editorialBorderColor, setEditorialBorderColor] = useState("#e4e4e7");
+  const [editorialTextColor, setEditorialTextColor] = useState("#52525b");
+  const [editorialSubColor, setEditorialSubColor] = useState("#2563eb");
+  const [editorialSubtitle, setEditorialSubtitle] = useState("CreAibox Insight Editorial");
+  const [editorialText, setEditorialText] = useState(
+    "본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오 크리에이박스(CreAibox)의 오리지널 인사이트 리포트입니다. 인공지능 기반의 고품질 콘텐츠 생성 가이드와 비즈니스 성장 전략에 대한 더 많은 전문 자료는 크리에이박스(CreAibox) 공식 블로그 기사 및 스튜디오 가이드에서 확인하실 수 있습니다."
+  );
 
+  const editorialSettingsRef = useRef({
+    enabled: true,
+    bgColor: "#f8f8f9",
+    borderColor: "#e4e4e7",
+    textColor: "#52525b",
+    subColor: "#2563eb",
+    subtitle: "CreAibox Insight Editorial",
+    text: "본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오 크리에이박스(CreAibox)의 오리지널 인사이트 리포트입니다. 인공지능 기반의 고품질 콘텐츠 생성 가이드와 비즈니스 성장 전략에 대한 더 많은 전문 자료는 크리에이박스(CreAibox) 공식 블로그 기사 및 스튜디오 가이드에서 확인하실 수 있습니다."
+  });
+
+  // Load and parse editorial settings comment on mount
+  useEffect(() => {
+    if (!content) return;
+    const regex = /<!-- CREAIBOX_EDITORIAL_START ([\s\S]*?) CREAIBOX_EDITORIAL_END -->/;
+    const match = content.match(regex);
+    if (match && match[1]) {
+      try {
+        const parsed = JSON.parse(match[1]);
+        const nextSettings = {
+          enabled: typeof parsed.enabled === "boolean" ? parsed.enabled : true,
+          bgColor: parsed.bgColor || "#f8f8f9",
+          borderColor: parsed.borderColor || "#e4e4e7",
+          textColor: parsed.textColor || "#52525b",
+          subColor: parsed.subColor || "#2563eb",
+          subtitle: parsed.subtitle || "CreAibox Insight Editorial",
+          text: parsed.text || "본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오 크리에이박스(CreAibox)의 오리지널 인사이트 리포트입니다..."
+        };
+        editorialSettingsRef.current = nextSettings;
+        setEditorialEnabled(nextSettings.enabled);
+        setEditorialBgColor(nextSettings.bgColor);
+        setEditorialBorderColor(nextSettings.borderColor);
+        setEditorialTextColor(nextSettings.textColor);
+        setEditorialSubColor(nextSettings.subColor);
+        setEditorialSubtitle(nextSettings.subtitle);
+        setEditorialText(nextSettings.text);
+      } catch (e) {
+        console.error("Failed to parse editorial settings comment:", e);
+      }
+    }
+  }, [content]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -782,7 +840,7 @@ export default function UniversalBlogEditor({
     [manuscriptId, contentImageSourceType, title]
   );
 
-  const initialHtml = useMemo(() => markdownToHtml(content), []);
+  const initialHtml = useMemo(() => markdownToHtml(cleanContentComment(content)), []);
 
   const editor = useEditor({
     extensions: [
@@ -937,8 +995,10 @@ export default function UniversalBlogEditor({
         deleteContentImagesRef.current(removedUrls);
       }
 
-      lastExternalContentRef.current = html;
-      setContent(html);
+      const commentStr = `<!-- CREAIBOX_EDITORIAL_START ${JSON.stringify(editorialSettingsRef.current)} CREAIBOX_EDITORIAL_END -->`;
+      const contentWithComment = `${html}\n\n${commentStr}`;
+      lastExternalContentRef.current = contentWithComment;
+      setContent(contentWithComment);
 
       // 외부 이미지 감지 및 자동 업로드
       void autoUploadExternalImages(editor);
@@ -955,7 +1015,7 @@ export default function UniversalBlogEditor({
     if (!editor) return;
     if (content === lastExternalContentRef.current) return;
 
-    const nextHtml = markdownToHtml(content);
+    const nextHtml = markdownToHtml(cleanContentComment(content));
 
     if (nextHtml !== editor.getHTML()) {
       setTimeout(() => {
@@ -2665,6 +2725,10 @@ export default function UniversalBlogEditor({
         <ToolbarButton onClick={() => handleEnhanceContent("correct")}>
           <Type size={14} /> 맞춤법
         </ToolbarButton>
+
+        <ToolbarButton onClick={() => setIsEditorialModalOpen(true)}>
+          <FileText size={14} /> 에디토리얼 설정
+        </ToolbarButton>
       </div>
       <div className="flex-1 overflow-y-auto bg-white custom-scrollbar">
         {isLoading || !isClientReady ? (
@@ -3116,6 +3180,254 @@ export default function UniversalBlogEditor({
           height: 0;
         }
       `}</style>
+
+      {isEditorialModalOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+          <div className="w-full max-w-2xl rounded-3xl border border-zinc-800 bg-[#090b11] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] text-zinc-100 flex flex-col max-h-[90vh] overflow-y-auto custom-scrollbar">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-4 mb-5">
+              <div className="flex items-center gap-2">
+                <FileText size={18} className="text-blue-500" />
+                <h3 className="text-lg font-black tracking-tight">본문 마지막 에디토리얼 설정</h3>
+              </div>
+              <button 
+                onClick={() => setIsEditorialModalOpen(false)}
+                className="rounded-full p-1 hover:bg-zinc-800 transition text-zinc-400 hover:text-white cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Active Switch */}
+            <div className="flex items-center justify-between bg-zinc-950/40 border border-zinc-900 rounded-2xl p-4 mb-5">
+              <div>
+                <p className="text-sm font-black">에디토리얼 상자 활성화</p>
+                <p className="text-[11px] text-zinc-500 mt-0.5">글 상세 보기 화면 하단에 이 카드를 항상 노출할까요?</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditorialEnabled(!editorialEnabled)}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  editorialEnabled ? "bg-blue-600" : "bg-zinc-800"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    editorialEnabled ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {editorialEnabled && (
+              <div className="space-y-4">
+                
+                {/* Preset Selector */}
+                <div>
+                  <label className="text-xs font-black text-zinc-400 uppercase tracking-wider block mb-2">프리셋 테마 선택</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {[
+                      { id: "default", label: "기본 라이트", bg: "#f8f8f9", border: "#e4e4e7", text: "#52525b", sub: "#2563eb" },
+                      { id: "blue", label: "소프트 블루", bg: "#eff6ff", border: "#bfdbfe", text: "#1e3a8a", sub: "#2563eb" },
+                      { id: "green", label: "소프트 그린", bg: "#f0fdf4", border: "#bbf7d0", text: "#064e3b", sub: "#16a34a" },
+                      { id: "red", label: "소프트 레드", bg: "#fef2f2", border: "#fecaca", text: "#7f1d1d", sub: "#dc2626" },
+                      { id: "dark", label: "네온 다크", bg: "#090b11", border: "#1e293b", text: "#94a3b8", sub: "#3b82f6" }
+                    ].map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          setEditorialBgColor(p.bg);
+                          setEditorialBorderColor(p.border);
+                          setEditorialTextColor(p.text);
+                          setEditorialSubColor(p.sub);
+                        }}
+                        className="rounded-xl border border-zinc-800 bg-zinc-950 p-2 text-center hover:border-zinc-700 hover:bg-zinc-900 transition cursor-pointer"
+                      >
+                        <div className="text-[11px] font-black">{p.label}</div>
+                        <div className="flex items-center justify-center gap-1 mt-1.5">
+                          <span className="w-3 h-3 rounded-full border border-zinc-800" style={{ backgroundColor: p.bg }} />
+                          <span className="w-3 h-3 rounded-full border border-zinc-800" style={{ backgroundColor: p.border }} />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Subtitle Input */}
+                <div>
+                  <label className="text-xs font-black text-zinc-400 uppercase tracking-wider block mb-1.5">상단 소제목 (Subtitle)</label>
+                  <input
+                    type="text"
+                    value={editorialSubtitle}
+                    onChange={(e) => setEditorialSubtitle(e.target.value)}
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/60 px-4 py-2.5 text-xs text-zinc-100 focus:border-blue-500 focus:outline-none"
+                    placeholder="예: CreAibox Insight Editorial"
+                  />
+                </div>
+
+                {/* Text Body Input */}
+                <div>
+                  <label className="text-xs font-black text-zinc-400 uppercase tracking-wider block mb-1.5">상세 내용 (Content Text)</label>
+                  <textarea
+                    value={editorialText}
+                    onChange={(e) => setEditorialText(e.target.value)}
+                    rows={4}
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/60 px-4 py-2.5 text-xs text-zinc-100 focus:border-blue-500 focus:outline-none resize-none leading-relaxed"
+                    placeholder="상세 에디토리얼 내용을 입력해 주세요."
+                  />
+                </div>
+
+                {/* Advanced Color Picker Inputs */}
+                <div>
+                  <p className="text-xs font-black text-zinc-400 uppercase tracking-wider mb-2">상세 색상 커스텀</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                      <label className="text-[10px] text-zinc-500 font-bold block mb-1">배경색</label>
+                      <div className="flex gap-1.5">
+                        <input
+                          type="color"
+                          value={editorialBgColor}
+                          onChange={(e) => setEditorialBgColor(e.target.value)}
+                          className="w-7 h-7 rounded border border-zinc-800 cursor-pointer overflow-hidden p-0 bg-transparent"
+                        />
+                        <input
+                          type="text"
+                          value={editorialBgColor}
+                          onChange={(e) => setEditorialBgColor(e.target.value)}
+                          className="w-full rounded border border-zinc-800 bg-zinc-950 px-2 text-[10px] uppercase font-mono focus:border-blue-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] text-zinc-500 font-bold block mb-1">테두리색</label>
+                      <div className="flex gap-1.5">
+                        <input
+                          type="color"
+                          value={editorialBorderColor}
+                          onChange={(e) => setEditorialBorderColor(e.target.value)}
+                          className="w-7 h-7 rounded border border-zinc-800 cursor-pointer overflow-hidden p-0 bg-transparent"
+                        />
+                        <input
+                          type="text"
+                          value={editorialBorderColor}
+                          onChange={(e) => setEditorialBorderColor(e.target.value)}
+                          className="w-full rounded border border-zinc-800 bg-zinc-950 px-2 text-[10px] uppercase font-mono focus:border-blue-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] text-zinc-500 font-bold block mb-1">상단 소제목색</label>
+                      <div className="flex gap-1.5">
+                        <input
+                          type="color"
+                          value={editorialSubColor}
+                          onChange={(e) => setEditorialSubColor(e.target.value)}
+                          className="w-7 h-7 rounded border border-zinc-800 cursor-pointer overflow-hidden p-0 bg-transparent"
+                        />
+                        <input
+                          type="text"
+                          value={editorialSubColor}
+                          onChange={(e) => setEditorialSubColor(e.target.value)}
+                          className="w-full rounded border border-zinc-800 bg-zinc-950 px-2 text-[10px] uppercase font-mono focus:border-blue-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] text-zinc-500 font-bold block mb-1">본문 텍스트색</label>
+                      <div className="flex gap-1.5">
+                        <input
+                          type="color"
+                          value={editorialTextColor}
+                          onChange={(e) => setEditorialTextColor(e.target.value)}
+                          className="w-7 h-7 rounded border border-zinc-800 cursor-pointer overflow-hidden p-0 bg-transparent"
+                        />
+                        <input
+                          type="text"
+                          value={editorialTextColor}
+                          onChange={(e) => setEditorialTextColor(e.target.value)}
+                          className="w-full rounded border border-zinc-800 bg-zinc-950 px-2 text-[10px] uppercase font-mono focus:border-blue-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Real-time Preview */}
+                <div className="pt-2">
+                  <label className="text-xs font-black text-zinc-400 uppercase tracking-wider block mb-2">실시간 상세 미리보기 (Preview)</label>
+                  <div 
+                    className="p-5 rounded-2xl border transition-all"
+                    style={{
+                      backgroundColor: editorialBgColor,
+                      borderColor: editorialBorderColor,
+                    }}
+                  >
+                    <p 
+                      className="text-[10px] font-black uppercase tracking-[0.2em] mb-1.5 select-none"
+                      style={{ color: editorialSubColor }}
+                    >
+                      {editorialSubtitle || "No Subtitle"}
+                    </p>
+                    <p 
+                      className="text-xs leading-relaxed"
+                      style={{ color: editorialTextColor }}
+                    >
+                      {editorialText || "에디토리얼 문구를 입력하면 이곳에 실시간 미리보기로 반영됩니다."}
+                    </p>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="mt-8 pt-4 border-t border-zinc-850 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsEditorialModalOpen(false)}
+                className="rounded-xl border border-zinc-800 bg-transparent px-5 py-2.5 text-xs font-black text-zinc-400 hover:text-white hover:bg-zinc-900 transition cursor-pointer"
+              >
+                닫기
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const nextSettings = {
+                    enabled: editorialEnabled,
+                    bgColor: editorialBgColor,
+                    borderColor: editorialBorderColor,
+                    textColor: editorialTextColor,
+                    subColor: editorialSubColor,
+                    subtitle: editorialSubtitle,
+                    text: editorialText
+                  };
+                  editorialSettingsRef.current = nextSettings;
+                  
+                  // Trigger content update in parent by reading current editor html
+                  if (editor) {
+                    const html = editor.getHTML();
+                    const commentStr = `<!-- CREAIBOX_EDITORIAL_START ${JSON.stringify(nextSettings)} CREAIBOX_EDITORIAL_END -->`;
+                    const contentWithComment = `${cleanContentComment(html)}\n\n${commentStr}`;
+                    lastExternalContentRef.current = contentWithComment;
+                    setContent(contentWithComment);
+                  }
+                  
+                  setIsEditorialModalOpen(false);
+                }}
+                className="rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-black text-white hover:bg-blue-500 transition shadow-lg shadow-blue-500/20 cursor-pointer"
+              >
+                적용 및 본문 연동
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }

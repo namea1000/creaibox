@@ -198,7 +198,7 @@ async function main() {
   const imageFolder = files.find(f => f.name === 'image' && f.mimeType === 'application/vnd.google-apps.folder');
   const musicFolder = files.find(f => f.name === 'music' && f.mimeType === 'application/vnd.google-apps.folder');
 
-  const filesToSync: { id: string; name: string; mimeType: string; size: string; createdTime: string; description: string; mediaType: 'video' | 'image' | 'music'; imageMediaMetadata?: any; videoMediaMetadata?: any }[] = [];
+  const filesToSync: { id: string; name: string; mimeType: string; size: string; createdTime: string; description: string; mediaType: 'video' | 'image' | 'music'; imageMediaMetadata?: any; videoMediaMetadata?: any; category?: string }[] = [];
 
   if (videoFolder) {
     console.log(`\nDetected 'video' folder. Scanning for subfolders and direct files inside (ID: ${videoFolder.id})...`);
@@ -224,7 +224,8 @@ async function main() {
               createdTime: f.createdTime || new Date().toISOString(),
               description: f.description || '',
               mediaType: 'video',
-              videoMediaMetadata: f.videoMediaMetadata
+              videoMediaMetadata: f.videoMediaMetadata,
+              category: 'video_root'
             });
           }
         }
@@ -261,7 +262,8 @@ async function main() {
               createdTime: f.createdTime || new Date().toISOString(),
               description: f.description || '',
               mediaType: 'video',
-              videoMediaMetadata: f.videoMediaMetadata
+              videoMediaMetadata: f.videoMediaMetadata,
+              category: folder.name || undefined
             });
           }
         });
@@ -286,16 +288,84 @@ async function main() {
           size: f.size || '0',
           createdTime: f.createdTime || new Date().toISOString(),
           description: f.description || '',
-          mediaType: 'music'
+          mediaType: 'music',
+          category: 'music_root'
         });
       }
     });
   }
 
   if (imageFolder && imageFolder.id) {
-    console.log(`\nDetected 'image' folder (ID: ${imageFolder.id}). Checking for 'creassets-library' subfolder...`);
-    const creassetsFolderId = await findFolder(drive, imageFolder.id, "creassets-library");
+    console.log(`\nDetected 'image' folder (ID: ${imageFolder.id}). Starting scan...`);
+
+    // 1. Fetch direct files under 'image' folder
+    let imgPageToken: string | undefined = undefined;
+    do {
+      const res: any = await drive.files.list({
+        q: `'${imageFolder.id}' in parents and trashed = false`,
+        fields: "nextPageToken, files(id, name, mimeType, size, createdTime, description, imageMediaMetadata)",
+        pageSize: 100,
+        pageToken: imgPageToken
+      });
+      const files = res.data.files || [];
+      files.forEach((f: any) => {
+        if (f.id && f.name && f.mimeType?.startsWith('image/')) {
+          filesToSync.push({
+            id: f.id,
+            name: f.name,
+            mimeType: f.mimeType,
+            size: f.size || '0',
+            createdTime: f.createdTime || new Date().toISOString(),
+            description: f.description || '',
+            mediaType: 'image',
+            imageMediaMetadata: f.imageMediaMetadata,
+            category: 'image_root'
+          });
+        }
+      });
+      imgPageToken = res.data.nextPageToken;
+    } while (imgPageToken);
+
+    // 2. Fetch all subfolders directly inside 'image' folder (excluding 'creassets-library')
+    const subFoldersRes = await drive.files.list({
+      q: `'${imageFolder.id}' in parents and mimeType = 'application/vnd.google-apps.folder' and name != 'creassets-library' and trashed = false`,
+      fields: "files(id, name)",
+    });
+    const customImageFolders = subFoldersRes.data.files || [];
     
+    // Scan all custom folders
+    for (const folder of customImageFolders) {
+      console.log(`Scanning custom image subfolder: ${folder.name} (ID: ${folder.id})...`);
+      let pageToken: string | undefined = undefined;
+      do {
+        const res: any = await drive.files.list({
+          q: `'${folder.id}' in parents and trashed = false`,
+          fields: "nextPageToken, files(id, name, mimeType, size, createdTime, description, imageMediaMetadata)",
+          pageSize: 100,
+          pageToken
+        });
+        const files = res.data.files || [];
+        files.forEach((f: any) => {
+          if (f.id && f.name && f.mimeType?.startsWith('image/')) {
+            filesToSync.push({
+              id: f.id,
+              name: f.name,
+              mimeType: f.mimeType,
+              size: f.size || '0',
+              createdTime: f.createdTime || new Date().toISOString(),
+              description: f.description || '',
+              mediaType: 'image',
+              imageMediaMetadata: f.imageMediaMetadata,
+              category: folder.name || undefined
+            });
+          }
+        });
+        pageToken = res.data.nextPageToken;
+      } while (pageToken);
+    }
+
+    // 3. Scan 'creassets-library' category folders
+    const creassetsFolderId = await findFolder(drive, imageFolder.id, "creassets-library");
     if (creassetsFolderId) {
       console.log(`Found 'creassets-library' folder (ID: ${creassetsFolderId}). Scanning category folders...`);
       const subFoldersRes = await drive.files.list({
@@ -326,34 +396,14 @@ async function main() {
                 createdTime: f.createdTime || new Date().toISOString(),
                 description: f.description || '',
                 mediaType: 'image',
-                imageMediaMetadata: f.imageMediaMetadata
+                imageMediaMetadata: f.imageMediaMetadata,
+                category: catFolder.name || undefined
               });
             }
           });
           pageToken = listRes.data.nextPageToken;
         } while (pageToken);
       }
-    } else {
-      console.log(`'creassets-library' not found. Fetching files directly inside 'image' folder...`);
-      const subListRes = await drive.files.list({
-        q: `'${imageFolder.id}' in parents and trashed = false`,
-        fields: "files(id, name, mimeType, size, createdTime, description, imageMediaMetadata)",
-      });
-      const subFiles = subListRes.data.files || [];
-      subFiles.forEach(f => {
-        if (f.id && f.name && f.mimeType?.startsWith('image/')) {
-          filesToSync.push({
-            id: f.id,
-            name: f.name,
-            mimeType: f.mimeType,
-            size: f.size || '0',
-            createdTime: f.createdTime || new Date().toISOString(),
-            description: f.description || '',
-            mediaType: 'image',
-            imageMediaMetadata: f.imageMediaMetadata
-          });
-        }
-      });
     }
   }
 
@@ -435,6 +485,26 @@ async function main() {
 
     let generationType = parsedMidjourney.genType;
     let tags: string[] = [file.mediaType === 'video' ? 'Video' : (file.mediaType === 'music' ? 'Music' : 'Image')];
+
+    // Auto-map category folder names to "Post Type" (용도) tags
+    const category = (file.category || "").toLowerCase();
+    if (category.includes("wealth_money") || category.includes("finance")) {
+      tags.push("금융 및 재테크", "뉴스 리포트");
+    } else if (category.includes("motivation") || category.includes("inspire")) {
+      tags.push("일반 정보성", "동기부여");
+    } else if (category.includes("knowledge_sci_fi") || category.includes("scifi") || category.includes("science")) {
+      tags.push("지식 정보", "뉴스 리포트");
+    } else if (category.includes("study_loop") || category.includes("study") || category.includes("asmr") || category.includes("rain")) {
+      tags.push("ASMR/백색소음", "플레이리스트");
+    } else if (category.includes("health") || category.includes("fitness")) {
+      tags.push("건강 정보", "영양제 분석", "일반 정보성");
+    } else if (category.includes("education")) {
+      tags.push("지식 정보", "일반 정보성");
+    } else if (category.includes("textures") || category.includes("background") || category.includes("design")) {
+      tags.push("디자인/배경", "SNS 카드뉴스");
+    } else if (category.includes("nature") || category.includes("flora") || category.includes("landscape")) {
+      tags.push("힐링/다큐", "플레이리스트");
+    }
 
     // If it's a video or we need Gemini Vision for unnamed images, download the buffer
     let buffer: Buffer | undefined = undefined;

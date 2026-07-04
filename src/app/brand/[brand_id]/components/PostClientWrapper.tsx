@@ -168,6 +168,33 @@ export default function PostClientWrapper({
   const accentColor = profile.extra_configs?.blog_accent_color || "#3b82f6";
   const tags = post.seo_tags || [];
 
+  // 🌟 에디토리얼 설정 댓글 파싱
+  const editorialRegex = /<!-- CREAIBOX_EDITORIAL_START ([\s\S]*?) CREAIBOX_EDITORIAL_END -->/;
+  const editorialMatch = (post.content || "").match(editorialRegex);
+  let editorial = {
+    enabled: true,
+    bgColor: "#f8f8f9",
+    borderColor: "#e4e4e7",
+    textColor: "#52525b",
+    subColor: "#2563eb",
+    subtitle: "CreAibox Insight Editorial",
+    text: "본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오 크리에이박스(CreAibox)의 오리지널 인사이트 리포트입니다. 인공지능 기반의 고품질 콘텐츠 생성 가이드와 비즈니스 성장 전략에 대한 더 많은 전문 자료는 크리에이박스(CreAibox) 공식 블로그 기사 및 스튜디오 가이드에서 확인하실 수 있습니다."
+  };
+
+  let hasCustomEditorial = false;
+  if (editorialMatch && editorialMatch[1]) {
+    try {
+      const parsed = JSON.parse(editorialMatch[1]);
+      editorial = { ...editorial, ...parsed };
+      hasCustomEditorial = true;
+    } catch (e) {
+      console.error("Failed to parse editorial settings in brand page:", e);
+    }
+  }
+
+  // Clean comment from normalizedContent if present
+  const cleanContent = normalizedContent.replace(editorialRegex, "").trim();
+
   const configs = profile.extra_configs || {};
   const primaryId = profile.brand_id || "";
   let adsensePubId = "";
@@ -377,19 +404,55 @@ export default function PostClientWrapper({
 
               <div className="px-6 py-8 md:px-8 space-y-8">
                 <div className="w-full">
-                  {looksLikeHtml(normalizedContent) ? (
+                  {looksLikeHtml(cleanContent) ? (
                     <div
                       className={blogContentClass}
                       dangerouslySetInnerHTML={{
-                        __html: sanitizePublishedHtml(normalizedContent),
+                        __html: sanitizePublishedHtml(cleanContent),
                       }}
                     />
                   ) : (
                     <ReactMarkdown remarkPlugins={[remarkGfm]} components={getBlogMarkdownComponents(theme)}>
-                      {normalizedContent}
+                      {cleanContent}
                     </ReactMarkdown>
                   )}
                 </div>
+
+                {/* Brand Editorial Card */}
+                {editorial.enabled && (
+                  hasCustomEditorial ? (
+                    <div 
+                      className="mt-12 p-6 rounded-2xl border transition-all"
+                      style={{
+                        backgroundColor: editorial.bgColor,
+                        borderColor: editorial.borderColor,
+                      }}
+                    >
+                      <p 
+                        className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 select-none"
+                        style={{ color: editorial.subColor }}
+                      >
+                        {editorial.subtitle}
+                      </p>
+                      <p 
+                        className="text-sm leading-[1.7]"
+                        style={{ color: editorial.textColor }}
+                      >
+                        {editorial.text}
+                      </p>
+                    </div>
+                  ) : (
+                    /* Default CreAibox Citation Card */
+                    <div className="mt-12 p-6 rounded-2xl border border-zinc-200/60 bg-zinc-50/30">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500 mb-2 select-none">
+                        CreAibox Publisher
+                      </p>
+                      <p className="text-xs text-zinc-500 leading-[1.6]">
+                        본 블로그 포스팅은 올인원 크리에이터 생성형 AI 스튜디오 <a href="https://creaibox.com" target="_blank" rel="noopener noreferrer" className="font-black text-zinc-700 hover:text-blue-500 underline decoration-zinc-400">크리에이박스(CreAibox)</a> 솔루션을 활용하여 자동화 및 최적화 배포된 기사입니다. AI 기반 블로그 및 스마트 마케팅 솔루션에 대한 정보는 공식 웹사이트에서 확인해 보세요.
+                      </p>
+                    </div>
+                  )
+                )}
 
                 {tags.length > 0 && (
                   <div className="pt-8 mt-12">

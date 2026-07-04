@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import {
@@ -120,12 +120,18 @@ export default function FreeAssetsLibraryPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [likedAssetIds, setLikedAssetIds] = useState<Set<string>>(new Set());
   const [bookmarkedAssetIds, setBookmarkedAssetIds] = useState<Set<string>>(new Set());
-  const [activeFilterTab, setActiveFilterTab] = useState<"ratio" | "generation" | "style" | null>(null);
+  const [activeFilterTab, setActiveFilterTab] = useState<"ratio" | "generation" | "style" | "postType" | null>(null);
   const [selectedMediaType, setSelectedMediaType] = useState<string>("all");
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>("all");
   const [selectedGenerationType, setSelectedGenerationType] = useState<string>("all");
   const [selectedThemeCategory, setSelectedThemeCategory] = useState<string>("all");
   const [selectedStyle, setSelectedStyle] = useState<string>("all");
+  const [selectedPostType, setSelectedPostType] = useState<string>("all");
+  
+  // Sort states & references
+  const [activeSortTab, setActiveSortTab] = useState<"for_you" | "random" | "hot" | "top_day" | "top_week" | "top_month" | "likes">("random");
+  const [isTopDropdownOpen, setIsTopDropdownOpen] = useState(false);
+  const sortDropdownRef = useRef<HTMLDivElement | null>(null);
   
   // Modal states
   const [selectedAsset, setSelectedAsset] = useState<FreeAsset | null>(null);
@@ -247,6 +253,22 @@ export default function FreeAssetsLibraryPage() {
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const downloadDropdownRef = useRef<HTMLDivElement | null>(null);
   const shareDropdownRef = useRef<HTMLDivElement | null>(null);
+
+  // Click outside listener for sort dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        sortDropdownRef.current &&
+        !sortDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsTopDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Fetch Assets List
   const fetchAssets = useCallback(async () => {
@@ -1199,8 +1221,84 @@ export default function FreeAssetsLibraryPage() {
       );
     })();
 
-    return matchesQuery && matchesAspectRatio && matchesGenerationType && matchesStyle;
+    const matchesPostType = (() => {
+      if (selectedPostType === "all") return true;
+      
+      const postTypeKeywordsMap: Record<string, string[]> = {
+        general: ["일반 정보성", "일반", "정보성", "general", "동기부여", "지식 정보"],
+        subsidies: ["생활 정책", "정부 지원금", "지원금", "정책", "subsidies"],
+        health: ["건강 정보", "영양제 분석", "건강", "영양제", "health", "fitness"],
+        finance_loan: ["보험", "대출", "카드 정보", "카드", "finance_loan"],
+        real_estate: ["부동산 정보", "부동산", "real_estate"],
+        finance_investment: ["금융 및 재테크", "금융", "재테크", "wealth_money", "finance", "investment"],
+        stock_analysis: ["주식/재테크 분석", "주식", "재테크 분석", "stock", "analysis"],
+        corporate_info: ["기업 정보", "기업", "주식 정보", "corporate"],
+        playlist_asmr: ["플레이리스트", "백색소음", "ASMR", "playlist", "rain", "cozy", "study", "loop"],
+        music_video: ["뮤직 동영상", "뮤직비디오", "music video"],
+        news_report: ["뉴스 리포트", "뉴스", "report"]
+      };
+
+      const keywords = postTypeKeywordsMap[selectedPostType] || [];
+      return keywords.some(kw => 
+        asset.title.toLowerCase().includes(kw.toLowerCase()) ||
+        asset.tags.some(t => t.toLowerCase().includes(kw.toLowerCase()))
+      );
+    })();
+    return matchesQuery && matchesAspectRatio && matchesGenerationType && matchesStyle && matchesPostType;
   });
+
+  const sortedAssets = useMemo(() => {
+    const list = [...filteredAssets];
+
+    if (activeSortTab === "random") {
+      // Deterministic hash based shuffle so it doesn't reshuffle on every state change render,
+      // but displays in a randomized order.
+      const hashString = (str: string) => {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+          hash = (hash << 5) - hash + str.charCodeAt(i);
+          hash |= 0;
+        }
+        return hash;
+      };
+      return list.sort((a, b) => hashString(a.id) - hashString(b.id));
+    }
+    
+    if (activeSortTab === "hot") {
+      return list.sort((a, b) => ((b.views || 0) + (b.downloads || 0)) - ((a.views || 0) + (a.downloads || 0)));
+    }
+    
+    if (activeSortTab === "top_day") {
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      return list
+        .filter(a => new Date(a.createdAt) >= oneDayAgo)
+        .sort((a, b) => ((b.views || 0) + (b.downloads || 0)) - ((a.views || 0) + (a.downloads || 0)));
+    }
+    
+    if (activeSortTab === "top_week") {
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      return list
+        .filter(a => new Date(a.createdAt) >= oneWeekAgo)
+        .sort((a, b) => ((b.views || 0) + (b.downloads || 0)) - ((a.views || 0) + (a.downloads || 0)));
+    }
+    
+    if (activeSortTab === "top_month") {
+      const oneMonthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      return list
+        .filter(a => new Date(a.createdAt) >= oneMonthAgo)
+        .sort((a, b) => ((b.views || 0) + (b.downloads || 0)) - ((a.views || 0) + (a.downloads || 0)));
+    }
+    
+    if (activeSortTab === "likes") {
+      return list.filter(a => likedAssetIds.has(a.id));
+    }
+    
+    if (activeSortTab === "for_you") {
+      return list.sort((a, b) => (b.views || 0) - (a.views || 0));
+    }
+
+    return list;
+  }, [filteredAssets, activeSortTab, likedAssetIds]);
 
   const popularTags = ["자연", "배경", "바다", "하늘", "여행", "힐링", "음악", "감성", "우주", "비즈니스"];
 
@@ -1425,6 +1523,55 @@ export default function FreeAssetsLibraryPage() {
                     }`}
                   />
                 </button>
+
+                {/* 포스트 타입 (용도) 필터 버튼 */}
+                <button
+                  onClick={() => setActiveFilterTab(activeFilterTab === "postType" ? null : "postType")}
+                  className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
+                    activeFilterTab === "postType"
+                      ? "border-blue-500 bg-blue-600/10 text-blue-400"
+                      : selectedPostType !== "all"
+                        ? "border-blue-500 bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                        : "border-zinc-800 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                  }`}
+                >
+                  <SlidersHorizontal size={12} />
+                  <span>
+                    포스트 타입(용도)
+                    {selectedPostType !== "all" && (
+                      <span className="ml-1 text-[11px] font-black opacity-90">
+                        ({
+                          selectedPostType === "general" ? "일반 정보" :
+                          selectedPostType === "subsidies" ? "생활/지원금" :
+                          selectedPostType === "health" ? "건강/영양제" :
+                          selectedPostType === "finance_loan" ? "보험/대출" :
+                          selectedPostType === "real_estate" ? "부동산" :
+                          selectedPostType === "finance_investment" ? "금융/재테크" :
+                          selectedPostType === "stock_analysis" ? "주식 분석" :
+                          selectedPostType === "corporate_info" ? "기업 정보" :
+                          selectedPostType === "playlist_asmr" ? "ASMR/플리" :
+                          selectedPostType === "music_video" ? "뮤직비디오" :
+                          selectedPostType === "news_report" ? "뉴스 리포트" : selectedPostType
+                        })
+                      </span>
+                    )}
+                  </span>
+                  <ChevronDown
+                    size={12}
+                    className={`transition-transform duration-200 ${
+                      activeFilterTab === "postType" ? "rotate-180 text-blue-400" : "text-zinc-500"
+                    }`}
+                  />
+                </button>
+
+                {/* 무료 에셋 나눔하기 버튼 */}
+                <button
+                  onClick={handleOpenUpload}
+                  className="flex items-center gap-1.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 text-xs font-bold transition shadow-md shadow-blue-500/20 cursor-pointer"
+                >
+                  <UploadCloud size={12} />
+                  <span>무료 에셋 나눔하기</span>
+                </button>
               </div>
 
               {/* 펼쳐지는 필터 콘텐츠 영역 */}
@@ -1514,6 +1661,39 @@ export default function FreeAssetsLibraryPage() {
                       ))}
                     </div>
                   )}
+
+                  {/* 4. 포스트 타입 필터 콘텐츠 */}
+                  {activeFilterTab === "postType" && (
+                    <div className="flex flex-wrap justify-center items-center gap-2">
+                      <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mr-2 select-none">용도 선택</span>
+                      {[
+                        { id: "all", label: "🌐 전체 용도" },
+                        { id: "general", label: "📝 일반 정보성/동기부여" },
+                        { id: "subsidies", label: "💵 생활 정책/정부 지원금" },
+                        { id: "health", label: "🩺 건강 정보/영양제 분석" },
+                        { id: "finance_loan", label: "💳 보험/대출/카드 정보" },
+                        { id: "real_estate", label: "🏠 부동산 정보" },
+                        { id: "finance_investment", label: "💰 금융 및 재테크" },
+                        { id: "stock_analysis", label: "📈 주식/재테크 분석" },
+                        { id: "corporate_info", label: "🏢 기업 정보" },
+                        { id: "playlist_asmr", label: "🎵 플레이리스트/ASMR" },
+                        { id: "music_video", label: "🎥 뮤직 동영상" },
+                        { id: "news_report", label: "📰 뉴스 리포트" }
+                      ].map((type) => (
+                        <button
+                          key={type.id}
+                          onClick={() => setSelectedPostType(type.id)}
+                          className={`rounded-full px-3 py-1 text-xs font-bold transition cursor-pointer ${
+                            selectedPostType === type.id
+                              ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                              : "border border-zinc-900 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                          }`}
+                        >
+                          {type.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </>
@@ -1558,13 +1738,73 @@ export default function FreeAssetsLibraryPage() {
             })}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="relative flex flex-wrap items-center gap-5 text-xs sm:text-sm select-none" ref={sortDropdownRef}>
+            {[
+              { id: "for_you", label: "For You" },
+              { id: "random", label: "Random" },
+              { id: "hot", label: "Hot" }
+            ].map((t) => (
+              <button
+                key={t.id}
+                onClick={() => {
+                  setActiveSortTab(t.id as any);
+                  setIsTopDropdownOpen(false);
+                }}
+                className={`font-black cursor-pointer transition ${
+                  activeSortTab === t.id ? "text-blue-500" : "text-zinc-500 hover:text-zinc-300"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+
+            {/* Top Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setIsTopDropdownOpen(!isTopDropdownOpen)}
+                className={`flex items-center gap-1 font-black cursor-pointer transition ${
+                  activeSortTab.startsWith("top_") ? "text-blue-500" : "text-zinc-500 hover:text-zinc-300"
+                }`}
+              >
+                <span>
+                  {activeSortTab === "top_day" ? "Top Day" :
+                   activeSortTab === "top_week" ? "Top Week" : "Top Month"}
+                </span>
+                <ChevronDown size={14} className={`transition-transform duration-200 ${isTopDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isTopDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-28 rounded-xl border border-zinc-800 bg-[#090b11] p-1 shadow-2xl z-50">
+                  {[
+                    { id: "top_day", label: "Top Day" },
+                    { id: "top_week", label: "Top Week" },
+                    { id: "top_month", label: "Top Month" }
+                  ].map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={() => {
+                        setActiveSortTab(opt.id as any);
+                        setIsTopDropdownOpen(false);
+                      }}
+                      className="w-full text-left rounded-lg px-3 py-1.5 text-xs font-bold text-zinc-400 hover:bg-zinc-900 hover:text-white transition cursor-pointer"
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <button
-              onClick={handleOpenUpload}
-              className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 transition px-5 py-2.5 text-xs font-black text-white shadow-lg cursor-pointer"
+              onClick={() => {
+                setActiveSortTab("likes");
+                setIsTopDropdownOpen(false);
+              }}
+              className={`font-black cursor-pointer transition ${
+                activeSortTab === "likes" ? "text-blue-500" : "text-zinc-500 hover:text-zinc-300"
+              }`}
             >
-              <UploadCloud size={16} />
-              무료 에셋 나눔하기
+              Likes
             </button>
           </div>
         </div>
@@ -1576,7 +1816,7 @@ export default function FreeAssetsLibraryPage() {
               <Loader2 className="animate-spin text-blue-500" size={32} />
               <p className="text-xs font-bold text-zinc-500">라이브러리로부터 무료 에셋 로딩 중...</p>
             </div>
-          ) : filteredAssets.length === 0 ? (
+          ) : sortedAssets.length === 0 ? (
             <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/10 text-zinc-500">
               <ImageIcon size={42} className="mb-3 text-zinc-700" />
               <p className="text-sm font-black">검색 조건에 맞는 무료 에셋이 없습니다.</p>
@@ -1584,7 +1824,7 @@ export default function FreeAssetsLibraryPage() {
             </div>
           ) : (
             <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-2 w-full">
-              {filteredAssets.map((asset) => {
+              {sortedAssets.map((asset) => {
                   const isAudio = asset.mediaType === "music";
                   const isVideo = asset.mediaType === "video";
                   const isPlaying = playingAudioId === asset.id;

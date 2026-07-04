@@ -835,6 +835,26 @@ AI 생성 단계를 거치지 않고, 사용자가 직접 수동으로 처음부
 * **[MODIFY] [Header.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Header.tsx)**:
   * 기존에 메인 페이지 헤더의 유저 프로필 드롭다운 메뉴에서 `planName` 상태가 `"Plus"`로 하드코딩되어 있던 문제를 개선.
   * `fetchProfile` 함수를 도입하여 Supabase `profiles` 테이블의 실제 `membership_level`을 비동기 조회 및 매핑(`Admin`, `Creator`, `Pro`, `Business`, `Free` 등)하고, 화면 깜빡임 차단을 위해 `localStorage`에 세션 정보와 캐싱 연동 처리.
+* **[NEW] [fix_post_types.ts](file:///Users/a1234/Local%20Sites/creaibox/scripts/fix_post_types.ts)**:
+  * 구글 드라이브 내 전체 카테고리 폴더 경로 및 파일 이름 키워드 분석을 통해 기존 DB의 모든 에셋(921개)을 포스트 타입(용도)별로 자동 분류 및 `tags` 배열 컬럼에 일괄 매핑하는 데이터 마이그레이션 스크립트 작성 및 성공적인 일괄 가동 완료.
+* **[MODIFY] [test_r2_sync.ts](file:///Users/a1234/Local%20Sites/creaibox/scripts/test_r2_sync.ts)**:
+  * 향후 추가되는 에셋들도 스캔 및 업로드/동기화 시점에 구글 드라이브 디렉토리 위치를 감지하여 적절한 포스트 타입 용도 태그가 데이터베이스에 자동으로 누적 주입되도록 로직 개선.
+* **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/free-assets/page.tsx)**:
+  * 에셋 라이브러리 메인 필터 대시보드 영역에 '포스트 타입(용도)' 트리거 버튼 및 옵션 선택 패널을 아코디언 형태로 추가하고 클라이언트 필터링 검색 연동을 완료.
+  * 기존 우측 하단에 단독으로 위치해 레이아웃을 불필요하게 차지하던 "무료 에셋 나눔하기" 버튼을 상단 필터 영역의 "포스트 타입" 바로 우측으로 이동시켜 컴팩트한 필터/액션 바 구조로 최적화.
+  * 미드저니 탐색 갤러리 스타일을 벤치마킹하여 미디어 카테고리 탭 오른쪽에 **`For You`**, **`Random` (기본 정렬 활성화)**, **`Hot`**, **`Top` (Top Day / Top Week / Top Month 드롭다운)**, **`Likes`** 정렬 탐색 패널을 완벽하게 추가 연동 완료.
+
+* **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/%5Bslug%5D/page.tsx)**:
+  * 공식 블로그 상세 조회 페이지의 본문이 마감되는 영역 하단에, 네이버 및 구글의 검색 지수(SEO) 향상 및 브랜드 노출을 위한 **`CreAibox Editorial` 인사이트 에디토리얼 카드**를 컴포넌트 템플릿 차원에서 자동 렌더링되도록 구현 완료.
+  * 본문 HTML 내 주석 형태로 패키징된 커스텀 에디토리얼 설정 데이터를 파싱하여 실시간으로 사용자가 설정한 문구 및 컬러칩(배경, 테두리, 글자색 등)으로 동적 드로잉 처리 연동.
+* **[MODIFY] [PostClientWrapper.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/PostClientWrapper.tsx)**:
+  * 개별 브랜드 블로그 상세 글 하단에도 백링크 효과(SEO Backlink building)를 통한 검색 노출 극대화를 위해 `https://creaibox.com` 공식 사이트 링크가 포함된 **`CreAibox Publisher` 카드**를 자동 덧붙임 렌더링하도록 반영 완료.
+  * 커스텀 에디토리얼 상자 설정을 사용자가 개별적으로 지정한 경우, 백링크 카드 대신 유저 커스텀 카드로 치환되어 유연하게 노출되도록 개선.
+* **[MODIFY] [UniversalBlogEditor.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/editor/UniversalBlogEditor.tsx)**:
+  * 에디터 중앙 툴바의 `[ T 맞춤법 ]` 오른쪽에 **`[ 에디토리얼 설정 ]`** 버튼을 추가하고 클릭 시 팝업되는 전용 모달 창 구현.
+  * 에디토리얼 활성화 토글, 테마 프리셋(기본 라이트, 소프트 블루, 소프트 그린, 소프트 레드, 네온 다크) 선택, 상단 소제목 및 본문 텍스트 커스텀 변경, Hex/Palette 컬러 선택기능 및 실시간 카드 프리뷰 화면 탑재.
+  * 입력된 데이터를 HTML 주석 형식인 `<!-- CREAIBOX_EDITORIAL_START ... JSON ... CREAIBOX_EDITORIAL_END -->`로 말아서 글 본문 데이터 저장 시 자동으로 덧붙임 처리하여 데이터베이스 스키마 확장 없이 안전한 데이터 저장을 달성.
 
 ### 30-3. 검증 상태
 * `npx tsc --noEmit`을 실행하여 전체 프로젝트 컴파일 에러가 없는 상태를 최종 검증 완료했습니다.
+

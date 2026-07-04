@@ -325,13 +325,36 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   const schemaRegex = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi;
   let match;
   while ((match = schemaRegex.exec(post.content || "")) !== null) {
-    if (match[1]) {
+      if (match[1]) {
       customSchemas.push(match[1].trim());
     }
   }
 
-  // 🌟 스키마 스크립트가 블로그 본문에 텍스트로 보이지 않도록 본문 렌더링 영역에서 삭제 처리
-  const contentWithoutSchemas = (post.content || "").replace(schemaRegex, "");
+  // 🌟 에디토리얼 설정 댓글 파싱
+  const editorialRegex = /<!-- CREAIBOX_EDITORIAL_START ([\s\S]*?) CREAIBOX_EDITORIAL_END -->/;
+  const editorialMatch = (post.content || "").match(editorialRegex);
+  let editorial = {
+    enabled: true,
+    bgColor: "#f8f8f9",
+    borderColor: "#e4e4e7",
+    textColor: "#52525b",
+    subColor: "#2563eb",
+    subtitle: "CreAibox Insight Editorial",
+    text: "본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오 크리에이박스(CreAibox)의 오리지널 인사이트 리포트입니다. 인공지능 기반의 고품질 콘텐츠 생성 가이드와 비즈니스 성장 전략에 대한 더 많은 전문 자료는 크리에이박스(CreAibox) 공식 블로그 기사 및 스튜디오 가이드에서 확인하실 수 있습니다."
+  };
+
+  if (editorialMatch && editorialMatch[1]) {
+    try {
+      const parsed = JSON.parse(editorialMatch[1]);
+      editorial = { ...editorial, ...parsed };
+    } catch (e) {
+      console.error("Failed to parse editorial settings:", e);
+    }
+  }
+
+  // 🌟 에디토리얼 설정 댓글 및 스키마 제거
+  const contentWithoutEditorial = (post.content || "").replace(editorialRegex, "").trim();
+  const contentWithoutSchemas = contentWithoutEditorial.replace(schemaRegex, "");
   let normalizedContent = normalizePublishedContent(contentWithoutSchemas);
 
   const canonical = post.canonical_url || `https://creaibox.com/blog/${post.slug || slug}`;
@@ -469,6 +492,30 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                     </ReactMarkdown>
                   )}
                 </div>
+
+                {/* CreAibox Official SEO Outro Card */}
+                {editorial.enabled && (
+                  <div 
+                    className="mt-12 p-6 rounded-2xl border transition-all"
+                    style={{
+                      backgroundColor: editorial.bgColor,
+                      borderColor: editorial.borderColor,
+                    }}
+                  >
+                    <p 
+                      className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 select-none"
+                      style={{ color: editorial.subColor }}
+                    >
+                      {editorial.subtitle}
+                    </p>
+                    <p 
+                      className="text-sm leading-[1.7]"
+                      style={{ color: editorial.textColor }}
+                    >
+                      {editorial.text}
+                    </p>
+                  </div>
+                )}
 
                 {tags.length > 0 && (
                   <div className="w-full mt-12 border-t border-zinc-200 pt-8">
