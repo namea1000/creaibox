@@ -509,7 +509,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                       {editorial.subtitle}
                     </p>
                     <p 
-                      className="text-sm leading-[1.7]"
+                      className="text-[1.05rem] leading-[1.8]"
                       style={{ color: editorial.textColor }}
                     >
                       {editorial.text}

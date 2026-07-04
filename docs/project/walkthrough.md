@@ -855,6 +855,9 @@ AI 생성 단계를 거치지 않고, 사용자가 직접 수동으로 처음부
   * 에디토리얼 활성화 토글, 테마 프리셋(기본 라이트, 소프트 블루, 소프트 그린, 소프트 레드, 네온 다크) 선택, 상단 소제목 및 본문 텍스트 커스텀 변경, Hex/Palette 컬러 선택기능 및 실시간 카드 프리뷰 화면 탑재.
   * 입력된 데이터를 HTML 주석 형식인 `<!-- CREAIBOX_EDITORIAL_START ... JSON ... CREAIBOX_EDITORIAL_END -->`로 말아서 글 본문 데이터 저장 시 자동으로 덧붙임 처리하여 데이터베이스 스키마 확장 없이 안전한 데이터 저장을 달성.
 
+* **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/%5Bslug%5D/page.tsx)**, **[PostClientWrapper.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/PostClientWrapper.tsx)**, **[UniversalBlogEditor.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/editor/UniversalBlogEditor.tsx)**:
+  * 에디토리얼 박스의 상세 내용 글자 크기를 기존 `text-sm` (14px)에서 블로그 본문 글자 크기인 **`text-[1.05rem]` (약 17px)** 및 줄바꿈 `leading-[1.8]`로 완벽하게 통일하여 시각적 일관성을 확보.
+
 ### 30-3. 검증 상태
 * `npx tsc --noEmit`을 실행하여 전체 프로젝트 컴파일 에러가 없는 상태를 최종 검증 완료했습니다.
 

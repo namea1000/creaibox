@@ -3374,7 +3374,7 @@ export default function UniversalBlogEditor({
                       {editorialSubtitle || "No Subtitle"}
                     </p>
                     <p 
-                      className="text-xs leading-relaxed"
+                      className="text-[1.05rem] leading-[1.8]"
                       style={{ color: editorialTextColor }}
                     >
                       {editorialText || "에디토리얼 문구를 입력하면 이곳에 실시간 미리보기로 반영됩니다."}
