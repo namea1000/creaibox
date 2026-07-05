@@ -41,9 +41,9 @@ export default function CreaiboxWritingHomePage() {
       color: "from-cyan-500 to-blue-600",
     },
     {
-      title: "AI 포스팅 글쓰기",
-      desc: "키워드만 입력하면 SEO 블로그 글을 자동 생성합니다.",
-      href: "/studio/writing/creaibox/create",
+      title: "블로그 새글 쓰기",
+      desc: "새 글 작성 에디터에 진입하여 AI 도구와 함께 새 포스팅 작성을 시작합니다.",
+      href: "/studio/writing/creaibox/new-post",
       icon: Edit3,
       color: "from-violet-600 to-blue-600",
     },
@@ -138,7 +138,7 @@ export default function CreaiboxWritingHomePage() {
               </Link>
 
               <Link
-                href="/studio/writing/creaibox/create"
+                href="/studio/writing/creaibox/new-post"
                 className="inline-flex h-11 items-center gap-2 rounded-xl bg-violet-600 px-4 text-sm font-black text-white hover:bg-violet-500"
               >
                 <Plus size={17} />

@@ -27,45 +27,68 @@ export default function CreaiboxNewPostBridge() {
           return;
         }
 
-        const payload = {
-          user_id: user.id,
-          user_nicename: user.email?.split("@")[0] ?? null,
-          title: "새글 제목을 수정해 주세요",
-          content: "",
-          status: "draft",
-          post_type: "create",
-          target_keyword: "",
-          selected_tone: "전문적이고 통찰력 있는 분석",
-          slug: null,
-          meta_description: "",
-          focus_keyword: "",
-          canonical_url: null,
-          seo_tags: [],
-          word_count_goal: null,
-          source_mode: "direct",
-        };
-
-        const { data, error } = await supabase
+        // Check if there is already a blank draft post for this user to prevent cluttering
+        const { data: existingDrafts, error: queryError } = await supabase
           .from("writing_creaibox_posts")
-          .insert([payload])
           .select("*")
-          .single();
+          .eq("user_id", user.id)
+          .eq("title", "새글 제목을 수정해 주세요")
+          .eq("status", "draft")
+          .order("id", { ascending: false });
 
-        if (error) {
-          throw new Error(error.message);
+        if (queryError) {
+          console.error("Query blank post failed:", queryError);
         }
 
-        if (!active) return;
+        const blankPost = existingDrafts?.find((post: any) => {
+          const content = (post.content ?? "").trim();
+          return content === "" || content === "<p></p>" || content === "<p></p>\n";
+        });
+
+        let targetPost = blankPost;
+
+        if (!targetPost) {
+          const payload = {
+            user_id: user.id,
+            user_nicename: user.email?.split("@")[0] ?? null,
+            title: "새글 제목을 수정해 주세요",
+            content: "",
+            status: "draft",
+            post_type: "create",
+            target_keyword: "",
+            selected_tone: "전문적이고 통찰력 있는 분석",
+            slug: null,
+            meta_description: "",
+            focus_keyword: "",
+            canonical_url: null,
+            seo_tags: [],
+            word_count_goal: null,
+            source_mode: "direct",
+          };
+
+          const { data: insertedData, error: insertError } = await supabase
+            .from("writing_creaibox_posts")
+            .insert([payload])
+            .select("*")
+            .single();
+
+          if (insertError) {
+            throw new Error(insertError.message);
+          }
+          targetPost = insertedData;
+        }
+
+        if (!active || !targetPost) return;
 
         // routeId 결정 (display_id가 있으면 우선 사용, 없으면 id 사용)
-        const rawDisplayId = data.display_id ?? data.displayId;
+        const rawDisplayId = targetPost.display_id ?? targetPost.displayId;
         const routeId =
           typeof rawDisplayId === "number" && Number.isFinite(rawDisplayId) && rawDisplayId > 0
             ? String(rawDisplayId)
-            : String(data.id);
+            : String(targetPost.id);
 
         // 에디터 상세 페이지로 워프 리다이렉트
-        router.replace(`/studio/writing/creaibox/list/${routeId}`);
+        router.replace(`/studio/writing/creaibox/list/${routeId}?newPost=true`);
       } catch (err: any) {
         if (active) {
           setErrorMsg(err.message || "새글 작성 도중 에러가 발생했습니다.");

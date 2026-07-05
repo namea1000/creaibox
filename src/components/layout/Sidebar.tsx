@@ -232,7 +232,6 @@ export default function Sidebar({
         icon: PenTool,
         color: "text-violet-400",
         children: [
-          { name: "AI 포스팅 글쓰기", href: "/studio/writing/creaibox/create", icon: Edit3 },
           { name: "블로그 새글 쓰기", href: "/studio/writing/creaibox/new-post", icon: PenLine },
           { name: "발행 원고 관리", href: "/studio/writing/creaibox/list", icon: Archive },
           { name: "블로그 관리", href: "/studio/writing/creaibox/blog-management", icon: Settings },
@@ -526,6 +525,14 @@ export default function Sidebar({
     if (href === "/studio") return pathname === "/studio";
     if (href === "/studio/library" && pathname.startsWith("/studio/library/free-assets")) {
       return false;
+    }
+    if (pathname.startsWith("/studio/writing/creaibox/list/")) {
+      if (href === "/studio/writing/creaibox/new-post") {
+        return true;
+      }
+      if (href === "/studio/writing/creaibox/list") {
+        return false;
+      }
     }
     return pathname === href || pathname.startsWith(`${href}/`);
   };

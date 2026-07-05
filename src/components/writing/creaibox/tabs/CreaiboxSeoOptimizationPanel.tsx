@@ -20,6 +20,8 @@ interface CreaiboxSeoOptimizationPanelProps {
   userBrandId?: string;
   userBrandIds?: string[];
   extraConfigs?: any;
+  onGenerateSeo?: () => Promise<void>;
+  isGeneratingSeo?: boolean;
 }
 
 const TITLE_LIMIT = 60;
@@ -182,6 +184,8 @@ export default function CreaiboxSeoOptimizationPanel({
   userBrandId,
   userBrandIds,
   extraConfigs,
+  onGenerateSeo,
+  isGeneratingSeo = false,
 }: CreaiboxSeoOptimizationPanelProps) {
   const [isSnippetOpen, setIsSnippetOpen] = useState(true);
   const [isBasicSettingsOpen, setIsBasicSettingsOpen] = useState(true);
@@ -399,6 +403,24 @@ export default function CreaiboxSeoOptimizationPanel({
   return (
     <div className="flex flex-col gap-px">
       
+      {onGenerateSeo && (
+        <div className="p-4 border-b border-zinc-800 bg-[#0c1017]/80 shrink-0">
+          <button
+            type="button"
+            onClick={onGenerateSeo}
+            disabled={isGeneratingSeo || !data.title}
+            className="w-full flex items-center justify-center gap-2 h-9 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 hover:brightness-110 active:scale-[0.99] transition-all text-xs font-black text-white shadow-md shadow-violet-500/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isGeneratingSeo ? (
+              <Loader2 className="h-4 w-4 animate-spin text-white" />
+            ) : (
+              <span className="text-yellow-400 font-black">✨</span>
+            )}
+            <span>{isGeneratingSeo ? "SEO 최적화 생성 중..." : "AI SEO최적화 자동 생성"}</span>
+          </button>
+        </div>
+      )}
+
       {/* 1단: Cre Snippet Editor */}
       <section>
         <button

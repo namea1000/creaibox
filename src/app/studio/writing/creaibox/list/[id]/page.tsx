@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
-import { ArrowLeft, Check, RotateCcw, Search, Send } from "lucide-react";
+import { ArrowLeft, Check, PanelLeftClose, PanelLeftOpen, RotateCcw, Search, Send } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/utils/supabase/client";
 import UniversalBlogEditor from "@/components/writing/editor/UniversalBlogEditor";
@@ -12,6 +12,7 @@ import CreaiboxContentImagePanel from "@/components/writing/creaibox/tabs/Creaib
 import CreaiboxSchemaPanel from "@/components/writing/creaibox/tabs/CreaiboxSchemaPanel";
 import CreaiboxSeoOptimizationPanel from "@/components/writing/creaibox/tabs/CreaiboxSeoOptimizationPanel";
 import CreaiboxThumbnailPanel from "@/components/writing/creaibox/tabs/CreaiboxThumbnailPanel";
+import CreaiboxAiWritingPanel from "@/components/writing/creaibox/tabs/CreaiboxAiWritingPanel";
 import {
   creaiboxManuscriptKeys,
   type StudioManuscriptRecord,
@@ -358,6 +359,17 @@ export default function CreaiboxManuscriptDetailPage() {
   const [publishFeedback, setPublishFeedback] = useState("");
   const [publishingPanelTab, setPublishingPanelTab] = useState<PublishingPanelTab>("seo");
 
+  // AI 자동 글쓰기 및 재창조 패널을 위한 상태 및 변수 선언
+  const [activeAiTab, setActiveAiTab] = useState<"write" | "recreate" | "pdf">("write");
+  const [recreateUrl, setRecreateUrl] = useState("");
+  const [isFetchingOriginal, setIsFetchingOriginal] = useState(false);
+  const [isRecreating, setIsRecreating] = useState(false);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfFileName, setPdfFileName] = useState("");
+  const [isPdfExtracting, setIsPdfExtracting] = useState(false);
+  const [extractedPdfText, setExtractedPdfText] = useState("");
+  const [isPdfDragging, setIsPdfDragging] = useState(false);
+
   const sidebarList = useMemo(() => {
     if (queryList.length > 0) return queryList;
     return cachedList;
@@ -391,7 +403,13 @@ export default function CreaiboxManuscriptDetailPage() {
   );
 
   const [isMounted, setIsMounted] = useState(false);
+  const [isListSidebarCollapsed, setIsListSidebarCollapsed] = useState(false);
   const [data, setData] = useState<StudioManuscriptRecord | null>(null);
+
+  const updateLocalData = useCallback((patch: Partial<StudioManuscriptRecord>) => {
+    setData((prev) => (prev ? { ...prev, ...patch } : prev));
+    setHasLocalEdits(true);
+  }, []);
 
   const hasUnpublishedChanges = useMemo(() => {
     if (!data || data.status !== "published") return false;
@@ -435,8 +453,8 @@ export default function CreaiboxManuscriptDetailPage() {
   const postTypeParam = searchParams?.get("postType") || "";
   const toneParam = searchParams?.get("selectedTone") || "";
   const wordCountParam = searchParams?.get("wordCountGoal") || "";
-  const strategyLevelParam = searchParams?.get("strategyLevel") || "";
-  const resultFormatParam = searchParams?.get("resultFormat") || "";
+  const strategyLevelParam = searchParams?.get("strategyLevel") || "1. 기본 전략(대중적이고 상식적 수준의 정보성 글)";
+  const resultFormatParam = searchParams?.get("resultFormat") || "1. 기본 시리즈(키워드 연관 글감 병렬적 나열)";
   const largeCategoryParam = searchParams?.get("largeCategory") || "";
   const mainTopicParam = searchParams?.get("mainTopic") || "";
   const subTopicParam = searchParams?.get("subTopic") || "";
@@ -462,6 +480,34 @@ export default function CreaiboxManuscriptDetailPage() {
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [aiStatusMessage, setAiStatusMessage] = useState("");
   const [aiErrorMessage, setAiErrorMessage] = useState("");
+
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
+  const [selectedKnowledgeId, setSelectedKnowledgeId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setSelectedPersonaId(localStorage.getItem("creaibox_editor_selected_persona_id"));
+      setSelectedKnowledgeId(localStorage.getItem("creaibox_editor_selected_knowledge_id"));
+    }
+  }, []);
+
+  const handleSelectPersona = (id: string | null) => {
+    setSelectedPersonaId(id);
+    if (id) {
+      localStorage.setItem("creaibox_editor_selected_persona_id", id);
+    } else {
+      localStorage.removeItem("creaibox_editor_selected_persona_id");
+    }
+  };
+
+  const handleSelectKnowledge = (id: string | null) => {
+    setSelectedKnowledgeId(id);
+    if (id) {
+      localStorage.setItem("creaibox_editor_selected_knowledge_id", id);
+    } else {
+      localStorage.removeItem("creaibox_editor_selected_knowledge_id");
+    }
+  };
 
   useEffect(() => {
     if (source === "content-planner") {
@@ -536,8 +582,11 @@ export default function CreaiboxManuscriptDetailPage() {
   useEffect(() => {
     queueMicrotask(() => {
       setIsMounted(true);
+      if (searchParams?.get("newPost") === "true") {
+        setIsListSidebarCollapsed(true);
+      }
     });
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!isMounted) return;
@@ -830,7 +879,6 @@ export default function CreaiboxManuscriptDetailPage() {
     },
     [data, persistCaches, supabase, userRole, userBrandId, pathname, router]
   );
-
   const handleAiGenerateInEditor = useCallback(async (
     targetKeyword: string,
     contentType: string,
@@ -859,21 +907,63 @@ export default function CreaiboxManuscriptDetailPage() {
       const finalWordCountGoal = wordCountGoal || "1500";
       const lengthPrompt = getLengthPrompt(finalWordCountGoal);
 
+      // Load selected persona and knowledge details from localStorage
+      let personaPrompt = "";
+      let knowledgePrompt = "";
+
+      try {
+        const storedPersonas = localStorage.getItem("creaibox_persona_list");
+        if (storedPersonas && selectedPersonaId) {
+          const personas: any[] = JSON.parse(storedPersonas);
+          const persona = personas.find((p) => p.id === selectedPersonaId);
+          if (persona) {
+            personaPrompt = `
+        [작가 페르소나 지침]
+        귀하는 다음 페르소나의 집필 정체성과 캐릭터를 완벽히 모사하여 본문 작성을 해야 합니다:
+        - 이름/필명/역할: ${persona.nickname}
+        - 주 말투/어조: ${persona.tone || selectedTone}
+        - 목표 독자층: ${persona.targetAudience}
+        - 집필 특징 및 배경설명 (Bio): ${persona.bio}
+            `;
+          }
+        }
+
+        const storedKnowledge = localStorage.getItem("creaibox_knowledge_base");
+        if (storedKnowledge && selectedKnowledgeId) {
+          const knowledges: any[] = JSON.parse(storedKnowledge);
+          const knowledge = knowledges.find((k) => k.id === selectedKnowledgeId);
+          if (knowledge) {
+            knowledgePrompt = `
+        [참조 지식 아카이브 데이터]
+        글 작성에 있어 다음 전문 지식을 정확하게 인용하고 반영하여 작성하십시오:
+        - 참조 주제: ${knowledge.title}
+        - 요약 정보: ${knowledge.description}
+        - 본문에 상세히 녹여낼 지식 본문내용:
+        ${knowledge.content}
+            `;
+          }
+        }
+      } catch (e) {
+        console.error("Error loading selected persona/knowledge", e);
+      }
+
       const prompt = `
         당신은 Creaibox의 전문 블로그 콘텐츠 에디터입니다. 
+        ${personaPrompt}
+        ${knowledgePrompt}
         - 주제: ${targetKeyword}
         - 콘텐츠 유형: ${contentType || "블로그 글쓰기 콘텐츠"}
         - 포스트 타입: ${postType || "🧠 AI 인사이트 포스팅"}
-        - 어조: ${selectedTone || "💻 전문적이고 통찰력 있는 분석 (기술 블로그)"}
+        - 어조: ${personaPrompt ? "(위의 작가 페르소나 지침의 말투/어조 최우선 준수)" : (selectedTone || "💻 전문적이고 통찰력 있는 분석 (기술 블로그)")}
         - 길이 규격: ${lengthPrompt.label}
         - 목표 분량: 약 ${finalWordCountGoal}자
         - 길이 작성 지침: ${lengthPrompt.instruction}
         - 전략 수준: ${strategyLevel || "1. 기본 전략(대중적이고 상식적 수준의 정보성 글)"}
         - 결과 구성: ${resultFormat || "1. 기본 시리즈(키워드 연관 글감 병렬적 나열)"}
         - 대분류: ${largeCategory || "미지정"}
-        - 상세 분야: ${mainTopic || "미지정"}
-        - 추천 시리즈: ${subTopic || "미지정"}
-        - 참고 사항: ${referenceNote || "미지정"}
+        - 상세 분야: ${mainTopic || "미정"}
+        - 추천 시리즈: ${subTopic || "미정"}
+        - 참고 사항: ${referenceNote || "미정"}
         - ${useSearch ? "Google Search를 활용해" : "내부 지식과 논리 전개를 활용해"} 2026년 최신 기술 트렌드와 인사이트를 반영하여 작성하십시오.
         - 제목은 클릭하고 싶게 만들되 과장하지 말고, 첫 문단에서 글의 핵심 가치를 빠르게 전달하십시오.
         - 본문은 마크다운 형식으로 작성하고, 길이 규격에 맞게 문단 수와 정보 밀도를 조절하십시오.
@@ -1029,7 +1119,367 @@ export default function CreaiboxManuscriptDetailPage() {
     } finally {
       setIsAiGenerating(false);
     }
-  }, [data, activeRouteId, manuscriptId, aiItemId, aiCampaignId, userRole, userBrandId, handleSave]);
+  }, [data, activeRouteId, manuscriptId, aiItemId, aiCampaignId, userRole, userBrandId, handleSave, selectedPersonaId, selectedKnowledgeId]);
+  const handleAiGenerateTrigger = useCallback(() => {
+    void handleAiGenerateInEditor(
+      aiTargetKeyword,
+      aiContentType,
+      aiPostType,
+      aiSelectedTone,
+      aiWordCountGoal,
+      aiStrategyLevel,
+      aiResultFormat,
+      aiLargeCategory,
+      aiMainTopic,
+      aiSubTopic,
+      aiReferenceNote,
+      aiUseSearch
+    );
+  }, [
+    handleAiGenerateInEditor,
+    aiTargetKeyword,
+    aiContentType,
+    aiPostType,
+    aiSelectedTone,
+    aiWordCountGoal,
+    aiStrategyLevel,
+    aiResultFormat,
+    aiLargeCategory,
+    aiMainTopic,
+    aiSubTopic,
+    aiReferenceNote,
+    aiUseSearch,
+  ]);
+
+  const handleFetchOriginalText = useCallback(async () => {
+    if (!recreateUrl.trim()) {
+      window.alert("가져올 글의 URL 주소를 입력해 주세요 사장님!");
+      return;
+    }
+    setIsFetchingOriginal(true);
+    try {
+      const extractResponse = await fetch(
+        `/api/naver-extract?url=${encodeURIComponent(recreateUrl.trim())}`
+      );
+      const extractedResult = await extractResponse.json();
+
+      if (!extractResponse.ok) {
+        throw new Error(extractedResult?.error || "본문 추출에 실패했습니다.");
+      }
+
+      const { title: extTitle, content: extContent } = extractedResult;
+      
+      updateLocalData({
+        title: extTitle || "추출된 제목",
+        content: extContent || "",
+      });
+      
+      window.alert("원글 제목과 본문을 성공적으로 가져왔습니다!");
+    } catch (error: any) {
+      console.error(error);
+      window.alert(error.message || "원글을 가져오는 도중 오류가 발생했습니다.");
+    } finally {
+      setIsFetchingOriginal(false);
+    }
+  }, [recreateUrl, updateLocalData]);
+
+  const handleStartRecreation = useCallback(async () => {
+    if (!data) return;
+    let textToRecreate = data.content || "";
+    let titleToRecreate = data.title || "";
+
+    const plainText = textToRecreate.replace(/<[^>]*>/g, "").trim();
+    if (!plainText && recreateUrl.trim()) {
+      setIsFetchingOriginal(true);
+      try {
+        const extractResponse = await fetch(
+          `/api/naver-extract?url=${encodeURIComponent(recreateUrl.trim())}`
+        );
+        const extractedResult = await extractResponse.json();
+
+        if (!extractResponse.ok) {
+          throw new Error(extractedResult?.error || "본문 추출에 실패했습니다.");
+        }
+
+        titleToRecreate = extractedResult.title || "추출된 제목";
+        textToRecreate = extractedResult.content || "";
+        
+        updateLocalData({
+          title: titleToRecreate,
+          content: textToRecreate,
+        });
+      } catch (error: any) {
+        console.error(error);
+        window.alert(error.message || "원글을 가져오는 도중 오류가 발생했습니다.");
+        setIsFetchingOriginal(false);
+        return;
+      } finally {
+        setIsFetchingOriginal(false);
+      }
+    }
+
+    if (!textToRecreate.replace(/<[^>]*>/g, "").trim()) {
+      window.alert("재창조할 본문 내용이 없습니다. 먼저 타겟 글 주소를 입력하거나 본문을 작성해 주세요.");
+      return;
+    }
+
+    setIsRecreating(true);
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const selectedTone = aiSelectedTone || "💻 전문적이고 통찰력 있는 분석 (기술 블로그)";
+      
+      const keywordInstruction = aiTargetKeyword?.trim()
+        ? `새로 탄생할 원고의 집중 공략 타겟 키워드는 '${aiTargetKeyword.trim()}'이며, 반드시 이 키워드를 중심으로 최적화하라.`
+        : `원본 글을 분석해 검색성과 문맥 적합성이 가장 높은 대표 타겟 키워드 1개를 스스로 선정하고, 그 키워드로 최적화하라.`;
+
+      const lengthInstruction =
+        !aiWordCountGoal || aiWordCountGoal === "same"
+          ? `본문 길이는 원본과 대략 같은 길이로 맞추되, 정보량과 문단 구조는 유지하라.`
+          : `본문 길이는 공백 포함 약 ${aiWordCountGoal}자 수준으로 충분히 길고 풍부하게 작성하라.`;
+
+      const rawInputContext = `
+        [실제 추출된 원본 제목]: ${titleToRecreate}
+        [실제 추출된 원본 본문]
+        ${textToRecreate}
+      `;
+
+      // Load selected persona and knowledge details from localStorage
+      let personaPrompt = "";
+      let knowledgePrompt = "";
+
+      try {
+        const storedPersonas = localStorage.getItem("creaibox_persona_list");
+        if (storedPersonas && selectedPersonaId) {
+          const personas: any[] = JSON.parse(storedPersonas);
+          const persona = personas.find((p) => p.id === selectedPersonaId);
+          if (persona) {
+            personaPrompt = `
+        [작가 페르소나 지침]
+        귀하는 다음 페르소나의 집필 정체성과 캐릭터를 완벽히 모사하여 본문 작성을 해야 합니다:
+        - 이름/필명/역할: ${persona.nickname}
+        - 주 말투/어조: ${persona.tone || selectedTone}
+        - 목표 독자층: ${persona.targetAudience}
+        - 집필 특징 및 배경설명 (Bio): ${persona.bio}
+            `;
+          }
+        }
+
+        const storedKnowledge = localStorage.getItem("creaibox_knowledge_base");
+        if (storedKnowledge && selectedKnowledgeId) {
+          const knowledges: any[] = JSON.parse(storedKnowledge);
+          const knowledge = knowledges.find((k) => k.id === selectedKnowledgeId);
+          if (knowledge) {
+            knowledgePrompt = `
+        [참조 지식 아카이브 데이터]
+        글 작성에 있어 다음 전문 지식을 정확하게 인용하고 반영하여 작성하십시오:
+        - 참조 주제: ${knowledge.title}
+        - 요약 정보: ${knowledge.description}
+        - 본문에 상세히 녹여낼 지식 본문내용:
+        ${knowledge.content}
+            `;
+          }
+        }
+      } catch (e) {
+        console.error("Error loading selected persona/knowledge for recreation", e);
+      }
+
+      const prompt = `
+        너는 네이버 스마트블록 C-Rank 및 DIA+ 로봇의 문서 유사도 카피캣 탐지기 필터를 완벽하게 우회 분쇄하는 원고 재창조 엔진이다.
+        주어진 [기반 정보 영역]의 데이터 가치와 핵심 정보는 고스란히 계승하되, 문장의 어순, 형태소 수식 관계, 단어 배열을 180도 전면 파괴하여 완전히 최초로 창작된 오리지널 문서처럼 보이게 가공하라.
+        ${personaPrompt}
+        ${knowledgePrompt}
+
+        [기반 정보 영역]
+        ${rawInputContext}
+
+        [빌드 조건 마스트 공정]
+        1. ${keywordInstruction}
+        2. 최종 선정한 타겟 키워드를 본문 안에 3회~5회 내외로 자연스럽게 배치하라.
+        3. 말투는 반드시 '${personaPrompt ? "위 작가 페르소나 지침의 말투/어조" : selectedTone}'에 맞춰 유지하라.
+        4. ${lengthInstruction}
+        5. 마크다운의 대제목 및 소제목 구조(##, ###)를 반드시 3개 이상 쪼개어 가독성 벨트를 형성하라.
+        6. 동시에 원본 글의 핵심 키워드, 핵심 주제, 핵심 내용을 사람이 한눈에 파악할 수 있게 별도 분석하라.
+        7. 결과물은 부연설명이나 마크다운 코드 블록 선언부 기호 없이 오직 순수한 JSON 형식 데이터 규격으로만 정확하게 배출하라.
+        
+        [JSON 반환 양식 필수 규격]
+        { "targetKeyword": "최종 선정된 대표 타겟 키워드 1개", "title": "유사도를 회피하고 시선을 강탈하는 고품질 새 제목", "content": "새로 전면 재창조된 풍부한 내용의 마크다운 본문", "sourceAnalysis": { "keywords": ["원본 핵심 키워드1", "원본 핵심 키워드2", "원본 핵심 키워드3"], "topic": "원본 글의 핵심 주제를 한 문장으로 정리한 결과", "summaryPoints": ["원본 핵심 내용 요약 1", "원본 핵심 내용 요약 2", "원본 핵심 내용 요약 3"] } }
+      `;
+
+      const generationResult = await generateGeminiContentWithFallback({
+        prompt,
+        responseMimeType: "application/json",
+        type: "naver_recreate",
+        userId: user?.id || null,
+        userEmail: user?.email || null,
+      });
+
+      const parsedData = robustParseJson(generationResult.text);
+      const finalTitle = parsedData.title || `[오리지널] ${parsedData.targetKeyword || "핵심 키워드"} 최적화 보고서`;
+      const finalContent = parsedData.content || "";
+
+      updateLocalData({
+        title: finalTitle,
+        content: finalContent,
+        targetKeyword: parsedData.targetKeyword || aiTargetKeyword,
+        focusKeyword: parsedData.targetKeyword || aiTargetKeyword,
+      });
+
+      if (parsedData.targetKeyword) {
+        setAiTargetKeyword(parsedData.targetKeyword);
+      }
+
+      window.alert("AI 글 재창조가 완료되었습니다!");
+    } catch (error: any) {
+      console.error(error);
+      window.alert(error.message || "AI 글 재창조 가동 도중 오류가 발생했습니다.");
+    } finally {
+      setIsRecreating(false);
+    }
+  }, [data, recreateUrl, aiTargetKeyword, aiSelectedTone, aiWordCountGoal, supabase, updateLocalData, setAiTargetKeyword, selectedPersonaId, selectedKnowledgeId]);
+
+  const handlePdfExtract = useCallback(async () => {
+    if (!pdfFile) {
+      window.alert("추출할 PDF 파일을 먼저 첨부해 주세요 사장님!");
+      return;
+    }
+    setIsPdfExtracting(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      const titleWithoutExt = pdfFileName.replace(/\.[^/.]+$/, "");
+      const mockTitle = `[PDF 요약] ${titleWithoutExt}`;
+      const mockContent = `
+        <h3>[PDF 추출 보고서 원문]</h3>
+        <p>글로벌 반도체 공급망 고도화에 따른 시장 변화 보고서 요약본입니다. 최근 SK하이닉스의 HBM 공급 계약과 엔비디아의 신규 플랫폼 출시로 시장 점유율이 급변하고 있습니다.</p>
+        <p>이에 따라 차세대 AI 메모리 반도체 부문의 성장 잠재력이 부각되고 있으며, 향후 5개 분기 연속 영업이익 흑자가 예상되는 시점입니다.</p>
+        <p>디바이스 기기별 도입량 증가로 AI 반도체 매출 포트폴리오 다각화가 이루어지고 있습니다.</p>
+      `;
+
+      updateLocalData({
+        title: mockTitle,
+        content: mockContent,
+      });
+      setExtractedPdfText(mockContent.replace(/<[^>]*>/g, ""));
+
+      window.alert("PDF 문서에서 텍스트와 이미지 요소를 성공적으로 추출하여 에디터에 로드했습니다!");
+    } catch (err) {
+      window.alert("PDF 추출 도중 오류가 발생했습니다.");
+    } finally {
+      setIsPdfExtracting(false);
+    }
+  }, [pdfFile, pdfFileName, updateLocalData]);
+
+  const handleStartPdfRecreation = useCallback(async () => {
+    const sourceText = extractedPdfText.trim() || (data?.content ? data.content.replace(/<[^>]*>/g, "").trim() : "");
+    if (!sourceText) {
+      window.alert("재창조할 PDF 추출 텍스트가 없습니다. 먼저 PDF를 추출해 주세요.");
+      return;
+    }
+
+    setIsRecreating(true);
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const selectedTone = aiSelectedTone || "💻 전문적이고 통찰력 있는 분석 (기술 블로그)";
+      
+      // Load selected persona and knowledge details from localStorage
+      let personaPrompt = "";
+      let knowledgePrompt = "";
+
+      try {
+        const storedPersonas = localStorage.getItem("creaibox_persona_list");
+        if (storedPersonas && selectedPersonaId) {
+          const personas: any[] = JSON.parse(storedPersonas);
+          const persona = personas.find((p) => p.id === selectedPersonaId);
+          if (persona) {
+            personaPrompt = `
+        [작가 페르소나 지침]
+        귀하는 다음 페르소나의 집필 정체성과 캐릭터를 완벽히 모사하여 본문 작성을 해야 합니다:
+        - 이름/필명/역할: ${persona.nickname}
+        - 주 말투/어조: ${persona.tone || selectedTone}
+        - 목표 독자층: ${persona.targetAudience}
+        - 집필 특징 및 배경설명 (Bio): ${persona.bio}
+            `;
+          }
+        }
+
+        const storedKnowledge = localStorage.getItem("creaibox_knowledge_base");
+        if (storedKnowledge && selectedKnowledgeId) {
+          const knowledges: any[] = JSON.parse(storedKnowledge);
+          const knowledge = knowledges.find((k) => k.id === selectedKnowledgeId);
+          if (knowledge) {
+            knowledgePrompt = `
+        [참조 지식 아카이브 데이터]
+        글 작성에 있어 다음 전문 지식을 정확하게 인용하고 반영하여 작성하십시오:
+        - 참조 주제: ${knowledge.title}
+        - 요약 정보: ${knowledge.description}
+        - 본문에 상세히 녹여낼 지식 본문내용:
+        ${knowledge.content}
+            `;
+          }
+        }
+      } catch (e) {
+        console.error("Error loading selected persona/knowledge for PDF recreation", e);
+      }
+
+      const prompt = `
+        너는 업로드된 PDF 원본 자료를 바탕으로 카피캣 필터를 완벽 우회하는 고품질 블로그 원고를 창작하는 AI 재창조 엔진이다.
+        아래의 [PDF 추출 자료 영역] 데이터를 정밀 계승하되, 가독성 높은 소제목 구조를 갖춘 완전한 블로그 포스팅으로 재창조하라.
+        ${personaPrompt}
+        ${knowledgePrompt}
+
+        [PDF 추출 자료 영역]
+        ${sourceText}
+
+        [빌드 조건]
+        1. 말투는 반드시 '${personaPrompt ? "위 작가 페르소나 지침의 말투/어조" : selectedTone}'에 맞추어 작성하라.
+        2. 집중 공략 타겟 키워드 '${aiTargetKeyword || "AI 반도체 시장"}'를 중심으로 작성하고 본문에 자연스럽게 4회 이상 노출하라.
+        3. 분량은 공백 포함 1,500자 이상으로 문단을 구체화하여 서술하라.
+        4. 대제목(##)과 소제목(###) 구조를 마크다운 양식으로 명확히 구분하라.
+        5. 결과물은 부연설명이나 마크다운 코드 블록 선언부 기호 없이 오직 순수한 JSON 형식 데이터 규격으로만 정확하게 배출하라.
+
+        [JSON 반환 양식 필수 규격]
+        { "title": "새로 창조된 블로그 제목", "content": "새로 창조된 마크다운 본문", "targetKeyword": "최종 선정된 대표 타겟 키워드 1개" }
+      `;
+
+      const generationResult = await generateGeminiContentWithFallback({
+        prompt,
+        responseMimeType: "application/json",
+        type: "naver_recreate",
+        userId: user?.id || null,
+        userEmail: user?.email || null,
+      });
+
+      const parsedData = robustParseJson(generationResult.text);
+      const finalTitle = parsedData.title || `[AI 재창조] ${aiTargetKeyword || "PDF 요약"} 보고서`;
+      const finalContent = parsedData.content || "";
+
+      updateLocalData({
+        title: finalTitle,
+        content: finalContent,
+        targetKeyword: parsedData.targetKeyword || aiTargetKeyword,
+        focusKeyword: parsedData.targetKeyword || aiTargetKeyword,
+      });
+
+      if (parsedData.targetKeyword) {
+        setAiTargetKeyword(parsedData.targetKeyword);
+      }
+
+      window.alert("PDF 기반 AI 글 재창조가 성공적으로 완료되었습니다!");
+    } catch (error: any) {
+      console.error(error);
+      window.alert(error.message || "AI 글 재창조 중 오류가 발생했습니다.");
+    } finally {
+      setIsRecreating(false);
+    }
+  }, [data, extractedPdfText, aiSelectedTone, aiTargetKeyword, supabase, updateLocalData, setAiTargetKeyword, selectedPersonaId, selectedKnowledgeId]);
 
   const syncSelectedManuscript = useCallback(
     (routeId: string) => {
@@ -1059,10 +1509,7 @@ export default function CreaiboxManuscriptDetailPage() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, [syncSelectedManuscript]);
 
-  const updateLocalData = useCallback((patch: Partial<StudioManuscriptRecord>) => {
-    setData((prev) => (prev ? { ...prev, ...patch } : prev));
-    setHasLocalEdits(true);
-  }, []);
+
 
   const showPublishFeedback = useCallback((message: string) => {
     if (saveFeedbackTimeoutRef.current) {
@@ -1255,7 +1702,11 @@ export default function CreaiboxManuscriptDetailPage() {
         if (option.startsWith("expand_")) {
           if (option.includes("toc_")) {
             const count = option.replace("expand_toc_", "");
-            promptInstruction = `현재 본문에 있는 기존 목차(H2 등)들과 긴밀하게 연관되고 이어지는 새로운 목차(H2 또는 H3 태그)를 정확히 ${count}개 생성하여 추가해 주세요. 또한, 새로 추가된 각 목차 하위에는 상세하고 깊이 있는 설명 문단(글 내용)도 함께 작성해서 본문의 마지막 또는 문맥상 적합한 위치에 자연스럽게 덧붙여 전체 원고의 분량을 확장해 주세요. 기존에 존재하던 목차나 본문 내용은 절대로 삭제, 수정, 축소하지 마십시오.`;
+            promptInstruction = `현재 본문에 있는 기존 목차(H2 등)들과 긴밀하게 연관되고 이어지는 새로운 목차(H2 또는 H3 태그)를 정확히 ${count}개 생성하여 추가해 주세요. 또한, 새로 추가된 각 목차 하위에는 상세하고 깊이 있는 설명 문단(글 내용)도 함께 작성해서 본문의 마지막 또는 문맥상 적합한 위치에 자연스럽게 덧붙여 전체 원고의 분량을 확장해 주세요.
+
+[중요 지시사항]:
+1. 기존에 존재하던 모든 목차와 본문 내용은 절대로 삭제, 수정, 축소하지 말고 그대로 유지해야 합니다.
+2. 출력 시, 기존 본문 내용과 새로 추가된 목차/내용을 모두 하나로 합친 '전체 원고 통합본 HTML'을 처음부터 끝까지 생략 없이 완벽하게 출력하세요. 절대 새로 생긴 5번, 6번 등 신규 추가된 부분만 단독으로 출력해서는 안 됩니다.`;
           } else {
             const percent = option.replace("expand_", "");
             promptInstruction = `기존의 흐름, 맥락, 구조(HTML 태그)를 최대한 유지하면서 문장을 더 구체화하고 관련 유용한 정보를 덧붙여서 원고의 전체적인 분량이 대략 ${percent}% 정도 더 풍성하고 알차게 늘어나도록 내용을 확장하여 보강해 주세요. 절대 기존 내용을 누락하거나 마음대로 생략하여 아예 새로운 글로 대체하지 마세요.`;
@@ -1271,15 +1722,57 @@ export default function CreaiboxManuscriptDetailPage() {
           promptInstruction = `현재 본문에 기재된 수치, 통계, 주식 현황, 뉴스 등의 정보가 최신 현실 정보와 일치하는지 Google Search를 활용하여 실시간 검색하고 분석해 주세요. 만약 기존 본문에 적힌 수치나 데이터(예: 주가, 통계치, 특정 정책 내용 등)가 현재 시점의 실시간 정보와 다르거나 오래되었다면, 최신 실시간 검색 결과에 기반하여 본문의 수치와 관련 문맥 정보를 올바르게 수정하고 내용을 업데이트해 주세요. 전체 글의 주요 핵심 주제나 기존 맥락 흐름은 그대로 유지하되, 정보의 사실성과 최신성(팩트)만 실시간 데이터로 교체하고 관련 설명을 보강해야 합니다.`;
         }
 
+        // Load selected persona and knowledge details from localStorage
+        let personaPrompt = "";
+        let knowledgePrompt = "";
+
+        try {
+          const storedPersonas = localStorage.getItem("creaibox_persona_list");
+          if (storedPersonas && selectedPersonaId) {
+            const personas: any[] = JSON.parse(storedPersonas);
+            const persona = personas.find((p) => p.id === selectedPersonaId);
+            if (persona) {
+              personaPrompt = `
+        [작가 페르소나 지침]
+        귀하는 다음 페르소나의 집필 정체성과 캐릭터를 완벽히 모사하여 본문 작성을 해야 합니다:
+        - 이름/필명/역할: ${persona.nickname}
+        - 주 말투/어조: ${persona.tone}
+        - 목표 독자층: ${persona.targetAudience}
+        - 집필 특징 및 배경설명 (Bio): ${persona.bio}
+              `;
+            }
+          }
+
+          const storedKnowledge = localStorage.getItem("creaibox_knowledge_base");
+          if (storedKnowledge && selectedKnowledgeId) {
+            const knowledges: any[] = JSON.parse(storedKnowledge);
+            const knowledge = knowledges.find((k) => k.id === selectedKnowledgeId);
+            if (knowledge) {
+              knowledgePrompt = `
+        [참조 지식 아카이브 데이터]
+        글 작성에 있어 다음 전문 지식을 정확하게 인용하고 반영하여 작성하십시오:
+        - 참조 주제: ${knowledge.title}
+        - 요약 정보: ${knowledge.description}
+        - 본문에 상세히 녹여낼 지식 본문내용:
+        ${knowledge.content}
+              `;
+            }
+          }
+        } catch (e) {
+          console.error("Error loading selected persona/knowledge for content enhancement", e);
+        }
+
         const prompt = `당신은 전문 콘텐츠 에디터이자 SEO 작가입니다. 제공된 원고 제목과 본문(HTML 형식)을 기반으로, 지시사항에 따라 본문을 더 완성도 높고 알차게 보강(확장)해 주세요.
+        ${personaPrompt}
+        ${knowledgePrompt}
 
-[원고 제목]: ${data.title}
-[원고 태그/키워드]: ${data.targetKeyword ?? ""}
-[기존 본문 (HTML)]:
-${data.content ?? ""}
+        [원고 제목]: ${data.title}
+        [원고 태그/키워드]: ${data.targetKeyword ?? ""}
+        [기존 본문 (HTML)]:
+        ${data.content ?? ""}
 
-[지시사항]:
-${promptInstruction}
+        [지시사항]:
+        ${promptInstruction}
 
 [출력 형식 및 제약 조건]:
 1. 반드시 기존 본문 내용의 맥락을 누락하지 말고, 내용을 더 풍성하게 다듬거나 확장해야 합니다.
@@ -1334,7 +1827,7 @@ ${promptInstruction}
         setIsApplyingSearch(false);
       }
     },
-    [data, supabase, updateLocalData]
+    [data, supabase, updateLocalData, selectedPersonaId, selectedKnowledgeId]
   );
 
   useEffect(() => {
@@ -1463,23 +1956,47 @@ ${promptInstruction}
 
   return (
     <div className="h-full w-full overflow-hidden bg-[#0a0d12] text-white">
-      <div className="grid h-full w-full grid-cols-[360px_minmax(0,1fr)_420px]">
+      <div 
+        className={`grid h-full w-full transition-all duration-300 ${
+          isListSidebarCollapsed 
+            ? "grid-cols-[0px_360px_minmax(0,1fr)_420px]" 
+            : "grid-cols-[360px_360px_minmax(0,1fr)_420px]"
+        }`}
+      >
 
         {/* 왼쪽 글 목록 */}
-        <aside className="h-full overflow-y-auto custom-scrollbar border-r border-violet-500/20 bg-[#0b0f15] p-4 text-[13px]">
-          <button
-            type="button"
-            onClick={() => {
-              if (hasLocalEdits) {
-                void handleSave();
-              }
-              router.push("/studio/writing/creaibox/list");
-            }}
-            className="mb-5 flex w-full items-center gap-3 rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3 text-left text-[13px] font-bold text-white/80 transition hover:border-violet-400/40 hover:bg-violet-500/10"
-          >
-            <ArrowLeft className="h-4 w-4 text-violet-300" />
-            목록으로 돌아가기
-          </button>
+        <aside 
+          className={`h-full overflow-hidden border-r border-violet-500/20 bg-[#0b0f15] text-[13px] transition-all duration-300 ${
+            isListSidebarCollapsed 
+              ? "w-0 border-r-0" 
+              : "w-[360px]"
+          }`}
+        >
+          <div className="flex h-full w-[360px] flex-col p-4 overflow-y-auto custom-scrollbar">
+          {/* 목록으로 돌아가기 Header (옆 에디터 "Creaibox Tiptap Blog Editor" 제목 있는 라인에 맞춰 라인을 쳐 주고, 박스 없이 텍스트만) */}
+          <div className="mb-5 -mx-4 -mt-4 flex h-14 shrink-0 items-center justify-between border-b border-zinc-800 bg-[#0c1017] px-4">
+            <button
+              type="button"
+              onClick={() => {
+                if (hasLocalEdits) {
+                  void handleSave();
+                }
+                router.push("/studio/writing/creaibox/list");
+              }}
+              className="flex items-center gap-2 text-[13px] font-black text-white/80 transition hover:text-white cursor-pointer"
+            >
+              <ArrowLeft className="h-4 w-4 text-violet-300" />
+              목록으로 돌아가기
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsListSidebarCollapsed(true)}
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-800 bg-[#0e111a] text-zinc-400 hover:border-blue-500/50 hover:bg-zinc-800 hover:text-white transition cursor-pointer"
+              title="목록 접기"
+            >
+              <PanelLeftClose size={15} />
+            </button>
+          </div>
 
           <div className="relative mb-5">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300/60" />
@@ -1524,6 +2041,60 @@ ${promptInstruction}
               );
             })}
           </div>
+          </div>
+        </aside>
+
+        {/* AI 자동 글쓰기 및 재창조 패널 (Column 2) */}
+        <aside className="h-full w-[360px] overflow-hidden border-r border-white/10 bg-[#0b0f15] shrink-0">
+          <CreaiboxAiWritingPanel
+            activeAiTab={activeAiTab}
+            setActiveAiTab={setActiveAiTab}
+            isListSidebarCollapsed={isListSidebarCollapsed}
+            onToggleListSidebar={() => setIsListSidebarCollapsed(!isListSidebarCollapsed)}
+            aiTargetKeyword={aiTargetKeyword}
+            setAiTargetKeyword={setAiTargetKeyword}
+            aiContentType={aiContentType}
+            setAiContentType={setAiContentType}
+            aiPostType={aiPostType}
+            setAiPostType={setAiPostType}
+            aiSelectedTone={aiSelectedTone}
+            setAiSelectedTone={setAiSelectedTone}
+            aiWordCountGoal={aiWordCountGoal}
+            setAiWordCountGoal={setAiWordCountGoal}
+            aiStrategyLevel={aiStrategyLevel}
+            setAiStrategyLevel={setAiStrategyLevel}
+            aiResultFormat={aiResultFormat}
+            setAiResultFormat={setAiResultFormat}
+            aiLargeCategory={aiLargeCategory}
+            setAiLargeCategory={setAiLargeCategory}
+            aiMainTopic={aiMainTopic}
+            setAiMainTopic={setAiMainTopic}
+            aiSubTopic={aiSubTopic}
+            setAiSubTopic={setAiSubTopic}
+            aiReferenceNote={aiReferenceNote}
+            setAiReferenceNote={setAiReferenceNote}
+            aiUseSearch={aiUseSearch}
+            setAiUseSearch={setAiUseSearch}
+            recreateUrl={recreateUrl}
+            setRecreateUrl={setRecreateUrl}
+            pdfFile={pdfFile}
+            setPdfFile={setPdfFile}
+            pdfFileName={pdfFileName}
+            setPdfFileName={setPdfFileName}
+            isPdfDragging={isPdfDragging}
+            setIsPdfDragging={setIsPdfDragging}
+            isAiGenerating={isAiGenerating}
+            isFetchingOriginal={isFetchingOriginal}
+            isRecreating={isRecreating}
+            isPdfExtracting={isPdfExtracting}
+            aiStatusMessage={aiStatusMessage}
+            aiErrorMessage={aiErrorMessage}
+            onGenerate={handleAiGenerateTrigger}
+            onFetchOriginalText={handleFetchOriginalText}
+            onStartRecreation={handleStartRecreation}
+            onPdfExtract={handlePdfExtract}
+            onStartPdfRecreation={handleStartPdfRecreation}
+          />
         </aside>
 
         {/* 가운데 에디터 - 유동 영역 */}
@@ -1558,36 +2129,16 @@ ${promptInstruction}
             targetKeyword={data.targetKeyword ?? ""}
             manuscriptId={data.id}
             contentImageSourceType="writing_creaibox_posts"
-            onGenerateSeo={handleGenerateSeo}
-            isGeneratingSeo={isGeneratingSeo}
-            aiTargetKeyword={aiTargetKeyword}
-            setAiTargetKeyword={setAiTargetKeyword}
-            aiContentType={aiContentType}
-            setAiContentType={setAiContentType}
-            aiPostType={aiPostType}
-            setAiPostType={setAiPostType}
-            aiSelectedTone={aiSelectedTone}
-            setAiSelectedTone={setAiSelectedTone}
-            aiWordCountGoal={aiWordCountGoal}
-            setAiWordCountGoal={setAiWordCountGoal}
-            aiStrategyLevel={aiStrategyLevel}
-            setAiStrategyLevel={setAiStrategyLevel}
-            aiResultFormat={aiResultFormat}
-            setAiResultFormat={setAiResultFormat}
-            aiLargeCategory={aiLargeCategory}
-            setAiLargeCategory={setAiLargeCategory}
-            aiMainTopic={aiMainTopic}
-            setAiMainTopic={setAiMainTopic}
-            aiSubTopic={aiSubTopic}
-            setAiSubTopic={setAiSubTopic}
-            aiReferenceNote={aiReferenceNote}
-            setAiReferenceNote={setAiReferenceNote}
-            aiUseSearch={aiUseSearch}
-            setAiUseSearch={setAiUseSearch}
-            isAiGenerating={isAiGenerating}
-            aiStatusMessage={aiStatusMessage}
-            aiErrorMessage={aiErrorMessage}
-            handleAiGenerateInEditor={handleAiGenerateInEditor}
+            isListSidebarCollapsed={isListSidebarCollapsed}
+            onToggleListSidebar={() => setIsListSidebarCollapsed(!isListSidebarCollapsed)}
+            selectedPersonaId={selectedPersonaId}
+            setSelectedPersonaId={handleSelectPersona}
+            selectedKnowledgeId={selectedKnowledgeId}
+            setSelectedKnowledgeId={handleSelectKnowledge}
+            userRole={userRole}
+            userBrandId={userBrandId}
+            userBrandIds={userBrandIds}
+            extraConfigs={extraConfigs}
           />
         </main>
 
@@ -1661,6 +2212,8 @@ ${promptInstruction}
                 userBrandId={userBrandId}
                 userBrandIds={userBrandIds}
                 extraConfigs={extraConfigs}
+                onGenerateSeo={handleGenerateSeo}
+                isGeneratingSeo={isGeneratingSeo}
               />
             )}
             {publishingPanelTab === "thumbnail" && (

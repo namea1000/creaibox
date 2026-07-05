@@ -132,6 +132,75 @@ export default function FreeAssetsLibraryPage() {
   const [activeSortTab, setActiveSortTab] = useState<"for_you" | "random" | "hot" | "top_day" | "top_week" | "top_month" | "likes">("random");
   const [isTopDropdownOpen, setIsTopDropdownOpen] = useState(false);
   const sortDropdownRef = useRef<HTMLDivElement | null>(null);
+  const filterDropdownRef = useRef<HTMLDivElement | null>(null);
+
+  // 로컬 스토리지 필터 값 복원 (SSR Hydration Mismatch 방지용 마운트 시 실행)
+  useEffect(() => {
+    try {
+      const savedMediaType = localStorage.getItem("free_assets_media_type");
+      if (savedMediaType) setSelectedMediaType(savedMediaType);
+
+      const savedAspectRatio = localStorage.getItem("free_assets_aspect_ratio");
+      if (savedAspectRatio) setSelectedAspectRatio(savedAspectRatio);
+
+      const savedGenerationType = localStorage.getItem("free_assets_generation_type");
+      if (savedGenerationType) setSelectedGenerationType(savedGenerationType);
+
+      const savedThemeCategory = localStorage.getItem("free_assets_theme_category");
+      if (savedThemeCategory) setSelectedThemeCategory(savedThemeCategory);
+
+      const savedStyle = localStorage.getItem("free_assets_style");
+      if (savedStyle) setSelectedStyle(savedStyle);
+
+      const savedPostType = localStorage.getItem("free_assets_post_type");
+      if (savedPostType) setSelectedPostType(savedPostType);
+
+      const savedSortTab = localStorage.getItem("free_assets_sort_tab");
+      if (savedSortTab) setActiveSortTab(savedSortTab as any);
+
+      const savedFilterTab = localStorage.getItem("free_assets_filter_tab");
+      if (savedFilterTab) setActiveFilterTab(savedFilterTab as any);
+    } catch (e) {
+      console.error("Failed to restore filter settings from localStorage:", e);
+    }
+  }, []);
+
+  // 필터 값 변경 시 로컬 스토리지 저장
+  useEffect(() => {
+    localStorage.setItem("free_assets_media_type", selectedMediaType);
+  }, [selectedMediaType]);
+
+  useEffect(() => {
+    localStorage.setItem("free_assets_aspect_ratio", selectedAspectRatio);
+  }, [selectedAspectRatio]);
+
+  useEffect(() => {
+    localStorage.setItem("free_assets_generation_type", selectedGenerationType);
+  }, [selectedGenerationType]);
+
+  useEffect(() => {
+    localStorage.setItem("free_assets_theme_category", selectedThemeCategory);
+  }, [selectedThemeCategory]);
+
+  useEffect(() => {
+    localStorage.setItem("free_assets_style", selectedStyle);
+  }, [selectedStyle]);
+
+  useEffect(() => {
+    localStorage.setItem("free_assets_post_type", selectedPostType);
+  }, [selectedPostType]);
+
+  useEffect(() => {
+    localStorage.setItem("free_assets_sort_tab", activeSortTab);
+  }, [activeSortTab]);
+
+  useEffect(() => {
+    if (activeFilterTab) {
+      localStorage.setItem("free_assets_filter_tab", activeFilterTab);
+    } else {
+      localStorage.removeItem("free_assets_filter_tab");
+    }
+  }, [activeFilterTab]);
   
   // Modal states
   const [selectedAsset, setSelectedAsset] = useState<FreeAsset | null>(null);
@@ -254,7 +323,7 @@ export default function FreeAssetsLibraryPage() {
   const downloadDropdownRef = useRef<HTMLDivElement | null>(null);
   const shareDropdownRef = useRef<HTMLDivElement | null>(null);
 
-  // Click outside listener for sort dropdown
+  // Click outside listener for sort & filter dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -262,6 +331,12 @@ export default function FreeAssetsLibraryPage() {
         !sortDropdownRef.current.contains(event.target as Node)
       ) {
         setIsTopDropdownOpen(false);
+      }
+      if (
+        filterDropdownRef.current &&
+        !filterDropdownRef.current.contains(event.target as Node)
+      ) {
+        setActiveFilterTab(null);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -1306,7 +1381,7 @@ export default function FreeAssetsLibraryPage() {
     <div className="min-h-screen w-full bg-[#06080d] text-zinc-100 pb-20">
       
       {/* 픽사베이 스타일 히어로 배너 */}
-      <section className="relative flex h-auto min-h-[260px] w-full flex-col items-center justify-center overflow-hidden border-b border-zinc-800 bg-[#080b12] py-10 md:py-14">
+      <section className="relative flex h-auto min-h-[220px] w-full flex-col items-center justify-center overflow-visible border-b border-zinc-800 bg-[#080b12] pt-8 pb-5 md:pt-10 md:pb-6">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/30 via-slate-900/80 to-[#06080d]" />
         
         {/* 장식용 그리드 패턴 */}
@@ -1427,161 +1502,46 @@ export default function FreeAssetsLibraryPage() {
                 ))}
               </div>
 
-              {/* 필터 대시보드 트리거 버튼들 */}
-              <div className="flex flex-wrap justify-center gap-3 mt-4 pt-3 border-t border-zinc-800/40 w-full max-w-3xl">
+               <div className="flex flex-wrap justify-center gap-3 mt-2.5 pt-0.5 w-full max-w-3xl" ref={filterDropdownRef}>
                 {/* 비율 필터 버튼 */}
-                <button
-                  onClick={() => setActiveFilterTab(activeFilterTab === "ratio" ? null : "ratio")}
-                  className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
-                    activeFilterTab === "ratio"
-                      ? "border-blue-500 bg-blue-600/10 text-blue-400"
-                      : selectedAspectRatio !== "all"
-                        ? "border-blue-500 bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                        : "border-zinc-800 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
-                  }`}
-                >
-                  <SlidersHorizontal size={12} />
-                  <span>
-                    비율 필터
-                    {selectedAspectRatio !== "all" && (
-                      <span className="ml-1 text-[11px] font-black opacity-90">
-                        ({selectedAspectRatio})
-                      </span>
-                    )}
-                  </span>
-                  <ChevronDown
-                    size={12}
-                    className={`transition-transform duration-200 ${
-                      activeFilterTab === "ratio" ? "rotate-180 text-blue-400" : "text-zinc-500"
+                <div className="relative">
+                  <button
+                    onClick={() => setActiveFilterTab(activeFilterTab === "ratio" ? null : "ratio")}
+                    className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
+                      activeFilterTab === "ratio"
+                        ? "border-blue-500 bg-blue-600/10 text-blue-400"
+                        : selectedAspectRatio !== "all"
+                          ? "border-blue-500 bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                          : "border-zinc-800 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
                     }`}
-                  />
-                </button>
+                  >
+                    <SlidersHorizontal size={12} />
+                    <span>
+                      비율 필터
+                      {selectedAspectRatio !== "all" && (
+                        <span className="ml-1 text-[11px] font-black opacity-90">
+                          ({selectedAspectRatio})
+                        </span>
+                      )}
+                    </span>
+                    <ChevronDown
+                      size={12}
+                      className={`transition-transform duration-200 ${
+                        activeFilterTab === "ratio" ? "rotate-180 text-blue-400" : "text-zinc-500"
+                      }`}
+                    />
+                  </button>
 
-                {/* 제작 방식 필터 버튼 */}
-                <button
-                  onClick={() => setActiveFilterTab(activeFilterTab === "generation" ? null : "generation")}
-                  className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
-                    activeFilterTab === "generation"
-                      ? "border-blue-500 bg-blue-600/10 text-blue-400"
-                      : selectedGenerationType !== "all"
-                        ? "border-blue-500 bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                        : "border-zinc-800 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
-                  }`}
-                >
-                  <SlidersHorizontal size={12} />
-                  <span>
-                    제작 방식
-                    {selectedGenerationType !== "all" && (
-                      <span className="ml-1 text-[11px] font-black opacity-90">
-                        ({selectedGenerationType === "ai" ? "AI 제작" : "실제 사진"})
-                      </span>
-                    )}
-                  </span>
-                  <ChevronDown
-                    size={12}
-                    className={`transition-transform duration-200 ${
-                      activeFilterTab === "generation" ? "rotate-180 text-blue-400" : "text-zinc-500"
+                  {/* 비율 필터 아코디언 드롭다운 */}
+                  <div
+                    className={`absolute left-0 mt-2 z-50 rounded-2xl border border-zinc-800 bg-[#090b11]/95 backdrop-blur-md p-3 shadow-2xl w-72 max-w-[90vw] flex flex-col gap-2 overflow-hidden transition-all duration-200 ease-in-out origin-top-left ${
+                      activeFilterTab === "ratio"
+                        ? "max-h-[300px] opacity-100 scale-100"
+                        : "max-h-0 opacity-0 scale-95 pointer-events-none border-transparent p-0"
                     }`}
-                  />
-                </button>
-
-                {/* 스타일 필터 버튼 */}
-                <button
-                  onClick={() => setActiveFilterTab(activeFilterTab === "style" ? null : "style")}
-                  className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
-                    activeFilterTab === "style"
-                      ? "border-blue-500 bg-blue-600/10 text-blue-400"
-                      : selectedStyle !== "all"
-                        ? "border-blue-500 bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                        : "border-zinc-800 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
-                  }`}
-                >
-                  <SlidersHorizontal size={12} />
-                  <span>
-                    스타일 필터
-                    {selectedStyle !== "all" && (
-                      <span className="ml-1 text-[11px] font-black opacity-90">
-                        ({
-                          selectedStyle === "photorealistic" ? "실사" :
-                          selectedStyle === "illustration" ? "일러스트" :
-                          selectedStyle === "vector" ? "벡터" :
-                          selectedStyle === "3d_render" ? "3D 렌더" :
-                          selectedStyle === "anime" ? "애니" :
-                          selectedStyle === "pixel_art" ? "픽셀" :
-                          selectedStyle === "watercolor" ? "수채화" :
-                          selectedStyle === "line_art" ? "라인" :
-                          selectedStyle === "seamless_pattern" ? "패턴" :
-                          selectedStyle === "retro_pop_art" ? "레트로" : selectedStyle
-                        })
-                      </span>
-                    )}
-                  </span>
-                  <ChevronDown
-                    size={12}
-                    className={`transition-transform duration-200 ${
-                      activeFilterTab === "style" ? "rotate-180 text-blue-400" : "text-zinc-500"
-                    }`}
-                  />
-                </button>
-
-                {/* 포스트 타입 (용도) 필터 버튼 */}
-                <button
-                  onClick={() => setActiveFilterTab(activeFilterTab === "postType" ? null : "postType")}
-                  className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
-                    activeFilterTab === "postType"
-                      ? "border-blue-500 bg-blue-600/10 text-blue-400"
-                      : selectedPostType !== "all"
-                        ? "border-blue-500 bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                        : "border-zinc-800 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
-                  }`}
-                >
-                  <SlidersHorizontal size={12} />
-                  <span>
-                    포스트 타입(용도)
-                    {selectedPostType !== "all" && (
-                      <span className="ml-1 text-[11px] font-black opacity-90">
-                        ({
-                          selectedPostType === "general" ? "일반 정보" :
-                          selectedPostType === "subsidies" ? "생활/지원금" :
-                          selectedPostType === "health" ? "건강/영양제" :
-                          selectedPostType === "finance_loan" ? "보험/대출" :
-                          selectedPostType === "real_estate" ? "부동산" :
-                          selectedPostType === "finance_investment" ? "금융/재테크" :
-                          selectedPostType === "stock_analysis" ? "주식 분석" :
-                          selectedPostType === "corporate_info" ? "기업 정보" :
-                          selectedPostType === "playlist_asmr" ? "ASMR/플리" :
-                          selectedPostType === "music_video" ? "뮤직비디오" :
-                          selectedPostType === "news_report" ? "뉴스 리포트" : selectedPostType
-                        })
-                      </span>
-                    )}
-                  </span>
-                  <ChevronDown
-                    size={12}
-                    className={`transition-transform duration-200 ${
-                      activeFilterTab === "postType" ? "rotate-180 text-blue-400" : "text-zinc-500"
-                    }`}
-                  />
-                </button>
-
-                {/* 무료 에셋 나눔하기 버튼 */}
-                <button
-                  onClick={handleOpenUpload}
-                  className="flex items-center gap-1.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 text-xs font-bold transition shadow-md shadow-blue-500/20 cursor-pointer"
-                >
-                  <UploadCloud size={12} />
-                  <span>무료 에셋 나눔하기</span>
-                </button>
-              </div>
-
-              {/* 펼쳐지는 필터 콘텐츠 영역 */}
-              {activeFilterTab && (
-                <div className="w-full max-w-3xl mt-3 p-4 rounded-2xl border border-zinc-800/80 bg-zinc-950/60 backdrop-blur-md transition-all duration-300">
-                  
-                  {/* 1. 비율 필터 콘텐츠 */}
-                  {activeFilterTab === "ratio" && (
-                    <div className="flex flex-wrap justify-center items-center gap-2">
-                      <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mr-2 select-none">비율 선택</span>
+                  >
+                    <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1 select-none">비율 선택</div>
+                    <div className="flex flex-wrap gap-1.5">
                       {[
                         { id: "all", label: "전체 비율" },
                         { id: "16:9", label: "16:9 가로" },
@@ -1593,8 +1553,11 @@ export default function FreeAssetsLibraryPage() {
                       ].map((ratio) => (
                         <button
                           key={ratio.id}
-                          onClick={() => setSelectedAspectRatio(ratio.id)}
-                          className={`rounded-full px-3 py-1 text-xs font-bold transition cursor-pointer ${
+                          onClick={() => {
+                            setSelectedAspectRatio(ratio.id);
+                            setActiveFilterTab(null);
+                          }}
+                          className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition cursor-pointer ${
                             selectedAspectRatio === ratio.id
                               ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
                               : "border border-zinc-900 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
@@ -1604,53 +1567,145 @@ export default function FreeAssetsLibraryPage() {
                         </button>
                       ))}
                     </div>
-                  )}
+                  </div>
+                </div>
 
-                  {/* 2. 제작 방식 필터 콘텐츠 */}
-                  {activeFilterTab === "generation" && (
-                    <div className="flex flex-wrap justify-center items-center gap-2">
-                      <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mr-2 select-none">제작 방식</span>
+                {/* 제작 방식 필터 버튼 */}
+                <div className="relative">
+                  <button
+                    onClick={() => setActiveFilterTab(activeFilterTab === "generation" ? null : "generation")}
+                    className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
+                      activeFilterTab === "generation"
+                        ? "border-blue-500 bg-blue-600/10 text-blue-400"
+                        : selectedGenerationType !== "all"
+                          ? "border-blue-500 bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                          : "border-zinc-800 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                    }`}
+                  >
+                    <SlidersHorizontal size={12} />
+                    <span>
+                      제작 방식
+                      {selectedGenerationType !== "all" && (
+                        <span className="ml-1 text-[11px] font-black opacity-90">
+                          ({selectedGenerationType === "ai" ? "AI 제작" : "실제 사진"})
+                        </span>
+                      )}
+                    </span>
+                    <ChevronDown
+                      size={12}
+                      className={`transition-transform duration-200 ${
+                        activeFilterTab === "generation" ? "rotate-180 text-blue-400" : "text-zinc-500"
+                      }`}
+                    />
+                  </button>
+
+                  {/* 제작 방식 아코디언 드롭다운 */}
+                  <div
+                    className={`absolute left-0 mt-2 z-50 rounded-2xl border border-zinc-800 bg-[#090b11]/95 backdrop-blur-md p-3 shadow-2xl w-60 max-w-[90vw] flex flex-col gap-2 overflow-hidden transition-all duration-200 ease-in-out origin-top-left ${
+                      activeFilterTab === "generation"
+                        ? "max-h-[300px] opacity-100 scale-100"
+                        : "max-h-0 opacity-0 scale-95 pointer-events-none border-transparent p-0"
+                    }`}
+                  >
+                    <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1 select-none">제작 방식</div>
+                    <div className="flex flex-col gap-1">
                       {[
                         { id: "all", label: "전체 이미지" },
                         { id: "ai", label: "AI 생성 이미지" },
                         { id: "real", label: "실제 사진 이미지" },
-                      ].map((gen) => (
-                        <button
-                          key={gen.id}
-                          onClick={() => setSelectedGenerationType(gen.id)}
-                          className={`rounded-full px-3 py-1 text-xs font-bold transition cursor-pointer ${
-                            selectedGenerationType === gen.id
-                              ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                              : "border border-zinc-900 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
-                          }`}
-                        >
-                          {gen.label}
-                        </button>
-                      ))}
+                      ].map((gen) => {
+                        const isSelected = selectedGenerationType === gen.id;
+                        return (
+                          <button
+                            key={gen.id}
+                            onClick={() => {
+                              setSelectedGenerationType(gen.id);
+                              setActiveFilterTab(null);
+                            }}
+                            className={`w-full text-left rounded-xl px-3 py-2 text-xs font-bold transition cursor-pointer ${
+                              isSelected
+                                ? "bg-[#182030] text-blue-400 font-black border border-blue-500/20"
+                                : "text-zinc-300 hover:bg-zinc-900/50 hover:text-white"
+                            }`}
+                          >
+                            {gen.label}
+                          </button>
+                        );
+                      })}
                     </div>
-                  )}
+                  </div>
+                </div>
 
-                  {/* 3. 스타일 필터 콘텐츠 */}
-                  {activeFilterTab === "style" && (
-                    <div className="flex flex-wrap justify-center items-center gap-2">
-                      <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mr-2 select-none">스타일 선택</span>
+                {/* 스타일 필터 버튼 */}
+                <div className="relative">
+                  <button
+                    onClick={() => setActiveFilterTab(activeFilterTab === "style" ? null : "style")}
+                    className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
+                      activeFilterTab === "style"
+                        ? "border-blue-500 bg-blue-600/10 text-blue-400"
+                        : selectedStyle !== "all"
+                          ? "border-blue-500 bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                          : "border-zinc-800 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                    }`}
+                  >
+                    <SlidersHorizontal size={12} />
+                    <span>
+                      스타일 필터
+                      {selectedStyle !== "all" && (
+                        <span className="ml-1 text-[11px] font-black opacity-90">
+                          ({
+                            selectedStyle === "photorealistic" ? "실사" :
+                            selectedStyle === "illustration" ? "일러스트" :
+                            selectedStyle === "vector" ? "벡터" :
+                            selectedStyle === "3d_render" ? "3D 렌더" :
+                            selectedStyle === "anime" ? "애니" :
+                            selectedStyle === "pixel_art" ? "픽셀" :
+                            selectedStyle === "watercolor" ? "수채화" :
+                            selectedStyle === "line_art" ? "라인" :
+                            selectedStyle === "seamless_pattern" ? "패턴" :
+                            selectedStyle === "retro_pop_art" ? "레트로" : selectedStyle
+                          })
+                        </span>
+                      )}
+                    </span>
+                    <ChevronDown
+                      size={12}
+                      className={`transition-transform duration-200 ${
+                        activeFilterTab === "style" ? "rotate-180 text-blue-400" : "text-zinc-500"
+                      }`}
+                    />
+                  </button>
+
+                  {/* 스타일 아코디언 드롭다운 */}
+                  <div
+                    className={`absolute left-0 mt-2 z-50 rounded-2xl border border-zinc-800 bg-[#090b11]/95 backdrop-blur-md p-3 shadow-2xl w-80 max-w-[90vw] flex flex-col gap-2 overflow-hidden transition-all duration-200 ease-in-out origin-top-left ${
+                      activeFilterTab === "style"
+                        ? "max-h-[300px] opacity-100 scale-100"
+                        : "max-h-0 opacity-0 scale-95 pointer-events-none border-transparent p-0"
+                    }`}
+                  >
+                    <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1 select-none">스타일 선택</div>
+                    <div className="flex flex-wrap gap-1.5">
                       {[
                         { id: "all", label: "전체 스타일" },
-                        { id: "photorealistic", label: "실사 (Photorealistic)" },
-                        { id: "illustration", label: "일러스트 (Illustration)" },
-                        { id: "vector", label: "벡터 (Vector)" },
-                        { id: "3d_render", label: "3D 렌더 (3D Render)" },
-                        { id: "anime", label: "애니메이션 (Anime)" },
-                        { id: "pixel_art", label: "픽셀 아트 (Pixel Art)" },
-                        { id: "watercolor", label: "수채화 (Watercolor)" },
-                        { id: "line_art", label: "라인 아트 (Line Art)" },
-                        { id: "seamless_pattern", label: "패턴 (Seamless Pattern)" },
-                        { id: "retro_pop_art", label: "레트로 팝아트 (Retro Pop)" },
+                        { id: "photorealistic", label: "실사" },
+                        { id: "illustration", label: "일러스트" },
+                        { id: "vector", label: "벡터" },
+                        { id: "3d_render", label: "3D 렌더" },
+                        { id: "anime", label: "애니" },
+                        { id: "pixel_art", label: "픽셀" },
+                        { id: "watercolor", label: "수채화" },
+                        { id: "line_art", label: "라인" },
+                        { id: "seamless_pattern", label: "패턴" },
+                        { id: "retro_pop_art", label: "레트로" },
                       ].map((style) => (
                         <button
                           key={style.id}
-                          onClick={() => setSelectedStyle(style.id)}
-                          className={`rounded-full px-3 py-1 text-xs font-bold transition cursor-pointer ${
+                          onClick={() => {
+                            setSelectedStyle(style.id);
+                            setActiveFilterTab(null);
+                          }}
+                          className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition cursor-pointer ${
                             selectedStyle === style.id
                               ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
                               : "border border-zinc-900 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
@@ -1660,12 +1715,60 @@ export default function FreeAssetsLibraryPage() {
                         </button>
                       ))}
                     </div>
-                  )}
+                  </div>
+                </div>
 
-                  {/* 4. 포스트 타입 필터 콘텐츠 */}
-                  {activeFilterTab === "postType" && (
-                    <div className="flex flex-wrap justify-center items-center gap-2">
-                      <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mr-2 select-none">용도 선택</span>
+                {/* 포스트 타입 (용도) 필터 버튼 */}
+                <div className="relative">
+                  <button
+                    onClick={() => setActiveFilterTab(activeFilterTab === "postType" ? null : "postType")}
+                    className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
+                      activeFilterTab === "postType"
+                        ? "border-blue-500 bg-blue-600/10 text-blue-400"
+                        : selectedPostType !== "all"
+                          ? "border-blue-500 bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                          : "border-zinc-800 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                    }`}
+                  >
+                    <SlidersHorizontal size={12} />
+                    <span>
+                      포스트 타입(용도)
+                      {selectedPostType !== "all" && (
+                        <span className="ml-1 text-[11px] font-black opacity-90">
+                          ({
+                            selectedPostType === "general" ? "일반 정보" :
+                            selectedPostType === "subsidies" ? "생활/지원금" :
+                            selectedPostType === "health" ? "건강/영양제" :
+                            selectedPostType === "finance_loan" ? "보험/대출" :
+                            selectedPostType === "real_estate" ? "부동산" :
+                            selectedPostType === "finance_investment" ? "금융/재테크" :
+                            selectedPostType === "stock_analysis" ? "주식 분석" :
+                            selectedPostType === "corporate_info" ? "기업 정보" :
+                            selectedPostType === "playlist_asmr" ? "ASMR/플리" :
+                            selectedPostType === "music_video" ? "뮤직비디오" :
+                            selectedPostType === "news_report" ? "뉴스 리포트" : selectedPostType
+                          })
+                        </span>
+                      )}
+                    </span>
+                    <ChevronDown
+                      size={12}
+                      className={`transition-transform duration-200 ${
+                        activeFilterTab === "postType" ? "rotate-180 text-blue-400" : "text-zinc-500"
+                      }`}
+                    />
+                  </button>
+
+                  {/* 포스트 타입 아코디언 드롭다운 */}
+                  <div
+                    className={`absolute right-0 md:left-0 mt-2 z-50 rounded-2xl border border-zinc-800 bg-[#090b11]/95 backdrop-blur-md p-3 shadow-2xl w-[500px] max-w-[90vw] flex flex-col gap-2 overflow-hidden transition-all duration-200 ease-in-out origin-top-right md:origin-top-left ${
+                      activeFilterTab === "postType"
+                        ? "max-h-[480px] opacity-100 scale-100"
+                        : "max-h-0 opacity-0 scale-95 pointer-events-none border-transparent p-0"
+                    }`}
+                  >
+                    <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1 select-none">용도 선택</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                       {[
                         { id: "all", label: "🌐 전체 용도" },
                         { id: "general", label: "📝 일반 정보성/동기부여" },
@@ -1679,34 +1782,39 @@ export default function FreeAssetsLibraryPage() {
                         { id: "playlist_asmr", label: "🎵 플레이리스트/ASMR" },
                         { id: "music_video", label: "🎥 뮤직 동영상" },
                         { id: "news_report", label: "📰 뉴스 리포트" }
-                      ].map((type) => (
-                        <button
-                          key={type.id}
-                          onClick={() => setSelectedPostType(type.id)}
-                          className={`rounded-full px-3 py-1 text-xs font-bold transition cursor-pointer ${
-                            selectedPostType === type.id
-                              ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                              : "border border-zinc-900 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
-                          }`}
-                        >
-                          {type.label}
-                        </button>
-                      ))}
+                      ].map((type) => {
+                        const isSelected = selectedPostType === type.id;
+                        return (
+                          <button
+                            key={type.id}
+                            onClick={() => {
+                              setSelectedPostType(type.id);
+                              setActiveFilterTab(null);
+                            }}
+                            className={`w-full text-left rounded-xl px-3 py-2 text-xs font-bold transition cursor-pointer ${
+                              isSelected
+                                ? "bg-[#182030] text-blue-400 font-black"
+                                : "text-zinc-300 hover:bg-zinc-900/50 hover:text-white"
+                            }`}
+                          >
+                            {type.label}
+                          </button>
+                        );
+                      })}
                     </div>
-                  )}
+                  </div>
                 </div>
-              )}
+
+              </div>
+
             </>
           )}
         </div>
-      </section>
 
-      {/* 메인 콘텐츠 바디 */}
-      <div className="mx-auto max-w-[96%] xl:max-w-[98%] px-5 lg:px-8 mt-10 space-y-8">
-        
-        {/* 미디어 유형 카테고리 탭 & 업로드 버튼 */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-900 pb-5">
-          <div className="flex flex-wrap gap-1 bg-zinc-950/40 border border-zinc-900 rounded-2xl p-1 shrink-0">
+        {/* Row 2: 미디어 카테고리 & 정렬 탭 (Hero 배너 영역 하단으로 이동하여 1px 라인 위에 깔끔하게 배치) */}
+        <div className="relative z-10 w-full max-w-[96%] xl:max-w-[98%] px-5 lg:px-8 mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pt-1">
+          {/* 미디어 유형 카테고리 탭 (배경 테두리 없이 깔끔하게 텍스트+아이콘만) */}
+          <div className="flex flex-wrap gap-6 items-center shrink-0">
             {[
               { id: "all", label: "통합 에셋", icon: ImageIcon },
               { id: "photo", label: "이미지", icon: ImageIcon },
@@ -1725,10 +1833,10 @@ export default function FreeAssetsLibraryPage() {
                       setPlayingAudioId(null);
                     }
                   }}
-                  className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-black transition cursor-pointer ${
+                  className={`flex items-center gap-1.5 text-xs font-black transition cursor-pointer ${
                     isActive
-                      ? "bg-zinc-800 text-white shadow-md shadow-black/20"
-                      : "text-zinc-400 hover:bg-zinc-900/40 hover:text-zinc-200"
+                      ? "text-blue-500 font-black"
+                      : "text-zinc-500 hover:text-zinc-300"
                   }`}
                 >
                   <TabIcon size={14} />
@@ -1738,11 +1846,12 @@ export default function FreeAssetsLibraryPage() {
             })}
           </div>
 
+          {/* 정렬 탭 (For You, Random 등) */}
           <div className="relative flex flex-wrap items-center gap-5 text-xs sm:text-sm select-none" ref={sortDropdownRef}>
             {[
-              { id: "for_you", label: "For You" },
-              { id: "random", label: "Random" },
-              { id: "hot", label: "Hot" }
+              { id: "for_you", label: "For You", emoji: "✨" },
+              { id: "random", label: "Random", emoji: "🎲" },
+              { id: "hot", label: "Hot", emoji: "🔥" }
             ].map((t) => (
               <button
                 key={t.id}
@@ -1750,10 +1859,11 @@ export default function FreeAssetsLibraryPage() {
                   setActiveSortTab(t.id as any);
                   setIsTopDropdownOpen(false);
                 }}
-                className={`font-black cursor-pointer transition ${
+                className={`flex items-center gap-1 font-black cursor-pointer transition ${
                   activeSortTab === t.id ? "text-blue-500" : "text-zinc-500 hover:text-zinc-300"
                 }`}
               >
+                <span className="mr-0.5">{t.emoji}</span>
                 {t.label}
               </button>
             ))}
@@ -1767,8 +1877,8 @@ export default function FreeAssetsLibraryPage() {
                 }`}
               >
                 <span>
-                  {activeSortTab === "top_day" ? "Top Day" :
-                   activeSortTab === "top_week" ? "Top Week" : "Top Month"}
+                  🏆 {activeSortTab === "top_day" ? "Top Day" :
+                      activeSortTab === "top_week" ? "Top Week" : "Top Month"}
                 </span>
                 <ChevronDown size={14} className={`transition-transform duration-200 ${isTopDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
@@ -1788,7 +1898,7 @@ export default function FreeAssetsLibraryPage() {
                       }}
                       className="w-full text-left rounded-lg px-3 py-1.5 text-xs font-bold text-zinc-400 hover:bg-zinc-900 hover:text-white transition cursor-pointer"
                     >
-                      {opt.label}
+                      🏆 {opt.label}
                     </button>
                   ))}
                 </div>
@@ -1800,17 +1910,31 @@ export default function FreeAssetsLibraryPage() {
                 setActiveSortTab("likes");
                 setIsTopDropdownOpen(false);
               }}
-              className={`font-black cursor-pointer transition ${
+              className={`flex items-center gap-1 font-black cursor-pointer transition ${
                 activeSortTab === "likes" ? "text-blue-500" : "text-zinc-500 hover:text-zinc-300"
               }`}
             >
+              <span className="mr-0.5">❤️</span>
               Likes
+            </button>
+
+            {/* 무료 에셋 나눔하기 버튼 */}
+            <button
+              onClick={handleOpenUpload}
+              className="flex items-center gap-1.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 text-xs font-bold transition shadow-md shadow-blue-500/20 cursor-pointer ml-2"
+            >
+              <UploadCloud size={12} />
+              <span>무료 에셋 나눔하기</span>
             </button>
           </div>
         </div>
+      </section>
+
+      {/* 메인 콘텐츠 바디 */}
+      <div className="mx-auto max-w-[96%] xl:max-w-[98%] px-5 lg:px-8 mt-3 space-y-8">
 
         {/* 메인 에셋 그리드 영역 (Masonry 스타일) */}
-        <div className="w-full mt-6">
+        <div className="w-full mt-2">
           {loading ? (
             <div className="flex h-64 flex-col items-center justify-center gap-3">
               <Loader2 className="animate-spin text-blue-500" size={32} />
