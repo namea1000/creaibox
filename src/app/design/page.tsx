@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import PublicStudioLayout from "@/components/layout/PublicStudioLayout";
 import WorkspaceTab from "@/app/studio/image/[section]/components/WorkspaceTab";
 
@@ -17,7 +17,13 @@ export default function PublicDesignPage() {
           </p>
         </header>
 
-        <WorkspaceTab />
+        <Suspense fallback={
+          <div className="h-[600px] w-full bg-slate-50 dark:bg-zinc-900/50 rounded-3xl border border-slate-100 dark:border-zinc-800/80 animate-pulse flex items-center justify-center">
+            <span className="text-sm font-bold text-slate-400 dark:text-zinc-600">워크스페이스를 불러오는 중...</span>
+          </div>
+        }>
+          <WorkspaceTab />
+        </Suspense>
       </div>
     </PublicStudioLayout>
   );
