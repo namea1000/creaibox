@@ -92,8 +92,13 @@
   - **모노 모드 패너 연결 안전 바이패스**: 모노 결합 모드일 때는 오디오 노드 중 `StereoPannerNode` 연결을 동적으로 건너뛰게 만들어 패너 예외 에러를 차단했습니다.
   - **정적 무결성 빌드 검증**: `npx tsc --noEmit`을 완벽 컴파일 통과하여 타입 안정성을 입증했습니다.
 
-#### 6. 쿠키 동의 배너 구현 및 회원의 Supabase 데이터베이스 상태 연동
-* **구현 요약**: 글로벌 개인정보 보호 규정(GDPR, CCPA)을 준수하고 브라우저 분석 자원을 제어하기 위해, 브랜드 일관성을 갖춘 쿠키 동의 배너를 구현하고 로그인 회원의 선택을 Supabase DB의 프로필 테이블과 영방향 연동했습니다.
+
+---
+
+### 🗓️ 2026-07-06 (월) - 오늘
+
+#### 1. 쿠키 동의 배너 구현 및 회원의 Supabase 데이터베이스 상태 연동
+* **구현 요약**: 글로벌 개인정보 보호 규정(GDPR, CCPA)을 준수하고 브라우저 분석 자원을 제어하기 위해, 브랜드 일관성을 갖춘 쿠키 동의 배너를 구현하고 로그인 회원의 선택을 Supabase DB의 프로필 테이블과 양방향 연동했습니다.
 * **작업 상세**:
   - **쿠키 동의 배너 컴포넌트 개발**:
     - [`CookieConsentBanner.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/common/CookieConsentBanner.tsx) 클라이언트 컴포넌트를 신규 설계하고, 다크 네이비 테마 (`#000B30/95` 배경색)와 은은한 보더, 부드러운 하단 슬라이드업 모션 및 모서리 곡률을 결합해 Canva와 유사한 세련된 UI를 연동했습니다.
@@ -105,7 +110,7 @@
   - **정적 무결성 빌드 검증**: `npx tsc --noEmit`을 완벽 컴파일 통과하여 타입 안정성을 입증했습니다.
   - **가이드 및 백서 문서 등록**: 관련된 3가지 관점과 신규 구축한 데이터베이스 연동 구조를 집약한 개발 가이드 문서인 [`cookie-consent-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/cookie-consent-guide.md) 파일을 신설했습니다.
 
-#### 7. 부속 브랜드(Sub-brand) 도메인/서브도메인 설정 키 분리 오류 수정
+#### 2. 부속 브랜드(Sub-brand) 도메인/서브도메인 설정 키 분리 오류 수정
 * **구현 요약**: 사용자가 여러 멀티 브랜드를 소유 및 가동할 때, 특정 도메인(예: `golfgosu.net`)으로 진입 시 서브 브랜드 개별 설정(예: "골프 고수") 대신 메인 브랜드 설정("가이드나라")이 출력되던 버그를 정밀 분석하여 해결하고 타입 안정성을 검증했습니다.
 * **작업 상세**:
   - **동적 브랜드 설정 파서(getConf) 구현 및 적용**:
@@ -115,6 +120,19 @@
   - **`guidenara.com` 리다이렉트 무한 로딩 일시 차단**:
     - 외부 도메인 DNS A레코드가 미결정되어 먹통인 상태에서 자동으로 리다이렉트되던 문제를 막기 위해, DB에서 `custom_domain_status_guidenara` 값을 임시로 `"PENDING"`으로 수정하여 2차 도메인인 `guidenara.creaibox.com`을 통한 사이트 접속이 막힘 없이 이루어지도록 복원 조치했습니다.
   - **정적 무결성 빌드 검증**: `npx tsc --noEmit`을 완벽 컴파일 통과하여 타입 안정성을 입증했습니다.
+
+#### 4. 구글 애드센스 게시자 ID 클라이언트 파싱 규격 오류 수정
+* **구현 요약**: 사용자가 애드센스 게시자 ID를 입력했을 때, 소스코드 내 클라이언트 포맷팅 정규식의 계산 오류로 인해 `client=ca-pub-XXXXXXXX` 대신 `client=ca-XXXXXXXX`로 잘못 파싱되어 광고 송출이 정상적으로 인식되지 않던 심각한 클라이언트 버그를 수정했습니다.
+* **작업 상세**:
+  - **인증 규격 보완**:
+    - [`BlogClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/BlogClientWrapper.tsx), [`CategoryClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/CategoryClientWrapper.tsx), [`PostClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/PostClientWrapper.tsx) 내에서 `ca-pub-` 접두사 포맷팅 로직을 수정하여, 입력 형태(`pub-` 유무, `ca-pub-` 포함 유무, 순수 숫자 입력 등)에 상관없이 반드시 정상적인 구글 표준 규격인 `ca-pub-XXXXXXXXXXXXXXXX` 형태로만 연동되도록 예외 처리를 정밀 매핑했습니다.
+  - **정적 무결성 빌드 검증**: `npx tsc --noEmit`을 완벽 컴파일 통과하여 타입 안정성을 입증했습니다.
+
+#### 5. 타사 도메인 Vercel.com 이전 가이드 문서 작성
+* **구현 요약**: 블루호스트(Bluehost) 등 외부 대행업체에서 관리 중인 도메인을 Vercel로 이관(Transfer In)하여 유지 비용을 최대 50%까지 절감하고 관리를 통합하기 위한 매뉴얼을 구축했습니다.
+* **작업 상세**:
+  - **이전 절차 백서 등록**:
+    - [`domain-transfer-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/domain-transfer-guide.md) 가이드 파일을 신설하여 블루호스트 기준 잠금 해제(Unlock), 인증코드(EPP Code) 발급 절차, Vercel 결제 내역 설명 및 **소유자 이메일 최종 승인 처리**의 중요성을 상세 정리했습니다.
 
 ---
 

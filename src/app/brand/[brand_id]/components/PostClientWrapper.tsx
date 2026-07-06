@@ -273,9 +273,13 @@ export default function PostClientWrapper({
   // Prevent flicker on load
   const visibleClass = "opacity-100";
 
-  // Format AdSense client ID correctly
+  // Format AdSense client ID correctly (must be in ca-pub-XXXXXXXXXXXXXXXX format)
   const adsenseClient = adsensePubId
-    ? `ca-${adsensePubId.startsWith("ca-") ? adsensePubId.replace("ca-", "") : adsensePubId.replace("pub-", "")}`
+    ? (adsensePubId.startsWith("ca-pub-")
+        ? adsensePubId
+        : (adsensePubId.startsWith("pub-")
+            ? `ca-${adsensePubId}`
+            : `ca-pub-${adsensePubId}`))
     : "";
 
   return (
