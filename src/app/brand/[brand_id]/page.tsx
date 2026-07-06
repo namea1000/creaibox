@@ -116,10 +116,17 @@ export async function generateMetadata({ params }: BrandPageProps): Promise<Meta
     };
   }
 
-  const blogTitle = profile.extra_configs?.blog_title || `${profile.nickname || brand_id} 블로그`;
-  const blogDesc = profile.extra_configs?.blog_description || "CreAibox에서 생성한 고품질 콘텐츠 블로그입니다.";
-
   const configs = profile.extra_configs || {};
+  const isPrimary = brand_id.toLowerCase() === (profile.brand_id || "").toLowerCase();
+
+  const getConf = (key: string, fallback: string = ""): string => {
+    if (isPrimary) return configs[key] || fallback;
+    return configs[`${key}_${brand_id.toLowerCase()}`] || configs[key] || fallback;
+  };
+
+  const blogTitle = getConf("blog_title", `${profile.nickname || brand_id} 블로그`);
+  const blogDesc = getConf("blog_description", "CreAibox에서 생성한 고품질 콘텐츠 블로그입니다.");
+
   const customDomain = configs[`custom_domain_${brand_id}`] || 
     (brand_id === profile.brand_id ? configs.custom_domain : "");
   const customDomainStatus = configs[`custom_domain_status_${brand_id}`] || 
@@ -137,10 +144,10 @@ export async function generateMetadata({ params }: BrandPageProps): Promise<Meta
     },
   };
 
-
-  if (profile.extra_configs?.naver_advisor_key) {
+  const naverKey = getConf("naver_advisor_key");
+  if (naverKey) {
     meta.other = {
-      "naver-site-verification": profile.extra_configs.naver_advisor_key,
+      "naver-site-verification": naverKey,
     };
   }
 

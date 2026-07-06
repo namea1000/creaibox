@@ -126,7 +126,15 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     .or(`brand_id.eq.${brand_id},brand_id.is.null`)
     .maybeSingle();
 
-  const blogTitle = profile.extra_configs?.blog_title || `${profile.nickname || brand_id} 블로그`;
+  const configs = profile.extra_configs || {};
+  const isPrimary = brand_id.toLowerCase() === (profile.brand_id || "").toLowerCase();
+
+  const getConf = (key: string, fallback: string = ""): string => {
+    if (isPrimary) return configs[key] || fallback;
+    return configs[`${key}_${brand_id.toLowerCase()}`] || configs[key] || fallback;
+  };
+
+  const blogTitle = getConf("blog_title", `${profile.nickname || brand_id} 블로그`);
   const catName = category ? category.name : decodedSlug;
 
   return {

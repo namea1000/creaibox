@@ -100,13 +100,19 @@ export default function BlogClientWrapper({
   const indexOfFirstPost = indexOfLastPost - postsPerPage;
   const currentPosts = filteredPosts.slice(indexOfFirstPost, indexOfLastPost);
 
-  const blogTitle = profile.extra_configs?.blog_title || `${profile.nickname || brand_id} 블로그`;
-  const blogDesc = profile.extra_configs?.blog_description || "CreAibox에서 생성한 고품질 콘텐츠 블로그입니다.";
-  const template = profile.extra_configs?.blog_template || "card";
-  const accentColor = profile.extra_configs?.blog_accent_color || "#3b82f6";
-  const gaId = profile.extra_configs?.ga_id;
-
   const configs = profile.extra_configs || {};
+  const isPrimary = brand_id.toLowerCase() === (profile.brand_id || "").toLowerCase();
+
+  const getConf = (key: string, fallback: string = ""): string => {
+    if (isPrimary) return configs[key] || fallback;
+    return configs[`${key}_${brand_id.toLowerCase()}`] || configs[key] || fallback;
+  };
+
+  const blogTitle = getConf("blog_title", `${profile.nickname || brand_id} 블로그`);
+  const blogDesc = getConf("blog_description", "CreAibox에서 생성한 고품질 콘텐츠 블로그입니다.");
+  const template = getConf("blog_template", "card");
+  const accentColor = getConf("blog_accent_color", "#3b82f6");
+  const gaId = getConf("ga_id");
   const primaryId = profile.brand_id || "";
   let adsensePubId = "";
   if (configs[`adsense_pub_id_${brand_id}`]) {

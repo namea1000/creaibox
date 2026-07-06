@@ -318,19 +318,29 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
   }
 
   const { post, profile } = result;
-  const blogTitle = profile.extra_configs?.blog_title || `${profile.nickname || brand_id} 블로그`;
+  const configs = profile.extra_configs || {};
+  const isPrimary = brand_id.toLowerCase() === (profile.brand_id || "").toLowerCase();
+
+  const getConf = (key: string, fallback: string = ""): string => {
+    if (isPrimary) return configs[key] || fallback;
+    return configs[`${key}_${brand_id.toLowerCase()}`] || configs[key] || fallback;
+  };
+
+  const blogTitle = getConf("blog_title", `${profile.nickname || brand_id} 블로그`);
   
   // Rank Math style SEO templates compiler
   let seoTitle = `${post.title} | ${blogTitle}`;
-  if (profile.extra_configs?.seo_template_title) {
-    seoTitle = profile.extra_configs.seo_template_title
+  const seoTemplateTitle = getConf("seo_template_title");
+  if (seoTemplateTitle) {
+    seoTitle = seoTemplateTitle
       .replace(/%title%/g, post.title || "")
       .replace(/%blog_title%/g, blogTitle);
   }
 
   let seoDesc = post.meta_description || post.focus_keyword || "CreAibox 블로그 글";
-  if (profile.extra_configs?.seo_template_desc) {
-    seoDesc = profile.extra_configs.seo_template_desc
+  const seoTemplateDesc = getConf("seo_template_desc");
+  if (seoTemplateDesc) {
+    seoDesc = seoTemplateDesc
       .replace(/%title%/g, post.title || "")
       .replace(/%blog_title%/g, blogTitle)
       .replace(/%description%/g, post.meta_description || "");
@@ -353,9 +363,10 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
     },
   };
 
-  if (profile.extra_configs?.naver_advisor_key) {
+  const naverKey = getConf("naver_advisor_key");
+  if (naverKey) {
     meta.other = {
-      "naver-site-verification": profile.extra_configs.naver_advisor_key,
+      "naver-site-verification": naverKey,
     };
   }
 
@@ -377,9 +388,17 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
     const { post, profile } = result;
     const supabase = await createAdminClient();
 
-    const blogTitle = profile.extra_configs?.blog_title || `${profile.nickname || brand_id} 블로그`;
-  const accentColor = profile.extra_configs?.blog_accent_color || "#3b82f6";
-  const gaId = profile.extra_configs?.ga_id;
+    const configs = profile.extra_configs || {};
+    const isPrimary = brand_id.toLowerCase() === (profile.brand_id || "").toLowerCase();
+
+    const getConf = (key: string, fallback: string = ""): string => {
+      if (isPrimary) return configs[key] || fallback;
+      return configs[`${key}_${brand_id.toLowerCase()}`] || configs[key] || fallback;
+    };
+
+    const blogTitle = getConf("blog_title", `${profile.nickname || brand_id} 블로그`);
+    const accentColor = getConf("blog_accent_color", "#3b82f6");
+    const gaId = getConf("ga_id");
 
   // Fetch Category details, categories list, and sibling posts list in parallel for speed optimization
   const [categoryResult, categoriesResult, siblingPostsResult] = await Promise.all([
@@ -406,7 +425,6 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
 
   // Sort categories based on brand_id category order
   const primaryId = profile.brand_id || "";
-  const configs = profile.extra_configs || {};
   const orderIds = configs[`category_order_${brand_id}`] || (brand_id === primaryId ? configs.category_order : []) || [];
   if (Array.isArray(orderIds) && orderIds.length > 0) {
     categories.sort((a, b) => {

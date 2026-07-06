@@ -164,8 +164,16 @@ export default function PostClientWrapper({
     document.cookie = `blog_theme_${brand_id}=${nextTheme}; path=/; max-age=31536000; SameSite=Lax`;
   };
 
-  const blogTitle = profile.extra_configs?.blog_title || `${profile.nickname || brand_id} 블로그`;
-  const accentColor = profile.extra_configs?.blog_accent_color || "#3b82f6";
+  const configs = profile.extra_configs || {};
+  const isPrimary = brand_id.toLowerCase() === (profile.brand_id || "").toLowerCase();
+
+  const getConf = (key: string, fallback: string = ""): string => {
+    if (isPrimary) return configs[key] || fallback;
+    return configs[`${key}_${brand_id.toLowerCase()}`] || configs[key] || fallback;
+  };
+
+  const blogTitle = getConf("blog_title", `${profile.nickname || brand_id} 블로그`);
+  const accentColor = getConf("blog_accent_color", "#3b82f6");
   const tags = post.seo_tags || [];
 
   // 🌟 에디토리얼 설정 댓글 파싱
@@ -195,7 +203,6 @@ export default function PostClientWrapper({
   // Clean comment from normalizedContent if present
   const cleanContent = normalizedContent.replace(editorialRegex, "").trim();
 
-  const configs = profile.extra_configs || {};
   const primaryId = profile.brand_id || "";
   let adsensePubId = "";
   if (configs[`adsense_pub_id_${brand_id}`]) {

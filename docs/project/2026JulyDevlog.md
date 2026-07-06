@@ -105,6 +105,17 @@
   - **정적 무결성 빌드 검증**: `npx tsc --noEmit`을 완벽 컴파일 통과하여 타입 안정성을 입증했습니다.
   - **가이드 및 백서 문서 등록**: 관련된 3가지 관점과 신규 구축한 데이터베이스 연동 구조를 집약한 개발 가이드 문서인 [`cookie-consent-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/cookie-consent-guide.md) 파일을 신설했습니다.
 
+#### 7. 부속 브랜드(Sub-brand) 도메인/서브도메인 설정 키 분리 오류 수정
+* **구현 요약**: 사용자가 여러 멀티 브랜드를 소유 및 가동할 때, 특정 도메인(예: `golfgosu.net`)으로 진입 시 서브 브랜드 개별 설정(예: "골프 고수") 대신 메인 브랜드 설정("가이드나라")이 출력되던 버그를 정밀 분석하여 해결하고 타입 안정성을 검증했습니다.
+* **작업 상세**:
+  - **동적 브랜드 설정 파서(getConf) 구현 및 적용**:
+    - 브랜드 블로그의 뷰어 및 메타데이터 관리 파일들에서 메인 브랜드 기본값(`blog_title` 등)만 무조건 가져오던 소스코드를 수정하여, 타겟 `brand_id`에 맞춰 접미사가 붙은 동적 키(`blog_title_golfgosu` 등)를 우선 조회하고 없으면 기본값으로 폴백하도록 파서를 탑재했습니다.
+    - 대상 파일: [`page.tsx(Home)`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/page.tsx), [`page.tsx(Post)`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/%5Bslug%5D/page.tsx), [`page.tsx(Category)`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/category/%5Bslug%5D/page.tsx), [`BlogClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/BlogClientWrapper.tsx), [`CategoryClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/CategoryClientWrapper.tsx), [`PostClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/PostClientWrapper.tsx).
+    - 동적 파싱 적용 설정 목록: 블로그 제목(`blog_title`), 소개 설명(`blog_description`), 템플릿 레이아웃(`blog_template`), 대표 테마 색상(`blog_accent_color`), 구글 통계 ID(`ga_id`), 네이버 서치어드바이저 키(`naver_advisor_key`), SEO 타이틀/디스크립션 템플릿(`seo_template_title`/`seo_template_desc`).
+  - **`guidenara.com` 리다이렉트 무한 로딩 일시 차단**:
+    - 외부 도메인 DNS A레코드가 미결정되어 먹통인 상태에서 자동으로 리다이렉트되던 문제를 막기 위해, DB에서 `custom_domain_status_guidenara` 값을 임시로 `"PENDING"`으로 수정하여 2차 도메인인 `guidenara.creaibox.com`을 통한 사이트 접속이 막힘 없이 이루어지도록 복원 조치했습니다.
+  - **정적 무결성 빌드 검증**: `npx tsc --noEmit`을 완벽 컴파일 통과하여 타입 안정성을 입증했습니다.
+
 ---
 
 ### 🗓️ 2026-07-04 (토)
