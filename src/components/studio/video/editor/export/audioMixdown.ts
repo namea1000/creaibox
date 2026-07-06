@@ -477,8 +477,34 @@ export async function renderOfflineAudioMixdown({
   await predecodeSources(sources, signal);
 
   const safeDuration = Math.max(0.1, duration);
-  const frameCount = Math.ceil(safeDuration * sampleRate);
-  const audioContext = new OfflineAudioContext(numberOfChannels, frameCount, sampleRate);
+  
+  // 🌟 Browser Web Audio memory safety limit check:
+  // If total sample count (frameCount * numberOfChannels) exceeds the browser's single array allocation budget,
+  // Chrome throws NotSupportedError. We automatically reduce channels to 1 (mono) and scale down sampleRate.
+  let targetChannels = numberOfChannels;
+  let targetSampleRate = sampleRate;
+
+  // We target a maximum safe allocation size of 400,000,000 samples (~1.6GB contiguous memory limit)
+  const MAX_SAFE_SAMPLES = 400_000_000;
+
+  let totalSamples = Math.ceil(safeDuration * targetSampleRate) * targetChannels;
+  if (totalSamples > MAX_SAFE_SAMPLES) {
+    console.warn(`[AudioMixdown] Target sample size ${totalSamples} exceeds browser safety limit. Downmixing to mono...`);
+    targetChannels = 1;
+    totalSamples = Math.ceil(safeDuration * targetSampleRate) * targetChannels;
+  }
+
+  if (totalSamples > MAX_SAFE_SAMPLES) {
+    // Calculate the maximum sample rate that fits the 400M safety budget
+    const calculatedRate = Math.floor(MAX_SAFE_SAMPLES / (safeDuration * targetChannels));
+    // Web Audio requires sampleRate to be at least 8000Hz.
+    targetSampleRate = clamp(calculatedRate, 8000, targetSampleRate);
+    totalSamples = Math.ceil(safeDuration * targetSampleRate) * targetChannels;
+    console.warn(`[AudioMixdown] Lowering sample rate dynamically to ${targetSampleRate}Hz to fit budget.`);
+  }
+
+  const frameCount = Math.ceil(safeDuration * targetSampleRate);
+  const audioContext = new OfflineAudioContext(targetChannels, frameCount, targetSampleRate);
   const bufferCache = new Map<string, AudioBuffer>();
   const skippedSources: ScheduledAudioMix["skippedSources"] = [];
 
@@ -499,7 +525,7 @@ export async function renderOfflineAudioMixdown({
 
       const bufferSource = audioContext.createBufferSource();
       const gainNode = audioContext.createGain();
-      const panNode = audioContext.createStereoPanner();
+      const panNode = targetChannels > 1 ? audioContext.createStereoPanner() : null;
       const offset = Math.max(0, source.trimStart);
       const sourceDuration = Math.min(
         source.duration,
@@ -511,10 +537,14 @@ export async function renderOfflineAudioMixdown({
       const fadeInDuration = Math.min(Math.max(0, source.fadeIn), sourceDuration);
       const fadeOutDuration = Math.min(Math.max(0, source.fadeOut), sourceDuration);
 
-      bufferSource.buffer = buffer;
+       bufferSource.buffer = buffer;
       bufferSource.connect(gainNode);
-      gainNode.connect(panNode);
-      panNode.connect(audioContext.destination);
+      if (panNode) {
+        gainNode.connect(panNode);
+        panNode.connect(audioContext.destination);
+      } else {
+        gainNode.connect(audioContext.destination);
+      }
 
       gainNode.gain.setValueAtTime(fadeInDuration > 0 ? 0 : baseVolume, startAt);
       if (fadeInDuration > 0) {
@@ -524,7 +554,9 @@ export async function renderOfflineAudioMixdown({
         gainNode.gain.setValueAtTime(baseVolume, Math.max(startAt, endAt - fadeOutDuration));
         gainNode.gain.linearRampToValueAtTime(0, endAt);
       }
-      panNode.pan.value = clamp(source.audioPan, -1, 1);
+      if (panNode) {
+        panNode.pan.value = clamp(source.audioPan, -1, 1);
+      }
 
       bufferSource.start(startAt, offset, sourceDuration);
     } catch (error) {

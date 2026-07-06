@@ -1,8 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "@/components/providers/query-provider";
-import "./globals.css";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import CookieConsentBanner from "@/components/common/CookieConsentBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -61,7 +61,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full bg-white text-slate-900 selection:bg-violet-200/70">
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider>
+          {children}
+          <CookieConsentBanner />
+        </QueryProvider>
         
         {/* 공식 사이트 정보 구조화 데이터 (SEO 최적화) */}
         <script

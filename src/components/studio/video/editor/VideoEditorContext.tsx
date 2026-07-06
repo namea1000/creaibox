@@ -453,7 +453,7 @@ type VideoEditorContextValue = VideoEditorState & VideoEditorActions;
 
 const VideoEditorContext = createContext<VideoEditorContextValue | null>(null);
 
-const TIMELINE_BASE_DURATION = 3600;
+export const TIMELINE_BASE_DURATION = 43200; // 12 hours (12 * 3600)
 const MIN_TIMELINE_DURATION = 5;
 const MAX_HISTORY = 50;
 const DEFAULT_CANVAS_ZOOM = 100;

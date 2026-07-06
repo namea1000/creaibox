@@ -21,11 +21,11 @@ import {
   Wand2,
 } from "lucide-react";
 
-import { useVideoEditor } from "./VideoEditorContext";
+import { useVideoEditor, TIMELINE_BASE_DURATION } from "./VideoEditorContext";
 import VideoEditorClip from "./VideoEditorClip";
 
 const TIMELINE_LABEL_INTERVALS = [
-  0.5, 1, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600,
+  0.5, 1, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200, 14400, 28800, 43200,
 ];
 const MIN_TIMELINE_LABEL_SPACING_PX = 72;
 const MIN_TIMELINE_ZOOM = 2;
@@ -608,7 +608,7 @@ export default function VideoEditorTimeline() {
     rawStartTime: number;
     duration: number;
   }) => {
-    const maxStartTime = Math.max(0, 3600 - duration);
+    const maxStartTime = Math.max(0, TIMELINE_BASE_DURATION - duration);
     const clampStart = (value: number) =>
       Number(Math.max(0, Math.min(maxStartTime, value)).toFixed(2));
     const safeRawStart = clampStart(rawStartTime);
