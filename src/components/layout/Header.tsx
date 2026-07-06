@@ -12,6 +12,17 @@ import {
   LayoutDashboard,
   CreditCard,
   HelpCircle,
+  Video,
+  Music,
+  TrendingUp,
+  Newspaper,
+  Lightbulb,
+  Image as ImageIcon,
+  Globe,
+  Folder,
+  PenTool,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { User } from "@supabase/supabase-js";
@@ -27,6 +38,30 @@ export default function Header() {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [planName, setPlanName] = useState("Free");
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("studio_theme") as "light" | "dark" | null;
+    const currentTheme = savedTheme || "dark";
+    setTheme(currentTheme);
+    if (currentTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    localStorage.setItem("studio_theme", nextTheme);
+    if (nextTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const supabase = useMemo(() => createClient(), []);
@@ -218,8 +253,6 @@ export default function Header() {
   };
 
   const menuItems = [
-    { label: "기능", href: "/#features" },
-    { label: "사용방법", href: "/#how-it-works" },
     { label: "가격", href: "/pricing" },
     { label: "블로그", href: "/blog" },
     { label: "가이드", href: "/about" },
@@ -252,7 +285,7 @@ export default function Header() {
   const initials = getInitials();
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-[100] border-b border-slate-200/70 bg-white">
+    <header className="fixed left-0 right-0 top-0 z-[100] border-b border-slate-200/70 bg-white dark:bg-zinc-950 dark:border-zinc-800 transition-colors duration-300">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 lg:px-8">
         <div className="flex w-[240px] shrink-0 items-center">
           <Link href="/" className="flex h-12 items-center overflow-hidden">
@@ -261,18 +294,163 @@ export default function Header() {
               alt="CreAibox"
               width={198}
               height={32}
-              className="object-contain"
+              className="object-contain dark:invert"
               priority
             />
           </Link>
         </div>
 
         <nav className="hidden flex-1 items-center justify-center gap-9 lg:flex">
+          {/* AI 도구 Hover Dropdown Megamenu */}
+          <div
+            className="relative"
+            onMouseEnter={() => setIsMegaMenuOpen(true)}
+            onMouseLeave={() => setIsMegaMenuOpen(false)}
+          >
+            <button className="flex items-center gap-1 text-sm font-extrabold text-slate-600 dark:text-zinc-300 transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3">
+              AI 도구
+              <ChevronDown size={14} className={`transition-transform duration-200 ${isMegaMenuOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {isMegaMenuOpen && (
+              <div className="absolute left-1/2 top-full z-50 -translate-x-1/2 mt-1 w-[920px] rounded-[28px] border border-slate-200/80 bg-white/95 p-8 shadow-2xl backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-900/95 transition-all duration-300">
+                <div className="grid grid-cols-4 gap-6">
+                  {/* Column 1: Video & Image */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">영상 & 이미지</h3>
+                    <div className="flex flex-col gap-1">
+                      <Link href="/studio/video" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-rose-500/10 rounded-xl text-rose-500 border border-rose-500/10 shrink-0">
+                          <Video size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">비디오 스튜디오</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">쇼츠 및 영상 숏폼 기획</p>
+                        </div>
+                      </Link>
+                      <Link href="/video-editor" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-pink-500/10 rounded-xl text-pink-500 border border-pink-500/10 shrink-0">
+                          <Video size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">영상 편집기</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">설치 없는 브라우저 영상 작업</p>
+                        </div>
+                      </Link>
+                      <Link href="/design" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-violet-500/10 rounded-xl text-violet-500 border border-violet-500/10 shrink-0">
+                          <ImageIcon size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">디자인 (이미지 스튜디오)</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">썸네일 및 카드뉴스 제작</p>
+                        </div>
+                      </Link>
+                      <Link href="/media-library" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-500 border border-emerald-500/10 shrink-0">
+                          <Folder size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">미디어 라이브러리</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">무료 이미지 및 영상 소스</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Column 2: Writing & News */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">글쓰기 & 뉴스</h3>
+                    <div className="flex flex-col gap-1">
+                      <Link href="/ai-writer" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500 border border-blue-500/10 shrink-0">
+                          <PenTool size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">AI 글쓰기</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">블로그, 네이버 자동 글 생성</p>
+                        </div>
+                      </Link>
+                      <Link href="/news-content" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-cyan-500/10 rounded-xl text-cyan-500 border border-cyan-500/10 shrink-0">
+                          <Newspaper size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">뉴스 콘텐츠</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">뉴스 아티클 및 소식 작성</p>
+                        </div>
+                      </Link>
+                      <Link href="/idea-hub" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500 border border-amber-500/10 shrink-0">
+                          <Lightbulb size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">콘텐츠 아이디어 허브</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">급상승 글감 기획 및 제안</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Column 3: Site Builder */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">홈페이지 제작</h3>
+                    <div className="flex flex-col gap-1">
+                      <Link href="/website-builder" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-500 border border-indigo-500/10 shrink-0">
+                          <Globe size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">AI 홈페이지 제작</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">랜딩페이지 원클릭 자동 배포</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Column 4: Sound & Analytics */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">분석 & 사운드</h3>
+                    <div className="flex flex-col gap-1">
+                      <Link href="/youtube-trend" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-red-500/10 rounded-xl text-red-500 border border-red-500/10 shrink-0">
+                          <TrendingUp size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">유튜브 트렌드 분석</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">인기 급상승 키워드 트렌드</p>
+                        </div>
+                      </Link>
+                      <Link href="/lyric-generator" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-pink-500/10 rounded-xl text-pink-500 border border-pink-500/10 shrink-0">
+                          <Music size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">가사 소재 허브</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">AI 사운드 및 가사 창작</p>
+                        </div>
+                      </Link>
+                      <Link href="/utility-tools" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-slate-500/10 rounded-xl text-slate-500 border border-slate-500/10 shrink-0">
+                          <Settings size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">스튜디오 Tools</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">텍스트 변환 및 글자 수 세기</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {menuItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="text-sm font-extrabold text-slate-600 transition-all hover:text-violet-600"
+              className="text-sm font-extrabold text-slate-600 dark:text-zinc-300 transition-all hover:text-violet-600 dark:hover:text-violet-400"
             >
               {item.label}
             </Link>
@@ -280,6 +458,15 @@ export default function Header() {
         </nav>
 
         <div className="hidden shrink-0 items-center justify-end gap-3 lg:flex">
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 shrink-0"
+            title={theme === "dark" ? "라이트 모드로 변경" : "다크 모드로 변경"}
+          >
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+
           <Link
             href="/studio"
             className="inline-flex h-14 items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 text-sm font-black text-white shadow-lg shadow-violet-500/20 transition hover:scale-[1.02] whitespace-nowrap"
@@ -290,12 +477,12 @@ export default function Header() {
 
           {!isAuthReady ? (
             // Placeholder skeleton with exact matching size (180px) to prevent layout shift
-            <div className="h-14 w-[180px] rounded-2xl border border-slate-200/50 bg-slate-50/50 animate-pulse shrink-0" />
+            <div className="h-14 w-[180px] rounded-2xl border border-slate-200/50 bg-slate-50/50 dark:border-zinc-800 dark:bg-zinc-900/50 animate-pulse shrink-0" />
           ) : user ? (
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsProfileOpen((prev) => !prev)}
-                className="flex h-14 w-[180px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 shadow-sm transition hover:border-violet-200 hover:bg-violet-50 shrink-0"
+                className="flex h-14 w-[180px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 shadow-sm transition hover:border-violet-200 hover:bg-violet-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800 shrink-0"
               >
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-xs font-black text-white">
                   {initials}
@@ -318,24 +505,24 @@ export default function Header() {
               </button>
 
               {isProfileOpen && (
-                <div className="absolute right-0 mt-3 w-72 overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-2xl">
-                  <div className="border-b border-slate-100 bg-slate-50 px-5 py-5">
+                <div className="absolute right-0 mt-3 w-72 overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
+                  <div className="border-b border-slate-100 bg-slate-50 px-5 py-5 dark:border-zinc-800/80 dark:bg-zinc-900/50">
                     <div className="flex items-center gap-4">
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-sm font-black text-white">
                         {initials}
                       </div>
 
                       <div className="min-w-0">
-                        <p className="truncate text-lg font-black text-slate-800">
+                        <p className="truncate text-lg font-black text-slate-800 dark:text-zinc-200">
                           {displayName}
                         </p>
-                        <p className="mt-0.5 text-sm font-bold text-slate-500">
+                        <p className="mt-0.5 text-sm font-bold text-slate-500 dark:text-zinc-400">
                           {planName}
                         </p>
                       </div>
                     </div>
 
-                    <p className="mt-4 truncate border-t border-slate-200 pt-4 text-xs font-bold text-slate-400">
+                    <p className="mt-4 truncate border-t border-slate-200 pt-4 text-xs font-bold text-slate-400 dark:border-zinc-800 dark:text-zinc-500">
                       {user.email}
                     </p>
                   </div>
@@ -343,7 +530,7 @@ export default function Header() {
                   <Link
                     href="/studio"
                     onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
+                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 dark:text-zinc-300 transition hover:bg-violet-50 dark:hover:bg-zinc-800/80"
                   >
                     <LayoutDashboard size={18} />
                     스튜디오로 이동
@@ -352,7 +539,7 @@ export default function Header() {
                   <Link
                     href="/pricing"
                     onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
+                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 dark:text-zinc-300 transition hover:bg-violet-50 dark:hover:bg-zinc-800/80"
                   >
                     <Sparkles size={18} />
                     요금제 업그레이드
@@ -361,7 +548,7 @@ export default function Header() {
                   <Link
                     href="/pricing"
                     onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
+                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 dark:text-zinc-300 transition hover:bg-violet-50 dark:hover:bg-zinc-800/80"
                   >
                     <CreditCard size={18} />
                     요금제 관리
@@ -370,7 +557,7 @@ export default function Header() {
                   <Link
                     href="/mypage"
                     onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
+                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 dark:text-zinc-300 transition hover:bg-violet-50 dark:hover:bg-zinc-800/80"
                   >
                     <UserIcon size={18} />
                     프로필
@@ -379,7 +566,7 @@ export default function Header() {
                   <Link
                     href="/apivault"
                     onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
+                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 dark:text-zinc-300 transition hover:bg-violet-50 dark:hover:bg-zinc-800/80"
                   >
                     <Settings size={18} />
                     설정 / API 키 관리
@@ -388,7 +575,7 @@ export default function Header() {
                   <Link
                     href="/help"
                     onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-4 border-t border-slate-100 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-violet-50"
+                    className="flex items-center gap-4 border-t border-slate-100 px-5 py-3 text-sm font-black text-slate-700 dark:text-zinc-300 dark:border-zinc-800 transition hover:bg-violet-50 dark:hover:bg-zinc-800/80"
                   >
                     <HelpCircle size={18} />
                     도움말
@@ -397,7 +584,7 @@ export default function Header() {
                   <button
                     onClick={handleLogout}
                     disabled={isLoggingOut}
-                    className="flex w-full items-center gap-4 border-t border-slate-100 px-5 py-3 text-left text-sm font-black text-red-500 transition hover:bg-red-50 disabled:opacity-50"
+                    className="flex w-full items-center gap-4 border-t border-slate-100 dark:border-zinc-800 px-5 py-3 text-left text-sm font-black text-red-500 transition hover:bg-red-50 dark:hover:bg-red-950/20 disabled:opacity-50"
                   >
                     <LogOut size={18} />
                     {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
@@ -409,13 +596,13 @@ export default function Header() {
             <div className="flex w-[180px] items-center justify-end gap-1 pl-2 shrink-0">
               <Link
                 href="/signup"
-                className="rounded-xl px-3.5 py-2 text-sm font-extrabold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                className="rounded-xl px-3.5 py-2 text-sm font-extrabold text-slate-600 dark:text-zinc-400 transition hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-zinc-100"
               >
                 회원가입
               </Link>
               <Link
                 href="/login"
-                className="rounded-xl px-3.5 py-2 text-sm font-extrabold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                className="rounded-xl px-3.5 py-2 text-sm font-extrabold text-slate-600 dark:text-zinc-400 transition hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-zinc-100"
               >
                 로그인
               </Link>
@@ -425,21 +612,21 @@ export default function Header() {
 
         <button
           onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-          className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm lg:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm lg:hidden dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-300"
         >
           {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
       {isMobileMenuOpen && (
-        <div className="border-t border-slate-100 bg-white px-5 py-5 shadow-2xl lg:hidden">
+        <div className="border-t border-slate-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-5 py-5 shadow-2xl lg:hidden">
           <div className="grid gap-2">
             {menuItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-black text-slate-700"
+                className="rounded-2xl border border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 px-4 py-3 text-sm font-black text-slate-700 dark:text-zinc-300"
               >
                 {item.label}
               </Link>
@@ -459,7 +646,7 @@ export default function Header() {
 
                 <button
                   onClick={handleLogout}
-                  className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-black text-red-500"
+                  className="rounded-2xl border border-red-100 dark:border-zinc-800 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm font-black text-red-500"
                 >
                   로그아웃
                 </button>
@@ -469,7 +656,7 @@ export default function Header() {
                 <Link
                   href="/login"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center text-sm font-black text-slate-700"
+                  className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 py-3 text-center text-sm font-black text-slate-700 dark:text-zinc-300"
                 >
                   로그인
                 </Link>

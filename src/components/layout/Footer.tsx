@@ -5,9 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   Mail,
-  Globe,
   MessageSquare,
-  Video,
   ArrowUpRight,
   Sparkles,
 } from "lucide-react";
@@ -48,9 +46,9 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="w-full border-t border-slate-200 bg-gradient-to-b from-white to-slate-50">
-      <div className="mx-auto max-w-7xl px-6 py-6 lg:px-8">
-        <div className="mb-6 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-5">
+    <footer className="w-full border-t border-slate-200 dark:border-zinc-900 bg-gradient-to-b from-white to-slate-50 dark:from-zinc-950 dark:to-zinc-900 transition-colors duration-300">
+      <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
+        <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-5">
           <div className="space-y-4 lg:col-span-2">
             <Link href="/" className="flex h-10 items-center overflow-hidden">
               <Image
@@ -58,12 +56,12 @@ export default function Footer() {
                 alt="Creaibox Logo"
                 width={173}
                 height={28}
-                className="object-contain"
+                className="object-contain dark:invert"
                 priority
               />
             </Link>
 
-            <p className="max-w-sm break-keep text-sm font-medium leading-relaxed text-slate-600">
+            <p className="max-w-sm break-keep text-sm font-medium leading-relaxed text-slate-600 dark:text-zinc-400">
               글쓰기, 이미지, 음악, 영상, 뉴스, 트렌드 분석까지 한 번에.
               CreAibox는 크리에이터를 위한 올인원 AI 콘텐츠 스튜디오입니다.
             </p>
@@ -83,7 +81,7 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 title="카카오톡 1:1 문의"
-                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-yellow-400 hover:bg-yellow-50 hover:text-yellow-600"
+                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-500 dark:text-zinc-400 shadow-sm transition hover:border-yellow-400 dark:hover:border-yellow-950/20 hover:bg-yellow-50 dark:hover:bg-zinc-850 hover:text-yellow-600 dark:hover:text-yellow-500"
               >
                 <MessageSquare size={18} fill="currentColor" className="stroke-none translate-y-[0.5px]" />
               </a>
@@ -92,7 +90,7 @@ export default function Footer() {
               <a
                 href="mailto:contact@creaibox.com"
                 title="이메일 문의"
-                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600"
+                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-500 dark:text-zinc-400 shadow-sm transition hover:border-blue-400 dark:hover:border-blue-950/20 hover:bg-blue-50 dark:hover:bg-zinc-850 hover:text-blue-600 dark:hover:text-blue-500"
               >
                 <Mail size={18} />
               </a>
@@ -101,7 +99,7 @@ export default function Footer() {
 
           {footerSections.map((section) => (
             <div key={section.title} className="space-y-3">
-              <h4 className="text-xs font-black uppercase tracking-[0.22em] text-slate-900">
+              <h4 className="text-xs font-black uppercase tracking-[0.22em] text-slate-900 dark:text-zinc-300">
                 {section.title}
               </h4>
 
@@ -110,7 +108,7 @@ export default function Footer() {
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="group flex items-center gap-1 text-sm font-bold text-slate-500 transition hover:text-violet-600"
+                      className="group flex items-center gap-1 text-sm font-bold text-slate-500 dark:text-zinc-400 transition hover:text-violet-600 dark:hover:text-violet-400"
                     >
                       {link.label}
                       <ArrowUpRight
@@ -125,23 +123,23 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="flex flex-col items-center justify-between gap-5 border-t border-slate-200 pt-4 md:flex-row">
-          <div className="text-xs font-bold text-slate-500">
-            © {currentYear} <span className="text-slate-800">크리에이박스(CreAibox)</span>.
+        <div className="flex flex-col items-center justify-between gap-5 border-t border-slate-200 dark:border-zinc-900 pt-4 md:flex-row">
+          <div className="text-xs font-bold text-slate-500 dark:text-zinc-500">
+            © {currentYear} <span className="text-slate-800 dark:text-zinc-300">크리에이박스(CreAibox)</span>.
             All rights reserved.
           </div>
 
           <div className="flex gap-6">
             <Link
               href="/privacy"
-              className="text-xs font-bold text-slate-500 transition hover:text-violet-600"
+              className="text-xs font-bold text-slate-500 dark:text-zinc-500 transition hover:text-violet-600 dark:hover:text-violet-400"
             >
               Privacy Policy
             </Link>
 
             <Link
               href="/terms"
-              className="text-xs font-bold text-slate-500 transition hover:text-violet-600"
+              className="text-xs font-bold text-slate-500 dark:text-zinc-500 transition hover:text-violet-600 dark:hover:text-violet-400"
             >
               Terms of Service
             </Link>
