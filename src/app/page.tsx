@@ -882,18 +882,18 @@ export default function MainLandingPage() {
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 {[
-                  { name: "추상 & 그래픽", slug: "art", img: "/images/categories/art.png" },
-                  { name: "기술 & 디지털", slug: "tech", img: "/images/categories/tech.png" },
-                  { name: "미식 & 푸드", slug: "food", img: "/images/categories/food.png" },
-                  { name: "자연 & 풍경", slug: "nature", img: "/images/categories/nature.png" },
-                  { name: "동물 & 야생", slug: "animal", img: "/images/categories/animal.png" },
-                  { name: "배경 & 텍스처", slug: "texture", img: "/images/categories/texture.png" },
-                  { name: "인물 & 라이프", slug: "people", img: "/images/categories/people.png" },
-                  { name: "건축 & 랜드마크", slug: "architecture", img: "/images/categories/architecture.png" },
-                  { name: "패션 & 뷰티", slug: "fashion", img: "/images/categories/fashion.png" },
-                  { name: "비즈니스 & 금융", slug: "business", img: "/images/categories/business.png" },
-                  { name: "교육 & 지식", slug: "education", img: "/images/categories/education.png" },
-                  { name: "의료 & 헬스케어", slug: "health", img: "/images/categories/health.png" },
+                  { name: "추상 & 그래픽", slug: "art", img: "/images/categories/art.webp" },
+                  { name: "기술 & 디지털", slug: "tech", img: "/images/categories/tech.webp" },
+                  { name: "미식 & 푸드", slug: "food", img: "/images/categories/food.webp" },
+                  { name: "자연 & 풍경", slug: "nature", img: "/images/categories/nature.webp" },
+                  { name: "동물 & 야생", slug: "animal", img: "/images/categories/animal.webp" },
+                  { name: "배경 & 텍스처", slug: "texture", img: "/images/categories/texture.webp" },
+                  { name: "인물 & 라이프", slug: "people", img: "/images/categories/people.webp" },
+                  { name: "건축 & 랜드마크", slug: "architecture", img: "/images/categories/architecture.webp" },
+                  { name: "패션 & 뷰티", slug: "fashion", img: "/images/categories/fashion.webp" },
+                  { name: "비즈니스 & 금융", slug: "business", img: "/images/categories/business.webp" },
+                  { name: "교육 & 지식", slug: "education", img: "/images/categories/education.webp" },
+                  { name: "의료 & 헬스케어", slug: "health", img: "/images/categories/health.webp" },
                 ].map((item) => (
                   <div
                     key={item.slug}
