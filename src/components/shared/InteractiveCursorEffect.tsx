@@ -51,17 +51,27 @@ export default function InteractiveCursorEffect() {
     };
     window.addEventListener("resize", handleResize);
 
-    // Color palettes for AI theme (Blue, Emerald, Purple, Amber neon)
-    const neonColors = [
+    // Color palettes for Dark theme (translucent pastel neon glow)
+    const darkNeonColors = [
       "rgba(59, 130, 246, ",  // Blue
       "rgba(16, 185, 129, ",  // Emerald
       "rgba(139, 92, 246, ",  // Purple
       "rgba(245, 158, 11, ",  // Amber
     ];
 
+    // Color palettes for Light theme (rich high-contrast colors)
+    const lightRichColors = [
+      "rgba(37, 99, 235, ",   // Deep Blue
+      "rgba(5, 150, 105, ",   // Emerald Green
+      "rgba(124, 58, 237, ",  // Deep Purple
+      "rgba(217, 119, 6, ",   // Dark Amber/Orange
+    ];
+
     const getRandomColor = (alpha = 1) => {
-      const idx = Math.floor(Math.random() * neonColors.length);
-      return `${neonColors[idx]}${alpha})`;
+      const isDark = document.documentElement.classList.contains("dark");
+      const activeColors = isDark ? darkNeonColors : lightRichColors;
+      const idx = Math.floor(Math.random() * activeColors.length);
+      return `${activeColors[idx]}${alpha})`;
     };
 
     // Main Loop
@@ -74,6 +84,7 @@ export default function InteractiveCursorEffect() {
       }
 
       ctx.clearRect(0, 0, width, height);
+      const isDark = document.documentElement.classList.contains("dark");
 
       // Smooth lag target for mouse glow spot
       if (mouseRef.current.active) {
@@ -89,8 +100,16 @@ export default function InteractiveCursorEffect() {
           delayMouseRef.current.y,
           180
         );
-        gradient.addColorStop(0, "rgba(59, 130, 246, 0.08)");
-        gradient.addColorStop(0.5, "rgba(139, 92, 246, 0.03)");
+
+        // Adjust opacity for Light vs Dark background
+        if (isDark) {
+          gradient.addColorStop(0, "rgba(59, 130, 246, 0.08)");
+          gradient.addColorStop(0.5, "rgba(139, 92, 246, 0.03)");
+        } else {
+          // Subtle darker contrast glow for white background
+          gradient.addColorStop(0, "rgba(37, 99, 235, 0.05)");
+          gradient.addColorStop(0.5, "rgba(124, 58, 237, 0.02)");
+        }
         gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
 
         ctx.fillStyle = gradient;
@@ -222,7 +241,7 @@ export default function InteractiveCursorEffect() {
   return (
     <canvas
       ref={canvasRef}
-      className="pointer-events-none fixed inset-0 z-0 opacity-80 mix-blend-screen"
+      className="pointer-events-none fixed inset-0 z-0 opacity-80 mix-blend-normal dark:mix-blend-screen"
       style={{ pointerEvents: "none" }}
     />
   );
