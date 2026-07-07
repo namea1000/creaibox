@@ -13,11 +13,13 @@ const sectionNames: Record<string, string> = {
 };
 
 interface Props {
-  params: Promise<{ section: string }>;
+  params: Promise<{ section?: string[] }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { section } = await params;
+  const resolvedParams = await params;
+  const segments = resolvedParams.section || [];
+  const section = segments[0] || "";
   const sectionTitle = sectionNames[section] || "콘텐츠 라이브러리";
   return {
     title: `${sectionTitle} | 크리에이박스 CreAibox`,

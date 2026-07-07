@@ -17,8 +17,12 @@ const sectionNames: Record<string, string> = {
   "free-assets": "크리에셋박스",
 };
 
+import LibraryHomePage from "@/app/studio/library/page";
+
 export default function PublicLibrarySectionClient() {
-  const { section } = useParams<{ section: string }>();
+  const params = useParams<{ section?: string[] }>();
+  const segments = params.section || [];
+  const section = segments[0] || "";
 
   const renderContent = () => {
     if (section === "free-assets") {
@@ -26,6 +30,9 @@ export default function PublicLibrarySectionClient() {
     }
     if (section === "creaibox" || section === "image") {
       return <CreaiboxLibraryManager />;
+    }
+    if (section === "") {
+      return <LibraryHomePage />;
     }
     return (
       <StudioOperationalSectionPage
