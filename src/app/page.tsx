@@ -19,11 +19,85 @@ import {
   Globe,
   Folder,
   Search,
+  Lightbulb,
+  ChevronRight,
 } from "lucide-react";
 
 export default function MainLandingPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+
+  const placeholders = [
+    "예) 인공지능이 바꾸는 미래 일자리 전망에 대해 작성해줘",
+    "예) 초보자를 위한 다이어트 운동 식단 가이드를 알려줘",
+    "예) 여름철 동남아 가족 여행지 추천 BEST 5 알려줘",
+    "예) 부동산 취득세 계산 방법과 절세 꿀팁 정리해줘",
+    "예) 서울 근교 감성 캠핑장 추천 및 예약 팁 가르쳐줘",
+    "예) 직장인을 위한 스트레스 해소법 및 명상 가이드 써줘",
+    "예) 소자본 창업을 위한 1인 지식 기업 아이디어 추천해줘",
+    "예) 유튜브 쇼츠 채널 빠르게 키우는 3가지 비법 알려줘",
+    "예) 퍼스널 브랜딩을 위한 블로그 글쓰기 전략 정리해줘",
+    "예) 메타버스 및 웹3.0 시대의 비즈니스 트렌드 분석해줘",
+  ];
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+
+  const subCategories = [
+    { name: "AI & 기술", sub: "AI & Tech", count: "535개 아이디어", emoji: "🤖" },
+    { name: "IT & 디지털", sub: "IT & Digital", count: "400개 아이디어", emoji: "💻" },
+    { name: "가상자산 & 블록체인", sub: "Crypto & Blockchain", count: "350개 아이디어", emoji: "🪙" },
+    { name: "사이버보안", sub: "Cyber Security", count: "60개 아이디어", emoji: "🛡️" },
+    { name: "데이터 & 분석", sub: "Data & Analytics", count: "65개 아이디어", emoji: "📊" },
+    { name: "경제 & 금융", sub: "Economy & Finance", count: "830개 아이디어", emoji: "💰" },
+    { name: "비즈니스 & 창업", sub: "Business & Startup", count: "772개 아이디어", emoji: "🚀" },
+    { name: "취업 & 커리어", sub: "Career", count: "400개 아이디어", emoji: "💼" },
+    { name: "기업 & 브랜드", sub: "Company & Brand", count: "120개 아이디어", emoji: "🏢" },
+    { name: "제품 & 쇼핑", sub: "Shopping", count: "120개 아이디어", emoji: "🛒" },
+    { name: "부동산", sub: "Real Estate", count: "240개 아이디어", emoji: "🏠" },
+    { name: "스타트업 & 벤처", sub: "Startup & Venture", count: "210개 아이디어", emoji: "📈" },
+    { name: "자동차", sub: "Car", count: "300개 아이디어", emoji: "🚗" },
+    { name: "여행", sub: "Travel", count: "420개 아이디어", emoji: "✈️" },
+    { name: "스포츠", sub: "Sports", count: "699개 아이디어", emoji: "⚽" },
+    { name: "음식", sub: "Food", count: "420개 아이디어", emoji: "🍲" },
+    { name: "라이프스타일", sub: "Lifestyle", count: "1,250개 아이디어", emoji: "☕" },
+    { name: "사주 & 운세", sub: "Saju & Fortune", count: "200개 아이디어", emoji: "🔮" },
+    { name: "취미 & 레저", sub: "Hobbies & Leisure", count: "202개 아이디어", emoji: "🏕️" },
+    { name: "건강", sub: "Health", count: "420개 아이디어", emoji: "🏥" },
+    { name: "반려동물", sub: "Pets", count: "240개 아이디어", emoji: "🐶" },
+    { name: "웰니스 & 마음챙김", sub: "Wellness & Mindfulness", count: "215개 아이디어", emoji: "🧘" },
+    { name: "인테리어 & 홈데코", sub: "Interior & Home Deco", count: "210개 아이디어", emoji: "🛋️" },
+    { name: "실버 라이프", sub: "Silver Life", count: "190개 아이디어", emoji: "👴" },
+    { name: "패션 & 뷰티", sub: "Fashion & Beauty", count: "210개 아이디어", emoji: "💄" },
+    { name: "임신 & 육아", sub: "Parenting & Childcare", count: "203개 아이디어", emoji: "👶" },
+    { name: "교육", sub: "Education", count: "680개 아이디어", emoji: "🎓" },
+    { name: "인물", sub: "People", count: "320개 아이디어", emoji: "👤" },
+    { name: "역사", sub: "History", count: "66개 아이디어", emoji: "🏛️" },
+    { name: "철학 & 인문학", sub: "Philosophy", count: "220개 아이디어", emoji: "📚" },
+    { name: "종교 & 영성", sub: "Religion", count: "280개 아이디어", emoji: "🙏" },
+    { name: "한자", sub: "Chinese Characters", count: "2개 아이디어", emoji: "✍️" },
+    { name: "정치 & 사회", sub: "Politics & Society", count: "480개 아이디어", emoji: "⚖️" },
+    { name: "국가 & 지역", sub: "Countries & Regions", count: "520개 아이디어", emoji: "🌎" },
+    { name: "군사 & 국제안보", sub: "Military & Security", count: "80개 아이디어", emoji: "🪖" },
+    { name: "법률", sub: "Law", count: "480개 아이디어", emoji: "⚖️" },
+    { name: "정부지원금 & 복지", sub: "Welfare", count: "66개 아이디어", emoji: "💵" },
+    { name: "세금 & 세무 전략", sub: "Tax Strategy", count: "210개 아이디어", emoji: "📊" },
+    { name: "권리 구제", sub: "Rights Remedy", count: "210개 아이디어", emoji: "🛡️" },
+    { name: "과학", sub: "Science", count: "460개 아이디어", emoji: "🧪" },
+    { name: "자연 & 우주", sub: "Nature & Space", count: "280개 아이디어", emoji: "🌌" },
+    { name: "환경 & ESG", sub: "Environment & ESG", count: "240개 아이디어", emoji: "🌱" },
+    { name: "기후 & 친환경 기술", sub: "Climate & Energy", count: "250개 아이디어", emoji: "⚡" },
+    { name: "우주 산업 & 탐사", sub: "Space Industry", count: "210개 아이디어", emoji: "🚀" },
+    { name: "예술 & 디자인", sub: "Art & Design", count: "220개 아이디어", emoji: "🎨" },
+    { name: "연예 & 문화", sub: "Entertainment", count: "20개 아이디어", emoji: "🎬" },
+    { name: "게임", sub: "Gaming", count: "220개 아이디어", emoji: "🎮" },
+    { name: "영상 제작", sub: "Video Production", count: "210개 아이디어", emoji: "📹" },
+    { name: "콘텐츠 기획", sub: "Content Planning", count: "210개 아이디어", emoji: "📝" },
+    { name: "음악 & 오디오", sub: "Music & Audio", count: "210개 아이디어", emoji: "🎵" },
+    { name: "창작 플랫폼", sub: "Creator Platform", count: "210개 아이디어", emoji: "📢" },
+    { name: "유튜브 영상제작", sub: "YouTube Production", count: "3개 아이디어", emoji: "📹" },
+    { name: "제조업 & 산업", sub: "Manufacturing", count: "200개 아이디어", emoji: "🏭" },
+    { name: "미래 모빌리티", sub: "Future Mobility", count: "210개 아이디어", emoji: "🛸" },
+    { name: "바이오 & 헬스케어", sub: "Bio & Healthcare", count: "210개 아이디어", emoji: "🧬" },
+  ];
 
   React.useEffect(() => {
     // 테마 캐시가 없으면 메인 페이지는 디폴트로 다크모드 주입
@@ -34,18 +108,34 @@ export default function MainLandingPage() {
     } else if (savedTheme === "dark") {
       document.documentElement.classList.add("dark");
     }
+
+    const timer = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % placeholders.length);
+    }, 3000);
+
+    return () => clearInterval(timer);
   }, []);
+
+  const getSmartRoute = (query: string): string => {
+    const q = query.toLowerCase().trim();
+    if (q.includes("홈페이지") || q.includes("웹사이트") || q.includes("빌더") || q.includes("비즈니스")) {
+      return `/client-site-builder`;
+    }
+    if (q.includes("테크") || q.includes("리포트") || q.includes("시장") || q.includes("뉴스") || q.includes("트렌드")) {
+      return `/keyword-trend?q=${encodeURIComponent(query)}`;
+    }
+    if (q.includes("유튜브") || q.includes("영상") || q.includes("쇼츠") || q.includes("골프") || q.includes("여행") || q.includes("레슨")) {
+      return `/youtube-trend?q=${encodeURIComponent(query)}`;
+    }
+    return `/studio/writing/creaibox/new-post?prompt=${encodeURIComponent(query)}`;
+  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-    router.push(`/youtube-trend?q=${encodeURIComponent(searchQuery)}`);
+    router.push(getSmartRoute(searchQuery));
   };
 
-  const handleTagClick = (tag: string) => {
-    setSearchQuery(tag);
-    router.push(`/youtube-trend?q=${encodeURIComponent(tag)}`);
-  };
 
   const portalTools = [
     {
@@ -257,40 +347,116 @@ export default function MainLandingPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="키워드, 유튜브 주제 또는 만들고 싶은 홈페이지 종류를 입력하세요..."
+                  placeholder={placeholders[placeholderIndex]}
                   className="w-full bg-transparent px-4 py-3 text-sm font-bold outline-none placeholder-slate-400 dark:placeholder-zinc-500 text-slate-800 dark:text-zinc-100"
                 />
                 <button
                   type="submit"
                   className="rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 py-3.5 text-sm font-black text-white shadow-lg transition hover:scale-[1.02] active:scale-[0.98] shrink-0"
                 >
-                  분석 및 시작
+                  AI 자동 글쓰기
                 </button>
               </div>
             </form>
 
-            {/* Keyword tags */}
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
-              <span className="text-xs font-bold text-slate-400 dark:text-zinc-500 pt-1.5 mr-2">인기 추천어:</span>
-              {["골프 레슨 🏌️", "AI 테크 🤖", "해외 여행 ✈️", "비즈니스 홈페이지 💼"].map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => handleTagClick(tag)}
-                  className="rounded-full border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-zinc-400 hover:border-violet-500 dark:hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-zinc-800 transition"
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
 
-            <div className="mt-8 flex gap-3">
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
               <button
                 onClick={() => router.push("/studio")}
-                className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 dark:bg-white text-white dark:text-slate-950 px-7 py-4 text-base font-black shadow-sm transition hover:bg-violet-600 dark:hover:bg-violet-50"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 dark:bg-white text-white dark:text-slate-950 px-7 py-4 text-base font-black shadow-sm transition hover:scale-[1.02] hover:bg-violet-600 dark:hover:bg-violet-50 cursor-pointer"
               >
                 <LayoutDashboard size={18} />
                 스튜디오 둘러보기
               </button>
+
+              <button
+                onClick={() => router.push("/content-planner/idea-hub")}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-7 py-4 text-base font-black shadow-lg transition hover:scale-[1.02] hover:from-violet-550 hover:to-indigo-500 cursor-pointer"
+              >
+                <Lightbulb size={18} />
+                콘텐츠 아이디어 허브
+              </button>
+            </div>
+
+            {/* 대분류 탐색 (10개) */}
+            <div className="mt-12 w-full border-t border-slate-200/50 dark:border-zinc-800/80 pt-8 text-left">
+              <div className="mb-5">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="text-violet-500 animate-pulse" size={16} />
+                  <h3 className="text-lg font-black tracking-tight text-slate-950 dark:text-white">
+                    콘텐츠 아이디어 허브 대분류 탐색
+                  </h3>
+                </div>
+                <p className="text-xs font-bold text-slate-600 dark:text-zinc-400 mt-1 leading-relaxed">
+                  10개 대분류 및 상세분야 55개 제공! 클릭만 하면 바로 글쓰기가 가능한 메인 키워드 주제 11,148개 이상, 추천 시리즈 2,189개 이상 수록되어 있습니다.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-3">
+                {[
+                  { id: "tech", name: "기술 & 디지털", sub: "Tech & Digital", emoji: "💻" },
+                  { id: "business", name: "경제 & 비즈니스", sub: "Economy & Business", emoji: "💼" },
+                  { id: "life", name: "생활 & 문화", sub: "Life & Culture", emoji: "☕" },
+                  { id: "health", name: "건강 & 라이프", sub: "Health & Life", emoji: "🧘" },
+                  { id: "education", name: "교육 & 지식", sub: "Education", emoji: "🎓" },
+                  { id: "global", name: "사회 & 국제", sub: "Society & Global", emoji: "🌎" },
+                  { id: "law", name: "법률 & 정책", sub: "Law & Policy", emoji: "⚖️" },
+                  { id: "environment", name: "환경 & 과학", sub: "Environment", emoji: "🌱" },
+                  { id: "creative", name: "예술 & 창작", sub: "Creative & Art", emoji: "🎨" },
+                  { id: "industry", name: "산업 & 미래", sub: "Industry & Future", emoji: "🏭" },
+                ].map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => router.push(`/content-planner/idea-hub?category=${cat.id}`)}
+                    className="group rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white/70 dark:bg-[#0c0d12]/45 p-3 flex flex-col items-center justify-center text-center transition-all hover:scale-[1.03] hover:border-violet-500 dark:hover:bg-violet-600/10 cursor-pointer"
+                  >
+                    <span className="text-2xl mb-2">{cat.emoji}</span>
+                    <span className="text-xs font-black text-slate-950 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400 truncate w-full">
+                      {cat.name}
+                    </span>
+                    <span className="text-[9px] font-bold text-slate-600 dark:text-zinc-400 truncate w-full mt-1">
+                      {cat.sub}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 상세 분야 탐색 (55개) */}
+            <div className="mt-8 w-full pt-2 text-left">
+              <div className="mb-5">
+                <div className="flex items-center gap-2">
+                  <Lightbulb className="text-violet-500 animate-pulse" size={16} />
+                  <h3 className="text-lg font-black tracking-tight text-slate-950 dark:text-white">
+                    상세 분야 탐색 (55개)
+                  </h3>
+                </div>
+                <p className="text-xs font-bold text-slate-600 dark:text-zinc-400 mt-1 leading-relaxed">
+                  원하시는 상세 분야를 선택하시면, 해당 분야에 맞춰 자동 정렬된 기획 시리즈와 실시간 메인 키워드 주제를 만나보실 수 있습니다.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                {subCategories.map((subItem) => (
+                  <button
+                    key={subItem.name}
+                    onClick={() => router.push(`/content-planner/idea-hub?q=${encodeURIComponent(subItem.name)}`)}
+                    className="group rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white/70 dark:bg-[#0c0d12]/45 p-3.5 flex items-center justify-between text-left transition-all hover:scale-[1.02] hover:border-violet-500 dark:hover:bg-violet-600/10 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="text-xl shrink-0">{subItem.emoji}</span>
+                      <div className="min-w-0">
+                        <p className="text-xs font-black text-slate-950 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400 truncate">
+                          {subItem.name}
+                        </p>
+                        <p className="text-[9px] font-bold text-slate-500 dark:text-zinc-500 mt-0.5 truncate">
+                          {subItem.sub}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight size={13} className="text-slate-400 dark:text-zinc-600 group-hover:text-violet-500 transition-colors shrink-0 ml-1" />
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </section>

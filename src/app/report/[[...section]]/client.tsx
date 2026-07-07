@@ -6,7 +6,7 @@ import PublicStudioLayout from "@/components/layout/PublicStudioLayout";
 import StudioComingSoonPage from "@/components/studio/StudioComingSoonPage";
 
 // Import Report components
-import ReportMainPage from "@/app/studio/report/page";
+import ReportMainPage from "@/app/studio/aireport/page";
 import MarketSection from "@/components/studio/aireport/MarketSection";
 import IndustrySection from "@/components/studio/aireport/IndustrySection";
 import NewsSection from "@/components/studio/aireport/NewsSection";

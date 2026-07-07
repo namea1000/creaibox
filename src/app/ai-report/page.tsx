@@ -2,7 +2,7 @@
 
 import React from "react";
 import PublicStudioLayout from "@/components/layout/PublicStudioLayout";
-import ReportStudioPage from "@/app/studio/report/page";
+import ReportStudioPage from "@/app/studio/aireport/page";
 
 export default function PublicAiReportPage() {
   return (

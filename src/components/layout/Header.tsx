@@ -313,7 +313,7 @@ export default function Header() {
 
   return (
     <header className="fixed left-0 right-0 top-0 z-[100] border-b-2 border-slate-300/85 bg-white dark:bg-zinc-950 dark:border-zinc-800 transition-colors duration-300">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 lg:px-8">
+      <div className="w-full flex h-16 items-center justify-between px-5 lg:px-10">
         <div className="flex w-[160px] shrink-0 items-center">
           <Link href="/" className="flex h-10 items-center overflow-hidden transition hover:scale-[1.02] active:scale-[0.98]">
             <Image
@@ -342,7 +342,7 @@ export default function Header() {
             onMouseEnter={() => setIsMegaMenuOpen(true)}
             onMouseLeave={() => setIsMegaMenuOpen(false)}
           >
-            <button className="flex items-center gap-1 text-sm font-extrabold text-slate-600 dark:text-zinc-300 transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3 whitespace-nowrap">
+            <button className="flex items-center gap-1 text-sm font-extrabold text-slate-700 dark:text-white transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3 whitespace-nowrap">
               AI 도구
             </button>
 
@@ -461,7 +461,7 @@ export default function Header() {
             onMouseEnter={() => setIsKeywordMenuOpen(true)}
             onMouseLeave={() => setIsKeywordMenuOpen(false)}
           >
-            <Link href="/keyword-trend" className="flex items-center gap-1 text-sm font-extrabold text-slate-600 dark:text-zinc-300 transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3 whitespace-nowrap">
+            <Link href="/keyword-trend" className="flex items-center gap-1 text-sm font-extrabold text-slate-700 dark:text-white transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3 whitespace-nowrap">
               키워드 트렌드
             </Link>
 
@@ -605,7 +605,7 @@ export default function Header() {
             onMouseEnter={() => setIsYoutubeMenuOpen(true)}
             onMouseLeave={() => setIsYoutubeMenuOpen(false)}
           >
-            <Link href="/youtube-trend" className="flex items-center gap-1 text-sm font-extrabold text-slate-600 dark:text-zinc-300 transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3 whitespace-nowrap">
+            <Link href="/youtube-trend" className="flex items-center gap-1 text-sm font-extrabold text-slate-700 dark:text-white transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3 whitespace-nowrap">
               유튜브 트렌드
             </Link>
 
@@ -785,7 +785,7 @@ export default function Header() {
             onMouseEnter={() => setIsToolsMenuOpen(true)}
             onMouseLeave={() => setIsToolsMenuOpen(false)}
           >
-            <Link href="/utility-tools" className="flex items-center gap-1 text-sm font-extrabold text-slate-600 dark:text-zinc-300 transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3 whitespace-nowrap">
+            <Link href="/utility-tools" className="flex items-center gap-1 text-sm font-extrabold text-slate-700 dark:text-white transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3 whitespace-nowrap">
               Tools
             </Link>
 
@@ -920,7 +920,7 @@ export default function Header() {
             onMouseEnter={() => setIsDesignMenuOpen(true)}
             onMouseLeave={() => setIsDesignMenuOpen(false)}
           >
-            <Link href="/design" className="flex items-center gap-1 text-sm font-extrabold text-slate-600 dark:text-zinc-300 transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3 whitespace-nowrap">
+            <Link href="/design" className="flex items-center gap-1 text-sm font-extrabold text-slate-700 dark:text-white transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3 whitespace-nowrap">
               디자인
             </Link>
 
@@ -1098,7 +1098,7 @@ export default function Header() {
             <Link
               key={item.href}
               href={item.href}
-              className="text-sm font-extrabold text-slate-600 dark:text-zinc-300 transition-all hover:text-violet-600 dark:hover:text-violet-400 whitespace-nowrap"
+              className="text-sm font-extrabold text-slate-700 dark:text-white transition-all hover:text-violet-600 dark:hover:text-violet-400 whitespace-nowrap"
             >
               {item.label}
             </Link>
@@ -1109,7 +1109,7 @@ export default function Header() {
           {/* Theme Toggle Button */}
           <button
             onClick={toggleTheme}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 shrink-0"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white dark:hover:bg-zinc-800 shrink-0"
             title={theme === "dark" ? "라이트 모드로 변경" : "다크 모드로 변경"}
           >
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
@@ -1236,13 +1236,13 @@ export default function Header() {
             <div className="flex w-[180px] items-center justify-end gap-1 pl-2 shrink-0">
               <Link
                 href="/signup"
-                className="rounded-xl px-3.5 py-2 text-sm font-extrabold text-slate-600 dark:text-zinc-400 transition hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-zinc-100"
+                className="rounded-xl px-3.5 py-2 text-sm font-extrabold text-slate-700 dark:text-white transition hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-white"
               >
                 회원가입
               </Link>
               <Link
                 href="/login"
-                className="rounded-xl px-3.5 py-2 text-sm font-extrabold text-slate-600 dark:text-zinc-400 transition hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-zinc-100"
+                className="rounded-xl px-3.5 py-2 text-sm font-extrabold text-slate-700 dark:text-white transition hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-white"
               >
                 로그인
               </Link>

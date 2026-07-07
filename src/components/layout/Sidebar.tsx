@@ -529,6 +529,9 @@ export default function Sidebar({
     if (href === "/library" && pathname.startsWith("/library/free-assets")) {
       return false;
     }
+    if (href === "/aireport" && pathname.startsWith("/report")) {
+      return true;
+    }
     if (pathname.startsWith("/studio/writing/creaibox/list/")) {
       if (href === "/studio/writing/creaibox/new-post") {
         return true;
