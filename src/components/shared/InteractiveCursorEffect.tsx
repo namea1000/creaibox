@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 interface Particle {
   x: number;
@@ -25,12 +26,25 @@ interface Ripple {
 }
 
 export default function InteractiveCursorEffect() {
+  const pathname = usePathname();
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const mouseRef = useRef({ x: 0, y: 0, active: false });
   const delayMouseRef = useRef({ x: 0, y: 0 }); // Smooth lag glow blob
   const lastEmitRef = useRef(0);
 
   useEffect(() => {
+    // 1. Instantly detect touch/mobile devices or viewport widths < 1024px
+    const isTouchOrMobile =
+      window.matchMedia("(pointer: coarse)").matches ||
+      window.innerWidth < 1024 ||
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    if (isTouchOrMobile) {
+      setIsMobileDevice(true);
+      return; // Do not initialize canvas logic on mobile/touch screens
+    }
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -76,7 +90,7 @@ export default function InteractiveCursorEffect() {
 
     // Main Loop
     const render = () => {
-      // 1. If everything is idle, stop the loop to save CPU and boost PageSpeed Score
+      // If everything is idle, stop the loop to save CPU and boost PageSpeed Score
       if (particles.length === 0 && ripples.length === 0 && !mouseRef.current.active) {
         isRunning = false;
         ctx.clearRect(0, 0, width, height);
@@ -237,6 +251,9 @@ export default function InteractiveCursorEffect() {
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
+
+  // Return null immediately on mobile/tablet viewport or root mismatch
+  if (isMobileDevice || pathname !== "/") return null;
 
   return (
     <canvas

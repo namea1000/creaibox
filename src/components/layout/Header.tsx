@@ -1260,6 +1260,7 @@ export default function Header() {
 
         <button
           onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+          aria-label={isMobileMenuOpen ? "모바일 메뉴 닫기" : "모바일 메뉴 열기"}
           className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm lg:hidden dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-300"
         >
           {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
