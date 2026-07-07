@@ -552,6 +552,15 @@ export default function Sidebar({
     return matched?.key ? [matched.key] : [];
   });
 
+  useEffect(() => {
+    const matched = getMatchedGroup();
+    if (matched?.key) {
+      setExpandedGroups((prev) =>
+        prev.includes(matched.key) ? prev : [...prev, matched.key]
+      );
+    }
+  }, [pathname]);
+
   const toggleGroup = (key: string) => {
     setExpandedGroups((prev) =>
       prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key]
