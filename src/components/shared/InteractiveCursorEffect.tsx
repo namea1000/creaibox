@@ -38,6 +38,7 @@ export default function InteractiveCursorEffect() {
     if (!ctx) return;
 
     let animationFrameId: number;
+    let isRunning = false;
     let particles: Particle[] = [];
     let ripples: Ripple[] = [];
     let width = (canvas.width = window.innerWidth);
@@ -63,18 +64,115 @@ export default function InteractiveCursorEffect() {
       return `${neonColors[idx]}${alpha})`;
     };
 
+    // Main Loop
+    const render = () => {
+      // 1. If everything is idle, stop the loop to save CPU and boost PageSpeed Score
+      if (particles.length === 0 && ripples.length === 0 && !mouseRef.current.active) {
+        isRunning = false;
+        ctx.clearRect(0, 0, width, height);
+        return;
+      }
+
+      ctx.clearRect(0, 0, width, height);
+
+      // Smooth lag target for mouse glow spot
+      if (mouseRef.current.active) {
+        delayMouseRef.current.x += (mouseRef.current.x - delayMouseRef.current.x) * 0.1;
+        delayMouseRef.current.y += (mouseRef.current.y - delayMouseRef.current.y) * 0.1;
+
+        // Draw dynamic glow light follow (glowing orb behind contents)
+        const gradient = ctx.createRadialGradient(
+          delayMouseRef.current.x,
+          delayMouseRef.current.y,
+          0,
+          delayMouseRef.current.x,
+          delayMouseRef.current.y,
+          180
+        );
+        gradient.addColorStop(0, "rgba(59, 130, 246, 0.08)");
+        gradient.addColorStop(0.5, "rgba(139, 92, 246, 0.03)");
+        gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(delayMouseRef.current.x, delayMouseRef.current.y, 180, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Render & Update Ripples (Circular waves expanding outward)
+      ctx.shadowBlur = 0; // Reset shadow for ripples
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        const ripple = ripples[i];
+        ripple.radius += ripple.speed;
+        ripple.alpha = 1 - (ripple.radius / ripple.maxRadius);
+
+        if (ripple.alpha <= 0 || ripple.radius >= ripple.maxRadius) {
+          ripples.splice(i, 1);
+          continue;
+        }
+
+        ctx.beginPath();
+        ctx.arc(ripple.x, ripple.y, ripple.radius, 0, Math.PI * 2);
+        
+        // Dynamic gradient for the ripple line
+        const rColor = ripple.color.replace(/[\d.]+\)$/, `${ripple.alpha})`);
+        ctx.strokeStyle = rColor;
+        ctx.lineWidth = ripple.lineWidth;
+        ctx.stroke();
+
+        // Optional: Draw a tiny concentric secondary ring for added details
+        if (ripple.radius > 15) {
+          ctx.beginPath();
+          ctx.arc(ripple.x, ripple.y, ripple.radius - 12, 0, Math.PI * 2);
+          ctx.strokeStyle = ripple.color.replace(/[\d.]+\)$/, `${ripple.alpha * 0.4})`);
+          ctx.lineWidth = ripple.lineWidth * 0.6;
+          ctx.stroke();
+        }
+      }
+
+      // Render & Update Particles (Sparkling dust drifting behind cursor)
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= p.decay;
+
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        
+        // Add neon glow to particles
+        ctx.fillStyle = p.color.replace(/[\d.]+\)$/, `${p.alpha})`);
+        ctx.fill();
+      }
+
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    const startLoopIfNeeded = () => {
+      if (!isRunning) {
+        isRunning = true;
+        render();
+      }
+    };
+
     // Track Mouse Move
     const handleMouseMove = (e: MouseEvent) => {
       mouseRef.current.x = e.clientX;
       mouseRef.current.y = e.clientY;
       mouseRef.current.active = true;
+      startLoopIfNeeded();
 
       const now = Date.now();
       // Emit ripple ring and trace particles on movement with slight throttle
       if (now - lastEmitRef.current > 60) {
         lastEmitRef.current = now;
 
-        // 1. Create a Ripple ring at mouse coordinates (similar to mexni.com circular expansion)
+        // 1. Create a Ripple ring at mouse coordinates (circular expansion)
         ripples.push({
           x: e.clientX,
           y: e.clientY,
@@ -109,87 +207,8 @@ export default function InteractiveCursorEffect() {
     window.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseleave", handleMouseLeave);
 
-    // Main Loop
-    const render = () => {
-      ctx.clearRect(0, 0, width, height);
-
-      // Smooth lag target for mouse glow spot
-      if (mouseRef.current.active) {
-        delayMouseRef.current.x += (mouseRef.current.x - delayMouseRef.current.x) * 0.1;
-        delayMouseRef.current.y += (mouseRef.current.y - delayMouseRef.current.y) * 0.1;
-
-        // Draw dynamic glow light follow (glowing orb behind contents)
-        const gradient = ctx.createRadialGradient(
-          delayMouseRef.current.x,
-          delayMouseRef.current.y,
-          0,
-          delayMouseRef.current.x,
-          delayMouseRef.current.y,
-          180
-        );
-        gradient.addColorStop(0, "rgba(59, 130, 246, 0.08)");
-        gradient.addColorStop(0.5, "rgba(139, 92, 246, 0.03)");
-        gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
-
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(delayMouseRef.current.x, delayMouseRef.current.y, 180, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Render & Update Ripples (Circular waves expanding outward)
-      ctx.shadowBlur = 0; // Reset shadow for ripples
-      ripples.forEach((ripple, idx) => {
-        ripple.radius += ripple.speed;
-        ripple.alpha = 1 - (ripple.radius / ripple.maxRadius);
-
-        if (ripple.alpha <= 0 || ripple.radius >= ripple.maxRadius) {
-          ripples.splice(idx, 1);
-          return;
-        }
-
-        ctx.beginPath();
-        ctx.arc(ripple.x, ripple.y, ripple.radius, 0, Math.PI * 2);
-        
-        // Dynamic gradient for the ripple line
-        const rColor = ripple.color.replace(/[\d.]+\)$/, `${ripple.alpha})`);
-        ctx.strokeStyle = rColor;
-        ctx.lineWidth = ripple.lineWidth;
-        ctx.stroke();
-
-        // Optional: Draw a tiny concentric secondary ring for added details
-        if (ripple.radius > 15) {
-          ctx.beginPath();
-          ctx.arc(ripple.x, ripple.y, ripple.radius - 12, 0, Math.PI * 2);
-          ctx.strokeStyle = ripple.color.replace(/[\d.]+\)$/, `${ripple.alpha * 0.4})`);
-          ctx.lineWidth = ripple.lineWidth * 0.6;
-          ctx.stroke();
-        }
-      });
-
-      // Render & Update Particles (Sparkling dust drifting behind cursor)
-      particles.forEach((p, idx) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.alpha -= p.decay;
-
-        if (p.alpha <= 0) {
-          particles.splice(idx, 1);
-          return;
-        }
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        
-        // Add neon glow to particles
-        ctx.fillStyle = p.color.replace(/[\d.]+\)$/, `${p.alpha})`);
-        ctx.fill();
-      });
-
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    render();
+    // Initial render trigger
+    startLoopIfNeeded();
 
     // Cleanups
     return () => {
