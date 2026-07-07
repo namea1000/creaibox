@@ -355,7 +355,7 @@ export default function MainLandingPage() {
             
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-violet-550/30 dark:border-zinc-800 bg-white/5 dark:bg-zinc-900/80 px-4 py-2 text-sm font-black text-violet-400 shadow-sm">
               <Sparkles size={16} />
-              Open Beta · 현재 베타 버전으로 무료 체험 가능
+              Open Beta(Ver3.0) · 현재 베타 버전으로 무료 체험 가능
             </div>
 
             <h1 className="break-keep text-4xl font-black leading-tight tracking-tight text-white md:text-6xl max-w-4xl">
