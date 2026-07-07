@@ -45,6 +45,7 @@ import {
   PieChart,
   LineChart,
   Award,
+  MessageSquare,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { User } from "@supabase/supabase-js";
@@ -67,6 +68,13 @@ export default function Header() {
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
   const [isDesignMenuOpen, setIsDesignMenuOpen] = useState(false);
   const [isKeywordMenuOpen, setIsKeywordMenuOpen] = useState(false);
+
+  // 모바일 아코디언 상태
+  const [isMobMegaOpen, setIsMobMegaOpen] = useState(false);
+  const [isMobYoutubeOpen, setIsMobYoutubeOpen] = useState(false);
+  const [isMobToolsOpen, setIsMobToolsOpen] = useState(false);
+  const [isMobDesignOpen, setIsMobDesignOpen] = useState(false);
+  const [isMobKeywordOpen, setIsMobKeywordOpen] = useState(false);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("studio_theme") as "light" | "dark" | null;
@@ -280,10 +288,10 @@ export default function Header() {
   };
 
   const menuItems = [
-    { label: "가격", href: "/pricing" },
-    { label: "블로그", href: "/blog" },
-    { label: "가이드", href: "/about" },
-    { label: "고객지원", href: "/help" },
+    { label: "가격", href: "/pricing", icon: CreditCard },
+    { label: "블로그", href: "/blog", icon: FileText },
+    { label: "가이드", href: "/about", icon: HelpCircle },
+    { label: "고객지원", href: "/help", icon: MessageSquare },
   ];
 
   const getDisplayName = () => {
@@ -1259,21 +1267,201 @@ export default function Header() {
       </div>
 
       {isMobileMenuOpen && (
-        <div className="border-t border-slate-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-5 py-5 shadow-2xl lg:hidden">
+        <div className="border-t border-slate-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 py-5 shadow-2xl lg:hidden max-h-[80vh] overflow-y-auto">
+          {/* 🌟 모바일 전용 현재 로그인 정보 카드 (로그인되어 있을 때만 출력) */}
+          {user && (
+            <div className="mb-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900/60 p-3.5 flex items-center gap-3">
+              <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-br from-violet-500 to-blue-500 text-white flex items-center justify-center font-black text-sm">
+                {getInitials()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-sm font-black text-slate-800 dark:text-zinc-100 truncate block">
+                    {getDisplayName()}
+                  </span>
+                  <span className="inline-flex items-center rounded-md bg-violet-500/10 dark:bg-violet-400/10 px-1.5 py-0.5 text-[10px] font-black text-violet-600 dark:text-violet-400 border border-violet-500/10">
+                    {planName === "free" || planName === "Free" ? "Free 요금제" : planName}
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 block mt-0.5 truncate">
+                  {user.email}
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="grid gap-2">
-            {menuItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="rounded-2xl border border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 px-4 py-3 text-sm font-black text-slate-700 dark:text-zinc-300"
+            {/* 1. AI 도구 아코디언 */}
+            <div>
+              <button
+                onClick={() => setIsMobMegaOpen((prev) => !prev)}
+                className="w-full flex items-center justify-between rounded-xl border border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 px-4 py-3 text-sm font-black text-slate-800 dark:text-white"
               >
-                {item.label}
-              </Link>
-            ))}
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} className="text-violet-500" />
+                  <span>AI 도구</span>
+                </div>
+                <ChevronDown
+                  size={15}
+                  className={`text-slate-400 dark:text-zinc-350 transition-transform duration-200 ${isMobMegaOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              {isMobMegaOpen && (
+                <div className="mt-1.5 ml-2 pl-3 border-l-2 border-violet-500/30 grid gap-1.5 py-1">
+                  <Link href="/studio/writing/creaibox/new-post" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">AI 새글쓰기</Link>
+                  <Link href="/studio/writing/naver/blog-automation" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">1인 블로그 자동화</Link>
+                  <Link href="/studio/design/creative-studio" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">AI 이미지 스튜디오</Link>
+                  <Link href="/studio/music/lyric-generator" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">AI 작사/작곡</Link>
+                  <Link href="/studio/video/video-generator" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">AI 비디오 스튜디오</Link>
+                  <Link href="/studio/music/sound-hub" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">사운드 허브</Link>
+                  <Link href="/studio/utility-tools" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">유틸리티 도구</Link>
+                </div>
+              )}
+            </div>
+
+            {/* 2. 키워드 트렌드 아코디언 */}
+            <div>
+              <button
+                onClick={() => setIsMobKeywordOpen((prev) => !prev)}
+                className="w-full flex items-center justify-between rounded-xl border border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 px-4 py-3 text-sm font-black text-slate-800 dark:text-white"
+              >
+                <div className="flex items-center gap-2">
+                  <TrendingUp size={16} className="text-violet-500" />
+                  <span>키워드 트렌드</span>
+                </div>
+                <ChevronDown
+                  size={15}
+                  className={`text-slate-400 dark:text-zinc-350 transition-transform duration-200 ${isMobKeywordOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              {isMobKeywordOpen && (
+                <div className="mt-1.5 ml-2 pl-3 border-l-2 border-violet-500/30 grid gap-1.5 py-1">
+                  <Link href="/keyword-trend" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">키워드 분석 홈</Link>
+                  <Link href="/keyword-trend/realtime" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">실시간 검색 트렌드</Link>
+                  <Link href="/keyword-trend/explorer" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">키워드 탐색기</Link>
+                  <Link href="/keyword-trend/rank-tracker" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">블로그 순위 추적</Link>
+                  <Link href="/keyword-trend/site-audit" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">사이트 검색 진단</Link>
+                </div>
+              )}
+            </div>
+
+            {/* 3. 유튜브 트렌드 아코디언 */}
+            <div>
+              <button
+                onClick={() => setIsMobYoutubeOpen((prev) => !prev)}
+                className="w-full flex items-center justify-between rounded-xl border border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 px-4 py-3 text-sm font-black text-slate-800 dark:text-white"
+              >
+                <div className="flex items-center gap-2">
+                  <Video size={16} className="text-violet-500" />
+                  <span>유튜브 트렌드</span>
+                </div>
+                <ChevronDown
+                  size={15}
+                  className={`text-slate-400 dark:text-zinc-350 transition-transform duration-200 ${isMobYoutubeOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              {isMobYoutubeOpen && (
+                <div className="mt-1.5 ml-2 pl-3 border-l-2 border-violet-500/30 grid gap-1.5 py-1">
+                  <Link href="/youtube-trend" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">유튜브 트렌드 홈</Link>
+                  <Link href="/youtube-trend/ranking" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">유튜브 랭킹 TOP 300</Link>
+                  <Link href="/youtube-trend/thumbnail-downloader" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">유튜브 썸네일 추출</Link>
+                  <Link href="/youtube-trend/shorts-script" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">AI 쇼츠 대본 제너레이터</Link>
+                  <Link href="/youtube-trend/translator" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">다국어 번역 및 AI 더빙</Link>
+                </div>
+              )}
+            </div>
+
+            {/* 4. Tools 아코디언 */}
+            <div>
+              <button
+                onClick={() => setIsMobToolsOpen((prev) => !prev)}
+                className="w-full flex items-center justify-between rounded-xl border border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 px-4 py-3 text-sm font-black text-slate-800 dark:text-white"
+              >
+                <div className="flex items-center gap-2">
+                  <Folder size={16} className="text-violet-500" />
+                  <span>Tools</span>
+                </div>
+                <ChevronDown
+                  size={15}
+                  className={`text-slate-400 dark:text-zinc-350 transition-transform duration-200 ${isMobToolsOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              {isMobToolsOpen && (
+                <div className="mt-1.5 ml-2 pl-3 border-l-2 border-violet-500/30 grid gap-1.5 py-1">
+                  <Link href="/client-site-builder" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">AI 홈페이지 제작</Link>
+                  <Link href="/media-library" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">에셋 라이브러리</Link>
+                  <Link href="/content-planner/idea-hub" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">콘텐츠 아이디어 허브</Link>
+                  <Link href="/content-planner/ai-planner" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">AI 콘텐츠 기획기</Link>
+                  <Link href="/content-planner/calendar" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">콘텐츠 캘린더</Link>
+                  <Link href="/help/creator-wiki" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">크리에이터 백과</Link>
+                </div>
+              )}
+            </div>
+
+            {/* 5. 디자인 아코디언 */}
+            <div>
+              <button
+                onClick={() => setIsMobDesignOpen((prev) => !prev)}
+                className="w-full flex items-center justify-between rounded-xl border border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 px-4 py-3 text-sm font-black text-slate-800 dark:text-white"
+              >
+                <div className="flex items-center gap-2">
+                  <Palette size={16} className="text-violet-500" />
+                  <span>디자인</span>
+                </div>
+                <ChevronDown
+                  size={15}
+                  className={`text-slate-400 dark:text-zinc-350 transition-transform duration-200 ${isMobDesignOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              {isMobDesignOpen && (
+                <div className="mt-1.5 ml-2 pl-3 border-l-2 border-violet-500/30 grid gap-1.5 py-1">
+                  <Link href="/design" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">디자인 스튜디오 홈</Link>
+                  <Link href="/design/bg-remover" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">AI 누끼 제거</Link>
+                  <Link href="/design/upscaler" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">AI 업스케일러</Link>
+                  <Link href="/design/mockup" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">목업 제너레이터</Link>
+                  <Link href="/design/templates" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">템플릿 라이브러리</Link>
+                </div>
+              )}
+            </div>
+
+            {/* 고정 메뉴 루프 (가격, 블로그, 가이드, 고객지원) */}
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="rounded-xl border border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 px-4 py-3 text-sm font-black text-slate-700 dark:text-white flex items-center gap-2"
+                >
+                  <Icon size={16} className="text-violet-500" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
           </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-2">
+          <div className="mt-5 flex items-center justify-between gap-4 border-t border-slate-100 dark:border-zinc-850 pt-4">
+            <span className="text-xs font-black text-slate-500 dark:text-zinc-400">테마 설정</span>
+            <button
+              onClick={toggleTheme}
+              className="flex h-10 px-4 items-center gap-2 rounded-xl border border-slate-200 bg-white text-xs font-extrabold text-slate-750 shadow-sm transition active:scale-95 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white"
+            >
+              {theme === "dark" ? (
+                <>
+                  <Sun size={14} className="text-amber-500" />
+                  <span>라이트 모드로 전환</span>
+                </>
+              ) : (
+                <>
+                  <Moon size={14} className="text-violet-500" />
+                  <span>다크 모드로 전환</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-2">
             {user ? (
               <>
                 <Link
@@ -1306,7 +1494,7 @@ export default function Header() {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 px-4 py-3 text-center text-sm font-black text-white"
                 >
-                  AI 스튜디오 시작하기
+                  스튜디오 시작
                 </Link>
               </>
             )}

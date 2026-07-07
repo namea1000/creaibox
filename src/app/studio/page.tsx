@@ -133,7 +133,7 @@ export default function StudioPage() {
     },
     {
       key: "creassetbox",
-      name: "크리에셋박스",
+      name: "미디어 라이브러리",
       href: "/library/free-assets",
       icon: Archive,
       color: "from-amber-600 to-yellow-500 text-amber-400 bg-amber-500/10",

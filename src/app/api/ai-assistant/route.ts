@@ -202,6 +202,7 @@ async function generateAssistantResponse({
   pagePath,
   agents,
   contextSummary,
+  apiKey,
 }: {
   prompt: string;
   messages: AssistantMessage[];
@@ -209,12 +210,8 @@ async function generateAssistantResponse({
   pagePath: string | null;
   agents: string[];
   contextSummary: string | null;
+  apiKey: string;
 }) {
-  const apiKey =
-    process.env.GEMINI_API_KEY ||
-    process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
-    "";
-
   if (!apiKey) {
     return buildFallbackResponse(prompt, agents);
   }
@@ -260,6 +257,11 @@ ${prompt}
 }
 
 export async function POST(request: Request) {
+  const userApiKey = (request.headers.get("x-gemini-api-key") || "").trim();
+  if (!userApiKey) {
+    return buildError("개인 Gemini API 키가 등록되어 있지 않습니다. 마이페이지 또는 API Vault에서 키를 등록한 뒤 대화를 시작해 주세요.", 400);
+  }
+
   const supabase = await createClient();
 
   const {
@@ -348,6 +350,7 @@ export async function POST(request: Request) {
     pagePath: conversation.page_path ?? null,
     agents,
     contextSummary: conversation.context_summary ?? null,
+    apiKey: userApiKey,
   });
 
   const assistantMessage: AssistantMessage = {

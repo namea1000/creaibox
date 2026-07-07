@@ -361,10 +361,20 @@ export default function AiAssistantPanel({
       setIsSending(true);
       setErrorMessage("");
 
+      let userApiKey = "";
+      if (typeof window !== "undefined") {
+        userApiKey =
+          localStorage.getItem("gemini_postpay_api_key") ||
+          localStorage.getItem("gemini_free_api_key") ||
+          localStorage.getItem("gemini_api_key") ||
+          "";
+      }
+
       const res = await fetch("/api/ai-assistant", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-gemini-api-key": userApiKey,
         },
         body: JSON.stringify({
           conversation_id: conversationId,

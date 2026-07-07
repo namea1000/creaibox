@@ -121,7 +121,7 @@ export default function AiAssistantWidget() {
 
               <div className="min-w-0">
                 <p className="truncate text-sm font-black text-white">
-                  AI Assistant
+                  AI Assistant <span className="text-[10px] font-bold text-cyan-400/80 ml-1.5">(개인 API 키 필요)</span>
                 </p>
                 <p className="truncate text-[11px] font-semibold text-cyan-200/60">
                   Multi Agent Hub

@@ -207,7 +207,7 @@ export default function Sidebar({
       },
       {
         key: "creassetbox",
-        name: "크리에셋박스",
+        name: "미디어 라이브러리",
         href: "/library/free-assets",
         icon: Archive,
         color: "text-amber-400",

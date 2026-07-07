@@ -15,13 +15,15 @@ export default function AiAssistantMessageList({
   messages,
   isSending = false,
 }: Props) {
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "end",
-    });
+    if (containerRef.current) {
+      containerRef.current.scrollTo({
+        top: containerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
   }, [messages, isSending]);
 
   if (!messages.length) {
@@ -59,7 +61,7 @@ export default function AiAssistantMessageList({
   }
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto">
+    <div ref={containerRef} className="min-h-0 flex-1 overflow-y-auto">
       <div className="mx-auto w-full max-w-5xl px-5 py-6">
         <div className="space-y-6">
           {messages.map((message) => (
@@ -86,8 +88,6 @@ export default function AiAssistantMessageList({
             </div>
           )}
         </div>
-
-        <div ref={bottomRef} />
       </div>
     </div>
   );

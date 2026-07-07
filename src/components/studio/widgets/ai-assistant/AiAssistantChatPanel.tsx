@@ -164,7 +164,7 @@ export default function AiAssistantChatPanel({
   };
 
   return (
-    <section className="flex min-w-0 flex-1 flex-col bg-[#05080c]">
+    <section className="flex min-w-0 flex-1 h-full min-h-0 flex-col bg-[#05080c]">
       {/* Header */}
       <div className="shrink-0 border-b border-white/10 bg-[#071018]/90 px-5 py-4">
         <div className="flex items-start justify-between gap-3">

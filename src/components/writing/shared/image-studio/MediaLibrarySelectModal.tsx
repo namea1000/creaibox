@@ -635,7 +635,7 @@ export default function MediaLibrarySelectModal({
             { id: "creaibox", label: "크리에이박스 콘텐츠" },
             { id: "naver", label: "네이버 콘텐츠" },
             { id: "image", label: "이미지 콘텐츠" },
-            { id: "creaset", label: "크리에셋박스" },
+            { id: "creaset", label: "미디어 라이브러리" },
             { id: "pixabay", label: "Pixabay (외부 API)" },
             { id: "pexels", label: "Pexels (외부 API)" },
             { id: "adobe", label: "Adobe Stock (외부 API)" },
@@ -734,7 +734,7 @@ export default function MediaLibrarySelectModal({
                 <p className="text-xs font-black">표시할 이미지가 없습니다.</p>
                 <p className="mt-1 text-[11px] text-zinc-600">
                   {activeTab === "creaset"
-                    ? "크리에셋박스에 업로드된 이미지가 없습니다."
+                    ? "미디어 라이브러리에 업로드된 이미지가 없습니다."
                     : ["pixabay", "pexels", "adobe", "shutterstock"].includes(activeTab)
                     ? "해당 검색어에 매칭되는 스톡 이미지가 없습니다."
                     : "원고 작성 시 저장된 이미지가 라이브러리에 노출됩니다."}

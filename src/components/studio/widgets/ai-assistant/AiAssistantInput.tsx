@@ -79,14 +79,15 @@ export default function AiAssistantInput({
           disabled={disabled || isSending}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            if (e.key === "Enter" && !e.shiftKey) {
+              if (e.nativeEvent.isComposing) return;
               e.preventDefault();
               void handleSubmit();
             }
           }}
           placeholder={placeholder}
-          rows={3}
-          className="max-h-40 min-h-[76px] w-full resize-none bg-transparent px-2 py-1 text-sm font-medium leading-6 text-white outline-none placeholder:text-zinc-600 disabled:cursor-not-allowed disabled:text-zinc-600"
+          rows={1}
+          className="max-h-40 min-h-[36px] w-full resize-none bg-transparent px-2 py-1 text-sm font-medium leading-6 text-white outline-none placeholder:text-zinc-600 disabled:cursor-not-allowed disabled:text-zinc-600"
         />
 
         <div className="mt-2 flex items-center justify-between gap-3">
@@ -157,7 +158,7 @@ export default function AiAssistantInput({
       </div>
 
       <p className="mt-2 text-center text-[11px] font-semibold text-zinc-600">
-        Enter 줄바꿈 · Ctrl/⌘ + Enter 전송 · AI 응답은 적용 전 반드시 확인하세요.
+        Enter 전송 · Shift + Enter 줄바꿈 · AI 응답은 적용 전 반드시 확인하세요.
       </p>
     </div>
   );

@@ -9,7 +9,7 @@ const sectionNames: Record<string, string> = {
   music: "음악 & 가사 콘텐츠",
   image: "이미지 콘텐츠",
   video: "비디오 콘텐츠",
-  "free-assets": "크리에셋박스 무료 에셋",
+  "free-assets": "미디어 라이브러리 무료 에셋",
 };
 
 interface Props {
