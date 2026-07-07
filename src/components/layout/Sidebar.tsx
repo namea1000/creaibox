@@ -526,7 +526,7 @@ export default function Sidebar({
 
   const isPathActive = (href: string) => {
     if (href === "/studio") return pathname === "/studio";
-    if (href === "/studio/library" && pathname.startsWith("/studio/library/free-assets")) {
+    if (href === "/library" && pathname.startsWith("/library/free-assets")) {
       return false;
     }
     if (pathname.startsWith("/studio/writing/creaibox/list/")) {

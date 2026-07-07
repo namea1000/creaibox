@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import PublicStudioLayout from "@/components/layout/PublicStudioLayout";
 import StudioOperationalSectionPage from "@/components/studio/StudioOperationalSectionPage";
 import CreaiboxLibraryManager from "@/app/studio/library/[section]/components/CreaiboxLibraryManager";
+import FreeAssetsPage from "@/app/studio/library/free-assets/page";
 
 const sectionNames: Record<string, string> = {
   creaibox: "크리에이박스 콘텐츠",
@@ -19,17 +20,21 @@ const sectionNames: Record<string, string> = {
 export default function PublicLibrarySectionClient() {
   const { section } = useParams<{ section: string }>();
 
-  return (
-    <PublicStudioLayout>
-      {section === "creaibox" || section === "image" ? (
-        <CreaiboxLibraryManager />
-      ) : (
-        <StudioOperationalSectionPage
-          area="library"
-          section={section}
-          title={sectionNames[section] || "콘텐츠 라이브러리"}
-        />
-      )}
-    </PublicStudioLayout>
-  );
+  const renderContent = () => {
+    if (section === "free-assets") {
+      return <FreeAssetsPage />;
+    }
+    if (section === "creaibox" || section === "image") {
+      return <CreaiboxLibraryManager />;
+    }
+    return (
+      <StudioOperationalSectionPage
+        area="library"
+        section={section}
+        title={sectionNames[section] || "콘텐츠 라이브러리"}
+      />
+    );
+  };
+
+  return <PublicStudioLayout>{renderContent()}</PublicStudioLayout>;
 }
