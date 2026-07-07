@@ -15,10 +15,17 @@ export default function AiAssistantWidget() {
     return Math.min(Math.max(width, 560), 980);
   }, [minimized, width]);
 
+  const [initialPrompt, setInitialPrompt] = useState<string | null>(null);
+
   useEffect(() => {
-    const handleOpen = () => {
+    const handleOpen = (e: Event) => {
+      const customEvent = e as CustomEvent<{ prompt?: string }>;
+      const promptText = customEvent.detail?.prompt;
       setOpen(true);
       setMinimized(false);
+      if (promptText) {
+        setInitialPrompt(promptText);
+      }
     };
 
     window.addEventListener("open-ai-assistant", handleOpen);
@@ -27,6 +34,19 @@ export default function AiAssistantWidget() {
       window.removeEventListener("open-ai-assistant", handleOpen);
     };
   }, []);
+
+  // Escape key event listener to close the AI Assistant widget
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && open) {
+        setOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!isResizing) return;
@@ -58,7 +78,7 @@ export default function AiAssistantWidget() {
 
   return (
     <div
-      className="fixed bottom-0 right-0 top-0 z-[80] border-l border-cyan-400/20 bg-[#05080c]/95 shadow-2xl shadow-black/70 backdrop-blur-xl"
+      className="fixed bottom-0 right-0 top-16 z-[80] border-l border-cyan-400/20 bg-[#05080c]/95 shadow-2xl shadow-black/70 backdrop-blur-xl"
       style={{ width: panelWidth }}
     >
       <button
@@ -111,13 +131,6 @@ export default function AiAssistantWidget() {
 
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setMinimized(true)}
-                className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-bold text-zinc-300 transition hover:bg-white/10 hover:text-white"
-              >
-                <Minus size={14} />
-              </button>
-
-              <button
                 onClick={() => setOpen(false)}
                 className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-bold text-zinc-300 transition hover:bg-red-500/10 hover:text-red-300"
               >
@@ -126,7 +139,7 @@ export default function AiAssistantWidget() {
             </div>
           </div>
 
-          <AiAssistantPanel />
+          <AiAssistantPanel initialPrompt={initialPrompt} clearInitialPrompt={() => setInitialPrompt(null)} />
         </div>
       )}
     </div>

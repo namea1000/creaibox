@@ -196,13 +196,14 @@ export default function MainLandingPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 transition-colors duration-300">
       <Header />
-      <main className="pt-20">
+      <main className="pt-16">
         
         {/* 가로 퀵 메뉴 바 */}
-        <div className="border-b border-slate-100 dark:border-zinc-900/60 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-md sticky top-20 z-40 transition-colors duration-300">
+        <div className="border-b border-slate-100 dark:border-zinc-900/60 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-md sticky top-16 z-40 transition-colors duration-300">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="flex items-center justify-start md:justify-center gap-2 overflow-x-auto py-3 scrollbar-none flex-nowrap">
               {[
+                { icon: <Sparkles size={16} />, label: "스튜디오 홈", href: "/studio", color: "text-violet-600 dark:text-violet-400 hover:bg-violet-500/5 hover:border-violet-500/30 dark:hover:bg-violet-500/10 font-black border-violet-500/20" },
                 { icon: <Video size={16} />, label: "영상 편집기", href: "/video-editor", color: "text-pink-500 hover:bg-pink-500/5 hover:border-pink-500/30 dark:hover:bg-pink-500/10" },
                 { icon: <PenLine size={16} />, label: "AI 글쓰기", href: "/ai-writer", color: "text-blue-500 hover:bg-blue-500/5 hover:border-blue-500/30 dark:hover:bg-blue-500/10" },
                 { icon: <TrendingUp size={16} />, label: "유튜브 트렌드", href: "/youtube-trend", color: "text-red-500 hover:bg-red-500/5 hover:border-red-500/30 dark:hover:bg-red-500/10" },
@@ -228,7 +229,7 @@ export default function MainLandingPage() {
           <div className="absolute left-1/2 top-10 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-violet-300/20 dark:bg-violet-900/5 blur-3xl" />
           <div className="absolute right-0 top-32 h-[420px] w-[420px] rounded-full bg-blue-300/15 dark:bg-blue-900/5 blur-3xl" />
 
-          <div className="relative mx-auto max-w-7xl px-6 py-20 lg:px-8 lg:py-28 text-center flex flex-col items-center">
+          <div className="relative mx-auto max-w-7xl px-6 py-10 lg:px-8 lg:py-16 text-center flex flex-col items-center">
             
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-violet-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 px-4 py-2 text-sm font-black text-violet-700 dark:text-violet-400 shadow-sm">
               <Sparkles size={16} />

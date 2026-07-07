@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import Aside from "@/components/layout/Aside";
 import StudioTopbar from "@/components/studio/StudioTopbar";
+import Header from "@/components/layout/Header";
 import { isReservedBrandId } from "@/lib/constants/reservedWords";
 
 type WpSite = {
@@ -759,14 +760,16 @@ export default function MyPage() {
     profile.role === "SUPER_ADMIN";
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#05070a] font-sans text-zinc-100">
-      <Sidebar
-        activeMenu="MyPage"
-        isCollapsed={isCollapsed}
-        setIsCollapsed={setIsCollapsed}
-        isMobileOpen={isMobileOpen}
-        setIsMobileOpen={setIsMobileOpen}
-      />
+    <div className="flex flex-col h-screen w-full overflow-hidden bg-[#05070a] font-sans text-zinc-100">
+      <Header />
+      <div className="flex flex-1 min-h-0 pt-16">
+        <Sidebar
+          activeMenu="MyPage"
+          isCollapsed={isCollapsed}
+          setIsCollapsed={setIsCollapsed}
+          isMobileOpen={isMobileOpen}
+          setIsMobileOpen={setIsMobileOpen}
+        />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <StudioTopbar setIsMobileOpen={setIsMobileOpen} />
@@ -1478,6 +1481,7 @@ export default function MyPage() {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }

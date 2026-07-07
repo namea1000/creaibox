@@ -20,6 +20,7 @@ import {
   Globe
 } from "lucide-react";
 import Image from "next/image";
+import { useQuery } from "@tanstack/react-query";
 import VideoAnalysisModal from "../[section]/components/VideoAnalysisModal";
 
 const PAGE_SIZE = 12;
@@ -103,9 +104,20 @@ function formatDisplayDate(value?: string | null) {
 }
 
 export default function YoutubeChannelReportsPage() {
-  const [reports, setReports] = useState<ReportRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: reports = [], isLoading, error } = useQuery<ReportRow[]>({
+    queryKey: ["youtubeReports", "channel"],
+    queryFn: async () => {
+      const res = await fetch("/api/youtube/reports?type=channel");
+      if (!res.ok) throw new Error("분석 리포트를 불러오는데 실패했습니다.");
+      const result = await res.json();
+      return result.data || [];
+    },
+    staleTime: 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -121,24 +133,6 @@ export default function YoutubeChannelReportsPage() {
   // Modal states
   const [selectedVideo, setSelectedVideo] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  useEffect(() => {
-    async function loadReports() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const res = await fetch("/api/youtube/reports?type=channel");
-        if (!res.ok) throw new Error("분석 리포트를 불러오는데 실패했습니다.");
-        const result = await res.json();
-        setReports(result.data || []);
-      } catch (err: any) {
-        setError(err.message || "오류가 발생했습니다.");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    void loadReports();
-  }, []);
 
   // Filter handlers
   const handleFilterChange = (key: keyof typeof filters, value: string) => {

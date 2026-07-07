@@ -1,24 +1,14 @@
-"use client";
-
 import React from "react";
-import PublicStudioLayout from "@/components/layout/PublicStudioLayout";
-import RisingTrends from "@/app/studio/keyword/[section]/components/RisingTrends";
+import { Metadata } from "next";
+import PublicKeywordTrendClient from "./client";
 
-export default function PublicKeywordTrendPage() {
-  return (
-    <PublicStudioLayout>
-      <div className="space-y-6">
-        <header className="space-y-2 text-left">
-          <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">
-            실시간 트렌드 급상승 키워드
-          </h1>
-          <p className="text-slate-500 dark:text-zinc-400 text-xs font-bold max-w-2xl">
-            인터넷 및 검색 포털에서 급상승하고 있는 주요 실시간 키워드 트렌드를 시각적으로 분석합니다.
-          </p>
-        </header>
+// 🌟 네이버/구글 검색 노출 최적화용 "크리에이박스 CreAibox" 브랜드 키워드 메타데이터 주입!
+export const metadata: Metadata = {
+  title: "키워드 트렌드 분석 | 크리에이박스 CreAibox",
+  description: "크리에이박스 CreAibox에서 제공하는 종합 키워드 트렌드 대시보드입니다. 실시간 키워드 통계, 연관 검색어 발굴 및 최신 트렌드를 확인해 보세요.",
+  keywords: ["크리에이박스", "creaibox", "키워드 트렌드", "연관 키워드", "실시간 검색어"]
+};
 
-        <RisingTrends />
-      </div>
-    </PublicStudioLayout>
-  );
+export default function Page() {
+  return <PublicKeywordTrendClient />;
 }

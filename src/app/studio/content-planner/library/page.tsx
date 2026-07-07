@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -75,40 +76,43 @@ function formatDisplayDate(value?: string | null) {
 }
 
 export default function ContentPlannerLibraryPage() {
+  const { data: campaignsData = [], isLoading, error } = useQuery<CampaignRow[]>({
+    queryKey: ["contentPlannerCampaigns"],
+    queryFn: async () => {
+      const { data, error: fetchErr } = await fetchContentPlannerCampaigns();
+      if (fetchErr) throw fetchErr;
+      return (data ?? []) as CampaignRow[];
+    },
+    staleTime: 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+
   const [campaigns, setCampaigns] = useState<CampaignRow[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (campaignsData) {
+      setCampaigns(campaignsData);
+    }
+  }, [campaignsData]);
+
+  useEffect(() => {
+    if (error) {
+      setErrorMessage(error instanceof Error ? error.message : String(error));
+    } else {
+      setErrorMessage(null);
+    }
+  }, [error]);
+
   const [selectedCampaign, setSelectedCampaign] = useState<CampaignRow | null>(
     null
   );
   const [selectedItems, setSelectedItems] = useState<CampaignItemRow[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const [isLoading, setIsLoading] = useState(true);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const fetchCampaigns = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setErrorMessage(null);
-
-      const { data, error } = await fetchContentPlannerCampaigns();
-
-      if (error) {
-        throw error;
-      }
-
-      setCampaigns((data ?? []) as CampaignRow[]);
-    } catch (error) {
-      console.error(error);
-      setErrorMessage("콘텐츠 기획 목록을 불러오지 못했습니다.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchCampaigns();
-  }, [fetchCampaigns]);
 
   const filteredCampaigns = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();

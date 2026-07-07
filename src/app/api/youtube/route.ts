@@ -753,12 +753,14 @@ function getMockData(type: string | null, searchParams: URLSearchParams) {
   switch (type) {
     case "trending": {
       const categoryId = searchParams.get("categoryId") || "all";
+      const country = (searchParams.get("country") || "KR").toUpperCase();
+      
       let mockList = [
         {
-          id: "trend-all-1",
+          id: `trend-all-1-${country}`,
           snippet: {
-            title: "Suno AI v4 음악 작곡 레전드 신곡 모음",
-            channelTitle: "AI 뮤직 스테이션",
+            title: `[${country}] Suno AI v4 음악 작곡 레전드 신곡 모음`,
+            channelTitle: `AI 뮤직 스테이션 (${country})`,
             publishedAt: new Date().toISOString(),
             thumbnails: { medium: { url: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=320&q=80" } },
           },
@@ -767,10 +769,10 @@ function getMockData(type: string | null, searchParams: URLSearchParams) {
           statistics: { viewCount: "128450", likeCount: "8540", commentCount: "320" },
         },
         {
-          id: "trend-all-2",
+          id: `trend-all-2-${country}`,
           snippet: {
-            title: "유튜브 알고리즘을 지배하는 썸네일 제작 기법 특강",
-            channelTitle: "크리에이터 연구소",
+            title: `[${country}] 유튜브 알고리즘을 지배하는 썸네일 제작 기법 특강`,
+            channelTitle: `크리에이터 연구소 (${country})`,
             publishedAt: new Date().toISOString(),
             thumbnails: { medium: { url: "https://images.unsplash.com/photo-1626544827763-d516dce335e2?w=320&q=80" } },
           },
@@ -779,10 +781,10 @@ function getMockData(type: string | null, searchParams: URLSearchParams) {
           statistics: { viewCount: "87600", likeCount: "6400", commentCount: "250" },
         },
         {
-          id: "trend-all-3",
+          id: `trend-all-3-${country}`,
           snippet: {
-            title: "1인 지식창업자용 필수 AI 업무 자동화 툴 5가지",
-            channelTitle: "지식창업 노마드",
+            title: `[${country}] 1인 지식창업자용 필수 AI 업무 자동화 툴 5가지`,
+            channelTitle: `지식창업 노마드 (${country})`,
             publishedAt: new Date().toISOString(),
             thumbnails: { medium: { url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=320&q=80" } },
           },
@@ -793,39 +795,230 @@ function getMockData(type: string | null, searchParams: URLSearchParams) {
       ];
 
       if (categoryId === "10") {
-        mockList = [
-          {
-            id: "trend-music-1",
-            snippet: {
-              title: "AESPA (에스파) - 'Supernova' Official Music Video",
-              channelTitle: "SMTOWN",
-              publishedAt: new Date().toISOString(),
-              thumbnails: { medium: { url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=320&q=80" } },
+        if (country === "KR") {
+          mockList = [
+            {
+              id: "trend-music-kr-1",
+              snippet: {
+                title: "AESPA (에스파) - 'Supernova' Official Music Video",
+                channelTitle: "SMTOWN",
+                publishedAt: new Date().toISOString(),
+                thumbnails: { medium: { url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=320&q=80" } },
+              },
+              contentDetails: { duration: "PT3M15S" },
+              isRealShorts: false,
+              statistics: { viewCount: "4820000", likeCount: "354000", commentCount: "28400" },
             },
-            contentDetails: { duration: "PT3M15S" },
-            isRealShorts: false,
-            statistics: { viewCount: "4820000", likeCount: "354000", commentCount: "28400" },
-          },
-          {
-            id: "trend-music-2",
-            snippet: {
-              title: "NewJeans (뉴진스) - 'How Sweet' Official MV",
-              channelTitle: "HYBE LABELS",
-              publishedAt: new Date().toISOString(),
-              thumbnails: { medium: { url: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=320&q=80" } },
+            {
+              id: "trend-music-kr-2",
+              snippet: {
+                title: "NewJeans (뉴진스) - 'How Sweet' Official MV",
+                channelTitle: "HYBE LABELS",
+                publishedAt: new Date().toISOString(),
+                thumbnails: { medium: { url: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=320&q=80" } },
+              },
+              contentDetails: { duration: "PT3M32S" },
+              isRealShorts: false,
+              statistics: { viewCount: "3295000", likeCount: "294000", commentCount: "19200" },
             },
-            contentDetails: { duration: "PT3M32S" },
-            isRealShorts: false,
-            statistics: { viewCount: "3295000", likeCount: "294000", commentCount: "19200" },
-          },
-        ];
+          ];
+        } else if (country === "US") {
+          mockList = [
+            {
+              id: "trend-music-us-1",
+              snippet: {
+                title: "Taylor Swift - 'Fortnight' (feat. Post Malone) Official MV",
+                channelTitle: "Taylor Swift",
+                publishedAt: new Date().toISOString(),
+                thumbnails: { medium: { url: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=320&q=80" } },
+              },
+              contentDetails: { duration: "PT3M50S" },
+              isRealShorts: false,
+              statistics: { viewCount: "12400000", likeCount: "850000", commentCount: "54000" },
+            },
+            {
+              id: "trend-music-us-2",
+              snippet: {
+                title: "Billie Eilish - 'LUNCH' Official Music Video",
+                channelTitle: "BillieEilishVEVO",
+                publishedAt: new Date().toISOString(),
+                thumbnails: { medium: { url: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=320&q=80" } },
+              },
+              contentDetails: { duration: "PT3M00S" },
+              isRealShorts: false,
+              statistics: { viewCount: "8950000", likeCount: "680000", commentCount: "32000" },
+            },
+          ];
+        } else if (country === "JP") {
+          mockList = [
+            {
+              id: "trend-music-jp-1",
+              snippet: {
+                title: "YOASOBI - 'Idol' (アイドル) Official Music Video",
+                channelTitle: "Ayase / YOASOBI",
+                publishedAt: new Date().toISOString(),
+                thumbnails: { medium: { url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=320&q=80" } },
+              },
+              contentDetails: { duration: "PT3M33S" },
+              isRealShorts: false,
+              statistics: { viewCount: "9800000", likeCount: "740000", commentCount: "42000" },
+            },
+            {
+              id: "trend-music-jp-2",
+              snippet: {
+                title: "Kenshi Yonezu (米津玄師) - 'Chuchu Lovely' Live Performance",
+                channelTitle: "Kenshi Yonezu",
+                publishedAt: new Date().toISOString(),
+                thumbnails: { medium: { url: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=320&q=80" } },
+              },
+              contentDetails: { duration: "PT4M12S" },
+              isRealShorts: false,
+              statistics: { viewCount: "4320000", likeCount: "390000", commentCount: "21000" },
+            },
+          ];
+        } else if (country === "GB") {
+          mockList = [
+            {
+              id: "trend-music-gb-1",
+              snippet: {
+                title: "Coldplay - 'feelslikeimfallinginlove' Official Video",
+                channelTitle: "Coldplay",
+                publishedAt: new Date().toISOString(),
+                thumbnails: { medium: { url: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=320&q=80" } },
+              },
+              contentDetails: { duration: "PT4M02S" },
+              isRealShorts: false,
+              statistics: { viewCount: "5420000", likeCount: "410000", commentCount: "18500" },
+            },
+            {
+              id: "trend-music-gb-2",
+              snippet: {
+                title: "Adele - 'Easy On Me' Official MV",
+                channelTitle: "AdeleVEVO",
+                publishedAt: new Date().toISOString(),
+                thumbnails: { medium: { url: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=320&q=80" } },
+              },
+              contentDetails: { duration: "PT3M44S" },
+              isRealShorts: false,
+              statistics: { viewCount: "8720000", likeCount: "620000", commentCount: "29400" },
+            },
+          ];
+        } else if (country === "VN") {
+          mockList = [
+            {
+              id: "trend-music-vn-1",
+              snippet: {
+                title: "Sơn Tùng M-TP - 'Đừng Làm Trái Tim Anh Đau' | Official MV",
+                channelTitle: "Sơn Tùng M-TP Official",
+                publishedAt: new Date().toISOString(),
+                thumbnails: { medium: { url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=320&q=80" } },
+              },
+              contentDetails: { duration: "PT4M15S" },
+              isRealShorts: false,
+              statistics: { viewCount: "7820000", likeCount: "580000", commentCount: "34000" },
+            },
+            {
+              id: "trend-music-vn-2",
+              snippet: {
+                title: "tlinh - 'nếu lúc đó' (feat. 2pillz) | Official MV",
+                channelTitle: "tlinh Official",
+                publishedAt: new Date().toISOString(),
+                thumbnails: { medium: { url: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=320&q=80" } },
+              },
+              contentDetails: { duration: "PT3M50S" },
+              isRealShorts: false,
+              statistics: { viewCount: "3120000", likeCount: "210000", commentCount: "12800" },
+            },
+          ];
+        } else if (country === "IN") {
+          mockList = [
+            {
+              id: "trend-music-in-1",
+              snippet: {
+                title: "Tauba Tauba - Bad Newz | Vicky Kaushal | Karan Aujla | Official Video",
+                channelTitle: "Saregama Music",
+                publishedAt: new Date().toISOString(),
+                thumbnails: { medium: { url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=320&q=80" } },
+              },
+              contentDetails: { duration: "PT3M28S" },
+              isRealShorts: false,
+              statistics: { viewCount: "15800000", likeCount: "940000", commentCount: "48000" },
+            },
+            {
+              id: "trend-music-in-2",
+              snippet: {
+                title: "O Sajna - Badshah | Divya Khossla | Payal Dev | Official Music Video",
+                channelTitle: "T-Series",
+                publishedAt: new Date().toISOString(),
+                thumbnails: { medium: { url: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=320&q=80" } },
+              },
+              contentDetails: { duration: "PT3M12S" },
+              isRealShorts: false,
+              statistics: { viewCount: "11200000", likeCount: "680000", commentCount: "32000" },
+            },
+          ];
+        } else if (country === "BR") {
+          mockList = [
+            {
+              id: "trend-music-br-1",
+              snippet: {
+                title: "Luísa Sonza - 'SAGRADO' Official Music Video",
+                channelTitle: "Luísa Sonza",
+                publishedAt: new Date().toISOString(),
+                thumbnails: { medium: { url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=320&q=80" } },
+              },
+              contentDetails: { duration: "PT2M55S" },
+              isRealShorts: false,
+              statistics: { viewCount: "3400000", likeCount: "280000", commentCount: "14800" },
+            },
+            {
+              id: "trend-music-br-2",
+              snippet: {
+                title: "Anitta - 'Joga Pra Lua' (feat. Dennis & Pedro Sampaio) | MV",
+                channelTitle: "Anitta",
+                publishedAt: new Date().toISOString(),
+                thumbnails: { medium: { url: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=320&q=80" } },
+              },
+              contentDetails: { duration: "PT3M05S" },
+              isRealShorts: false,
+              statistics: { viewCount: "5800000", likeCount: "420000", commentCount: "22000" },
+            },
+          ];
+        } else {
+          mockList = [
+            {
+              id: "trend-music-global-1",
+              snippet: {
+                title: "The Weeknd - 'Dancing In the Flames' (Official MV)",
+                channelTitle: "The Weeknd",
+                publishedAt: new Date().toISOString(),
+                thumbnails: { medium: { url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=320&q=80" } },
+              },
+              contentDetails: { duration: "PT3M40S" },
+              isRealShorts: false,
+              statistics: { viewCount: "14800000", likeCount: "1100000", commentCount: "68000" },
+            },
+            {
+              id: "trend-music-global-2",
+              snippet: {
+                title: "Drake - 'Wah Gwan Delilah' (Official Audio)",
+                channelTitle: "OVO Sound",
+                publishedAt: new Date().toISOString(),
+                thumbnails: { medium: { url: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=320&q=80" } },
+              },
+              contentDetails: { duration: "PT3M05S" },
+              isRealShorts: false,
+              statistics: { viewCount: "4200000", likeCount: "280000", commentCount: "19800" },
+            },
+          ];
+        }
       } else if (categoryId === "20") {
         mockList = [
           {
-            id: "trend-game-1",
+            id: `trend-game-1-${country}`,
             snippet: {
-              title: "LCK 2026 Summer Finals - T1 vs GEN.G 5세트 하이라이트",
-              channelTitle: "LCK",
+              title: `[${country}] LCK Summer Finals - T1 vs GEN.G 5세트 하이라이트`,
+              channelTitle: `LCK (${country})`,
               publishedAt: new Date().toISOString(),
               thumbnails: { medium: { url: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=320&q=80" } },
             },
@@ -834,10 +1027,10 @@ function getMockData(type: string | null, searchParams: URLSearchParams) {
             statistics: { viewCount: "840000", likeCount: "12800", commentCount: "5400" },
           },
           {
-            id: "trend-game-2",
+            id: `trend-game-2-${country}`,
             snippet: {
-              title: "마인크래프트 하드코어 100일 생존 생중계 하이라이트",
-              channelTitle: "잠뜰 TV",
+              title: `[${country}] 마인크래프트 하드코어 100일 생존 하이라이트`,
+              channelTitle: `잠뜰 TV (${country})`,
               publishedAt: new Date().toISOString(),
               thumbnails: { medium: { url: "https://images.unsplash.com/photo-1605899435973-ca2d1a8861cf?w=320&q=80" } },
             },
@@ -849,22 +1042,22 @@ function getMockData(type: string | null, searchParams: URLSearchParams) {
       } else if (categoryId === "24") {
         mockList = [
           {
-            id: "trend-ent-1",
+            id: `trend-ent-1-${country}`,
             snippet: {
-              title: "[출장 십오야] 하이브(HYBE) 야유회 대망의 댄스 신고식 1부",
-              channelTitle: "채널 십오야",
+              title: `[${country}] 아는 형님 - 레전드 전학생들의 미친 춤 대결 모음집`,
+              channelTitle: `JTBC Entertainment (${country})`,
               publishedAt: new Date().toISOString(),
-              thumbnails: { medium: { url: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=320&q=80" } },
+              thumbnails: { medium: { url: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=320&q=80" } },
             },
-            contentDetails: { duration: "PT35M12S" },
+            contentDetails: { duration: "PT12M30S" },
             isRealShorts: false,
-            statistics: { viewCount: "1920000", likeCount: "68000", commentCount: "7400" },
+            statistics: { viewCount: "1250000", likeCount: "45000", commentCount: "2890" },
           },
           {
-            id: "trend-ent-2",
+            id: `trend-ent-2-${country}`,
             snippet: {
-              title: "런닝맨 - 소름 돋는 마피아 게임 심리전 역대급 명장면 요약",
-              channelTitle: "SBS Entertainment",
+              title: `[${country}] 런닝맨 - 소름 돋는 마피아 게임 심리전 역대급 명장면 요약`,
+              channelTitle: `SBS Entertainment (${country})`,
               publishedAt: new Date().toISOString(),
               thumbnails: { medium: { url: "https://images.unsplash.com/photo-1594909122845-11baa439b7bf?w=320&q=80" } },
             },
@@ -876,10 +1069,10 @@ function getMockData(type: string | null, searchParams: URLSearchParams) {
       } else if (categoryId === "1") {
         mockList = [
           {
-            id: "trend-film-1",
+            id: `trend-film-1-${country}`,
             snippet: {
-              title: "어벤져스 시크릿 워즈 첫 공식 예고편 분석 및 이스터에그 32선",
-              channelTitle: "영화 돋보기",
+              title: `[${country}] 어벤져스 시크릿 워즈 첫 공식 예고편 분석 및 이스터에그 32선`,
+              channelTitle: `영화 돋보기 (${country})`,
               publishedAt: new Date().toISOString(),
               thumbnails: { medium: { url: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=320&q=80" } },
             },
@@ -888,10 +1081,10 @@ function getMockData(type: string | null, searchParams: URLSearchParams) {
             statistics: { viewCount: "540000", likeCount: "19200", commentCount: "3100" },
           },
           {
-            id: "trend-film-2",
+            id: `trend-film-2-${country}`,
             snippet: {
-              title: "주토피아 2 공식 티저 예고편 - 나무늘보 플래시의 컴백",
-              channelTitle: "디즈니 코리아",
+              title: `[${country}] 주토피아 2 공식 티저 예고편 - 나무늘보 플래시의 컴백`,
+              channelTitle: `디즈니 코리아 (${country})`,
               publishedAt: new Date().toISOString(),
               thumbnails: { medium: { url: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=320&q=80" } },
             },
@@ -903,10 +1096,10 @@ function getMockData(type: string | null, searchParams: URLSearchParams) {
       } else if (categoryId === "28") {
         mockList = [
           {
-            id: "trend-tech-1",
+            id: `trend-tech-1-${country}`,
             snippet: {
-              title: "GPT-5 전격 공개! 현존 인공지능 종결자가 가져올 미래 생태계",
-              channelTitle: "테크 잇(Tech It)",
+              title: `[${country}] GPT-5 전격 공개! 현존 인공지능 종결자가 가져올 미래 생태계`,
+              channelTitle: `테크 잇 (${country})`,
               publishedAt: new Date().toISOString(),
               thumbnails: { medium: { url: "https://images.unsplash.com/photo-1677442136019-21780efad99a?w=320&q=80" } },
             },
@@ -915,10 +1108,10 @@ function getMockData(type: string | null, searchParams: URLSearchParams) {
             statistics: { viewCount: "680000", likeCount: "34000", commentCount: "8200" },
           },
           {
-            id: "trend-tech-2",
+            id: `trend-tech-2-${country}`,
             snippet: {
-              title: "갤럭시 S27 울트라 2달 실사용기 - 100배 줌 폴디드 렌즈의 한계",
-              channelTitle: "it섭",
+              title: `[${country}] 갤럭시 S27 울트라 2달 실사용기 - 100배 줌 폴디드 렌즈의 한계`,
+              channelTitle: `it섭 (${country})`,
               publishedAt: new Date().toISOString(),
               thumbnails: { medium: { url: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=320&q=80" } },
             },
@@ -930,10 +1123,10 @@ function getMockData(type: string | null, searchParams: URLSearchParams) {
       } else if (categoryId === "17") {
         mockList = [
           {
-            id: "trend-sport-1",
+            id: `trend-sport-1-${country}`,
             snippet: {
-              title: "손흥민 멀티골 작렬! 2026 프리미어리그 토트넘 vs 첼시 전술 하이라이트",
-              channelTitle: "SPOTV",
+              title: `[${country}] 손흥민 멀티골 작렬! 2026 프리미어리그 토트넘 vs 첼시 전술 하이라이트`,
+              channelTitle: `SPOTV (${country})`,
               publishedAt: new Date().toISOString(),
               thumbnails: { medium: { url: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=320&q=80" } },
             },
@@ -942,10 +1135,10 @@ function getMockData(type: string | null, searchParams: URLSearchParams) {
             statistics: { viewCount: "2500000", likeCount: "148000", commentCount: "15400" },
           },
           {
-            id: "trend-sport-2",
+            id: `trend-sport-2-${country}`,
             snippet: {
-              title: "집에서 15분 만에 지방 불태우는 전신 타바타 홈트레이닝 루틴",
-              channelTitle: "핏블리 FITVELY",
+              title: `[${country}] 집에서 15분 만에 지방 불태우는 전신 타바타 홈트레이닝 루틴`,
+              channelTitle: `핏블리 FITVELY (${country})`,
               publishedAt: new Date().toISOString(),
               thumbnails: { medium: { url: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=320&q=80" } },
             },
@@ -957,10 +1150,10 @@ function getMockData(type: string | null, searchParams: URLSearchParams) {
       } else if (categoryId === "25") {
         mockList = [
           {
-            id: "trend-news-1",
+            id: `trend-news-1-${country}`,
             snippet: {
-              title: "미국 연준, 기준 금리 기습 인하 발표 - 금융권 충격 및 아시아 증시 폭등 뉴스",
-              channelTitle: "MBC 뉴스",
+              title: `[${country}] 미국 연준, 기준 금리 기습 인하 발표 - 금융권 충격 및 아시아 증시 폭등 뉴스`,
+              channelTitle: `MBC 뉴스 (${country})`,
               publishedAt: new Date().toISOString(),
               thumbnails: { medium: { url: "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=320&q=80" } },
             },
@@ -969,10 +1162,10 @@ function getMockData(type: string | null, searchParams: URLSearchParams) {
             statistics: { viewCount: "720000", likeCount: "14200", commentCount: "3480" },
           },
           {
-            id: "trend-news-2",
+            id: `trend-news-2-${country}`,
             snippet: {
-              title: "수도권 GTX 노선 조기 개통 현장 긴급 점검 - 출퇴근 교통망 어떻게 바뀌나",
-              channelTitle: "KBS 뉴스",
+              title: `[${country}] 수도권 GTX 노선 조기 개통 현장 긴급 점검 - 출퇴근 교통망 어떻게 바뀌나`,
+              channelTitle: `KBS 뉴스 (${country})`,
               publishedAt: new Date().toISOString(),
               thumbnails: { medium: { url: "https://images.unsplash.com/photo-1541535650810-10d26f5c2ab3?w=320&q=80" } },
             },

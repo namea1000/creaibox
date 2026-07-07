@@ -7,12 +7,6 @@ import { User } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
 import {
   Menu,
-  Plus,
-  Search,
-  SlidersHorizontal,
-  Folder,
-  Bell,
-  Send,
   ChevronDown,
   User as UserIcon,
   Settings,
@@ -28,6 +22,15 @@ import {
   Bot,
   Sun,
   Moon,
+  Video,
+  PenLine,
+  TrendingUp,
+  ImageIcon,
+  Folder,
+  Globe,
+  Edit3,
+  Music,
+  LineChart,
 } from "lucide-react";
 
 interface StudioTopbarProps {
@@ -192,12 +195,12 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
     e.preventDefault();
 
     if (!prompt.trim()) {
-      router.push("/studio/writing/creaibox/create");
+      router.push("/studio/writing/creaibox/new-post");
       return;
     }
 
     router.push(
-      `/studio/writing/creaibox/create?prompt=${encodeURIComponent(prompt)}`
+      `/studio/writing/creaibox/new-post?prompt=${encodeURIComponent(prompt.trim())}`
     );
   };
 
@@ -227,7 +230,7 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
   const initials = getInitials();
 
   return (
-    <div className="sticky top-0 z-40 h-20 border-b border-zinc-200 dark:border-zinc-800/70 bg-white/95 dark:bg-[#06080d]/95 px-5 backdrop-blur-xl transition-colors duration-300 lg:px-8">
+    <div className="sticky top-0 lg:top-16 z-40 h-16 border-b border-zinc-200 dark:border-zinc-800/80 bg-white/95 dark:bg-[#06080d]/95 pl-4 pr-5 backdrop-blur-xl transition-colors duration-300 lg:pl-5 lg:pr-8">
       <div className="flex h-full items-center gap-3">
         <button
           onClick={() => setIsMobileOpen(true)}
@@ -236,15 +239,15 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
           <Menu size={22} />
         </button>
 
-        <div className="hidden min-w-[260px] items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/80 py-2 pl-2 pr-3 text-sm font-bold text-zinc-650 dark:text-zinc-300 xl:flex">
+        <div className="hidden items-center gap-1.5 py-1 pl-0 pr-2 text-sm font-bold text-zinc-650 dark:text-zinc-300 xl:flex">
           <Link
             href="/"
-            className="-ml-1 flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-white transition-colors duration-300"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 hover:text-zinc-800 dark:hover:text-white transition-colors duration-300"
           >
-            <Home size={16} />
+            <Home size={15} />
           </Link>
 
-          <ChevronRight size={14} className="text-zinc-400 dark:text-zinc-600" />
+          <ChevronRight size={13} className="text-zinc-400 dark:text-zinc-600" />
 
           <Link href="/studio" className="text-zinc-700 dark:text-zinc-300 hover:text-blue-500 transition-colors">
             Studio
@@ -252,7 +255,7 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
 
           {pathname !== "/studio" && (
             <>
-              <ChevronRight size={14} className="text-zinc-400 dark:text-zinc-600" />
+              <ChevronRight size={13} className="text-zinc-400 dark:text-zinc-600" />
               <span className="capitalize text-blue-500 dark:text-blue-400">
                 {pathname.replace("/studio/", "").split("/")[0]}
               </span>
@@ -260,209 +263,79 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
           )}
         </div>
 
-        <form onSubmit={handlePromptSubmit} className="relative min-w-0 flex-1">
-          <div className="flex h-12 items-center rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/90 shadow-2xl shadow-black/5 dark:shadow-black/20 transition focus-within:border-blue-500/50">
-            <button
-              type="button"
-              onClick={() => router.push("/studio/writing/creaibox/create")}
-              className="ml-3 flex h-9 w-9 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-white"
-            >
-              <Plus size={19} />
-            </button>
-
+        <form onSubmit={handlePromptSubmit} className="relative w-full max-w-[420px]">
+          <div className="flex h-10 items-center rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0c0d12]/45 transition focus-within:border-blue-500/50">
             <input
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="무엇을 만들어 볼까요? 예: 삼성전자 주가 전망 블로그 글 작성해줘"
-              className="h-full flex-1 bg-transparent px-3 text-sm font-medium text-zinc-800 dark:text-zinc-100 outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+              placeholder="예) 삼성전자 주가 전망 블로그 글 작성해줘"
+              className="h-full flex-1 bg-transparent pl-4 pr-3 text-sm font-semibold text-zinc-950 dark:text-zinc-50 outline-none placeholder:text-zinc-700 dark:placeholder:text-white"
             />
 
             <button
-              type="button"
-              className="mr-2 flex h-9 w-9 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-white"
-            >
-              <SlidersHorizontal size={18} />
-            </button>
-
-            <button
               type="submit"
-              className="mr-3 flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white transition hover:bg-blue-500"
+              className="mr-1 flex h-8 shrink-0 items-center justify-center rounded-lg bg-blue-600 px-3.5 text-[11px] font-black text-white transition hover:bg-blue-500 whitespace-nowrap shadow-md shadow-blue-500/20"
             >
-              <Send size={17} />
+              AI 자동 글쓰기
             </button>
           </div>
         </form>
 
-        <button className="hidden h-12 w-12 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 transition hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-white md:flex">
-          <Folder size={20} />
-        </button>
+        {/* 스튜디오 탑바 퀵 도크(Dock) 툴바 */}
+        <div className="hidden items-center justify-center px-4 xl:flex">
+          <div className="flex h-10 items-center gap-1 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0c0d12]/45 px-1.5">
+            {[
+              { icon: <PenLine size={14} />, label: "크리에이박스 글쓰기", href: "/studio/writing/creaibox/new-post", color: "text-blue-500 hover:bg-blue-500/10 hover:text-blue-300" },
+              { icon: <Edit3 size={14} />, label: "네이버 글쓰기", href: "/studio/writing/naver/create", color: "text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-300" },
+              { icon: <TrendingUp size={14} />, label: "유튜브 트렌드", href: "/youtube-trend", color: "text-red-500 hover:bg-red-500/10 hover:text-red-300" },
+              { icon: <LineChart size={14} />, label: "키워드 트렌드", href: "/keyword-trend", color: "text-amber-500 hover:bg-amber-500/10 hover:text-amber-300" },
+              { icon: <ImageIcon size={14} />, label: "디자인 스튜디오", href: "/design", color: "text-fuchsia-500 hover:bg-fuchsia-500/10 hover:text-fuchsia-300" },
+              { icon: <Music size={14} />, label: "뮤직 스튜디오", href: "/studio/music", color: "text-cyan-500 hover:bg-cyan-500/10 hover:text-cyan-300" },
+              { icon: <Video size={14} />, label: "비디오 스튜디오", href: "/video-editor", color: "text-pink-500 hover:bg-pink-500/10 hover:text-pink-300" },
+              { icon: <Folder size={14} />, label: "미디어 라이브러리", href: "/media-library", color: "text-teal-500 hover:bg-teal-500/10 hover:text-teal-300" },
+              { icon: <Globe size={14} />, label: "홈페이지 빌더", href: "/website-builder", color: "text-indigo-500 hover:bg-indigo-500/10 hover:text-indigo-300" },
+            ].map((item, index) => (
+              <Link
+                key={index}
+                href={item.href}
+                className={`group relative flex h-7.5 w-7.5 items-center justify-center rounded-lg transition-all duration-300 ${item.color}`}
+              >
+                {item.icon}
+                {/* 인터랙티브 한글 툴팁 */}
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-2 -translate-x-1/2 scale-90 rounded-md bg-zinc-900/95 dark:bg-zinc-800/95 px-2 py-1.5 text-[10.5px] font-black text-white opacity-0 shadow-lg transition-all duration-200 group-hover:scale-100 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/30">
+                  {item.label}
+                  {/* 말풍선 꼬리 */}
+                  <span className="absolute left-1/2 bottom-full -translate-x-1/2 -mb-1 border-4 border-transparent border-b-zinc-900/95 dark:border-b-zinc-800/95" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
 
-        <button className="hidden h-12 w-12 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 transition hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-white md:flex">
-          <Search size={20} />
-        </button>
 
-        <button className="hidden h-12 w-12 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 transition hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-white md:flex">
-          <Bell size={20} />
-        </button>
 
-        {/* 🌓 Theme Toggle Button */}
-        <button
-          onClick={toggleTheme}
-          className="hidden h-12 w-12 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 transition hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-white md:flex"
-          aria-label="Toggle theme"
-          title={theme === "dark" ? "밝은 테마로 변경" : "어두운 테마로 변경"}
-        >
-          {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
+
 
         <button
           onClick={() => window.dispatchEvent(new Event("open-ai-assistant"))}
-          className="hidden h-12 items-center gap-2 rounded-xl border border-cyan-200 dark:border-cyan-400/20 bg-cyan-50 dark:bg-cyan-500/10 px-4 text-cyan-600 dark:text-cyan-300 transition hover:bg-cyan-100 dark:hover:bg-cyan-500/15 hover:text-cyan-700 dark:hover:text-cyan-200 md:flex"
+          className="hidden h-10 items-center gap-2 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0c0d12]/45 px-3.5 text-zinc-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-white/30 hover:bg-zinc-100/50 dark:hover:bg-[#141622]/80 hover:text-slate-800 dark:hover:text-white transition-all duration-300 md:flex"
         >
-          <Bot size={20} />
-          <span className="text-sm font-black text-cyan-700 dark:text-zinc-100">
+          <Bot size={15} className="text-cyan-400 shrink-0" />
+          <span className="text-[13px] font-bold">
             AI Assistant
           </span>
         </button>
 
         <button
           onClick={() => window.dispatchEvent(new Event("open-cre-note"))}
-          className="hidden h-12 items-center gap-2 rounded-xl border border-purple-200 dark:border-white/10 bg-purple-600 dark:bg-purple-700 px-4 text-white dark:text-zinc-300 transition hover:bg-purple-700 dark:hover:bg-purple-600 md:flex"
+          className="hidden h-10 items-center gap-2 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0c0d12]/45 px-3.5 text-zinc-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-white/30 hover:bg-zinc-100/50 dark:hover:bg-[#141622]/80 hover:text-slate-800 dark:hover:text-white transition-all duration-300 md:flex"
         >
-          <StickyNote size={20} />
-          <span className="text-sm font-black text-white dark:text-zinc-100">Cre Note</span>
+          <StickyNote size={15} className="text-purple-400 shrink-0" />
+          <span className="text-[13px] font-bold">Cre Note</span>
         </button>
 
         <div className="flex shrink-0 justify-end md:min-w-[190px]">
-          {!isAuthReady ? (
-            <div className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900 px-1.5 py-1.5">
-              <div className="h-10 w-10 animate-pulse rounded-full bg-zinc-800" />
-              <div className="mr-1 hidden h-4 w-4 animate-pulse rounded bg-zinc-800 md:block" />
-            </div>
-          ) : user ? (
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setIsProfileOpen((prev) => !prev)}
-                className="flex h-12 w-12 items-center justify-center rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 transition hover:border-blue-500/40 dark:hover:border-blue-500/40 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 md:w-auto md:min-w-[190px] md:justify-start md:gap-3 md:px-3"
-              >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-xs font-black text-white md:h-10 md:w-10">
-                  {initials}
-                </div>
-
-                <div className="hidden min-w-0 flex-1 text-left md:block">
-                  <p className="truncate text-sm font-black leading-tight text-zinc-800 dark:text-zinc-100">
-                    {displayName}
-                  </p>
-                  <p className="mt-0.5 truncate text-xs font-bold leading-tight text-zinc-500 dark:text-zinc-500">
-                    {planName}
-                  </p>
-                </div>
-
-                <ChevronDown
-                  size={15}
-                  className={`hidden shrink-0 text-zinc-400 dark:text-zinc-400 transition md:block ${isProfileOpen ? "rotate-180" : ""
-                    }`}
-                />
-              </button>
-
-              {isProfileOpen && (
-                <div className="absolute right-0 mt-3 w-60 overflow-hidden rounded-[22px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181b] shadow-2xl z-50">
-                  <div className="border-b border-zinc-200 dark:border-zinc-800 px-5 py-5">
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-sm font-black text-white">
-                        {initials}
-                      </div>
-
-                      <div className="min-w-0">
-                        <p className="truncate text-lg font-black text-zinc-900 dark:text-zinc-100">
-                          {displayName}
-                        </p>
-                        <p className="mt-0.5 text-sm font-bold text-zinc-500 dark:text-zinc-400">
-                          {planName}
-                        </p>
-                      </div>
-                    </div>
-
-                    <p className="mt-4 truncate border-t border-zinc-200 dark:border-zinc-800 pt-4 text-xs font-bold text-zinc-500">
-                      {user.email}
-                    </p>
-                  </div>
-
-                  <Link
-                    href="/pricing"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-4 px-5 py-2.5 text-base font-black text-zinc-700 dark:text-zinc-300 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  >
-                    <Sparkles size={20} />
-                    요금제 업그레이드
-                  </Link>
-
-                  <Link
-                    href="/pricing"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-4 px-5 py-2.5 text-base font-black text-zinc-700 dark:text-zinc-300 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  >
-                    <CreditCard size={20} />
-                    요금제 관리
-                  </Link>
-
-                  <Link
-                    href="/mypage"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-4 px-5 py-2.5 text-base font-black text-zinc-700 dark:text-zinc-300 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  >
-                    <UserIcon size={20} />
-                    프로필
-                  </Link>
-
-                  <Link
-                    href="/apivault"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-4 px-5 py-2.5 text-base font-black text-zinc-700 dark:text-zinc-300 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  >
-                    <Settings size={20} />
-                    설정 / API 키 관리
-                  </Link>
-
-                  <Link
-                    href="/help"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-4 border-t border-zinc-200 dark:border-zinc-800 px-5 py-4 text-base font-black text-zinc-700 dark:text-zinc-300 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  >
-                    <HelpCircle size={20} />
-                    도움말
-                  </Link>
-
-                  <button
-                    onClick={handleLogout}
-                    disabled={isLoggingOut}
-                    className="flex w-full items-center gap-4 border-t border-zinc-200 dark:border-zinc-800 px-5 py-4 text-left text-base font-black text-red-500 transition hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50"
-                  >
-                    <LogOut size={20} />
-                    {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Link
-                href="/login"
-                className="inline-flex h-12 items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 px-4 text-sm font-black text-zinc-300 transition hover:border-blue-500/40 hover:text-white"
-              >
-                <LogIn size={17} />
-                로그인
-              </Link>
-
-              <Link
-                href="/signup"
-                className="inline-flex h-12 items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-4 text-sm font-black text-white transition hover:scale-[1.02]"
-              >
-                <UserPlus size={17} />
-                회원가입
-              </Link>
-            </div>
-          )}
+          {/* 로그인 세션은 메인 헤더에 있으므로 탑바에서는 제거함 */}
         </div>
       </div>
     </div>

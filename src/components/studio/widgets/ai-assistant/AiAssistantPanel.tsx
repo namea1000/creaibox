@@ -94,7 +94,13 @@ function normalizeConversation(item: any): AiAssistantConversation {
   };
 }
 
-export default function AiAssistantPanel() {
+export default function AiAssistantPanel({
+  initialPrompt,
+  clearInitialPrompt,
+}: {
+  initialPrompt?: string | null;
+  clearInitialPrompt?: () => void;
+}) {
   const [folders, setFolders] = useState<AiAssistantFolder[]>([]);
   const [conversations, setConversations] = useState<AiAssistantConversation[]>([]);
   const [activeFolderId, setActiveFolderId] = useState<string>("all");
@@ -208,9 +214,12 @@ export default function AiAssistantPanel() {
     }
   };
 
-  const createConversation = async () => {
-    const title = window.prompt("새 채팅창 이름을 입력하세요.", "새 AI 채팅");
-    if (!title?.trim()) return;
+  const createConversation = async (forcedTitle?: string) => {
+    let title = forcedTitle;
+    if (!title) {
+      title = window.prompt("새 채팅창 이름을 입력하세요.", "새 AI 채팅") || undefined;
+    }
+    if (!title?.trim()) return null;
 
     const targetFolderId =
       activeFolderId === "all" || activeFolderId === "pinned" || activeFolderId === "archived"
@@ -247,10 +256,41 @@ export default function AiAssistantPanel() {
       if (nextConversation.folder_id) {
         setActiveFolderId(nextConversation.folder_id);
       }
+      return nextConversation;
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "채팅창 생성에 실패했습니다.");
+      return null;
     }
   };
+
+  useEffect(() => {
+    if (!initialPrompt || isLoading) return;
+
+    const runInitialPrompt = async () => {
+      const promptText = initialPrompt;
+      if (clearInitialPrompt) clearInitialPrompt();
+
+      let targetConversationId = activeConversationId;
+
+      if (!targetConversationId) {
+        try {
+          const nextConv = await createConversation("새 AI 채팅");
+          if (nextConv) {
+            targetConversationId = nextConv.id;
+          }
+        } catch (err) {
+          console.error("Failed to create conversation for initial prompt:", err);
+          return;
+        }
+      }
+
+      if (targetConversationId) {
+        appendMessages(targetConversationId, promptText);
+      }
+    };
+
+    runInitialPrompt();
+  }, [initialPrompt, isLoading, activeConversationId]);
 
   const updateConversation = async (
     conversationId: string,

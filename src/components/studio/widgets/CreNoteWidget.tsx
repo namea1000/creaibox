@@ -110,6 +110,19 @@ export default function CreNoteWidget() {
     };
   }, [open, activeNote, title, content, userId, folderId]);
 
+  // Escape key event listener to close the Cre Note widget
+  useEffect(() => {
+    const handleEscapeClose = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && open) {
+        closeWidget();
+      }
+    };
+    window.addEventListener("keydown", handleEscapeClose);
+    return () => {
+      window.removeEventListener("keydown", handleEscapeClose);
+    };
+  }, [open]);
+
   useEffect(() => {
     function handleMouseMove(e: MouseEvent) {
       if (!resizingRef.current) return;
@@ -1030,7 +1043,7 @@ export default function CreNoteWidget() {
   return (
     <aside
       style={{ width: minimized ? 72 : panelWidth }}
-      className="fixed right-0 top-0 z-[9999] h-screen border-l border-white/10 bg-[#080d10] shadow-2xl"
+      className="fixed right-0 top-16 z-[80] h-[calc(100vh-64px)] border-l border-white/10 bg-[#080d10] shadow-2xl"
     >
       {isResizing && (
         <div className="fixed inset-0 z-[-1] cursor-col-resize select-none" />
@@ -1055,7 +1068,7 @@ export default function CreNoteWidget() {
       )}
 
       <div
-        className={`flex h-14 items-center border-b border-white/10 ${
+        className={`flex h-14 items-center border-b border-zinc-800 bg-[#071018]/95 ${
           minimized ? "justify-center px-0" : "justify-between px-4"
         }`}
       >
@@ -1099,31 +1112,6 @@ export default function CreNoteWidget() {
 
             <div className="flex items-center gap-2">
               <button
-                onClick={async () => {
-                  setMinimized(true);
-
-                  if (userId) {
-                    await supabase
-                      .from("studio_widgets")
-                      .update({
-                        position: {
-                          side: "right",
-                          width: panelWidth,
-                          minimized: true,
-                        },
-                        updated_at: new Date().toISOString(),
-                      })
-                      .eq("user_id", userId)
-                      .eq("widget_type", "cre_note");
-                  }
-                }}
-                className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-black text-zinc-300 transition hover:bg-white/10 hover:text-white"
-                title="Cre Note 축소"
-              >
-                축소
-              </button>
-
-              <button
                 onClick={closeWidget}
                 className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-black text-zinc-300 transition hover:bg-white/10 hover:text-white"
                 title="Cre Note 닫기"
@@ -1136,9 +1124,9 @@ export default function CreNoteWidget() {
       </div>
 
       {minimized ? (
-        <div className="h-[calc(100vh-56px)]" />
+        <div className="h-[calc(100vh-120px)]" />
       ) : (
-        <div className="grid h-[calc(100vh-56px)] grid-cols-[230px_1fr]">
+        <div className="grid h-[calc(100vh-120px)] grid-cols-[230px_1fr]">
           <section className="border-r border-white/10 bg-black/20">
             <div className="space-y-2 border-b border-white/10 p-3">
               <button

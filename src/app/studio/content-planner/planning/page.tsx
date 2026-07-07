@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect, useCallback, Suspense } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Clapperboard, Compass, FileText, Megaphone, Newspaper, X, Search } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -59,10 +60,55 @@ function ContentPlannerPlanningPageContent() {
   const supabase = useMemo(() => createClient(), []);
   const searchParams = useSearchParams();
 
+  const { data: campaignsData = [], isLoading: isCampaignsLoading, error: campaignsError } = useQuery<any[]>({
+    queryKey: ["contentPlannerCampaigns"],
+    queryFn: async () => {
+      const { data, error: fetchErr } = await fetchContentPlannerCampaigns();
+      if (fetchErr) throw fetchErr;
+      return data ?? [];
+    },
+    staleTime: 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [campaignPage, setCampaignPage] = useState(1);
+  const activeCamp = campaigns[campaignPage - 1];
+  const activeCampId = activeCamp?.id || "";
+
+  const { data: campDetail = { items: [], outputs: [] }, isLoading: isDetailLoading, error: detailError } = useQuery({
+    queryKey: ["contentPlannerCampaignDetail", activeCampId],
+    queryFn: async () => {
+      if (!activeCampId) return { items: [], outputs: [] };
+      const detail = await fetchContentPlannerCampaignDetail(activeCampId);
+      return {
+        items: detail.items ?? [],
+        outputs: detail.outputs ?? [],
+      };
+    },
+    enabled: Boolean(activeCampId),
+    staleTime: 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+  });
+
   const [currentItems, setCurrentItems] = useState<any[]>([]);
   const [currentOutputs, setCurrentOutputs] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (campaignsData) {
+      setCampaigns(campaignsData);
+    }
+  }, [campaignsData]);
+
+  useEffect(() => {
+    if (campDetail) {
+      setCurrentItems(campDetail.items ?? []);
+      setCurrentOutputs(campDetail.outputs ?? []);
+    }
+  }, [campDetail]);
+
   const [isCampaignPickerOpen, setIsCampaignPickerOpen] = useState(false);
   const [campaignSearchTerm, setCampaignSearchTerm] = useState("");
 
@@ -85,9 +131,16 @@ function ContentPlannerPlanningPageContent() {
     setIsCampaignPickerOpen(false);
   };
 
-  const [isLoading, setIsLoading] = useState(false);
+  const isLoading = isCampaignsLoading || isDetailLoading;
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const queryError = campaignsError || detailError;
+  useEffect(() => {
+    if (queryError) {
+      setErrorMessage(queryError instanceof Error ? queryError.message : String(queryError));
+    }
+  }, [queryError]);
 
   const [selectedGoals, setSelectedGoals] = useState<ContentGoal[]>([
     "SEO 검색 유입",
@@ -154,40 +207,6 @@ function ContentPlannerPlanningPageContent() {
     [selectedGoals]
   );
 
-  const fetchCampaigns = useCallback(async () => {
-    setIsLoading(true);
-    setErrorMessage("");
-    try {
-      const { data, error } = await fetchContentPlannerCampaigns();
-      if (error) throw error;
-      setCampaigns(data ?? []);
-    } catch (err: any) {
-      console.error(err);
-      setErrorMessage(err.message || "기획 캠페인을 불러오지 못했습니다.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const fetchItems = useCallback(async (campaignId: string) => {
-    setIsLoading(true);
-    setErrorMessage("");
-    try {
-      const detail = await fetchContentPlannerCampaignDetail(campaignId);
-      setCurrentItems(detail.items ?? []);
-      setCurrentOutputs(detail.outputs ?? []);
-    } catch (err: any) {
-      console.error(err);
-      setErrorMessage(err.message || "기획 아이템을 불러오지 못했습니다.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchCampaigns();
-  }, [fetchCampaigns]);
-
   useEffect(() => {
     if (campaigns.length > 0 && campaigns[campaignPage - 1]) {
       const activeCamp = campaigns[campaignPage - 1];
@@ -202,12 +221,8 @@ function ContentPlannerPlanningPageContent() {
       }
       setSubTopic(activeCamp.campaign_type || "");
       setMainKeyword(activeCamp.main_keyword || "");
-      void fetchItems(activeCamp.id);
-    } else {
-      setCurrentItems([]);
-      setCurrentOutputs([]);
     }
-  }, [campaigns, campaignPage, fetchItems]);
+  }, [campaigns, campaignPage]);
 
   const toggleGoal = (goal: ContentGoal) => {
     setSelectedGoals((prev) =>

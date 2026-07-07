@@ -15,6 +15,8 @@ import ThumbnailCtr from "./components/ThumbnailCtr";
 import AiTitleGenerator from "./components/AiTitleGenerator";
 import StrategyReport from "./components/StrategyReport";
 import VideoWorkflow from "./components/VideoWorkflow";
+import YoutubeTop300 from "./components/YoutubeTop300";
+import YoutubeVideoSearch from "./components/YoutubeVideoSearch";
 
 const sectionNames: Record<string, string> = {
   channel: "채널 상세 분석",
@@ -27,6 +29,8 @@ const sectionNames: Record<string, string> = {
   title: "AI 제목 생성기",
   report: "콘텐츠 전략 리포트",
   workflow: "유튜브 자동 제작 연결",
+  top300: "유튜브 랭킹 TOP 300",
+  search: "유튜브 영상 검색",
 };
 
 export default function YoutubeSectionPage() {
@@ -55,6 +59,10 @@ export default function YoutubeSectionPage() {
         return <StrategyReport />;
       case "workflow":
         return <VideoWorkflow />;
+      case "top300":
+        return <YoutubeTop300 />;
+      case "search":
+        return <YoutubeVideoSearch />;
       default:
         return (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-10 text-center text-zinc-400">
@@ -66,7 +74,7 @@ export default function YoutubeSectionPage() {
 
   return (
     <div className="min-h-full w-full bg-zinc-50 dark:bg-[#06080d] px-5 py-8 text-zinc-800 dark:text-zinc-100 lg:px-8 transition-colors duration-300">
-      <div className="mx-auto max-w-7xl">
+      <div className="w-full">
         {/* Dynamic Tool Component */}
         <div>{renderContent()}</div>
       </div>

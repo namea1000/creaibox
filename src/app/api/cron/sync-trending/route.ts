@@ -4,6 +4,8 @@ import { supabaseAdmin } from "@/lib/server/get-free-gemini-key";
 
 // Target 8 categories to collect for CreAibox Studio
 const TARGET_CATEGORIES = ["all", "10", "20", "24", "1", "28", "17", "25"];
+// Target 8 countries for global support
+const TARGET_COUNTRIES = ["KR", "US", "JP", "GB", "VN", "IN", "BR", "CA"];
 
 export async function GET(req: NextRequest) {
   // 1. Verify Vercel Cron authorization header
@@ -16,7 +18,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  console.log("Vercel Cron Triggered: Starting YouTube Trending Daily Archive Scraper.");
+  console.log("Vercel Cron Triggered: Starting YouTube Global Trending Daily Archive Scraper.");
 
   const date = getKstTodayDate();
 
@@ -40,32 +42,40 @@ export async function GET(req: NextRequest) {
     console.error("Failed to fetch cron status setting, continuing by default:", settingErr);
   }
 
-  const results: Array<{ categoryId: string; success: boolean; error?: string }> = [];
+  const results: Array<{ country: string; categoryId: string; success: boolean; error?: string }> = [];
 
-  // 2. Sequentially scrap each category to prevent connection threshold / Google API rate limits
-  for (const catId of TARGET_CATEGORIES) {
-    try {
-      console.log(`Cron Scraping start for category: ${catId} (Date: ${date})`);
-      await fetchAndCacheTrending(catId, date, "https://creaibox.com/");
-      results.push({ categoryId: catId, success: true });
-      console.log(`Cron Scraping success for category: ${catId}`);
-    } catch (err: any) {
-      const errMsg = err.message || String(err);
-      console.error(`Cron Scraping failed for category ${catId}:`, errMsg);
-      results.push({ categoryId: catId, success: false, error: errMsg });
+  // Helper utility to introduce artificial delays between fetch events to minimize quota limits
+  const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  // 2. Sequentially scrap each country & category to prevent threshold / Google API rate limits
+  for (const country of TARGET_COUNTRIES) {
+    for (const catId of TARGET_CATEGORIES) {
+      try {
+        console.log(`Cron Scraping start for country: ${country}, category: ${catId} (Date: ${date})`);
+        await fetchAndCacheTrending(catId, date, "https://creaibox.com/", country);
+        results.push({ country, categoryId: catId, success: true });
+        console.log(`Cron Scraping success for country: ${country}, category: ${catId}`);
+        // Tiny cooldown delay to respect rate limit caps
+        await delay(100);
+      } catch (err: any) {
+        const errMsg = err.message || String(err);
+        console.error(`Cron Scraping failed for country ${country}, category ${catId}:`, errMsg);
+        results.push({ country, categoryId: catId, success: false, error: errMsg });
+      }
     }
   }
 
   const successCount = results.filter((r) => r.success).length;
-  console.log(`Vercel Cron Finished: Scraped ${successCount}/${TARGET_CATEGORIES.length} categories successfully.`);
+  const totalCount = TARGET_COUNTRIES.length * TARGET_CATEGORIES.length;
+  console.log(`Vercel Cron Finished: Scraped ${successCount}/${totalCount} targets successfully.`);
 
   return NextResponse.json({
     message: "Cron sync executed successfully.",
     date,
     summary: {
-      total: TARGET_CATEGORIES.length,
+      total: totalCount,
       success: successCount,
-      failed: TARGET_CATEGORIES.length - successCount,
+      failed: totalCount - successCount,
     },
     details: results,
   });

@@ -19,6 +19,7 @@ import {
   Clock
 } from "lucide-react";
 import Image from "next/image";
+import { useQuery } from "@tanstack/react-query";
 import VideoAnalysisModal from "../[section]/components/VideoAnalysisModal";
 
 const PAGE_SIZE = 12;
@@ -79,9 +80,20 @@ function formatDisplayDate(value?: string | null) {
 }
 
 export default function YoutubeReportsPage() {
-  const [reports, setReports] = useState<ReportRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: reports = [], isLoading, error } = useQuery<ReportRow[]>({
+    queryKey: ["youtubeReports", "trending"],
+    queryFn: async () => {
+      const res = await fetch("/api/youtube/reports");
+      if (!res.ok) throw new Error("분석 리포트를 불러오는데 실패했습니다.");
+      const result = await res.json();
+      return result.data || [];
+    },
+    staleTime: 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -96,24 +108,6 @@ export default function YoutubeReportsPage() {
   // Modal states
   const [selectedVideo, setSelectedVideo] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  useEffect(() => {
-    async function loadReports() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const res = await fetch("/api/youtube/reports");
-        if (!res.ok) throw new Error("분석 리포트를 불러오는데 실패했습니다.");
-        const result = await res.json();
-        setReports(result.data || []);
-      } catch (err: any) {
-        setError(err.message || "오류가 발생했습니다.");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    void loadReports();
-  }, []);
 
   // Filter handlers
   const handleFilterChange = (key: keyof typeof filters, value: string) => {
@@ -495,7 +489,7 @@ export default function YoutubeReportsPage() {
       {error && (
         <div className="mt-6 flex items-center gap-3 border border-rose-400/30 bg-rose-500/10 px-5 py-4 text-xs text-rose-200 font-bold">
           <AlertCircle className="h-5 w-5 shrink-0" />
-          분석 리포트를 불러오지 못했습니다: {error}
+          분석 리포트를 불러오지 못했습니다: {error instanceof Error ? error.message : String(error)}
         </div>
       )}
 

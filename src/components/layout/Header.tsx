@@ -23,9 +23,32 @@ import {
   PenTool,
   Sun,
   Moon,
+  FileText,
+  Users,
+  BarChart3,
+  Database,
+  Search,
+  Bot,
+  Wand2,
+  Eye,
+  Palette,
+  Tags,
+  CircleHelp,
+  RefreshCw,
+  Eraser,
+  Maximize,
+  BadgeDollarSign,
+  Library,
+  Megaphone,
+  Gauge,
+  Layers,
+  PieChart,
+  LineChart,
+  Award,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { SiYoutube } from "react-icons/si";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -40,6 +63,10 @@ export default function Header() {
   const [planName, setPlanName] = useState("Free");
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
+  const [isYoutubeMenuOpen, setIsYoutubeMenuOpen] = useState(false);
+  const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
+  const [isDesignMenuOpen, setIsDesignMenuOpen] = useState(false);
+  const [isKeywordMenuOpen, setIsKeywordMenuOpen] = useState(false);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("studio_theme") as "light" | "dark" | null;
@@ -285,35 +312,42 @@ export default function Header() {
   const initials = getInitials();
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-[100] border-b border-slate-200/70 bg-white dark:bg-zinc-950 dark:border-zinc-800 transition-colors duration-300">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 lg:px-8">
-        <div className="flex w-[240px] shrink-0 items-center">
-          <Link href="/" className="flex h-12 items-center overflow-hidden">
+    <header className="fixed left-0 right-0 top-0 z-[100] border-b-2 border-slate-300/85 bg-white dark:bg-zinc-950 dark:border-zinc-800 transition-colors duration-300">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 lg:px-8">
+        <div className="flex w-[160px] shrink-0 items-center">
+          <Link href="/" className="flex h-10 items-center overflow-hidden transition hover:scale-[1.02] active:scale-[0.98]">
             <Image
               src="/logobg.webp"
               alt="CreAibox"
-              width={198}
-              height={32}
-              className="object-contain dark:invert"
+              width={140}
+              height={24}
+              className="object-contain dark:hidden"
+              priority
+            />
+            <Image
+              src="/logobg_dark.webp"
+              alt="CreAibox"
+              width={140}
+              height={24}
+              className="object-contain hidden dark:block"
               priority
             />
           </Link>
         </div>
 
-        <nav className="hidden flex-1 items-center justify-center gap-9 lg:flex">
+        <nav className="hidden flex-1 items-center justify-center gap-5 lg:flex">
           {/* AI 도구 Hover Dropdown Megamenu */}
           <div
             className="relative"
             onMouseEnter={() => setIsMegaMenuOpen(true)}
             onMouseLeave={() => setIsMegaMenuOpen(false)}
           >
-            <button className="flex items-center gap-1 text-sm font-extrabold text-slate-600 dark:text-zinc-300 transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3">
+            <button className="flex items-center gap-1 text-sm font-extrabold text-slate-600 dark:text-zinc-300 transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3 whitespace-nowrap">
               AI 도구
-              <ChevronDown size={14} className={`transition-transform duration-200 ${isMegaMenuOpen ? "rotate-180" : ""}`} />
             </button>
 
             {isMegaMenuOpen && (
-              <div className="absolute left-1/2 top-full z-50 -translate-x-1/2 mt-1 w-[920px] rounded-[28px] border border-slate-200/80 bg-white/95 p-8 shadow-2xl backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-900/95 transition-all duration-300">
+              <div className="absolute left-1/2 top-full z-50 -translate-x-1/2 -mt-1.5 w-[920px] rounded-[28px] border border-slate-200/80 bg-white/95 p-8 shadow-2xl backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-900/95 transition-all duration-300">
                 <div className="grid grid-cols-4 gap-6">
                   {/* Column 1: Video & Image */}
                   <div>
@@ -337,15 +371,7 @@ export default function Header() {
                           <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">설치 없는 브라우저 영상 작업</p>
                         </div>
                       </Link>
-                      <Link href="/design" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
-                        <div className="p-2 bg-violet-500/10 rounded-xl text-violet-500 border border-violet-500/10 shrink-0">
-                          <ImageIcon size={16} />
-                        </div>
-                        <div className="text-left">
-                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">디자인 (이미지 스튜디오)</p>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">썸네일 및 카드뉴스 제작</p>
-                        </div>
-                      </Link>
+
                       <Link href="/media-library" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
                         <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-500 border border-emerald-500/10 shrink-0">
                           <Folder size={16} />
@@ -408,19 +434,11 @@ export default function Header() {
                     </div>
                   </div>
 
-                  {/* Column 4: Sound & Analytics */}
+                  {/* Column 4: Sound & Utility */}
+                  {/* Column 4: Sound Hub */}
                   <div>
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">분석 & 사운드</h3>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">사운드 허브</h3>
                     <div className="flex flex-col gap-1">
-                      <Link href="/youtube-trend" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
-                        <div className="p-2 bg-red-500/10 rounded-xl text-red-500 border border-red-500/10 shrink-0">
-                          <TrendingUp size={16} />
-                        </div>
-                        <div className="text-left">
-                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">유튜브 트렌드 분석</p>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">인기 급상승 키워드 트렌드</p>
-                        </div>
-                      </Link>
                       <Link href="/lyric-generator" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
                         <div className="p-2 bg-pink-500/10 rounded-xl text-pink-500 border border-pink-500/10 shrink-0">
                           <Music size={16} />
@@ -430,13 +448,643 @@ export default function Header() {
                           <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">AI 사운드 및 가사 창작</p>
                         </div>
                       </Link>
-                      <Link href="/utility-tools" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
-                        <div className="p-2 bg-slate-500/10 rounded-xl text-slate-500 border border-slate-500/10 shrink-0">
-                          <Settings size={16} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 키워드 트렌드 Hover Dropdown Megamenu */}
+          <div
+            className="relative"
+            onMouseEnter={() => setIsKeywordMenuOpen(true)}
+            onMouseLeave={() => setIsKeywordMenuOpen(false)}
+          >
+            <Link href="/keyword-trend" className="flex items-center gap-1 text-sm font-extrabold text-slate-600 dark:text-zinc-300 transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3 whitespace-nowrap">
+              키워드 트렌드
+            </Link>
+
+            {isKeywordMenuOpen && (
+              <div className="absolute left-1/2 top-full z-50 -translate-x-1/4 -mt-1.5 w-[920px] rounded-[28px] border border-slate-200/80 bg-white/95 p-8 shadow-2xl backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-900/95 transition-all duration-300">
+                <div className="grid grid-cols-4 gap-6">
+                  {/* Column 1: 키워드 발굴 & 대량 조회 */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">키워드 발굴 & 대량 조회</h3>
+                    <div className="flex flex-col gap-1 text-left">
+                      <Link href="/keyword-trend/bulk" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500 border border-blue-500/10 shrink-0">
+                          <Database size={16} />
                         </div>
                         <div className="text-left">
-                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">스튜디오 Tools</p>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">텍스트 변환 및 글자 수 세기</p>
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">키워드 대량 조회</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">수천 개의 키워드 실시간 일괄 지표 분석</p>
+                        </div>
+                      </Link>
+                      <Link href="/keyword-trend/related" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500 border border-blue-500/10 shrink-0">
+                          <Layers size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">연관 키워드 발굴</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">연관성 높은 최적의 서브 키워드 추출</p>
+                        </div>
+                      </Link>
+                      <Link href="/keyword-trend/morphology" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500 border border-blue-500/10 shrink-0">
+                          <PieChart size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">형태소 분석기</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">한국어 형태소 형태 분석 및 분석 요약</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Column 2: 키워드 추적 & 경쟁 */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">키워드 추적 & 경쟁</h3>
+                    <div className="flex flex-col gap-1 text-left">
+                      <Link href="/keyword-trend/rank" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500 border border-blue-500/10 shrink-0">
+                          <LineChart size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">실시간 순위 추적</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">특정 키워드 기반 순위 흐름 실시간 모니터링</p>
+                        </div>
+                      </Link>
+                      <Link href="/keyword-trend/seo" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500 border border-blue-500/10 shrink-0">
+                          <Search size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">SEO 경쟁 분석</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">상위 노출을 위한 최적의 SEO 지표 매칭</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Column 3: 트렌드 & 분석 */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">트렌드 & 분석</h3>
+                    <div className="flex flex-col gap-1 text-left">
+                      <Link href="/keyword-trend/rising" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500 border border-blue-500/10 shrink-0">
+                          <TrendingUp size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">트렌드 급상승 분석</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">실시간 급상승 키워드 세부 정보 추적</p>
+                        </div>
+                      </Link>
+                      <Link href="/keyword-trend/youtube" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500 border border-blue-500/10 shrink-0">
+                          <SiYoutube size={14} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">유튜브 키워드 분석</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">유튜브 내 검색 유도 키워드 정합성 대조</p>
+                        </div>
+                      </Link>
+                      <Link href="/keyword-trend/dashboard" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500 border border-blue-500/10 shrink-0">
+                          <BarChart3 size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">트렌드 대시보드</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">전체 핵심 트렌드 현황 종합 지표 뷰어</p>
+                        </div>
+                      </Link>
+                      <Link href="/keyword-trend/trends" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500 border border-blue-500/10 shrink-0">
+                          <TrendingUp size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">트렌드 키워드</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">플래너 맞춤형 추천 트렌드 키워드 연계</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Column 4: AI 전략 & 연결 */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">AI 전략 & 연결</h3>
+                    <div className="flex flex-col gap-1 text-left">
+                      <Link href="/keyword-trend/strategy" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500 border border-blue-500/10 shrink-0">
+                          <Bot size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">AI 키워드 전략 생성</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">AI가 제안하는 키워드 연계 포지셔닝 플랜</p>
+                        </div>
+                      </Link>
+                      <Link href="/keyword-trend/workflow" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500 border border-blue-500/10 shrink-0">
+                          <Sparkles size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">자동 콘텐츠 연결</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">키워드 발굴 후 콘텐츠 제작 파이프라인 매핑</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 유튜브 트렌드 Hover Dropdown Megamenu */}
+          <div
+            className="relative"
+            onMouseEnter={() => setIsYoutubeMenuOpen(true)}
+            onMouseLeave={() => setIsYoutubeMenuOpen(false)}
+          >
+            <Link href="/youtube-trend" className="flex items-center gap-1 text-sm font-extrabold text-slate-600 dark:text-zinc-300 transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3 whitespace-nowrap">
+              유튜브 트렌드
+            </Link>
+
+            {isYoutubeMenuOpen && (
+              <div className="absolute left-1/2 top-full z-50 -translate-x-1/3 -mt-1.5 w-[920px] rounded-[28px] border border-slate-200/80 bg-white/95 p-8 shadow-2xl backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-900/95 transition-all duration-300">
+                <div className="grid grid-cols-4 gap-6">
+                  {/* Column 1: 트렌드 & 리포트 */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">트렌드 & 리포트</h3>
+                    <div className="flex flex-col gap-1 text-left">
+                      <Link href="/youtube-trend/top300" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-red-500/10 rounded-xl text-red-500 border border-red-500/10 shrink-0">
+                          <Award size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">유튜브 랭킹 TOP 300</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5 font-bold">인기 채널 랭킹 및 필터링</p>
+                        </div>
+                      </Link>
+                      <Link href="/youtube-trend/search" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-red-500/10 rounded-xl text-red-500 border border-red-500/10 shrink-0">
+                          <Search size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">유튜브 영상 검색</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5 font-bold">키워드 기반 입체 영상 검색</p>
+                        </div>
+                      </Link>
+                      <Link href="/youtube-trend/rising" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-red-500/10 rounded-xl text-red-500 border border-red-500/10 shrink-0">
+                          <TrendingUp size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">급상승 영상 트렌드</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">인기 급상승 키워드 트렌드</p>
+                        </div>
+                      </Link>
+                      <Link href="/youtube-trend/reports" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-red-500/10 rounded-xl text-red-500 border border-red-500/10 shrink-0">
+                          <FileText size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">급상승 영상분석 리포트</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">급상승 영상 AI 리포트</p>
+                        </div>
+                      </Link>
+                      <Link href="/youtube-trend/channel" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-red-500/10 rounded-xl text-red-500 border border-red-500/10 shrink-0">
+                          <Users size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">인기채널 영상분석</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">급상승 채널 동향 분석</p>
+                        </div>
+                      </Link>
+                      <Link href="/youtube-trend/channel-reports" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-red-500/10 rounded-xl text-red-500 border border-red-500/10 shrink-0">
+                          <FileText size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">인기채널 영상분석 리포트</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">인기 채널 AI 분석 보고서</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Column 2: 채널 비교 & 수익 */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">채널 비교 & 수익</h3>
+                    <div className="flex flex-col gap-1 text-left">
+                      <Link href="/youtube-trend/compare" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-red-500/10 rounded-xl text-red-500 border border-red-500/10 shrink-0">
+                          <BarChart3 size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">경쟁 채널 비교</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">채널 경쟁력 스코어 비교</p>
+                        </div>
+                      </Link>
+                      <Link href="/youtube-trend/cpm" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-red-500/10 rounded-xl text-red-500 border border-red-500/10 shrink-0">
+                          <Database size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">광고 단가 계산기</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">유튜브 예상 CPM 및 단가 산출</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Column 3: 분석 & 연구소 */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">분석 & 연구소</h3>
+                    <div className="flex flex-col gap-1 text-left">
+                      <Link href="/youtube-trend/seo" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-red-500/10 rounded-xl text-red-500 border border-red-500/10 shrink-0">
+                          <Search size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">유튜브 SEO 분석</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">태그 및 디스크립션 최적화</p>
+                        </div>
+                      </Link>
+                      <Link href="/youtube-trend/shorts" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-red-500/10 rounded-xl text-red-500 border border-red-500/10 shrink-0">
+                          <Video size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">쇼츠 바이럴 분석</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">쇼츠 알고리즘 도달 최적화</p>
+                        </div>
+                      </Link>
+                      <Link href="/youtube-trend/thumbnail" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-red-500/10 rounded-xl text-red-500 border border-red-500/10 shrink-0">
+                          <ImageIcon size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">썸네일 CTR 연구소</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">썸네일 클릭률 및 디자인 분석</p>
+                        </div>
+                      </Link>
+                      <Link href="/utility-tools/youtube-thumbnail" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-red-500/10 rounded-xl text-red-500 border border-red-500/10 shrink-0">
+                          <SiYoutube size={14} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">유튜브 썸네일 다운로더</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">고화질 썸네일 이미지 추출</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Column 4: 제작 & 자동화 */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">제작 & 자동화</h3>
+                    <div className="flex flex-col gap-1 text-left">
+                      <Link href="/youtube-trend/title" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-red-500/10 rounded-xl text-red-500 border border-red-500/10 shrink-0">
+                          <Sparkles size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">AI 제목 생성기</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">AI 추천 클릭유도 제목</p>
+                        </div>
+                      </Link>
+                      <Link href="/youtube-trend/report" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-red-500/10 rounded-xl text-red-500 border border-red-500/10 shrink-0">
+                          <FileText size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">콘텐츠 전략 리포트</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">시청자 반응 및 제작 전략 리포트</p>
+                        </div>
+                      </Link>
+                      <Link href="/youtube-trend/workflow" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-red-500/10 rounded-xl text-red-500 border border-red-500/10 shrink-0">
+                          <Bot size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">유튜브 자동 제작 연결</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">AI 비디오 자동 제작 매핑</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Tools Hover Dropdown Megamenu */}
+          <div
+            className="relative"
+            onMouseEnter={() => setIsToolsMenuOpen(true)}
+            onMouseLeave={() => setIsToolsMenuOpen(false)}
+          >
+            <Link href="/utility-tools" className="flex items-center gap-1 text-sm font-extrabold text-slate-600 dark:text-zinc-300 transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3 whitespace-nowrap">
+              Tools
+            </Link>
+
+            {isToolsMenuOpen && (
+              <div className="absolute left-1/2 top-full z-50 -translate-x-1/2 -mt-1.5 w-[920px] rounded-[28px] border border-slate-200/80 bg-white/95 p-8 shadow-2xl backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-900/95 transition-all duration-300">
+                <div className="grid grid-cols-4 gap-6">
+                  {/* Column 1: AI 분석 & 이미지 */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">AI 분석 & 이미지</h3>
+                    <div className="flex flex-col gap-1 text-left">
+                      <Link href="/utility-tools/bg-remover" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500 border border-amber-500/10 shrink-0">
+                          <Wand2 size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">AI 누끼 제거</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">이미지 배경 자동 제거 및 누끼 추출</p>
+                        </div>
+                      </Link>
+                      <Link href="/utility-tools/ocr" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500 border border-amber-500/10 shrink-0">
+                          <Eye size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">AI OCR 문자 추출</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">이미지에서 텍스트 감지 및 추출</p>
+                        </div>
+                      </Link>
+                      <Link href="/utility-tools/color-picker" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500 border border-amber-500/10 shrink-0">
+                          <Palette size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">색상 추출기</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">이미지 내 정확한 컬러 코드 검출</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Column 2: 문서 & 리포트 */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">문서 & 리포트</h3>
+                    <div className="flex flex-col gap-1 text-left">
+                      <Link href="/utility-tools/pdf-analyzer" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500 border border-amber-500/10 shrink-0">
+                          <FileText size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">PDF 문서 분석</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">PDF 문서 업로드 및 AI 분석 요약</p>
+                        </div>
+                      </Link>
+                      <Link href="/utility-tools/metadata" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500 border border-amber-500/10 shrink-0">
+                          <Database size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">메타데이터 추출기</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">다양한 파일의 숨은 속성 데이터 분석</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Column 3: 프롬프트 & 유틸리티 */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">프롬프트 & 유틸리티</h3>
+                    <div className="flex flex-col gap-1 text-left">
+                      <Link href="/utility-tools/prompt-studio" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500 border border-amber-500/10 shrink-0">
+                          <Sparkles size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">AI 프롬프트 스튜디오</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">고급 AI 지시문 템플릿 제작</p>
+                        </div>
+                      </Link>
+                      <Link href="/utility-tools/hashtag" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500 border border-amber-500/10 shrink-0">
+                          <Tags size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">해시태그 생성기</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">블로그 및 SNS 해시태그 자동 추출</p>
+                        </div>
+                      </Link>
+                      <Link href="/utility-tools/qr" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500 border border-amber-500/10 shrink-0">
+                          <CircleHelp size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">QR 생성기</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">웹사이트/텍스트용 QR 코드 생성</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Column 4: 포맷 & 개발 */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">포맷 & 개발</h3>
+                    <div className="flex flex-col gap-1 text-left">
+                      <Link href="/utility-tools/converter" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500 border border-amber-500/10 shrink-0">
+                          <RefreshCw size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">포맷 변환기</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">이미지, 문서 등의 확장자 일괄 변환</p>
+                        </div>
+                      </Link>
+                      <Link href="/utility-tools/code-beautifier" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500 border border-amber-500/10 shrink-0">
+                          <FileText size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">코드 뷰티파이어</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">소스코드 정렬 및 난독화 해제</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 디자인 Hover Dropdown Megamenu */}
+          <div
+            className="relative"
+            onMouseEnter={() => setIsDesignMenuOpen(true)}
+            onMouseLeave={() => setIsDesignMenuOpen(false)}
+          >
+            <Link href="/design" className="flex items-center gap-1 text-sm font-extrabold text-slate-600 dark:text-zinc-300 transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3 whitespace-nowrap">
+              디자인
+            </Link>
+
+            {isDesignMenuOpen && (
+              <div className="absolute left-1/2 top-full z-50 -translate-x-1/2 -mt-1.5 w-[920px] rounded-[28px] border border-slate-200/80 bg-white/95 p-8 shadow-2xl backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-900/95 transition-all duration-300">
+                <div className="grid grid-cols-4 gap-6">
+                  {/* Column 1: 디자인 & 기획 */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">디자인 & 기획</h3>
+                    <div className="flex flex-col gap-1 text-left">
+                      <Link href="/design/workspace" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-purple-500/10 rounded-xl text-purple-500 border border-purple-500/10 shrink-0">
+                          <Wand2 size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">디자인 편집기</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">디자인 편집 및 레이아웃 워크스페이스</p>
+                        </div>
+                      </Link>
+                      <Link href="/design/magic-design" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-purple-500/10 rounded-xl text-purple-500 border border-purple-500/10 shrink-0">
+                          <Sparkles size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">AI 매직 디자인</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">AI 자동 이미지 스타일 및 시안 디자인</p>
+                        </div>
+                      </Link>
+                      <Link href="/design/brand-kit" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-purple-500/10 rounded-xl text-purple-500 border border-purple-500/10 shrink-0">
+                          <Palette size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">브랜드 키트</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">로고, 색상 등 브랜드 자산 사전 설정</p>
+                        </div>
+                      </Link>
+                      <Link href="/design/editor" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-purple-500/10 rounded-xl text-purple-500 border border-purple-500/10 shrink-0">
+                          <Wand2 size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">간편 이미지 편집기</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">빠르고 직관적인 필터 및 자르기 도구</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Column 2: 콘텐츠 & 배너 */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">콘텐츠 & 배너</h3>
+                    <div className="flex flex-col gap-1 text-left">
+                      <Link href="/design/thumbnail" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-purple-500/10 rounded-xl text-purple-500 border border-purple-500/10 shrink-0">
+                          <ImageIcon size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">썸네일 메이커</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">유튜브 및 포털 고성능 썸네일 기획</p>
+                        </div>
+                      </Link>
+                      <Link href="/design/poster" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-purple-500/10 rounded-xl text-purple-500 border border-purple-500/10 shrink-0">
+                          <FileText size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">포스터 & 전단지</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">오프라인 및 온라인 포스터 템플릿</p>
+                        </div>
+                      </Link>
+                      <Link href="/design/business-card" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-purple-500/10 rounded-xl text-purple-500 border border-purple-500/10 shrink-0">
+                          <BadgeDollarSign size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">디지털 명함</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">세련된 모바일 명함 신속 제작</p>
+                        </div>
+                      </Link>
+                      <Link href="/design/banner" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-purple-500/10 rounded-xl text-purple-500 border border-purple-500/10 shrink-0">
+                          <Megaphone size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">현수막 & 배너</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">대형 출력물 및 광고 배너 그리드</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Column 3: 이미지 변환 & 처리 */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">이미지 변환 & 처리</h3>
+                    <div className="flex flex-col gap-1 text-left">
+                      <Link href="/design/upscaler" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-purple-500/10 rounded-xl text-purple-500 border border-purple-500/10 shrink-0">
+                          <Sparkles size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">이미지 AI 업스케일러</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">저화질 이미지 고대비 해상도 변환</p>
+                        </div>
+                      </Link>
+                      <Link href="/design/converter" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-purple-500/10 rounded-xl text-purple-500 border border-purple-500/10 shrink-0">
+                          <RefreshCw size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">이미지 확장자 변환기</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">PNG, JPG, WEBP 일괄 포맷 교체</p>
+                        </div>
+                      </Link>
+                      <Link href="/design/bg-remover" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-purple-500/10 rounded-xl text-purple-500 border border-purple-500/10 shrink-0">
+                          <Eraser size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">이미지 배경 제거기</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">AI 자동 누끼 제거 및 투명화</p>
+                        </div>
+                      </Link>
+                      <Link href="/design/resizer" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-purple-500/10 rounded-xl text-purple-500 border border-purple-500/10 shrink-0">
+                          <Maximize size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">이미지 크기 조절기</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">정밀 해상도 및 픽셀 규격 재조정</p>
+                        </div>
+                      </Link>
+                      <Link href="/design/webp-compressor" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-purple-500/10 rounded-xl text-purple-500 border border-purple-500/10 shrink-0">
+                          <Gauge size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">WEBP 일괄 압축기</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">용량 절감을 위한 대량 초압축 프로세스</p>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Column 4: 템플릿 & 프롬프트 */}
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">템플릿 & 프롬프트</h3>
+                    <div className="flex flex-col gap-1 text-left">
+                      <Link href="/design/templates" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-purple-500/10 rounded-xl text-purple-500 border border-purple-500/10 shrink-0">
+                          <Library size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">템플릿 라이브러리</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">완성형 추천 디자인 샘플 보관소</p>
+                        </div>
+                      </Link>
+                      <Link href="/design/prompts" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                        <div className="p-2 bg-purple-500/10 rounded-xl text-purple-500 border border-purple-500/10 shrink-0">
+                          <Library size={16} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">프롬프트 라이브러리</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">미드저니 및 스테이블디퓨전 명령어 가이드</p>
                         </div>
                       </Link>
                     </div>
@@ -450,7 +1098,7 @@ export default function Header() {
             <Link
               key={item.href}
               href={item.href}
-              className="text-sm font-extrabold text-slate-600 dark:text-zinc-300 transition-all hover:text-violet-600 dark:hover:text-violet-400"
+              className="text-sm font-extrabold text-slate-600 dark:text-zinc-300 transition-all hover:text-violet-600 dark:hover:text-violet-400 whitespace-nowrap"
             >
               {item.label}
             </Link>
@@ -461,44 +1109,36 @@ export default function Header() {
           {/* Theme Toggle Button */}
           <button
             onClick={toggleTheme}
-            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 shrink-0"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 shrink-0"
             title={theme === "dark" ? "라이트 모드로 변경" : "다크 모드로 변경"}
           >
-            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
           </button>
 
-          <Link
-            href="/studio"
-            className="inline-flex h-14 items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 text-sm font-black text-white shadow-lg shadow-violet-500/20 transition hover:scale-[1.02] whitespace-nowrap"
-          >
-            <Sparkles size={16} />
-            AI 스튜디오 시작하기
-          </Link>
-
           {!isAuthReady ? (
-            // Placeholder skeleton with exact matching size (180px) to prevent layout shift
-            <div className="h-14 w-[180px] rounded-2xl border border-slate-200/50 bg-slate-50/50 dark:border-zinc-800 dark:bg-zinc-900/50 animate-pulse shrink-0" />
+            // Placeholder skeleton with exact matching size (150px) to prevent layout shift
+            <div className="h-10 w-[150px] rounded-xl border border-slate-200/50 bg-slate-50/50 dark:border-zinc-800 dark:bg-zinc-900/50 animate-pulse shrink-0" />
           ) : user ? (
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsProfileOpen((prev) => !prev)}
-                className="flex h-14 w-[180px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 shadow-sm transition hover:border-violet-200 hover:bg-violet-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800 shrink-0"
+                className="flex h-10 w-[150px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 shadow-sm transition hover:border-violet-200 hover:bg-violet-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800 shrink-0"
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-xs font-black text-white">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-[10px] font-black text-white">
                   {initials}
                 </div>
 
                 <div className="min-w-0 flex-1 text-left">
-                  <p className="truncate text-sm font-black leading-tight text-slate-800">
+                  <p className="truncate text-xs font-black leading-tight text-slate-800 dark:text-zinc-200">
                     {displayName}
                   </p>
-                  <p className="mt-0.5 truncate text-xs font-bold leading-tight text-slate-400">
+                  <p className="mt-0.5 truncate text-[9px] font-bold leading-tight text-slate-450 dark:text-zinc-400">
                     {planName}
                   </p>
                 </div>
 
                 <ChevronDown
-                  size={15}
+                  size={13}
                   className={`shrink-0 text-slate-400 transition-transform ${isProfileOpen ? "rotate-180" : ""
                     }`}
                 />

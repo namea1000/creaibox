@@ -26,6 +26,7 @@ import Aside from "@/components/layout/Aside";
 import StudioTopbar from "@/components/studio/StudioTopbar";
 import CreNoteWidget from "@/components/studio/widgets/CreNoteWidget";
 import AiAssistantWidget from "@/components/studio/widgets/AiAssistantWidget";
+import Header from "@/components/layout/Header";
 import {
   AI_API_VAULT_SERVICES,
   AI_PROVIDER_LABELS,
@@ -248,14 +249,16 @@ export default function APIVaultPage() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#06080d] text-zinc-100">
-      <Sidebar
-        activeMenu="APIVault"
-        isCollapsed={isCollapsed}
-        setIsCollapsed={setIsCollapsed}
-        isMobileOpen={isMobileOpen}
-        setIsMobileOpen={setIsMobileOpen}
-      />
+    <div className="flex flex-col h-screen overflow-hidden bg-[#06080d] text-zinc-100">
+      <Header />
+      <div className="flex flex-1 min-h-0 pt-16">
+        <Sidebar
+          activeMenu="APIVault"
+          isCollapsed={isCollapsed}
+          setIsCollapsed={setIsCollapsed}
+          isMobileOpen={isMobileOpen}
+          setIsMobileOpen={setIsMobileOpen}
+        />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <StudioTopbar setIsMobileOpen={setIsMobileOpen} />
@@ -414,6 +417,7 @@ export default function APIVaultPage() {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }
