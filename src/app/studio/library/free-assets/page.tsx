@@ -120,7 +120,7 @@ export default function FreeAssetsLibraryPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [likedAssetIds, setLikedAssetIds] = useState<Set<string>>(new Set());
   const [bookmarkedAssetIds, setBookmarkedAssetIds] = useState<Set<string>>(new Set());
-  const [activeFilterTab, setActiveFilterTab] = useState<"ratio" | "generation" | "style" | "postType" | null>(null);
+  const [activeFilterTab, setActiveFilterTab] = useState<"ratio" | "generation" | "style" | "postType" | "category" | null>(null);
   const [selectedMediaType, setSelectedMediaType] = useState<string>("all");
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>("all");
   const [selectedGenerationType, setSelectedGenerationType] = useState<string>("all");
@@ -129,7 +129,7 @@ export default function FreeAssetsLibraryPage() {
   const [selectedPostType, setSelectedPostType] = useState<string>("all");
   
   // Sort states & references
-  const [activeSortTab, setActiveSortTab] = useState<"for_you" | "random" | "hot" | "top_day" | "top_week" | "top_month" | "likes">("random");
+  const [activeSortTab, setActiveSortTab] = useState<"for_you" | "recent" | "random" | "hot" | "top_day" | "top_week" | "top_month" | "likes">("recent");
   const [isTopDropdownOpen, setIsTopDropdownOpen] = useState(false);
   const sortDropdownRef = useRef<HTMLDivElement | null>(null);
   const filterDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -1319,11 +1319,39 @@ export default function FreeAssetsLibraryPage() {
         asset.tags.some(t => t.toLowerCase().includes(kw.toLowerCase()))
       );
     })();
-    return matchesQuery && matchesAspectRatio && matchesGenerationType && matchesStyle && matchesPostType;
+    const matchesThemeCategory = (() => {
+      if (selectedThemeCategory === "all") return true;
+      
+      const themeCategoryKeywordsMap: Record<string, string[]> = {
+        art: ["art", "예술", "창작", "추상", "graphic", "illustration", "design"],
+        tech: ["tech", "기술", "디지털", "hologram", "cyber", "digital"],
+        food: ["food", "미식", "푸드", "음식", "요리", "burger", "beer", "fries"],
+        nature: ["nature", "자연", "풍경", "forest", "mountain", "river", "train"],
+        animal: ["animal", "동물", "야생", "lion", "cat", "dog"],
+        texture: ["texture", "텍스처", "background", "배경"],
+        people: ["people", "인물", "라이프", "person", "man", "woman"],
+        architecture: ["architecture", "건축", "랜드마크", "building"],
+        fashion: ["fashion", "패션", "뷰티", "beauty"],
+        business: ["business", "비즈니스", "금융", "finance"],
+        education: ["education", "교육", "지식", "book", "school"],
+        health: ["health", "의료", "헬스케어", "medical", "hospital"]
+      };
+
+      const keywords = themeCategoryKeywordsMap[selectedThemeCategory] || [];
+      return keywords.some(kw => 
+        asset.title.toLowerCase().includes(kw.toLowerCase()) ||
+        asset.tags.some(t => t.toLowerCase().includes(kw.toLowerCase()))
+      );
+    })();
+    return matchesQuery && matchesAspectRatio && matchesGenerationType && matchesStyle && matchesPostType && matchesThemeCategory;
   });
 
   const sortedAssets = useMemo(() => {
     const list = [...filteredAssets];
+
+    if (activeSortTab === "recent") {
+      return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
 
     if (activeSortTab === "random") {
       // Deterministic hash based shuffle so it doesn't reshuffle on every state change render,
@@ -1718,6 +1746,92 @@ export default function FreeAssetsLibraryPage() {
                   </div>
                 </div>
 
+                {/* 카테고리 필터 버튼 */}
+                <div className="relative">
+                  <button
+                    onClick={() => setActiveFilterTab(activeFilterTab === "category" ? null : "category")}
+                    className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
+                      activeFilterTab === "category"
+                        ? "border-blue-500 bg-blue-600/10 text-blue-400"
+                        : selectedThemeCategory !== "all"
+                          ? "border-blue-500 bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                          : "border-zinc-800 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                    }`}
+                  >
+                    <SlidersHorizontal size={12} />
+                    <span>
+                      카테고리 필터
+                      {selectedThemeCategory !== "all" && (
+                        <span className="ml-1 text-[11px] font-black opacity-90">
+                          ({
+                            selectedThemeCategory === "art" ? "추상/그래픽" :
+                            selectedThemeCategory === "tech" ? "기술/디지털" :
+                            selectedThemeCategory === "food" ? "미식/푸드" :
+                            selectedThemeCategory === "nature" ? "자연/풍경" :
+                            selectedThemeCategory === "animal" ? "동물/야생" :
+                            selectedThemeCategory === "texture" ? "배경/텍스처" :
+                            selectedThemeCategory === "people" ? "인물/라이프" :
+                            selectedThemeCategory === "architecture" ? "건축" :
+                            selectedThemeCategory === "fashion" ? "패션/뷰티" :
+                            selectedThemeCategory === "business" ? "비즈니스" :
+                            selectedThemeCategory === "education" ? "교육" :
+                            selectedThemeCategory === "health" ? "의료" : selectedThemeCategory
+                          })
+                        </span>
+                      )}
+                    </span>
+                    <ChevronDown
+                      size={12}
+                      className={`transition-transform duration-200 ${
+                        activeFilterTab === "category" ? "rotate-180 text-blue-400" : "text-zinc-500"
+                      }`}
+                    />
+                  </button>
+
+                  {/* 카테고리 아코디언 드롭다운 */}
+                  <div
+                    className={`absolute left-0 mt-2 z-50 rounded-2xl border border-zinc-800 bg-[#090b11]/95 backdrop-blur-md p-3 shadow-2xl w-80 max-w-[90vw] flex flex-col gap-2 overflow-hidden transition-all duration-200 ease-in-out origin-top-left ${
+                      activeFilterTab === "category"
+                        ? "max-h-[300px] opacity-100 scale-100"
+                        : "max-h-0 opacity-0 scale-95 pointer-events-none border-transparent p-0"
+                    }`}
+                  >
+                    <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1 select-none">카테고리 선택</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { id: "all", label: "전체 카테고리" },
+                        { id: "art", label: "추상 & 그래픽" },
+                        { id: "tech", label: "기술 & 디지털" },
+                        { id: "food", label: "미식 & 푸드" },
+                        { id: "nature", label: "자연 & 풍경" },
+                        { id: "animal", label: "동물 & 야생" },
+                        { id: "texture", label: "배경 & 텍스처" },
+                        { id: "people", label: "인물 & 라이프" },
+                        { id: "architecture", label: "건축 & 랜드마크" },
+                        { id: "fashion", label: "패션 & 뷰티" },
+                        { id: "business", label: "비즈니스 & 금융" },
+                        { id: "education", label: "교육 & 지식" },
+                        { id: "health", label: "의료 & 헬스케어" },
+                      ].map((cat) => (
+                        <button
+                          key={cat.id}
+                          onClick={() => {
+                            setSelectedThemeCategory(cat.id);
+                            setActiveFilterTab(null);
+                          }}
+                          className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition cursor-pointer ${
+                            selectedThemeCategory === cat.id
+                              ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                              : "border border-zinc-900 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                          }`}
+                        >
+                          {cat.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
                 {/* 포스트 타입 (용도) 필터 버튼 */}
                 <div className="relative">
                   <button
@@ -1850,6 +1964,7 @@ export default function FreeAssetsLibraryPage() {
           <div className="relative flex flex-wrap items-center gap-5 text-xs sm:text-sm select-none" ref={sortDropdownRef}>
             {[
               { id: "for_you", label: "For You", emoji: "✨" },
+              { id: "recent", label: "Recent", emoji: "⏱️" },
               { id: "random", label: "Random", emoji: "🎲" },
               { id: "hot", label: "Hot", emoji: "🔥" }
             ].map((t) => (
@@ -2046,7 +2161,9 @@ export default function FreeAssetsLibraryPage() {
                           src={(assetUrl.includes("googleusercontent.com") || assetUrl.includes("drive.google.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(assetUrl)}` : assetUrl}
                           alt={asset.title}
                           loading="lazy"
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${
+                            (asset.themeCategory === "people" || asset.title.includes("머스크")) ? "object-top" : ""
+                          }`}
                         />
                       )}
 

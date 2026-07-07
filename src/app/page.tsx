@@ -317,11 +317,41 @@ export default function MainLandingPage() {
         </div>
 
         {/* Hero Section - Dark Block */}
-        <section className="relative overflow-hidden bg-slate-950 dark:bg-black py-20 text-white border-b border-slate-900 dark:border-zinc-950">
-          <div className="absolute left-1/2 top-10 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-violet-500/10 dark:bg-violet-900/5 blur-3xl" />
-          <div className="absolute right-0 top-32 h-[420px] w-[420px] rounded-full bg-blue-500/10 dark:bg-blue-900/5 blur-3xl" />
+        <section className="relative overflow-hidden bg-[#06080d] py-20 text-white border-b border-zinc-900/60">
+          {/* 1. Perspective 3D Grid Floor & Grid overlay (원근 3D 격자 바닥) */}
+          <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#1f293708_1px,transparent_1px),linear-gradient(to_bottom,#1f293708_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-50" />
+          <div 
+            className="absolute inset-x-0 -bottom-40 h-[400px] z-0 opacity-20 bg-[linear-gradient(to_right,#3b82f615_1px,transparent_1px),linear-gradient(to_bottom,#3b82f615_1px,transparent_1px)] bg-[size:30px_30px] [mask-image:linear-gradient(to_bottom,black,transparent)]"
+            style={{
+              transform: "perspective(500px) rotateX(70deg) translateZ(0)",
+              transformOrigin: "center top",
+            }}
+          />
 
-          <div className="relative mx-auto max-w-7xl px-6 text-center flex flex-col items-center">
+          {/* 2. Concentric Tech Circles (테크 동심원 그래픽) */}
+          <div className="absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-[0.22]">
+            <div className="h-[300px] w-[300px] animate-[spin_80s_linear_infinite] rounded-full border border-dashed border-violet-500/30" />
+            <div className="absolute left-1/2 top-1/2 h-[450px] w-[450px] -translate-x-1/2 -translate-y-1/2 animate-[spin_120s_linear_infinite_reverse] rounded-full border border-dashed border-blue-500/20" />
+            <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 animate-[spin_180s_linear_infinite] rounded-full border border-zinc-700/10" />
+          </div>
+
+          {/* 3. Dynamic Moving Aurora Orbs (동적 오로라 오알브) */}
+          <div className="absolute left-1/4 top-1/4 h-[350px] w-[350px] rounded-full bg-violet-600/12 blur-[100px] animate-[pulse_10s_ease-in-out_infinite]" />
+          <div className="absolute right-1/4 bottom-1/4 h-[400px] w-[400px] rounded-full bg-emerald-500/8 blur-[120px] animate-[pulse_12s_ease-in-out_infinite_1s]" />
+          <div className="absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-blue-600/10 blur-[130px] animate-[pulse_15s_ease-in-out_infinite_2s]" />
+
+          {/* 4. AI Studio Concept Blueprint Backdrop Image (은은한 백그라운드 디자인 패턴) */}
+          <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.15] mix-blend-screen select-none [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_40%,transparent_100%)]">
+            <Image
+              src="/images/hero_tech_bg_v2.png"
+              alt="AI Studio Concept Blueprint"
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+
+          <div className="relative z-10 mx-auto max-w-7xl px-6 text-center flex flex-col items-center">
             
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-violet-550/30 dark:border-zinc-800 bg-white/5 dark:bg-zinc-900/80 px-4 py-2 text-sm font-black text-violet-400 shadow-sm">
               <Sparkles size={16} />
@@ -828,6 +858,74 @@ export default function MainLandingPage() {
                 <p className="mt-2 text-sm font-medium leading-relaxed text-zinc-400">
                   키워드 검색, 태그별 분류, 그리고 비디오 호버 스크러빙 동작까지 지원해 방대한 자산 중에서 필요한 에셋을 1초 만에 색출하여 매핑합니다.
                 </p>
+              </div>
+            </div>
+
+            {/* Shutterstock style Categories Exploration */}
+            <div className="mt-24 border-t border-zinc-800/60 pt-16">
+              <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 text-left">
+                <div>
+                  <h3 className="break-keep text-2xl font-black tracking-tight text-white md:text-3xl">
+                    카테고리 탐색하기
+                  </h3>
+                  <p className="mt-2 text-sm font-medium text-zinc-400">
+                    전 세계 크리에이터들이 올리는 고화질 이미지와 에셋을 테마별로 만나보세요.
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push("/library/free-assets")}
+                  className="mt-4 md:mt-0 text-xs font-black text-emerald-400 hover:underline flex items-center gap-1 shrink-0"
+                >
+                  전체 라이브러리 보기 <ChevronRight size={14} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {[
+                  { name: "추상 & 그래픽", slug: "art", img: "/images/categories/art.png" },
+                  { name: "기술 & 디지털", slug: "tech", img: "/images/categories/tech.png" },
+                  { name: "미식 & 푸드", slug: "food", img: "/images/categories/food.png" },
+                  { name: "자연 & 풍경", slug: "nature", img: "/images/categories/nature.png" },
+                  { name: "동물 & 야생", slug: "animal", img: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?auto=format&fit=crop&w=600&q=80" },
+                  { name: "배경 & 텍스처", slug: "texture", img: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=600&q=80" },
+                  { name: "인물 & 라이프", slug: "people", img: "https://upload.wikimedia.org/wikipedia/commons/e/ed/Elon_Musk_Royal_Society.jpg" },
+                  { name: "건축 & 랜드마크", slug: "architecture", img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80" },
+                  { name: "패션 & 뷰티", slug: "fashion", img: "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=600&q=80" },
+                  { name: "비즈니스 & 금융", slug: "business", img: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80" },
+                  { name: "교육 & 지식", slug: "education", img: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=600&q=80" },
+                  { name: "의료 & 헬스케어", slug: "health", img: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=600&q=80" },
+                ].map((item) => (
+                  <div
+                    key={item.slug}
+                    onClick={() => router.push(`/library/free-assets?category=${item.slug}`)}
+                    className="group flex flex-col text-left cursor-pointer"
+                  >
+                    <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl border border-zinc-800/80 bg-zinc-900 shadow-sm">
+                      <Image
+                        src={item.img}
+                        alt={item.name}
+                        fill
+                        className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
+                          item.slug === "people" ? "object-top" : ""
+                        }`}
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                        unoptimized={item.img.startsWith("http")}
+                      />
+                    </div>
+                    <span className="mt-3 text-sm font-black text-zinc-200 group-hover:text-emerald-400 transition leading-tight">
+                      {item.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-12 text-center">
+                <button
+                  onClick={() => router.push("/library/free-assets")}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-full border border-zinc-850 hover:border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800 px-8 py-3 text-sm font-black text-zinc-200 transition shadow-md cursor-pointer"
+                >
+                  자세히 보기
+                </button>
               </div>
             </div>
           </div>

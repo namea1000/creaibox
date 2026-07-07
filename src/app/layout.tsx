@@ -3,6 +3,7 @@ import "./globals.css";
 import QueryProvider from "@/components/providers/query-provider";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import CookieConsentBanner from "@/components/common/CookieConsentBanner";
+import InteractiveCursorEffect from "@/components/shared/InteractiveCursorEffect";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -63,6 +64,7 @@ export default function RootLayout({
       <body className="min-h-full bg-white text-slate-900 selection:bg-violet-200/70">
         <QueryProvider>
           {children}
+          <InteractiveCursorEffect />
           <CookieConsentBanner />
         </QueryProvider>
         
