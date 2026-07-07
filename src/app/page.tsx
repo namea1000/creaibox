@@ -639,7 +639,7 @@ export default function MainLandingPage() {
               
               <div className="relative overflow-hidden rounded-2xl border border-zinc-800/80 dark:border-white/10 shadow-2xl bg-slate-900 group">
                 <Image
-                  src="/images/landingpage/blog_editor.png"
+                  src="/images/landingpage/blog_editor.webp"
                   alt="크리에이박스 블로그 글쓰기 에디터 화면"
                   width={1920}
                   height={1080}
@@ -721,7 +721,7 @@ export default function MainLandingPage() {
               
               <div className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 shadow-2xl bg-slate-900 group">
                 <Image
-                  src="/images/landingpage/video_editor.png"
+                  src="/images/landingpage/video_editor.webp"
                   alt="크리에이박스 비디오 에디터 화면"
                   width={1920}
                   height={1080}
@@ -803,7 +803,7 @@ export default function MainLandingPage() {
               
               <div className="relative overflow-hidden rounded-2xl border border-zinc-800/80 dark:border-white/10 shadow-2xl bg-slate-900 group">
                 <Image
-                  src="/images/landingpage/medio_library.png"
+                  src="/images/landingpage/medio_library.webp"
                   alt="크리에이박스 미디어 라이브러리 화면"
                   width={1920}
                   height={1080}
@@ -886,14 +886,14 @@ export default function MainLandingPage() {
                   { name: "기술 & 디지털", slug: "tech", img: "/images/categories/tech.png" },
                   { name: "미식 & 푸드", slug: "food", img: "/images/categories/food.png" },
                   { name: "자연 & 풍경", slug: "nature", img: "/images/categories/nature.png" },
-                  { name: "동물 & 야생", slug: "animal", img: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?auto=format&fit=crop&w=600&q=80" },
-                  { name: "배경 & 텍스처", slug: "texture", img: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=600&q=80" },
-                  { name: "인물 & 라이프", slug: "people", img: "https://upload.wikimedia.org/wikipedia/commons/e/ed/Elon_Musk_Royal_Society.jpg" },
-                  { name: "건축 & 랜드마크", slug: "architecture", img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80" },
-                  { name: "패션 & 뷰티", slug: "fashion", img: "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=600&q=80" },
-                  { name: "비즈니스 & 금융", slug: "business", img: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80" },
-                  { name: "교육 & 지식", slug: "education", img: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=600&q=80" },
-                  { name: "의료 & 헬스케어", slug: "health", img: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=600&q=80" },
+                  { name: "동물 & 야생", slug: "animal", img: "/images/categories/animal.png" },
+                  { name: "배경 & 텍스처", slug: "texture", img: "/images/categories/texture.png" },
+                  { name: "인물 & 라이프", slug: "people", img: "/images/categories/people.png" },
+                  { name: "건축 & 랜드마크", slug: "architecture", img: "/images/categories/architecture.png" },
+                  { name: "패션 & 뷰티", slug: "fashion", img: "/images/categories/fashion.png" },
+                  { name: "비즈니스 & 금융", slug: "business", img: "/images/categories/business.png" },
+                  { name: "교육 & 지식", slug: "education", img: "/images/categories/education.png" },
+                  { name: "의료 & 헬스케어", slug: "health", img: "/images/categories/health.png" },
                 ].map((item) => (
                   <div
                     key={item.slug}
