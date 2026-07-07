@@ -649,6 +649,7 @@ export default function Sidebar({
         <Link
           href={group.href}
           onClick={() => {
+            toggleGroup(group.key);
             setIsMobileOpen(false);
           }}
           className={`
