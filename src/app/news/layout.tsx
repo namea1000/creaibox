@@ -19,6 +19,24 @@ export default function NewsLayout({ children }: { children: React.ReactNode }) 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+  // 🌟 AI 스튜디오 도구 화면일 때는 기사 뷰어용 레이아웃을 씌우지 않고 그대로 반환합니다.
+  const isStudioRoute = 
+    pathname === "/news" || 
+    pathname.startsWith("/news/collect") ||
+    pathname.startsWith("/news/summary") ||
+    pathname.startsWith("/news/blog") ||
+    pathname.startsWith("/news/issue") ||
+    pathname.startsWith("/news/trend") ||
+    pathname.startsWith("/news/publish") ||
+    pathname.startsWith("/news/card") ||
+    pathname.startsWith("/news/anchor") ||
+    pathname.startsWith("/news/archive") ||
+    pathname.startsWith("/news/dashboard");
+
+  if (isStudioRoute) {
+    return <>{children}</>;
+  }
+
   // 🌟 맨 앞에 '뉴스 홈(/news)'을 추가한 럭셔리 탭 네비게이션 배열
   const tabs = [
     { id: 'news-home', label: '뉴스 홈', icon: LayoutGrid, href: '/news' }, // 🚀 1순위 홈 버튼 배치!
