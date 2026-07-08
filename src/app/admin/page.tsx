@@ -28,6 +28,7 @@ import {
   DollarSign,
   BarChart3,
   PieChart,
+  HelpCircle,
   type LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
@@ -138,6 +139,13 @@ const adminMenus: AdminMenu[] = [
     href: "/admin/chatbot",
     icon: MessageSquare,
     iconColor: "text-cyan-400",
+  },
+  {
+    title: "고객지원 1:1 문의 관리",
+    description: "플랫폼 1:1 문의 및 사이트 개선 건의 내역 확인 및 답변 관리",
+    href: "/admin/inquiry",
+    icon: HelpCircle,
+    iconColor: "text-indigo-400",
   },
 ];
 
