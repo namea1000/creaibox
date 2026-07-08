@@ -70,6 +70,7 @@ import {
   CalendarDays,
   Target,
   Maximize,
+  Plus,
   type LucideIcon,
 } from "lucide-react";
 
@@ -173,20 +174,28 @@ export default function Sidebar({
         icon: LayoutDashboard,
         color: "text-blue-400",
       },
+      {
+        key: "chatbot",
+        name: "AI 챗봇",
+        href: "/chatbot",
+        icon: MessageSquare,
+        color: "text-cyan-400",
+      },
 
       {
         key: "client-site-builder",
         name: "AI 홈페이지 제작",
-        href: "/client-site-builder",
+        href: "/studio/client-site-builder",
         icon: Globe,
         color: "text-emerald-400",
         children: [
-          { name: "스튜디오 홈", href: "/client-site-builder", icon: LayoutDashboard },
-          { name: "AI 홈페이지 빌더", href: "/client-site-builder/builder", icon: Wand2 },
-          { name: "디자인 테마 라이브러리", href: "/client-site-builder/themes", icon: Palette },
-          { name: "고객 문의 관리", href: "/client-site-builder/inquiries", icon: MessageSquare },
-          { name: "페이지 & 글 관리", href: "/client-site-builder/posts", icon: FileText },
-          { name: "홈페이지 설정", href: "/client-site-builder/settings", icon: Settings },
+          { name: "대시보드", href: "/studio/client-site-builder", icon: LayoutDashboard },
+          { name: "AI 홈페이지 빌더", href: "/studio/client-site-builder/builder", icon: Plus },
+          { name: "섹션 레이아웃 변경", href: "/studio/client-site-builder/sections", icon: Wand2 },
+          { name: "디자인 테마 라이브러리", href: "/studio/client-site-builder/themes", icon: Palette },
+          { name: "고객 문의 관리", href: "/studio/client-site-builder/inquiries", icon: MessageSquare },
+          { name: "페이지 & 글 관리", href: "/studio/client-site-builder/posts", icon: FileText },
+          { name: "홈페이지 설정", href: "/studio/client-site-builder/settings", icon: Settings },
         ],
       },
 
@@ -526,6 +535,7 @@ export default function Sidebar({
 
   const isPathActive = (href: string) => {
     if (href === "/studio") return pathname === "/studio";
+    if (href === "/studio/client-site-builder") return pathname === "/studio/client-site-builder";
     if (href === "/library" && pathname.startsWith("/library/free-assets")) {
       return false;
     }

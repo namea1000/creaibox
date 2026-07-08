@@ -107,77 +107,70 @@ function SiteBuilderLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Tabs Definition
   const tabs = [
-    { name: "대시보드 홈", href: "/studio/client-site-builder", icon: LayoutDashboard },
-    { name: "AI 홈페이지 빌더", href: "/studio/client-site-builder/builder", icon: Wand2 },
+    { name: "대시보드", href: "/studio/client-site-builder", icon: LayoutDashboard },
+    { name: "AI 홈페이지 빌더", href: "/studio/client-site-builder/builder", icon: Plus },
+    { name: "섹션 레이아웃 변경", href: "/studio/client-site-builder/sections", icon: Wand2 },
     { name: "디자인 테마 라이브러리", href: "/studio/client-site-builder/themes", icon: Palette },
     { name: "고객 문의 관리", href: "/studio/client-site-builder/inquiries", icon: MessageSquare },
     { name: "페이지 & 글 관리", href: "/studio/client-site-builder/posts", icon: FileText },
     { name: "홈페이지 설정", href: "/studio/client-site-builder/settings", icon: Settings },
   ];
 
+  const hasSites = sites && sites.length > 0 && selectedSite;
+
+  // 4. Render clean full-screen wizard/opening card when user has no website yet
+  if (!hasSites) {
+    return (
+      <div className="max-w-7xl mx-auto p-6 md:p-8 animate-fade-in">
+        <div className="min-h-[500px]">{children}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto p-6 md:p-8 space-y-8 animate-fade-in">
       {/* Site Master GNB Header */}
       <div className="bg-white dark:bg-[#0b0f19] border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
-        {sites.length > 0 && selectedSite ? (
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                운영 중
-              </span>
-              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-                {selectedSite.brand_id}.creaibox.com
-              </span>
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              운영 중
+            </span>
+            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+              {selectedSite.brand_id}.creaibox.com
+            </span>
 
-              {/* Multi-site switcher dropdown */}
-              {sites.length > 1 && (
-                <select
-                  value={selectedSite.id}
-                  onChange={(e) => handleSiteSwitch(e.target.value)}
-                  className="ml-3 text-xs font-black text-slate-700 dark:text-emerald-400 bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1 focus:outline-none cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
-                >
-                  {sites.map((s) => (
-                    <option key={s.id} value={s.id} className="dark:bg-slate-900 dark:text-white">
-                      🏢 {s.company_name} ({s.brand_id})
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
-              {selectedSite.company_name}
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold flex items-center gap-3">
-              {selectedSite.phone && (
-                <span className="flex items-center gap-1">
-                  <Phone size={12} /> {selectedSite.phone}
-                </span>
-              )}
-              {selectedSite.address && (
-                <span className="flex items-center gap-1">
-                  <MapPin size={12} /> {selectedSite.address}
-                </span>
-              )}
-            </p>
+            {/* Multi-site switcher dropdown */}
+            {sites.length > 1 && (
+              <select
+                value={selectedSite.id}
+                onChange={(e) => handleSiteSwitch(e.target.value)}
+                className="ml-3 text-xs font-black text-slate-700 dark:text-emerald-400 bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1 focus:outline-none cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+              >
+                {sites.map((s) => (
+                  <option key={s.id} value={s.id} className="dark:bg-slate-900 dark:text-white">
+                    🏢 {s.company_name} ({s.brand_id})
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
-        ) : (
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                생성 대기
+          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
+            {selectedSite.company_name}
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold flex items-center gap-3">
+            {selectedSite.phone && (
+              <span className="flex items-center gap-1">
+                <Phone size={12} /> {selectedSite.phone}
               </span>
-              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-                나만의 비즈니스 홈페이지 개설
+            )}
+            {selectedSite.address && (
+              <span className="flex items-center gap-1">
+                <MapPin size={12} /> {selectedSite.address}
               </span>
-            </div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
-              AI 홈페이지 제작 스튜디오
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold">
-              비즈니스의 디지털 성장을 지원하는 스마트 AI 빌더 홈입니다.
-            </p>
-          </div>
-        )}
+            )}
+          </p>
+        </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <button
@@ -186,17 +179,15 @@ function SiteBuilderLayoutContent({ children }: { children: React.ReactNode }) {
           >
             <span>➕ 새 홈페이지 추가</span>
           </button>
-          {sites.length > 0 && selectedSite && (
-            <a
-              href={liveUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-extrabold text-white bg-slate-950 hover:bg-slate-800 dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-slate-950 rounded-2xl shadow-md transition-all active:scale-95 cursor-pointer"
-            >
-              <Eye size={16} />
-              <span>내 홈페이지 바로가기</span>
-            </a>
-          )}
+          <a
+            href={liveUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-extrabold text-white bg-slate-950 hover:bg-slate-800 dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-slate-950 rounded-2xl shadow-md transition-all active:scale-95 cursor-pointer"
+          >
+            <Eye size={16} />
+            <span>내 홈페이지 바로가기</span>
+          </a>
         </div>
       </div>
 

@@ -14,6 +14,8 @@ import {
   CreditCard,
   FileText,
   Server,
+  Building2,
+  MessageSquare,
   Settings,
   ShieldCheck,
   ShieldAlert,
@@ -122,6 +124,20 @@ const adminMenus: AdminMenu[] = [
     href: "/admin/reserved-words",
     icon: ShieldAlert,
     iconColor: "text-red-400",
+  },
+  {
+    title: "B2B 맞춤/제휴 관리",
+    description: "기업형 맞춤 제작 신청 및 광고/협업 제안 내역 상세 제어",
+    href: "/admin/business",
+    icon: Building2,
+    iconColor: "text-amber-400",
+  },
+  {
+    title: "AI 챗봇 이용 분석",
+    description: "사용자별 챗봇 상담 히스토리 복원 및 가이드 제작 건의 제어",
+    href: "/admin/chatbot",
+    icon: MessageSquare,
+    iconColor: "text-cyan-400",
   },
 ];
 

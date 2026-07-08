@@ -27,10 +27,19 @@ export function SiteBuilderProvider({ children }: { children: React.ReactNode })
 
   const refreshData = async () => {
     setLoading(true);
+
+    // 3-second safety guard timeout to prevent infinite pending loading state
+    const safetyTimeout = setTimeout(() => {
+      console.warn("refreshData took too long. Disabling loading spinner via safety timeout.");
+      setLoading(false);
+    }, 3000);
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) {
         setLoading(false);
+        clearTimeout(safetyTimeout);
         return;
       }
 
@@ -68,6 +77,7 @@ export function SiteBuilderProvider({ children }: { children: React.ReactNode })
     } catch (err) {
       console.error("Error loading user and site details:", err);
     } finally {
+      clearTimeout(safetyTimeout);
       setLoading(false);
     }
   };

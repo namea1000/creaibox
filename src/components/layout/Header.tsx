@@ -1389,7 +1389,7 @@ export default function Header() {
               </button>
               {isMobToolsOpen && (
                 <div className="mt-1.5 ml-2 pl-3 border-l-2 border-violet-500/30 grid gap-1.5 py-1">
-                  <Link href="/client-site-builder" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">AI 홈페이지 제작</Link>
+                  <Link href="/studio/client-site-builder" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">AI 홈페이지 제작</Link>
                   <Link href="/media-library" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">에셋 라이브러리</Link>
                   <Link href="/content-planner/idea-hub" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">콘텐츠 아이디어 허브</Link>
                   <Link href="/content-planner/ai-planner" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">AI 콘텐츠 기획기</Link>

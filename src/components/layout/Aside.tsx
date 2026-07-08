@@ -17,24 +17,27 @@ import {
   ShieldCheck,
   FileText,
   Cookie,
+  Briefcase,
+  Undo2,
 } from "lucide-react";
 
 export default function Aside() {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const businessLinks = [
+    { label: "비즈니스 홈", href: "/business", icon: Briefcase, color: "from-blue-700 to-indigo-800", iconColor: "text-blue-350" },
     { label: "협업 / 광고 제안", href: "/business/ads", icon: Handshake, color: "from-blue-600 to-indigo-600", iconColor: "text-blue-400" },
     { label: "기업형 맞춤 제작", href: "/business/enterprise", icon: Building2, color: "from-violet-600 to-blue-600", iconColor: "text-violet-400" },
-    { label: "홈페이지 제작", href: "/business/web-dev", icon: LayoutTemplate, color: "from-emerald-600 to-teal-600", iconColor: "text-emerald-400" },
   ];
 
   const supportLinks = [
     { label: "AI 챗봇 - 채팅 시작하기", href: "/chatbot", icon: MessageCircle, color: "from-cyan-600 to-blue-600", iconColor: "text-cyan-400" },
-    { label: "고객지원", href: "/support", icon: LifeBuoy, color: "from-sky-600 to-blue-600", iconColor: "text-sky-400" },
-    { label: "스튜디오 가이드", href: "/guide", icon: BookOpen, color: "from-violet-600 to-purple-600", iconColor: "text-violet-400" },
+    { label: "고객지원", href: "/help", icon: LifeBuoy, color: "from-sky-600 to-blue-600", iconColor: "text-sky-400" },
+    { label: "스튜디오 가이드", href: "/about", icon: BookOpen, color: "from-violet-600 to-purple-600", iconColor: "text-violet-400" },
     { label: "Privacy Policy", href: "/privacy", icon: ShieldCheck, color: "from-emerald-600 to-green-600", iconColor: "text-emerald-400" },
     { label: "Terms of Service", href: "/terms", icon: FileText, color: "from-slate-600 to-zinc-600", iconColor: "text-zinc-300" },
-    { label: "쿠키 정책", href: "/cookie", icon: Cookie, color: "from-amber-600 to-orange-600", iconColor: "text-amber-400" },
+    { label: "쿠키 정책", href: "/cookie-policy", icon: Cookie, color: "from-amber-600 to-orange-600", iconColor: "text-amber-400" },
+    { label: "환불 정책", href: "/refund-policy", icon: Undo2, color: "from-rose-600 to-orange-500", iconColor: "text-rose-450" },
     { label: "콘텐츠 신고하기", href: "/report", icon: AlertTriangle, color: "from-red-600 to-rose-600", iconColor: "text-red-400" },
   ];
 

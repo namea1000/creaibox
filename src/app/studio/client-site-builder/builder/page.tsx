@@ -1,40 +1,40 @@
 "use client";
 
 import React, { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useSiteBuilder } from "../context";
 import SiteCreationWizard from "../components/SiteCreationWizard";
-import SectionEditor from "../components/SectionEditor";
 import { Loader2 } from "lucide-react";
 
 function BuilderPageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const themeParam = searchParams.get("theme");
 
   const {
     sites,
-    selectedSite,
-    isCreatingNewSite,
     setIsCreatingNewSite,
     refreshData,
   } = useSiteBuilder();
 
-  // 1. Render creation wizard if there are no sites or user explicitly clicked 'New Site'
-  if (sites.length === 0 || isCreatingNewSite) {
-    return (
-      <SiteCreationWizard
-        initialTemplateId={themeParam || undefined}
-        onSuccess={() => {
-          setIsCreatingNewSite(false);
-          refreshData();
-        }}
-        onCancel={sites.length > 0 ? () => setIsCreatingNewSite(false) : undefined}
-      />
-    );
-  }
-
-  // 2. Render live Section Editor if site exists
-  return <SectionEditor siteId={selectedSite.id} />;
+  return (
+    <SiteCreationWizard
+      initialTemplateId={themeParam || undefined}
+      onSuccess={async () => {
+        setIsCreatingNewSite(false);
+        await refreshData();
+        router.push("/studio/client-site-builder");
+      }}
+      onCancel={
+        sites.length > 0
+          ? () => {
+              setIsCreatingNewSite(false);
+              router.push("/studio/client-site-builder");
+            }
+          : undefined
+      }
+    />
+  );
 }
 
 export default function BuilderPage() {

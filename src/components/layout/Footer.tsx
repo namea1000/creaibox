@@ -84,13 +84,13 @@ export default function Footer() {
             </div>
             <div className="relative z-10 flex flex-col h-full justify-between">
               <div>
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-400 text-slate-900 shadow-lg shadow-yellow-500/20">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-yellow-400 text-slate-900 shadow-lg shadow-yellow-500/20">
                   <MessageSquare size={22} fill="currentColor" className="stroke-none animate-pulse" style={{ animationDuration: '3s' }} />
                 </div>
-                <h3 className="mt-4 text-lg font-black text-slate-900 dark:text-zinc-100">
+                <h3 className="mt-4 text-lg font-black text-white">
                   카카오톡 채널 추가
                 </h3>
-                <p className="mt-2 text-xs font-bold leading-relaxed text-slate-500 dark:text-zinc-400">
+                <p className="mt-2 text-xs font-bold leading-relaxed text-slate-300">
                   실시간 1:1 고객 문의와 크리에이박스의 최신 업데이트 소식을 가장 빠르게 접해보세요.
                 </p>
               </div>
@@ -115,15 +115,15 @@ export default function Footer() {
             </div>
             <div className="relative z-10 flex flex-col h-full justify-between">
               <div>
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-red-600 text-white shadow-lg shadow-red-500/20">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-red-600 text-white shadow-lg shadow-red-500/20">
                   <svg viewBox="0 0 24 24" width={22} height={22} fill="currentColor" className="animate-pulse" style={{ animationDuration: '3s' }}>
                     <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.107C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.388.511a3.002 3.002 0 0 0-2.11 2.107C0 8.053 0 12 0 12s0 3.947.502 5.837a3.003 3.003 0 0 0 2.11 2.107c1.883.511 9.388.511 9.388.511s7.505 0 9.388-.511a3.002 3.002 0 0 0 2.11-2.107C24 15.947 24 12 24 12s0-3.947-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                   </svg>
                 </div>
-                <h3 className="mt-4 text-lg font-black text-slate-900 dark:text-zinc-100">
+                <h3 className="mt-4 text-lg font-black text-white">
                   공식 유튜브 구독
                 </h3>
-                <p className="mt-2 text-xs font-bold leading-relaxed text-slate-500 dark:text-zinc-400">
+                <p className="mt-2 text-xs font-bold leading-relaxed text-slate-300">
                   AI 글쓰기 요령, 이미지 제작 팁 및 플랫폼 활용 튜토리얼 가이드를 영상으로 확인하세요.
                 </p>
               </div>
@@ -151,17 +151,17 @@ export default function Footer() {
             </div>
             <div className="relative z-10 flex flex-col h-full justify-between">
               <div>
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 text-white shadow-lg shadow-pink-500/20">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 text-white shadow-lg shadow-pink-500/20">
                   <svg viewBox="0 0 24 24" width={22} height={22} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-pulse" style={{ animationDuration: '3s' }}>
                     <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
                     <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
                     <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
                   </svg>
                 </div>
-                <h3 className="mt-4 text-lg font-black text-slate-900 dark:text-zinc-100">
+                <h3 className="mt-4 text-lg font-black text-white">
                   인스타그램 팔로우
                 </h3>
-                <p className="mt-2 text-xs font-bold leading-relaxed text-slate-500 dark:text-zinc-400">
+                <p className="mt-2 text-xs font-bold leading-relaxed text-slate-300">
                   매일 배포되는 트렌디한 카드뉴스로 글로벌 AI 동향 및 유용한 크리에이터 팁을 얻어가세요.
                 </p>
               </div>
@@ -205,22 +205,51 @@ export default function Footer() {
                   스튜디오 시작하기
                 </Link>
 
-              {/* 카카오톡 1:1 문의 채널 */}
+              {/* 카카오톡 채널 추가 */}
               <a
-                href="https://pf.kakao.com/_RxdxmsX/chat"
+                href="https://pf.kakao.com/_RxdxmsX"
                 target="_blank"
                 rel="noopener noreferrer"
-                title="카카오톡 1:1 문의"
-                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-500 dark:text-zinc-400 shadow-sm transition hover:border-yellow-400 dark:hover:border-yellow-955/20 hover:bg-yellow-50 dark:hover:bg-zinc-850 hover:text-yellow-600 dark:hover:text-yellow-500"
+                title="카카오톡 채널 추가"
+                className="flex h-11 w-11 items-center justify-center rounded-lg bg-yellow-400 text-slate-900 shadow-md shadow-yellow-500/10 transition hover:scale-105 hover:bg-yellow-500 active:scale-[0.97]"
               >
-                <MessageSquare size={18} fill="currentColor" className="stroke-none translate-y-[0.5px]" />
+                <MessageSquare size={18} fill="currentColor" className="stroke-none" />
               </a>
 
-              {/* 이메일 문의 채널 */}
+              {/* 공식 유튜브 구독 */}
+              <a
+                href="https://www.youtube.com/@creaibox"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="공식 유튜브 구독"
+                className="flex h-11 w-11 items-center justify-center rounded-lg bg-red-600 text-white shadow-md shadow-red-500/10 transition hover:scale-105 hover:bg-red-700 active:scale-[0.97]"
+              >
+                <svg viewBox="0 0 24 24" width={18} height={18} fill="currentColor">
+                  <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.107C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.388.511a3.002 3.002 0 0 0-2.11 2.107C0 8.053 0 12 0 12s0 3.947.502 5.837a3.003 3.003 0 0 0 2.11 2.107c1.883.511 9.388.511 9.388.511s7.505 0 9.388-.511a3.002 3.002 0 0 0 2.11-2.107C24 15.947 24 12 24 12s0-3.947-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
+              </a>
+
+              {/* 인스타그램 팔로우 */}
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  alert("인스타그램 채널은 현재 준비 중입니다. 조만간 오픈될 예정이오니 많은 기대 부탁드립니다!");
+                }}
+                title="인스타그램 팔로우"
+                className="flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/10 transition hover:scale-105 active:scale-[0.97]"
+              >
+                <svg viewBox="0 0 24 24" width={18} height={18} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                </svg>
+              </button>
+
+              {/* 이메일 문의 */}
               <a
                 href="mailto:contact@creaibox.com"
                 title="이메일 문의"
-                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-500 dark:text-zinc-400 shadow-sm transition hover:border-blue-400 dark:hover:border-blue-955/20 hover:bg-blue-50 dark:hover:bg-zinc-850 hover:text-blue-600 dark:hover:text-blue-500"
+                className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-500 dark:text-zinc-400 shadow-sm transition hover:border-blue-400 dark:hover:border-blue-955/20 hover:bg-blue-50 dark:hover:bg-zinc-850 hover:text-blue-600 dark:hover:text-blue-500"
               >
                 <Mail size={18} />
               </a>

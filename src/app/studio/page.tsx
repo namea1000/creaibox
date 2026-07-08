@@ -104,16 +104,16 @@ export default function StudioPage() {
     {
       key: "client-site-builder",
       name: "AI 홈페이지 제작",
-      href: "/client-site-builder",
+      href: "/studio/client-site-builder",
       icon: Globe,
       color: "from-emerald-600 to-teal-500 text-emerald-400 bg-emerald-500/10",
       children: [
-        { name: "스튜디오 홈", href: "/client-site-builder", icon: LayoutDashboard },
-        { name: "AI 빌더", href: "/client-site-builder/builder", icon: Wand2 },
-        { name: "디자인 테마", href: "/client-site-builder/themes", icon: Palette },
-        { name: "고객 문의", href: "/client-site-builder/inquiries", icon: MessageSquare },
-        { name: "페이지 & 글", href: "/client-site-builder/posts", icon: FileText },
-        { name: "홈 설정", href: "/client-site-builder/settings", icon: Settings },
+        { name: "대시보드", href: "/studio/client-site-builder", icon: LayoutDashboard },
+        { name: "섹션 레이아웃 변경", href: "/studio/client-site-builder/builder", icon: Wand2 },
+        { name: "디자인 테마", href: "/studio/client-site-builder/themes", icon: Palette },
+        { name: "고객 문의", href: "/studio/client-site-builder/inquiries", icon: MessageSquare },
+        { name: "페이지 & 글", href: "/studio/client-site-builder/posts", icon: FileText },
+        { name: "홈 설정", href: "/studio/client-site-builder/settings", icon: Settings },
       ],
     },
     {
