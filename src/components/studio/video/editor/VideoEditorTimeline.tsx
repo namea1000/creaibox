@@ -431,63 +431,79 @@ export default function VideoEditorTimeline() {
 
   useEffect(() => {
     let animationFrameId: number;
+    let isLoopRunning = false;
 
     const scrollLoop = () => {
       if (!isDraggingRef.current || dragMouseXRef.current === null) {
-        animationFrameId = requestAnimationFrame(scrollLoop);
-        return;
+        isLoopRunning = false;
+        return; // Stop animation loop immediately when not dragging
       }
 
       const container = timelineScrollRef.current;
-      if (!container) {
-        animationFrameId = requestAnimationFrame(scrollLoop);
-        return;
-      }
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        const mouseX = dragMouseXRef.current;
 
-      const rect = container.getBoundingClientRect();
-      const mouseX = dragMouseXRef.current;
+        const EDGE_THRESHOLD = 60; // pixels from edge to start scrolling
+        const MAX_SPEED = 15; // max pixels to scroll per frame
 
-      const EDGE_THRESHOLD = 60; // pixels from edge to start scrolling
-      const MAX_SPEED = 15; // max pixels to scroll per frame
+        const leftDist = mouseX - rect.left;
+        const rightDist = rect.right - mouseX;
 
-      const leftDist = mouseX - rect.left;
-      const rightDist = rect.right - mouseX;
+        let scrolled = false;
 
-      let scrolled = false;
-
-      if (leftDist < EDGE_THRESHOLD && leftDist > -20) {
-        const speedFactor = (EDGE_THRESHOLD - Math.max(0, leftDist)) / EDGE_THRESHOLD;
-        const scrollDelta = Math.ceil(speedFactor * MAX_SPEED);
-        const prevScrollLeft = container.scrollLeft;
-        container.scrollLeft = Math.max(0, container.scrollLeft - scrollDelta);
-        if (container.scrollLeft !== prevScrollLeft) {
-          scrolled = true;
+        if (leftDist < EDGE_THRESHOLD && leftDist > -20) {
+          const speedFactor = (EDGE_THRESHOLD - Math.max(0, leftDist)) / EDGE_THRESHOLD;
+          const scrollDelta = Math.ceil(speedFactor * MAX_SPEED);
+          const prevScrollLeft = container.scrollLeft;
+          container.scrollLeft = Math.max(0, container.scrollLeft - scrollDelta);
+          if (container.scrollLeft !== prevScrollLeft) {
+            scrolled = true;
+          }
+        } else if (rightDist < EDGE_THRESHOLD && rightDist > -20) {
+          const speedFactor = (EDGE_THRESHOLD - Math.max(0, rightDist)) / EDGE_THRESHOLD;
+          const scrollDelta = Math.ceil(speedFactor * MAX_SPEED);
+          const prevScrollLeft = container.scrollLeft;
+          container.scrollLeft = Math.min(
+            container.scrollWidth - container.clientWidth,
+            container.scrollLeft + scrollDelta
+          );
+          if (container.scrollLeft !== prevScrollLeft) {
+            scrolled = true;
+          }
         }
-      } else if (rightDist < EDGE_THRESHOLD && rightDist > -20) {
-        const speedFactor = (EDGE_THRESHOLD - Math.max(0, rightDist)) / EDGE_THRESHOLD;
-        const scrollDelta = Math.ceil(speedFactor * MAX_SPEED);
-        const prevScrollLeft = container.scrollLeft;
-        container.scrollLeft = Math.min(
-          container.scrollWidth - container.clientWidth,
-          container.scrollLeft + scrollDelta
-        );
-        if (container.scrollLeft !== prevScrollLeft) {
-          scrolled = true;
-        }
-      }
 
-      if (scrolled && marqueeActiveRef.current && marqueeMousePosRef.current) {
-        updateMarqueeSelection(
-          marqueeMousePosRef.current.clientX,
-          marqueeMousePosRef.current.clientY
-        );
+        if (scrolled && marqueeActiveRef.current && marqueeMousePosRef.current) {
+          updateMarqueeSelection(
+            marqueeMousePosRef.current.clientX,
+            marqueeMousePosRef.current.clientY
+          );
+        }
       }
 
       animationFrameId = requestAnimationFrame(scrollLoop);
     };
 
-    animationFrameId = requestAnimationFrame(scrollLoop);
-    return () => cancelAnimationFrame(animationFrameId);
+    const triggerLoop = () => {
+      if (isDraggingRef.current && dragMouseXRef.current !== null && !isLoopRunning) {
+        isLoopRunning = true;
+        animationFrameId = requestAnimationFrame(scrollLoop);
+      }
+    };
+
+    // Listen to global pointer movements and drag-overs to wake up the loop
+    const handleWakeup = () => {
+      triggerLoop();
+    };
+
+    window.addEventListener("pointermove", handleWakeup);
+    window.addEventListener("dragover", handleWakeup);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("pointermove", handleWakeup);
+      window.removeEventListener("dragover", handleWakeup);
+    };
   }, [updateMarqueeSelection]);
 
   useEffect(() => {

@@ -7,6 +7,7 @@ const sectionNames: Record<string, string> = {
   planning: "AI 앨범 기획",
   lyrics: "가사 & SUNO 작곡",
   library: "생성곡 라이브러리",
+  "cre-music": "Cre Music 플레이어",
   albums: "앨범 관리 스튜디오",
   visualizer: "오디오 스펙트럼 비주얼라이저",
   "style-format": "스타일 포맷",

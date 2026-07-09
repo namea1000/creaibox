@@ -277,6 +277,7 @@ export default function Sidebar({
           { name: "AI 앨범 기획", href: "/music/planning", icon: Sparkles },
           { name: "가사 & SUNO", href: "/music/lyrics", icon: Mic2 },
           { name: "생성곡 라이브러리", href: "/music/library", icon: Mic2 },
+          { name: "Cre Music 플레이어", href: "/music/cre-music", icon: PlayCircle },
           { name: "앨범 관리", href: "/music/albums", icon: Disc3 },
           { name: "스타일 포맷", href: "/music/style-format", icon: Palette },
           { name: "오디오 스펙트럼", href: "/music/visualizer", icon: Waves, },

@@ -327,7 +327,7 @@ export default function CreMusicPlayerPage() {
             <div className="flex items-center gap-3">
               <h2 className="text-sm font-black text-white flex items-center gap-2">
                 <Sparkles size={14} className="text-cyan-400" />
-                Google Drive 20TB 연동 음악 플레이어
+                CreAibox Music Player
               </h2>
             </div>
 
@@ -341,16 +341,6 @@ export default function CreMusicPlayerPage() {
                 <RefreshCw size={12} className={isSyncing ? "animate-spin" : ""} />
                 동기화
               </button>
-
-              <a
-                href="https://drive.google.com"
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs font-black text-zinc-300 hover:border-cyan-500/50 hover:text-cyan-200"
-              >
-                드라이브 열기
-                <ExternalLink size={12} />
-              </a>
             </div>
           </header>
 
@@ -389,7 +379,7 @@ export default function CreMusicPlayerPage() {
                 <span>•</span>
                 <span className="flex items-center gap-1 text-cyan-300">
                   <Music size={12} />
-                  vocal_trance 폴더 연동
+                  R2 스토리지 연동
                 </span>
               </div>
             </div>

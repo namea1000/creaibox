@@ -1239,7 +1239,20 @@ export default forwardRef<VideoEditorRenderCanvasRef>(function VideoEditorRender
         return true;
       };
 
-      return async (time: number) => {
+       return async (time: number) => {
+        // Prevent Memory Leak / OOM (Error Code 5) on long video exports by clearing caches periodically
+        if (isExport) {
+          if (staticMediaFrameCache.size > 80) {
+            staticMediaFrameCache.clear();
+          }
+          if (staticOverlayFrameCache.size > 80) {
+            staticOverlayFrameCache.clear();
+          }
+          if (visualizerAudioCache.size > 15) {
+            visualizerAudioCache.clear();
+          }
+        }
+
         ctx.save();
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.globalAlpha = 1;

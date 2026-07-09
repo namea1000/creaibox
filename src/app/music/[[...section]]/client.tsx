@@ -13,8 +13,10 @@ import LyricsPage from "@/app/studio/music/lyrics/page";
 import LibraryPage from "@/app/studio/music/library/page";
 import AlbumsPage from "@/app/studio/music/albums/page";
 import VisualizerPage from "@/app/studio/music/visualizer/page";
+import CreMusicPage from "@/app/studio/music/cre-music/page";
 
 const sectionNames: Record<string, string> = {
+  "cre-music": "Cre Music 플레이어",
   "style-format": "스타일 포맷",
   "cover-image": "커버 이미지",
   "video-prompt": "영상 프롬프트",
@@ -43,6 +45,8 @@ export default function PublicMusicClient() {
         return <LyricsIdeaHubPage />;
       case "library":
         return <LibraryPage />;
+      case "cre-music":
+        return <CreMusicPage />;
       case "albums":
         return <AlbumsPage />;
       case "visualizer":
