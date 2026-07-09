@@ -38,6 +38,7 @@ interface FreeAsset {
   id: string;
   name: string;
   url: string;
+  thumbnailUrl?: string;
   mimeType: string;
   size: number;
   createdAt: string;
@@ -127,6 +128,11 @@ export default function FreeAssetsLibraryPage() {
   const [selectedThemeCategory, setSelectedThemeCategory] = useState<string>("all");
   const [selectedStyle, setSelectedStyle] = useState<string>("all");
   const [selectedPostType, setSelectedPostType] = useState<string>("all");
+
+  // Music catalog states
+  const [musicCategory, setMusicCategory] = useState<string | null>(null);
+  const [selectedMusicGenre, setSelectedMusicGenre] = useState<string | null>(null);
+  const [selectedMusicMood, setSelectedMusicMood] = useState<string | null>(null);
   
   // Sort states & references
   const [activeSortTab, setActiveSortTab] = useState<"for_you" | "recent" | "random" | "hot" | "top_day" | "top_week" | "top_month" | "likes">("recent");
@@ -711,8 +717,12 @@ export default function FreeAssetsLibraryPage() {
       audioRef.current.pause();
       setPlayingAudioId(null);
     } else {
-      audioRef.current.src = asset.url;
-      void audioRef.current.play();
+      const isGoogleUrl = asset.url.includes("googleusercontent.com") || asset.url.includes("drive.google.com");
+      audioRef.current.src = isGoogleUrl ? `/api/free-assets/proxy?url=${encodeURIComponent(asset.url)}` : asset.url;
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {});
+      }
       setPlayingAudioId(asset.id);
       
       // Increment view count when previewing audio
@@ -786,7 +796,10 @@ export default function FreeAssetsLibraryPage() {
     
     // Create temporary link to trigger native browser download
     const link = document.createElement("a");
-    link.href = asset.url;
+    const isGoogleUrl = asset.url.includes("googleusercontent.com") || asset.url.includes("drive.google.com");
+    link.href = isGoogleUrl 
+      ? `/api/free-assets/proxy?url=${encodeURIComponent(asset.url)}&download=true&filename=${encodeURIComponent(asset.name || "download")}` 
+      : asset.url;
     link.download = asset.name;
     link.target = "_blank";
     document.body.appendChild(link);
@@ -1212,10 +1225,11 @@ export default function FreeAssetsLibraryPage() {
     } else {
       if (asset.isOfficialThemeAsset) return false;
       const matchesType =
-        selectedMediaType === "all" ||
-        (selectedMediaType === "photo"
-          ? (asset.mediaType === "photo" || asset.mediaType === "image")
-          : asset.mediaType === selectedMediaType);
+        selectedMediaType === "all"
+          ? asset.mediaType !== "music"
+          : (selectedMediaType === "photo"
+            ? (asset.mediaType === "photo" || asset.mediaType === "image")
+            : asset.mediaType === selectedMediaType);
       if (!matchesType) return false;
     }
 
@@ -1402,6 +1416,482 @@ export default function FreeAssetsLibraryPage() {
 
     return list;
   }, [filteredAssets, activeSortTab, likedAssetIds]);
+
+  const renderAssetsContent = () => {
+    if (loading) {
+      return (
+        <div className="flex h-64 flex-col items-center justify-center gap-3">
+          <Loader2 className="animate-spin text-blue-500" size={32} />
+          <p className="text-xs font-bold text-zinc-500">라이브러리로부터 무료 에셋 로딩 중...</p>
+        </div>
+      );
+    }
+
+    if (selectedMediaType === "music") {
+      if (!musicCategory) {
+        // === 1단계: 음악 장르 및 무드 카테고리 선택 카드 뷰 ===
+        return (
+          <div className="w-full space-y-12 py-6">
+            {/* 장르 컬렉션 */}
+            <div>
+              <h2 className="text-xl font-black text-white mb-2 flex items-center gap-2">
+                <Music size={18} className="text-blue-400" />
+                장르 컬렉션 검색
+              </h2>
+              <p className="text-xs text-zinc-500 mb-6 text-left">다양한 콘텐츠 제작을 위한 다양한 장르의 로열티 프리 음악</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                {[
+                  { id: "일렉트로니카", label: "일렉트로니카", desc: "신나는 일렉트로닉 댄스 및 하우스 비트", img: "/images/categories/music_electronica.png" },
+                  { id: "팝", label: "팝", desc: "귀에 감기는 대중적이고 리드미컬한 멜로디", img: "/images/categories/music_pop.png" },
+                  { id: "영화/드라마", label: "영화/드라마", desc: "서사적이고 웅장한 시네마틱 오케스트라 사운드", img: "/images/categories/music_cinematic.png" },
+                  { id: "어쿠스틱", label: "어쿠스틱", desc: "잔잔하고 따뜻한 목재 감성 통기타 연주", img: "/images/categories/music_acoustic.png" },
+                ].map((g) => (
+                  <div
+                    key={g.id}
+                    onClick={() => {
+                      setMusicCategory(g.id);
+                      setSelectedMusicGenre(g.id);
+                      setSelectedMusicMood(null);
+                    }}
+                    className="group relative h-48 overflow-hidden rounded-2xl border border-zinc-800 bg-[#090c13] transition-all duration-300 hover:-translate-y-1.5 hover:border-blue-500/50 hover:shadow-2xl hover:shadow-blue-500/10 cursor-pointer"
+                  >
+                    <img
+                      src={g.img}
+                      alt={g.label}
+                      className="h-full w-full object-cover opacity-60 group-hover:scale-105 group-hover:opacity-85 transition duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#06080d] via-black/40 to-transparent" />
+                    <div className="absolute bottom-4 left-4 right-4 text-left">
+                      <h3 className="text-sm font-black text-white tracking-tight">{g.label}</h3>
+                      <p className="mt-1 text-[11px] font-medium text-zinc-400 leading-normal line-clamp-2">{g.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 무드 컬렉션 */}
+            <div>
+              <h2 className="text-xl font-black text-white mb-2 flex items-center gap-2">
+                <Sparkles size={18} className="text-emerald-400" />
+                무드 컬렉션 검색
+              </h2>
+              <p className="text-xs text-zinc-500 mb-6 text-left">감정을 불어넣고 비디오를 돋보이게 하는 음악 무드</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                {[
+                  { id: "그루비", label: "그루비 (Groovy)", desc: "리듬감이 살아 숨 쉬는 그루브 사운드", bg: "from-purple-950 to-indigo-900" },
+                  { id: "신나는", label: "신나는 (Energetic)", desc: "기분을 업 시켜줄 밝고 신나는 트랙", bg: "from-rose-950 to-amber-900" },
+                  { id: "부드러운", label: "부드러운 (Mellow)", desc: "편안하게 감싸주는 잔잔한 멜로디", bg: "from-teal-950 to-emerald-900" },
+                  { id: "로맨틱", label: "로맨틱 (Romantic)", desc: "사랑스럽고 감성적인 분위기의 서사", bg: "from-pink-950 to-purple-900" },
+                ].map((m) => (
+                  <div
+                    key={m.id}
+                    onClick={() => {
+                      setMusicCategory(m.id);
+                      setSelectedMusicMood(m.id);
+                      setSelectedMusicGenre(null);
+                    }}
+                    className={`group relative h-32 overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br ${m.bg} p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:border-emerald-500/50 hover:shadow-2xl hover:shadow-emerald-500/10 cursor-pointer`}
+                  >
+                    <div className="absolute -right-6 -bottom-6 h-20 w-20 rounded-full bg-white/5 blur-xl group-hover:scale-150 transition duration-500" />
+                    <h3 className="text-sm font-black text-white tracking-tight text-left">{m.label}</h3>
+                    <p className="text-[11px] font-medium text-zinc-300/80 text-left leading-normal">{m.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // === 2단계: 카테고리별 음악 트랙 플레이어 리스트 뷰 ===
+      const filteredTracks = sortedAssets.filter(
+        (asset) =>
+          asset.mediaType === "music" &&
+          (asset.tags.map(t => t.toLowerCase()).includes(musicCategory.toLowerCase()) ||
+            asset.title.toLowerCase().includes(musicCategory.toLowerCase()) ||
+            (asset.themeCategory && asset.themeCategory.toLowerCase() === musicCategory.toLowerCase()))
+      );
+
+      return (
+        <div className="w-full py-6 space-y-6">
+          <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  setMusicCategory(null);
+                  setSelectedMusicGenre(null);
+                  setSelectedMusicMood(null);
+                }}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white transition cursor-pointer"
+              >
+                <ArrowLeft size={14} />
+              </button>
+              <div>
+                <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest flex text-left">Category Library</span>
+                <h2 className="text-xl font-black text-white tracking-tight mt-0.5 flex text-left">
+                  {musicCategory} 음악 목록
+                </h2>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-zinc-500">
+              총 {filteredTracks.length}곡 검색됨
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {filteredTracks.length === 0 ? (
+              <div className="flex h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/10 text-zinc-500">
+                <Music size={32} className="mb-3 text-zinc-700 animate-pulse" />
+                <p className="text-xs font-bold">해당 카테고리에 등록된 무료 음원이 아직 없습니다.</p>
+              </div>
+            ) : (
+              filteredTracks.map((asset) => {
+                const isPlaying = playingAudioId === asset.id;
+                return (
+                  <div
+                    key={asset.id}
+                    className="flex flex-col md:flex-row md:items-center justify-between rounded-xl border border-zinc-800/80 bg-[#090b11] p-4 hover:border-zinc-700/80 transition duration-250 gap-4"
+                  >
+                    <div className="flex items-center gap-4 min-w-[30%]">
+                      <button
+                        onClick={(e) => toggleAudio(asset, e)}
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition shadow-lg cursor-pointer ${
+                          isPlaying
+                            ? "bg-blue-500 text-black hover:bg-blue-400"
+                            : "bg-zinc-800 text-white hover:bg-zinc-700"
+                        }`}
+                      >
+                        {isPlaying ? <Pause size={14} fill="black" /> : <Play size={14} className="ml-0.5" />}
+                      </button>
+                      <div className="truncate text-left">
+                        <h4
+                          onClick={() => openDetailModal(asset)}
+                          className="text-xs font-black text-white truncate hover:text-blue-400 cursor-pointer"
+                        >
+                          {asset.title}
+                        </h4>
+                        <p className="text-[10px] font-bold text-zinc-500 mt-1 flex items-center gap-1.5">
+                          <span>by {asset.uploader.split("@")[0]}</span>
+                          <span>•</span>
+                          <span className="flex items-center gap-0.5"><Eye size={10} /> {asset.views}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="hidden lg:flex items-center gap-0.5 flex-1 justify-center max-w-[40%] h-8 overflow-hidden select-none opacity-40 hover:opacity-80 transition">
+                      {Array.from({ length: 42 }).map((_, i) => {
+                        const h = 5 + Math.sin(i * 0.4) * 12 + Math.cos(i * 0.2) * 8;
+                        return (
+                          <div
+                            key={i}
+                            style={{
+                              height: isPlaying ? `${Math.max(4, h + Math.random() * 8)}px` : `${Math.max(3, h * 0.4)}px`,
+                              transition: "height 0.18s ease-in-out"
+                            }}
+                            className={`w-[3px] rounded-full ${isPlaying ? 'bg-blue-400 animate-pulse' : 'bg-zinc-800'}`}
+                          />
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex items-center justify-between md:justify-end gap-5 font-bold text-xs text-zinc-400">
+                      <div className="flex gap-2">
+                        {asset.tags.slice(0, 3).map((t) => (
+                          <span key={t} className="rounded-full bg-zinc-900 border border-zinc-800 px-2 py-0.5 text-[9px] text-zinc-500">
+                            #{t}
+                          </span>
+                        ))}
+                      </div>
+                      <span>{asset.createdAt.slice(0, 10).replace(/-/g, ".")}</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          triggerDownload(asset);
+                        }}
+                        className="flex h-8 items-center gap-1.5 rounded-lg bg-zinc-800 hover:bg-blue-600 hover:text-white transition px-3 text-[11px] font-black text-zinc-300 cursor-pointer"
+                      >
+                        <Download size={12} />
+                        다운로드
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // === 기존의 Masonry 그리드 뷰 (이미지, 비디오 등) ===
+    if (sortedAssets.length === 0) {
+      return (
+        <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/10 text-zinc-500">
+          <ImageIcon size={42} className="mb-3 text-zinc-700" />
+          <p className="text-sm font-black">검색 조건에 맞는 무료 에셋이 없습니다.</p>
+          <p className="mt-1 text-xs text-zinc-600">첫 번째 기여자로 무료 나눔 파일 업로드를 해보세요!</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-2 w-full">
+        {sortedAssets.map((asset) => {
+          const isAudio = asset.mediaType === "music";
+          const isVideo = asset.mediaType === "video";
+          const isPlaying = playingAudioId === asset.id;
+          const assetUrl = asset.url || "";
+          
+          const getAspectClass = (ratio: string) => {
+            if (ratio === "16:9") return "aspect-[16/9]";
+            if (ratio === "9:16") return "aspect-[9/16]";
+            if (ratio === "4:3") return "aspect-[4/3]";
+            if (ratio === "3:4") return "aspect-[3/4]";
+            if (ratio === "1:1") return "aspect-square";
+            return isVideo ? "aspect-[16/9]" : "aspect-square";
+          };
+
+          return (
+            <div
+              key={asset.id}
+              onClick={() => openDetailModal(asset)}
+              onPointerMove={isVideo ? (e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const pct = Math.max(0, Math.min(1, x / rect.width));
+                const video = e.currentTarget.querySelector("video");
+                if (video) {
+                  const duration = video.duration || 5;
+                  const targetTime = pct * duration;
+                  if (!isNaN(targetTime)) {
+                    video.currentTime = targetTime;
+                  }
+                  if (video.paused) {
+                    const playPromise = video.play();
+                    if (playPromise !== undefined) {
+                      playPromise.catch(() => {});
+                    }
+                  }
+                }
+              } : undefined}
+              onPointerLeave={isVideo ? (e) => {
+                const video = e.currentTarget.querySelector("video");
+                if (video) {
+                  video.currentTime = 0;
+                  if (video.paused) {
+                    const playPromise = video.play();
+                    if (playPromise !== undefined) {
+                      playPromise.catch(() => {});
+                    }
+                  }
+                }
+              } : undefined}
+              className={`break-inside-avoid mb-2 group relative w-full overflow-hidden rounded-lg border border-zinc-800/60 bg-zinc-950/80 transition hover:-translate-y-1 hover:border-zinc-700/80 hover:shadow-2xl hover:shadow-black/50 cursor-pointer ${getAspectClass(asset.aspectRatio || "")}`}
+            >
+              {asset.isBusinessOnly && (
+                <div className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 px-2 py-1 text-[9px] font-black text-zinc-950 shadow-md uppercase tracking-wider select-none">
+                  👑 Business
+                </div>
+              )}
+              {isAudio ? (
+                <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-indigo-950/50 to-slate-900 px-4">
+                  <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400 group-hover:scale-105 transition-transform">
+                    <Music size={26} />
+                    {isPlaying && (
+                      <span className="absolute inset-0 animate-ping rounded-full bg-indigo-500/10" />
+                    )}
+                  </div>
+                  <p className="mt-3 text-center text-xs font-bold text-zinc-400 truncate w-full px-2">
+                    {asset.title}
+                  </p>
+                  <button
+                    onClick={(e) => toggleAudio(asset, e)}
+                    className="mt-3 flex items-center justify-center gap-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition px-3 py-1 text-[11px] font-black text-white cursor-pointer"
+                  >
+                    {isPlaying ? (
+                      <>
+                        <Pause size={10} /> 정지
+                      </>
+                    ) : (
+                      <>
+                        <Play size={10} /> 미리듣기
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : isVideo ? (
+                <div className="relative h-full w-full">
+                  <AutoplayVideo
+                    src={(assetUrl.includes("googleusercontent.com") || assetUrl.includes("drive.google.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(assetUrl)}` : assetUrl}
+                    className="h-full w-full object-cover pointer-events-none"
+                  />
+                  <div className="absolute right-3 top-3 rounded-lg bg-black/60 px-1.5 py-0.5 text-[9px] font-bold text-white tracking-widest uppercase">
+                    Video
+                  </div>
+                </div>
+              ) : (
+                <img
+                  src={(() => {
+                    const displayUrl = asset.thumbnailUrl || assetUrl;
+                    return (displayUrl.includes("googleusercontent.com") || displayUrl.includes("drive.google.com"))
+                      ? `/api/free-assets/proxy?url=${encodeURIComponent(displayUrl)}`
+                      : displayUrl;
+                  })()}
+                  alt={asset.title}
+                  loading="lazy"
+                  className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${
+                    (asset.themeCategory === "people" || asset.title.includes("머스크")) ? "object-top" : ""
+                  }`}
+                />
+              )}
+
+              {/* 카드 호버 오버레이 (Pixabay style) */}
+              <div className="absolute inset-0 flex flex-col justify-between bg-gradient-to-t from-black/90 via-black/20 to-black/35 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="flex justify-between items-start w-full">
+                  <div className="min-w-0 flex-1 text-left space-y-1">
+                    <p className="truncate text-xs font-black text-white leading-tight">
+                      {asset.title}
+                    </p>
+                    <p className="text-[10px] text-zinc-400 font-bold leading-none mb-1.5">
+                      By {asset.uploader.split("@")[0]}
+                    </p>
+                    <div className="flex flex-wrap gap-1 items-center">
+                      {asset.aspectRatio && (
+                        <span className="rounded-full bg-blue-600/90 text-white px-2 py-0.5 text-[9px] font-black tracking-wider shadow select-none">
+                          {asset.aspectRatio}
+                        </span>
+                      )}
+                      {asset.generationType === "ai" ? (
+                        <span className="rounded-full bg-purple-600/90 text-white px-2 py-0.5 text-[9px] font-black tracking-wider shadow select-none">
+                          AI 제작
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-emerald-600/90 text-white px-2 py-0.5 text-[9px] font-black tracking-wider shadow select-none">
+                          실제 사진
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    {currentUserEmail && (currentUserEmail.toLowerCase() === (asset.uploaderEmail || "").toLowerCase() || isAdmin) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditModal(asset);
+                        }}
+                        className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-zinc-300 hover:bg-black/90 hover:text-amber-400 transition cursor-pointer"
+                        title="정보 수정"
+                      >
+                        <Edit size={13} />
+                      </button>
+                    )}
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        triggerDownload(asset);
+                      }}
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-zinc-300 hover:bg-black/90 hover:text-white transition cursor-pointer"
+                      title="다운로드"
+                    >
+                      <Download size={13} />
+                    </button>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setBookmarkedAssetIds((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(asset.id)) {
+                            next.delete(asset.id);
+                          } else {
+                            next.add(asset.id);
+                          }
+                          return next;
+                        });
+                      }}
+                      className={`flex h-7 w-7 items-center justify-center rounded-full bg-black/60 transition cursor-pointer ${
+                        bookmarkedAssetIds.has(asset.id)
+                          ? "text-blue-500 hover:bg-black/90"
+                          : "text-zinc-300 hover:bg-black/90 hover:text-blue-400"
+                      }`}
+                      title="저장"
+                    >
+                      <Tag size={13} className={bookmarkedAssetIds.has(asset.id) ? "fill-blue-500 text-blue-500" : ""} />
+                    </button>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLikedAssetIds((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(asset.id)) {
+                            next.delete(asset.id);
+                          } else {
+                            next.add(asset.id);
+                          }
+                          return next;
+                        });
+                      }}
+                      className={`flex h-7 w-7 items-center justify-center rounded-full bg-black/60 transition cursor-pointer ${
+                        likedAssetIds.has(asset.id)
+                          ? "text-red-500 hover:bg-black/90"
+                          : "text-zinc-300 hover:bg-black/90 hover:text-red-400"
+                      }`}
+                      title="좋아요"
+                    >
+                      <Heart size={13} className={likedAssetIds.has(asset.id) ? "fill-red-500 text-red-500" : ""} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-end gap-3 w-full">
+                  <div className="min-w-0 flex-1 space-y-1 text-left">
+                    <div className="flex flex-wrap gap-1 pt-0.5">
+                      {asset.tags.slice(0, 3).map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-bold text-zinc-300"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center gap-2.5 mt-1 text-[9px] text-zinc-500 font-bold">
+                      <span className="flex items-center gap-0.5">
+                        <Eye size={10} /> {asset.views}
+                      </span>
+                      <span className="flex items-center gap-0.5">
+                        <Download size={10} /> {asset.downloads}
+                      </span>
+                    </div>
+                  </div>
+
+                  {asset.mediaType !== "music" && asset.mediaType !== "video" && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const importUrl = encodeURIComponent(asset.url);
+                        const title = encodeURIComponent(asset.title);
+                        window.location.href = `/studio/image/workspace?imageUrl=${importUrl}&title=${title}`;
+                      }}
+                      className="flex items-center gap-1.5 shrink-0 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition px-3 py-2 text-[10px] font-black shadow-lg cursor-pointer"
+                    >
+                      <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-white/20 text-white text-[8px] font-black font-mono">C</span>
+                      이미지 편집
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   const popularTags = ["자연", "배경", "바다", "하늘", "여행", "힐링", "음악", "감성", "우주", "비즈니스"];
 
@@ -1960,78 +2450,164 @@ export default function FreeAssetsLibraryPage() {
             })}
           </div>
 
-          {/* 정렬 탭 (For You, Random 등) */}
-          <div className="relative flex flex-wrap items-center gap-5 text-xs sm:text-sm select-none" ref={sortDropdownRef}>
-            {[
-              { id: "for_you", label: "For You", emoji: "✨" },
-              { id: "recent", label: "Recent", emoji: "⏱️" },
-              { id: "random", label: "Random", emoji: "🎲" },
-              { id: "hot", label: "Hot", emoji: "🔥" }
-            ].map((t) => (
-              <button
-                key={t.id}
-                onClick={() => {
-                  setActiveSortTab(t.id as any);
-                  setIsTopDropdownOpen(false);
-                }}
-                className={`flex items-center gap-1 font-black cursor-pointer transition ${
-                  activeSortTab === t.id ? "text-blue-500" : "text-zinc-500 hover:text-zinc-300"
-                }`}
-              >
-                <span className="mr-0.5">{t.emoji}</span>
-                {t.label}
-              </button>
-            ))}
-
-            {/* Top Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setIsTopDropdownOpen(!isTopDropdownOpen)}
-                className={`flex items-center gap-1 font-black cursor-pointer transition ${
-                  activeSortTab.startsWith("top_") ? "text-blue-500" : "text-zinc-500 hover:text-zinc-300"
-                }`}
-              >
-                <span>
-                  🏆 {activeSortTab === "top_day" ? "Top Day" :
-                      activeSortTab === "top_week" ? "Top Week" : "Top Month"}
-                </span>
-                <ChevronDown size={14} className={`transition-transform duration-200 ${isTopDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {isTopDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-28 rounded-xl border border-zinc-800 bg-[#090b11] p-1 shadow-2xl z-50">
-                  {[
-                    { id: "top_day", label: "Top Day" },
-                    { id: "top_week", label: "Top Week" },
-                    { id: "top_month", label: "Top Month" }
-                  ].map((opt) => (
-                    <button
-                      key={opt.id}
-                      onClick={() => {
-                        setActiveSortTab(opt.id as any);
-                        setIsTopDropdownOpen(false);
-                      }}
-                      className="w-full text-left rounded-lg px-3 py-1.5 text-xs font-bold text-zinc-400 hover:bg-zinc-900 hover:text-white transition cursor-pointer"
-                    >
-                      🏆 {opt.label}
-                    </button>
-                  ))}
+          {/* 정렬 탭 / 음악 장르&무드 필터 선택 옵션 */}
+          <div className="relative flex flex-wrap items-center gap-4 text-xs sm:text-sm select-none" ref={sortDropdownRef}>
+            {selectedMediaType === "music" ? (
+              <div className="flex flex-wrap items-center gap-3">
+                {/* 음악 장르 선택 옵션 */}
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setActiveFilterTab(activeFilterTab === "category" ? null : "category");
+                    }}
+                    className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-black transition cursor-pointer ${
+                      selectedMusicGenre
+                        ? "border-blue-500/50 bg-blue-500/10 text-blue-400"
+                        : "border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white"
+                    }`}
+                  >
+                    <span>🎹 장르: {selectedMusicGenre || "전체"}</span>
+                    <ChevronDown size={12} />
+                  </button>
+                  {activeFilterTab === "category" && (
+                    <div className="absolute left-0 mt-2 z-50 w-44 rounded-xl border border-zinc-800 bg-[#0c101b] p-1.5 shadow-2xl">
+                      {["전체", "일렉트로니카", "팝", "영화/드라마", "어쿠스틱"].map((genre) => (
+                        <button
+                          key={genre}
+                          onClick={() => {
+                            const val = genre === "전체" ? null : genre;
+                            setSelectedMusicGenre(val);
+                            setSelectedMusicMood(null); // Reset mood when choosing genre
+                            setMusicCategory(val);
+                            setActiveFilterTab(null);
+                          }}
+                          className={`w-full text-left rounded-lg px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
+                            (genre === "전체" && !selectedMusicGenre) || selectedMusicGenre === genre
+                              ? "bg-[#182030] text-blue-400 font-black"
+                              : "text-zinc-400 hover:bg-zinc-900/60 hover:text-white"
+                          }`}
+                        >
+                          {genre}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            <button
-              onClick={() => {
-                setActiveSortTab("likes");
-                setIsTopDropdownOpen(false);
-              }}
-              className={`flex items-center gap-1 font-black cursor-pointer transition ${
-                activeSortTab === "likes" ? "text-blue-500" : "text-zinc-500 hover:text-zinc-300"
-              }`}
-            >
-              <span className="mr-0.5">❤️</span>
-              Likes
-            </button>
+                {/* 음악 무드 선택 옵션 */}
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setActiveFilterTab(activeFilterTab === "style" ? null : "style");
+                    }}
+                    className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-black transition cursor-pointer ${
+                      selectedMusicMood
+                        ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400"
+                        : "border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white"
+                    }`}
+                  >
+                    <span>✨ 무드: {selectedMusicMood || "전체"}</span>
+                    <ChevronDown size={12} />
+                  </button>
+                  {activeFilterTab === "style" && (
+                    <div className="absolute left-0 mt-2 z-50 w-44 rounded-xl border border-zinc-800 bg-[#0c101b] p-1.5 shadow-2xl">
+                      {["전체", "그루비", "신나는", "부드러운", "로맨틱"].map((mood) => (
+                        <button
+                          key={mood}
+                          onClick={() => {
+                            const val = mood === "전체" ? null : mood;
+                            setSelectedMusicMood(val);
+                            setSelectedMusicGenre(null); // Reset genre when choosing mood
+                            setMusicCategory(val);
+                            setActiveFilterTab(null);
+                          }}
+                          className={`w-full text-left rounded-lg px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
+                            (mood === "전체" && !selectedMusicMood) || selectedMusicMood === mood
+                              ? "bg-[#182030] text-emerald-400 font-black"
+                              : "text-zinc-400 hover:bg-zinc-900/60 hover:text-white"
+                          }`}
+                        >
+                          {mood}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <>
+                {[
+                  { id: "for_you", label: "For You", emoji: "✨" },
+                  { id: "recent", label: "Recent", emoji: "⏱️" },
+                  { id: "random", label: "Random", emoji: "🎲" },
+                  { id: "hot", label: "Hot", emoji: "🔥" }
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => {
+                      setActiveSortTab(t.id as any);
+                      setIsTopDropdownOpen(false);
+                    }}
+                    className={`flex items-center gap-1 font-black cursor-pointer transition ${
+                      activeSortTab === t.id ? "text-blue-500" : "text-zinc-500 hover:text-zinc-300"
+                    }`}
+                  >
+                    <span className="mr-0.5">{t.emoji}</span>
+                    {t.label}
+                  </button>
+                ))}
+
+                {/* Top Dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => setIsTopDropdownOpen(!isTopDropdownOpen)}
+                    className={`flex items-center gap-1 font-black cursor-pointer transition ${
+                      activeSortTab.startsWith("top_") ? "text-blue-500" : "text-zinc-500 hover:text-zinc-300"
+                    }`}
+                  >
+                    <span>
+                      🏆 {activeSortTab === "top_day" ? "Top Day" :
+                          activeSortTab === "top_week" ? "Top Week" : "Top Month"}
+                    </span>
+                    <ChevronDown size={14} className={`transition-transform duration-200 ${isTopDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isTopDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-28 rounded-xl border border-zinc-800 bg-[#090b11] p-1 shadow-2xl z-50">
+                      {[
+                        { id: "top_day", label: "Top Day" },
+                        { id: "top_week", label: "Top Week" },
+                        { id: "top_month", label: "Top Month" }
+                      ].map((opt) => (
+                        <button
+                          key={opt.id}
+                          onClick={() => {
+                            setActiveSortTab(opt.id as any);
+                            setIsTopDropdownOpen(false);
+                          }}
+                          className="w-full text-left rounded-lg px-3 py-1.5 text-xs font-bold text-zinc-400 hover:bg-zinc-900 hover:text-white transition cursor-pointer"
+                        >
+                          🏆 {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => {
+                    setActiveSortTab("likes");
+                    setIsTopDropdownOpen(false);
+                  }}
+                  className={`flex items-center gap-1 font-black cursor-pointer transition ${
+                    activeSortTab === "likes" ? "text-blue-500" : "text-zinc-500 hover:text-zinc-300"
+                  }`}
+                >
+                  <span className="mr-0.5">❤️</span>
+                  Likes
+                </button>
+              </>
+            )}
 
             {/* 무료 에셋 나눔하기 버튼 */}
             <button
@@ -2050,7 +2626,8 @@ export default function FreeAssetsLibraryPage() {
 
         {/* 메인 에셋 그리드 영역 (Masonry 스타일) */}
         <div className="w-full mt-2">
-          {loading ? (
+          {renderAssetsContent()}
+          {false && (loading ? (
             <div className="flex h-64 flex-col items-center justify-center gap-3">
               <Loader2 className="animate-spin text-blue-500" size={32} />
               <p className="text-xs font-bold text-zinc-500">라이브러리로부터 무료 에셋 로딩 중...</p>
@@ -2319,7 +2896,7 @@ export default function FreeAssetsLibraryPage() {
                   );
                 })}
               </div>
-            )}
+            ))}
           </div>
         </div>
 

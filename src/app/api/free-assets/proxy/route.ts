@@ -57,6 +57,9 @@ export async function GET(req: NextRequest) {
       const contentType = getHeader(res.headers, "Content-Type") || "application/octet-stream";
       const buffer = new Uint8Array(res.data);
       
+      const download = searchParams.get("download");
+      const filename = searchParams.get("filename") || "download";
+
       const headers: Record<string, string> = {
         "Content-Type": contentType,
         "Access-Control-Allow-Origin": "*",
@@ -65,6 +68,10 @@ export async function GET(req: NextRequest) {
         // Since Google Drive assets do not change under the same file ID
         "Cache-Control": "public, max-age=31536000, s-maxage=31536000, immutable",
       };
+
+      if (download === "true") {
+        headers["Content-Disposition"] = `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`;
+      }
 
       const contentLength = getHeader(res.headers, "Content-Length");
       if (contentLength) {
@@ -97,10 +104,17 @@ export async function GET(req: NextRequest) {
       const contentType = response.headers.get("content-type") || "application/octet-stream";
       const buffer = await response.arrayBuffer();
 
+      const download = searchParams.get("download");
+      const filename = searchParams.get("filename") || "download";
+
       const headers: Record<string, string> = {
         "Content-Type": contentType,
         "Access-Control-Allow-Origin": "*",
       };
+
+      if (download === "true") {
+        headers["Content-Disposition"] = `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`;
+      }
 
       const acceptRanges = response.headers.get("accept-ranges");
       if (acceptRanges) headers["Accept-Ranges"] = acceptRanges;

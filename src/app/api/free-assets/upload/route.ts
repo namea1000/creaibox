@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { uploadFreeAsset } from "@/lib/google-drive";
+import { uploadFreeAsset, uploadFreeAssetThumbnail } from "@/lib/google-drive";
+import { uploadR2Music } from "@/lib/r2";
 import { createClient } from "@/utils/supabase/server";
+import sharp from "sharp";
 
 export async function POST(req: NextRequest) {
   const folderId = process.env.GDRIVE_FREE_ASSETS_FOLDER_ID;
@@ -64,18 +66,6 @@ export async function POST(req: NextRequest) {
     };
 
     const description = JSON.stringify(metadata);
-    
-    // Create unique filename to prevent folder name clutter
-    const fileExt = file.name.split(".").pop() || "png";
-    const baseName = file.name.replace(/\.[^/.]+$/, "");
-    const uniqueFileName = `${baseName}_${Date.now()}.${fileExt}`;
-
-    const fileUrl = await uploadFreeAsset(buffer, uniqueFileName, file.type, description);
-
-    // Parse fileId from Direct download URL
-    const fileIdMatch = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    const fileId = fileIdMatch ? fileIdMatch[1] : "";
-
     // Determine YYYYMM and mediaType
     const now = new Date();
     const year = now.getFullYear();
@@ -99,6 +89,46 @@ export async function POST(req: NextRequest) {
       else if (file.type.startsWith("video/")) normMediaType = "video";
     }
 
+    // Create unique filename to prevent folder name clutter
+    const fileExt = file.name.split(".").pop() || "png";
+    const baseName = file.name.replace(/\.[^/.]+$/, "");
+    const uniqueFileName = `${baseName}_${Date.now()}.${fileExt}`;
+
+    let fileUrl = "";
+    let fileId = "";
+    let thumbnailUrl: string | null = null;
+
+    if (normMediaType === "music") {
+      // 1. Upload to Cloudflare R2 if it is audio/music
+      fileUrl = await uploadR2Music(buffer, uniqueFileName, file.type);
+      fileId = uniqueFileName;
+    } else {
+      // 2. Upload to Google Drive for images/videos
+      const uploadResult = await uploadFreeAsset(buffer, uniqueFileName, file.type, description);
+      fileUrl = uploadResult.url;
+      const fileIdMatch = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      fileId = fileIdMatch ? fileIdMatch[1] : "";
+
+      // 3. If it is an image, generate a WebP thumbnail and upload to the same parent folder's thumbnails subdirectory
+      if (normMediaType === "image") {
+        try {
+          const thumbBuffer = await sharp(buffer)
+            .resize(400) // limit width to 400px
+            .webp({ quality: 85 })
+            .toBuffer();
+          const thumbFileName = `thumb_${uniqueFileName.replace(/\.[^/.]+$/, "")}.webp`;
+          thumbnailUrl = await uploadFreeAssetThumbnail(
+            thumbBuffer,
+            thumbFileName,
+            "image/webp",
+            uploadResult.parentFolderId
+          );
+        } catch (thumbErr: any) {
+          console.error("Failed to generate/upload thumbnail:", thumbErr);
+        }
+      }
+    }
+
     // Insert record into Supabase free_assets table
     if (fileId) {
       const { error: dbError } = await supabase
@@ -106,6 +136,7 @@ export async function POST(req: NextRequest) {
         .insert({
           gdrive_file_id: fileId,
           storage_url: fileUrl,
+          thumbnail_url: thumbnailUrl,
           file_name: file.name,
           mime_type: file.type,
           media_type: metadata.mediaType || normMediaType,

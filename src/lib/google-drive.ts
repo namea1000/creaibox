@@ -244,7 +244,7 @@ export async function uploadFreeAsset(
   fileName: string,
   mimeType: string,
   description: string
-): Promise<string> {
+): Promise<{ url: string; parentFolderId: string }> {
   const drive = getDriveClient();
   const rootFolderId = process.env.GDRIVE_FREE_ASSETS_FOLDER_ID;
 
@@ -313,6 +313,59 @@ export async function uploadFreeAsset(
   const fileId = uploadResponse.data.id;
   if (!fileId) {
     throw new Error("Failed to upload free asset to Google Drive.");
+  }
+
+  await drive.permissions.create({
+    fileId,
+    requestBody: {
+      role: "reader",
+      type: "anyone",
+    },
+  });
+
+  return {
+    url: `https://lh3.googleusercontent.com/d/${fileId}`,
+    parentFolderId: targetFolderId,
+  };
+}
+
+/**
+ * Uploads a WebP thumbnail file directly inside the 'thumbnails' subfolder of the original asset's parent folder.
+ */
+export async function uploadFreeAssetThumbnail(
+  buffer: Buffer,
+  fileName: string,
+  mimeType: string,
+  parentFolderId: string
+): Promise<string> {
+  const drive = getDriveClient();
+
+  // Resolve: parentFolderId -> thumbnails
+  const targetFolderId = await getOrCreateFolder(drive, "thumbnails", parentFolderId);
+
+  const mediaStream = new Readable();
+  mediaStream.push(buffer);
+  mediaStream.push(null);
+
+  const fileMetadata = {
+    name: fileName,
+    parents: [targetFolderId],
+  };
+
+  const media = {
+    mimeType,
+    body: mediaStream,
+  };
+
+  const uploadResponse = await drive.files.create({
+    requestBody: fileMetadata,
+    media,
+    fields: "id",
+  });
+
+  const fileId = uploadResponse.data.id;
+  if (!fileId) {
+    throw new Error("Failed to upload free asset thumbnail to Google Drive.");
   }
 
   await drive.permissions.create({

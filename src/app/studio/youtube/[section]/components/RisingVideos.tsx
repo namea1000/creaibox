@@ -77,6 +77,38 @@ export default function RisingVideos() {
   const [analyzedVideos, setAnalyzedVideos] = useState<any[]>([]);
   const [visibleCount, setVisibleCount] = useState(20);
 
+  const [isBulkLoading, setIsBulkLoading] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState(0);
+  const [bulkTotal, setBulkTotal] = useState(64);
+  const [bulkCurrentInfo, setBulkCurrentInfo] = useState("");
+  const [refreshCooldown, setRefreshCooldown] = useState<number>(0);
+
+  // Recover cooldown from localStorage on mount and run a second counter
+  useEffect(() => {
+    const checkCooldown = () => {
+      const lastTime = localStorage.getItem("creaibox_last_refresh_timestamp");
+      if (lastTime) {
+        const elapsed = Math.floor((Date.now() - parseInt(lastTime, 10)) / 1000);
+        const remaining = 10800 - elapsed; // 3 Hours limit
+        if (remaining > 0) {
+          setRefreshCooldown(remaining);
+        } else {
+          setRefreshCooldown(0);
+        }
+      }
+    };
+
+    checkCooldown();
+    const timer = setInterval(checkCooldown, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatCooldown = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}분 ${s}초 남음`;
+  };
+
   // 1. Recover recent analyzed reports from localStorage on mount
   useEffect(() => {
     const cached = localStorage.getItem("creaibox_recent_analyzed_videos");
@@ -141,17 +173,22 @@ export default function RisingVideos() {
     setTimeout(() => setCopiedVideoId(null), 1500);
   };
 
-  const fetchTrending = useCallback(async (catId = activeCategory, targetDate = selectedDate, country = selectedCountry) => {
+  const fetchTrending = useCallback(async (catId = activeCategory, targetDate = selectedDate, country = selectedCountry, force = false) => {
     setPlayingVideoId(null);
     setLoading(true);
     setError(null);
     setVisibleCount(20); // Reset page count on new fetch
     try {
-      const res = await fetch(`/api/youtube?type=trending&categoryId=${catId}&date=${targetDate}&country=${country}`);
+      const res = await fetch(`/api/youtube?type=trending&categoryId=${catId}&date=${targetDate}&country=${country}${force ? '&force=true' : ''}`);
       if (!res.ok) throw new Error("급상승 비디오 리스트를 가져오는데 실패했습니다.");
       const result = await res.json();
       setVideos(result.data || []);
       setSource(result.source);
+
+      if (force) {
+        localStorage.setItem("creaibox_last_refresh_timestamp", Date.now().toString());
+        setRefreshCooldown(10800);
+      }
 
       // Prepopulate and merge analyzed news list from database cache hit status (Global Unified Merge)
       if (result.analyzedVideoIds && result.data) {
@@ -176,6 +213,48 @@ export default function RisingVideos() {
   useEffect(() => {
     fetchTrending("all", getKstTodayDateStr(), "KR");
   }, []);
+
+  const handleBulkSync = async () => {
+    if (isBulkLoading) return;
+    setIsBulkLoading(true);
+    setBulkProgress(0);
+    setBulkTotal(COUNTRIES.length * CATEGORIES.length);
+    setBulkCurrentInfo("일괄 수집을 시작합니다...");
+
+    const todayStr = getKstTodayDateStr();
+    let completed = 0;
+
+    try {
+      for (const country of COUNTRIES) {
+        for (const category of CATEGORIES) {
+          const info = `${country.flag} ${country.name} - ${category.label} 트렌드 분석 수집 중...`;
+          setBulkCurrentInfo(info);
+
+          try {
+            await fetch(`/api/youtube?type=trending&categoryId=${category.id}&date=${todayStr}&country=${country.code}`);
+          } catch (e) {
+            console.error(`Error syncing ${country.code} - ${category.label}:`, e);
+          }
+
+          completed++;
+          setBulkProgress(completed);
+
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      }
+      setBulkCurrentInfo("🎉 모든 국가 및 카테고리 수집 완료!");
+      localStorage.setItem("creaibox_last_refresh_timestamp", Date.now().toString());
+      setRefreshCooldown(10800);
+      fetchTrending(activeCategory, selectedDate, selectedCountry);
+    } catch (err: any) {
+      console.error("Bulk sync failed:", err);
+      setBulkCurrentInfo("⚠️ 일괄 수집 중 일부 오류가 발생했습니다.");
+    } finally {
+      setTimeout(() => {
+        setIsBulkLoading(false);
+      }, 3000);
+    }
+  };
 
   const handleCategoryChange = (catId: string) => {
     setActiveCategory(catId);
@@ -242,15 +321,46 @@ export default function RisingVideos() {
           </div>
         </div>
 
-        <button
-          onClick={() => fetchTrending(activeCategory, selectedDate, selectedCountry)}
-          disabled={loading || !isTodaySelected}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-orange-600 hover:bg-orange-500 disabled:opacity-30 disabled:hover:bg-orange-600 px-5 text-xs font-black text-white transition shrink-0 self-start sm:self-center"
-        >
-          {loading ? <Loader2 size={14} className="animate-spin" /> : <Flame size={14} />}
-          {isTodaySelected ? "새로고침" : "새로고침 불가"}
-        </button>
+    <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+      <button
+        onClick={handleBulkSync}
+        disabled={loading || isBulkLoading || !isTodaySelected || refreshCooldown > 0}
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 disabled:opacity-30 disabled:hover:from-orange-600 px-5 text-xs font-black text-white transition"
+      >
+        {isBulkLoading ? <Loader2 size={14} className="animate-spin" /> : <Flame size={14} />}
+        {refreshCooldown > 0 ? `수집 완료 (${formatCooldown(refreshCooldown)})` : (isTodaySelected ? "전체 일괄수집" : "일괄수집 불가")}
+      </button>
+
+      <button
+        onClick={() => fetchTrending(activeCategory, selectedDate, selectedCountry, true)}
+        disabled={loading || isBulkLoading || !isTodaySelected || refreshCooldown > 0}
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 disabled:opacity-30 disabled:hover:bg-zinc-800 px-5 text-xs font-black text-white transition"
+      >
+        {loading ? <Loader2 size={14} className="animate-spin" /> : <Flame size={14} />}
+        {refreshCooldown > 0 ? `새로고침 불가 (${formatCooldown(refreshCooldown)})` : (isTodaySelected ? "새로고침" : "새로고침 불가")}
+      </button>
+    </div>
+  </div>
+
+  {isBulkLoading && (
+    <div className="rounded-2xl border border-orange-500/20 bg-zinc-950/40 p-5 shadow-2xl backdrop-blur-md space-y-3 animate-pulse">
+      <div className="flex justify-between items-center text-xs font-black text-zinc-300">
+        <span className="flex items-center gap-2">
+          <Loader2 size={14} className="animate-spin text-orange-500" />
+          {bulkCurrentInfo}
+        </span>
+        <span className="bg-orange-500/10 text-orange-400 px-2 py-0.5 rounded-md border border-orange-500/20">
+          {bulkProgress} / {bulkTotal} ({(bulkProgress / bulkTotal * 100).toFixed(0)}%)
+        </span>
       </div>
+      <div className="w-full bg-zinc-900 h-2.5 rounded-full overflow-hidden border border-zinc-800">
+        <div 
+          className="bg-gradient-to-r from-orange-600 to-amber-400 h-full transition-all duration-300 rounded-full"
+          style={{ width: `${(bulkProgress / bulkTotal * 100)}%` }}
+        />
+      </div>
+    </div>
+  )}
 
       {/* 🌐 Central Filter Hub (Global Country + Category Selectors) */}
       <div className="rounded-2xl border border-zinc-800 bg-zinc-950/20 p-6 backdrop-blur-md space-y-3.5 shadow-2xl shadow-black/25 flex flex-col items-center w-full">

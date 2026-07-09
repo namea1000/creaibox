@@ -1,4 +1,4 @@
-import { S3Client, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { S3Client, ListObjectsV2Command, PutObjectCommand } from "@aws-sdk/client-s3";
 
 // 1. Initialize Cloudflare R2 Client (S3 Compatible API)
 const r2Client = new S3Client({
@@ -55,4 +55,35 @@ export async function listR2Music(): Promise<R2MusicFile[]> {
         lastModified: item.LastModified || new Date(),
       };
     });
+}
+
+/**
+ * Uploads a music file to Cloudflare R2 inside the 'music/' folder.
+ * Returns the public URL of the uploaded file.
+ */
+export async function uploadR2Music(
+  buffer: Buffer,
+  fileName: string,
+  contentType: string
+): Promise<string> {
+  const bucketName = process.env.R2_BUCKET_NAME;
+  const r2PublicUrl = (process.env.NEXT_PUBLIC_R2_PUBLIC_URL || "").replace(/\/$/, "");
+  
+  if (!bucketName) {
+    throw new Error("R2_BUCKET_NAME environment variable is not configured.");
+  }
+
+  const key = `music/${fileName}`;
+
+  const command = new PutObjectCommand({
+    Bucket: bucketName,
+    Key: key,
+    Body: buffer,
+    ContentType: contentType,
+  });
+
+  await r2Client.send(command);
+
+  // Return the direct CDN Public URL
+  return `${r2PublicUrl}/${key}`;
 }

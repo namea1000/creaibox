@@ -17,6 +17,10 @@ import VideoWorkflow from "@/app/studio/youtube/[section]/components/VideoWorkfl
 import YoutubeTop300 from "@/app/studio/youtube/[section]/components/YoutubeTop300";
 import YoutubeVideoSearch from "@/app/studio/youtube/[section]/components/YoutubeVideoSearch";
 
+// Import original page components for reports and channel-reports mapping
+import YoutubeReportsPage from "@/app/studio/youtube/reports/page";
+import YoutubeChannelReportsPage from "@/app/studio/youtube/channel-reports/page";
+
 export default function PublicYoutubeSectionClient() {
   const { section } = useParams<{ section: string }>();
 
@@ -39,9 +43,11 @@ export default function PublicYoutubeSectionClient() {
       case "title":
         return <AiTitleGenerator />;
       case "report":
-      case "reports":
-      case "channel-reports":
         return <StrategyReport />;
+      case "reports":
+        return <YoutubeReportsPage />;
+      case "channel-reports":
+        return <YoutubeChannelReportsPage />;
       case "workflow":
         return <VideoWorkflow />;
       case "top300":

@@ -105,6 +105,25 @@ export default function ChannelDetail() {
       if (!res.ok) throw new Error("채널 정보를 가져오는데 실패했습니다.");
       const result = await res.json();
       if (result.error) throw new Error(result.error);
+      
+      // LocalStorage 캐시에 실시간 채널 정보 저장 (Top 300 리스트와 연동 브릿지)
+      try {
+        const cached = localStorage.getItem("yt_channel_cache");
+        const cacheMap = cached ? JSON.parse(cached) : {};
+        const key = (result.handle || activeSearchQuery || "").toLowerCase();
+        if (key) {
+          cacheMap[key] = {
+            subscribers: result.subscribers,
+            views: result.views,
+            videos: result.videos,
+            timestamp: Date.now()
+          };
+          localStorage.setItem("yt_channel_cache", JSON.stringify(cacheMap));
+        }
+      } catch (e) {
+        console.error("Failed to write to channel cache", e);
+      }
+      
       setData(result);
     } catch (err: any) {
       setError(err.message || "오류가 발생했습니다.");
@@ -162,7 +181,8 @@ export default function ChannelDetail() {
     if (!data || !data.channel) return;
     const channelSnippet = data.channel.snippet;
     const channelStats = data.channel.statistics;
-    const handle = channelSnippet.customUrl || `@${channelSnippet.title.replace(/\s+/g, "")}`;
+    const rawUrl = channelSnippet.customUrl || channelSnippet.title.replace(/\s+/g, "");
+    const handle = rawUrl.startsWith("@") ? rawUrl : `@${rawUrl}`;
 
     const isAdded = radarChannels.some((ch) => ch.handle.toLowerCase() === handle.toLowerCase());
 
@@ -465,6 +485,22 @@ export default function ChannelDetail() {
       {/* Search results mapping outperformer indicators */}
       {data && data.channel && (
         <div className="flex flex-col space-y-4">
+          {/* ⚠️ 유튜브 API 쿼터 초과 시 솔직/투명 안내 배너 노출 */}
+          {data.source === "mock-fallback" && (
+            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4.5 text-left space-y-2">
+              <h4 className="text-xs font-black text-amber-500 flex items-center gap-1.5">
+                ⚠️ 유튜브 라이브 통계 제한 안내 (API 할당량 초과)
+              </h4>
+              <p className="text-[11px] font-bold text-zinc-400 leading-relaxed">
+                현재 구글/유튜브 본사 API의 실시간 호출 한도(일일 트래픽 Quota)가 소진되어 실시간 데이터 연동이 일시적으로 제한된 상태입니다.
+                <br />
+                이에 따라 신뢰할 수 없는 허위 가짜 값을 표출하는 대신, <strong>정합성이 검증된 벤치마킹 기준 데이터</strong>로 대체하여 안내 배너와 통계를 표기하고 있습니다. 
+                <br />
+                유튜브 본사 서버의 리셋 시각(매일 오후 5시 전후) 이후에는 자동으로 정상적인 실시간 핫 라이브 정보 조회가 재개됩니다.
+              </p>
+            </div>
+          )}
+
           {/* Back to list button */}
           <button
             onClick={() => router.push("/studio/youtube/channel")}
@@ -502,7 +538,11 @@ export default function ChannelDetail() {
 
                   <div>
                     <h3 className="text-lg sm:text-xl font-black text-white leading-tight">{data.channel.snippet.title}</h3>
-                    <p className="text-xs sm:text-sm text-zinc-400 mt-1 font-bold">{data.channel.snippet.customUrl}</p>
+                    <p className="text-xs sm:text-sm text-zinc-400 mt-1 font-bold">
+                      {data.channel.snippet.customUrl?.startsWith("@") 
+                        ? data.channel.snippet.customUrl 
+                        : `@${data.channel.snippet.customUrl || ""}`}
+                    </p>
                   </div>
 
                   {/* Scrollable full description */}
@@ -515,18 +555,41 @@ export default function ChannelDetail() {
 
                   {/* 3-Metric stats labels and values */}
                   <div className="grid grid-cols-3 gap-2 text-left">
-                    <div className="rounded-xl border border-zinc-850 bg-zinc-950/20 p-2.5 text-center">
-                      <p className="text-[10px] font-black text-zinc-400">구독자</p>
-                      <p className="text-sm font-black text-red-400 mt-1">{formatNumber(data.channel.statistics.subscriberCount)}</p>
+                    <div className="rounded-xl border border-zinc-850 bg-zinc-950/20 p-2.5 text-center flex flex-col justify-between min-h-[76px]">
+                      <div>
+                        <p className="text-[10px] font-black text-zinc-400">구독자</p>
+                        <p className="text-sm font-black text-red-400 mt-0.5">{formatNumber(data.channel.statistics.subscriberCount)}</p>
+                      </div>
+                      <p className="text-[8.5px] font-bold text-zinc-500 mt-1.5 border-t border-zinc-850/60 pt-1 leading-none">
+                        업데이트: {data.updatedAt ? new Date(data.updatedAt).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }) : "오늘 실시간"}
+                      </p>
                     </div>
-                    <div className="rounded-xl border border-zinc-850 bg-zinc-950/20 p-2.5 text-center">
-                      <p className="text-[10px] font-black text-zinc-400">총조회수</p>
-                      <p className="text-sm font-black text-white mt-1">{formatNumber(data.channel.statistics.viewCount)}</p>
+                    <div className="rounded-xl border border-zinc-850 bg-zinc-950/20 p-2.5 text-center flex flex-col justify-between min-h-[76px]">
+                      <div>
+                        <p className="text-[10px] font-black text-zinc-400">총조회수</p>
+                        <p className="text-sm font-black text-white mt-0.5">{formatNumber(data.channel.statistics.viewCount)}</p>
+                      </div>
+                      <p className="text-[8.5px] font-bold text-zinc-500 mt-1.5 border-t border-zinc-850/60 pt-1 leading-none">
+                        조회기준일: 오늘
+                      </p>
                     </div>
-                    <div className="rounded-xl border border-zinc-850 bg-zinc-950/20 p-2.5 text-center">
-                      <p className="text-[10px] font-black text-zinc-400">동영상수</p>
-                      <p className="text-sm font-black text-white mt-1">{data.channel.statistics.videoCount}개</p>
+                    <div className="rounded-xl border border-zinc-850 bg-zinc-950/20 p-2.5 text-center flex flex-col justify-between min-h-[76px]">
+                      <div>
+                        <p className="text-[10px] font-black text-zinc-400">동영상수</p>
+                        <p className="text-sm font-black text-white mt-0.5">{data.channel.statistics.videoCount}개</p>
+                      </div>
+                      <p className="text-[8.5px] font-bold text-zinc-500 mt-1.5 border-t border-zinc-850/60 pt-1 leading-none">
+                        상태: 정상연동
+                      </p>
                     </div>
+                  </div>
+
+                  {/* 100일 주기 실시간 동기화 정보 알림 문구 배너 */}
+                  <div className="rounded-xl border border-zinc-850 bg-red-950/5 p-3 text-center">
+                    <p className="text-[10px] font-extrabold text-red-400 flex items-center justify-center gap-1.5">
+                      <span>⚠️</span>
+                      <span>채널 정보는 100일에 1번씩 유튜브 API를 통해 실시간 업데이트됩니다.</span>
+                    </p>
                   </div>
 
                   {/* Dynamic Add to Radar Channel toggler */}

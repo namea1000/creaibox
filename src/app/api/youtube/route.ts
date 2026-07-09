@@ -1,3 +1,4 @@
+import { BENCHMARK_CHANNELS } from "@/app/studio/youtube/[section]/components/benchmarkChannels";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, recordVaultSuccess, recordVaultFailure } from "@/lib/server/get-free-gemini-key";
 import { decryptApiKey } from "@/lib/server/api-vault-crypto";
@@ -1184,26 +1185,70 @@ function getMockData(type: string | null, searchParams: URLSearchParams) {
 
     case "channel": {
       const query = searchParams.get("query") || "크리에이박스";
+      const cleanQuery = query.toLowerCase().trim().replace("@", "");
+      
+      const parseStringToNumber = (str: string | undefined): number => {
+        if (!str) return 0;
+        let parsed = str.trim();
+        let total = 0;
+        if (parsed.includes("억")) {
+          const parts = parsed.split("억");
+          total += parseFloat(parts[0]) * 100000000;
+          if (parts[1] && parts[1].includes("만")) {
+            total += parseFloat(parts[1].replace("만", "")) * 10000;
+          }
+        } else if (parsed.includes("만")) {
+          total += parseFloat(parsed.replace("만", "")) * 10000;
+        } else if (parsed.includes("개")) {
+          total += parseFloat(parsed.replace("개", ""));
+        } else {
+          total += parseFloat(parsed) || 0;
+        }
+        return total;
+      };
+
+      const benchmarkMatch = BENCHMARK_CHANNELS.find(ch => {
+        const localKey = (ch.handle || "").toLowerCase().trim().replace("@", "");
+        const localName = ch.name.toLowerCase().replace(/\s+/g, "");
+        return localKey === cleanQuery || localName === cleanQuery;
+      });
+
+      let name = query;
+      let subscribers = "124500";
+      let views = "3540000";
+      let videos = "148";
+      let description = "인공지능을 활용한 앨범 작사, 작곡, 영상 편집 자동화 비즈니스 팁을 공유하는 채널입니다.";
+
+      if (benchmarkMatch) {
+        name = benchmarkMatch.name;
+        subscribers = String(parseStringToNumber(benchmarkMatch.subscribers));
+        views = String(parseStringToNumber(benchmarkMatch.views));
+        videos = String(parseStringToNumber(benchmarkMatch.videos));
+        description = benchmarkMatch.desc || `${name} 공식 유튜브 채널입니다.`;
+      }
+
+      const customUrlVal = query.startsWith("@") ? query : `@${query}`;
+
       return {
         source: "mock-fallback",
         channel: {
           id: "mock-channel-id",
           snippet: {
-            title: query,
-            description: "인공지능을 활용한 앨범 작사, 작곡, 영상 편집 자동화 비즈니스 팁을 공유하는 채널입니다.",
-            customUrl: `@${query.replace(/\s+/g, "").toLowerCase()}`,
+            title: name,
+            description: description,
+            customUrl: customUrlVal,
             thumbnails: { medium: { url: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=120&q=80" } },
           },
           statistics: {
-            subscriberCount: "124500",
-            viewCount: "3540000",
-            videoCount: "148",
+            subscriberCount: subscribers,
+            viewCount: views,
+            videoCount: videos,
           },
         },
         recentVideos: Array.from({ length: 30 }).map((_, i) => ({
           id: { videoId: `mock-v-${i}` },
           snippet: {
-            title: `${query}의 인기 추천 영상 파트 ${i + 1}`,
+            title: `${name}의 인기 추천 영상 파트 ${i + 1}`,
             publishedAt: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
             thumbnails: {
               medium: {

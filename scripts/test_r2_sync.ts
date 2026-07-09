@@ -3,6 +3,8 @@ import { google } from 'googleapis';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { createClient } from '@supabase/supabase-js';
 import * as path from 'path';
+import sharp from 'sharp';
+import { uploadFreeAssetThumbnail } from '../src/lib/google-drive';
 
 // Load environment variables from .env.local
 const dotenvPath = path.join(process.cwd(), '.env.local');
@@ -83,6 +85,8 @@ function cleanMidjourneyPrompt(fileName: string): { cleanPrompt: string; ratio: 
     .replace(/--weird\s+\d+/gi, '')
     .replace(/--w\s+\d+/gi, '')
     .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '') // remove uuid
+    // Remove raw/style/photo/stylize keywords to avoid uncanny translations like "날것", "원시 스타일"
+    .replace(/\b(raw|style|stylize|photo)\b/gi, '')
     .replace(/_/g, ' ')
     .replace(/-/g, ' ')
     .replace(/\s+/g, ' ')
@@ -110,7 +114,7 @@ async function analyzeWithGemini(promptText: string, imageBuffer?: Buffer, mimeT
       {
         parts: [
           {
-            text: "Look at this image. Output a JSON object containing: 1. 'title' (a clean, descriptive Korean title, max 3 words for website display), 2. 'english_title' (a clean, concise English title, max 3 words, alphanumeric only, using spaces), 3. 'tags' (array of 5-8 Korean keywords for search classification)."
+            text: "Look at this image. Output a JSON object containing: 1. 'title' (a highly descriptive, premium, and natural Korean title fitting a high-quality free stock media library, maximum 3-4 words. Do NOT use single word titles like '공부방', '산', '바다'. Tell a beautiful story. Also do NOT use tech terms like '원시', '날것', '로우', 'raw', '스타일'), 2. 'english_title' (a clean, concise English title, max 3-4 words, alphanumeric only, using spaces), 3. 'tags' (array of 6-9 Korean keywords for search classification)."
           },
           {
             inlineData: {
@@ -126,7 +130,7 @@ async function analyzeWithGemini(promptText: string, imageBuffer?: Buffer, mimeT
       {
         parts: [
           {
-            text: `Translate this image/video generation prompt into a clean Korean title (max 3 words) and generate 5-8 relevant tags in Korean. Also output a clean, concise English title (max 3 words, alphanumeric only, using spaces) for the filename. Return a JSON object with 'title' (string), 'english_title' (string), and 'tags' (array of strings). Prompt: "${promptText}"`
+            text: `Translate this image/video generation prompt into a highly descriptive, premium, and natural Korean title fitting a free stock media library (3-4 words. Tell a beautiful story rather than single word titles like '공부방', '산', '바다'. Do NOT use raw/style/photo/stylize literal translations like '날것', '원시', '스타일') and generate 6-9 relevant tags in Korean. Also output a clean, concise English title (max 3-4 words, alphanumeric only, using spaces) for the filename. Return a JSON object with 'title' (string), 'english_title' (string), and 'tags' (array of strings). Prompt: "${promptText}"`
           }
         ]
       }
@@ -170,6 +174,75 @@ async function findFolder(drive: any, parentId: string, folderName: string): Pro
   });
   const files = res.data.files || [];
   return files.length > 0 ? files[0].id : null;
+}
+
+async function scanFolderRecursive(
+  drive: any,
+  folderId: string,
+  categoryName: string,
+  filesToSync: any[]
+) {
+  let pageToken: string | undefined = undefined;
+  do {
+    const res: any = await drive.files.list({
+      q: `'${folderId}' in parents and trashed = false`,
+      fields: "nextPageToken, files(id, name, mimeType, size, createdTime, description, imageMediaMetadata, videoMediaMetadata)",
+      pageSize: 100,
+      pageToken
+    });
+    const files = res.data.files || [];
+    for (const f of files) {
+      if (!f.id || !f.name) continue;
+      
+      if (f.mimeType === 'application/vnd.google-apps.folder') {
+        // Skip thumbnails subfolders to avoid processing thumbnails as raw assets
+        if (f.name === 'thumbnails') continue;
+        await scanFolderRecursive(drive, f.id, categoryName, filesToSync);
+      } else {
+        const isImage = f.mimeType?.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(f.name);
+        const isVideo = f.mimeType?.startsWith('video/') || /\.(mp4|mkv|mov|avi|webm)$/i.test(f.name);
+        const isAudio = f.mimeType?.startsWith('audio/') || /\.(mp3|wav|ogg|aac|flac)$/i.test(f.name);
+
+        if (isImage) {
+          filesToSync.push({
+            id: f.id,
+            name: f.name,
+            mimeType: f.mimeType || 'image/png',
+            size: f.size || '0',
+            createdTime: f.createdTime || new Date().toISOString(),
+            description: f.description || '',
+            mediaType: 'image',
+            imageMediaMetadata: f.imageMediaMetadata,
+            category: categoryName
+          });
+        } else if (isVideo) {
+          filesToSync.push({
+            id: f.id,
+            name: f.name,
+            mimeType: f.mimeType || 'video/mp4',
+            size: f.size || '0',
+            createdTime: f.createdTime || new Date().toISOString(),
+            description: f.description || '',
+            mediaType: 'video',
+            videoMediaMetadata: f.videoMediaMetadata,
+            category: categoryName
+          });
+        } else if (isAudio) {
+          filesToSync.push({
+            id: f.id,
+            name: f.name,
+            mimeType: f.mimeType || 'audio/mpeg',
+            size: f.size || '0',
+            createdTime: f.createdTime || new Date().toISOString(),
+            description: f.description || '',
+            mediaType: 'music',
+            category: categoryName
+          });
+        }
+      }
+    }
+    pageToken = res.data.nextPageToken;
+  } while (pageToken);
 }
 
 async function main() {
@@ -376,33 +449,8 @@ async function main() {
       console.log(`Found ${categoryFolders.length} category folders inside creassets-library.`);
       
       for (const catFolder of categoryFolders) {
-        console.log(`Scanning category folder: ${catFolder.name} (ID: ${catFolder.id})...`);
-        let pageToken: string | undefined = undefined;
-        do {
-          const listRes: any = await drive.files.list({
-            q: `'${catFolder.id}' in parents and trashed = false`,
-            fields: "nextPageToken, files(id, name, mimeType, size, createdTime, description, imageMediaMetadata)",
-            pageSize: 100,
-            pageToken: pageToken
-          });
-          const catFiles = listRes.data.files || [];
-          catFiles.forEach((f: any) => {
-            if (f.id && f.name && f.mimeType?.startsWith('image/')) {
-              filesToSync.push({
-                id: f.id,
-                name: f.name,
-                mimeType: f.mimeType,
-                size: f.size || '0',
-                createdTime: f.createdTime || new Date().toISOString(),
-                description: f.description || '',
-                mediaType: 'image',
-                imageMediaMetadata: f.imageMediaMetadata,
-                category: catFolder.name || undefined
-              });
-            }
-          });
-          pageToken = listRes.data.nextPageToken;
-        } while (pageToken);
+        console.log(`Scanning category folder recursively: ${catFolder.name} (ID: ${catFolder.id})...`);
+        await scanFolderRecursive(drive, catFolder.id, catFolder.name, filesToSync);
       }
     }
   }
@@ -508,7 +556,7 @@ async function main() {
 
     // If it's a video or we need Gemini Vision for unnamed images, download the buffer
     let buffer: Buffer | undefined = undefined;
-    const needsDownload = file.mediaType === 'video' || (file.mediaType === 'image' && !parsedMidjourney.cleanPrompt);
+    const needsDownload = file.mediaType === 'video' || file.mediaType === 'image';
 
     if (needsDownload) {
       console.log(`Downloading file from Google Drive...`);
@@ -532,12 +580,16 @@ async function main() {
         title = geminiRes.title;
         englishTitle = geminiRes.english_title;
         tags = [...tags, ...geminiRes.tags];
+        // Delay to prevent Gemini API RPM rate limits
+        await new Promise(resolve => setTimeout(resolve, 1000));
       } else if (file.mediaType === 'image' && buffer) {
         console.log(`[Gemini Vision] Analyzing unnamed image buffer...`);
         const geminiRes = await analyzeWithGemini('', buffer, file.mimeType);
         title = geminiRes.title;
         englishTitle = geminiRes.english_title;
         tags = [...tags, ...geminiRes.tags];
+        // Delay to prevent Gemini API RPM rate limits
+        await new Promise(resolve => setTimeout(resolve, 1000));
       } else {
         title = file.mediaType === 'video' ? 'AI 비디오 템플릿' : (file.mediaType === 'music' ? 'AI 오디오 트랙' : 'AI 이미지');
         englishTitle = file.mediaType === 'video' ? 'ai_video_template' : (file.mediaType === 'music' ? 'ai_audio_track' : 'ai_image');
@@ -563,17 +615,19 @@ async function main() {
       .replace(/__+/g, '_')
       .replace(/^_+|_+$/g, '');
     
-    const isAlreadyClean = /^[a-z0-9_]+$/.test(file.name.replace(/\.[^/.]+$/, "")) && (file.name.includes('_ai') || file.name.includes('_real'));
+    const isAlreadyClean = /^[a-z0-9_]+$/.test(file.name.replace(/\.[^/.]+$/, "")) && (file.name.includes('_ai') || file.name.includes('_real')) && file.name.includes('_creaibox');
     const isMusic = file.mediaType === 'music';
     const newFileName = isAlreadyClean 
       ? file.name 
       : (isMusic 
-          ? `${cleanEnglishTitleForFile}_${generationType}${extension}` 
-          : `${cleanEnglishTitleForFile}_${ratioStr}_${generationType}${extension}`);
+          ? `${cleanEnglishTitleForFile}_${generationType}_creaibox${extension}` 
+          : `${cleanEnglishTitleForFile}_${ratioStr}_${generationType}_creaibox${extension}`);
     console.log(`Target Clean Filename: "${newFileName}"`);
 
     // --- File Storage URL Assignment ---
     let storageUrl = '';
+    let thumbnailUrl: string | null = null;
+
     if (file.mediaType === 'video') {
       if (!buffer) {
         console.error(`Fatal: Video buffer is missing for upload!`);
@@ -593,6 +647,36 @@ async function main() {
       // Images and Audios are served directly from Google Drive stream URL
       storageUrl = `https://lh3.googleusercontent.com/d/${file.id}`;
       console.log(`[GDrive Sync] ${file.mediaType} mapped to direct GDrive stream URL: ${storageUrl}`);
+
+      // If it is an image, generate a WebP thumbnail and upload to its parent folder's thumbnails subdirectory
+      if (file.mediaType === 'image' && buffer) {
+        try {
+          // Fetch parent folder ID from Google Drive
+          const fileInfo = await drive.files.get({
+            fileId: file.id,
+            fields: "parents",
+          });
+          const parents = fileInfo.data.parents;
+          if (parents && parents.length > 0) {
+            const parentFolderId = parents[0];
+            console.log(`[Thumbnail] Generating 400px WebP thumbnail...`);
+            const thumbBuffer = await sharp(buffer)
+              .resize(400)
+              .webp({ quality: 85 })
+              .toBuffer();
+            const thumbFileName = `thumb_${newFileName.replace(/\.[^/.]+$/, "")}.webp`;
+            thumbnailUrl = await uploadFreeAssetThumbnail(
+              thumbBuffer,
+              thumbFileName,
+              "image/webp",
+              parentFolderId
+            );
+            console.log(`[Thumbnail Success] Created and uploaded thumbnail: ${thumbnailUrl}`);
+          }
+        } catch (thumbErr: any) {
+          console.error(`[Thumbnail Error] Failed to generate/upload thumbnail:`, thumbErr.message);
+        }
+      }
     }
 
     // Extract YYYYMM format from createdTime
@@ -607,6 +691,7 @@ async function main() {
       .upsert({
         gdrive_file_id: file.id,
         storage_url: storageUrl,
+        thumbnail_url: thumbnailUrl,
         file_name: newFileName,
         mime_type: file.mimeType,
         media_type: file.mediaType,
@@ -648,6 +733,9 @@ async function main() {
         console.error(`[GDrive Error] Failed to rename file:`, gdriveErr.message);
       }
     }
+
+    // Sleep slightly between each processed asset to prevent rate limits on APIs
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
 
   console.log("\nSync process completed successfully!");
