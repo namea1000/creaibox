@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
         "Accept-Ranges": "bytes",
         // Force Vercel Edge Network CDN and browser to cache this permanently (1 year)
         // Since Google Drive assets do not change under the same file ID
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": "public, max-age=31536000, s-maxage=31536000, immutable",
       };
 
       const contentLength = getHeader(res.headers, "Content-Length");
@@ -113,10 +113,10 @@ export async function GET(req: NextRequest) {
 
       if (isSupabaseStorage) {
         // Force Vercel Edge Network CDN and browser to cache Supabase assets permanently (1 year) to save bandwidth costs
-        headers["Cache-Control"] = "public, max-age=31536000, immutable";
+        headers["Cache-Control"] = "public, max-age=31536000, s-maxage=31536000, immutable";
       } else {
         // Cache external general assets for 1 day
-        headers["Cache-Control"] = "public, max-age=86400";
+        headers["Cache-Control"] = "public, max-age=86400, s-maxage=86400";
       }
 
       return new Response(new Uint8Array(buffer), {

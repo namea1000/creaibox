@@ -2144,6 +2144,18 @@ function getMediaDuration(file: File): Promise<number> {
       if (!file) {
         file = await getFileFromCache(media.id);
       }
+      if (!file && media.url) {
+        try {
+          setProcessingMessage("미디어 원본 파일을 다운로드하는 중입니다...");
+          const response = await fetch(media.url);
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          const blob = await response.blob();
+          file = new File([blob], media.name || "temp_video.mp4", { type: blob.type || "video/mp4" });
+          await saveFileToCache(media.id, file);
+        } catch (fetchErr) {
+          console.error("[reverseVideoClip] Failed to download media from URL:", fetchErr);
+        }
+      }
       if (!file) {
         throw new Error("미디어 원본 파일을 찾을 수 없습니다.");
       }
@@ -2213,6 +2225,18 @@ function getMediaDuration(file: File): Promise<number> {
       let file: File | null = media.file || null;
       if (!file) {
         file = await getFileFromCache(media.id);
+      }
+      if (!file && media.url) {
+        try {
+          setProcessingMessage("미디어 원본 파일을 분석하기 위해 다운로드하는 중입니다...");
+          const response = await fetch(media.url);
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          const blob = await response.blob();
+          file = new File([blob], media.name || "temp_video.mp4", { type: blob.type || "video/mp4" });
+          await saveFileToCache(media.id, file);
+        } catch (fetchErr) {
+          console.error("[detectScenesAndSplitClip] Failed to download media from URL:", fetchErr);
+        }
       }
       if (!file) {
         throw new Error("미디어 원본 파일을 찾을 수 없습니다.");

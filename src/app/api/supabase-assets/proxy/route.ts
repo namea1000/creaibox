@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
       "Content-Type": contentType,
       "Access-Control-Allow-Origin": "*",
       // Force Vercel Edge Network CDN and browser to cache Supabase assets permanently (1 year)
-      "Cache-Control": "public, max-age=31536000, immutable",
+      "Cache-Control": "public, max-age=31536000, s-maxage=31536000, immutable",
     };
 
     const acceptRanges = response.headers.get("accept-ranges");
