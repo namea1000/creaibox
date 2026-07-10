@@ -449,8 +449,10 @@ async function main() {
       console.log(`Found ${categoryFolders.length} category folders inside creassets-library.`);
       
       for (const catFolder of categoryFolders) {
-        console.log(`Scanning category folder recursively: ${catFolder.name} (ID: ${catFolder.id})...`);
-        await scanFolderRecursive(drive, catFolder.id, catFolder.name, filesToSync);
+        if (catFolder.id && catFolder.name) {
+          console.log(`Scanning category folder recursively: ${catFolder.name} (ID: ${catFolder.id})...`);
+          await scanFolderRecursive(drive, catFolder.id, catFolder.name, filesToSync);
+        }
       }
     }
   }

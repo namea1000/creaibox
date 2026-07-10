@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { google } from 'googleapis';
 import * as fs from 'fs';
 import * as path from 'path';
-import { analyzeWithGemini } from './test_r2_sync'; // We can adapt or re-implement Gemini vision analysis locally
+// We can adapt or re-implement Gemini vision analysis locally
 
 // Load environment variables from .env.local
 const dotenvPath = path.join(process.cwd(), '.env.local');

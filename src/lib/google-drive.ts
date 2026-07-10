@@ -59,6 +59,32 @@ async function getOrCreateFolder(
 }
 
 /**
+ * 파일명을 정제하고 끝에 _creaibox 접미사를 붙여 반환합니다. (확장자 보존)
+ */
+function cleanAndAppendCreaiboxSuffix(fileName: string): string {
+  const lastDotIndex = fileName.lastIndexOf(".");
+  let baseName = lastDotIndex !== -1 ? fileName.substring(0, lastDotIndex) : fileName;
+  const ext = lastDotIndex !== -1 ? fileName.substring(lastDotIndex) : "";
+
+  // 1. 공백 및 특수문자를 언더스코어(_)로 대체하여 파일명 정제
+  let cleanBaseName = baseName
+    .replace(/[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣_.-]/g, "_")
+    .replace(/__+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  if (!cleanBaseName) {
+    cleanBaseName = "media";
+  }
+
+  // 2. _creaibox 접미사 중복 추가 방지 처리
+  if (!cleanBaseName.toLowerCase().endsWith("_creaibox")) {
+    cleanBaseName = `${cleanBaseName}_creaibox`;
+  }
+
+  return `${cleanBaseName}${ext}`;
+}
+
+/**
  * Uploads a buffer directly to Google Drive under a user and sourceType isolated folder, shares it publicly, and returns the direct embed URL.
  * 
  * @param buffer - File content buffer (e.g. WebP image)
@@ -110,9 +136,11 @@ export async function uploadToGoogleDrive(
   mediaStream.push(buffer);
   mediaStream.push(null);
 
+  const cleanFileName = cleanAndAppendCreaiboxSuffix(fileName);
+
   // Upload file to designated folder
   const fileMetadata = {
-    name: fileName,
+    name: cleanFileName,
     parents: [targetFolderId],
   };
 
@@ -293,8 +321,10 @@ export async function uploadFreeAsset(
   mediaStream.push(buffer);
   mediaStream.push(null);
 
+  const cleanFileName = cleanAndAppendCreaiboxSuffix(fileName);
+
   const fileMetadata = {
-    name: fileName,
+    name: cleanFileName,
     parents: [targetFolderId],
     description: description, // Stores JSON metadata string
   };
@@ -347,8 +377,10 @@ export async function uploadFreeAssetThumbnail(
   mediaStream.push(buffer);
   mediaStream.push(null);
 
+  const cleanFileName = cleanAndAppendCreaiboxSuffix(fileName);
+
   const fileMetadata = {
-    name: fileName,
+    name: cleanFileName,
     parents: [targetFolderId],
   };
 

@@ -115,6 +115,184 @@ const AutoplayVideo: React.FC<AutoplayVideoProps> = ({ src, className }) => {
   );
 };
 
+interface GenreCollectionItem {
+  id: string;
+  label: string;
+  desc: string;
+  img: string;
+  genreGroup: string;
+}
+
+const GENRE_COLLECTIONS: GenreCollectionItem[] = [
+  // 록 / 서브컬처 스타일
+  { id: "Punk", label: "Punk", desc: "반항적이고 날것의 매력을 뿜어내는 정통 펑크 록", img: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "록 / 서브컬처 스타일" },
+  { id: "Hard Rock", label: "Hard Rock", desc: "강렬한 기타 리프와 파워풀한 정통 하드 록", img: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "록 / 서브컬처 스타일" },
+  { id: "Metal", label: "Metal", desc: "압도적인 드럼 비트와 디스토션의 메탈 사운드", img: "https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "록 / 서브컬처 스타일" },
+
+  // 라틴 / 댄스 그루브
+  { id: "Reggaeton", label: "Reggaeton", desc: "중독성 강한 라틴 얼반 댄스 레게톤 BGM", img: "https://images.unsplash.com/photo-1545128485-c400e7702796?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "라틴 / 댄스 그루브" },
+  { id: "Salsa", label: "Salsa", desc: "정열적이고 화려한 브라스와 타악기의 살사", img: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "라틴 / 댄스 그루브" },
+  { id: "Flamenco", label: "Flamenco", desc: "애절한 보컬과 현란한 어쿠스틱 플라멩코 기타", img: "https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "라틴 / 댄스 그루브" },
+  { id: "Bachata", label: "Bachata", desc: "감성적이고 감미로운 도미니카 공화국 바차타", img: "https://images.unsplash.com/photo-1504609773096-104ff2c73ba4?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "라틴 / 댄스 그루브" },
+  { id: "Samba (Latin)", label: "Samba (Latin)", desc: "브라질 리우 카니발의 폭발적인 춤의 삼바", img: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "라틴 / 댄스 그루브" },
+  { id: "Cha Cha (Latin)", label: "Cha Cha (Latin)", desc: "경쾌하고 절도 있는 리듬의 댄스스포츠 차차차", img: "https://images.unsplash.com/photo-1547153760-18fc86324498?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "라틴 / 댄스 그루브" },
+  { id: "Latin", label: "Latin", desc: "라틴 특유의 정열적이고 활기찬 댄스 그루브", img: "https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "라틴 / 댄스 그루브" },
+  { id: "Disco", label: "Disco", desc: "화려한 미러볼 아래 복고풍 디스코 비트", img: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "라틴 / 댄스 그루브" },
+  { id: "Dance", label: "Dance", desc: "클럽과 페스티벌을 장악하는 댄스 팝 BGM", img: "https://images.unsplash.com/photo-1508219803418-5f1f894a9b52?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "라틴 / 댄스 그루브" },
+
+  // 전자 음악 (Electronic)
+  { id: "Electronic", label: "Electronic", desc: "신디사이저로 직조한 몽환적인 전자 음악", img: "https://images.unsplash.com/photo-1487215078519-e21cc028cb29?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "전자 음악 (Electronic)" },
+  { id: "Synth Pop", label: "Synth Pop", desc: "대중적이고 레트로한 80년대 감성 신스팝", img: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "전자 음악 (Electronic)" },
+  { id: "Synthwave", label: "Synthwave", desc: "80년대 아날로그 신디사이저 그리드 사운드", img: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "전자 음악 (Electronic)" },
+  { id: "Electro", label: "Electro", desc: "기계적이고 리드미컬한 일렉트로닉 댄스 BGM", img: "https://images.unsplash.com/photo-1516280440614-37939bbacd6a?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "전자 음악 (Electronic)" },
+  { id: "Future Bass", label: "Future Bass", desc: "트렌디한 코드 진행과 화려한 신스 사운드", img: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "전자 음악 (Electronic)" },
+  { id: "Techno & Trance", label: "Techno & Trance", desc: "무한 반복의 몽환적이고 빠른 클럽 비트", img: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "전자 음악 (Electronic)" },
+  { id: "House", label: "House", desc: "그루브한 정박자 하우스 댄스 음악", img: "https://images.unsplash.com/photo-1563841930606-67e2b6c330df?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "전자 음악 (Electronic)" },
+  { id: "Soft House", label: "Soft House", desc: "편안하고 부드러운 이지리스닝 하우스 비트", img: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "전자 음악 (Electronic)" },
+  { id: "Deep House", label: "Deep House", desc: "깊고 울림이 묵직한 클럽 라운지 딥하우스", img: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "전자 음악 (Electronic)" },
+  { id: "Drum N Bass", label: "Drum N Bass", desc: "빠른 템포의 브레이크비트와 묵직한 베이스", img: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "전자 음악 (Electronic)" },
+  { id: "Dubstep", label: "Dubstep", desc: "폭발적인 와블 베이스와 공격적인 드롭 BGM", img: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "전자 음악 (Electronic)" },
+  { id: "Edm", label: "Edm", desc: "대형 페스티벌을 열광케 하는 일렉트로닉 댄스", img: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "전자 음악 (Electronic)" },
+
+  // 힙합 / 알앤비 / 재즈 / 블루스
+  { id: "Alternative Hip Hop", label: "Alternative Hip Hop", desc: "새롭고 독창적인 비트의 대안 힙합", img: "https://images.unsplash.com/photo-1571171782249-c400e7702796?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "힙합 / 알앤비 / 재즈 / 블루스" },
+  { id: "Old School Hip Hop", label: "Old School Hip Hop", desc: "붐뱁 드럼과 레트로한 90년대 힙합 그루브", img: "https://images.unsplash.com/photo-1564282697843-09404f697775?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "힙합 / 알앤비 / 재즈 / 블루스" },
+  { id: "Mainstream Hip Hop", label: "Mainstream Hip Hop", desc: "차트를 장악하는 가장 트렌디한 힙합 비트", img: "https://images.unsplash.com/photo-1524567214243-0013ee31f78f?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "힙합 / 알앤비 / 재즈 / 블루스" },
+  { id: "Rap", label: "Rap", desc: "라임과 래핑이 살아있는 클래식 랩 비트", img: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "힙합 / 알앤비 / 재즈 / 블루스" },
+  { id: "Trap", label: "Trap", desc: "무거운 808 베이스와 정교한 하이햇 트랩 BGM", img: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "힙합 / 알앤비 / 재즈 / 블루스" },
+  { id: "Phonk", label: "Phonk", desc: "거칠고 어두운 로파이 분위기의 멤피스 폰크", img: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "힙합 / 알앤비 / 재즈 / 블루스" },
+  { id: "Rnb", label: "Rnb", desc: "감미로운 보컬과 세련된 비트의 알앤비 BGM", img: "https://images.unsplash.com/photo-1563841930606-67e2b6c330df?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "힙합 / 알앤비 / 재즈 / 블루스" },
+  { id: "Old School Rnb", label: "Old School Rnb", desc: "복고적인 90년대 슬로우잼 알앤비 그루브", img: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "힙합 / 알앤비 / 재즈 / 블루스" },
+  { id: "Motown & Old School Rnb", label: "Motown & Old School Rnb", desc: "클래식 모타운 레코드 소울과 레트로 알앤비", img: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "힙합 / 알앤비 / 재즈 / 블루스" },
+  { id: "Traditional Jazz", label: "Traditional Jazz", desc: "클래식하고 정통적인 뉴올리언스 재즈 스윙", img: "https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "힙합 / 알앤비 / 재즈 / 블루스" },
+  { id: "Modern Jazz", label: "Modern Jazz", desc: "세련된 코드와 자유로운 즉흥 연주의 모던 재즈", img: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "힙합 / 알앤비 / 재즈 / 블루스" },
+  { id: "Smooth Jazz", label: "Smooth Jazz", desc: "부드럽고 대중적인 이지리스닝 퓨전 재즈 BGM", img: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "힙합 / 알앤비 / 재즈 / 블루스" },
+  { id: "Acid Jazz", label: "Acid Jazz", desc: "펑크, 소울, 힙합이 결합된 하이브리드 애시드 재즈", img: "https://images.unsplash.com/photo-1508219803418-5f1f894a9b52?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "힙합 / 알앤비 / 재즈 / 블루스" },
+  { id: "Blues", label: "Blues", desc: "애절한 펜타토닉 기타와 영혼을 울리는 블루스", img: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "힙합 / 알앤비 / 재즈 / 블루스" },
+  { id: "Modern Blues", label: "Modern Blues", desc: "현대적인 편곡과 록 사운드가 결합된 모던 블루스", img: "https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "힙합 / 알앤비 / 재즈 / 블루스" },
+
+  // 팝 / 포크 / 컨트리 / 전통악기
+  { id: "Pop", label: "Pop", desc: "귀를 사로잡는 가장 대중적인 팝 음악 BGM", img: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "팝 / 포크 / 컨트리 / 전통악기" },
+  { id: "Indie Pop", label: "Indie Pop", desc: "감성적이고 유니크한 멜로디의 인디 팝", img: "https://images.unsplash.com/photo-1508219803418-5f1f894a9b52?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "팝 / 포크 / 컨트리 / 전통악기" },
+  { id: "Alternative", label: "Alternative", desc: "규격화되지 않은 매력적인 대안 팝/록 BGM", img: "https://images.unsplash.com/photo-1487215078519-e21cc028cb29?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "팝 / 포크 / 컨트리 / 전통악기" },
+  { id: "Post Rock", label: "Post Rock", desc: "보컬 없이 악기 연주로 공간을 메우는 포스트록", img: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "팝 / 포크 / 컨트리 / 전통악기" },
+  { id: "Folk", label: "Folk", desc: "어쿠스틱 기타와 서정적인 멜로디의 포크 BGM", img: "https://images.unsplash.com/photo-1482440308425-276ad0f28b19?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "팝 / 포크 / 컨트리 / 전통악기" },
+  { id: "Traditional Country", label: "Traditional Country", desc: "미국 정통 서부 감성의 컨트리 음악 BGM", img: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "팝 / 포크 / 컨트리 / 전통악기" },
+  { id: "Modern Country", label: "Modern Country", desc: "팝 음악 요소와 어우러진 현대적인 컨트리", img: "https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "팝 / 포크 / 컨트리 / 전통악기" },
+  { id: "Ska", label: "Ska", desc: "경쾌한 금관악기와 레게 템포의 자메이카 스카", img: "https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "팝 / 포크 / 컨트리 / 전통악기" },
+  { id: "Funk", label: "Funk", desc: "톡톡 튀는 슬랩 베이스와 극강의 펑크 리듬 BGM", img: "https://images.unsplash.com/photo-1545128485-c400e7702796?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "팝 / 포크 / 컨트리 / 전통악기" },
+
+  // 클래식 / 합주 / 월드뮤직
+  { id: "Modern Classical", label: "Modern Classical", desc: "현대적인 감각으로 재탄생한 모던 클래식", img: "https://images.unsplash.com/photo-1507838153414-b4b713384a76?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "클래식 / 합주 / 월드뮤직" },
+  { id: "Orchestral", label: "Orchestral", desc: "대규모 관현악단의 품격 있고 웅장한 연주 BGM", img: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "클래식 / 합주 / 월드뮤직" },
+  { id: "Cinematic", label: "Cinematic", desc: "한 편의 영화를 보는 듯한 영상 연출용 음악", img: "https://images.unsplash.com/photo-1487180142328-054b783fc471?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "클래식 / 합주 / 월드뮤직" },
+  { id: "Epic Classical", label: "Epic Classical", desc: "블록버스터 영화에 쓰이는 스펙터클 클래식", img: "https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "클래식 / 합주 / 월드뮤직" },
+  { id: "Chamber Music", label: "Chamber Music", desc: "소규모 실내악단의 단아하고 아름다운 하모니", img: "https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "클래식 / 합주 / 월드뮤직" },
+  { id: "Dramatic Classical", label: "Dramatic Classical", desc: "격정적인 드라마와 연출을 극대화하는 클래식", img: "https://images.unsplash.com/photo-1504609773096-104ff2c73ba4?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "클래식 / 합주 / 월드뮤직" },
+  { id: "Choir", label: "Choir", desc: "인간의 목소리가 만들어내는 성스러운 성가대 BGM", img: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "클래식 / 합주 / 월드뮤직" },
+  { id: "Gospel", label: "Gospel", desc: "영혼을 치유하는 밝고 넘치는 은혜의 가스펠", img: "https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "클래식 / 합주 / 월드뮤직" },
+  { id: "Instrumental", label: "Instrumental", desc: "보컬을 배제한 순수 기악 연주곡 BGM", img: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "클래식 / 합주 / 월드뮤직" },
+  { id: "Ambient", label: "Ambient", desc: "공간을 가득 채우는 은은하고 평온한 환경음악", img: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "클래식 / 합주 / 월드뮤직" },
+  { id: "World", label: "World", desc: "세계 곳곳의 고유한 전통 에스닉 월드뮤직 BGM", img: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "클래식 / 합주 / 월드뮤직" },
+  { id: "Arabic", label: "Arabic", desc: "이국적인 중동의 매력이 느껴지는 아라빅 음악", img: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "클래식 / 합주 / 월드뮤직" },
+  { id: "Celtic", label: "Celtic", desc: "아일랜드의 자연과 전설이 담긴 서정적인 켈틱", img: "https://images.unsplash.com/photo-1487180142328-054b783fc471?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "클래식 / 합주 / 월드뮤직" },
+  { id: "Ireland", label: "Ireland", desc: "아일랜드 전통 민요와 파이프 연주곡 BGM", img: "https://images.unsplash.com/photo-1482440308425-276ad0f28b19?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "클래식 / 합주 / 월드뮤직" },
+  { id: "Scotland", label: "Scotland", desc: "백파이프가 울리는 스코틀랜드 전통 고원 음악", img: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "클래식 / 합주 / 월드뮤직" },
+  { id: "China", label: "China", desc: "동양적이고 고풍스러운 정취의 중국 대륙 음악", img: "https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "클래식 / 합주 / 월드뮤직" },
+  { id: "France", label: "France", desc: "아코디언 소리가 들려오는 낭만적인 프랑스 샹송", img: "https://images.unsplash.com/photo-1508219803418-5f1f894a9b52?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "클래식 / 합주 / 월드뮤직" },
+  { id: "Greece", label: "Greece", desc: "지중해의 싱그러움이 깃든 그리스 전통 BGM", img: "https://images.unsplash.com/photo-1545128485-c400e7702796?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "클래식 / 합주 / 월드뮤직" },
+  { id: "India", label: "India", desc: "시타르 연주와 신비로운 인도 전통 라가 BGM", img: "https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "클래식 / 합주 / 월드뮤직" },
+
+  // 비디오 씬 / 영상 연출
+  { id: "Upbeat", label: "Upbeat", desc: "비디오 템포를 끌어올리는 경쾌하고 밝은 비트 BGM", img: "https://images.unsplash.com/photo-1446057032654-9d8885b76c7a?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Beats", label: "Beats", desc: "영상 편집을 다이나믹하게 도와주는 드럼 비트 BGM", img: "https://images.unsplash.com/photo-1487215078519-e21cc028cb29?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Main Title", label: "Main Title", desc: "프로그램이나 영상의 강렬한 인트로 오프닝 타이틀", img: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Build Up Scenes", label: "Build Up Scenes", desc: "긴장과 텐션을 서서히 빌드업하는 드라마 연출용 BGM", img: "https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Corporate", label: "Corporate", desc: "비즈니스 소개 및 회사 PT용 밝고 신뢰감 있는 음악", img: "https://images.unsplash.com/photo-1507838153414-b4b713384a76?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Action", label: "Action", desc: "박진감 넘치고 긴장감 폭발하는 액션 씬 BGM 연출", img: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Adventure", label: "Adventure", desc: "새로운 모험과 여정을 자극하는 웅장한 여정 BGM", img: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Intro/Outro", label: "Intro/Outro", desc: "영상의 오프닝과 클로징에 알맞은 콤팩트 트랙 BGM", img: "https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Mystery", label: "Mystery", desc: "비밀을 풀어가거나 미스터리하고 묘한 씬 연출 BGM", img: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Chase Scene", label: "Chase Scene", desc: "박진감 넘치는 질주 및 체이스 씬에 딱 맞는 BGM", img: "https://images.unsplash.com/photo-1508219803418-5f1f894a9b52?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Video Games", label: "Video Games", desc: "8비트 도트부터 최신 대작 게임 BGM 감성 트랙", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Horror Scene", label: "Horror Scene", desc: "으스스하고 소름 돋는 공포 연출을 위한 호러 BGM", img: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Crime Scene", label: "Crime Scene", desc: "수사물이나 어두운 범죄 현장, 느와르 씬 연출 BGM", img: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Cartoons", label: "Cartoons", desc: "익살스럽고 톡톡 튀는 애니메이션 만화 BGM 트랙", img: "https://images.unsplash.com/photo-1508873535684-277a3cbcc4e8?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Small Drama", label: "Small Drama", desc: "일상 소소한 에피소드나 일상 유튜버 일상 BGM", img: "https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Drama Scene", label: "Drama Scene", desc: "갈등과 화해, 격정적인 서사를 표현하는 drama BGM", img: "https://images.unsplash.com/photo-1504609773096-104ff2c73ba4?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Jingles", label: "Jingles", desc: "광고 및 시그널 음악에 바로 꽂히는 짧은 징글 BGM", img: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Vaudeville & Variety Show", label: "Vaudeville & Variety Show", desc: "버라이어티 예능이나 익살맞은 만담 쇼 분위기 BGM", img: "https://images.unsplash.com/photo-1547153760-18fc86324498?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Show Dance", label: "Show Dance", desc: "댄스 퍼포먼스나 뮤지컬 쇼의 화려한 쇼 댄스 BGM", img: "https://images.unsplash.com/photo-1508219803418-5f1f894a9b52?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Tragedy", label: "Tragedy", desc: "깊은 비극과 감정이 무너져 내리는 슬픈 연출 BGM", img: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+  { id: "Bloopers", label: "Bloopers", desc: "NG 장면이나 유쾌하고 우스꽝스러운 일상 클립 BGM", img: "https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "비디오 씬 / 영상 연출" },
+
+  // 감정 / 공간 / 이벤트
+  { id: "Cafe", label: "Cafe", desc: "아늑한 조명 아래 스며드는 커피 향 가득한 음악 BGM", img: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "감정 / 공간 / 이벤트" },
+  { id: "Elevator Music", label: "Elevator Music", desc: "백화점이나 대기실의 평화로운 이지리스닝 배경음", img: "https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "감정 / 공간 / 이벤트" },
+  { id: "Vintage", label: "Vintage", desc: "빛바랜 필름 질감과 카세트테이프 감성 레트로 BGM", img: "https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "감정 / 공간 / 이벤트" },
+  { id: "Meditation/Spiritual", label: "Meditation/Spiritual", desc: "마음을 차분히 가라앉히는 명상과 요가 BGM 트랙", img: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "감정 / 공간 / 이벤트" },
+  { id: "Small Emotions", label: "Small Emotions", desc: "소소하고 잔잔한 감성을 불러오는 일상 감성 BGM", img: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "감정 / 공간 / 이벤트" },
+  { id: "Nostalgia", label: "Nostalgia", desc: "어린 시절의 추억과 과거를 회상케 하는 노스탤지어", img: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "감정 / 공간 / 이벤트" },
+  { id: "Supernatural", label: "Supernatural", desc: "초자연적이고 몽환적인 신비의 판타지 BGM", img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "감정 / 공간 / 이벤트" },
+  { id: "Special Occasions", label: "Special Occasions", desc: "특별한 파티나 기념일을 빛내주는 이벤트용 BGM", img: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "감정 / 공간 / 이벤트" },
+  { id: "Christmas", label: "Christmas", desc: "눈 내리는 화이트 크리스마스의 캐롤 감성 BGM", img: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "감정 / 공간 / 이벤트" },
+  { id: "Eccentric & Quirky", label: "Eccentric & Quirky", desc: "엉뚱하고 재기발랄하며 묘한 중독성의 인디 BGM", img: "https://images.unsplash.com/photo-1508219803418-5f1f894a9b52?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "감정 / 공간 / 이벤트" },
+  { id: "Funerals", label: "Funerals", desc: "고인을 추모하는 차분하고 진지한 장례 테마 BGM", img: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "감정 / 공간 / 이벤트" },
+  { id: "Wedding", label: "Wedding", desc: "신랑 신부의 축복과 사랑을 그리는 로맨틱 웨딩 송", img: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "감정 / 공간 / 이벤트" },
+  { id: "Religious Theme", label: "Religious Theme", desc: "성스럽고 차분한 영적 치유의 기독교/종교 테마", img: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "감정 / 공간 / 이벤트" },
+  { id: "Amusement Park", label: "Amusement Park", desc: "놀이공원의 회전목마와 퍼레이드 같은 BGM 트랙", img: "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "감정 / 공간 / 이벤트" },
+  { id: "Scary Childrens Tunes", label: "Scary Childrens Tunes", desc: "으스스한 잔혹 동화와 호러 오르골 BGM 튠", img: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "감정 / 공간 / 이벤트" },
+  { id: "Happy Childrens Tunes", label: "Happy Childrens Tunes", desc: "천진난만하고 아기자기한 어린이 교육용 동요 BGM", img: "https://images.unsplash.com/photo-1471193945509-9ad0617afabf?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "감정 / 공간 / 이벤트" },
+  { id: "Fantasy & Dreamy Childrens'", label: "Fantasy & Dreamy Childrens'", desc: "별이 빛나는 밤하늘과 동심 가득한 판타지 동화", img: "https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "감정 / 공간 / 이벤트" },
+  { id: "Military & Historical", label: "Military & Historical", desc: "역사적인 다큐멘터리나 군대 행진곡 BGM 트랙", img: "https://images.unsplash.com/photo-1507838153414-b4b713384a76?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "감정 / 공간 / 이벤트" },
+  { id: "Usa", label: "Usa", desc: "미국 정통 서부 개척 시대와 로드 트립 BGM", img: "https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "감정 / 공간 / 이벤트" },
+
+  // 악기 및 사운드 텍스처
+  { id: "Beautiful Plays", label: "Beautiful Plays", desc: "아름답고 섬세한 터치와 멜로디의 앙상블 연주", img: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+  { id: "Acoustic Group", label: "Acoustic Group", desc: "어쿠스틱 악기들의 담백하고 아름다운 하모니 BGM", img: "https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+  { id: "Solo Piano", label: "Solo Piano", desc: "피아노 건반 단독이 만들어내는 잔잔한 피아노 BGM", img: "https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+  { id: "Solo Instruments", label: "Solo Instruments", desc: "첼로나 바이올린 등 독주 악기의 원본 매력 연주", img: "https://images.unsplash.com/photo-1487180142328-054b783fc471?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+  { id: "Solo Classical Instruments", label: "Solo Classical Instruments", desc: "클래식 악기 단 하나의 선율이 전하는 독주 BGM", img: "https://images.unsplash.com/photo-1507838153414-b4b713384a76?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+  { id: "Marching Band", label: "Marching Band", desc: "화려한 타악기와 관악기의 웅장한 마칭밴드 연주", img: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+  { id: "Solo Guitar", label: "Solo Guitar", desc: "기타 줄 하나의 울림이 전하는 담백한 솔로 기타", img: "https://images.unsplash.com/photo-1482440308425-276ad0f28b19?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+  { id: "Oompah Band", label: "Oompah Band", desc: "경쾌한 튜바와 트롬본 중심의 즐거운 요들송 BGM", img: "https://images.unsplash.com/photo-1547153760-18fc86324498?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+  { id: "Classical String Quartet", label: "Classical String Quartet", desc: "바이올린2, 비올라, 첼로의 우아한 현악 4중주 BGM", img: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+  { id: "Big Band", label: "Big Band", desc: "웅장하고 신나는 정통 재즈 빅밴드 오케스트라 BGM", img: "https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+  { id: "High Drones", label: "High Drones", desc: "공간을 가득 채우는 은은한 고음역대 지속 사운드", img: "https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+  { id: "Pulses", label: "Pulses", desc: "일정한 비트와 긴장감을 유도하는 펄스 비트 BGM", img: "https://images.unsplash.com/photo-1508219803418-5f1f894a9b52?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+  { id: "Low Drones", label: "Low Drones", desc: "무겁고 묵직하게 가라앉는 저음역 지속 드론 사운드", img: "https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+  { id: "High Rhythmic Drones", label: "High Rhythmic Drones", desc: "리드미컬하게 요동치는 고음 지속 사운드 텍스처", img: "https://images.unsplash.com/photo-1487215078519-e21cc028cb29?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+  { id: "Low Rhythmic Drones", label: "Low Rhythmic Drones", desc: "박동하듯 뛰는 저음역 리드미컬 드론 사운드", img: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+  { id: "High Non Rhythmic Drones", label: "High Non Rhythmic Drones", desc: "리듬 없이 몽환적으로 흐르는 고음 지속 텍스처", img: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+  { id: "Low Non Rhythmic Drones", label: "Low Non Rhythmic Drones", desc: "리듬 없이 어둡게 깔리는 심해의 저음 지속 텍스처", img: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+  { id: "Abstract", label: "Abstract", desc: "규정할 수 없는 독창적이고 난해한 예술적 소음 BGM", img: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+  { id: "Percussion", label: "Percussion", desc: "보컬과 화음 없이 오직 타악기로만 달리는 타악 BGM", img: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+  { id: "Oomph / Volume2", label: "Oomph / Volume2", desc: "웅장한 임팩트와 리듬감을 선사하는 강력한 사운드", img: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "악기 및 사운드 텍스처" },
+
+  // 일렉트로닉 / 힙합 서브컬처
+  { id: "Synthwave / Retrowave", label: "Synthwave / Retrowave", desc: "복고적인 80년대 신디사이저 감성 신스웨이브 BGM", img: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "일렉트로닉 / 힙합 서브컬처" },
+  { id: "Vaporwave", label: "Vaporwave", desc: "몽환적이고 왜곡된 레트로 PC 그래픽 감성 BGM", img: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "일렉트로닉 / 힙합 서브컬처" },
+  { id: "Future Funk", label: "Future Funk", desc: "복고 디스코를 트렌디하게 믹싱한 신나는 일렉 비트", img: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "일렉트로닉 / 힙합 서브컬처" },
+  { id: "Melodic Dubstep", label: "Melodic Dubstep", desc: "아름다운 멜로디 위로 터지는 강력한 덥스텝 드롭", img: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "일렉트로닉 / 힙합 서브컬처" },
+  { id: "Emo Rap / Sad Boy Beats", label: "Emo Rap / Sad Boy Beats", desc: "어둡고 우울하며 감성적인 이모 힙합 사운드 BGM", img: "https://images.unsplash.com/photo-1524567214243-0013ee31f78f?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "일렉트로닉 / 힙합 서브컬처" },
+
+  // 팝 / 인디 / 뉴에이지
+  { id: "City Pop", label: "City Pop", desc: "복고풍의 청량하고 세련된 네온 감성 시티팝 BGM", img: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "팝 / 인디 / 뉴에이지" },
+  { id: "Bedroom Pop", label: "Bedroom Pop", desc: "방 안에서 속삭이듯 연주하는 미니멀 감성 팝 BGM", img: "https://images.unsplash.com/photo-1508219803418-5f1f894a9b52?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "팝 / 인디 / 뉴에이지" },
+  { id: "Neo-Classical", label: "Neo-Classical", desc: "피아노와 소규모 스트링의 서정적인 신클래식 BGM", img: "https://images.unsplash.com/photo-1507838153414-b4b713384a76?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "팝 / 인디 / 뉴에이지" },
+  { id: "Cinematic Post-Rock", label: "Cinematic Post-Rock", desc: "기타 선율이 서서히 웅장해지는 영화적 포스트록", img: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "팝 / 인디 / 뉴에이지" },
+
+  // 아시아 / 월드 에스닉
+  { id: "K-Pop (Modern)", label: "K-Pop (Modern)", desc: "전 세계를 매료시키는 핫하고 현대적인 케이팝 BGM", img: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "아시아 / 월드 에스닉" },
+  { id: "J-Pop / Anime Rock", label: "J-Pop / Anime Rock", desc: "청량한 제이팝 멜로디와 스피디한 애니 록 BGM", img: "https://images.unsplash.com/photo-1487215078519-e21cc028cb29?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "아시아 / 월드 에스닉" },
+  { id: "Afrobeat (Amapiano)", label: "Afrobeat (Amapiano)", desc: "아프리카 전통 리듬과 하우스가 만난 아마피아노", img: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "아시아 / 월드 에스닉" },
+
+  // 기능성 및 오디오 텍스처
+  { id: "ASMR / Textural Soundscape", label: "ASMR / Textural Soundscape", desc: "뇌를 자극하는 포근하고 세밀한 화이트 노이즈", img: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "기능성 및 오디오 텍스처" },
+  { id: "Dark Ambient", label: "Dark Ambient", desc: "심해나 우주 속 고독하고 어두운 앰비언스 BGM", img: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "기능성 및 오디오 텍스처" },
+  { id: "Glitch Hop", label: "Glitch Hop", desc: "기계적 글리치 노이즈를 힙합 비트에 결합한 트랙", img: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "기능성 및 오디오 텍스처" }
+];
+
 export default function FreeAssetsLibraryPage() {
   const [assets, setAssets] = useState<FreeAsset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,6 +311,8 @@ export default function FreeAssetsLibraryPage() {
   const [musicCategory, setMusicCategory] = useState<string | null>(null);
   const [selectedMusicGenre, setSelectedMusicGenre] = useState<string | null>(null);
   const [selectedMusicMood, setSelectedMusicMood] = useState<string | null>(null);
+  const [selectedGenreGroup, setSelectedGenreGroup] = useState<string>("전체 장르");
+  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
   
   // Sort states & references
   const [activeSortTab, setActiveSortTab] = useState<"for_you" | "recent" | "random" | "hot" | "top_day" | "top_week" | "top_month" | "likes">("recent");
@@ -1433,40 +1613,87 @@ export default function FreeAssetsLibraryPage() {
         return (
           <div className="w-full space-y-12 py-6">
             {/* 장르 컬렉션 */}
-            <div>
-              <h2 className="text-xl font-black text-white mb-2 flex items-center gap-2">
-                <Music size={18} className="text-blue-400" />
-                장르 컬렉션 검색
-              </h2>
-              <p className="text-xs text-zinc-500 mb-6 text-left">다양한 콘텐츠 제작을 위한 다양한 장르의 로열티 프리 음악</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-black text-white mb-2 flex items-center gap-2">
+                  <Music size={18} className="text-blue-400" />
+                  장르 컬렉션 검색
+                </h2>
+                <p className="text-xs text-zinc-500 mb-4 text-left">다양한 콘텐츠 제작을 위한 다양한 장르의 로열티 프리 음악</p>
+              </div>
+
+              {/* 대분류 가로형 스크롤 탭 버튼 */}
+              <div className="flex w-full items-center gap-2 overflow-x-auto pb-3 border-b border-zinc-800 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
                 {[
-                  { id: "일렉트로니카", label: "일렉트로니카", desc: "신나는 일렉트로닉 댄스 및 하우스 비트", img: "/images/categories/music_electronica.png" },
-                  { id: "팝", label: "팝", desc: "귀에 감기는 대중적이고 리드미컬한 멜로디", img: "/images/categories/music_pop.png" },
-                  { id: "영화/드라마", label: "영화/드라마", desc: "서사적이고 웅장한 시네마틱 오케스트라 사운드", img: "/images/categories/music_cinematic.png" },
-                  { id: "어쿠스틱", label: "어쿠스틱", desc: "잔잔하고 따뜻한 목재 감성 통기타 연주", img: "/images/categories/music_acoustic.png" },
-                ].map((g) => (
-                  <div
-                    key={g.id}
-                    onClick={() => {
-                      setMusicCategory(g.id);
-                      setSelectedMusicGenre(g.id);
-                      setSelectedMusicMood(null);
-                    }}
-                    className="group relative h-48 overflow-hidden rounded-2xl border border-zinc-800 bg-[#090c13] transition-all duration-300 hover:-translate-y-1.5 hover:border-blue-500/50 hover:shadow-2xl hover:shadow-blue-500/10 cursor-pointer"
-                  >
-                    <img
-                      src={g.img}
-                      alt={g.label}
-                      className="h-full w-full object-cover opacity-60 group-hover:scale-105 group-hover:opacity-85 transition duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#06080d] via-black/40 to-transparent" />
-                    <div className="absolute bottom-4 left-4 right-4 text-left">
-                      <h3 className="text-sm font-black text-white tracking-tight">{g.label}</h3>
-                      <p className="mt-1 text-[11px] font-medium text-zinc-400 leading-normal line-clamp-2">{g.desc}</p>
+                  "전체 장르",
+                  "록 / 서브컬처 스타일",
+                  "라틴 / 댄스 그루브",
+                  "전자 음악 (Electronic)",
+                  "힙합 / 알앤비 / 재즈 / 블루스",
+                  "팝 / 포크 / 컨트리 / 전통악기",
+                  "클래식 / 합주 / 월드뮤직",
+                  "비디오 씬 / 영상 연출",
+                  "감정 / 공간 / 이벤트",
+                  "악기 및 사운드 텍스처",
+                  "일렉트로닉 / 힙합 서브컬처",
+                  "팝 / 인디 / 뉴에이지",
+                  "아시아 / 월드 에스닉",
+                  "기능성 및 오디오 텍스처"
+                ].map((group) => {
+                  const isActive = selectedGenreGroup === group;
+                  return (
+                    <button
+                      key={group}
+                      onClick={() => setSelectedGenreGroup(group)}
+                      className={`shrink-0 rounded-full px-4 py-2 text-xs font-black transition-all cursor-pointer ${
+                        isActive
+                          ? "bg-blue-500 text-black shadow-lg shadow-blue-500/20"
+                          : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                      }`}
+                    >
+                      {group}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* 선택된 대분류의 세부 서브 장르 카드 그리드 - 1:1 바둑판식 */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
+                {GENRE_COLLECTIONS.filter((g) => selectedGenreGroup === "전체 장르" || g.genreGroup === selectedGenreGroup).map((g) => {
+                  const hasError = imgErrors[g.id];
+                  const imgSrc = hasError
+                    ? `https://picsum.photos/seed/${encodeURIComponent(g.id)}/300/300`
+                    : `/images/genres/${encodeURIComponent(g.id.replace(/[^a-zA-Z0-9_-]/g, "_"))}.webp`;
+
+                  return (
+                    <div
+                      key={g.id}
+                      onClick={() => {
+                        setMusicCategory(g.id);
+                        setSelectedMusicGenre(g.id);
+                        setSelectedMusicMood(null);
+                      }}
+                      className="group relative aspect-square overflow-hidden rounded-xl border border-zinc-850 bg-[#090c13] transition-all duration-300 hover:-translate-y-1 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer"
+                    >
+                      <img
+                        src={imgSrc}
+                        alt={g.label}
+                        onError={() => {
+                          setImgErrors((prev) => ({ ...prev, [g.id]: true }));
+                        }}
+                        className="h-full w-full object-cover opacity-90 group-hover:scale-105 group-hover:opacity-100 transition duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                      <div className="absolute bottom-2.5 left-2.5 right-2.5 text-left">
+                        <span className="inline-block text-[8px] font-black text-blue-400 uppercase tracking-wide mb-0.5 bg-blue-500/10 px-1.5 py-0.5 rounded">
+                          {g.id}
+                        </span>
+                        <h3 className="text-[11px] font-black text-white tracking-tight leading-tight truncate">{g.label}</h3>
+                        <p className="mt-0.5 text-[9px] font-bold text-zinc-400 leading-normal line-clamp-1 group-hover:line-clamp-none transition-all duration-200">{g.desc}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

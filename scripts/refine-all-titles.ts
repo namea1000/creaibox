@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 import { google } from 'googleapis';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -47,14 +48,56 @@ const s3Client = new S3Client({
   },
 });
 
+// Decrypt helper logic matching production api-vault-crypto
+function decryptApiKey(encryptedText: string): string {
+  if (!encryptedText) return "";
+  const encryptionKeyEnv = process.env.API_VAULT_ENCRYPTION_KEY;
+  if (!encryptionKeyEnv) return encryptedText;
+  try {
+    const ENCRYPTION_KEY = Buffer.from(encryptionKeyEnv, "base64");
+    const parts = encryptedText.split(".");
+    if (parts.length !== 3) {
+      try {
+        return Buffer.from(encryptedText, "base64").toString("utf8");
+      } catch {
+        return encryptedText;
+      }
+    }
+    const [ivBase64, authTagBase64, encryptedBase64] = parts;
+    const decipher = crypto.createDecipheriv("aes-256-gcm", ENCRYPTION_KEY, Buffer.from(ivBase64, "base64"));
+    decipher.setAuthTag(Buffer.from(authTagBase64, "base64"));
+    const decrypted = Buffer.concat([decipher.update(Buffer.from(encryptedBase64, "base64")), decipher.final()]);
+    return decrypted.toString("utf8");
+  } catch (err: any) {
+    console.error("Decryption error inside refine task:", err.message);
+    return encryptedText;
+  }
+}
+
+async function getLiveGeminiKeys(): Promise<string[]> {
+  try {
+    const { data } = await supabase
+      .from("admin_api_vault")
+      .select("key")
+      .eq("status", "active")
+      .eq("provider", "gemini")
+      .order("priority", { ascending: true })
+      .order("today_count", { ascending: true })
+      .limit(10);
+    if (data && data.length > 0) {
+      return data.map(row => decryptApiKey(row.key)).filter(Boolean);
+    }
+  } catch {}
+  const envKey = decryptApiKey(process.env.GEMINI_API_KEY || "");
+  return envKey ? [envKey] : [];
+}
+
 // Gemini Vision Helper
 async function analyzeImageWithGeminiVision(imageBuffer: Buffer, mimeType: string): Promise<{ title: string; english_title: string; tags: string[] }> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("Missing GEMINI_API_KEY in environment");
+  const apiKeys = await getLiveGeminiKeys();
+  if (apiKeys.length === 0) {
+    throw new Error("No GEMINI_API_KEYs available");
   }
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
   const contents = [
     {
@@ -75,26 +118,47 @@ async function analyzeImageWithGeminiVision(imageBuffer: Buffer, mimeType: strin
     }
   ];
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: contents,
-      generationConfig: {
-        responseMimeType: "application/json"
-      }
-    })
-  });
+  // 3.1-flash-lite 를 최우선으로 시도하고, 2.5-flash 로 순회하는 지능형 풀
+  const models = ["gemini-3.1-flash-lite", "gemini-2.5-flash", "gemini-1.5-flash"];
+  let textContent = "";
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+  // 이중 루프: 키 목록 순회 * 모델 목록 순회
+  for (const apiKey of apiKeys) {
+    const maskedKey = apiKey.substring(0, 8) + "...";
+    for (const model of models) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: contents,
+            generationConfig: {
+              responseMimeType: "application/json"
+            }
+          })
+        });
+
+        if (response.ok) {
+          const resData = await response.json();
+          textContent = resData.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (textContent) {
+            console.log(`[Gemini Success] Processed vision task successfully using model: ${model} and active key: ${maskedKey}`);
+            break;
+          }
+        } else {
+          const errorText = await response.text();
+          console.warn(`[Gemini Try] Model ${model} with Key ${maskedKey} failed: HTTP ${response.status} - ${errorText}`);
+        }
+      } catch (e: any) {
+        console.warn(`[Gemini Try] Request error with model ${model} and Key ${maskedKey}:`, e.message);
+      }
+    }
+    if (textContent) break;
   }
 
-  const resData = await response.json();
-  const textContent = resData.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!textContent) {
-    throw new Error("Empty response from Gemini Vision");
+    throw new Error("All Gemini keys and models failed to analyze this image.");
   }
 
   const parsed = JSON.parse(textContent);
