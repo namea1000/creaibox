@@ -23,7 +23,7 @@ export default function PricingPage() {
       priceMonthly: "0원",
       priceYearly: "0원",
       yearlyTotal: "무료 이용",
-      badge: "Beta 무료",
+      badge: "무료 이용",
       buttonText: "시작하기",
       buttonHref: "/signup",
       highlight: false,
@@ -99,9 +99,9 @@ export default function PricingPage() {
         {
           feature: "공식 앰버서더 지원",
           free: "제휴 문의 지원(무료 이용)",
-          creator: "-",
-          pro: "-",
-          premier: "-"
+          creator: "제휴 문의 지원(무료 이용)",
+          pro: "제휴 문의 지원(무료 이용)",
+          premier: "제휴 문의 지원(무료 이용)"
         }
       ]
     },
@@ -435,7 +435,7 @@ export default function PricingPage() {
             </div>
             <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
               <p className="break-keep text-base md:text-lg font-bold text-slate-800 dark:text-slate-200">
-                베타 기간 동안 크리에이터분들의 소중한 피드백을 반영하여 요금 정책을 정밀하게 다듬을 예정입니다.
+                베타 기간 동안 크리에이터분들의 소중한 피드백을 반영하여 요금 정책을 정밀하게 다듬을 예정입니다.(현재 무료이용 가능)
               </p>
               <span className="hidden md:inline text-slate-300 dark:text-slate-700 font-semibold">|</span>
               <p className="break-keep text-xs md:text-sm font-medium text-slate-600 dark:text-slate-400">
@@ -487,7 +487,7 @@ export default function PricingPage() {
                 key={plan.name}
                 className={`relative rounded-[28px] border p-8 flex flex-col justify-between transition-all duration-350 hover:-translate-y-1 ${
                   isPro
-                    ? "border-violet-450 bg-gradient-to-b from-violet-50/40 via-white to-white dark:border-violet-500 dark:from-slate-900 dark:to-[#120e29]/70 shadow-xl dark:shadow-2xl dark:shadow-violet-950/40"
+                    ? "border-violet-450 bg-gradient-to-b from-violet-50/40 via-white to-white dark:border-violet-500 dark:from-[#1e154c]/60 dark:via-[#090b16]/90 dark:to-[#070913] shadow-xl dark:shadow-2xl dark:shadow-violet-950/40"
                     : "border-slate-200 bg-white dark:border-slate-850 dark:bg-slate-950/50 hover:border-slate-350 dark:hover:border-slate-700"
                 }`}
               >
@@ -548,7 +548,7 @@ export default function PricingPage() {
         <div className="mt-28">
           <div className="text-center mb-10">
             <h2 className="text-2xl font-black text-slate-900 dark:text-white md:text-3xl tracking-tight">
-              Compare CreAibox plans
+              Compare CreAibox Plans
             </h2>
             <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
               세부적인 기능별 지원 범위와 용량을 한눈에 비교해 보세요.
