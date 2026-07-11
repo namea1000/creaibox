@@ -227,7 +227,7 @@ export default function ContentPlannerHomePage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-2">
+              <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
                 {mainGroups.map((group) => (
                   <Link
                     key={group}

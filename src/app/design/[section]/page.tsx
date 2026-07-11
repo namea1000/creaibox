@@ -26,13 +26,31 @@ interface Props {
   };
 }
 
-// 🌟 네이버/구글 검색 노출 최적화용 "크리에이박스 CreAibox" 브랜드 키워드 동적 메타데이터 주입!
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const name = sectionNames[params.section] || "디자인 스튜디오";
   return {
-    title: `${name} | 크리에이박스 CreAibox`,
-    description: `크리에이박스 CreAibox에서 제공하는 차세대 AI 기반 ${name} 도구입니다. 복잡한 설치 없이 브라우저 상에서 고퀄리티 비주얼 에셋을 즉시 제작해 보세요.`,
-    keywords: ["크리에이박스", "creaibox", name, "무료 디자인 툴", "AI 이미지 편집"]
+    title: name + " | 크리에이박스 CreAibox",
+    description: "크리에이박스 CreAibox에서 제공하는 차세대 AI 기반 " + name + " 도구입니다. 복잡한 설치 없이 브라우저 상에서 고퀄리티 비주얼 에셋을 즉시 제작해 보세요.",
+    keywords: ["크리에이박스", "creaibox", name, "무료 디자인 툴", "AI 이미지 편집"],
+    openGraph: {
+      title: name + " | 크리에이박스 CreAibox",
+      description: "크리에이박스 CreAibox에서 제공하는 차세대 AI 기반 " + name + " 도구입니다. 복잡한 설치 없이 브라우저 상에서 고퀄리티 비주얼 에셋을 즉시 제작해 보세요.",
+      url: "https://creaibox.com/design/" + params.section,
+      images: [
+        {
+          url: "/images/seo/themes.webp",
+          width: 1200,
+          height: 630,
+          alt: name,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: name + " | 크리에이박스 CreAibox",
+      description: "크리에이박스 CreAibox에서 제공하는 차세대 AI 기반 " + name + " 도구입니다. 복잡한 설치 없이 브라우저 상에서 고퀄리티 비주얼 에셋을 즉시 제작해 보세요.",
+      images: ["/images/seo/themes.webp"],
+    },
   };
 }
 

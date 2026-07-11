@@ -6,7 +6,26 @@ import PublicKeywordTrendClient from "./client";
 export const metadata: Metadata = {
   title: "키워드 트렌드 분석 | 크리에이박스 CreAibox",
   description: "크리에이박스 CreAibox에서 제공하는 종합 키워드 트렌드 대시보드입니다. 실시간 키워드 통계, 연관 검색어 발굴 및 최신 트렌드를 확인해 보세요.",
-  keywords: ["크리에이박스", "creaibox", "키워드 트렌드", "연관 키워드", "실시간 검색어"]
+  keywords: ["크리에이박스", "creaibox", "키워드 트렌드", "연관 키워드", "실시간 검색어"],
+  openGraph: {
+    title: "키워드 트렌드 분석 | 크리에이박스 CreAibox",
+    description: "크리에이박스 CreAibox에서 제공하는 종합 키워드 트렌드 대시보드입니다. 실시간 키워드 통계, 연관 검색어 발굴 및 최신 트렌드를 확인해 보세요.",
+    url: "https://creaibox.com/keyword-trend",
+    images: [
+      {
+        url: "/images/seo/keyword-trend.webp",
+        width: 1200,
+        height: 630,
+        alt: "키워드 트렌드 분석",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "키워드 트렌드 분석 | 크리에이박스 CreAibox",
+    description: "크리에이박스 CreAibox에서 제공하는 종합 키워드 트렌드 대시보드입니다. 실시간 키워드 통계, 연관 검색어 발굴 및 최신 트렌드를 확인해 보세요.",
+    images: ["/images/seo/keyword-trend.webp"],
+  },
 };
 
 export default function Page() {

@@ -21,10 +21,33 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const segments = resolvedParams.section || [];
   const section = segments[0] || "";
   const sectionTitle = sectionNames[section] || "콘텐츠 라이브러리";
+  
+  // ⚡ 세부 콘텐츠 유형에 따른 썸네일 파일 분기 매칭
+  const imageFilename = section === "music" ? "media-library-music.webp" : "media-library.webp";
+
   return {
-    title: `${sectionTitle} | 크리에이박스 CreAibox`,
-    description: `크리에이박스 CreAibox의 대외 공개용 ${sectionTitle} 관리 도구입니다. 풍부한 템플릿과 저장 데이터를 한눈에 확인하고 활용해 보세요.`,
-    keywords: ["크리에이박스", "creaibox", sectionTitle, "크리에이터 에셋", "AI 콘텐츠 저장소"]
+    title: sectionTitle + " | 크리에이박스 CreAibox",
+    description: "크리에이박스 CreAibox의 대외 공개용 " + sectionTitle + " 관리 도구입니다. 풍부한 템플릿과 저장 데이터를 한눈에 확인하고 활용해 보세요.",
+    keywords: ["크리에이박스", "creaibox", sectionTitle, "크리에이터 에셋", "AI 콘텐츠 저장소"],
+    openGraph: {
+      title: sectionTitle + " | 크리에이박스 CreAibox",
+      description: "크리에이박스 CreAibox의 대외 공개용 " + sectionTitle + " 관리 도구입니다. 풍부한 템플릿과 저장 데이터를 한눈에 확인하고 활용해 보세요.",
+      url: "https://creaibox.com/library/" + (segments.join("/")),
+      images: [
+        {
+          url: "/images/seo/" + imageFilename,
+          width: 1200,
+          height: 630,
+          alt: sectionTitle,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: sectionTitle + " | 크리에이박스 CreAibox",
+      description: "크리에이박스 CreAibox의 대외 공개용 " + sectionTitle + " 관리 도구입니다. 풍부한 템플릿과 저장 데이터를 한눈에 확인하고 활용해 보세요.",
+      images: ["/images/seo/" + imageFilename],
+    },
   };
 }
 

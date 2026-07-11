@@ -293,6 +293,22 @@ const GENRE_COLLECTIONS: GenreCollectionItem[] = [
   { id: "Glitch Hop", label: "Glitch Hop", desc: "기계적 글리치 노이즈를 힙합 비트에 결합한 트랙", img: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=300&h=300&q=80", genreGroup: "기능성 및 오디오 텍스처" }
 ];
 
+const GENRE_GROUPS_INFO = [
+  { id: "록 / 서브컬처 스타일", label: "록 / 서브컬처", desc: "펑크, 메탈 등 강렬하고 반항적인 얼터너티브 록 그루브", img: "/images/genres/rock_subculture.webp" },
+  { id: "라틴 / 댄스 그루브", label: "라틴 / 댄스", desc: "살사, 삼바, 차차차 등 열정적인 라틴 댄스 파티 리듬", img: "/images/genres/latin_dance.webp" },
+  { id: "전자 음악 (Electronic)", label: "전자 음악", desc: "테크노, 하우스, EDM 등 신디사이저 기반의 트렌디 비트", img: "/images/genres/electronic.webp" },
+  { id: "힙합 / 알앤비 / 재즈 / 블루스", label: "힙합 / R&B / 재즈", desc: "소울풀한 붐뱁 랩 비트부터 로맨틱한 스무스 재즈까지", img: "/images/genres/hiphop_rnb_jazz.webp" },
+  { id: "팝 / 포크 / 컨트리 / 전통악기", label: "팝 / 포크 / 컨트리", desc: "대중적인 어쿠스틱 팝과 목가적인 전통 포크 멜로디", img: "/images/genres/pop_folk_country.webp" },
+  { id: "클래식 / 합주 / 월드뮤직", label: "클래식 / 월드뮤직", desc: "웅장한 시네마틱 오케스트라와 이국적인 세계 민속 음악", img: "/images/genres/classical_world.webp" },
+  { id: "비디오 씬 / 영상 연출", label: "비디오 / 영상 연출", desc: "액션, 추격전, 예능 등 비디오 장면에 완벽히 녹아드는 BGM", img: "/images/genres/video_scene.webp" },
+  { id: "감정 / 공간 / 이벤트", label: "감정 / 공간 / 이벤트", desc: "비 내리는 카페, 명상, 크리스마스 등 특별한 이벤트 무드", img: "/images/genres/emotion_space.webp" },
+  { id: "악기 및 사운드 텍스처", label: "악기 & 텍스처", desc: "피아노 독주, 마칭밴드, 공간감을 채우는 딥한 드론 사운드", img: "/images/genres/instrument_texture.webp" },
+  { id: "일렉트로닉 / 힙합 서브컬처", label: "일렉 / 힙합 서브컬처", desc: "신스웨이브, 베이퍼웨이브 등 몽환적 아날로그 감성 비트", img: "/images/genres/electro_hiphop_sub.webp" },
+  { id: "팝 / 인디 / 뉴에이지", label: "팝 / 인디 / 뉴에이지", desc: "청량한 시티팝과 방 안에서 속삭이는 미니멀 침실 팝", img: "/images/genres/pop_indie_newage.webp" },
+  { id: "아시아 / 월드 에스닉", label: "아시아 / 에스닉", desc: "K-Pop, J-Pop 및 아시아 정통 에스닉 악기 컬렉션", img: "/images/genres/asia_world.webp" },
+  { id: "기능성 및 오디오 텍스처", label: "기능성 오디오", desc: "ASMR, 다크 앰비언트 등 깊은 집중과 치유를 돕는 사운드", img: "/images/genres/audio_texture.webp" }
+];
+
 export default function FreeAssetsLibraryPage() {
   const [assets, setAssets] = useState<FreeAsset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1657,44 +1673,84 @@ export default function FreeAssetsLibraryPage() {
                 })}
               </div>
 
-              {/* 선택된 대분류의 세부 서브 장르 카드 그리드 - 1:1 바둑판식 */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
-                {GENRE_COLLECTIONS.filter((g) => selectedGenreGroup === "전체 장르" || g.genreGroup === selectedGenreGroup).map((g) => {
-                  const hasError = imgErrors[g.id];
-                  const imgSrc = hasError
-                    ? `https://picsum.photos/seed/${encodeURIComponent(g.id)}/300/300`
-                    : `/images/genres/${encodeURIComponent(g.id.replace(/[^a-zA-Z0-9_-]/g, "_"))}.webp`;
-
-                  return (
+              {/* 선택된 대분류의 세부 서브 장르 또는 대분류 카드 그리드 */}
+              {selectedGenreGroup === "전체 장르" ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {GENRE_GROUPS_INFO.map((group) => (
                     <div
-                      key={g.id}
-                      onClick={() => {
-                        setMusicCategory(g.id);
-                        setSelectedMusicGenre(g.id);
-                        setSelectedMusicMood(null);
-                      }}
-                      className="group relative aspect-square overflow-hidden rounded-xl border border-zinc-850 bg-[#090c13] transition-all duration-300 hover:-translate-y-1 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer"
+                      key={group.id}
+                      onClick={() => setSelectedGenreGroup(group.id)}
+                      className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-zinc-850 bg-[#090c13] transition-all duration-300 hover:-translate-y-1.5 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/10 cursor-pointer"
                     >
                       <img
-                        src={imgSrc}
-                        alt={g.label}
-                        onError={() => {
-                          setImgErrors((prev) => ({ ...prev, [g.id]: true }));
-                        }}
-                        className="h-full w-full object-cover opacity-90 group-hover:scale-105 group-hover:opacity-100 transition duration-500"
+                        src={group.img}
+                        alt={group.label}
+                        className="h-full w-full object-cover opacity-85 group-hover:scale-105 group-hover:opacity-100 transition duration-500"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                      <div className="absolute bottom-2.5 left-2.5 right-2.5 text-left">
-                        <span className="inline-block text-[8px] font-black text-blue-400 uppercase tracking-wide mb-0.5 bg-blue-500/10 px-1.5 py-0.5 rounded">
-                          {g.id}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+                      <div className="absolute bottom-4 left-4 right-4 text-left">
+                        <span className="inline-block text-[8px] font-black text-blue-400 uppercase tracking-widest mb-1.5 bg-blue-500/10 px-2 py-0.5 rounded">
+                          GENRE GROUP
                         </span>
-                        <h3 className="text-[11px] font-black text-white tracking-tight leading-tight truncate">{g.label}</h3>
-                        <p className="mt-0.5 text-[9px] font-bold text-zinc-400 leading-normal line-clamp-1 group-hover:line-clamp-none transition-all duration-200">{g.desc}</p>
+                        <h3 className="text-sm font-black text-white tracking-tight leading-tight">{group.label}</h3>
+                        <p className="mt-1 text-[10px] font-bold text-zinc-400 leading-normal line-clamp-2">{group.desc}</p>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <button
+                      onClick={() => setSelectedGenreGroup("전체 장르")}
+                      className="flex items-center gap-1.5 text-xs font-black text-zinc-400 hover:text-white transition cursor-pointer"
+                    >
+                      <span>← 전체 장르 목록</span>
+                    </button>
+                    <span className="text-xs font-bold text-zinc-500">
+                      {selectedGenreGroup} ({GENRE_COLLECTIONS.filter(g => g.genreGroup === selectedGenreGroup).length}개 장르)
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
+                    {GENRE_COLLECTIONS.filter((g) => g.genreGroup === selectedGenreGroup).map((g) => {
+                      const hasError = imgErrors[g.id];
+                      const imgSrc = hasError
+                        ? `https://picsum.photos/seed/${encodeURIComponent(g.id)}/300/300`
+                        : `/images/genres/${encodeURIComponent(g.id.replace(/[^a-zA-Z0-9]/g, "_"))}.webp`;
+
+                      return (
+                        <div
+                          key={g.id}
+                          onClick={() => {
+                            setMusicCategory(g.id);
+                            setSelectedMusicGenre(g.id);
+                            setSelectedMusicMood(null);
+                          }}
+                          className="group relative aspect-square overflow-hidden rounded-xl border border-zinc-850 bg-[#090c13] transition-all duration-300 hover:-translate-y-1 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer"
+                        >
+                          <img
+                            src={imgSrc}
+                            alt={g.label}
+                            onError={() => {
+                              setImgErrors((prev) => ({ ...prev, [g.id]: true }));
+                            }}
+                            className="h-full w-full object-cover opacity-90 group-hover:scale-105 group-hover:opacity-100 transition duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                          <div className="absolute bottom-2.5 left-2.5 right-2.5 text-left">
+                            <span className="inline-block text-[8px] font-black text-blue-400 uppercase tracking-wide mb-0.5 bg-blue-500/10 px-1.5 py-0.5 rounded">
+                              {g.id}
+                            </span>
+                            <h3 className="text-[11px] font-black text-white tracking-tight leading-tight truncate">{g.label}</h3>
+                            <p className="mt-0.5 text-[9px] font-bold text-zinc-400 leading-normal line-clamp-1 group-hover:line-clamp-none transition-all duration-200">{g.desc}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 무드 컬렉션 */}
@@ -1704,12 +1760,32 @@ export default function FreeAssetsLibraryPage() {
                 무드 컬렉션 검색
               </h2>
               <p className="text-xs text-zinc-500 mb-6 text-left">감정을 불어넣고 비디오를 돋보이게 하는 음악 무드</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
                 {[
-                  { id: "그루비", label: "그루비 (Groovy)", desc: "리듬감이 살아 숨 쉬는 그루브 사운드", bg: "from-purple-950 to-indigo-900" },
-                  { id: "신나는", label: "신나는 (Energetic)", desc: "기분을 업 시켜줄 밝고 신나는 트랙", bg: "from-rose-950 to-amber-900" },
-                  { id: "부드러운", label: "부드러운 (Mellow)", desc: "편안하게 감싸주는 잔잔한 멜로디", bg: "from-teal-950 to-emerald-900" },
-                  { id: "로맨틱", label: "로맨틱 (Romantic)", desc: "사랑스럽고 감성적인 분위기의 서사", bg: "from-pink-950 to-purple-900" },
+                  { id: "경쾌한", label: "경쾌한 (Upbeat)", desc: "vlog나 화사한 브랜딩에 어울리는 밝은 어쿠스틱", img: "/images/genres/Upbeat.webp" },
+                  { id: "공포", label: "공포 (Horror)", desc: "스릴러와 공포 영화의 극단적인 탈출 씬 연출", img: "/images/genres/Horror.webp" },
+                  { id: "귀여운", label: "귀여운 (Cute)", desc: "통통 튀는 어린이, 반려동물 및 장난스러운 상황", img: "/images/genres/Kids.webp" },
+                  { id: "그루브", label: "그루브 (Groovy)", desc: "슬랩 베이스가 주도하는 세련된 펑크 그루브", img: "/images/genres/Funk.webp" },
+                  { id: "긴장감", label: "긴장감 (Suspense)", desc: "현악 스타카토로 조여오는 범죄 추리물 텐션", img: "/images/genres/Tension.webp" },
+                  { id: "단순한", label: "단순한 (Minimal)", desc: "화면을 방해하지 않는 담백한 비트와 멜로디", img: "/images/genres/Abstract.webp" },
+                  { id: "드라마틱", label: "드라마틱 (Dramatic)", desc: "현악과 브라스로 그리는 서사와 장엄한 어드벤처", img: "/images/genres/Cinematic.webp" },
+                  { id: "로맨틱", label: "로맨틱 (Romantic)", desc: "클래식 기타와 바이올린 앙상블의 낭만적 감성", img: "/images/genres/Wedding.webp" },
+                  { id: "몽환적인", label: "몽환적인 (Dreamy)", desc: "공상과학, 신비로운 판타지 세계 묘사", img: "/images/genres/Fantasy.webp" },
+                  { id: "밝은", label: "밝은 (Bright)", desc: "화사한 휴가, 커머셜 광고풍 긍정적 사운드", img: "/images/genres/Acoustic_Pop.webp" },
+                  { id: "비장한", label: "비장한 (Solemn)", desc: "French horn과 타이코 드럼의 전장의 결의", img: "/images/genres/Heroic.webp" },
+                  { id: "슬픈", label: "슬픈 (Sad)", desc: "지독한 슬픔, 상실과 이별 장면에 부합하는 곡", img: "/images/genres/Melodramatic.webp" },
+                  { id: "신나는", label: "신나는 (Exciting)", desc: "Future bass와 레트로 80년대 밤거리 주행", img: "/images/genres/Dance.webp" },
+                  { id: "신비로운", label: "신비로운 (Mysterious)", desc: "이국적인 민속 플루트 선율과 신비한 숲 속", img: "/images/genres/Supernatural.webp" },
+                  { id: "아련한", label: "아련한 (Nostalgic)", desc: "나른한 Rhodes 건반과 아련한 회상 브이로그", img: "/images/genres/Nostalgia.webp" },
+                  { id: "웅장한", label: "웅장한 (Epic)", desc: "대륙의 건국 서사, 웅장한 비즈니스 웅비", img: "/images/genres/Epic_Classical.webp" },
+                  { id: "잔잔한", label: "잔잔한 (Calm)", desc: "나일론 기타와 보사노바 리듬의 따스한 오후", img: "/images/genres/Acoustic_Texture.webp" },
+                  { id: "재밌는", label: "재밌는 (Fun)", desc: "만화 영화 속 재치 넘치는 비밀 미션 묘사", img: "/images/genres/Cartoons.webp" },
+                  { id: "청량한", label: "청량한 (Refreshing)", desc: "맑은 봄비와 푸른 하늘 정취의 크리스탈 벨", img: "/images/genres/Happy_Childrens_Tunes.webp" },
+                  { id: "코믹한", label: "코믹한 (Comical)", desc: "뒤뚱거리는 예능 NG 자막 모음 컷 특화", img: "/images/genres/Comical.webp" },
+                  { id: "평온한", label: "평온한 (Peaceful)", desc: "정갈한 피아노와 스트링의 아침 명상/요가", img: "/images/genres/Meditation_Spiritual.webp" },
+                  { id: "행복한", label: "행복한 (Happy)", desc: "우쿨렐레 피킹과 박수 소리의 단란한 소풍", img: "/images/genres/Happy_Childrens_Tunes.webp" },
+                  { id: "희망찬", label: "희망찬 (Hopeful)", desc: "성공적인 도전을 그리는 피아노 빌드업", img: "/images/genres/Corporate.webp" },
+                  { id: "무서운", label: "무서운 (Scary)", desc: "불협화음 긁는 소리로 유령의 집, 미스터리 위협", img: "/images/genres/Creepy.webp" }
                 ].map((m) => (
                   <div
                     key={m.id}
@@ -1718,11 +1794,21 @@ export default function FreeAssetsLibraryPage() {
                       setSelectedMusicMood(m.id);
                       setSelectedMusicGenre(null);
                     }}
-                    className={`group relative h-32 overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br ${m.bg} p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:border-emerald-500/50 hover:shadow-2xl hover:shadow-emerald-500/10 cursor-pointer`}
+                    className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-zinc-850 bg-[#090c13] transition-all duration-300 hover:-translate-y-1.5 hover:border-emerald-500/50 hover:shadow-2xl hover:shadow-emerald-500/10 cursor-pointer"
                   >
-                    <div className="absolute -right-6 -bottom-6 h-20 w-20 rounded-full bg-white/5 blur-xl group-hover:scale-150 transition duration-500" />
-                    <h3 className="text-sm font-black text-white tracking-tight text-left">{m.label}</h3>
-                    <p className="text-[11px] font-medium text-zinc-300/80 text-left leading-normal">{m.desc}</p>
+                    <img
+                      src={m.img}
+                      alt={m.label}
+                      className="h-full w-full object-cover opacity-80 group-hover:scale-105 group-hover:opacity-100 transition duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    <div className="absolute bottom-3 left-3 right-3 text-left">
+                      <span className="inline-block text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-1 bg-emerald-500/10 px-2 py-0.5 rounded">
+                        MOOD
+                      </span>
+                      <h3 className="text-xs font-black text-white tracking-tight leading-tight">{m.label}</h3>
+                      <p className="mt-0.5 text-[9px] font-bold text-zinc-400 leading-snug line-clamp-1">{m.desc}</p>
+                    </div>
                   </div>
                 ))}
               </div>

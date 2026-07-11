@@ -441,7 +441,7 @@ export default function MainLandingPage() {
                   10개 대분류 및 상세분야 55개 제공! 클릭만 하면 바로 글쓰기가 가능한 메인 키워드 주제 11,148개 이상, 추천 시리즈 2,189개 이상 수록되어 있습니다.
                 </p>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-3">
+              <div className="grid grid-cols-5 sm:grid-cols-10 gap-3">
                 {[
                   { id: "tech", name: "기술 & 디지털", sub: "Tech & Digital", emoji: "💻" },
                   { id: "business", name: "경제 & 비즈니스", sub: "Economy & Business", emoji: "💼" },

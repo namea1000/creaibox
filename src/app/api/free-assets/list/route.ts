@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import fs from "fs";
+import path from "path";
 
 export async function GET() {
   try {
@@ -13,6 +15,90 @@ export async function GET() {
 
     if (error) {
       throw new Error(`Database fetch failed: ${error.message}`);
+    }
+
+    // Load music assets dynamically from local metadata JSON
+    let musicAssets: any[] = [];
+    try {
+      const metadataPath = path.resolve(process.cwd(), "src/lib/constants/music_metadata.json");
+      if (fs.existsSync(metadataPath)) {
+        const rawMetadata = fs.readFileSync(metadataPath, "utf-8");
+        const parsed = JSON.parse(rawMetadata);
+        
+        const moodMap: Record<string, string> = {
+          "upbeat": "경쾌한",
+          "horror": "공포",
+          "cute": "귀여운",
+          "groovy": "그루브",
+          "suspenseful": "긴장감",
+          "minimal": "단순한",
+          "dramatic": "드라마틱",
+          "romantic": "로맨틱",
+          "dreamy": "몽환적인",
+          "bright": "밝은",
+          "solemn": "비장한",
+          "sad": "슬픈",
+          "exciting": "신나는",
+          "mysterious": "신비로운",
+          "nostalgic": "아련한",
+          "epic": "웅장한",
+          "calm": "잔잔한",
+          "fun": "재밌는",
+          "refreshing": "청량한",
+          "comical": "코믹한",
+          "peaceful": "평온한",
+          "happy": "행복한",
+          "hopeful": "희망찬",
+          "scary": "무서운"
+        };
+
+        musicAssets = parsed.map((song: any) => {
+          // Normalize subgenre for WebP thumbnail URL mapping
+          const cleanSubGenre = song.subGenre.replace(/[^a-zA-Z0-9]/g, "_");
+          return {
+            id: song.id,
+            name: `${song.title}.mp3`,
+            url: song.audioUrl,
+            thumbnailUrl: `/images/genres/${cleanSubGenre}.webp`,
+            mimeType: "audio/mpeg",
+            size: 0,
+            createdAt: new Date().toISOString(),
+            title: song.title,
+            // Bundle all metadata into tags so they are correctly searchable and filterable by genre and mood
+            tags: [
+              song.subGenre.toLowerCase(),
+              song.genreGroup.toLowerCase(),
+              song.mood.toLowerCase(),
+              "music",
+              "bgm",
+              "음악",
+              "사운드",
+              ...song.mood.split(",").map((m: string) => m.trim().toLowerCase()),
+              ...song.mood.split(",").map((m: string) => {
+                const norm = m.trim().toLowerCase();
+                return moodMap[norm] || "";
+              }).filter(Boolean)
+            ],
+            mediaType: "music",
+            uploader: "CreAIbox Official",
+            uploaderEmail: "admin@creaibox.com",
+            downloads: Math.floor(Math.random() * 120) + 10,
+            views: Math.floor(Math.random() * 300) + 50,
+            aspectRatio: "",
+            generationType: "ai",
+            width: 0,
+            height: 0,
+            camera: "",
+            prompt: song.prompt || "",
+            aiTool: "Suno / Udio",
+            isOfficialThemeAsset: false,
+            themeCategory: "music",
+            isBusinessOnly: false,
+          };
+        });
+      }
+    } catch (e) {
+      console.error("Failed to load music metadata json in API:", e);
     }
 
     // Extract unique uploader emails to query nicknames from profiles table
@@ -951,7 +1037,7 @@ export async function GET() {
       }
     ];
 
-    return NextResponse.json({ files: [...formattedFiles, ...staticCategoryAssets] });
+    return NextResponse.json({ files: [...formattedFiles, ...staticCategoryAssets, ...musicAssets] });
   } catch (error: any) {
     console.error("Failed to list free assets from database:", error);
     return NextResponse.json(

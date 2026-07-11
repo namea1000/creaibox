@@ -6,7 +6,26 @@ import PublicDesignClient from "./client";
 export const metadata: Metadata = {
   title: "디자인 스튜디오 | 크리에이박스 CreAibox",
   description: "크리에이박스 CreAibox에서 제공하는 차세대 온라인 디자인 에디터입니다. 브라우저에서 템플릿과 캔버스를 활용하여 웹 배너, 포스터, 유튜브 썸네일을 즉시 무료로 제작해 보세요.",
-  keywords: ["크리에이박스", "creaibox", "디자인 스튜디오", "무료 디자인 캔버스", "썸네일 만들기"]
+  keywords: ["크리에이박스", "creaibox", "디자인 스튜디오", "무료 디자인 캔버스", "썸네일 만들기"],
+  openGraph: {
+    title: "디자인 스튜디오 | 크리에이박스 CreAibox",
+    description: "크리에이박스 CreAibox에서 제공하는 차세대 온라인 디자인 에디터입니다. 브라우저에서 템플릿과 캔버스를 활용하여 웹 배너, 포스터, 유튜브 썸네일을 즉시 무료로 제작해 보세요.",
+    url: "https://creaibox.com/design",
+    images: [
+      {
+        url: "/images/seo/themes.webp",
+        width: 1200,
+        height: 630,
+        alt: "디자인 스튜디오",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "디자인 스튜디오 | 크리에이박스 CreAibox",
+    description: "크리에이박스 CreAibox에서 제공하는 차세대 온라인 디자인 에디터입니다. 브라우저에서 템플릿과 캔버스를 활용하여 웹 배너, 포스터, 유튜브 썸네일을 즉시 무료로 제작해 보세요.",
+    images: ["/images/seo/themes.webp"],
+  },
 };
 
 export default function Page() {

@@ -24,9 +24,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const path = segments.join("/");
   const sectionTitle = sectionNames[path] || "AI 비디오 스튜디오";
   return {
-    title: `${sectionTitle} | 크리에이박스 CreAibox`,
-    description: `크리에이박스 CreAibox의 대외 공개용 ${sectionTitle} 솔루션입니다. 브라우저 기반의 AI 영상 편집기 및 쇼츠 제작기를 통해 임팩트 있는 비디오를 기획 및 랜더링해 보세요.`,
-    keywords: ["크리에이박스", "creaibox", sectionTitle, "AI 비디오 제작", "쇼츠 만들기 프로그램"]
+    title: sectionTitle + " | 크리에이박스 CreAibox",
+    description: "크리에이박스 CreAibox의 대외 공개용 " + sectionTitle + " 솔루션입니다. 브라우저 기반의 AI 영상 편집기 및 쇼츠 제작기를 통해 임팩트 있는 비디오를 기획 및 랜더링해 보세요.",
+    keywords: ["크리에이박스", "creaibox", sectionTitle, "AI 비디오 제작", "쇼츠 만들기 프로그램"],
+    openGraph: {
+      title: sectionTitle + " | 크리에이박스 CreAibox",
+      description: "크리에이박스 CreAibox의 대외 공개용 " + sectionTitle + " 솔루션입니다. 브라우저 기반의 AI 영상 편집기 및 쇼츠 제작기를 통해 임팩트 있는 비디오를 기획 및 랜더링해 보세요.",
+      url: "https://creaibox.com/video/" + path,
+      images: [
+        {
+          url: "/images/seo/video-editor.webp",
+          width: 1200,
+          height: 630,
+          alt: sectionTitle,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: sectionTitle + " | 크리에이박스 CreAibox",
+      description: "크리에이박스 CreAibox의 대외 공개용 " + sectionTitle + " 솔루션입니다. 브라우저 기반의 AI 영상 편집기 및 쇼츠 제작기를 통해 임팩트 있는 비디오를 기획 및 랜더링해 보세요.",
+      images: ["/images/seo/video-editor.webp"],
+    },
   };
 }
 

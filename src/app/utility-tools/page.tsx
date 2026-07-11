@@ -6,7 +6,26 @@ import PublicUtilityToolsClient from "./client";
 export const metadata: Metadata = {
   title: "유틸리티 Tools | 크리에이박스 CreAibox",
   description: "크리에이박스 CreAibox에서 제공하는 크리에이터 필수 유틸리티 도구 세트입니다. 누끼 제거, QR 생성, 이미지 압축 및 코드 뷰티파이어 등을 무료로 편리하게 사용해 보세요.",
-  keywords: ["크리에이박스", "creaibox", "유틸리티 툴", "무료 크리에이터 도구", "누끼 따기 프로그램"]
+  keywords: ["크리에이박스", "creaibox", "유틸리티 툴", "무료 크리에이터 도구", "누끼 따기 프로그램"],
+  openGraph: {
+    title: "유틸리티 Tools | 크리에이박스 CreAibox",
+    description: "크리에이박스 CreAibox에서 제공하는 크리에이터 필수 유틸리티 도구 세트입니다. 누끼 제거, QR 생성, 이미지 압축 및 코드 뷰티파이어 등을 무료로 편리하게 사용해 보세요.",
+    url: "https://creaibox.com/utility-tools",
+    images: [
+      {
+        url: "/images/seo/utility-tools.webp",
+        width: 1200,
+        height: 630,
+        alt: "유틸리티 Tools",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "유틸리티 Tools | 크리에이박스 CreAibox",
+    description: "크리에이박스 CreAibox에서 제공하는 크리에이터 필수 유틸리티 도구 세트입니다. 누끼 제거, QR 생성, 이미지 압축 및 코드 뷰티파이어 등을 무료로 편리하게 사용해 보세요.",
+    images: ["/images/seo/utility-tools.webp"],
+  },
 };
 
 export default function Page() {

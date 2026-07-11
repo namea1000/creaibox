@@ -28,9 +28,28 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const name = sectionNames[params.section] || "유틸리티 Tools";
   return {
-    title: `${name} | 크리에이박스 CreAibox`,
-    description: `크리에이박스 CreAibox에서 무료로 제공하는 고성능 ${name} 유틸리티 도구입니다. 복잡한 가입 없이 누구나 간편하게 작업을 자동화해 보세요.`,
-    keywords: ["크리에이박스", "creaibox", name, "무료 웹 도구", "작업 자동화"]
+    title: name + " | 크리에이박스 CreAibox",
+    description: "크리에이박스 CreAibox에서 무료로 제공하는 고성능 " + name + " 유틸리티 도구입니다. 복잡한 가입 없이 누구나 간편하게 작업을 자동화해 보세요.",
+    keywords: ["크리에이박스", "creaibox", name, "무료 웹 도구", "작업 자동화"],
+    openGraph: {
+      title: name + " | 크리에이박스 CreAibox",
+      description: "크리에이박스 CreAibox에서 무료로 제공하는 고성능 " + name + " 유틸리티 도구입니다. 복잡한 가입 없이 누구나 간편하게 작업을 자동화해 보세요.",
+      url: "https://creaibox.com/utility-tools/" + params.section,
+      images: [
+        {
+          url: "/images/seo/utility-tools.webp",
+          width: 1200,
+          height: 630,
+          alt: name,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: name + " | 크리에이박스 CreAibox",
+      description: "크리에이박스 CreAibox에서 무료로 제공하는 고성능 " + name + " 유틸리티 도구입니다. 복잡한 가입 없이 누구나 간편하게 작업을 자동화해 보세요.",
+      images: ["/images/seo/utility-tools.webp"],
+    },
   };
 }
 

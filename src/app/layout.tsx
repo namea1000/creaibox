@@ -36,6 +36,11 @@ export const metadata = {
   alternates: {
     canonical: "/",
   },
+  icons: {
+    icon: "/icon.png?v=2",
+    shortcut: "/icon.png?v=2",
+    apple: "/icon.png?v=2",
+  },
 
   openGraph: {
     title: "크리에이박스(CreAibox) | 올인원 AI 콘텐츠 스튜디오",
@@ -45,10 +50,16 @@ export const metadata = {
     siteName: "CreAibox",
     images: [
       {
-        url: "/logothumbnail.webp",
+        url: "/images/seo/main.webp",
         width: 1200,
         height: 630,
-        alt: "CreAibox Logo",
+        alt: "CreAibox Logo (Landscape)",
+      },
+      {
+        url: "/images/seo/main-sq.webp",
+        width: 1200,
+        height: 1200,
+        alt: "CreAibox Logo (Square)",
       },
     ],
     locale: "ko_KR",
@@ -59,7 +70,7 @@ export const metadata = {
     title: "크리에이박스(CreAibox) | 올인원 AI 콘텐츠 스튜디오",
     description:
       "AI 글쓰기부터 이미지 생성, 음악, 홈페이지 제작까지. 크리에이박스는 크리에이터를 위한 올인원 AI 콘텐츠 스튜디오입니다.",
-    images: ["/logothumbnail.webp"],
+    images: ["/images/seo/main.webp", "/images/seo/main-sq.webp"],
   },
 };
 
