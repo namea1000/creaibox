@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "CreAibox Suno Connector",
+  "version": "1.0.0",
+  "description": "CreAibox AI 앨범 기획 플랫폼과 Suno.com의 세션/데이터를 실시간으로 가교 동기화해 줍니다.",
+  "permissions": [
+    "storage",
+    "tabs",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://suno.com/*",
+    "http://localhost:3000/*",
+    "https://creaibox.com/*"
+  ],
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost:3000/*",
+        "https://creaibox.com/*"
+      ],
+      "js": ["content-creaibox.js"],
+      "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "https://suno.com/*"
+      ],
+      "js": ["content-suno.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  }
+}

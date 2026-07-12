@@ -208,7 +208,7 @@ async function main() {
         { fileId: file.id, alt: 'media' },
         { responseType: 'arraybuffer' }
       );
-      fileBuffer = Buffer.from(driveFileRes.data);
+      fileBuffer = Buffer.from(driveFileRes.data as any);
     } catch (e: any) {
       console.error(`❌ Failed to download "${file.name}" from Drive:`, e.message);
       continue;

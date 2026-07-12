@@ -14,7 +14,9 @@ import {
   ListChecks,
   Save,
   Copy,
+  Sparkles,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
 const PAGE_SIZE = 15;
@@ -246,6 +248,18 @@ async function copyToClipboard(value?: string | null) {
 
 export default function MusicLibraryPage() {
   const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
+
+  const handleCreateSunoSong = (song: MusicSongRow) => {
+    const prefillData = {
+      prompt: song.suno_prompt || "",
+      lyrics: song.lyrics || "",
+      title: song.title || "",
+      lyricsMode: song.lyrics ? "write" : "instrumental"
+    };
+    sessionStorage.setItem("suno_prefill", JSON.stringify(prefillData));
+    router.push("/studio/music/suno-generator");
+  };
 
   const [songs, setSongs] = useState<MusicSongRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -913,16 +927,31 @@ export default function MusicLibraryPage() {
                   </td>
 
                   <td className="px-3 py-4">
-                    <button
-                      type="button"
-                      className="text-left font-semibold leading-6 text-cyan-200 transition hover:text-cyan-100 hover:underline"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleOpenSong(song);
-                      }}
-                    >
-                      {safeText(song.title, "제목 없음")}
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        className="text-left font-semibold leading-6 text-cyan-200 transition hover:text-cyan-100 hover:underline"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleOpenSong(song);
+                        }}
+                      >
+                        {safeText(song.title, "제목 없음")}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleCreateSunoSong(song);
+                        }}
+                        className="px-2 py-0.5 bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/20 hover:border-emerald-400/40 rounded text-[10px] text-emerald-300 font-bold flex items-center gap-1 transition-all flex-shrink-0"
+                        title="이 곡의 스타일과 가사를 들고 Suno 곡 생성으로 이동"
+                      >
+                        <Sparkles className="h-2.5 w-2.5 text-emerald-400" />
+                        <span>Suno 곡 생성</span>
+                      </button>
+                    </div>
                     <div className="mt-1 text-[13px] leading-6 text-zinc-500">
                       {safeText(song.concept_description, "소재 설명 없음").slice(0, 80)}
                     </div>
@@ -1045,6 +1074,28 @@ export default function MusicLibraryPage() {
             </div>
 
             <div className="max-h-[calc(90vh-80px)] overflow-y-auto px-6 py-5">
+              
+              {/* Suno Generation Trigger CTA banner */}
+              <div className="mb-5 p-4 rounded-xl bg-gradient-to-r from-cyan-500/20 via-purple-500/15 to-transparent border border-cyan-400/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-[14px] font-bold text-cyan-200 flex items-center gap-1.5">
+                    <Sparkles className="h-4 w-4 text-emerald-400 animate-pulse" />
+                    Suno 연동 자동 작곡 가동
+                  </h3>
+                  <p className="text-[12px] text-zinc-400 mt-1 font-medium">
+                    현재 라이브러리 곡의 스타일 태그와 가사 텍스트를 자동으로 Suno 생성 페이지로 실어 나릅니다.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCreateSunoSong(selectedSong)}
+                  className="px-5 py-2.5 bg-gradient-to-r from-cyan-400 to-purple-500 hover:from-cyan-300 hover:to-purple-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-cyan-400/10 transition flex items-center gap-1.5 flex-shrink-0"
+                >
+                  <Music className="h-4 w-4 fill-slate-950" />
+                  <span>Suno 곡 생성 페이지로 이동</span>
+                </button>
+              </div>
+
               <div className="mb-5 grid grid-cols-2 gap-3 text-[14px] md:grid-cols-4">
                 {[
                   ["앨범", getAlbumTitle(selectedSong)],

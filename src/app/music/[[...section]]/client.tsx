@@ -14,6 +14,7 @@ import LibraryPage from "@/app/studio/music/library/page";
 import AlbumsPage from "@/app/studio/music/albums/page";
 import VisualizerPage from "@/app/studio/music/visualizer/page";
 import CreMusicPage from "@/app/studio/music/cre-music/page";
+import SunoGeneratorPage from "@/app/studio/music/suno-generator/page";
 
 const sectionNames: Record<string, string> = {
   "cre-music": "Cre Music 플레이어",
@@ -28,6 +29,7 @@ const sectionNames: Record<string, string> = {
   projects: "프로젝트",
   history: "작업 내역",
   settings: "설정",
+  "suno-generator": "Suno 곡 생성",
 };
 
 export default function PublicMusicClient() {
@@ -51,6 +53,8 @@ export default function PublicMusicClient() {
         return <AlbumsPage />;
       case "visualizer":
         return <VisualizerPage />;
+      case "suno-generator":
+        return <SunoGeneratorPage />;
       case "":
         return <MusicMainPage />;
       default:

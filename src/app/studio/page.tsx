@@ -193,6 +193,7 @@ export default function StudioPage() {
         { name: "가사 소재 허브", href: "/music/lyrics/idea-hub", icon: Lightbulb },
         { name: "AI 앨범 기획", href: "/music/planning", icon: Sparkles },
         { name: "가사 & SUNO", href: "/music/lyrics", icon: Mic2 },
+        { name: "Suno 곡 생성", href: "/music/suno-generator", icon: Wand2 },
         { name: "생성곡 라이센스", href: "/music/library", icon: Mic2 },
         { name: "앨범 관리", href: "/music/albums", icon: Disc },
         { name: "스타일 포맷", href: "/music/style-format", icon: Palette },
