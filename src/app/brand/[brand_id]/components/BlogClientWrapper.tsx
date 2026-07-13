@@ -420,11 +420,6 @@ export default function BlogClientWrapper({
                             <Sparkles size={24} />
                           </div>
                         )}
-                        {postCategory && (
-                          <div className="absolute left-4 top-4 rounded-full border border-white/10 bg-black/40 backdrop-blur-md px-3 py-1 text-[10px] font-black text-white">
-                            {postCategory.name}
-                          </div>
-                        )}
                       </div>
                       
                       <div className="flex flex-1 flex-col p-6 space-y-4">
