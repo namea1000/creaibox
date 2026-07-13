@@ -216,7 +216,53 @@ export async function middleware(request: NextRequest) {
       
       let rewritePath = "";
       if (isCustomClient) {
-        rewritePath = `/clients/${targetBrandId.toLowerCase()}${path}`;
+        // 🌟 정적 맞춤형 기업 홈페이지 라이센스(APPROVED 매핑) 유효성 체크
+        let isStaticApproved = false;
+        try {
+          const adminSupabase = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            {
+              cookies: {
+                get(name: string) { return ""; },
+                set(name: string, value: string, options: any) {},
+                remove(name: string, options: any) {},
+              }
+            }
+          );
+          
+          // 1. 대표 브랜드 ID 매치 확인
+          let { data: prof } = await adminSupabase
+            .from("profiles")
+            .select("id")
+            .eq("brand_id", targetBrandId.toLowerCase())
+            .eq("brand_id_status", "APPROVED")
+            .maybeSingle();
+            
+          if (prof?.id) {
+            isStaticApproved = true;
+          } else {
+            // 2. 부브랜드 ID 매치 확인
+            const { data: allProfs } = await adminSupabase
+              .from("profiles")
+              .select("id, extra_configs")
+              .not("extra_configs", "is", null);
+              
+            if (allProfs) {
+              isStaticApproved = allProfs.some((p: any) => {
+                const configs = p.extra_configs || {};
+                const list = (configs.brand_ids || []).map((id: string) => id.toLowerCase());
+                return list.includes(targetBrandId.toLowerCase());
+              });
+            }
+          }
+        } catch (staticErr) {
+          console.error("Static client license check failed:", staticErr);
+        }
+
+        rewritePath = isStaticApproved
+          ? `/clients/${targetBrandId.toLowerCase()}${path}`
+          : `/brand/${targetBrandId.toLowerCase()}${path}`;
       } else {
         // DB-driven Dynamic Website Builder Check
         let isDynamicClient = false;

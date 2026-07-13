@@ -180,6 +180,7 @@ export default function MyPage() {
         }
 
         if (data) {
+          const nextExtraConfigs = data.extra_configs || {};
           setProfile({
             nickname: data.nickname || "",
             brand_id: data.brand_id || "",
@@ -188,11 +189,101 @@ export default function MyPage() {
             brand_id_rejection_reason: data.brand_id_rejection_reason || "",
             membership_level: data.membership_level || "free",
             role: data.role || "FREE",
-            extra_configs: data.extra_configs || {},
+            extra_configs: nextExtraConfigs,
           });
           setBrandInput("");
 
-          setWpSites(data.extra_configs?.wp_sites || []);
+          setWpSites(nextExtraConfigs.wp_sites || []);
+
+          // 🌟 [낙오 홈페이지 도메인 보정 엔진]
+          // 신규 advanced cancellation 기능 탑재 전, 이미 profiles에서는 신청취소되었으나 client_sites에는 ACTIVE로 남아있거나,
+          // CUSTOM_CLIENT_SITES(정적 커스텀 사이트) 리스트에 하드코딩되어 외부 노출 중인 낙오 도메인들을 자동 구출하여 비공개 차단 및 휴면 보관함 이식
+          try {
+            const activeSubdomains = [
+              data.brand_id,
+              data.requested_brand_id,
+              ...(nextExtraConfigs.brand_ids || [])
+            ].filter(Boolean).map((id: string) => id.toLowerCase());
+
+            let cancelledBrands = [...(nextExtraConfigs.cancelled_brands || [])];
+            let hasChange = false;
+
+            // 1) DB-driven dynamic client sites 감지 및 INACTIVE 강등
+            const { data: userSites } = await supabase
+              .from("client_sites")
+              .select("brand_id, status")
+              .eq("profile_id", currentUser.id);
+
+            if (userSites && userSites.length > 0) {
+              for (const site of userSites) {
+                if (!site.brand_id) continue;
+                const bIdLower = site.brand_id.toLowerCase();
+                
+                const isActive = activeSubdomains.includes(bIdLower);
+                const isArchived = cancelledBrands.some((cb: any) => cb.brandId.toLowerCase() === bIdLower);
+
+                if (!isActive && !isArchived) {
+                  // 휴면 보관함에 보존
+                  cancelledBrands.push({
+                    brandId: site.brand_id,
+                    cancelledAt: new Date().toISOString(),
+                    type: "ALL"
+                  });
+                  
+                  // status를 INACTIVE로 강제 강등하여 미들웨어 접근 차단
+                  if (site.status === "ACTIVE") {
+                    await supabase
+                      .from("client_sites")
+                      .update({ status: "INACTIVE" })
+                      .eq("brand_id", bIdLower);
+                  }
+                  
+                  hasChange = true;
+                }
+              }
+            }
+
+            // 2) CUSTOM_CLIENT_SITES (하드코딩 정적 커스텀 사이트) 감지 및 휴면 보관함 이식
+            const staticClientList = ["ugnamumath", "sotongcheum", "commufill"];
+            for (const sId of staticClientList) {
+              const sIdLower = sId.toLowerCase();
+              const isActive = activeSubdomains.includes(sIdLower);
+              const isArchived = cancelledBrands.some((cb: any) => cb.brandId.toLowerCase() === sIdLower);
+
+              // 이 유저의 프로필에 해당 brand_id 관련 흔적(예: 설정 접미사 등)이 존재하지만 활성 리스트와 보관함에 둘 다 없는 경우 구출
+              const hasConfigTrace = Object.keys(nextExtraConfigs).some(key => key.endsWith(`_${sIdLower}`));
+              
+              if (!isActive && !isArchived && hasConfigTrace) {
+                cancelledBrands.push({
+                  brandId: sIdLower,
+                  cancelledAt: new Date().toISOString(),
+                  type: "ALL"
+                });
+                hasChange = true;
+              }
+            }
+
+            if (hasChange) {
+              nextExtraConfigs.cancelled_brands = cancelledBrands;
+              
+              // 프로필 테이블 업데이트
+              await supabase
+                .from("profiles")
+                .update({
+                  extra_configs: nextExtraConfigs,
+                  updated_at: new Date().toISOString()
+                })
+                .eq("id", currentUser.id);
+
+              // 로컬 상태 리프레시
+              setProfile(prev => ({
+                ...prev,
+                extra_configs: nextExtraConfigs
+              }));
+            }
+          } catch (autoFixErr) {
+            console.error("Orphan site auto patch failed:", autoFixErr);
+          }
         }
       } finally {
         if (mounted) setIsDataLoading(false);

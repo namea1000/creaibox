@@ -4,6 +4,5 @@
 export const CUSTOM_CLIENT_SITES: string[] = [
   "commufill",
   "sotongcheum",
-  "ugnamumath",
   // 차후 새로운 기업 홈페이지 구축 시 여기에 brand_id 추가
 ];
