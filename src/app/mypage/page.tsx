@@ -13,6 +13,7 @@ import {
   LogIn,
   RefreshCw,
   AlertTriangle,
+  FolderClosed,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -438,8 +439,8 @@ export default function MyPage() {
       e.stopPropagation();
     }
     setConfirmModal({
-      title: "브랜드 ID 신청 취소",
-      message: "정말로 브랜드 ID 신청을 취소하시겠습니까? 취소하시면 등록된 모든 연동 정보가 자동 정리되며 새로 신청해야 합니다.",
+      title: "브랜드 ID 신청 취소 (비공개 전환)",
+      message: "정말로 브랜드 ID 신청을 취소하시겠습니까?\n\n⚠️ 취소 시 해당 브랜드 도메인(블로그 및 AI 홈페이지)은 즉시 비공개(휴면) 상태로 전환되며, 외부 사용자의 접속이 차단됩니다.\n제작된 데이터는 휴면 보관함에 안전하게 보관되며 언제든지 다시 복원할 수 있습니다.",
       onConfirm: () => executeCancelBrand(brandIdToCancel),
     });
   };
@@ -463,6 +464,29 @@ export default function MyPage() {
       let requestedBrandId = latestProfile.requested_brand_id || null;
       let brandIds: string[] = latestProfile.extra_configs?.brand_ids || [];
       let nextExtraConfigs = { ...(latestProfile.extra_configs || {}) };
+
+      // 🌟 휴면 보관함(cancelled_brands)에 취소 이력 적립
+      const cancelledBrands = nextExtraConfigs.cancelled_brands || [];
+      const isAlreadyArchived = cancelledBrands.some((cb: any) => cb.brandId.toLowerCase() === brandIdToCancel.toLowerCase());
+      
+      if (!isAlreadyArchived) {
+        cancelledBrands.push({
+          brandId: brandIdToCancel,
+          cancelledAt: new Date().toISOString(),
+          type: "ALL"
+        });
+        nextExtraConfigs.cancelled_brands = cancelledBrands;
+      }
+
+      // 🌟 AI 홈페이지 빌더(client_sites) 비공개 전환 (INACTIVE 상태 변경)
+      const { error: clientSiteErr } = await supabase
+        .from("client_sites")
+        .update({ status: "INACTIVE" })
+        .eq("brand_id", brandIdToCancel.toLowerCase());
+
+      if (clientSiteErr) {
+        console.error("Warning: client_site status update failed:", clientSiteErr.message);
+      }
 
       // Handle canceling pending request
       if (requestedBrandId === brandIdToCancel) {
@@ -540,10 +564,188 @@ export default function MyPage() {
         extra_configs: nextExtraConfigs,
       }));
 
-      alert("✅ 브랜드 ID 신청이 성공적으로 취소되었습니다.");
+      alert("✅ 브랜드 ID가 성공적으로 취소 및 비공개 처리되었습니다.");
     } catch (err: any) {
       console.error(err);
       alert(`취소 중 오류가 발생했습니다: ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleRestoreBrand = (brandIdToRestore: string) => {
+    setConfirmModal({
+      title: "브랜드 ID 복원 (재활성화)",
+      message: `정말로 브랜드 ID '${brandIdToRestore}'을(를) 복원하시겠습니까? 복원하시면 기존의 블로그 및 홈페이지 사이트가 즉시 다시 라이브 상태로 재공개됩니다.`,
+      onConfirm: () => executeRestoreBrand(brandIdToRestore),
+    });
+  };
+
+  const executeRestoreBrand = async (brandIdToRestore: string) => {
+    setConfirmModal(null);
+    if (!user || !profile) return;
+
+    setIsSaving(true);
+    try {
+      // 1. 중복 선점 검사
+      const { data: dupProfile, error: dupErr } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("brand_id", brandIdToRestore.toLowerCase())
+        .maybeSingle();
+
+      if (dupErr) throw dupErr;
+      if (dupProfile) {
+        alert("이 브랜드 ID는 현재 다른 사용자가 사용 중이므로 복원할 수 없습니다.");
+        return;
+      }
+
+      // 2. profiles 정보 패치
+      const { data: latestProfile, error: fetchErr } = await supabase
+        .from("profiles")
+        .select("brand_id, brand_id_status, extra_configs")
+        .eq("id", user.id)
+        .single();
+
+      if (fetchErr) throw fetchErr;
+
+      let primaryBrandId = latestProfile.brand_id || null;
+      let brandIdStatus = latestProfile.brand_id_status || "NONE";
+      let brandIds: string[] = latestProfile.extra_configs?.brand_ids || [];
+      let nextExtraConfigs = { ...(latestProfile.extra_configs || {}) };
+
+      // 만약 대표 brand_id가 비어있다면 대표로 복원
+      if (!primaryBrandId) {
+        primaryBrandId = brandIdToRestore;
+        brandIdStatus = "APPROVED";
+      } else {
+        if (!brandIds.includes(brandIdToRestore)) {
+          brandIds.push(brandIdToRestore);
+        }
+      }
+
+      nextExtraConfigs.brand_ids = brandIds;
+
+      // 휴면 리스트에서 제거
+      let cancelledBrands = nextExtraConfigs.cancelled_brands || [];
+      cancelledBrands = cancelledBrands.filter((cb: any) => cb.brandId.toLowerCase() !== brandIdToRestore.toLowerCase());
+      nextExtraConfigs.cancelled_brands = cancelledBrands;
+
+      // 3. 홈페이지 빌더(client_sites) 상태 복원 (ACTIVE 변경)
+      const { error: siteRestoreErr } = await supabase
+        .from("client_sites")
+        .update({ status: "ACTIVE" })
+        .eq("brand_id", brandIdToRestore.toLowerCase());
+
+      if (siteRestoreErr) {
+        console.error("Warning: client_sites state reactivation failed:", siteRestoreErr.message);
+      }
+
+      const { error: updateErr } = await supabase
+        .from("profiles")
+        .update({
+          brand_id: primaryBrandId,
+          brand_id_status: brandIdStatus,
+          extra_configs: nextExtraConfigs,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (updateErr) throw updateErr;
+
+      setProfile((prev: any) => ({
+        ...prev,
+        brand_id: primaryBrandId || "",
+        brand_id_status: brandIdStatus,
+        extra_configs: nextExtraConfigs,
+      }));
+
+      alert("🎉 브랜드 ID가 성공적으로 복원 및 공개 활성화되었습니다!");
+    } catch (err: any) {
+      console.error("Restore brand error:", err);
+      alert(`복원 중 오류가 발생했습니다: ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleHardDeleteBrand = (brandIdToDelete: string) => {
+    setConfirmModal({
+      title: "⚠️ 브랜드 데이터 영구 삭제 ⚠️",
+      message: `정말로 브랜드 ID '${brandIdToDelete}' 관련 모든 데이터를 영구히 완전히 파기하시겠습니까?\n\n이 작업은 데이터베이스(DB) 내의 홈페이지 빌더 설정, 블로그 카테고리 등 모든 연동 데이터를 삭제하며, 절대로 복구할 수 없습니다!`,
+      onConfirm: () => executeHardDeleteBrand(brandIdToDelete),
+    });
+  };
+
+  const executeHardDeleteBrand = async (brandIdToDelete: string) => {
+    setConfirmModal(null);
+    if (!user || !profile) return;
+
+    setIsSaving(true);
+    try {
+      // 1. client_sites 영구 삭제
+      const { error: siteDeleteErr } = await supabase
+        .from("client_sites")
+        .delete()
+        .eq("brand_id", brandIdToDelete.toLowerCase());
+
+      if (siteDeleteErr) {
+        console.error("client_sites delete error:", siteDeleteErr.message);
+      }
+
+      // 2. blog_categories 및 관련 글 메타데이터 삭제
+      const { data: userCategories } = await supabase
+        .from("blog_categories")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("brand_id", brandIdToDelete.toLowerCase());
+
+      const catIds = (userCategories || []).map((c: any) => c.id);
+      if (catIds.length > 0) {
+        await supabase
+          .from("writing_creaibox_posts")
+          .update({ category_id: null })
+          .in("category_id", catIds);
+
+        await supabase
+          .from("blog_categories")
+          .delete()
+          .in("id", catIds);
+      }
+
+      // 3. profiles extra_configs 보관함에서 항목 제거
+      const { data: latestProfile, error: fetchErr } = await supabase
+        .from("profiles")
+        .select("extra_configs")
+        .eq("id", user.id)
+        .single();
+
+      if (fetchErr) throw fetchErr;
+
+      let nextExtraConfigs = { ...(latestProfile.extra_configs || {}) };
+      let cancelledBrands = nextExtraConfigs.cancelled_brands || [];
+      cancelledBrands = cancelledBrands.filter((cb: any) => cb.brandId.toLowerCase() !== brandIdToDelete.toLowerCase());
+      nextExtraConfigs.cancelled_brands = cancelledBrands;
+
+      const { error: updateErr } = await supabase
+        .from("profiles")
+        .update({
+          extra_configs: nextExtraConfigs,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (updateErr) throw updateErr;
+
+      setProfile((prev: any) => ({
+        ...prev,
+        extra_configs: nextExtraConfigs,
+      }));
+
+      alert("🔥 해당 브랜드 ID와 연동 데이터가 영구 삭제 완료되었습니다.");
+    } catch (err: any) {
+      console.error("Hard delete brand error:", err);
+      alert(`삭제 중 오류가 발생했습니다: ${err.message}`);
     } finally {
       setIsSaving(false);
     }
@@ -1021,6 +1223,45 @@ export default function MyPage() {
                         <li>apple, creaibox 등 시스템/유명 브랜드 예약어는 신청이 제한됩니다.</li>
                       </ul>
                     </div>
+
+                    {/* 🌟 📁 휴면/취소된 브랜드 ID 보관함 신설 */}
+                    {profile.extra_configs?.cancelled_brands && profile.extra_configs.cancelled_brands.length > 0 && (
+                      <div className="space-y-4 pt-4 border-t border-zinc-800/50">
+                        <label className="pl-1 text-[11px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1.5">
+                          <FolderClosed size={12} className="text-zinc-500" /> 휴면/취소된 브랜드 ID 보관함 ({profile.extra_configs.cancelled_brands.length}개)
+                        </label>
+                        <div className="space-y-2">
+                          {profile.extra_configs.cancelled_brands.map((cb: any) => (
+                            <div key={cb.brandId} className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-950/20 px-6 py-4">
+                              <div className="flex flex-col text-left">
+                                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">휴면 보관 중</span>
+                                <span className="text-sm font-black text-white mt-0.5 italic tracking-tight">
+                                  {cb.brandId}.creaibox.com
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleRestoreBrand(cb.brandId)}
+                                  disabled={isSaving}
+                                  className="rounded-xl border border-blue-500/20 bg-blue-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-blue-400 hover:bg-blue-500/20 disabled:opacity-50 transition-colors cursor-pointer"
+                                >
+                                  복원하기
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleHardDeleteBrand(cb.brandId)}
+                                  disabled={isSaving}
+                                  className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors cursor-pointer"
+                                >
+                                  DB 영구 삭제
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Custom Domain Section */}
