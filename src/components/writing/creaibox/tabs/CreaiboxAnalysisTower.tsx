@@ -3,8 +3,11 @@
 import React, { useState } from 'react';
 import { 
   Check, AlertCircle, ShieldCheck, Cpu, PieChart, 
-  BarChart3, CheckCircle2, ChevronDown, ChevronUp, HelpCircle 
+  BarChart3, CheckCircle2, ChevronDown, ChevronUp, HelpCircle,
+  Sparkles, Loader2
 } from 'lucide-react';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import type { StudioManuscriptRecord } from "@/lib/queries/manuscripts";
 
 interface KeywordFrequency {
   word: string;
@@ -41,6 +44,7 @@ interface CreaiboxAnalysisTowerProps {
   isRecreateMode?: boolean;
   similarityScore?: number;
   isDetailMode?: boolean;
+  updateLocalData?: (patch: Partial<StudioManuscriptRecord>) => void;
 }
 
 type SeoItem = {
@@ -133,7 +137,7 @@ function SeoCheckGroup({
 
 export default function CreaiboxAnalysisTower({
   seoScore, seoChecks, posRatio, frequencies, content, title = "", focusKeyword = "", metaDescription = "", slug = "", canonicalUrl = "", seoTags = [], crawlabilityScore, isDensitySafe,
-  isRecreateMode = false, similarityScore = 100, isDetailMode = false
+  isRecreateMode = false, similarityScore = 100, isDetailMode = false, updateLocalData
 }: CreaiboxAnalysisTowerProps) {
   const [isSeoOptimizerOpen, setIsSeoOptimizerOpen] = useState(true);
   const [isContentQualityOpen, setIsContentQualityOpen] = useState(true);
@@ -143,6 +147,110 @@ export default function CreaiboxAnalysisTower({
     title: true,
     content: true,
   });
+
+  const [isOptimizingBody, setIsOptimizingBody] = useState(false);
+  const [apiKey, setApiKey] = useState<string | null>(null);
+
+  // Retrieve API Key from localStorage
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedKey = localStorage.getItem("gemini_api_key");
+      setApiKey(savedKey);
+    }
+  }, []);
+
+  const handleOptimizeBodyText = async () => {
+    if (!content || !updateLocalData) return;
+
+    const currentKey = localStorage.getItem("gemini_api_key");
+    if (!currentKey) {
+      alert("API Vault 메뉴에서 Gemini API 키를 먼저 등록해 주세요.");
+      return;
+    }
+
+    if (!focusKeyword) {
+      alert("포커스 키워드가 설정되어 있지 않습니다. 키워드를 먼저 입력해 주세요.");
+      return;
+    }
+
+    if (!window.confirm("AI 본문 SEO 자동 교정을 진행할까요? 기존 글의 뼈대와 문맥은 보존하면서 SEO 점수 최적화가 자연스럽게 본문에 반영됩니다.")) {
+      return;
+    }
+
+    setIsOptimizingBody(true);
+
+    try {
+      const genAI = new GoogleGenerativeAI(currentKey);
+      const model = genAI.getGenerativeModel({
+        model: "models/gemini-3.1-flash-lite",
+        systemInstruction: `당신은 노련한 웹 전문 SEO 테크니컬 카피라이터입니다.
+제시되는 HTML 포스트 본문을 정밀 분석하여, 전체 글의 뼈대, 세부 문맥, 본래의 어조, 기획 의도를 90% 이상 그대로 고스란히 보존(Keep)하면서 다음 4가지 핵심 SEO 지표에 대해서만 '자연스럽고 부드럽게 최소한의 본문 문구 교정'을 적용해 주십시오.
+억지로 100점을 맞추기 위해 글을 기계처럼 완전히 새로 쓰거나 틀을 뒤흔들어서 가독성을 해치지 않도록 각별히 유의하십시오.
+
+[핵심 교정 미션]
+1. [키워드 초기 배치]: 본문 기사의 시작 부분(첫 2~3개의 문장 또는 첫 문단 구간) 안에 포커스 키워드([focusKeyword])를 자연스럽게 흐름에 맞추어 1회 삽입하십시오.
+2. [소제목 키워드 주입]: <h2> 또는 <h3> 부제목 중 최소 1~2개에 포커스 키워드([focusKeyword])를 매끄럽게 포함하도록 타이틀을 수정하십시오. (예: 키워드가 '다이어트'라면 '효과적인 다이어트 비법'과 같이 문맥에 맞춘 조사/단어의 부분 결합 허용)
+3. [키워드 밀도 조율]: 본문 전체 텍스트 중 포커스 키워드의 출현 점유율이 약 1.0% 전후 (0.8% ~ 1.5% 사이)가 되도록 조율하십시오. 본문 내에 키워드가 너무 과도하게 연발되면 동의어(대체어)로 순화하여 깎아내고, 반대로 너무 희박한 경우 흐름상 1~2회 추가하십시오.
+4. [소제목 논리 구조]: <h2>, <h3> 등의 제목 구조가 체계적인 목차처럼 조화를 이루게 만드십시오.
+
+[출력 규칙]
+- 마크다운 백틱(\`\`\`html)이나 "네, 수정했습니다" 같은 안내 멘트 등은 단 한 마디도 적지 마십시오.
+- 오직 교정이 완벽히 완료된 순수 HTML 코드(포스트 본문)만 응답으로 즉시 출력하십시오.`,
+      });
+
+      const prompt = `Target Focus Keyword: ${focusKeyword}
+Current Post Title: ${title}
+Current Meta Description: ${metaDescription}
+Current HTML Content:
+${content}`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      let text = response.text().trim();
+
+      // Clean up markdown block wraps if AI returned them
+      if (text.startsWith("```")) {
+        text = text.replace(/^```html\s*/, "").replace(/^```\s*/, "").replace(/\s*```$/, "");
+      }
+
+      if (!text) {
+        throw new Error("AI로부터 반환된 교정 본문이 비어있습니다.");
+      }
+
+      // 🌟 주석 스키마 보존 가드 (Bypass Guard)
+      const schemaRegex = /<!--\s*CREAIBOX_SCHEMA_START([\s\S]*?)CREAIBOX_SCHEMA_END\s*-->|<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi;
+      const schemaBlocks: string[] = [];
+      let match;
+      while ((match = schemaRegex.exec(content)) !== null) {
+        schemaBlocks.push(match[0]);
+      }
+
+      // 기존 본문 뒤에 붙어있던 에디토리얼 설정 주석(CREAIBOX_EDITORIAL_START)도 찾아 보존합니다.
+      const editorialRegex = /<!--\s*CREAIBOX_EDITORIAL_START([\s\S]*?)CREAIBOX_EDITORIAL_END\s*-->/gi;
+      const editorialMatch = editorialRegex.exec(content);
+      const editorialBlock = editorialMatch ? editorialMatch[0] : "";
+
+      // 새 HTML 끝에 주석들을 병합
+      let cleanText = text.replace(schemaRegex, "").replace(editorialRegex, "").trim();
+      let finalContent = cleanText;
+      
+      if (editorialBlock) {
+        finalContent += `\n\n${editorialBlock}`;
+      }
+      if (schemaBlocks.length > 0) {
+        finalContent += `\n\n${schemaBlocks.join("\n\n")}`;
+      }
+      finalContent += `\n`;
+
+      updateLocalData({ content: finalContent });
+      alert("AI 본문 SEO 자동 교정이 성공적으로 완료되었습니다! 본문 소제목과 키워드 밀도가 자연스럽게 정돈되었습니다.");
+    } catch (err: any) {
+      console.error("AI SEO optimization error:", err);
+      alert(`본문 SEO 교정 실패: ${err.message || "알 수 없는 오류가 발생했습니다."}`);
+    } finally {
+      setIsOptimizingBody(false);
+    }
+  };
 
   const cleanContent = content.replace(/[#*_>`-]/g, " ");
   const compactContentLength = cleanContent.replace(/\s+/g, "").length;
@@ -297,6 +405,28 @@ export default function CreaiboxAnalysisTower({
 
         {isSeoOptimizerOpen && (
           <div>
+            {/* 🌟 AI 본문 SEO 자동 교정 버튼 배치 (기본 SEO 아코디언 카드 위로 올림) */}
+            <div className="px-5 py-4 bg-zinc-950/40 border-b border-zinc-800 flex justify-center">
+              <button
+                type="button"
+                onClick={handleOptimizeBodyText}
+                disabled={isOptimizingBody || !apiKey}
+                className="w-full h-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 disabled:opacity-40 disabled:hover:brightness-100 rounded-xl transition-all shadow-md text-white text-xs font-black flex items-center justify-center gap-1.5"
+              >
+                {isOptimizingBody ? (
+                  <>
+                    <Loader2 className="animate-spin" size={14} />
+                    <span>AI 본문 SEO 교정 중...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={14} />
+                    <span>AI 본문 SEO 자동 교정</span>
+                  </>
+                )}
+              </button>
+            </div>
+
             <SeoCheckGroup
               title="기본 SEO"
               items={basicSeoItems}

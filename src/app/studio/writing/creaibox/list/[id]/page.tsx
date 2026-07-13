@@ -2253,6 +2253,7 @@ export default function CreaiboxManuscriptDetailPage() {
                 crawlabilityScore={0}
                 isDensitySafe={true}
                 isDetailMode
+                updateLocalData={updateLocalData}
               />
             </div>
           )}

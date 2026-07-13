@@ -406,7 +406,7 @@ export default function CreaiboxContentImagePanel({ data }: CreaiboxContentImage
               ) : sharedAssets.length === 0 ? (
                 <p className="text-[11px] text-zinc-600 text-center py-4">공유 이미지가 없습니다.</p>
               ) : (
-                <div className="grid grid-cols-3 gap-2 max-h-[160px] overflow-y-auto custom-scrollbar pr-1">
+                <div className="grid grid-cols-3 gap-2 max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
                   {sharedAssets.map((img) => (
                     <div
                       key={img.id}
@@ -548,7 +548,7 @@ export default function CreaiboxContentImagePanel({ data }: CreaiboxContentImage
               ) : personalImages.length === 0 ? (
                 <p className="text-[11px] text-zinc-600 text-center py-4">보관된 콘텐츠 이미지가 없습니다.</p>
               ) : (
-                <div className="grid grid-cols-3 gap-2 max-h-[160px] overflow-y-auto custom-scrollbar pr-1">
+                <div className="grid grid-cols-3 gap-2 max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
                   {personalImages.map((img) => (
                     <div
                       key={img.id}

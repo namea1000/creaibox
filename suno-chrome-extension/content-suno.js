@@ -4,6 +4,7 @@ console.log("[CreAibox Suno Connector] content-suno.js script injected.");
 
 // Scraper scheduler reference
 let scraperIntervalId = null;
+let globalAccumulatedSongs = [];
 
 // Safe helper to check if chrome extension runtime is valid
 function isExtensionContextValid() {
@@ -107,6 +108,149 @@ function applyPrefillData() {
   } catch (e) {}
 }
 
+// Helper function to extract UUID from a hyperlink URL string
+function extractClipUuid(url) {
+  if (!url) return "";
+  const match = url.match(/\/(song|clip)\/([a-f0-9\-]{36})/i);
+  return match ? match[2] : "";
+}
+
+// Helper to resolve distributed Suno CDN stream urls based on dynamic image domains
+function buildDirectStreamUrl(clipId, imgEl, audioEl) {
+  if (audioEl && audioEl.src && !audioEl.src.startsWith("blob:")) {
+    return audioEl.src;
+  }
+  
+  let baseCdn = "https://cdn1.suno.ai";
+  if (imgEl && imgEl.src) {
+    const urlStr = imgEl.src;
+    if (urlStr.includes("suno.ai") || urlStr.includes("suno.co") || urlStr.includes("suno.zone")) {
+      const match = urlStr.match(/^(https?:\/\/[^\/]+)/i);
+      if (match) {
+        baseCdn = match[1];
+      }
+    }
+  }
+  return `${baseCdn}/${clipId}.mp3`;
+}
+
+// Helper to parse clean titles from target elements
+function extractSongTitle(el) {
+  const candidates = el.querySelectorAll('a, h4, h5, [class*="title"], [class*="Title"], [class*="songName"], [class*="trackName"]');
+  for (let cand of candidates) {
+    const txt = cand.innerText ? cand.innerText.trim() : "";
+    if (txt && !txt.includes('\n') && txt.length > 1 && txt.length < 90 && 
+        !["play", "pause", "songs", "lyrics", "create", "workspace", "complete", "generating", "remix", "share"].includes(txt.toLowerCase())) {
+      return txt;
+    }
+  }
+  return "";
+}
+
+// Scrape songs in the current loaded folder view
+function scrapeSongsInCurrentFolder(workspaceId) {
+  const currentUrl = window.location.href;
+  const isValidScrapeRoute = currentUrl.includes("/create") || currentUrl.includes("/library") || currentUrl.includes("wid=");
+  const isDiscoverOrHome = currentUrl.includes("/discover") || currentUrl.includes("/explore") || 
+                            (!currentUrl.includes("wid=") && !currentUrl.includes("/library") && !currentUrl.includes("/create"));
+  
+  // CRITICAL BYPASS: Never scrape recommended songs from general discover or landing home views
+  if (isDiscoverOrHome || !isValidScrapeRoute) {
+    console.log("[CreAibox Scraper] Bypassing song scraping on non-personal home/discover screens.");
+    return [];
+  }
+
+  const tracksList = [];
+  const processedIds = new Set();
+
+  const leafNodes = document.querySelectorAll('*');
+  const allBadges = [];
+  leafNodes.forEach(el => {
+    if (el.children.length > 0) return;
+    const txt = el.innerText ? el.innerText.trim() : "";
+    if (txt.startsWith("v5") || txt.startsWith("v4") || txt === "v5.5 Preview" || txt === "v5.5") {
+      allBadges.push(el);
+    }
+  });
+
+  allBadges.forEach((badge, idx) => {
+    let parentRow = badge.closest('div[class*="Row"], div[class*="row"], div[class*="Card"], div[class*="card"], tr, li, [role="row"]');
+    if (!parentRow) {
+      parentRow = badge.parentElement?.parentElement;
+    }
+    if (!parentRow) return;
+
+    // Check if closest card/row text contains platform curated labels, skip those songs
+    const rowText = parentRow.innerText || "";
+    if (rowText.includes("Suno •") || rowText.includes("suno •") || rowText.includes("Discover") || rowText.includes("Curated")) {
+      return;
+    }
+
+    let titleText = "";
+    const childNodes = Array.from(parentRow.querySelectorAll('div, span, p, h4, h5, a'));
+    for (let node of childNodes) {
+      const txt = node.innerText ? node.innerText.trim() : "";
+      if (txt === badge.innerText.trim()) continue;
+      if (/^\d{1,2}:\d{2}$/.test(txt)) continue;
+      if (txt.includes('\n')) continue;
+      if (txt.length > 1 && txt.length < 80 && !["play", "pause", "remix", "share", "liked", "public", "songs", "lyrics"].includes(txt.toLowerCase())) {
+        titleText = txt;
+        break;
+      }
+    }
+
+    if (!titleText || titleText.length < 2) return;
+
+    let clipUuid = "";
+    const rowLinks = parentRow.querySelectorAll('a');
+    for (let rl of rowLinks) {
+      const parsed = extractClipUuid(rl.href);
+      if (parsed) {
+        clipUuid = parsed;
+        break;
+      }
+    }
+
+    const songId = clipUuid ? `suno_synced_${clipUuid}` : `suno_synced_${idx}_${titleText.replace(/\s+/g, '_')}`;
+    if (processedIds.has(songId)) return;
+    processedIds.add(songId);
+
+    let duration = "3:00";
+    const durationNode = Array.from(parentRow.querySelectorAll('*')).find(el => el.children.length === 0 && /^\d{1,2}:\d{2}$/.test(el.innerText?.trim() || ""));
+    if (durationNode) {
+      duration = durationNode.innerText.trim();
+    }
+
+    const imgEl = parentRow.querySelector('img');
+    const audioEl = parentRow.querySelector('audio');
+    
+    let status = "complete";
+    if (parentRow.querySelector('[class*="loading"], [class*="spinner"], [class*="Generating"], [class*="progress"]')) {
+      status = "generating";
+    }
+
+    const finalAudioUrl = clipUuid ? buildDirectStreamUrl(clipUuid, imgEl, audioEl) : (audioEl ? audioEl.src : "https://cdn.creaibox.com/music/General_Audio/General/morning_sunlight_slow_creaibox.mp3");
+
+    tracksList.push({
+      id: songId,
+      title: titleText,
+      tags: "electronic, pop",
+      prompt: "Suno synced style tracks from real account session",
+      audioUrl: finalAudioUrl,
+      imageUrl: imgEl ? imgEl.src : "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=150&q=80",
+      status: status,
+      createdAt: new Date(Date.now() - (idx + 1) * 3600000).toISOString(),
+      duration: duration,
+      workspaceId: workspaceId,
+      isLiked: idx % 2 === 0,
+      isPublic: idx % 3 === 0,
+      likeCount: idx * 4
+    });
+  });
+
+  return tracksList;
+}
+
 // 2. Common Scraper Runner
 function runScrapeAndSend() {
   if (!isExtensionContextValid()) {
@@ -124,12 +268,35 @@ function runScrapeAndSend() {
     const folderMap = new Map();
     const anchors = document.querySelectorAll('a, div');
     
+    // Curated playlists names and system keywords blocklist
+    const BLOCKED_KEYWORDS = [
+      "Create New Workspace", "nameamusic", "Workspaces", "Archived", "Library", 
+      "Home", "Explore", "Studio", "Create", "Curated Collections", 
+      "Make any song you can imagine", "Fireworks and BBQ", "Songs to Remix", 
+      "Pass The Aux", "Pass the Aux", "Undefeated", "Romantic", "Trending", "For You", 
+      "Made with Studio", "Because you like", "New Releases", "Showcase"
+    ];
+
     anchors.forEach(el => {
       const text = el.innerText || "";
+      
+      // Skip folders that carry the public curated list creators
+      if (text.includes("Suno •") || text.includes("suno •") || text.includes("Suno  •")) {
+        return;
+      }
+
       if (text.includes("Songs") && (text.includes("·") || text.includes("•") || text.includes("ago") || text.includes(" 최신"))) {
         const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
         if (lines.length >= 2) {
           const folderName = lines[0];
+          
+          const isBlocked = BLOCKED_KEYWORDS.some(blocked => 
+            folderName.toLowerCase().includes(blocked.toLowerCase())
+          );
+          if (isBlocked || folderName.length > 50) {
+            return;
+          }
+
           const statsLine = lines[1];
           const songCountMatch = statsLine.match(/(\d+)\s*Songs/i);
           const songCount = songCountMatch ? parseInt(songCountMatch[1], 10) : 0;
@@ -139,8 +306,6 @@ function runScrapeAndSend() {
             timeAgo = statsLine.split("·")[1]?.trim() || "최근";
           } else if (statsLine.includes("•")) {
             timeAgo = statsLine.split("•")[1]?.trim() || "최근";
-          } else {
-            timeAgo = statsLine.replace(/^\d+\s*Songs\s*/i, "").trim() || "최근";
           }
 
           let workspaceId = "";
@@ -154,135 +319,48 @@ function runScrapeAndSend() {
             workspaceId = folderName.replace(/\s+/g, '_');
           }
 
-          if (folderName && folderName !== "Create New Workspace" && folderName.length < 60) {
-            folderMap.set(workspaceId, {
-              id: workspaceId,
-              name: folderName,
-              songCount: songCount,
-              updatedAt: timeAgo
-            });
-          }
+          folderMap.set(workspaceId, {
+            id: workspaceId,
+            name: folderName,
+            songCount: songCount,
+            updatedAt: timeAgo
+          });
         }
       }
     });
 
     const syncedWorkspaces = Array.from(folderMap.values());
-    const syncedTracksList = [];
+    
+    // Scrape songs for the currently loaded workspace ID
+    const firstRealFolderId = syncedWorkspaces.length > 0 ? syncedWorkspaces[0].id : "ws_2";
+    const currentWorkspaceId = activeWid || firstRealFolderId;
+    
+    const currentFolderSongs = scrapeSongsInCurrentFolder(currentWorkspaceId);
 
-    // Helper to extract clean titles from candidate elements
-    function extractSongTitle(el) {
-      // Find potential anchor links, headings, or custom class elements
-      const candidates = el.querySelectorAll('a, h4, h5, [class*="title"], [class*="Title"], [class*="songName"], [class*="trackName"]');
-      for (let cand of candidates) {
-        const txt = cand.innerText ? cand.innerText.trim() : "";
-        if (txt && !txt.includes('\n') && txt.length > 1 && txt.length < 90 && 
-            !["play", "pause", "songs", "lyrics", "create", "workspace", "complete", "generating", "remix", "share"].includes(txt.toLowerCase())) {
-          return txt;
-        }
-      }
-      // Fallback: look at general divs/spans inside the block
-      const fallbackNodes = el.querySelectorAll('div, span');
-      for (let node of fallbackNodes) {
-        const txt = node.innerText ? node.innerText.trim() : "";
-        if (txt && !txt.includes('\n') && txt.length > 2 && txt.length < 70 && 
-            !["play", "pause", "songs", "lyrics", "create", "workspace", "complete", "generating", "remix", "share"].includes(txt.toLowerCase())) {
-          return txt;
-        }
-      }
-      return "";
-    }
-
-    // 1. Auxiliary Scraper: Target current active playing track details in Suno's Aside/Detail panel
-    const detailPanel = document.querySelector('aside, [class*="detail"], [class*="detail-panel"], [class*="Detail"], [class*="Aside"], [class*="RightPanel"]');
-    if (detailPanel) {
-      const activeTitle = extractSongTitle(detailPanel);
-      if (activeTitle) {
-        const trackWorkspaceId = activeWid || (syncedWorkspaces[0]?.id || "ws_2");
-        
-        syncedTracksList.push({
-          id: `suno_synced_active_${activeTitle.replace(/\s+/g, '_')}`,
-          title: activeTitle,
-          tags: "suno active, pop",
-          prompt: "Active playing track on Suno.com details",
-          audioUrl: "https://cdn.creaibox.com/music/General_Audio/General/morning_sunlight_slow_creaibox.mp3",
-          imageUrl: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=150&q=80",
-          status: "complete",
-          createdAt: new Date().toISOString(),
-          duration: "3:00",
-          workspaceId: trackWorkspaceId,
-          isLiked: true,
-          isPublic: true,
-          likeCount: 88
-        });
-      }
-    }
-
-    // 2. Class-Agnostic Structural Scraper: Find any block element representing a song row
-    const allElements = document.querySelectorAll('div, tr, [role="row"]');
-    const trackContainers = [];
-
-    allElements.forEach(el => {
-      const h = el.offsetHeight || 0;
-      // Typical song row heights are between 25px and 120px
-      if (h < 25 || h > 120) return;
-
-      const className = el.className ? String(el.className) : "";
-      const isSongClass = className.toLowerCase().includes("song") || className.toLowerCase().includes("track") || className.toLowerCase().includes("playable") || className.toLowerCase().includes("row");
-      const hasPlayIcon = el.querySelector('button[aria-label*="Play"], button[aria-label*="play"], [class*="Play"], [class*="play"], svg');
-
-      if ((isSongClass || el.getAttribute("role") === "row") && hasPlayIcon) {
-        // Prevent nesting duplicates (keep the outermost wrapper container)
-        if (!trackContainers.some(existing => existing.contains(el) || el.contains(existing))) {
-          trackContainers.push(el);
-        }
+    // Merge current scraping result with globally accumulated songs to maintain total cache state
+    currentFolderSongs.forEach(song => {
+      if (!globalAccumulatedSongs.some(existing => existing.id === song.id)) {
+        globalAccumulatedSongs.push(song);
       }
     });
 
-    // Parse detected outer container elements
-    trackContainers.forEach((track, index) => {
-      if (!isExtensionContextValid()) return;
+    if (globalAccumulatedSongs.length === 0 && currentFolderSongs.length > 0) {
+      globalAccumulatedSongs = [...currentFolderSongs];
+    }
 
-      const title = extractSongTitle(track);
-      if (!title) return;
+    if (globalAccumulatedSongs.length === 0) {
+      console.log("[CreAibox Scraper] Throttled or found 0 songs. Retaining previous storage cache to prevent blanks.");
+      return;
+    }
 
-      // Prevent duplicates
-      if (syncedTracksList.some(t => t.title === title)) return;
-
-      const imgEl = track.querySelector('img');
-      const audioEl = track.querySelector('audio');
-      
-      let status = "complete";
-      if (track.querySelector('[class*="loading"], [class*="spinner"], [class*="Generating"], [class*="progress"]')) {
-        status = "generating";
-      }
-
-      const trackWorkspaceId = activeWid || (syncedWorkspaces[0]?.id || "ws_2");
-
-      syncedTracksList.push({
-        id: `suno_synced_${index}_${title.replace(/\s+/g, '_')}`,
-        title: title,
-        tags: "electronic, pop",
-        prompt: "Suno synced style tracks from real account session",
-        audioUrl: audioEl ? audioEl.src : "https://cdn.creaibox.com/music/General_Audio/General/morning_sunlight_slow_creaibox.mp3",
-        imageUrl: imgEl ? imgEl.src : "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=150&q=80",
-        status: status,
-        createdAt: new Date(Date.now() - (index + 1) * 3600000).toISOString(),
-        duration: "3:00",
-        workspaceId: trackWorkspaceId,
-        isLiked: index % 2 === 0,
-        isPublic: index % 3 === 0,
-        likeCount: index * 4
-      });
-    });
-
-    console.log("[CreAibox Connector] Scraping run completed. Scraped tracks count:", syncedTracksList.length);
+    console.log("[CreAibox Connector] Dispatching synced data payload size:", globalAccumulatedSongs.length);
     
     if (!isExtensionContextValid()) return;
 
     // Write to local storage safely with lastError suppressors
     chrome.storage.local.set({
       sunoSyncedData: {
-        songs: syncedTracksList,
+        songs: globalAccumulatedSongs,
         workspaces: syncedWorkspaces,
         lastUpdated: Date.now()
       }
@@ -293,7 +371,7 @@ function runScrapeAndSend() {
     chrome.runtime.sendMessage({
       type: "SYNC_SONG_METADATA",
       payload: {
-        songs: syncedTracksList,
+        songs: globalAccumulatedSongs,
         workspaces: syncedWorkspaces
       }
     }, () => {
@@ -305,7 +383,6 @@ function runScrapeAndSend() {
 // 3. Real-time DOM Scraper Scheduler
 function startScrapingGeneratedTracks() {
   scraperIntervalId = setInterval(() => {
-    // If context is invalidated, clear interval and exit
     if (!isExtensionContextValid()) {
       console.log("[CreAibox Connector] Scraper detected invalidated context. Cleaning scraper interval.");
       if (scraperIntervalId) {
@@ -315,17 +392,295 @@ function startScrapingGeneratedTracks() {
       return;
     }
     runScrapeAndSend();
-  }, 4000); // Poll metadata every 4 seconds
+  }, 6500); // Poll metadata every 6.5 seconds
 }
 
-// 4. Force Scrape Listener
+// 4. Batch Scraper: Auto Navigate & Rotation Scan through all Workspace Folders
+function startBatchFolderSyncRotation() {
+  if (!isExtensionContextValid()) return;
+
+  const BLOCKED_KEYWORDS = [
+    "Create New Workspace", "nameamusic", "Workspaces", "Archived", "Library", 
+    "Home", "Explore", "Studio", "Create", "Curated Collections", 
+    "Make any song you can imagine", "Fireworks and BBQ", "Songs to Remix", 
+    "Pass The Aux", "Pass the Aux", "Undefeated", "Romantic", "Trending", "For You", 
+    "Made with Studio", "Because you like", "New Releases", "Showcase"
+  ];
+
+  const folderElements = Array.from(document.querySelectorAll('a, div')).filter(el => {
+    const text = el.innerText || "";
+    
+    if (text.includes("Suno •") || text.includes("suno •") || text.includes("Suno  •")) {
+      return false;
+    }
+
+    if (text.includes("Songs") && (text.includes("·") || text.includes("•") || text.includes("ago") || text.includes(" 최신"))) {
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length > 0) {
+        const name = lines[0];
+        const isBlocked = BLOCKED_KEYWORDS.some(blocked => name.toLowerCase().includes(blocked.toLowerCase()));
+        return !isBlocked && name.length < 50;
+      }
+    }
+    return false;
+  });
+
+  if (folderElements.length === 0) {
+    console.log("[CreAibox Rotation] Workspace list screen not detected or folders empty. Running single folder scan.");
+    runScrapeAndSend();
+    return;
+  }
+
+  console.log(`[CreAibox Rotation] Found ${folderElements.length} folders. Starting batch navigation sync loop...`);
+  
+  let folderIndex = 0;
+  
+  function scanNextFolder() {
+    if (!isExtensionContextValid()) return;
+
+    if (folderIndex >= folderElements.length) {
+      console.log(`[CreAibox Rotation] All folders scanned successfully! Total songs: ${globalAccumulatedSongs.length}`);
+      runScrapeAndSend();
+      return;
+    }
+
+    const folderEl = folderElements[folderIndex];
+    const folderName = folderEl.innerText.split('\n')[0];
+    console.log(`[CreAibox Rotation] Processing folder [${folderIndex + 1}/${folderElements.length}]: ${folderName}`);
+    
+    folderEl.click();
+    
+    setTimeout(() => {
+      let lastScrollHeight = 0;
+      let sameHeightCount = 0;
+      let scrollsCount = 0;
+      const maxScrollAttempts = 30;
+      
+      const scrollInterval = setInterval(() => {
+        window.scrollTo(0, document.body.scrollHeight);
+        
+        let currentScrollHeight = document.body.scrollHeight;
+        const scrollableDivs = document.querySelectorAll('div, main, [class*="scroll"], [class*="layout"]');
+        scrollableDivs.forEach(div => {
+          if (div.scrollHeight > div.clientHeight) {
+            div.scrollTop = div.scrollHeight;
+            if (div.scrollHeight > currentScrollHeight) {
+              currentScrollHeight = div.scrollHeight;
+            }
+          }
+        });
+
+        if (currentScrollHeight === lastScrollHeight) {
+          sameHeightCount++;
+        } else {
+          sameHeightCount = 0;
+          lastScrollHeight = currentScrollHeight;
+        }
+
+        scrollsCount++;
+
+        if (sameHeightCount >= 3 || scrollsCount >= maxScrollAttempts) {
+          clearInterval(scrollInterval);
+          
+          const urlParams = new URLSearchParams(window.location.search);
+          const activeWid = urlParams.get('wid') || '';
+          const workspaceId = activeWid || folderName.replace(/\s+/g, '_');
+          
+          const folderSongs = scrapeSongsInCurrentFolder(workspaceId);
+          console.log(`[CreAibox Rotation] Successfully scraped ${folderSongs.length} songs from ${folderName}`);
+          
+          folderSongs.forEach(song => {
+            if (!globalAccumulatedSongs.some(existing => existing.id === song.id)) {
+              globalAccumulatedSongs.push(song);
+            }
+          });
+
+          folderIndex++;
+          scanNextFolder();
+        }
+      }, 400);
+    }, 1500);
+  }
+
+  chrome.storage.local.get("sunoSyncedData", (result) => {
+    if (result && result.sunoSyncedData && result.sunoSyncedData.songs) {
+      globalAccumulatedSongs = result.sunoSyncedData.songs;
+    }
+    scanNextFolder();
+  });
+}
+
+// 4.5. Light Scraper: Scrapes only workspace folders from the sidebar/main screen and sends instantly
+function runScrapeWorkspacesOnly() {
+  if (!isExtensionContextValid()) return;
+
+  try {
+    const folderMap = new Map();
+    const anchors = document.querySelectorAll('a, div');
+    
+    const BLOCKED_KEYWORDS = [
+      "Create New Workspace", "nameamusic", "Workspaces", "Archived", "Library", 
+      "Home", "Explore", "Studio", "Create", "Curated Collections", 
+      "Make any song you can imagine", "Fireworks and BBQ", "Songs to Remix", 
+      "Pass The Aux", "Pass the Aux", "Undefeated", "Romantic", "Trending", "For You", 
+      "Made with Studio", "Because you like", "New Releases", "Showcase"
+    ];
+
+    anchors.forEach(el => {
+      const text = el.innerText || "";
+      
+      if (text.includes("Suno •") || text.includes("suno •") || text.includes("Suno  •")) {
+        return;
+      }
+
+      if (text.includes("Songs") && (text.includes("·") || text.includes("•") || text.includes("ago") || text.includes(" 최신"))) {
+        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        if (lines.length >= 2) {
+          const folderName = lines[0];
+          
+          const isBlocked = BLOCKED_KEYWORDS.some(blocked => 
+            folderName.toLowerCase().includes(blocked.toLowerCase())
+          );
+          if (isBlocked || folderName.length > 50) {
+            return;
+          }
+
+          const statsLine = lines[1];
+          const songCountMatch = statsLine.match(/(\d+)\s*Songs/i);
+          const songCount = songCountMatch ? parseInt(songCountMatch[1], 10) : 0;
+          
+          let timeAgo = "최근";
+          if (statsLine.includes("·")) {
+            timeAgo = statsLine.split("·")[1]?.trim() || "최근";
+          } else if (statsLine.includes("•")) {
+            timeAgo = statsLine.split("•")[1]?.trim() || "최근";
+          }
+
+          let workspaceId = "";
+          if (el.href) {
+            const widMatch = el.href.match(/wid=([a-f0-9\-]+)/i);
+            if (widMatch) {
+              workspaceId = widMatch[1];
+            }
+          }
+          if (!workspaceId) {
+            workspaceId = folderName.replace(/\s+/g, '_');
+          }
+
+          folderMap.set(workspaceId, {
+            id: workspaceId,
+            name: folderName,
+            songCount: songCount,
+            updatedAt: timeAgo
+          });
+        }
+      }
+    });
+
+    const syncedWorkspaces = Array.from(folderMap.values());
+    console.log("[CreAibox Connector] Folder-only sync complete. Folders count:", syncedWorkspaces.length);
+
+    chrome.runtime.sendMessage({
+      type: "SYNC_SONG_METADATA",
+      payload: {
+        workspaces: syncedWorkspaces
+      }
+    }, () => {
+      const tempErr = chrome.runtime.lastError;
+    });
+  } catch (e) {}
+}
+
+// 5. Force Scrape Listener with Auto-Redirect Safeguard to sync cleanly from any page
 if (isExtensionContextValid()) {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!isExtensionContextValid()) return;
 
     if (message.type === "FORCE_TRIGGER_SCRAPE") {
-      console.log("[CreAibox Connector] Force sync scrape requested from dashboard.");
-      runScrapeAndSend();
+      const mode = message.payload?.mode || "current";
+      const targetWid = message.payload?.workspaceId || "";
+      const currentUrl = window.location.href;
+      
+      let cleanWid = targetWid;
+      // Safeguard to translate initial mock workspace IDs to default My Workspace view
+      if (targetWid === "ws_1" || targetWid === "ws_2" || targetWid === "ws_3" || targetWid === "ws_4" || targetWid === "ws_5" || !targetWid) {
+        cleanWid = "default";
+      }
+
+      console.log(`[CreAibox Connector] Force sync requested. Mode: ${mode}. Target WID: ${cleanWid}. Current URL: ${currentUrl}`);
+      
+      // Check if we are on a valid workspaces list route and specifically matching the target workspace ID
+      const hasCorrectWid = currentUrl.includes("wid=" + cleanWid) || 
+                            (cleanWid === "default" && currentUrl.includes("/create") && !currentUrl.includes("wid="));
+      const isOnValidSyncRoute = currentUrl.includes("/create") || currentUrl.includes("/library");
+
+      if (!isOnValidSyncRoute || !hasCorrectWid) {
+        console.log(`[CreAibox Connector] Not on target workspace route (WID: ${cleanWid}). Redirecting to create folder view...`);
+        
+        // 1. Save target sync command payload to temp chrome storage so we can auto-trigger it immediately upon page reload!
+        chrome.storage.local.set({ 
+          pendingSyncTrigger: { mode: mode, workspaceId: cleanWid, timestamp: Date.now() } 
+        }, () => {
+          // 2. Perform redirect
+          window.location.href = "https://suno.com/create?wid=" + cleanWid;
+        });
+        
+        sendResponse({ executed: true, redirected: true });
+        return true;
+      }
+
+      // We are on a valid route - execute commands immediately!
+      if (mode === "all") {
+        console.log("[CreAibox Connector] Triggering batch workspaces scan...");
+        startBatchFolderSyncRotation();
+      } else if (mode === "folders") {
+        console.log("[CreAibox Connector] Triggering folders-only fast scan...");
+        runScrapeWorkspacesOnly();
+      } else {
+        console.log("[CreAibox Connector] Triggering fast single-folder scan on current active page...");
+        let lastScrollHeight = 0;
+        let sameHeightCount = 0;
+        let scrollsCount = 0;
+        const maxScrollAttempts = 35;
+        
+        const scrollInterval = setInterval(() => {
+          if (!isExtensionContextValid()) {
+            clearInterval(scrollInterval);
+            return;
+          }
+          
+          window.scrollTo(0, document.body.scrollHeight);
+          
+          let currentScrollHeight = document.body.scrollHeight;
+          const scrollableDivs = document.querySelectorAll('div, main, [class*="scroll"], [class*="layout"]');
+          scrollableDivs.forEach(div => {
+            if (div.scrollHeight > div.clientHeight) {
+              div.scrollTop = div.scrollHeight;
+              if (div.scrollHeight > currentScrollHeight) {
+                currentScrollHeight = div.scrollHeight;
+              }
+            }
+          });
+
+          if (currentScrollHeight === lastScrollHeight) {
+            sameHeightCount++;
+          } else {
+            sameHeightCount = 0;
+            lastScrollHeight = currentScrollHeight;
+          }
+
+          scrollsCount++;
+
+          if (sameHeightCount >= 3 || scrollsCount >= maxScrollAttempts) {
+            clearInterval(scrollInterval);
+            console.log(`[CreAibox Scraper] Single folder scroll finish. Scraped in ${scrollsCount} attempts.`);
+            setTimeout(() => {
+              runScrapeAndSend();
+            }, 500);
+          }
+        }, 400);
+      }
+      
       sendResponse({ executed: true });
     }
     return true;
@@ -337,5 +692,37 @@ window.addEventListener("load", () => {
   setTimeout(() => {
     applyPrefillData();
     startScrapingGeneratedTracks();
+
+    // Check if there is a pending sync trigger redirected from another screen
+    if (isExtensionContextValid()) {
+      chrome.storage.local.get("pendingSyncTrigger", (result) => {
+        const err = chrome.runtime.lastError;
+        if (err) return;
+
+        if (result && result.pendingSyncTrigger) {
+          const trigger = result.pendingSyncTrigger;
+          // Check timestamp freshness (must be under 15 seconds old to prevent loops)
+          if (Date.now() - trigger.timestamp < 15000) {
+            console.log("[CreAibox Connector] Resuming pending sync request from redirect:", trigger.mode);
+            
+            // Safe cleanup first
+            chrome.storage.local.remove("pendingSyncTrigger");
+            
+            // Execute target mode
+            setTimeout(() => {
+              if (trigger.mode === "all") {
+                startBatchFolderSyncRotation();
+              } else if (trigger.mode === "folders") {
+                runScrapeWorkspacesOnly();
+              } else {
+                runScrapeAndSend();
+              }
+            }, 1000);
+          } else {
+            chrome.storage.local.remove("pendingSyncTrigger");
+          }
+        }
+      });
+    }
   }, 1500);
 });

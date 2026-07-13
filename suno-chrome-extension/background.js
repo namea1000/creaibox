@@ -17,15 +17,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   // 2. Relay force sync trigger command to Suno tabs
   if (message.type === "REQUEST_FORCE_SYNC_FROM_SUNO") {
-    console.log("[CreAibox Background] Relaying force sync request to all Suno.com tabs...");
+    console.log("[CreAibox Background] Relaying force sync request to all Suno.com tabs...", message.payload);
     chrome.tabs.query({}, (tabs) => {
       if (chrome.runtime.lastError) return;
 
       tabs.forEach((tab) => {
         if (tab.id && tab.url && tab.url.includes("suno.com")) {
           console.log("[CreAibox Background] Nudging Suno.com tab to scrape immediately:", tab.id);
-          chrome.tabs.sendMessage(tab.id, { type: "FORCE_TRIGGER_SCRAPE" }, (response) => {
-            // Read lastError immediately to prevent Chrome from logging Uncaught Promises
+          chrome.tabs.sendMessage(tab.id, { 
+            type: "FORCE_TRIGGER_SCRAPE",
+            payload: message.payload
+          }, (response) => {
             const err = chrome.runtime.lastError;
             if (err) {
               console.log("[CreAibox Background] Force sync trigger handshake skipped for tab:", tab.id);

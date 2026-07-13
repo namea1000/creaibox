@@ -84,12 +84,15 @@ window.addEventListener("message", (event) => {
 
   // Force trigger sync request from dashboard button click
   if (event.data && event.data.type === "FORCE_SUNO_SYNC_REQUEST") {
-    console.log("[CreAibox Connector] Force sync request clicked. Restoring cache & triggering scrape...");
+    console.log("[CreAibox Connector] Force sync request clicked. Mode:", event.data.payload?.mode);
     loadCachedSyncData(); // Instant load from cache
     registerTabWithBackground(); // Refresh tab registration
     if (isExtensionContextValid()) {
       try {
-        chrome.runtime.sendMessage({ type: "REQUEST_FORCE_SYNC_FROM_SUNO" });
+        chrome.runtime.sendMessage({ 
+          type: "REQUEST_FORCE_SYNC_FROM_SUNO",
+          payload: event.data.payload
+        });
       } catch (e) {}
     }
   }

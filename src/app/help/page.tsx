@@ -102,6 +102,11 @@ export default function HelpCenterPage() {
       question: "크리에이박스에서 생성한 음악과 이미지는 상업적 용도로 사용해도 법적 문제가 없나요?",
       answer: "네, 완전히 안전합니다. 유료 구독 요금제뿐만 아니라 무료 크레딧으로 생성하신 모든 콘텐츠도 상업적 이용 권한이 100% 보장됩니다. 출처 표기 의무가 없으며 유튜브 수익 창출, 기업 홍보 영상 제작, SNS 광고 등 모든 상업적 비즈니스에 저작권 걱정 없이 자유롭게 사용하실 수 있습니다."
     },
+    {
+      category: "ai",
+      question: "크리에이박스 글쓰기 스튜디오의 '구조화 스키마(Schema)' 기능은 무엇이며 어떻게 작동하나요?",
+      answer: "구조화 스키마(JSON-LD)는 구글, 네이버 등 검색 엔진의 크롤링 로봇에게 블로그 글의 성격(일반 기사, 자주 묻는 질문(FAQ), 가이드 등)을 기계용 데이터로 정확하게 알려주는 글로벌 SEO 표준 마크업입니다.\n\n[작동 원리 및 사용법]\n1. 스튜디오 글쓰기 우측 '스키마' 탭에서 AI 엔진과 스키마 유형(추천/Article/FAQPage 등)을 선택한 후 [AI 스키마 자동 생성]을 누릅니다.\n2. 생성된 코드를 확인하고 [본문에 적용하기]를 클릭하면, 원고 본문 맨 하단에 눈에 보이지 않는 HTML 주석(Comment) 래퍼 형태로 자동 주입됩니다.\n3. 저장 후 발행(Publish)하면, 시스템이 이 주석을 실시간으로 감지하고 추출하여 기사 페이지의 HTML <head> 내부에 검색엔진용 스크립트로 안전하게 꽂아 넣습니다.\n\n일반 독자가 읽는 본문 영역의 가독성은 티 없이 깨끗하게 보존하면서, 검색 엔진 로봇에게만 스키마 데이터를 전달하여 구글 및 네이버 검색 결과 영역에 풍부한 Rich Snippet(접이식 FAQ 메뉴 등)이 노출되도록 랭킹 점수를 최적화해 주는 고급 기능입니다."
+    },
 
     // 4. 클라우드 저장소 (storage)
     {
@@ -164,10 +169,10 @@ export default function HelpCenterPage() {
         </div>
 
         {/* 🔍 SECTION 2: SEARCH CONSOLE */}
-        <div className="grid gap-6 md:grid-cols-2 mb-16">
+        <div className="mb-16">
           <form 
             onSubmit={(e) => e.preventDefault()}
-            className="flex items-center gap-2.5 bg-white dark:bg-[#0b0f19]/80 border border-slate-200 dark:border-slate-850 p-4 rounded-2xl shadow-sm transition-all focus-within:border-blue-500"
+            className="max-w-2xl mx-auto flex items-center gap-2.5 bg-white dark:bg-[#0b0f19]/80 border border-slate-200 dark:border-slate-850 p-4 rounded-2xl shadow-sm transition-all focus-within:border-blue-500"
           >
             <Search size={20} className="text-slate-400 shrink-0" />
             <input
@@ -178,27 +183,32 @@ export default function HelpCenterPage() {
               className="flex-1 bg-transparent text-slate-855 dark:text-white text-xs md:text-sm font-semibold outline-none placeholder-slate-400"
             />
           </form>
-
-          {/* 구글 워크스페이스 메일 연동 안내 */}
-          <a 
-            href="mailto:contact@creaibox.com"
-            className="p-4 rounded-2xl border border-slate-200 dark:border-slate-855 bg-white dark:bg-[#0b0f19]/80 hover:bg-slate-550/5 dark:hover:bg-slate-900/20 hover:border-slate-350 dark:hover:border-slate-750 transition-all flex items-start gap-4 group shadow-sm"
-          >
-            <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <Mail size={20} />
-            </div>
-            <div className="space-y-0.5">
-              <h3 className="text-sm font-black text-slate-855 dark:text-white flex items-center gap-1">
-                이메일 대표 문의하기 <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-              </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-455 leading-relaxed font-bold">
-                제휴 및 대량 구매, 계정 유실 등 서류 첨부가 필요한 건은 메일로 접수해 주세요.
-              </p>
-            </div>
-          </a>
         </div>
 
-        {/* 🏷️ SECTION 3: CATEGORY TABS */}
+        {/* 📂 SECTION 3: 카테고리별로 찾아보세요 (바둑판식 플랫 그리드) */}
+        <div className="mb-16 space-y-6">
+          <h2 className="text-lg md:text-xl font-black text-slate-950 dark:text-white flex items-center gap-2">
+            <ClipboardList size={18} className="text-blue-600" />
+            카테고리별로 찾아보세요
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {QUICK_CATEGORIES.map((qCat) => (
+              <button
+                key={qCat.label}
+                onClick={() => {
+                  setSelectedCategory(qCat.targetId);
+                  setSearchQuery(qCat.keyword);
+                  document.getElementById("faq-section")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="p-4.5 rounded-xl border border-slate-200 dark:border-slate-805 bg-white dark:bg-[#0b0f19]/40 text-center hover:bg-slate-550/5 dark:hover:bg-slate-900/60 hover:border-slate-350 dark:hover:border-slate-700 transition cursor-pointer shadow-sm text-xs md:text-sm font-black text-slate-800 dark:text-slate-300"
+              >
+                {qCat.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 🏷️ SECTION 4: CATEGORY TABS */}
         <div className="flex flex-wrap items-center justify-center gap-2 mb-12 border-b border-slate-200 dark:border-slate-850 pb-8 shrink-0">
           {CATEGORIES.map((cat) => {
             const active = selectedCategory === cat.id;
@@ -219,7 +229,7 @@ export default function HelpCenterPage() {
           })}
         </div>
 
-        {/* ❓ SECTION 4: FAQ ACCORDION */}
+        {/* ❓ SECTION 5: FAQ ACCORDION */}
         <div id="faq-section" className="space-y-6 scroll-mt-24">
           <h2 className="text-lg md:text-xl font-black text-slate-950 dark:text-white flex items-center gap-2">
             <FileText size={18} className="text-blue-505" />
@@ -254,29 +264,6 @@ export default function HelpCenterPage() {
                 일치하는 자주 묻는 질문이 없습니다.
               </div>
             )}
-          </div>
-        </div>
-
-        {/* 📂 SECTION 4.5: 카테고리별로 찾아보세요 (바둑판식 플랫 그리드 - 그라데이션 제거) */}
-        <div className="mt-20 space-y-6">
-          <h2 className="text-lg md:text-xl font-black text-slate-950 dark:text-white flex items-center gap-2">
-            <ClipboardList size={18} className="text-blue-600" />
-            카테고리별로 찾아보세요
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {QUICK_CATEGORIES.map((qCat) => (
-              <button
-                key={qCat.label}
-                onClick={() => {
-                  setSelectedCategory(qCat.targetId);
-                  setSearchQuery(qCat.keyword);
-                  document.getElementById("faq-section")?.scrollIntoView({ behavior: "smooth" });
-                }}
-                className="p-4.5 rounded-xl border border-slate-200 dark:border-slate-805 bg-white dark:bg-[#0b0f19]/40 text-center hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:border-slate-350 dark:hover:border-slate-700 transition cursor-pointer shadow-sm text-xs md:text-sm font-black text-slate-800 dark:text-slate-300"
-              >
-                {qCat.label}
-              </button>
-            ))}
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Loader2, Zap, Copy, FileCode, CheckCircle, AlertTriangle, Trash2 } from "lucide-react";
+import { Loader2, Zap, Copy, FileCode, CheckCircle, AlertTriangle, Trash2, Eye, Globe } from "lucide-react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { StudioManuscriptRecord } from "@/lib/queries/manuscripts";
 
@@ -31,12 +31,15 @@ export default function CreaiboxSchemaPanel({ data, updateLocalData }: CreaiboxS
       return;
     }
 
-    const schemaRegex = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi;
+    // Support both older script formats and new comment block formats to bypass Tiptap filters
+    const schemaRegex = /<!--\s*CREAIBOX_SCHEMA_START([\s\S]*?)CREAIBOX_SCHEMA_END\s*-->|<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi;
     const match = schemaRegex.exec(data.content);
-    if (match && match[1]) {
-      setHasExistingSchema(true);
-      // Default the input code to the existing one if no new generation has happened yet
-      setSchemaCode((prev) => prev || match[1].trim());
+    if (match) {
+      const rawSchema = (match[1] || match[2] || "").trim();
+      if (rawSchema) {
+        setHasExistingSchema(true);
+        setSchemaCode((prev) => prev || rawSchema);
+      }
     } else {
       setHasExistingSchema(false);
     }
@@ -120,37 +123,66 @@ ${data.content || ""}`;
       return;
     }
 
-    // Validate if JSON is parseable before injecting
+    let currentType = "Article";
     try {
-      JSON.parse(schemaCode);
+      const parsed = JSON.parse(schemaCode);
+      currentType = parsed["@type"] || "Article";
     } catch {
       if (!window.confirm("JSON 형식이 올바르지 않습니다. 그대로 삽입할까요?")) {
         return;
       }
     }
 
-    // Strip existing schema script blocks from content
-    const schemaRegex = /\n*\s*<script type="application\/ld\+json">[\s\S]*?<\/script>\s*\n*/gi;
-    const cleanContent = data.content.replace(schemaRegex, "").trim();
+    // 🌟 스마트 스키마 병합 엔진 (Smart Schema Upsert Merger)
+    // 1. 기존 본문에 등록되어 있는 스키마 블록들을 파싱하여 타입별 Map으로 적재합니다.
+    const existingSchemasMap = new Map<string, string>();
+    const schemaRegex = /<!--\s*CREAIBOX_SCHEMA_START([\s\S]*?)CREAIBOX_SCHEMA_END\s*-->|<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi;
+    let match;
+    
+    while ((match = schemaRegex.exec(data.content || "")) !== null) {
+      const code = (match[1] || match[2] || "").trim();
+      if (code) {
+        try {
+          const parsed = JSON.parse(code);
+          const type = parsed["@type"] || "Schema";
+          existingSchemasMap.set(type, code);
+        } catch {
+          // 파싱이 불가능한 임의의 JSON인 경우 유니크 키로 저장하여 삭제를 방지합니다.
+          existingSchemasMap.set(`Custom_${Date.now()}`, code);
+        }
+      }
+    }
 
-    // Append new schema block at the bottom
-    const newSchemaBlock = `\n\n<script type="application/ld+json">\n${schemaCode}\n</script>\n`;
-    const nextContent = `${cleanContent}${newSchemaBlock}`;
+    // 2. 현재 생성한 스키마 타입의 값을 새로 엎어치거나 추가합니다!
+    existingSchemasMap.set(currentType, schemaCode.trim());
+
+    // 3. 본문 내의 모든 구버전/신버전 스키마 마크업들을 깨끗이 지웁니다.
+    const cleanRegex = /\n*\s*(<!--\s*CREAIBOX_SCHEMA_START[\s\S]*?CREAIBOX_SCHEMA_END\s*-->|<script type="application\/ld\+json">[\s\S]*?<\/script>)\s*\n*/gi;
+    const cleanContent = data.content.replace(cleanRegex, "").trim();
+
+    // 4. Map에 모인 모든 유니크 스키마 블록들을 차례대로 본문 하단에 덧붙여 줍니다!
+    let newSchemaBlocks = "";
+    existingSchemasMap.forEach((code) => {
+      newSchemaBlocks += `\n\n<!-- CREAIBOX_SCHEMA_START\n${code}\nCREAIBOX_SCHEMA_END -->`;
+    });
+    
+    const nextContent = `${cleanContent}${newSchemaBlocks}\n`;
 
     updateLocalData({ content: nextContent });
-    alert("스키마가 본문 하단에 적용되었습니다! 좌측 상단의 '원고 저장' 버튼을 누르면 DB에 영구 반영됩니다.");
+    setSchemaCode("");
+    alert(`[${currentType}] 스키마가 본문 하단에 성공적으로 가동되었습니다! 타 스키마들과 병합 완료되어 여러 개의 구조화 데이터가 동시 작동합니다.`);
   };
 
   const handleDeleteSchema = () => {
     if (!data || !updateLocalData) return;
-    if (!window.confirm("본문에서 기존 스키마 스크립트를 제거할까요?")) return;
+    if (!window.confirm("본문에서 기존 스키마 마크업을 완전히 제거할까요?")) return;
 
-    const schemaRegex = /\n*\s*<script type="application\/ld\+json">[\s\S]*?<\/script>\s*\n*/gi;
-    const nextContent = data.content.replace(schemaRegex, "").trim();
+    const cleanRegex = /\n*\s*(<!--\s*CREAIBOX_SCHEMA_START[\s\S]*?CREAIBOX_SCHEMA_END\s*-->|<script type="application\/ld\+json">[\s\S]*?<\/script>)\s*\n*/gi;
+    const nextContent = data.content.replace(cleanRegex, "").trim();
 
     updateLocalData({ content: nextContent });
     setSchemaCode("");
-    alert("본문에서 스키마 스크립트가 제거되었습니다. '원고 저장' 버튼을 눌러야 적용됩니다.");
+    alert("본문에서 스키마 마크업이 제거되었습니다. '원고 저장' 버튼을 눌러야 적용됩니다.");
   };
 
   const handleCopySchema = () => {
@@ -158,6 +190,94 @@ ${data.content || ""}`;
     navigator.clipboard.writeText(schemaCode);
     alert("스키마 코드가 클립보드에 복사되었습니다.");
   };
+
+  // 🌟 다중 구조화 스키마 리치 결과 통합 미리보기 리스트 생성기 (Multi-Schema Preview List Engine)
+  const schemasList = useMemo(() => {
+    const list: Array<{
+      type: string;
+      headline: string;
+      description: string;
+      url: string;
+      isPending?: boolean;
+    }> = [];
+    const processedTypes = new Set<string>();
+
+    let pendingType = "";
+    if (schemaCode) {
+      try {
+        const parsed = JSON.parse(schemaCode);
+        pendingType = parsed["@type"] || "Article";
+      } catch {}
+    }
+
+    // 1. 본문 데이터에 이미 등록되어 있는 스키마 블록들을 파싱하여 적재합니다.
+    const schemaRegex = /<!--\s*CREAIBOX_SCHEMA_START([\s\S]*?)CREAIBOX_SCHEMA_END\s*-->|<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi;
+    let match;
+    while ((match = schemaRegex.exec(data?.content || "")) !== null) {
+      const code = (match[1] || match[2] || "").trim();
+      if (code) {
+        try {
+          const parsed = JSON.parse(code);
+          const type = parsed["@type"] || "Schema";
+          
+          // 만약 방금 새로 생성한 임시 스키마(대기 중)와 타입이 겹치는 경우, 대기 중인 최신 스키마가 우선이므로 스킵합니다.
+          if (type === pendingType) continue;
+
+          if (!processedTypes.has(type)) {
+            processedTypes.add(type);
+
+            const headline = parsed.headline || parsed.name || data?.title || "제목 정보가 스키마에 없습니다.";
+            let description = parsed.description;
+            
+            if (!description && type === "FAQPage" && Array.isArray(parsed.mainEntity) && parsed.mainEntity.length > 0) {
+              description = parsed.mainEntity.map((faq: any, idx: number) => {
+                const q = faq.name || "";
+                const a = faq.acceptedAnswer?.text || "";
+                return `Q${idx + 1}. ${q}\nA${idx + 1}. ${a}`;
+              }).join("\n\n");
+            }
+
+            if (!description) {
+              description = data?.metaDescription || "본문 내용 요약 혹은 메타 설명 정보가 없습니다.";
+            }
+
+            const url = parsed.mainEntityOfPage?.["@id"] || parsed.url || data?.canonicalUrl || "https://creaibox.com/blog-slug";
+
+            list.push({ type, headline, description, url, isPending: false });
+          }
+        } catch {}
+      }
+    }
+
+    // 2. 방금 AI가 새로 생성해내어 대기 중인 임시 스키마 코드(schemaCode)가 있으면 리스트 최상단에 주입합니다!
+    if (schemaCode) {
+      try {
+        const parsed = JSON.parse(schemaCode);
+        const type = parsed["@type"] || "Article";
+
+        const headline = parsed.headline || parsed.name || data?.title || "제목 정보가 스키마에 없습니다.";
+        let description = parsed.description;
+        
+        if (!description && type === "FAQPage" && Array.isArray(parsed.mainEntity) && parsed.mainEntity.length > 0) {
+          description = parsed.mainEntity.map((faq: any, idx: number) => {
+            const q = faq.name || "";
+            const a = faq.acceptedAnswer?.text || "";
+            return `Q${idx + 1}. ${q}\nA${idx + 1}. ${a}`;
+          }).join("\n\n");
+        }
+
+        if (!description) {
+          description = data?.metaDescription || "본문 내용 요약 혹은 메타 설명 정보가 없습니다.";
+        }
+
+        const url = parsed.mainEntityOfPage?.["@id"] || parsed.url || data?.canonicalUrl || "https://creaibox.com/blog-slug";
+
+        list.unshift({ type, headline, description, url, isPending: true });
+      } catch {}
+    }
+
+    return list;
+  }, [schemaCode, data]);
 
   if (!data || !updateLocalData) {
     return (
@@ -269,7 +389,7 @@ ${data.content || ""}`;
         <div className="space-y-2 animate-in slide-in-from-top-2 duration-300 text-left">
           <div className="flex justify-between items-center px-1">
             <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">
-              JSON-LD Code (미리보기)
+              JSON-LD Code
             </span>
             <button
               onClick={handleCopySchema}
@@ -281,14 +401,14 @@ ${data.content || ""}`;
           <textarea
             value={schemaCode}
             onChange={(e) => setSchemaCode(e.target.value)}
-            className="w-full h-64 p-4 rounded-xl bg-black border border-zinc-800 text-emerald-400 font-mono text-[11px] leading-relaxed custom-scrollbar focus:outline-none focus:border-zinc-700"
+            className="w-full h-40 p-3.5 rounded-xl bg-black border border-zinc-800 text-emerald-400 font-mono text-[10px] leading-relaxed custom-scrollbar focus:outline-none focus:border-zinc-700"
           />
         </div>
       )}
 
       {/* Apply / Delete Actions */}
       {schemaCode && (
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-2 pt-1">
           {hasExistingSchema && (
             <button
               onClick={handleDeleteSchema}
@@ -305,6 +425,49 @@ ${data.content || ""}`;
             <CheckCircle size={13} />
             본문에 적용하기
           </button>
+        </div>
+      )}
+
+      {/* 🔍 Google/Naver Search Rich Snippet Result Previews (Multi-Card Container) */}
+      {schemasList.length > 0 && (
+        <div className="space-y-4 pt-4 text-left animate-in fade-in duration-500 border-t border-zinc-855">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider flex items-center gap-1">
+              <Eye size={12} className="text-sky-400" />
+              검색엔진(구글, 네이버 등) 노출 미리보기(Preview)
+            </span>
+            <span className="text-[9px] text-zinc-500 font-bold leading-normal">
+              💡 본문에 장착되었거나 적용 대기 중인 모든 스키마의 가상 검색 결과 카드입니다.
+            </span>
+          </div>
+          <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1 custom-scrollbar">
+            {schemasList.map((preview, index) => (
+              <div key={`${preview.type}-${index}`} className="bg-[#0b0f19] border border-zinc-800 rounded-xl p-3.5 space-y-1.5 shadow-inner">
+                <div className="flex items-start gap-1.5 text-zinc-400 text-[10px] leading-relaxed">
+                  <Globe size={11} className="text-zinc-500 shrink-0 mt-0.5" />
+                  <span className="break-all font-medium">{preview.url}</span>
+                </div>
+                <h4 className="text-[13px] font-black text-[#8ab4f8] hover:underline cursor-pointer leading-tight">
+                  {preview.headline}
+                </h4>
+                <p className="text-[11px] leading-relaxed text-zinc-400 whitespace-pre-wrap break-all">
+                  {preview.description}
+                </p>
+                <div className="pt-1.5 flex items-center justify-between text-[9px] text-zinc-500 font-bold uppercase">
+                  <span>구조화 유형: {preview.type}</span>
+                  {preview.isPending ? (
+                    <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded leading-none text-[8.5px] font-black tracking-wide">
+                      적용 대기 중
+                    </span>
+                  ) : (
+                    <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded leading-none text-[8.5px] font-black tracking-wide">
+                      장착 완료
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

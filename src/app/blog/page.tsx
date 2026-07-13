@@ -170,45 +170,22 @@ export default async function BlogPage(props: {
                     >
                       <div className="relative h-[170px] w-full md:w-[270px] shrink-0 overflow-hidden rounded-lg bg-zinc-100 dark:bg-slate-950">
                         {post.thumbnailUrl ? (
-                          <>
-                            <img
-                              src={post.thumbnailUrl}
-                              alt={post.title || "thumbnail"}
-                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                            <div className="absolute left-4 top-4 rounded-full border border-white/20 bg-black/40 backdrop-blur-md px-3 py-1 text-[11px] font-black text-white">
-                              {keyword}
-                            </div>
-                            <div className="absolute inset-x-5 bottom-5">
-                              <div className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-3 py-1 text-[11px] font-black text-white shadow-sm">
-                                <Sparkles size={12} />
-                                Insight
-                              </div>
-                            </div>
-                          </>
+                          <img
+                            src={post.thumbnailUrl}
+                            alt={post.title || "thumbnail"}
+                            className="h-full w-full object-contain bg-zinc-950/20 transition-transform duration-500 group-hover:scale-105"
+                          />
                         ) : (
-                          <>
-                            <div className="absolute inset-0 bg-slate-100 dark:bg-slate-900" />
-                            <div className="absolute left-4 top-4 rounded-full border border-white/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900 px-3 py-1 text-[11px] font-black text-zinc-700 dark:text-slate-300">
-                              {keyword}
-                            </div>
-                            <div className="absolute inset-x-5 bottom-5">
-                              <div className="inline-flex items-center gap-2 rounded-full bg-blue-650 text-white px-3 py-1 text-[11px] font-black shadow-sm">
-                                <Sparkles size={12} />
-                                Insight
-                              </div>
-                            </div>
-                          </>
+                          <div className="absolute inset-0 bg-slate-100 dark:bg-slate-900" />
                         )}
                       </div>
 
-                      <div className="flex min-w-0 flex-1 flex-col">
-                        <h2 className="line-clamp-2 text-xl md:text-[1.35rem] font-black leading-[1.3] tracking-[-0.02em] text-zinc-950 dark:text-white transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                      <div className="flex min-w-0 flex-1 flex-col justify-center">
+                        <h2 className="line-clamp-2 text-base md:text-[1.125rem] font-bold leading-snug tracking-[-0.01em] text-zinc-950 dark:text-white transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400">
                           {post.title}
                         </h2>
 
-                        <p className="mt-4 line-clamp-3 text-[1.05rem] leading-[1.8] text-zinc-655 dark:text-slate-400 font-semibold">
+                        <p className="mt-3 line-clamp-3 text-[13px] md:text-sm leading-relaxed text-zinc-500 dark:text-slate-400 font-medium">
                           {excerpt}
                         </p>
                       </div>
@@ -279,7 +256,7 @@ export default async function BlogPage(props: {
                             <img
                               src={post.thumbnailUrl}
                               alt={post.title || "thumbnail"}
-                              className="h-full w-full object-cover"
+                              className="h-full w-full object-contain bg-zinc-950/20"
                             />
                           ) : (
                             <div className="absolute inset-0 bg-slate-100 dark:bg-slate-900" />
@@ -287,7 +264,7 @@ export default async function BlogPage(props: {
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <h3 className="line-clamp-2 text-[1.05rem] font-bold leading-snug text-zinc-800 dark:text-slate-205 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                          <h3 className="line-clamp-2 text-xs md:text-[13px] font-bold leading-snug text-zinc-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
                             {post.title}
                           </h3>
                         </div>

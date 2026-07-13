@@ -148,6 +148,7 @@ export default function SunoGeneratorPage() {
   // Dropdown menus visibility
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState<boolean>(false);
   const [isSortMenuOpen, setIsSortMenuOpen] = useState<boolean>(false);
+  const [isSyncMenuOpen, setIsSyncMenuOpen] = useState<boolean>(false);
   const [isViewMenuOpen, setIsViewMenuOpen] = useState<boolean>(false);
 
   // Detailed Filters Checked States
@@ -167,20 +168,14 @@ export default function SunoGeneratorPage() {
   
   // Workspace State
   // Workspace State
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([
-    { id: "ws_1", name: "My Workspace", songCount: 210, updatedAt: "2주 전" },
-    { id: "ws_2", name: "CreAibox 분위기별", songCount: 229, updatedAt: "5시간 전" },
-    { id: "ws_3", name: "CreAibox 장르별", songCount: 236, updatedAt: "1일 전" },
-    { id: "ws_4", name: "Runway EDM", songCount: 356, updatedAt: "1달 전" },
-    { id: "ws_5", name: "앨범 : 잔상의 온도: 첫사랑이 남긴 무늬(Cinematic)", songCount: 36, updatedAt: "1달 전", isAlbum: true },
-  ]);
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>("ws_2");
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>("");
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState<boolean>(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState<string>("");
   const [workspaceMenuId, setWorkspaceMenuId] = useState<string | null>(null);
 
   // Selected song for the Right Aside Info panel
-  const [selectedSongId, setSelectedSongId] = useState<string | null>("suno_mock_2");
+  const [selectedSongId, setSelectedSongId] = useState<string | null>(null);
 
   // Bottom Audio Player states
   const [playingSongId, setPlayingSongId] = useState<string | null>(null);
@@ -255,78 +250,7 @@ export default function SunoGeneratorPage() {
   ];
 
   // Songs state (with Suno cover art URL placeholders and filter attributes)
-  const [songs, setSongs] = useState<SunoSong[]>([
-    {
-      id: "suno_mock_1",
-      title: "Battle Line",
-      tags: "cinematic, taiko, marching percussion, powerful",
-      prompt: "Mid-tempo cinematic taiko percussion, marching drum style rhythms, dramatic sub-bass drops",
-      audioUrl: "https://cdn.creaibox.com/music/General_Audio/General/morning_sunlight_slow_creaibox.mp3",
-      wavUrl: "https://cdn.creaibox.com/music/General_Audio/General/morning_sunlight_slow_creaibox.mp3",
-      imageUrl: "https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=150&q=80",
-      status: "complete",
-      createdAt: "2026-07-11T12:00:00.000Z",
-      duration: "4:20",
-      workspaceId: "ws_2",
-      isLiked: true,
-      isDisliked: false,
-      isPublic: false,
-      isUpload: false,
-      likeCount: 15
-    },
-    {
-      id: "suno_mock_2",
-      title: "Coastline Walk",
-      tags: "acoustic guitar, ocean wave, gentle",
-      prompt: "Mid-tempo simple acoustic guitar, ocean wave sound fx overlay, serene calm atmosphere, 95 BPM, acoustic picking",
-      audioUrl: "https://cdn.creaibox.com/music/General_Audio/General/morning_sunlight_slow_creaibox.mp3",
-      wavUrl: "https://cdn.creaibox.com/music/General_Audio/General/morning_sunlight_slow_creaibox.mp3",
-      imageUrl: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=150&q=80",
-      status: "complete",
-      createdAt: "2026-07-10T12:00:00.000Z",
-      duration: "3:09",
-      workspaceId: "ws_2",
-      isLiked: false,
-      isDisliked: false,
-      isPublic: true,
-      isUpload: false,
-      likeCount: 5
-    },
-    {
-      id: "suno_mock_3",
-      title: "Enchanted Lake",
-      tags: "mysterious, bell chime, soft celtic flute",
-      prompt: "Mid-tempo mysterious bell chime, soft celtic flute harmony, ambient forest drone",
-      audioUrl: "https://cdn.creaibox.com/music/General_Audio/General/morning_sunlight_slow_creaibox.mp3",
-      imageUrl: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=150&q=80",
-      status: "complete",
-      createdAt: "2026-07-09T12:00:00.000Z",
-      duration: "2:49",
-      workspaceId: "ws_2",
-      isLiked: true,
-      isDisliked: false,
-      isPublic: true,
-      isUpload: true,
-      likeCount: 20
-    },
-    {
-      id: "suno_mock_4",
-      title: "War of Fate",
-      tags: "epic cello, war drums, majestic drama",
-      prompt: "Fast epic cello arpeggio, war drums, majestic dramatic progression",
-      audioUrl: "https://cdn.creaibox.com/music/General_Audio/General/morning_sunlight_slow_creaibox.mp3",
-      imageUrl: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=150&q=80",
-      status: "complete",
-      createdAt: "2026-07-08T12:00:00.000Z",
-      duration: "3:43",
-      workspaceId: "ws_2",
-      isLiked: false,
-      isDisliked: true,
-      isPublic: false,
-      isUpload: true,
-      likeCount: 0
-    }
-  ]);
+  const [songs, setSongs] = useState<SunoSong[]>([]);
 
   // Active Dropdowns state per song
   const [downloadDropdownId, setDownloadDropdownId] = useState<string | null>(null);
@@ -578,14 +502,12 @@ export default function SunoGeneratorPage() {
       const activeFolder = workspaces.find(w => w.id === activeWorkspaceId);
       const songFolder = workspaces.find(w => w.id === s.workspaceId);
       
-      const isSunoSynced = s.id.startsWith("suno_synced_");
       const isDemoMock = s.id.startsWith("suno_mock_");
       
       const isMatchedWorkspace = 
         s.workspaceId === activeWorkspaceId ||
         (activeFolder && songFolder && activeFolder.name === songFolder.name) ||
         (activeWorkspaceId.includes("ws_") && s.workspaceId.includes("ws_") && activeWorkspaceId === s.workspaceId) ||
-        isSunoSynced ||
         isDemoMock; // Expose demo mock tracks globally to prevent empty layouts
         
       if (!isMatchedWorkspace) return false;
@@ -785,6 +707,7 @@ export default function SunoGeneratorPage() {
       setIsFilterMenuOpen(false);
       setIsSortMenuOpen(false);
       setIsViewMenuOpen(false);
+      setIsSyncMenuOpen(false);
     };
 
     const handleExtensionSyncMessage = (event: MessageEvent) => {
@@ -793,18 +716,37 @@ export default function SunoGeneratorPage() {
         console.log("[CreAibox React] Received synced workspace payload:", payload);
         
         if (payload.workspaces && payload.workspaces.length > 0) {
-          setWorkspaces(payload.workspaces);
+          setWorkspaces(prev => {
+            const workspaceMap = new Map<string, Workspace>();
+            // 1. Seed existing folders first (preserving cached list)
+            prev.forEach(w => workspaceMap.set(w.id, w));
+            // 2. Add or update with incoming folder items
+            payload.workspaces.forEach((w: Workspace) => {
+              workspaceMap.set(w.id, w);
+            });
+            return Array.from(workspaceMap.values());
+          });
           const currentId = activeWorkspaceIdRef.current;
-          const hasActive = payload.workspaces.some((w: Workspace) => w.id === currentId);
-          if (!hasActive && payload.workspaces[0]) {
-            setActiveWorkspaceId(payload.workspaces[0].id);
-          }
+          // Look for active in accumulated list
+          setWorkspaces(currWorkspaces => {
+            const hasActive = currWorkspaces.some((w: Workspace) => w.id === currentId);
+            if (!hasActive && payload.workspaces[0]) {
+              setActiveWorkspaceId(payload.workspaces[0].id);
+            }
+            return currWorkspaces;
+          });
         }
-        // Keep demo mock tracks and only merge/append with scraped tracks from Suno tab
+        // Perform Map-based Upsert to continuously accumulate scraped tracks (supporting duplicate titles and infinite scroll)
         if (payload.songs && payload.songs.length > 0) {
           setSongs(prev => {
-            const localAndMocks = prev.filter(s => !s.id.startsWith("suno_synced_"));
-            return [...localAndMocks, ...payload.songs];
+            const songMap = new Map<string, SunoSong>();
+            // 1. Seed existing songs first
+            prev.forEach(s => songMap.set(s.id, s));
+            // 2. Overwrite or append with incoming synced tracks
+            payload.songs.forEach((newSong: SunoSong) => {
+              songMap.set(newSong.id, newSong);
+            });
+            return Array.from(songMap.values());
           });
         }
         setExtensionActive(true);
@@ -1360,17 +1302,78 @@ export default function SunoGeneratorPage() {
                   )}
                 </div>
 
-                <button
-                  onClick={() => {
-                    window.postMessage({ type: "FORCE_SUNO_SYNC_REQUEST" }, "*");
-                    alert("Suno.com 실시간 계정 정보 동기화 요청을 전송했습니다.");
-                  }}
-                  className="px-3 py-2 bg-[#05080e] hover:bg-slate-900 border border-slate-850 hover:border-emerald-500/20 text-xs text-emerald-400 font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer"
-                  title="Suno.com 실시간 생성 데이터 강제 동기화"
-                >
-                  <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Suno 동기화</span>
-                </button>
+                <div className="relative">
+                  <div className="flex items-center">
+                    <button
+                      onClick={() => {
+                        window.postMessage({ type: "FORCE_SUNO_SYNC_REQUEST", payload: { mode: "current", workspaceId: activeWorkspaceId } }, "*");
+                        alert("현재 활성화된 폴더의 실시간 곡 동기화 요청을 보냈습니다.");
+                      }}
+                      className="pl-3 pr-2.5 py-2 bg-[#05080e] hover:bg-slate-900 border border-slate-850 hover:border-emerald-500/20 text-xs text-emerald-400 font-bold rounded-l-xl transition flex items-center gap-1.5 cursor-pointer border-r-0"
+                      title="현재 폴더(워크스페이스)의 곡들만 실시간 초고속 동기화"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>현재 폴더 동기화</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsSyncMenuOpen(!isSyncMenuOpen);
+                      }}
+                      className="px-2 py-2 bg-[#05080e] hover:bg-slate-900 border border-slate-850 hover:border-emerald-500/20 text-xs text-emerald-400 rounded-r-xl transition cursor-pointer flex items-center justify-center"
+                      title="동기화 방식 선택"
+                    >
+                      <ChevronDown className="w-3.5 h-3.5 text-emerald-400" />
+                    </button>
+                  </div>
+
+                  {isSyncMenuOpen && (
+                    <div className="absolute right-0 mt-1.5 w-48 bg-[#0f1420] border border-slate-800 rounded-xl shadow-2xl z-50 p-1 flex flex-col gap-0.5 animate-fadeIn">
+                      <button 
+                        onClick={() => {
+                          window.postMessage({ type: "FORCE_SUNO_SYNC_REQUEST", payload: { mode: "current", workspaceId: activeWorkspaceId } }, "*");
+                          setIsSyncMenuOpen(false);
+                          alert("현재 활성화된 폴더의 실시간 곡 동기화 요청을 전송했습니다.");
+                        }} 
+                        className="w-full text-left flex items-center gap-2 px-3 py-2.5 text-xs font-bold text-slate-350 hover:text-emerald-400 hover:bg-slate-900 rounded-lg transition"
+                      >
+                        <RefreshCw className="w-4 h-4 text-emerald-400" />
+                        <div className="flex flex-col">
+                          <span>현재 폴더만 동기화</span>
+                          <span className="text-[9px] text-slate-500 font-normal">현재 활성화된 워크스페이스 (초고속)</span>
+                        </div>
+                      </button>
+                      <button 
+                        onClick={() => {
+                          window.postMessage({ type: "FORCE_SUNO_SYNC_REQUEST", payload: { mode: "folders" } }, "*");
+                          setIsSyncMenuOpen(false);
+                          alert("Suno.com 폴더 목록 동기화 요청을 보냈습니다. (약 0.5초 소요)");
+                        }} 
+                        className="w-full text-left flex items-center gap-2 px-3 py-2.5 text-xs font-bold text-slate-350 hover:text-emerald-400 hover:bg-slate-900 rounded-lg transition border-t border-slate-800"
+                      >
+                        <Folder className="w-4 h-4 text-amber-400" />
+                        <div className="flex flex-col">
+                          <span>폴더 목록만 동기화</span>
+                          <span className="text-[9px] text-slate-500 font-normal">전체 워크스페이스 목록만 (초경량)</span>
+                        </div>
+                      </button>
+                      <button 
+                        onClick={() => {
+                          window.postMessage({ type: "FORCE_SUNO_SYNC_REQUEST", payload: { mode: "all" } }, "*");
+                          setIsSyncMenuOpen(false);
+                          alert("모든 폴더 전체 자동 순회 동기화 요청을 보냈습니다. (약 10~20초 소요)");
+                        }} 
+                        className="w-full text-left flex items-center gap-2 px-3 py-2.5 text-xs font-bold text-slate-350 hover:text-emerald-400 hover:bg-slate-900 rounded-lg transition border-t border-slate-800"
+                      >
+                        <RefreshCcw className="w-4 h-4 text-sky-400" />
+                        <div className="flex flex-col">
+                          <span>모든 폴더 전체 동기화</span>
+                          <span className="text-[9px] text-slate-500 font-normal">Suno 모든 폴더 자동 이동 순회</span>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1900,7 +1903,7 @@ export default function SunoGeneratorPage() {
             <button
               onClick={() => playingSong && playTrack(playingSong)}
               disabled={!playingSong}
-              className="p-2.5 bg-white text-slate-955 rounded-full hover:scale-105 disabled:opacity-40 transition flex items-center justify-center shadow-md animate-fadeIn"
+              className="p-2.5 bg-white text-slate-950 rounded-full hover:scale-105 disabled:opacity-40 transition flex items-center justify-center shadow-md animate-fadeIn"
             >
               {isPlaying ? (
                 <Pause className="w-4 h-4 fill-current" />

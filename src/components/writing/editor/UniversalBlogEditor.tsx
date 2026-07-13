@@ -38,6 +38,7 @@ import {
   Eraser,
   Eye,
   FileText,
+  FileCode,
   Globe,
   Heading1,
   Heading2,
@@ -196,8 +197,9 @@ const IMAGE_BUCKET = "generated-images";
 
 const cleanContentComment = (htmlOrMd: string) => {
   if (!htmlOrMd) return "";
-  const regex = /<!-- CREAIBOX_EDITORIAL_START ([\s\S]*?) CREAIBOX_EDITORIAL_END -->/;
-  return htmlOrMd.replace(regex, "").trim();
+  const regexEditorial = /<!-- CREAIBOX_EDITORIAL_START ([\s\S]*?) CREAIBOX_EDITORIAL_END -->/g;
+  const regexSchema = /<!--\s*CREAIBOX_SCHEMA_START([\s\S]*?)CREAIBOX_SCHEMA_END\s*-->/g;
+  return htmlOrMd.replace(regexEditorial, "").replace(regexSchema, "").trim();
 };
 
 type GeneratedImageRow = {
@@ -734,6 +736,25 @@ export default function UniversalBlogEditor({
   extraConfigs,
 }: UniversalBlogEditorProps) {
   const supabase = useMemo(() => createClient(), []);
+
+  // Parse active schema metadata to verify injection presence
+  const activeSchemaInfo = useMemo(() => {
+    if (!content) return null;
+    const regex = /<!--\s*CREAIBOX_SCHEMA_START([\s\S]*?)CREAIBOX_SCHEMA_END\s*-->/i;
+    const match = regex.exec(content);
+    if (match && match[1]) {
+      try {
+        const parsed = JSON.parse(match[1].trim());
+        return {
+          type: parsed["@type"] || "Article",
+          headline: parsed.headline || parsed.name || "JSON-LD"
+        };
+      } catch {
+        return { type: "Custom Schema", headline: "JSON-LD" };
+      }
+    }
+    return null;
+  }, [content]);
 
   // 🌟 에디터 2.0 신규 기능 상태관리
   const [isFindReplaceOpen, setIsFindReplaceOpen] = useState(false);
@@ -1367,8 +1388,15 @@ export default function UniversalBlogEditor({
         deleteContentImagesRef.current(removedUrls);
       }
 
+      let schemaStr = "";
+      const schemaRegex = /<!--\s*CREAIBOX_SCHEMA_START([\s\S]*?)CREAIBOX_SCHEMA_END\s*-->/i;
+      const schemaMatch = schemaRegex.exec(content);
+      if (schemaMatch) {
+        schemaStr = `\n\n${schemaMatch[0]}`;
+      }
+
       const commentStr = `<!-- CREAIBOX_EDITORIAL_START ${JSON.stringify(editorialSettingsRef.current)} CREAIBOX_EDITORIAL_END -->`;
-      const contentWithComment = `${html}\n\n${commentStr}`;
+      const contentWithComment = `${html}\n\n${commentStr}${schemaStr}`;
       lastExternalContentRef.current = contentWithComment;
       setContent(contentWithComment);
 
@@ -1412,7 +1440,12 @@ export default function UniversalBlogEditor({
     if (handleCopy) {
       handleCopy();
     } else {
-      const copyText = `제목: ${title}\n\n${editor?.getHTML() ?? content}`;
+      const rawContent = editor?.getHTML() ?? content;
+      // Convert hidden schema comments into formal script tags upon clipboard copy operations
+      const parsedCopyText = rawContent.replace(/<!--\s*CREAIBOX_SCHEMA_START([\s\S]*?)CREAIBOX_SCHEMA_END\s*-->/gi, (match, jsonCode) => {
+        return `\n<script type="application/ld+json">\n${jsonCode.trim()}\n</script>\n`;
+      });
+      const copyText = `제목: ${title}\n\n${parsedCopyText}`;
       navigator.clipboard.writeText(copyText);
     }
     setCopyFeedback("copied");
@@ -3007,6 +3040,32 @@ export default function UniversalBlogEditor({
 
             <div className="min-h-[760px] rounded-[10px] bg-transparent px-1 py-1 text-zinc-800 focus-within:bg-zinc-50/70">
               <EditorContent editor={editor} />
+
+              {activeSchemaInfo && (
+                <div className="mt-8 p-4 rounded-xl border border-violet-500/20 bg-violet-500/5 flex items-center justify-between text-left">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-violet-500/10 text-violet-400 shrink-0">
+                      <FileCode size={20} />
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-black text-zinc-950 flex items-center gap-1.5">
+                        ✨ 본문 내에 SEO 구조화 스키마(JSON-LD)가 안전하게 적용되었습니다!
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-violet-200 bg-violet-100 text-violet-700 uppercase">
+                          {activeSchemaInfo.type}
+                        </span>
+                      </p>
+                      <p className="text-[10px] text-zinc-500 mt-1 font-medium leading-relaxed">
+                        Google 및 Naver 검색로봇이 구조화된 Rich Snippet 스니펫으로 최우선 수집해 갑니다.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-emerald-600 bg-emerald-100 border border-emerald-200 px-2 py-1 rounded">
+                      장착 완료
+                    </span>
+                  </div>
+                </div>
+              )}
               
               {editor && (
                 <BubbleMenu

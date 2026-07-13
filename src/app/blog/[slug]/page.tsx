@@ -320,13 +320,14 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   const tags = post.seo_tags || [];
   const publishedDate = formatDate(post.created_at);
 
-  // 🌟 본문에 저장된 커스텀 JSON-LD 스키마 추출
+  // 🌟 본문에 저장된 커스텀 JSON-LD 스키마 추출 (기존 script 형식과 신규 주석 우회 형식 모두 지원)
   const customSchemas: string[] = [];
-  const schemaRegex = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi;
+  const schemaRegex = /<!--\s*CREAIBOX_SCHEMA_START([\s\S]*?)CREAIBOX_SCHEMA_END\s*-->|<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi;
   let match;
   while ((match = schemaRegex.exec(post.content || "")) !== null) {
-      if (match[1]) {
-      customSchemas.push(match[1].trim());
+    const rawSchema = (match[1] || match[2] || "").trim();
+    if (rawSchema) {
+      customSchemas.push(rawSchema);
     }
   }
 
@@ -531,6 +532,39 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                           #{tag}
                         </span>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 🌟 SEO 구조화 데이터(JSON-LD) 삽입 현황 확인 카드 */}
+                {customSchemas.length > 0 && (
+                  <div className="w-full mt-10 border-t border-zinc-200 pt-8 text-left">
+                    <h2 className="text-sm font-black uppercase tracking-[0.24em] text-zinc-500 flex items-center gap-1.5">
+                      <Star size={14} className="text-violet-500 fill-violet-500" />
+                      검색엔진 Rich Schema info
+                    </h2>
+                    <div className="mt-4 p-5 rounded-2xl border border-violet-100 bg-violet-50/20">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-black uppercase bg-violet-600 text-white px-2 py-0.5 rounded tracking-wide">
+                          JSON-LD ACTIVE
+                        </span>
+                        {customSchemas.map((schemaStr, idx) => {
+                          try {
+                            const parsed = JSON.parse(schemaStr);
+                            const type = parsed["@type"] || "Schema";
+                            return (
+                              <span key={`badge-${idx}`} className="text-[10px] font-black border border-violet-300 bg-white text-violet-700 px-2 py-0.5 rounded uppercase">
+                                {type}
+                              </span>
+                            );
+                          } catch {
+                            return null;
+                          }
+                        })}
+                      </div>
+                      <p className="text-xs text-zinc-600 font-medium leading-relaxed mt-3">
+                        💡 이 글의 HTML 헤더 소스코드에 구조화 스키마 메타데이터가 정상적으로 주입되어 있습니다.
+                      </p>
                     </div>
                   </div>
                 )}
