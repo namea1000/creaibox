@@ -364,9 +364,11 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
   };
 
   const naverKey = getConf("naver_advisor_key");
-  if (naverKey) {
+  const googleKey = getConf("google_search_console_key");
+  if (naverKey || googleKey) {
     meta.other = {
-      "naver-site-verification": naverKey,
+      ...(naverKey ? { "naver-site-verification": naverKey } : {}),
+      ...(googleKey ? { "google-site-verification": googleKey } : {}),
     };
   }
 

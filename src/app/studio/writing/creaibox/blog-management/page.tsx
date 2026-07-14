@@ -98,6 +98,7 @@ export default function BlogManagementPage() {
   const [blogAccentColor, setBlogAccentColor] = useState("#3b82f6");
   const [gaId, setGaId] = useState("");
   const [naverKey, setNaverKey] = useState("");
+  const [googleSearchConsoleKey, setGoogleSearchConsoleKey] = useState("");
   const [adsensePubId, setAdsensePubId] = useState("");
   const [seoTitleTemplate, setSeoTitleTemplate] = useState("%title% | %blog_title%");
   const [seoDescTemplate, setSeoDescTemplate] = useState("%description%");
@@ -249,6 +250,7 @@ export default function BlogManagementPage() {
     setBlogAccentColor(getConfigValue("blog_accent_color", "#3b82f6"));
     setGaId(getConfigValue("ga_id", ""));
     setNaverKey(getConfigValue("naver_advisor_key", ""));
+    setGoogleSearchConsoleKey(getConfigValue("google_search_console_key", ""));
     setAdsensePubId(getConfigValue("adsense_pub_id", ""));
     setSeoTitleTemplate(getConfigValue("seo_template_title", "%title% | %blog_title%"));
     setSeoDescTemplate(getConfigValue("seo_template_desc", "%description%"));
@@ -412,6 +414,7 @@ export default function BlogManagementPage() {
         [`blog_accent_color_${activeBrandId}`]: blogAccentColor,
         [`ga_id_${activeBrandId}`]: gaId.trim(),
         [`naver_advisor_key_${activeBrandId}`]: naverKey.trim(),
+        [`google_search_console_key_${activeBrandId}`]: googleSearchConsoleKey.trim(),
         [`adsense_pub_id_${activeBrandId}`]: adsensePubId.trim(),
         [`seo_template_title_${activeBrandId}`]: seoTitleTemplate.trim(),
         [`seo_template_desc_${activeBrandId}`]: seoDescTemplate.trim(),
@@ -425,6 +428,7 @@ export default function BlogManagementPage() {
         mergedConfigs.blog_accent_color = blogAccentColor;
         mergedConfigs.ga_id = gaId.trim();
         mergedConfigs.naver_advisor_key = naverKey.trim();
+        mergedConfigs.google_search_console_key = googleSearchConsoleKey.trim();
         mergedConfigs.adsense_pub_id = adsensePubId.trim();
         mergedConfigs.seo_template_title = seoTitleTemplate.trim();
         mergedConfigs.seo_template_desc = seoDescTemplate.trim();
@@ -1334,7 +1338,7 @@ export default function BlogManagementPage() {
                   </h3>
 
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-1.5">
                         <label className="pl-1 text-[10px] font-black uppercase tracking-wider text-zinc-500">
                           Google Analytics (GA4) ID
@@ -1361,7 +1365,20 @@ export default function BlogManagementPage() {
                         />
                       </div>
 
-                      <div className="space-y-1.5 md:col-span-2 border-t border-zinc-900/50 pt-4">
+                      <div className="space-y-1.5">
+                        <label className="pl-1 text-[10px] font-black uppercase tracking-wider text-zinc-500">
+                          구글 서치콘솔 연동 키
+                        </label>
+                        <input
+                          type="text"
+                          value={googleSearchConsoleKey}
+                          onChange={(e) => setGoogleSearchConsoleKey(e.target.value)}
+                          placeholder="google-site-verification 값"
+                          className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4 text-xs font-bold font-mono text-white outline-none focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5 md:col-span-3 border-t border-zinc-900/50 pt-4">
                         <label className="pl-1 text-[10px] font-black uppercase tracking-wider text-zinc-500">
                           구글 애드센스 (Google AdSense) 게시자 ID
                         </label>

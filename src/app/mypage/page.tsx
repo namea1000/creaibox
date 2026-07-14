@@ -595,7 +595,7 @@ export default function MyPage() {
           // Copy configs of the new primary brand to the base configs
           const keysToCopy = [
             "blog_title", "blog_description", "blog_template", "blog_accent_color",
-            "ga_id", "naver_advisor_key", "seo_template_title", "seo_template_desc",
+            "ga_id", "naver_advisor_key", "google_search_console_key", "seo_template_title", "seo_template_desc",
             "custom_domain", "custom_domain_status", "requested_custom_domain", "custom_domain_rejection_reason"
           ];
           keysToCopy.forEach(key => {
@@ -613,7 +613,7 @@ export default function MyPage() {
           // Clear base configs
           const keysToClear = [
             "blog_title", "blog_description", "blog_template", "blog_accent_color",
-            "ga_id", "naver_advisor_key", "seo_template_title", "seo_template_desc",
+            "ga_id", "naver_advisor_key", "google_search_console_key", "seo_template_title", "seo_template_desc",
             "custom_domain", "custom_domain_status", "requested_custom_domain", "custom_domain_rejection_reason"
           ];
           keysToClear.forEach(key => {
