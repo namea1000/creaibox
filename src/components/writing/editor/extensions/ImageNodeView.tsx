@@ -28,6 +28,9 @@ export default function ImageNodeView(props: NodeViewProps) {
   const { node, updateAttributes, selected, editor, getPos, deleteNode } = props;
   const { src, alt, title, width, alignment, href, caption, description } = node.attrs;
 
+  // Strict check to ensure this is a NodeSelection (directly clicked image) and not a drag TextSelection
+  const isNodeSelected = selected && editor.state.selection instanceof NodeSelection;
+
   const [isReplaceModalOpen, setIsReplaceModalOpen] = useState(false);
   const [isEditingLink, setIsEditingLink] = useState(false);
   const [linkUrl, setLinkUrl] = useState(href || "");
@@ -54,6 +57,18 @@ export default function ImageNodeView(props: NodeViewProps) {
   const [isResizing, setIsResizing] = useState(false);
   const [resizeStartWidth, setResizeStartWidth] = useState(0);
   const [resizeStartMouseX, setResizeStartMouseX] = useState(0);
+
+  // Caption Debouncing Timer
+  const captionDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Clean up debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (captionDebounceRef.current) {
+        clearTimeout(captionDebounceRef.current);
+      }
+    };
+  }, []);
 
   // Close menus on click outside
   useEffect(() => {
@@ -404,6 +419,19 @@ export default function ImageNodeView(props: NodeViewProps) {
     updateAttributes({ alignment: align });
   };
 
+  // Caption input change with debouncing to prevent save-loss before blur
+  const handleCaptionChange = (val: string) => {
+    setCaptionText(val);
+
+    if (captionDebounceRef.current) {
+      clearTimeout(captionDebounceRef.current);
+    }
+
+    captionDebounceRef.current = setTimeout(() => {
+      updateAttributes({ caption: val.trim() });
+    }, 250); // Fast sync in 250ms to ensure DB save catch
+  };
+
   return (
     <NodeViewWrapper
       ref={containerRef}
@@ -421,7 +449,7 @@ export default function ImageNodeView(props: NodeViewProps) {
         {/* Selection blue outline */}
         <div
           className={`relative overflow-hidden transition-all duration-200 ${
-            selected && !isCropping
+            isNodeSelected && !isCropping
               ? "ring-4 ring-blue-500 rounded-none shadow-lg shadow-blue-500/10"
               : "rounded-none"
           }`}
@@ -475,7 +503,7 @@ export default function ImageNodeView(props: NodeViewProps) {
         </div>
 
         {/* Resize Handles (Only when selected and not cropping) */}
-        {selected && !isCropping && (
+        {isNodeSelected && !isCropping && (
           <>
             <div
               className="absolute top-1/2 left-0 z-20 flex h-8 w-2 -translate-y-1/2 cursor-ew-resize items-center justify-center rounded-r bg-blue-500 hover:bg-blue-400 active:bg-blue-600 transition"
@@ -489,7 +517,7 @@ export default function ImageNodeView(props: NodeViewProps) {
         )}
 
         {/* --- FLOATING TOOLBAR --- */}
-        {selected && (
+        {isNodeSelected && (
           <div 
             className={`absolute left-1/2 top-0 z-40 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-zinc-800 bg-[#0e111a]/95 px-3 py-1.5 shadow-2xl backdrop-blur-md transition-all whitespace-nowrap ${
               showAltInput || isEditingLink
@@ -783,13 +811,16 @@ export default function ImageNodeView(props: NodeViewProps) {
 
       {/* --- figcaption CAPTION EDITOR --- */}
       <div className="mt-2 w-full text-center">
-        {(selected || caption) ? (
+        {(isNodeSelected || caption) ? (
           <input
             type="text"
             value={captionText}
             placeholder="캡션 추가..."
-            onChange={(e) => setCaptionText(e.target.value)}
-            onBlur={() => updateAttributes({ caption: captionText.trim() })}
+            onChange={(e) => handleCaptionChange(e.target.value)}
+            onBlur={() => {
+              if (captionDebounceRef.current) clearTimeout(captionDebounceRef.current);
+              updateAttributes({ caption: captionText.trim() });
+            }}
             onMouseDown={(e) => e.stopPropagation()}
             onKeyDown={(e) => {
               e.stopPropagation();

@@ -58,6 +58,34 @@ export default function CreaiboxContentImagePanel({ data }: CreaiboxContentImage
   // 3. Shared Library States (CreAibox 공유 라이브러리)
   const [sharedAssets, setSharedAssets] = useState<ImageItem[]>([]);
   const [isSharedLoading, setIsSharedLoading] = useState(false);
+  const [sharedSearchQuery, setSharedSearchQuery] = useState("");
+  const [selectedSharedCategory, setSelectedSharedCategory] = useState("ALL");
+
+  // Filtered Shared Assets Memo
+  const filteredSharedAssets = useMemo(() => {
+    return sharedAssets.filter((img: any) => {
+      // Category filter matching themeCategory or tags list
+      if (selectedSharedCategory !== "ALL") {
+        const categoryLower = selectedSharedCategory.toLowerCase();
+        const hasCategoryMatch = 
+          img.themeCategory?.toLowerCase() === categoryLower ||
+          img.tags?.some((t: string) => t.toLowerCase() === categoryLower);
+        
+        if (!hasCategoryMatch) return false;
+      }
+
+      // Keyword query filter matching title or tags list
+      if (sharedSearchQuery.trim()) {
+        const queryLower = sharedSearchQuery.toLowerCase().trim();
+        const titleMatch = img.title?.toLowerCase().includes(queryLower);
+        const tagMatch = img.tags?.some((t: string) => t.toLowerCase().includes(queryLower));
+        
+        if (!titleMatch && !tagMatch) return false;
+      }
+
+      return true;
+    });
+  }, [sharedAssets, selectedSharedCategory, sharedSearchQuery]);
 
   // 4. Stock Image Search States
   const [stockSearchQuery, setStockSearchQuery] = useState("");
@@ -396,24 +424,85 @@ export default function CreaiboxContentImagePanel({ data }: CreaiboxContentImage
 
           {openSections.shared && (
             <div className="p-3 border-t border-zinc-800 space-y-3">
-              <p className="text-[11px] text-zinc-500">
+              <p className="text-[11px] text-zinc-500 leading-relaxed">
                 에디터를 위해 제공되는 고품질 무료 공유 일러스트 및 사진 에셋입니다.
               </p>
+
+              {/* 🔍 Search Input Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-zinc-500" />
+                <input
+                  type="text"
+                  value={sharedSearchQuery}
+                  onChange={(e) => setSharedSearchQuery(e.target.value)}
+                  placeholder="공유 이미지 검색 (태그, 제목...)"
+                  className="w-full pl-9 pr-4 py-2 bg-zinc-950/80 border border-zinc-800 rounded-xl text-[11px] text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:border-sky-500 focus:bg-zinc-950 transition outline-none"
+                />
+                {sharedSearchQuery && (
+                  <button
+                    onClick={() => setSharedSearchQuery("")}
+                    className="absolute right-3 top-2.5 text-zinc-500 hover:text-white transition"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+
+              {/* 🏷️ Horizontal Category Scroll Chips */}
+              <div className="flex gap-1.5 overflow-x-auto pb-1.5 pt-0.5 scrollbar-thin scrollbar-thumb-zinc-800 custom-scrollbar whitespace-nowrap">
+                {[
+                  { id: "ALL", label: "전체" },
+                  { id: "tech", label: "기술/IT" },
+                  { id: "business", label: "비즈니스" },
+                  { id: "art", label: "디자인" },
+                  { id: "food", label: "푸드/음식" },
+                  { id: "nature", label: "풍경/자연" },
+                  { id: "animal", label: "동물" },
+                  { id: "texture", label: "텍스처" },
+                  { id: "people", label: "인물" },
+                  { id: "fashion", label: "패션" },
+                  { id: "architecture", label: "건축" },
+                  { id: "education", label: "교육" },
+                  { id: "health", label: "의료" },
+                ].map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setSelectedSharedCategory(cat.id)}
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-black transition-all ${
+                      selectedSharedCategory === cat.id
+                        ? "bg-sky-500/10 text-sky-400 border border-sky-500/30"
+                        : "bg-zinc-950/50 hover:bg-zinc-900 text-zinc-400 border border-zinc-800/80"
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* 🖼️ Grid Image Gallery */}
               {isSharedLoading ? (
-                <div className="flex justify-center py-4 text-zinc-500">
+                <div className="flex justify-center py-8 text-zinc-500">
                   <Loader2 className="animate-spin" size={18} />
                 </div>
-              ) : sharedAssets.length === 0 ? (
-                <p className="text-[11px] text-zinc-600 text-center py-4">공유 이미지가 없습니다.</p>
+              ) : filteredSharedAssets.length === 0 ? (
+                <div className="text-center py-8 border border-dashed border-zinc-800/60 rounded-xl bg-zinc-950/30">
+                  <p className="text-[10px] text-zinc-500 font-bold">조건에 맞는 공유 이미지가 없습니다.</p>
+                  <p className="text-[9px] text-zinc-600 mt-1">다른 검색어 또는 카테고리를 선택해 보세요.</p>
+                </div>
               ) : (
                 <div className="grid grid-cols-3 gap-2 max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
-                  {sharedAssets.map((img) => (
+                  {filteredSharedAssets.map((img) => (
                     <div
                       key={img.id}
                       className="group relative aspect-square rounded-lg border border-zinc-800 bg-zinc-950 overflow-hidden cursor-pointer"
                       onClick={() => addToQueue(img)}
                     >
-                      <img src={(img.url.includes("googleusercontent.com") || img.url.includes("drive.google.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(img.url)}` : img.url} alt="shared" className="w-full h-full object-cover transition group-hover:scale-105" />
+                      <img
+                        src={(img.url.includes("googleusercontent.com") || img.url.includes("drive.google.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(img.url)}` : img.url}
+                        alt="shared"
+                        className="w-full h-full object-cover transition group-hover:scale-105"
+                      />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
                         <PlusCircle size={18} className="text-sky-300" />
                       </div>

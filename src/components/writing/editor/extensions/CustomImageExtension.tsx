@@ -54,6 +54,9 @@ export const CustomImage = Image.extend({
       alignment: {
         default: "center", // left, center, right, wide, full
         parseHTML: (element) => {
+          const directAlign = element.getAttribute("data-alignment");
+          if (directAlign) return directAlign;
+
           const wrapper = element.closest(".image-block");
           if (wrapper) {
             return wrapper.getAttribute("data-alignment") || "center";
@@ -70,6 +73,9 @@ export const CustomImage = Image.extend({
       href: {
         default: null,
         parseHTML: (element) => {
+          const directHref = element.getAttribute("data-href");
+          if (directHref) return directHref;
+
           const parentA = element.closest("a");
           if (parentA) {
             return parentA.getAttribute("href");
@@ -86,6 +92,11 @@ export const CustomImage = Image.extend({
       caption: {
         default: "",
         parseHTML: (element) => {
+          // Priority 1: Directly read from the img tag attributes (most reliable during DOM parsing)
+          const directCaption = element.getAttribute("data-caption");
+          if (directCaption !== null) return directCaption;
+
+          // Priority 2: Fallback to wrapper container or figcaption text content for legacy compatibility
           const wrapper = element.closest(".image-block");
           if (wrapper) {
             const figcaption = wrapper.querySelector(".image-caption");
@@ -97,6 +108,7 @@ export const CustomImage = Image.extend({
           return "";
         },
         renderHTML: (attributes) => {
+          if (!attributes.caption) return {};
           return {
             "data-caption": attributes.caption,
           };
@@ -105,6 +117,9 @@ export const CustomImage = Image.extend({
       description: {
         default: null,
         parseHTML: (element) => {
+          const directDesc = element.getAttribute("data-description");
+          if (directDesc) return directDesc;
+
           const wrapper = element.closest(".image-block") || element;
           return wrapper.getAttribute("data-description") || element.getAttribute("data-description");
         },
@@ -124,10 +139,14 @@ export const CustomImage = Image.extend({
     // Style for the img tag
     const imgStyle = `width: ${width || "100%"}; max-width: 100%; height: auto; display: block; margin: 0 auto;`;
     
-    // Core image element representation
+    // Core image element representation (Ensuring attributes are bound directly to the img tag for parsing persistence)
     const imgAttrs: Record<string, any> = {
       src,
       style: imgStyle,
+      "data-alignment": alignment || "center",
+      "data-href": href || "",
+      "data-caption": caption || "",
+      "data-description": description || "",
     };
     if (alt) imgAttrs.alt = alt;
     if (title) imgAttrs.title = title;

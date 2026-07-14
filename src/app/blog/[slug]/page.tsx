@@ -577,7 +577,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                       href={`/blog/${prevPost.slug}`}
                       className="group flex items-center gap-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow-md text-left"
                     >
-                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center">
+                      <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center">
                         {prevPost.thumbnailUrl ? (
                           <img
                             src={prevPost.thumbnailUrl}
@@ -609,7 +609,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                       href={`/blog/${nextPost.slug}`}
                       className="group flex items-center gap-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow-md text-left"
                     >
-                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center">
+                      <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center">
                         {nextPost.thumbnailUrl ? (
                           <img
                             src={nextPost.thumbnailUrl}

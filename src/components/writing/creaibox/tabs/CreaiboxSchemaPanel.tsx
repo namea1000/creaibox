@@ -169,7 +169,7 @@ ${data.content || ""}`;
     const nextContent = `${cleanContent}${newSchemaBlocks}\n`;
 
     updateLocalData({ content: nextContent });
-    setSchemaCode("");
+    // Keep schemaCode state intact even after applying to the content to allow manual code modifications
     alert(`[${currentType}] 스키마가 본문 하단에 성공적으로 가동되었습니다! 타 스키마들과 병합 완료되어 여러 개의 구조화 데이터가 동시 작동합니다.`);
   };
 
@@ -237,6 +237,64 @@ ${data.content || ""}`;
               }).join("\n\n");
             }
 
+            if (!description && type === "HowTo") {
+              const steps = parsed.step || parsed.steps || [];
+              if (Array.isArray(steps) && steps.length > 0) {
+                description = steps.map((s: any, idx: number) => {
+                  if (typeof s === "string") return `Step ${idx + 1}. ${s}`;
+                  const sName = s.name || "";
+                  const sText = s.text || "";
+                  return `[단계 ${idx + 1}] ${sName}${sText ? `: ${sText}` : ""}`;
+                }).join("\n");
+              } else if (typeof steps === "object" && steps !== null) {
+                const sName = (steps as any).name || "";
+                const sText = (steps as any).text || "";
+                description = `[단계 1] ${sName}${sText ? `: ${sText}` : ""}`;
+              }
+            }
+
+            if (!description && type === "Product") {
+              const brandName = typeof parsed.brand === "object" ? (parsed.brand?.name || "") : (parsed.brand || "");
+              const price = parsed.offers?.price || "";
+              const currency = parsed.offers?.priceCurrency || "";
+              const availability = parsed.offers?.availability === "https://schema.org/InStock" ? "재고 있음" : "";
+              const rating = parsed.aggregateRating?.ratingValue || "";
+              const count = parsed.aggregateRating?.reviewCount || parsed.aggregateRating?.ratingCount || "";
+              const lines = [];
+              if (brandName) lines.push(`브랜드: ${brandName}`);
+              if (price) lines.push(`가격: ${price} ${currency} ${availability ? `(${availability})` : ""}`);
+              if (rating) lines.push(`평점: ⭐ ${rating} / 5.0 ${count ? `(리뷰 ${count}개)` : ""}`);
+              if (parsed.description) lines.push(`제품 설명: ${parsed.description}`);
+              if (lines.length > 0) {
+                description = lines.join("\n");
+              }
+            }
+
+            if (!description && type === "LocalBusiness") {
+              const phone = parsed.telephone || "";
+              const addr = typeof parsed.address === "object"
+                ? `${parsed.address?.addressRegion || ""} ${parsed.address?.addressLocality || ""} ${parsed.address?.streetAddress || ""}`.trim()
+                : (parsed.address || "");
+              const openHours = parsed.openingHoursSpecification || parsed.openingHours || "";
+              let parsedHours = "";
+              if (Array.isArray(openHours)) {
+                parsedHours = openHours.map((oh: any) => {
+                  const days = Array.isArray(oh.dayOfWeek) ? oh.dayOfWeek.join(", ") : (oh.dayOfWeek || "");
+                  return `${days}: ${oh.opens || ""} ~ ${oh.closes || ""}`;
+                }).join(" / ");
+              } else if (typeof openHours === "string") {
+                parsedHours = openHours;
+              }
+              const lines = [];
+              if (addr) lines.push(`주소: ${addr}`);
+              if (phone) lines.push(`연락처: ${phone}`);
+              if (parsedHours) lines.push(`영업시간: ${parsedHours}`);
+              if (parsed.description) lines.push(`소개: ${parsed.description}`);
+              if (lines.length > 0) {
+                description = lines.join("\n");
+              }
+            }
+
             if (!description) {
               description = data?.metaDescription || "본문 내용 요약 혹은 메타 설명 정보가 없습니다.";
             }
@@ -264,6 +322,64 @@ ${data.content || ""}`;
             const a = faq.acceptedAnswer?.text || "";
             return `Q${idx + 1}. ${q}\nA${idx + 1}. ${a}`;
           }).join("\n\n");
+        }
+
+        if (!description && type === "HowTo") {
+          const steps = parsed.step || parsed.steps || [];
+          if (Array.isArray(steps) && steps.length > 0) {
+            description = steps.map((s: any, idx: number) => {
+              if (typeof s === "string") return `Step ${idx + 1}. ${s}`;
+              const sName = s.name || "";
+              const sText = s.text || "";
+              return `[단계 ${idx + 1}] ${sName}${sText ? `: ${sText}` : ""}`;
+            }).join("\n");
+          } else if (typeof steps === "object" && steps !== null) {
+            const sName = (steps as any).name || "";
+            const sText = (steps as any).text || "";
+            description = `[단계 1] ${sName}${sText ? `: ${sText}` : ""}`;
+          }
+        }
+
+        if (!description && type === "Product") {
+          const brandName = typeof parsed.brand === "object" ? (parsed.brand?.name || "") : (parsed.brand || "");
+          const price = parsed.offers?.price || "";
+          const currency = parsed.offers?.priceCurrency || "";
+          const availability = parsed.offers?.availability === "https://schema.org/InStock" ? "재고 있음" : "";
+          const rating = parsed.aggregateRating?.ratingValue || "";
+          const count = parsed.aggregateRating?.reviewCount || parsed.aggregateRating?.ratingCount || "";
+          const lines = [];
+          if (brandName) lines.push(`브랜드: ${brandName}`);
+          if (price) lines.push(`가격: ${price} ${currency} ${availability ? `(${availability})` : ""}`);
+          if (rating) lines.push(`평점: ⭐ ${rating} / 5.0 ${count ? `(리뷰 ${count}개)` : ""}`);
+          if (parsed.description) lines.push(`제품 설명: ${parsed.description}`);
+          if (lines.length > 0) {
+            description = lines.join("\n");
+          }
+        }
+
+        if (!description && type === "LocalBusiness") {
+          const phone = parsed.telephone || "";
+          const addr = typeof parsed.address === "object"
+            ? `${parsed.address?.addressRegion || ""} ${parsed.address?.addressLocality || ""} ${parsed.address?.streetAddress || ""}`.trim()
+            : (parsed.address || "");
+          const openHours = parsed.openingHoursSpecification || parsed.openingHours || "";
+          let parsedHours = "";
+          if (Array.isArray(openHours)) {
+            parsedHours = openHours.map((oh: any) => {
+              const days = Array.isArray(oh.dayOfWeek) ? oh.dayOfWeek.join(", ") : (oh.dayOfWeek || "");
+              return `${days}: ${oh.opens || ""} ~ ${oh.closes || ""}`;
+            }).join(" / ");
+          } else if (typeof openHours === "string") {
+            parsedHours = openHours;
+          }
+          const lines = [];
+          if (addr) lines.push(`주소: ${addr}`);
+          if (phone) lines.push(`연락처: ${phone}`);
+          if (parsedHours) lines.push(`영업시간: ${parsedHours}`);
+          if (parsed.description) lines.push(`소개: ${parsed.description}`);
+          if (lines.length > 0) {
+            description = lines.join("\n");
+          }
         }
 
         if (!description) {

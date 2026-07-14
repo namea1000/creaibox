@@ -262,8 +262,46 @@ ${content}`;
   const keywordOccurrences = countKeywordOccurrences(content, focusKeyword);
   const densityBase = Math.max(1, Math.ceil(compactContentLength / 100));
   const keywordDensity = keywordOccurrences / densityBase;
-  const hasExternalLink = /https?:\/\/(?!creaibox\.com|www\.creaibox\.com)/i.test(content);
-  const hasInternalLink = /https?:\/\/(?:www\.)?creaibox\.com|]\(\//i.test(content);
+  // Extract custom domain from canonicalUrl to dynamically check internal/external link matching
+  const currentDomain = (() => {
+    if (!canonicalUrl) return "";
+    try {
+      const parsed = new URL(canonicalUrl);
+      let host = parsed.hostname;
+      if (host.startsWith("www.")) {
+        host = host.slice(4);
+      }
+      return host.toLowerCase();
+    } catch (e) {
+      return "";
+    }
+  })();
+
+  // 1. Internal Link: Relative paths, creaibox.com, or the active blog domain (e.g., downhubs.com)
+  const hasInternalLink = (() => {
+    if (/]\(\//i.test(content)) return true;
+    if (/https?:\/\/(?:www\.)?creaibox\.com/i.test(content)) return true;
+    if (currentDomain) {
+      const escapedDomain = currentDomain.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const domainRegex = new RegExp(`https?:\\/\\/(?:www\\.)?${escapedDomain}`, "i");
+      if (domainRegex.test(content)) return true;
+    }
+    return false;
+  })();
+
+  // 2. External Link: Outbound URLs that are neither creaibox.com nor the active blog domain
+  const hasExternalLink = (() => {
+    if (!/https?:\/\//i.test(content)) return false;
+    let pattern = "(?!creaibox\\.com|www\\.creaibox\\.com";
+    if (currentDomain) {
+      const escapedDomain = currentDomain.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      pattern += `|${escapedDomain}|www\\.${escapedDomain}`;
+    }
+    pattern += ")";
+    const externalRegex = new RegExp(`https?:\\/\\/${pattern}`, "i");
+    return externalRegex.test(content);
+  })();
+
   const hasRichMedia = /!\[[^\]]*]\([^)]+\)|<img|<video/i.test(content);
   const isParagraphReadable = paragraphs.length > 0 && paragraphs.every((paragraph) => paragraph.length <= 450);
   const isContentReadable = compactContentLength >= 600 && isParagraphReadable;

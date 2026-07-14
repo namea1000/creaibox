@@ -533,7 +533,7 @@ export default function PostClientWrapper({
                       href={`/${prevPost.slug}`}
                       className={`group flex items-center gap-4 rounded-xl border p-4 transition-all hover:border-blue-400 hover:shadow-md ${cardBg}`}
                     >
-                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-zinc-950">
+                      <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-lg bg-zinc-950">
                         {prevPost.thumbnailUrl ? (
                           <img
                             src={prevPost.thumbnailUrl}
@@ -566,7 +566,7 @@ export default function PostClientWrapper({
                       href={`/${nextPost.slug}`}
                       className={`group flex items-center gap-4 rounded-xl border p-4 transition-all hover:border-blue-400 hover:shadow-md ${cardBg}`}
                     >
-                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-zinc-950">
+                      <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-lg bg-zinc-950">
                         {nextPost.thumbnailUrl ? (
                           <img
                             src={nextPost.thumbnailUrl}

@@ -874,29 +874,27 @@ export default function UniversalBlogEditor({
     const postExcerpt = (post.meta_description || "CreAibox 인사이트 포스팅").trim().slice(0, 120);
 
     const thumbnailHtml = imgUrl
-      ? `<div style="width: 140px; height: 90px; flex-shrink: 0; border-radius: 10px; overflow: hidden; background-color: #f4f4f5; display: flex; align-items: center; justify-content: center;">
+      ? `<span class="card-thumb" style="display: inline-block; width: 140px; height: 90px; border-radius: 8px; overflow: hidden; border: 1px solid #f4f4f5; margin: 0; vertical-align: middle;">
           <img src="${imgUrl}" alt="Thumbnail" style="width: 100%; height: 100%; object-fit: cover; margin: 0; display: block;" />
-        </div>`
-      : `<div style="width: 140px; height: 90px; flex-shrink: 0; border-radius: 10px; overflow: hidden; background-color: #f4f4f5; display: flex; align-items: center; justify-content: center; color: #a1a1aa;">
+        </span>`
+      : `<span class="card-thumb" style="display: inline-flex; align-items: center; justify-content: center; width: 140px; height: 90px; border-radius: 8px; background-color: #f4f4f5; border: 1px solid #e4e4e7; color: #a1a1aa; margin: 0; vertical-align: middle;">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block; margin: 0 auto;"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path><path d="M6 6h10"></path><path d="M6 10h10"></path></svg>
-        </div>`;
+        </span>`;
 
     const cardHtml = `
-      <a href="${postUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: inherit; display: block; margin: 20px 0;">
-        <div style="display: flex; gap: 16px; border: 1px solid #e4e4e7; background-color: #ffffff; border-radius: 16px; padding: 16px; cursor: pointer; text-align: left; transition: all 0.2s ease; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);">
-          ${thumbnailHtml}
-          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; justify-content: center;">
-            <div style="font-size: 15px; font-weight: 700; color: #18181b; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-              ${post.title}
-            </div>
-            <div style="font-size: 12px; color: #71717a; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-              ${postExcerpt}
-            </div>
-            <div style="display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; color: #2563eb; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-              <span style="background-color: #eff6ff; color: #1d4ed8; padding: 2px 6px; border-radius: 6px;">Insight</span>
-            </div>
-          </div>
-        </div>
+      <a href="${postUrl}" target="_blank" rel="noopener noreferrer" class="internal-link-card" style="display: flex; align-items: center; gap: 16px; border: 1px solid #e4e4e7; background-color: #ffffff; border-radius: 16px; padding: 16px; text-decoration: none; color: inherit; text-align: left; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); margin: 24px 0; width: 100%; box-sizing: border-box; cursor: pointer;">
+        ${thumbnailHtml}
+        <span class="card-body" style="flex: 1; min-width: 0; display: inline-flex; flex-direction: column; gap: 6px; justify-content: center; margin: 0; vertical-align: middle;">
+          <span class="card-title" style="font-size: 15px; font-weight: 800; color: #18181b; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+            ${post.title}
+          </span>
+          <span class="card-desc" style="font-size: 12px; color: #71717a; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+            ${postExcerpt}
+          </span>
+          <span class="card-tag" style="display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; color: #2563eb; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; margin-bottom: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+            <span style="background-color: #eff6ff; color: #1d4ed8; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: 800; display: inline-block;">Insight</span>
+          </span>
+        </span>
       </a>
       <p></p>
     `;

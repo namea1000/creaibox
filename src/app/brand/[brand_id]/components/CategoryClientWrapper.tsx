@@ -253,6 +253,7 @@ export default function CategoryClientWrapper({
                       setIsSearchOpen(false);
                       setSearchQuery("");
                     }} 
+                    aria-label="검색창 닫기"
                     className={`p-1.5 rounded-lg transition-colors ${theme === "dark" ? "text-zinc-400 hover:text-white" : "text-zinc-500 hover:text-black"}`}
                   >
                     <X size={16} />
@@ -261,6 +262,7 @@ export default function CategoryClientWrapper({
               ) : (
                 <button
                   onClick={() => setIsSearchOpen(true)}
+                  aria-label="검색창 열기"
                   className={`p-2 rounded-lg transition-colors ${theme === "dark" ? "text-zinc-400 hover:text-white" : "text-zinc-500 hover:text-black"}`}
                 >
                   <Search size={18} />
