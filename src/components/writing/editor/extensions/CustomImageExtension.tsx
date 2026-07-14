@@ -102,11 +102,24 @@ export const CustomImage = Image.extend({
           };
         },
       },
+      description: {
+        default: null,
+        parseHTML: (element) => {
+          const wrapper = element.closest(".image-block") || element;
+          return wrapper.getAttribute("data-description") || element.getAttribute("data-description");
+        },
+        renderHTML: (attributes) => {
+          if (!attributes.description) return {};
+          return {
+            "data-description": attributes.description,
+          };
+        },
+      },
     };
   },
 
   renderHTML({ HTMLAttributes }) {
-    const { src, alt, title, width, alignment, href, caption } = HTMLAttributes;
+    const { src, alt, title, width, alignment, href, caption, description } = HTMLAttributes;
 
     // Style for the img tag
     const imgStyle = `width: ${width || "100%"}; max-width: 100%; height: auto; display: block; margin: 0 auto;`;
@@ -140,6 +153,7 @@ export const CustomImage = Image.extend({
       "data-alignment": alignment || "center",
       "data-href": href || "",
       "data-caption": caption || "",
+      "data-description": description || "",
       style: `max-width: ${width || "100%"};`,
     };
 

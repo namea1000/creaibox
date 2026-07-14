@@ -129,6 +129,12 @@ function isHighDemandError(error: unknown) {
 }
 
 function getFriendlyAiErrorMessage(error: unknown) {
+  const errMsg = getErrorMessage(error).toLowerCase();
+  
+  if (errMsg.includes("prepayment credits") || errMsg.includes("depleted") || errMsg.includes("billing")) {
+    return "Gemini API 키의 선결제 크레딧(Prepayment Credits)이 소진되었습니다. Google AI Studio(https://aistudio.google.com/)에 방문하셔서 결제 한도 및 잔액을 확인하고 충전해 주세요.";
+  }
+  
   if (isHighDemandError(error)) {
     return "AI 서버가 현재 혼잡합니다. 자동 재시도 후에도 실패했습니다. 잠시 후 다시 시도해주세요.";
   }

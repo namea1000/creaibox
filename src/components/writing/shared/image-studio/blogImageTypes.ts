@@ -11,6 +11,11 @@ export interface GeneratedImage {
   sourceId?: string;
   imageRole?: string;
   isPrimary?: boolean;
+  alt_text?: string | null;
+  title?: string | null;
+  description?: string | null;
+  caption?: string | null;
+  created_at?: string | null;
 }
 
 export interface BlogImagePost {

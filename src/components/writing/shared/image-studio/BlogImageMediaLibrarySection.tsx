@@ -55,6 +55,8 @@ export default function BlogImageMediaLibrarySection({
   const [openSaveMenuId, setOpenSaveMenuId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // (Sidebar image metadata editing state is removed to unify editing into the tiptap canvas wrapper)
+
   const handleSetPrimary = async (image: GeneratedImage) => {
     if (!sourceId) return;
 
@@ -161,7 +163,7 @@ export default function BlogImageMediaLibrarySection({
       </div>
 
       <div
-        className="flex-1 overflow-y-auto p-5 custom-scrollbar"
+        className="flex-1 overflow-y-auto py-5 px-0 sm:px-5 custom-scrollbar"
         onDragEnter={(event) => {
           event.preventDefault();
           setIsDraggingUpload(true);
@@ -198,11 +200,17 @@ export default function BlogImageMediaLibrarySection({
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,320px))] gap-5">
+          <div 
+            className={`grid gap-5 w-full ${
+              mode === "thumbnail"
+                ? "grid-cols-1"
+                : "grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(240px,320px))]"
+            }`}
+          >
             {gallery.map((img) => (
               <div
                 key={img.id}
-                className="group relative flex flex-col space-y-3 overflow-visible border border-zinc-800/80 bg-zinc-950 p-3 text-[13px]"
+                className="group relative flex flex-col space-y-3 overflow-visible border border-zinc-800/80 bg-zinc-950 p-3 text-[13px] w-full"
               >
                 <div className="relative aspect-[3/2] w-full overflow-hidden border border-zinc-900 bg-zinc-900">
                   <img
@@ -226,15 +234,9 @@ export default function BlogImageMediaLibrarySection({
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <p className="text-[13px] font-bold leading-normal text-zinc-500">
-                    {img.style}
-                    {img.styleDetail ? ` / ${img.styleDetail}` : ""}
-                  </p>
-                  <p className="line-clamp-2 text-[13px] leading-normal text-zinc-400">
-                    <span className="font-bold text-zinc-500">Prompt:</span> {img.prompt}
-                  </p>
-                </div>
+                {/* (Sidebar manual/prompt texts are removed per user request) */}
+
+                {/* (Sidebar details configuration is removed per user request to avoid overlap with canvas metadata editor) */}
 
                 <div className="grid grid-cols-4 gap-2">
                   {mode === "content" ? (

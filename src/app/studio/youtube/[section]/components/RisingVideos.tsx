@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Flame, Loader2, Play, Eye, ThumbsUp, Calendar, ArrowRight, Copy, Check, ChevronLeft, ChevronRight, BarChart2 } from "lucide-react";
+import { Flame, Loader2, Play, Eye, ThumbsUp, Calendar, ArrowRight, Copy, Check, ChevronLeft, ChevronRight, BarChart2, ExternalLink } from "lucide-react";
 import VideoAnalysisModal from "./VideoAnalysisModal";
 
 // ISO 8601 duration parser e.g., PT1M15S -> {formatted: "1:15", seconds: 75, isShorts: false}
@@ -552,6 +552,17 @@ export default function RisingVideos() {
                             </>
                           )}
                         </button>
+                      )}
+                      {video.snippet?.channelId && (
+                        <a
+                          href={`https://youtube.com/channel/${video.snippet.channelId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 hover:text-white transition"
+                        >
+                          <ExternalLink size={11} />
+                          <span>채널 바로가기</span>
+                        </a>
                       )}
                       {videoId && typeof videoId === "string" && (
                         <a

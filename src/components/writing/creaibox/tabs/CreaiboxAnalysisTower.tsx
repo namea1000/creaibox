@@ -314,7 +314,19 @@ ${content}`;
     },
     {
       label: "포커스 키워드를 대체 텍스트로 사용해서 이미지를 추가합니다.",
-      passed: Boolean(focusKeyword) && new RegExp(`!\\[[^\\]]*${escapeRegExp(focusKeyword)}[^\\]]*\\]`, "i").test(content),
+      passed: (() => {
+        if (!focusKeyword) return false;
+        // HTML img 태그의 alt 속성을 검출
+        const imgAltRegex = /<img[^>]+alt=["']([^"']*)["']/gi;
+        let match;
+        while ((match = imgAltRegex.exec(content)) !== null) {
+          const altText = match[1] || "";
+          if (includesKeyword(altText, focusKeyword)) {
+            return true;
+          }
+        }
+        return false;
+      })(),
     },
     {
       label: `키워드 밀도는 ${(keywordDensity * 100).toFixed(1)}%입니다. 1% 근처가 목표치입니다.`,
@@ -341,7 +353,18 @@ ${content}`;
   const titleReadabilityItems: SeoItem[] = [
     {
       label: "SEO 제목의 앞 부분에서 포커스 키워드를 사용합니다.",
-      passed: Boolean(focusKeyword) && normalizeText(title).startsWith(normalizeText(focusKeyword)),
+      passed: (() => {
+        if (!focusKeyword) return false;
+        const normTitle = normalizeText(title);
+        const normKeyword = normalizeText(focusKeyword);
+        const index = normTitle.indexOf(normKeyword);
+        if (index === -1) return false;
+        
+        // 키워드 앞의 문자열에서 괄호, 따옴표, 공백 등 특수기호를 제외한 순수 글자 수를 계산
+        const prefix = normTitle.substring(0, index);
+        const cleanPrefix = prefix.replace(/[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣]/g, "");
+        return cleanPrefix.length <= 5;
+      })(),
     },
     {
       label: "SEO 제목에 숫자를 사용하고 있습니다.",

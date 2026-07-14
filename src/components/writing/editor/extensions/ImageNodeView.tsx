@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { NodeViewWrapper, NodeViewProps } from "@tiptap/react";
+import { NodeSelection } from "@tiptap/pm/state";
 import {
   AlignLeft,
   AlignCenter,
@@ -21,10 +22,11 @@ import {
   Heading
 } from "lucide-react";
 import MediaLibrarySelectModal from "@/components/writing/shared/image-studio/MediaLibrarySelectModal";
+import { createClient } from "@/utils/supabase/client";
 
 export default function ImageNodeView(props: NodeViewProps) {
-  const { node, updateAttributes, selected, editor, getPos } = props;
-  const { src, alt, title, width, alignment, href, caption } = node.attrs;
+  const { node, updateAttributes, selected, editor, getPos, deleteNode } = props;
+  const { src, alt, title, width, alignment, href, caption, description } = node.attrs;
 
   const [isReplaceModalOpen, setIsReplaceModalOpen] = useState(false);
   const [isEditingLink, setIsEditingLink] = useState(false);
@@ -32,6 +34,9 @@ export default function ImageNodeView(props: NodeViewProps) {
   const [isSettingFeatured, setIsSettingFeatured] = useState(false);
   const [isEditingAlt, setIsEditingAlt] = useState(false);
   const [altText, setAltText] = useState(alt || "");
+  const [titleText, setTitleText] = useState(title || "");
+  const [descriptionText, setDescriptionText] = useState(description || "");
+  const [captionText, setCaptionText] = useState(caption || "");
   const [showAltInput, setShowAltInput] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
@@ -70,6 +75,21 @@ export default function ImageNodeView(props: NodeViewProps) {
   useEffect(() => {
     setAltText(alt || "");
   }, [alt]);
+
+  // Update titleText if title changes
+  useEffect(() => {
+    setTitleText(title || "");
+  }, [title]);
+
+  // Update descriptionText if description changes
+  useEffect(() => {
+    setDescriptionText(description || "");
+  }, [description]);
+
+  // Update captionText if caption changes
+  useEffect(() => {
+    setCaptionText(caption || "");
+  }, [caption]);
 
   // Initial crop box setup when crop mode is entered
   useEffect(() => {
@@ -124,12 +144,7 @@ export default function ImageNodeView(props: NodeViewProps) {
     }
   }, [editor, getPos, node]);
 
-  // Delete node helper
-  const deleteNode = useCallback(() => {
-    const pos = getPos();
-    if (typeof pos !== "number") return;
-    editor.chain().focus().deleteRange({ from: pos, to: pos + node.nodeSize }).run();
-  }, [editor, getPos, node.nodeSize]);
+  // (Using props.deleteNode directly from Tiptap ReactNodeViewRenderer to avoid React-ProseMirror offset mismatch bugs)
 
   const handleSetAsFeatured = useCallback(async () => {
     const setAsFeatured = props.extension.options.setAsFeatured;
@@ -337,11 +352,51 @@ export default function ImageNodeView(props: NodeViewProps) {
     setIsEditingLink(false);
   };
 
-  const handleAltSubmit = (e: React.FormEvent) => {
+  const handleAltSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateAttributes({ alt: altText.trim() || null });
+    
+    // 1. Tiptap 에디터 속성 업데이트 (alt, title, description)
+    updateAttributes({
+      alt: altText.trim() || null,
+      title: titleText.trim() || null,
+      description: descriptionText.trim() || null,
+    });
+    
     setIsEditingAlt(false);
     setShowAltInput(false);
+
+    // 2. 데이터베이스(Supabase) 실시간 싱크 갱신 (src 주소 기반 매칭)
+    if (src) {
+      try {
+        const supabaseClient = createClient();
+        
+        // 2-1. generated_images 테이블 업데이트 시도
+        const { error: genErr } = await supabaseClient
+          .from("generated_images")
+          .update({
+            alt_text: altText.trim() || null,
+            title: titleText.trim() || null,
+            description: descriptionText.trim() || null,
+          })
+          .eq("image_url", src);
+
+        if (genErr) {
+          // 2-2. 실패하거나 해당 URL이 free_assets일 경우 free_assets 테이블도 시도
+          const { error: freeErr } = await supabaseClient
+            .from("free_assets")
+            .update({
+              title: titleText.trim() || null,
+            })
+            .eq("url", src);
+          
+          if (freeErr) {
+            console.error("Failed to sync updated metadata to free_assets:", freeErr);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to sync metadata to DB:", err);
+      }
+    }
   };
 
   // Alignments handler
@@ -352,6 +407,7 @@ export default function ImageNodeView(props: NodeViewProps) {
   return (
     <NodeViewWrapper
       ref={containerRef}
+      contentEditable={false}
       className={`image-node-wrapper group relative my-6 inline-block w-full text-center transition-all ${
         alignment === "left" ? "float-left mr-6 max-w-[50%]" : ""
       } ${alignment === "right" ? "float-right ml-6 max-w-[50%]" : ""} ${
@@ -376,6 +432,7 @@ export default function ImageNodeView(props: NodeViewProps) {
             src={src}
             alt={alt || ""}
             title={title || ""}
+            onDragStart={(e) => e.preventDefault()}
             className="mx-auto block h-auto max-w-full select-none rounded-none border border-zinc-200 dark:border-zinc-800 shadow-sm"
             style={{ width: "100%" }}
           />
@@ -433,7 +490,13 @@ export default function ImageNodeView(props: NodeViewProps) {
 
         {/* --- FLOATING TOOLBAR --- */}
         {selected && (
-          <div className="absolute left-1/2 top-0 z-30 flex -translate-x-1/2 -translate-y-[115%] items-center gap-1 rounded-xl border border-zinc-800 bg-[#0e111a]/95 px-3 py-1.5 shadow-2xl backdrop-blur-md">
+          <div 
+            className={`absolute left-1/2 top-0 z-40 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-zinc-800 bg-[#0e111a]/95 px-3 py-1.5 shadow-2xl backdrop-blur-md transition-all whitespace-nowrap ${
+              showAltInput || isEditingLink
+                ? "translate-y-[15px]" 
+                : "-translate-y-[115%]"
+            }`}
+          >
             
             {/* Standard Options Mode */}
             {!isCropping && !isEditingLink && !showAltInput ? (
@@ -542,7 +605,7 @@ export default function ImageNodeView(props: NodeViewProps) {
                     <button
                       onClick={handleSetAsFeatured}
                       disabled={isSettingFeatured}
-                      className="flex h-8 items-center justify-center rounded-lg px-2.5 text-xs font-bold text-blue-400 hover:bg-zinc-800/80 hover:text-blue-300 disabled:opacity-50 transition"
+                      className="flex h-8 items-center justify-center rounded-lg px-2.5 text-xs font-bold text-blue-400 hover:bg-zinc-800/80 hover:text-blue-300 disabled:opacity-50 transition whitespace-nowrap flex-shrink-0"
                       title="이 이미지를 대표 이미지(썸네일)로 지정"
                     >
                       {isSettingFeatured ? "지정 중..." : "대표 이미지 지정"}
@@ -550,6 +613,20 @@ export default function ImageNodeView(props: NodeViewProps) {
                     <div className="h-4 w-[1px] bg-zinc-800 mx-1" />
                   </>
                 )}
+
+                {/* 대체 텍스트 수정 바로 가기 단추 꺼내기 */}
+                <button
+                  onClick={() => {
+                    setIsEditingAlt(true);
+                    setShowAltInput(true);
+                  }}
+                  className="flex h-8 items-center justify-center gap-1 rounded-lg px-2.5 text-xs font-bold text-zinc-300 hover:bg-zinc-800/80 hover:text-white transition cursor-pointer whitespace-nowrap flex-shrink-0"
+                  title="대체 텍스트 / 제목 / 설명 수정"
+                >
+                  <Type size={13} className="text-zinc-500" />
+                  대체 텍스트 수정
+                </button>
+                <div className="h-4 w-[1px] bg-zinc-800 mx-1" />
 
                 {/* Three Dots Menu trigger */}
                 <div className="relative" ref={moreMenuRef}>
@@ -565,17 +642,6 @@ export default function ImageNodeView(props: NodeViewProps) {
                   {/* Dropdown Options */}
                   {showMoreMenu && (
                     <div className="absolute right-0 top-[110%] z-50 flex w-40 flex-col rounded-xl border border-zinc-800 bg-[#0e111a] p-1 shadow-2xl">
-                      <button
-                        onClick={() => {
-                          setShowMoreMenu(false);
-                          setIsEditingAlt(true);
-                          setShowAltInput(true);
-                        }}
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-zinc-300 hover:bg-zinc-900 hover:text-white transition"
-                      >
-                        <Type size={13} className="text-zinc-500" />
-                        대체 텍스트 수정
-                      </button>
                       <button
                         onClick={() => {
                           setShowMoreMenu(false);
@@ -616,32 +682,63 @@ export default function ImageNodeView(props: NodeViewProps) {
                 </button>
               </form>
             ) : showAltInput ? (
-              /* --- Alt text Edit Input Mode --- */
-              <form onSubmit={handleAltSubmit} className="flex items-center gap-1.5 p-0.5">
-                <input
-                  type="text"
-                  placeholder="대체 텍스트(alt) 입력..."
-                  value={altText}
-                  onChange={(e) => setAltText(e.target.value)}
-                  className="w-48 rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1 text-xs text-white outline-none focus:border-blue-500/50"
-                  autoFocus
-                />
-                <button
-                  type="submit"
-                  className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-600 text-white hover:bg-blue-500"
-                >
-                  <Check size={13} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsEditingAlt(false);
-                    setShowAltInput(false);
-                  }}
-                  className="flex h-7 w-7 items-center justify-center rounded-md bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white"
-                >
-                  <X size={13} />
-                </button>
+              /* --- Alt text / Title / Description Edit Mode --- */
+              <form onSubmit={handleAltSubmit} className="flex flex-col gap-3.5 p-4 w-[340px] max-w-[calc(100vw-32px)] bg-zinc-900 border-2 border-zinc-700 rounded-xl shadow-[0_25px_60px_rgba(0,0,0,0.8)] ring-2 ring-blue-500/10 box-border text-left">
+                <div className="flex items-center justify-between border-b border-zinc-700/60 pb-2.5 mb-1.5 box-border">
+                  <span className="text-[11px] font-black text-zinc-300">이미지 메타 정보 수정</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="submit"
+                      className="flex h-6.5 px-3 items-center justify-center rounded bg-blue-600 text-[10px] font-black text-white hover:bg-blue-500 transition cursor-pointer whitespace-nowrap"
+                    >
+                      저장
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditingAlt(false);
+                        setShowAltInput(false);
+                      }}
+                      className="flex h-6.5 px-3 items-center justify-center rounded bg-zinc-800 text-[10px] font-black text-zinc-400 hover:bg-zinc-700 hover:text-white transition cursor-pointer"
+                    >
+                      취소
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-start gap-1 w-full box-border">
+                  <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-wide text-left">대체 텍스트 (Alt Text)</label>
+                  <input
+                    type="text"
+                    placeholder="대체 텍스트(alt) 입력..."
+                    value={altText}
+                    onChange={(e) => setAltText(e.target.value)}
+                    className="w-full box-border rounded border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-xs text-white outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="flex flex-col items-start gap-1 w-full box-border">
+                  <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-wide text-left">제목 (Title)</label>
+                  <input
+                    type="text"
+                    placeholder="이미지 제목(title) 입력..."
+                    value={titleText}
+                    onChange={(e) => setTitleText(e.target.value)}
+                    className="w-full box-border rounded border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-xs text-white outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
+                  />
+                </div>
+
+                <div className="flex flex-col items-start gap-1 w-full box-border">
+                  <label className="block text-[9px] font-black text-zinc-400 uppercase tracking-wide text-left">설명 (Description)</label>
+                  <textarea
+                    placeholder="설명(description) 입력..."
+                    value={descriptionText}
+                    onChange={(e) => setDescriptionText(e.target.value)}
+                    rows={2}
+                    className="w-full box-border resize-none rounded border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-xs text-white outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
+                  />
+                </div>
               </form>
             ) : isCropping ? (
               /* --- Crop Toolbar Mode --- */
@@ -689,10 +786,18 @@ export default function ImageNodeView(props: NodeViewProps) {
         {(selected || caption) ? (
           <input
             type="text"
-            value={caption}
+            value={captionText}
             placeholder="캡션 추가..."
-            onChange={(e) => updateAttributes({ caption: e.target.value })}
-            className="mx-auto block w-full max-w-[80%] text-center text-xs text-zinc-950 font-bold bg-transparent border-none outline-none focus:text-black transition-colors placeholder:text-zinc-500"
+            onChange={(e) => setCaptionText(e.target.value)}
+            onBlur={() => updateAttributes({ caption: captionText.trim() })}
+            onMouseDown={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === "Enter") {
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
+            className="mx-auto block w-full max-w-[80%] text-center text-xs text-zinc-950 font-bold bg-transparent border-none outline-none focus:text-black transition-colors placeholder:text-zinc-500 cursor-text"
           />
         ) : null}
       </div>

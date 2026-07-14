@@ -612,6 +612,7 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
         nextPost={nextPost}
         bestPosts={brandPosts.slice(0, 5)}
         initialTheme={initialTheme}
+        customSchemas={customSchemas}
       />
     </>
   );

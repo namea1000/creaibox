@@ -40,6 +40,7 @@ interface PostClientWrapperProps {
   nextPost?: any;
   bestPosts: any[];
   initialTheme?: "light" | "dark";
+  customSchemas?: string[];
 }
 
 function looksLikeHtml(content: string) {
@@ -142,7 +143,8 @@ export default function PostClientWrapper({
   prevPost,
   nextPost,
   bestPosts,
-  initialTheme
+  initialTheme,
+  customSchemas = []
 }: PostClientWrapperProps) {
   // 1. Theme State (default to initialTheme or light)
   const [theme, setTheme] = useState<"light" | "dark">(initialTheme || "light");
@@ -479,6 +481,47 @@ export default function PostClientWrapper({
                           #{tag}
                         </span>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 🌟 SEO 구조화 데이터(JSON-LD) 삽입 현황 확인 카드 */}
+                {customSchemas && customSchemas.length > 0 && (
+                  <div className={`w-full mt-10 border-t pt-8 text-left ${theme === "dark" ? "border-zinc-800" : "border-zinc-200"}`}>
+                    <h2 className={`text-sm font-black uppercase tracking-[0.24em] flex items-center gap-1.5 ${theme === "dark" ? "text-zinc-400" : "text-zinc-500"}`}>
+                      <Star size={14} className="text-violet-500 fill-violet-500" />
+                      검색엔진 Rich Schema info
+                    </h2>
+                    <div className={`mt-4 p-5 rounded-2xl border ${
+                      theme === "dark"
+                        ? "border-violet-500/20 bg-violet-950/10 text-violet-300"
+                        : "border-violet-100 bg-violet-50/20 text-zinc-650"
+                    }`}>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-black uppercase bg-violet-600 text-white px-2 py-0.5 rounded tracking-wide">
+                          JSON-LD ACTIVE
+                        </span>
+                        {customSchemas.map((schemaStr, idx) => {
+                          try {
+                            const parsed = JSON.parse(schemaStr);
+                            const type = parsed["@type"] || "Schema";
+                            return (
+                              <span key={`badge-${idx}`} className={`text-[10px] font-black border px-2 py-0.5 rounded uppercase ${
+                                theme === "dark"
+                                  ? "border-violet-800 bg-zinc-900 text-violet-300"
+                                  : "border-violet-300 bg-white text-violet-700"
+                              }`}>
+                                {type}
+                              </span>
+                            );
+                          } catch {
+                            return null;
+                          }
+                        })}
+                      </div>
+                      <p className={`text-xs font-medium leading-relaxed mt-3 ${theme === "dark" ? "text-zinc-400" : "text-zinc-650"}`}>
+                        💡 이 글의 HTML 헤더 소스코드에 구조화 스키마 메타데이터가 정상적으로 주입되어 있습니다.
+                      </p>
                     </div>
                   </div>
                 )}
