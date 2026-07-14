@@ -1628,9 +1628,9 @@ export default function CreaiboxManuscriptDetailPage() {
 응답 JSON 구조:
 {
   "focusKeyword": "글의 핵심이 되는 타겟 키워드 1개 (예: '골프 스윙 팁')",
-  "metaDescription": "검색 결과 페이지(SERP)에 표시될 매력적이고 요약된 설명문 (70자 이상 120자 이하)",
+  "metaDescription": "검색 결과 페이지(SERP)에 표시될 매력적이고 요약된 설명문 (공백 포함 반드시 최소 150자 이상, 최대 160자 이하로 구체적이고 완성도 높게 작성)",
   "seoTags": ["글의 맥락을 보여주는 핵심 키워드 태그 3~5개 배열"],
-  "slug": "URL 경로로 사용할 영어 소문자 및 하이픈(-) 조합의 슬러그 (예: 'golf-swing-basic-guide')"
+  "slug": "URL 경로로 사용할 영어 소문자 및 하이픈(-) 조합 of 슬러그 (예: 'golf-swing-basic-guide')"
 }
 
 작성된 원고 정보:

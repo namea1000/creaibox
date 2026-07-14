@@ -24,8 +24,8 @@ const CustomTableCell = TableCell.extend({
         parseHTML: (element) => element.style.backgroundColor || null,
       },
       verticalAlign: {
-        default: null,
-        parseHTML: (element) => element.style.verticalAlign || null,
+        default: "middle",
+        parseHTML: (element) => element.style.verticalAlign || "middle",
       },
       textAlign: {
         default: null,
@@ -38,7 +38,7 @@ const CustomTableCell = TableCell.extend({
     const attrs = node.attrs;
     const styles: string[] = [];
     if (attrs.backgroundColor) styles.push(`background-color: ${attrs.backgroundColor}`);
-    if (attrs.verticalAlign) styles.push(`vertical-align: ${attrs.verticalAlign}`);
+    styles.push(`vertical-align: ${attrs.verticalAlign || 'middle'} !important`);
     if (attrs.textAlign) styles.push(`text-align: ${attrs.textAlign}`);
 
     const styleString = styles.length > 0 ? styles.join("; ") : undefined;
@@ -59,8 +59,8 @@ const CustomTableHeader = TableHeader.extend({
         parseHTML: (element) => element.style.backgroundColor || null,
       },
       verticalAlign: {
-        default: null,
-        parseHTML: (element) => element.style.verticalAlign || null,
+        default: "middle",
+        parseHTML: (element) => element.style.verticalAlign || "middle",
       },
       textAlign: {
         default: null,
@@ -73,7 +73,7 @@ const CustomTableHeader = TableHeader.extend({
     const attrs = node.attrs;
     const styles: string[] = [];
     if (attrs.backgroundColor) styles.push(`background-color: ${attrs.backgroundColor}`);
-    if (attrs.verticalAlign) styles.push(`vertical-align: ${attrs.verticalAlign}`);
+    styles.push(`vertical-align: ${attrs.verticalAlign || 'middle'} !important`);
     if (attrs.textAlign) styles.push(`text-align: ${attrs.textAlign}`);
 
     const styleString = styles.length > 0 ? styles.join("; ") : undefined;
@@ -2406,7 +2406,7 @@ export default function UniversalBlogEditor({
       onMouseDown={onMouseDown}
       disabled={disabled || !editor}
       title={title}
-      className={`flex items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-bold transition-all disabled:cursor-not-allowed disabled:opacity-40 ${active ? "bg-blue-500/15 text-blue-300" : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
+      className={`flex shrink-0 items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-bold transition-all disabled:cursor-not-allowed disabled:opacity-40 ${active ? "bg-blue-500/15 text-blue-300" : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
         } ${className}`}
     >
       {children}
@@ -2481,7 +2481,7 @@ export default function UniversalBlogEditor({
       <div className="shrink-0 border-b border-zinc-800 bg-[#0b0d12] flex flex-col">
         
         {/* [1열]: 텍스트 기본 서식 및 폰트 */}
-        <div className="flex flex-wrap items-center gap-1 px-4 py-2 border-b border-zinc-900/60">
+        <div className="flex flex-nowrap items-center gap-1.5 px-4 py-2 border-b border-zinc-900/60 overflow-x-auto scrollbar-none select-none shrink-0">
           <ToolbarButton
             onClick={() => editor?.chain().focus().undo().run()}
             disabled={!editor?.can().undo()}
@@ -2529,7 +2529,7 @@ export default function UniversalBlogEditor({
               }
             }}
             value={editor?.getAttributes("textStyle").fontFamily || "default"}
-            className="h-9 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold text-center"
+            className="h-9 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold text-center shrink-0"
             title="글꼴 설정"
           >
             <option value="default">기본 글꼴</option>
@@ -2613,7 +2613,7 @@ export default function UniversalBlogEditor({
               }
             }}
             value={editor?.getAttributes("fontSize").size || "default"}
-            className="h-9 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold text-center"
+            className="h-9 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold text-center shrink-0"
             title="글자 크기 설정"
           >
             <option value="default">글자 크기</option>
@@ -2625,7 +2625,7 @@ export default function UniversalBlogEditor({
           <div className="mx-1.5 h-4 w-px bg-zinc-800" />
 
           {/* 글자색 */}
-          <div className="flex items-center gap-1" title="글자 색상">
+          <div className="flex shrink-0 items-center gap-1" title="글자 색상">
             <span className="text-[10px] font-black text-zinc-500 mr-0.5">글자색</span>
             <input
               type="color"
@@ -2643,7 +2643,7 @@ export default function UniversalBlogEditor({
           </div>
 
           {/* 형광펜 색상 */}
-          <div className="flex items-center gap-1" title="글자 형광펜(배경색)">
+          <div className="flex shrink-0 items-center gap-1" title="글자 형광펜(배경색)">
             <span className="text-[10px] font-black text-zinc-500 mr-0.5">형광펜</span>
             <input
               type="color"
@@ -2756,7 +2756,7 @@ export default function UniversalBlogEditor({
         </div>
 
         {/* [2열]: 레이아웃 삽입, 유틸리티, 설정 모달들 */}
-        <div className="flex flex-wrap items-center gap-1 px-4 py-2 border-b border-zinc-800 bg-zinc-950/20">
+        <div className="flex flex-nowrap items-center gap-1.5 px-4 py-2 border-b border-zinc-800 bg-zinc-950/20 overflow-x-auto scrollbar-none select-none shrink-0">
           
           {/* 문자표 단추 */}
           <ToolbarButton onClick={() => setIsSymbolModalOpen(true)} title="문자표 (특수문자 삽입)">
@@ -2771,7 +2771,7 @@ export default function UniversalBlogEditor({
           </ToolbarButton>
 
           {/* 대소문자 변환 드롭다운 */}
-          <div className="relative">
+          <div className="relative shrink-0">
             <select
               onChange={(e) => {
                 const val = e.target.value;
@@ -2830,8 +2830,8 @@ export default function UniversalBlogEditor({
         </div>
 
         {/* [3열]: AI 자동 수정보완 메뉴 (별도 라인 배치) */}
-        <div className="flex flex-wrap items-center gap-2 px-4 py-2 bg-violet-950/10">
-          <div className="flex items-center gap-1 text-[11px] font-black text-violet-400 mr-2 select-none uppercase tracking-wider">
+        <div className="flex flex-nowrap items-center gap-2.5 px-4 py-2 bg-violet-950/10 overflow-x-auto scrollbar-none select-none shrink-0">
+          <div className="flex shrink-0 items-center gap-1 text-[11px] font-black text-violet-400 mr-2 select-none uppercase tracking-wider">
             <Wand2 size={13} className="animate-pulse" />
             <span>AI 자동 수정보완</span>
           </div>
@@ -3636,7 +3636,7 @@ export default function UniversalBlogEditor({
           border: 1px solid #191e23;
           min-width: 90px;
           padding: 0.65rem 0.75rem;
-          vertical-align: top;
+          vertical-align: middle;
           font-size: 0.9rem;
           line-height: 1.7;
         }

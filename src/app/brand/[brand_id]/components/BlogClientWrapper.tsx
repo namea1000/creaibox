@@ -436,7 +436,7 @@ export default function BlogClientWrapper({
                         </div>
                         
                         {/* 하단: 날짜 | 카테고리 (가운데) | 글 더보기 -> (우측) */}
-                        <div className={`mt-5 pt-4 border-t flex items-center justify-between text-xs font-bold ${
+                        <div className={`mt-3.5 pt-3 border-t flex items-center justify-between text-xs font-bold ${
                           theme === "dark" ? "border-zinc-800/80 text-zinc-500" : "border-zinc-100 text-zinc-500"
                         }`}>
                           {/* 날짜 */}
@@ -446,9 +446,9 @@ export default function BlogClientWrapper({
                           </div>
 
                           {/* 가운데: 카테고리 */}
-                          <div className="flex-1 text-center px-2 min-w-0">
+                          <div className="flex-1 flex justify-center items-center px-2 min-w-0">
                             {postCategory && (
-                              <span className={`inline-block truncate max-w-full rounded px-2 py-0.5 border ${
+                              <span className={`inline-flex items-center justify-center truncate max-w-full rounded px-2 py-0.5 text-[10px] font-black border leading-none ${
                                 theme === "dark"
                                   ? "text-zinc-400 border-zinc-800 bg-[#1e222b]/50"
                                   : "text-zinc-600 border-zinc-200 bg-zinc-50"
