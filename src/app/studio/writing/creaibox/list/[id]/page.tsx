@@ -1625,10 +1625,14 @@ export default function CreaiboxManuscriptDetailPage() {
       const prompt = `당신은 최고의 SEO 전문가입니다. 아래 제공된 원고 제목과 본문 내용을 분석하여, 검색엔진 최적화(SEO)를 위한 핵심 필드값들을 생성해 주세요.
 반드시 아래 정의된 JSON 구조로만 응답해야 하며, 그 외의 텍스트(예: markdown code block 백틱)는 절대 포함하지 말고 순수 JSON만 반환해야 합니다.
 
+중요 제약 조건:
+- "metaDescription"은 공백을 포함하여 반드시 최소 150자 이상이어야 하며, '절대로' 160자를 단 한 자라도 초과해서는 안 됩니다. (150자 ~ 160자 범위 필수 준수)
+- 문장이 중간에 끊기지 않도록 완결된 문장 형태로 온점('.')으로 안전하게 끝맺어 주세요.
+
 응답 JSON 구조:
 {
   "focusKeyword": "글의 핵심이 되는 타겟 키워드 1개 (예: '골프 스윙 팁')",
-  "metaDescription": "검색 결과 페이지(SERP)에 표시될 매력적이고 요약된 설명문 (공백 포함 반드시 최소 150자 이상, 최대 160자 이하로 구체적이고 완성도 높게 작성)",
+  "metaDescription": "매력적이고 구체적인 설명문 (반드시 150자 이상 160자 이하 규격 준수)",
   "seoTags": ["글의 맥락을 보여주는 핵심 키워드 태그 3~5개 배열"],
   "slug": "URL 경로로 사용할 영어 소문자 및 하이픈(-) 조합 of 슬러그 (예: 'golf-swing-basic-guide')"
 }
@@ -1658,10 +1662,15 @@ export default function CreaiboxManuscriptDetailPage() {
       }
 
       const parsedSeo = JSON.parse(result.text);
+      
+      let finalMetaDesc = (parsedSeo.metaDescription || "").trim();
+      if (finalMetaDesc.length > 160) {
+        finalMetaDesc = finalMetaDesc.slice(0, 160);
+      }
 
       updateLocalData({
         focusKeyword: parsedSeo.focusKeyword || "",
-        metaDescription: parsedSeo.metaDescription || "",
+        metaDescription: finalMetaDesc,
         seoTags: Array.isArray(parsedSeo.seoTags) ? parsedSeo.seoTags : [],
         slug: parsedSeo.slug || "",
       });

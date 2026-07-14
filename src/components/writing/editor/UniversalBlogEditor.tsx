@@ -1259,6 +1259,7 @@ export default function UniversalBlogEditor({
 
   // Create refs to prevent stale closure values in Tiptap's cache
   const manuscriptIdRef = useRef(manuscriptId);
+  const lastManuscriptIdRef = useRef(manuscriptId);
   const titleRef = useRef(title);
 
   useEffect(() => {
@@ -1497,6 +1498,14 @@ export default function UniversalBlogEditor({
 
   useEffect(() => {
     if (!editor) return;
+
+    // 만약 원고 ID 자체가 바뀌었다면, 이전 원고의 이미지/텍스트 잔상을 방지하기 위해 즉시 에디터를 비워줍니다.
+    if (manuscriptId !== lastManuscriptIdRef.current) {
+      editor.commands.clearContent(false);
+      lastManuscriptIdRef.current = manuscriptId;
+      lastExternalContentRef.current = ""; // 외부 내용 레퍼런스도 초기화하여 갱신 트리거 보장
+    }
+
     if (content === lastExternalContentRef.current) return;
 
     const nextHtml = markdownToHtml(cleanContentComment(content));
@@ -1509,7 +1518,7 @@ export default function UniversalBlogEditor({
         lastExternalContentRef.current = content;
       }, 0);
     }
-  }, [content, editor]);
+  }, [content, editor, manuscriptId]);
 
 
 
@@ -2830,13 +2839,15 @@ export default function UniversalBlogEditor({
         </div>
 
         {/* [3열]: AI 자동 수정보완 메뉴 (별도 라인 배치) */}
-        <div className="flex flex-nowrap items-center gap-2.5 px-4 py-2 bg-violet-950/10 overflow-x-auto scrollbar-none select-none shrink-0">
-          <div className="flex shrink-0 items-center gap-1 text-[11px] font-black text-violet-400 mr-2 select-none uppercase tracking-wider">
-            <Wand2 size={13} className="animate-pulse" />
-            <span>AI 자동 수정보완</span>
-          </div>
+        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-violet-950/10 select-none shrink-0">
+          {/* 왼쪽 AI 스크롤 그룹 */}
+          <div className="flex flex-nowrap items-center gap-2.5 overflow-x-auto scrollbar-none flex-1 min-w-0">
+            <div className="flex shrink-0 items-center gap-1 text-[11px] font-black text-violet-400 mr-2 select-none uppercase tracking-wider">
+              <Wand2 size={13} className="animate-pulse" />
+              <span>AI 자동 수정보완</span>
+            </div>
 
-          <div className="h-4 w-px bg-violet-500/20 mr-1" />
+            <div className="h-4 w-px bg-violet-500/20 mr-1" />
 
           {/* AI 내용 보강 */}
           <div className="relative" ref={contentDropdownRef}>
@@ -3058,6 +3069,20 @@ export default function UniversalBlogEditor({
             <Link2 size={14} className="text-zinc-400" />
             <span>내부 링크 콘텐츠 추가</span>
           </ToolbarButton>
+          </div>
+
+          {/* 우측 끝 새로고침 버튼 */}
+          <div className="flex shrink-0 items-center pl-3 border-l border-zinc-800/40">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-750 bg-zinc-900/60 px-3 py-1.5 text-[11px] font-black text-zinc-300 hover:bg-zinc-800 hover:text-white transition-all shadow-sm"
+              title="페이지 새로고침"
+            >
+              <RefreshCw size={11} className="text-violet-400" />
+              <span>새로고침</span>
+            </button>
+          </div>
         </div>
       </div>
       <div className="flex-1 overflow-y-auto bg-white custom-scrollbar">
