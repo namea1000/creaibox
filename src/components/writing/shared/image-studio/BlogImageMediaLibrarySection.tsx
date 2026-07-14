@@ -212,7 +212,7 @@ export default function BlogImageMediaLibrarySection({
                 key={img.id}
                 className="group relative flex flex-col space-y-3 overflow-visible border border-zinc-800/80 bg-zinc-950 p-3 text-[13px] w-full"
               >
-                <div className="relative aspect-[3/2] w-full overflow-hidden border border-zinc-900 bg-zinc-900">
+                <div className="relative aspect-video w-full overflow-hidden border border-zinc-900 bg-zinc-900">
                   <img
                     src={img.url}
                     alt="Asset"

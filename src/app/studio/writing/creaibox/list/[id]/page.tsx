@@ -1972,75 +1972,81 @@ export default function CreaiboxManuscriptDetailPage() {
               : "w-[360px]"
           }`}
         >
-          <div className="flex h-full w-[360px] flex-col p-4 overflow-y-auto custom-scrollbar">
-          {/* 목록으로 돌아가기 Header (옆 에디터 "Creaibox Tiptap Blog Editor" 제목 있는 라인에 맞춰 라인을 쳐 주고, 박스 없이 텍스트만) */}
-          <div className="mb-5 -mx-4 -mt-4 flex h-14 shrink-0 items-center justify-between border-b border-zinc-800 bg-[#0c1017] px-4">
-            <button
-              type="button"
-              onClick={() => {
-                if (hasLocalEdits) {
-                  void handleSave();
-                }
-                router.push("/studio/writing/creaibox/list");
-              }}
-              className="flex items-center gap-2 text-[13px] font-black text-white/80 transition hover:text-white cursor-pointer"
-            >
-              <ArrowLeft className="h-4 w-4 text-violet-300" />
-              목록으로 돌아가기
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsListSidebarCollapsed(true)}
-              className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-800 bg-[#0e111a] text-zinc-400 hover:border-blue-500/50 hover:bg-zinc-800 hover:text-white transition cursor-pointer"
-              title="목록 접기"
-            >
-              <PanelLeftClose size={15} />
-            </button>
-          </div>
+          <div className="flex h-full w-[360px] flex-col overflow-hidden">
+            {/* 목록으로 돌아가기 Header (옆 에디터 "Creaibox Tiptap Blog Editor" 제목 있는 라인에 맞춰 라인을 쳐 주고, 박스 없이 텍스트만) */}
+            <div className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-800 bg-[#0c1017] px-4">
+              <button
+                type="button"
+                onClick={() => {
+                  if (hasLocalEdits) {
+                    void handleSave();
+                  }
+                  router.push("/studio/writing/creaibox/list");
+                }}
+                className="flex items-center gap-2 text-[13px] font-black text-white/80 transition hover:text-white cursor-pointer"
+              >
+                <ArrowLeft className="h-4 w-4 text-violet-300" />
+                목록으로 돌아가기
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsListSidebarCollapsed(true)}
+                className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-800 bg-[#0e111a] text-zinc-400 hover:border-blue-500/50 hover:bg-zinc-800 hover:text-white transition cursor-pointer"
+                title="목록 접기"
+              >
+                <PanelLeftClose size={15} />
+              </button>
+            </div>
 
-          <div className="relative mb-5">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300/60" />
-            <input
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="원고 검색..."
-              className="w-full rounded-xl border border-zinc-800/80 bg-zinc-950/30 py-3 pl-11 pr-4 text-[13px] font-medium text-white outline-none transition placeholder:text-white/30 focus:border-violet-500/50"
-            />
-          </div>
+            {/* 원고 검색 입력칸 (고정 영역, 패딩 유지) */}
+            <div className="p-4 pb-0 shrink-0">
+              <div className="relative mb-4">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300/60" />
+                <input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="원고 검색..."
+                  className="w-full rounded-xl border border-zinc-800/80 bg-zinc-950/30 py-3 pl-11 pr-4 text-[13px] font-medium text-white outline-none transition placeholder:text-white/30 focus:border-violet-500/50"
+                />
+              </div>
+            </div>
 
-          <div ref={manuscriptListRef} className="space-y-2">
-            {filteredManuscripts.map((manuscript) => {
-              const active = manuscript.id === data.id;
-              const routeId = String(manuscript.displayId ?? manuscript.id);
+            {/* 스크롤 가능한 원고 리스트 본문 */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 pt-0">
+              <div ref={manuscriptListRef} className="space-y-2">
+                {filteredManuscripts.map((manuscript) => {
+                  const active = manuscript.id === data.id;
+                  const routeId = String(manuscript.displayId ?? manuscript.id);
 
-              return (
-                <button
-                  key={manuscript.id}
-                  data-manuscript-id={routeId}
-                  onClick={() => handleOpenManuscript(manuscript)}
-                  className={`w-full rounded-xl border p-3.5 text-left transition ${active
-                    ? "border-violet-500/60 bg-violet-950/15"
-                    : "border-zinc-800/80 bg-zinc-950/30 hover:border-violet-500/35 hover:bg-zinc-900/40"
-                    }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className={`line-clamp-2 text-[13px] font-black leading-tight ${active ? "text-violet-300" : "text-zinc-100"}`}>
-                      {manuscript.title}
-                    </div>
-                    {active && <Check className="mt-0.5 h-3 w-3 shrink-0 text-violet-300" />}
-                  </div>
-                  <div className="mt-2 flex items-center gap-1.5">
-                    <span className="inline-flex rounded-md border border-violet-500/30 bg-violet-500/10 px-1.5 py-0.5 text-[13px] font-black uppercase tracking-[0.16em] text-violet-300">
-                      {manuscript.postType === "recreate" ? "RECREATE" : "CREATE"}
-                    </span>
-                    <span className="line-clamp-1 text-[13px] font-medium text-zinc-500">
-                      #{manuscript.targetKeyword || "키워드 없음"}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+                  return (
+                    <button
+                      key={manuscript.id}
+                      data-manuscript-id={routeId}
+                      onClick={() => handleOpenManuscript(manuscript)}
+                      className={`w-full rounded-xl border p-3.5 text-left transition ${active
+                        ? "border-violet-500/60 bg-violet-950/15"
+                        : "border-zinc-800/80 bg-zinc-950/30 hover:border-violet-500/35 hover:bg-zinc-900/40"
+                        }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className={`line-clamp-2 text-[13px] font-black leading-tight ${active ? "text-violet-300" : "text-zinc-100"}`}>
+                          {manuscript.title}
+                        </div>
+                        {active && <Check className="mt-0.5 h-3 w-3 shrink-0 text-violet-300" />}
+                      </div>
+                      <div className="mt-2 flex items-center gap-1.5">
+                        <span className="inline-flex rounded-md border border-violet-500/30 bg-violet-500/10 px-1.5 py-0.5 text-[13px] font-black uppercase tracking-[0.16em] text-violet-300">
+                          {manuscript.postType === "recreate" ? "RECREATE" : "CREATE"}
+                        </span>
+                        <span className="line-clamp-1 text-[13px] font-medium text-zinc-500">
+                          #{manuscript.targetKeyword || "키워드 없음"}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </aside>
 

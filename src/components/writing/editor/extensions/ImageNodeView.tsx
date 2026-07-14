@@ -457,7 +457,9 @@ export default function ImageNodeView(props: NodeViewProps) {
           {/* Main Image */}
           <img
             ref={imgRef}
-            src={src}
+            src={(src && (src.includes("googleusercontent.com") || src.includes("drive.google.com")))
+              ? `/api/free-assets/proxy?url=${encodeURIComponent(src)}`
+              : src}
             alt={alt || ""}
             title={title || ""}
             onDragStart={(e) => e.preventDefault()}

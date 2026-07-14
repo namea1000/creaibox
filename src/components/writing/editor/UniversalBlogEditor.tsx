@@ -14,6 +14,76 @@ import TableRow from "@tiptap/extension-table-row";
 import TableHeader from "@tiptap/extension-table-header";
 import TableCell from "@tiptap/extension-table-cell";
 import TextAlign from "@tiptap/extension-text-align";
+
+const CustomTableCell = TableCell.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      backgroundColor: {
+        default: null,
+        parseHTML: (element) => element.style.backgroundColor || null,
+      },
+      verticalAlign: {
+        default: null,
+        parseHTML: (element) => element.style.verticalAlign || null,
+      },
+      textAlign: {
+        default: null,
+        parseHTML: (element) => element.style.textAlign || null,
+      },
+    };
+  },
+
+  renderHTML({ node, HTMLAttributes }) {
+    const attrs = node.attrs;
+    const styles: string[] = [];
+    if (attrs.backgroundColor) styles.push(`background-color: ${attrs.backgroundColor}`);
+    if (attrs.verticalAlign) styles.push(`vertical-align: ${attrs.verticalAlign}`);
+    if (attrs.textAlign) styles.push(`text-align: ${attrs.textAlign}`);
+
+    const styleString = styles.length > 0 ? styles.join("; ") : undefined;
+    const merged = mergeAttributes(HTMLAttributes, {
+      style: styleString,
+    });
+
+    return ["td", merged, 0];
+  },
+});
+
+const CustomTableHeader = TableHeader.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      backgroundColor: {
+        default: null,
+        parseHTML: (element) => element.style.backgroundColor || null,
+      },
+      verticalAlign: {
+        default: null,
+        parseHTML: (element) => element.style.verticalAlign || null,
+      },
+      textAlign: {
+        default: null,
+        parseHTML: (element) => element.style.textAlign || null,
+      },
+    };
+  },
+
+  renderHTML({ node, HTMLAttributes }) {
+    const attrs = node.attrs;
+    const styles: string[] = [];
+    if (attrs.backgroundColor) styles.push(`background-color: ${attrs.backgroundColor}`);
+    if (attrs.verticalAlign) styles.push(`vertical-align: ${attrs.verticalAlign}`);
+    if (attrs.textAlign) styles.push(`text-align: ${attrs.textAlign}`);
+
+    const styleString = styles.length > 0 ? styles.join("; ") : undefined;
+    const merged = mergeAttributes(HTMLAttributes, {
+      style: styleString,
+    });
+
+    return ["th", merged, 0];
+  },
+});
 import { TextStyle } from "@tiptap/extension-text-style";
 import { FontFamily } from "@tiptap/extension-font-family";
 import {
@@ -29,6 +99,7 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
+  ChevronsUpDown,
   CirclePlay,
   Code2,
   Combine,
@@ -970,7 +1041,7 @@ export default function UniversalBlogEditor({
   const [isContentDropdownOpen, setIsContentDropdownOpen] = useState(false);
   const [isTocDropdownOpen, setIsTocDropdownOpen] = useState(false);
   const [isPostTypeDropdownOpen, setIsPostTypeDropdownOpen] = useState(false);
-  const [activeTableDropdown, setActiveTableDropdown] = useState<"row" | "col" | null>(null);
+  const [activeTableDropdown, setActiveTableDropdown] = useState<"row" | "col" | "align-h" | "align-v" | "color" | null>(null);
   const contentDropdownRef = useRef<HTMLDivElement>(null);
   const tocDropdownRef = useRef<HTMLDivElement>(null);
   const postTypeDropdownRef = useRef<HTMLDivElement>(null);
@@ -1186,9 +1257,24 @@ export default function UniversalBlogEditor({
     setIsClientReady(true);
   }, []);
 
+  // Create refs to prevent stale closure values in Tiptap's cache
+  const manuscriptIdRef = useRef(manuscriptId);
+  const titleRef = useRef(title);
+
+  useEffect(() => {
+    manuscriptIdRef.current = manuscriptId;
+  }, [manuscriptId]);
+
+  useEffect(() => {
+    titleRef.current = title;
+  }, [title]);
+
   const handleSetAsFeaturedImage = useCallback(
     async (src: string) => {
-      if (!manuscriptId) {
+      const currentId = manuscriptIdRef.current;
+      const currentTitle = titleRef.current;
+
+      if (!currentId) {
         alert("원고를 먼저 저장해주십시오. (원고 ID가 필요합니다)");
         throw new Error("manuscriptId가 존재하지 않습니다.");
       }
@@ -1206,10 +1292,10 @@ export default function UniversalBlogEditor({
           aspectRatio: "content",
           provider: "upload",
           sourceType: contentImageSourceType,
-          sourceId: String(manuscriptId),
+          sourceId: String(currentId),
           imageRole: "thumbnail",
-          title: title || "대표 이미지",
-          altText: title || "대표 이미지",
+          title: currentTitle || "대표 이미지",
+          altText: currentTitle || "대표 이미지",
         }),
       });
 
@@ -1225,7 +1311,7 @@ export default function UniversalBlogEditor({
         window.dispatchEvent(new CustomEvent("generated-images-updated"));
       }
     },
-    [manuscriptId, contentImageSourceType, title]
+    [contentImageSourceType]
   );
 
   const initialHtml = useMemo(() => markdownToHtml(cleanContentComment(content)), []);
@@ -1270,9 +1356,9 @@ export default function UniversalBlogEditor({
       }),
       Table.configure({ resizable: true }),
       TableRow,
-      TableHeader,
-      TableCell,
-      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      CustomTableHeader,
+      CustomTableCell,
+      TextAlign.configure({ types: ["heading", "paragraph", "tableCell", "tableHeader"] }),
       Placeholder.configure({
         placeholder: isRecreateMode
           ? "재창조 본문 결과 영역..."
@@ -2098,31 +2184,7 @@ export default function UniversalBlogEditor({
 
   const setCellVerticalAlign = (alignment: 'top' | 'middle' | 'bottom') => {
     if (!editor) return;
-    const { state, view } = editor;
-    const { tr } = state;
-    const { from, to } = state.selection;
-
-    let hasChanged = false;
-    state.doc.nodesBetween(from, to, (node, pos) => {
-      if (node.type.name === "tableCell" || node.type.name === "tableHeader") {
-        const currentStyle = node.attrs.style || "";
-        let cleanStyle = currentStyle
-          .replace(/vertical-align\s*:\s*[^;]+;?/g, "")
-          .trim();
-        
-        const newStyle = `${cleanStyle}${cleanStyle && !cleanStyle.endsWith(";") ? ";" : ""} vertical-align: ${alignment};`.trim();
-        
-        tr.setNodeMarkup(pos, undefined, {
-          ...node.attrs,
-          style: newStyle,
-        });
-        hasChanged = true;
-      }
-    });
-
-    if (hasChanged) {
-      view.dispatch(tr);
-    }
+    editor.chain().focus().setCellAttribute('verticalAlign', alignment).run();
   };
 
   const isCellVerticalAlignActive = (alignment: 'top' | 'middle' | 'bottom') => {
@@ -2131,8 +2193,7 @@ export default function UniversalBlogEditor({
     let isActive = false;
     editor.state.doc.nodesBetween(from, to, (node) => {
       if (node.type.name === "tableCell" || node.type.name === "tableHeader") {
-        const currentStyle = node.attrs.style || "";
-        if (currentStyle.includes(`vertical-align: ${alignment}`)) {
+        if (node.attrs.verticalAlign === alignment) {
           isActive = true;
         }
       }
@@ -2329,6 +2390,7 @@ export default function UniversalBlogEditor({
     disabled = false,
     className = "",
     title = "",
+    onMouseDown,
   }: {
     onClick: () => void;
     children: React.ReactNode;
@@ -2336,10 +2398,12 @@ export default function UniversalBlogEditor({
     disabled?: boolean;
     className?: string;
     title?: string;
+    onMouseDown?: (e: React.MouseEvent<HTMLButtonElement>) => void;
   }) => (
     <button
       type="button"
       onClick={onClick}
+      onMouseDown={onMouseDown}
       disabled={disabled || !editor}
       title={title}
       className={`flex items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-bold transition-all disabled:cursor-not-allowed disabled:opacity-40 ${active ? "bg-blue-500/15 text-blue-300" : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
@@ -2636,16 +2700,58 @@ export default function UniversalBlogEditor({
 
           <div className="mx-1.5 h-4 w-px bg-zinc-800" />
 
-          <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign("left").run()} title="텍스트 왼쪽 정렬">
+          <ToolbarButton
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => editor?.chain().focus().setTextAlign("left").run()}
+            title="텍스트 왼쪽 정렬"
+          >
             <AlignLeft size={15} />
           </ToolbarButton>
 
-          <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign("center").run()} title="텍스트 가운데 정렬">
+          <ToolbarButton
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => editor?.chain().focus().setTextAlign("center").run()}
+            title="텍스트 가운데 정렬"
+          >
             <AlignCenter size={15} />
           </ToolbarButton>
 
-          <ToolbarButton onClick={() => editor?.chain().focus().setTextAlign("right").run()} title="텍스트 오른쪽 정렬">
+          <ToolbarButton
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => editor?.chain().focus().setTextAlign("right").run()}
+            title="텍스트 오른쪽 정렬"
+          >
             <AlignRight size={15} />
+          </ToolbarButton>
+
+          <div className="mx-1.5 h-4 w-px bg-zinc-800" />
+
+          {/* 표 세로 정렬 도구 (1열 병합) */}
+          <ToolbarButton
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => setCellVerticalAlign("top")}
+            active={isCellVerticalAlignActive("top")}
+            title="표 셀 세로 위 정렬"
+          >
+            <ArrowUp size={15} />
+          </ToolbarButton>
+
+          <ToolbarButton
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => setCellVerticalAlign("middle")}
+            active={isCellVerticalAlignActive("middle")}
+            title="표 셀 세로 가운데 정렬"
+          >
+            <ChevronsUpDown size={15} />
+          </ToolbarButton>
+
+          <ToolbarButton
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => setCellVerticalAlign("bottom")}
+            active={isCellVerticalAlignActive("bottom")}
+            title="표 셀 세로 아래 정렬"
+          >
+            <ArrowDown size={15} />
           </ToolbarButton>
         </div>
 
@@ -2694,32 +2800,7 @@ export default function UniversalBlogEditor({
           <div className="mx-1.5 h-4 w-px bg-zinc-800" />
 
           {/* 표 세로 정렬 도구 */}
-          <div className="flex items-center gap-0.5 border border-zinc-850 bg-black/25 rounded-lg px-1.5 py-0.5">
-            <span className="text-[9px] font-black text-zinc-500 mr-1 select-none">표 정렬</span>
-            <ToolbarButton 
-              onClick={() => setCellVerticalAlign("top")} 
-              active={isCellVerticalAlignActive("top")} 
-              title="위쪽 맞춤 (세로 정렬)"
-            >
-              <TopAlignIcon />
-            </ToolbarButton>
-            <ToolbarButton 
-              onClick={() => setCellVerticalAlign("middle")} 
-              active={isCellVerticalAlignActive("middle")} 
-              title="가운데 맞춤 (세로 정렬)"
-            >
-              <MiddleAlignIcon />
-            </ToolbarButton>
-            <ToolbarButton 
-              onClick={() => setCellVerticalAlign("bottom")} 
-              active={isCellVerticalAlignActive("bottom")} 
-              title="아래쪽 맞춤 (세로 정렬)"
-            >
-              <BottomAlignIcon />
-            </ToolbarButton>
-          </div>
 
-          <div className="mx-1.5 h-4 w-px bg-zinc-800" />
 
           <ToolbarButton onClick={handleInsertTable} title="표 삽입">
             <Table2 size={14} /> 표
@@ -3226,6 +3307,192 @@ export default function UniversalBlogEditor({
                       <Heading3 size={12} />
                       <span>헤더</span>
                     </button>
+
+                    <div className="h-4 w-[1px] bg-zinc-800 mx-1" />
+
+                    {/* Horizontal Alignment Dropdown */}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveTableDropdown(activeTableDropdown === "align-h" ? null : "align-h");
+                        }}
+                        className={`flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800/80 hover:text-white transition ${
+                          activeTableDropdown === "align-h" ? "bg-zinc-800 text-white" : ""
+                        }`}
+                        title="가로 정렬"
+                      >
+                        <AlignLeft size={14} />
+                      </button>
+
+                      {activeTableDropdown === "align-h" && (
+                        <div className="absolute left-0 top-[110%] z-50 flex w-32 flex-col rounded-xl border border-zinc-850 bg-[#0e111a] p-1 shadow-2xl">
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => {
+                              editor.chain().focus().setTextAlign('left').run();
+                              setActiveTableDropdown(null);
+                            }}
+                            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-bold text-zinc-300 hover:bg-zinc-900 hover:text-white transition"
+                          >
+                            <AlignLeft size={13} className="text-zinc-500" />
+                            왼쪽 정렬
+                          </button>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => {
+                              editor.chain().focus().setTextAlign('center').run();
+                              setActiveTableDropdown(null);
+                            }}
+                            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-bold text-zinc-300 hover:bg-zinc-900 hover:text-white transition"
+                          >
+                            <AlignCenter size={13} className="text-zinc-500" />
+                            가운데 정렬
+                          </button>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => {
+                              editor.chain().focus().setTextAlign('right').run();
+                              setActiveTableDropdown(null);
+                            }}
+                            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-bold text-zinc-300 hover:bg-zinc-900 hover:text-white transition"
+                          >
+                            <AlignRight size={13} className="text-zinc-500" />
+                            오른쪽 정렬
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Vertical Alignment Dropdown */}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveTableDropdown(activeTableDropdown === "align-v" ? null : "align-v");
+                        }}
+                        className={`flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800/80 hover:text-white transition ${
+                          activeTableDropdown === "align-v" ? "bg-zinc-800 text-white" : ""
+                        }`}
+                        title="세로 정렬"
+                      >
+                        <ChevronsUpDown size={14} />
+                      </button>
+
+                      {activeTableDropdown === "align-v" && (
+                        <div className="absolute left-0 top-[110%] z-50 flex w-32 flex-col rounded-xl border border-zinc-850 bg-[#0e111a] p-1 shadow-2xl">
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => {
+                              editor.chain().focus().setCellAttribute('verticalAlign', 'top').run();
+                              setActiveTableDropdown(null);
+                            }}
+                            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-bold text-zinc-300 hover:bg-zinc-900 hover:text-white transition"
+                          >
+                            <ArrowUp size={13} className="text-zinc-500" />
+                            위 정렬
+                          </button>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => {
+                              editor.chain().focus().setCellAttribute('verticalAlign', 'middle').run();
+                              setActiveTableDropdown(null);
+                            }}
+                            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-bold text-zinc-300 hover:bg-zinc-900 hover:text-white transition"
+                          >
+                            <ChevronsUpDown size={13} className="text-zinc-500" />
+                            가운데 정렬
+                          </button>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => {
+                              editor.chain().focus().setCellAttribute('verticalAlign', 'bottom').run();
+                              setActiveTableDropdown(null);
+                            }}
+                            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-bold text-zinc-300 hover:bg-zinc-900 hover:text-white transition"
+                          >
+                            <ArrowDown size={13} className="text-zinc-500" />
+                            아래 정렬
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Background Color Dropdown */}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveTableDropdown(activeTableDropdown === "color" ? null : "color");
+                        }}
+                        className={`flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-zinc-400 hover:bg-zinc-800/80 hover:text-white transition ${
+                          activeTableDropdown === "color" ? "bg-zinc-800 text-white" : ""
+                        }`}
+                        title="배경색 지정"
+                      >
+                        <div className="w-3 h-3 rounded-full border border-zinc-700 bg-gradient-to-tr from-rose-400 to-indigo-500" />
+                        <span>배경색</span>
+                        <ChevronDown size={12} />
+                      </button>
+
+                      {activeTableDropdown === "color" && (
+                        <div className="absolute left-0 top-[110%] z-50 flex w-48 flex-col rounded-xl border border-zinc-850 bg-[#0e111a] p-3 shadow-2xl">
+                          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider mb-2">셀 배경색 지정</span>
+                          <div className="grid grid-cols-4 gap-2 mb-2.5">
+                            {[
+                              { color: "#ffffff", label: "흰색" },
+                              { color: "#f4f4f5", label: "회색" },
+                              { color: "#fee2e2", label: "빨강" },
+                              { color: "#ffedd5", label: "주황" },
+                              { color: "#fef9c3", label: "노랑" },
+                              { color: "#dcfce7", label: "초록" },
+                              { color: "#dbeafe", label: "파랑" },
+                              { color: "#f3e8ff", label: "보라" },
+                            ].map((item) => (
+                              <button
+                                key={item.color}
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => {
+                                  editor.chain().focus().setCellAttribute('backgroundColor', item.color).run();
+                                  setActiveTableDropdown(null);
+                                }}
+                                className="w-8 h-8 rounded-lg border border-zinc-800 transition hover:scale-105 active:scale-95 cursor-pointer relative group"
+                                style={{ backgroundColor: item.color }}
+                                title={item.label}
+                              >
+                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-zinc-950 text-[9px] px-1 py-0.5 rounded text-white opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
+                                  {item.label}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => {
+                              editor.chain().focus().setCellAttribute('backgroundColor', null).run();
+                              setActiveTableDropdown(null);
+                            }}
+                            className="w-full py-1 text-center text-[10px] font-black text-red-400 hover:bg-red-950/20 rounded transition border border-red-500/20"
+                          >
+                            배경색 지우기
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
                     <div className="h-4 w-[1px] bg-zinc-800 mx-1" />
 

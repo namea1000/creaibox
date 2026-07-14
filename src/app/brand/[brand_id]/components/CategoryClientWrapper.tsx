@@ -403,21 +403,43 @@ export default function CategoryClientWrapper({
                         )}
                       </div>
                       
-                      <div className="flex flex-1 flex-col p-6 space-y-4">
-                        <div className="flex items-center gap-2 text-xs font-bold text-zinc-500">
-                          <CalendarDays size={13} />
-                          {formatDate(post.created_at)}
+                      <div className="flex flex-1 flex-col p-6 justify-between">
+                        {/* 상단: 제목 & 설명 */}
+                        <div className="space-y-3">
+                          <h2 className={`line-clamp-2 text-lg font-black leading-tight transition-colors group-hover:text-blue-400 ${cardText}`}>
+                            {post.title}
+                          </h2>
+                          <p className={`line-clamp-3 text-sm font-bold leading-relaxed ${cardDesc}`}>
+                            {excerpt}
+                          </p>
                         </div>
-                        <h2 className={`line-clamp-2 text-xl font-black leading-tight group-hover:text-blue-400 transition-colors ${cardText}`}>
-                          {post.title}
-                        </h2>
-                        <p className={`line-clamp-3 text-sm font-bold leading-relaxed ${cardDesc}`}>
-                          {excerpt}
-                        </p>
-                        <div className={`mt-auto pt-4 border-t flex items-center justify-between text-xs font-black text-zinc-500 ${cardBorder}`}>
-                          <span className="flex items-center gap-1 text-blue-400 group-hover:text-blue-300">
-                            자세히 보기 <ArrowRight size={12} />
-                          </span>
+                        
+                        {/* 하단: 날짜 | 카테고리 (가운데) | 글 더보기 -> (우측) */}
+                        <div className={`mt-5 pt-4 border-t flex items-center justify-between text-xs font-bold ${
+                          theme === "dark" ? "border-zinc-800/80 text-zinc-500" : "border-zinc-100 text-zinc-500"
+                        }`}>
+                          {/* 날짜 */}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <CalendarDays size={13} />
+                            <span>{formatDate(post.created_at)}</span>
+                          </div>
+
+                          {/* 가운데: 카테고리 */}
+                          <div className="flex-1 text-center px-2 min-w-0">
+                            <span className={`inline-block truncate max-w-full rounded px-2 py-0.5 border ${
+                              theme === "dark"
+                                ? "text-zinc-400 border-zinc-800 bg-[#1e222b]/50"
+                                : "text-zinc-600 border-zinc-200 bg-zinc-50"
+                            }`}>
+                              {category.name}
+                            </span>
+                          </div>
+
+                          {/* 제일 오른쪽: 글 더보기 -> */}
+                          <div className="flex items-center gap-1 shrink-0 text-blue-500 group-hover:text-blue-400 transition-colors font-black">
+                            <span>글 더보기</span>
+                            <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
+                          </div>
                         </div>
                       </div>
                     </Link>

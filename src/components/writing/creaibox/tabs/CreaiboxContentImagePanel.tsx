@@ -379,10 +379,14 @@ export default function CreaiboxContentImagePanel({ data }: CreaiboxContentImage
 
   // 9. Tiptap Insertion Handlers
   const handleInsertImageToEditor = (url: string, titleText?: string) => {
+    const safeUrl = (url.includes("googleusercontent.com") || url.includes("drive.google.com"))
+      ? `/api/free-assets/proxy?url=${encodeURIComponent(url)}`
+      : url;
+
     window.dispatchEvent(
       new CustomEvent("insert-editor-image", {
         detail: {
-          url,
+          url: safeUrl,
           alt: manuscriptKeyword || "본문 이미지",
           title: titleText || "이미지",
         },
@@ -400,7 +404,11 @@ export default function CreaiboxContentImagePanel({ data }: CreaiboxContentImage
 
   // Drag Start Handler
   const handleDragStart = (e: React.DragEvent, url: string) => {
-    e.dataTransfer.setData("text/html", `<img src="${url}" alt="${manuscriptKeyword || '본문 이미지'}" style="margin: 2rem auto; display: block; max-width: 100%;" />`);
+    const safeUrl = (url.includes("googleusercontent.com") || url.includes("drive.google.com"))
+      ? `/api/free-assets/proxy?url=${encodeURIComponent(url)}`
+      : url;
+
+    e.dataTransfer.setData("text/html", `<img src="${safeUrl}" alt="${manuscriptKeyword || '본문 이미지'}" style="margin: 2rem auto; display: block; max-width: 100%;" />`);
   };
 
   return (
@@ -644,7 +652,13 @@ export default function CreaiboxContentImagePanel({ data }: CreaiboxContentImage
                       className="group relative aspect-square rounded-lg border border-zinc-800 bg-zinc-950 overflow-hidden cursor-pointer"
                       onClick={() => addToQueue(img)}
                     >
-                      <img src={img.url} alt="personal" className="w-full h-full object-cover transition group-hover:scale-105" />
+                      <img 
+                        src={(img.url.includes("googleusercontent.com") || img.url.includes("drive.google.com")) 
+                          ? `/api/free-assets/proxy?url=${encodeURIComponent(img.url)}` 
+                          : img.url} 
+                        alt="personal" 
+                        className="w-full h-full object-cover transition group-hover:scale-105" 
+                      />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
                         <PlusCircle size={18} className="text-emerald-300" />
                       </div>
