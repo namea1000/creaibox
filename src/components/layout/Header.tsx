@@ -1117,6 +1117,7 @@ export default function Header() {
           {/* Theme Toggle Button */}
           <button
             onClick={toggleTheme}
+            aria-label={theme === "dark" ? "라이트 모드로 변경" : "다크 모드로 변경"}
             className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white dark:hover:bg-zinc-800 shrink-0"
             title={theme === "dark" ? "라이트 모드로 변경" : "다크 모드로 변경"}
           >
