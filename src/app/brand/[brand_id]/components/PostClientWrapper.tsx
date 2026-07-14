@@ -188,7 +188,7 @@ export default function PostClientWrapper({
     textColor: "#52525b",
     subColor: "#2563eb",
     subtitle: "CreAibox Insight Editorial",
-    text: "본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오 크리에이박스(CreAibox)의 오리지널 인사이트 리포트입니다. 인공지능 기반의 고품질 콘텐츠 생성 가이드와 비즈니스 성장 전략에 대한 더 많은 전문 자료는 크리에이박스(CreAibox) 공식 블로그 기사 및 스튜디오 가이드에서 확인하실 수 있습니다."
+    text: "본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오 크리에이박스(CreAibox)의 오리지널 인사이트 리포트입니다. 인공지능 기반의 고품질 콘텐츠 생성 가이드와 비즈니스 성장 전략에 대한 더 많은 전문 자료는 크리에이박스(CreAibox) 공식 홈페이지 <a href=\"https://creaibox.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"font-bold text-blue-500 hover:text-blue-400 underline\">https://creaibox.com</a> 에서 확인하실 수 있습니다."
   };
 
   let hasCustomEditorial = false;
@@ -448,11 +448,10 @@ export default function PostClientWrapper({
                         {editorial.subtitle}
                       </p>
                       <p 
-                        className="text-[1.05rem] leading-[1.8]"
+                        className="text-[1.05rem] leading-[1.8] [&_a]:text-blue-500 [&_a]:font-bold [&_a]:underline hover:[&_a]:text-blue-400 transition-colors"
                         style={{ color: editorial.textColor }}
-                      >
-                        {editorial.text}
-                      </p>
+                        dangerouslySetInnerHTML={{ __html: editorial.text }}
+                      />
                     </div>
                   ) : (
                     /* Default CreAibox Citation Card */
