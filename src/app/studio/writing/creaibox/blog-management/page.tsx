@@ -1340,20 +1340,23 @@ export default function BlogManagementPage() {
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-1.5">
-                        <label className="pl-1 text-[10px] font-black uppercase tracking-wider text-zinc-500">
+                        <label className="pl-1 text-xs font-black uppercase tracking-wider text-zinc-400">
                           Google Analytics (GA4) ID
                         </label>
                         <input
                           type="text"
                           value={gaId}
-                          onChange={(e) => setGaId(e.target.value)}
-                          placeholder="예: G-XXXXXXXXXX"
-                          className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4 text-xs font-bold font-mono text-white outline-none focus:border-blue-500 transition-colors"
+                          disabled
+                          placeholder="자동 발급 및 연동 대기 중"
+                          className="w-full rounded-2xl border border-zinc-800 bg-zinc-950/60 px-5 py-4 text-xs font-bold font-mono text-zinc-500 outline-none cursor-not-allowed select-none transition-colors"
                         />
+                        <p className="text-xs text-zinc-300 pl-1 leading-relaxed mt-1">
+                          해당 ID는 브랜드 신청 승인(도메인 연동) 시점에 크리에이박스 백엔드가 <b>Google Analytics Admin API를 직접 호출하여 도메인별 전용 분석 프로퍼티를 자동 개설하고 주입한 값</b>입니다. 시스템 관리에 의해 자동으로 추적 스크립트 셋팅이 완료되었으므로 수동 변경이 불가합니다.
+                        </p>
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="pl-1 text-[10px] font-black uppercase tracking-wider text-zinc-500">
+                        <label className="pl-1 text-xs font-black uppercase tracking-wider text-zinc-400">
                           네이버 서치어드바이저 연동 키
                         </label>
                         <input
@@ -1366,7 +1369,7 @@ export default function BlogManagementPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="pl-1 text-[10px] font-black uppercase tracking-wider text-zinc-500">
+                        <label className="pl-1 text-xs font-black uppercase tracking-wider text-zinc-400">
                           구글 서치콘솔 연동 키
                         </label>
                         <input
@@ -1379,7 +1382,7 @@ export default function BlogManagementPage() {
                       </div>
 
                       <div className="space-y-1.5 md:col-span-3 border-t border-zinc-900/50 pt-4">
-                        <label className="pl-1 text-[10px] font-black uppercase tracking-wider text-zinc-500">
+                        <label className="pl-1 text-xs font-black uppercase tracking-wider text-zinc-400">
                           구글 애드센스 (Google AdSense) 게시자 ID
                         </label>
                         <input
@@ -1389,14 +1392,14 @@ export default function BlogManagementPage() {
                           placeholder="예: pub-XXXXXXXXXXXXXXXX"
                           className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4 text-xs font-bold font-mono text-white outline-none focus:border-blue-500 transition-colors"
                         />
-                        <p className="text-[10px] text-zinc-500 pl-1 leading-relaxed">
+                        <p className="text-xs text-zinc-300 pl-1 leading-relaxed mt-1">
                           애드센스 게시자 ID(pub-으로 시작하는 16자리 숫자)를 입력하면 <b>ads.txt 파일이 해당 도메인에 자동으로 생성 및 서비스</b>되며, 광고 게재 권한이 즉시 활성화됩니다.
                         </p>
                       </div>
                     </div>
 
                     <div className="space-y-1.5 pt-2">
-                      <label className="pl-1 text-[10px] font-black uppercase tracking-wider text-zinc-500">
+                      <label className="pl-1 text-xs font-black uppercase tracking-wider text-zinc-400">
                         Rank Math 스타일 SEO Title 템플릿
                       </label>
                       <input
@@ -1406,13 +1409,13 @@ export default function BlogManagementPage() {
                         placeholder="%title% | %blog_title%"
                         className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4 text-xs font-bold font-mono text-white outline-none focus:border-blue-500 transition-colors"
                       />
-                      <p className="text-[10px] text-zinc-500 pl-1">
+                      <p className="text-xs text-zinc-300 pl-1 mt-1">
                         치환자 지원: %title% (원고 제목), %blog_title% (블로그 공식 제목)
                       </p>
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="pl-1 text-[10px] font-black uppercase tracking-wider text-zinc-500">
+                      <label className="pl-1 text-xs font-black uppercase tracking-wider text-zinc-400">
                         Rank Math 스타일 SEO Meta Description 템플릿
                       </label>
                       <input
@@ -1422,7 +1425,7 @@ export default function BlogManagementPage() {
                         placeholder="%description%"
                         className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4 text-xs font-bold font-mono text-white outline-none focus:border-blue-500 transition-colors"
                       />
-                      <p className="text-[10px] text-zinc-500 pl-1">
+                      <p className="text-xs text-zinc-300 pl-1 mt-1">
                         치환자 지원: %description% (원고 메타 설명문), %title% (원고 제목)
                       </p>
                     </div>
@@ -1445,7 +1448,7 @@ export default function BlogManagementPage() {
                   </h4>
                   <div className="space-y-4">
                     <div className="rounded-2xl border border-zinc-900 bg-black/40 p-5 space-y-2">
-                      <span className="text-[10px] font-bold text-zinc-500 uppercase">sitemap.xml 주소</span>
+                      <span className="text-xs font-bold text-zinc-400 uppercase">sitemap.xml 주소</span>
                       <a
                         href={sitemapUrl}
                         target="_blank"
@@ -1456,8 +1459,8 @@ export default function BlogManagementPage() {
                       </a>
                     </div>
                     
-                    <div className="rounded-2xl border border-zinc-900 bg-black/40 p-5 space-y-2 text-[10px] font-bold text-zinc-500 leading-relaxed">
-                      <p className="text-white font-black">💡 구글/네이버 등록 안내</p>
+                    <div className="rounded-2xl border border-zinc-900 bg-black/40 p-5 space-y-2 text-xs font-bold text-zinc-300 leading-relaxed">
+                      <p className="text-white font-black text-xs">💡 구글/네이버 등록 안내</p>
                       <p>
                         위 사이트맵 링크를 구글 서치콘솔 및 네이버 서치어드바이저에 등록하시면, 글 발행 시 검색엔진에 자동 반영 및 색인됩니다.
                       </p>

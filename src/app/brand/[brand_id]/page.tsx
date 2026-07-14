@@ -103,6 +103,19 @@ function isPostForBrand(postCanonicalUrl: string | null, targetBrandId: string, 
   return false;
 }
 
+function cleanGoogleVerificationKey(rawKey: string): string {
+  if (!rawKey) return "";
+  const clean = rawKey.trim();
+  const metaMatch = /content=["']([^"']+)["']/i.exec(clean);
+  if (metaMatch && metaMatch[1]) {
+    return metaMatch[1].trim();
+  }
+  if (clean.startsWith("google-site-verification=")) {
+    return clean.replace("google-site-verification=", "").trim();
+  }
+  return clean;
+}
+
 // 🌟 Dynamically generate page metadata with Naver Site Verification support
 export async function generateMetadata({ params }: BrandPageProps): Promise<Metadata> {
   const { brand_id } = await params;
@@ -146,10 +159,11 @@ export async function generateMetadata({ params }: BrandPageProps): Promise<Meta
 
   const naverKey = getConf("naver_advisor_key");
   const googleKey = getConf("google_search_console_key");
-  if (naverKey || googleKey) {
+  const cleanGoogleKey = cleanGoogleVerificationKey(googleKey);
+  if (naverKey || cleanGoogleKey) {
     meta.other = {
       ...(naverKey ? { "naver-site-verification": naverKey } : {}),
-      ...(googleKey ? { "google-site-verification": googleKey } : {}),
+      ...(cleanGoogleKey ? { "google-site-verification": cleanGoogleKey } : {}),
     };
   }
 

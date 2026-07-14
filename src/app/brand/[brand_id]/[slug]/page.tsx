@@ -307,6 +307,19 @@ const fetchPost = cache(async (brandId: string, slug: string) => {
   };
 });
 
+function cleanGoogleVerificationKey(rawKey: string): string {
+  if (!rawKey) return "";
+  const clean = rawKey.trim();
+  const metaMatch = /content=["']([^"']+)["']/i.exec(clean);
+  if (metaMatch && metaMatch[1]) {
+    return metaMatch[1].trim();
+  }
+  if (clean.startsWith("google-site-verification=")) {
+    return clean.replace("google-site-verification=", "").trim();
+  }
+  return clean;
+}
+
 export async function generateMetadata({ params }: PostDetailPageProps): Promise<Metadata> {
   const { brand_id, slug } = await params;
   const result = await fetchPost(brand_id, slug);
@@ -365,10 +378,11 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
 
   const naverKey = getConf("naver_advisor_key");
   const googleKey = getConf("google_search_console_key");
-  if (naverKey || googleKey) {
+  const cleanGoogleKey = cleanGoogleVerificationKey(googleKey);
+  if (naverKey || cleanGoogleKey) {
     meta.other = {
       ...(naverKey ? { "naver-site-verification": naverKey } : {}),
-      ...(googleKey ? { "google-site-verification": googleKey } : {}),
+      ...(cleanGoogleKey ? { "google-site-verification": cleanGoogleKey } : {}),
     };
   }
 
