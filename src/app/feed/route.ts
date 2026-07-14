@@ -73,26 +73,35 @@ export async function GET() {
   const brand_id = "creaibox";
   const supabase = await createAdminClient();
 
-  // 1. Fetch Main Profile
-  const profile = await getProfileByBrandId(supabase, brand_id);
-  if (!profile) {
-    return new Response("Main blog profile not found", { status: 404 });
+  // 1. Fetch Main Profile with graceful fallback
+  let profile = await getProfileByBrandId(supabase, brand_id);
+  const isFallbackProfile = !profile;
+
+  if (isFallbackProfile) {
+    profile = {
+      id: "creaibox-main-fallback",
+      brand_id: "creaibox",
+      nickname: "크리에이박스",
+      extra_configs: {},
+    };
   }
 
   // 2. Fetch Published Posts for main brand
-  const { data: postsRawResult, error: postsError } = await supabase
-    .from("writing_creaibox_posts")
-    .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at, category_id, published_snapshot")
-    .eq("user_id", profile.id)
-    .eq("status", "published")
-    .not("slug", "is", null)
-    .order("created_at", { ascending: false });
+  let postsRaw: PublishedPost[] = [];
+  if (!isFallbackProfile) {
+    const { data: postsRawResult, error: postsError } = await supabase
+      .from("writing_creaibox_posts")
+      .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at, category_id, published_snapshot")
+      .eq("user_id", profile.id)
+      .eq("status", "published")
+      .not("slug", "is", null)
+      .order("created_at", { ascending: false });
 
-  if (postsError) {
-    console.error("Error fetching posts for main feed:", postsError);
+    if (postsError) {
+      console.error("Error fetching posts for main feed:", postsError);
+    }
+    postsRaw = (postsRawResult as PublishedPost[] | null) || [];
   }
-
-  const postsRaw = (postsRawResult as PublishedPost[] | null) || [];
   let posts: PublishedPost[] = postsRaw.map((post) => {
     const finalPost = { ...post };
     if (post.published_snapshot) {
