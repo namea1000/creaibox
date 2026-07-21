@@ -4,7 +4,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { 
   Settings, Layers, Palette, Shield, LineChart, Globe, HelpCircle, 
-  Plus, Trash2, Save, FileText, CheckCircle2, TrendingUp, Users, Eye, RefreshCw
+  Plus, Trash2, Save, FileText, CheckCircle2, TrendingUp, Users, Eye, RefreshCw,
+  Sparkles, Zap, GitCommit
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -1464,6 +1465,188 @@ export default function BlogManagementPage() {
                       <p>
                         위 사이트맵 링크를 구글 서치콘솔 및 네이버 서치어드바이저에 등록하시면, 글 발행 시 검색엔진에 자동 반영 및 색인됩니다.
                       </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 🌟 SEO & GA4 Premium Visual Insight Guide */}
+                <div className="lg:col-span-3 mt-8 rounded-[32px] border border-zinc-800/80 bg-zinc-900/10 backdrop-blur-xl p-8 md:p-10 space-y-10 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 -z-10 h-96 w-96 rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
+                  <div className="absolute bottom-0 left-0 -z-10 h-96 w-96 rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none" />
+                  
+                  <div className="space-y-3">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-blue-500/20 bg-blue-500/5 text-blue-400 text-[10px] font-black tracking-widest uppercase shadow-sm">
+                      <Sparkles size={11} className="animate-spin-slow" /> CreAibox Magic Engine
+                    </div>
+                    <h3 className="text-xl md:text-2xl font-black tracking-tight text-white leading-tight">
+                      크리에이박스 검색 노출 & 분석 자동화 시스템 가이드
+                    </h3>
+                    <p className="text-xs text-zinc-400 font-semibold leading-relaxed max-w-4xl">
+                      크리에이박스는 번거로운 코딩과 기술적 환경 설정 지식 없이도, 프로 수준의 구글/네이버 검색 엔진 최적화(SEO) 및 방문자 분석 환경을 즉시 완성할 수 있도록 모든 연동을 지능형 자동화로 셋팅해 드립니다.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                    {/* CARD 1: 비즈니스 검색 노출 구조 비교 */}
+                    <div className="rounded-2xl border border-zinc-850 bg-black/30 p-6 space-y-4">
+                      <h4 className="text-sm font-black text-white flex items-center gap-1.5">
+                        <Globe size={16} className="text-indigo-400" /> 서브 도메인 VS 독립 도메인 차이
+                      </h4>
+                      <p className="text-xs text-zinc-400 leading-relaxed">
+                        블로그 개설 형태에 따라 검색엔진 봇이 도메인의 소유권을 심사하는 로직이 달라집니다.
+                      </p>
+                      <div className="space-y-2.5 pt-2">
+                        <div className="p-3.5 rounded-xl bg-zinc-950/40 border border-zinc-900 space-y-1">
+                          <span className="text-[10px] font-black text-indigo-400 uppercase tracking-wider block">
+                            기본 서브도메인 (아이디.creaibox.com)
+                          </span>
+                          <p className="text-xs text-zinc-300 font-bold leading-normal">
+                            <b>개별 소유권 인증 불필요!</b> 크리에이박스 메인 도메인의 강력한 점수(도메인 권위)를 함께 공유하므로, 별도의 연동 작업 없이 글 발행 즉시 검색 노출이 가능합니다.
+                          </p>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-zinc-950/40 border border-zinc-900 space-y-1">
+                          <span className="text-[10px] font-black text-blue-400 uppercase tracking-wider block">
+                            개인 독립 도메인 (본인도메인.com)
+                          </span>
+                          <p className="text-xs text-zinc-300 font-bold leading-normal">
+                            <b>최초 1회 인증 필요!</b> 사용자 고유의 독립 도메인이므로, 구글/네이버 등록 시에 제공된 HTML 인증 키를 <b>[SEO 및 연동 관리]</b>에 입력하여 소유자임을 선언해야 합니다.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* CARD 2: 구글 소유권 확인 자동 시너지 */}
+                    <div className="rounded-2xl border border-zinc-850 bg-black/30 p-6 space-y-4">
+                      <h4 className="text-sm font-black text-white flex items-center gap-1.5">
+                        <Zap size={16} className="text-yellow-400" /> 구글 서치콘솔 프리패스 시너지
+                      </h4>
+                      <p className="text-xs text-zinc-400 leading-relaxed">
+                        구글 애널리틱스(GA4)가 블로그 헤더에 선제적으로 자동 장착되어 동작하기 때문에, 사용자가 별도의 메타태그 복사 설정 없이도 서치콘솔에서 <b>&quot;원클릭 소유권 인증&quot;</b>이 가능해집니다.
+                      </p>
+                      <div className="p-4 rounded-xl bg-zinc-950/40 border border-zinc-900 space-y-2">
+                        <span className="text-[10px] font-black text-yellow-400 uppercase tracking-wider flex items-center gap-1">
+                          ✨ 원클릭 프리패스 작동 원리
+                        </span>
+                        <p className="text-xs text-zinc-300 font-medium leading-relaxed">
+                          구글 서치콘솔 사이트 등록 화면에서 본인 도메인을 입력한 뒤 소유권 인증 수단 중 <b>[Google 애널리틱스]</b>를 선택하기만 하면, 사이트 내에 탑재되어 있는 애널리틱스 추적 태그가 실시간 감지되어 1초 만에 바로 소유권 확인이 완료됩니다.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* CARD 3: GA4 자동화 프로세스 다이어그램 */}
+                    <div className="md:col-span-2 rounded-2xl border border-zinc-850 bg-black/30 p-6 space-y-6">
+                      <h4 className="text-sm font-black text-white flex items-center gap-1.5">
+                        <GitCommit size={16} className="text-emerald-400" /> 구글 애널리틱스 (GA4) API 자동 발급 프로세스
+                      </h4>
+                      
+                      {/* Horizontal Steps Timeline diagram UI */}
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative">
+                        <div className="hidden md:block absolute top-[18px] left-[15%] right-[15%] h-[1px] bg-zinc-800/80 -z-10" />
+                        
+                        <div className="flex items-start md:flex-col gap-4 md:gap-3">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-955 border border-zinc-800 text-xs font-black text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.1)]">
+                            01
+                          </span>
+                          <div className="space-y-1">
+                            <h5 className="text-xs font-black text-white">도메인 승인</h5>
+                            <p className="text-[10px] text-zinc-400 leading-normal">관리자가 도메인 연결을 최종 승인합니다.</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start md:flex-col gap-4 md:gap-3">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-955 border border-zinc-800 text-xs font-black text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.1)]">
+                            02
+                          </span>
+                          <div className="space-y-1">
+                            <h5 className="text-xs font-black text-white">API 연동 호출</h5>
+                            <p className="text-[10px] text-zinc-400 leading-normal">백엔드 서버가 구글 GA Admin API를 직접 호출합니다.</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start md:flex-col gap-4 md:gap-3">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-955 border border-zinc-800 text-xs font-black text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.1)]">
+                            03
+                          </span>
+                          <div className="space-y-1">
+                            <h5 className="text-xs font-black text-white">데이터 스트림 생성</h5>
+                            <p className="text-[10px] text-zinc-400 leading-normal">구글 서버 내에 도메인 전용 분석 스트림이 개설됩니다.</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start md:flex-col gap-4 md:gap-3">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-955 border border-zinc-800 text-xs font-black text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.1)]">
+                            04
+                          </span>
+                          <div className="space-y-1">
+                            <h5 className="text-xs font-black text-white">헤더 스크립트 주입</h5>
+                            <p className="text-[10px] text-zinc-400 leading-normal">측정 ID가 감지되어 블로그 헤더에 자동 탑재됩니다.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* CARD 4: 비즈니스 마케팅 세일즈 카피 가이드 */}
+                    <div className="md:col-span-2 rounded-2xl border border-zinc-850 bg-black/30 p-6 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-black text-white flex items-center gap-1.5">
+                          <FileText size={16} className="text-pink-400" /> 비즈니스 마케팅 세일즈 카피 가이드
+                        </h4>
+                        <span className="text-[9px] font-black bg-pink-500/10 text-pink-400 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                          홍보에 즉시 활용 가능
+                        </span>
+                      </div>
+                      <p className="text-xs text-zinc-400 leading-relaxed">
+                        크리에이박스의 차별화된 SEO 자동화 기술을 대고객 및 파트너 영업 마케팅에 그대로 카피하여 세일즈 효율을 올려보세요.
+                      </p>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                        <div className="p-4 rounded-xl bg-zinc-950/40 border border-zinc-900 space-y-1 text-xs">
+                          <p className="text-white font-black">🔥 검색 노출이 머리아픈 크리에이터들에게</p>
+                          <p className="text-zinc-400 text-[11px] leading-relaxed">
+                            &quot;구글 서치콘솔 등록이 복잡해서 포기하셨나요? 크리에이박스 기본 도메인을 사용하시면 1초 만에 최적의 구글 노출 뼈대가 자동 장착됩니다.&quot;
+                          </p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-zinc-950/40 border border-zinc-900 space-y-1 text-xs">
+                          <p className="text-white font-black">💼 기업 및 비즈니스 요금제 마케팅 시</p>
+                          <p className="text-zinc-400 text-[11px] leading-relaxed">
+                            &quot;GA4 연동 및 추적 코드 코딩을 몰라도, 본인 소유의 개인 도메인을 연결하는 즉시 구글 애널리틱스 분석 채널이 완전 자동 개설됩니다.&quot;
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* CARD 5: 구글/네이버 수동 사이트맵 & 피드 제출 안내 */}
+                    <div className="md:col-span-2 rounded-2xl border border-zinc-850 bg-black/30 p-6 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-black text-white flex items-center gap-1.5">
+                          <HelpCircle size={16} className="text-blue-400" /> 왜 사이트맵(sitemap.xml)과 피드(/feed)를 직접 수동 제출해야 하나요?
+                        </h4>
+                        <span className="text-[9px] font-black bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                          최초 1회 필수 작업
+                        </span>
+                      </div>
+                      <p className="text-xs text-zinc-400 leading-relaxed">
+                        등록하지 않아도 구글/네이버가 링크를 타고 부분적으로 색인을 생성할 수는 있지만, <b>기사 누락을 방지하고 몇 분 내로 초고속 검색 수집을 개통하려면 반드시 아래의 직접 연동 제출 작업이 강력히 권장됩니다.</b>
+                      </p>
+                      
+                      <div className="p-4 rounded-xl bg-zinc-950/40 border border-zinc-900 space-y-3">
+                        <p className="text-xs text-zinc-300 font-bold leading-relaxed">
+                          <b>💡 플랫폼(중앙 시스템)이 대신 자동 등록해 주지 못하는 이유:</b><br />
+                          구글 서치콘솔과 네이버 서치어드바이저는 보안 및 스팸 차단을 목적으로 <b>&quot;해당 도메인을 쥔 실소유주 개인 계정&quot;의 로그인 승인을 철저하게 강제</b>하고 있기 때문에, 중앙 시스템이 우회하여 대행 등록하는 수단이 기술적/정책적으로 원천 차단되어 있습니다.
+                        </p>
+                        
+                        <div className="border-t border-zinc-900 pt-3 space-y-2 text-xs">
+                          <p className="text-white font-black">⚙️ 최초 1회 수동 제출 가이드라인</p>
+                          <ul className="list-disc pl-5 space-y-1.5 text-zinc-400 text-[11px] leading-relaxed">
+                            <li>
+                              <b>구글 서치콘솔 (Google Search Console)</b>: 로그인 ➡️ 좌측 <b>[Sitemaps]</b> 메뉴 이동 ➡️ &apos;새 사이트맵 추가&apos; 입력창에 <code className="text-blue-400 font-mono">sitemap.xml</code> 과 <code className="text-blue-400 font-mono">feed</code> 를 각각 1회씩 써넣고 제출합니다.
+                            </li>
+                            <li>
+                              <b>네이버 서치어드바이저 (Naver Search Advisor)</b>: 로그인 ➡️ 본인 도메인 선택 ➡️ 좌측 <b>[요청]</b> 메뉴 이동 ➡️ <b>[사이트맵 제출]</b> 메뉴에 <code className="text-blue-400 font-mono">sitemap.xml</code> 을 입력하여 제출 ➡️ <b>[RSS 제출]</b> 메뉴에 도메인을 포함한 전체 피드 주소(예: <code className="text-blue-400 font-mono">https://{activeBrandId}.creaibox.com/feed</code>)를 정확히 입력하여 제출합니다.
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
