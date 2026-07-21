@@ -78,7 +78,7 @@ export default function DynamicSection({
 
               {/* Visual Graphic Panel */}
               <div className="lg:col-span-5 relative w-full aspect-square flex items-center justify-center animate-fade-in">
-                {bgImage ? (
+                {bgImage && typeof bgImage === "string" && (bgImage.startsWith("http://") || bgImage.startsWith("https://") || bgImage.startsWith("/")) ? (
                   <img
                     src={(bgImage.includes("drive.google.com") || bgImage.includes("googleusercontent.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(bgImage)}` : bgImage}
                     alt={title}
@@ -201,7 +201,7 @@ export default function DynamicSection({
                   style={{ borderRadius: "var(--border-radius)" }}
                 >
                   <div className="aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 relative flex items-center justify-center">
-                    {item.image ? (
+                    {item.image && typeof item.image === "string" && (item.image.startsWith("http://") || item.image.startsWith("https://") || item.image.startsWith("/")) ? (
                       <img
                         src={(item.image.includes("drive.google.com") || item.image.includes("googleusercontent.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(item.image)}` : item.image}
                         alt={item.title}

@@ -212,11 +212,11 @@ export default function BlogImageMediaLibrarySection({
                 key={img.id}
                 className="group relative flex flex-col space-y-3 overflow-visible border border-zinc-800/80 bg-zinc-950 p-3 text-[13px] w-full"
               >
-                <div className="relative aspect-video w-full overflow-hidden border border-zinc-900 bg-zinc-900">
+                <div className="relative aspect-video w-full overflow-hidden border border-zinc-900 bg-zinc-950 flex items-center justify-center">
                   <img
                     src={img.url}
                     alt="Asset"
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
                   />
 
                   <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">

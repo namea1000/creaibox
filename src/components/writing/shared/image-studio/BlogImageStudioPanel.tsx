@@ -1219,6 +1219,7 @@ export default function BlogImageStudioPanel({
           sourceId={activeSourceId}
           imageRole={imageRole}
           mode={mode}
+          onOpenMediaModal={() => setIsMediaModalOpen(true)}
           className="h-full min-w-0 border-l border-zinc-800/60"
         />
       )}
