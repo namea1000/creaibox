@@ -12,14 +12,19 @@ function getErrorMessage(error: unknown) {
 }
 
 function decodeHtmlEntities(text: string) {
+  if (!text) return '';
   return text
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&#x2F;/g, '/');
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&apos;/gi, "'")
+    .replace(/&#39;/gi, "'")
+    .replace(/&#34;/gi, '"')
+    .replace(/&#x2F;/gi, '/')
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(Number(dec)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
 }
 
 function stripHtml(html: string) {
@@ -232,6 +237,62 @@ function extractTimestamp(html: string) {
   return '';
 }
 
+function formatNaverHtmlToRichHtml(html: string) {
+  if (!html) return '';
+
+  let processed = html;
+
+  // 1. Convert Naver SmartEditor Quote & Callout & Speech Bubble blocks -> <blockquote>
+  processed = processed.replace(
+    /<(?:div|blockquote|section)[^>]*class=["'][^"']*(?:se-quote|se-module-quote|se-component-quote|se-quote-speech|se-quote-line|se-quote-default|se-quote-underline|se-callout)[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|blockquote|section)>/gi,
+    (_, inner) => {
+      const text = stripHtml(inner).trim();
+      if (!text) return '';
+      return `\n<blockquote><p><strong>${text}</strong></p></blockquote>\n`;
+    }
+  );
+
+  // 2. Convert Naver SmartEditor Section Title & Subheading blocks -> <h3>
+  processed = processed.replace(
+    /<(?:div|h2|h3|h4)[^>]*class=["'][^"']*(?:se-section-title|se-title-text|se-sub-title|se-text-title)[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|h2|h3|h4)>/gi,
+    (_, inner) => {
+      const text = stripHtml(inner).trim();
+      if (!text) return '';
+      return `\n<h3>${text}</h3>\n`;
+    }
+  );
+
+  // 3. Convert standard H1/H2/H3 tags
+  processed = processed.replace(/<h[12][^>]*>([\s\S]*?)<\/h[12]>/gi, (_, inner) => {
+    const text = stripHtml(inner).trim();
+    return text ? `\n<h2>${text}</h2>\n` : '';
+  });
+  processed = processed.replace(/<h[3456][^>]*>([\s\S]*?)<\/h[3456]>/gi, (_, inner) => {
+    const text = stripHtml(inner).trim();
+    return text ? `\n<h3>${text}</h3>\n` : '';
+  });
+
+  // 4. Convert blockquote tags if any remain
+  processed = processed.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (_, inner) => {
+    const text = stripHtml(inner).trim();
+    return text ? `\n<blockquote><p><strong>${text}</strong></p></blockquote>\n` : '';
+  });
+
+  // 5. Split into lines and wrap plain text lines into <p>
+  const lines = processed
+    .split(/\n+/)
+    .map((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return '';
+      if (/^<(blockquote|h2|h3|p|hr)/i.test(trimmed)) return trimmed;
+      const text = stripHtml(trimmed);
+      return text ? `<p>${text}</p>` : '';
+    })
+    .filter(Boolean);
+
+  return lines.join('\n');
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const rawUrl = searchParams.get('url');
@@ -254,18 +315,17 @@ export async function GET(request: NextRequest) {
       const title = extractTitle(articleHtml) || extractTitle(outerHtml);
       const contentHtml = extractContentHtml(articleHtml);
       
-      const textBody = stripHtml(contentHtml);
+      const textBody = formatNaverHtmlToRichHtml(contentHtml);
       const timestamp = extractTimestamp(articleHtml) || extractTimestamp(outerHtml);
 
       let content = '';
       if (timestamp) {
-        content += `[입력/수정 시간] ${timestamp}\n`;
+        content += `<p><strong>[입력/수정 시간]</strong> ${timestamp}</p>`;
       }
-      content += `[출처] ${urlStr}\n\n`;
-      content += `---\n\n`;
+      content += `<p><strong>[출처]</strong> <a href="${urlStr}" target="_blank" rel="noopener noreferrer">${urlStr}</a></p><hr/><br/>`;
       content += textBody;
 
-      if (!textBody || textBody.length < 80) {
+      if (!textBody || textBody.replace(/<[^>]*>/g, '').trim().length < 80) {
         throw new Error('본문을 충분히 추출하지 못했습니다. 공개된 네이버 블로그 글인지 확인해 주세요.');
       }
 
@@ -336,17 +396,16 @@ export async function GET(request: NextRequest) {
 
       const title = extractTitle(html);
       const timestamp = extractTimestamp(html);
-      const textBody = stripHtml(contentHtml);
+      const textBody = formatNaverHtmlToRichHtml(contentHtml);
 
       let content = '';
       if (timestamp) {
-        content += `[입력/수정 시간] ${timestamp}\n`;
+        content += `<p><strong>[입력/수정 시간]</strong> ${timestamp}</p>`;
       }
-      content += `[출처] ${urlStr}\n\n`;
-      content += `---\n\n`;
+      content += `<p><strong>[출처]</strong> <a href="${urlStr}" target="_blank" rel="noopener noreferrer">${urlStr}</a></p><hr/><br/>`;
       content += textBody;
 
-      if (!textBody || textBody.length < 50) {
+      if (!textBody || textBody.replace(/<[^>]*>/g, '').trim().length < 50) {
         throw new Error('본문을 충분히 추출하지 못했습니다. URL이 올바른지 혹은 공개된 페이지인지 확인해 주세요.');
       }
 

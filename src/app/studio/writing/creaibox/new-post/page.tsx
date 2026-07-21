@@ -47,6 +47,10 @@ export default function CreaiboxNewPostBridge() {
 
         let targetPost = blankPost;
 
+        const searchParams = new URLSearchParams(window.location.search);
+        const targetDomain = searchParams.get("domain") || "";
+        const initialCanonical = targetDomain ? `https://${targetDomain.toLowerCase()}.creaibox.com/blog` : null;
+
         if (!targetPost) {
           const payload = {
             user_id: user.id,
@@ -60,7 +64,7 @@ export default function CreaiboxNewPostBridge() {
             slug: null,
             meta_description: "",
             focus_keyword: "",
-            canonical_url: null,
+            canonical_url: initialCanonical,
             seo_tags: [],
             word_count_goal: null,
             source_mode: "direct",

@@ -878,16 +878,16 @@ export default function CreaiboxAiWritingPanel({
                 type="button"
                 onClick={onFetchOriginalText}
                 disabled={isAiGenerating || isFetchingOriginal || isRecreating || !recreateUrl.trim()}
-                className="w-full h-10 rounded-xl border border-zinc-800 bg-[#0e111a] hover:bg-zinc-800 text-zinc-300 font-black text-xs transition flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full h-11 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-emerald-500 hover:brightness-110 active:scale-[0.98] text-white font-black text-xs transition-all flex items-center justify-center gap-2 shadow-[0_6px_20px_rgba(16,185,129,0.35)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isFetchingOriginal ? (
                   <>
-                    <RefreshCw size={13} className="animate-spin" />
+                    <RefreshCw size={14} className="animate-spin text-white" />
                     <span>본문 추출하는 중...</span>
                   </>
                 ) : (
                   <>
-                    <Download size={13} />
+                    <Download size={14} className="text-white" />
                     <span>URL 원본 글 가져오기</span>
                   </>
                 )}
@@ -911,6 +911,25 @@ export default function CreaiboxAiWritingPanel({
                   </>
                 )}
               </button>
+
+              {/* ⚠️ 저작권 방지 및 필수 원문 글 재창조 안내 박스 */}
+              <div className="mt-3 p-4 rounded-2xl border border-amber-500/35 bg-amber-950/25 text-amber-200/90 flex flex-col gap-2.5 shadow-sm">
+                <div className="flex items-center gap-2 text-sm font-black text-amber-400">
+                  <AlertTriangle size={16} className="shrink-0 text-amber-400" />
+                  <span>필독: 원문 사용 및 저작권 주의 안내</span>
+                </div>
+                <ul className="space-y-2 list-disc list-inside text-zinc-200 font-medium text-[12.5px] leading-relaxed">
+                  <li>
+                    <strong className="text-amber-300 font-bold">이미지 미추출:</strong> URL 원문의 이미지는 저작권 침해 위험으로 인해 가져오지 않습니다. (필요 시 직접 사진 등록 또는 AI 이미지를 활용하세요)
+                  </li>
+                  <li>
+                    <strong className="text-amber-300 font-bold">원문 그대로 발행 금지:</strong> 가져온 원본 글을 그대로 발행할 경우 저작권 침해 및 유사문서 제재 대상이 됩니다.
+                  </li>
+                  <li>
+                    <strong className="text-amber-300 font-bold">글 재창조 필수:</strong> 반드시 본문을 직접 대폭 수정하시거나 위 <span className="text-violet-300 font-black">"AI 글 재창조 시작"</span> 또는 에디터 상단 툴바의 <span className="text-emerald-300 font-black">"원문 글 재창조"</span> 버튼을 클릭하여 글을 완전히 재창조한 후 발행하세요!
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         )}

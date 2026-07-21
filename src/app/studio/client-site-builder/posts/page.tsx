@@ -39,16 +39,47 @@ export default function PagesAndPostsPage() {
     if (!selectedSite) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("site_posts")
-        .select("*")
-        .eq("site_id", selectedSite.id)
-        .in("post_type", ["notice", "board"])
-        .order("is_pinned", { ascending: false })
-        .order("created_at", { ascending: false });
+      const [sitePostsRes, creaiboxPostsRes] = await Promise.all([
+        supabase
+          .from("site_posts")
+          .select("*")
+          .eq("site_id", selectedSite.id)
+          .in("post_type", ["notice", "board"])
+          .order("is_pinned", { ascending: false })
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("writing_creaibox_posts")
+          .select("id, title, content, created_at, canonical_url, published_snapshot")
+          .eq("status", "published")
+          .order("created_at", { ascending: false })
+      ]);
 
-      if (error) throw error;
-      setPosts(data || []);
+      const sitePosts = sitePostsRes.data || [];
+      const creaiboxPostsRaw = creaiboxPostsRes.data || [];
+
+      // Filter CreAibox AI posts matching this brand_id
+      const bId = selectedSite.brand_id.toLowerCase();
+      const creaiboxPosts = creaiboxPostsRaw
+        .filter((p: any) => {
+          if (!p.canonical_url) return false;
+          const u = p.canonical_url.toLowerCase();
+          return u.includes(`://${bId}.`) || u.includes(`://${bId}:`);
+        })
+        .map((p: any) => {
+          const snap = p.published_snapshot || {};
+          return {
+            id: p.id,
+            title: snap.title || p.title || "제목 없음",
+            content: snap.content || p.content || "",
+            post_type: "board" as const,
+            author_name: selectedSite.company_name + " (CreAibox AI)",
+            is_pinned: false,
+            views: 0,
+            created_at: p.created_at
+          };
+        });
+
+      setPosts([...sitePosts, ...creaiboxPosts]);
     } catch (err) {
       console.error("Failed to fetch posts:", err);
     } finally {
@@ -265,13 +296,22 @@ export default function PagesAndPostsPage() {
               </p>
             </div>
 
-            <button
-              onClick={() => setShowWriteModal(true)}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-extrabold text-white bg-slate-900 hover:bg-slate-800 dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-slate-955 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer self-start sm:self-auto"
-            >
-              <Plus size={14} />
-              <span>➕ 새 글 작성하기</span>
-            </button>
+            <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+              <Link
+                href={`/studio/writing/creaibox/new-post?domain=${selectedSite.brand_id}`}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-black text-white bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 hover:brightness-110 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
+              >
+                <span>✍️ AI 블로그 글 작성 (크리에이박스 에디터)</span>
+              </Link>
+
+              <button
+                onClick={() => setShowWriteModal(true)}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-extrabold text-white bg-slate-900 hover:bg-slate-800 dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-slate-955 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
+              >
+                <Plus size={14} />
+                <span>공지글 직접 작성</span>
+              </button>
+            </div>
           </div>
 
           {/* Posts Table */}

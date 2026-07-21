@@ -31,7 +31,7 @@ const PAGE_SIZE = 15;
 const CREAIBOX_LIST_CACHE_KEY = "creaibox:manuscripts:list:v1";
 type CreaiboxRow = Record<string, unknown>;
 type TableFilters = {
-  writingType: string;
+  domain: string;
   contentType: string;
   tone: string;
 };
@@ -63,15 +63,41 @@ function getRouteId(record: StudioManuscriptRecord, index: number) {
   return record.id || String(index + 1);
 }
 
+const STANDARD_TONE_OPTIONS = [
+  "💻 전문적이고 통찰력 있는 분석 (기술 블로그)",
+  "✍️ 친근하고 명확한 실무 설명 (가이드형 포스팅)",
+  "📢 브랜드 중심의 신뢰형 설명 (서비스 소개형)",
+  "📈 인사이트 리포트형 톤 (트렌드 분석)",
+  "✉️ 가볍고 설득력 있는 뉴스레터형 톤",
+];
+
 function safeText(value?: string | null) {
   return value ?? "";
 }
 
-function getToneLabel(value?: string | null) {
-  const tone = safeText(value).trim();
-  if (!tone) return "말투 설정 없음";
+function cleanToneString(str: string): string {
+  return str.replace(/^[^\w\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F]+/u, "").trim();
+}
 
-  return tone.split("(")[0].trim() || tone;
+function getToneLabel(value?: string | null): string {
+  const raw = safeText(value).trim();
+  if (!raw) return "말투 설정 없음";
+
+  const cleanRaw = cleanToneString(raw);
+  const rawNoBracket = cleanRaw.split("(")[0].trim();
+
+  const matched = STANDARD_TONE_OPTIONS.find((opt) => {
+    if (opt === raw) return true;
+    const cleanOpt = cleanToneString(opt);
+    const optNoBracket = cleanOpt.split("(")[0].trim();
+
+    if (cleanOpt === cleanRaw) return true;
+    if (optNoBracket === rawNoBracket) return true;
+    if (cleanOpt.startsWith(rawNoBracket) || cleanRaw.startsWith(optNoBracket)) return true;
+    return false;
+  });
+
+  return matched || raw;
 }
 
 function getStatusLabel(status?: StudioManuscriptRecord["status"] | null) {
@@ -81,15 +107,111 @@ function getStatusLabel(status?: StudioManuscriptRecord["status"] | null) {
   return "임시 저장";
 }
 
+function getManuscriptDomainLabel(
+  manuscript: StudioManuscriptRecord,
+  clientSiteBrandIds?: Set<string>
+) {
+  if (manuscript.canonicalUrl) {
+    try {
+      const url = new URL(manuscript.canonicalUrl);
+      const host = url.hostname.toLowerCase();
+
+      if (host === "creaibox.com" || host === "www.creaibox.com") {
+        return "⭐ creaibox.com (공식)";
+      }
+
+      if (host.endsWith(".creaibox.com") || host.endsWith(".localhost")) {
+        const sub = host.split(".")[0];
+        if (sub === "creaibox" || sub === "www") {
+          return "⭐ creaibox.com (공식)";
+        }
+        if (clientSiteBrandIds && clientSiteBrandIds.has(sub)) {
+          return `🏢 ${host}`;
+        }
+        return `📝 ${host}`;
+      }
+
+      return `🌐 ${host}`;
+    } catch {
+      if (manuscript.canonicalUrl.includes("creaibox.com")) {
+        const parts = manuscript.canonicalUrl.replace("https://", "").replace("http://", "").split("/");
+        const domain = parts[0] || manuscript.canonicalUrl;
+        if (domain.endsWith(".creaibox.com")) {
+          const sub = domain.split(".")[0];
+          if (clientSiteBrandIds && clientSiteBrandIds.has(sub)) {
+            return `🏢 ${domain}`;
+          }
+          return `📝 ${domain}`;
+        }
+        return `🌐 ${domain}`;
+      }
+    }
+  }
+  return "📁 미지정 (미발행)";
+}
+
+const STANDARD_TYPE_OPTIONS = [
+  "🤖 AI 자동 포스팅",
+  "🧠 AI 인사이트 포스팅",
+  "📈 트렌드 브리프",
+  "📊 시장/기술 분석 리포트",
+  "📰 최신 뉴스 및 이슈",
+  "📌 오늘의 주요 이슈 정리",
+  "ℹ️ 일반 정보성",
+  "💵 생활 정책 및 정부 지원금",
+  "🥗 건강 정보 및 영양제 분석",
+  "💳 보험/대출/카드 정보",
+  "🏠 부동산 정보",
+  "💰 금융 및 재테크",
+  "📈 주식/재테크 분석",
+  "🏢 기업 정보 및 주식 정보",
+  "🚀 비즈니스/창업 정보",
+  "📖 브랜드 스토리 포스팅",
+  "📢 서비스 소개형 포스팅",
+  "🏢 기업 소개 및 서비스 안내",
+  "✉️ 뉴스레터형 콘텐츠",
+  "📱 앱 설치 및 상세 가이드",
+  "🤖 AI 툴 및 웹 서비스 가이드",
+  "⚙️ 유틸리티 설치/사용 방법",
+  "🔗 바로가기 버튼 생성",
+  "🌐 URL 원문 재창조",
+  "📝 텍스트 원문 재창조",
+  "📄 PDF 원문 추출",
+];
+
+function cleanTypeString(str: string): string {
+  return str.replace(/^[^\w\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F]+/u, "").trim();
+}
+
 function getWritingTypeLabel(manuscript: StudioManuscriptRecord) {
   return manuscript.postType === "recreate" ? "글 재창조" : "스마트 글쓰기";
 }
 
-function getContentTypeLabel(manuscript: StudioManuscriptRecord) {
-  if (manuscript.sourceMode === "url") return "URL 재창조";
-  if (manuscript.sourceMode === "text") return "텍스트 재창조";
-  if (manuscript.postType === "recreate") return "AI 재창조";
-  return "AI 인사이트 포스팅";
+function getContentTypeLabel(manuscript: StudioManuscriptRecord): string {
+  let raw = "";
+
+  if (manuscript.sourceMode === "url") raw = "URL 원문 재창조";
+  else if (manuscript.sourceMode === "text") raw = "텍스트 원문 재창조";
+  else if (manuscript.sourceMode === "pdf") raw = "PDF 원문 추출";
+  else if (manuscript.detailLabel && manuscript.detailLabel !== "create" && manuscript.detailLabel !== "recreate") {
+    raw = manuscript.detailLabel;
+  } else if (manuscript.postType === "recreate") {
+    raw = "AI 재창조";
+  } else {
+    raw = "AI 인사이트 포스팅";
+  }
+
+  const cleanRaw = cleanTypeString(raw);
+
+  const matched = STANDARD_TYPE_OPTIONS.find((opt) => {
+    if (opt === raw) return true;
+    const cleanOpt = cleanTypeString(opt);
+    if (cleanOpt === cleanRaw) return true;
+    if (cleanOpt.startsWith(cleanRaw) || cleanRaw.startsWith(cleanOpt)) return true;
+    return false;
+  });
+
+  return matched || raw;
 }
 
 function getPreviewUrl(manuscript: StudioManuscriptRecord) {
@@ -193,11 +315,29 @@ export default function CreaiboxManuscriptListPage() {
   const [isCreatingDirect, setIsCreatingDirect] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [tableFilters, setTableFilters] = useState<TableFilters>({
-    writingType: "all",
+    domain: "all",
     contentType: "all",
     tone: "all",
   });
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  const [clientSiteBrandIds, setClientSiteBrandIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    async function loadClientSites() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: clientSites } = await supabase
+        .from("client_sites")
+        .select("brand_id")
+        .eq("profile_id", user.id);
+      if (clientSites) {
+        const brandSet = new Set<string>(clientSites.map((cs: any) => String(cs.brand_id || "").toLowerCase()));
+        setClientSiteBrandIds(brandSet);
+      }
+    }
+    void loadClientSites();
+  }, [supabase]);
 
   const {
     data: queryManuscripts = [],
@@ -345,22 +485,24 @@ export default function CreaiboxManuscriptListPage() {
   const isTrashView = statusTab === "trash";
 
   const filterOptions = useMemo(() => {
-    const writingTypes = new Set<string>();
-    const contentTypes = new Set<string>();
-    const tones = new Set<string>();
+    const domains = new Set<string>();
+    const contentTypes = new Set<string>(STANDARD_TYPE_OPTIONS);
+    const tones = new Set<string>(STANDARD_TONE_OPTIONS);
 
     manuscripts.forEach((manuscript) => {
-      writingTypes.add(getWritingTypeLabel(manuscript));
+      domains.add(getManuscriptDomainLabel(manuscript, clientSiteBrandIds));
       contentTypes.add(getContentTypeLabel(manuscript));
-      tones.add(getToneLabel(manuscript.selectedTone));
+      if (manuscript.selectedTone) {
+        tones.add(getToneLabel(manuscript.selectedTone));
+      }
     });
 
     return {
-      writingTypes: Array.from(writingTypes),
+      domains: Array.from(domains),
       contentTypes: Array.from(contentTypes),
       tones: Array.from(tones),
     };
-  }, [manuscripts]);
+  }, [clientSiteBrandIds, manuscripts]);
 
   const filteredManuscripts = useMemo(() => {
     const lowerSearch = searchTerm.trim().toLowerCase();
@@ -369,9 +511,9 @@ export default function CreaiboxManuscriptListPage() {
       const isTrash = manuscript.status === "trash";
       const matchesStatus =
         statusTab === "all" ? !isTrash : manuscript.status === statusTab;
-      const matchesWritingType =
-        tableFilters.writingType === "all" ||
-        getWritingTypeLabel(manuscript) === tableFilters.writingType;
+      const matchesDomain =
+        tableFilters.domain === "all" ||
+        getManuscriptDomainLabel(manuscript, clientSiteBrandIds) === tableFilters.domain;
       const matchesContentType =
         tableFilters.contentType === "all" ||
         getContentTypeLabel(manuscript) === tableFilters.contentType;
@@ -381,16 +523,18 @@ export default function CreaiboxManuscriptListPage() {
       const title = safeText(manuscript.title).toLowerCase();
       const targetKeyword = safeText(manuscript.targetKeyword).toLowerCase();
       const selectedTone = safeText(manuscript.selectedTone).toLowerCase();
+      const domainLabel = getManuscriptDomainLabel(manuscript).toLowerCase();
 
       const matchesSearch =
         !lowerSearch ||
         title.includes(lowerSearch) ||
         targetKeyword.includes(lowerSearch) ||
-        selectedTone.includes(lowerSearch);
+        selectedTone.includes(lowerSearch) ||
+        domainLabel.includes(lowerSearch);
 
       return (
         matchesStatus &&
-        matchesWritingType &&
+        matchesDomain &&
         matchesContentType &&
         matchesTone &&
         matchesSearch
@@ -827,29 +971,12 @@ export default function CreaiboxManuscriptListPage() {
 
   return (
     <div className="min-h-screen bg-[#f0f0f1] px-6 py-6 text-[14px] text-slate-900">
-      <div className="mb-4 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{pageTitle}</h1>
-          <p className="mt-2 text-[14px] leading-6 text-slate-600">
-            AI로 제작된 원고를 관리합니다. 각 원고를 클릭하면 실시간 수정/발행이 가능한 전용
-            스튜디오로 이동합니다.
-          </p>
-        </div>
-
-        <div className="w-full max-w-md">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              value={searchTerm}
-              onChange={(event) => {
-                setSearchTerm(event.target.value);
-                setCurrentPage(1);
-              }}
-              placeholder="원고 제목 또는 검색 키워드 입력..."
-              className="h-10 w-full border border-slate-300 bg-white pl-10 pr-3 text-[14px] text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-        </div>
+      <div className="mb-4">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{pageTitle}</h1>
+        <p className="mt-2 text-[14px] leading-6 text-slate-600">
+          AI로 제작된 원고를 관리합니다. 각 원고를 클릭하면 실시간 수정/발행이 가능한 전용
+          스튜디오로 이동합니다.
+        </p>
       </div>
 
       {createError && (
@@ -897,15 +1024,15 @@ export default function CreaiboxManuscriptListPage() {
 
       <div className="mb-3 flex flex-wrap items-center gap-2 text-[14px]">
         <label className="flex items-center gap-2 border border-slate-300 bg-white px-3 py-2 text-slate-700">
-          <PenLine className="h-4 w-4 text-[#135e96]" />
-          <span className="font-semibold">작성 방식</span>
+          <Globe className="h-4 w-4 text-[#135e96]" />
+          <span className="font-semibold">도메인(블로그, 홈페이지)</span>
           <select
-            value={tableFilters.writingType}
-            onChange={(event) => handleTableFilterChange("writingType", event.target.value)}
+            value={tableFilters.domain}
+            onChange={(event) => handleTableFilterChange("domain", event.target.value)}
             className="bg-white text-slate-900 outline-none"
           >
-            <option value="all">전체 선택</option>
-            {filterOptions.writingTypes.map((option) => (
+            <option value="all">📑 전체 글목록 보기</option>
+            {filterOptions.domains.map((option) => (
               <option key={option} value={option}>
                 {option}
               </option>
@@ -949,16 +1076,29 @@ export default function CreaiboxManuscriptListPage() {
       </div>
 
       <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 flex-1 max-w-xl">
           <button
             type="button"
             disabled={isCreatingDirect}
             onClick={handleCreateDirect}
-            className="inline-flex items-center gap-2 border border-transparent bg-violet-600 hover:bg-violet-700 px-4 py-2 text-[14px] font-black text-white rounded-xl transition shadow-lg shadow-violet-950/20 disabled:opacity-50"
+            className="shrink-0 inline-flex items-center gap-2 border border-transparent bg-violet-600 hover:bg-violet-700 px-4 py-2 text-[14px] font-black text-white rounded-xl transition shadow-lg shadow-violet-950/20 disabled:opacity-50"
           >
             <FilePlus2 className="h-4 w-4 text-white" />
             {isCreatingDirect ? "생성 중..." : "새글 쓰기"}
           </button>
+
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={searchTerm}
+              onChange={(event) => {
+                setSearchTerm(event.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="원고 제목 또는 검색 키워드 입력..."
+              className="h-10 w-full border border-slate-300 bg-white pl-10 pr-3 text-[14px] text-slate-900 rounded-xl outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm"
+            />
+          </div>
 
           {isTrashView && (
             <>
@@ -985,13 +1125,13 @@ export default function CreaiboxManuscriptListPage() {
         {paginationControls}
       </div>
 
-      <div className="overflow-hidden border border-slate-300 bg-white">
+      <div className="overflow-x-auto border border-slate-300 bg-white">
         <table className="w-full border-collapse text-[14px]">
           <thead>
             <tr className="border-b border-slate-300 bg-white text-left text-[14px] font-semibold text-slate-700">
-              <th className="w-16 px-3 py-3 text-center">번호</th>
+              <th className="w-16 px-3 py-3 text-center whitespace-nowrap">번호</th>
               {isTrashView && (
-                <th className="w-10 px-2 py-3 text-center">
+                <th className="w-10 px-2 py-3 text-center whitespace-nowrap">
                   <input
                     type="checkbox"
                     checked={allTrashRowsSelected}
@@ -1002,13 +1142,13 @@ export default function CreaiboxManuscriptListPage() {
                 </th>
               )}
               <th className="min-w-[320px] px-3 py-3">포스팅 제목</th>
-              <th className="w-28 px-3 py-3 text-center">원고 상태</th>
-              <th className="w-44 px-3 py-3 text-center">작성 방식</th>
-              <th className="w-44 px-3 py-3 text-center">타입</th>
-              <th className="w-72 px-3 py-3 text-center">말투</th>
-              <th className="w-28 px-3 py-3 text-center">글자 수</th>
-              <th className="w-40 px-3 py-3 text-center">업데이트 일시</th>
-              <th className="w-32 px-3 py-3 text-center">관리</th>
+              <th className="w-28 px-3 py-3 text-center whitespace-nowrap">원고 상태</th>
+              <th className="w-56 px-3 py-3 text-center whitespace-nowrap">도메인 (블로그/홈페이지)</th>
+              <th className="w-48 px-3 py-3 text-center whitespace-nowrap">타입</th>
+              <th className="w-80 px-3 py-3 text-center whitespace-nowrap">말투</th>
+              <th className="w-28 px-3 py-3 text-center whitespace-nowrap">글자 수</th>
+              <th className="w-40 px-3 py-3 text-center whitespace-nowrap">업데이트 일시</th>
+              <th className="w-32 px-3 py-3 text-center whitespace-nowrap">관리</th>
             </tr>
           </thead>
 
@@ -1045,6 +1185,7 @@ export default function CreaiboxManuscriptListPage() {
             const statusLabel = getStatusLabel(manuscript.status);
             const modeLabel = getContentTypeLabel(manuscript);
             const toneLabel = getToneLabel(manuscript.selectedTone);
+            const domainLabel = getManuscriptDomainLabel(manuscript, clientSiteBrandIds);
 
             const routeId = getRouteId(manuscript, index);
             const isSelected = pathname === `/studio/writing/creaibox/list/${routeId}`;
@@ -1146,31 +1287,31 @@ export default function CreaiboxManuscriptListPage() {
                   </div>
                 </td>
 
-                <td className="px-3 py-4 text-center text-[14px] text-slate-700">
+                <td className="px-3 py-4 text-center text-[14px] text-slate-700 whitespace-nowrap">
                   <span className="inline-flex border border-slate-300 bg-white px-2 py-1 text-[13px] text-slate-700">
                     {statusLabel}
                   </span>
                 </td>
 
-                <td className="px-3 py-4 text-center text-[14px] text-slate-700">
-                  <span className="inline-flex border border-slate-300 bg-white px-2 py-1 text-[13px] text-slate-700">
-                    {typeLabel}
+                <td className="px-3 py-4 text-center text-[14px] text-slate-700 whitespace-nowrap">
+                  <span className="inline-flex border border-blue-200/80 bg-blue-50/70 px-2.5 py-1 text-[12px] font-bold text-blue-900 rounded-md">
+                    {domainLabel}
                   </span>
                 </td>
 
-                <td className="px-3 py-4 text-center text-[14px] text-slate-700">
+                <td className="px-3 py-4 text-center text-[14px] text-slate-700 whitespace-nowrap">
                   {modeLabel}
                 </td>
 
-                <td className="px-3 py-4 text-center text-[14px] leading-6 text-slate-700">
+                <td className="px-3 py-4 text-center text-[14px] leading-6 text-slate-700 whitespace-nowrap">
                   {toneLabel}
                 </td>
 
-                <td className="px-3 py-4 text-center text-[14px] text-slate-700">
+                <td className="px-3 py-4 text-center text-[14px] text-slate-700 whitespace-nowrap">
                   {Number(wordCount).toLocaleString()} 자
                 </td>
 
-                <td className="px-3 py-4 text-center text-[14px] leading-6 text-slate-600">{updatedText}</td>
+                <td className="px-3 py-4 text-center text-[14px] leading-6 text-slate-600 whitespace-nowrap">{updatedText}</td>
 
                 <td
                   className="px-3 py-4"

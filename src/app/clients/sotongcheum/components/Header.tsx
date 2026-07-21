@@ -29,6 +29,7 @@ export default function Header() {
     { name: "사업영역", href: "/#business" },
     { name: "행사렌탈", href: "/#rental" },
     { name: "실적갤러리", href: "/#portfolio" },
+    { name: "블로그", href: "/blog" },
     { name: "견적문의", href: "/contact" },
   ];
 
@@ -44,21 +45,15 @@ export default function Header() {
   };
 
   return (
-    <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? "bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm py-4"
-          : "bg-white border-b border-slate-50 py-5"
-      }`}
-    >
-      <div className="mx-auto max-w-7xl px-6 lg:px-8 flex items-center justify-between">
+    <header className="sticky top-0 z-50 bg-white border-b-2 border-slate-200/90 shadow-sm transition-colors duration-300">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8 flex items-center justify-between h-16">
         {/* Brand Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 text-blue-600 group-hover:bg-blue-100 group-hover:text-blue-700 transition-all duration-300 shadow-sm">
             <HeartHandshake className="h-5 w-5" />
           </div>
           <div className="flex flex-col">
-            <span className="text-lg font-black tracking-tight text-slate-900 leading-none">
+            <span className="text-xl font-extrabold tracking-tight text-slate-900 leading-none">
               {COMPANY_INFO.brandName}
             </span>
             <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest leading-none">
@@ -68,7 +63,7 @@ export default function Header() {
         </Link>
 
         {/* Desktop GNB */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-bold text-slate-600">
+        <nav className="hidden md:flex items-center gap-8 text-sm font-extrabold text-slate-700">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
             return (

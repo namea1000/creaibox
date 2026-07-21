@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { ChevronDown, ChevronUp, Check, Plus, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Check, Plus, Loader2, Globe } from "lucide-react";
 import type { StudioManuscriptRecord } from "@/lib/queries/manuscripts";
 import { createClient } from "@/utils/supabase/client";
 
@@ -65,10 +65,10 @@ function buildPreviewUrl(
     
   if (data.slug) {
     if (role === "ADMIN") return `https://creaibox.com/blog/${data.slug}`;
-    return `${domainPrefix}/${data.slug}`;
+    return `${domainPrefix}/blog/${data.slug}`;
   }
   if (role === "ADMIN") return "https://creaibox.com/blog";
-  return domainPrefix;
+  return `${domainPrefix}/blog`;
 }
 
 function buildCanonicalUrlFromSlug(
@@ -101,7 +101,7 @@ function buildCanonicalUrlFromSlug(
       const prefix = getDomainPrefix(bid);
       const subPrefix = `https://${bid}.creaibox.com`;
       if (currentCanonical.startsWith(prefix) || currentCanonical.startsWith(subPrefix)) {
-        return cleanSlug ? `${prefix}/${cleanSlug}` : prefix;
+        return cleanSlug ? `${prefix}/blog/${cleanSlug}` : `${prefix}/blog`;
       }
     }
   }
@@ -111,7 +111,7 @@ function buildCanonicalUrlFromSlug(
   }
   if (defaultBrand) {
     const prefix = getDomainPrefix(defaultBrand);
-    return cleanSlug ? `${prefix}/${cleanSlug}` : prefix;
+    return cleanSlug ? `${prefix}/blog/${cleanSlug}` : `${prefix}/blog`;
   }
   return cleanSlug ? `https://creaibox.com/blog/${cleanSlug}` : "https://creaibox.com/blog";
 }
@@ -389,6 +389,72 @@ export default function CreaiboxSeoOptimizationPanel({
     }
   }
 
+  const [clientSiteBrandIds, setClientSiteBrandIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    async function loadClientSites() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: clientSites } = await supabase
+        .from("client_sites")
+        .select("brand_id")
+        .eq("profile_id", user.id);
+      if (clientSites) {
+        const brandSet = new Set<string>(clientSites.map((cs: any) => String(cs.brand_id || "").toLowerCase()));
+        setClientSiteBrandIds(brandSet);
+      }
+    }
+    void loadClientSites();
+  }, [supabase]);
+
+  const domainOptions = useMemo(() => {
+    const list: Array<{
+      key: string;
+      label: string;
+      basePrefix: string;
+      isSelected: boolean;
+    }> = [];
+
+    if (userRole === "ADMIN") {
+      list.push({
+        key: "official",
+        label: "⭐ creaibox.com (공식)",
+        basePrefix: "https://creaibox.com",
+        isSelected: selectedBrand === "official",
+      });
+    }
+
+    if (userBrandIds) {
+      userBrandIds.forEach((bid) => {
+        const isPrimary = bid === userBrandId;
+        const customDom = extraConfigs?.[`custom_domain_${bid}`] || (isPrimary ? extraConfigs?.custom_domain : "");
+        const customDomStatus = extraConfigs?.[`custom_domain_status_${bid}`] || (isPrimary ? extraConfigs?.custom_domain_status : "NONE");
+        const hasCustom = customDomStatus === "APPROVED" && customDom;
+
+        let emoji = "📝";
+        let label = `${bid}.creaibox.com`;
+        let basePrefix = `https://${bid}.creaibox.com`;
+
+        if (hasCustom) {
+          emoji = "🌐";
+          label = customDom;
+          basePrefix = `https://${customDom}`;
+        } else if (clientSiteBrandIds.has(bid.toLowerCase())) {
+          emoji = "🏢";
+        }
+
+        list.push({
+          key: bid,
+          label: `${emoji} ${label}`,
+          basePrefix,
+          isSelected: selectedBrand === bid,
+        });
+      });
+    }
+
+    return list;
+  }, [clientSiteBrandIds, extraConfigs, selectedBrand, userBrandId, userBrandIds, userRole]);
+
   // Statistics calculations
   const contentStr = data.content || "";
   const charCountWithSpaces = contentStr.length;
@@ -454,6 +520,40 @@ export default function CreaiboxSeoOptimizationPanel({
               </p>
             </section>
 
+            {/* 🌟 도메인 선택 (Title 상단 배치, 1행 가로 배치: 좌측 '도메인 선택' / 우측 선택 드롭다운) */}
+            {domainOptions.length > 0 && (
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-zinc-800/80 bg-zinc-950/60 p-3 mb-4">
+                <span className="flex shrink-0 items-center gap-1.5 text-sm font-semibold text-white/80">
+                  <Globe className="h-4 w-4 text-violet-400" />
+                  도메인 선택
+                </span>
+
+                <div className="relative flex-1 max-w-[220px]">
+                  <select
+                    value={selectedBrand || ""}
+                    onChange={(e) => {
+                      const targetKey = e.target.value;
+                      const opt = domainOptions.find((o) => o.key === targetKey);
+                      if (opt) {
+                        const cleanSlug = (data.slug || "").trim().replace(/^\/+/, "");
+                        updateLocalData({
+                          canonicalUrl: cleanSlug ? `${opt.basePrefix}/blog/${cleanSlug}` : `${opt.basePrefix}/blog`,
+                        });
+                      }
+                    }}
+                    className="w-full rounded-lg border border-zinc-800/80 bg-zinc-900/90 py-2 pl-3 pr-7 text-[12px] font-semibold text-white outline-none transition focus:border-violet-500/50 appearance-none cursor-pointer"
+                  >
+                    {domainOptions.map((opt) => (
+                      <option key={opt.key} value={opt.key} className="bg-[#0b0f15] text-white">
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
+                </div>
+              </div>
+            )}
+
             <label className="block">
               <div className="mb-1.5 flex items-center justify-between text-sm font-semibold text-white/75">
                 <span>Title</span>
@@ -499,70 +599,14 @@ export default function CreaiboxSeoOptimizationPanel({
             </label>
 
             <div className="block">
-              <div className="mb-1.5 flex items-center justify-between text-sm font-semibold text-white/75">
-                <span>Canonical URL (20~45자가 가장 깔끔한 권장 구간)</span>
-                <span className="text-xs font-medium text-white/45">
-                  {(data.canonicalUrl || "").length}
-                </span>
-              </div>
-
-              {/* Subdomain selector button bar */}
-              {userBrandIds && userBrandIds.length > 0 && (
-                <div className="mb-2">
-                  <span className="block text-[10px] font-bold text-zinc-500 mb-1 uppercase tracking-wider">
-                    도메인 선택
+              {/* Canonical URL 입력창 */}
+              <div>
+                <div className="mb-1.5 flex items-center justify-between text-sm font-semibold text-white/75">
+                  <span>Canonical URL (20~45자가 가장 깔끔한 권장 구간)</span>
+                  <span className="text-xs font-medium text-white/45">
+                    {(data.canonicalUrl || "").length}
                   </span>
-                  <div className="flex flex-wrap gap-1.5 p-1 rounded-xl bg-zinc-950/60 border border-zinc-800/80">
-                    {userRole === "ADMIN" && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const cleanSlug = (data.slug || "").trim().replace(/^\/+/, "");
-                          updateLocalData({
-                            canonicalUrl: cleanSlug ? `https://creaibox.com/blog/${cleanSlug}` : "https://creaibox.com/blog",
-                          });
-                        }}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-black tracking-tight transition-all ${
-                          selectedBrand === "official"
-                            ? "bg-blue-500 text-white shadow-md shadow-blue-500/20"
-                            : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
-                        }`}
-                      >
-                        creaibox.com (공식)
-                      </button>
-                    )}
-                    {userBrandIds.map((bid) => {
-                      const isPrimary = bid === userBrandId;
-                      const customDom = extraConfigs?.[`custom_domain_${bid}`] || (isPrimary ? extraConfigs?.custom_domain : "");
-                      const customDomStatus = extraConfigs?.[`custom_domain_status_${bid}`] || (isPrimary ? extraConfigs?.custom_domain_status : "NONE");
-                      const hasCustom = customDomStatus === "APPROVED" && customDom;
-                      
-                      const label = hasCustom ? customDom : `${bid}.creaibox.com`;
-                      const basePrefix = hasCustom ? `https://${customDom}` : `https://${bid}.creaibox.com`;
-
-                      return (
-                        <button
-                          key={bid}
-                          type="button"
-                          onClick={() => {
-                            const cleanSlug = (data.slug || "").trim().replace(/^\/+/, "");
-                            updateLocalData({
-                              canonicalUrl: cleanSlug ? `${basePrefix}/${cleanSlug}` : basePrefix,
-                            });
-                          }}
-                          className={`px-3 py-1.5 rounded-lg text-[11px] font-black tracking-tight transition-all ${
-                            selectedBrand === bid
-                              ? "bg-blue-500 text-white shadow-md shadow-blue-500/20"
-                              : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
                 </div>
-              )}
 
               <input
                 value={data.canonicalUrl || ""}
@@ -624,6 +668,7 @@ export default function CreaiboxSeoOptimizationPanel({
               <p className="mt-1.5 text-[12px] font-medium leading-relaxed text-zinc-500">
                 검색엔진에 기준 주소로 전달되는 정식 URL입니다.
               </p>
+              </div>
             </div>
 
             <label className="block">

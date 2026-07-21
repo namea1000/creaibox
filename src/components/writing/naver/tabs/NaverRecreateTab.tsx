@@ -5,7 +5,7 @@ import Link from 'next/link';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import NaverAnalysisTower from "@/components/writing/naver/NaverAnalysisTower";
-import { Cpu, Link2, FileText, Zap, RefreshCw, Sparkles, ChevronDown, Copy, Download, ExternalLink, Eye, FileText as FileTextIcon } from 'lucide-react';
+import { Cpu, Link2, FileText, Zap, RefreshCw, Sparkles, ChevronDown, Copy, Download, ExternalLink, Eye, AlertTriangle, FileText as FileTextIcon } from 'lucide-react';
 
 interface KeywordFrequency { word: string; count: number; density: number; status: 'good' | 'warning' | 'danger'; }
 interface SourceAnalysisResult { keywords: string[]; topic: string; summaryPoints: string[]; }
@@ -323,7 +323,7 @@ export default function NaverRecreateTab({
                 type="button"
                 onClick={handleAiRecreate}
                 disabled={isAiLoading}
-                className="w-full h-14 bg-gradient-to-tr from-emerald-600 to-teal-600 text-white text-xs font-black rounded-2xl shadow-lg flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-70"
+                className="w-full h-14 bg-gradient-to-tr from-emerald-600 to-teal-600 text-white text-xs font-black rounded-2xl shadow-lg flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-70 cursor-pointer"
               >
                 {isAiLoading ? (
                   <>
@@ -335,6 +335,25 @@ export default function NaverRecreateTab({
                   </>
                 )}
               </button>
+
+              {/* ⚠️ 저작권 방지 및 필수 원문 글 재창조 안내 박스 */}
+              <div className="p-4 rounded-2xl border border-amber-500/35 bg-amber-950/25 text-amber-200/90 flex flex-col gap-2.5 shadow-sm text-left">
+                <div className="flex items-center gap-2 text-sm font-black text-amber-400">
+                  <AlertTriangle size={16} className="shrink-0 text-amber-400" />
+                  <span>필독: 원문 사용 및 저작권 주의 안내</span>
+                </div>
+                <ul className="space-y-2 list-disc list-inside text-zinc-200 font-medium text-[12.5px] leading-relaxed">
+                  <li>
+                    <strong className="text-amber-300 font-bold">이미지 미추출:</strong> URL 원문의 이미지는 저작권 침해 위험으로 인해 가져오지 않습니다. (필요 시 직접 사진 등록 또는 AI 이미지를 활용하세요)
+                  </li>
+                  <li>
+                    <strong className="text-amber-300 font-bold">원문 그대로 발행 금지:</strong> 가져온 원본 글을 그대로 발행할 경우 저작권 침해 및 유사문서 제재 대상이 됩니다.
+                  </li>
+                  <li>
+                    <strong className="text-amber-300 font-bold">글 재창조 필수:</strong> 반드시 본문을 직접 대폭 수정하시거나 위 <span className="text-emerald-300 font-black">"AI 글 재창조 가동"</span> 버튼을 클릭하여 글을 완전히 재창조한 후 발행하세요!
+                  </li>
+                </ul>
+              </div>
 
               {generationStatusMessage && isAiLoading && (
                 <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm font-bold text-amber-200">

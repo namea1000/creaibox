@@ -245,8 +245,8 @@ export default function Sidebar({
           { name: "블로그 새글 쓰기", href: "/writing/creaibox/new-post", icon: PenLine },
           { name: "발행 원고 관리", href: "/writing/creaibox/list", icon: Archive },
           { name: "블로그 관리", href: "/writing/creaibox/blog-management", icon: Settings },
-          { name: "크리에이박스 썸네일", href: "/writing/creaibox/thumbnail", icon: ImageIcon },
-          { name: "지식 & 페르소나", href: "/writing/creaibox/knowledge", icon: Database },
+          { name: "썸네일 생성 관리", href: "/writing/creaibox/thumbnail", icon: ImageIcon },
+          { name: "지식 & 페르소나 설정", href: "/writing/creaibox/knowledge", icon: Database },
         ],
       },
       {

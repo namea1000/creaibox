@@ -3,7 +3,50 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
-import { ArrowLeft, Check, PanelLeftClose, PanelLeftOpen, RotateCcw, Search, Send } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, Globe, PanelLeftClose, PanelLeftOpen, RotateCcw, Search, Send } from "lucide-react";
+
+function getManuscriptDomainLabel(
+  manuscript: StudioManuscriptRecord,
+  clientSiteBrandIds?: Set<string>
+) {
+  if (manuscript.canonicalUrl) {
+    try {
+      const url = new URL(manuscript.canonicalUrl);
+      const host = url.hostname.toLowerCase();
+
+      if (host === "creaibox.com" || host === "www.creaibox.com") {
+        return "⭐ creaibox.com (공식)";
+      }
+
+      if (host.endsWith(".creaibox.com") || host.endsWith(".localhost")) {
+        const sub = host.split(".")[0];
+        if (sub === "creaibox" || sub === "www") {
+          return "⭐ creaibox.com (공식)";
+        }
+        if (clientSiteBrandIds && clientSiteBrandIds.has(sub)) {
+          return `🏢 ${host}`;
+        }
+        return `📝 ${host}`;
+      }
+
+      return `🌐 ${host}`;
+    } catch {
+      if (manuscript.canonicalUrl.includes("creaibox.com")) {
+        const parts = manuscript.canonicalUrl.replace("https://", "").replace("http://", "").split("/");
+        const domain = parts[0] || manuscript.canonicalUrl;
+        if (domain.endsWith(".creaibox.com")) {
+          const sub = domain.split(".")[0];
+          if (clientSiteBrandIds && clientSiteBrandIds.has(sub)) {
+            return `🏢 ${domain}`;
+          }
+          return `📝 ${domain}`;
+        }
+        return `🌐 ${domain}`;
+      }
+    }
+  }
+  return "📁 미지정 (미발행)";
+}
 import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/utils/supabase/client";
 import UniversalBlogEditor from "@/components/writing/editor/UniversalBlogEditor";
@@ -52,12 +95,105 @@ function buildPublicBlogSlug(title?: string, focusKeyword?: string, targetKeywor
   return base || `creaibox-post-${Date.now()}`;
 }
 
+const STANDARD_TONE_OPTIONS = [
+  "💻 전문적이고 통찰력 있는 분석 (기술 블로그)",
+  "✍️ 친근하고 명확한 실무 설명 (가이드형 포스팅)",
+  "📢 브랜드 중심의 신뢰형 설명 (서비스 소개형)",
+  "📈 인사이트 리포트형 톤 (트렌드 분석)",
+  "✉️ 가볍고 설득력 있는 뉴스레터형 톤",
+];
+
+function cleanToneString(str: string): string {
+  return str.replace(/^[^\w\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F]+/u, "").trim();
+}
+
+function getToneLabel(value?: string | null): string {
+  const raw = (value || "").trim();
+  if (!raw) return "말투 설정 없음";
+
+  const cleanRaw = cleanToneString(raw);
+  const rawNoBracket = cleanRaw.split("(")[0].trim();
+
+  const matched = STANDARD_TONE_OPTIONS.find((opt) => {
+    if (opt === raw) return true;
+    const cleanOpt = cleanToneString(opt);
+    const optNoBracket = cleanOpt.split("(")[0].trim();
+
+    if (cleanOpt === cleanRaw) return true;
+    if (optNoBracket === rawNoBracket) return true;
+    if (cleanOpt.startsWith(rawNoBracket) || cleanRaw.startsWith(optNoBracket)) return true;
+    return false;
+  });
+
+  return matched || raw;
+}
+
+const STANDARD_TYPE_OPTIONS = [
+  "🤖 AI 자동 포스팅",
+  "🧠 AI 인사이트 포스팅",
+  "📈 트렌드 브리프",
+  "📊 시장/기술 분석 리포트",
+  "📰 최신 뉴스 및 이슈",
+  "📌 오늘의 주요 이슈 정리",
+  "ℹ️ 일반 정보성",
+  "💵 생활 정책 및 정부 지원금",
+  "🥗 건강 정보 및 영양제 분석",
+  "💳 보험/대출/카드 정보",
+  "🏠 부동산 정보",
+  "💰 금융 및 재테크",
+  "📈 주식/재테크 분석",
+  "🏢 기업 정보 및 주식 정보",
+  "🚀 비즈니스/창업 정보",
+  "📖 브랜드 스토리 포스팅",
+  "📢 서비스 소개형 포스팅",
+  "🏢 기업 소개 및 서비스 안내",
+  "✉️ 뉴스레터형 콘텐츠",
+  "📱 앱 설치 및 상세 가이드",
+  "🤖 AI 툴 및 웹 서비스 가이드",
+  "⚙️ 유틸리티 설치/사용 방법",
+  "🔗 바로가기 버튼 생성",
+  "🌐 URL 원문 재창조",
+  "📝 텍스트 원문 재창조",
+  "📄 PDF 원문 추출",
+];
+
+function cleanTypeString(str: string): string {
+  return str.replace(/^[^\w\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F]+/u, "").trim();
+}
+
+function getContentTypeLabel(manuscript: StudioManuscriptRecord): string {
+  let raw = "";
+
+  if (manuscript.sourceMode === "url") raw = "URL 원문 재창조";
+  else if (manuscript.sourceMode === "text") raw = "텍스트 원문 재창조";
+  else if (manuscript.sourceMode === "pdf") raw = "PDF 원문 추출";
+  else if (manuscript.detailLabel && manuscript.detailLabel !== "create" && manuscript.detailLabel !== "recreate") {
+    raw = manuscript.detailLabel;
+  } else if (manuscript.postType === "recreate") {
+    raw = "AI 재창조";
+  } else {
+    raw = "AI 인사이트 포스팅";
+  }
+
+  const cleanRaw = cleanTypeString(raw);
+
+  const matched = STANDARD_TYPE_OPTIONS.find((opt) => {
+    if (opt === raw) return true;
+    const cleanOpt = cleanTypeString(opt);
+    if (cleanOpt === cleanRaw) return true;
+    if (cleanOpt.startsWith(cleanRaw) || cleanRaw.startsWith(cleanOpt)) return true;
+    return false;
+  });
+
+  return matched || raw;
+}
+
 function buildCanonicalUrl(slug: string, role?: string, brandId?: string) {
   if (role === "ADMIN") {
     return `https://creaibox.com/blog/${slug}`;
   }
   if (brandId) {
-    return `https://${brandId}.creaibox.com/${slug}`;
+    return `https://${brandId}.creaibox.com/blog/${slug}`;
   }
   return `https://creaibox.com/blog/${slug}`;
 }
@@ -347,6 +483,9 @@ export default function CreaiboxManuscriptDetailPage() {
 
   const [cachedList, setCachedList] = useState<StudioManuscriptRecord[]>(() => readCachedList());
   const [searchTerm, setSearchTerm] = useState("");
+  const [sidebarTab, setSidebarTab] = useState<"domain" | "search">("domain");
+  const [sidebarDomainFilter, setSidebarDomainFilter] = useState("all");
+  const [clientSiteBrandIds, setClientSiteBrandIds] = useState<Set<string>>(new Set());
   const [hasLocalEdits, setHasLocalEdits] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDirectLoading, setIsDirectLoading] = useState(false);
@@ -356,6 +495,7 @@ export default function CreaiboxManuscriptDetailPage() {
   const [isPolishing, setIsPolishing] = useState(false);
   const [isChangingPostType, setIsChangingPostType] = useState(false);
   const [isApplyingSearch, setIsApplyingSearch] = useState(false);
+  const [isSpinRecreating, setIsSpinRecreating] = useState(false);
   const [publishFeedback, setPublishFeedback] = useState("");
   const [publishingPanelTab, setPublishingPanelTab] = useState<PublishingPanelTab>("seo");
 
@@ -466,7 +606,7 @@ export default function CreaiboxManuscriptDetailPage() {
   const [aiContentType, setAiContentType] = useState(contentTypeParam);
   const [aiPostType, setAiPostType] = useState(postTypeParam);
   const [aiSelectedTone, setAiSelectedTone] = useState(toneParam);
-  const [aiWordCountGoal, setAiWordCountGoal] = useState(wordCountParam);
+  const [aiWordCountGoal, setAiWordCountGoal] = useState(wordCountParam || "same");
   const [aiStrategyLevel, setAiStrategyLevel] = useState(strategyLevelParam);
   const [aiResultFormat, setAiResultFormat] = useState(resultFormatParam);
   const [aiLargeCategory, setAiLargeCategory] = useState(largeCategoryParam);
@@ -573,6 +713,23 @@ export default function CreaiboxManuscriptDetailPage() {
             }
           });
         }
+
+        // 🌟 기업용 홈페이지(client_sites)의 brand_id도 도메인 선택 목록에 추가
+        const { data: clientSites } = await supabase
+          .from("client_sites")
+          .select("brand_id")
+          .eq("profile_id", user.id);
+
+        if (clientSites) {
+          const brandSet = new Set<string>(clientSites.map((cs: any) => String(cs.brand_id || "").toLowerCase()));
+          setClientSiteBrandIds(brandSet);
+          clientSites.forEach((cs: any) => {
+            if (cs.brand_id && !approvedBrands.includes(cs.brand_id.toLowerCase())) {
+              approvedBrands.push(cs.brand_id.toLowerCase());
+            }
+          });
+        }
+
         setUserBrandIds(approvedBrands);
       }
     };
@@ -654,6 +811,32 @@ export default function CreaiboxManuscriptDetailPage() {
     }
   }, [activeRouteId, data?.id, detail, hasLocalEdits, queryClient]);
 
+  // 🌟 포스트 선택 변경 시 좌측 AI 설정 폼(콘텐츠 유형, 포스트 타입, 말투 선택 등) 자동 동기화
+  useEffect(() => {
+    if (!data) return;
+    if (data.selectedTone) {
+      setAiSelectedTone(getToneLabel(data.selectedTone));
+    } else {
+      setAiSelectedTone("💻 전문적이고 통찰력 있는 분석 (기술 블로그)");
+    }
+    if (data.targetKeyword && data.targetKeyword !== "일반 원고") {
+      setAiTargetKeyword(data.targetKeyword);
+    }
+    setAiPostType(getContentTypeLabel(data));
+    if (data.sourceMode === "url") {
+      setAiContentType("URL 원문 재창조");
+    } else if (data.sourceMode === "text") {
+      setAiContentType("텍스트 재창조");
+    } else if (data.sourceMode === "pdf") {
+      setAiContentType("PDF 원문추출");
+    } else {
+      setAiContentType("블로그 글쓰기 콘텐츠");
+    }
+    if (data.wordCountGoal) {
+      setAiWordCountGoal(String(data.wordCountGoal));
+    }
+  }, [data?.id]);
+
   const fetchDirectDetail = useCallback(async () => {
     if (!activeRouteId || data || isDirectLoading) return;
 
@@ -720,17 +903,32 @@ export default function CreaiboxManuscriptDetailPage() {
     };
   }, []);
 
+  const sidebarDomainOptions = useMemo(() => {
+    const domains = new Set<string>();
+    sidebarList.forEach((item) => {
+      domains.add(getManuscriptDomainLabel(item, clientSiteBrandIds));
+    });
+    return Array.from(domains);
+  }, [clientSiteBrandIds, sidebarList]);
+
   const filteredManuscripts = useMemo(() => {
     const lower = searchTerm.trim().toLowerCase();
-    if (!lower) return sidebarList;
 
     return sidebarList.filter((item) => {
-      const title = item.title ?? "";
-      const targetKeyword = item.targetKeyword ?? "";
+      if (sidebarDomainFilter !== "all") {
+        const itemDomain = getManuscriptDomainLabel(item, clientSiteBrandIds);
+        if (itemDomain !== sidebarDomainFilter) return false;
+      }
 
-      return title.toLowerCase().includes(lower) || targetKeyword.toLowerCase().includes(lower);
+      if (lower) {
+        const title = (item.title || "").toLowerCase();
+        const targetKeyword = (item.targetKeyword || "").toLowerCase();
+        if (!title.includes(lower) && !targetKeyword.includes(lower)) return false;
+      }
+
+      return true;
     });
-  }, [sidebarList, searchTerm]);
+  }, [clientSiteBrandIds, sidebarDomainFilter, sidebarList, searchTerm]);
 
   const persistCaches = useCallback(
     (nextRecord: StudioManuscriptRecord) => {
@@ -788,8 +986,8 @@ export default function CreaiboxManuscriptDetailPage() {
       let canonicalUrl = safeData.canonicalUrl || "";
       if (userRole !== "ADMIN" && userBrandId) {
         const prefix = `https://${userBrandId}.creaibox.com`;
-        if (!canonicalUrl.startsWith(prefix)) {
-          canonicalUrl = `${prefix}/${slug}`;
+        if (!canonicalUrl.startsWith(`${prefix}/blog`) && !canonicalUrl.startsWith("https://creaibox.com/blog")) {
+          canonicalUrl = `${prefix}/blog/${slug}`;
         }
       } else {
         if (!canonicalUrl) {
@@ -1690,7 +1888,19 @@ export default function CreaiboxManuscriptDetailPage() {
     async (option: string) => {
       if (!data) return;
 
-      if (option.startsWith("expand_")) {
+      if (option === "recreate_spin") {
+        const rawTitle = (data.title || "").trim();
+        const rawContent = (data.content || "").replace(/<[^>]*>/g, "").trim();
+        const isTitleEmpty = !rawTitle || rawTitle === "새글 제목을 수정해 주세요";
+        const isContentEmpty = !rawContent;
+
+        if (isTitleEmpty || isContentEmpty) {
+          window.alert("제목과 본문에 재창조 할 원본 글을 입력해 주세요");
+          return;
+        }
+
+        setIsSpinRecreating(true);
+      } else if (option.startsWith("expand_")) {
         if (option.includes("toc_")) {
           setIsEnhancingToc(true);
         } else {
@@ -1708,7 +1918,18 @@ export default function CreaiboxManuscriptDetailPage() {
         const { data: { user } } = await supabase.auth.getUser();
 
         let promptInstruction = "";
-        if (option.startsWith("expand_")) {
+        if (option === "recreate_spin") {
+          promptInstruction = `[Spin-Rewriting Engine 가동 지침]:
+당신은 고성능 AI 원문 글 재창조 엔진입니다.
+제공된 원본 원고의 제목과 본문(HTML)을 바탕으로, 원본의 핵심 팩트, 유용한 지식, 주요 쟁점 데이터는 완벽하게 보존하되, 문장 표현, 어휘 선택, 단락 구조 및 전개 흐름을 완전히 새롭게 재구성(Spin-Rewriting)하여 매력적이고 가독성 높은 새로운 글로 재창조해 주십시오.
+
+[필수 출력 형식]:
+반드시 아래 JSON 포맷만을 반환해야 합니다 (다른 부연 설명이나 마크다운 백틱 등은 절대로 포함하지 마십시오):
+{
+  "title": "재창조된 감각적인 새 제목",
+  "content": "<p>재창조된 새로운 본문 통합 HTML 내용</p>"
+}`;
+        } else if (option.startsWith("expand_")) {
           if (option.includes("toc_")) {
             const count = option.replace("expand_toc_", "");
             promptInstruction = `현재 본문에 있는 기존 목차(H2 등)들과 긴밀하게 연관되고 이어지는 새로운 목차(H2 또는 H3 태그)를 정확히 ${count}개 생성하여 추가해 주세요. 또한, 새로 추가된 각 목차 하위에는 상세하고 깊이 있는 설명 문단(글 내용)도 함께 작성해서 본문의 마지막 또는 문맥상 적합한 위치에 자연스럽게 덧붙여 전체 원고의 분량을 확장해 주세요.
@@ -1786,7 +2007,7 @@ export default function CreaiboxManuscriptDetailPage() {
 [출력 형식 및 제약 조건]:
 1. 반드시 기존 본문 내용의 맥락을 누락하지 말고, 내용을 더 풍성하게 다듬거나 확장해야 합니다.
 2. 마크다운 기호(예: ** 혹은 * 등)가 아닌 기존 본문에 맞춰 <h2>, <h3>, <p>, <ul>, <li>, <strong> 등 적합한 HTML 태그 형태로 결과를 작성해야 합니다.
-3. 지시사항 외의 다른 부연 설명이나 마크다운 백틱(예: \`\`\`html 등)은 절대 포함하지 말고, 브라우저에서 바로 사용할 수 있는 순수한 HTML 본문 코드만 출력하세요.`;
+3. 지시사항 외의 다른 부연 설명이나 마크다운 백틱(예: \`\`\`html 등)은 절대 포함하지 말고, 결과를 명확히 출력하세요.`;
 
         const useSearch = option === "apply_google_search";
         const response = await fetch("/api/ai/generate", {
@@ -1810,9 +2031,26 @@ export default function CreaiboxManuscriptDetailPage() {
         }
 
         let enhancedHtml = result.text || "";
-        enhancedHtml = enhancedHtml.replace(/^```html\s*/i, "").replace(/```$/, "").trim();
+        enhancedHtml = enhancedHtml.replace(/^```html\s*/i, "").replace(/^```json\s*/i, "").replace(/```$/, "").trim();
 
-        if (enhancedHtml) {
+        if (option === "recreate_spin") {
+          let parsed: { title?: string; content?: string } | null = null;
+          try {
+            parsed = robustParseJson(enhancedHtml);
+          } catch {
+            parsed = null;
+          }
+
+          if (parsed && (parsed.title || parsed.content)) {
+            updateLocalData({
+              ...(parsed.title ? { title: parsed.title } : {}),
+              ...(parsed.content ? { content: parsed.content } : {}),
+            });
+          } else if (enhancedHtml) {
+            updateLocalData({ content: enhancedHtml });
+          }
+          window.alert("Spin-Rewriting Engine에 의해 제목과 본문 원문 글 재창조가 완료되었습니다!");
+        } else if (enhancedHtml) {
           // 포스트 타입 변경 성공 시, 데이터 모델의 post_type도 함께 갱신 처리
           if (option.startsWith("change_post_type:")) {
             const targetType = option.replace("change_post_type:", "");
@@ -1834,6 +2072,7 @@ export default function CreaiboxManuscriptDetailPage() {
         setIsPolishing(false);
         setIsChangingPostType(false);
         setIsApplyingSearch(false);
+        setIsSpinRecreating(false);
       }
     },
     [data, supabase, updateLocalData, selectedPersonaId, selectedKnowledgeId]
@@ -2007,17 +2246,67 @@ export default function CreaiboxManuscriptDetailPage() {
               </button>
             </div>
 
-            {/* 원고 검색 입력칸 (고정 영역, 패딩 유지) */}
+            {/* 원고 도메인 / 원고 검색 2탭 분리 컨트롤 */}
             <div className="p-4 pb-0 shrink-0">
-              <div className="relative mb-4">
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300/60" />
-                <input
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="원고 검색..."
-                  className="w-full rounded-xl border border-zinc-800/80 bg-zinc-950/30 py-3 pl-11 pr-4 text-[13px] font-medium text-white outline-none transition placeholder:text-white/30 focus:border-violet-500/50"
-                />
+              <div className="flex rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-1 mb-3">
+                <button
+                  type="button"
+                  onClick={() => setSidebarTab("domain")}
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[12px] font-bold transition cursor-pointer ${
+                    sidebarTab === "domain"
+                      ? "bg-violet-600 text-white shadow-md shadow-violet-950/30"
+                      : "text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  도메인
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSidebarTab("search")}
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[12px] font-bold transition cursor-pointer ${
+                    sidebarTab === "search"
+                      ? "bg-violet-600 text-white shadow-md shadow-violet-950/30"
+                      : "text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  <Search className="h-3.5 w-3.5" />
+                  원고 검색
+                </button>
               </div>
+
+              {/* 탭 1: 도메인 선택 드롭다운 */}
+              {sidebarTab === "domain" && (
+                <div className="relative mb-3">
+                  <Globe className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300/70" />
+                  <select
+                    value={sidebarDomainFilter}
+                    onChange={(event) => setSidebarDomainFilter(event.target.value)}
+                    className="w-full rounded-xl border border-zinc-800/80 bg-zinc-950/40 py-2.5 pl-10 pr-8 text-[13px] font-semibold text-white outline-none transition focus:border-violet-500/50 appearance-none cursor-pointer"
+                  >
+                    <option value="all" className="bg-[#0b0f15] text-white">📑 전체 글목록 보기</option>
+                    {sidebarDomainOptions.map((domain) => (
+                      <option key={domain} value={domain} className="bg-[#0b0f15] text-white">
+                        {domain}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                </div>
+              )}
+
+              {/* 탭 2: 원고 검색 입력창 */}
+              {sidebarTab === "search" && (
+                <div className="relative mb-3">
+                  <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300/60" />
+                  <input
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="원고 제목 또는 검색 키워드 입력..."
+                    className="w-full rounded-xl border border-zinc-800/80 bg-zinc-950/30 py-2.5 pl-10 pr-4 text-[13px] font-medium text-white outline-none transition placeholder:text-white/30 focus:border-violet-500/50"
+                  />
+                </div>
+              )}
             </div>
 
             {/* 스크롤 가능한 원고 리스트 본문 */}
@@ -2134,6 +2423,7 @@ export default function CreaiboxManuscriptDetailPage() {
             isPolishing={isPolishing}
             isChangingPostType={isChangingPostType}
             isApplyingSearch={isApplyingSearch}
+            isSpinRecreating={isSpinRecreating}
             handleImageUploadClick={() => { }}
             handleImageChange={() => { }}
             handleUpdateCaption={() => { }}

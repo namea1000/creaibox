@@ -120,14 +120,17 @@ import {
   List,
   ListOrdered,
   Minus,
+  MessageSquareQuote,
   PanelLeftClose,
   PanelLeftOpen,
   Printer,
   Quote,
   Redo,
   RefreshCw,
+  RotateCcw,
   Save,
   Search,
+  Smile,
   Sparkles,
   Split,
   Table2,
@@ -308,6 +311,7 @@ interface UniversalBlogEditorProps {
   isPolishing?: boolean;
   isChangingPostType?: boolean;
   isApplyingSearch?: boolean;
+  isSpinRecreating?: boolean;
   handleImageUploadClick: () => void;
   handleImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleUpdateCaption: (id: string, text: string) => void;
@@ -754,6 +758,7 @@ export default function UniversalBlogEditor({
   isPolishing = false,
   isChangingPostType = false,
   isApplyingSearch = false,
+  isSpinRecreating = false,
   handleUpdateCaption,
   handleDeleteImage,
   handleEnhanceContent,
@@ -974,6 +979,51 @@ export default function UniversalBlogEditor({
     setIsInternalLinkModalOpen(false);
   };
 
+  // 인용구 & 말풍선 카드 삽입 후 커서를 박스 내부로 이동시키는 헬퍼
+  const handleInsertQuoteCard = (html: string, cursorOffset: number = 3) => {
+    if (!editor) return;
+    const startPos = editor.state.selection.from;
+    editor.chain().focus().insertContent(html).run();
+
+    setTimeout(() => {
+      try {
+        const docSize = editor.state.doc.content.size;
+        const targetPos = Math.min(startPos + cursorOffset, docSize - 1);
+        editor.chain().setTextSelection(targetPos).focus().run();
+      } catch (err) {
+        console.error("Failed to move cursor inside quote:", err);
+      }
+    }, 10);
+
+    setIsQuoteDropdownOpen(false);
+  };
+
+  // 스티커 이모티콘 삽입 헬퍼 (120px 센터 정렬)
+  const handleInsertSticker = (imgUrl: string, name: string) => {
+    if (!editor) return;
+    editor.chain().focus().setImage({
+      src: imgUrl,
+      alt: name,
+      width: "120px",
+      alignment: "center",
+    } as any).run();
+    setIsStickerDropdownOpen(false);
+  };
+
+  // 스티커 뱃지 삽입 헬퍼
+  const handleInsertBadge = (badgeHtml: string) => {
+    if (!editor) return;
+    editor.chain().focus().insertContent(`<div class="cb-sticker-wrapper text-center my-2 select-none">${badgeHtml}</div>`).run();
+    setIsStickerDropdownOpen(false);
+  };
+
+  // 다양한 구분선 삽입 헬퍼
+  const handleInsertDivider = (dividerHtml: string) => {
+    if (!editor) return;
+    editor.chain().focus().insertContent(dividerHtml).run();
+    setIsDividerDropdownOpen(false);
+  };
+
   // 최근 사용 기호 추가 헬퍼
   const addRecentSymbol = (sym: string) => {
     setRecentSymbols((prev) => {
@@ -1113,6 +1163,16 @@ export default function UniversalBlogEditor({
     }
   }, [content]);
 
+  const [isQuoteDropdownOpen, setIsQuoteDropdownOpen] = useState(false);
+  const quoteDropdownRef = useRef<HTMLDivElement>(null);
+
+  const [isStickerDropdownOpen, setIsStickerDropdownOpen] = useState(false);
+  const [selectedStickerCategory, setSelectedStickerCategory] = useState<"emoji" | "badge">("emoji");
+  const stickerDropdownRef = useRef<HTMLDivElement>(null);
+
+  const [isDividerDropdownOpen, setIsDividerDropdownOpen] = useState(false);
+  const dividerDropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (contentDropdownRef.current && !contentDropdownRef.current.contains(event.target as Node)) {
@@ -1123,6 +1183,15 @@ export default function UniversalBlogEditor({
       }
       if (postTypeDropdownRef.current && !postTypeDropdownRef.current.contains(event.target as Node)) {
         setIsPostTypeDropdownOpen(false);
+      }
+      if (quoteDropdownRef.current && !quoteDropdownRef.current.contains(event.target as Node)) {
+        setIsQuoteDropdownOpen(false);
+      }
+      if (stickerDropdownRef.current && !stickerDropdownRef.current.contains(event.target as Node)) {
+        setIsStickerDropdownOpen(false);
+      }
+      if (dividerDropdownRef.current && !dividerDropdownRef.current.contains(event.target as Node)) {
+        setIsDividerDropdownOpen(false);
       }
       setActiveTableDropdown(null);
     }
@@ -2507,24 +2576,6 @@ export default function UniversalBlogEditor({
             <Redo size={14} />
           </ToolbarButton>
 
-          <div className="mx-1 h-4 w-px bg-zinc-800" />
-
-          <input type="file" accept="image/*" ref={fileInputRef} onChange={handleEditorImageUpload} className="hidden" />
-
-          <ToolbarButton
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isImageUploading}
-            className="border border-zinc-800 bg-zinc-900/50 hover:bg-emerald-500/10 hover:text-emerald-400"
-            title="로컬 이미지 업로드"
-          >
-            {isImageUploading ? <RefreshCw size={14} className="animate-spin" /> : <ImageIcon size={14} />}
-            {isImageUploading ? "업로드중" : "사진"}
-          </ToolbarButton>
-
-          <ToolbarButton onClick={handleInsertImageUrl} title="외부 이미지 URL로 이미지 삽입">
-            <ImageIcon size={14} /> URL이미지
-          </ToolbarButton>
-
           <div className="mx-1.5 h-4 w-px bg-zinc-800" />
 
           {/* 프리미엄 글꼴 드롭다운 */}
@@ -2703,10 +2754,6 @@ export default function UniversalBlogEditor({
             <ListOrdered size={15} />
           </ToolbarButton>
 
-          <ToolbarButton onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive("blockquote")} title="인용문 blockquote">
-            <Quote size={15} />
-          </ToolbarButton>
-
           <div className="mx-1.5 h-4 w-px bg-zinc-800" />
 
           <ToolbarButton
@@ -2765,7 +2812,304 @@ export default function UniversalBlogEditor({
         </div>
 
         {/* [2열]: 레이아웃 삽입, 유틸리티, 설정 모달들 */}
-        <div className="flex flex-nowrap items-center gap-1.5 px-4 py-2 border-b border-zinc-800 bg-zinc-950/20 overflow-x-auto scrollbar-none select-none shrink-0">
+        <div className="flex flex-nowrap items-center gap-1.5 px-4 py-2 border-b border-zinc-800 bg-zinc-950/20 overflow-visible relative z-30 select-none shrink-0">
+          <input type="file" accept="image/*" ref={fileInputRef} onChange={handleEditorImageUpload} className="hidden" />
+
+          {/* 사진 업로드 버튼 */}
+          <ToolbarButton
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isImageUploading}
+            className="border border-zinc-800 bg-zinc-900/50 hover:bg-emerald-500/10 hover:text-emerald-400"
+            title="로컬 이미지 업로드"
+          >
+            {isImageUploading ? <RefreshCw size={14} className="animate-spin" /> : <ImageIcon size={14} />}
+            {isImageUploading ? "업로드중" : "사진"}
+          </ToolbarButton>
+
+          {/* URL 이미지 삽입 버튼 */}
+          <ToolbarButton onClick={handleInsertImageUrl} title="외부 이미지 URL로 이미지 삽입">
+            <ImageIcon size={14} /> URL이미지
+          </ToolbarButton>
+
+          <div className="mx-1 h-4 w-px bg-zinc-800" />
+
+          {/* 🌟 인용구 & 말풍선 보강 모듈 드롭다운 */}
+          <div className="relative shrink-0" ref={quoteDropdownRef}>
+            <ToolbarButton
+              onClick={() => setIsQuoteDropdownOpen((prev) => !prev)}
+              active={editor?.isActive("blockquote") || isQuoteDropdownOpen}
+              title="인용구 및 말풍선 박스 모듈 삽입"
+              className="border border-violet-500/40 bg-gradient-to-r from-violet-950/60 to-indigo-950/60 text-violet-200 hover:border-violet-400 hover:text-white px-3 py-1.5 shadow-[0_0_12px_rgba(139,92,246,0.2)]"
+            >
+              <Quote size={14} className="text-violet-400" />
+              <span className="text-xs font-black text-violet-300">인용구 & 말풍선</span>
+              <ChevronDown size={12} className="text-violet-400" />
+            </ToolbarButton>
+
+            {isQuoteDropdownOpen && (
+              <div className="absolute left-0 top-full mt-1.5 w-80 rounded-2xl border border-violet-500/40 bg-[#0d0f19] p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.95)] z-[99999] flex flex-col gap-2 max-h-[75vh] overflow-y-auto custom-scrollbar select-none">
+                <div className="px-1 py-1 text-[10px] font-black text-violet-400 uppercase tracking-wider flex items-center justify-between border-b border-zinc-800/80 pb-1.5 mb-1">
+                  <span>인용구 & 말풍선 템플릿</span>
+                  <span className="text-[9px] text-zinc-500">원클릭 바로 삽입</span>
+                </div>
+
+                {/* 1. 기본 라인 인용구 */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleInsertQuoteCard(`
+                      <blockquote class="cb-quote cb-quote-line">
+                        <p><strong>강조하고 싶은 인용구 문장을 입력하세요.</strong></p>
+                      </blockquote>
+                    `, 3);
+                  }}
+                  className="w-full p-2.5 rounded-xl border border-zinc-800/80 bg-zinc-950/60 hover:border-violet-500/40 hover:bg-violet-950/30 text-left transition cursor-pointer group"
+                >
+                  <div className="text-[11px] font-bold text-zinc-300 group-hover:text-white mb-1 flex items-center gap-1.5">
+                    <Quote size={13} className="text-violet-400" /> 라인 포인트 인용구
+                  </div>
+                  <div className="border-l-4 border-indigo-500 bg-slate-900/60 p-2 rounded-r-lg text-[10px] text-zinc-400 italic">
+                    “ 세 가족이 고른 편한 단체 숙소 ”
+                  </div>
+                </button>
+
+                {/* 2. 대형 따옴표 강조 인용구 */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleInsertQuoteCard(`
+                      <div class="cb-quote cb-quote-bigquote">
+                        <span class="cb-quote-symbol">“</span>
+                        <p class="cb-quote-text">네이버 스마트에디터 스타일의 대형 따옴표 강조 인용구 문장입니다.</p>
+                        <span class="cb-quote-symbol">”</span>
+                      </div>
+                    `, 4);
+                  }}
+                  className="w-full p-2.5 rounded-xl border border-zinc-800/80 bg-zinc-950/60 hover:border-fuchsia-500/40 hover:bg-fuchsia-950/30 text-left transition cursor-pointer group"
+                >
+                  <div className="text-[11px] font-bold text-zinc-300 group-hover:text-white mb-1 flex items-center gap-1.5">
+                    <Sparkles size={13} className="text-fuchsia-400" /> 대형 따옴표 강조 카드
+                  </div>
+                  <div className="bg-fuchsia-950/30 border border-fuchsia-500/20 p-2 rounded-lg text-center text-[10px] text-fuchsia-300 font-bold">
+                    “ 핵심 가치와 메시지를 보여주는 대형 따옴표 카드 ”
+                  </div>
+                </button>
+
+                {/* 3. 말풍선 콜아웃 박스 💬 */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleInsertQuoteCard(`
+                      <div class="cb-quote cb-quote-speech">
+                        <div class="cb-quote-speech-bubble">💬 <strong>말풍선 안에 들어갈 추천 문구나 소주제를 입력하세요!</strong></div>
+                      </div>
+                    `, 4);
+                  }}
+                  className="w-full p-2.5 rounded-xl border border-zinc-800/80 bg-zinc-950/60 hover:border-emerald-500/40 hover:bg-emerald-950/30 text-left transition cursor-pointer group"
+                >
+                  <div className="text-[11px] font-bold text-zinc-300 group-hover:text-white mb-1 flex items-center gap-1.5">
+                    <MessageSquareQuote size={13} className="text-emerald-400" /> 말풍선 💬 박스
+                  </div>
+                  <div className="bg-emerald-950/40 border border-emerald-500/30 p-2 rounded-xl text-[10px] text-emerald-300 font-bold">
+                    💬 경기도 물놀이장 및 단체 펜션 추천!
+                  </div>
+                </button>
+
+                {/* 4. 포스트잇 노트 박스 📌 */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleInsertQuoteCard(`
+                      <div class="cb-quote cb-quote-note">
+                        <div class="cb-quote-note-title">📌 핵심 체크 요약 노트</div>
+                        <p>중요하게 강조하고 싶은 꿀팁이나 핵심 유의사항을 입력하세요.</p>
+                      </div>
+                    `, 3);
+                  }}
+                  className="w-full p-2.5 rounded-xl border border-zinc-800/80 bg-zinc-950/60 hover:border-amber-500/40 hover:bg-amber-950/30 text-left transition cursor-pointer group"
+                >
+                  <div className="text-[11px] font-bold text-zinc-300 group-hover:text-white mb-1 flex items-center gap-1.5">
+                    <FileText size={13} className="text-amber-400" /> 📌 포스트잇 메모 노트
+                  </div>
+                  <div className="bg-amber-950/40 border-t-4 border-amber-400 p-2 rounded-b-lg text-[10px] text-amber-200">
+                    📌 <strong>핵심 메모:</strong> 6월 27일부터 8월 30일까지 운영
+                  </div>
+                </button>
+
+                {/* 5. 상하 라인 헤더 인용구 ✍️ */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleInsertQuoteCard(`
+                      <div class="cb-quote cb-quote-horizontal">
+                        <p>상하 가로 라인과 함께 정갈하게 정렬되는 깔끔한 클래식 인용구입니다.</p>
+                      </div>
+                    `, 2);
+                  }}
+                  className="w-full p-2.5 rounded-xl border border-zinc-800/80 bg-zinc-950/60 hover:border-sky-500/40 hover:bg-sky-950/30 text-left transition cursor-pointer group"
+                >
+                  <div className="text-[11px] font-bold text-zinc-300 group-hover:text-white mb-1 flex items-center gap-1.5">
+                    <Minus size={13} className="text-sky-400" /> 상하 라인 클래식 인용구
+                  </div>
+                  <div className="border-y border-zinc-500 py-1.5 text-center text-[10px] text-zinc-300 font-bold">
+                    ― 명언이나 핵심 문장을 정갈하게 강조 ―
+                  </div>
+                </button>
+
+                {/* 6. 4가지 색상 콜아웃 팁 박스 */}
+                <div className="pt-2 border-t border-zinc-800/80 mt-1">
+                  <div className="px-1 py-1 text-[9px] font-black text-violet-400 uppercase tracking-wider mb-1.5">
+                    컬러 포인트 콜아웃 박스
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleInsertQuoteCard(`
+                          <div class="cb-callout-blue">💡 <strong>정보 팁:</strong> 상세한 안내 내용을 입력하세요.</div>
+                        `, 2);
+                      }}
+                      className="p-1.5 rounded-lg border border-blue-500/30 bg-blue-950/30 text-blue-300 text-[10px] font-bold hover:bg-blue-600/20 transition text-left cursor-pointer"
+                    >
+                      💡 파랑 정보 박스
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleInsertQuoteCard(`
+                          <div class="cb-callout-green">✅ <strong>체크 포인트:</strong> 꼭 확인할 사항입니다.</div>
+                        `, 2);
+                      }}
+                      className="p-1.5 rounded-lg border border-emerald-500/30 bg-emerald-950/30 text-emerald-300 text-[10px] font-bold hover:bg-emerald-600/20 transition text-left cursor-pointer"
+                    >
+                      ✅ 초록 성공 박스
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleInsertQuoteCard(`
+                          <div class="cb-callout-amber">⚠️ <strong>주의 사항:</strong> 놓치기 쉬운 유의점입니다.</div>
+                        `, 2);
+                      }}
+                      className="p-1.5 rounded-lg border border-amber-500/30 bg-amber-950/30 text-amber-300 text-[10px] font-bold hover:bg-amber-600/20 transition text-left cursor-pointer"
+                    >
+                      ⚠️ 주황 주의 박스
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleInsertQuoteCard(`
+                          <div class="cb-callout-violet">🚀 <strong>추천 꿀팁:</strong> 성공을 돕는 전문가 노하우입니다.</div>
+                        `, 2);
+                      }}
+                      className="p-1.5 rounded-lg border border-violet-500/30 bg-violet-950/30 text-violet-300 text-[10px] font-bold hover:bg-violet-600/20 transition text-left cursor-pointer"
+                    >
+                      🚀 보라 꿀팁 박스
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 🌟 스티커 & 이모티콘 드롭다운 모듈 */}
+          <div className="relative shrink-0" ref={stickerDropdownRef}>
+            <ToolbarButton
+              onClick={() => setIsStickerDropdownOpen((prev) => !prev)}
+              active={isStickerDropdownOpen}
+              title="스티커 및 이모티콘 뱃지 삽입"
+              className="border border-emerald-500/40 bg-gradient-to-r from-emerald-950/60 to-teal-950/60 text-emerald-200 hover:border-emerald-400 hover:text-white px-3 py-1.5 shadow-[0_0_12px_rgba(16,185,129,0.2)]"
+            >
+              <Smile size={14} className="text-emerald-400" />
+              <span className="text-xs font-black text-emerald-300">스티커</span>
+              <ChevronDown size={12} className="text-emerald-400" />
+            </ToolbarButton>
+
+            {isStickerDropdownOpen && (
+              <div className="absolute left-0 top-full mt-1.5 w-80 rounded-2xl border border-emerald-500/40 bg-[#0d0f19] p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.95)] z-[99999] flex flex-col gap-2.5 max-h-[75vh] overflow-y-auto custom-scrollbar select-none">
+                <div className="px-1 py-1 text-[10px] font-black text-emerald-400 uppercase tracking-wider flex items-center justify-between border-b border-zinc-800/80 pb-1.5">
+                  <span>네이버풍 스티커 & 뱃지 팩</span>
+                  <span className="text-[9px] text-zinc-500">원클릭 센터 삽입</span>
+                </div>
+
+                {/* 카테고리 탭 */}
+                <div className="flex rounded-xl bg-zinc-900 p-1 border border-zinc-800">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStickerCategory("emoji")}
+                    className={`flex-1 py-1 text-[11px] font-bold rounded-lg transition ${selectedStickerCategory === "emoji" ? "bg-emerald-600 text-white" : "text-zinc-400 hover:text-white"}`}
+                  >
+                    😊 캐릭터 스티커
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStickerCategory("badge")}
+                    className={`flex-1 py-1 text-[11px] font-bold rounded-lg transition ${selectedStickerCategory === "badge" ? "bg-emerald-600 text-white" : "text-zinc-400 hover:text-white"}`}
+                  >
+                    🏷️ 포인트 뱃지
+                  </button>
+                </div>
+
+                {selectedStickerCategory === "emoji" ? (
+                  <div className="grid grid-cols-4 gap-2 py-1">
+                    {[
+                      { name: "신남/해피", url: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f604.svg" },
+                      { name: "러브/하트", url: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f60d.svg" },
+                      { name: "대박/스타", url: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f929.svg" },
+                      { name: "축하/파티", url: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f973.svg" },
+                      { name: "쿨/선글라스", url: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f60e.svg" },
+                      { name: "감동/글썽", url: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f97a.svg" },
+                      { name: "헉!놀람", url: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f631.svg" },
+                      { name: "휴식/Zzz", url: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f634.svg" },
+                      { name: "생각/고민", url: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f914.svg" },
+                      { name: "눈물/슬픔", url: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f62d.svg" },
+                      { name: "최고/강추", url: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f44d.svg" },
+                      { name: "핫인기", url: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f525.svg" },
+                      { name: "백점만점", url: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f4af.svg" },
+                      { name: "커피한잔", url: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2615.svg" },
+                      { name: "선물이벤트", url: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f381.svg" },
+                      { name: "꿀팁발사", url: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f680.svg" },
+                    ].map((stk, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleInsertSticker(stk.url, stk.name)}
+                        className="flex flex-col items-center justify-center p-2 rounded-xl border border-zinc-800/80 bg-zinc-950/60 hover:bg-emerald-950/40 hover:border-emerald-500/50 transition cursor-pointer group"
+                        title={stk.name}
+                      >
+                        <img src={stk.url} alt={stk.name} className="w-10 h-10 object-contain group-hover:scale-110 transition-transform" />
+                        <span className="text-[9px] font-bold text-zinc-400 group-hover:text-emerald-300 mt-1 truncate w-full text-center">{stk.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2 py-1">
+                    {[
+                      { label: "📌 CHECK!", bg: "bg-gradient-to-r from-amber-500 to-yellow-500 text-black" },
+                      { label: "💡 꿀팁 POINT", bg: "bg-gradient-to-r from-blue-600 to-indigo-600 text-white" },
+                      { label: "⭐ MUST READ", bg: "bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white" },
+                      { label: "❓ Q & A", bg: "bg-gradient-to-r from-emerald-600 to-teal-600 text-white" },
+                      { label: "📢 공지사항", bg: "bg-gradient-to-r from-red-600 to-rose-600 text-white" },
+                      { label: "🏷️ 내돈내산 후기", bg: "bg-gradient-to-r from-orange-500 to-amber-600 text-white" },
+                      { label: "🎁 협찬 / 제작지원", bg: "bg-gradient-to-r from-pink-600 to-rose-500 text-white" },
+                      { label: "🔥 HOT ISSUE", bg: "bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 text-white" },
+                    ].map((bdg, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleInsertBadge(`<span class="inline-block px-4 py-2 rounded-full font-black text-xs shadow-md ${bdg.bg}">${bdg.label}</span>`)}
+                        className="p-2 rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-emerald-950/30 hover:border-emerald-500/40 text-center transition cursor-pointer flex items-center justify-center"
+                      >
+                        <span className={`inline-block px-3 py-1 rounded-full font-black text-[11px] shadow-sm ${bdg.bg}`}>{bdg.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="mx-1 h-4 w-px bg-zinc-800" />
           
           {/* 문자표 단추 */}
           <ToolbarButton onClick={() => setIsSymbolModalOpen(true)} title="문자표 (특수문자 삽입)">
@@ -2808,9 +3152,6 @@ export default function UniversalBlogEditor({
 
           <div className="mx-1.5 h-4 w-px bg-zinc-800" />
 
-          {/* 표 세로 정렬 도구 */}
-
-
           <ToolbarButton onClick={handleInsertTable} title="표 삽입">
             <Table2 size={14} /> 표
           </ToolbarButton>
@@ -2819,9 +3160,136 @@ export default function UniversalBlogEditor({
             <CirclePlay size={14} /> 유튜브
           </ToolbarButton>
 
-          <ToolbarButton onClick={() => editor?.chain().focus().setHorizontalRule().run()} title="가로 구분선 삽입">
-            <Minus size={14} /> 구분선
-          </ToolbarButton>
+          {/* 🌟 다양한 구분선 모듈 드롭다운 */}
+          <div className="relative shrink-0" ref={dividerDropdownRef}>
+            <ToolbarButton
+              onClick={() => setIsDividerDropdownOpen((prev) => !prev)}
+              active={isDividerDropdownOpen}
+              title="네이버 스타일 다양한 구분선 삽입"
+              className="border border-sky-500/40 bg-sky-950/20 text-sky-200 hover:border-sky-400 hover:text-white px-2.5 py-1.5"
+            >
+              <Minus size={14} className="text-sky-400" />
+              <span className="text-xs font-bold">구분선</span>
+              <ChevronDown size={12} className="text-sky-400" />
+            </ToolbarButton>
+
+            {isDividerDropdownOpen && (
+              <div className="absolute left-0 top-full mt-1.5 w-64 rounded-2xl border border-sky-500/40 bg-[#0d0f19] p-3 shadow-[0_20px_50px_rgba(0,0,0,0.95)] z-[99999] flex flex-col gap-2 max-h-[75vh] overflow-y-auto custom-scrollbar select-none">
+                <div className="px-1 py-1 text-[10px] font-black text-sky-400 uppercase tracking-wider flex items-center justify-between border-b border-zinc-800/80 pb-1.5 mb-1">
+                  <span>네이버 블로그형 구분선 팩</span>
+                  <span className="text-[9px] text-zinc-500">원클릭 바로 삽입</span>
+                </div>
+
+                {/* 1. 기본 실선 */}
+                <button
+                  type="button"
+                  onClick={() => handleInsertDivider('<hr class="cb-hr cb-hr-solid" />')}
+                  className="w-full p-2 rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-sky-950/30 hover:border-sky-500/40 transition text-left cursor-pointer group"
+                >
+                  <div className="text-[10px] font-bold text-zinc-400 group-hover:text-sky-300 mb-1">기본 실선</div>
+                  <div className="h-px bg-zinc-400 w-full" />
+                </button>
+
+                {/* 2. 이중 실선 */}
+                <button
+                  type="button"
+                  onClick={() => handleInsertDivider('<hr class="cb-hr cb-hr-double" />')}
+                  className="w-full p-2 rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-sky-950/30 hover:border-sky-500/40 transition text-left cursor-pointer group"
+                >
+                  <div className="text-[10px] font-bold text-zinc-400 group-hover:text-sky-300 mb-1">이중 실선</div>
+                  <div className="border-t-3 border-double border-zinc-400 w-full h-1" />
+                </button>
+
+                {/* 3. 굵은 슬림 바 */}
+                <button
+                  type="button"
+                  onClick={() => handleInsertDivider('<hr class="cb-hr cb-hr-thick" />')}
+                  className="w-full p-2 rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-sky-950/30 hover:border-sky-500/40 transition text-left cursor-pointer group"
+                >
+                  <div className="text-[10px] font-bold text-zinc-400 group-hover:text-sky-300 mb-1">굵은 바 구분선</div>
+                  <div className="h-1 bg-zinc-400 rounded-full w-full" />
+                </button>
+
+                {/* 4. 다이아몬드 데코 선 */}
+                <button
+                  type="button"
+                  onClick={() => handleInsertDivider('<div class="cb-hr-deco"><span>◆</span></div>')}
+                  className="w-full p-2 rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-sky-950/30 hover:border-sky-500/40 transition text-left cursor-pointer group"
+                >
+                  <div className="text-[10px] font-bold text-zinc-400 group-hover:text-sky-300 mb-1">다이아몬드 포인트 선</div>
+                  <div className="flex items-center gap-2 text-[10px] text-zinc-400">
+                    <div className="h-px bg-zinc-600 flex-1" />◆<div className="h-px bg-zinc-600 flex-1" />
+                  </div>
+                </button>
+
+                {/* 5. 원형 데코 선 */}
+                <button
+                  type="button"
+                  onClick={() => handleInsertDivider('<div class="cb-hr-deco"><span>●</span></div>')}
+                  className="w-full p-2 rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-sky-950/30 hover:border-sky-500/40 transition text-left cursor-pointer group"
+                >
+                  <div className="text-[10px] font-bold text-zinc-400 group-hover:text-sky-300 mb-1">서클 포인트 선</div>
+                  <div className="flex items-center gap-2 text-[9px] text-zinc-400">
+                    <div className="h-px bg-zinc-600 flex-1" />●<div className="h-px bg-zinc-600 flex-1" />
+                  </div>
+                </button>
+
+                {/* 6. 별빛 데코 선 */}
+                <button
+                  type="button"
+                  onClick={() => handleInsertDivider('<div class="cb-hr-deco"><span>★</span></div>')}
+                  className="w-full p-2 rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-sky-950/30 hover:border-sky-500/40 transition text-left cursor-pointer group"
+                >
+                  <div className="text-[10px] font-bold text-zinc-400 group-hover:text-sky-300 mb-1">별빛 데코 선</div>
+                  <div className="flex items-center gap-2 text-[10px] text-amber-400">
+                    <div className="h-px bg-zinc-600 flex-1" />★<div className="h-px bg-zinc-600 flex-1" />
+                  </div>
+                </button>
+
+                {/* 7. 하트 데코 선 */}
+                <button
+                  type="button"
+                  onClick={() => handleInsertDivider('<div class="cb-hr-deco"><span>♥</span></div>')}
+                  className="w-full p-2 rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-sky-950/30 hover:border-sky-500/40 transition text-left cursor-pointer group"
+                >
+                  <div className="text-[10px] font-bold text-zinc-400 group-hover:text-sky-300 mb-1">하트 데코 선</div>
+                  <div className="flex items-center gap-2 text-[10px] text-rose-400">
+                    <div className="h-px bg-zinc-600 flex-1" />♥<div className="h-px bg-zinc-600 flex-1" />
+                  </div>
+                </button>
+
+                {/* 8. 도트 점선 */}
+                <button
+                  type="button"
+                  onClick={() => handleInsertDivider('<hr class="cb-hr cb-hr-dotted" />')}
+                  className="w-full p-2 rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-sky-950/30 hover:border-sky-500/40 transition text-left cursor-pointer group"
+                >
+                  <div className="text-[10px] font-bold text-zinc-400 group-hover:text-sky-300 mb-1">도트 점선</div>
+                  <div className="border-t-2 border-dotted border-zinc-400 w-full h-1" />
+                </button>
+
+                {/* 9. 대시 파선 */}
+                <button
+                  type="button"
+                  onClick={() => handleInsertDivider('<hr class="cb-hr cb-hr-dashed" />')}
+                  className="w-full p-2 rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-sky-950/30 hover:border-sky-500/40 transition text-left cursor-pointer group"
+                >
+                  <div className="text-[10px] font-bold text-zinc-400 group-hover:text-sky-300 mb-1">대시 파선</div>
+                  <div className="border-t-2 border-dashed border-zinc-400 w-full h-1" />
+                </button>
+
+                {/* 10. 퍼플 그라데이션 선 */}
+                <button
+                  type="button"
+                  onClick={() => handleInsertDivider('<div class="cb-hr-gradient"></div>')}
+                  className="w-full p-2 rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-sky-950/30 hover:border-sky-500/40 transition text-left cursor-pointer group"
+                >
+                  <div className="text-[10px] font-bold text-zinc-400 group-hover:text-sky-300 mb-1">퍼플 그라데이션 선</div>
+                  <div className="h-0.5 bg-gradient-to-r from-transparent via-indigo-500 to-transparent w-full" />
+                </button>
+              </div>
+            )}
+          </div>
 
           <div className="mx-1.5 h-4 w-px bg-zinc-800" />
 
@@ -2838,245 +3306,277 @@ export default function UniversalBlogEditor({
           </ToolbarButton>
         </div>
 
-        {/* [3열]: AI 자동 수정보완 메뉴 (별도 라인 배치) */}
-        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-violet-950/10 select-none shrink-0">
+        {/* [3열]: AI 자동 수정보완 커스텀 커맨드 툴바 (프리미엄 통일 디자인) */}
+        <div className="flex items-center justify-between gap-3 pl-0 pr-4 h-12 bg-gradient-to-r from-[#0b0d18] via-[#101326] to-[#0b0d18] border-y border-violet-500/25 shadow-[inset_0_1px_0_rgba(139,92,246,0.18)] select-none shrink-0 overflow-hidden">
           {/* 왼쪽 AI 스크롤 그룹 */}
-          <div className="flex flex-nowrap items-center gap-2.5 overflow-x-auto scrollbar-none flex-1 min-w-0">
-            <div className="flex shrink-0 items-center gap-1 text-[11px] font-black text-violet-400 mr-2 select-none uppercase tracking-wider">
-              <Wand2 size={13} className="animate-pulse" />
-              <span>AI 자동 수정보완</span>
+          <div className="flex flex-nowrap items-center gap-2 overflow-x-auto scrollbar-none flex-1 min-w-0 h-full">
+            {/* 맨 왼쪽 상하까지 통으로 막힌 AI 자동 수정보완 섹션 뱃지 타이틀 블록 */}
+            <div className="h-full px-4 flex items-center gap-2 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white border-r border-violet-400/40 shadow-md shrink-0 mr-1 select-none">
+              <Sparkles size={14} className="animate-pulse text-yellow-300" />
+              <span className="text-[12px] font-black tracking-wider uppercase whitespace-nowrap">AI 자동 수정보완</span>
             </div>
 
-            <div className="h-4 w-px bg-violet-500/20 mr-1" />
-
-          {/* AI 내용 보강 */}
-          <div className="relative" ref={contentDropdownRef}>
-            <ToolbarButton 
-              onClick={() => setIsContentDropdownOpen((prev) => !prev)}
-              disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch}
-              title="AI 내용 보강 (분량 늘리기)"
-              className="bg-violet-950/20 border border-violet-500/20 hover:bg-violet-500/10"
-            >
-              {isEnhancingContent ? (
-                <RefreshCw size={14} className="animate-spin text-violet-400" />
-              ) : (
-                <Wand2 size={14} className="text-violet-400" />
-              )}
-              <span>내용 보강</span>
-            </ToolbarButton>
-            {isContentDropdownOpen && (
-              <div className="absolute left-0 mt-1 w-40 rounded-xl border border-zinc-800 bg-[#121214] py-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-50">
-                <div className="px-3 py-1 text-[9px] font-black text-zinc-500 uppercase tracking-wider">
-                  내용 분량 보강
-                </div>
-                {[10, 30, 50, 70, 100].map((percent) => (
-                  <button
-                    key={percent}
-                    type="button"
-                    onClick={() => {
-                      handleEnhanceContent(`expand_${percent}`);
-                      setIsContentDropdownOpen(false);
-                    }}
-                    className="flex w-full items-center px-3 py-1.5 text-left text-xs font-bold text-zinc-300 hover:bg-zinc-850 hover:text-white transition-colors cursor-pointer"
-                  >
-                    {percent}% 내용 보강
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* AI 목차 보강 */}
-          <div className="relative" ref={tocDropdownRef}>
-            <ToolbarButton 
-              onClick={() => setIsTocDropdownOpen((prev) => !prev)}
-              disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch}
-              title="AI 목차 보강 (새 소주제 추가)"
-              className="bg-violet-950/20 border border-violet-500/20 hover:bg-violet-500/10"
-            >
-              {isEnhancingToc ? (
-                <RefreshCw size={14} className="animate-spin text-violet-400" />
-              ) : (
-                <Cpu size={14} className="text-violet-400" />
-              )}
-              <span>목차 보강</span>
-            </ToolbarButton>
-            {isTocDropdownOpen && (
-              <div className="absolute left-0 mt-1 w-52 rounded-xl border border-zinc-800 bg-[#121214] p-3 shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-50 flex flex-col gap-2.5">
-                <div>
-                  <div className="px-1 py-1 text-[9px] font-black text-zinc-500 uppercase tracking-wider mb-1.5">
-                    보강할 목차 수 선택
+            {/* AI 내용 보강 */}
+            <div className="relative" ref={contentDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsContentDropdownOpen((prev) => !prev)}
+                disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch || isSpinRecreating}
+                title="AI 내용 보강 (분량 늘리기)"
+                className="h-8 px-3 rounded-xl border border-violet-500/25 bg-violet-950/25 text-violet-200 text-[12px] font-bold tracking-tight hover:border-violet-400/60 hover:bg-violet-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                {isEnhancingContent ? (
+                  <RefreshCw size={13} className="animate-spin text-violet-400" />
+                ) : (
+                  <Wand2 size={13} className="text-violet-400" />
+                )}
+                <span>내용 보강</span>
+              </button>
+              {isContentDropdownOpen && (
+                <div className="absolute left-0 mt-1.5 w-44 rounded-2xl border border-violet-500/30 bg-[#0e101d] py-2 shadow-[0_12px_36px_rgba(0,0,0,0.8)] z-50">
+                  <div className="px-3 py-1 text-[9px] font-black text-violet-400/80 uppercase tracking-wider">
+                    내용 분량 보강
                   </div>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map((count) => {
-                      const isSelected = selectedTocCount === count;
-                      return (
-                        <button
-                          key={count}
-                          type="button"
-                          onClick={() => setSelectedTocCount(count)}
-                          className={`flex-1 py-1 rounded-lg text-xs font-bold transition cursor-pointer text-center ${
-                            isSelected
-                              ? "bg-violet-600 text-white shadow-md shadow-violet-500/20"
-                              : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-white"
-                          }`}
-                        >
-                          {count}개
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleEnhanceContent(`expand_toc_${selectedTocCount}`);
-                    setIsTocDropdownOpen(false);
-                  }}
-                  className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:brightness-110 text-white text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-violet-500/10"
-                >
-                  🚀 AI 자동 목차 보강
-                </button>
-
-                <div className="border-t border-zinc-800/80 my-0.5" />
-
-                <div>
-                  <div className="px-1 py-1 text-[9px] font-black text-zinc-500 uppercase tracking-wider mb-1.5">
-                    직접 커스텀 추가
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="추가할 소주제 입력..."
-                    className="w-full rounded bg-zinc-950 px-2 py-1 text-[10px] text-zinc-200 border border-zinc-800 focus:outline-none focus:border-violet-500"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        const val = e.currentTarget.value.trim();
-                        if (val) {
-                          handleEnhanceContent(`enhance_toc_custom:${val}`);
-                          setIsTocDropdownOpen(false);
-                        }
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* AI 글 다듬기 */}
-          <ToolbarButton
-            onClick={() => handleEnhanceContent("polish")}
-            disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch}
-            title="AI 글 다듬기 (문맥 및 표현 다듬기)"
-            className="bg-violet-950/20 border border-violet-500/20 hover:bg-violet-500/10"
-          >
-            {isPolishing ? (
-              <RefreshCw size={14} className="animate-spin text-violet-400" />
-            ) : (
-              <Sparkles size={14} className="text-violet-400" />
-            )}
-            <span>글 다듬기</span>
-          </ToolbarButton>
-
-          {/* AI 타입 변경 */}
-          <div className="relative" ref={postTypeDropdownRef}>
-            <ToolbarButton 
-              onClick={() => setIsPostTypeDropdownOpen((prev) => !prev)}
-              disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch}
-              title="AI 글 타입 변경"
-              className="bg-violet-950/20 border border-violet-500/20 hover:bg-violet-500/10"
-            >
-              {isChangingPostType ? (
-                <RefreshCw size={14} className="animate-spin text-violet-400" />
-              ) : (
-                <Split size={14} className="text-violet-400" />
-              )}
-              <span>타입 변경</span>
-            </ToolbarButton>
-            {isPostTypeDropdownOpen && (
-              <div className="absolute left-0 mt-1 w-44 rounded-xl border border-zinc-800 bg-[#121214] py-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-50">
-                <div className="px-3 py-1 text-[9px] font-black text-zinc-500 uppercase tracking-wider">
-                  원고 타입 변경
-                </div>
-                {[
-                  { id: "review", label: "후기/리뷰형" },
-                  { id: "info", label: "정보성/가이드형" },
-                  { id: "news", label: "소식/뉴스형" },
-                  { id: "story", label: "스토리텔링형" },
-                  { id: "interview", label: "인터뷰/대화형" }
-                ].map((item) => {
-                  return (
+                  {[10, 30, 50, 70, 100].map((percent) => (
                     <button
-                      key={item.id}
+                      key={percent}
                       type="button"
                       onClick={() => {
-                        const yes = window.confirm(
-                          `"${item.label}" 타입으로 전체 본문을 변경하시겠습니까?\n(본문 내용의 전체 흐름과 핵심 정보는 유지되면서 서술 방식과 스타일만 타입에 맞춰 재작성됩니다.)`
-                        );
-                        if (yes) {
-                          handleEnhanceContent(`change_post_type:${item.label}`);
-                        }
-                        setIsPostTypeDropdownOpen(false);
+                        handleEnhanceContent(`expand_${percent}`);
+                        setIsContentDropdownOpen(false);
                       }}
-                      className="flex w-full items-center px-3 py-1.5 text-left text-xs font-bold text-zinc-300 hover:bg-zinc-850 hover:text-white transition-colors cursor-pointer"
+                      className="flex w-full items-center px-3 py-1.5 text-left text-xs font-bold text-zinc-300 hover:bg-violet-600/20 hover:text-white transition-colors cursor-pointer"
                     >
-                      {item.label}
+                      {percent}% 내용 보강
                     </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-          {/* Google Search 실시간 정보 반영 */}
-          <ToolbarButton
-            onClick={() => handleEnhanceContent("apply_google_search")}
-            disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch}
-            title="Google Search 실시간 웹 검색 정보 반영"
-            className="bg-emerald-950/10 border border-emerald-500/20 hover:bg-emerald-500/10 text-emerald-400"
-          >
-            {isApplyingSearch ? (
-              <RefreshCw size={14} className="animate-spin text-emerald-400" />
-            ) : (
-              <Globe size={14} className="text-emerald-400" />
-            )}
-            <span>실시간 검색 반영</span>
-          </ToolbarButton>
+            {/* AI 원문 글 재창조 (Spin-Rewriting Engine) */}
+            <button 
+              type="button"
+              onClick={() => handleEnhanceContent("recreate_spin")}
+              disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch || isSpinRecreating}
+              title="Spin-Rewriting Engine으로 원문 글 재창조"
+              className="h-8 px-3 rounded-xl border border-violet-500/25 bg-violet-950/25 text-violet-200 text-[12px] font-bold tracking-tight hover:border-violet-400/60 hover:bg-violet-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              {isSpinRecreating ? (
+                <RefreshCw size={13} className="animate-spin text-emerald-400" />
+              ) : (
+                <RotateCcw size={13} className="text-emerald-400" />
+              )}
+              <span>원문 글 재창조</span>
+            </button>
 
-          <div className="h-4 w-px bg-zinc-800/60 mx-1.5" />
+            {/* AI 목차 보강 */}
+            <div className="relative" ref={tocDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsTocDropdownOpen((prev) => !prev)}
+                disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch || isSpinRecreating}
+                title="AI 목차 보강 (새 소주제 추가)"
+                className="h-8 px-3 rounded-xl border border-violet-500/25 bg-violet-950/25 text-violet-200 text-[12px] font-bold tracking-tight hover:border-violet-400/60 hover:bg-violet-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                {isEnhancingToc ? (
+                  <RefreshCw size={13} className="animate-spin text-violet-400" />
+                ) : (
+                  <Cpu size={13} className="text-violet-400" />
+                )}
+                <span>목차 보강</span>
+              </button>
+              {isTocDropdownOpen && (
+                <div className="absolute left-0 mt-1.5 w-56 rounded-2xl border border-violet-500/30 bg-[#0e101d] p-3 shadow-[0_12px_36px_rgba(0,0,0,0.8)] z-50 flex flex-col gap-2.5">
+                  <div>
+                    <div className="px-1 py-1 text-[9px] font-black text-violet-400/80 uppercase tracking-wider mb-1.5">
+                      보강할 목차 수 선택
+                    </div>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((count) => {
+                        const isSelected = selectedTocCount === count;
+                        return (
+                          <button
+                            key={count}
+                            type="button"
+                            onClick={() => setSelectedTocCount(count)}
+                            className={`flex-1 py-1 rounded-lg text-xs font-bold transition cursor-pointer text-center ${
+                              isSelected
+                                ? "bg-violet-600 text-white shadow-md shadow-violet-500/20"
+                                : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                            }`}
+                          >
+                            {count}개
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-          {/* 에디토리얼 설정 */}
-          <ToolbarButton onClick={() => setIsEditorialModalOpen(true)} title="에디토리얼 설정" className="bg-zinc-950/20 border border-zinc-800/40 hover:bg-zinc-800">
-            <FileText size={14} /> 에디토리얼 설정
-          </ToolbarButton>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleEnhanceContent(`expand_toc_${selectedTocCount}`);
+                      setIsTocDropdownOpen(false);
+                    }}
+                    className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:brightness-110 text-white text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-violet-500/10"
+                  >
+                    🚀 AI 자동 목차 보강
+                  </button>
 
-          {/* 지식 & 페르소나 설정 */}
-          <ToolbarButton onClick={() => setIsKnowledgePersonaModalOpen(true)} className="bg-zinc-950/20 border border-zinc-800/40 hover:bg-zinc-800 flex items-center gap-1" title="페르소나 및 참조 지식 설정">
-            <Brain size={14} className={selectedPersonaId || selectedKnowledgeId ? "text-violet-400 animate-pulse" : "text-zinc-400"} />
-            <span>지식 & 페르소나 설정</span>
-            {(selectedPersonaId || selectedKnowledgeId) && (
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 ml-0.5" />
-            )}
-          </ToolbarButton>
+                  <div className="border-t border-zinc-800/80 my-0.5" />
 
-          {/* 내부 링크 콘텐츠 추가 */}
-          <ToolbarButton
-            onClick={() => setIsInternalLinkModalOpen(true)}
-            className="bg-zinc-950/20 border border-zinc-800/40 hover:bg-zinc-800 flex items-center gap-1 text-zinc-300 hover:text-white"
-            title="본문에 내부 블로그 글 링크 카드 삽입"
-          >
-            <Link2 size={14} className="text-zinc-400" />
-            <span>내부 링크 콘텐츠 추가</span>
-          </ToolbarButton>
+                  <div>
+                    <div className="px-1 py-1 text-[9px] font-black text-violet-400/80 uppercase tracking-wider mb-1.5">
+                      직접 커스텀 추가
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="추가할 소주제 입력..."
+                      className="w-full rounded-xl bg-zinc-950 px-3 py-1.5 text-[11px] text-zinc-200 border border-zinc-800 focus:outline-none focus:border-violet-500"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          const val = e.currentTarget.value.trim();
+                          if (val) {
+                            handleEnhanceContent(`enhance_toc_custom:${val}`);
+                            setIsTocDropdownOpen(false);
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* AI 글 다듬기 */}
+            <button
+              type="button"
+              onClick={() => handleEnhanceContent("polish")}
+              disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch || isSpinRecreating}
+              title="AI 글 다듬기 (문맥 및 표현 다듬기)"
+              className="h-8 px-3 rounded-xl border border-violet-500/25 bg-violet-950/25 text-violet-200 text-[12px] font-bold tracking-tight hover:border-violet-400/60 hover:bg-violet-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              {isPolishing ? (
+                <RefreshCw size={13} className="animate-spin text-violet-400" />
+              ) : (
+                <Sparkles size={13} className="text-violet-400" />
+              )}
+              <span>글 다듬기</span>
+            </button>
+
+            {/* AI 타입 변경 */}
+            <div className="relative" ref={postTypeDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsPostTypeDropdownOpen((prev) => !prev)}
+                disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch || isSpinRecreating}
+                title="AI 글 타입 변경"
+                className="h-8 px-3 rounded-xl border border-violet-500/25 bg-violet-950/25 text-violet-200 text-[12px] font-bold tracking-tight hover:border-violet-400/60 hover:bg-violet-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                {isChangingPostType ? (
+                  <RefreshCw size={13} className="animate-spin text-violet-400" />
+                ) : (
+                  <Split size={13} className="text-violet-400" />
+                )}
+                <span>타입 변경</span>
+              </button>
+              {isPostTypeDropdownOpen && (
+                <div className="absolute left-0 mt-1.5 w-48 rounded-2xl border border-violet-500/30 bg-[#0e101d] py-2 shadow-[0_12px_36px_rgba(0,0,0,0.8)] z-50">
+                  <div className="px-3 py-1 text-[9px] font-black text-violet-400/80 uppercase tracking-wider">
+                    원고 타입 변경
+                  </div>
+                  {[
+                    { id: "review", label: "후기/리뷰형" },
+                    { id: "info", label: "정보성/가이드형" },
+                    { id: "news", label: "소식/뉴스형" },
+                    { id: "story", label: "스토리텔링형" },
+                    { id: "interview", label: "인터뷰/대화형" }
+                  ].map((item) => {
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          const yes = window.confirm(
+                            `"${item.label}" 타입으로 전체 본문을 변경하시겠습니까?\n(본문 내용의 전체 흐름과 핵심 정보는 유지되면서 서술 방식과 스타일만 타입에 맞춰 재작성됩니다.)`
+                          );
+                          if (yes) {
+                            handleEnhanceContent(`change_post_type:${item.label}`);
+                          }
+                          setIsPostTypeDropdownOpen(false);
+                        }}
+                        className="flex w-full items-center px-3 py-1.5 text-left text-xs font-bold text-zinc-300 hover:bg-violet-600/20 hover:text-white transition-colors cursor-pointer"
+                      >
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Google Search 실시간 정보 반영 */}
+            <button
+              type="button"
+              onClick={() => handleEnhanceContent("apply_google_search")}
+              disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch || isSpinRecreating}
+              title="Google Search 실시간 웹 검색 정보 반영"
+              className="h-8 px-3 rounded-xl border border-violet-500/25 bg-violet-950/25 text-violet-200 text-[12px] font-bold tracking-tight hover:border-violet-400/60 hover:bg-violet-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              {isApplyingSearch ? (
+                <RefreshCw size={13} className="animate-spin text-emerald-400" />
+              ) : (
+                <Globe size={13} className="text-emerald-400" />
+              )}
+              <span>실시간 검색 반영</span>
+            </button>
+
+            <div className="h-4 w-px bg-violet-500/25 mx-1" />
+
+            {/* 에디토리얼 설정 */}
+            <button
+              type="button"
+              onClick={() => setIsEditorialModalOpen(true)}
+              title="에디토리얼 설정"
+              className="h-8 px-3 rounded-xl border border-indigo-500/25 bg-indigo-950/20 text-indigo-200 text-[12px] font-bold tracking-tight hover:border-indigo-400/50 hover:bg-indigo-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+            >
+              <FileText size={13} className="text-indigo-400" />
+              <span>에디토리얼 설정</span>
+            </button>
+
+            {/* 지식 & 페르소나 설정 */}
+            <button
+              type="button"
+              onClick={() => setIsKnowledgePersonaModalOpen(true)}
+              title="페르소나 및 참조 지식 설정"
+              className="h-8 px-3 rounded-xl border border-indigo-500/25 bg-indigo-950/20 text-indigo-200 text-[12px] font-bold tracking-tight hover:border-indigo-400/50 hover:bg-indigo-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+            >
+              <Brain size={13} className={selectedPersonaId || selectedKnowledgeId ? "text-violet-400 animate-pulse" : "text-indigo-400"} />
+              <span>지식 & 페르소나 설정</span>
+              {(selectedPersonaId || selectedKnowledgeId) && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 ml-0.5" />
+              )}
+            </button>
+
+            {/* 내부 링크 콘텐츠 추가 */}
+            <button
+              type="button"
+              onClick={() => setIsInternalLinkModalOpen(true)}
+              title="본문에 내부 블로그 글 링크 카드 삽입"
+              className="h-8 px-3 rounded-xl border border-indigo-500/25 bg-indigo-950/20 text-indigo-200 text-[12px] font-bold tracking-tight hover:border-indigo-400/50 hover:bg-indigo-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+            >
+              <Link2 size={13} className="text-indigo-400" />
+              <span>내부 링크 콘텐츠 추가</span>
+            </button>
           </div>
 
           {/* 우측 끝 새로고침 버튼 */}
-          <div className="flex shrink-0 items-center pl-3 border-l border-zinc-800/40">
+          <div className="flex shrink-0 items-center pl-3 border-l border-violet-500/25">
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-750 bg-zinc-900/60 px-3 py-1.5 text-[11px] font-black text-zinc-300 hover:bg-zinc-800 hover:text-white transition-all shadow-sm"
+              className="h-8 px-3 rounded-xl border border-zinc-800 bg-zinc-900/90 text-zinc-300 hover:border-zinc-700 hover:bg-zinc-800 hover:text-white transition-all text-[11px] font-bold flex items-center gap-1.5 cursor-pointer shadow-sm whitespace-nowrap"
               title="페이지 새로고침"
             >
               <RefreshCw size={11} className="text-violet-400" />
@@ -3614,15 +4114,177 @@ export default function UniversalBlogEditor({
           line-height: 1.9;
         }
 
-        .ProseMirror blockquote {
-          margin: 1.5rem 0;
-          padding: 1rem 1.25rem;
-          border: 1px solid #e4e4e7;
-          border-left: 4px solid #6366f1;
-          border-radius: 1rem;
+        .ProseMirror blockquote, .ProseMirror .cb-quote-line {
+          margin: 0.4rem 0;
+          padding: 0.55rem 0.85rem;
+          border: 1px solid #e2e8f0;
+          border-left: 5px solid #6366f1;
+          border-radius: 0.75rem;
           background: #f8fafc;
-          color: #52525b;
+          color: #334155;
           font-weight: 600;
+          box-shadow: 0 2px 8px rgba(99, 102, 241, 0.05);
+        }
+
+        .ProseMirror blockquote p,
+        .ProseMirror .cb-quote p,
+        .ProseMirror .cb-quote-text,
+        .ProseMirror .cb-callout-blue p,
+        .ProseMirror .cb-callout-green p,
+        .ProseMirror .cb-callout-amber p,
+        .ProseMirror .cb-callout-violet p {
+          margin: 0 !important;
+          padding: 0 !important;
+          line-height: 1.5;
+        }
+
+        .ProseMirror .cb-quote-bigquote {
+          margin: 0.4rem 0;
+          padding: 0.6rem 1rem;
+          border-radius: 0.85rem;
+          background: linear-gradient(135deg, #fdf4ff 0%, #f5f3ff 100%);
+          border: 1.5px solid #f0abfc;
+          text-align: center;
+          position: relative;
+        }
+
+        .ProseMirror .cb-quote-bigquote .cb-quote-symbol {
+          font-size: 1.5rem;
+          font-family: Georgia, serif;
+          color: #c084fc;
+          line-height: 1;
+          display: block;
+          margin-bottom: 0.1rem;
+        }
+
+        .ProseMirror .cb-quote-bigquote p, .ProseMirror .cb-quote-bigquote .cb-quote-text {
+          font-size: 0.95rem;
+          font-weight: 700;
+          color: #4c1d95;
+          margin: 0 !important;
+        }
+
+        .ProseMirror .cb-quote-speech {
+          margin: 0.4rem 0;
+          padding: 0.55rem 0.85rem;
+          background: #f0fdf4;
+          border: 1.5px solid #86efac;
+          border-radius: 0.75rem;
+          position: relative;
+          color: #14532d;
+          font-weight: 600;
+          box-shadow: 0 2px 8px rgba(34, 197, 94, 0.08);
+        }
+
+        .ProseMirror .cb-quote-note {
+          margin: 0.4rem 0;
+          padding: 0.55rem 0.85rem;
+          background: #fefce8;
+          border: 1px solid #fde047;
+          border-top: 4px solid #eab308;
+          border-radius: 0.5rem;
+          color: #713f12;
+          box-shadow: 0 2px 8px rgba(234, 179, 8, 0.08);
+        }
+
+        .ProseMirror .cb-quote-note-title {
+          font-weight: 800;
+          color: #854d0e;
+          margin-bottom: 0.2rem;
+          font-size: 0.9rem;
+        }
+
+        .ProseMirror .cb-quote-horizontal {
+          margin: 0.4rem 0;
+          padding: 0.5rem 0.75rem;
+          border-top: 2px solid #94a3b8;
+          border-bottom: 2px solid #94a3b8;
+          text-align: center;
+          color: #334155;
+          font-weight: 700;
+        }
+
+        .ProseMirror .cb-callout-blue,
+        .ProseMirror .cb-callout-green,
+        .ProseMirror .cb-callout-amber,
+        .ProseMirror .cb-callout-violet {
+          margin: 0.4rem 0;
+          padding: 0.45rem 0.75rem;
+          border-radius: 0.5rem;
+          font-weight: 600;
+        }
+
+        .ProseMirror hr, .ProseMirror hr.cb-hr-solid {
+          margin: 0.6rem 0;
+          border: 0;
+          border-top: 1.5px solid #d4d4d8;
+        }
+
+        .ProseMirror hr.cb-hr-double {
+          margin: 0.6rem 0;
+          border: 0;
+          border-top: 3px double #94a3b8;
+        }
+
+        .ProseMirror hr.cb-hr-thick {
+          margin: 0.6rem 0;
+          border: 0;
+          height: 4px;
+          background: #64748b;
+          border-radius: 2px;
+        }
+
+        .ProseMirror .cb-hr-deco {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0.6rem 0;
+          position: relative;
+        }
+
+        .ProseMirror .cb-hr-deco::before, .ProseMirror .cb-hr-deco::after {
+          content: "";
+          flex: 1;
+          border-top: 1px solid #cbd5e1;
+        }
+
+        .ProseMirror .cb-hr-deco span {
+          padding: 0 1rem;
+          color: #64748b;
+          font-weight: 800;
+          font-size: 0.9rem;
+        }
+
+        .ProseMirror hr.cb-hr-dotted {
+          margin: 0.6rem 0;
+          border: 0;
+          border-top: 2.5px dotted #94a3b8;
+        }
+
+        .ProseMirror hr.cb-hr-dashed {
+          margin: 0.6rem 0;
+          border: 0;
+          border-top: 2px dashed #94a3b8;
+        }
+
+        .ProseMirror .cb-hr-gradient {
+          margin: 0.6rem 0;
+          height: 2px;
+          background: linear-gradient(to right, transparent, #818cf8, transparent);
+          border: 0;
+        }
+
+        .ProseMirror .cb-sticker-wrapper {
+          display: block;
+          text-align: center;
+          margin: 0.4rem 0;
+        }
+
+        .ProseMirror .cb-sticker-img {
+          display: inline-block;
+          width: 120px;
+          height: 120px;
+          object-fit: contain;
         }
 
         .ProseMirror pre {
@@ -4473,6 +5135,24 @@ export default function UniversalBlogEditor({
                 닫기
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Spin-Rewriting Engine 가동 알림 안내 토스트 팝업 */}
+      {isSpinRecreating && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-2xl border border-emerald-500/40 bg-[#0c131d]/95 p-4 text-emerald-300 shadow-[0_10px_40px_rgba(16,185,129,0.3)] backdrop-blur-md animate-in fade-in slide-in-from-bottom-5 max-w-md">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
+            <RefreshCw className="h-5 w-5 animate-spin text-emerald-400" />
+          </div>
+          <div className="space-y-0.5 min-w-0">
+            <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-emerald-400">
+              <Sparkles className="h-3.5 w-3.5 text-yellow-400" />
+              Spin-Rewriting Engine 가동 중
+            </div>
+            <p className="text-[12px] font-semibold leading-snug text-white/90">
+              원본의 핵심 정보는 유지하면서 문장 구조와 흐름을 새롭게 재구성하여 새글을 쓰고 있습니다...
+            </p>
           </div>
         </div>
       )}

@@ -436,7 +436,7 @@ export default function ImageNodeView(props: NodeViewProps) {
     <NodeViewWrapper
       ref={containerRef}
       contentEditable={false}
-      className={`image-node-wrapper group relative my-6 inline-block w-full text-center transition-all ${
+      className={`image-node-wrapper group relative my-2 inline-block w-full text-center transition-all ${
         alignment === "left" ? "float-left mr-6 max-w-[50%]" : ""
       } ${alignment === "right" ? "float-right ml-6 max-w-[50%]" : ""} ${
         alignment === "wide" ? "max-w-4xl" : ""
@@ -444,7 +444,7 @@ export default function ImageNodeView(props: NodeViewProps) {
     >
       <div 
         className="relative inline-block overflow-visible group"
-        style={{ width: alignment === "full" ? "100vw" : "100%" }}
+        style={{ width: alignment === "full" ? "100vw" : width && width !== "100%" ? width : "100%", maxWidth: "100%" }}
       >
         {/* Selection blue outline */}
         <div
@@ -464,7 +464,7 @@ export default function ImageNodeView(props: NodeViewProps) {
             title={title || ""}
             onDragStart={(e) => e.preventDefault()}
             className="mx-auto block h-auto max-w-full select-none rounded-none border border-zinc-200 dark:border-zinc-800 shadow-sm"
-            style={{ width: "100%" }}
+            style={{ width: width && width !== "100%" ? width : "100%", maxWidth: "100%" }}
           />
 
           {/* Semi-transparent Overlay for crop mode */}
