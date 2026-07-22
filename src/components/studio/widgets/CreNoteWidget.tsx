@@ -17,6 +17,8 @@ import {
   Folder as FolderIcon,
   Pencil,
   RotateCcw,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -69,6 +71,7 @@ export default function CreNoteWidget() {
 
   const [panelWidth, setPanelWidth] = useState(560);
   const [minimized, setMinimized] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const resizingRef = useRef(false);
   const saveTimer = useRef<NodeJS.Timeout | null>(null);
@@ -110,18 +113,22 @@ export default function CreNoteWidget() {
     };
   }, [open, activeNote, title, content, userId, folderId]);
 
-  // Escape key event listener to close the Cre Note widget
+  // Escape key event listener to close full screen or Cre Note widget
   useEffect(() => {
     const handleEscapeClose = (e: KeyboardEvent) => {
       if (e.key === "Escape" && open) {
-        closeWidget();
+        if (isFullScreen) {
+          setIsFullScreen(false);
+        } else {
+          closeWidget();
+        }
       }
     };
     window.addEventListener("keydown", handleEscapeClose);
     return () => {
       window.removeEventListener("keydown", handleEscapeClose);
     };
-  }, [open]);
+  }, [open, isFullScreen]);
 
   useEffect(() => {
     function handleMouseMove(e: MouseEvent) {
@@ -1042,14 +1049,16 @@ export default function CreNoteWidget() {
 
   return (
     <aside
-      style={{ width: minimized ? 72 : panelWidth }}
-      className="fixed right-0 top-16 z-[80] h-[calc(100vh-64px)] border-l border-white/10 bg-[#080d10] shadow-2xl"
+      style={isFullScreen ? undefined : { width: minimized ? 72 : panelWidth }}
+      className={`fixed right-0 top-16 z-[85] h-[calc(100vh-64px)] border-l border-white/10 bg-[#080d10] shadow-2xl transition-all duration-300 ${
+        isFullScreen ? "left-0 lg:left-[220px] w-auto" : ""
+      }`}
     >
-      {isResizing && (
+      {isResizing && !isFullScreen && (
         <div className="fixed inset-0 z-[-1] cursor-col-resize select-none" />
       )}
 
-      {!minimized && (
+      {!minimized && !isFullScreen && (
         <div
           onMouseDown={() => {
             resizingRef.current = true;
@@ -1105,15 +1114,41 @@ export default function CreNoteWidget() {
               </div>
 
               <div className="min-w-0">
-                <div className="truncate text-sm font-bold text-white">Cre Note</div>
+                <div className="truncate text-sm font-bold text-white flex items-center gap-2">
+                  <span>Cre Note</span>
+                  {isFullScreen && (
+                    <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-[10px] font-black text-emerald-400 border border-emerald-500/20">
+                      FULL SCREEN
+                    </span>
+                  )}
+                </div>
                 <div className="truncate text-xs text-zinc-500">Global Quick Note</div>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
+              {/* 🚀 전체 화면 / 복원 토글 버튼 */}
+              <button
+                onClick={() => setIsFullScreen((prev) => !prev)}
+                className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-extrabold text-zinc-300 transition hover:bg-white/10 hover:text-white cursor-pointer"
+                title={isFullScreen ? "이전 크기로 복원" : "전체 화면으로 열기"}
+              >
+                {isFullScreen ? (
+                  <>
+                    <Minimize2 size={13} className="text-emerald-400" />
+                    <span>복원</span>
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 size={13} className="text-emerald-400" />
+                    <span>전체 화면</span>
+                  </>
+                )}
+              </button>
+
               <button
                 onClick={closeWidget}
-                className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-black text-zinc-300 transition hover:bg-white/10 hover:text-white"
+                className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-black text-zinc-300 transition hover:bg-white/10 hover:text-white cursor-pointer"
                 title="Cre Note 닫기"
               >
                 닫기
@@ -1126,7 +1161,7 @@ export default function CreNoteWidget() {
       {minimized ? (
         <div className="h-[calc(100vh-120px)]" />
       ) : (
-        <div className="grid h-[calc(100vh-120px)] grid-cols-[230px_1fr]">
+        <div className={`grid h-[calc(100vh-120px)] ${isFullScreen ? "grid-cols-[280px_1fr]" : "grid-cols-[230px_1fr]"}`}>
           <section className="border-r border-white/10 bg-black/20">
             <div className="space-y-2 border-b border-white/10 p-3">
               <button

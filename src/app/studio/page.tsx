@@ -118,7 +118,7 @@ export default function StudioPage() {
     },
     {
       key: "library",
-      name: "콘텐츠 라이브러리",
+      name: "내 콘텐츠 보관함",
       href: "/library",
       icon: Library,
       color: "from-sky-600 to-blue-500 text-sky-400 bg-sky-500/10",

@@ -174,13 +174,7 @@ export default function Sidebar({
         icon: LayoutDashboard,
         color: "text-blue-400",
       },
-      {
-        key: "chatbot",
-        name: "AI 챗봇",
-        href: "/chatbot",
-        icon: MessageSquare,
-        color: "text-cyan-400",
-      },
+
 
       {
         key: "client-site-builder",
@@ -201,7 +195,7 @@ export default function Sidebar({
 
       {
         key: "library",
-        name: "콘텐츠 라이브러리",
+        name: "내 콘텐츠 보관함",
         href: "/library",
         icon: Library,
         color: "text-sky-400",

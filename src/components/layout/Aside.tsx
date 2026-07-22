@@ -31,7 +31,7 @@ export default function Aside() {
   ];
 
   const supportLinks = [
-    { label: "AI 챗봇 - 채팅 시작하기", href: "/chatbot", icon: MessageCircle, color: "from-cyan-600 to-blue-600", iconColor: "text-cyan-400" },
+    { label: "FAQ 챗봇 - 가이드 문의", href: "/chatbot", icon: MessageCircle, color: "from-cyan-600 to-blue-600", iconColor: "text-cyan-400" },
     { label: "고객지원", href: "/help", icon: LifeBuoy, color: "from-sky-600 to-blue-600", iconColor: "text-sky-400" },
     { label: "스튜디오 가이드", href: "/about", icon: BookOpen, color: "from-violet-600 to-purple-600", iconColor: "text-violet-400" },
     { label: "Privacy Policy", href: "/privacy", icon: ShieldCheck, color: "from-emerald-600 to-green-600", iconColor: "text-emerald-400" },

@@ -316,14 +316,14 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
 
 
 
+
+
         <button
-          onClick={() => window.dispatchEvent(new Event("open-ai-assistant"))}
+          onClick={() => window.dispatchEvent(new Event("open-faq-chatbot"))}
           className="hidden h-10 items-center gap-2 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0c0d12]/45 px-3.5 text-zinc-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-white/30 hover:bg-zinc-100/50 dark:hover:bg-[#141622]/80 hover:text-slate-800 dark:hover:text-white transition-all duration-300 md:flex"
         >
-          <Bot size={15} className="text-cyan-400 shrink-0" />
-          <span className="text-[13px] font-bold">
-            AI Assistant
-          </span>
+          <HelpCircle size={15} className="text-emerald-400 shrink-0" />
+          <span className="text-[13px] font-bold">FAQ 챗봇</span>
         </button>
 
         <button

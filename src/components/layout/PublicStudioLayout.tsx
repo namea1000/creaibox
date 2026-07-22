@@ -5,7 +5,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Aside from "@/components/layout/Aside";
 import StudioTopbar from "@/components/studio/StudioTopbar";
 import CreNoteWidget from "@/components/studio/widgets/CreNoteWidget";
-import AiAssistantWidget from "@/components/studio/widgets/AiAssistantWidget";
+import FaqChatbotWidget from "@/components/studio/widgets/FaqChatbotWidget";
 import Header from "@/components/layout/Header";
 
 export default function PublicStudioLayout({
@@ -41,7 +41,7 @@ export default function PublicStudioLayout({
             <main className="min-w-0 flex-1 overflow-y-auto overflow-x-auto custom-scrollbar bg-zinc-100 dark:bg-[#06080d] transition-colors duration-300">
               {children}
               <CreNoteWidget />
-              <AiAssistantWidget />
+              <FaqChatbotWidget />
             </main>
 
             <Aside />

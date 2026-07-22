@@ -969,6 +969,27 @@ export default function CreaiboxAiWritingPanel({
               />
             </div>
 
+            {/* 12. 특정 키워드로 글쓰기 (자유 키워드 직접 입력) */}
+            <div className="flex flex-col gap-1.5 text-left">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-black text-violet-400 select-none flex items-center gap-1">
+                  <Sparkles size={12} className="text-violet-400" />
+                  <span>12. 특정 키워드로 글쓰기 (자유 입력)</span>
+                </label>
+                <span className="text-[10px] font-bold text-zinc-500">
+                  * 직접 입력 시 7~10번 대신 적용
+                </span>
+              </div>
+              <input
+                type="text"
+                placeholder="원하시는 타겟 키워드를 직접 입력하세요 (예: 삼성전자 주가 전망, 캠핑용품 추천...)"
+                value={aiTargetKeyword}
+                onChange={(e) => setAiTargetKeyword(e.target.value)}
+                disabled={isAiGenerating}
+                className="w-full bg-[#161a23] border border-violet-500/40 text-white text-xs px-3.5 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-500/50 outline-none placeholder:text-zinc-600 transition"
+              />
+            </div>
+
             <div className="flex items-center gap-2 py-1">
               <input
                 type="checkbox"

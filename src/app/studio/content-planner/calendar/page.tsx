@@ -27,11 +27,14 @@ type CalendarEvent = {
   targetRoute?: string;
   externalUrl?: string;
   mainKeyword?: string;
+  brandId?: string;
 };
 
 export default function ContentCalendarPage() {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [brandsList, setBrandsList] = useState<{ id: string; name: string }[]>([]);
+  const [selectedBrand, setSelectedBrand] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
@@ -48,11 +51,9 @@ export default function ContentCalendarPage() {
     const days = lastDay.getDate();
     const firstDayIdx = firstDay.getDay(); // 0(일) ~ 6(토)
 
-    // 달력 그리드를 채울 이전 달의 일수와 다음 달의 일수를 42칸(6행 7열) 구조로 계산
     const rows: { date: Date; isCurrentMonth: boolean }[] = [];
     const prevMonthLast = new Date(y, m, 0).getDate();
 
-    // 1. 이전 달 일수 채우기
     for (let i = firstDayIdx - 1; i >= 0; i--) {
       rows.push({
         date: new Date(y, m - 1, prevMonthLast - i),
@@ -60,7 +61,6 @@ export default function ContentCalendarPage() {
       });
     }
 
-    // 2. 현재 달 일수 채우기
     for (let i = 1; i <= days; i++) {
       rows.push({
         date: new Date(y, m, i),
@@ -68,7 +68,6 @@ export default function ContentCalendarPage() {
       });
     }
 
-    // 3. 다음 달 일수 채우기 (42칸 맞추기)
     const nextDaysNeeded = 42 - rows.length;
     for (let i = 1; i <= nextDaysNeeded; i++) {
       rows.push({
@@ -93,21 +92,58 @@ export default function ContentCalendarPage() {
     async function loadData() {
       try {
         setIsLoading(true);
-        // 1. 기획 캠페인 로드
-        const { data: campaigns, error: campaignError } = await supabase
-          .from("content_planner_campaigns")
-          .select("id, title, created_at, content_type, primary_platform, main_keyword")
-          .neq("status", "trash");
 
-        if (campaignError) throw campaignError;
+        // 0. 사용자 및 브랜드 목록 로드
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role, brand_id, extra_configs")
+            .eq("id", user.id)
+            .single();
+
+          const brandSet = new Set<string>();
+          if (profile?.brand_id) brandSet.add(profile.brand_id);
+          if (profile?.extra_configs?.brand_ids && Array.isArray(profile.extra_configs.brand_ids)) {
+            profile.extra_configs.brand_ids.forEach((b: string) => brandSet.add(b));
+          }
+
+          const { data: clientSites } = await supabase
+            .from("client_sites")
+            .select("brand_id, name");
+
+          (clientSites ?? []).forEach((cs: any) => {
+            if (cs.brand_id) brandSet.add(cs.brand_id);
+          });
+
+          const bList = Array.from(brandSet).map((b) => ({ id: b, name: b }));
+          setBrandsList(bList);
+        }
+
+        // 1. 기획 캠페인 로드
+        const { data: campaigns } = await supabase
+          .from("content_planner_campaigns")
+          .select("id, title, created_at, updated_at, content_type, primary_platform, main_keyword, status, is_deleted");
 
         // 2. 발행 아웃풋 로드
-        const { data: outputs, error: outputError } = await supabase
+        const { data: outputs } = await supabase
           .from("content_planner_outputs")
-          .select("id, title, created_at, output_type, platform, status, target_route, external_url")
-          .neq("status", "trash");
+          .select("id, title, created_at, updated_at, output_type, platform, status, target_route, external_url, is_deleted");
 
-        if (outputError) throw outputError;
+        // 3. AI 글쓰기 원고(Creaibox Posts) 로드
+        const { data: creaiboxPosts } = await supabase
+          .from("writing_creaibox_posts")
+          .select("id, title, created_at, updated_at, status, slug, main_keyword, is_deleted, brand_id");
+
+        // 4. 네이버 글쓰기 원고(Naver Posts) 로드
+        const { data: naverPosts } = await supabase
+          .from("writing_naver_posts")
+          .select("id, title, created_at, updated_at, status, main_keyword, is_deleted, brand_id");
+
+        // 5. 워드프레스 글쓰기 원고(Wordpress Posts) 로드
+        const { data: wpPosts } = await supabase
+          .from("writing_wordpress_posts")
+          .select("id, title, created_at, updated_at, status, main_keyword, is_deleted, brand_id");
 
         if (!mounted) return;
 
@@ -115,12 +151,14 @@ export default function ContentCalendarPage() {
 
         // 기획서 이벤트 매핑
         (campaigns ?? []).forEach((c: any) => {
-          if (c.created_at) {
+          if (c.status === "trash" || c.status === "TRASH" || c.is_deleted === true) return;
+          const dateVal = c.created_at || c.updated_at;
+          if (dateVal) {
             loadedEvents.push({
               id: `campaign-${c.id}`,
               title: c.title,
               type: "기획 완료",
-              dateStr: c.created_at.substring(0, 10),
+              dateStr: dateVal.substring(0, 10),
               platform: c.primary_platform || "멀티",
               status: "planned",
               mainKeyword: c.main_keyword || undefined,
@@ -130,16 +168,75 @@ export default function ContentCalendarPage() {
 
         // 발행 이력 이벤트 매핑
         (outputs ?? []).forEach((o: any) => {
-          if (o.created_at) {
+          if (o.status === "trash" || o.status === "TRASH" || o.is_deleted === true) return;
+          const dateVal = o.created_at || o.updated_at;
+          if (dateVal) {
             loadedEvents.push({
               id: `output-${o.id}`,
               title: o.title,
               type: "콘텐츠 발행",
-              dateStr: o.created_at.substring(0, 10),
+              dateStr: dateVal.substring(0, 10),
               platform: o.platform || o.output_type || "발행",
               status: o.status || "generated",
               targetRoute: o.target_route || undefined,
               externalUrl: o.external_url || undefined,
+            });
+          }
+        });
+
+        // AI 글쓰기(크리에이박스) 원고 매핑
+        (creaiboxPosts ?? []).forEach((p: any) => {
+          if (p.status === "trash" || p.status === "TRASH" || p.is_deleted === true) return;
+          const dateVal = p.created_at || p.updated_at;
+          if (dateVal) {
+            loadedEvents.push({
+              id: `creaibox-${p.id}`,
+              title: p.title || "크리에이박스 글",
+              type: "AI 글쓰기 발행",
+              dateStr: dateVal.substring(0, 10),
+              platform: "Creaibox 블로그",
+              status: p.status || "published",
+              targetRoute: p.slug ? `/blog/${p.slug}` : `/studio/writing/creaibox/list`,
+              mainKeyword: p.main_keyword || undefined,
+              brandId: p.brand_id || undefined,
+            });
+          }
+        });
+
+        // 네이버 글쓰기 원고 매핑
+        (naverPosts ?? []).forEach((p: any) => {
+          if (p.status === "trash" || p.status === "TRASH" || p.is_deleted === true) return;
+          const dateVal = p.created_at || p.updated_at;
+          if (dateVal) {
+            loadedEvents.push({
+              id: `naver-${p.id}`,
+              title: p.title || "네이버 글",
+              type: "네이버 글 발행",
+              dateStr: dateVal.substring(0, 10),
+              platform: "네이버 블로그",
+              status: p.status || "published",
+              targetRoute: `/studio/writing/naver/list`,
+              mainKeyword: p.main_keyword || undefined,
+              brandId: p.brand_id || undefined,
+            });
+          }
+        });
+
+        // 워드프레스 글쓰기 원고 매핑
+        (wpPosts ?? []).forEach((p: any) => {
+          if (p.status === "trash" || p.status === "TRASH" || p.is_deleted === true) return;
+          const dateVal = p.created_at || p.updated_at;
+          if (dateVal) {
+            loadedEvents.push({
+              id: `wp-${p.id}`,
+              title: p.title || "워드프레스 글",
+              type: "워드프레스 글 발행",
+              dateStr: dateVal.substring(0, 10),
+              platform: "워드프레스",
+              status: p.status || "published",
+              targetRoute: `/studio/writing/wp/list`,
+              mainKeyword: p.main_keyword || undefined,
+              brandId: p.brand_id || undefined,
             });
           }
         });
@@ -161,15 +258,27 @@ export default function ContentCalendarPage() {
     };
   }, [supabase]);
 
-  // 해당 일자의 이벤트 필터링
+  // 브랜드 필터링 및 일자별 이벤트 필터링
+  const filteredEvents = useMemo(() => {
+    if (selectedBrand === "all") return events;
+    return events.filter((e) => !e.brandId || e.brandId.toLowerCase() === selectedBrand.toLowerCase());
+  }, [events, selectedBrand]);
+
   const getEventsForDate = (date: Date) => {
     const ystr = date.getFullYear();
     const mstr = String(date.getMonth() + 1).padStart(2, "0");
     const dstr = String(date.getDate()).padStart(2, "0");
     const formatted = `${ystr}-${mstr}-${dstr}`;
 
-    return events.filter((e) => e.dateStr === formatted);
+    return filteredEvents.filter((e) => e.dateStr === formatted);
   };
+
+  const currentMonthEventsCount = useMemo(() => {
+    const ystr = String(year);
+    const mstr = String(month).padStart(2, "0");
+    const prefix = `${ystr}-${mstr}`;
+    return filteredEvents.filter((e) => e.dateStr.startsWith(prefix)).length;
+  }, [filteredEvents, year, month]);
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(year - 1, month - 2, 1));
@@ -213,48 +322,91 @@ export default function ContentCalendarPage() {
 
       {/* 캘린더 컨트롤 및 지표 바 */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between rounded-2xl border border-white/10 bg-white/[0.02] p-4">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <h2 className="text-xl font-black text-white min-w-[140px]">
             {year}년 {month}월
           </h2>
+
           <div className="flex items-center gap-1 border border-white/10 rounded-lg p-0.5 bg-black/40">
             <button
               onClick={handlePrevMonth}
               className="p-1.5 text-slate-400 hover:text-white rounded hover:bg-white/5 transition"
+              title="이전 달"
             >
               <ChevronLeft size={15} />
             </button>
             <button
               onClick={handleToday}
               className="px-2.5 py-1 text-[11px] font-bold text-slate-300 hover:text-white rounded hover:bg-white/5 transition"
+              title="오늘 날짜로 이동"
             >
               오늘
             </button>
             <button
               onClick={handleNextMonth}
               className="p-1.5 text-slate-400 hover:text-white rounded hover:bg-white/5 transition"
+              title="다음 달"
             >
               <ChevronRight size={15} />
             </button>
           </div>
+
+          {/* 🏷️ 다중 브랜드 선택 필터 드롭다운 */}
+          {brandsList.length > 0 && (
+            <div className="flex items-center gap-2 bg-black/50 border border-white/10 px-3 py-1.5 rounded-xl ml-2">
+              <span className="text-xs font-bold text-slate-400">브랜드 필터:</span>
+              <select
+                value={selectedBrand}
+                onChange={(e) => setSelectedBrand(e.target.value)}
+                className="bg-transparent text-xs font-black text-cyan-400 outline-none cursor-pointer"
+              >
+                <option value="all" className="bg-zinc-950 text-white">전체 브랜드 (통합 뷰)</option>
+                {brandsList.map((b) => (
+                  <option key={b.id} value={b.id} className="bg-zinc-950 text-white">
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* 범례 및 통계 */}
         <div className="flex flex-wrap gap-4 text-xs font-bold text-slate-400">
           <div className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-cyan-400"></span>
-            <span>기획 완료 {events.filter((e) => e.type === "기획 완료").length}건</span>
+            <span>기획 완료 {filteredEvents.filter((e) => e.type === "기획 완료").length}건</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
-            <span>블로그/네이버 발행 {events.filter((e) => e.type === "콘텐츠 발행" && e.platform.includes("블로그")).length}건</span>
+            <span>블로그/AI 글쓰기 발행 {filteredEvents.filter((e) => e.platform.includes("블로그") || e.platform.includes("Creaibox") || e.platform.includes("네이버")).length}건</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-rose-400"></span>
-            <span>동영상/SNS {events.filter((e) => e.type === "콘텐츠 발행" && !e.platform.includes("블로그")).length}건</span>
+            <span>동영상/SNS {filteredEvents.filter((e) => !e.platform.includes("블로그") && !e.platform.includes("Creaibox") && !e.platform.includes("네이버")).length}건</span>
           </div>
         </div>
       </div>
+
+      {/* 💡 선택 월 일정 없음 안내 배너 */}
+      {!isLoading && currentMonthEventsCount === 0 && (
+        <div className="flex items-center justify-between px-5 py-3.5 rounded-2xl border border-amber-500/20 bg-amber-500/10 text-amber-300 text-xs font-bold shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <Info size={16} className="text-amber-400 shrink-0" />
+            <span>
+              선택하신 <strong>{year}년 {month}월</strong>에는 등록되거나 발행된 일정이 없습니다.
+              {selectedBrand !== "all" && ` (현재 브랜드 필터: ${selectedBrand})`}
+            </span>
+          </div>
+          <button
+            onClick={handleToday}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 text-xs font-extrabold transition cursor-pointer"
+          >
+            <span>오늘 날짜로 이동 ({new Date().getFullYear()}년 {new Date().getMonth() + 1}월)</span>
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      )}
 
       {/* 캘린더 그리드 영역 */}
       {isLoading ? (

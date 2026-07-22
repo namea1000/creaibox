@@ -47,7 +47,7 @@ export default function LibraryHomePage() {
               </div>
 
               <h1 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white md:text-5xl">
-                콘텐츠 라이브러리
+                내 콘텐츠 보관함
               </h1>
 
               <p className="mt-4 max-w-2xl text-sm font-medium leading-relaxed text-zinc-650 dark:text-zinc-400 md:text-base">

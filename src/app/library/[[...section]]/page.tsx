@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
   const segments = resolvedParams.section || [];
   const section = segments[0] || "";
-  const sectionTitle = sectionNames[section] || "콘텐츠 라이브러리";
+  const sectionTitle = sectionNames[section] || "내 콘텐츠 보관함";
   
   // ⚡ 세부 콘텐츠 유형에 따른 썸네일 파일 분기 매칭
   const imageFilename = section === "music" ? "media-library-music.webp" : "media-library.webp";

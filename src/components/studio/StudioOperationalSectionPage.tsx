@@ -53,7 +53,7 @@ const fallbackActions = [
 
 const areaDefaults: Record<StudioArea, Omit<SectionConfig, "title">> = {
   library: {
-    eyebrow: "콘텐츠 라이브러리",
+    eyebrow: "내 콘텐츠 보관함",
     description: "콘텐츠, 음악, 비디오, 무료 공유 에셋을 정돈하고 관리합니다.",
     accent: "sky",
     icon: Library,

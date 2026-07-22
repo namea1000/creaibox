@@ -56,6 +56,8 @@ const platforms: {
     { label: "멀티 플랫폼", icon: Compass },
   ];
 
+const DEFAULT_CAMP_DETAIL = { items: [], outputs: [] };
+
 function ContentPlannerPlanningPageContent() {
   const supabase = useMemo(() => createClient(), []);
   const searchParams = useSearchParams();
@@ -78,10 +80,10 @@ function ContentPlannerPlanningPageContent() {
   const activeCamp = campaigns[campaignPage - 1];
   const activeCampId = activeCamp?.id || "";
 
-  const { data: campDetail = { items: [], outputs: [] }, isLoading: isDetailLoading, error: detailError } = useQuery({
+  const { data: campDetail = DEFAULT_CAMP_DETAIL, isLoading: isDetailLoading, error: detailError } = useQuery({
     queryKey: ["contentPlannerCampaignDetail", activeCampId],
     queryFn: async () => {
-      if (!activeCampId) return { items: [], outputs: [] };
+      if (!activeCampId) return DEFAULT_CAMP_DETAIL;
       const detail = await fetchContentPlannerCampaignDetail(activeCampId);
       return {
         items: detail.items ?? [],
@@ -97,7 +99,7 @@ function ContentPlannerPlanningPageContent() {
   const [currentOutputs, setCurrentOutputs] = useState<any[]>([]);
 
   useEffect(() => {
-    if (campaignsData) {
+    if (campaignsData && campaignsData.length > 0) {
       setCampaigns(campaignsData);
     }
   }, [campaignsData]);

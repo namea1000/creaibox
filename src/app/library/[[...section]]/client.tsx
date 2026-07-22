@@ -38,7 +38,7 @@ export default function PublicLibrarySectionClient() {
       <StudioOperationalSectionPage
         area="library"
         section={section}
-        title={sectionNames[section] || "콘텐츠 라이브러리"}
+        title={sectionNames[section] || "내 콘텐츠 보관함"}
       />
     );
   };
