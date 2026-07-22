@@ -3307,9 +3307,9 @@ export default function UniversalBlogEditor({
         </div>
 
         {/* [3열]: AI 자동 수정보완 커스텀 커맨드 툴바 (프리미엄 통일 디자인) */}
-        <div className="flex items-center justify-between gap-3 pl-0 pr-4 h-12 bg-gradient-to-r from-[#0b0d18] via-[#101326] to-[#0b0d18] border-y border-violet-500/25 shadow-[inset_0_1px_0_rgba(139,92,246,0.18)] select-none shrink-0 overflow-hidden">
-          {/* 왼쪽 AI 스크롤 그룹 */}
-          <div className="flex flex-nowrap items-center gap-2 overflow-x-auto scrollbar-none flex-1 min-w-0 h-full">
+        <div className="relative z-40 flex items-center justify-between gap-3 pl-0 pr-4 h-12 bg-gradient-to-r from-[#0b0d18] via-[#101326] to-[#0b0d18] border-y border-violet-500/25 shadow-[inset_0_1px_0_rgba(139,92,246,0.18)] select-none shrink-0 overflow-visible">
+          {/* 왼쪽 AI 그룹 */}
+          <div className="flex flex-nowrap items-center gap-2 overflow-visible flex-1 min-w-0 h-full">
             {/* 맨 왼쪽 상하까지 통으로 막힌 AI 자동 수정보완 섹션 뱃지 타이틀 블록 */}
             <div className="h-full px-4 flex items-center gap-2 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white border-r border-violet-400/40 shadow-md shrink-0 mr-1 select-none">
               <Sparkles size={14} className="animate-pulse text-yellow-300" />
@@ -3333,7 +3333,7 @@ export default function UniversalBlogEditor({
                 <span>내용 보강</span>
               </button>
               {isContentDropdownOpen && (
-                <div className="absolute left-0 mt-1.5 w-44 rounded-2xl border border-violet-500/30 bg-[#0e101d] py-2 shadow-[0_12px_36px_rgba(0,0,0,0.8)] z-50">
+                <div className="absolute left-0 top-full mt-1.5 w-44 rounded-2xl border border-violet-500/40 bg-[#0e101d] py-2 shadow-[0_16px_40px_rgba(0,0,0,0.95)] z-[100]">
                   <div className="px-3 py-1 text-[9px] font-black text-violet-400/80 uppercase tracking-wider">
                     내용 분량 보강
                   </div>
@@ -3387,7 +3387,7 @@ export default function UniversalBlogEditor({
                 <span>목차 보강</span>
               </button>
               {isTocDropdownOpen && (
-                <div className="absolute left-0 mt-1.5 w-56 rounded-2xl border border-violet-500/30 bg-[#0e101d] p-3 shadow-[0_12px_36px_rgba(0,0,0,0.8)] z-50 flex flex-col gap-2.5">
+                <div className="absolute left-0 top-full mt-1.5 w-56 rounded-2xl border border-violet-500/40 bg-[#0e101d] p-3 shadow-[0_16px_40px_rgba(0,0,0,0.95)] z-[100] flex flex-col gap-2.5">
                   <div>
                     <div className="px-1 py-1 text-[9px] font-black text-violet-400/80 uppercase tracking-wider mb-1.5">
                       보강할 목차 수 선택
@@ -3482,7 +3482,7 @@ export default function UniversalBlogEditor({
                 <span>타입 변경</span>
               </button>
               {isPostTypeDropdownOpen && (
-                <div className="absolute left-0 mt-1.5 w-48 rounded-2xl border border-violet-500/30 bg-[#0e101d] py-2 shadow-[0_12px_36px_rgba(0,0,0,0.8)] z-50">
+                <div className="absolute left-0 top-full mt-1.5 w-48 rounded-2xl border border-violet-500/40 bg-[#0e101d] py-2 shadow-[0_16px_40px_rgba(0,0,0,0.95)] z-[100]">
                   <div className="px-3 py-1 text-[9px] font-black text-violet-400/80 uppercase tracking-wider">
                     원고 타입 변경
                   </div>
