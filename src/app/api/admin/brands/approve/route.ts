@@ -108,27 +108,25 @@ export async function POST(req: NextRequest) {
     }
 
     // 5. Update user profile brand fields atomically in DB
-    let primary_brand_id = targetProfile.brand_id || "";
-    let brand_ids = targetProfile.extra_configs?.brand_ids || [];
+    const previousBrandId = targetProfile.brand_id || "";
+    let brand_ids: string[] = targetProfile.extra_configs?.brand_ids || [];
 
-    if (!primary_brand_id) {
-      primary_brand_id = requestedId;
-    } else {
-      if (!brand_ids.includes(requestedId)) {
-        brand_ids.push(requestedId);
-      }
+    // The requestedId MUST become the user's primary brand_id
+    const primary_brand_id = requestedId;
+
+    if (previousBrandId && previousBrandId !== requestedId && !brand_ids.includes(previousBrandId)) {
+      brand_ids.push(previousBrandId);
+    }
+    if (!brand_ids.includes(requestedId)) {
+      brand_ids.push(requestedId);
     }
 
     const nextExtraConfigs = {
       ...(targetProfile.extra_configs || {}),
       brand_ids: brand_ids,
       [`ga_id_${requestedId}`]: measurementId,
+      ga_id: measurementId,
     };
-
-    // For backward compatibility and single brand users, set primary ga_id
-    if (requestedId === primary_brand_id) {
-      nextExtraConfigs.ga_id = measurementId;
-    }
 
     const { error: updateError } = await adminSupabase
       .from("profiles")

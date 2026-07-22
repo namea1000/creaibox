@@ -737,19 +737,22 @@ export default function CreaiboxManuscriptDetailPage() {
           .eq("id", user.id)
           .single();
         if (prof?.role) setUserRole(prof.role);
-        if (prof?.brand_id) setUserBrandId(prof.brand_id);
         if (prof?.extra_configs) setExtraConfigs(prof.extra_configs);
 
         const approvedBrands: string[] = [];
-        if (prof?.brand_id) {
-          approvedBrands.push(prof.brand_id);
-        }
+
+        // 1. Add user-requested approved brand IDs from extra_configs first
         if (prof?.extra_configs?.brand_ids && Array.isArray(prof.extra_configs.brand_ids)) {
           prof.extra_configs.brand_ids.forEach((b: string) => {
             if (b && !approvedBrands.includes(b)) {
               approvedBrands.push(b);
             }
           });
+        }
+
+        // 2. Add prof.brand_id if not present
+        if (prof?.brand_id && !approvedBrands.includes(prof.brand_id)) {
+          approvedBrands.push(prof.brand_id);
         }
 
         // 🌟 기업용 홈페이지(client_sites)의 brand_id도 도메인 선택 목록에 추가
@@ -768,6 +771,8 @@ export default function CreaiboxManuscriptDetailPage() {
           });
         }
 
+        const primaryBrand = approvedBrands[0] || prof?.brand_id || "";
+        setUserBrandId(primaryBrand);
         setUserBrandIds(approvedBrands);
       }
     };
