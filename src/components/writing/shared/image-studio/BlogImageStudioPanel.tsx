@@ -503,23 +503,23 @@ export default function BlogImageStudioPanel({
         }
 
         const userId = await resolveUserId();
-        if (!userId) {
-          setGallery([]);
-          return;
+
+        let targetSourceIds = [activeSourceId];
+        if (selectedPost?.displayId) {
+          targetSourceIds.push(String(selectedPost.displayId));
         }
 
-        const { data, error } = await supabase
+        let { data, error } = await supabase
           .from("generated_images")
           .select("id, image_url, prompt, style, aspect_ratio, provider, source_type, source_id, image_role, is_primary, created_at")
-          .eq("user_id", userId)
           .eq("source_type", sourceType)
-          .eq("source_id", activeSourceId)
+          .in("source_id", targetSourceIds)
           .eq("image_role", imageRole)
           .order("is_primary", { ascending: false })
           .order("created_at", { ascending: false })
           .limit(60);
 
-        if (error) throw error;
+        if (error && !data) throw error;
 
         const images: GeneratedImage[] = ((data || []) as GeneratedImageRecord[]).map((img) => ({
           id: String(img.id),
@@ -616,7 +616,7 @@ export default function BlogImageStudioPanel({
           sourceType,
           sourceId: activeSourceId,
           imageRole,
-          markAsPrimary: false,
+          markAsPrimary: mode === "thumbnail" ? true : false,
         }),
       });
 
@@ -638,7 +638,7 @@ export default function BlogImageStudioPanel({
         sourceType: img.source_type || sourceType,
         sourceId: img.source_id || activeSourceId,
         imageRole: img.image_role || imageRole,
-        isPrimary: Boolean(img.is_primary),
+        isPrimary: mode === "thumbnail" ? true : Boolean(img.is_primary),
       }));
 
       savePresetMap({
@@ -654,6 +654,10 @@ export default function BlogImageStudioPanel({
           isPrimary: mode === "thumbnail" ? false : item.isPrimary,
         })),
       ]);
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("generated-images-updated"));
+      }
     } catch (error) {
       alert(error instanceof Error ? error.message : "이미지 생성에 실패했습니다.");
     } finally {
@@ -976,12 +980,12 @@ export default function BlogImageStudioPanel({
                 </div>
 
                 <div className="border-t border-zinc-800/80">
-                  <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
-                    <label className="px-4 py-2.5 font-bold text-zinc-100">1. 이미지 생성 모델</label>
+                  <div className="grid grid-cols-[140px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
+                    <label className="px-2.5 py-2.5 font-bold text-zinc-100 whitespace-nowrap text-xs">1. 이미지 생성 모델</label>
                     <select
                       value={selectedProvider}
                       onChange={(e) => setSelectedProvider(e.target.value)}
-                      className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 font-bold text-zinc-100 outline-none"
+                      className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 font-bold text-zinc-100 outline-none text-xs"
                     >
                       {modelOptions.map((model) => (
                         <option key={model.value} value={model.value}>
@@ -991,8 +995,8 @@ export default function BlogImageStudioPanel({
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
-                    <label className="px-4 py-2.5 font-bold text-zinc-100">2. 스타일 선택</label>
+                  <div className="grid grid-cols-[140px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
+                    <label className="px-2.5 py-2.5 font-bold text-zinc-100 whitespace-nowrap text-xs">2. 스타일 선택</label>
                     <select
                       value={selectedStyle}
                       onChange={(e) => {
@@ -1001,7 +1005,7 @@ export default function BlogImageStudioPanel({
                         setSelectedStyle(nextStyle);
                         setSelectedStyleDetail(nextStyleData?.details[0] || "");
                       }}
-                      className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 font-bold text-zinc-100 outline-none"
+                      className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 font-bold text-zinc-100 outline-none text-xs"
                     >
                       {styleOptions.map((style) => (
                         <option key={style.value} value={style.value}>
@@ -1011,12 +1015,12 @@ export default function BlogImageStudioPanel({
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
-                    <label className="px-4 py-2.5 font-bold text-zinc-100">3. 비주얼 표현 방식</label>
+                  <div className="grid grid-cols-[140px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
+                    <label className="px-2.5 py-2.5 font-bold text-zinc-100 whitespace-nowrap text-xs">3. 비주얼 표현 방식</label>
                     <select
                       value={selectedStyleDetail}
                       onChange={(e) => setSelectedStyleDetail(e.target.value)}
-                      className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 font-bold text-zinc-100 outline-none"
+                      className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 font-bold text-zinc-100 outline-none text-xs"
                     >
                       {selectedStyleData?.details.map((detail) => (
                         <option key={detail} value={detail}>
@@ -1026,12 +1030,12 @@ export default function BlogImageStudioPanel({
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
-                    <label className="px-4 py-2.5 font-bold text-zinc-100">4. 비율 사이즈 선택</label>
+                  <div className="grid grid-cols-[140px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
+                    <label className="px-2.5 py-2.5 font-bold text-zinc-100 whitespace-nowrap text-xs">4. 비율 사이즈 선택</label>
                     <select
                       value={selectedAspectRatio}
                       onChange={(e) => setSelectedAspectRatio(e.target.value)}
-                      className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 font-bold text-zinc-100 outline-none"
+                      className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 font-bold text-zinc-100 outline-none text-xs"
                     >
                       {aspectRatioOptions.map((ratio) => (
                         <option key={ratio.value} value={ratio.value}>
@@ -1041,8 +1045,8 @@ export default function BlogImageStudioPanel({
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
-                    <label className="px-4 py-2.5 font-bold text-zinc-100">5. 썸네일 유형</label>
+                  <div className="grid grid-cols-[140px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
+                    <label className="px-2.5 py-2.5 font-bold text-zinc-100 whitespace-nowrap text-xs">5. 썸네일 유형</label>
                     <div className="relative w-full border-l border-zinc-800 bg-blue-950/10 font-bold text-zinc-100 outline-none" ref={thumbnailTypeDropdownRef}>
                       <button
                         type="button"
@@ -1093,12 +1097,12 @@ export default function BlogImageStudioPanel({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
-                    <label className="px-4 py-2.5 font-bold text-zinc-100">6. 텍스트 강도</label>
+                  <div className="grid grid-cols-[140px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
+                    <label className="px-2.5 py-2.5 font-bold text-zinc-100 whitespace-nowrap text-xs">6. 텍스트 강도</label>
                     <select
                       value={selectedTextIntensity}
                       onChange={(e) => setSelectedTextIntensity(e.target.value)}
-                      className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 font-bold text-zinc-100 outline-none"
+                      className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 font-bold text-zinc-100 outline-none text-xs"
                     >
                       {textIntensityOptions.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -1108,12 +1112,12 @@ export default function BlogImageStudioPanel({
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
-                    <label className="px-4 py-2.5 font-bold text-zinc-100">7. 레이아웃</label>
+                  <div className="grid grid-cols-[140px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
+                    <label className="px-2.5 py-2.5 font-bold text-zinc-100 whitespace-nowrap text-xs">7. 레이아웃</label>
                     <select
                       value={selectedLayout}
                       onChange={(e) => setSelectedLayout(e.target.value)}
-                      className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 font-bold text-zinc-100 outline-none"
+                      className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 font-bold text-zinc-100 outline-none text-xs"
                     >
                       {layoutOptions.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -1123,12 +1127,12 @@ export default function BlogImageStudioPanel({
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
-                    <label className="px-4 py-2.5 font-bold text-zinc-100">8. 컬러 톤</label>
+                  <div className="grid grid-cols-[140px_minmax(0,1fr)] items-center border-b border-zinc-800/70 transition hover:bg-blue-950/10">
+                    <label className="px-2.5 py-2.5 font-bold text-zinc-100 whitespace-nowrap text-xs">8. 컬러 톤</label>
                     <select
                       value={selectedColorTone}
                       onChange={(e) => setSelectedColorTone(e.target.value)}
-                      className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 font-bold text-zinc-100 outline-none"
+                      className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 font-bold text-zinc-100 outline-none text-xs"
                     >
                       {colorToneOptions.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -1138,12 +1142,12 @@ export default function BlogImageStudioPanel({
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-[132px_minmax(0,1fr)] items-center transition hover:bg-blue-950/10">
-                    <label className="px-4 py-2.5 font-bold text-zinc-100">9. 텍스트 언어</label>
+                  <div className="grid grid-cols-[140px_minmax(0,1fr)] items-center transition hover:bg-blue-950/10">
+                    <label className="px-2.5 py-2.5 font-bold text-zinc-100 whitespace-nowrap text-xs">9. 텍스트 언어</label>
                     <select
                       value={selectedTextLanguage}
                       onChange={(e) => setSelectedTextLanguage(e.target.value)}
-                      className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 font-bold text-zinc-100 outline-none"
+                      className="h-10 w-full border-l border-zinc-800 bg-blue-950/10 px-3 font-bold text-zinc-100 outline-none text-xs"
                     >
                       {textLanguageOptions.map((option) => (
                         <option key={option.value} value={option.value}>

@@ -79,7 +79,7 @@ function buildCanonicalUrlFromSlug(
   userBrandIds?: string[],
   extraConfigs?: any
 ) {
-  const cleanSlug = slug.trim().replace(/^\/+/, "");
+  const cleanSlug = slug.trim().replace(/^\/+/, "").replace(/\s+/g, "-").replace(/-+/g, "-");
   
   const defaultBrand = brandId || (userBrandIds && userBrandIds[0]) || "";
   
@@ -585,11 +585,21 @@ export default function CreaiboxSeoOptimizationPanel({
               <input
                 value={data.slug || ""}
                 onChange={(event) => {
-                  const nextSlug = event.target.value;
+                  const rawSlug = event.target.value;
+                  const formattedSlug = rawSlug.replace(/\s+/g, "-");
                   updateLocalData({
-                    slug: nextSlug,
-                    canonicalUrl: buildCanonicalUrlFromSlug(nextSlug, data.canonicalUrl, userRole, userBrandId, userBrandIds, extraConfigs),
+                    slug: formattedSlug,
+                    canonicalUrl: buildCanonicalUrlFromSlug(formattedSlug, data.canonicalUrl, userRole, userBrandId, userBrandIds, extraConfigs),
                   });
+                }}
+                onBlur={() => {
+                  if (data.slug) {
+                    const cleanSlug = data.slug.replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+                    updateLocalData({
+                      slug: cleanSlug,
+                      canonicalUrl: buildCanonicalUrlFromSlug(cleanSlug, data.canonicalUrl, userRole, userBrandId, userBrandIds, extraConfigs),
+                    });
+                  }
                 }}
                 className="w-full rounded-md border border-transparent bg-white px-4 py-3 text-sm font-semibold text-[#111111] outline-none"
               />

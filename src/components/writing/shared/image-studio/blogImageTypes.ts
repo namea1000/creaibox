@@ -20,6 +20,7 @@ export interface GeneratedImage {
 
 export interface BlogImagePost {
   id: string;
+  displayId?: number | string;
   title: string;
   keyword: string;
   content: string;
