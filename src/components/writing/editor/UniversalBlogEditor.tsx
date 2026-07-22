@@ -2500,16 +2500,6 @@ export default function UniversalBlogEditor({
             <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
           </div>
-          {isListSidebarCollapsed && onToggleListSidebar && (
-            <button
-              type="button"
-              onClick={onToggleListSidebar}
-              className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-800 bg-[#0e111a] text-zinc-400 hover:border-blue-500/50 hover:bg-zinc-800 hover:text-white transition cursor-pointer"
-              title="목록 펼치기"
-            >
-              <PanelLeftOpen size={15} />
-            </button>
-          )}
           <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]" />
           <span className="truncate text-[0.78rem] font-black uppercase tracking-[0.24em] text-zinc-300">
             Creaibox Tiptap Blog Editor

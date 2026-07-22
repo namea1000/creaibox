@@ -581,7 +581,7 @@ export default function CreaiboxManuscriptDetailPage() {
   );
 
   const [isMounted, setIsMounted] = useState(false);
-  const [isListSidebarCollapsed, setIsListSidebarCollapsed] = useState(false);
+  const [isListSidebarCollapsed, setIsListSidebarCollapsed] = useState(true);
   const [data, setData] = useState<StudioManuscriptRecord | null>(null);
 
   const updateLocalData = useCallback((patch: Partial<StudioManuscriptRecord>) => {
@@ -782,9 +782,7 @@ export default function CreaiboxManuscriptDetailPage() {
   useEffect(() => {
     queueMicrotask(() => {
       setIsMounted(true);
-      if (searchParams?.get("newPost") === "true") {
-        setIsListSidebarCollapsed(true);
-      }
+      setIsListSidebarCollapsed(true);
     });
   }, [searchParams]);
 
@@ -2312,10 +2310,11 @@ export default function CreaiboxManuscriptDetailPage() {
               <button
                 type="button"
                 onClick={() => setIsListSidebarCollapsed(true)}
-                className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-800 bg-[#0e111a] text-zinc-400 hover:border-blue-500/50 hover:bg-zinc-800 hover:text-white transition cursor-pointer"
-                title="목록 접기"
+                className="flex h-8.5 items-center gap-1.5 px-3 rounded-xl border border-violet-500/40 bg-violet-950/30 text-violet-300 hover:bg-violet-600 hover:border-violet-400 hover:text-white transition-all shadow-sm cursor-pointer"
+                title="원고 목록 접기"
               >
-                <PanelLeftClose size={15} />
+                <PanelLeftClose size={16} />
+                <span className="text-xs font-black tracking-wide">목록 접기</span>
               </button>
             </div>
 

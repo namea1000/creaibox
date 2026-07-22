@@ -13,6 +13,7 @@ import {
   RotateCcw,
   Loader2,
   PanelLeftOpen,
+  PanelLeftClose,
   ChevronDown,
   Search,
   Lightbulb,
@@ -413,16 +414,25 @@ export default function CreaiboxAiWritingPanel({
       {/* 1. Header */}
       <div className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-zinc-800 bg-[#0d1017] px-4">
         {/* Left slot for collapse/expand button */}
-        <div className="w-16 flex items-center justify-start">
-          {isListSidebarCollapsed && onToggleListSidebar && (
+        <div className="min-w-[120px] flex items-center justify-start">
+          {onToggleListSidebar && (
             <button
               type="button"
               onClick={onToggleListSidebar}
-              className="flex h-7 items-center gap-1 px-2 rounded-lg border border-zinc-800 bg-[#0e111a] text-zinc-400 hover:border-violet-500/50 hover:bg-zinc-800 hover:text-white transition cursor-pointer"
-              title="목록 펼치기"
+              className="flex h-8.5 items-center gap-1.5 px-3 rounded-xl border border-violet-500/40 bg-violet-950/30 text-violet-300 hover:bg-violet-600 hover:border-violet-400 hover:text-white transition-all shadow-sm cursor-pointer"
+              title={isListSidebarCollapsed ? "원고 목록 펼치기" : "원고 목록 접기"}
             >
-              <PanelLeftOpen size={13} />
-              <span className="text-[10px] font-black">목록</span>
+              {isListSidebarCollapsed ? (
+                <>
+                  <PanelLeftOpen size={16} />
+                  <span className="text-xs font-black tracking-wide">목록 펼치기</span>
+                </>
+              ) : (
+                <>
+                  <PanelLeftClose size={16} />
+                  <span className="text-xs font-black tracking-wide">목록 접기</span>
+                </>
+              )}
             </button>
           )}
         </div>
@@ -435,7 +445,7 @@ export default function CreaiboxAiWritingPanel({
         </div>
 
         {/* Right slot spacer for perfect balancing */}
-        <div className="w-16" />
+        <div className="min-w-[120px]" />
       </div>
 
       {/* 2. Tabs */}
