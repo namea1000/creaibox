@@ -242,15 +242,39 @@ function formatNaverHtmlToRichHtml(html: string) {
 
   let processed = html;
 
-  // 1. Convert Naver SmartEditor Quote & Callout & Speech Bubble blocks -> <blockquote>
-  processed = processed.replace(
-    /<(?:div|blockquote|section)[^>]*class=["'][^"']*(?:se-quote|se-module-quote|se-component-quote|se-quote-speech|se-quote-line|se-quote-default|se-quote-underline|se-callout)[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|blockquote|section)>/gi,
-    (_, inner) => {
-      const text = stripHtml(inner).trim();
-      if (!text) return '';
-      return `\n<blockquote><p><strong>${text}</strong></p></blockquote>\n`;
-    }
+  // 1. Remove Naver SmartEditor Quote, Speech Bubble, Callout & Sticker components completely (인용구, 말풍선, 콜아웃 제거)
+  const targetClasses = [
+    'se-component-quote',
+    'se-quote',
+    'se-module-quote',
+    'se-quote-speech',
+    'se-quote-line',
+    'se-quote-default',
+    'se-quote-underline',
+    'se-quote-box',
+    'se-quote-caption',
+    'se-callout',
+    'se-component-speechBubble',
+    'se-speech-bubble',
+    'se-speechBubble',
+    'se-module-speechBubble',
+    'se-sticker',
+    'se-component-sticker'
+  ];
+
+  const componentPattern = new RegExp(
+    `<(?:div|blockquote|section|p)[^>]*class=["'][^"']*(?:${targetClasses.join('|')})[^"']*["'][^>]*>[\\s\\S]*?<\\/(?:div|blockquote|section|p)>`,
+    'gi'
   );
+
+  let prevLength = 0;
+  while (processed.length !== prevLength) {
+    prevLength = processed.length;
+    processed = processed.replace(componentPattern, '');
+  }
+
+  // Also remove standard blockquotes if any remain
+  processed = processed.replace(/<blockquote[^>]*>[\s\S]*?<\/blockquote>/gi, '');
 
   // 2. Convert Naver SmartEditor Section Title & Subheading blocks -> <h3>
   processed = processed.replace(
@@ -272,19 +296,13 @@ function formatNaverHtmlToRichHtml(html: string) {
     return text ? `\n<h3>${text}</h3>\n` : '';
   });
 
-  // 4. Convert blockquote tags if any remain
-  processed = processed.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (_, inner) => {
-    const text = stripHtml(inner).trim();
-    return text ? `\n<blockquote><p><strong>${text}</strong></p></blockquote>\n` : '';
-  });
-
-  // 5. Split into lines and wrap plain text lines into <p>
+  // 4. Split into lines and wrap plain text lines into <p>
   const lines = processed
     .split(/\n+/)
     .map((line) => {
       const trimmed = line.trim();
       if (!trimmed) return '';
-      if (/^<(blockquote|h2|h3|p|hr)/i.test(trimmed)) return trimmed;
+      if (/^<(h2|h3|p|hr)/i.test(trimmed)) return trimmed;
       const text = stripHtml(trimmed);
       return text ? `<p>${text}</p>` : '';
     })
