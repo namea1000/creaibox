@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   Sparkles,
   Zap,
@@ -14,6 +14,11 @@ import {
   Loader2,
   PanelLeftOpen,
   ChevronDown,
+  Search,
+  Lightbulb,
+  X,
+  Flame,
+  ArrowRight,
 } from "lucide-react";
 import { topicCategories, topicSubTopics } from "@/lib/content-planner/topic-categories";
 import { ideaHubSeries } from "@/lib/content-planner/topic-series";
@@ -213,10 +218,22 @@ export default function CreaiboxAiWritingPanel({
   const [isCustomSubTopic, setIsCustomSubTopic] = useState(false);
   const [isCustomKeyword, setIsCustomKeyword] = useState(false);
 
+  // 🌟 콘텐츠 아이디어 허브 통합 검색 및 모달 상태
+  const [ideaSearchQuery, setIdeaSearchQuery] = useState("");
+  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
+  const [isIdeaHubModalOpen, setIsIdeaHubModalOpen] = useState(false);
+  const [modalGroupFilter, setModalGroupFilter] = useState("ALL");
+  const [modalSearchQuery, setModalSearchQuery] = useState("");
+
+  const searchDropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (postTypeDropdownRef.current && !postTypeDropdownRef.current.contains(event.target as Node)) {
         setIsPostTypeOpen(false);
+      }
+      if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target as Node)) {
+        setIsSearchDropdownOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -224,6 +241,131 @@ export default function CreaiboxAiWritingPanel({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // 💡 선택된 검색 결과 항목을 대분류 / 상세분야 / 추천시리즈 / 타겟키워드에 한 번에 적용
+  const handleSelectIdeaItem = (item: {
+    largeGroup: string;
+    categoryName: string;
+    subTopicName: string;
+    title: string;
+  }) => {
+    setIsCustomSubTopic(false);
+    setIsCustomKeyword(false);
+    setAiLargeCategory(item.largeGroup);
+    setAiMainTopic(item.categoryName);
+    setAiSubTopic(item.subTopicName);
+    setAiTargetKeyword(item.title);
+    setIdeaSearchQuery("");
+    setIsSearchDropdownOpen(false);
+    setIsIdeaHubModalOpen(false);
+  };
+
+  // 인라인 실시간 검색 결과 (2,189개 시리즈 + 11,148개 키워드 자동 필터링)
+  const searchResults = useMemo(() => {
+    const query = ideaSearchQuery.trim().toLowerCase();
+    if (!query) return [];
+
+    const results: Array<{
+      id: string;
+      title: string;
+      subTopicName: string;
+      categoryName: string;
+      largeGroup: string;
+      emoji: string;
+    }> = [];
+
+    for (const idea of ideaHubSeries) {
+      if (
+        idea.title.toLowerCase().includes(query) ||
+        (idea.tags && idea.tags.some((t) => t.toLowerCase().includes(query)))
+      ) {
+        const sub = topicSubTopics.find((s) => s.id === idea.subTopicId);
+        const cat = topicCategories.find((c) => c.id === (sub?.categoryId || idea.categoryId));
+        if (cat) {
+          results.push({
+            id: idea.id,
+            title: idea.title,
+            subTopicName: sub?.name || "",
+            categoryName: cat.name,
+            largeGroup: cat.group,
+            emoji: cat.emoji || "✨",
+          });
+        }
+        if (results.length >= 25) break;
+      }
+    }
+
+    if (results.length < 15) {
+      for (const sub of topicSubTopics) {
+        if (
+          sub.name.toLowerCase().includes(query) ||
+          (sub.keywords && sub.keywords.some((k) => k.toLowerCase().includes(query)))
+        ) {
+          const cat = topicCategories.find((c) => c.id === sub.categoryId);
+          if (cat) {
+            const idea = ideaHubSeries.find((i) => i.subTopicId === sub.id);
+            const title = idea ? idea.title : sub.name;
+            if (!results.some((r) => r.title === title)) {
+              results.push({
+                id: sub.id,
+                title,
+                subTopicName: sub.name,
+                categoryName: cat.name,
+                largeGroup: cat.group,
+                emoji: cat.emoji || "⚡",
+              });
+            }
+          }
+          if (results.length >= 25) break;
+        }
+      }
+    }
+
+    return results;
+  }, [ideaSearchQuery]);
+
+  // 대형 모달 내 검색/필터링 결과
+  const modalFilteredResults = useMemo(() => {
+    const query = modalSearchQuery.trim().toLowerCase();
+    const list: Array<{
+      id: string;
+      title: string;
+      subTopicName: string;
+      categoryName: string;
+      largeGroup: string;
+      emoji: string;
+    }> = [];
+
+    for (const idea of ideaHubSeries) {
+      const sub = topicSubTopics.find((s) => s.id === idea.subTopicId);
+      const cat = topicCategories.find((c) => c.id === (sub?.categoryId || idea.categoryId));
+      if (!cat) continue;
+
+      if (modalGroupFilter !== "ALL" && cat.group !== modalGroupFilter) {
+        continue;
+      }
+
+      if (
+        !query ||
+        idea.title.toLowerCase().includes(query) ||
+        sub?.name.toLowerCase().includes(query) ||
+        cat.name.toLowerCase().includes(query) ||
+        (idea.tags && idea.tags.some((t) => t.toLowerCase().includes(query)))
+      ) {
+        list.push({
+          id: idea.id,
+          title: idea.title,
+          subTopicName: sub?.name || "",
+          categoryName: cat.name,
+          largeGroup: cat.group,
+          emoji: cat.emoji || "✨",
+        });
+      }
+      if (list.length >= 60) break;
+    }
+
+    return list;
+  }, [modalGroupFilter, modalSearchQuery]);
 
   // Drag and drop handlers for PDF
   const handleDragEnter = (e: React.DragEvent) => {
@@ -494,6 +636,86 @@ export default function CreaiboxAiWritingPanel({
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* 🔍 콘텐츠 아이디어 / 키워드 통합 검색 바 */}
+            <div className="relative mb-2 flex flex-col gap-1.5 p-3 rounded-2xl bg-gradient-to-r from-violet-950/40 via-indigo-950/30 to-purple-950/40 border border-violet-500/30 shadow-lg">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-xs font-black text-violet-300">
+                  <Sparkles className="h-3.5 w-3.5 text-yellow-400" />
+                  아이디어 Hub 키워드 검색
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsIdeaHubModalOpen(true)}
+                  className="inline-flex items-center gap-1 text-[11px] font-black text-violet-300 hover:text-white transition bg-violet-500/20 hover:bg-violet-500/40 px-2.5 py-1 rounded-lg border border-violet-500/30 cursor-pointer shadow-sm"
+                >
+                  <Lightbulb className="h-3 w-3 text-amber-300 animate-pulse" />
+                  아이디어 허브 팝업
+                </button>
+              </div>
+
+              <div className="relative flex items-center w-full mt-1">
+                <Search className="absolute left-3 h-3.5 w-3.5 text-violet-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={ideaSearchQuery}
+                  onChange={(e) => {
+                    setIdeaSearchQuery(e.target.value);
+                    setIsSearchDropdownOpen(true);
+                  }}
+                  onFocus={() => setIsSearchDropdownOpen(true)}
+                  placeholder="주제/키워드 검색 (예: 삼성전자, AI, 부업...)"
+                  className="w-full bg-[#11141c] border border-violet-500/30 text-white text-xs pl-8 pr-7 py-2 rounded-xl font-bold focus:outline-none focus:border-violet-400 placeholder:text-zinc-500"
+                />
+                {ideaSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIdeaSearchQuery("");
+                      setIsSearchDropdownOpen(false);
+                    }}
+                    className="absolute right-2.5 text-zinc-400 hover:text-white text-xs font-bold"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* 드롭다운 실시간 연관 검색 결과 */}
+              {isSearchDropdownOpen && ideaSearchQuery.trim() !== "" && (
+                <div
+                  ref={searchDropdownRef}
+                  className="absolute left-0 right-0 top-full mt-1 z-50 max-h-64 overflow-y-auto rounded-xl border border-violet-500/40 bg-[#0d1017] shadow-2xl p-1.5 custom-scrollbar"
+                >
+                  {searchResults.length === 0 ? (
+                    <div className="p-3 text-center text-xs font-semibold text-zinc-400">
+                      검색 결과가 없습니다. (직접 입력 가능)
+                    </div>
+                  ) : (
+                    searchResults.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => handleSelectIdeaItem(item)}
+                        className="w-full text-left p-2 rounded-lg hover:bg-violet-600/20 transition flex flex-col gap-0.5 border-b border-zinc-800/40 last:border-0 cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-1.5 text-xs font-black text-white group-hover:text-violet-200">
+                          <span>{item.emoji}</span>
+                          <span className="truncate">{item.title}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] font-semibold text-zinc-400 group-hover:text-violet-300">
+                          <span className="px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-300">{item.largeGroup}</span>
+                          <span>›</span>
+                          <span>{item.categoryName}</span>
+                          <span>›</span>
+                          <span className="truncate">{item.subTopicName}</span>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-[100px_1fr] items-center gap-3">
@@ -1054,6 +1276,151 @@ export default function CreaiboxAiWritingPanel({
           </div>
         )}
       </div>
+
+      {/* 💡 콘텐츠 아이디어 허브 대형 팝업 모달 */}
+      {isIdeaHubModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 sm:p-6 overflow-y-auto">
+          <div className="relative w-full max-w-5xl max-h-[90vh] flex flex-col rounded-3xl border border-violet-500/40 bg-[#0d1017] shadow-2xl text-white overflow-hidden">
+            
+            {/* 모달 헤더 */}
+            <div className="flex items-center justify-between border-b border-zinc-800 bg-gradient-to-r from-[#131722] via-[#161a27] to-[#10141f] px-6 py-4 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-md shadow-violet-500/20">
+                  <Lightbulb className="h-5 w-5 text-amber-300 animate-pulse" />
+                </div>
+                <div>
+                  <h2 className="text-base font-black text-white flex items-center gap-2">
+                    콘텐츠 아이디어 허브
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-violet-500/20 border border-violet-500/30 text-violet-300 font-bold">
+                      10개 대분류 · 55개 분야 · 2,189+ 시리즈
+                    </span>
+                  </h2>
+                  <p className="text-xs text-zinc-400 font-medium mt-0.5">
+                    원하시는 키워드나 시리즈를 검색/탐색 후 [이 주제 적용] 버튼을 누르면 에디터 폼에 자동으로 세팅됩니다.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsIdeaHubModalOpen(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white transition cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* 모달 검색바 및 카테고리 필터 */}
+            <div className="p-5 border-b border-zinc-800 bg-[#0f131d] space-y-3 shrink-0">
+              <div className="relative flex items-center w-full">
+                <Search className="absolute left-4 h-4 w-4 text-violet-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={modalSearchQuery}
+                  onChange={(e) => setModalSearchQuery(e.target.value)}
+                  placeholder="관심있는 주제, 키워드, 시리즈를 검색하세요 (예: 삼성전자, AI, 부업, 주식, 영양제...)"
+                  className="w-full bg-[#161a24] border border-violet-500/30 text-white text-xs pl-11 pr-10 py-3 rounded-2xl font-bold focus:outline-none focus:border-violet-400 placeholder:text-zinc-500 shadow-inner"
+                />
+                {modalSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setModalSearchQuery("")}
+                    className="absolute right-3.5 text-zinc-400 hover:text-white text-xs font-bold"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* 카테고리 그룹 필터 버튼 */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
+                <button
+                  type="button"
+                  onClick={() => setModalGroupFilter("ALL")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer ${
+                    modalGroupFilter === "ALL"
+                      ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
+                      : "bg-zinc-800/60 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                  }`}
+                >
+                  🔥 전체 (All)
+                </button>
+                {mainGroups.map((group) => (
+                  <button
+                    key={group}
+                    type="button"
+                    onClick={() => setModalGroupFilter(group)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer ${
+                      modalGroupFilter === group
+                        ? "bg-violet-600 text-white shadow-md shadow-violet-600/30"
+                        : "bg-zinc-800/60 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                    }`}
+                  >
+                    {groupEmojis[group] || "📁"} {group}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 모달 바디: 카드 Grid 목록 */}
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-[#0a0d13]">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {modalFilteredResults.map((item) => (
+                  <div
+                    key={item.id}
+                    className="group flex flex-col justify-between rounded-2xl border border-zinc-800/80 bg-[#121622] p-4 transition hover:border-violet-500/50 hover:bg-[#161c2c] hover:shadow-xl cursor-pointer"
+                    onClick={() => handleSelectIdeaItem(item)}
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="inline-flex items-center gap-1 rounded-lg bg-violet-500/10 px-2 py-0.5 text-[10px] font-black text-violet-300 border border-violet-500/20">
+                          {item.emoji} {item.largeGroup}
+                        </span>
+                        <span className="text-[10px] font-bold text-zinc-500">
+                          {item.categoryName}
+                        </span>
+                      </div>
+                      
+                      <h3 className="text-xs font-black text-white group-hover:text-violet-200 leading-snug line-clamp-2">
+                        {item.title}
+                      </h3>
+                      
+                      <p className="text-[11px] font-medium text-zinc-400 line-clamp-1">
+                        ⚡ 시리즈: {item.subTopicName}
+                      </p>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-zinc-800/50 flex items-center justify-between">
+                      <span className="text-[10px] font-semibold text-violet-400 flex items-center gap-1">
+                        <Sparkles className="h-3 w-3 text-yellow-400" />
+                        클릭시 즉시 세팅
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectIdeaItem(item);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-xl bg-violet-600 hover:bg-violet-500 text-white px-3 py-1.5 text-xs font-black transition cursor-pointer shadow-md shadow-violet-600/20"
+                      >
+                        <span>이 주제 적용</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {modalFilteredResults.length === 0 && (
+                <div className="py-16 text-center text-zinc-500 text-xs font-semibold">
+                  검색 결과와 일치하는 키워드가 없습니다. 다른 검색어를 입력해 보세요.
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

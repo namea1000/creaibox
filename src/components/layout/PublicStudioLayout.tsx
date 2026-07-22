@@ -17,7 +17,7 @@ export default function PublicStudioLayout({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-zinc-50 dark:bg-[#06080d] text-zinc-800 dark:text-zinc-100 transition-colors duration-300">
+    <div className="flex flex-col h-screen overflow-x-auto bg-zinc-50 dark:bg-[#06080d] text-zinc-800 dark:text-zinc-100 transition-colors duration-300">
       {/* 최상단 메인 헤더 */}
       <Header />
 
@@ -38,7 +38,7 @@ export default function PublicStudioLayout({
 
           {/* Content + Aside */}
           <div className="flex min-h-0 min-w-0 flex-1">
-            <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden bg-zinc-100 dark:bg-[#06080d] transition-colors duration-300">
+            <main className="min-w-0 flex-1 overflow-y-auto overflow-x-auto custom-scrollbar bg-zinc-100 dark:bg-[#06080d] transition-colors duration-300">
               {children}
               <CreNoteWidget />
               <AiAssistantWidget />
