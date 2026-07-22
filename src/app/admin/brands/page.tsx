@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { 
   ShieldCheck, Globe, CheckCircle2, XCircle, Trash2, Plus, 
-  Search, RefreshCw, AlertCircle, Ban, CalendarDays, AlertTriangle 
+  Search, RefreshCw, AlertCircle, Ban, CalendarDays, AlertTriangle, Filter
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -57,6 +57,7 @@ export default function AdminBrandsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState<"requests" | "blacklist">("requests");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
 
   // Requests states
   const [requests, setRequests] = useState<PendingRequest[]>([]);
@@ -80,7 +81,20 @@ export default function AdminBrandsPage() {
   } | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
-  // 1. Authenticate user
+  // ESC Key listener for Modal
+  useEffect(() => {
+    if (!rejectingItem) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setRejectingItem(null);
+        setRejectionReason("");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [rejectingItem]);
+
+  // 1. Authenticate user & load data via server API
   useEffect(() => {
     let mounted = true;
     const checkUser = async () => {
@@ -94,7 +108,7 @@ export default function AdminBrandsPage() {
 
         if (ADMIN_EMAILS.includes(user.email || "")) {
           setIsAdmin(true);
-          await Promise.all([fetchRequests(), fetchBlacklist()]);
+          await fetchAdminData();
         } else {
           setIsAdmin(false);
           alert("❌ 관리자 권한이 없습니다.");
@@ -112,64 +126,33 @@ export default function AdminBrandsPage() {
     };
   }, [supabase, router]);
 
-  // 2. Fetch subdomain and custom domain requests
-  const fetchRequests = async () => {
+  // 2. Fetch subdomain & domain requests and blacklist via Server Admin API (bypassing client RLS)
+  const fetchAdminData = async () => {
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, nickname, brand_id, requested_brand_id, brand_id_status, extra_configs, updated_at")
-        .order("updated_at", { ascending: false });
+      const res = await fetch("/api/admin/brands");
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.error || "관리자 데이터 조회 실패");
+      }
 
-      if (error) throw error;
-
-      const filtered = (data || []).filter((r: any) => {
-        const hasBrandId = !!r.brand_id;
-        const hasRequestedBrand = !!r.requested_brand_id;
-        const hasAdditionalBrands = Array.isArray(r.extra_configs?.brand_ids) && r.extra_configs.brand_ids.length > 0;
-        const hasCustomDomain = !!r.extra_configs?.custom_domain || !!r.extra_configs?.requested_custom_domain;
-        
-        let hasFlatCustomDomain = false;
-        if (r.extra_configs) {
-          for (const key of Object.keys(r.extra_configs)) {
-            if (key.startsWith("custom_domain_") || key.startsWith("requested_custom_domain_")) {
-              if (r.extra_configs[key]) {
-                hasFlatCustomDomain = true;
-                break;
-              }
-            }
-          }
-        }
-
-        return hasBrandId || hasRequestedBrand || hasAdditionalBrands || hasCustomDomain || hasFlatCustomDomain;
-      });
-
-      setRequests(filtered as PendingRequest[]);
+      const json = await res.json();
+      if (json.requests) {
+        setRequests(json.requests as PendingRequest[]);
+      }
+      if (json.blacklist) {
+        setBlacklist(json.blacklist as ReservedBrand[]);
+      }
     } catch (e) {
-      console.error("Fetch requests failed:", e);
+      console.error("Fetch admin data failed:", e);
     }
   };
 
-  // 3. Fetch blacklist (reserved IDs)
-  const fetchBlacklist = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("reserved_brand_ids")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setBlacklist((data as ReservedBrand[]) || []);
-    } catch (e) {
-      console.error("Fetch blacklist failed:", e);
-    }
-  };
-
-  // 4. Action: Approve Request (GA4 Web Data Stream Auto Creation via Backend API)
+  // 3. Action: Approve Subdomain Request (GA4 Web Data Stream Auto Creation via Backend API)
   const handleApprove = async (e: React.MouseEvent, userId: string, requestedId: string) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (approvingBrandId) return; // Prevent concurrent approvals
+    if (approvingBrandId) return;
 
     setApprovingBrandId(requestedId);
 
@@ -186,16 +169,14 @@ export default function AdminBrandsPage() {
 
       if (!response.ok) {
         let errorMsg = result.error || "브랜드 승인 요청에 실패했습니다.";
-        if (result.details && typeof result.details === "object") {
-          errorMsg += `\n상세 정보: ${JSON.stringify(result.details)}`;
-        } else if (result.details) {
-          errorMsg += `\n상세 정보: ${result.details}`;
+        if (result.details) {
+          errorMsg += `\n상세 정보: ${typeof result.details === "object" ? JSON.stringify(result.details) : result.details}`;
         }
         throw new Error(errorMsg);
       }
 
       alert(`✅ '${requestedId}' 브랜드 ID 승인 및 GA4 데이터 스트림 자동 연동이 완료되었습니다.\n측정 ID: ${result.measurementId}`);
-      await fetchRequests();
+      await fetchAdminData();
     } catch (e: any) {
       console.error("Approval error:", e);
       alert(`❌ 승인 실패: ${e.message}`);
@@ -204,7 +185,7 @@ export default function AdminBrandsPage() {
     }
   };
 
-  // 5. Action: Reject Request (Trigger Rejection Modal)
+  // 4. Action: Reject Request (Trigger Rejection Modal)
   const handleReject = (e: React.MouseEvent, userId: string, requestedId: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -217,109 +198,60 @@ export default function AdminBrandsPage() {
     });
   };
 
-  // 5.1 Action: Cancel Approval (승인/반려 취소하고 대기 상태로 변경)
+  // 5. Action: Cancel Approval (Reset to PENDING)
   const handleCancelApprove = async (e: React.MouseEvent, userId: string, requestedId: string) => {
     e.preventDefault();
     e.stopPropagation();
 
     try {
-      const { data: profile, error: fetchErr } = await supabase
-        .from("profiles")
-        .select("brand_id, extra_configs")
-        .eq("id", userId)
-        .single();
-      
-      if (fetchErr) throw fetchErr;
+      const res = await fetch("/api/admin/brands/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "cancel-approve-subdomain",
+          userId,
+          brandId: requestedId,
+        }),
+      });
 
-      let primary_brand_id = profile.brand_id || "";
-      let brand_ids = profile.extra_configs?.brand_ids || [];
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "승인 취소 실패");
 
-      if (primary_brand_id === requestedId) {
-        if (brand_ids.length > 0) {
-          primary_brand_id = brand_ids[0];
-          brand_ids = brand_ids.slice(1);
-        } else {
-          primary_brand_id = "";
-        }
-      } else {
-        brand_ids = brand_ids.filter((bid: string) => bid !== requestedId);
-      }
-
-      const nextExtraConfigs = {
-        ...(profile.extra_configs || {}),
-        brand_ids: brand_ids
-      };
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          brand_id: primary_brand_id || null,
-          brand_id_status: "PENDING",
-          requested_brand_id: requestedId,
-          brand_id_rejection_reason: null,
-          extra_configs: nextExtraConfigs,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
-
-      if (error) throw error;
-
-      alert(`✅ '${requestedId}' 브랜드 ID 승인이 취소되어 대기 상태로 변경되었습니다.`);
-      await fetchRequests();
+      alert(json.message || `✅ '${requestedId}' 브랜드 ID 승인이 취소되어 대기 상태로 변경되었습니다.`);
+      await fetchAdminData();
     } catch (e: any) {
       alert(`승인 취소 실패: ${e.message}`);
     }
   };
 
-  // 4-2. Action: Approve Custom Domain
+  // 6. Action: Approve Custom Domain
   const handleApproveCustomDomain = async (e: React.MouseEvent, userId: string, brandId: string, requestedDomain: string) => {
     e.preventDefault();
     e.stopPropagation();
 
     try {
-      const { data: profile, error: fetchErr } = await supabase
-        .from("profiles")
-        .select("brand_id, extra_configs")
-        .eq("id", userId)
-        .single();
-      
-      if (fetchErr) throw fetchErr;
+      const res = await fetch("/api/admin/brands/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "approve-custom-domain",
+          userId,
+          brandId,
+          requestedDomain,
+        }),
+      });
 
-      const isPrimary = profile.brand_id === brandId;
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "독립 도메인 승인 실패");
 
-      const nextExtraConfigs = {
-        ...(profile.extra_configs || {}),
-        [`custom_domain_${brandId}`]: requestedDomain,
-        [`requested_custom_domain_${brandId}`]: null,
-        [`custom_domain_status_${brandId}`]: "APPROVED",
-        [`custom_domain_rejection_reason_${brandId}`]: null,
-      };
-
-      if (isPrimary) {
-        nextExtraConfigs.custom_domain = requestedDomain;
-        nextExtraConfigs.requested_custom_domain = null;
-        nextExtraConfigs.custom_domain_status = "APPROVED";
-        nextExtraConfigs.custom_domain_rejection_reason = null;
-      }
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          extra_configs: nextExtraConfigs,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
-
-      if (error) throw error;
-
-      alert(`✅ '${requestedDomain}' 독립 도메인 연결 승인이 완료되었습니다.`);
-      await fetchRequests();
+      alert(json.message || `✅ '${requestedDomain}' 독립 도메인 연결 승인이 완료되었습니다.`);
+      await fetchAdminData();
     } catch (e: any) {
       alert(`승인 실패: ${e.message}`);
     }
   };
 
-  // 5-2. Action: Reject Custom Domain (Trigger Rejection Modal)
+  // 7. Action: Reject Custom Domain (Trigger Rejection Modal)
   const handleRejectCustomDomain = (e: React.MouseEvent, userId: string, brandId: string, requestedDomain: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -332,7 +264,7 @@ export default function AdminBrandsPage() {
     });
   };
 
-  // Submit Rejection from Modal
+  // 8. Action: Submit Rejection from Modal
   const submitRejection = async () => {
     if (!rejectingItem) return;
     const { userId, brandId, type, value } = rejectingItem;
@@ -343,102 +275,53 @@ export default function AdminBrandsPage() {
     }
 
     try {
-      if (type === "subdomain") {
-        const { error } = await supabase
-          .from("profiles")
-          .update({
-            brand_id_status: "REJECTED",
-            brand_id_rejection_reason: reason,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", userId);
+      const actionType = type === "subdomain" ? "reject-subdomain" : "reject-custom-domain";
+      const res = await fetch("/api/admin/brands/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: actionType,
+          userId,
+          brandId,
+          requestedDomain: value,
+          reason,
+        }),
+      });
 
-        if (error) throw error;
-        alert(`❌ '${brandId}' 브랜드 ID 신청이 반려 처리되었습니다.`);
-      } else {
-        const { data: profile, error: fetchErr } = await supabase
-          .from("profiles")
-          .select("brand_id, extra_configs")
-          .eq("id", userId)
-          .single();
-        
-        if (fetchErr) throw fetchErr;
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "반려 처리 실패");
 
-        const isPrimary = profile.brand_id === brandId;
-        const nextExtraConfigs = {
-          ...(profile.extra_configs || {}),
-          [`custom_domain_status_${brandId}`]: "REJECTED",
-          [`custom_domain_rejection_reason_${brandId}`]: reason,
-        };
-
-        if (isPrimary) {
-          nextExtraConfigs.custom_domain_status = "REJECTED";
-          nextExtraConfigs.custom_domain_rejection_reason = reason;
-        }
-
-        const { error } = await supabase
-          .from("profiles")
-          .update({
-            extra_configs: nextExtraConfigs,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", userId);
-
-        if (error) throw error;
-        alert(`❌ '${value}' 독립 도메인 신청이 반려 처리되었습니다.`);
-      }
-
+      alert(json.message || "❌ 신청이 반려 처리되었습니다.");
       setRejectingItem(null);
       setRejectionReason("");
-      await fetchRequests();
+      await fetchAdminData();
     } catch (e: any) {
       alert(`반려 처리 실패: ${e.message}`);
     }
   };
 
-  // 5.2-2 Action: Cancel Custom Domain Approval
+  // 9. Action: Cancel Custom Domain Approval (Reset to PENDING)
   const handleCancelCustomDomain = async (e: React.MouseEvent, userId: string, brandId: string, domain: string) => {
     e.preventDefault();
     e.stopPropagation();
 
     try {
-      const { data: profile, error: fetchErr } = await supabase
-        .from("profiles")
-        .select("brand_id, extra_configs")
-        .eq("id", userId)
-        .single();
-      
-      if (fetchErr) throw fetchErr;
+      const res = await fetch("/api/admin/brands/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "cancel-custom-domain",
+          userId,
+          brandId,
+          requestedDomain: domain,
+        }),
+      });
 
-      const isPrimary = profile.brand_id === brandId;
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "승인 취소 실패");
 
-      const nextExtraConfigs = {
-        ...(profile.extra_configs || {}),
-        [`custom_domain_${brandId}`]: null,
-        [`requested_custom_domain_${brandId}`]: domain,
-        [`custom_domain_status_${brandId}`]: "PENDING",
-        [`custom_domain_rejection_reason_${brandId}`]: null,
-      };
-
-      if (isPrimary) {
-        nextExtraConfigs.custom_domain = null;
-        nextExtraConfigs.requested_custom_domain = domain;
-        nextExtraConfigs.custom_domain_status = "PENDING";
-        nextExtraConfigs.custom_domain_rejection_reason = null;
-      }
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          extra_configs: nextExtraConfigs,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
-
-      if (error) throw error;
-
-      alert(`✅ '${domain}' 독립 도메인 승인이 취소되어 대기 상태로 변경되었습니다.`);
-      await fetchRequests();
+      alert(json.message || `✅ '${domain}' 독립 도메인 승인이 취소되어 대기 상태로 변경되었습니다.`);
+      await fetchAdminData();
     } catch (e: any) {
       alert(`승인 취소 실패: ${e.message}`);
     }
@@ -474,7 +357,7 @@ export default function AdminBrandsPage() {
         result.dns = "missing";
       }
 
-      // 2. Test SSL & Routing via our custom diagnostics endpoint
+      // 2. Test SSL & Routing via custom diagnostics endpoint
       try {
         const diagRes = await fetch(`https://${domain}/.well-known/creaibox-diagnostics`);
         if (diagRes.ok) {
@@ -490,7 +373,6 @@ export default function AdminBrandsPage() {
           result.routing = "failed";
         }
       } catch (err) {
-        // Fallback check in case CORS is still blocked or certificate is not fully trusted
         try {
           await fetch(`https://${domain}`, { mode: "no-cors" });
           result.ssl = "success";
@@ -511,7 +393,7 @@ export default function AdminBrandsPage() {
     }
   };
 
-  // 6. Action: Add Blacklist Item
+  // 10. Action: Add Blacklist Item
   const handleAddReserved = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanId = newReservedId.trim().toLowerCase();
@@ -524,19 +406,23 @@ export default function AdminBrandsPage() {
 
     setIsAddingBlacklist(true);
     try {
-      const { error } = await supabase
-        .from("reserved_brand_ids")
-        .insert({
-          brand_id: cleanId,
+      const res = await fetch("/api/admin/brands", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "add_reserved",
+          brandId: cleanId,
           reason: newReservedReason.trim() || "관리자 예약어",
-        });
+        }),
+      });
 
-      if (error) throw error;
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "예약어 등록 실패");
 
-      alert(`✅ '${cleanId}' 예약어가 등록되었습니다.`);
+      alert(json.message || `✅ '${cleanId}' 예약어가 등록되었습니다.`);
       setNewReservedId("");
       setNewReservedReason("");
-      await fetchBlacklist();
+      await fetchAdminData();
     } catch (e: any) {
       alert(`등록 실패: ${e.message}`);
     } finally {
@@ -544,25 +430,31 @@ export default function AdminBrandsPage() {
     }
   };
 
-  // 7. Action: Delete Blacklist Item
+  // 11. Action: Delete Blacklist Item
   const handleDeleteReserved = async (id: string, brandId: string) => {
     if (!confirm(`예약어 '${brandId}'을(를) 삭제하시겠습니까?`)) return;
 
     try {
-      const { error } = await supabase
-        .from("reserved_brand_ids")
-        .delete()
-        .eq("id", id);
+      const res = await fetch("/api/admin/brands", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "delete_reserved",
+          id,
+        }),
+      });
 
-      if (error) throw error;
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "삭제 실패");
 
-      alert("삭제되었습니다.");
-      await fetchBlacklist();
+      alert(json.message || "삭제되었습니다.");
+      await fetchAdminData();
     } catch (e: any) {
       alert(`삭제 실패: ${e.message}`);
     }
   };
 
+  // Build row list for all subdomains and custom domains
   const expandedRequests = useMemo(() => {
     const rows: ExpandedRequestRow[] = [];
 
@@ -594,25 +486,27 @@ export default function AdminBrandsPage() {
       // 2. Additional approved brands
       const additionalBrands = req.extra_configs?.brand_ids || [];
       additionalBrands.forEach((bid: string) => {
-        const customDomain = req.extra_configs?.["custom_domain_" + bid] || "";
-        const reqCustomDomain = req.extra_configs?.["requested_custom_domain_" + bid] || "";
-        const customStatus = req.extra_configs?.["custom_domain_status_" + bid] || "NONE";
-        const customRejectionReason = req.extra_configs?.["custom_domain_rejection_reason_" + bid] || "";
+        if (bid !== req.brand_id) {
+          const customDomain = req.extra_configs?.["custom_domain_" + bid] || "";
+          const reqCustomDomain = req.extra_configs?.["requested_custom_domain_" + bid] || "";
+          const customStatus = req.extra_configs?.["custom_domain_status_" + bid] || "NONE";
+          const customRejectionReason = req.extra_configs?.["custom_domain_rejection_reason_" + bid] || "";
 
-        rows.push({
-          id: req.id,
-          nickname: req.nickname,
-          brandId: bid,
-          brandStatus: "APPROVED",
-          customDomain,
-          requestedCustomDomain: reqCustomDomain,
-          customStatus,
-          customRejectionReason,
-          updated_at: req.updated_at,
-          isPrimary: false,
-          isAdditional: true,
-          isRequested: false,
-        });
+          rows.push({
+            id: req.id,
+            nickname: req.nickname,
+            brandId: bid,
+            brandStatus: "APPROVED",
+            customDomain,
+            requestedCustomDomain: reqCustomDomain,
+            customStatus,
+            customRejectionReason,
+            updated_at: req.updated_at,
+            isPrimary: false,
+            isAdditional: true,
+            isRequested: false,
+          });
+        }
       });
 
       // 3. Pending or Rejected brand request
@@ -644,19 +538,47 @@ export default function AdminBrandsPage() {
     return rows;
   }, [requests]);
 
-  const searchedRows = useMemo(() => {
-    if (!searchQuery.trim()) return expandedRequests;
+  // Apply Status & Text Filters
+  const filteredRequests = useMemo(() => {
+    let rows = expandedRequests;
+
+    if (statusFilter !== "ALL") {
+      rows = rows.filter((row) => {
+        if (statusFilter === "PENDING") {
+          return row.brandStatus === "PENDING" || row.customStatus === "PENDING";
+        }
+        if (statusFilter === "APPROVED") {
+          return row.brandStatus === "APPROVED" || row.customStatus === "APPROVED";
+        }
+        if (statusFilter === "REJECTED") {
+          return row.brandStatus === "REJECTED" || row.customStatus === "REJECTED";
+        }
+        return true;
+      });
+    }
+
+    if (!searchQuery.trim()) return rows;
     const q = searchQuery.toLowerCase();
-    return expandedRequests.filter(row => {
+    return rows.filter((row) => {
       const nick = (row.nickname || "").toLowerCase();
       const bid = (row.brandId || "").toLowerCase();
       const customDom = (row.customDomain || "").toLowerCase();
       const reqCustomDom = (row.requestedCustomDomain || "").toLowerCase();
       return nick.includes(q) || bid.includes(q) || customDom.includes(q) || reqCustomDom.includes(q);
     });
-  }, [expandedRequests, searchQuery]);
+  }, [expandedRequests, statusFilter, searchQuery]);
 
-  const filteredRequests = searchedRows;
+  const pendingCount = useMemo(() => {
+    return expandedRequests.filter(row => row.brandStatus === "PENDING" || row.customStatus === "PENDING").length;
+  }, [expandedRequests]);
+
+  const approvedCount = useMemo(() => {
+    return expandedRequests.filter(row => row.brandStatus === "APPROVED" || row.customStatus === "APPROVED").length;
+  }, [expandedRequests]);
+
+  const rejectedCount = useMemo(() => {
+    return expandedRequests.filter(row => row.brandStatus === "REJECTED" || row.customStatus === "REJECTED").length;
+  }, [expandedRequests]);
 
   if (isLoading) {
     return (
@@ -683,7 +605,7 @@ export default function AdminBrandsPage() {
             <h1 className="text-3xl font-black uppercase italic tracking-tight text-white flex items-center gap-2">
               브랜드 ID 및 도메인 관리
             </h1>
-            <p className="text-xs font-bold text-zinc-550">
+            <p className="text-xs font-bold text-zinc-400">
               사용자의 블로그 서브도메인(Brand ID) 신청을 검토하고 예약어 블랙리스트를 관리합니다.
             </p>
           </div>
@@ -691,12 +613,12 @@ export default function AdminBrandsPage() {
             <button
               onClick={async () => {
                 setIsLoading(true);
-                await Promise.all([fetchRequests(), fetchBlacklist()]);
+                await fetchAdminData();
                 setIsLoading(false);
               }}
-              className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-3 text-zinc-400 hover:text-white transition-colors"
+              className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-3 text-zinc-400 hover:text-white transition-colors flex items-center gap-2 text-xs font-bold"
             >
-              <RefreshCw size={16} />
+              <RefreshCw size={16} /> 새로고침
             </button>
           </div>
         </div>
@@ -711,7 +633,7 @@ export default function AdminBrandsPage() {
                 : "border-transparent text-zinc-500 hover:text-zinc-300"
             }`}
           >
-            신청 내역 검토 ({expandedRequests.filter(row => row.brandStatus === "PENDING" || row.customStatus === "PENDING").length})
+            신청 내역 검토 ({pendingCount}건 대기 중)
           </button>
           <button
             onClick={() => setActiveTab("blacklist")}
@@ -728,18 +650,67 @@ export default function AdminBrandsPage() {
         {/* Content Panel: Requests */}
         {activeTab === "requests" && (
           <div className="space-y-6">
-            {/* Search Bar */}
-            <div className="relative max-w-md">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600">
-                <Search size={16} />
-              </span>
-              <input
-                type="text"
-                placeholder="사용자 닉네임 또는 신청 도메인 검색"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-2xl border border-zinc-800 bg-zinc-900/40 pl-11 pr-6 py-3.5 text-xs font-bold text-white outline-none focus:border-blue-500 transition-colors placeholder:text-zinc-700"
-              />
+            {/* Search & Filter Bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+              <div className="relative max-w-md w-full">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600">
+                  <Search size={16} />
+                </span>
+                <input
+                  type="text"
+                  placeholder="사용자 닉네임 또는 신청 도메인 검색"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full rounded-2xl border border-zinc-800 bg-zinc-900/40 pl-11 pr-6 py-3.5 text-xs font-bold text-white outline-none focus:border-blue-500 transition-colors placeholder:text-zinc-700"
+                />
+              </div>
+
+              {/* Status Filter Buttons */}
+              <div className="flex items-center gap-1.5 bg-zinc-900/60 border border-zinc-800/80 p-1.5 rounded-2xl">
+                <span className="px-2 text-[10px] font-black text-zinc-500 uppercase flex items-center gap-1">
+                  <Filter size={11} /> 상태
+                </span>
+                <button
+                  onClick={() => setStatusFilter("ALL")}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                    statusFilter === "ALL"
+                      ? "bg-blue-600 text-white font-black"
+                      : "text-zinc-400 hover:text-white hover:bg-zinc-800/50"
+                  }`}
+                >
+                  전체 ({expandedRequests.length})
+                </button>
+                <button
+                  onClick={() => setStatusFilter("PENDING")}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                    statusFilter === "PENDING"
+                      ? "bg-amber-500 text-black font-black"
+                      : "text-amber-400 hover:bg-amber-500/10"
+                  }`}
+                >
+                  대기 중 ({pendingCount})
+                </button>
+                <button
+                  onClick={() => setStatusFilter("APPROVED")}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                    statusFilter === "APPROVED"
+                      ? "bg-emerald-600 text-white font-black"
+                      : "text-emerald-400 hover:bg-emerald-500/10"
+                  }`}
+                >
+                  승인됨 ({approvedCount})
+                </button>
+                <button
+                  onClick={() => setStatusFilter("REJECTED")}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                    statusFilter === "REJECTED"
+                      ? "bg-red-600 text-white font-black"
+                      : "text-red-400 hover:bg-red-500/10"
+                  }`}
+                >
+                  반려됨 ({rejectedCount})
+                </button>
+              </div>
             </div>
 
             {(() => {
@@ -758,7 +729,7 @@ export default function AdminBrandsPage() {
                 <div className="space-y-10">
                   <div className="space-y-4">
                     <h2 className="text-md font-black uppercase italic tracking-wider text-white flex items-center gap-2">
-                      <Globe size={16} className="text-blue-400" /> 브랜드 ID 서브도메인 및 독립 도메인 (Custom Domain) 연결 심사 및 진단 모니터링 ({filteredRequests.length})
+                      <Globe size={16} className="text-blue-400" /> 브랜드 ID 서브도메인 및 독립 도메인 연결 심사 목록 ({filteredRequests.length})
                     </h2>
                     <div className="overflow-hidden rounded-[24px] border border-zinc-900 bg-zinc-900/10">
                       <table className="w-full text-left border-collapse">
@@ -806,7 +777,7 @@ export default function AdminBrandsPage() {
                                       <div className="flex items-center gap-2">
                                         {brandStatus === "PENDING" && (
                                           <>
-                                            <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[9px] font-black text-amber-400">
+                                            <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[9px] font-black text-amber-400 border border-amber-500/20">
                                               PENDING
                                             </span>
                                             <button
@@ -885,7 +856,7 @@ export default function AdminBrandsPage() {
                                       <div className="flex items-center gap-2">
                                         {customStatus === "PENDING" && (
                                           <>
-                                            <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[9px] font-black text-amber-400">
+                                            <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[9px] font-black text-amber-400 border border-amber-500/20">
                                               PENDING
                                             </span>
                                             <button
@@ -1021,7 +992,7 @@ export default function AdminBrandsPage() {
                                       )}
                                     </div>
                                   ) : (
-                                    <span className="text-zinc-655">-</span>
+                                    <span className="text-zinc-650">-</span>
                                   )}
                                 </td>
                               </tr>
@@ -1151,6 +1122,7 @@ export default function AdminBrandsPage() {
           </div>
         )}
       </div>
+
       {/* 🌟 Custom Rejection Reason Modal */}
       {rejectingItem && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">

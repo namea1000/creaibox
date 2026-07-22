@@ -4,9 +4,17 @@ import { google } from "googleapis";
 
 export const runtime = "nodejs";
 
-// Helper: Check if user is an admin by querying whitelist
+const ADMIN_EMAILS = [
+  "creaiboxofficial@gmail.com",
+  "jenam7720@gmail.com",
+  "namjjang7720@gmail.com",
+  "admin@creaibox.com",
+];
+
+// Helper: Check if user is an admin by querying whitelist or hardcoded admin emails
 async function checkIsAdminEmail(adminSupabase: any, email?: string | null) {
   if (!email) return false;
+  if (ADMIN_EMAILS.includes(email)) return true;
   const { data, error } = await adminSupabase
     .from("admin_whitelist")
     .select("email")

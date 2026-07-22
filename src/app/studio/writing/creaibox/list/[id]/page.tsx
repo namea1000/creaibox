@@ -188,14 +188,52 @@ function getContentTypeLabel(manuscript: StudioManuscriptRecord): string {
   return matched || raw;
 }
 
-function buildCanonicalUrl(slug: string, role?: string, brandId?: string) {
-  if (role === "ADMIN") {
-    return `https://creaibox.com/blog/${slug}`;
+function buildCanonicalUrl(
+  slug: string,
+  role?: string,
+  brandId?: string,
+  userBrandIds?: string[],
+  extraConfigs?: any,
+  currentCanonical?: string
+) {
+  const cleanSlug = slug.trim().replace(/^\/+/, "").replace(/\s+/g, "-").replace(/-+/g, "-");
+
+  const getDomainPrefix = (bid: string) => {
+    const isPrimary = bid === brandId;
+    const customDom = extraConfigs?.[`custom_domain_${bid}`] || (isPrimary ? extraConfigs?.custom_domain : "");
+    const customDomStatus = extraConfigs?.[`custom_domain_status_${bid}`] || (isPrimary ? extraConfigs?.custom_domain_status : "NONE");
+    return (customDomStatus === "APPROVED" && customDom)
+      ? `https://${customDom}`
+      : `https://${bid}.creaibox.com`;
+  };
+
+  // If currentCanonical exists and belongs to one of user's approved domains/brands, preserve its domain prefix
+  if (currentCanonical) {
+    if (role === "ADMIN" && currentCanonical.startsWith("https://creaibox.com")) {
+      return cleanSlug ? `https://creaibox.com/blog/${cleanSlug}` : "https://creaibox.com/blog";
+    }
+
+    const activeBrands = Array.from(new Set([brandId, ...(userBrandIds || [])].filter(Boolean) as string[]));
+    for (const bid of activeBrands) {
+      const prefix = getDomainPrefix(bid);
+      const subPrefix = `https://${bid}.creaibox.com`;
+      if (currentCanonical.startsWith(prefix) || currentCanonical.startsWith(subPrefix)) {
+        return cleanSlug ? `${prefix}/blog/${cleanSlug}` : `${prefix}/blog`;
+      }
+    }
   }
-  if (brandId) {
-    return `https://${brandId}.creaibox.com/blog/${slug}`;
+
+  // Fallback default brand
+  const defaultBrand = brandId || (userBrandIds && userBrandIds[0]) || "";
+
+  if (role === "ADMIN" && !defaultBrand) {
+    return cleanSlug ? `https://creaibox.com/blog/${cleanSlug}` : "https://creaibox.com/blog";
   }
-  return `https://creaibox.com/blog/${slug}`;
+  if (defaultBrand) {
+    const prefix = getDomainPrefix(defaultBrand);
+    return cleanSlug ? `${prefix}/blog/${cleanSlug}` : `${prefix}/blog`;
+  }
+  return cleanSlug ? `https://creaibox.com/blog/${cleanSlug}` : "https://creaibox.com/blog";
 }
 
 function getLengthPrompt(wordCountGoal: string) {
@@ -984,15 +1022,36 @@ export default function CreaiboxManuscriptDetailPage() {
           );
 
       let canonicalUrl = safeData.canonicalUrl || "";
-      if (userRole !== "ADMIN" && userBrandId) {
-        const prefix = `https://${userBrandId}.creaibox.com`;
-        if (!canonicalUrl.startsWith(`${prefix}/blog`) && !canonicalUrl.startsWith("https://creaibox.com/blog")) {
-          canonicalUrl = `${prefix}/blog/${slug}`;
-        }
+      const allApprovedBrands = Array.from(new Set([userBrandId, ...(userBrandIds || [])].filter(Boolean)));
+      
+      let matchedPrefix: string | null = null;
+
+      if (userRole === "ADMIN" && canonicalUrl.startsWith("https://creaibox.com/blog")) {
+        matchedPrefix = "https://creaibox.com/blog";
       } else {
-        if (!canonicalUrl) {
-          canonicalUrl = buildCanonicalUrl(slug, userRole, userBrandId);
+        for (const bid of allApprovedBrands) {
+          const isPrimary = bid === userBrandId;
+          const customDom = extraConfigs?.[`custom_domain_${bid}`] || (isPrimary ? extraConfigs?.custom_domain : "");
+          const customDomStatus = extraConfigs?.[`custom_domain_status_${bid}`] || (isPrimary ? extraConfigs?.custom_domain_status : "NONE");
+          
+          const subPrefix = `https://${bid}.creaibox.com/blog`;
+          const customPrefix = (customDomStatus === "APPROVED" && customDom) ? `https://${customDom}/blog` : null;
+
+          if (customPrefix && canonicalUrl.startsWith(customPrefix)) {
+            matchedPrefix = customPrefix;
+            break;
+          }
+          if (canonicalUrl.startsWith(subPrefix)) {
+            matchedPrefix = subPrefix;
+            break;
+          }
         }
+      }
+
+      if (matchedPrefix) {
+        canonicalUrl = slug ? `${matchedPrefix}/${slug}` : matchedPrefix;
+      } else {
+        canonicalUrl = buildCanonicalUrl(slug, userRole, userBrandId, userBrandIds, extraConfigs, safeData.canonicalUrl);
       }
 
       const now = new Date().toISOString();
@@ -1276,7 +1335,7 @@ export default function CreaiboxManuscriptDetailPage() {
         targetKeyword: targetKeyword,
         selectedTone: selectedTone,
         wordCountGoal: wordCountGoal,
-        canonicalUrl: buildCanonicalUrl(nextSlug, userRole, userBrandId),
+        canonicalUrl: buildCanonicalUrl(nextSlug, userRole, userBrandId, userBrandIds, extraConfigs, data.canonicalUrl),
         detailLabel: postType,
       };
 
@@ -2111,8 +2170,17 @@ export default function CreaiboxManuscriptDetailPage() {
 
   const triggerRevalidation = useCallback(async (targetSlug: string) => {
     if (!data) return;
-    const bid = userBrandId || (data.canonicalUrl ? data.canonicalUrl.replace("https://", "").split(".")[0] : "");
-    if (!bid) return;
+    const targetBrandId = (() => {
+      if (data?.canonicalUrl) {
+        for (const b of [userBrandId, ...(userBrandIds || [])].filter(Boolean)) {
+          if (data.canonicalUrl.includes(`://${b}.creaibox.com`) || (extraConfigs?.[`custom_domain_${b}`] && data.canonicalUrl.includes(`://${extraConfigs[`custom_domain_${b}`]}`))) {
+            return b;
+          }
+        }
+      }
+      return userBrandId || (userBrandIds && userBrandIds[0]) || "";
+    })();
+    if (!targetBrandId) return;
 
     const catIds = data.categoryIds || (data.categoryId ? [data.categoryId] : []);
     
@@ -2124,7 +2192,7 @@ export default function CreaiboxManuscriptDetailPage() {
         },
         body: JSON.stringify({
           slug: targetSlug,
-          brandId: bid,
+          brandId: targetBrandId,
           categoryIds: catIds,
         }),
       });
