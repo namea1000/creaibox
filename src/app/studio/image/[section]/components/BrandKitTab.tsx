@@ -30,13 +30,35 @@ export default function BrandKitTab() {
     setNewPaletteName("");
   };
 
-  const handleAddLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAddLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("sourceType", "image-studio");
+      formData.append("imageRole", "logo");
+      formData.append("title", file.name);
+
+      const res = await fetch("/api/image-upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json().catch(() => ({}));
+      const uploadedUrl = data.url || data.image_url || data.image?.image_url;
+      if (res.ok && uploadedUrl) {
+        setLogos(prev => [...prev, uploadedUrl]);
+      } else {
+        throw new Error(data.error || "서버 업로드 실패");
+      }
+    } catch (err) {
+      console.warn("Logo upload to server failed, reading as data URL fallback:", err);
       const reader = new FileReader();
       reader.onload = (event) => {
-        if (event.target?.result) {
-          setLogos([...logos, event.target.result as string]);
+        const resUrl = event?.target?.result;
+        if (resUrl) {
+          setLogos(prev => [...prev, resUrl as string]);
         }
       };
       reader.readAsDataURL(file);

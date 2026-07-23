@@ -35,9 +35,18 @@ mier
 * **구현 요약**: 거추장스러운 기사 박스를 파스텔 1줄 뱃지(`✨ Published with CreAibox`)로 경량화하고, 사용자가 직접 **작가/브랜드명, 한 줄 소개글, 아바타 이미지 URL, 공식 홈페이지/SNS 링크**를 편집/저장할 수 있는 맞춤 프로필 카드 UI를 구축했습니다. 유료 회원의 뱃지 OFF 시에도 블로그 푸터 영역에 `Powered by CreAibox.com` 백링크를 주입하여 100% SEO 백링크 파워 상승 효과를 유지하도록 완성했습니다.
 * **작업 상세**:
   - **기존 배포글 포함 출처 박스 동적 개편 연동 ([`PostClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/PostClientWrapper.tsx))**: 과거에 이미 발행되었던 포스트 본문에 삽입되어 있던 기존 `CREAIBOX INSIGHT EDITORIAL` 박스 형태를 동적으로 파싱/대체하여, 유저의 최신 설정에 따라 **[맞춤 작가/브랜드 프로필 카드]**, **[파스텔 1줄 뱃지 (`✨ Published with CreAibox`)]**, 또는 **[뱃지 OFF]**가 기존 배포글에도 실시간으로 100% 동등하게 적용되도록 렌더러 파이프라인 전면 개편.
+  - **작가/브랜드 프로필 링크 기본값 블로그 주소 연동 ([`blog-management/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx))**: **`공식 링크 / SNS (선택)`** 필드의 기본값을 사용자의 현재 블로그 주소(`https://golfgosu.net` 또는 `https://{brand_id}.creaibox.com`)로 자동 채움 및 예시 플라시보 동적 연동 완료.
   - **블로그 메인 헤더 설명글 노출 연동 및 빈 값 처리 버그 수정 ([`BlogClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/BlogClientWrapper.tsx), [`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/page.tsx), [`blog-management/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx))**: `getConf` 파서에서 빈 문자열(`""`)을 섭취했을 때 기본 폴백 문구("CreAibox에서 생성한 고품질 콘텐츠 블로그입니다.")로 자간 복원되던 로직 버그를 수정하여, 사용자가 설명을 비워두면 블로그 상단 배너에 아무 설명도 노출되지 않도록 완벽히 동기화.
   - **푸터 SEO 백링크 보장**: 블로그 최하단 푸터 영역에 `Powered by CreAibox.com` 텍스트 앵커 링크(`href="https://creaibox.com"`)를 결합하여 수천 개 포스트에서 구글/네이버 백링크 수집이 100% 유지되도록 처리.
   - **플랜 가이드 문서 업데이트**: [`pricing-plan-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/pricing-plan-guide.md) Section 4 백링크 마케팅 통합 규정 수록.
+  - **정적 무결성 빌드 검증**: `npx tsc --noEmit` 완벽 컴파일 통과.
+
+#### 6. 로고 및 아바타 프로필 이미지 업로드 실패 및 API 응답 호환성 버그 수정
+* **구현 요약**: 사용자가 블로그 관리 프로필 카드 및 브랜드 키트에서 로고/아바타 이미지 파일을 업로드할 때 이미지가 적용되지 않던 응답 구조 불일치 문제를 전면 해결하고 정식 업로드 통신을 연동했습니다.
+* **작업 상세**:
+  - **API 응답 최상위 필드 보완 ([`route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/image-upload/route.ts))**: `/api/image-upload` 엔드포인트의 응답 JSON 최상위에 `url: imageUrl` 및 `image_url: imageUrl` 속성을 반환하도록 보완하여, `data.url` 또는 `data.image_url`을 호출하는 모든 클라이언트 핸들러와 100% 호환되도록 조치.
+  - **블로그 관리 아바타 업로드 핸들러 교정 ([`blog-management/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx))**: `handleAvatarUpload`에서 `data.url || data.image_url || data.image?.image_url`을 감지하여 업로드 직후 UI 아바타 주소(`setAuthorAvatarUrl`)가 즉시 갱신되도록 처리하고 에러 핸들링 보완.
+  - **브랜드 키트 로고 업로드 연동 ([`BrandKitTab.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/image/%5Bsection%5D/components/BrandKitTab.tsx))**: `handleAddLogo`에 `/api/image-upload` 서버 업로드 프로세스를 결합하여 로고 추가 시 스토리지/DB에 정식 보관되도록 개선 (실패 시 local DataURL fallback 유지).
   - **정적 무결성 빌드 검증**: `npx tsc --noEmit` 완벽 컴파일 통과.
 
 ---

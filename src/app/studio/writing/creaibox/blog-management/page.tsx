@@ -128,14 +128,19 @@ export default function BlogManagementPage() {
         body: formData,
       });
 
-      if (!res.ok) throw new Error("Upload failed");
-      const data = await res.json();
-      if (data.url) {
-        setAuthorAvatarUrl(data.url);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "이미지 업로드에 실패했습니다.");
       }
-    } catch (err) {
+      const uploadedUrl = data.url || data.image_url || data.image?.image_url;
+      if (uploadedUrl) {
+        setAuthorAvatarUrl(uploadedUrl);
+      } else {
+        throw new Error("업로드된 이미지 URL을 생성하지 못했습니다.");
+      }
+    } catch (err: any) {
       console.error("Failed to upload avatar", err);
-      alert("아바타 이미지 업로드에 실패했습니다. 다시 시도해 주세요.");
+      alert(`로고/아바타 이미지 업로드 실패: ${err.message || err}`);
     } finally {
       setIsAvatarUploading(false);
       if (avatarFileInputRef.current) avatarFileInputRef.current.value = "";
@@ -302,8 +307,6 @@ export default function BlogManagementPage() {
     setAuthorName(getConfigValue("author_name", `${profile.nickname || "에디터"}`));
     setAuthorBio(getConfigValue("author_bio", "국내외 최신 소식과 정보를 전문적으로 다루는 미디어입니다."));
     setAuthorAvatarUrl(getConfigValue("author_avatar_url", ""));
-    setAuthorLink(getConfigValue("author_link", ""));
-
     const status = getConfigValue("custom_domain_status", "NONE");
     const domain = getConfigValue("custom_domain", "");
     const reqDomain = getConfigValue("requested_custom_domain", "");
@@ -313,6 +316,12 @@ export default function BlogManagementPage() {
     setRequestedCustomDomain(reqDomain);
     setCustomDomainRejectionReason(getConfigValue("custom_domain_rejection_reason", ""));
     setCustomDomainInput(reqDomain || domain || "");
+
+    const defaultBlogUrl = (status === "APPROVED" && domain)
+      ? `https://${domain}`
+      : `https://${activeBrandId}.creaibox.com`;
+
+    setAuthorLink(getConfigValue("author_link", defaultBlogUrl));
 
     // Fetch categories dynamically for this activeBrandId!
     const fetchCats = async () => {
@@ -1116,7 +1125,7 @@ export default function BlogManagementPage() {
                                   type="text"
                                   value={authorLink}
                                   onChange={(e) => setAuthorLink(e.target.value)}
-                                  placeholder="예: https://techlife.blog"
+                                  placeholder={`예: ${customDomainStatus === "APPROVED" && customDomain ? `https://${customDomain}` : `https://${activeBrandId}.creaibox.com`}`}
                                   className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs font-bold text-white outline-none focus:border-blue-500"
                                 />
                               </div>

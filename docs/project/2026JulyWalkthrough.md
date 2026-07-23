@@ -106,7 +106,7 @@ AI 스마트 글쓰기, 네이버 글쓰기, 워드프레스 글쓰기로 생성
   * `is_manual_grant`, `grant_reason`, `grant_expires_at` DB 필드 GET/PATCH 연동 API 완성.
 * **[MODIFY] [studio/writing/creaibox/blog-management/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx)**:
   * 유료 회원 전용 1줄 뱃지 On/Off 스위치 및 일반 파워블로거 예시 기준 **사용자 맞춤 작가/브랜드 프로필 카드 편집기**(`테크앤라이프 에디터`, `https://techlife.blog`, 한 줄 소개글, 아바타 URL, 공식 링크) 구축 완료.
-  * **블로그 구글드라이브 폴더 일치 연동**: `sourceType`을 `writing_creaibox_posts`로 지정하여, 아바타 이미지 업로드 시 사용자의 블로그 이미지용 구글드라이브 연동 폴더(`{user.id}/writing-creaibox-posts/{YYYYMM}`)에 동일하게 저장되도록 수정 완료.
+  * **공식 링크/SNS 필드 기본값 연동**: 사용자의 독립 커스텀 도메인(`https://golfgosu.net`) 또는 브랜드 서브도메인(`https://{brand_id}.creaibox.com`) 주소가 기본 디폴트 값으로 자동 채워지도록 연동 완료.
 * **[MODIFY] [brand/[brand_id]/components/BlogClientWrapper.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/BlogClientWrapper.tsx)**:
   * 블로그 상단 뱃지 텍스트를 `Professional AI Publisher` ➔ **`Professional Media Publisher`** (전문 미디어 퍼블리셔)로 수정 및 사용자가 입력한 **`블로그 설명(상세 설명)`** 텍스트가 메인 배너 제목 하단 서브 타이틀로 나타나도록 렌더링 연결 완료. 빈 값(`""`) 입력 시 기본 문구가 나오지 않고 깨끗이 비워지도록 파서 버그 수정 완료. 
   * 기존에 이미 발행되었던 포스트 본문의 `CREAIBOX INSIGHT EDITORIAL` 박스를 동적 대체 파이프라인으로 전환하여, 유저의 최신 설정에 따른 **[맞춤 프로필 카드]**, **[파스텔 1줄 뱃지]**, 또는 **[뱃지 OFF]**가 과거 배포글 및 신규 배포글 전면에 실시간 100% 적용되도록 개편 완료.
@@ -164,6 +164,19 @@ AI 스마트 글쓰기, 네이버 글쓰기, 워드프레스 글쓰기로 생성
 * **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/page.tsx)**:
   * 크리에이박스 메인 랜딩 히어로 배너 및 서비스 카드를 현대적 감각의 어두운 우주 테마 비주얼로 전면 개편.
   * 이미지 WebP/AVIF 인코딩 및 폰트 디스플레이 swap 적용으로 모바일 Web Vitals (LCP) 속도 40% 이상 향상.
+
+---
+
+### 1-11. 블로그 관리 프로필/로고 이미지 업로드 및 API 응답 호환성 보완
+
+블로그 관리 프로필 카드 및 브랜드 키트에서 로고/아바타 파일 선택 시 이미지가 적용되지 않던 응답 파싱 및 API 스키마 호환성 문제를 해결했습니다.
+
+* **[MODIFY] [route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/image-upload/route.ts)**:
+  * `/api/image-upload` API 성공 JSON 응답 최상위에 `url: imageUrl` 및 `image_url: imageUrl` 속성을 추가하여, 클라이언트 호출부에 따라 `data.url` 또는 `data.image_url`을 참조하는 모든 패턴과 100% 호환성을 보장하도록 개선.
+* **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx)**:
+  * `handleAvatarUpload`에서 `data.url || data.image_url || data.image?.image_url`의 모든 유효 필드를 탐색하여 파일 선택 즉시 화면의 아바타/로고 프리뷰 URL이 반영되도록 교정 및 실패 알림 강화.
+* **[MODIFY] [BrandKitTab.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/image/%5Bsection%5D/components/BrandKitTab.tsx)**:
+  * `handleAddLogo`에 `/api/image-upload` 서버 업로드 프로세스를 결합하여, 브랜드 키트에 로고 추가 시 스토리지/DB에 정식 등록되도록 연동하고 local DataURL fallback과 안전한 TypeScript null 검사 추가.
 
 ---
 
