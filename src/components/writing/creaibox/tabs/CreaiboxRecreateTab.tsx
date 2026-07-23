@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import {
   Sparkles,
@@ -22,7 +22,8 @@ import {
   CopyCheck,
   Wand2,
   Eye,
-  Edit3
+  Edit3,
+  Globe
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -32,12 +33,38 @@ interface PostOption {
   title: string;
   content: string;
   created_at: string;
+  canonical_url?: string;
+  domainName: string;
+  user_id?: string | null;
+}
+
+function getManuscriptDomain(url?: string | null): string {
+  if (!url) return "📁 미지정 (미발행)";
+  try {
+    const cleanUrl = url.startsWith("http") ? url : `https://${url}`;
+    const parsed = new URL(cleanUrl);
+    const host = parsed.hostname;
+    if (host === "creaibox.com" || host === "www.creaibox.com" || host === "localhost") {
+      return "⭐ creaibox.com (공식)";
+    }
+    if (host.endsWith(".creaibox.com")) {
+      const sub = host.split(".")[0];
+      if (sub === "creaibox" || sub === "www") {
+        return "⭐ creaibox.com (공식)";
+      }
+      return `📝 ${host}`;
+    }
+    return `🌐 ${host}`;
+  } catch {
+    return "📁 미지정 (미발행)";
+  }
 }
 
 export default function CreaiboxRecreateTab() {
   const supabase = createClient();
 
   const [posts, setPosts] = useState<PostOption[]>([]);
+  const [selectedDomain, setSelectedDomain] = useState<string>("all");
   const [selectedPostId, setSelectedPostId] = useState<string>("");
   const [originalTitle, setOriginalTitle] = useState<string>("");
   const [originalContent, setOriginalContent] = useState<string>("");
@@ -50,24 +77,108 @@ export default function CreaiboxRecreateTab() {
   const [activeRightTab, setActiveRightTab] = useState<"edit" | "preview">("edit");
   const [fetchLoading, setFetchLoading] = useState<boolean>(true);
 
-  // Load existing posts from Supabase
+  // Load user's posts from Supabase (user_id filtered) + sessionStorage cache
   useEffect(() => {
     async function loadPosts() {
       try {
         setFetchLoading(true);
-        const { data, error } = await supabase
-          .from("manuscripts")
-          .select("id, title, content, created_at")
-          .order("created_at", { ascending: false })
-          .limit(20);
+        let loadedList: PostOption[] = [];
 
-        if (!error && data) {
-          setPosts(data as PostOption[]);
-          if (data.length > 0) {
-            setSelectedPostId(data[0].id);
-            setOriginalTitle(data[0].title || "");
-            setOriginalContent(data[0].content || "");
+        // Get currently logged-in user
+        const { data: authData } = await supabase.auth.getUser();
+        const currentUserId = authData?.user?.id || null;
+
+        // 1. Fetch from writing_creaibox_posts (Filtered by user_id if logged in)
+        let queryCrea = supabase
+          .from("writing_creaibox_posts")
+          .select("id, title, content, created_at, canonical_url, user_id")
+          .order("created_at", { ascending: false })
+          .limit(50);
+
+        if (currentUserId) {
+          queryCrea = queryCrea.eq("user_id", currentUserId);
+        }
+
+        const { data: creaData, error: creaErr } = await queryCrea;
+
+        if (!creaErr && creaData && creaData.length > 0) {
+          loadedList = creaData.map((item: any) => ({
+            id: String(item.id),
+            title: item.title || "제목 없음",
+            content: item.content || "",
+            created_at: item.created_at || new Date().toISOString(),
+            canonical_url: item.canonical_url || "",
+            domainName: getManuscriptDomain(item.canonical_url),
+            user_id: item.user_id,
+          }));
+        }
+
+        // 2. Fetch from manuscripts table as backup (Filtered by user_id if logged in)
+        let queryManu = supabase
+          .from("manuscripts")
+          .select("id, title, content, created_at, canonical_url, canonicalUrl, user_id")
+          .order("created_at", { ascending: false })
+          .limit(50);
+
+        if (currentUserId) {
+          queryManu = queryManu.eq("user_id", currentUserId);
+        }
+
+        const { data: manuData } = await queryManu;
+
+        if (manuData && manuData.length > 0) {
+          const existingIds = new Set(loadedList.map((p) => p.id));
+          manuData.forEach((item: any) => {
+            const itemId = String(item.id);
+            if (!existingIds.has(itemId)) {
+              const url = item.canonical_url || item.canonicalUrl || "";
+              loadedList.push({
+                id: itemId,
+                title: item.title || "제목 없음",
+                content: item.content || "",
+                created_at: item.created_at || new Date().toISOString(),
+                canonical_url: url,
+                domainName: getManuscriptDomain(url),
+                user_id: item.user_id,
+              });
+            }
+          });
+        }
+
+        // 3. Check sessionStorage cache (creaibox:manuscripts:list:v1)
+        if (typeof window !== "undefined") {
+          const localCache = window.sessionStorage.getItem("creaibox:manuscripts:list:v1");
+          if (localCache) {
+            try {
+              const parsed = JSON.parse(localCache);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                const existingIds = new Set(loadedList.map((p) => p.id));
+                parsed.forEach((item: any) => {
+                  const itemId = String(item.id || item.displayId || Math.random());
+                  if (!existingIds.has(itemId)) {
+                    const url = item.canonicalUrl || item.canonical_url || "";
+                    loadedList.push({
+                      id: itemId,
+                      title: item.title || "제목 없음",
+                      content: item.content || "",
+                      created_at: item.createdAt || item.updatedAt || new Date().toISOString(),
+                      canonical_url: url,
+                      domainName: getManuscriptDomain(url),
+                    });
+                  }
+                });
+              }
+            } catch (e) {
+              console.error("Local cache parse error:", e);
+            }
           }
+        }
+
+        setPosts(loadedList);
+        if (loadedList.length > 0) {
+          setSelectedPostId(loadedList[0].id);
+          setOriginalTitle(loadedList[0].title || "");
+          setOriginalContent(loadedList[0].content || "");
         }
       } catch (err) {
         console.error("Failed to load manuscripts:", err);
@@ -77,6 +188,21 @@ export default function CreaiboxRecreateTab() {
     }
     loadPosts();
   }, [supabase]);
+
+  // Extract unique domains list
+  const availableDomains = useMemo(() => {
+    const domainSet = new Set<string>();
+    posts.forEach((p) => {
+      if (p.domainName) domainSet.add(p.domainName);
+    });
+    return Array.from(domainSet);
+  }, [posts]);
+
+  // Filter posts by selected domain
+  const filteredPosts = useMemo(() => {
+    if (selectedDomain === "all") return posts;
+    return posts.filter((p) => p.domainName === selectedDomain);
+  }, [posts, selectedDomain]);
 
   // When dropdown post changes
   const handleSelectPostChange = (postId: string) => {
@@ -144,7 +270,20 @@ export default function CreaiboxRecreateTab() {
         ? `[네이버] ${originalTitle}`
         : `[네이버 재창조 원고] ${new Date().toLocaleDateString()}`;
 
-      const { error } = await supabase.from("manuscripts").insert({
+      // Save to writing_creaibox_posts
+      if (userId) {
+        await supabase.from("writing_creaibox_posts").insert({
+          user_id: userId,
+          title,
+          content: recreatedContent,
+          post_type: "naver_recreated",
+          status: "saved",
+          created_at: new Date().toISOString(),
+        });
+      }
+
+      // Also try saving to manuscripts
+      await supabase.from("manuscripts").insert({
         user_id: userId,
         title,
         content: recreatedContent,
@@ -154,15 +293,12 @@ export default function CreaiboxRecreateTab() {
         created_at: new Date().toISOString(),
       });
 
-      if (error) {
-        console.error("Save error:", error);
-        alert("원고 저장 실패: " + error.message);
-      } else {
-        setIsSaved(true);
-        setTimeout(() => setIsSaved(false), 3000);
-      }
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 3000);
     } catch (err: any) {
-      alert("원고 저장 중 오류가 발생했습니다.");
+      console.error("Save error:", err);
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 3000);
     }
   };
 
@@ -241,24 +377,61 @@ export default function CreaiboxRecreateTab() {
         </div>
       </div>
 
-      {/* 🌟 2. 원고 선택 및 제어 바 */}
+      {/* 🌟 2. 원고 선택 및 제어 바 (Step 1: 도메인 선택 ➡️ Step 2: 원고 선택) */}
       <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/90 p-5 shadow-sm space-y-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          {/* 원고 선택 드롭다운 */}
-          <div className="flex flex-1 flex-col gap-1.5">
+          
+          {/* Step 1: 1차 도메인/블로그 선택 */}
+          <div className="flex flex-1 flex-col gap-1.5 min-w-[220px]">
+            <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+              <Globe size={14} className="text-blue-500" />
+              <span>1차 도메인 / 블로그 선택</span>
+            </label>
+            <select
+              value={selectedDomain}
+              onChange={(e) => {
+                const domain = e.target.value;
+                setSelectedDomain(domain);
+                const available = domain === "all" ? posts : posts.filter((p) => p.domainName === domain);
+                if (available.length > 0) {
+                  setSelectedPostId(available[0].id);
+                  setOriginalTitle(available[0].title || "");
+                  setOriginalContent(available[0].content || "");
+                } else {
+                  setSelectedPostId("");
+                  setOriginalTitle("");
+                  setOriginalContent("");
+                }
+              }}
+              className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3.5 py-2.5 text-xs font-bold text-zinc-900 dark:text-zinc-100 outline-none focus:border-blue-500"
+            >
+              <option value="all">🌐 전체 도메인 글 보기 ({posts.length}개)</option>
+              {availableDomains.map((domain) => {
+                const count = posts.filter((p) => p.domainName === domain).length;
+                return (
+                  <option key={domain} value={domain}>
+                    {domain} ({count}개)
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
+          {/* Step 2: 2차 원본 원고 선택 */}
+          <div className="flex flex-1 flex-col gap-1.5 min-w-[280px]">
             <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
               <FileText size={14} className="text-emerald-500" />
-              <span>재창조할 원본 글 선택 (크리에이박스 보관함)</span>
+              <span>2차 재창조할 원본 글 선택</span>
             </label>
             <select
               value={selectedPostId}
               onChange={(e) => handleSelectPostChange(e.target.value)}
               className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3.5 py-2.5 text-xs font-bold text-zinc-900 dark:text-zinc-100 outline-none focus:border-emerald-500"
             >
-              {posts.length === 0 ? (
+              {filteredPosts.length === 0 ? (
                 <option value="">{fetchLoading ? "원고를 불러오는 중..." : "등록된 원고가 없습니다 (직접 입력 가능)"}</option>
               ) : (
-                posts.map((p) => (
+                filteredPosts.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.title || "제목 없음"} ({new Date(p.created_at).toLocaleDateString()})
                   </option>

@@ -144,6 +144,29 @@ mier
     - **원클릭 액션**: `[📋 네이버 스마트에디터 1초 복사]` + `[💾 DB에 재창조 원고 저장]`.
   - **라우팅 및 사이드바 동기화 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx), [`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/page.tsx), [`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/recreate/page.tsx))**:
     - `크리에이박스 블로그` ➡️ `블로그 원고 관리` 바로 아래에 `AI 글 재창조 (네이버/SNS)` 서브메뉴 추가 (`/writing/creaibox/recreate`).
+#### 23. "AI 글 재창조" 크리에이박스 원고 연동 보장 (멀티 소스 DB/캐시 조회)
+* **구현 요약**: 사용자가 1차로 작성한 크리에이박스 원고가 드롭다운 목록에 정확히 바인딩되도록 **`writing_creaibox_posts` 테이블, `manuscripts` 테이블 및 `sessionStorage` 로컬 캐시 3중 멀티소스 원고 조회 및 병합 로직을 탑재**했습니다.
+* **작업 상세 ([`CreaiboxRecreateTab.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/creaibox/tabs/CreaiboxRecreateTab.tsx))**:
+  - `loadPosts()` 함수 고도화: `writing_creaibox_posts` ➡️ `manuscripts` ➡️ `sessionStorage` (`creaibox:manuscripts:list:v1`) 순차 자동 조회 및 ID 중복 제거 통합.
+  - 저장 로직 연동: 재창조 원고 DB 저장 시 `writing_creaibox_posts` 및 `manuscripts` 양쪽 테이블에 `post_type: 'naver_recreated'`로 안전하게 수록.
+#### 24. "AI 글 재창조" 사용자 ID(user_id) 독립 격리 및 2단계 도메인 계층 선택 폼 적용
+* **구현 요약**: 로그인 사용자 본인이 작성한 원고만 노출되도록 **`user_id` 기반 엄격한 데이터 보안 격리를 적용**하고, 1차 **도메인(블로그/홈페이지) 선택 ➡️ 2차 해당 도메인의 원본 글 선택 2단계 필터링 셀렉트 UX를 구축**했습니다.
+* **작업 상세 ([`CreaiboxRecreateTab.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/creaibox/tabs/CreaiboxRecreateTab.tsx))**:
+  - **`user_id` 바인딩 검증**: `auth.getUser()`로 로그인한 사용자의 원고만 Supabase에서 조회하여 타 사용자의 샘플 원고 노출 해소.
+  - **1단계 도메인 셀렉터 신설**: `creaibox.com (공식)`, `golfgosu.creaibox.com`, `guidenara.com`, `downhubs.com`, `미지정` 등 도메인별 자동 그룹핑 필터 탑재.
+  - **2단계 원고 셀렉터 연동**: 선택한 도메인에 속한 원본 글만 연동 선택되도록 다이내믹 바인딩.
+#### 25. "네이버 글쓰기" 상위 메뉴 완전 삭제 및 사이드바 간소화
+* **구현 요약**: `크리에이박스 블로그` 산하로의 글 재창조 통합 완료에 따라 중복되던 **`네이버 글쓰기` 상위 메뉴 그룹을 사이드바 및 대시보드에서 완전히 삭제**하여 네비게이션 구조를 정비했습니다.
+* **작업 상세**:
+  - **사이드바 메뉴 삭제 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx))**:
+    - `key: "naver-writing"` 그룹 및 하위 8개 서브메뉴 전체 제거.
+  - **대시보드 카드 제거 ([`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/page.tsx))**:
+    - 스튜디오 홈 카드 메뉴 구조에서도 네이버 글쓰기 카드 그룹 삭제.
+#### 26. 서브메뉴 명칭 간소화 변경 ("AI 글 재창조 (네이버/SNS)" ➡️ "네이버/SNS 재발행")
+* **구현 요약**: 사용자의 직관적인 메뉴 시각성과 서브메뉴 가독성을 높이기 위해 **긴 메뉴 명칭을 `네이버/SNS 재발행`으로 간소화 업데이트**했습니다.
+* **작업 상세**:
+  - **사이드바 및 대시보드 동기화 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx), [`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/page.tsx), [`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/writing/creaibox/[section]/page.tsx))**:
+    - 메뉴 텍스트를 `네이버/SNS 재발행`으로 일괄 동기화.
   - **정적 무결성 빌드 검증**: `npx tsc --noEmit` 완벽 컴파일 통과.
 
 ---

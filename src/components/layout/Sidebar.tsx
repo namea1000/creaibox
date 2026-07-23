@@ -216,7 +216,7 @@ export default function Sidebar({
         children: [
           { name: "블로그 새글 쓰기", href: "/writing/creaibox/new-post", icon: PenLine },
           { name: "블로그 원고 관리", href: "/writing/creaibox/list", icon: Archive },
-          { name: "AI 글 재창조 (네이버/SNS)", href: "/writing/creaibox/recreate", icon: RefreshCw },
+          { name: "네이버/SNS 재발행", href: "/writing/creaibox/recreate", icon: RefreshCw },
           { name: "AI 콘텐츠 기획", href: "/content-planner/planning", icon: Sparkles },
           { name: "기획 라이브러리", href: "/content-planner/library", icon: Library },
           { name: "콘텐츠 캘린더", href: "/content-planner/calendar", icon: CalendarDays },
@@ -224,23 +224,6 @@ export default function Sidebar({
           { name: "블로그 설정 및 관리", href: "/writing/creaibox/blog-management", icon: Settings },
           { name: "썸네일 생성 관리", href: "/writing/creaibox/thumbnail", icon: ImageIcon },
           { name: "지식 & 페르소나 설정", href: "/writing/creaibox/knowledge", icon: Database },
-        ],
-      },
-      {
-        key: "naver-writing",
-        name: "네이버 글쓰기",
-        href: "/writing/naver",
-        icon: SiNaver,
-        color: "text-emerald-400",
-        children: [
-          { name: "AI 스마트 글쓰기", href: "/writing/naver/create", icon: Edit3 },
-          { name: "AI 글 재창조", href: "/writing/naver/recreate", icon: RefreshCw },
-          { name: "블로그 원고 관리", href: "/writing/naver/list", icon: Archive },
-          { name: "네이버용 썸네일", href: "/writing/naver/thumbnail", icon: ImageIcon },
-          { name: "네이버 키워드 분석", href: "/writing/naver/keyword", icon: Search },
-          { name: "실시간 노출 진단", href: "/writing/naver/diagnosis", icon: Eye },
-          { name: "C-Rank 가이드", href: "/writing/naver/guide", icon: CircleHelp },
-          { name: "엔진 최적화 세팅", href: "/writing/naver/api", icon: Settings },
         ],
       },
       {

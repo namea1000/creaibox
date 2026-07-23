@@ -5,7 +5,7 @@ import PublicCreaiboxWritingClient from "./client";
 const sectionNames: Record<string, string> = {
   "new-post": "블로그 새글 쓰기",
   list: "블로그 원고 관리",
-  recreate: "AI 글 재창조 (네이버/SNS 변환)",
+  recreate: "네이버/SNS 재발행",
   "blog-management": "블로그 설정 및 관리",
   thumbnail: "크리아이박스 썸네일 메이커",
   knowledge: "AI 지식 & 페르소나 설정",
