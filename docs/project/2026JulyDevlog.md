@@ -41,12 +41,12 @@ mier
   - **플랜 가이드 문서 업데이트**: [`pricing-plan-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/pricing-plan-guide.md) Section 4 백링크 마케팅 통합 규정 수록.
   - **정적 무결성 빌드 검증**: `npx tsc --noEmit` 완벽 컴파일 통과.
 
-#### 6. 로고 및 아바타 프로필 이미지 업로드 실패 및 API 응답 호환성 버그 수정
-* **구현 요약**: 사용자가 블로그 관리 프로필 카드 및 브랜드 키트에서 로고/아바타 이미지 파일을 업로드할 때 이미지가 적용되지 않던 응답 구조 불일치 문제를 전면 해결하고 정식 업로드 통신을 연동했습니다.
+#### 7. Cre Note 빠른 메모 위젯 사용자 맞춤 조절 폭 커스텀 저장 및 기본 50% 폭 세팅
+* **구현 요약**: Cre Note 위젯([`CreNoteWidget.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/widgets/CreNoteWidget.tsx))의 드래그 조절 폭을 `localStorage` 및 DB에 저장하여 위젯을 닫았다 다시 열 때 **최근 유저가 직접 조정해둔 개인 맞춤 폭을 그대로 100% 복원**하고, 별도 조작 이력이 없을 때에는 **기본 화면 50% 폭(`Math.round(window.innerWidth * 0.5)`)**으로 스마트하게 렌더링되도록 구현했습니다.
 * **작업 상세**:
-  - **API 응답 최상위 필드 보완 ([`route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/image-upload/route.ts))**: `/api/image-upload` 엔드포인트의 응답 JSON 최상위에 `url: imageUrl` 및 `image_url: imageUrl` 속성을 반환하도록 보완하여, `data.url` 또는 `data.image_url`을 호출하는 모든 클라이언트 핸들러와 100% 호환되도록 조치.
-  - **블로그 관리 아바타 업로드 핸들러 교정 ([`blog-management/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx))**: `handleAvatarUpload`에서 `data.url || data.image_url || data.image?.image_url`을 감지하여 업로드 직후 UI 아바타 주소(`setAuthorAvatarUrl`)가 즉시 갱신되도록 처리하고 에러 핸들링 보완.
-  - **브랜드 키트 로고 업로드 연동 ([`BrandKitTab.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/image/%5Bsection%5D/components/BrandKitTab.tsx))**: `handleAddLogo`에 `/api/image-upload` 서버 업로드 프로세스를 결합하여 로고 추가 시 스토리지/DB에 정식 보관되도록 개선 (실패 시 local DataURL fallback 유지).
+  - **사용자 커스텀 리사이즈 위치 자동 지속성(Persistence) 구축**: 드래그 리사이즈 종료 시(`handleMouseUp`) 조정된 픽셀 폭(`panelWidth`)을 `cre_note_user_custom_width` 키로 로컬스토리지 및 Supabase DB에 실시간 동기화 저장.
+  - **위젯 오픈 시 사용자 맞춤 폭 스마트 복원**: 위젯 오픈 시(`openWidget`) 및 마운트 시(`ensureWidgetSetting`), 저장된 사용자 맞춤 가로 폭이 존재하면 해당 크기로 100% 복원하고, 조정 이력이 없으면 우측 화면의 50% 비율(예: 1920px 기준 960px)로 자동 산출하여 렌더링.
+  - **사이드바 실시간 폭 감지 및 침범 차단**: 드래그 리사이즈 이벤트 핸들러(`handleMouseMove`)에서 DOM 요소를 통해 좌측 사이드바의 실시간 픽셀 폭(펼침 시 220px, 접힘 시 56px 등)을 동적으로 측정하여, 메모 위젯의 왼쪽 경계가 사이드바 우측 테두리 직전에서 딱 멈추도록 최댓값을 `Math.max(window.innerWidth - sidebarWidth - 2, 420)`로 자동 계산.
   - **정적 무결성 빌드 검증**: `npx tsc --noEmit` 완벽 컴파일 통과.
 
 ---

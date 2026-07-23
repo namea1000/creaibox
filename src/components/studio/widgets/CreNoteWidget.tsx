@@ -69,7 +69,9 @@ export default function CreNoteWidget() {
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const [panelWidth, setPanelWidth] = useState(560);
+  const [panelWidth, setPanelWidth] = useState(() =>
+    typeof window !== "undefined" ? Math.max(Math.round(window.innerWidth * 0.5), 560) : 720
+  );
   const [minimized, setMinimized] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -135,7 +137,14 @@ export default function CreNoteWidget() {
       if (!resizingRef.current) return;
       e.preventDefault();
       const nextWidth = window.innerWidth - e.clientX;
-      const clampedWidth = Math.min(Math.max(nextWidth, 420), 900);
+      
+      // 좌측 메인 사이드바 폭 동적 측정 (사이드바 펼침 220px, 접힘 56px 등)
+      const sidebarEl = document.querySelector("aside.lg\\:sticky, aside[class*='lg:w-']");
+      const sidebarWidth = sidebarEl ? sidebarEl.getBoundingClientRect().width : 220;
+      
+      // 사이드바 내부 영역 침범(가려짐) 원천 차단: 사이드바 경계선 직전에서 멈춤
+      const maxAllowedWidth = Math.max(window.innerWidth - sidebarWidth - 2, 420);
+      const clampedWidth = Math.min(Math.max(nextWidth, 420), maxAllowedWidth);
       setPanelWidth(clampedWidth);
     }
 
@@ -143,6 +152,12 @@ export default function CreNoteWidget() {
       if (!resizingRef.current) return;
       resizingRef.current = false;
       setIsResizing(false);
+
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("cre_note_user_custom_width", String(panelWidth));
+        } catch (e) {}
+      }
 
       if (!userId) return;
 
@@ -153,6 +168,7 @@ export default function CreNoteWidget() {
             side: "right",
             width: panelWidth,
             minimized,
+            has_custom_width: true,
           },
           updated_at: new Date().toISOString(),
         })
@@ -240,11 +256,22 @@ export default function CreNoteWidget() {
       setOpen(data.is_open ?? false);
 
       const position = data.position as
-        | { width?: number; minimized?: boolean }
+        | { width?: number; minimized?: boolean; has_custom_width?: boolean }
         | null
         | undefined;
 
-      if (position?.width) setPanelWidth(position.width);
+      const default50Width = typeof window !== "undefined" ? Math.max(Math.round(window.innerWidth * 0.5), 560) : 720;
+      const localSaved = typeof window !== "undefined" ? localStorage.getItem("cre_note_user_custom_width") : null;
+      let targetWidth = default50Width;
+
+      if (localSaved && !isNaN(parseInt(localSaved, 10))) {
+        targetWidth = parseInt(localSaved, 10);
+      } else if (position?.has_custom_width && position?.width) {
+        targetWidth = position.width;
+      }
+
+      setPanelWidth(targetWidth);
+
       if (typeof position?.minimized === "boolean") {
         setMinimized(position.minimized);
       }
@@ -252,6 +279,7 @@ export default function CreNoteWidget() {
       return;
     }
 
+    const default50Width = typeof window !== "undefined" ? Math.max(Math.round(window.innerWidth * 0.5), 560) : 720;
     await supabase.from("studio_widgets").insert({
       user_id: uid,
       widget_type: "cre_note",
@@ -259,7 +287,7 @@ export default function CreNoteWidget() {
       content: "",
       is_open: false,
       metadata: {},
-      position: { side: "right", width: 560, minimized: false },
+      position: { side: "right", width: default50Width, minimized: false },
     });
   }
 
@@ -968,12 +996,26 @@ export default function CreNoteWidget() {
 
   async function openWidget() {
     setOpen(true);
+    setIsFullScreen(false);
+
+    const default50Width = typeof window !== "undefined" ? Math.max(Math.round(window.innerWidth * 0.5), 560) : 720;
+    const localSaved = typeof window !== "undefined" ? localStorage.getItem("cre_note_user_custom_width") : null;
+    let targetWidth = default50Width;
+
+    if (localSaved && !isNaN(parseInt(localSaved, 10))) {
+      targetWidth = parseInt(localSaved, 10);
+    }
+
+    setPanelWidth(targetWidth);
 
     if (!userId) return;
 
     await supabase
       .from("studio_widgets")
-      .update({ is_open: true, updated_at: new Date().toISOString() })
+      .update({
+        is_open: true,
+        updated_at: new Date().toISOString(),
+      })
       .eq("user_id", userId)
       .eq("widget_type", "cre_note");
   }
@@ -1049,8 +1091,10 @@ export default function CreNoteWidget() {
 
   return (
     <aside
-      style={isFullScreen ? undefined : { width: minimized ? 72 : panelWidth }}
-      className={`fixed right-0 top-16 z-[85] h-[calc(100vh-64px)] border-l border-white/10 bg-[#080d10] shadow-2xl transition-all duration-300 ${
+      style={isFullScreen ? undefined : { width: minimized ? 72 : panelWidth, maxWidth: "calc(100vw - 220px)" }}
+      className={`fixed right-0 top-16 z-[85] h-[calc(100vh-64px)] border-l border-white/10 bg-[#080d10] shadow-2xl ${
+        isResizing ? "transition-none" : "transition-all duration-300"
+      } ${
         isFullScreen ? "left-0 lg:left-[220px] w-auto" : ""
       }`}
     >

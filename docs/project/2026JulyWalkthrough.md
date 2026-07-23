@@ -180,6 +180,17 @@ AI 스마트 글쓰기, 네이버 글쓰기, 워드프레스 글쓰기로 생성
 
 ---
 
+### 1-12. Cre Note 빠른 메모 위젯 사용자 맞춤 조절 폭 커스텀 저장 및 50% 스마트 복원 구현
+
+Cre Note 위젯을 열 때 사용자가 최근 드래그하여 조정해둔 가로 폭이 존재하면 해당 개인 맞춤 크기를 그대로 100% 복원하고, 별도 조정 이력이 없을 때에는 **우측 화면 50% 폭(`Math.round(window.innerWidth * 0.5)`)**으로 자동 세팅되도록 구현했습니다.
+
+* **[MODIFY] [CreNoteWidget.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/widgets/CreNoteWidget.tsx)**:
+  * 드래그 리사이즈 조율 완료 시(`handleMouseUp`) 유저가 맞춤 설정한 픽셀 폭(`panelWidth`)을 `cre_note_user_custom_width` 키로 `localStorage` 및 Supabase DB에 저장.
+  * 위젯 오픈 시(`openWidget`) 및 마운트 시(`ensureWidgetSetting`), 저장된 유저 커스텀 폭을 감지하여 최근 조작 위치를 100% 실시간 복원.
+  * 마우스 드래그 리사이즈 시 좌측 사이드바의 실시간 픽셀 폭(`sidebarWidth`)을 동적으로 감지하고 `Math.max(window.innerWidth - sidebarWidth - 2, 420)`를 적용하여, 사이드바 영역 침범 방지.
+
+---
+
 ## 2. 무결성 검증 결과
 
 * **TS 컴파일러 검증**: `npx tsc --noEmit`을 실행하여 7월에 수정된 모든 소스코드에 대한 컴파일 무결성 및 타입 체크를 마쳤습니다 (에러 0건).
