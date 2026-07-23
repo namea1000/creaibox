@@ -206,6 +206,31 @@ export default function PostClientWrapper({
   const cleanContent = normalizedContent.replace(editorialRegex, "").trim();
 
   const primaryId = profile.brand_id || "";
+
+  const getConfigValue = (configName: string, defaultValue: any = "") => {
+    if (configs[`${configName}_${brand_id}`] !== undefined && configs[`${configName}_${brand_id}`] !== null) {
+      return configs[`${configName}_${brand_id}`];
+    }
+    if (brand_id === primaryId && configs[configName] !== undefined && configs[configName] !== null) {
+      return configs[configName];
+    }
+    return defaultValue;
+  };
+
+  const membershipLevel = (profile.membership_level || "free").toLowerCase();
+  const isPaidUser = ["creator", "pro", "premier", "business", "admin"].includes(membershipLevel);
+
+  const rawShowBadge = getConfigValue("show_creaibox_badge", true);
+  const showBadge = isPaidUser ? (typeof rawShowBadge === "boolean" ? rawShowBadge : String(rawShowBadge) !== "false") : true;
+
+  const rawUseAuthorCard = getConfigValue("use_author_card", false);
+  const useAuthorCard = typeof rawUseAuthorCard === "boolean" ? rawUseAuthorCard : String(rawUseAuthorCard) === "true";
+
+  const authorName = getConfigValue("author_name", profile.nickname || "");
+  const authorBio = getConfigValue("author_bio", "");
+  const authorAvatarUrl = getConfigValue("author_avatar_url", "");
+  const authorLink = getConfigValue("author_link", "");
+
   let adsensePubId = "";
   if (configs[`adsense_pub_id_${brand_id}`]) {
     adsensePubId = configs[`adsense_pub_id_${brand_id}`];
@@ -431,40 +456,53 @@ export default function PostClientWrapper({
                   )}
                 </div>
 
-                {/* Brand Editorial Card */}
-                {editorial.enabled && (
-                  hasCustomEditorial ? (
-                    <div 
-                      className="mt-12 p-6 rounded-2xl border transition-all"
-                      style={{
-                        backgroundColor: editorial.bgColor,
-                        borderColor: editorial.borderColor,
-                      }}
+                {/* Custom Author / Brand Profile Card OR Sleek Pastel 1-Line Badge */}
+                {useAuthorCard ? (
+                  <div className="mt-10 p-6 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/40 flex items-center gap-4 text-left transition-all">
+                    <div className="relative w-14 h-14 rounded-full overflow-hidden border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-950 shrink-0 flex items-center justify-center">
+                      {authorAvatarUrl ? (
+                        <img src={authorAvatarUrl} alt={authorName || "Author"} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="text-blue-500 font-black text-lg">
+                          {authorName ? authorName[0] : "A"}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-sm font-black text-zinc-900 dark:text-white truncate">
+                          {authorName || "에디터 프로필"}
+                        </h4>
+                        {authorLink && (
+                          <a
+                            href={authorLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] font-bold text-blue-500 hover:underline shrink-0"
+                          >
+                            공식 사이트 ➔
+                          </a>
+                        )}
+                      </div>
+                      <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed line-clamp-2">
+                        {authorBio || "최신 소식과 정보를 전문적으로 전달하는 미디어 브랜드입니다."}
+                      </p>
+                    </div>
+                  </div>
+                ) : showBadge ? (
+                  /* Pastel 1-Line Published with CreAibox Badge */
+                  <div className="mt-10 flex items-center justify-center">
+                    <a
+                      href="https://creaibox.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-1.5 text-[11px] font-bold text-purple-400 backdrop-blur-sm transition-all hover:bg-purple-500/20 hover:text-purple-300 shadow-sm"
                     >
-                      <p 
-                        className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 select-none"
-                        style={{ color: editorial.subColor }}
-                      >
-                        {editorial.subtitle}
-                      </p>
-                      <p 
-                        className="text-[1.05rem] leading-[1.8] [&_a]:text-blue-500 [&_a]:font-bold [&_a]:underline hover:[&_a]:text-blue-400 transition-colors"
-                        style={{ color: editorial.textColor }}
-                        dangerouslySetInnerHTML={{ __html: editorial.text }}
-                      />
-                    </div>
-                  ) : (
-                    /* Default CreAibox Citation Card */
-                    <div className="mt-12 p-6 rounded-2xl border border-zinc-200/60 bg-zinc-50/30">
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500 mb-2 select-none">
-                        CreAibox Publisher
-                      </p>
-                      <p className="text-xs text-zinc-500 leading-[1.6]">
-                        본 블로그 포스팅은 올인원 크리에이터 생성형 AI 스튜디오 <a href="https://creaibox.com" target="_blank" rel="noopener noreferrer" className="font-black text-zinc-700 hover:text-blue-500 underline decoration-zinc-400">크리에이박스(CreAibox)</a> 솔루션을 활용하여 자동화 및 최적화 배포된 기사입니다. AI 기반 블로그 및 스마트 마케팅 솔루션에 대한 정보는 공식 웹사이트에서 확인해 보세요.
-                      </p>
-                    </div>
-                  )
-                )}
+                      <Sparkles size={13} className="text-purple-400" />
+                      <span>Published with <strong className="font-black underline decoration-purple-400/50">CreAibox</strong></span>
+                    </a>
+                  </div>
+                ) : null}
 
                 {tags.length > 0 && (
                   <div className="pt-8 mt-12">
