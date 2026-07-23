@@ -295,6 +295,11 @@ export default function BlogClientWrapper({
           <h1 className={`text-4xl md:text-5xl font-black tracking-tight leading-none ${theme === "dark" ? "text-white" : "text-zinc-900"}`}>
             {blogTitle}
           </h1>
+          {blogDesc && (
+            <p className={`mt-3 text-sm md:text-base font-bold max-w-2xl mx-auto leading-relaxed ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`}>
+              {blogDesc}
+            </p>
+          )}
         </div>
       </section>
 
