@@ -29,13 +29,13 @@ export default function UpgradeModal() {
           </div>
 
           <span className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">
-            PREMIUM ENTERPRISE SERVICE
+            PREMIUM PRO SERVICE
           </span>
           <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
-            Business 요금제 전용 서비스
+            Pro 요금제 이상 전용 서비스
           </h2>
           <p className="mt-4 text-sm md:text-base text-slate-500 dark:text-slate-400 max-w-md leading-relaxed">
-            AI 홈페이지 빌더 및 CMS 시스템은 **비즈니스(Business) 요금제** 이상의 고객님께만 제공하는 프리미엄 서비스입니다.
+            AI 홈페이지 빌더 및 CMS 시스템은 **Pro 요금제** 이상의 고객님께만 제공하는 프리미엄 서비스입니다.
           </p>
 
           {/* Benefits Grid */}

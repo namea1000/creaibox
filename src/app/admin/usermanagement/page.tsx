@@ -15,6 +15,7 @@ import {
   MessageSquare,
   Star,
   Sparkles,
+  Globe,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -29,6 +30,9 @@ interface UserProfile {
   role: UserRole;
   membershipLevel: string;
   status: UserStatus;
+  approvedBrands?: string[];
+  brandCount?: number;
+  brandLimit?: number;
   todayUsage: number;
   totalUsage: number;
   joinedAt: string;
@@ -48,7 +52,7 @@ export default function UserManagementPage() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterTab, setFilterTab] = useState<"ALL" | "PAID" | "VIP">("ALL");
+  const [filterTab, setFilterTab] = useState<"ALL" | "PAID" | "VIP" | "PREMIER" | "PRO" | "BUSINESS" | "CREATOR" | "FREE" | "ADMIN">("ALL");
   const [adminEmail, setAdminEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -152,6 +156,18 @@ export default function UserManagementPage() {
           (u.membershipLevel || "").toLowerCase() !== "free" &&
           (u.membershipLevel || "").toLowerCase() !== "admin"
       );
+    } else if (filterTab === "PREMIER") {
+      result = result.filter((u) => (u.membershipLevel || "").toLowerCase() === "premier");
+    } else if (filterTab === "PRO") {
+      result = result.filter((u) => (u.membershipLevel || "").toLowerCase() === "pro");
+    } else if (filterTab === "BUSINESS") {
+      result = result.filter((u) => (u.membershipLevel || "").toLowerCase() === "business");
+    } else if (filterTab === "CREATOR") {
+      result = result.filter((u) => (u.membershipLevel || "").toLowerCase() === "creator");
+    } else if (filterTab === "FREE") {
+      result = result.filter((u) => (u.membershipLevel || "").toLowerCase() === "free");
+    } else if (filterTab === "ADMIN") {
+      result = result.filter((u) => (u.membershipLevel || "").toLowerCase() === "admin");
     }
 
     const keyword = searchTerm.trim().toLowerCase();
@@ -171,9 +187,9 @@ export default function UserManagementPage() {
     return {
       total: users.length,
       admin: users.filter((u) => (u.membershipLevel || "").toLowerCase() === "admin").length,
-      pro: users.filter((u) =>
-        ["pro", "premier", "business"].includes((u.membershipLevel || "").toLowerCase())
-      ).length,
+      premier: users.filter((u) => (u.membershipLevel || "").toLowerCase() === "premier").length,
+      pro: users.filter((u) => (u.membershipLevel || "").toLowerCase() === "pro").length,
+      business: users.filter((u) => (u.membershipLevel || "").toLowerCase() === "business").length,
       creator: users.filter((u) => (u.membershipLevel || "").toLowerCase() === "creator").length,
       free: users.filter((u) => (u.membershipLevel || "").toLowerCase() === "free").length,
       vip: users.filter((u) => u.isManualGrant).length,
@@ -395,40 +411,36 @@ export default function UserManagementPage() {
 
               <div className="flex w-full flex-wrap items-center gap-3 lg:w-auto">
                 {/* 탭 구분 필터 */}
-                <div className="flex rounded-2xl border border-zinc-800 bg-zinc-900/80 p-1.5 backdrop-blur-md">
-                  <button
-                    type="button"
-                    onClick={() => setFilterTab("ALL")}
-                    className={`rounded-xl px-4 py-2 text-xs font-black transition-all ${
-                      filterTab === "ALL"
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
-                        : "text-zinc-500 hover:text-zinc-300"
-                    }`}
-                  >
-                    👥 전체 ({stats.total})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFilterTab("PAID")}
-                    className={`rounded-xl px-4 py-2 text-xs font-black transition-all ${
-                      filterTab === "PAID"
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
-                        : "text-zinc-500 hover:text-zinc-300"
-                    }`}
-                  >
-                    💳 정기 결제 ({users.length - stats.vip - stats.admin})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFilterTab("VIP")}
-                    className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-black transition-all ${
-                      filterTab === "VIP"
-                        ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20"
-                        : "text-amber-500/80 hover:text-amber-400"
-                    }`}
-                  >
-                    <Star size={13} className="fill-amber-500" /> ⭐ VIP 수동 무상 ({stats.vip})
-                  </button>
+                {/* 탭 구분 필터 */}
+                <div className="flex flex-wrap items-center gap-1 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-1.5 backdrop-blur-md">
+                  {[
+                    { key: "ALL", label: `👥 전체 (${stats.total})` },
+                    { key: "PAID", label: `💳 정기 결제 (${users.length - stats.vip - stats.admin})` },
+                    { key: "VIP", label: `⭐ VIP 무상 (${stats.vip})`, isStar: true },
+                    { key: "PREMIER", label: `👑 Premier (${stats.premier})` },
+                    { key: "PRO", label: `✨ Pro (${stats.pro})` },
+                    { key: "BUSINESS", label: `🏢 Business (${stats.business})` },
+                    { key: "CREATOR", label: `💼 Creator (${stats.creator})` },
+                    { key: "FREE", label: `🆓 Free (${stats.free})` },
+                    { key: "ADMIN", label: `🛡️ Admin (${stats.admin})` },
+                  ].map((tab) => (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => setFilterTab(tab.key as any)}
+                      className={`flex items-center gap-1 rounded-xl px-3 py-1.5 text-[11px] font-black transition-all ${
+                        filterTab === tab.key
+                          ? tab.isStar
+                            ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20"
+                            : "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                          : tab.isStar
+                          ? "text-amber-500/80 hover:text-amber-400"
+                          : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
 
                 <div className="relative w-full lg:w-auto">
@@ -458,64 +470,93 @@ export default function UserManagementPage() {
               </div>
             </header>
 
-            <div className="mb-10 grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-6">
+            <div className="mb-10 grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-8">
               {[
                 {
+                  key: "ALL",
                   label: "Total Users",
                   value: stats.total,
                   icon: Users,
                   color: "text-blue-500",
                 },
                 {
-                  label: "VIP Manual Grant",
+                  key: "VIP",
+                  label: "VIP Manual",
                   value: stats.vip,
                   icon: Star,
                   color: "text-amber-400",
                 },
                 {
-                  label: "Admin",
-                  value: stats.admin,
-                  icon: ShieldAlert,
-                  color: "text-red-500",
-                },
-                {
-                  label: "Pro / Business",
-                  value: stats.pro,
+                  key: "PREMIER",
+                  label: "Premier",
+                  value: stats.premier,
                   icon: Crown,
-                  color: "text-yellow-500",
+                  color: "text-amber-400",
                 },
                 {
+                  key: "PRO",
+                  label: "Pro (Best)",
+                  value: stats.pro,
+                  icon: Sparkles,
+                  color: "text-yellow-400",
+                },
+                {
+                  key: "BUSINESS",
+                  label: "Business",
+                  value: stats.business,
+                  icon: Crown,
+                  color: "text-emerald-400",
+                },
+                {
+                  key: "CREATOR",
                   label: "Creator",
                   value: stats.creator,
                   icon: Briefcase,
-                  color: "text-purple-500",
+                  color: "text-purple-400",
                 },
                 {
+                  key: "FREE",
                   label: "Free Trial",
                   value: stats.free,
                   icon: Users,
                   color: "text-zinc-500",
                 },
-              ].map((stat) => (
-                <div
-                  key={stat.label}
-                  className="flex flex-col gap-4 rounded-[24px] border border-zinc-800 bg-zinc-900/40 p-6 shadow-xl"
-                >
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-800/80 ${stat.color}`}
+                {
+                  key: "ADMIN",
+                  label: "Admin",
+                  value: stats.admin,
+                  icon: ShieldAlert,
+                  color: "text-red-500",
+                },
+              ].map((stat) => {
+                const isActive = filterTab === stat.key;
+                return (
+                  <button
+                    key={stat.label}
+                    type="button"
+                    onClick={() => setFilterTab(stat.key as any)}
+                    className={`flex flex-col gap-3 rounded-[20px] border p-4 shadow-xl text-left transition-all hover:scale-[1.02] active:scale-95 ${
+                      isActive
+                        ? "border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/30"
+                        : "border-zinc-800 bg-zinc-900/40 hover:border-zinc-700"
+                    }`}
                   >
-                    <stat.icon size={20} />
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600">
-                      {stat.label}
-                    </p>
-                    <p className="mt-1 text-2xl font-black italic tracking-tighter text-white">
-                      {stat.value}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                    <div
+                      className={`flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-800/80 ${stat.color}`}
+                    >
+                      <stat.icon size={18} />
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-[0.15em] text-zinc-500 truncate">
+                        {stat.label}
+                      </p>
+                      <p className="mt-1 text-2xl font-black italic tracking-tighter text-white">
+                        {stat.value}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             <div className="overflow-hidden rounded-[32px] border border-zinc-800 bg-zinc-900/40 shadow-2xl backdrop-blur-xl">
@@ -525,16 +566,17 @@ export default function UserManagementPage() {
                     <Loader2 className="animate-spin text-blue-500" size={42} />
                   </div>
                 ) : (
-                  <table className="w-full min-w-[1200px] text-left">
+                  <table className="w-full min-w-[1500px] text-left">
                     <thead>
-                      <tr className="border-b border-zinc-800/50 bg-zinc-900/30 text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                        <th className="px-8 py-5">Identity</th>
-                        <th className="px-8 py-5">Access Level</th>
-                        <th className="px-8 py-5">Trial Usage</th>
-                        <th className="px-8 py-5">Status</th>
-                        <th className="px-8 py-5">Joined</th>
-                        <th className="px-8 py-5">Last Login</th>
-                        <th className="px-8 py-5 text-right">Settings</th>
+                      <tr className="border-b border-zinc-800/50 bg-zinc-900/30 text-[10px] font-black uppercase tracking-widest text-zinc-500 whitespace-nowrap">
+                        <th className="px-6 py-5">Identity</th>
+                        <th className="px-6 py-5">Access Level</th>
+                        <th className="px-6 py-5">Brand Domains</th>
+                        <th className="px-6 py-5">Trial Usage</th>
+                        <th className="px-6 py-5">Status</th>
+                        <th className="px-6 py-5">Joined</th>
+                        <th className="px-6 py-5">Last Login</th>
+                        <th className="px-6 py-5 text-right">Settings</th>
                       </tr>
                     </thead>
 
@@ -542,8 +584,8 @@ export default function UserManagementPage() {
                       {filteredUsers.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={7}
-                            className="px-8 py-20 text-center text-xs font-black uppercase tracking-widest text-zinc-600"
+                            colSpan={8}
+                            className="px-6 py-20 text-center text-xs font-black uppercase tracking-widest text-zinc-600"
                           >
                             No users found.
                           </td>
@@ -554,10 +596,10 @@ export default function UserManagementPage() {
                             key={user.id}
                             className="group transition-colors hover:bg-white/[0.02]"
                           >
-                            <td className="px-8 py-6">
+                            <td className="px-6 py-6 whitespace-nowrap">
                               <div className="flex items-center gap-4">
                                 <div
-                                  className={`flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-black ${
+                                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xs font-black ${
                                     user.isManualGrant
                                       ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                                       : (user.membershipLevel || "").toLowerCase() === "admin"
@@ -572,22 +614,22 @@ export default function UserManagementPage() {
                                   {user.isManualGrant ? "⭐" : user.name[0]?.toUpperCase() || "U"}
                                 </div>
                                 <div>
-                                  <p className="flex items-center gap-2 text-sm font-black italic text-zinc-200">
+                                  <p className="flex items-center gap-2 text-sm font-black italic text-zinc-200 whitespace-nowrap">
                                     {user.name}
                                     {user.isManualGrant && (
-                                      <span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold not-italic text-amber-400">
+                                      <span className="whitespace-nowrap inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold not-italic text-amber-400">
                                         ⭐ 무상 부여 ({user.grantReason || "VIP"})
                                       </span>
                                     )}
                                   </p>
-                                  <p className="text-[11px] font-medium tracking-tight text-zinc-600">
+                                  <p className="text-[11px] font-medium tracking-tight text-zinc-600 whitespace-nowrap">
                                     {user.email}
                                   </p>
                                 </div>
                               </div>
                             </td>
 
-                            <td className="px-8 py-6">
+                            <td className="px-6 py-6 whitespace-nowrap">
                               <div className="flex flex-col gap-2">
                                 <select
                                   value={user.membershipLevel || "free"}
@@ -624,7 +666,7 @@ export default function UserManagementPage() {
                                     type="button"
                                     disabled={savingId === user.id}
                                     onClick={() => toggleWhitelist(user)}
-                                    className={`w-fit rounded-md px-2 py-1 text-[8px] font-black uppercase tracking-wider transition-all border active:scale-95 ${
+                                    className={`w-fit rounded-md px-2 py-1 text-[8px] font-black uppercase tracking-wider transition-all border active:scale-95 whitespace-nowrap ${
                                       user.isWhitelisted
                                         ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
                                         : "border-rose-500/25 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 animate-pulse"
@@ -636,7 +678,39 @@ export default function UserManagementPage() {
                               </div>
                             </td>
 
-                            <td className="px-8 py-6">
+                            <td className="px-6 py-6 whitespace-nowrap">
+                              <div className="flex flex-col gap-1.5 min-w-[150px]">
+                                <div className="flex items-center justify-between text-xs font-black">
+                                  <span className="flex items-center gap-1 text-blue-400">
+                                    <Globe size={13} /> {user.brandCount || 0} / {user.brandLimit || 1}개
+                                  </span>
+                                  <span className="text-[10px] font-bold text-zinc-500">
+                                    {Math.round(((user.brandCount || 0) / (user.brandLimit || 1)) * 100)}%
+                                  </span>
+                                </div>
+                                <div className="h-1.5 w-32 overflow-hidden rounded-full bg-zinc-800">
+                                  <div
+                                    className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all"
+                                    style={{
+                                      width: `${Math.min(((user.brandCount || 0) / (user.brandLimit || 1)) * 100, 100)}%`,
+                                    }}
+                                  />
+                                </div>
+                                {user.approvedBrands && user.approvedBrands.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1 max-w-[220px]">
+                                    {user.approvedBrands.map((b) => (
+                                      <span key={b} className="rounded bg-zinc-800/80 px-1.5 py-0.5 text-[9px] font-bold text-zinc-300 border border-zinc-700/50 whitespace-nowrap">
+                                        {b}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <span className="text-[10px] text-zinc-600 italic whitespace-nowrap">미개설</span>
+                                )}
+                              </div>
+                            </td>
+
+                            <td className="px-6 py-6 whitespace-nowrap">
                               <div className="flex flex-col gap-1.5">
                                 <div className="flex w-32 justify-between text-[9px] font-black uppercase italic text-zinc-600">
                                   <span>{user.todayUsage} Units</span>
@@ -658,15 +732,15 @@ export default function UserManagementPage() {
                                     }}
                                   />
                                 </div>
-                                <p className="text-[9px] font-bold text-zinc-700">
+                                <p className="text-[9px] font-bold text-zinc-700 whitespace-nowrap">
                                   Total {user.totalUsage}
                                 </p>
                               </div>
                             </td>
 
-                            <td className="px-8 py-6">
+                            <td className="px-6 py-6 whitespace-nowrap">
                               <span
-                                className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-widest ${
+                                className={`rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-widest whitespace-nowrap ${
                                   user.status === "ACTIVE"
                                     ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                                     : "bg-red-500/10 text-red-400 border border-red-500/20"
@@ -676,20 +750,20 @@ export default function UserManagementPage() {
                               </span>
                             </td>
 
-                            <td className="px-8 py-6 text-[11px] font-bold text-zinc-500">
+                            <td className="px-6 py-6 text-[11px] font-bold text-zinc-500 whitespace-nowrap">
                               {formatDate(user.joinedAt)}
                             </td>
 
-                            <td className="px-8 py-6 text-[11px] font-bold text-zinc-500">
+                            <td className="px-6 py-6 text-[11px] font-bold text-zinc-500 whitespace-nowrap">
                               {formatDate(user.lastLogin)}
                             </td>
 
-                            <td className="px-8 py-6 text-right">
-                              <div className="flex justify-end gap-2">
+                            <td className="px-6 py-6 text-right whitespace-nowrap">
+                              <div className="flex justify-end items-center gap-2 whitespace-nowrap">
                                 <button
                                   type="button"
                                   onClick={() => openVipModal(user)}
-                                  className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-bold transition-all active:scale-95 border ${
+                                  className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3 py-2 text-[11px] font-bold transition-all active:scale-95 border whitespace-nowrap ${
                                     user.isManualGrant
                                       ? "border-amber-500/30 bg-amber-500/15 text-amber-300 hover:bg-amber-500/25"
                                       : "border-zinc-800 bg-zinc-800/40 text-zinc-400 hover:bg-zinc-700 hover:text-amber-400"
@@ -697,12 +771,12 @@ export default function UserManagementPage() {
                                   title="VIP/지인 수동 무상 부여 설정"
                                 >
                                   <Star size={14} className={user.isManualGrant ? "fill-amber-400 text-amber-400" : ""} />
-                                  <span>{user.isManualGrant ? "VIP 전용" : "VIP 설정"}</span>
+                                  <span className="whitespace-nowrap">{user.isManualGrant ? "VIP 전용" : "VIP 설정"}</span>
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => openMemoModal(user)}
-                                  className={`rounded-xl p-2.5 transition-all active:scale-90 border ${
+                                  className={`shrink-0 rounded-xl p-2.5 transition-all active:scale-90 border whitespace-nowrap ${
                                     user.adminMemo
                                       ? "bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20"
                                       : "bg-zinc-800/50 text-zinc-500 border-transparent hover:bg-zinc-700 hover:text-zinc-300"

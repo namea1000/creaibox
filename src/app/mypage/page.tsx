@@ -55,10 +55,13 @@ function getBrandLimit(membershipLevel: string, role: string) {
   const cleanRole = (role || "").toUpperCase();
 
   if (cleanRole === "ADMIN" || cleanRole === "SUPER_ADMIN" || cleanLevel === "admin") {
-    return 10;
+    return 13;
   }
-  if (cleanLevel === "pro" || cleanLevel === "business" || cleanLevel === "premier" || cleanLevel === "enterprise") {
-    return 3;
+  if (cleanLevel === "premier" || cleanLevel === "business" || cleanLevel === "enterprise") {
+    return 13;
+  }
+  if (cleanLevel === "pro") {
+    return 7;
   }
   if (cleanLevel === "creator") {
     return 2;
@@ -193,9 +196,9 @@ export default function MyPage() {
             brand_id_rejection_reason: data.brand_id_rejection_reason || "",
             membership_level: data.membership_level || "free",
             role: data.role || "FREE",
-            is_manual_grant: data.is_manual_grant || false,
-            grant_reason: data.grant_reason || "",
-            grant_expires_at: data.grant_expires_at || null,
+            is_manual_grant: nextExtraConfigs.is_manual_grant ?? data.is_manual_grant ?? false,
+            grant_reason: nextExtraConfigs.grant_reason ?? data.grant_reason ?? "",
+            grant_expires_at: nextExtraConfigs.grant_expires_at ?? data.grant_expires_at ?? null,
             extra_configs: nextExtraConfigs,
           });
           setBrandInput("");
@@ -1148,7 +1151,7 @@ export default function MyPage() {
                         <Globe size={12} className="text-blue-400" /> 브랜드 ID 보유 현황 ({approvedBrands.length} / {limit}개)
                       </span>
                       <span className="text-[10px] text-zinc-600">
-                        Free: 1개 | Creator: 2개 | Pro: 3개 | Admin: 10개
+                        Free: 1개 | Creator: 2개 | Pro: 7개 | Premier: 13개
                       </span>
                     </label>
 
@@ -1251,65 +1254,56 @@ export default function MyPage() {
                       </div>
                     )}
 
-                    {/* Apply Form - Render only if count is below limit */}
-                    {approvedBrands.length + (profile.brand_id_status === "PENDING" ? 1 : 0) < limit ? (
-                      <div className="space-y-4 pt-2">
-                        <div className="flex gap-2">
-                          <div className="relative flex-1">
-                            <input
-                              type="text"
-                              value={brandInput}
-                              onChange={(e) => {
-                                setBrandInput(e.target.value);
-                                setBrandAvailable(null);
-                              }}
-                              className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 pl-6 pr-28 py-5 text-sm font-bold text-white shadow-inner outline-none transition-all placeholder:text-zinc-800 focus:border-blue-500"
-                              placeholder="추가할 브랜드 ID 입력"
-                            />
-                            <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-600">
-                              .creaibox.com
-                            </span>
-                          </div>
-
-                          <button
-                            onClick={() => checkBrandIdAvailability(brandInput)}
-                            disabled={isBrandChecking}
-                            className="rounded-2xl border border-zinc-700 bg-zinc-800 px-6 text-[11px] font-black uppercase italic tracking-tighter text-zinc-300 transition-all hover:bg-zinc-700 disabled:opacity-50"
-                          >
-                            {isBrandChecking ? "Checking..." : "Check"}
-                          </button>
+                    {/* Apply / Change Form */}
+                    <div className="space-y-4 pt-2">
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="text"
+                            value={brandInput}
+                            onChange={(e) => {
+                              setBrandInput(e.target.value);
+                              setBrandAvailable(null);
+                            }}
+                            className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 pl-6 pr-28 py-5 text-sm font-bold text-white shadow-inner outline-none transition-all placeholder:text-zinc-700 focus:border-blue-500"
+                            placeholder={approvedBrands.length >= limit ? "기존 브랜드 ID 변경 입력" : "신규 또는 변경할 브랜드 ID 입력"}
+                          />
+                          <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-600">
+                            .creaibox.com
+                          </span>
                         </div>
 
-                        {brandAvailable === true && checkingBrandName === brandInput.trim().toLowerCase() && (
-                          <div className="flex items-center justify-between rounded-2xl border border-blue-500/20 bg-blue-600/5 p-5">
-                            <div className="space-y-1 text-left">
-                              <p className="text-xs font-black text-blue-400 flex items-center gap-1.5">
-                                <CheckCircle size={14} /> 사용 가능한 브랜드 ID입니다!
-                              </p>
-                              <p className="text-[11px] font-bold text-zinc-500 leading-relaxed">
-                                {checkingBrandName}.creaibox.com 도메인을 추가하시겠습니까?
-                              </p>
-                            </div>
-                            <button
-                              onClick={requestBrandId}
-                              disabled={isSaving}
-                              className="rounded-xl bg-blue-500 hover:bg-blue-600 px-5 py-2.5 text-[11px] font-black uppercase italic tracking-widest text-white transition-all shadow-[0_4px_12px_rgba(59,130,246,0.2)]"
-                            >
-                              추가하기
-                            </button>
+                        <button
+                          onClick={() => checkBrandIdAvailability(brandInput)}
+                          disabled={isBrandChecking}
+                          className="rounded-2xl border border-zinc-700 bg-zinc-800 px-6 text-[11px] font-black uppercase italic tracking-tighter text-zinc-300 transition-all hover:bg-zinc-700 disabled:opacity-50"
+                        >
+                          {isBrandChecking ? "Checking..." : "Check"}
+                        </button>
+                      </div>
+
+                      {brandAvailable === true && checkingBrandName === brandInput.trim().toLowerCase() && (
+                        <div className="flex items-center justify-between rounded-2xl border border-blue-500/20 bg-blue-600/5 p-5">
+                          <div className="space-y-1 text-left">
+                            <p className="text-xs font-black text-blue-400 flex items-center gap-1.5">
+                              <CheckCircle size={14} /> 사용 가능한 브랜드 ID입니다!
+                            </p>
+                            <p className="text-[11px] font-bold text-zinc-500 leading-relaxed">
+                              {approvedBrands.length >= limit
+                                ? `${checkingBrandName}.creaibox.com 도메인으로 기존 브랜드 ID를 1:1 변경 신청하시겠습니까?`
+                                : `${checkingBrandName}.creaibox.com 도메인을 신규 신청하시겠습니까?`}
+                            </p>
                           </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-6 text-center">
-                        <AlertTriangle className="mx-auto text-amber-500 mb-2" size={24} />
-                        <p className="text-xs font-black text-zinc-400">브랜드 ID 한도 도달</p>
-                        <p className="text-[11px] font-medium text-zinc-600 mt-1.5 leading-relaxed">
-                          현재 요금제 등급에서 등록 가능한 최대 브랜드 ID 개수({limit}개)에 도달했습니다.<br />
-                          더 많은 브랜드 ID를 등록하려면 요금제를 업그레이드해 주세요.
-                        </p>
-                      </div>
-                    )}
+                          <button
+                            onClick={requestBrandId}
+                            disabled={isSaving}
+                            className="rounded-xl bg-blue-500 hover:bg-blue-600 px-5 py-2.5 text-[11px] font-black uppercase italic tracking-widest text-white transition-all shadow-[0_4px_12px_rgba(59,130,246,0.2)]"
+                          >
+                            {approvedBrands.length >= limit ? "1:1 변경 신청" : "신청하기"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
                     <div className="space-y-2.5 rounded-2xl border border-blue-500/10 bg-blue-600/5 p-5">
                       <p className="flex items-center gap-2 text-xs font-black leading-relaxed text-blue-400">
@@ -1317,7 +1311,8 @@ export default function MyPage() {
                       </p>
                       <ul className="text-[11px] font-bold leading-relaxed text-zinc-500 list-disc pl-4 space-y-1 text-left">
                         <li>브랜드 ID는 영문 소문자와 숫자 조합으로 2~15자만 가능합니다.</li>
-                        <li>신청 후 관리자 승인을 통해 나만의 개인 브랜드 블로그 서브도메인이 최종 할당됩니다.</li>
+                        <li>발급받은 브랜드 ID는 크리에이박스 블로그(<strong className="text-blue-400">blog_id.creaibox.com</strong>) 및 비즈니스 웹사이트(<strong className="text-emerald-400">brand_id.creaibox.com</strong>)의 서브도메인 전용 주소로 각각 연결하여 활용할 수 있습니다.</li>
+                        <li>언제든지 마이페이지에서 <strong className="text-white">1:1 변경 신청</strong>을 통해 임시 또는 기존 브랜드 ID를 원하는 새 주소로 1:1 교체할 수 있습니다. (기존 주소는 휴면 보관함에 안전 보관)</li>
                         <li>apple, creaibox 등 시스템/유명 브랜드 예약어는 신청이 제한됩니다.</li>
                       </ul>
                     </div>

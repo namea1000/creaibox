@@ -137,11 +137,18 @@ export default function PricingPage() {
           premier: "무제한 (개인 API 사용 필수)"
         },
         {
-          feature: "블로그 홈페이지 개설",
-          free: "1개 개설 가능 (id.creaibox.com)",
-          creator: "2개 개설 가능 (id.creaibox.com)",
-          pro: "5개 개설 가능 (id.creaibox.com)",
-          premier: "10개 개설 가능 (id.creaibox.com)"
+          feature: "크리에이박스 블로그 개설",
+          free: "1개 개설 가능 (blog_id.creaibox.com)",
+          creator: "2개 개설 가능 (blog_id.creaibox.com)",
+          pro: "5개 개설 가능 (blog_id.creaibox.com)",
+          premier: "10개 개설 가능 (blog_id.creaibox.com)"
+        },
+        {
+          feature: "비즈니스 웹사이트 개설",
+          free: "L",
+          creator: "L",
+          pro: "2개 개설 가능 (brand_id.creaibox.com)",
+          premier: "3개 개설 가능 (brand_id.creaibox.com)"
         },
         {
           feature: "개인 독립 도메인 연결",

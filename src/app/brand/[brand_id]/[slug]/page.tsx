@@ -335,19 +335,31 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
   const isPrimary = brand_id.toLowerCase() === (profile.brand_id || "").toLowerCase();
 
   const getConf = (key: string, fallback: string = ""): string => {
-    if (isPrimary) return configs[key] || fallback;
-    return configs[`${key}_${brand_id.toLowerCase()}`] || configs[key] || fallback;
+    const brandKey = `${key}_${brand_id.toLowerCase()}`;
+    if (configs[brandKey] !== undefined && configs[brandKey] !== null && String(configs[brandKey]).trim() !== "") {
+      return String(configs[brandKey]);
+    }
+    if (configs[key] !== undefined && configs[key] !== null && String(configs[key]).trim() !== "") {
+      return String(configs[key]);
+    }
+    return fallback;
   };
 
   const blogTitle = getConf("blog_title", `${profile.nickname || brand_id} 블로그`);
   
   // Rank Math style SEO templates compiler
-  let seoTitle = `${post.title} | ${blogTitle}`;
+  let seoTitle = "";
   const seoTemplateTitle = getConf("seo_template_title");
   if (seoTemplateTitle) {
     seoTitle = seoTemplateTitle
       .replace(/%title%/g, post.title || "")
       .replace(/%blog_title%/g, blogTitle);
+  } else {
+    seoTitle = `${post.title} - ${blogTitle}`;
+  }
+
+  if (blogTitle && !seoTitle.includes(blogTitle)) {
+    seoTitle = `${seoTitle} - ${blogTitle}`;
   }
 
   let seoDesc = post.meta_description || post.focus_keyword || "CreAibox 블로그 글";

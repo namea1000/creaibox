@@ -167,6 +167,49 @@ mier
 * **작업 상세**:
   - **사이드바 및 대시보드 동기화 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx), [`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/page.tsx), [`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/writing/creaibox/[section]/page.tsx))**:
     - 메뉴 텍스트를 `네이버/SNS 재발행`으로 일괄 동기화.
+#### 27. "AI 홈페이지 제작" 이용 권한 기준 변경 (Business ➡️ Pro 요금제 이상)
+* **구현 요약**: 더 많은 이용자가 홈페이지 생성 및 CMS 빌더 기능을 활용할 수 있도록 **접근 권한 기준을 `Pro 요금제 이상` (Pro, Business, Enterprise, Admin)으로 대폭 완화**했습니다.
+* **작업 상세**:
+  - **권한 분기 조건 확장 ([`layout.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/client-site-builder/layout.tsx))**:
+    - `membership_level` 검사에 `pro` 등급 추가 (`mLevel === "pro"` 포함 허용).
+#### 28. "AI 홈페이지 제작" ➡️ "비즈니스 웹사이트" 서비스 명칭 정비
+* **구현 요약**: SEO 포스팅 중심의 `크리에이박스 블로그`와 랜딩페이지/CMS 중심의 홈페이지 빌더를 명확히 대치·구분하기 위해 **상위 메뉴 및 대시보드 명칭을 `비즈니스 웹사이트`로 직관화 및 일괄 개편**했습니다.
+* **작업 상세**:
+  - **사이드바 명칭 변경 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx))**:
+    - `key: "client-site-builder"` 그룹의 `name` 속성을 `비즈니스 웹사이트`로 변경.
+#### 29. "크리에이박스 블로그" vs "비즈니스 웹사이트" 도메인 안내 문구 연동 정비
+* **구현 요약**: 블로그 서브도메인(`blog_id.creaibox.com`)과 웹사이트 서브도메인(`brand_id.creaibox.com`)의 역할과 구분을 사용자가 명확히 파악할 수 있도록 **마이페이지 및 비즈니스 웹사이트 설정의 도메인 안내 라벨을 일괄 갱신**했습니다.
+* **작업 상세**:
+  - **마이페이지 안내문 수정 ([`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/mypage/page.tsx))**:
+    - 브랜드 ID 서브도메인이 블로그(`blog_id.creaibox.com`) 및 비즈니스 웹사이트(`brand_id.creaibox.com`)의 전용 주소로 각각 활용 가능함을 구체적 안내.
+#### 30. 요금제 기능 비교표 "블로그 vs 비즈니스 웹사이트 개설" 2원화 개편
+* **구현 요약**: 요금제 안내 페이지([`/pricing`](file:///Users/a1234/Local%20Sites/creaibox/src/app/pricing/page.tsx))에서 기존 단일 항목(`블로그 홈페이지 개설`)을 **`크리에이박스 블로그 개설` 및 `비즈니스 웹사이트 개설` 2개 로우로 완전 분리 탑재**했습니다.
+* **작업 상세 ([`pricing/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/pricing/page.tsx))**:
+#### 31. 회원가입 시 임시 브랜드 ID 자동 생성 차단 및 수동 신청 구조화
+* **구현 요약**: 신규 회원가입 시 의미없는 난수 조합의 임시 브랜드 ID가 자동 부여되던 로직을 제거하고, **회원이 마이페이지에서 원하는 브랜드/블로그 ID를 직접 체크하고 신청하는 수동 선택 구조로 변경**했습니다.
+* **작업 상세 ([`profiles.sql`](file:///Users/a1234/Local%20Sites/creaibox/docs/database/sql/profiles.sql))**:
+#### 32. 브랜드 ID 1:1 변경(대체) 메커니즘 탑재 (옵션 3 적용)
+* **구현 요약**: 가입 시 편리한 체험을 위해 기본 임시 ID를 보존하되, 사용자가 마이페이지에서 원하는 브랜드 ID를 신청/승인받을 경우 **기존 임시 ID가 개수 누적 없이 1:1로 자동 대체(교체)되는 옵션 3 아키텍처를 적용**했습니다.
+* **작업 상세**:
+  - **가입 시 임시 ID 보존 ([`profiles.sql`](file:///Users/a1234/Local%20Sites/creaibox/docs/database/sql/profiles.sql))**:
+    - `handle_new_user()` 트리거의 `final_brand_id` 할당을 복원하여 가입 즉시 체험 가능하게 조치.
+#### 33. 요금제별 종합 브랜드 ID 보유 한도 일쇄 정비 (Free:1, Creator:2, Pro:7, Premier:13)
+* **구현 요약**: 크리에이박스 블로그 및 비즈니스 웹사이트의 통합 개설 한도 기준을 **요금제별 최신 합산 규칙(Free: 1개, Creator: 2개, Pro: 7개, Premier/Business: 13개)으로 완벽 동기화**했습니다.
+* **작업 상세 ([`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/mypage/page.tsx), [`approve/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/admin/brands/approve/route.ts))**:
+#### 34. 관리자 회원 관리 VIP 수동 무상 부여 `grant_reason` 스키마 캡슐화 오류 수정
+* **구현 요약**: 관리자 페이지([`/admin/usermanagement`](file:///Users/a1234/Local%20Sites/creaibox/src/app/admin/usermanagement/page.tsx))에서 수동 무상 부여 저장 시 발생하던 `Could not find the 'grant_reason' column of 'profiles'` 스키마 누락 에러를 **`extra_configs` JSONB 필드 저장 구조로 이관 조치하여 완전 해결**했습니다.
+* **작업 상세 ([`admin/users/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/admin/users/route.ts), [`mypage/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/mypage/page.tsx))**:
+#### 35. 관리자 회원 관리 "Brand Domains (개설 현황)" 전용 컬럼 신설
+* **구현 요약**: 관리자 페이지([`/admin/usermanagement`](file:///Users/a1234/Local%20Sites/creaibox/src/app/admin/usermanagement/page.tsx)) 회원 테이블에 **`Brand Domains` (개설 수량 / 최대 가능 한도) 전용 컬럼을 추가**하여 사용자별 도메인 발급 현황을 한눈에 파악할 수 있도록 구현했습니다.
+#### 36. 관리자 회원 대시보드 "Pro / Premier / Business" 요금제별 집계 카드 독립 분리
+* **구현 요약**: 기존에 `Pro / Business`로 묶여 있던 상단 집계 카드를 **`Pro (Best)`, `Premier`, `Business` 3개 개별 카드로 완전 독립 분리**하여 요금제별 구독자 현황을 100% 직관적으로 모니터링할 수 있도록 8개 카드로 정비했습니다.
+#### 37. 관리자 회원 관리 요금제별 멀티 필터링 탭 및 카드 클릭 인터랙션 구현
+* **구현 요약**: 관리자 페이지([`/admin/usermanagement`](file:///Users/a1234/Local%20Sites/creaibox/src/app/admin/usermanagement/page.tsx))에서 요금제별(`Premier`, `Pro`, `Business`, `Creator`, `Free`, `Admin`, `VIP`, `Paid`) 회원 리스트를 **즉시 필터링하여 검색할 수 있도록 필터 탭 바 확장 및 대시보드 카드 클릭 연동을 완벽 구현**했습니다.
+#### 39. 블로그 글 메타데이터 타이틀 내 "블로그 이름 (타이틀)" 유지 보장 구현
+* **구현 요약**: 블로그 포스팅 상세 진입 시 브라우저 탭 상단 타이틀에서 블로그 이름이 누락되던 현상을 수정하여 **포스팅 상세, 카테고리, 메인 등 모든 페이지에서 "블로그 설정 및 관리"의 [블로그 이름]이 항상 `[글 제목] - [블로그 이름]` (또는 `[글 제목] | [블로그 이름]`) 형태로 나오도록 완벽 보장 조치**했습니다.
+* **작업 상세 ([`brand/[brand_id]/[slug]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/[brand_id]/[slug]/page.tsx), [`brand/[brand_id]/category/[slug]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/[brand_id]/category/[slug]/page.tsx))**:
+  - `getConf()` 헬퍼를 브랜드별 서브 키(`blog_title_${brandId}`) 최우선 참조 방식으로 통합 정비.
+  - `seoTitle` 생성 시 `blogTitle` 미포함 시 자동 결합 연산 보장.
   - **정적 무결성 빌드 검증**: `npx tsc --noEmit` 완벽 컴파일 통과.
 
 ---

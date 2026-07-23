@@ -103,7 +103,7 @@ export default function StudioPage() {
   const menuGroups = [
     {
       key: "client-site-builder",
-      name: "AI 홈페이지 제작",
+      name: "비즈니스 웹사이트",
       href: "/studio/client-site-builder",
       icon: Globe,
       color: "from-emerald-600 to-teal-500 text-emerald-400 bg-emerald-500/10",

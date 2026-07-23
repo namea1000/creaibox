@@ -67,6 +67,22 @@ export async function GET(req: NextRequest) {
       (log) => new Date(log.created_at) >= today
     ).length;
 
+    const approvedBrands = Array.from(
+      new Set(
+        [profile?.brand_id, ...(profile?.extra_configs?.brand_ids || [])].filter(Boolean)
+      )
+    );
+    const mLevel = (profile?.membership_level || "free").toLowerCase();
+    const roleUpper = (profile?.role || "").toUpperCase();
+    const brandLimit =
+      roleUpper === "ADMIN" || roleUpper === "SUPER_ADMIN" || mLevel === "admin" || mLevel === "premier" || mLevel === "business"
+        ? 13
+        : mLevel === "pro"
+        ? 7
+        : mLevel === "creator"
+        ? 2
+        : 1;
+
     return {
       id: user.id,
       email: emailStr || "-",
@@ -77,6 +93,9 @@ export async function GET(req: NextRequest) {
         "Unknown",
       nickname: profile?.nickname || null,
       brandId: profile?.brand_id || null,
+      approvedBrands,
+      brandCount: approvedBrands.length,
+      brandLimit,
       role: profile?.role || "FREE",
       membershipLevel: profile?.membership_level || "free",
       status: profile?.status || "ACTIVE",
@@ -86,9 +105,9 @@ export async function GET(req: NextRequest) {
       lastLogin: profile?.last_login_at || user.last_sign_in_at || null,
       adminMemo: profile?.admin_memo || "",
       isWhitelisted: whitelistedEmails.has(emailStr),
-      isManualGrant: profile?.is_manual_grant || false,
-      grantReason: profile?.grant_reason || "",
-      grantExpiresAt: profile?.grant_expires_at || null,
+      isManualGrant: profile?.extra_configs?.is_manual_grant ?? profile?.is_manual_grant ?? false,
+      grantReason: profile?.extra_configs?.grant_reason ?? profile?.grant_reason ?? "",
+      grantExpiresAt: profile?.extra_configs?.grant_expires_at ?? profile?.grant_expires_at ?? null,
     };
   });
 
@@ -163,21 +182,39 @@ export async function PATCH(req: NextRequest) {
     updateData.admin_memo = body.adminMemo;
   }
 
+  // 1. Fetch current profile extra_configs
+  const { data: currentProfile } = await supabaseAdmin
+    .from("profiles")
+    .select("extra_configs")
+    .eq("id", body.id)
+    .maybeSingle();
+
+  let nextExtraConfigs = { ...(currentProfile?.extra_configs || {}) };
+  let hasExtraChanges = false;
+
   if (body.isManualGrant !== undefined) {
-    updateData.is_manual_grant = body.isManualGrant;
+    nextExtraConfigs.is_manual_grant = body.isManualGrant;
+    hasExtraChanges = true;
   }
 
   if (body.grantReason !== undefined) {
-    updateData.grant_reason = body.grantReason;
+    nextExtraConfigs.grant_reason = body.grantReason;
+    hasExtraChanges = true;
   }
 
   if (body.grantExpiresAt !== undefined) {
-    updateData.grant_expires_at = body.grantExpiresAt;
+    nextExtraConfigs.grant_expires_at = body.grantExpiresAt;
+    hasExtraChanges = true;
+  }
+
+  if (hasExtraChanges) {
+    updateData.extra_configs = nextExtraConfigs;
   }
 
   const { error } = await supabaseAdmin
     .from("profiles")
-    .upsert(updateData, { onConflict: "id" });
+    .update(updateData)
+    .eq("id", body.id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

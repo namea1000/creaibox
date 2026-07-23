@@ -130,8 +130,14 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   const isPrimary = brand_id.toLowerCase() === (profile.brand_id || "").toLowerCase();
 
   const getConf = (key: string, fallback: string = ""): string => {
-    if (isPrimary) return configs[key] || fallback;
-    return configs[`${key}_${brand_id.toLowerCase()}`] || configs[key] || fallback;
+    const brandKey = `${key}_${brand_id.toLowerCase()}`;
+    if (configs[brandKey] !== undefined && configs[brandKey] !== null && String(configs[brandKey]).trim() !== "") {
+      return String(configs[brandKey]);
+    }
+    if (configs[key] !== undefined && configs[key] !== null && String(configs[key]).trim() !== "") {
+      return String(configs[key]);
+    }
+    return fallback;
   };
 
   const blogTitle = getConf("blog_title", `${profile.nickname || brand_id} 블로그`);

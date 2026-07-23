@@ -69,17 +69,18 @@ function SiteBuilderLayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // 3. Enforce Business/Enterprise/Admin Membership Restrictions
+  // 3. Enforce Pro/Business/Enterprise/Admin Membership Restrictions
   const mLevel = (profile.membership_level || "").toLowerCase();
   const role = (profile.role || "").toUpperCase();
-  const isBusiness =
+  const isAllowed =
+    mLevel === "pro" ||
     mLevel === "business" ||
     mLevel === "enterprise" ||
     mLevel === "admin" ||
     role === "ADMIN" ||
     role === "SUPER_ADMIN";
 
-  if (!isBusiness) {
+  if (!isAllowed) {
     return (
       <div className="max-w-7xl mx-auto p-6 md:p-8">
         <UpgradeModal />

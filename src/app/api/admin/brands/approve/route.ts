@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     // 3. Fetch current user profile to be approved
     const { data: targetProfile, error: profileError } = await adminSupabase
       .from("profiles")
-      .select("brand_id, extra_configs")
+      .select("brand_id, membership_level, extra_configs")
       .eq("id", userId)
       .maybeSingle();
 
@@ -107,15 +107,33 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
 
-    // 5. Update user profile brand fields atomically in DB
+    // 5. Update user profile brand fields atomically in DB (Option 3: 1:1 Replacement for Free Plan)
     const previousBrandId = targetProfile.brand_id || "";
-    let brand_ids: string[] = targetProfile.extra_configs?.brand_ids || [];
+    const mLevel = (targetProfile.membership_level || "free").toLowerCase();
+    const limit = mLevel === "premier" || mLevel === "business" || mLevel === "admin" ? 13 : mLevel === "pro" ? 7 : mLevel === "creator" ? 2 : 1;
 
-    // The requestedId MUST become the user's primary brand_id
+    let brand_ids: string[] = targetProfile.extra_configs?.brand_ids || [];
+    let cancelled_brands: any[] = targetProfile.extra_configs?.cancelled_brands || [];
+
     const primary_brand_id = requestedId;
 
-    if (previousBrandId && previousBrandId !== requestedId && !brand_ids.includes(previousBrandId)) {
-      brand_ids.push(previousBrandId);
+    if (previousBrandId && previousBrandId !== requestedId) {
+      if (limit === 1) {
+        // Free plan: 1:1 Replacement - Archive old brand ID
+        const isAlreadyArchived = cancelled_brands.some((cb: any) => cb.brandId?.toLowerCase() === previousBrandId.toLowerCase());
+        if (!isAlreadyArchived) {
+          cancelled_brands.push({
+            brandId: previousBrandId,
+            cancelledAt: new Date().toISOString(),
+            type: "REPLACED",
+          });
+        }
+      } else {
+        // Multi-brand plan: Keep previous as secondary if not already present
+        if (!brand_ids.includes(previousBrandId)) {
+          brand_ids.push(previousBrandId);
+        }
+      }
     }
     if (!brand_ids.includes(requestedId)) {
       brand_ids.push(requestedId);
@@ -124,6 +142,7 @@ export async function POST(req: NextRequest) {
     const nextExtraConfigs = {
       ...(targetProfile.extra_configs || {}),
       brand_ids: brand_ids,
+      cancelled_brands: cancelled_brands,
       [`ga_id_${requestedId}`]: measurementId,
       ga_id: measurementId,
     };

@@ -104,10 +104,17 @@ export default function SettingsPage() {
 
   return (
     <div className="bg-white dark:bg-[#0b0f19] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-6 md:p-8 max-w-3xl mx-auto shadow-sm animate-fade-in">
-      <h2 className="text-lg font-extrabold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-        <Settings className="text-emerald-500" size={20} />
-        <span>기본 정보 및 노출 설정</span>
-      </h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-5 mb-6 gap-2">
+        <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+          <Settings className="text-emerald-500" size={20} />
+          <span>비즈니스 웹사이트 기본 정보 설정</span>
+        </h2>
+        {selectedSite.brand_id && (
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-400">
+            <span>대표 주소: {selectedSite.brand_id}.creaibox.com</span>
+          </div>
+        )}
+      </div>
 
       <form onSubmit={handleSaveSettings} className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
