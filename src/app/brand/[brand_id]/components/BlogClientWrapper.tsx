@@ -290,7 +290,7 @@ export default function BlogClientWrapper({
               ? "border-zinc-800 bg-[#1e222b]/60 text-zinc-300" 
               : "border-zinc-200 bg-white/60 text-zinc-600"
           }`}>
-            <Sparkles size={12} className="text-yellow-400" /> Professional AI Publisher
+            <Sparkles size={12} className="text-yellow-400" /> Professional Media Publisher
           </div>
           <h1 className={`text-4xl md:text-5xl font-black tracking-tight leading-none ${theme === "dark" ? "text-white" : "text-zinc-900"}`}>
             {blogTitle}

@@ -34,7 +34,7 @@ mier
 #### 5. 크리에이박스 출처 뱃지 파스텔 1줄 경량화, 블로그 관리 On/Off & 작가/브랜드 프로필 카드 편집 기능 구축
 * **구현 요약**: 거추장스러운 기사 박스를 파스텔 1줄 뱃지(`✨ Published with CreAibox`)로 경량화하고, 사용자가 직접 **작가/브랜드명, 한 줄 소개글, 아바타 이미지 URL, 공식 홈페이지/SNS 링크**를 편집/저장할 수 있는 맞춤 프로필 카드 UI를 구축했습니다. 유료 회원의 뱃지 OFF 시에도 블로그 푸터 영역에 `Powered by CreAibox.com` 백링크를 주입하여 100% SEO 백링크 파워 상승 효과를 유지하도록 완성했습니다.
 * **작업 상세**:
-  - **작가/브랜드 프로필 이미지 블로그 구글드라이브 폴더 연동 ([`blog-management/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx))**: `sourceType`을 블로그 글 쓸 때와 동일한 **`writing_creaibox_posts`**로 변경하여, 아바타 이미지가 Supabase 버킷이 아닌 사용자의 블로그 구글드라이브 연동 폴더(`writing-creaibox-posts/{YYYYMM}`)에 동일하게 업로드되도록 바인딩 완료.
+  - **브랜드 블로그 상단 뱃지 텍스트 개선 ([`BlogClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/BlogClientWrapper.tsx))**: 독자 신뢰 저해 요인이 될 수 있는 기존 `Professional AI Publisher` 문구에서 `AI`를 제거하고 **`Professional Media Publisher`**(전문 미디어 퍼블리셔)로 깔끔하게 변경.
   - **파스텔 1줄 뱃지 전환 ([`PostClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/PostClientWrapper.tsx))**: 본문 하단 둔탁한 기사 카드를 퍼플 파스텔 1줄 뱃지(`✨ Published with CreAibox`)로 세련되게 전환.
   - **푸터 SEO 백링크 보장**: 블로그 최하단 푸터 영역에 `Powered by CreAibox.com` 텍스트 앵커 링크(`href="https://creaibox.com"`)를 결합하여 수천 개 포스트에서 구글/네이버 백링크 수집이 100% 유지되도록 처리.
   - **플랜 가이드 문서 업데이트**: [`pricing-plan-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/pricing-plan-guide.md) Section 4 백링크 마케팅 통합 규정 수록.

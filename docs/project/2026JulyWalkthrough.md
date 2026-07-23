@@ -107,8 +107,8 @@ AI 스마트 글쓰기, 네이버 글쓰기, 워드프레스 글쓰기로 생성
 * **[MODIFY] [studio/writing/creaibox/blog-management/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx)**:
   * 유료 회원 전용 1줄 뱃지 On/Off 스위치 및 일반 파워블로거 예시 기준 **사용자 맞춤 작가/브랜드 프로필 카드 편집기**(`테크앤라이프 에디터`, `https://techlife.blog`, 한 줄 소개글, 아바타 URL, 공식 링크) 구축 완료.
   * **블로그 구글드라이브 폴더 일치 연동**: `sourceType`을 `writing_creaibox_posts`로 지정하여, 아바타 이미지 업로드 시 사용자의 블로그 이미지용 구글드라이브 연동 폴더(`{user.id}/writing-creaibox-posts/{YYYYMM}`)에 동일하게 저장되도록 수정 완료.
-* **[MODIFY] [brand/[brand_id]/components/PostClientWrapper.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/PostClientWrapper.tsx)**:
-  * 둔탁한 출처 카드를 파스텔 1줄 뱃지(`✨ Published with CreAibox`)로 경량화 및 블로그 푸터 영역에 `Powered by CreAibox.com` 백링크 앵커 탑재 완료.
+* **[MODIFY] [brand/[brand_id]/components/BlogClientWrapper.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/BlogClientWrapper.tsx)**:
+  * 블로그 상단 뱃지 텍스트를 `Professional AI Publisher` ➔ **`Professional Media Publisher`** (전문 미디어 퍼블리셔)로 수정하여 AI 자동 생성 이미지 거부감 차단.
 * **[NEW] [referral-program-proposal.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/referral-program-proposal.md)**:
   * 인플루언서 및 파트너 추천 코드제 시스템 기안서 작성 완료. 3단계 윈-윈 수익 공유 구조, 회원가입 시 추천 코드 입력, 일반 회원(1달 무료) vs 인플루언서 제휴 회원(1달 무료 + 2달 차 첫 유료 결제 50% 반값 할인) 이중 혜택 차별화, 매월 결제액의 20% 자동 적립, Section 8 홍보 효과 분석 및 SaaS 성공 사례(Jasper AI, Shopify), DB 4종 스키마, 파트너 대시보드 및 어드민 정산 관리 시스템 규정 정의.
 
