@@ -1,5 +1,31 @@
 # ==================================================
 
+# MANDATORY DAILY DEVLOG & MONTHLY FILE CREATION RULE (매일 개발일지 기록 & 월별 자동 문서 생성 필수 규칙)
+
+# ==================================================
+
+CRITICAL DIRECTIVE FOR ALL AI AGENTS WORKING ON CREAIBOX:
+Every AI Agent MUST maintain project history logs without exception.
+A coding task IS NOT COMPLETE until the project devlog and walkthrough documents are updated.
+
+### 1. Mandatory Daily Log Recording (매일 개발 기록 의무화)
+Whenever any feature, refactoring, bug fix, or UI edit is performed:
+- **Devlog**: Update `docs/project/<YYYY><MonthName>Devlog.md` (e.g. `docs/project/2026JulyDevlog.md`) with date, feature summary, detailed changes, modified file links, and `npx tsc --noEmit` build verification status.
+- **Walkthrough**: Update `docs/project/<YYYY><MonthName>Walkthrough.md` (e.g. `docs/project/2026JulyWalkthrough.md`) with section-by-section completion walkthroughs.
+
+### 2. Automatic Monthly File Creation (월별 문서 자동 생성 의무화)
+When operating in a new calendar month (e.g., August 2026, September 2026...):
+- Check if `docs/project/<YYYY><MonthName>Devlog.md` and `docs/project/<YYYY><MonthName>Walkthrough.md` exist for the current month.
+- If they do NOT exist, the AI Agent MUST automatically create both new files with standard headers BEFORE completing the task.
+
+### 3. No Exit Without Documentation Update (기록 누락 상태 완료 금지)
+AI Agents MUST NOT declare success or finish a user request turn without verifying that:
+1. `npx tsc --noEmit` build check passes with 0 errors.
+2. `docs/project/<YYYY><MonthName>Devlog.md` has been updated for today's work.
+3. `docs/project/<YYYY><MonthName>Walkthrough.md` has been updated for today's work.
+
+# ==================================================
+
 # Documentation Rules
 
 # ==================================================

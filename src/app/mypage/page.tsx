@@ -14,6 +14,7 @@ import {
   RefreshCw,
   AlertTriangle,
   FolderClosed,
+  Star,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -39,6 +40,9 @@ type ProfileState = {
   brand_id_rejection_reason: string;
   membership_level: string;
   role?: string;
+  is_manual_grant?: boolean;
+  grant_reason?: string;
+  grant_expires_at?: string | null;
   extra_configs?: {
     wp_sites?: WpSite[];
     brand_ids?: string[];
@@ -53,7 +57,7 @@ function getBrandLimit(membershipLevel: string, role: string) {
   if (cleanRole === "ADMIN" || cleanRole === "SUPER_ADMIN" || cleanLevel === "admin") {
     return 10;
   }
-  if (cleanLevel === "pro" || cleanLevel === "business" || cleanLevel === "enterprise") {
+  if (cleanLevel === "pro" || cleanLevel === "business" || cleanLevel === "premier" || cleanLevel === "enterprise") {
     return 3;
   }
   if (cleanLevel === "creator") {
@@ -189,6 +193,9 @@ export default function MyPage() {
             brand_id_rejection_reason: data.brand_id_rejection_reason || "",
             membership_level: data.membership_level || "free",
             role: data.role || "FREE",
+            is_manual_grant: data.is_manual_grant || false,
+            grant_reason: data.grant_reason || "",
+            grant_expires_at: data.grant_expires_at || null,
             extra_configs: nextExtraConfigs,
           });
           setBrandInput("");
@@ -1654,7 +1661,7 @@ export default function MyPage() {
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between py-2">
+                  <div className="flex items-center justify-between border-b border-zinc-800/30 py-2">
                     <span className="pl-1 text-[11px] font-black uppercase tracking-widest text-zinc-600">
                       Plan Level
                     </span>
@@ -1662,6 +1669,33 @@ export default function MyPage() {
                       {profile.membership_level || "free"}
                     </span>
                   </div>
+
+                  {profile.is_manual_grant && (
+                    <div className="mt-4 flex flex-col gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-left shadow-xl shadow-amber-500/5">
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-1.5 text-xs font-black uppercase italic tracking-wider text-amber-400">
+                          <Star size={14} className="fill-amber-400 text-amber-400" />
+                          ⭐ VIP SPECIAL MEMBERSHIP
+                        </span>
+                        <span className="rounded-md border border-amber-500/40 bg-amber-500/20 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-amber-300">
+                          무상 혜택 적용 중
+                        </span>
+                      </div>
+
+                      <p className="text-[11px] font-medium leading-relaxed text-zinc-300">
+                        현재 회원님은 <strong className="font-bold text-amber-300">{profile.grant_reason || "VIP 특별 파트너"}</strong> 혜택으로 월 정기 결제 없이 <span className="font-black uppercase text-white">{profile.membership_level}</span> 요금제를 무상 이용 중입니다.
+                      </p>
+
+                      <div className="mt-1 flex items-center justify-between border-t border-amber-500/20 pt-2.5 text-[10px] font-bold text-zinc-400">
+                        <span>무상 이용 혜택 기간</span>
+                        <span className="font-mono font-bold text-amber-300">
+                          {profile.grant_expires_at
+                            ? new Date(profile.grant_expires_at).toLocaleDateString() + " 까지"
+                            : "무제한 (평생 무상 혜택)"}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </section>
 

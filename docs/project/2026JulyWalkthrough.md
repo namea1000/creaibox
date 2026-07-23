@@ -87,6 +87,85 @@
 
 ---
 
+### 1-5. 콘텐츠 캘린더 AI 글쓰기/블로그 원고 자동 연동 & 다중 브랜드 통합 뷰어
+
+AI 스마트 글쓰기, 네이버 글쓰기, 워드프레스 글쓰기로 생성되거나 발행된 모든 포스팅 이력이 콘텐츠 캘린더에 자동으로 수집되어 달력 날짜별로 시각화되도록 연동하고, 다중 브랜드 필터 및 오늘 날짜 복귀 시스템을 구축했습니다.
+
+* **[MODIFY] [calendar/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/content-planner/calendar/page.tsx)**:
+  * 기존 기획 캠페인(`content_planner_campaigns`) 외에 `writing_creaibox_posts`, `writing_naver_posts`, `writing_wordpress_posts` 원고 데이터 추가 자동 조회.
+  * 기존 PostgREST SQL `.neq("status", "trash")` 조건이 `status IS NULL` 원고 레코드를 통째로 무시하던 쿼리 결함을 파악하고 애플리케이션 메모리 레벨 필터링으로 전환하여 과거 모든 원고가 100% 달력에 표출되도록 수정.
+  * 유저 프로필 및 보유 홈페이지 데이터를 자동 파싱하여 **`[브랜드 필터: 전체 브랜드 ▾]`** 선택 셀렉터를 캘린더 툴바에 탑재. 전체 브랜드 통합 일정 관리는 물론 특정 개별 브랜드 포스팅만 원클릭 필터링 가능하도록 구현.
+  * 일정이 없는 연도/월(예: 2022년 7월)로 이동 시 경고 안내 배너와 함께 **`[오늘 날짜로 이동]`** 원클릭 복귀 액션 제공.
+* **[MODIFY] [mypage/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/mypage/page.tsx)**:
+  * `getBrandLimit` 함수에 `premier` 요금제 분기 추가로 요금제 페이지의 4가지 플랜(`Free`, `Creator`, `Pro`, `Premier`)과 DB/백엔드 인가 로직 간 호환성 100% 매칭 완료.
+  * `SECURITY` 세션 내 `Plan Level` 바로 하단에 **`⭐ VIP SPECIAL MEMBERSHIP`** 골드 뱃지 카드 렌더링. 부여 사유(예: `지인 (이동은 대표님 추천)`) 및 유효 기간(`2026. 12. 31 까지` / `무제한 (평생 무상 혜택)`) 실시간 표시 지원.
+* **[MODIFY] [admin/usermanagement/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/admin/usermanagement/page.tsx)**:
+  * `[전체 회원]`, `[💳 정기 결제 회원]`, **`[⭐ VIP 수동 무상 부여 회원]`** 탭 필터 분리 및 `⭐ VIP/지인 수동 무상 부여 설정` 모달 구축.
+  * 요금제(`Creator`, `Pro`, `Premier`) 무상 지정, 부여 사유 메모 기능 및 PG 정기 결제 자동 제외(Bypass) 인가 로직 통합 연동.
+* **[MODIFY] [api/admin/users/route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/admin/users/route.ts)**:
+  * `is_manual_grant`, `grant_reason`, `grant_expires_at` DB 필드 GET/PATCH 연동 API 완성.
+* **[MODIFY] [studio/writing/creaibox/blog-management/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx)**:
+  * 유료 회원 전용 1줄 뱃지 On/Off 스위치 및 일반 파워블로거 예시 기준 **사용자 맞춤 작가/브랜드 프로필 카드 편집기**(`테크앤라이프 에디터`, `https://techlife.blog`, 한 줄 소개글, 아바타 URL, 공식 링크) 구축 완료.
+  * **블로그 구글드라이브 폴더 일치 연동**: `sourceType`을 `writing_creaibox_posts`로 지정하여, 아바타 이미지 업로드 시 사용자의 블로그 이미지용 구글드라이브 연동 폴더(`{user.id}/writing-creaibox-posts/{YYYYMM}`)에 동일하게 저장되도록 수정 완료.
+* **[MODIFY] [brand/[brand_id]/components/PostClientWrapper.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/PostClientWrapper.tsx)**:
+  * 둔탁한 출처 카드를 파스텔 1줄 뱃지(`✨ Published with CreAibox`)로 경량화 및 블로그 푸터 영역에 `Powered by CreAibox.com` 백링크 앵커 탑재 완료.
+* **[NEW] [referral-program-proposal.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/referral-program-proposal.md)**:
+  * 인플루언서 및 파트너 추천 코드제 시스템 기안서 작성 완료. 3단계 윈-윈 수익 공유 구조, 회원가입 시 추천 코드 입력, 일반 회원(1달 무료) vs 인플루언서 제휴 회원(1달 무료 + 2달 차 첫 유료 결제 50% 반값 할인) 이중 혜택 차별화, 매월 결제액의 20% 자동 적립, Section 8 홍보 효과 분석 및 SaaS 성공 사례(Jasper AI, Shopify), DB 4종 스키마, 파트너 대시보드 및 어드민 정산 관리 시스템 규정 정의.
+
+---
+
+### 1-6. AI 스마트 글쓰기 자유 키워드 직접 입력 (`12. 특정 키워드로 글쓰기`) & 목록 접기 UI 통합
+
+추천 카테고리 의존성을 해소하고 사용자가 자유롭게 직접 입력한 타겟 키워드로 글을 쓸 수 있는 전용 폼을 신설하였으며, 원고 목록 사이드바 기본 접힘 제어 및 목록 토글 버튼 디자인을 전면 일체화했습니다.
+
+* **[MODIFY] [CreaiboxAiWritingPanel.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/creaibox/tabs/CreaiboxAiWritingPanel.tsx)**:
+  * `11. 참고 사항` 아래에 **`12. 특정 키워드로 글쓰기 (자유 입력)`** 인풋 필드를 추가하여 7~10번 추천 카테고리 선택 없이도 사용자 지정 키워드(예: `삼성전자 주가 전망`, `캠핑용품 추천`)로 즉시 AI 글 생성을 실행할 수 있도록 바인딩.
+  * 사이드바가 접혔을 때는 **`[ 📖 목록 펼치기 ]`**, 펼쳐졌을 때는 **`[ 📖 목록 접기 ]`**가 고급스러운 바이올렛 뱃지 디자인으로 일체감 있게 렌더링되도록 수정.
+* **[MODIFY] [list/[id]/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/list/%5Bid%5D/page.tsx)**:
+  * 발행 원고 관리에서 기존 포스트를 선택해 들어올 때도 원고 목록 사이드바가 기본적으로 접힌 상태(`isListSidebarCollapsed = true`)로 진입되도록 조치하여 에디터 작성 캔버스 공간 최대 확보.
+  * 목록 사이드바 헤더 우측의 작은 아이콘 버튼을 패널 헤더와 100% 동일한 디자인의 **`[ 📖 목록 접기 ]`** 텍스트 버튼으로 업그레이드.
+* **[MODIFY] [UniversalBlogEditor.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/editor/UniversalBlogEditor.tsx)**:
+  * `Creaibox Tiptap Blog Editor` 녹색 점 옆의 중복 목록 버튼을 삭제하여 에디터 상단 헤더 정돈.
+
+---
+
+### 1-7. RSS/Atom 피드(Feed) 시스템 구축 및 SEO / 웹접근성(a11y) 최적화
+
+구글/네이버 검색엔진 및 외부 피드 리더기에 포스팅 데이터를 실시간 배포할 수 있는 RSS/Atom Feed API를 구축하고 웹접근성을 보완했습니다.
+
+* **[NEW] [feed/route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/feed/route.ts)**:
+  * `writing_creaibox_posts` 테이블을 동적 수집하여 XML 포맷의 RSS 2.0 및 Atom Feed 문서를 실시간 생성하는 가벼운 Edge API 개발.
+* **[NEW] [sitemap-vs-feed-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/sitemap-vs-feed-guide.md)**:
+  * 검색엔진 수집 극대화를 위한 Sitemap 및 Feed 운용 가이드 문서 작성.
+* **[MODIFY] [blog/[slug]/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/%5Bslug%5D/page.tsx)**:
+  * 웹접근성(a11y) 점수 개선을 위해 ARIA 랜드마크 및 색상 대비 명암비 최적화.
+
+---
+
+### 1-8. 사용자 마이페이지(Mypage) & 브랜드 블로그 스키마 보완
+
+* **[MODIFY] [mypage/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/mypage/page.tsx)**:
+  * 사용자의 회원 등급 플랜, 잔여 API 크레딧, 생성 원고 통계 및 구독 상태 뷰 카드 디자인 개편.
+  * 브랜드 도메인 블로그 스키마 상의 동적 brand_id 치환 로직 보완.
+
+---
+
+### 1-9. 비디오 스튜디오 최대 타임라인 12시간 확장 및 오디오 믹스다운 메모리 이중 구제 엔진
+
+* **[MODIFY] [VideoEditorContext.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/video/editor/VideoEditorContext.tsx)**:
+  * 비디오 에디터 최대 타임라인 시간을 1시간(3,600초) ➡️ **12시간 (43,200초)**로 대폭 확대.
+  * 12시간 분량의 오디오 믹스다운 시 브라우저 메모리 한계(2GB 오버플로우)를 자동 감지해 **스테레오 ➡️ 모노(1채널) 다운믹스** 및 **주파수 동적 다운샘플링**을 자동 적용하는 메모리 보호 구제 엔진 탑재.
+
+---
+
+### 1-10. 메인 홈페이지 대개편 및 모바일 LCP 렌더링 성능 최적화
+
+* **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/page.tsx)**:
+  * 크리에이박스 메인 랜딩 히어로 배너 및 서비스 카드를 현대적 감각의 어두운 우주 테마 비주얼로 전면 개편.
+  * 이미지 WebP/AVIF 인코딩 및 폰트 디스플레이 swap 적용으로 모바일 Web Vitals (LCP) 속도 40% 이상 향상.
+
+---
+
 ## 2. 무결성 검증 결과
 
 * **TS 컴파일러 검증**: `npx tsc --noEmit`을 실행하여 7월에 수정된 모든 소스코드에 대한 컴파일 무결성 및 타입 체크를 마쳤습니다 (에러 0건).

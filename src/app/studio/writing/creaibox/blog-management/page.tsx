@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { 
   Settings, Layers, Palette, Shield, LineChart, Globe, HelpCircle, 
   Plus, Trash2, Save, FileText, CheckCircle2, TrendingUp, Users, Eye, RefreshCw,
-  Sparkles, Zap, GitCommit
+  Sparkles, Zap, GitCommit, Upload, Image as ImageIcon, Loader2
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -103,6 +103,44 @@ export default function BlogManagementPage() {
   const [adsensePubId, setAdsensePubId] = useState("");
   const [seoTitleTemplate, setSeoTitleTemplate] = useState("%title% | %blog_title%");
   const [seoDescTemplate, setSeoDescTemplate] = useState("%description%");
+
+  // Author Profile Card & Badge states
+  const [showBadge, setShowBadge] = useState<boolean>(true);
+  const [useAuthorCard, setUseAuthorCard] = useState<boolean>(false);
+  const [authorName, setAuthorName] = useState<string>("");
+  const [authorBio, setAuthorBio] = useState<string>("");
+  const [authorAvatarUrl, setAuthorAvatarUrl] = useState<string>("");
+  const [authorLink, setAuthorLink] = useState<string>("");
+  const [isAvatarUploading, setIsAvatarUploading] = useState<boolean>(false);
+  const avatarFileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsAvatarUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("sourceType", "writing_creaibox_posts");
+
+      const res = await fetch("/api/image-upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      if (data.url) {
+        setAuthorAvatarUrl(data.url);
+      }
+    } catch (err) {
+      console.error("Failed to upload avatar", err);
+      alert("아바타 이미지 업로드에 실패했습니다. 다시 시도해 주세요.");
+    } finally {
+      setIsAvatarUploading(false);
+      if (avatarFileInputRef.current) avatarFileInputRef.current.value = "";
+    }
+  };
   
   const [isSaving, setIsSaving] = useState(false);
 
@@ -255,6 +293,16 @@ export default function BlogManagementPage() {
     setAdsensePubId(getConfigValue("adsense_pub_id", ""));
     setSeoTitleTemplate(getConfigValue("seo_template_title", "%title% | %blog_title%"));
     setSeoDescTemplate(getConfigValue("seo_template_desc", "%description%"));
+
+    const badgeVal = getConfigValue("show_creaibox_badge", "true");
+    setShowBadge(typeof badgeVal === "boolean" ? badgeVal : badgeVal !== "false");
+
+    const authorCardVal = getConfigValue("use_author_card", "false");
+    setUseAuthorCard(typeof authorCardVal === "boolean" ? authorCardVal : authorCardVal === "true");
+    setAuthorName(getConfigValue("author_name", `${profile.nickname || "에디터"}`));
+    setAuthorBio(getConfigValue("author_bio", "국내외 최신 소식과 정보를 전문적으로 다루는 미디어입니다."));
+    setAuthorAvatarUrl(getConfigValue("author_avatar_url", ""));
+    setAuthorLink(getConfigValue("author_link", ""));
 
     const status = getConfigValue("custom_domain_status", "NONE");
     const domain = getConfigValue("custom_domain", "");
@@ -419,6 +467,12 @@ export default function BlogManagementPage() {
         [`adsense_pub_id_${activeBrandId}`]: adsensePubId.trim(),
         [`seo_template_title_${activeBrandId}`]: seoTitleTemplate.trim(),
         [`seo_template_desc_${activeBrandId}`]: seoDescTemplate.trim(),
+        [`show_creaibox_badge_${activeBrandId}`]: showBadge,
+        [`use_author_card_${activeBrandId}`]: useAuthorCard,
+        [`author_name_${activeBrandId}`]: authorName.trim(),
+        [`author_bio_${activeBrandId}`]: authorBio.trim(),
+        [`author_avatar_url_${activeBrandId}`]: authorAvatarUrl.trim(),
+        [`author_link_${activeBrandId}`]: authorLink.trim(),
       };
 
       // Set top-level configs as well if the selected brand ID is the primary brand ID for compatibility
@@ -433,6 +487,12 @@ export default function BlogManagementPage() {
         mergedConfigs.adsense_pub_id = adsensePubId.trim();
         mergedConfigs.seo_template_title = seoTitleTemplate.trim();
         mergedConfigs.seo_template_desc = seoDescTemplate.trim();
+        mergedConfigs.show_creaibox_badge = showBadge;
+        mergedConfigs.use_author_card = useAuthorCard;
+        mergedConfigs.author_name = authorName.trim();
+        mergedConfigs.author_bio = authorBio.trim();
+        mergedConfigs.author_avatar_url = authorAvatarUrl.trim();
+        mergedConfigs.author_link = authorLink.trim();
       }
 
       const { error } = await supabase
@@ -971,6 +1031,168 @@ export default function BlogManagementPage() {
                             <p className="text-[10px] font-bold text-zinc-500 mt-1">{tpl.desc}</p>
                           </button>
                         ))}
+                      </div>
+                    </div>
+
+                    {/* 🌟 출처 뱃지 & 사용자 맞춤 작가/브랜드 프로필 카드 설정 */}
+                    <div className="space-y-4 pt-6 border-t border-zinc-900">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-black uppercase italic tracking-wider text-amber-400 flex items-center gap-2">
+                            <Sparkles size={14} className="text-amber-400" />
+                            출처 뱃지 & 브랜드 프로필 카드 설정
+                          </h4>
+                          <p className="text-[10px] text-zinc-500 font-bold mt-0.5">
+                            포스팅 하단에 표시되는 1줄 출처 뱃지와 맞춤 작가/브랜드 소식을 제어합니다.
+                          </p>
+                        </div>
+
+                        {/* 뱃지 On/Off 스위치 (유료 플랜 전용) */}
+                        {["creator", "pro", "premier", "business", "admin"].includes((membershipLevel || "").toLowerCase()) ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black uppercase text-zinc-400">1줄 뱃지 표시</span>
+                            <button
+                              type="button"
+                              onClick={() => setShowBadge(!showBadge)}
+                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                showBadge ? "bg-purple-600" : "bg-zinc-800"
+                              }`}
+                            >
+                              <span
+                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                  showBadge ? "translate-x-6" : "translate-x-1"
+                                }`}
+                              />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[9px] font-bold text-zinc-500 bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-md">
+                            🔒 유료 플랜 뱃지 Off 지원
+                          </span>
+                        )}
+                      </div>
+
+                      {/* 맞춤 프로필 카드 토글 및 폼 */}
+                      <div className="rounded-2xl border border-zinc-900 bg-zinc-950/60 p-5 space-y-4">
+                        <div className="flex items-center justify-between border-b border-zinc-900 pb-3">
+                          <div>
+                            <p className="text-xs font-black text-white">사용자 맞춤 작가 / 브랜드 프로필 카드 사용</p>
+                            <p className="text-[10px] text-zinc-500 font-bold">
+                              포스팅 본문 하단에 본인의 프로필(소개글, 링크) 카드를 렌더링합니다.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setUseAuthorCard(!useAuthorCard)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                              useAuthorCard ? "bg-blue-600" : "bg-zinc-800"
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                useAuthorCard ? "translate-x-6" : "translate-x-1"
+                              }`}
+                            />
+                          </button>
+                        </div>
+
+                        {useAuthorCard && (
+                          <div className="space-y-4 pt-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase text-zinc-500">작가 / 브랜드명</label>
+                                <input
+                                  type="text"
+                                  value={authorName}
+                                  onChange={(e) => setAuthorName(e.target.value)}
+                                  placeholder="예: 테크앤라이프 에디터"
+                                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs font-bold text-white outline-none focus:border-blue-500"
+                                />
+                              </div>
+
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] font-black uppercase text-zinc-500">공식 링크 / SNS (선택)</label>
+                                <input
+                                  type="text"
+                                  value={authorLink}
+                                  onChange={(e) => setAuthorLink(e.target.value)}
+                                  placeholder="예: https://techlife.blog"
+                                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs font-bold text-white outline-none focus:border-blue-500"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-black uppercase text-zinc-500">한 줄 소개글</label>
+                              <textarea
+                                value={authorBio}
+                                onChange={(e) => setAuthorBio(e.target.value)}
+                                placeholder="예: 최신 IT 기기 리뷰, 스마트 라이프스타일 및 에센셜 소식을 전달하는 파워블로그입니다."
+                                rows={2}
+                                className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs font-bold text-white outline-none focus:border-blue-500 resize-none"
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-black uppercase text-zinc-500">아바타 / 로고 이미지 (업로드 또는 URL 입력)</label>
+                              <div className="flex items-center gap-4">
+                                {/* 아바타 실시간 프리뷰 */}
+                                <div className="relative w-12 h-12 rounded-full overflow-hidden border border-zinc-800 bg-zinc-900 shrink-0 flex items-center justify-center">
+                                  {authorAvatarUrl ? (
+                                    <img src={authorAvatarUrl} alt="Avatar Preview" className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="text-blue-500 font-black text-sm">
+                                      {authorName ? authorName[0] : "A"}
+                                    </div>
+                                  )}
+                                  {isAvatarUploading && (
+                                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white">
+                                      <Loader2 size={16} className="animate-spin text-blue-400" />
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* 숨겨진 파일 인풋 */}
+                                <input
+                                  type="file"
+                                  ref={avatarFileInputRef}
+                                  onChange={handleAvatarUpload}
+                                  accept="image/*"
+                                  className="hidden"
+                                />
+
+                                {/* 파일 업로드 버튼 */}
+                                <button
+                                  type="button"
+                                  onClick={() => avatarFileInputRef.current?.click()}
+                                  disabled={isAvatarUploading}
+                                  className="rounded-xl border border-zinc-800 bg-zinc-900 hover:bg-zinc-850 px-4 py-2.5 text-xs font-bold text-zinc-300 hover:text-white transition-colors flex items-center gap-2 shrink-0 disabled:opacity-50"
+                                >
+                                  {isAvatarUploading ? (
+                                    <>
+                                      <Loader2 size={14} className="animate-spin text-blue-400" />
+                                      <span>업로드 중...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Upload size={14} className="text-blue-400" />
+                                      <span>내 컴퓨터에서 사진 업로드</span>
+                                    </>
+                                  )}
+                                </button>
+
+                                {/* URL 직접 입력 필드 */}
+                                <input
+                                  type="text"
+                                  value={authorAvatarUrl}
+                                  onChange={(e) => setAuthorAvatarUrl(e.target.value)}
+                                  placeholder="https://domain.com/logo.png (직접 URL 입력 가능)"
+                                  className="flex-1 rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs font-bold text-white outline-none focus:border-blue-500 font-mono"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

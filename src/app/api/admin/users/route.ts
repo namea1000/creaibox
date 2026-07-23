@@ -86,6 +86,9 @@ export async function GET(req: NextRequest) {
       lastLogin: profile?.last_login_at || user.last_sign_in_at || null,
       adminMemo: profile?.admin_memo || "",
       isWhitelisted: whitelistedEmails.has(emailStr),
+      isManualGrant: profile?.is_manual_grant || false,
+      grantReason: profile?.grant_reason || "",
+      grantExpiresAt: profile?.grant_expires_at || null,
     };
   });
 
@@ -158,6 +161,18 @@ export async function PATCH(req: NextRequest) {
 
   if (body.adminMemo !== undefined) {
     updateData.admin_memo = body.adminMemo;
+  }
+
+  if (body.isManualGrant !== undefined) {
+    updateData.is_manual_grant = body.isManualGrant;
+  }
+
+  if (body.grantReason !== undefined) {
+    updateData.grant_reason = body.grantReason;
+  }
+
+  if (body.grantExpiresAt !== undefined) {
+    updateData.grant_expires_at = body.grantExpiresAt;
   }
 
   const { error } = await supabaseAdmin

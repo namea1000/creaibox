@@ -653,7 +653,7 @@ export default function PostClientWrapper({
           <div className="flex items-center gap-4">
             <Link href="/" className={`hover:text-zinc-400 ${theme === "dark" ? "text-zinc-500" : "text-zinc-650"}`}>Home</Link>
             <span className={footerDivider}>|</span>
-            <span className="text-zinc-500">Powered by CreAibox</span>
+            <a href="https://creaibox.com" target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 text-zinc-500 underline decoration-zinc-500/40">Powered by CreAibox.com</a>
           </div>
         </div>
       </footer>
