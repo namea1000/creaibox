@@ -49,6 +49,8 @@ export default function CreaiboxNewPostBridge() {
 
         const searchParams = new URLSearchParams(window.location.search);
         const targetDomain = searchParams.get("domain") || "";
+        const prompt = searchParams.get("prompt") || searchParams.get("keyword") || searchParams.get("q") || "";
+        const autoGenerate = searchParams.get("autoGenerate") || (prompt ? "true" : "false");
         const initialCanonical = targetDomain ? `https://${targetDomain.toLowerCase()}.creaibox.com/blog` : null;
 
         if (!targetPost) {
@@ -59,11 +61,11 @@ export default function CreaiboxNewPostBridge() {
             content: "",
             status: "draft",
             post_type: "create",
-            target_keyword: "",
+            target_keyword: prompt || "",
             selected_tone: "전문적이고 통찰력 있는 분석",
             slug: null,
             meta_description: "",
-            focus_keyword: "",
+            focus_keyword: prompt || "",
             canonical_url: initialCanonical,
             seo_tags: [],
             word_count_goal: null,
@@ -91,8 +93,21 @@ export default function CreaiboxNewPostBridge() {
             ? String(rawDisplayId)
             : String(targetPost.id);
 
+        const queryParams = new URLSearchParams();
+        queryParams.set("newPost", "true");
+        if (prompt) {
+          queryParams.set("prompt", prompt);
+          queryParams.set("keyword", prompt);
+        }
+        if (autoGenerate === "true") {
+          queryParams.set("autoGenerate", "true");
+        }
+        if (targetDomain) {
+          queryParams.set("domain", targetDomain);
+        }
+
         // 에디터 상세 페이지로 워프 리다이렉트
-        router.replace(`/studio/writing/creaibox/list/${routeId}?newPost=true`);
+        router.replace(`/studio/writing/creaibox/list/${routeId}?${queryParams.toString()}`);
       } catch (err: any) {
         if (active) {
           setErrorMsg(err.message || "새글 작성 도중 에러가 발생했습니다.");

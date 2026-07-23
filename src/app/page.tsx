@@ -129,7 +129,7 @@ export default function MainLandingPage() {
     if (q.includes("유튜브") || q.includes("영상") || q.includes("쇼츠") || q.includes("골프") || q.includes("여행") || q.includes("레슨")) {
       return `/youtube-trend?q=${encodeURIComponent(query)}`;
     }
-    return `/studio/writing/creaibox/new-post?prompt=${encodeURIComponent(query)}`;
+    return `/studio/writing/creaibox/new-post?prompt=${encodeURIComponent(query)}&autoGenerate=true`;
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {

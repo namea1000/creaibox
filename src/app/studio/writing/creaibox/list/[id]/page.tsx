@@ -625,7 +625,8 @@ export default function CreaiboxManuscriptDetailPage() {
 
   const searchParams = useSearchParams();
   const source = searchParams?.get("source");
-  const keywordParam = searchParams?.get("keyword") || "";
+  const keywordParam = searchParams?.get("keyword") || searchParams?.get("prompt") || searchParams?.get("q") || "";
+  const autoGenerateParam = searchParams?.get("autoGenerate") === "true" || (searchParams?.get("newPost") === "true" && Boolean(keywordParam));
   const titleParam = searchParams?.get("title") || "";
   const contentTypeParam = searchParams?.get("contentType") || "";
   const postTypeParam = searchParams?.get("postType") || "";
@@ -641,6 +642,7 @@ export default function CreaiboxManuscriptDetailPage() {
   const campaignIdParam = searchParams?.get("campaignId") || "";
 
   const [aiTargetKeyword, setAiTargetKeyword] = useState(keywordParam);
+  const autoGenerateTriggeredRef = useRef(false);
   const [aiContentType, setAiContentType] = useState(contentTypeParam);
   const [aiPostType, setAiPostType] = useState(postTypeParam);
   const [aiSelectedTone, setAiSelectedTone] = useState(toneParam);
@@ -715,10 +717,15 @@ export default function CreaiboxManuscriptDetailPage() {
     largeCategoryParam,
     mainTopicParam,
     subTopicParam,
-    referenceNoteParam,
     itemIdParam,
     campaignIdParam,
   ]);
+
+  useEffect(() => {
+    if (keywordParam) {
+      setAiTargetKeyword(keywordParam);
+    }
+  }, [keywordParam]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -1398,6 +1405,54 @@ export default function CreaiboxManuscriptDetailPage() {
   }, [
     handleAiGenerateInEditor,
     aiTargetKeyword,
+    aiContentType,
+    aiPostType,
+    aiSelectedTone,
+    aiWordCountGoal,
+    aiStrategyLevel,
+    aiResultFormat,
+    aiLargeCategory,
+    aiMainTopic,
+    aiSubTopic,
+    aiReferenceNote,
+    aiUseSearch,
+  ]);
+
+  useEffect(() => {
+    if (
+      isMounted &&
+      data &&
+      keywordParam &&
+      autoGenerateParam &&
+      !autoGenerateTriggeredRef.current &&
+      !isAiGenerating
+    ) {
+      autoGenerateTriggeredRef.current = true;
+      const timer = setTimeout(() => {
+        void handleAiGenerateInEditor(
+          keywordParam,
+          aiContentType || "AI 자동 포스팅",
+          aiPostType || "🤖 AI 자동 포스팅",
+          aiSelectedTone || "💻 전문적이고 통찰력 있는 분석 (기술 블로그)",
+          aiWordCountGoal || "1500",
+          aiStrategyLevel,
+          aiResultFormat,
+          aiLargeCategory,
+          aiMainTopic,
+          aiSubTopic,
+          aiReferenceNote,
+          aiUseSearch
+        );
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [
+    isMounted,
+    data,
+    keywordParam,
+    autoGenerateParam,
+    isAiGenerating,
+    handleAiGenerateInEditor,
     aiContentType,
     aiPostType,
     aiSelectedTone,

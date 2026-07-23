@@ -205,11 +205,12 @@ mier
 * **구현 요약**: 기존에 `Pro / Business`로 묶여 있던 상단 집계 카드를 **`Pro (Best)`, `Premier`, `Business` 3개 개별 카드로 완전 독립 분리**하여 요금제별 구독자 현황을 100% 직관적으로 모니터링할 수 있도록 8개 카드로 정비했습니다.
 #### 37. 관리자 회원 관리 요금제별 멀티 필터링 탭 및 카드 클릭 인터랙션 구현
 * **구현 요약**: 관리자 페이지([`/admin/usermanagement`](file:///Users/a1234/Local%20Sites/creaibox/src/app/admin/usermanagement/page.tsx))에서 요금제별(`Premier`, `Pro`, `Business`, `Creator`, `Free`, `Admin`, `VIP`, `Paid`) 회원 리스트를 **즉시 필터링하여 검색할 수 있도록 필터 탭 바 확장 및 대시보드 카드 클릭 연동을 완벽 구현**했습니다.
-#### 39. 블로그 글 메타데이터 타이틀 내 "블로그 이름 (타이틀)" 유지 보장 구현
-* **구현 요약**: 블로그 포스팅 상세 진입 시 브라우저 탭 상단 타이틀에서 블로그 이름이 누락되던 현상을 수정하여 **포스팅 상세, 카테고리, 메인 등 모든 페이지에서 "블로그 설정 및 관리"의 [블로그 이름]이 항상 `[글 제목] - [블로그 이름]` (또는 `[글 제목] | [블로그 이름]`) 형태로 나오도록 완벽 보장 조치**했습니다.
-* **작업 상세 ([`brand/[brand_id]/[slug]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/[brand_id]/[slug]/page.tsx), [`brand/[brand_id]/category/[slug]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/[brand_id]/category/[slug]/page.tsx))**:
-  - `getConf()` 헬퍼를 브랜드별 서브 키(`blog_title_${brandId}`) 최우선 참조 방식으로 통합 정비.
-  - `seoTitle` 생성 시 `blogTitle` 미포함 시 자동 결합 연산 보장.
+#### 40. 메인 페이지 "AI 자동 글쓰기" 검색 키워드 자동 전달 및 AI 포스팅 즉시 연동 구현
+* **구현 요약**: 메인 페이지([`src/app/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/page.tsx))에서 키워드(예: `삼성전자`)를 입력하고 "AI 자동 글쓰기"를 클릭했을 때 에디터로 키워드가 정상 전송되고 **AI가 글 생성을 자동으로 즉시 시작하도록 브릿지 및 에디터 연동을 완벽 구현**했습니다.
+* **작업 상세 ([`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/page.tsx), [`new-post/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/new-post/page.tsx), [`list/[id]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/list/[id]/page.tsx))**:
+  - `page.tsx`: 검색 경로에 `prompt=${query}&autoGenerate=true` 쿼리 파라미터 부여.
+  - `new-post/page.tsx`: 입력받은 프롬프트/키워드를 `target_keyword` 및 `focus_keyword`에 초기 저장하고 에디터 URL 파라미터로 포워딩.
+  - `list/[id]/page.tsx`: `autoGenerate=true` 파라미터 감지 시 `aiTargetKeyword` 자동 세팅 후 AI 글 작성 엔진(`handleAiGenerateInEditor`)을 0.4초 후 자동 실행하여 완벽 원고 생성.
   - **정적 무결성 빌드 검증**: `npx tsc --noEmit` 완벽 컴파일 통과.
 
 ---
