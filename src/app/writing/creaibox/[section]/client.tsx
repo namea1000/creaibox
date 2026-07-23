@@ -8,6 +8,7 @@ import PublicStudioLayout from "@/components/layout/PublicStudioLayout";
 import CreaiboxWritingMainPage from "@/app/studio/writing/creaibox/page";
 import NewPostPage from "@/app/studio/writing/creaibox/new-post/page";
 import ListPage from "@/app/studio/writing/creaibox/list/page";
+import RecreatePage from "@/app/studio/writing/creaibox/recreate/page";
 import BlogManagementPage from "@/app/studio/writing/creaibox/blog-management/page";
 import ThumbnailPage from "@/app/studio/writing/creaibox/thumbnail/page";
 import KnowledgePage from "@/app/studio/writing/creaibox/knowledge/page";
@@ -25,6 +26,8 @@ export default function PublicCreaiboxWritingClient() {
         return <NewPostPage />;
       case "list":
         return <ListPage />;
+      case "recreate":
+        return <RecreatePage />;
       case "blog-management":
         return <BlogManagementPage />;
       case "thumbnail":

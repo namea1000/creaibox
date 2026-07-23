@@ -61,22 +61,30 @@ const COUNTRY_MAP: Record<string, { name: string; flag: string }> = {
   KR: { name: "대한민국", flag: "🇰🇷" },
   US: { name: "미국", flag: "🇺🇸" },
   JP: { name: "일본", flag: "🇯🇵" },
+  CA: { name: "캐나다", flag: "🇨🇦" },
   GB: { name: "영국", flag: "🇬🇧" },
   VN: { name: "베트남", flag: "🇻🇳" },
   IN: { name: "인도", flag: "🇮🇳" },
   BR: { name: "브라질", flag: "🇧🇷" },
-  CA: { name: "캐나다", flag: "🇨🇦" }
+  DE: { name: "독일", flag: "🇩🇪" },
+  FR: { name: "프랑스", flag: "🇫🇷" },
+  AU: { name: "호주", flag: "🇦🇺" },
+  ES: { name: "스페인", flag: "🇪🇸" }
 };
 
 const COUNTRIES_LIST = [
   { code: "KR", name: "대한민국", flag: "🇰🇷" },
   { code: "US", name: "미국", flag: "🇺🇸" },
   { code: "JP", name: "일본", flag: "🇯🇵" },
+  { code: "CA", name: "캐나다", flag: "🇨🇦" },
   { code: "GB", name: "영국", flag: "🇬🇧" },
   { code: "VN", name: "베트남", flag: "🇻🇳" },
   { code: "IN", name: "인도", flag: "🇮🇳" },
   { code: "BR", name: "브라질", flag: "🇧🇷" },
-  { code: "CA", name: "캐나다", flag: "🇨🇦" }
+  { code: "DE", name: "독일", flag: "🇩🇪" },
+  { code: "FR", name: "프랑스", flag: "🇫🇷" },
+  { code: "AU", name: "호주", flag: "🇦🇺" },
+  { code: "ES", name: "스페인", flag: "🇪🇸" }
 ];
 
 function formatNumber(value?: string | number) {

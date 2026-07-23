@@ -966,7 +966,7 @@ export default function CreaiboxCreateTab({
             {publishingPanelTab === "thumbnail" && (
               <DraftOnlyPanel
                 title="썸네일 생성은 원고 저장 후 사용할 수 있습니다."
-                description="원고를 먼저 저장한 뒤 글수정 이동 버튼을 누르면 발행 원고 관리 화면에서 같은 썸네일 엔진으로 이어서 작업할 수 있습니다."
+                description="원고를 먼저 저장한 뒤 글수정 이동 버튼을 누르면 블로그 원고 관리 화면에서 같은 썸네일 엔진으로 이어서 작업할 수 있습니다."
               />
             )}
 

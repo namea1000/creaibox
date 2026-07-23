@@ -42,24 +42,33 @@ function getKstTodayDateStr(): string {
 
 const CATEGORIES = [
   { label: "전체", id: "all" },
-  { label: "뮤직", id: "10" },
+  { label: "음악/댄스/가수", id: "10" },
   { label: "게임", id: "20" },
-  { label: "엔터테인먼트", id: "24" },
-  { label: "영화/애니", id: "1" },
-  { label: "테크/IT", id: "28" },
-  { label: "스포츠", id: "17" },
-  { label: "뉴스/시사", id: "25" },
+  { label: "엔터테인먼트/방송", id: "24" },
+  { label: "영화/만화/애니", id: "1" },
+  { label: "음식/요리/뷰티", id: "26" },
+  { label: "뉴스/정치/경제", id: "25" },
+  { label: "취미/여행/일상", id: "22" },
+  { label: "IT/기술/컴퓨터", id: "28" },
+  { label: "교육/강의", id: "27" },
+  { label: "애완/반려동물", id: "15" },
+  { label: "스포츠/운동", id: "17" },
+  { label: "자동차", id: "2" }
 ];
 
 const COUNTRIES = [
   { code: "KR", name: "대한민국", flag: "🇰🇷" },
   { code: "US", name: "미국", flag: "🇺🇸" },
   { code: "JP", name: "일본", flag: "🇯🇵" },
+  { code: "CA", name: "캐나다", flag: "🇨🇦" },
   { code: "GB", name: "영국", flag: "🇬🇧" },
   { code: "VN", name: "베트남", flag: "🇻🇳" },
   { code: "IN", name: "인도", flag: "🇮🇳" },
   { code: "BR", name: "브라질", flag: "🇧🇷" },
-  { code: "CA", name: "캐나다", flag: "🇨🇦" }
+  { code: "DE", name: "독일", flag: "🇩🇪" },
+  { code: "FR", name: "프랑스", flag: "🇫🇷" },
+  { code: "AU", name: "호주", flag: "🇦🇺" },
+  { code: "ES", name: "스페인", flag: "🇪🇸" }
 ];
 
 export default function RisingVideos() {
@@ -364,19 +373,19 @@ export default function RisingVideos() {
 
       {/* 🌐 Central Filter Hub (Global Country + Category Selectors) */}
       <div className="rounded-2xl border border-zinc-800 bg-zinc-950/20 p-6 backdrop-blur-md space-y-3.5 shadow-2xl shadow-black/25 flex flex-col items-center w-full">
-        {/* 1. Country Selector (Large & Centered) */}
-        <div className="flex flex-wrap justify-center gap-2 max-w-5xl w-full">
+        {/* 1. Country Selector (Single row on desktop, 2 rows on responsive screens) */}
+        <div className="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 w-full max-w-full">
           {COUNTRIES.map((ct) => (
             <button
               key={ct.code}
               onClick={() => handleCountryChange(ct.code)}
-              className={`px-4.5 py-2.5 text-xs font-black rounded-xl transition flex items-center gap-1.5 border-2 ${
+              className={`px-3 sm:px-3.5 py-2 text-xs font-black rounded-xl transition flex items-center gap-1.5 shrink-0 whitespace-nowrap border-2 ${
                 selectedCountry === ct.code
                   ? "bg-orange-950/30 border-orange-500/70 text-white shadow-lg shadow-orange-950/40 transform scale-105"
                   : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white"
               }`}
             >
-              <span className="text-lg leading-none">{ct.flag}</span>
+              <span className="text-base sm:text-lg leading-none">{ct.flag}</span>
               <span>{ct.name}</span>
             </button>
           ))}
@@ -386,12 +395,12 @@ export default function RisingVideos() {
         <div className="h-[1px] w-full bg-zinc-850/60" />
 
         {/* 2. Category Selector & Tabs (Centered) */}
-        <div className="flex flex-wrap justify-center gap-2 w-full">
+        <div className="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 w-full max-w-full">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               onClick={() => handleCategoryChange(cat.id)}
-              className={`px-4 py-2 text-xs font-black rounded-lg transition border-2 ${
+              className={`px-3 sm:px-3.5 py-1.5 text-xs font-black rounded-lg transition shrink-0 whitespace-nowrap border-2 ${
                 activeCategory === cat.id
                   ? "bg-orange-650 border-orange-500 text-white shadow-md shadow-orange-650/15"
                   : "bg-zinc-900 border-zinc-850 text-zinc-400 hover:bg-zinc-800 hover:text-white"

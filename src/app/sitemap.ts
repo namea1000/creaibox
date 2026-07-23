@@ -144,7 +144,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.8,
     },
-    // 크리에이박스 글쓰기
+    // 크리에이박스 블로그
     {
       url: "https://creaibox.com/writing/creaibox",
       lastModified: new Date(),

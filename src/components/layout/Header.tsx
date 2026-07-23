@@ -46,6 +46,7 @@ import {
   LineChart,
   Award,
   MessageSquare,
+  Archive,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { User } from "@supabase/supabase-js";
@@ -462,6 +463,14 @@ export default function Header() {
               </div>
             )}
           </div>
+
+          {/* 미디어 라이브러리 Menu Item (AI 도구 오른쪽에 위치) */}
+          <Link
+            href="/library/free-assets"
+            className="flex items-center gap-1 text-sm font-extrabold text-slate-700 dark:text-white transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3 whitespace-nowrap"
+          >
+            미디어 라이브러리
+          </Link>
 
           {/* 키워드 트렌드 Hover Dropdown Megamenu */}
           <div
@@ -1320,6 +1329,18 @@ export default function Header() {
                 </div>
               )}
             </div>
+
+            {/* 미디어 라이브러리 (모바일 - AI 도구 오른쪽/다음 위치) */}
+            <Link
+              href="/library/free-assets"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="w-full flex items-center justify-between rounded-xl border border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 px-4 py-3 text-sm font-black text-slate-800 dark:text-white"
+            >
+              <div className="flex items-center gap-2">
+                <Archive size={16} className="text-amber-500" />
+                <span>미디어 라이브러리</span>
+              </div>
+            </Link>
 
             {/* 2. 키워드 트렌드 아코디언 */}
             <div>

@@ -5,7 +5,7 @@ import PublicNaverWritingClient from "./client";
 const sectionNames: Record<string, string> = {
   create: "AI 스마트 글쓰기",
   recreate: "AI 글 재창조",
-  list: "발행 원고 관리",
+  list: "블로그 원고 관리",
   thumbnail: "네이버용 썸네일 메이커",
   keyword: "네이버 키워드 분석",
   diagnosis: "실시간 노출 진단",

@@ -119,7 +119,7 @@ const areaDefaults: Record<StudioArea, Omit<SectionConfig, "title">> = {
     filters: ["전체", "앨범", "가사", "커버", "영상"],
   },
   creaibox: {
-    eyebrow: "크리에이박스 글쓰기",
+    eyebrow: "크리에이박스 블로그",
     description: "지식 베이스, 이미지 워크샵, 엔진 설정을 포스팅 제작 흐름에 연결합니다.",
     accent: "violet",
     icon: Wand2,
@@ -130,8 +130,8 @@ const areaDefaults: Record<StudioArea, Omit<SectionConfig, "title">> = {
     ],
     actions: [
       { label: "AI 글쓰기", href: "/studio/writing/creaibox/create", icon: Sparkles },
-      { label: "원고 관리", href: "/studio/writing/creaibox/list", icon: Archive },
-      { label: "블로그 관리", href: "/studio/writing/creaibox/blog-management", icon: Settings },
+      { label: "블로그 원고 관리", href: "/studio/writing/creaibox/list", icon: Archive },
+      { label: "블로그 설정 및 관리", href: "/studio/writing/creaibox/blog-management", icon: Settings },
     ],
     items: [
       { title: "브랜드 보이스 지식 묶음", type: "지식", status: "활성", meta: "12 notes" },

@@ -31,6 +31,9 @@ import {
   Edit3,
   Music,
   LineChart,
+  Wand2,
+  LayoutDashboard,
+  Library,
 } from "lucide-react";
 
 interface StudioTopbarProps {
@@ -317,6 +320,30 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
 
 
 
+
+        <Link
+          href="/library"
+          className="hidden h-10 items-center gap-2 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0c0d12]/45 px-3.5 text-zinc-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-white/30 hover:bg-zinc-100/50 dark:hover:bg-[#141622]/80 hover:text-slate-800 dark:hover:text-white transition-all duration-300 md:flex"
+        >
+          <Library size={15} className="text-sky-400 shrink-0" />
+          <span className="text-[13px] font-bold">내 콘텐츠 보관함</span>
+        </Link>
+
+        <Link
+          href="/studio/dashboard"
+          className="hidden h-10 items-center gap-2 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0c0d12]/45 px-3.5 text-zinc-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-white/30 hover:bg-zinc-100/50 dark:hover:bg-[#141622]/80 hover:text-slate-800 dark:hover:text-white transition-all duration-300 md:flex"
+        >
+          <LayoutDashboard size={15} className="text-blue-400 shrink-0" />
+          <span className="text-[13px] font-bold">관리 대시보드</span>
+        </Link>
+
+        <Link
+          href="/utility-tools"
+          className="hidden h-10 items-center gap-2 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0c0d12]/45 px-3.5 text-zinc-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-white/30 hover:bg-zinc-100/50 dark:hover:bg-[#141622]/80 hover:text-slate-800 dark:hover:text-white transition-all duration-300 md:flex"
+        >
+          <Wand2 size={15} className="text-amber-400 shrink-0" />
+          <span className="text-[13px] font-bold">스튜디오 Tools</span>
+        </Link>
 
         <button
           onClick={() => window.dispatchEvent(new Event("open-faq-chatbot"))}

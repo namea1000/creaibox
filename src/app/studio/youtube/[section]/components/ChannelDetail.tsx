@@ -28,17 +28,76 @@ const COUNTRIES: CountryOption[] = [
   { code: "KR", name: "대한민국", flag: "🇰🇷" },
   { code: "US", name: "미국", flag: "🇺🇸" },
   { code: "JP", name: "일본", flag: "🇯🇵" },
+  { code: "CA", name: "캐나다", flag: "🇨🇦" },
   { code: "GB", name: "영국", flag: "🇬🇧" },
   { code: "VN", name: "베트남", flag: "🇻🇳" },
   { code: "IN", name: "인도", flag: "🇮🇳" },
   { code: "BR", name: "브라질", flag: "🇧🇷" },
-  { code: "CA", name: "캐나다", flag: "🇨🇦" }
+  { code: "DE", name: "독일", flag: "🇩🇪" },
+  { code: "FR", name: "프랑스", flag: "🇫🇷" },
+  { code: "AU", name: "호주", flag: "🇦🇺" },
+  { code: "ES", name: "스페인", flag: "🇪🇸" }
 ];
 
 // Curated real benchmark channels for users (exactly 20 channels per category/country)
 import { BENCHMARK_CHANNELS, EXTENDED_BENCHMARK_CHANNELS } from "./benchmarkChannels";
 
-const CATEGORIES = ["나의 채널", "전체", "테크/IT", "게임", "뮤직", "엔터테인먼트", "영화/애니", "뉴스/시사", "스포츠"];
+const categoryMapping: Record<string, string> = {
+  "테크/IT": "IT/기술/컴퓨터",
+  "IT/기술/컴퓨터": "IT/기술/컴퓨터",
+  "게임": "게임",
+  "뮤직": "음악/댄스/가수",
+  "음악/댄스/가수": "음악/댄스/가수",
+  "엔터테인먼트": "엔터테인먼트/방송",
+  "BJ/인물/연예인": "엔터테인먼트/방송",
+  "TV/방송": "엔터테인먼트/방송",
+  "방송": "엔터테인먼트/방송",
+  "키즈": "엔터테인먼트/방송",
+  "어린이": "엔터테인먼트/방송",
+  "키즈/어린이": "엔터테인먼트/방송",
+  "영화/애니": "영화/만화/애니",
+  "영화/만화/애니": "영화/만화/애니",
+  "뉴스/시사": "뉴스/정치/경제",
+  "뉴스/정치/사회": "뉴스/정치/경제",
+  "주식/재테크": "뉴스/정치/경제",
+  "재테크": "뉴스/정치/경제",
+  "주식/경제/부동산": "뉴스/정치/경제",
+  "스포츠": "스포츠/운동",
+  "스포츠/운동": "스포츠/운동",
+  "국내/해외/여행": "취미/여행/일상",
+  "취미": "취미/여행/일상",
+  "취미/라이프": "취미/여행/일상",
+  "요리/레시피": "음식/요리/뷰티",
+  "음식/요리/레시피": "음식/요리/뷰티",
+  "뷰티": "음식/요리/뷰티",
+  "뷰티/패션": "음식/요리/뷰티",
+  "뷰티/미용": "음식/요리/뷰티",
+  "자동차": "자동차",
+  "동물/반려동물": "애완/반려동물",
+  "반려동물": "애완/반려동물",
+  "애완/반려동물": "애완/반려동물",
+  "교육": "교육/강의",
+  "교육/강의": "교육/강의",
+  "회사/오피셜": "IT/기술/컴퓨터",
+  "오피셜": "IT/기술/컴퓨터"
+};
+
+const CATEGORIES = [
+  "나의 채널",
+  "전체",
+  "음악/댄스/가수",
+  "게임",
+  "엔터테인먼트/방송",
+  "영화/만화/애니",
+  "음식/요리/뷰티",
+  "뉴스/정치/경제",
+  "취미/여행/일상",
+  "IT/기술/컴퓨터",
+  "교육/강의",
+  "애완/반려동물",
+  "스포츠/운동",
+  "자동차"
+];
 
 export default function ChannelDetail() {
   const router = useRouter();
@@ -225,7 +284,8 @@ export default function ChannelDetail() {
     ? radarChannels
     : EXTENDED_BENCHMARK_CHANNELS.filter((ch) => {
         const matchCountry = ch.country === selectedCountry;
-        const matchCategory = activeCategory === "전체" || ch.category === activeCategory;
+        const normalizedCategory = categoryMapping[ch.category] || ch.category;
+        const matchCategory = activeCategory === "전체" || normalizedCategory === activeCategory || ch.category === activeCategory;
         return matchCountry && matchCategory;
       }).slice(0, 48);
 
@@ -333,14 +393,14 @@ export default function ChannelDetail() {
 
             {/* Inner selectors wrapper with tighter spacing */}
             <div className="w-full flex flex-col items-center space-y-3.5">
-              {/* 2. Country Selector (Large & Centered) */}
-              <div className="flex flex-wrap justify-center gap-2 max-w-5xl w-full">
+              {/* 2. Country Selector (Single row on desktop, 2 rows on responsive screens) */}
+              <div className="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 w-full max-w-full">
                 {COUNTRIES.map((ct) => (
                   <button
                     key={ct.code}
                     disabled={isMyChannelSelected}
                     onClick={() => setSelectedCountry(ct.code)}
-                    className={`px-4.5 py-2.5 text-xs font-black rounded-xl transition flex items-center gap-1.5 border-2 ${
+                    className={`px-3 sm:px-3.5 py-2 text-xs font-black rounded-xl transition flex items-center gap-1.5 shrink-0 whitespace-nowrap border-2 ${
                       isMyChannelSelected
                         ? "opacity-30 cursor-not-allowed bg-zinc-900/50 border-zinc-850 text-zinc-650"
                         : selectedCountry === ct.code
@@ -348,7 +408,7 @@ export default function ChannelDetail() {
                         : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white"
                     }`}
                   >
-                    <span className="text-lg leading-none">{ct.flag}</span>
+                    <span className="text-base sm:text-lg leading-none">{ct.flag}</span>
                     <span>{ct.name}</span>
                   </button>
                 ))}
@@ -358,12 +418,12 @@ export default function ChannelDetail() {
               <div className="h-[1px] w-full bg-zinc-850/60" />
 
               {/* 3. Category Selector & Tabs (Centered & Close) */}
-              <div className="flex flex-wrap justify-center gap-2 max-w-4xl w-full">
+              <div className="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 w-full max-w-full">
                 {CATEGORIES.map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
-                    className={`px-4 py-2 text-xs font-black rounded-lg transition border-2 ${
+                    className={`px-3 sm:px-3.5 py-1.5 text-xs font-black rounded-lg transition shrink-0 whitespace-nowrap border-2 ${
                       activeCategory === cat
                         ? "bg-red-650 border-red-500 text-white shadow-md shadow-red-650/15"
                         : "bg-zinc-900 border-zinc-850 text-zinc-400 hover:bg-zinc-800 hover:text-white"

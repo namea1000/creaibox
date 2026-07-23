@@ -41,11 +41,109 @@ mier
   - **플랜 가이드 문서 업데이트**: [`pricing-plan-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/pricing-plan-guide.md) Section 4 백링크 마케팅 통합 규정 수록.
   - **정적 무결성 빌드 검증**: `npx tsc --noEmit` 완벽 컴파일 통과.
 
-#### 8. Published with CreAibox 뱃지 디자인 고급화 (네모 각진 박스 & 딥 블랙 폰트 체계)
-* **구현 요약**: 포스팅 본문 하단에 표시되는 `Published with CreAibox` 뱃지([`PostClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/PostClientWrapper.tsx))의 타원형 타원형 타원을 걷어내고, **미세 라운딩 각진 사각 박스(`rounded-lg`)와 선명한 딥 블랙 폰트(`font-black text-black`)** 기반의 고급스러운 에디토리얼 브랜드 뱃지로 전면 디자인 개편했습니다.
+#### 10. 유튜브 영상 트렌드 & TOP 300 카테고리 통폐합 정리 및 다중 선택 버그 수정
+* **구현 요약**: 기존 동일한 유튜브 API ID(`24`, `26`, `25`, `28`)를 공유하여 카테고리 클릭 시 2~3개 버튼이 동시에 활성화되던 중복 현상을 통폐합 정리하고, `유튜브 랭킹 TOP 300`, `급상승 영상 트렌드`, `인기 채널 분석` 3개 화면의 카테고리를 **독자적이고 명확한 12개 통합 카테고리(고유 ID 1:1 매핑)**로 완전히 정비했습니다.
 * **작업 상세**:
-  - **각진 사각 구조 및 고급 그라데이션 컨테이너**: 기존 동그란 타원(`rounded-full`) 및 연보라 톤 배경을 제거하고, 라운딩이 약간만 들어간 `rounded-lg` 사각 구조와 정갈한 경계선(`border border-zinc-250 dark:border-zinc-800`), 미세 그라데이션 배경(`from-zinc-50 via-white to-zinc-50`)으로 개편.
-  - **딥 블랙 폰트 & 하이콘트라스트 타이포그래피**: `CreAibox` 브랜드 텍스트를 대문자 선명한 딥 블랙 폰트(`text-black dark:text-white font-black tracking-wide uppercase`)로 서체 가독성 및 브랜딩 신뢰도 대폭 향상.
+  - **카테고리 통폐합 정비 ([`RisingVideos.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx), [`YoutubeTop300.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/YoutubeTop300.tsx), [`ChannelDetail.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/ChannelDetail.tsx))**:
+    - 중복되던 파편화 카테고리를 `엔터테인먼트/방송`, `음식/요리/뷰티`, `뉴스/정치/경제`, `취미/여행/일상` 등 12개 표준 통합 카테고리로 통폐합.
+    - 각 카테고리별로 고유한 API ID(`10`, `20`, `24`, `1`, `26`, `25`, `22`, `28`, `27`, `15`, `17`, `2`)를 1:1로만 할당하여 다중 버튼 오작동 원천 차단.
+  - **국가 1줄 반응형 레이아웃**: 와이드 데스크톱 1줄 배치 및 화면 축소 시 2줄 자연 반응형 래핑 유지.
+  - **유튜브 API CategoryID 공식 명세 문서화 ([`youtube-category-ids.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/api/youtube-category-ids.md))**: 유튜브 Data API v3 전체 비디오 카테고리 ID 목록과 CreAibox 12개 통합 표준 카테고리 간의 1:1 매핑표 수록.
+#### 11. 좌측 사이드바 유튜브 트렌드 메뉴 순서 재배치
+* **구현 요약**: 사용자의 접근성 및 트렌드 분석 동선 최적화를 위해 **`급상승 영상 트렌드`와 `급상승 영상분석 리포트`를 유튜브 메뉴 그룹의 최상단(1, 2번째)으로 올리고**, `유튜브 영상 검색` 메뉴는 `인기채널 영상분석 리포트` 하단(6번째)으로 위치를 재배치했습니다.
+* **작업 상세**:
+  - **사이드바 메뉴 순서 정비 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx))**:
+    - 1위: `급상승 영상 트렌드` (`/youtube-trend/rising`)
+    - 2위: `급상승 영상분석 리포트` (`/youtube-trend/reports`)
+    - 3위: `유튜브 랭킹 TOP 300` (`/youtube-trend/top300`)
+    - 4위: `인기채널 영상분석` (`/youtube-trend/channel`)
+    - 5위: `인기채널 영상분석 리포트` (`/youtube-trend/channel-reports`)
+    - 6위: `유튜브 영상 검색` (`/youtube-trend/search`)
+#### 12. 좌측 사이드바 및 대시보드 메뉴 명칭 변경 ("크리에이박스 글쓰기" ➡️ "크리에이박스 블로그", "발행 원고 관리" ➡️ "블로그 원고 관리", "블로그 관리" ➡️ "블로그 설정 및 관리")
+* **구현 요약**: 사용자의 직관적인 메뉴 인지를 위해 **`크리에이박스 글쓰기`를 `크리에이박스 블로그`로 변경**하고, 하위 메뉴명 **`발행 원고 관리` ➡️ `블로그 원고 관리`**, **`블로그 관리` ➡️ `블로그 설정 및 관리`**로 전면 쇄신했습니다.
+* **작업 상세**:
+  - **사이드바 및 스튜디오 대시보드 명칭 변경 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx), [`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/page.tsx), [`StudioOperationalSectionPage.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/StudioOperationalSectionPage.tsx), [`blog-management/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx))**:
+    - `"크리에이박스 글쓰기"` ➡️ `"크리에이박스 블로그"`
+    - `"발행 원고 관리"` ➡️ `"블로그 원고 관리"`
+    - `"블로그 관리"` ➡️ `"블로그 설정 및 관리"`
+#### 13. 메인페이지 헤더 상단 네비게이션 "미디어 라이브러리" 메뉴 신설
+* **구현 요약**: 상단 메인 헤더의 **"AI 도구" 바로 오른쪽 위치에 "미디어 라이브러리" 메뉴를 신설**하여 사용자가 데스크톱 및 모바일 상단 네비게이션에서 무료 에셋 보관함(`/library/free-assets`)으로 즉시 이동할 수 있도록 조치했습니다.
+* **작업 상세**:
+  - **상단 헤더 네비게이션 정비 ([`Header.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Header.tsx))**:
+    - 데스크톱 GNB: `AI 도구` 메가메뉴 바로 오른쪽 순서에 `미디어 라이브러리` 상단 메뉴 탑재.
+    - 모바일 GNB: `AI 도구` 아코디언 하단에 `미디어 라이브러리` 바로가기 메뉴 추가.
+#### 14. "AI 리포트(개발중)", "뉴스 콘텐츠(개발중)", "채널 배포 스튜디오", "자료 분석 스튜디오" 메뉴 사이드바 최하단 이동 및 관리자 전용 제어
+* **구현 요약**: 사용자의 요청에 따라 **`AI 리포트(개발중)`, `뉴스 콘텐츠(개발중)`, `채널 배포 스튜디오`, `자료 분석 스튜디오` 메뉴를 사이드바 최하단(관리자 권한 영역)으로 이동**시켜 오직 관리자(`ADMIN`) 계정 로그인 상태에서만 표시되도록 권한 및 위치 제어를 적용했습니다.
+* **작업 상세**:
+  - **사이드바 관리자 전용 메뉴 배치 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx))**:
+    - 일반 사용자용 메인 메뉴 그룹에서 제거하고 `isAdmin` 조건부 배열의 최하단에 배치.
+    - 대상 메뉴: `AI 리포트(개발중)`, `뉴스 콘텐츠(개발중)`, `채널 배포 스튜디오`, `자료 분석 스튜디오`.
+  - **대시보드 명칭 동기화 ([`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/page.tsx))**:
+    - 스튜디오 카드 메뉴 명칭을 `AI 리포트(개발중)`, `뉴스 콘텐츠(개발중)`으로 동기화.
+#### 15. "유튜브 트렌드 분석" 상위 메뉴 클릭 시 "급상승 영상 트렌드" 기본 노출 조치
+* **구현 요약**: 사용자가 사이드바 및 대시보드의 최상위 **`유튜브 트렌드 분석` 메뉴 클릭 시 기존 TOP 300 랭킹 대신 `급상승 영상 트렌드` 화면이 기본 탑재되도록 랜딩 페이지 및 라우팅 주소를 변경**했습니다.
+* **작업 상세**:
+  - **기본 랜딩 화면 교체 ([`youtube-trend/client.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/youtube-trend/client.tsx))**:
+    - `/youtube-trend` 진입 시 `<RisingVideos />` 컴포넌트 렌더링하도록 교체.
+  - **사이드바 및 대시보드 링크 동기화 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx), [`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/page.tsx))**:
+    - `youtube` 메뉴 그룹 대표 `href` 주소를 `/youtube-trend/rising`으로 업데이트.
+#### 16. "스튜디오 Tools" 메뉴 사이드바 제거 및 상단 탑바 "FAQ 챗봇" 좌측 이동
+* **구현 요약**: 사이드바 메뉴 간소화를 위해 **`스튜디오 Tools` 메뉴를 좌측 사이드바에서 제거하고, 스튜디오 상단 탑바(`StudioTopbar.tsx`)의 `FAQ 챗봇` 버튼 바로 왼편으로 위치를 재배치**했습니다.
+* **작업 상세**:
+  - **스튜디오 탑바 노출 ([`StudioTopbar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/StudioTopbar.tsx))**:
+    - `FAQ 챗봇` 버튼 좌측에 동일한 디자인 규격의 `스튜디오 Tools` 퀵버튼 탑재 (`/utility-tools` 연결, Amber 색상 `Wand2` 아이콘 수록).
+  - **사이드바 메뉴 정비 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx))**:
+    - `key: "tools"` 그룹 사이드바 항목에서 삭제.
+#### 17. "관리 대시보드" 메뉴 사이드바 제거 및 상단 탑바 이동
+* **구현 요약**: 사이드바 구조 최적화를 위해 **`관리 대시보드` 메뉴를 좌측 사이드바에서 제거하고 스튜디오 상단 탑바(`StudioTopbar.tsx`)로 위치를 이동**했습니다.
+* **작업 상세**:
+  - **스튜디오 탑바 노출 ([`StudioTopbar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/StudioTopbar.tsx))**:
+    - `스튜디오 Tools` 좌측에 동일한 퀵버튼 스타일로 `관리 대시보드` 링크 추가 (`/studio/dashboard` 연결, Blue 색상 `LayoutDashboard` 아이콘 수록).
+  - **사이드바 메뉴 정비 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx))**:
+    - `key: "dashboard"` 그룹 사이드바 항목에서 삭제.
+#### 18. "내 콘텐츠 보관함" 메뉴 사이드바 제거 및 상단 탑바 이동
+* **구현 요약**: 사이드바 구조 간소화 및 상단 접근성 향상을 위해 **`내 콘텐츠 보관함` 메뉴를 좌측 사이드바에서 제거하고 스튜디오 상단 탑바(`StudioTopbar.tsx`)로 위치를 이동**했습니다.
+* **작업 상세**:
+  - **스튜디오 탑바 노출 ([`StudioTopbar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/StudioTopbar.tsx))**:
+    - `관리 대시보드` 바로 좌측 위치에 Sky 색상 `Library` 아이콘과 함께 `내 콘텐츠 보관함` 버튼 탑재 (`/library` 연결).
+  - **사이드바 메뉴 정비 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx))**:
+    - `key: "library"` 내 콘텐츠 보관함 그룹 사이드바에서 삭제.
+#### 19. "콘텐츠 아이디어 허브" 독립 메뉴 분리 ("미디어 라이브러리" 바로 하단 배치)
+* **구현 요약**: 사용자의 직관적인 아이디어 탐색 접근성을 높이기 위해 **`콘텐츠 아이디어 허브`를 `AI 콘텐츠 플래너` 하위 메뉴에서 추출하여 `미디어 라이브러리` 바로 하단의 독립 단독 메뉴로 분리 정비**했습니다.
+* **작업 상세**:
+  - **사이드바 메뉴 독립 개설 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx))**:
+    - `미디어 라이브러리` 바로 아랫순서에 `key: "idea-hub"`, `콘텐츠 아이디어 허브` 독립 상위 메뉴 배치 (`/content-planner/idea-hub` 연결, Amber 색상 `Lightbulb` 아이콘 수록).
+  - **대시보드 메뉴 동기화 ([`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/page.tsx))**:
+    - 스튜디오 홈 대시보드 카드 메뉴 구조에서도 독립 최상위 메뉴로 재배치 동기화.
+#### 20. "AI 콘텐츠 플래너" 하위 4개 메뉴 "크리에이박스 블로그" 산하 배치 및 "AI 콘텐츠 플래너" 부모 메뉴 삭제
+* **구현 요약**: 사용자의 작업 동선을 효율화하기 위해 **기존 `AI 콘텐츠 플래너` 부모 메뉴를 삭제하고, 하위 4개 기능(AI 콘텐츠 기획, 기획 라이브러리, 콘텐츠 캘린더, 자동화 워크플로우)을 `크리에이박스 블로그` 산하의 `블로그 원고 관리` 바로 밑으로 이전 배치**했습니다.
+* **작업 상세**:
+  - **하위 메뉴 이전 및 부모 그룹 삭제 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx))**:
+    - `크리에이박스 블로그` 서브메뉴 순서: `블로그 새글 쓰기` ➡️ `블로그 원고 관리` ➡️ `AI 콘텐츠 기획` ➡️ `기획 라이브러리` ➡️ `콘텐츠 캘린더` ➡️ `자동화 워크플로우` ➡️ `블로그 설정 및 관리` ➡️ `썸네일 생성 관리` ➡️ `지식 & 페르소나 설정`.
+    - `AI 콘텐츠 플래너` 상위 메뉴 삭제.
+  - **대시보드 카드 동기화 ([`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/page.tsx))**:
+    - 스튜디오 메인 대시보드 카드 구조에도 동일한 서브메뉴 순서 반영 및 플래너 카드 제거.
+#### 21. "네이버용 AI 글 재창조" 알고리즘 메커니즘 및 사용자 안내가이드 명세 수록
+* **구현 요약**: 1차 작성된 크리에이박스 원고를 네이버 블로그로 2차 전환할 때 유사 문서 패널티를 100% 회피하고 상위 노출을 도모하는 **"네이버용 AI 글 재창조" 4대 핵심 메커니즘을 정의 및 문서화**했습니다.
+* **작업 상세 (4대 재창조 알고리즘 원칙)**:
+  1. **문장 구조 및 어휘 재설계**: 단순 단어 치환이 아닌 주어/목적어 구성을 완전히 다르게 재배치하여 네이버 유사 문서 검출 시스템 통과.
+  2. **어조 및 톤앤매너 변환**: 네이버 블로그 특유의 친근한 대화체 구어체(`~해요`, `~했답니다`)로 변환.
+  3. **도입부 및 마무리 창작**: 네이버 이웃 소통에 적합한 새로운 서론 인사말 및 독자 참여형 결론 자동 생성.
+  4. **네이버 검색 키워드 최적 재배치**: 네이버 C-Rank / DIA+ 알고리즘이 선호하는 자연스러운 키워드 밀도 및 소제목 수록.
+  - **사용자 가이드 안내 UI 연동**: 재창조 폼/모달창에 툴팁 및 가이드 카드로 설명 노출되도록 디자인 명세 확정.
+#### 22. "크리에이박스 블로그" 산하 "AI 글 재창조 (네이버/SNS 변환)" 스튜디오 완전 개발 및 라우팅 연결
+* **구현 요약**: 사용자의 1차 원고 작성 후 2차 네이버 블로그 재창조 및 스마트에디터 원클릭 복사 유저 에이전트 동선을 지원하기 위해 **`크리에이박스 블로그` 산하에 `AI 글 재창조 (네이버/SNS 변환)` 모듈과 라우트를 완전 개발**했습니다.
+* **작업 상세**:
+  - **서버 백엔드 API 개발 ([`route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/ai/recreate/route.ts))**:
+    - `originalTitle`, `originalContent`, `tone` 수신 후 네이버 4대 재창조 원칙 시스템 프롬프트 및 Vault 키 폴백 기반 Gemini 2.5 Flash 고속 생성 API 신설.
+  - **프론트엔드 2분할 스마트 에디터 컴포넌트 개발 ([`CreaiboxRecreateTab.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/creaibox/tabs/CreaiboxRecreateTab.tsx))**:
+    - **상단 가이드 카드**: 4대 핵심 메커니즘(문장 구조 재설계, 친근 어조 변환, 서론/결론 창작, DIA+ 키워드 배치) 가이드 수록.
+    - **원고 선택/입력**: Supabase `manuscripts` 보관함 연동 원고 선택 드롭다운 + 직접 입력 기능.
+    - **어조 선택**: 🟢 친근한 대화체, ⚡ 숏/핵심 서머리체, 📖 스토리텔링체, 💼 전문 정보 전달체 옵션 제공.
+    - **좌우 2분할 듀얼 에디터**: 좌측(크리에이박스 원본) vs 우측(실시간 수정 가능한 네이버 재창조 원고).
+    - **원클릭 액션**: `[📋 네이버 스마트에디터 1초 복사]` + `[💾 DB에 재창조 원고 저장]`.
+  - **라우팅 및 사이드바 동기화 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx), [`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/page.tsx), [`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/recreate/page.tsx))**:
+    - `크리에이박스 블로그` ➡️ `블로그 원고 관리` 바로 아래에 `AI 글 재창조 (네이버/SNS)` 서브메뉴 추가 (`/writing/creaibox/recreate`).
   - **정적 무결성 빌드 검증**: `npx tsc --noEmit` 완벽 컴파일 통과.
 
 ---

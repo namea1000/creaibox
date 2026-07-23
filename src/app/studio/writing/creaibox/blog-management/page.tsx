@@ -860,7 +860,7 @@ export default function BlogManagementPage() {
                   <Settings size={12} className="text-blue-500" /> Writing Studio
                 </p>
                 <h1 className="text-3xl font-black uppercase italic tracking-tight text-white flex items-center gap-2">
-                  공식 블로그 관리
+                  공식 블로그 설정 및 관리
                 </h1>
                 <p className="text-xs font-bold text-zinc-500">
                   내 브랜드 블로그({activeBrandId}.creaibox.com)의 디자인, 카테고리 구성, SEO 검색엔진 최적화를 연동합니다.
