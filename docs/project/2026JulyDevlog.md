@@ -41,12 +41,11 @@ mier
   - **플랜 가이드 문서 업데이트**: [`pricing-plan-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/pricing-plan-guide.md) Section 4 백링크 마케팅 통합 규정 수록.
   - **정적 무결성 빌드 검증**: `npx tsc --noEmit` 완벽 컴파일 통과.
 
-#### 7. Cre Note 빠른 메모 위젯 사용자 맞춤 조절 폭 커스텀 저장 및 기본 50% 폭 세팅
-* **구현 요약**: Cre Note 위젯([`CreNoteWidget.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/widgets/CreNoteWidget.tsx))의 드래그 조절 폭을 `localStorage` 및 DB에 저장하여 위젯을 닫았다 다시 열 때 **최근 유저가 직접 조정해둔 개인 맞춤 폭을 그대로 100% 복원**하고, 별도 조작 이력이 없을 때에는 **기본 화면 50% 폭(`Math.round(window.innerWidth * 0.5)`)**으로 스마트하게 렌더링되도록 구현했습니다.
+#### 8. Published with CreAibox 뱃지 디자인 고급화 (네모 각진 박스 & 딥 블랙 폰트 체계)
+* **구현 요약**: 포스팅 본문 하단에 표시되는 `Published with CreAibox` 뱃지([`PostClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/PostClientWrapper.tsx))의 타원형 타원형 타원을 걷어내고, **미세 라운딩 각진 사각 박스(`rounded-lg`)와 선명한 딥 블랙 폰트(`font-black text-black`)** 기반의 고급스러운 에디토리얼 브랜드 뱃지로 전면 디자인 개편했습니다.
 * **작업 상세**:
-  - **사용자 커스텀 리사이즈 위치 자동 지속성(Persistence) 구축**: 드래그 리사이즈 종료 시(`handleMouseUp`) 조정된 픽셀 폭(`panelWidth`)을 `cre_note_user_custom_width` 키로 로컬스토리지 및 Supabase DB에 실시간 동기화 저장.
-  - **위젯 오픈 시 사용자 맞춤 폭 스마트 복원**: 위젯 오픈 시(`openWidget`) 및 마운트 시(`ensureWidgetSetting`), 저장된 사용자 맞춤 가로 폭이 존재하면 해당 크기로 100% 복원하고, 조정 이력이 없으면 우측 화면의 50% 비율(예: 1920px 기준 960px)로 자동 산출하여 렌더링.
-  - **사이드바 실시간 폭 감지 및 침범 차단**: 드래그 리사이즈 이벤트 핸들러(`handleMouseMove`)에서 DOM 요소를 통해 좌측 사이드바의 실시간 픽셀 폭(펼침 시 220px, 접힘 시 56px 등)을 동적으로 측정하여, 메모 위젯의 왼쪽 경계가 사이드바 우측 테두리 직전에서 딱 멈추도록 최댓값을 `Math.max(window.innerWidth - sidebarWidth - 2, 420)`로 자동 계산.
+  - **각진 사각 구조 및 고급 그라데이션 컨테이너**: 기존 동그란 타원(`rounded-full`) 및 연보라 톤 배경을 제거하고, 라운딩이 약간만 들어간 `rounded-lg` 사각 구조와 정갈한 경계선(`border border-zinc-250 dark:border-zinc-800`), 미세 그라데이션 배경(`from-zinc-50 via-white to-zinc-50`)으로 개편.
+  - **딥 블랙 폰트 & 하이콘트라스트 타이포그래피**: `CreAibox` 브랜드 텍스트를 대문자 선명한 딥 블랙 폰트(`text-black dark:text-white font-black tracking-wide uppercase`)로 서체 가독성 및 브랜딩 신뢰도 대폭 향상.
   - **정적 무결성 빌드 검증**: `npx tsc --noEmit` 완벽 컴파일 통과.
 
 ---

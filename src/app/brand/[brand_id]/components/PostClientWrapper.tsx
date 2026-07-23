@@ -490,16 +490,18 @@ export default function PostClientWrapper({
                     </div>
                   </div>
                 ) : showBadge ? (
-                  /* Pastel 1-Line Published with CreAibox Badge */
+                  /* Ultra-Premium Squared Published with CreAibox Badge */
                   <div className="mt-10 flex items-center justify-center">
                     <a
                       href="https://creaibox.com"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-1.5 text-[11px] font-bold text-purple-400 backdrop-blur-sm transition-all hover:bg-purple-500/20 hover:text-purple-300 shadow-sm"
+                      className="group inline-flex items-center gap-2 rounded-lg border border-zinc-250 dark:border-zinc-800 bg-gradient-to-r from-zinc-50 via-white to-zinc-50 dark:from-zinc-900 dark:via-[#0c0e14] dark:to-zinc-900 px-4.5 py-2 text-xs font-bold text-black dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.05)] hover:border-zinc-400 dark:hover:border-zinc-600 hover:shadow-md transition-all duration-300"
                     >
-                      <Sparkles size={13} className="text-purple-400" />
-                      <span>Published with <strong className="font-black underline decoration-purple-400/50">CreAibox</strong></span>
+                      <Sparkles size={14} className="text-purple-600 dark:text-purple-400 shrink-0 group-hover:scale-110 transition-transform" />
+                      <span className="text-zinc-700 dark:text-zinc-300 font-semibold tracking-tight">
+                        Published with <strong className="font-black text-black dark:text-white tracking-wide uppercase ml-0.5">CreAibox</strong>
+                      </span>
                     </a>
                   </div>
                 ) : null}
