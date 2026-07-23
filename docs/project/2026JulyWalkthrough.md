@@ -108,7 +108,7 @@ AI 스마트 글쓰기, 네이버 글쓰기, 워드프레스 글쓰기로 생성
   * 유료 회원 전용 1줄 뱃지 On/Off 스위치 및 일반 파워블로거 예시 기준 **사용자 맞춤 작가/브랜드 프로필 카드 편집기**(`테크앤라이프 에디터`, `https://techlife.blog`, 한 줄 소개글, 아바타 URL, 공식 링크) 구축 완료.
   * **블로그 구글드라이브 폴더 일치 연동**: `sourceType`을 `writing_creaibox_posts`로 지정하여, 아바타 이미지 업로드 시 사용자의 블로그 이미지용 구글드라이브 연동 폴더(`{user.id}/writing-creaibox-posts/{YYYYMM}`)에 동일하게 저장되도록 수정 완료.
 * **[MODIFY] [brand/[brand_id]/components/BlogClientWrapper.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/BlogClientWrapper.tsx)**:
-  * 블로그 상단 뱃지 텍스트를 `Professional AI Publisher` ➔ **`Professional Media Publisher`** (전문 미디어 퍼블리셔)로 수정 및 사용자가 입력한 **`블로그 설명(상세 설명)`** 텍스트가 메인 배너 제목 하단 서브 타이틀로 나타나도록 렌더링 연결 완료. 
+  * 블로그 상단 뱃지 텍스트를 `Professional AI Publisher` ➔ **`Professional Media Publisher`** (전문 미디어 퍼블리셔)로 수정 및 사용자가 입력한 **`블로그 설명(상세 설명)`** 텍스트가 메인 배너 제목 하단 서브 타이틀로 나타나도록 렌더링 연결 완료. 빈 값(`""`) 입력 시 기본 문구가 나오지 않고 깨끗이 비워지도록 파서 버그 수정 완료. 
   * 기존에 이미 발행되었던 포스트 본문의 `CREAIBOX INSIGHT EDITORIAL` 박스를 동적 대체 파이프라인으로 전환하여, 유저의 최신 설정에 따른 **[맞춤 프로필 카드]**, **[파스텔 1줄 뱃지]**, 또는 **[뱃지 OFF]**가 과거 배포글 및 신규 배포글 전면에 실시간 100% 적용되도록 개편 완료.
 * **[NEW] [referral-program-proposal.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/referral-program-proposal.md)**:
   * 인플루언서 및 파트너 추천 코드제 시스템 기안서 작성 완료. 3단계 윈-윈 수익 공유 구조, 회원가입 시 추천 코드 입력, 일반 회원(1달 무료) vs 인플루언서 제휴 회원(1달 무료 + 2달 차 첫 유료 결제 50% 반값 할인) 이중 혜택 차별화, 매월 결제액의 20% 자동 적립, Section 8 홍보 효과 분석 및 SaaS 성공 사례(Jasper AI, Shopify), DB 4종 스키마, 파트너 대시보드 및 어드민 정산 관리 시스템 규정 정의.

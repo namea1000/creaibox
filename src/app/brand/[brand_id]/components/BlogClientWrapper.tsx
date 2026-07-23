@@ -104,12 +104,18 @@ export default function BlogClientWrapper({
   const isPrimary = brand_id.toLowerCase() === (profile.brand_id || "").toLowerCase();
 
   const getConf = (key: string, fallback: string = ""): string => {
-    if (isPrimary) return configs[key] || fallback;
-    return configs[`${key}_${brand_id.toLowerCase()}`] || configs[key] || fallback;
+    const brandKey = `${key}_${brand_id.toLowerCase()}`;
+    if (configs[brandKey] !== undefined && configs[brandKey] !== null) {
+      return String(configs[brandKey]);
+    }
+    if (configs[key] !== undefined && configs[key] !== null) {
+      return String(configs[key]);
+    }
+    return fallback;
   };
 
   const blogTitle = getConf("blog_title", `${profile.nickname || brand_id} 블로그`);
-  const blogDesc = getConf("blog_description", "CreAibox에서 생성한 고품질 콘텐츠 블로그입니다.");
+  const blogDesc = getConf("blog_description", "");
   const template = getConf("blog_template", "card");
   const accentColor = getConf("blog_accent_color", "#3b82f6");
   const gaId = getConf("ga_id");

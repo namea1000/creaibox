@@ -284,7 +284,7 @@ export default function BlogManagementPage() {
     };
 
     setBlogTitle(getConfigValue("blog_title", `${profile.nickname || "My AI"} 블로그`));
-    setBlogDesc(getConfigValue("blog_description", "CreAibox에서 생성한 고품질 콘텐츠 블로그입니다."));
+    setBlogDesc(getConfigValue("blog_description", ""));
     setBlogTemplate(getConfigValue("blog_template", "card"));
     setBlogAccentColor(getConfigValue("blog_accent_color", "#3b82f6"));
     setGaId(getConfigValue("ga_id", ""));
