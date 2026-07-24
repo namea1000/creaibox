@@ -296,7 +296,7 @@ const GENRE_COLLECTIONS: GenreCollectionItem[] = [
 const GENRE_GROUPS_INFO = [
   { id: "록 / 서브컬처 스타일", label: "록 / 서브컬처", desc: "펑크, 메탈 등 강렬하고 반항적인 얼터너티브 록 그루브", img: "/images/genres/rock_subculture.webp" },
   { id: "라틴 / 댄스 그루브", label: "라틴 / 댄스", desc: "살사, 삼바, 차차차 등 열정적인 라틴 댄스 파티 리듬", img: "/images/genres/latin_dance.webp" },
-  { id: "전자 음악 (Electronic)", label: "전자 음악", desc: "테크노, 하우스, EDM 등 신디사이저 기반의 트렌디 비트", img: "/images/genres/electronic.webp" },
+  { id: "전자 음악 (Electronic)", label: "전자 음악", desc: "테크노, 하우스, EDM 등 신디사이저 기반의 트렌디 비트", img: "/images/genres/Electronic.webp" },
   { id: "힙합 / 알앤비 / 재즈 / 블루스", label: "힙합 / R&B / 재즈", desc: "소울풀한 붐뱁 랩 비트부터 로맨틱한 스무스 재즈까지", img: "/images/genres/hiphop_rnb_jazz.webp" },
   { id: "팝 / 포크 / 컨트리 / 전통악기", label: "팝 / 포크 / 컨트리", desc: "대중적인 어쿠스틱 팝과 목가적인 전통 포크 멜로디", img: "/images/genres/pop_folk_country.webp" },
   { id: "클래식 / 합주 / 월드뮤직", label: "클래식 / 월드뮤직", desc: "웅장한 시네마틱 오케스트라와 이국적인 세계 민속 음악", img: "/images/genres/classical_world.webp" },
@@ -305,7 +305,7 @@ const GENRE_GROUPS_INFO = [
   { id: "악기 및 사운드 텍스처", label: "악기 & 텍스처", desc: "피아노 독주, 마칭밴드, 공간감을 채우는 딥한 드론 사운드", img: "/images/genres/instrument_texture.webp" },
   { id: "일렉트로닉 / 힙합 서브컬처", label: "일렉 / 힙합 서브컬처", desc: "신스웨이브, 베이퍼웨이브 등 몽환적 아날로그 감성 비트", img: "/images/genres/electro_hiphop_sub.webp" },
   { id: "팝 / 인디 / 뉴에이지", label: "팝 / 인디 / 뉴에이지", desc: "청량한 시티팝과 방 안에서 속삭이는 미니멀 침실 팝", img: "/images/genres/pop_indie_newage.webp" },
-  { id: "아시아 / 월드 에스닉", label: "아시아 / 에스닉", desc: "K-Pop, J-Pop 및 아시아 정통 에스닉 악기 컬렉션", img: "/images/genres/asia_world.webp" },
+  { id: "아시아 / 월드 에스닉", label: "아시아 / 에스닉", desc: "K-Pop, J-Pop 및 아시아 정통 에스닉 악기 컬렉션", img: "/images/genres/Asia_World.webp" },
   { id: "기능성 및 오디오 텍스처", label: "기능성 오디오", desc: "ASMR, 다크 앰비언트 등 깊은 집중과 치유를 돕는 사운드", img: "/images/genres/audio_texture.webp" }
 ];
 
@@ -1685,6 +1685,9 @@ export default function FreeAssetsLibraryPage() {
                       <img
                         src={group.img}
                         alt={group.label}
+                        onError={(e) => {
+                          e.currentTarget.src = "/images/genres/rock_subculture.webp";
+                        }}
                         className="h-full w-full object-cover opacity-85 group-hover:scale-105 group-hover:opacity-100 transition duration-500"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />

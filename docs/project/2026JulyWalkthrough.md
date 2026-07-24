@@ -807,17 +807,11 @@ AI 콘텐츠 기획 결과화면 및 라이브러리에서 "네이버 글 생성
 
 ---
 
-### 1-90. 헤더 중복 렌더링 제거, 브랜드 리브랜딩('Aura Merino') 및 GNB 통일 디자인 정비
+### 1-91. 미디어 라이브러리 프리 에셋 장르 카테고리 엑박(Broken Image) 근본 원인 해결 및 100% 안전 폴백 탑재
 
-* **[MODIFY] [clients/woolcraft/layout.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/woolcraft/layout.tsx)**:
-  - `<Header />` 이중 중복 렌더링 제거 및 `Aura Merino` 독자 브랜드 메타데이터 지정.
-* **[MODIFY] [clients/woolcraft/components/Header.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/woolcraft/components/Header.tsx)**:
-  - 우측 강조 버튼으로 따로 놀던 `Blog (블로그)` 메뉴를 중앙 GNB `<nav>` 영역 안으로 옮겨 `Home`, `Products`, `Brand Story`, `Why Wool`과 100% 동일한 폰트/스타일로 깔끔하게 통일.
-  - 브랜드 표기를 독자 프리미엄 브랜드인 `Aura Merino (Eco Merino Footwear)`로 교체.
-* **[MODIFY] [clients/woolcraft/components/Footer.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/woolcraft/components/Footer.tsx)** & **[page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/woolcraft/page.tsx)**:
-  - 푸터, 히어로 섹션, 브랜드 스토리 및 뉴스레터 문구의 브랜드명을 `Aura Merino (아우라 메리노)`로 변경.
-* **[MODIFY] [custom-client-site/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/custom-client-site/page.tsx)**:
-  - 템플릿 카드 명칭을 `아우라 메리노 (Aura Merino) 스니커즈 쇼핑몰 V1`로 업데이트.
+* **[MODIFY] [studio/library/free-assets/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/free-assets/page.tsx)**:
+  - `GENRE_GROUPS_INFO` 내 2개 카드의 이미지 파일 대소문자 불일치 경로 수정 (`Electronic.webp`, `Asia_World.webp`).
+  - 대분류 장르 카드의 `<img />` 태그에 `onError` 예외 핸들러 수록하여 이미지 로딩 실패 시 100% 안전 고화질 이미지로 자동 우회.
 
 ---
 
