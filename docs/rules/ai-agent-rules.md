@@ -57,6 +57,15 @@ docs/arch/ai-assistant-design-spec.md
 
 # --------------------------------------------------
 
+# Custom Client Website Template Rules
+
+# --------------------------------------------------
+
+Custom Client Site Template Rules:
+- @docs/rules/custom-client-site-template-rules.md (Must follow 5-7 mandatory GNB menus & 5-7 embedded features)
+
+# --------------------------------------------------
+
 # Operational Documentation
 
 # --------------------------------------------------

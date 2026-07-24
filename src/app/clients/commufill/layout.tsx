@@ -29,6 +29,7 @@ export default function CommufillLayout({
           <nav className="hidden md:flex items-center gap-8 text-sm font-bold text-zinc-400">
             <Link href="/" className="hover:text-white transition-colors">Home</Link>
             <Link href="/about" className="hover:text-white transition-colors">About</Link>
+            <Link href="/blog" className="text-emerald-400 font-extrabold hover:text-emerald-300 transition-colors">Blog (블로그)</Link>
             <Link href="/contact" className="hover:text-white transition-colors">Contact</Link>
           </nav>
 
@@ -84,7 +85,18 @@ export default function CommufillLayout({
           </div>
           <div className="mt-12 border-t border-zinc-900 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] font-black uppercase tracking-widest text-zinc-600">
             <p>&copy; {new Date().getFullYear()} Commufill. All rights reserved.</p>
-            <p>Powered by CreAibox System</p>
+            <p>
+              Powered by{" "}
+              <a
+                href="https://creaibox.com"
+                target="_blank"
+                rel="noopener font-bold"
+                className="hover:text-emerald-400 underline transition-colors"
+                title="CreAibox - AI 블로그 포스팅 및 웹사이트 자동화 플랫폼"
+              >
+                CreAibox Custom Site
+              </a>
+            </p>
           </div>
         </div>
       </footer>

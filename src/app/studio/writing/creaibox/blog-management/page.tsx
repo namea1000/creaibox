@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { 
   Settings, Layers, Palette, Shield, LineChart, Globe, HelpCircle, 
   Plus, Trash2, Save, FileText, CheckCircle2, TrendingUp, Users, Eye, RefreshCw,
-  Sparkles, Zap, GitCommit, Upload, Image as ImageIcon, Loader2, X
+  Sparkles, Zap, GitCommit, Upload, Image as ImageIcon, Loader2, X, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -328,6 +328,22 @@ export default function BlogManagementPage() {
       }
     });
   }, [posts, activeBrandId, profile]);
+
+  const cumulativePv = useMemo(() => {
+    return filteredPosts.reduce((sum: number, p: any) => sum + Number(p.views || 0), 0);
+  }, [filteredPosts]);
+
+  const [analyticsPostsPage, setAnalyticsPostsPage] = useState(1);
+  const POSTS_PER_PAGE = 10;
+  const totalAnalyticsPages = Math.max(1, Math.ceil(filteredPosts.length / POSTS_PER_PAGE));
+  const paginatedPosts = useMemo(() => {
+    const start = (analyticsPostsPage - 1) * POSTS_PER_PAGE;
+    return filteredPosts.slice(start, start + POSTS_PER_PAGE);
+  }, [filteredPosts, analyticsPostsPage]);
+
+  useEffect(() => {
+    setAnalyticsPostsPage(1);
+  }, [activeBrandId]);
 
   // Handle activeBrandId settings sync
   useEffect(() => {
@@ -2011,24 +2027,20 @@ export default function BlogManagementPage() {
                     </h4>
                   </div>
 
-                  {/* Card 2: Today PV */}
+                  {/* Card 2: Cumulative PV */}
                   <div className="rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-6 space-y-2">
                     <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 flex items-center gap-1">
-                      <Eye size={12} className="text-blue-400" /> 오늘 페이지 뷰 (PV)
+                      <Eye size={12} className="text-blue-400" /> 누적 페이지 뷰 (PV)
                     </span>
                     <h4 className="text-2xl font-black italic tracking-tight text-white">
-                      {isAnalyticsLoading ? (
-                        <span className="inline-block w-12 h-6 bg-zinc-850 rounded animate-pulse" />
-                      ) : (
-                        `${analyticsData?.todayPv ?? 0} 회`
-                      )}
+                      {cumulativePv} 회
                     </h4>
                   </div>
 
-                  {/* Card 3: Today UV */}
+                  {/* Card 3: Cumulative UV */}
                   <div className="rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-6 space-y-2">
                     <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 flex items-center gap-1">
-                      <Users size={12} className="text-emerald-400" /> 오늘 고유 방문자 (UV)
+                      <Users size={12} className="text-emerald-400" /> 누적 방문자 (UV)
                     </span>
                     <h4 className="text-2xl font-black italic tracking-tight text-white">
                       {isAnalyticsLoading ? (
@@ -2064,104 +2076,91 @@ export default function BlogManagementPage() {
                   </div>
                 </div>
 
-                {/* Popular posts & 7 days chart */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                  {/* Traffic flow chart */}
-                  <div className="lg:col-span-2 rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-6 space-y-6">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-black uppercase italic tracking-wider text-white">
-                        일간 방문 흐름 (최근 7일)
+                {/* Full-width Paginated Published Posts List Panel */}
+                <div className="rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-6 sm:p-8 space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-900 pb-4">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-sm font-black uppercase italic tracking-wider text-white flex items-center gap-2">
+                        발행글 리스트 <FileText size={16} className="text-purple-400" />
                       </h3>
-                      {isAnalyticsLoading && (
-                        <span className="text-[9px] font-black uppercase tracking-widest text-blue-400 animate-pulse">Syncing...</span>
-                      )}
+                      <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-[10px] font-black text-purple-400">
+                        총 {filteredPosts.length}개 발행됨
+                      </span>
                     </div>
 
-                    <div className="h-60 flex items-end gap-3 px-4 pt-10 border-b border-zinc-900">
-                      {isAnalyticsLoading || !analyticsData?.dailyTrend || analyticsData.dailyTrend.length === 0 ? (
-                        // Skeleton Chart Bars
-                        Array.from({ length: 7 }).map((_, idx) => (
-                          <div key={idx} className="flex-1 flex flex-col items-center gap-2 animate-pulse">
-                            <div className="w-full bg-zinc-900/30 rounded-t-lg h-20" />
-                            <span className="w-8 h-2 bg-zinc-900/30 rounded mt-2" />
-                          </div>
-                        ))
-                      ) : (
-                        // Live GA4 Chart Bars
-                        analyticsData.dailyTrend.map((item: any, idx: number) => {
-                          const maxViews = Math.max(...analyticsData.dailyTrend.map((t: any) => t.views), 10);
-                          const percentage = Math.min(Math.round((item.views / maxViews) * 100), 100);
-                          
-                          return (
-                            <div key={idx} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer">
-                              <span className="text-[9px] text-zinc-500 font-bold group-hover:text-blue-400 transition-colors">
-                                {item.views} PV
-                              </span>
-                              <div 
-                                className="w-full bg-blue-500/20 group-hover:bg-blue-500/40 rounded-t-lg transition-all duration-300"
-                                style={{ height: `${percentage}%` }}
-                              />
-                              <span className="text-[9px] text-zinc-600 font-bold mt-2">
-                                {item.date}
-                              </span>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
+                    {/* Pagination Controls */}
+                    {filteredPosts.length > 0 && (
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setAnalyticsPostsPage((p) => Math.max(1, p - 1))}
+                          disabled={analyticsPostsPage === 1}
+                          className="rounded-xl border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 px-3 py-1.5 text-xs font-bold text-zinc-300 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer"
+                        >
+                          <ChevronLeft size={14} /> 이전
+                        </button>
 
-                  {/* Popular posts (GA4 Live Data backed) */}
-                  <div className="rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-6 space-y-4">
-                    <h3 className="text-sm font-black uppercase italic tracking-wider text-white flex items-center justify-between">
-                      인기 글 순위 <TrendingUp size={14} className="text-blue-400" />
-                    </h3>
+                        <span className="text-xs font-black text-zinc-400 font-mono">
+                          <span className="text-blue-400">{analyticsPostsPage}</span> / {totalAnalyticsPages} 페이지
+                        </span>
 
-                    {isAnalyticsLoading ? (
-                      // Skeleton Loading
-                      <div className="space-y-3 py-4">
-                        {Array.from({ length: 3 }).map((_, idx) => (
-                          <div key={idx} className="flex items-center gap-3 animate-pulse">
-                            <div className="h-6 w-6 rounded bg-zinc-900/30" />
-                            <div className="flex-1 space-y-2">
-                              <div className="h-3 bg-zinc-900/30 rounded w-3/4" />
-                              <div className="h-2 bg-zinc-900/30 rounded w-1/2" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : !analyticsData?.popularPosts || analyticsData.popularPosts.length === 0 ? (
-                      <div className="text-xs font-bold text-zinc-600 py-10 text-center">
-                        통계를 집계할 포스트가 없습니다.
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {analyticsData.popularPosts.map((post: any, idx: number) => (
-                          <div key={idx} className="flex items-start gap-3 border-b border-zinc-900/50 pb-2.5 last:border-b-0 last:pb-0">
-                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-zinc-950 font-black text-xs text-blue-400 italic mt-0.5">
-                              {idx + 1}
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-xs font-bold text-zinc-200" title={post.title}>
-                                {post.title}
-                              </p>
-                              <div className="flex flex-wrap gap-1.5 mt-1">
-                                <span className="text-[9px] font-black text-zinc-500 bg-zinc-950/80 px-1.5 py-0.5 rounded">
-                                  PV: {post.pv}
-                                </span>
-                                <span className="text-[9px] font-black text-zinc-500 bg-zinc-950/80 px-1.5 py-0.5 rounded">
-                                  평균독서: {post.avgDuration}
-                                </span>
-                                <span className="text-[9px] font-black text-zinc-500 bg-zinc-950/80 px-1.5 py-0.5 rounded">
-                                  이탈: {post.bounceRate}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                        <button
+                          type="button"
+                          onClick={() => setAnalyticsPostsPage((p) => Math.min(totalAnalyticsPages, p + 1))}
+                          disabled={analyticsPostsPage === totalAnalyticsPages}
+                          className="rounded-xl border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 px-3 py-1.5 text-xs font-bold text-zinc-300 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer"
+                        >
+                          다음 <ChevronRight size={14} />
+                        </button>
                       </div>
                     )}
                   </div>
+
+                  {filteredPosts.length === 0 ? (
+                    <div className="text-xs font-bold text-zinc-600 py-12 text-center">
+                      발행된 포스트가 없습니다.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
+                      {paginatedPosts.map((post: any, idx: number) => {
+                        const absoluteIdx = (analyticsPostsPage - 1) * POSTS_PER_PAGE + idx + 1;
+                        const pubDate = post.created_at ? new Date(post.created_at).toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }) : "-";
+
+                        return (
+                          <div
+                            key={post.id || idx}
+                            className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-900/80 bg-zinc-950/60 p-4 hover:border-zinc-800 hover:bg-zinc-900/40 transition-all group"
+                          >
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800 font-black text-xs text-purple-400 italic font-mono">
+                                {absoluteIdx}
+                              </span>
+                              <div className="min-w-0 flex-1 space-y-1">
+                                <a
+                                  href={post.canonical_url || `/blog/${post.slug}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="truncate text-xs font-bold text-zinc-200 group-hover:text-blue-400 transition-colors block"
+                                  title={post.title}
+                                >
+                                  {post.title}
+                                </a>
+                                <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500">
+                                  <span>📅 {pubDate}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="shrink-0">
+                              <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-black text-emerald-400">
+                                <Eye size={12} className="text-emerald-400" /> {post.views || 0}회 누적
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {/* 2단계: Marketing Analytics Panels */}

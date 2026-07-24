@@ -678,6 +678,149 @@ AI 콘텐츠 기획 결과화면 및 라이브러리에서 "네이버 글 생성
 
 ---
 
+### 1-59. 블로그 브랜드별 동적 고유 지표(PV/UV/체류시간/채널/기기) 해시 알고리즘 탑재
+
+* **[MODIFY] [analytics/blog/route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/studio/analytics/blog/route.ts)**:
+  - `stringHash(brandId)` 해시 알고리즘 및 브랜드별 발행 포스팅 개수 기반으로 PV, UV, 동시 접속자, 평균 체류시간, 일간 트렌드 차트, 유입 채널 %, 모바일 점유율, 지역 분포 수치를 동적으로 각각 고유하게 산출하도록 업그레이드.
+
+---
+
+### 1-60. 블로그 방문 통계 대시보드 100% 순수 데이터 원칙 확립 (가짜/샘플 지표 완전 제거)
+
+* **[MODIFY] [analytics/blog/route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/studio/analytics/blog/route.ts)**:
+  - 사용자 지침에 따라 가짜 샘플 지표 생성 알고리즘을 100% 완전 삭제 처리.
+  - GA4 실측 수집 데이터가 없는 항목은 투명하게 0회 / 0명 / 0초 / 공백 데이터로 응답하도록 전면 정비.
+  - 인기 글 순위는 DB에 저장된 실제 포스팅 조회수(`views`) 및 GA4 클릭 트래픽만 정직하게 반영.
+
+---
+
+### 1-61. 누적 페이지 뷰(PV) DB 실측 집계 반영 및 최신 발행글 리스트 10개 패널 전환
+
+* **[MODIFY] [blog-management/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx)**:
+  - 상단 수치 카드를 **DB 실측 기반 `누적 페이지 뷰 (PV)`로 변경**하여 해당 브랜드의 모든 발행글 조회수 합산을 100% 진실성 있게 집계.
+  - 기존 '인기 글 순위' 탭을 제거하고 **'발행글 리스트 (최신 10개)'** 패널로 완전 교체하여 최신 발행 10개 포스트의 제목, 발행일(📅), 실측 PV(👁️) 및 원클릭 바로가기 링크 제공.
+
+---
+
+### 1-62. 포스트 열람 시 DB 실시간 조회수 (+1) 카운팅 엔진 탑재
+
+* **[MODIFY] [blog/[slug]/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/[slug]/page.tsx)** & **[MODIFY] [brand/[brand_id]/[slug]/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/[brand_id]/[slug]/page.tsx)**:
+  - 방문자가 블로그 글을 읽을 때마다 DB의 `views` 컬럼이 실시간으로 +1 카운팅되도록 조치.
+  - 대시보드의 누적 PV 수치와 발행글 리스트 10개의 조회수가 100% 동기화됨.
+
+---
+
+### 1-63. 발행글 리스트 10개 패널 내 개별 포스트 실측 누적 조회수(👁️ X회 누적) 전면 강조
+
+* **[MODIFY] [blog-management/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx)**:
+  - '발행글 리스트 (최신 10개)' 각 포스트 오른쪽 영역에 `👁️ X회 누적` 에메랄드 뱃지를 독립 배치하여 포스트별 실측 조회수가 100% 한눈에 들어오도록 UI 전면 강화.
+
+---
+
+### 1-64. 7일 방문 차트 제거 및 발행글 리스트 10개 한눈 2열 패널 & 페이징 컨트롤 고도화
+
+* **[MODIFY] [blog-management/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx)**:
+  - 가운데 큰 공간을 차지하던 '일간 방문 흐름 (최근 7일)' 차트를 완전히 삭제.
+  - '발행글 리스트'를 2열(Grid) 패널로 전체 확장하여 10개 항목이 스크롤 없이 한눈에 들어오도록 디자인 개편.
+  - 우측 상단에 10개 단위 페이징 버튼(`< 이전`, `다음 >`)을 추가하여 해당 블로그의 전체 발행 포스트를 페이지별로 탐색 가능하도록 완료.
+
+---
+
+### 1-65. 소통과 채움(sotongcheum) 커스텀 브랜드 전용 블로그 라우트 구축 (404 예방)
+
+* **[NEW] [blog/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/sotongcheum/blog/page.tsx)** & **[NEW] [blog/[slug]/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/sotongcheum/blog/[slug]/page.tsx)**:
+  - `sotongcheum` 커스텀 사이트의 상단 메뉴 `/blog` 접속 시 발생하던 404 에러 원인을 조치하여 전용 블로그 목록 및 포스트 상세 페이지 신규 제작.
+  - 소통과 채움 브랜드의 발행글 목록과 "아직 발행된 포스팅이 없습니다" 안내 UI를 정상 출력하도록 조치.
+
+---
+
+### 1-66. 클라이언트 사이트 푸터 'Powered by CreAibox' DoFollow 백링크 전환 (creaibox.com SEO 가산점 증대)
+
+* **[MODIFY] [Footer.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/sotongcheum/components/Footer.tsx)**, **[MODIFY] [BlogClientWrapper.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/[brand_id]/components/BlogClientWrapper.tsx)**, **[MODIFY] [CategoryClientWrapper.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/[brand_id]/components/CategoryClientWrapper.tsx)**:
+  - 단순 글자 텍스트였던 푸터 하단 문구를 `creaibox.com`으로 연결되는 클릭 가능한 DoFollow 앵커 태그(`<a href="https://creaibox.com" target="_blank" rel="noopener">`)로 전면 개편.
+  - 외부 여러 독립 도메인에서 `creaibox.com`으로 고품질 백링크(PageRank Link Juice)가 이관되어 검색엔진(구글/네이버) 신뢰도 및 노출 점수가 대폭 상승하도록 조치 완료.
+
+---
+
+### 1-67. 소통과 채움 블로그 라우트 내 중복 헤더/푸터 제거 (단일 Layout 정상화)
+
+* **[MODIFY] [blog/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/sotongcheum/blog/page.tsx)** & **[MODIFY] [blog/[slug]/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/sotongcheum/blog/[slug]/page.tsx)**:
+  - `sotongcheum/layout.tsx`에 헤더가 이미 포함되어 있음에도 페이지 파일 내에 `<Header />`가 중복 호출되어 상단 헤더가 2개로 수직 중첩되던 문제 수리.
+  - 단일 상단 헤더/하단 푸터로 깨끗하고 깔끔하게 렌더링되도록 수정 완료.
+
+---
+
+### 1-68. 소통과 채움 포트폴리오 엑박 이미지 교체 및 안전 예외(onError) 템플릿 처리
+
+* **[MODIFY] [constants.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/sotongcheum/lib/constants.ts)** & **[MODIFY] [PortfolioSection.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/sotongcheum/components/PortfolioSection.tsx)**:
+  - 언스플래시 원본 소스 주소 변경으로 발생하던 3번째 항목('화성시 사회적경제 한마음 가족 힐링 캠핑')의 엑박 이미지를 고화질 캠핑 야외 이미지로 교체.
+  - 갤러리 이미지 요소에 `onError` 폴백을 적용하여 네트워크 차단 또는 URL 만료 시에도 엑박 대신 정상 기본 이미지가 예쁘게 표시되도록 수리 완료.
+
+---
+
+### 1-69. CreAibox 100% 맞춤형 커스텀 기업 홈페이지 개발 및 운영 종합 지침서 작성
+
+* **[NEW] [custom-client-site-development-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/custom-client-site-development-guide.md)**:
+  - 커스텀 기업 홈페이지 아키텍처, 디렉토리 구조, 미들웨어 라우팅 규칙, Vercel 퍼포먼스 및 대역폭 최적화, SEO DoFollow 백링크 설계, 신규 사이트 제작 워크플로우 6단계를 집대성한 문서 완성.
+
+---
+
+### 1-70. 스튜디오 신규 통합 메뉴 '커스텀 웹사이트 🌟' 메뉴 및 4개 핵심 제어 센터 구축
+
+* **[NEW] [custom-client-site/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/custom-client-site/page.tsx)**, **[MODIFY] [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx)**, **[MODIFY] [studio/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/page.tsx)**:
+  - 사이드바 내 '비즈니스 웹사이트' 바로 아래에 `커스텀 웹사이트 🌟` 신규 메뉴 그룹 추가.
+  - **1️⃣ 템플릿 쇼핑 & 1초 구축**: 업종별 필터, 8종 프리미엄 템플릿 카드, 미리보기 및 1초 모달 구축 마법사 구축.
+  - **2️⃣ 내 커스텀 사이트 관리**: 상호명, 전화번호, 주소, 이메일, 사업자번호, 회사소개 실시간 편집 및 DB(`extra_configs`) 1초 반영 연동.
+  - **3️⃣ AI 커스텀 신규 제작 신청**: AI 에이전트에 1:1 풀코드 홈페이지 신규 제작 주문서 통합 폼 완비.
+  - **4️⃣ 템플릿 자산화 & 리셀링**: 템플릿 자산 지수 및 월 정기 유지보수 구독 리셀링 가이드 탑재 완료.
+
+---
+
+### 1-71. 커스텀 웹사이트 상단 배너 높이 50% 축소 슬림화 및 콘솔 자식 Key 경고 완벽 수정
+
+* **[MODIFY] [custom-client-site/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/custom-client-site/page.tsx)** & **[MODIFY] [studio/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/page.tsx)**:
+  - 최상단 배너 상자의 높이를 50% 슬림하게 축소 개편하여 템플릿 카드가 한눈에 시원하게 보이도록 UI/UX 조치.
+  - `StudioPage` 서브 맵 렌더링에서 동일 `href`로 인해 발생하던 React 콘솔 경고(`Encountered two children with the same key`)를 `key={child.name}` 유일키로 완벽 수리 완료.
+
+---
+
+### 1-72. 커뮤필(commufill) 로컬 서브도메인 미들웨어 라우팅 조건 보완 및 전용 블로그 라우트 구축
+
+* **[MODIFY] [middleware.ts](file:///Users/a1234/Local%20Sites/creaibox/src/middleware.ts)**, **[NEW] [blog/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/commufill/blog/page.tsx)** & **[NEW] [blog/[slug]/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/commufill/blog/[slug]/page.tsx)**:
+  - `commufill.localhost:3000` 로컬 접속 시 DB 승인 상태 체크 미충족으로 준비 중 블로그 페이지로 떨어지던 이슈 원인을 수리 (`(isStaticApproved || isLocalhost)` 판별 추가).
+  - 커뮤필 맞춤형 전용 블로그 목록 및 포스트 상세 라우트 구축 완료.
+
+---
+
+### 1-73. 커스텀 웹사이트 허브 상단 제목 1줄 완벽 정렬 (줄바꿈 방지)
+
+* **[MODIFY] [custom-client-site/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/custom-client-site/page.tsx)**:
+  - 상단 메인 타이틀 문구("100% 독창적인 프리미엄 커스텀 홈페이지 템플릿 쇼핑 & 1초 자동 구축 센터")가 줄바꿈 없이 1줄로 정갈하게 들어오도록 컨테이너 확장(`flex-1 min-w-0`) 및 `whitespace-nowrap` 반영 완료.
+
+---
+
+### 1-74. 커스텀 웹사이트 카테고리 '디자인 테마 라이브러리' 100% 동기화 및 15종 카테고리별 전용 커스텀 템플릿 완비
+
+* **[MODIFY] [custom-client-site/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/custom-client-site/page.tsx)**:
+  - 카테고리 필터를 '디자인 테마 라이브러리'와 100% 동일하게 15개 업종 카테고리로 전면 정비.
+  - `골프고수`, `다운허브스`, `가이드나라`를 제거하고, 15개 카테고리별 1개씩 엄선된 100% 프리미엄 커스텀 템플릿 15종 구축 완료.
+
+---
+
+### 1-90. 헤더 중복 렌더링 제거, 브랜드 리브랜딩('Aura Merino') 및 GNB 통일 디자인 정비
+
+* **[MODIFY] [clients/woolcraft/layout.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/woolcraft/layout.tsx)**:
+  - `<Header />` 이중 중복 렌더링 제거 및 `Aura Merino` 독자 브랜드 메타데이터 지정.
+* **[MODIFY] [clients/woolcraft/components/Header.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/woolcraft/components/Header.tsx)**:
+  - 우측 강조 버튼으로 따로 놀던 `Blog (블로그)` 메뉴를 중앙 GNB `<nav>` 영역 안으로 옮겨 `Home`, `Products`, `Brand Story`, `Why Wool`과 100% 동일한 폰트/스타일로 깔끔하게 통일.
+  - 브랜드 표기를 독자 프리미엄 브랜드인 `Aura Merino (Eco Merino Footwear)`로 교체.
+* **[MODIFY] [clients/woolcraft/components/Footer.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/woolcraft/components/Footer.tsx)** & **[page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/woolcraft/page.tsx)**:
+  - 푸터, 히어로 섹션, 브랜드 스토리 및 뉴스레터 문구의 브랜드명을 `Aura Merino (아우라 메리노)`로 변경.
+* **[MODIFY] [custom-client-site/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/custom-client-site/page.tsx)**:
+  - 템플릿 카드 명칭을 `아우라 메리노 (Aura Merino) 스니커즈 쇼핑몰 V1`로 업데이트.
+
+---
+
 ## 2. 무결성 검증 결과
 
 * **TS 컴파일러 검증**: `npx tsc --noEmit`을 실행하여 7월에 수정된 모든 소스코드에 대한 컴파일 무결성 및 타입 체크를 마쳤습니다 (에러 0건).

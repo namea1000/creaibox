@@ -177,6 +177,13 @@ async function fetchPublishedPost(slug: string) {
     return null;
   }
 
+  // Increment real-time DB view count (+1)
+  const currentViews = Number((post as any).views || 0);
+  void supabase
+    .from("writing_creaibox_posts")
+    .update({ views: currentViews + 1 })
+    .eq("id", post.id);
+
   // Fetch thumbnail for this post
   const { data: images, error: imagesError } = await supabase
     .from("generated_images")

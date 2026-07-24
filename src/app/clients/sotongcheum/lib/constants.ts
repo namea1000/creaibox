@@ -133,7 +133,7 @@ export const PORTFOLIO_ITEMS: PortfolioItem[] = [
     id: "pf-3",
     title: "화성시 사회적경제 한마음 가족 힐링 캠핑 프로그램 캠프 운영",
     date: "2026-03",
-    imageUrl: "https://images.unsplash.com/photo-1478135047287-f941774fda62?auto=format&fit=crop&w=800&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80",
     category: "가족캠프",
   },
   {

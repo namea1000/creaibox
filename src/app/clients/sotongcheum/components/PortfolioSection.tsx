@@ -61,6 +61,9 @@ export default function PortfolioSection() {
                   alt={item.title}
                   className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                   loading="lazy"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80";
+                  }}
                 />
                 {/* Overlay Badge */}
                 <div className="absolute top-4 left-4 flex items-center gap-1 rounded-lg bg-white/95 backdrop-blur-sm px-2.5 py-1 text-[10px] font-black text-blue-600 shadow-sm border border-blue-50">

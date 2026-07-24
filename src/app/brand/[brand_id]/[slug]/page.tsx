@@ -301,6 +301,13 @@ const fetchPost = cache(async (brandId: string, slug: string) => {
   const primaryImg = (images || []).find((img) => img.is_primary) || (images || [])[0];
   post.thumbnailUrl = primaryImg ? primaryImg.image_url : null;
 
+  // Increment real-time DB view count (+1)
+  const currentViews = Number((post as any).views || 0);
+  void supabase
+    .from("writing_creaibox_posts")
+    .update({ views: currentViews + 1 })
+    .eq("id", post.id);
+
   return {
     post,
     profile,

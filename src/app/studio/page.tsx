@@ -117,6 +117,18 @@ export default function StudioPage() {
       ],
     },
     {
+      key: "custom-client-site",
+      name: "커스텀 웹사이트 🌟",
+      href: "/studio/custom-client-site",
+      icon: Sparkles,
+      color: "from-cyan-600 to-blue-500 text-cyan-400 bg-cyan-500/10",
+      children: [
+        { name: "템플릿 쇼핑 & 구축", href: "/studio/custom-client-site", icon: LayoutDashboard },
+        { name: "내 사이트 관리", href: "/studio/custom-client-site", icon: Settings },
+        { name: "AI 신규 제작 신청", href: "/studio/custom-client-site", icon: Zap },
+      ],
+    },
+    {
       key: "library",
       name: "내 콘텐츠 보관함",
       href: "/library",
@@ -463,7 +475,7 @@ export default function StudioPage() {
                       const ChildIcon = child.icon;
                       return (
                         <Link
-                          key={child.href}
+                          key={child.name}
                           href={child.href}
                           className="flex items-center gap-2 rounded-xl border border-slate-200/50 dark:border-zinc-800/60 bg-slate-50/50 dark:bg-[#08090d]/60 px-3 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 transition-all hover:bg-violet-600 dark:hover:bg-violet-600 hover:text-white dark:hover:text-white hover:border-violet-600 dark:hover:border-violet-600"
                         >

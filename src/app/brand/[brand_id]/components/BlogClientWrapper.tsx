@@ -530,7 +530,15 @@ export default function BlogClientWrapper({
           <div className="flex items-center gap-4">
             <Link href="/" className={`hover:text-zinc-400 ${theme === "dark" ? "text-zinc-500" : "text-zinc-600"}`}>Home</Link>
             <span className={`${theme === "dark" ? "text-zinc-800" : "text-zinc-350"}`}>|</span>
-            <span className="text-zinc-500">Powered by CreAibox</span>
+            <a
+              href="https://creaibox.com"
+              target="_blank"
+              rel="noopener"
+              className="text-zinc-500 hover:text-blue-500 underline transition-colors"
+              title="CreAibox - AI 블로그 포스팅 및 웹사이트 자동화 플랫폼"
+            >
+              Powered by CreAibox
+            </a>
           </div>
         </div>
       </footer>

@@ -194,6 +194,14 @@ export default function Sidebar({
       },
 
       {
+        key: "custom-client-site",
+        name: "커스텀 웹사이트 🌟",
+        href: "/studio/custom-client-site",
+        icon: Sparkles,
+        color: "text-cyan-400",
+      },
+
+      {
         key: "creassetbox",
         name: "미디어 라이브러리",
         href: "/library/free-assets",

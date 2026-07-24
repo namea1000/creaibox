@@ -205,11 +205,12 @@ mier
 * **구현 요약**: 기존에 `Pro / Business`로 묶여 있던 상단 집계 카드를 **`Pro (Best)`, `Premier`, `Business` 3개 개별 카드로 완전 독립 분리**하여 요금제별 구독자 현황을 100% 직관적으로 모니터링할 수 있도록 8개 카드로 정비했습니다.
 #### 37. 관리자 회원 관리 요금제별 멀티 필터링 탭 및 카드 클릭 인터랙션 구현
 * **구현 요약**: 관리자 페이지([`/admin/usermanagement`](file:///Users/a1234/Local%20Sites/creaibox/src/app/admin/usermanagement/page.tsx))에서 요금제별(`Premier`, `Pro`, `Business`, `Creator`, `Free`, `Admin`, `VIP`, `Paid`) 회원 리스트를 **즉시 필터링하여 검색할 수 있도록 필터 탭 바 확장 및 대시보드 카드 클릭 연동을 완벽 구현**했습니다.
-#### 53. 커스텀 도메인(downhubs.com, guidenara.com) 매칭 매핑 및 드롭다운 표시 고도화
-* **구현 요약**: 독립 커스텀 도메인(`downhubs.com`, `guidenara.com`)을 사용하는 블로그의 글들이 서브도메인(`downhubs.creaibox.com`) 문자열 비교로 인해 0개로 인식되던 원인을 발견하고, **`isPostMatchBrand` 매처에 커스텀 도메인 매핑 로직을 탑재하여 `downhubs.com` 11개, `guidenara.com` 5개 포스팅 통계와 드롭다운 라벨을 100% 완벽하게 연동**했습니다.
-* **작업 상세 ([`blog-management/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx), [`analytics/blog/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/studio/analytics/blog/route.ts))**:
-  - `extra_configs` 내 `custom_domain` 값을 파싱하여 포스팅 `canonical_url`과 비교하는 커스텀 도메인 일치 로직 적용.
-  - 관리할 블로그 선택 드롭다운 옵션에 커스텀 도메인명(`downhubs.com (downhubs.creaibox.com)`)을 직관적으로 함께 표시.
+#### 86. GNB 메뉴 언어 100% 영문('Blog') 통일, 잔여 WoolCraft 브랜드 타이틀 제거 및 서브도메인 URL('aura-merino') 동기화
+* **구현 요약**: GNB 메뉴의 다른 메뉴가 영문(`Home`, `Products`, `Brand Story`, `Why Wool`)임에 따라 `Blog (블로그)` 혼용 명칭을 **순수 영문 `Blog`로 100% 깔끔 통일**했습니다. 또한 본문 내 잔여 `WoolCraft` 표기를 **`Aura Merino 트렌드 & 칼럼`으로 수정**하고, 서브도메인 접속 경로를 **`http://aura-merino.localhost:3000` (`/clients/aura-merino`)로 완전 갱신**했습니다.
+* **작업 상세**:
+  - **GNB 메뉴 라벨 영문 통일 ([`Header.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/woolcraft/components/Header.tsx))**: `Blog (블로그)` ➡️ `Blog`로 수정하여 전체 5개 메뉴 영문 이니셜감 통일.
+  - **잔여 브랜드 타이틀 교체 ([`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/woolcraft/page.tsx))**: `WoolCraft 트렌드 & 칼럼` ➡️ `Aura Merino 트렌드 & 칼럼`으로 변경.
+  - **전용 클라이언트 디렉토리 및 서브도메인 동기화 ([`clientSites.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/lib/constants/clientSites.ts), [`custom-client-site/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/custom-client-site/page.tsx))**: `src/app/clients/aura-merino` 탑재, `CUSTOM_CLIENT_SITES`에 `"aura-merino"` 추가, 마켓플레이스 템플릿 ID를 `aura-merino`로 동기화.
   - **정적 무결성 빌드 검증**: `npx tsc --noEmit` 완벽 컴파일 통과.
 
 ---

@@ -68,7 +68,18 @@ export default function Footer() {
         {/* copyright and legal */}
         <div className="mt-16 border-t border-slate-200/60 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
           <p>&copy; {new Date().getFullYear()} {COMPANY_INFO.name}. All rights reserved.</p>
-          <p>Powered by CreAibox Custom Site</p>
+          <p>
+            Powered by{" "}
+            <a
+              href="https://creaibox.com"
+              target="_blank"
+              rel="noopener"
+              className="text-slate-500 hover:text-blue-600 underline transition-colors"
+              title="CreAibox - AI 블로그 포스팅 및 웹사이트 자동화 플랫폼"
+            >
+              CreAibox Custom Site
+            </a>
+          </p>
         </div>
       </div>
     </footer>

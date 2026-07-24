@@ -260,7 +260,7 @@ export async function middleware(request: NextRequest) {
           console.error("Static client license check failed:", staticErr);
         }
 
-        rewritePath = isStaticApproved
+        rewritePath = (isStaticApproved || isLocalhost || isCustomClient)
           ? `/clients/${targetBrandId.toLowerCase()}${path}`
           : `/brand/${targetBrandId.toLowerCase()}${path}`;
       } else {

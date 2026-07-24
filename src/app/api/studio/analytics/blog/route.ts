@@ -91,7 +91,8 @@ export async function GET(req: NextRequest) {
 
     if (cachedData && cachedData.lastFetched) {
       const timeDiff = Date.now() - new Date(cachedData.lastFetched).getTime();
-      if (timeDiff < CACHE_TTL_MS) {
+      const isOldFakeCache = Array.isArray(cachedData.data?.channels) && cachedData.data.channels.some((c: any) => c.value === 45 || c.value === 42 || c.value === 35 || c.value === 58 || c.value === 50);
+      if (timeDiff < CACHE_TTL_MS && !isOldFakeCache) {
         console.log(`[GA4 Analytics Cache Hit] Returning cached statistics for ${brandId}`);
         return NextResponse.json(cachedData.data);
       }
@@ -394,12 +395,13 @@ function isPostMatchBrand(cUrl: string, targetBrandId: string, targetCustomDomai
   }
 }
 
-    // Fallback: If popularPosts is empty (GA4 data not populated yet), fetch published posts directly from DB for this specific brand
+    // Fallback for popularPosts if GA4 popularPosts is empty:
+    // List real published posts from DB for this brand with actual DB views count
     if (popularPosts.length === 0) {
       try {
         const { data: dbPosts } = await adminSupabase
           .from("writing_creaibox_posts")
-          .select("title, slug, created_at, canonical_url")
+          .select("title, slug, created_at, canonical_url, views")
           .eq("user_id", user.id)
           .eq("status", "published")
           .order("created_at", { ascending: false });
@@ -407,78 +409,32 @@ function isPostMatchBrand(cUrl: string, targetBrandId: string, targetCustomDomai
         if (dbPosts && dbPosts.length > 0) {
           const brandFiltered = dbPosts.filter((p: any) => isPostMatchBrand(p.canonical_url || "", brandId, customDomain));
 
-          brandFiltered.slice(0, 5).forEach((post: any, i: number) => {
+          brandFiltered.slice(0, 5).forEach((post: any) => {
+            const realViews = Number(post.views || 0);
             popularPosts.push({
               title: post.title,
               path: `/blog/${post.slug}`,
-              pv: Math.max(28 - i * 5, 5),
-              avgDuration: "1분 40초",
-              bounceRate: "24%",
+              pv: realViews,
+              avgDuration: "-",
+              bounceRate: "-",
             });
           });
         }
       } catch (dbErr) {
-        console.error("Failed to fetch fallback posts for analytics:", dbErr);
+        console.error("Failed to fetch published posts for analytics:", dbErr);
       }
-    }
-
-    const hasPostsOrTraffic = popularPosts.length > 0;
-
-    // Fallback for dailyTrend if empty and has posts
-    if (formattedDailyTrend.length === 0 && hasPostsOrTraffic) {
-      const now = new Date();
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(now);
-        d.setDate(d.getDate() - i);
-        const dateStr = `${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
-        const baseViews = 15 + ((i * 7 + 3) % 18);
-        formattedDailyTrend.push({
-          date: dateStr,
-          visitors: Math.round(baseViews * 0.7),
-          views: baseViews,
-        });
-      }
-    }
-
-    // Fallback for channels if empty and has posts
-    if (channels.length === 0 && hasPostsOrTraffic) {
-      channels.push(
-        { name: "Naver Search", value: 45 },
-        { name: "Google Search", value: 35 },
-        { name: "Direct Visit", value: 20 }
-      );
-    }
-
-    // Fallback for devices if empty and has posts
-    if (devices.length === 0 && hasPostsOrTraffic) {
-      devices.push(
-        { name: "Mobile", value: 72 },
-        { name: "Desktop", value: 28 }
-      );
-    }
-
-    // Fallback for regions if empty and has posts
-    if (regions.length === 0 && hasPostsOrTraffic) {
-      regions.push(
-        { name: "Seoul", value: 55 },
-        { name: "Gyeonggi", value: 30 },
-        { name: "Busan", value: 15 }
-      );
     }
 
     const realtimeUsers = getMetricValue(realtimeReport?.rows?.[0], 0);
-    const calcTodayPv = todayPv > 0 ? todayPv : (hasPostsOrTraffic ? 32 : 0);
-    const calcTodayUv = todayUv > 0 ? todayUv : (hasPostsOrTraffic ? 24 : 0);
-    const calcRealtime = realtimeUsers > 0 ? realtimeUsers : (hasPostsOrTraffic ? 3 : 0);
 
-    // Assemble final response object
+    // Assemble final 100% genuine data object (no fake data, 0 if no real traffic)
     const finalData = {
-      todayPv: calcTodayPv,
-      todayUv: calcTodayUv,
-      avgDuration: (avgDurationStr !== "0초" && avgDurationStr !== "") ? avgDurationStr : (hasPostsOrTraffic ? "1분 25초" : "0초"),
-      realtimeUsers: calcRealtime,
+      todayPv,
+      todayUv,
+      avgDuration: avgDurationStr || "0초",
+      realtimeUsers,
       dailyTrend: formattedDailyTrend,
-      popularPosts: popularPosts.slice(0, 5), // Keep top 5
+      popularPosts: popularPosts.slice(0, 5),
       channels,
       devices,
       regions,
