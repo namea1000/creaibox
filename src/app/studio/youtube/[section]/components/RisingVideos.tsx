@@ -324,7 +324,6 @@ export default function RisingVideos() {
               현재 유튜브 {getCountryName(selectedCountry)} 급상승 트렌드 리스트에 등록된 상위 인기 동영상 리스트를 가져와 조회수 분석을 제공합니다.
             </p>
             <p className="text-xs text-zinc-400 leading-relaxed font-bold">
-              매일 오전 05시에 AI가 자동으로 급상승 트렌드 영상을 수집하는 자동 아카이브 시스템입니다. <br/>
               각 영상 하단의 <span className="text-orange-500 font-black">"AI 데이터 분석 리포트"</span> 버튼을 클릭하면 고성능 <span className="text-orange-500 font-black">"AI Gemini Pro"</span>가 시청자 반응 지표와 핵심 바이럴 요인, 내 채널용 변형 기획안을 포함한 정밀 보고서를 작성해 팝업합니다.
             </p>
           </div>

@@ -205,12 +205,11 @@ mier
 * **구현 요약**: 기존에 `Pro / Business`로 묶여 있던 상단 집계 카드를 **`Pro (Best)`, `Premier`, `Business` 3개 개별 카드로 완전 독립 분리**하여 요금제별 구독자 현황을 100% 직관적으로 모니터링할 수 있도록 8개 카드로 정비했습니다.
 #### 37. 관리자 회원 관리 요금제별 멀티 필터링 탭 및 카드 클릭 인터랙션 구현
 * **구현 요약**: 관리자 페이지([`/admin/usermanagement`](file:///Users/a1234/Local%20Sites/creaibox/src/app/admin/usermanagement/page.tsx))에서 요금제별(`Premier`, `Pro`, `Business`, `Creator`, `Free`, `Admin`, `VIP`, `Paid`) 회원 리스트를 **즉시 필터링하여 검색할 수 있도록 필터 탭 바 확장 및 대시보드 카드 클릭 연동을 완벽 구현**했습니다.
-#### 40. 메인 페이지 "AI 자동 글쓰기" 검색 키워드 자동 전달 및 AI 포스팅 즉시 연동 구현
-* **구현 요약**: 메인 페이지([`src/app/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/page.tsx))에서 키워드(예: `삼성전자`)를 입력하고 "AI 자동 글쓰기"를 클릭했을 때 에디터로 키워드가 정상 전송되고 **AI가 글 생성을 자동으로 즉시 시작하도록 브릿지 및 에디터 연동을 완벽 구현**했습니다.
-* **작업 상세 ([`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/page.tsx), [`new-post/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/new-post/page.tsx), [`list/[id]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/list/[id]/page.tsx))**:
-  - `page.tsx`: 검색 경로에 `prompt=${query}&autoGenerate=true` 쿼리 파라미터 부여.
-  - `new-post/page.tsx`: 입력받은 프롬프트/키워드를 `target_keyword` 및 `focus_keyword`에 초기 저장하고 에디터 URL 파라미터로 포워딩.
-  - `list/[id]/page.tsx`: `autoGenerate=true` 파라미터 감지 시 `aiTargetKeyword` 자동 세팅 후 AI 글 작성 엔진(`handleAiGenerateInEditor`)을 0.4초 후 자동 실행하여 완벽 원고 생성.
+#### 53. 커스텀 도메인(downhubs.com, guidenara.com) 매칭 매핑 및 드롭다운 표시 고도화
+* **구현 요약**: 독립 커스텀 도메인(`downhubs.com`, `guidenara.com`)을 사용하는 블로그의 글들이 서브도메인(`downhubs.creaibox.com`) 문자열 비교로 인해 0개로 인식되던 원인을 발견하고, **`isPostMatchBrand` 매처에 커스텀 도메인 매핑 로직을 탑재하여 `downhubs.com` 11개, `guidenara.com` 5개 포스팅 통계와 드롭다운 라벨을 100% 완벽하게 연동**했습니다.
+* **작업 상세 ([`blog-management/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx), [`analytics/blog/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/studio/analytics/blog/route.ts))**:
+  - `extra_configs` 내 `custom_domain` 값을 파싱하여 포스팅 `canonical_url`과 비교하는 커스텀 도메인 일치 로직 적용.
+  - 관리할 블로그 선택 드롭다운 옵션에 커스텀 도메인명(`downhubs.com (downhubs.creaibox.com)`)을 직관적으로 함께 표시.
   - **정적 무결성 빌드 검증**: `npx tsc --noEmit` 완벽 컴파일 통과.
 
 ---

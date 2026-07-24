@@ -431,18 +431,11 @@ export default function ContentPlannerLibraryPage() {
                             <div className="flex items-center gap-4 shrink-0">
                               <div className="flex flex-col gap-1 w-[260px] justify-center shrink-0">
                                 <div className="flex gap-1 w-full">
-                                  <div className="flex-1">
+                                  <div className="w-full">
                                     <ActionButton
                                       label="블로그 글 생성"
                                       disabled={isCompleted}
-                                      href={`/studio/writing/creaibox/create?source=content-planner&itemId=${item.id}&title=${encodeURIComponent(item.title)}&keyword=${encodeURIComponent(item.main_keyword || "")}&contentType=${encodeURIComponent(item.content_type || "")}&selectedTone=${encodeURIComponent(item.selectedTone || item.raw_ai_response?.selectedTone || "전문적이고 통찰력 있는 분석 (기술 블로그)")}&wordCountGoal=${encodeURIComponent(item.wordCountGoal || item.raw_ai_response?.wordCountGoal || "1500")}`}
-                                    />
-                                  </div>
-                                  <div className="flex-1">
-                                    <ActionButton
-                                      label="네이버 글 생성"
-                                      disabled={isCompleted}
-                                      href={`/studio/writing/naver/create?source=content-planner&itemId=${item.id}&title=${encodeURIComponent(item.title)}&keyword=${encodeURIComponent(item.main_keyword || "")}&contentType=${encodeURIComponent(item.content_type || "")}`}
+                                      href={`/studio/writing/creaibox/create?source=content-planner&autoGenerate=true&itemId=${item.id}&title=${encodeURIComponent(item.title)}&keyword=${encodeURIComponent(item.main_keyword || "")}&contentType=${encodeURIComponent(item.content_type || "")}&selectedTone=${encodeURIComponent(item.selectedTone || item.raw_ai_response?.selectedTone || "전문적이고 통찰력 있는 분석 (기술 블로그)")}&wordCountGoal=${encodeURIComponent(item.wordCountGoal || item.raw_ai_response?.wordCountGoal || "1500")}`}
                                     />
                                   </div>
                                 </div>

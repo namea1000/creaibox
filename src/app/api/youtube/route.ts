@@ -60,11 +60,12 @@ export async function fetchAndCacheTrending(categoryId: string, date: string = g
   const vaultId = selectedVault.id;
 
   // 2. Fetch Live YouTube API
+  const safeReferer = (referer && referer.trim() !== "") ? referer : "https://creaibox.com/";
   let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular&regionCode=${country}&maxResults=20&key=${apiKey}`;
   if (categoryId && categoryId !== "all") {
     url += `&videoCategoryId=${categoryId}`;
   }
-  const response = await fetch(url, { headers: { Referer: referer } });
+  const response = await fetch(url, { headers: { Referer: safeReferer } });
   if (!response.ok) throw new Error(`Google API returned ${response.status}`);
   const data = await response.json();
   
@@ -195,7 +196,7 @@ export async function GET(req: NextRequest) {
                 .eq("category_id", dbCategoryId)
                 .maybeSingle();
 
-              if (cachedRow && cachedRow.videos_data) {
+              if (cachedRow && cachedRow.videos_data && Array.isArray(cachedRow.videos_data) && cachedRow.videos_data.length > 0) {
                 return cachedRow.videos_data as any[];
               }
             } catch (e) {
@@ -206,7 +207,7 @@ export async function GET(req: NextRequest) {
             if (date === todayDate) {
               try {
                 const enriched = await fetchAndCacheTrending(catId, date, referer, country);
-                return enriched;
+                if (enriched && enriched.length > 0) return enriched;
               } catch (e) {
                 console.error(`Failed to fetch live category ${catId}:`, e);
               }
@@ -227,6 +228,37 @@ export async function GET(req: NextRequest) {
                 }
               }
             }
+          }
+
+          // Fallback to recent DB cache if combinedVideos is empty
+          if (combinedVideos.length === 0) {
+            try {
+              const { data: fallbackRows } = await supabaseAdmin
+                .from("youtube_trending_archive")
+                .select("videos_data")
+                .like("category_id", country === "KR" ? "%" : `${country}_%`)
+                .order("target_date", { ascending: false })
+                .limit(10);
+
+              if (fallbackRows && fallbackRows.length > 0) {
+                for (const row of fallbackRows) {
+                  if (Array.isArray(row.videos_data)) {
+                    for (const video of row.videos_data) {
+                      if (video && video.id && !seenIds.has(video.id)) {
+                        seenIds.add(video.id);
+                        combinedVideos.push(video);
+                      }
+                    }
+                  }
+                }
+              }
+            } catch (fallbackErr) {
+              console.error("Failed to query fallback archive rows:", fallbackErr);
+            }
+          }
+
+          if (combinedVideos.length === 0) {
+            return NextResponse.json(getMockData("trending", searchParams));
           }
 
           const videoIds = combinedVideos.map((v) => v.id).filter(Boolean);
@@ -250,7 +282,7 @@ export async function GET(req: NextRequest) {
 
         const dbCategoryId = country === "KR" ? categoryId : `${country}_${categoryId}`;
         
-        // 1. Try to read from Supabase Cache
+        // 1. Try to read from Supabase Cache for exact target date
         try {
           const { data: cachedRow, error: cacheError } = await supabaseAdmin
             .from("youtube_trending_archive")
@@ -259,7 +291,7 @@ export async function GET(req: NextRequest) {
             .eq("category_id", dbCategoryId)
             .maybeSingle();
 
-          if (!cacheError && cachedRow && cachedRow.videos_data) {
+          if (!cacheError && cachedRow && cachedRow.videos_data && Array.isArray(cachedRow.videos_data) && cachedRow.videos_data.length > 0) {
             console.log(`Cache Hit: Serving trending category ${categoryId} for date ${date} from DB.`);
             
             const videoIds = (cachedRow.videos_data as any[]).map((v) => v.id).filter(Boolean);
@@ -284,15 +316,8 @@ export async function GET(req: NextRequest) {
           console.error("Supabase Cache read failed, trying live fallback:", dbErr);
         }
 
-        // 2. Cache Miss - Live API call is ONLY allowed if requested date is today
-        const todayDate = getKstTodayDate();
-        if (date !== todayDate) {
-          console.warn(`Cache Miss on historical date ${date}. YouTube API call is blocked to preserve quota.`);
-          return NextResponse.json({ source: "supabase-db-empty", data: [] });
-        }
-
+        // 2. Cache Miss - Live API call
         try {
-          // Get active key ONLY for fallback vault error recording
           const { data: vaultKeys } = await supabaseAdmin
             .from("admin_api_vault")
             .select("id")
@@ -304,30 +329,50 @@ export async function GET(req: NextRequest) {
           }
 
           const enrichedItems = await fetchAndCacheTrending(categoryId, date, referer, country);
-          const videoIds = enrichedItems.map((v: any) => v.id).filter(Boolean);
-          let analyzedVideoIds: string[] = [];
-          if (videoIds.length > 0) {
-            try {
-              const { data: analyzedRows } = await supabaseAdmin
-                .from("youtube_video_analysis")
-                .select("video_id")
-                .in("video_id", videoIds);
-              if (analyzedRows) {
-                analyzedVideoIds = analyzedRows.map((r) => r.video_id);
+          if (enrichedItems && enrichedItems.length > 0) {
+            const videoIds = enrichedItems.map((v: any) => v.id).filter(Boolean);
+            let analyzedVideoIds: string[] = [];
+            if (videoIds.length > 0) {
+              try {
+                const { data: analyzedRows } = await supabaseAdmin
+                  .from("youtube_video_analysis")
+                  .select("video_id")
+                  .in("video_id", videoIds);
+                if (analyzedRows) {
+                  analyzedVideoIds = analyzedRows.map((r) => r.video_id);
+                }
+              } catch (analysisErr) {
+                console.error("Failed to query analyzed rows in live hit path:", analysisErr);
               }
-            } catch (analysisErr) {
-              console.error("Failed to query analyzed rows in live hit path:", analysisErr);
             }
+            return NextResponse.json({ source: "youtube-api", data: enrichedItems, analyzedVideoIds });
           }
-          return NextResponse.json({ source: "youtube-api", data: enrichedItems, analyzedVideoIds });
         } catch (err: any) {
           console.error("Cache Miss Scraper failed:", err);
           if (vaultId !== null) {
             await recordVaultFailure(vaultId, err.message || String(err));
           }
-          console.warn("Falling back to mock data due to sync error.");
-          return NextResponse.json(getMockData(type, searchParams));
         }
+
+        // 3. Fallback to latest available cache row for this category
+        try {
+          const { data: latestRow } = await supabaseAdmin
+            .from("youtube_trending_archive")
+            .select("videos_data")
+            .eq("category_id", dbCategoryId)
+            .order("target_date", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (latestRow && latestRow.videos_data && Array.isArray(latestRow.videos_data) && latestRow.videos_data.length > 0) {
+            return NextResponse.json({ source: "supabase-db-latest", data: latestRow.videos_data });
+          }
+        } catch (latestErr) {
+          console.error("Latest category fallback failed:", latestErr);
+        }
+
+        // 4. Final fallback to mock data
+        return NextResponse.json(getMockData(type, searchParams));
       }
 
       case "channel": {

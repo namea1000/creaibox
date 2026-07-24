@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { 
   Settings, Layers, Palette, Shield, LineChart, Globe, HelpCircle, 
   Plus, Trash2, Save, FileText, CheckCircle2, TrendingUp, Users, Eye, RefreshCw,
-  Sparkles, Zap, GitCommit, Upload, Image as ImageIcon, Loader2
+  Sparkles, Zap, GitCommit, Upload, Image as ImageIcon, Loader2, X
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -186,6 +186,21 @@ export default function BlogManagementPage() {
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(false);
 
+  // Search Console Tutorial Guide Modal states
+  const [isVerificationGuideOpen, setIsVerificationGuideOpen] = useState(false);
+  const [guideModalTab, setGuideModalTab] = useState<"naver" | "google" | "urls">("naver");
+  const [copiedUrlType, setCopiedUrlType] = useState<string | null>(null);
+
+  const handleCopyUrl = (text: string, label: string) => {
+    try {
+      navigator.clipboard.writeText(text);
+      setCopiedUrlType(label);
+      setTimeout(() => setCopiedUrlType(null), 2000);
+    } catch (e) {
+      console.error("Clipboard copy failed:", e);
+    }
+  };
+
   // Custom confirmation modal state
   const [confirmModal, setConfirmModal] = useState<{
     title: string;
@@ -216,7 +231,7 @@ export default function BlogManagementPage() {
             .maybeSingle(),
           supabase
             .from("writing_creaibox_posts")
-            .select("id, title, slug, created_at")
+            .select("id, title, slug, created_at, canonical_url")
             .eq("user_id", currentUser.id)
             .eq("status", "published")
             .order("created_at", { ascending: false })
@@ -233,10 +248,12 @@ export default function BlogManagementPage() {
           setMembershipLevel(profileData.membership_level || "free");
           setUserRole(profileData.role || "USER");
 
-          // Extract all approved brands
-          const brands: string[] = [];
+          // Extract all approved brands (including main official blog creaibox.com/blog)
+          const brands: string[] = ["creaibox"];
           if (profileData.brand_id && profileData.brand_id_status === "APPROVED") {
-            brands.push(profileData.brand_id);
+            if (!brands.includes(profileData.brand_id)) {
+              brands.push(profileData.brand_id);
+            }
           }
           if (Array.isArray(profileData.extra_configs?.brand_ids)) {
             profileData.extra_configs.brand_ids.forEach((bid: string) => {
@@ -250,7 +267,7 @@ export default function BlogManagementPage() {
           if (brands.length > 0) {
             setActiveBrandId(profileData.brand_id && brands.includes(profileData.brand_id) ? profileData.brand_id : brands[0]);
           } else {
-            setActiveBrandId("");
+            setActiveBrandId("creaibox");
           }
         }
 
@@ -270,6 +287,47 @@ export default function BlogManagementPage() {
       mounted = false;
     };
   }, [supabase, router]);
+
+  // Filter published posts for activeBrandId
+  const filteredPosts = useMemo(() => {
+    if (!activeBrandId) return posts;
+    const configs = profile?.extra_configs || {};
+    const primaryId = profile?.brand_id || "";
+    const customDomainKey = `custom_domain_${activeBrandId}`;
+    const activeCustomDomain = activeBrandId === primaryId 
+      ? (configs.custom_domain || "") 
+      : (configs[customDomainKey] || "");
+
+    return posts.filter((p: any) => {
+      const cUrl = (p.canonical_url || "").toLowerCase();
+      if (!cUrl) return activeBrandId === "creaibox";
+      try {
+        const urlObj = new URL(cUrl);
+        let host = urlObj.hostname;
+        if (host.startsWith("www.")) host = host.slice(4);
+
+        if (activeBrandId === "creaibox") {
+          if (host.endsWith(".creaibox.com")) {
+            const sub = host.replace(".creaibox.com", "");
+            if (sub !== "www" && sub !== "") return false;
+          }
+          if (host.endsWith(".localhost")) {
+            const sub = host.replace(".localhost", "");
+            if (sub !== "www" && sub !== "") return false;
+          }
+          if (host === "creaibox.com" || host === "localhost") return true;
+          return false;
+        } else {
+          const cleanCustom = activeCustomDomain ? activeCustomDomain.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, "").split("/")[0] : "";
+          return host === `${activeBrandId.toLowerCase()}.creaibox.com` || 
+                 host === `${activeBrandId.toLowerCase()}.localhost` ||
+                 (cleanCustom ? host === cleanCustom : false);
+        }
+      } catch (e) {
+        return activeBrandId === "creaibox";
+      }
+    });
+  }, [posts, activeBrandId, profile]);
 
   // Handle activeBrandId settings sync
   useEffect(() => {
@@ -875,21 +933,37 @@ export default function BlogManagementPage() {
                       onChange={(e) => setActiveBrandId(e.target.value)}
                       className="bg-transparent text-xs font-black text-blue-400 outline-none cursor-pointer"
                     >
-                      {approvedBrands.map((bid) => (
-                        <option key={bid} value={bid} className="bg-zinc-950 text-zinc-300 font-bold">
-                          {bid}.creaibox.com
-                        </option>
-                      ))}
+                      {approvedBrands.map((bid) => {
+                        const isPrimary = bid === (profile?.brand_id || "");
+                        const cDomKey = `custom_domain_${bid}`;
+                        const cDom = isPrimary ? (profile?.extra_configs?.custom_domain || "") : (profile?.extra_configs?.[cDomKey] || "");
+                        const label = bid === "creaibox" 
+                          ? "creaibox.com/blog (공식 메인 블로그)" 
+                          : cDom 
+                          ? `${cDom} (${bid}.creaibox.com)` 
+                          : `${bid}.creaibox.com`;
+                        return (
+                          <option key={bid} value={bid} className="bg-zinc-950 text-zinc-300 font-bold">
+                            {label}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                 )}
                 <a
-                  href={customDomainStatus === "APPROVED" && customDomain ? `https://${customDomain}` : `http://${activeBrandId}.localhost:3000`}
+                  href={
+                    activeBrandId === "creaibox"
+                      ? "/blog"
+                      : customDomainStatus === "APPROVED" && customDomain
+                      ? `https://${customDomain}`
+                      : `http://${activeBrandId}.localhost:3000`
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/50 px-5 py-3 text-xs font-black uppercase italic text-zinc-400 hover:text-white transition-colors"
                 >
-                  <Globe size={13} /> {customDomainStatus === "APPROVED" && customDomain ? customDomain : `${activeBrandId}.creaibox.com`} 방문
+                  <Globe size={13} /> {activeBrandId === "creaibox" ? "creaibox.com/blog" : customDomainStatus === "APPROVED" && customDomain ? customDomain : `${activeBrandId}.creaibox.com`} 방문
                 </a>
               </div>
             </div>
@@ -1565,9 +1639,18 @@ export default function BlogManagementPage() {
             {activeSubTab === "seo" && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                 <div className="lg:col-span-2 rounded-[32px] border border-zinc-900 bg-zinc-900/10 p-8 space-y-6">
-                  <h3 className="text-md font-black uppercase italic tracking-wider text-white flex items-center gap-2">
-                    <Shield size={18} className="text-blue-400" /> SEO 및 애널리틱스 연동
-                  </h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <h3 className="text-md font-black uppercase italic tracking-wider text-white flex items-center gap-2">
+                      <Shield size={18} className="text-blue-400" /> SEO 및 애널리틱스 연동
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setIsVerificationGuideOpen(true)}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 px-4 py-2.5 text-xs font-black text-blue-400 transition-all shadow-[0_4px_12px_rgba(59,130,246,0.15)]"
+                    >
+                      <HelpCircle size={14} /> 📖 구글/네이버 소유권 1분 연동 가이드
+                    </button>
+                  </div>
 
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1887,6 +1970,26 @@ export default function BlogManagementPage() {
             {/* TAB CONTENT: Traffic Analytics Dashboard */}
             {activeSubTab === "analytics" && (
               <div className="space-y-8">
+                {/* Analytics Top Banner Banner */}
+                <div className="rounded-[28px] border border-blue-500/20 bg-gradient-to-r from-blue-500/10 via-indigo-500/5 to-purple-500/10 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-black text-white flex items-center gap-2">
+                      <Sparkles size={16} className="text-blue-400" />
+                      크리에이박스 스튜디오 내 자체 조회수 & 통합 성과 분석 대시보드
+                    </h3>
+                    <p className="text-xs text-zinc-400 font-bold">
+                      구글/네이버 서치콘솔에 매번 로그인하지 않고도 내 블로그의 인기 포스팅, 실시간 접속자, 유입 경로를 한눈에 모니터링합니다.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsVerificationGuideOpen(true)}
+                    className="inline-flex items-center gap-2 shrink-0 rounded-2xl bg-blue-500 hover:bg-blue-600 px-5 py-3 text-xs font-black text-white transition-all shadow-[0_4px_12px_rgba(59,130,246,0.25)]"
+                  >
+                    <HelpCircle size={15} /> 📖 구글/네이버 소유권 1분 연동 가이드
+                  </button>
+                </div>
+
                 {/* Scorecards */}
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                   {/* Card 1: Real-time Active Users */}
@@ -1942,7 +2045,7 @@ export default function BlogManagementPage() {
                       <FileText size={12} className="text-purple-400" /> 누적 발행 포스트
                     </span>
                     <h4 className="text-2xl font-black italic tracking-tight text-white">
-                      {posts.length} 개
+                      {filteredPosts.length} 개
                     </h4>
                   </div>
 
@@ -2588,6 +2691,198 @@ export default function BlogManagementPage() {
                 className="flex-1 rounded-2xl bg-blue-600 hover:bg-blue-500 py-3.5 text-xs font-black text-white transition-all shadow-[0_4px_12px_rgba(37,99,235,0.2)] font-bold"
               >
                 확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🌟 구글 / 네이버 서치콘솔 3단계 소유권 연동 튜토리얼 모달 */}
+      {isVerificationGuideOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-3xl rounded-[32px] border border-zinc-800 bg-zinc-950 p-6 md:p-8 space-y-6 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="absolute top-0 right-0 -z-10 h-72 w-72 rounded-full bg-blue-500/10 blur-[100px] pointer-events-none" />
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-blue-400 flex items-center gap-1.5">
+                  <Sparkles size={12} /> 1분 자동 완성 튜토리얼
+                </span>
+                <h3 className="text-xl font-black text-white italic tracking-tight flex items-center gap-2 mt-0.5">
+                  구글 서치콘솔 & 네이버 서치어드바이저 등록 가이드
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsVerificationGuideOpen(false)}
+                className="rounded-full bg-zinc-900 p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Tabs */}
+            <div className="flex border-b border-zinc-900 gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setGuideModalTab("naver")}
+                className={`px-4 py-2.5 text-xs font-black rounded-xl transition-all ${
+                  guideModalTab === "naver"
+                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                    : "text-zinc-400 hover:text-white hover:bg-zinc-900"
+                }`}
+              >
+                🟢 네이버 서치어드바이저 (3단계)
+              </button>
+              <button
+                type="button"
+                onClick={() => setGuideModalTab("google")}
+                className={`px-4 py-2.5 text-xs font-black rounded-xl transition-all ${
+                  guideModalTab === "google"
+                    ? "bg-blue-500/10 text-blue-400 border border-blue-500/30"
+                    : "text-zinc-400 hover:text-white hover:bg-zinc-900"
+                }`}
+              >
+                🔵 구글 서치콘솔 (3단계)
+              </button>
+              <button
+                type="button"
+                onClick={() => setGuideModalTab("urls")}
+                className={`px-4 py-2.5 text-xs font-black rounded-xl transition-all ${
+                  guideModalTab === "urls"
+                    ? "bg-purple-500/10 text-purple-400 border border-purple-500/30"
+                    : "text-zinc-400 hover:text-white hover:bg-zinc-900"
+                }`}
+              >
+                📋 사이트맵 & RSS 주소 1초 복사
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="overflow-y-auto space-y-4 pr-1 text-xs leading-relaxed font-bold text-zinc-300 custom-scrollbar flex-1">
+              {guideModalTab === "naver" && (
+                <div className="space-y-4">
+                  <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-850 space-y-2">
+                    <span className="text-[10px] font-black uppercase text-emerald-400 tracking-wider">Step 1. 서치어드바이저 로그인 및 사이트 추가</span>
+                    <p className="text-zinc-300">
+                      <a href="https://searchadvisor.naver.com" target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline font-black">네이버 서치어드바이저(searchadvisor.naver.com)</a> 접속 ➡️ [웹마스터 도구] 진입 ➡️ 사이트 등록란에 내 블로그 주소(<code className="text-white font-mono bg-zinc-950 px-1.5 py-0.5 rounded">https://{activeBrandId}.creaibox.com</code>)를 입력합니다.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-850 space-y-2">
+                    <span className="text-[10px] font-black uppercase text-emerald-400 tracking-wider">Step 2. HTML 태그 방식 메타태그 복사</span>
+                    <p className="text-zinc-300">
+                      사이트 소유 확인 방법 중 <b>[HTML 태그]</b>를 선택한 후, 제공되는 코드 중 <code className="text-emerald-300 font-mono bg-zinc-950 px-1.5 py-0.5 rounded">content=&quot;...&quot;</code> 안의 고유 키값을 복사합니다.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-850 space-y-2">
+                    <span className="text-[10px] font-black uppercase text-emerald-400 tracking-wider">Step 3. 크리에이박스 스튜디오에 입력 및 저장</span>
+                    <p className="text-zinc-300">
+                      현재 보시는 <b>[SEO 및 연동 관리]</b> 탭의 <b>&apos;네이버 서치어드바이저 연동 키&apos;</b> 입력칸에 복사한 값을 붙여넣고 [설정 저장하기]를 클릭합니다.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-850 space-y-2">
+                    <span className="text-[10px] font-black uppercase text-emerald-400 tracking-wider">Step 4. 네이버에서 소유확인 & 사이트맵 / RSS 제출</span>
+                    <p className="text-zinc-300">
+                      네이버 서치어드바이저 화면으로 돌아와 <b>[소유확인]</b> 버튼을 누르면 승인이 완료됩니다!<br />
+                      ① <b>[요청 ➡️ 사이트맵 제출]</b>: <code className="text-emerald-400 font-mono">sitemap.xml</code> 입력 후 제출<br />
+                      ② <b>[요청 ➡️ RSS 제출]</b>: 전체 피드 주소(<code className="text-emerald-400 font-mono">https://{activeBrandId}.creaibox.com/feed</code>)를 입력 후 제출해 주세요.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {guideModalTab === "google" && (
+                <div className="space-y-4">
+                  <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-850 space-y-2">
+                    <span className="text-[10px] font-black uppercase text-blue-400 tracking-wider">Step 1. 구글 서치콘솔 접속 및 속성 추가</span>
+                    <p className="text-zinc-300">
+                      <a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline font-black">구글 서치콘솔(search.google.com/search-console)</a> 로그인 ➡️ 좌측 상단 [속성 추가] ➡️ <b>&apos;URL 접두사&apos;</b> 항목에 내 블로그 주소(<code className="text-white font-mono bg-zinc-950 px-1.5 py-0.5 rounded">https://{activeBrandId}.creaibox.com</code>)를 입력합니다.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-850 space-y-2">
+                    <span className="text-[10px] font-black uppercase text-blue-400 tracking-wider">Step 2. HTML 태그 소유권 인증 코드 복사</span>
+                    <p className="text-zinc-300">
+                      다른 인증 방법 중 <b>[HTML 태그]</b>를 클릭하고 발급된 <code className="text-blue-300 font-mono bg-zinc-950 px-1.5 py-0.5 rounded">google-site-verification</code> 메타태그 키값을 복사합니다.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-850 space-y-2">
+                    <span className="text-[10px] font-black uppercase text-blue-400 tracking-wider">Step 3. 스튜디오 붙여넣기 & 사이트맵 / RSS 제출</span>
+                    <p className="text-zinc-300">
+                      스튜디오 <b>[SEO 및 연동 관리]</b>의 <b>&apos;구글 서치콘솔 연동 키&apos;</b>에 복사한 키를 넣고 [설정 저장하기]를 누른 뒤, 구글 서치콘솔에서 [확인] 클릭!<br />
+                      그 후 <b>[Sitemaps]</b> 메뉴에서 <code className="text-blue-400 font-mono">sitemap.xml</code> 과 <code className="text-blue-400 font-mono">feed</code> (또는 RSS 피드 주소)를 각각 1회씩 입력하여 제출해 주세요.
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs leading-relaxed font-bold">
+                    💡 <b>꿀팁!</b> 구글 애널리틱스(GA4)가 블로그에 자동 설치되어 있으므로, 구글 서치콘솔 인증 시 <b>[Google 애널리틱스]</b> 방식을 선택하시면 클릭 한 번에 1초 완료됩니다!
+                  </div>
+                </div>
+              )}
+
+              {guideModalTab === "urls" && (
+                <div className="space-y-4">
+                  <p className="text-zinc-400 text-xs font-bold">
+                    구글 서치콘솔 및 네이버 서치어드바이저 사이트맵 제출 메뉴에 아래 주소를 입력하세요.
+                  </p>
+
+                  <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-850 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black uppercase text-purple-400">1. 사이트맵 주소 (Sitemap.xml)</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyUrl(`https://${activeBrandId}.creaibox.com/sitemap.xml`, "sitemap")}
+                        className="rounded-xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 px-3 py-1 text-[10px] font-black text-purple-300 transition-all"
+                      >
+                        {copiedUrlType === "sitemap" ? "✅ 복사 완료!" : "📋 주소 복사"}
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      readOnly
+                      value={`https://${activeBrandId}.creaibox.com/sitemap.xml`}
+                      className="w-full rounded-xl bg-zinc-950 border border-zinc-800 px-4 py-2.5 text-xs font-mono text-white outline-none select-all"
+                    />
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-850 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black uppercase text-purple-400">2. RSS 피드 주소 (/feed)</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyUrl(`https://${activeBrandId}.creaibox.com/feed`, "rss")}
+                        className="rounded-xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 px-3 py-1 text-[10px] font-black text-purple-300 transition-all"
+                      >
+                        {copiedUrlType === "rss" ? "✅ 복사 완료!" : "📋 주소 복사"}
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      readOnly
+                      value={`https://${activeBrandId}.creaibox.com/feed`}
+                      className="w-full rounded-xl bg-zinc-950 border border-zinc-800 px-4 py-2.5 text-xs font-mono text-white outline-none select-all"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="border-t border-zinc-900 pt-4 flex items-center justify-between shrink-0">
+              <span className="text-[10px] font-bold text-zinc-500">
+                크리에이박스 검색엔진 자동 색인 지원 로직 적용됨
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsVerificationGuideOpen(false)}
+                className="rounded-2xl bg-zinc-850 hover:bg-zinc-800 px-6 py-2.5 text-xs font-black text-white transition-colors"
+              >
+                닫기
               </button>
             </div>
           </div>

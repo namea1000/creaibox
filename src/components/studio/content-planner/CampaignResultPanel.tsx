@@ -134,6 +134,7 @@ export default function CampaignResultPanel({
 
       const query = new URLSearchParams({
         source: "content-planner",
+        autoGenerate: "true",
         itemId: item.id || "",
         campaignId: item.campaign_id || item.campaignId || "",
         title: item.title || "",
@@ -349,14 +350,6 @@ export default function CampaignResultPanel({
                 </button>
                 <button
                   type="button"
-                  onClick={() => onCampaignAction?.("네이버 전체 제작")}
-                  className="inline-flex h-11 w-44 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 text-xs font-black text-zinc-300 hover:border-cyan-400/40 hover:text-cyan-200"
-                >
-                  <SiNaver size={13} className="text-[#03C75A]" />
-                  네이버 전체 제작
-                </button>
-                <button
-                  type="button"
                   onClick={() => onCampaignAction?.("쇼츠 전체 제작")}
                   className="inline-flex h-11 w-44 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 text-xs font-black text-zinc-300 hover:border-cyan-400/40 hover:text-cyan-200"
                 >
@@ -509,10 +502,6 @@ export default function CampaignResultPanel({
                               label="블로그 글 생성"
                               onClick={() => void handleCreateBlog(item)}
                               isLoading={isGeneratingBlog === item.id}
-                            />
-                            <ActionButton
-                              label="네이버 글 생성"
-                              href={`/studio/writing/naver/create?source=content-planner&itemId=${item.id || ""}&campaignId=${item.campaign_id || item.campaignId || ""}&title=${encodeURIComponent(item.title)}&keyword=${encodeURIComponent(item.main_keyword || item.mainKeyword || "")}&contentType=${encodeURIComponent(item.content_type || item.contentType || "")}`}
                             />
                             <ActionButton
                               label="쇼츠 제작"

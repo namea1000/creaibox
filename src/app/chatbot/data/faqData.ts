@@ -149,6 +149,22 @@ export const faqData: FAQCategory[] = [
         answer: "구글 서치콘솔과 네이버 서치어드바이저는 보안 및 실소유자 확인을 위해 반드시 본인의 계정으로 사이트맵을 등록받습니다.\n\n[주소 확인 및 제출 방법]\n- 사이트맵 주소: https://[내블로그도메인]/sitemap.xml\n- RSS 피드 주소: https://[내블로그도메인]/feed\n구글 서치콘솔 [Sitemaps] 메뉴 및 네이버 서치어드바이저 [요청] 메뉴에서 위 주소를 복사해서 등록해 주시면 구글/네이버 색인 속도가 수 시간 이내로 대폭 상승합니다.",
         link: "/studio/writing/creaibox/blog-management",
         linkLabel: "사이트맵 및 피드 주소 확인하기"
+      },
+      {
+        id: "write-7",
+        category: "ai-writer",
+        question: "네이버 서치어드바이저(웹마스터 도구) 사이트 소유권 확인 및 등록 방법이 궁금해요.",
+        answer: "네이버 검색 결과에 내 블로그/홈페이지를 노출하고 수집 현황 및 클릭수를 직접 확인하시려면 네이버 서치어드바이저 소유권 확인이 필요합니다.\n\n[네이버 소유권 확인 4단계 가이드]\n1. 네이버 서치어드바이저(searchadvisor.naver.com)에 로그인 후 [웹마스터 도구]로 이동하여 내 블로그 주소(https://내브랜드.creaibox.com)를 입력합니다.\n2. 사이트 소유확인 방법 중 'HTML 태그'를 선택하고 제공되는 메타태그(예: <meta name=\"naver-site-verification\" content=\"...\" />)를 복사합니다.\n3. 크리에이박스 스튜디오 [크리에이박스 블로그 -> 블로그 설정 및 관리 -> SEO 및 연동 관리] 탭으로 이동합니다.\n4. '네이버 서치어드바이저 메타태그' 입력란에 복사한 코드를 붙여넣고 저장합니다.\n5. 네이버 서치어드바이저 화면으로 돌아와 [소유확인] 버튼을 누르면 즉시 인정됩니다.\n6. 소유확인 완료 후 [요청 -> 사이트맵 제출] 메뉴에서 sitemap.xml 을 제출하고, [요청 -> RSS 제출] 메뉴에서 전체 피드 주소(https://내브랜드.creaibox.com/feed)를 등록해 주시면 네이버 검색 로봇 수집이 대폭 빨라집니다.",
+        link: "/studio/writing/creaibox/blog-management",
+        linkLabel: "SEO 및 연동 관리 페이지로 이동"
+      },
+      {
+        id: "write-8",
+        category: "ai-writer",
+        question: "구글 서치콘솔(Google Search Console) 사이트 소유권 확인 및 등록 가이드",
+        answer: "구글 검색 노출 키워드와 포스팅별 클릭수/조회수 분석을 위해 본인의 구글 계정으로 서치콘솔 소유권을 인증하실 수 있습니다.\n\n[구글 서치콘솔 등록 4단계 가이드]\n1. 구글 서치콘솔(search.google.com/search-console) 접속 후 로그인합니다.\n2. 속성 유형 선택 화면에서 'URL 접두사' 방식을 선택하고 내 블로그 주소(https://내브랜드.creaibox.com)를 입력합니다.\n3. 소유권 확인 방법으로 'HTML 태그' 방식을 선택하고 제공되는 메타태그(예: <meta name=\"google-site-verification\" content=\"...\" />)를 복사합니다.\n4. 크리에이박스 스튜디오 [크리에이박스 블로그 -> 블로그 설정 및 관리 -> SEO 및 연동 관리] 탭의 '구글 서치콘솔 메타태그' 입력란에 붙여넣고 저장합니다.\n5. 구글 서치콘솔 화면에서 [확인] 버튼을 클릭하면 소유권 검증이 즉시 완료됩니다.\n6. 인증 완료 후 서치콘솔 [Sitemaps] 메뉴에서 sitemap.xml 과 feed (RSS 피드 주소)를 각각 입력하여 제출해 주시면 구글 크롤링 로봇이 신규 포스팅을 실시간 감지합니다.",
+        link: "/studio/writing/creaibox/blog-management",
+        linkLabel: "SEO 및 연동 관리 페이지로 이동"
       }
     ]
   },
