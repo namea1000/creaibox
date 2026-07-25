@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import MoonshotCursor from "@/components/common/MoonshotCursor";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -287,6 +288,7 @@ export default function MainLandingPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 transition-colors duration-300">
+      <MoonshotCursor />
       <Header />
       <main className="pt-16">
         

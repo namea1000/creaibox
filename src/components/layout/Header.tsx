@@ -105,13 +105,30 @@ export default function Header() {
   const router = useRouter();
 
   const fetchProfile = useCallback(
-    async (userId: string) => {
+    async (userId: string, email?: string) => {
       try {
         const { data } = await supabase
           .from("profiles")
           .select("nickname, membership_level, role, extra_configs, is_manual_grant")
           .eq("id", userId)
           .maybeSingle();
+
+        let isWhitelistedAdmin = false;
+        if (email) {
+          const cleanEmail = email.toLowerCase().trim();
+          if (cleanEmail === "creaiboxofficial@gmail.com" || cleanEmail === "jenam7720@gmail.com") {
+            isWhitelistedAdmin = true;
+          } else {
+            const { data: whitelistData } = await supabase
+              .from("admin_whitelist")
+              .select("email")
+              .eq("email", cleanEmail)
+              .maybeSingle();
+            if (whitelistData) {
+              isWhitelistedAdmin = true;
+            }
+          }
+        }
 
         const isManual = data?.extra_configs?.is_manual_grant ?? data?.is_manual_grant ?? false;
 
@@ -120,9 +137,12 @@ export default function Header() {
           membershipLevel: data?.membership_level ?? "free",
           role: data?.role ?? "",
           isManualGrant: Boolean(isManual),
+          isAdminWhitelist: isWhitelistedAdmin,
         };
       } catch {
-        return { nickname: "", membershipLevel: "free", role: "", isManualGrant: false };
+        const cleanEmail = (email || "").toLowerCase().trim();
+        const fallbackAdmin = cleanEmail === "creaiboxofficial@gmail.com" || cleanEmail === "jenam7720@gmail.com";
+        return { nickname: "", membershipLevel: "free", role: "", isManualGrant: false, isAdminWhitelist: fallbackAdmin };
       }
     },
     [supabase]
@@ -181,12 +201,15 @@ export default function Header() {
         setIsVip(cachedIsVip);
 
         // Fetch the fresh profile in the background
-        const profileData = await fetchProfile(nextUser.id);
+        const profileData = await fetchProfile(nextUser.id, nextUser.email);
         if (!cancelled) {
           setNickname(profileData.nickname);
           
+          const roleUpper = String(profileData.role || "").toUpperCase();
           const rawLevel = String(profileData.membershipLevel || "free").toLowerCase();
-          const mappedLevel = rawLevel === "admin"
+          const isAdminUser = profileData.isAdminWhitelist || roleUpper === "ADMIN" || roleUpper === "SUPER_ADMIN" || rawLevel === "admin";
+
+          const mappedLevel = isAdminUser
             ? "Admin"
             : rawLevel === "premier"
             ? "Premier"
@@ -198,7 +221,7 @@ export default function Header() {
             ? "Creator"
             : "Free";
             
-          const isVipUser = profileData.isManualGrant || rawLevel === "vip" || String(profileData.role).toUpperCase() === "VIP";
+          const isVipUser = profileData.isManualGrant || rawLevel === "vip" || roleUpper === "VIP";
 
           setPlanName(mappedLevel);
           setIsVip(isVipUser);

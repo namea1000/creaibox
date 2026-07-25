@@ -17,8 +17,8 @@
   - 서비스 계정 생성 완료 (`creaibox-indexing-bot@project-51796415-94e5-4403-ad7.iam.gserviceaccount.com`) 및 JSON 키 발급 완료
 - [x] **구글 서치콘솔 소유자 권한 연동**
   - Google Search Console (`creaibox.com` 도메인 속성) 소유자(Owner) 권한에 서비스 계정 추가 완료
-- [x] **Google Indexing API 일일 쿼터 확장(Quota Increase Request) 신청 가이드 작성**
-  - 기본 제공 200건/일 쿼터를 2,000~10,000건/일 이상으로 증액하기 위한 GCP 콘솔 신청 절차 및 영문 사유 양식 가이드 제공완료 (`google-indexing-api-guide.md` 4.2절 연동)
+- [x] **Google Indexing API 일일 쿼터 확장(Quota Increase Request) 신청 제출 완료**
+  - 기본 제공 200건/일 쿼터를 2,000건/일 이상으로 증액하기 위한 구글 폼 신청서 제출 완료 (`google-indexing-api-guide.md` 4.2절 연동, 구글 심사 후 자동 승인 예정)
 - [x] **백엔드 실시간 핑 전송 모듈 구축 완료**
   - Google Indexing API 백엔드 모듈 (`src/lib/server/google-indexing.ts`) 및 API 엔드포인트 (`src/app/api/seo/google-indexing-ping/route.ts`) 구축
   - 1시간 쿨다운 스레틀링 & Trailing Edge Ping (최종 핑 보장) 알고리즘 탑재 및 에디터 발행 시 비동기 핑 트리거 연동 완료

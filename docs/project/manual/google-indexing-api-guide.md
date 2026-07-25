@@ -98,15 +98,18 @@ GOOGLE_INDEXING_CREDENTIALS='{"type":"service_account","project_id":"project-517
 
 ### 4.2 일일 쿼터 (Quota) 및 확장 (Quota Increase Request) 방법
 * **기본 제공 쿼터**: GCP 프로젝트당 **일일 200건 (Requests per day)**의 핑(Ping) 쿼터가 기본 제공됩니다.
-* **증액 신청 (Quota Request)**:
-  * **신청 바로가기**: [GCP Console IAM & Admin Quotas Page](https://console.cloud.google.com/iam-admin/quotas?project=project-51796415-94e5-4403-ad7)
-  * **신청 절차**:
-    1. 위 링크로 이동 후 검색창에 `Indexing API` 입력.
-    2. `Publish requests per day` (일일 게시 요청 수) 항목의 체크박스 선택.
-    3. 상단 **`[할당량 수정 (EDIT QUOTAS)]`** 클릭 후 새 할당량을 `2000` 또는 `10000`으로 입력.
-    4. **신청 사유 (Request Description)** 양식 작성:
-       > *"We operate an AI blogging & content management platform (creaibox.com). As our users generate and publish multiple blog posts daily, we require a higher daily indexing ping quota to notify Googlebot in real-time."*
-    5. 제출 시 구글 검토 후 보통 1~2영업일 이내 무료 승인 완료.
+* **목록에 Indexing API가 안 보일 때 선행 조치**:
+  1. **API 활성화 필수**: [Google Cloud Console Indexing API 활성화 바로가기](https://console.cloud.google.com/apis/library/indexing.googleapis.com?project=project-51796415-94e5-4403-ad7) ➔ **`[사용 (ENABLE)]`** 버튼 1회 클릭.
+  2. **전용 할당량 페이지 직행**: [Indexing API 전용 Quota 페이지 바로가기](https://console.cloud.google.com/apis/api/indexing.googleapis.com/quotas?project=project-51796415-94e5-4403-ad7)
+* **증액 신청 (Google Form Quota Request) 작성 양식**:
+  1. **Applicant name**: `Jung-on Kim` (또는 대표자 영문 성함)
+  2. **Email Address**: `creaiboxofficial@gmail.com` (자동 입력됨)
+  3. **Project Number**: `333143506545` (자동 입력됨)
+  4. **Desired Quota**: `10000` (일일 10,000건 신청)
+  5. **Example URL**: `https://creaibox.com/blog`
+  6. **Use Case**: 드롭다운에서 `Content Publishing` 또는 `Other` (또는 `JobPosting` / `BroadcastEvent`) 선택.
+  7. **Request Description / Justification (신청 사유)**:
+     > *"We operate CreAibox (creaibox.com), an all-in-one digital blogging and website builder platform that enables content creators, businesses, and bloggers to build custom websites and publish active blogs. As we scale up our platform service, we expect thousands of creators and users to build websites and publish multiple blog posts and pages daily. To ensure prompt indexing and seamless search visibility for all our users' growing content from day one, we kindly request a daily Indexing API quota of 10,000 requests to notify Googlebot in real time."*
 
 ### 4.3 스마트 핑 낭비 방지 & 최종 핑 보장 알고리즘 (Smart Throttling & Trailing Edge Ping)
 유저가 글을 발행한 후 short-term으로 수정 및 재발행을 연속해서 누를 경우 핑 쿼터 낭비를 방지하고 최신 완성본의 수집을 보장하기 위한 3중 방어 메커니즘입니다.

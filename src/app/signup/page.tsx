@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { MessageCircle, Mail, Lock } from "lucide-react";
+import Image from "next/image";
 import { Provider } from "@supabase/supabase-js";
 
 export default function SignupPage() {
@@ -72,10 +73,17 @@ export default function SignupPage() {
 
       <div className="max-w-[460px] w-full space-y-8 bg-black/60 border border-zinc-800/50 p-10 lg:p-14 rounded-[32px] backdrop-blur-2xl shadow-2xl relative z-10">
         <div className="text-center space-y-3">
-          <h1 className="text-4xl font-black italic uppercase tracking-tighter text-white">
-            <span className="text-blue-600">Creaibox</span>
-          </h1>
-          <p className="text-zinc-500 text-sm font-medium tracking-tight">
+          <Link href="/" className="inline-block transition hover:scale-[1.02] active:scale-[0.98]">
+            <Image
+              src="/logobg_dark.webp"
+              alt="CreAibox Logo"
+              width={210}
+              height={40}
+              className="object-contain mx-auto h-10 w-auto"
+              priority
+            />
+          </Link>
+          <p className="text-zinc-400 text-sm font-semibold tracking-tight">
             가장 스마트한 AI Contents Studio 가입
           </p>
         </div>
