@@ -441,7 +441,7 @@ export default function Header() {
                   <div>
                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">글쓰기 & 뉴스</h3>
                     <div className="flex flex-col gap-1">
-                      <Link href="/ai-writer" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                      <Link href="/writing/creaibox/new-post" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
                         <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500 border border-blue-500/10 shrink-0">
                           <PenTool size={16} />
                         </div>

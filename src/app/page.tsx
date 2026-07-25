@@ -147,7 +147,7 @@ export default function MainLandingPage() {
       badge: "FREE GENERATION",
       badgeColor: "bg-blue-500/10 text-blue-500 border-blue-500/20",
       icon: <PenLine size={20} className="text-blue-500" />,
-      href: "/ai-writer",
+      href: "/writing/creaibox/new-post",
       preview: (
         <div className="flex flex-col gap-2 rounded-2xl bg-zinc-950 p-4 border border-zinc-800/80 text-left h-full">
           <div className="flex items-center gap-2 border-b border-zinc-800/80 pb-2">
@@ -299,7 +299,7 @@ export default function MainLandingPage() {
               {[
                 { icon: <Sparkles size={16} />, label: "스튜디오 홈", href: "/studio", color: "text-violet-600 dark:text-violet-400 hover:bg-violet-500/5 hover:border-violet-500/30 dark:hover:bg-violet-500/10 font-black border-violet-500/20" },
                 { icon: <Video size={16} />, label: "영상 편집기", href: "/video-editor", color: "text-pink-500 hover:bg-pink-500/5 hover:border-pink-500/30 dark:hover:bg-pink-500/10" },
-                { icon: <PenLine size={16} />, label: "AI 글쓰기", href: "/ai-writer", color: "text-blue-500 hover:bg-blue-500/5 hover:border-blue-500/30 dark:hover:bg-blue-500/10" },
+                { icon: <PenLine size={16} />, label: "AI 글쓰기", href: "/writing/creaibox/new-post", color: "text-blue-500 hover:bg-blue-500/5 hover:border-blue-500/30 dark:hover:bg-blue-500/10" },
                 { icon: <TrendingUp size={16} />, label: "유튜브 트렌드", href: "/youtube-trend", color: "text-red-500 hover:bg-red-500/5 hover:border-red-500/30 dark:hover:bg-red-500/10" },
                 { icon: <ImageIcon size={16} />, label: "이미지 스튜디오", href: "/design", color: "text-violet-500 hover:bg-violet-500/5 hover:border-violet-500/30 dark:hover:bg-violet-50/10" },
                 { icon: <Folder size={16} />, label: "미디어 라이브러리", href: "/media-library", color: "text-emerald-500 hover:bg-emerald-500/5 hover:border-emerald-500/30 dark:hover:bg-emerald-500/10" },
