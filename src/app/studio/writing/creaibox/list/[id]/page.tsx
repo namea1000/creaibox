@@ -1124,6 +1124,20 @@ export default function CreaiboxManuscriptDetailPage() {
         return false;
       }
 
+      // Trigger Google Indexing API Ping asynchronously when published
+      if (nextStatus === "published") {
+        const pingTargetUrl = canonicalUrl || (slug ? `https://creaibox.com/blog/${slug}` : null);
+        if (pingTargetUrl) {
+          fetch("/api/seo/google-indexing-ping", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: pingTargetUrl, type: "URL_UPDATED" }),
+          }).catch((pingErr) => {
+            console.error("Google Indexing Ping trigger error:", pingErr);
+          });
+        }
+      }
+
       const nextRecord: StudioManuscriptRecord = {
         ...safeData,
         slug,

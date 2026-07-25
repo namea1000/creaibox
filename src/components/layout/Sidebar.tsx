@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   PanelLeftClose,
@@ -10,7 +9,6 @@ import {
   ChevronDown,
   ChevronRight,
   LayoutDashboard,
-  Star,
   HelpCircle,
   MessageCircle,
   Globe,
@@ -32,8 +30,6 @@ import {
   Library,
   Users,
   Folder,
-  Edit3,
-  Award,
   PenLine,
   Archive,
   Lightbulb,
@@ -42,22 +38,12 @@ import {
   Wand2,
   RefreshCw,
   Eraser,
-  FileArchive,
-  Eye,
-  CircleHelp,
-  Tags,
-  Save,
-  Clock,
-  Palette,
-  Languages,
-  PlayCircle,
   Gauge,
   BadgeDollarSign,
   LineChart,
   TrendingUp,
   Radio,
   Bot,
-  Brain,
   Rss,
   Megaphone,
   Building2,
@@ -68,16 +54,20 @@ import {
   Disc3,
   Waves,
   CalendarDays,
-  Target,
   Maximize,
   Plus,
+  Award,
+  Clock,
+  Palette,
+  Languages,
+  PlayCircle,
+  Tags,
+  Save,
   type LucideIcon,
 } from "lucide-react";
 
 import { SiNaver, SiYoutube } from "react-icons/si";
 import { createClient } from "@/utils/supabase/client";
-
-
 
 interface SidebarProps {
   activeMenu?: string;
@@ -106,6 +96,18 @@ type SidebarIcon = React.ComponentType<any>;
 
 function PieIcon(props: React.ComponentProps<LucideIcon>) {
   return <BarChart3 {...props} />;
+}
+
+// Helper to normalize path by stripping /studio prefix for unified matching
+function normalizePath(p: string): string {
+  if (!p) return "";
+  let clean = p.trim();
+  if (clean.startsWith("/studio/")) {
+    clean = clean.substring(7); // Remove "/studio"
+  } else if (clean === "/studio") {
+    clean = "/studio";
+  }
+  return clean;
 }
 
 export default function Sidebar({
@@ -174,8 +176,6 @@ export default function Sidebar({
         icon: LayoutDashboard,
         color: "text-blue-400",
       },
-
-
       {
         key: "client-site-builder",
         name: "비즈니스 웹사이트",
@@ -192,7 +192,6 @@ export default function Sidebar({
           { name: "홈페이지 설정", href: "/studio/client-site-builder/settings", icon: Settings },
         ],
       },
-
       {
         key: "custom-client-site",
         name: "커스텀 웹사이트 🌟",
@@ -200,7 +199,6 @@ export default function Sidebar({
         icon: Sparkles,
         color: "text-cyan-400",
       },
-
       {
         key: "creassetbox",
         name: "미디어 라이브러리",
@@ -225,11 +223,11 @@ export default function Sidebar({
           { name: "블로그 새글 쓰기", href: "/writing/creaibox/new-post", icon: PenLine },
           { name: "블로그 원고 관리", href: "/writing/creaibox/list", icon: Archive },
           { name: "네이버/SNS 재발행", href: "/writing/creaibox/recreate", icon: RefreshCw },
+          { name: "블로그 설정 및 관리", href: "/writing/creaibox/blog-management", icon: Settings },
           { name: "AI 콘텐츠 기획", href: "/content-planner/planning", icon: Sparkles },
           { name: "기획 라이브러리", href: "/content-planner/library", icon: Library },
           { name: "콘텐츠 캘린더", href: "/content-planner/calendar", icon: CalendarDays },
           { name: "자동화 워크플로우", href: "/content-planner/workflow", icon: Bot },
-          { name: "블로그 설정 및 관리", href: "/writing/creaibox/blog-management", icon: Settings },
           { name: "썸네일 생성 관리", href: "/writing/creaibox/thumbnail", icon: ImageIcon },
           { name: "지식 & 페르소나 설정", href: "/writing/creaibox/knowledge", icon: Database },
         ],
@@ -249,7 +247,7 @@ export default function Sidebar({
           { name: "Cre Music 플레이어", href: "/music/cre-music", icon: PlayCircle },
           { name: "앨범 관리", href: "/music/albums", icon: Disc3 },
           { name: "스타일 포맷", href: "/music/style-format", icon: Palette },
-          { name: "오디오 스펙트럼", href: "/music/visualizer", icon: Waves, },
+          { name: "오디오 스펙트럼", href: "/music/visualizer", icon: Waves },
           { name: "커버 이미지", href: "/music/cover-image", icon: ImageIcon },
           { name: "영상 프롬프트", href: "/music/video-prompt", icon: Video },
           { name: "번역", href: "/music/translate", icon: Languages },
@@ -261,7 +259,6 @@ export default function Sidebar({
           { name: "설정", href: "/music/settings", icon: Settings },
         ],
       },
-
       {
         key: "image",
         name: "디자인 스튜디오",
@@ -286,7 +283,6 @@ export default function Sidebar({
           { name: "간편 이미지 편집기", href: "/design/editor", icon: Wand2 },
         ],
       },
-
       {
         key: "video",
         name: "비디오 스튜디오",
@@ -477,46 +473,134 @@ export default function Sidebar({
     [isAdmin]
   );
 
-  const isPathActive = (href: string) => {
-    if (href === "/studio") return pathname === "/studio";
-    if (href === "/studio/client-site-builder") return pathname === "/studio/client-site-builder";
-    if (href === "/library" && pathname.startsWith("/library/free-assets")) {
-      return false;
-    }
-    if (href === "/aireport" && pathname.startsWith("/report")) {
-      return true;
-    }
-    if (pathname.startsWith("/studio/writing/creaibox/list/")) {
-      if (href === "/studio/writing/creaibox/new-post") {
+  const isPathActive = useCallback(
+    (href: string, groupChildren?: MenuItem[]) => {
+      const normPath = normalizePath(pathname);
+      const normHref = normalizePath(href);
+
+      if (normHref === "/studio") return normPath === "/studio" || normPath === "";
+      if (normHref === "/client-site-builder") return normPath === "/client-site-builder";
+      
+      // Special case: /writing/creaibox/list/[id] post detail page
+      if (normPath.startsWith("/writing/creaibox/list/")) {
+        const isNewPostWarp =
+          typeof window !== "undefined" &&
+          (window.location.search.includes("newPost=true") || window.location.search.includes("newPost"));
+
+        if (isNewPostWarp) {
+          if (normHref.includes("/writing/creaibox/new-post")) return true;
+          if (normHref.includes("/writing/creaibox/list")) return false;
+        } else {
+          if (normHref.includes("/writing/creaibox/list")) return true;
+          if (normHref.includes("/writing/creaibox/new-post")) return false;
+        }
+      }
+
+      if (!normHref) return false;
+
+      // Exact match
+      if (normPath === normHref) return true;
+
+      // Prefix match check
+      if (normPath.startsWith(`${normHref}/`)) {
+        // If other children in the same group also match normPath with a longer (more specific) href,
+        // then this shorter href should NOT be marked active!
+        if (groupChildren) {
+          const hasMoreSpecificMatch = groupChildren.some((otherChild) => {
+            const otherNormHref = normalizePath(otherChild.href);
+            if (otherNormHref === normHref) return false;
+            if (otherNormHref.length > normHref.length) {
+              return normPath === otherNormHref || normPath.startsWith(`${otherNormHref}/`);
+            }
+            return false;
+          });
+
+          if (hasMoreSpecificMatch) return false;
+        }
         return true;
       }
-      if (href === "/studio/writing/creaibox/list") {
-        return false;
+
+      return false;
+    },
+    [pathname]
+  );
+
+  const isGroupActive = useCallback(
+    (group: MenuGroup) => {
+      const normPath = normalizePath(pathname);
+      const normGroupHref = normalizePath(group.href);
+
+      // 1. Check if group.href matches
+      if (isPathActive(group.href, group.children)) return true;
+
+      // 2. Check if any child's href matches current pathname
+      if (group.children && group.children.some((child) => isPathActive(child.href, group.children))) {
+        return true;
+      }
+
+      // 3. Explicit prefix checks based on group.key (prevents /community/writing from opening /writing/creaibox)
+      switch (group.key) {
+        case "community":
+          return normPath.startsWith("/community");
+        case "infocenter":
+          return normPath.startsWith("/infocenter");
+        case "creaibox-writing":
+          return normPath.startsWith("/writing/creaibox") || normPath.startsWith("/content-planner");
+        case "music":
+          return normPath.startsWith("/music");
+        case "image":
+          return normPath.startsWith("/design");
+        case "video":
+          return normPath.startsWith("/video");
+        case "keyword":
+          return normPath.startsWith("/keyword-trend");
+        case "youtube":
+          return normPath.startsWith("/youtube-trend") || normPath.startsWith("/utility-tools/youtube");
+        case "client-site-builder":
+          return normPath.startsWith("/client-site-builder");
+        case "custom-client-site":
+          return normPath.startsWith("/custom-client-site");
+        case "admin":
+          return normPath.startsWith("/admin");
+        case "report":
+          return normPath.startsWith("/report") || normPath.startsWith("/aireport");
+        case "news":
+          return normPath.startsWith("/news");
+        case "publish":
+          return normPath.startsWith("/publish");
+        case "research":
+          return normPath.startsWith("/research");
+        default:
+          return false;
+      }
+    },
+    [isPathActive, pathname]
+  );
+
+  const getMatchedGroup = useCallback(() => {
+    for (const group of menuGroups) {
+      if (isGroupActive(group)) {
+        return group;
       }
     }
-    return pathname === href || pathname.startsWith(`${href}/`);
-  };
+    return undefined;
+  }, [menuGroups, isGroupActive]);
 
-  const allGroups = useMemo(() => menuGroups, [menuGroups]);
-
-  const getMatchedGroup = () =>
-    [...allGroups]
-      .filter((group) => isPathActive(group.href))
-      .sort((a, b) => b.href.length - a.href.length)[0];
+  const [optimisticActiveKey, setOptimisticActiveKey] = useState<string | null>(null);
 
   const [expandedGroups, setExpandedGroups] = useState<string[]>(() => {
-    const matched = getMatchedGroup();
-    return matched?.key ? [matched.key] : [];
+    const activeKeys = menuGroups.filter((g) => isGroupActive(g)).map((g) => g.key);
+    return activeKeys;
   });
 
+  // Automatically update expandedGroups and clear optimistic active key when pathname changes
   useEffect(() => {
-    const matched = getMatchedGroup();
-    if (matched?.key) {
-      setExpandedGroups((prev) =>
-        prev.includes(matched.key) ? prev : [...prev, matched.key]
-      );
+    setOptimisticActiveKey(null);
+    const activeKeys = menuGroups.filter((g) => isGroupActive(g)).map((g) => g.key);
+    if (activeKeys.length > 0) {
+      setExpandedGroups(activeKeys);
     }
-  }, [pathname]);
+  }, [pathname, isGroupActive, menuGroups]);
 
   const toggleGroup = (key: string) => {
     setExpandedGroups((prev) =>
@@ -530,18 +614,14 @@ export default function Sidebar({
         return "border-emerald-500/20 bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-lg shadow-emerald-500/20";
       case "planner":
         return "border-purple-500/20 bg-gradient-to-r from-purple-600 to-indigo-500 text-white shadow-lg shadow-purple-500/20";
-      case "writing":
+      case "creaibox-writing":
         return "border-violet-500/20 bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow-lg shadow-violet-500/20";
-      case "naver":
-        return "border-green-500/20 bg-gradient-to-r from-green-600 to-emerald-500 text-white shadow-lg shadow-green-500/20";
       case "music":
         return "border-pink-500/20 bg-gradient-to-r from-pink-600 to-rose-500 text-white shadow-lg shadow-pink-500/20";
       case "image":
         return "border-fuchsia-500/20 bg-gradient-to-r from-fuchsia-600 to-pink-500 text-white shadow-lg shadow-fuchsia-500/20";
       case "video":
         return "border-cyan-500/20 bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/20";
-      case "data":
-        return "border-indigo-500/20 bg-gradient-to-r from-indigo-600 to-violet-500 text-white shadow-lg shadow-indigo-500/20";
       case "keyword":
         return "border-teal-500/20 bg-gradient-to-r from-teal-600 to-emerald-500 text-white shadow-lg shadow-teal-500/20";
       case "youtube":
@@ -550,17 +630,12 @@ export default function Sidebar({
         return "border-blue-500/20 bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/20";
       case "news":
         return "border-orange-500/20 bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/20";
-      case "tools":
-        return "border-amber-500/20 bg-gradient-to-r from-amber-500 to-yellow-500 text-white shadow-lg shadow-amber-500/20";
       case "community":
         return "border-pink-500/20 bg-gradient-to-r from-pink-500 to-rose-400 text-white shadow-lg shadow-pink-500/20";
       case "infocenter":
         return "border-sky-500/20 bg-gradient-to-r from-sky-500 to-blue-400 text-white shadow-lg shadow-sky-500/20";
-      case "dashboard":
-        return "border-blue-500/20 bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/20";
       case "admin":
         return "border-red-700/20 bg-gradient-to-r from-red-700 to-rose-600 text-white shadow-lg shadow-red-700/20";
-      case "studio-home":
       default:
         return "border-sky-500/20 bg-gradient-to-r from-sky-500 to-indigo-500 text-white shadow-lg shadow-sky-500/20";
     }
@@ -568,7 +643,10 @@ export default function Sidebar({
 
   const renderSimpleMenu = (item: MenuItem & { key?: string }, color = "text-blue-400") => {
     const Icon = item.icon || PenTool;
-    const isActive = isPathActive(item.href);
+    const itemKey = item.key || item.name;
+    const isActive = optimisticActiveKey
+      ? optimisticActiveKey === itemKey
+      : isPathActive(item.href);
     const activeStyles = getActiveStyles(item.key);
 
     const baseClass = isCollapsed
@@ -579,7 +657,10 @@ export default function Sidebar({
       <Link
         key={item.name}
         href={item.href}
-        onClick={() => setIsMobileOpen(false)}
+        onClick={() => {
+          if (item.key) setOptimisticActiveKey(item.key);
+          setIsMobileOpen(false);
+        }}
         title={isCollapsed ? item.name : undefined}
         className={`
           group relative flex items-center rounded-xl border text-[13px] font-bold transition-all duration-300
@@ -600,7 +681,9 @@ export default function Sidebar({
     const Icon = group.icon;
     const hasChildren = !!group.children?.length;
     const isExpanded = expandedGroups.includes(group.key);
-    const isActive = isPathActive(group.href);
+    const isGroupActiveState = optimisticActiveKey
+      ? optimisticActiveKey === group.key
+      : isGroupActive(group);
     const activeStyles = getActiveStyles(group.key);
 
     if (isCollapsed || !hasChildren) {
@@ -612,23 +695,30 @@ export default function Sidebar({
 
     return (
       <div key={group.key} className="space-y-1.5">
-        <Link
-          href={group.href}
-          onClick={() => {
-            toggleGroup(group.key);
-            setIsMobileOpen(false);
-          }}
+        <div
           className={`
             group relative flex items-center rounded-xl border px-3 py-2 text-[13px] font-bold transition-all duration-300
-            ${isActive
+            ${isGroupActiveState
               ? activeStyles
               : "border-slate-300 bg-slate-50 text-slate-900 dark:border-white/15 dark:bg-[#0c0d12]/45 dark:text-zinc-100 hover:border-slate-400 hover:bg-zinc-100/50 dark:hover:border-white/30 dark:hover:bg-[#141622]/80 dark:hover:text-white"
             }
           `}
         >
-          <Icon size={15} className={`shrink-0 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-white" : group.color}`} />
-          <span className="ml-2.5 min-w-0 flex-1 truncate">{group.name}</span>
+          {/* Main Parent Menu Header Link */}
+          <Link
+            href={group.href}
+            onClick={() => {
+              setOptimisticActiveKey(group.key);
+              toggleGroup(group.key);
+              setIsMobileOpen(false);
+            }}
+            className="flex min-w-0 flex-1 items-center cursor-pointer"
+          >
+            <Icon size={15} className={`shrink-0 transition-transform duration-300 group-hover:scale-110 ${isGroupActiveState ? "text-white" : group.color}`} />
+            <span className="ml-2.5 truncate">{group.name}</span>
+          </Link>
 
+          {/* Dedicated Expand/Collapse Chevron Button */}
           <button
             type="button"
             onClick={(e) => {
@@ -637,28 +727,35 @@ export default function Sidebar({
               toggleGroup(group.key);
             }}
             className={`
-              ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-all duration-300
-              ${isActive
+              ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-all duration-300 cursor-pointer
+              ${isGroupActiveState
                 ? "text-white/80 hover:bg-white/15 hover:text-white"
                 : "text-zinc-400 hover:bg-zinc-150 dark:hover:bg-zinc-800 hover:text-zinc-750 dark:hover:text-zinc-300"
               }
             `}
+            title={isExpanded ? "메뉴 접기" : "메뉴 펼치기"}
           >
             {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
           </button>
-        </Link>
+        </div>
 
+        {/* Submenu Item List - STAYS 100% EXPANDED ON CLICK */}
         {isExpanded && (
           <div className="ml-2.5 mt-1.5 p-1.5 space-y-1 rounded-xl bg-zinc-50/40 dark:bg-zinc-950/30 border border-zinc-200/40 dark:border-zinc-900/30">
             {group.children?.map((child) => {
               const ChildIcon = child.icon || FileText;
-              const childActive = isPathActive(child.href);
+              const childActive = isPathActive(child.href, group.children);
 
               return (
                 <Link
                   key={child.href}
                   href={child.href}
-                  onClick={() => setIsMobileOpen(false)}
+                  onClick={() => {
+                    setOptimisticActiveKey(group.key);
+                    // Explicitly preserve parent group in expandedGroups array!
+                    setExpandedGroups((prev) => (prev.includes(group.key) ? prev : [...prev, group.key]));
+                    setIsMobileOpen(false);
+                  }}
                   className={`
                     relative flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[12px] font-bold transition duration-250
                     ${childActive
@@ -681,13 +778,6 @@ export default function Sidebar({
     );
   };
 
-  const sectionTitle = (label: string) =>
-    !isCollapsed && (
-      <p className="text-[16px] font-black tracking-wider text-center w-full text-blue-600 dark:text-cyan-400 uppercase">
-        {label}
-      </p>
-    );
-
   return (
     <aside
       className={`
@@ -697,12 +787,12 @@ export default function Sidebar({
         ${isMobileOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"}
       `}
     >
-      <div className="relative flex h-16 items-center justify-center border-b border-zinc-200 dark:border-zinc-800/80 px-4 bg-white dark:bg-[#090e15] transition-colors duration-300">
+      <div className="relative flex h-16 shrink-0 items-center justify-center border-b border-zinc-200 dark:border-zinc-800/80 px-4 bg-white dark:bg-[#090e15] transition-colors duration-300">
         {isCollapsed ? (
           <div className="flex w-full justify-center">
             <button
               onClick={() => setIsCollapsed(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
               title="사이드바 펼치기"
             >
               <PanelLeftOpen size={16} />
@@ -715,7 +805,7 @@ export default function Sidebar({
             </span>
             <button
               onClick={() => setIsCollapsed(true)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="absolute right-4 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
               title="사이드바 접기"
             >
               <PanelLeftClose size={16} />

@@ -4,9 +4,61 @@ mier
 
 이 문서는 2026년 7월 동안 CreAibox 프로젝트에서 진행된 일자별 개발 세부 작업 내역과 핵심 아키텍처 결정 사항을 기록합니다.
 
+### 🗓️ 2026-07-25 (토) - 오늘
+
+#### 1. 구글 검색엔진 실시간 색인 (Google Indexing API) 인프라 연동 & 서치콘솔 소유자 승인 완료
+* **구현 요약**: 사용자가 블로그 포스트나 웹사이트 글을 작성할 때 구글 검색 로봇(Googlebot)에 실시간으로 수집 핑(Ping)을 전송하기 위한 Google Indexing API 인프라 구축 및 서치콘솔 권한 연동을 완료했습니다.
+* **작업 상세**:
+  - **Google Indexing API 활성화**: GCP 콘솔에서 `Web Search Indexing API` (`indexing.googleapis.com`) 사용 설정 활성화.
+  - **서비스 계정 생성 및 환경변수 연동 ([`.env.local`](file:///Users/a1234/Local%20Sites/creaibox/.env.local))**:
+    - 서비스 계정 `creaibox-indexing-bot@project-51796415-94e5-4403-ad7.iam.gserviceaccount.com` 생성 및 JSON 키 발급.
+    - `.env.local` 파일에 `GOOGLE_INDEXING_CLIENT_EMAIL`, `GOOGLE_INDEXING_PRIVATE_KEY`, `GOOGLE_INDEXING_CREDENTIALS` 비밀키 안전 적재 완료.
+  - **Google Search Console 소유자(Owner) 권한 연동**: `creaibox.com` 서치콘솔 속성의 사용자 권한에 해당 서비스 계정을 **`소유자 (Owner)`** 권한으로 100% 승인 등록 완료.
+
+#### 2. 크리에이박스 프로젝트 종합 할 일 & 로드맵 대장 (`docs/project/todo-roadmap.md`) 신설
+* **구현 요약**: 프로젝트 내 SEO 실시간 자동 색인, 사이트맵/피드 최적화, 무인 자동화(Cron) 및 AI 에이전트 개발일지 규칙을 지속적으로 기록하고 추적할 수 있는 종합 할 일 대장을 신설했습니다.
+* **작업 상세**:
+  - **[todo-roadmap.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/todo-roadmap.md)** 파일 생성: 4대 핵심 분야(검색엔진 실시간 자동 색인, 사이트맵/RSS, 백그라운드 무인 자동화, AI 에이전트 개발 규정)별 체크리스트(`- [ ]` / `- [x]`) 수록 및 동기화 체계 구축.
+  - **에이전트 규칙 등록 ([`AGENTS.md`](file:///Users/a1234/Local%20Sites/creaibox/AGENTS.md))**: 사용자가 "할 일 추가" 요청 시 해당 할 일 대장 문서에 자동 기록/업데이트하도록 지침 수록.
+
+#### 3. Google Indexing API 서버 모듈 & 1시간 쿨다운/최종 핑 보장(Trailing Edge Ping) 시스템 구현
+* **구현 요약**: 유저가 블로그 포스트를 발행하거나 수정/재발행할 때 구글 검색봇에 실시간 핑을 비동기로 송신하는 서버 백엔드 모듈 및 API 엔드포인트를 완전 개발·탑재했습니다.
+* **작업 상세**:
+  - **서버 인덱싱 모듈 구축 ([`google-indexing.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/google-indexing.ts))**:
+    - `googleapis` OAuth2 JWT 인증을 통해 구글 Indexing API (`https://indexing.googleapis.com/v3/urlNotifications:publish`) 호출 비동기 모듈 개발.
+    - **1시간 쿨다운 (1-Hour Cooldown Throttling)** & **최종 핑 보장 (Trailing Edge Ping)** 알고리즘 구현: 최초 발행 시 즉시 핑 1회 전송 후, 1시간 이내 연속 재발행 시 핑 낭비를 차단하고 1시간 경과 시점 최종 완해본으로 핑 1회를 자동 보장전송하도록 설계.
+  - **API 엔드포인트 신설 ([`route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/seo/google-indexing-ping/route.ts))**: POST 핑 전송 라우터 탑재.
+  - **에디터 발행 연동 ([`list/[id]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/list/%5Bid%5D/page.tsx))**: 글이 `published` 상태로 업서트/발행 시 비동기 핑 자동 트리거 탑재.
+#### 4. "크리에이박스 블로그" 허브 메인 페이지 전면 개편 & 좌측 10대 서브메뉴 100% 동기화
+* **구현 요약**: `/studio/writing/creaibox` 메인 페이지 명칭을 **`크리에이박스 블로그`**로 변경하고, 불필요한 구형 카드를 제거하여 좌측 사이드바 서브메뉴 10개 항목과 1:1로 정확히 동기화된 카드 그리드 및 **4대 핵심 차별화 셀링포인트(Google Indexing API, DIA+ 4대 재창조 등)** 배너를 전면 이식했습니다.
+* **작업 상세 ([`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/page.tsx))**:
+  - **헤더 타이틀 갱신**: `"크리아이박스 글쓰기"` ➡️ `"크리에이박스 블로그"` 명칭 개편.
+  - **4대 핵심 차별화 셀링포인트 (USP) 배너 탑재**:
+    1. ⚡ **구글 1초 실시간 색인 (Google Indexing API)**
+    2. 🛡️ **네이버/SNS 4대 재창조 (C-Rank & DIA+ 파괴)**
+    3. 📑 **동적 사이트맵 & /feed (RSS)**
+    4. 🤖 **구조화 스키마 (JSON-LD) 1초 주입**
+  - **좌측 서브메뉴 10대 카드 100% 동기화**: `블로그 새글 쓰기`, `블로그 원고 관리`, `네이버/SNS 재발행`, `AI 콘텐츠 기획`, `기획 라이브러리`, `콘텐츠 캘린더`, `자동화 워크플로우`, `블로그 설정 및 관리`, `썸네일 생성 관리`, `지식 & 페르소나 설정`.
+  - **실시간 통계 카운터 연동**: Supabase DB `writing_creaibox_posts` 조회 기반 유저별 작성 포스트, 발행 완료, 임시 보관, 재발행 카운터 수치 렌더링.
+  - **정적 무결성 빌드 검증**: `npx tsc --noEmit` 완벽 컴파일 통과.
+
+#### 5. 사이트바 서브메뉴 클릭 시 자동 접힘 원인 완전 해결 & 경로 정규화/리다이렉트 워프 매칭 고도화
+* **구현 요약**: "블로그 새글 쓰기" 클릭 시 임시 보관함(`/studio/writing/creaibox/list/[id]`)으로 워프(Warp) 리다이렉트되면서 상위 "크리에이박스 블로그" 서브메뉴가 자동으로 닫히던 근본 원인을 규명하고, `/studio/` 경로 정규화 함수(`normalizePath`) 및 리다이렉트 맵핑을 이식하여 어떤 서브메뉴를 클릭하든 메뉴가 100% 펼침 유지되도록 정비했습니다.
+* **작업 상세 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx))**:
+  - **경로 정규화 함수 (`normalizePath`) 구현**: `/studio/` 접두사가 포함된 동적 URL과 일반 대외용 URL 간의 불일치를 자동 흡수하여 경로 매칭 100% 보장.
+  - **리다이렉트 워프 매칭 예외 처리**: `new-post` 클릭 시 생성되는 에디터 상세 경로(`/writing/creaibox/list/[id]?newPost=true`) 조건 분기를 통해 `블로그 새글 쓰기`와 `블로그 원고 관리`가 동시에 파란색 활성화(Active) 칼라로 중복 렌더링되던 버그를 정밀 분리하여, 단 1개의 서브메뉴만 정확하게 활성화되도록 개선.
+  - **서브메뉴 순서 재배치**: 사용자 요청에 따라 `"블로그 설정 및 관리"` 메뉴를 `"네이버/SNS 재발행"` 바로 밑(4번째 위치)으로 순서 이동 재배치 (`Sidebar.tsx` 및 `writing/creaibox/page.tsx` 동시 적용).
+  - **상위-하위 서브메뉴 경로 중복 하이라이트 방지 (`hasMoreSpecificMatch`)**: `/music/lyrics/idea-hub`(가사 소재 허브) 접속 시 상위 접두 경로인 `/music/lyrics`(가사 & SUNO)까지 두 서브메뉴가 동시에 하늘색으로 중복 선택되던 버그를 정밀 알고리즘으로 해결하여, 가장 구체적인 단 1개의 서브메뉴만 정확히 하이라이트되도록 수정.
+  - **커뮤니티 경로 단어 오매칭 버그 완전 방지 (`switch(group.key)`)**: `/community/writing` 또는 `/community/music` 접속 시 느슨한 문자열 검색(`.includes("writing")` / `.includes("music")`)으로 인해 위쪽 "크리에이박스 블로그" 및 "뮤직 스튜디오" 메뉴까지 동시에 열리던 오작동 버그를 명시적 그룹 라우트 접두사 검사 분기문으로 전면 교체하여 해결.
+  - **채팅 룸 윈도우 전체 스크롤 밀림 방지 ([`ChatRoom.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/community/%5Bsection%5D/components/ChatRoom.tsx))**: `/community/chat` 진입 시 `scrollIntoView()`가 브라우저 최상위 윈도우 및 사이드바 헤더(`AI Studio`)까지 위로 밀어버리던 버그를 채팅 내부 컨테이너 전용 `scrollTop` 스크롤(`chatScrollRef`)로 교체하고 사이드바 헤더에 `shrink-0`을 부여하여 상단 타이틀 밀림 현상 완전 차단.
+  - **메인 메뉴 행 전체 토글 동일화 (`toggleGroup`)**: 메인 메뉴 행(제목 및 아이콘) 클릭 시에도 우측 셰브론(`ChevronDown`/`ChevronRight`) 버튼 클릭과 100% 동일하게 1회 클릭 시 서브메뉴 펼침, 재클릭 시 서브메뉴가 즉시 접히도록 토글 UX 개선.
+  - **하드코딩 기본 펼침 폴백 제거 & 라우트별 단독 메뉴 펼침 단일화**: 기존 `useState` 내에 하드코딩되어 있던 `["creaibox-writing", "youtube"]` 기본 펼침 값을 제거하여, "자료 분석 스튜디오", "AI 리포트", "뉴스 콘텐츠" 등 다른 메뉴 페이지 접속 시 위쪽 블로그/유튜브 메뉴가 엉뚱하게 함께 열려버리던 버그를 완전 근절하고, 오직 현재 이동한 메뉴 그룹 1개만 단독으로 열리도록 정상화.
+  - **클릭 즉시 0ms 낙관적 컬러 렌더링 (`optimisticActiveKey`)**: 기존 Next.js 클라이언트 지연 로딩(1~2초) 완료 후 `pathname` 변화 시점에 메뉴 컬러가 늦게 반응하던 딜레이 현상을 완전 차단하고, 메뉴 클릭 0ms 동기 시점에 즉시 하이라이트/그라데이션 스타일이 활성화되는 낙관적 피드백 시스템 탑재.
+  - **전체 14개 메인 메뉴 그룹 전수 검증**: `npx tsc --noEmit` 검증 0 에러 무결성 확인.
+
 ---
 
-### 🗓️ 2026-07-22 (수) ~ 2026-07-23 (목) - 오늘
+### 🗓️ 2026-07-22 (수) ~ 2026-07-23 (목)
 
 #### 1. 콘텐츠 캘린더 AI 글쓰기 원고 자동 연동, 다중 브랜드 필터 및 빈 월 안내 구축
 

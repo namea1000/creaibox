@@ -129,6 +129,22 @@ export const faqData: FAQCategory[] = [
       {
         id: "write-4",
         category: "ai-writer",
+        question: "크리에이박스에서 쓴 글은 구글 검색에 얼마나 빠르게 노출되나요?",
+        answer: "크리에이박스는 **'Google Web Search Indexing API' 실시간 핑 시스템**이 100% 무설정 자동 탑재되어 있습니다.\n\n사용자가 블로그 포스트나 비즈니스 웹사이트 글을 발행하는 즉시, 백엔드 서버가 구글 검색 로봇(Googlebot)으로 수집 요청 핑(Ping)을 전송하여 수 분 내에 구글 검색 엔진에 실시간 색인(Indexing) 처리됩니다.",
+        link: "/studio/writing/creaibox/blog-management",
+        linkLabel: "블로그 관리 스튜디오 바로가기"
+      },
+      {
+        id: "write-5",
+        category: "ai-writer",
+        question: "글을 수정하거나 재발행할 때도 구글에 실시간 핑이 전송되나요?",
+        answer: "네, 글 수정 및 재발행 시에도 구글봇에 `URL_UPDATED` 핑이 자동 전송됩니다.\n\n특히 무분별한 핑 남발 및 쿼터 낭비를 방지하기 위해 **1시간 스마트 쿨다운(Cooldown) 및 Trailing Edge Ping 알고리즘**이 적용되어 있어, short-term 연속 수정 시에도 1시간 후 최종 완성본 원고가 구글봇에 100% 수집 반영되도록 보장합니다.",
+        link: "/studio/writing/creaibox/blog-management",
+        linkLabel: "블로그 설정 및 관리 이동"
+      },
+      {
+        id: "write-6",
+        category: "ai-writer",
         question: "크리에이박스 글쓰기 스튜디오의 '구조화 스키마(Schema)' 기능은 무엇이며 어떻게 작동하나요?",
         answer: "구조화 스키마(JSON-LD)는 구글, 네이버 등 검색 엔진의 크롤링 로봇에게 블로그 글의 성격(일반 기사, 자주 묻는 질문(FAQ), 가이드 등)을 기계용 데이터로 정확하게 알려주는 글로벌 SEO 표준 마크업입니다.\n\n[작동 원리 및 사용법]\n1. 스튜디오 글쓰기 우측 '스키마' 탭에서 AI 엔진과 스키마 유형(추천/Article/FAQPage 등)을 선택한 후 [AI 스키마 자동 생성]을 누릅니다.\n2. 생성된 코드를 확인하고 [본문에 적용하기]를 클릭하면, 원고 본문 맨 하단에 눈에 보이지 않는 HTML 주석(Comment) 래퍼 형태로 자동 주입됩니다.\n3. 저장 후 발행(Publish)하면, 시스템이 이 주석을 실시간으로 감지하고 추출하여 기사 페이지의 HTML <head> 내부에 검색엔진용 스크립트로 안전하게 꽂아 넣습니다.",
         link: "/studio/writing/creaibox/new-post",

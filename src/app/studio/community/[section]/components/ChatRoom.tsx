@@ -54,6 +54,7 @@ export default function ChatRoom({ section }: ChatRoomProps) {
   const [typingUser, setTypingUser] = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
 
   // Initialize messages on channel change
   useEffect(() => {
@@ -62,9 +63,11 @@ export default function ChatRoom({ section }: ChatRoomProps) {
     setTypingUser("");
   }, [activeSection]);
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom on new messages (internal chat container only)
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
   };
 
   useEffect(() => {
@@ -217,7 +220,7 @@ export default function ChatRoom({ section }: ChatRoomProps) {
         </header>
 
         {/* Message View Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-zinc-800 bg-gradient-to-b from-[#080b12] to-[#06080d]">
+        <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-zinc-800 bg-gradient-to-b from-[#080b12] to-[#06080d]">
           {messages.map((msg) => (
             <div
               key={msg.id}
