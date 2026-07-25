@@ -51,8 +51,8 @@ export default function MoonshotCursor() {
     const lerp = (start: number, end: number, factor: number) => start + (end - start) * factor;
 
     const renderLoop = () => {
-      ringPos.current.x = lerp(ringPos.current.x, mousePos.current.x, 0.16);
-      ringPos.current.y = lerp(ringPos.current.y, mousePos.current.y, 0.16);
+      ringPos.current.x = lerp(ringPos.current.x, mousePos.current.x, 0.26);
+      ringPos.current.y = lerp(ringPos.current.y, mousePos.current.y, 0.26);
 
       if (ringRef.current) {
         // Hover only expands scale (no color change)
@@ -80,7 +80,7 @@ export default function MoonshotCursor() {
   return (
     <div
       ref={ringRef}
-      className={`fixed top-0 left-0 pointer-events-none z-[99999] rounded-full transition-transform duration-300 ease-out will-change-transform ${
+      className={`fixed top-0 left-0 pointer-events-none z-[99999] rounded-full transition-opacity duration-200 will-change-transform ${
         isVisible ? "opacity-100" : "opacity-0"
       } w-10 h-10 border-[1.8px] border-zinc-700/80 dark:border-white/80 bg-transparent`}
       style={{
