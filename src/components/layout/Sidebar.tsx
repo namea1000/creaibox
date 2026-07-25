@@ -545,6 +545,9 @@ export default function Sidebar({
         case "infocenter":
           return normPath.startsWith("/infocenter");
         case "creaibox-writing":
+          if (normPath === "/content-planner/idea-hub" || normPath.startsWith("/content-planner/idea-hub/")) {
+            return false;
+          }
           return normPath.startsWith("/writing/creaibox") || normPath.startsWith("/content-planner");
         case "music":
           return normPath.startsWith("/music");

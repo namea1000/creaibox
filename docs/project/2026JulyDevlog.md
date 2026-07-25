@@ -57,7 +57,7 @@ mier
   - **Google Indexing API 일일 쿼터 증액 신청 가이드 확립 ([`google-indexing-api-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/google-indexing-api-guide.md))**: 기본 200건/일 쿼터를 2,000~10,000건/일 이상으로 확대하기 위한 GCP 콘솔 직관 링크 및 영문 신청 사유 양식 가이드 정리 연동.
   - **스튜디오 탑바 위젯 메뉴 반응형 아이콘 전용 모드 및 텍스트 세로 찌그러짐 방지 ([`StudioTopbar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/StudioTopbar.tsx))**: 창 폭 축소 시 "내 콘텐츠 보관함", "관리 대시보드" 등 텍스트가 줄바꿈되어 세로로 깨지던 현상을 `whitespace-nowrap`과 `hidden 2xl:inline` 반응형 분기문으로 정비하여, 화면 축소 시 글자 없이 깔끔하게 이모티콘/아이콘 전용 뱃지 버튼으로 즉시 전환되도록 개선.
   - **브라우저 네이티브 지연 툴팁 완전 제거 & 0ms 실시간 직관 툴팁 탑재 ([`StudioTopbar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/StudioTopbar.tsx))**: 마우스 호버 시 0.5~1초간 뜸들이던 브라우저 네이티브 `title` 속성을 전면 제거하고, 마우스 오버 0.00초(0ms) 동기 시점에 즉시 반응하여 뜨는 `duration-75` 초고속 커스텀 말풍선 툴팁 시스템으로 전면 개선.
-  - **Moonshot AI 스타일 커서 링 정비 & 메뉴 시야 방해 애니메이션 제거 ([`MoonshotCursor.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/common/MoonshotCursor.tsx), [`layout.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/layout.tsx))**: 커서 링 선 굵기를 섬세하고 세련된 `1.8px` 아웃라인으로 정밀 조정하고, 호버 시 불필요한 블루 네온 발광 없이 깔끔하게 링 크기만 확대(1.65x)되도록 정돈. 메뉴 시야를 어지럽히던 기존 `InteractiveCursorEffect`(반짝이 가루 및 무지개 파동 원 확산)를 전면 제거하여 깔끔하고 세련된 시각적 가독성 완성.
+  - **독립 "콘텐츠 아이디어 허브" 선택 시 "크리에이박스 블로그" 중복 선택/펼침 방지 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx))**: `/content-planner/idea-hub` 접속 시 URL 경로 접두사(`/content-planner`)로 인해 하단의 "크리에이박스 블로그" 그룹까지 동시에 활성화되어 서브메뉴가 펼쳐지던 오매칭 버그를 예외 분기 조건으로 정밀 차단하여 "콘텐츠 아이디어 허브" 단독 하이라이트 정상화.
   - **전체 14개 메인 메뉴 그룹 전수 검증**: `npx tsc --noEmit` 검증 0 에러 무결성 확인.
 
 ---
