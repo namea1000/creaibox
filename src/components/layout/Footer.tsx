@@ -210,10 +210,14 @@ export default function Footer() {
                 href="https://pf.kakao.com/_RxdxmsX"
                 target="_blank"
                 rel="noopener noreferrer"
-                title="카카오톡 채널 추가"
-                className="flex h-11 w-11 items-center justify-center rounded-lg bg-yellow-400 text-slate-900 shadow-md shadow-yellow-500/10 transition hover:scale-105 hover:bg-yellow-500 active:scale-[0.97]"
+                className="group relative flex h-11 w-11 items-center justify-center rounded-lg bg-yellow-400 text-slate-900 shadow-md shadow-yellow-500/10 transition hover:scale-105 hover:bg-yellow-500 active:scale-[0.97]"
               >
                 <MessageSquare size={18} fill="currentColor" className="stroke-none" />
+                {/* 0ms 실시간 직관 툴팁 */}
+                <span className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
+                  카카오톡 채널 추가
+                  <span className="absolute left-1/2 top-full -translate-x-1/2 -mt-1 border-4 border-transparent border-t-zinc-900/95 dark:border-t-zinc-800/95" />
+                </span>
               </a>
 
               {/* 공식 유튜브 구독 */}
@@ -221,12 +225,16 @@ export default function Footer() {
                 href="https://www.youtube.com/@creaibox"
                 target="_blank"
                 rel="noopener noreferrer"
-                title="공식 유튜브 구독"
-                className="flex h-11 w-11 items-center justify-center rounded-lg bg-red-600 text-white shadow-md shadow-red-500/10 transition hover:scale-105 hover:bg-red-700 active:scale-[0.97]"
+                className="group relative flex h-11 w-11 items-center justify-center rounded-lg bg-red-600 text-white shadow-md shadow-red-500/10 transition hover:scale-105 hover:bg-red-700 active:scale-[0.97]"
               >
                 <svg viewBox="0 0 24 24" width={18} height={18} fill="currentColor">
                   <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.107C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.388.511a3.002 3.002 0 0 0-2.11 2.107C0 8.053 0 12 0 12s0 3.947.502 5.837a3.003 3.003 0 0 0 2.11 2.107c1.883.511 9.388.511 9.388.511s7.505 0 9.388-.511a3.002 3.002 0 0 0 2.11-2.107C24 15.947 24 12 24 12s0-3.947-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                 </svg>
+                {/* 0ms 실시간 직관 툴팁 */}
+                <span className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
+                  공식 유튜브 구독
+                  <span className="absolute left-1/2 top-full -translate-x-1/2 -mt-1 border-4 border-transparent border-t-zinc-900/95 dark:border-t-zinc-800/95" />
+                </span>
               </a>
 
               {/* 인스타그램 팔로우 */}
@@ -235,23 +243,31 @@ export default function Footer() {
                   e.preventDefault();
                   alert("인스타그램 채널은 현재 준비 중입니다. 조만간 오픈될 예정이오니 많은 기대 부탁드립니다!");
                 }}
-                title="인스타그램 팔로우"
-                className="flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/10 transition hover:scale-105 active:scale-[0.97]"
+                className="group relative flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 text-white shadow-md shadow-pink-500/10 transition hover:scale-105 active:scale-[0.97]"
               >
                 <svg viewBox="0 0 24 24" width={18} height={18} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
                   <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
                   <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
                 </svg>
+                {/* 0ms 실시간 직관 툴팁 */}
+                <span className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
+                  인스타그램 팔로우
+                  <span className="absolute left-1/2 top-full -translate-x-1/2 -mt-1 border-4 border-transparent border-t-zinc-900/95 dark:border-t-zinc-800/95" />
+                </span>
               </button>
 
               {/* 이메일 문의 */}
               <a
                 href="mailto:contact@creaibox.com"
-                title="이메일 문의"
-                className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-500 dark:text-zinc-400 shadow-sm transition hover:border-blue-400 dark:hover:border-blue-955/20 hover:bg-blue-50 dark:hover:bg-zinc-850 hover:text-blue-600 dark:hover:text-blue-500"
+                className="group relative flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-500 dark:text-zinc-400 shadow-sm transition hover:border-blue-400 dark:hover:border-blue-955/20 hover:bg-blue-50 dark:hover:bg-zinc-850 hover:text-blue-600 dark:hover:text-blue-500"
               >
                 <Mail size={18} />
+                {/* 0ms 실시간 직관 툴팁 */}
+                <span className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
+                  이메일 문의
+                  <span className="absolute left-1/2 top-full -translate-x-1/2 -mt-1 border-4 border-transparent border-t-zinc-900/95 dark:border-t-zinc-800/95" />
+                </span>
               </a>
             </div>
           </div>

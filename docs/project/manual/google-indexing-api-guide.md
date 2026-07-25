@@ -96,10 +96,17 @@ GOOGLE_INDEXING_CREDENTIALS='{"type":"service_account","project_id":"project-517
   }
   ```
 
-### 4.2 일일 쿼터 (Quota) 및 확장 방법
-* **기본 쿼터**: GCP 프로젝트당 **일일 200건**의 핑(Ping) 쿼터가 기본 제공됩니다.
+### 4.2 일일 쿼터 (Quota) 및 확장 (Quota Increase Request) 방법
+* **기본 제공 쿼터**: GCP 프로젝트당 **일일 200건 (Requests per day)**의 핑(Ping) 쿼터가 기본 제공됩니다.
 * **증액 신청 (Quota Request)**:
-  * 유저들의 일일 포스트 발행량이 200건을 넘어서면, GCP 콘솔의 **`API 및 서비스` > `할당량 (Quotas)`** 메뉴에서 **Google Indexing API Requests Per Day** 항목의 `할당량 수정 요청`을 신청합니다. (보통 2,000건~10,000건 이상 무료 확장 가능)
+  * **신청 바로가기**: [GCP Console IAM & Admin Quotas Page](https://console.cloud.google.com/iam-admin/quotas?project=project-51796415-94e5-4403-ad7)
+  * **신청 절차**:
+    1. 위 링크로 이동 후 검색창에 `Indexing API` 입력.
+    2. `Publish requests per day` (일일 게시 요청 수) 항목의 체크박스 선택.
+    3. 상단 **`[할당량 수정 (EDIT QUOTAS)]`** 클릭 후 새 할당량을 `2000` 또는 `10000`으로 입력.
+    4. **신청 사유 (Request Description)** 양식 작성:
+       > *"We operate an AI blogging & content management platform (creaibox.com). As our users generate and publish multiple blog posts daily, we require a higher daily indexing ping quota to notify Googlebot in real-time."*
+    5. 제출 시 구글 검토 후 보통 1~2영업일 이내 무료 승인 완료.
 
 ### 4.3 스마트 핑 낭비 방지 & 최종 핑 보장 알고리즘 (Smart Throttling & Trailing Edge Ping)
 유저가 글을 발행한 후 short-term으로 수정 및 재발행을 연속해서 누를 경우 핑 쿼터 낭비를 방지하고 최신 완성본의 수집을 보장하기 위한 3중 방어 메커니즘입니다.

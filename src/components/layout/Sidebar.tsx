@@ -661,7 +661,6 @@ export default function Sidebar({
           if (item.key) setOptimisticActiveKey(item.key);
           setIsMobileOpen(false);
         }}
-        title={isCollapsed ? item.name : undefined}
         className={`
           group relative flex items-center rounded-xl border text-[13px] font-bold transition-all duration-300
           ${isActive
@@ -673,6 +672,14 @@ export default function Sidebar({
       >
         <Icon size={15} className={`shrink-0 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-white" : color}`} />
         {!isCollapsed && <span className="truncate">{item.name}</span>}
+
+        {/* 0ms 실시간 직관 툴팁 (접힘 모드용) */}
+        {isCollapsed && (
+          <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2.5 -translate-y-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
+            {item.name}
+            <span className="absolute right-full top-1/2 -translate-y-1/2 -mr-1 border-4 border-transparent border-r-zinc-900/95 dark:border-r-zinc-800/95" />
+          </span>
+        )}
       </Link>
     );
   };
@@ -727,13 +734,12 @@ export default function Sidebar({
               toggleGroup(group.key);
             }}
             className={`
-              ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-all duration-300 cursor-pointer
+              group/chev ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-all duration-300 cursor-pointer relative
               ${isGroupActiveState
                 ? "text-white/80 hover:bg-white/15 hover:text-white"
                 : "text-zinc-400 hover:bg-zinc-150 dark:hover:bg-zinc-800 hover:text-zinc-750 dark:hover:text-zinc-300"
               }
             `}
-            title={isExpanded ? "메뉴 접기" : "메뉴 펼치기"}
           >
             {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
           </button>
@@ -787,34 +793,44 @@ export default function Sidebar({
         ${isMobileOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"}
       `}
     >
-      <div className="relative flex h-16 shrink-0 items-center justify-center border-b border-zinc-200 dark:border-zinc-800/80 px-4 bg-white dark:bg-[#090e15] transition-colors duration-300">
+      <div className="flex h-16 shrink-0 items-center justify-between border-b border-zinc-200 dark:border-zinc-800/80 px-3.5 bg-white dark:bg-[#090e15] transition-colors duration-300">
         {isCollapsed ? (
           <div className="flex w-full justify-center">
             <button
               onClick={() => setIsCollapsed(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
-              title="사이드바 펼치기"
+              className="group relative flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
             >
               <PanelLeftOpen size={16} />
+              
+              {/* 0ms 실시간 직관 툴팁 */}
+              <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2.5 -translate-y-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
+                사이드바 펼치기
+                <span className="absolute right-full top-1/2 -translate-y-1/2 -mr-1 border-4 border-transparent border-r-zinc-900/95 dark:border-r-zinc-800/95" />
+              </span>
             </button>
           </div>
         ) : (
-          <>
-            <span className="text-[23px] font-black tracking-tight bg-gradient-to-r from-violet-600 via-indigo-500 to-blue-600 dark:from-cyan-400 dark:via-blue-400 dark:to-violet-400 bg-clip-text text-transparent select-none uppercase">
+          <div className="flex w-full items-center justify-between">
+            <span className="text-[19px] font-black tracking-tight bg-gradient-to-r from-violet-600 via-indigo-500 to-blue-600 dark:from-cyan-400 dark:via-blue-400 dark:to-violet-400 bg-clip-text text-transparent select-none uppercase truncate mr-2">
               AI Studio
             </span>
             <button
               onClick={() => setIsCollapsed(true)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
-              title="사이드바 접기"
+              className="group relative flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:border-blue-500/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-blue-500 cursor-pointer"
             >
-              <PanelLeftClose size={16} />
+              <PanelLeftClose size={15} />
+              
+              {/* 0ms 실시간 직관 툴팁 */}
+              <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2.5 -translate-y-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
+                사이드바 접기
+                <span className="absolute right-full top-1/2 -translate-y-1/2 -mr-1 border-4 border-transparent border-r-zinc-900/95 dark:border-r-zinc-800/95" />
+              </span>
             </button>
-          </>
+          </div>
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-2.5 py-4">
+      <div className={`flex-1 px-2.5 py-4 ${isCollapsed ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"}`}>
         <nav className="space-y-2">{menuGroups.map(renderGroup)}</nav>
       </div>
 

@@ -63,6 +63,7 @@ export default function Header() {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [planName, setPlanName] = useState("Free");
+  const [isVip, setIsVip] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
   const [isYoutubeMenuOpen, setIsYoutubeMenuOpen] = useState(false);
@@ -108,16 +109,20 @@ export default function Header() {
       try {
         const { data } = await supabase
           .from("profiles")
-          .select("nickname, membership_level")
+          .select("nickname, membership_level, role, extra_configs, is_manual_grant")
           .eq("id", userId)
           .maybeSingle();
+
+        const isManual = data?.extra_configs?.is_manual_grant ?? data?.is_manual_grant ?? false;
 
         return {
           nickname: data?.nickname ?? "",
           membershipLevel: data?.membership_level ?? "free",
+          role: data?.role ?? "",
+          isManualGrant: Boolean(isManual),
         };
       } catch {
-        return { nickname: "", membershipLevel: "free" };
+        return { nickname: "", membershipLevel: "free", role: "", isManualGrant: false };
       }
     },
     [supabase]
@@ -130,6 +135,7 @@ export default function Header() {
         const cachedUser = localStorage.getItem("creaibox_cached_user");
         const cachedNickname = localStorage.getItem("creaibox_cached_nickname");
         const cachedPlanName = localStorage.getItem("creaibox_cached_planname");
+        const cachedIsVip = localStorage.getItem("creaibox_cached_is_vip");
         
         if (cachedUser) {
           setUser(JSON.parse(cachedUser));
@@ -138,6 +144,9 @@ export default function Header() {
           }
           if (cachedPlanName) {
             setPlanName(cachedPlanName);
+          }
+          if (cachedIsVip === "true") {
+            setIsVip(true);
           }
           setIsAuthReady(true);
         }
@@ -155,9 +164,11 @@ export default function Header() {
         // Apply cached profile first to avoid flickering
         let cachedNickname = "";
         let cachedPlanName = "Free";
+        let cachedIsVip = false;
         if (typeof window !== "undefined") {
           cachedNickname = localStorage.getItem("creaibox_cached_nickname") || "";
           cachedPlanName = localStorage.getItem("creaibox_cached_planname") || "Free";
+          cachedIsVip = localStorage.getItem("creaibox_cached_is_vip") === "true";
         }
         
         setUser(nextUser);
@@ -167,6 +178,7 @@ export default function Header() {
         if (cachedPlanName) {
           setPlanName(cachedPlanName);
         }
+        setIsVip(cachedIsVip);
 
         // Fetch the fresh profile in the background
         const profileData = await fetchProfile(nextUser.id);
@@ -176,20 +188,27 @@ export default function Header() {
           const rawLevel = String(profileData.membershipLevel || "free").toLowerCase();
           const mappedLevel = rawLevel === "admin"
             ? "Admin"
-            : rawLevel === "creator"
-            ? "Creator"
+            : rawLevel === "premier"
+            ? "Premier"
             : rawLevel === "pro"
             ? "Pro"
             : rawLevel === "business"
             ? "Business"
+            : rawLevel === "creator"
+            ? "Creator"
             : "Free";
             
+          const isVipUser = profileData.isManualGrant || rawLevel === "vip" || String(profileData.role).toUpperCase() === "VIP";
+
           setPlanName(mappedLevel);
+          setIsVip(isVipUser);
+
           if (typeof window !== "undefined") {
             try {
               localStorage.setItem("creaibox_cached_user", JSON.stringify(nextUser));
               localStorage.setItem("creaibox_cached_nickname", profileData.nickname);
               localStorage.setItem("creaibox_cached_planname", mappedLevel);
+              localStorage.setItem("creaibox_cached_is_vip", isVipUser ? "true" : "false");
             } catch (e) {
               console.warn("Failed to cache user session:", e);
             }
@@ -199,11 +218,13 @@ export default function Header() {
         setUser(null);
         setNickname("");
         setPlanName("Free");
+        setIsVip(false);
         setIsProfileOpen(false);
         if (typeof window !== "undefined") {
           localStorage.removeItem("creaibox_cached_user");
           localStorage.removeItem("creaibox_cached_nickname");
           localStorage.removeItem("creaibox_cached_planname");
+          localStorage.removeItem("creaibox_cached_is_vip");
         }
       }
 
@@ -1127,10 +1148,15 @@ export default function Header() {
           <button
             onClick={toggleTheme}
             aria-label={theme === "dark" ? "라이트 모드로 변경" : "다크 모드로 변경"}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white dark:hover:bg-zinc-800 shrink-0"
-            title={theme === "dark" ? "라이트 모드로 변경" : "다크 모드로 변경"}
+            className="group relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white dark:hover:bg-zinc-800 shrink-0"
           >
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+
+            {/* 0ms 실시간 직관 툴팁 */}
+            <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-2 -translate-x-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
+              {theme === "dark" ? "라이트 모드로 변경" : "다크 모드로 변경"}
+              <span className="absolute left-1/2 bottom-full -translate-x-1/2 -mb-1 border-4 border-transparent border-b-zinc-900/95 dark:border-b-zinc-800/95" />
+            </span>
           </button>
 
           {!isAuthReady ? (
@@ -1150,9 +1176,16 @@ export default function Header() {
                   <p className="truncate text-xs font-black leading-tight text-slate-800 dark:text-zinc-200">
                     {displayName}
                   </p>
-                  <p className="mt-0.5 truncate text-[9px] font-bold leading-tight text-slate-450 dark:text-zinc-400">
-                    {planName}
-                  </p>
+                  <div className="mt-0.5 flex items-center gap-1 min-w-0">
+                    <span className="truncate text-[9.5px] font-bold leading-tight text-slate-450 dark:text-zinc-400">
+                      {planName}
+                    </span>
+                    {isVip && (
+                      <span className="inline-flex items-center gap-0.5 rounded bg-amber-500/20 px-1 py-0.2 text-[8px] font-black text-amber-500 dark:text-amber-400 border border-amber-500/30 shrink-0">
+                        ⭐ VIP
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <ChevronDown
@@ -1170,10 +1203,17 @@ export default function Header() {
                         {initials}
                       </div>
 
-                      <div className="min-w-0">
-                        <p className="truncate text-lg font-black text-slate-800 dark:text-zinc-200">
-                          {displayName}
-                        </p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="truncate text-lg font-black text-slate-800 dark:text-zinc-200">
+                            {displayName}
+                          </p>
+                          {isVip && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 px-2 py-0.5 text-[10px] font-black text-amber-500 dark:text-amber-400 border border-amber-500/40 shadow-sm shadow-amber-500/10">
+                              ⭐ VIP
+                            </span>
+                          )}
+                        </div>
                         <p className="mt-0.5 text-sm font-bold text-slate-500 dark:text-zinc-400">
                           {planName}
                         </p>
@@ -1293,6 +1333,11 @@ export default function Header() {
                   <span className="inline-flex items-center rounded-md bg-violet-500/10 dark:bg-violet-400/10 px-1.5 py-0.5 text-[10px] font-black text-violet-600 dark:text-violet-400 border border-violet-500/10">
                     {planName === "free" || planName === "Free" ? "Free 요금제" : planName}
                   </span>
+                  {isVip && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-black text-amber-500 dark:text-amber-400 border border-amber-500/30">
+                      ⭐ VIP
+                    </span>
+                  )}
                 </div>
                 <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 block mt-0.5 truncate">
                   {user.email}

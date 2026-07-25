@@ -60,8 +60,7 @@ export default function Aside() {
           href={item.href}
           target="_blank"
           rel="noopener noreferrer"
-          title={item.label}
-          className={`group flex items-center rounded-lg bg-[#FEE500] text-[#191919] transition-all duration-300 hover:scale-[1.02] ${baseClass}`}
+          className={`group relative flex items-center rounded-lg bg-[#FEE500] text-[#191919] transition-all duration-300 hover:scale-[1.02] ${baseClass}`}
         >
           {isExpanded ? (
             <div className="flex min-w-0 items-center gap-2.5 w-full justify-between">
@@ -74,7 +73,14 @@ export default function Aside() {
               <ArrowRight size={14} className="shrink-0 opacity-80" />
             </div>
           ) : (
-            <Icon size={16} className="shrink-0 fill-[#191919]" />
+            <>
+              <Icon size={16} className="shrink-0 fill-[#191919]" />
+              {/* 0ms 실시간 직관 툴팁 */}
+              <span className="pointer-events-none absolute right-full top-1/2 z-50 mr-2.5 -translate-y-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
+                {item.label}
+                <span className="absolute left-full top-1/2 -translate-y-1/2 -ml-1 border-4 border-transparent border-l-zinc-900/95 dark:border-l-zinc-800/95" />
+              </span>
+            </>
           )}
         </a>
       );
@@ -83,8 +89,7 @@ export default function Aside() {
     return (
       <Link
         href={item.href}
-        title={item.label}
-        className={`group flex items-center rounded-lg bg-gradient-to-br ${item.color} text-white transition-all duration-300 hover:scale-[1.02] ${baseClass}`}
+        className={`group relative flex items-center rounded-lg bg-gradient-to-br ${item.color} text-white transition-all duration-300 hover:scale-[1.02] ${baseClass}`}
       >
         {isExpanded ? (
           <div className="flex min-w-0 items-center gap-2.5 w-full justify-between">
@@ -97,7 +102,14 @@ export default function Aside() {
             <ArrowRight size={14} className="shrink-0 opacity-70" />
           </div>
         ) : (
-          <Icon size={16} className="shrink-0" />
+          <>
+            <Icon size={16} className="shrink-0" />
+            {/* 0ms 실시간 직관 툴팁 */}
+            <span className="pointer-events-none absolute right-full top-1/2 z-50 mr-2.5 -translate-y-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
+              {item.label}
+              <span className="absolute left-full top-1/2 -translate-y-1/2 -ml-1 border-4 border-transparent border-l-zinc-900/95 dark:border-l-zinc-800/95" />
+            </span>
+          </>
         )}
       </Link>
     );
@@ -120,13 +132,18 @@ export default function Aside() {
         ${isExpanded ? "w-56" : "w-14"}
       `}
     >
-      <div className="flex-1 overflow-y-auto px-2.5 py-4">
+      <div className={`flex-1 px-2.5 py-4 ${!isExpanded ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"}`}>
         <button
           onClick={() => setIsExpanded((prev) => !prev)}
-          className={`mb-4 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:border-blue-500/50 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-white ${isExpanded ? "" : "mx-auto"}`}
-          title={isExpanded ? "오른쪽 패널 접기" : "오른쪽 패널 펼치기"}
+          className={`group relative mb-4 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:border-blue-500/50 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-white ${isExpanded ? "" : "mx-auto"}`}
         >
           {isExpanded ? <PanelRightClose size={15} /> : <PanelRightOpen size={15} />}
+          
+          {/* 0ms 실시간 직관 툴팁 */}
+          <span className="pointer-events-none absolute right-full top-1/2 z-50 mr-2.5 -translate-y-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
+            {isExpanded ? "오른쪽 패널 접기" : "오른쪽 패널 펼치기"}
+            <span className="absolute left-full top-1/2 -translate-y-1/2 -ml-1 border-4 border-transparent border-l-zinc-900/95 dark:border-l-zinc-800/95" />
+          </span>
         </button>
 
         <div className="space-y-5">

@@ -301,13 +301,12 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
               <Link
                 key={index}
                 href={item.href}
-                className={`group relative flex h-7.5 w-7.5 items-center justify-center rounded-lg transition-all duration-300 ${item.color}`}
+                className={`group relative flex h-7.5 w-7.5 items-center justify-center rounded-lg transition-all duration-150 ${item.color}`}
               >
                 {item.icon}
-                {/* 인터랙티브 한글 툴팁 */}
-                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-2 -translate-x-1/2 scale-90 rounded-md bg-zinc-900/95 dark:bg-zinc-800/95 px-2 py-1.5 text-[10.5px] font-black text-white opacity-0 shadow-lg transition-all duration-200 group-hover:scale-100 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/30">
+                {/* 0ms 실시간 직관 툴팁 */}
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-2 -translate-x-1/2 rounded-md bg-zinc-900/95 dark:bg-zinc-800/95 px-2 py-1 text-[10.5px] font-black text-white opacity-0 shadow-lg transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/30">
                   {item.label}
-                  {/* 말풍선 꼬리 */}
                   <span className="absolute left-1/2 bottom-full -translate-x-1/2 -mb-1 border-4 border-transparent border-b-zinc-900/95 dark:border-b-zinc-800/95" />
                 </span>
               </Link>
@@ -315,50 +314,76 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
           </div>
         </div>
 
-
-
-
-
-
-
         <Link
           href="/library"
-          className="hidden h-10 items-center gap-2 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0c0d12]/45 px-3.5 text-zinc-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-white/30 hover:bg-zinc-100/50 dark:hover:bg-[#141622]/80 hover:text-slate-800 dark:hover:text-white transition-all duration-300 md:flex"
+          className="group relative flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0c0d12]/45 px-2.5 2xl:px-3.5 text-zinc-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-white/30 hover:bg-zinc-100/50 dark:hover:bg-[#141622]/80 hover:text-slate-800 dark:hover:text-white transition-all duration-300 shrink-0"
         >
           <Library size={15} className="text-sky-400 shrink-0" />
-          <span className="text-[13px] font-bold">내 콘텐츠 보관함</span>
+          <span className="hidden 2xl:inline text-[13px] font-bold whitespace-nowrap">내 콘텐츠 보관함</span>
+          
+          {/* 0ms 실시간 직관 툴팁 */}
+          <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-2.5 -translate-x-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
+            내 콘텐츠 보관함
+            <span className="absolute left-1/2 bottom-full -translate-x-1/2 -mb-1 border-4 border-transparent border-b-zinc-900/95 dark:border-b-zinc-800/95" />
+          </span>
         </Link>
 
         <Link
           href="/studio/dashboard"
-          className="hidden h-10 items-center gap-2 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0c0d12]/45 px-3.5 text-zinc-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-white/30 hover:bg-zinc-100/50 dark:hover:bg-[#141622]/80 hover:text-slate-800 dark:hover:text-white transition-all duration-300 md:flex"
+          className="group relative flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0c0d12]/45 px-2.5 2xl:px-3.5 text-zinc-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-white/30 hover:bg-zinc-100/50 dark:hover:bg-[#141622]/80 hover:text-slate-800 dark:hover:text-white transition-all duration-300 shrink-0"
         >
           <LayoutDashboard size={15} className="text-blue-400 shrink-0" />
-          <span className="text-[13px] font-bold">관리 대시보드</span>
+          <span className="hidden 2xl:inline text-[13px] font-bold whitespace-nowrap">관리 대시보드</span>
+          
+          {/* 0ms 실시간 직관 툴팁 */}
+          <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-2.5 -translate-x-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
+            관리 대시보드
+            <span className="absolute left-1/2 bottom-full -translate-x-1/2 -mb-1 border-4 border-transparent border-b-zinc-900/95 dark:border-b-zinc-800/95" />
+          </span>
         </Link>
 
         <Link
           href="/utility-tools"
-          className="hidden h-10 items-center gap-2 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0c0d12]/45 px-3.5 text-zinc-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-white/30 hover:bg-zinc-100/50 dark:hover:bg-[#141622]/80 hover:text-slate-800 dark:hover:text-white transition-all duration-300 md:flex"
+          className="group relative flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0c0d12]/45 px-2.5 2xl:px-3.5 text-zinc-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-white/30 hover:bg-zinc-100/50 dark:hover:bg-[#141622]/80 hover:text-slate-800 dark:hover:text-white transition-all duration-300 shrink-0"
         >
           <Wand2 size={15} className="text-amber-400 shrink-0" />
-          <span className="text-[13px] font-bold">스튜디오 Tools</span>
+          <span className="hidden 2xl:inline text-[13px] font-bold whitespace-nowrap">스튜디오 Tools</span>
+          
+          {/* 0ms 실시간 직관 툴팁 */}
+          <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-2.5 -translate-x-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
+            스튜디오 Tools
+            <span className="absolute left-1/2 bottom-full -translate-x-1/2 -mb-1 border-4 border-transparent border-b-zinc-900/95 dark:border-b-zinc-800/95" />
+          </span>
         </Link>
 
         <button
+          type="button"
           onClick={() => window.dispatchEvent(new Event("open-faq-chatbot"))}
-          className="hidden h-10 items-center gap-2 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0c0d12]/45 px-3.5 text-zinc-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-white/30 hover:bg-zinc-100/50 dark:hover:bg-[#141622]/80 hover:text-slate-800 dark:hover:text-white transition-all duration-300 md:flex"
+          className="group relative flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0c0d12]/45 px-2.5 2xl:px-3.5 text-zinc-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-white/30 hover:bg-zinc-100/50 dark:hover:bg-[#141622]/80 hover:text-slate-800 dark:hover:text-white transition-all duration-300 shrink-0 cursor-pointer"
         >
           <HelpCircle size={15} className="text-emerald-400 shrink-0" />
-          <span className="text-[13px] font-bold">FAQ 챗봇</span>
+          <span className="hidden 2xl:inline text-[13px] font-bold whitespace-nowrap">FAQ 챗봇</span>
+          
+          {/* 0ms 실시간 직관 툴팁 */}
+          <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-2.5 -translate-x-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
+            FAQ 챗봇
+            <span className="absolute left-1/2 bottom-full -translate-x-1/2 -mb-1 border-4 border-transparent border-b-zinc-900/95 dark:border-b-zinc-800/95" />
+          </span>
         </button>
 
         <button
+          type="button"
           onClick={() => window.dispatchEvent(new Event("open-cre-note"))}
-          className="hidden h-10 items-center gap-2 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0c0d12]/45 px-3.5 text-zinc-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-white/30 hover:bg-zinc-100/50 dark:hover:bg-[#141622]/80 hover:text-slate-800 dark:hover:text-white transition-all duration-300 md:flex"
+          className="group relative flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0c0d12]/45 px-2.5 2xl:px-3.5 text-zinc-600 dark:text-zinc-300 hover:border-slate-400 dark:hover:border-white/30 hover:bg-zinc-100/50 dark:hover:bg-[#141622]/80 hover:text-slate-800 dark:hover:text-white transition-all duration-300 shrink-0 cursor-pointer"
         >
           <StickyNote size={15} className="text-purple-400 shrink-0" />
-          <span className="text-[13px] font-bold">Cre Note</span>
+          <span className="hidden 2xl:inline text-[13px] font-bold whitespace-nowrap">Cre Note</span>
+          
+          {/* 0ms 실시간 직관 툴팁 */}
+          <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-2.5 -translate-x-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
+            Cre Note
+            <span className="absolute left-1/2 bottom-full -translate-x-1/2 -mb-1 border-4 border-transparent border-b-zinc-900/95 dark:border-b-zinc-800/95" />
+          </span>
         </button>
 
         <div className="flex shrink-0 justify-end md:min-w-[190px]">

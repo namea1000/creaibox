@@ -54,6 +54,10 @@ mier
   - **메인 메뉴 행 전체 토글 동일화 (`toggleGroup`)**: 메인 메뉴 행(제목 및 아이콘) 클릭 시에도 우측 셰브론(`ChevronDown`/`ChevronRight`) 버튼 클릭과 100% 동일하게 1회 클릭 시 서브메뉴 펼침, 재클릭 시 서브메뉴가 즉시 접히도록 토글 UX 개선.
   - **하드코딩 기본 펼침 폴백 제거 & 라우트별 단독 메뉴 펼침 단일화**: 기존 `useState` 내에 하드코딩되어 있던 `["creaibox-writing", "youtube"]` 기본 펼침 값을 제거하여, "자료 분석 스튜디오", "AI 리포트", "뉴스 콘텐츠" 등 다른 메뉴 페이지 접속 시 위쪽 블로그/유튜브 메뉴가 엉뚱하게 함께 열려버리던 버그를 완전 근절하고, 오직 현재 이동한 메뉴 그룹 1개만 단독으로 열리도록 정상화.
   - **클릭 즉시 0ms 낙관적 컬러 렌더링 (`optimisticActiveKey`)**: 기존 Next.js 클라이언트 지연 로딩(1~2초) 완료 후 `pathname` 변화 시점에 메뉴 컬러가 늦게 반응하던 딜레이 현상을 완전 차단하고, 메뉴 클릭 0ms 동기 시점에 즉시 하이라이트/그라데이션 스타일이 활성화되는 낙관적 피드백 시스템 탑재.
+  - **Google Indexing API 일일 쿼터 증액 신청 가이드 확립 ([`google-indexing-api-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/google-indexing-api-guide.md))**: 기본 200건/일 쿼터를 2,000~10,000건/일 이상으로 확대하기 위한 GCP 콘솔 직관 링크 및 영문 신청 사유 양식 가이드 정리 연동.
+  - **스튜디오 탑바 위젯 메뉴 반응형 아이콘 전용 모드 및 텍스트 세로 찌그러짐 방지 ([`StudioTopbar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/StudioTopbar.tsx))**: 창 폭 축소 시 "내 콘텐츠 보관함", "관리 대시보드" 등 텍스트가 줄바꿈되어 세로로 깨지던 현상을 `whitespace-nowrap`과 `hidden 2xl:inline` 반응형 분기문으로 정비하여, 화면 축소 시 글자 없이 깔끔하게 이모티콘/아이콘 전용 뱃지 버튼으로 즉시 전환되도록 개선.
+  - **브라우저 네이티브 지연 툴팁 완전 제거 & 0ms 실시간 직관 툴팁 탑재 ([`StudioTopbar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/StudioTopbar.tsx))**: 마우스 호버 시 0.5~1초간 뜸들이던 브라우저 네이티브 `title` 속성을 전면 제거하고, 마우스 오버 0.00초(0ms) 동기 시점에 즉시 반응하여 뜨는 `duration-75` 초고속 커스텀 말풍선 툴팁 시스템으로 전면 개선.
+  - **헤더 로그인 세션 Access Level 매핑 수정 및 ⭐ VIP 뱃지 추가 ([`Header.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Header.tsx))**: 관리자 센터에서 부여된 `premier`(`PREMIER`) 요금제 레벨 분기 누락 버그를 수리하여 로그인 세션 프로필 영역에 정확히 `Premier`로 반응 표시되도록 정상화하고, `is_manual_grant`(`VIP 전용`) 회원인 경우 프로필 버튼 및 드롭다운 카드, 모바일 정보 란에 골드 `⭐ VIP` / `⭐ VIP SPECIAL` 뱃지가 적용되도록 반영.
   - **전체 14개 메인 메뉴 그룹 전수 검증**: `npx tsc --noEmit` 검증 0 에러 무결성 확인.
 
 ---
