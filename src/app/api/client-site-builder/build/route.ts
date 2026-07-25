@@ -32,9 +32,15 @@ export async function POST(req: Request) {
     const mLevel = (profile?.membership_level || "").toLowerCase();
     const role = (profile?.role || "").toUpperCase();
     const isBusiness =
+      mLevel === "pro" ||
+      mLevel === "premier" ||
+      mLevel === "premiere" ||
+      mLevel === "premium" ||
+      mLevel === "master" ||
       mLevel === "business" ||
       mLevel === "enterprise" ||
       mLevel === "admin" ||
+      (mLevel !== "" && mLevel !== "free" && mLevel !== "starter") ||
       role === "ADMIN" ||
       role === "SUPER_ADMIN";
 
