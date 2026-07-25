@@ -49,6 +49,7 @@ import {
   User,
   MessageSquareCode,
   CheckCircle,
+  CreditCard,
 } from "lucide-react";
 
 export interface CustomMenuItem {
@@ -415,7 +416,7 @@ const CUSTOM_TEMPLATES: CustomTemplate[] = [
 ];
 
 export default function CustomClientSiteStudioPage() {
-  const [activeTab, setActiveTab] = useState<"marketplace" | "manage" | "request" | "assetization" | "admin_dashboard">("marketplace");
+  const [activeTab, setActiveTab] = useState<"marketplace" | "manage" | "request" | "assetization" | "admin_dashboard" | "domain_seller">("marketplace");
   const [selectedCategory, setSelectedCategory] = useState<string>("전체 테마");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
@@ -460,6 +461,14 @@ export default function CustomClientSiteStudioPage() {
     { id: "6", label: "Blog (블로그)", url: "#articles", isRightAligned: true },
     { id: "7", label: "Contact & 구독하기", url: "#contact", isRightAligned: true },
   ]);
+
+  // PG Payment Gateway State
+  const [pgProvider, setPgProvider] = useState<string>("portone");
+  const [pgMid, setPgMid] = useState<string>("imp_884920412491");
+  const [pgApiKey, setPgApiKey] = useState<string>("pk_live_creaibox_payment_key_sample");
+  const [enableBankTransfer, setEnableBankTransfer] = useState<boolean>(true);
+  const [bankAccountInfo, setBankAccountInfo] = useState<string>("기업은행 123-456-7890 (예금주: 소통과채움)");
+  const [enableInquiryPayment, setEnableInquiryPayment] = useState<boolean>(true);
 
   const [isSavingConfig, setIsSavingConfig] = useState<boolean>(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string>("");
@@ -527,6 +536,12 @@ export default function CustomClientSiteStudioPage() {
         if (cfg.heroSlogan) setHeroSlogan(cfg.heroSlogan);
         if (cfg.logoUrl) setLogoUrl(cfg.logoUrl);
         if (cfg.customMenus && Array.isArray(cfg.customMenus)) setCustomMenus(cfg.customMenus);
+        if (cfg.pgProvider) setPgProvider(cfg.pgProvider);
+        if (cfg.pgMid) setPgMid(cfg.pgMid);
+        if (cfg.pgApiKey) setPgApiKey(cfg.pgApiKey);
+        if (typeof cfg.enableBankTransfer === "boolean") setEnableBankTransfer(cfg.enableBankTransfer);
+        if (cfg.bankAccountInfo) setBankAccountInfo(cfg.bankAccountInfo);
+        if (typeof cfg.enableInquiryPayment === "boolean") setEnableInquiryPayment(cfg.enableInquiryPayment);
       }
     }
     void loadConfig();
@@ -568,6 +583,12 @@ export default function CustomClientSiteStudioPage() {
         heroSlogan,
         logoUrl,
         customMenus,
+        pgProvider,
+        pgMid,
+        pgApiKey,
+        enableBankTransfer,
+        bankAccountInfo,
+        enableInquiryPayment,
         updatedAt: new Date().toISOString(),
       };
 
@@ -745,6 +766,18 @@ export default function CustomClientSiteStudioPage() {
         >
           <Bot size={16} className="text-rose-400 animate-pulse" />
           <span>5️⃣ 👑 관리자: 커스텀 신청 현황 ({adminRequests.length}건)</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("domain_seller")}
+          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 ${
+            activeTab === "domain_seller"
+              ? "bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 text-white shadow-lg shadow-cyan-600/20 scale-102"
+              : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-cyan-500/30"
+          }`}
+        >
+          <Globe size={16} className="text-cyan-400 animate-pulse" />
+          <span>6️⃣ 🌐 도메인 조회 & 1초 구매·이관 센터</span>
         </button>
       </div>
 
@@ -990,6 +1023,181 @@ export default function CustomClientSiteStudioPage() {
                   </span>
                   <ArrowRight size={14} />
                 </Link>
+              </div>
+            </div>
+
+            {/* Card 2: 💳 PG 결제 게이트웨이 & 결제 수단 세팅 (Left Column Standalone Box) */}
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 space-y-5">
+              <div className="space-y-1 border-b border-slate-800/80 pb-4">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+                  <CreditCard size={12} />
+                  <span>결제 수금 직접 입금 지원</span>
+                </div>
+                <h3 className="text-base font-black text-white flex items-center gap-2">
+                  <span>💳 PG 결제 게이트웨이 & 결제 세팅</span>
+                </h3>
+                <p className="text-[11px] font-medium text-slate-400 leading-relaxed">
+                  자사몰/커스텀 사이트에서 소비자의 결제금액을 직접 수금할 PG 상점 키 및 결제 수단을 설정하세요.
+                </p>
+              </div>
+
+              {/* PG Provider Select */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-slate-300">주요 PG 결제 게이트웨이 선택</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: "portone", name: "포트원 (PortOne)" },
+                    { id: "toss", name: "토스페이먼츠 (Toss)" },
+                    { id: "kakaopay", name: "카카오페이 전용" },
+                    { id: "none", name: "PG 결제 미사용" },
+                  ].map((pg) => (
+                    <button
+                      key={pg.id}
+                      type="button"
+                      onClick={() => setPgProvider(pg.id)}
+                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center ${
+                        pgProvider === pg.id
+                          ? "border-emerald-500 bg-emerald-500/10 text-emerald-300 shadow-md"
+                          : "border-slate-800 bg-slate-950 text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      {pg.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* PG MID & API Key Inputs */}
+              {pgProvider !== "none" && (
+                <div className="space-y-3 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-300">PG 상점 ID (MID)</label>
+                    <input
+                      type="text"
+                      value={pgMid}
+                      onChange={(e) => setPgMid(e.target.value)}
+                      placeholder="예: imp_884920412491 또는 toss_mid_xxxx"
+                      className="w-full rounded-xl bg-slate-900 border border-slate-800 px-3 py-2 text-xs font-mono font-bold text-cyan-300 focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-300">API Client Key (공개키)</label>
+                    <input
+                      type="text"
+                      value={pgApiKey}
+                      onChange={(e) => setPgApiKey(e.target.value)}
+                      placeholder="예: pk_live_creaibox_sample_key"
+                      className="w-full rounded-xl bg-slate-900 border border-slate-800 px-3 py-2 text-xs font-mono font-bold text-slate-300 focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Bank Transfer & Online Quote Switches */}
+              <div className="space-y-3">
+                {/* Bank Transfer Info */}
+                <div className="space-y-2 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-extrabold text-slate-200">🏦 무통장 입금 활성화</label>
+                    <input
+                      type="checkbox"
+                      checked={enableBankTransfer}
+                      onChange={(e) => setEnableBankTransfer(e.target.checked)}
+                      className="w-4 h-4 rounded accent-emerald-500 cursor-pointer"
+                    />
+                  </div>
+                  {enableBankTransfer && (
+                    <input
+                      type="text"
+                      value={bankAccountInfo}
+                      onChange={(e) => setBankAccountInfo(e.target.value)}
+                      placeholder="예: 기업은행 123-456-7890 (예금주: 소통과채움)"
+                      className="w-full rounded-xl bg-slate-900 border border-slate-800 px-3 py-2 text-xs font-bold text-amber-300 focus:border-emerald-500 focus:outline-none"
+                    />
+                  )}
+                </div>
+
+                {/* Online Quote Payment Switch */}
+                <div className="space-y-2 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-extrabold text-slate-200">📄 실시간 견적서 결제 폼 활성화</label>
+                    <input
+                      type="checkbox"
+                      checked={enableInquiryPayment}
+                      onChange={(e) => setEnableInquiryPayment(e.target.checked)}
+                      className="w-4 h-4 rounded accent-cyan-500 cursor-pointer"
+                    />
+                  </div>
+                  <p className="text-[11px] font-medium text-slate-400 leading-relaxed">
+                    소비자가 온라인 견적서(PDF) 발행 후 바로 견적 금액 결제 및 예약을 진행할 수 있도록 견적 결제 폼을 활성화합니다.
+                  </p>
+                </div>
+              </div>
+
+              {/* PG Save Button */}
+              <div className="pt-2 border-t border-slate-800/80">
+                <button
+                  type="button"
+                  onClick={handleSaveConfig}
+                  disabled={isSavingConfig}
+                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-3 text-xs font-black text-white hover:brightness-110 transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-50 cursor-pointer"
+                >
+                  {isSavingConfig ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
+                  <span>💳 PG 결제 설정 저장하기</span>
+                </button>
+              </div>
+
+              {/* PG Merchant Signup Guide Links & Notice */}
+              <div className="pt-3 border-t border-slate-800/80 space-y-2.5">
+                <p className="text-[11px] font-bold text-slate-300 flex items-center gap-1">
+                  <HelpCircle size={13} className="text-cyan-400" />
+                  <span>PG 가맹점 미신청 상태이신가요? (1초 가입 센터)</span>
+                </p>
+                <p className="text-[11px] font-medium text-slate-400 leading-relaxed">
+                  아래 공식 PG사 포털에서 가맹 신청 후 발급된 상점 MID 및 API Key를 입력하시면 결제가 자동 가동됩니다.
+                </p>
+
+                <div className="flex flex-col gap-1.5 pt-1">
+                  <a
+                    href="https://portone.io"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-300 hover:border-emerald-500 hover:text-emerald-300 transition-all"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <ExternalLink size={12} className="text-emerald-400" />
+                      <span>포트원 (PortOne) 무료 가맹 신청 포털</span>
+                    </span>
+                    <span className="text-[10px] text-emerald-400 font-mono">portone.io ↗</span>
+                  </a>
+
+                  <a
+                    href="https://www.tosspayments.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-300 hover:border-blue-500 hover:text-blue-300 transition-all"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <ExternalLink size={12} className="text-blue-400" />
+                      <span>토스페이먼츠 (Toss) 전자결제 가맹 센터</span>
+                    </span>
+                    <span className="text-[10px] text-blue-400 font-mono">tosspayments.com ↗</span>
+                  </a>
+
+                  <a
+                    href="https://with.kakaopay.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-300 hover:border-amber-500 hover:text-amber-300 transition-all"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <ExternalLink size={12} className="text-amber-400" />
+                      <span>카카오페이 (Kakao Pay) 가맹점 직접 신청</span>
+                    </span>
+                    <span className="text-[10px] text-amber-400 font-mono">with.kakaopay.com ↗</span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -1723,6 +1931,272 @@ export default function CustomClientSiteStudioPage() {
               >
                 완료 & 내 커스텀 관리로 이동
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- TAB 6: 🌐 도메인 조회 & 1초 구매·이관 센터 (Domain Seller Hub) --- */}
+      {activeTab === "domain_seller" && (
+        <div className="space-y-8 animate-fade-in-up">
+          {/* Hero Banner */}
+          <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-950 to-cyan-950/40 p-8 lg:p-10 shadow-2xl">
+            <div className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
+            <div className="absolute -left-20 -bottom-20 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 max-w-4xl space-y-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3.5 py-1 text-xs font-extrabold text-cyan-300">
+                <Globe size={14} className="animate-pulse" />
+                <span>CreAibox Domain Reseller Portal & Vercel API 100% 연동</span>
+              </div>
+
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+                독자 브랜드 도메인 <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent">1초 검색 & 원클릭 구매·이관 센터</span>
+              </h2>
+
+              <p className="text-sm sm:text-base font-medium text-slate-300 leading-relaxed max-w-3xl">
+                국내 타사(G사/W사 등)의 높은 갱신 비용에서 탈피하세요! Vercel Domains API 연동으로 
+                <strong className="text-cyan-300 font-extrabold"> 해외 도매가(18,000원)</strong>에 도메인을 구매하거나 
+                타사 도메인을 1초 만에 이관할 수 있으며, <strong className="text-emerald-300 font-extrabold">비즈니스 회원은 도메인비 평생 100% 무료(0원)</strong> 혜택이 제공됩니다.
+              </p>
+
+              {/* Quick Perks */}
+              <div className="pt-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: "시중 대비 35% 이상 절감", sub: "G사 25,850원 vs 18,000원" },
+                  { label: "비즈니스 회원 무료 지원", sub: "도메인 연장비 평생 0원" },
+                  { label: "WHOIS 개인정보 보호", sub: "100% 평생 무상 제공" },
+                  { label: "SSL 보안인증서 1초 자동 발급", sub: "https:// 1초 무장애 결합" },
+                ].map((item, idx) => (
+                  <div key={idx} className="bg-slate-900/90 border border-slate-800 p-3 rounded-2xl space-y-0.5">
+                    <div className="text-xs font-black text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 size={12} /> {item.label}
+                    </div>
+                    <div className="text-[10px] font-bold text-slate-400">{item.sub}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Domain Search Engine Section */}
+          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 lg:p-8 space-y-6 shadow-xl">
+            <div className="space-y-1">
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <Search className="text-cyan-400" /> 원하는 브랜드 도메인 실시간 가용성 & 가격 검색
+              </h3>
+              <p className="text-xs font-medium text-slate-400">
+                원하시는 브랜드명(예: mybrand, auramerino)을 입력하시면 구매 가능 여부와 시중가 대비 할인 가격을 1초 만에 확인합니다.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                <input
+                  type="text"
+                  placeholder="예: auramerino, sotongcheum, mycompany"
+                  className="w-full rounded-2xl bg-slate-950 border border-slate-800 pl-12 pr-4 py-4 text-sm font-bold text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none transition-all shadow-inner"
+                />
+              </div>
+
+              <select
+                className="rounded-2xl bg-slate-950 border border-slate-800 px-4 py-4 text-xs font-bold text-slate-200 focus:border-cyan-500 focus:outline-none cursor-pointer"
+              >
+                <option value=".com">.com (추천)</option>
+                <option value=".kr">.kr (국내전용)</option>
+                <option value=".co.kr">.co.kr (기업전용)</option>
+                <option value=".io">.io (테크/스타트업)</option>
+                <option value=".net">.net (네트워크)</option>
+              </select>
+
+              <button
+                type="button"
+                onClick={() => alert("auramerino.com ➔ 구매 가능! 연 18,000원 (비즈니스 회원 연장비 0원 무상 지원)")}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-4 text-xs font-black text-slate-950 hover:brightness-110 transition-all shadow-lg shadow-cyan-500/20 cursor-pointer whitespace-nowrap"
+              >
+                <Sparkles size={16} />
+                <span>실시간 도메인 검색</span>
+              </button>
+            </div>
+
+            {/* Default Mock Results */}
+            <div className="space-y-3 pt-4 border-t border-slate-800">
+              <h4 className="text-xs font-extrabold text-slate-300">인기 추천 도메인 실시간 가용 현황</h4>
+              <div className="grid grid-cols-1 gap-2.5">
+                {[
+                  { domain: "auramerino.com", available: true, price: 18000, orig: 25850, best: true },
+                  { domain: "auramerino.kr", available: true, price: 19000, orig: 23500, best: false },
+                  { domain: "sotongcheum.com", available: true, price: 18000, orig: 25850, best: true },
+                  { domain: "creaibox.io", available: false, price: 45000, orig: 55000, best: false },
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
+                      item.available
+                        ? "border-emerald-500/30 bg-emerald-950/10 hover:border-emerald-500/60"
+                        : "border-slate-800 bg-slate-950/60 opacity-60"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {item.available ? (
+                        <CheckCircle2 size={20} className="text-emerald-400 flex-shrink-0" />
+                      ) : (
+                        <Lock size={20} className="text-rose-400 flex-shrink-0" />
+                      )}
+                      <div>
+                        <div className="text-sm font-black text-white font-mono flex items-center gap-2">
+                          <span>{item.domain}</span>
+                          {item.best && (
+                            <span className="text-[10px] font-black bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                              BEST
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] font-medium text-slate-400">
+                          {item.available ? "구매 가능 (1초 무장애 커스텀 사이트 결합)" : "이미 타인이 등록한 도메인"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      {item.available ? (
+                        <>
+                          <div className="text-right">
+                            <div className="text-xs text-slate-400 line-through">
+                              시중가 {item.orig.toLocaleString()}원
+                            </div>
+                            <div className="text-sm font-black text-emerald-400 flex items-center gap-1">
+                              <span>연 {item.price.toLocaleString()}원</span>
+                              <span className="text-[10px] font-black text-amber-300 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">
+                                비즈니스 0원
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => alert(`${item.domain} 1초 구매 및 자동 연결 요청이 완료되었습니다!`)}
+                            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2.5 text-xs font-black text-slate-950 hover:brightness-110 transition-all shadow-md cursor-pointer"
+                          >
+                            <Zap size={13} />
+                            <span>1초 구매하기</span>
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-xs font-bold text-slate-500">이관 가능</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Domain Transfer-In Section */}
+          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 lg:p-8 space-y-6 shadow-xl">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
+                <RefreshCw size={12} />
+                <span>국내 타사(G사 / W사 등) 도메인 CreAibox로 1초 옮겨오기</span>
+              </div>
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <ShieldCheck className="text-emerald-400" /> 타사 도메인 기관 이관 (Domain Transfer-In)
+              </h3>
+              <p className="text-xs font-medium text-slate-400">
+                G사나 W사 등 타사에 매년 25,850원~35,000원씩 내지 마시고 CreAibox로 이관하세요! 만료일 1년 무조건 추가 연장 혜택이 적용됩니다.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950 p-6 rounded-2xl border border-slate-800">
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold text-slate-300">이관할 도메인 주소</label>
+                <input
+                  type="text"
+                  placeholder="예: mybrand.com"
+                  className="w-full rounded-xl bg-slate-900 border border-slate-800 px-4 py-3 text-xs font-mono font-bold text-cyan-300 focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold text-slate-300">이전 인증키 (Auth Code / EPP Code)</label>
+                <input
+                  type="text"
+                  placeholder="기존 등록업체(G사/W사 등)에서 발급된 인증키 입력"
+                  className="w-full rounded-xl bg-slate-900 border border-slate-800 px-4 py-3 text-xs font-mono font-bold text-slate-300 focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="sm:col-span-2 flex items-center justify-between pt-2">
+                <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1">
+                  <Lock size={12} className="text-emerald-400" /> 기존 등록업체(G사/W사 등)에서 '도메인 잠금(Domain Lock)' 해제 후 신청하세요.
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => alert("✅ 국내 타사 도메인 1초 이관 요청이 정상 전송되었습니다! (1년 연장 혜택 완료)")}
+                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 px-6 py-3 text-xs font-black text-slate-950 hover:brightness-110 transition-all shadow-md cursor-pointer"
+                >
+                  <Zap size={14} />
+                  <span>CreAibox로 1초 이관 신청하기</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Domestic vs International Real Pricing Fact Check Table */}
+          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 lg:p-8 space-y-6 shadow-xl">
+            <div className="space-y-1">
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <Award className="text-amber-400" /> 팩트 체크: 국내외 주요 도메인 등록업체 실제 결제 금액 비교
+              </h3>
+              <p className="text-xs font-medium text-slate-400">
+                국내 타사의 높은 갱신 수수료 및 첫해 할인가 대비 구조와 CreAibox 해외 도매 원가 기반 파격 혜택 대조표
+              </p>
+            </div>
+
+            <div className="overflow-x-auto rounded-2xl border border-slate-800">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-950 text-slate-400 uppercase font-extrabold border-b border-slate-800">
+                  <tr>
+                    <th className="p-3.5">등록업체 / 서비스</th>
+                    <th className="p-3.5">1년 실제 결제 금액 (VAT 포함)</th>
+                    <th className="p-3.5">WHOIS 개인정보 보호</th>
+                    <th className="p-3.5">특이사항 및 가격 구조</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/80 text-slate-300 font-medium">
+                  <tr className="bg-slate-900/50">
+                    <td className="p-3.5 font-bold text-white">W사 (국내 대표 등록업체)</td>
+                    <td className="p-3.5 font-bold text-rose-400">28,600원 ~ 35,000원</td>
+                    <td className="p-3.5 text-rose-400">유료 (추가비용)</td>
+                    <td className="p-3.5 text-slate-400">국내 등록업체 중 가장 비쌈 ❌</td>
+                  </tr>
+                  <tr className="bg-slate-900/30">
+                    <td className="p-3.5 font-bold text-white">G사 (국내 1위 등록업체)</td>
+                    <td className="p-3.5 font-bold text-rose-400">25,850원</td>
+                    <td className="p-3.5 text-rose-400">유료 (연 3,300원 추가)</td>
+                    <td className="p-3.5 text-slate-400">첫해 할인 후 2년 차부터 25,850원 갱신 ❌</td>
+                  </tr>
+                  <tr className="bg-slate-900/50">
+                    <td className="p-3.5 font-bold text-white">C사 (국내 대표 호스팅업체)</td>
+                    <td className="p-3.5 font-bold text-slate-300">23,500원</td>
+                    <td className="p-3.5 text-slate-400">신청 절차 번거로움</td>
+                    <td className="p-3.5 text-slate-400">일반 시중가 ❌</td>
+                  </tr>
+                  <tr className="bg-cyan-950/30 border-l-4 border-l-cyan-500">
+                    <td className="p-3.5 font-bold text-cyan-300">👑 CreAibox 일반 판매가</td>
+                    <td className="p-3.5 font-bold text-cyan-300">18,000원</td>
+                    <td className="p-3.5 font-bold text-emerald-400">100% 무료 자동 탑재</td>
+                    <td className="p-3.5 text-cyan-300 font-bold">G사 대비 매년 1만 원 이상 지속 절약 ⭕</td>
+                  </tr>
+                  <tr className="bg-emerald-950/40 border-l-4 border-l-emerald-500">
+                    <td className="p-3.5 font-black text-emerald-300">👑 CreAibox 비즈니스 회원</td>
+                    <td className="p-3.5 font-black text-emerald-300 text-sm">0원 (평생 무상 지원!)</td>
+                    <td className="p-3.5 font-bold text-emerald-400">100% 무료 자동 탑재</td>
+                    <td className="p-3.5 text-emerald-300 font-bold">비즈니스 플랜 사용 시 도메인 연장비 평생 0원 ⭕</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

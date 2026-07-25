@@ -3,7 +3,7 @@
 import React from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { Undo2, Coins, Clock, ShieldAlert, ArrowRight, CheckCircle2, MessageSquare } from "lucide-react";
+import { Undo2, Coins, Clock, ShieldAlert, ArrowRight, CheckCircle2, MessageSquare, Globe } from "lucide-react";
 
 export default function RefundPolicyClient() {
   const currentYear = new Date().getFullYear();
@@ -32,6 +32,14 @@ export default function RefundPolicyClient() {
       badge: "환불 제한 대상",
       badgeColor: "bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-450 border border-rose-100 dark:border-rose-500/20",
       description: "이벤트 참여 또는 프로모션 제휴 등으로 지급된 무상 웰컴 크레딧 및 비매품 포인트는 환불 대상에 포함되지 않습니다. 또한, 악의적인 대량 계정 생성 및 API 오남용으로 인해 이용약관 위반 처분을 받은 영구 정지 계정의 잔여 잔액 역시 환불이 거부될 수 있습니다."
+    },
+    {
+      icon: Globe,
+      title: "도메인 구매 및 기관 이관 환불 불가 규정",
+      subtitle: "국제 도메인 등록기관(ICANN/Vercel) 표준 규정",
+      badge: "즉시 등록 후 환불 불가",
+      badgeColor: "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20",
+      description: "CreAibox 도메인 센터를 통한 도메인 실시간 신규 구매 및 타사 기관 이관 서비스는 결제 동기 시점에 국제 도메인 등록기관(Vercel Registrar)의 장부에 소유권이 1초 만에 즉시 실시간 등록됩니다. 이에 따라 전자상거래법 및 국제 WHOIS 규정에 의거하여 결제 완료 후에는 청약철회, 명의 취소 및 환불이 불가능하오니, 구매 전 도메인 철자 및 명의를 반드시 재확인하여 주시기 바랍니다."
     },
     {
       icon: Clock,

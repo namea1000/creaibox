@@ -92,3 +92,20 @@
   - 회원 10개 신청 내역 실시간 조회, 상태 변경, `[🤖 AI 에이전트 자동 제작 진행하기]` 안티그래비티 1:1 풀코드 생성 명령 파이프라인 구축 완료
 - [x] **운영 및 자동 제작 프로세스 매뉴얼 문서화**
   - 📖 매뉴얼: [`custom-client-site-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/custom-client-site-guide.md) 수록 완료
+- [x] **💳 PG 결제 모듈 & 무통장 & 실시간 견적 결제 독립 카드 구축**
+  - 포트원, 토스페이먼츠, 카카오페이 MID 입력, 무통장 입금 계좌, 실시간 견적 결제 스위치 및 PG사 가맹 링크 수록 완료
+- [x] **📁 프로젝트 계획서 및 IR/기획 문서 `docs/project/plan/` 폴더 통합 정리 완료 (총 10종)**
+  - B2B 파괴적 웹사이트 및 도메인 사업계획서: [`creaibox-website-disruptor-business-plan.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/creaibox-website-disruptor-business-plan.md) (가비아 이관 4대 필승 전략, 4단계 이관 파이프라인, 손익 마진 분석 완전 개정 완료)
+  - B2C 크리에이터 AI 스튜디오 사업계획서: [`creaibox-b2c-creator-ai-studio-business-plan.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/creaibox-b2c-creator-ai-studio-business-plan.md)
+  - IR 투자자 브리핑 기술 아키텍처: [`creaibox-investor-technical-architecture.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/creaibox-investor-technical-architecture.md)
+  - 클라이언트 웹사이트 빌더 기획안: [`client_site_builder_proposal.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/client_site_builder_proposal.md)
+  - 추천 프로그램 기획서: [`referral-program-proposal.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/referral-program-proposal.md)
+- [x] **🌐 CreAibox Domain Reseller 및 Vercel Domains API 원클릭 도메인 자동화 사업계획서 수록 (#4)**
+  - 📖 사업계획서 & 기술 구현안: [`vercel-domains-api-implementation-plan.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/vercel-domains-api-implementation-plan.md) 수록 완료
+
+
+
+
+
+
+

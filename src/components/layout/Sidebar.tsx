@@ -18,6 +18,7 @@ import {
   Search,
   ShieldCheck,
   ShieldAlert,
+  Zap,
   Server,
   Image as ImageIcon,
   Video,
@@ -198,6 +199,13 @@ export default function Sidebar({
         href: "/studio/custom-client-site",
         icon: Sparkles,
         color: "text-cyan-400",
+      },
+      {
+        key: "domain-search",
+        name: "도메인 조회 & 구매 🌐",
+        href: "/studio/domain-search",
+        icon: Globe,
+        color: "text-emerald-400",
       },
       {
         key: "creassetbox",
@@ -563,6 +571,8 @@ export default function Sidebar({
           return normPath.startsWith("/client-site-builder");
         case "custom-client-site":
           return normPath.startsWith("/custom-client-site");
+        case "domain-search":
+          return normPath.startsWith("/domain-search");
         case "admin":
           return normPath.startsWith("/admin");
         case "report":

@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "../../utils/supabase/client";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { MessageCircle, Mail, Lock } from "lucide-react";
@@ -15,6 +15,61 @@ export default function LoginPage() {
   const [email, setEmail] = useState("jenam7720@gmail.com");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Dynamic Brand Customization State
+  const [brandConfig, setBrandConfig] = useState<{
+    name?: string;
+    logoUrl?: string;
+    slogan?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    async function fetchBrandConfig() {
+      if (typeof window === "undefined") return;
+      const hostname = window.location.hostname;
+      const parts = hostname.split(".");
+      let brandId = "";
+
+      if (parts.length === 3 && parts[1] === "creaibox") {
+        brandId = parts[0];
+      } else if (parts.length === 2 && parts[1] === "localhost") {
+        brandId = parts[0];
+      }
+
+      if (brandId && !["www", "studio", "admin", "api", "assets"].includes(brandId.toLowerCase())) {
+        const normalizedId = brandId.toLowerCase() === "auramerino" ? "aura-merino" : brandId.toLowerCase();
+        
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("extra_configs, brand_id")
+          .eq("brand_id", normalizedId)
+          .maybeSingle();
+
+        if (profile?.extra_configs) {
+          const cfg = profile.extra_configs as Record<string, any>;
+          setBrandConfig({
+            name: cfg.companyName || profile.brand_id,
+            logoUrl: cfg.logoUrl,
+            slogan: cfg.heroSlogan || cfg.description || `${cfg.companyName || brandId} 커스텀 멤버십 로그인`,
+          });
+        } else {
+          // Hardcoded brand fallbacks for primary demo custom sites
+          if (normalizedId === "aura-merino" || normalizedId === "auramerino") {
+            setBrandConfig({
+              name: "아우라 메리노 (Aura Merino)",
+              slogan: "100% 천연 메리노 울 스니커즈 회원 혜택 & 전용 로그인",
+            });
+          } else if (normalizedId === "sotongcheum") {
+            setBrandConfig({
+              name: "소통과 채움",
+              slogan: "공공행사 & 지역 축제 렌탈 전용 브랜드 회원 로그인",
+            });
+          }
+        }
+      }
+    }
+    void fetchBrandConfig();
+  }, [supabase]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,17 +112,29 @@ export default function LoginPage() {
       <div className="max-w-[460px] w-full space-y-8 bg-black/60 border border-zinc-800/50 p-10 lg:p-14 rounded-[32px] backdrop-blur-2xl shadow-2xl relative z-10">
         <div className="text-center space-y-3">
           <Link href="/" className="inline-block transition hover:scale-[1.02] active:scale-[0.98]">
-            <Image
-              src="/logobg_dark.webp"
-              alt="CreAibox Logo"
-              width={210}
-              height={40}
-              className="object-contain mx-auto h-10 w-auto"
-              priority
-            />
+            {brandConfig?.logoUrl ? (
+              <img
+                src={brandConfig.logoUrl}
+                alt={brandConfig.name || "Brand Logo"}
+                className="object-contain mx-auto h-10 w-auto"
+              />
+            ) : brandConfig?.name ? (
+              <h2 className="text-2xl font-black text-white tracking-tight bg-gradient-to-r from-cyan-400 via-blue-400 to-emerald-300 bg-clip-text text-transparent">
+                {brandConfig.name}
+              </h2>
+            ) : (
+              <Image
+                src="/logobg_dark.webp"
+                alt="CreAibox Logo"
+                width={210}
+                height={40}
+                className="object-contain mx-auto h-10 w-auto"
+                priority
+              />
+            )}
           </Link>
           <p className="text-zinc-400 text-sm font-semibold tracking-tight">
-            가장 스마트한 AI Contents Studio 입장
+            {brandConfig?.slogan || "가장 스마트한 AI Contents Studio 입장"}
           </p>
         </div>
 
