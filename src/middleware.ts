@@ -260,8 +260,9 @@ export async function middleware(request: NextRequest) {
           console.error("Static client license check failed:", staticErr);
         }
 
+        const clientFolder = targetBrandId.toLowerCase() === "auramerino" ? "aura-merino" : targetBrandId.toLowerCase();
         rewritePath = (isStaticApproved || isLocalhost || isCustomClient)
-          ? `/clients/${targetBrandId.toLowerCase()}${path}`
+          ? `/clients/${clientFolder}${path}`
           : `/brand/${targetBrandId.toLowerCase()}${path}`;
       } else {
         // DB-driven Dynamic Website Builder Check

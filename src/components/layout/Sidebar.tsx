@@ -665,7 +665,7 @@ export default function Sidebar({
           setIsMobileOpen(false);
         }}
         className={`
-          group relative flex items-center rounded-xl border text-[13px] font-bold transition-all duration-300
+          group relative flex items-center rounded-md border text-[13px] font-bold transition-all duration-300
           ${isActive
             ? activeStyles
             : "border-slate-300 bg-slate-50 text-slate-900 dark:border-white/15 dark:bg-[#0c0d12]/45 dark:text-zinc-100 hover:border-slate-400 hover:bg-zinc-100/50 dark:hover:border-white/30 dark:hover:bg-[#141622]/80 dark:hover:text-white"
@@ -678,7 +678,7 @@ export default function Sidebar({
 
         {/* 0ms 실시간 직관 툴팁 (접힘 모드용) */}
         {isCollapsed && (
-          <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2.5 -translate-y-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
+          <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2.5 -translate-y-1/2 rounded-md bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
             {item.name}
             <span className="absolute right-full top-1/2 -translate-y-1/2 -mr-1 border-4 border-transparent border-r-zinc-900/95 dark:border-r-zinc-800/95" />
           </span>
@@ -707,7 +707,7 @@ export default function Sidebar({
       <div key={group.key} className="space-y-1.5">
         <div
           className={`
-            group relative flex items-center rounded-xl border px-3 py-2 text-[13px] font-bold transition-all duration-300
+            group relative flex items-center rounded-md border px-3 py-2 text-[13px] font-bold transition-all duration-300
             ${isGroupActiveState
               ? activeStyles
               : "border-slate-300 bg-slate-50 text-slate-900 dark:border-white/15 dark:bg-[#0c0d12]/45 dark:text-zinc-100 hover:border-slate-400 hover:bg-zinc-100/50 dark:hover:border-white/30 dark:hover:bg-[#141622]/80 dark:hover:text-white"
@@ -750,7 +750,7 @@ export default function Sidebar({
 
         {/* Submenu Item List - STAYS 100% EXPANDED ON CLICK */}
         {isExpanded && (
-          <div className="ml-2.5 mt-1.5 p-1.5 space-y-1 rounded-xl bg-zinc-50/40 dark:bg-zinc-950/30 border border-zinc-200/40 dark:border-zinc-900/30">
+          <div className="ml-2.5 mt-1.5 p-1.5 space-y-1 rounded-md bg-zinc-50/40 dark:bg-zinc-950/30 border border-zinc-200/40 dark:border-zinc-900/30">
             {group.children?.map((child) => {
               const ChildIcon = child.icon || FileText;
               const childActive = isPathActive(child.href, group.children);
@@ -766,7 +766,7 @@ export default function Sidebar({
                     setIsMobileOpen(false);
                   }}
                   className={`
-                    relative flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[12px] font-bold transition duration-250
+                    relative flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-[12px] font-bold transition duration-250
                     ${childActive
                       ? "border-blue-400/20 bg-blue-500/10 text-blue-600 dark:text-cyan-400 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.05)]"
                       : "border-transparent text-slate-700 dark:text-zinc-200 hover:border-zinc-300/40 dark:hover:border-zinc-800/40 hover:bg-zinc-100/40 dark:hover:bg-zinc-900/40 hover:text-slate-900 dark:hover:text-white"

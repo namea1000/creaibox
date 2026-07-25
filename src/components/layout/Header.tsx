@@ -389,124 +389,7 @@ export default function Header() {
         </div>
 
         <nav className="hidden flex-1 items-center justify-center gap-5 lg:flex">
-          {/* AI 도구 Hover Dropdown Megamenu */}
-          <div
-            className="relative"
-            onMouseEnter={() => setIsMegaMenuOpen(true)}
-            onMouseLeave={() => setIsMegaMenuOpen(false)}
-          >
-            <button className="flex items-center gap-1 text-sm font-extrabold text-slate-700 dark:text-white transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3 whitespace-nowrap">
-              AI 도구
-            </button>
 
-            {isMegaMenuOpen && (
-              <div className="absolute left-1/2 top-full z-50 -translate-x-1/2 -mt-1.5 w-[920px] rounded-[28px] border border-slate-200/80 bg-white/95 p-8 shadow-2xl backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-900/95 transition-all duration-300">
-                <div className="grid grid-cols-4 gap-6">
-                  {/* Column 1: Video & Image */}
-                  <div>
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">영상 & 이미지</h3>
-                    <div className="flex flex-col gap-1">
-                      <Link href="/studio/video" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
-                        <div className="p-2 bg-rose-500/10 rounded-xl text-rose-500 border border-rose-500/10 shrink-0">
-                          <Video size={16} />
-                        </div>
-                        <div className="text-left">
-                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">비디오 스튜디오</p>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">쇼츠 및 영상 숏폼 기획</p>
-                        </div>
-                      </Link>
-                      <Link href="/video-editor" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
-                        <div className="p-2 bg-pink-500/10 rounded-xl text-pink-500 border border-pink-500/10 shrink-0">
-                          <Video size={16} />
-                        </div>
-                        <div className="text-left">
-                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">영상 편집기</p>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">설치 없는 브라우저 영상 작업</p>
-                        </div>
-                      </Link>
-
-                      <Link href="/media-library" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
-                        <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-500 border border-emerald-500/10 shrink-0">
-                          <Folder size={16} />
-                        </div>
-                        <div className="text-left">
-                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">미디어 라이브러리</p>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">무료 이미지 및 영상 소스</p>
-                        </div>
-                      </Link>
-                    </div>
-                  </div>
-
-                  {/* Column 2: Writing & News */}
-                  <div>
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">글쓰기 & 뉴스</h3>
-                    <div className="flex flex-col gap-1">
-                      <Link href="/writing/creaibox/new-post" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
-                        <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500 border border-blue-500/10 shrink-0">
-                          <PenTool size={16} />
-                        </div>
-                        <div className="text-left">
-                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">AI 글쓰기</p>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">블로그, 네이버 자동 글 생성</p>
-                        </div>
-                      </Link>
-                      <Link href="/news-content" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
-                        <div className="p-2 bg-cyan-500/10 rounded-xl text-cyan-500 border border-cyan-500/10 shrink-0">
-                          <Newspaper size={16} />
-                        </div>
-                        <div className="text-left">
-                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">뉴스 콘텐츠</p>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">뉴스 아티클 및 소식 작성</p>
-                        </div>
-                      </Link>
-                      <Link href="/idea-hub" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
-                        <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500 border border-amber-500/10 shrink-0">
-                          <Lightbulb size={16} />
-                        </div>
-                        <div className="text-left">
-                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">콘텐츠 아이디어 허브</p>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">급상승 글감 기획 및 제안</p>
-                        </div>
-                      </Link>
-                    </div>
-                  </div>
-
-                  {/* Column 3: Site Builder */}
-                  <div>
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">홈페이지 제작</h3>
-                    <div className="flex flex-col gap-1">
-                      <Link href="/website-builder" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
-                        <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-500 border border-indigo-500/10 shrink-0">
-                          <Globe size={16} />
-                        </div>
-                        <div className="text-left">
-                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">AI 홈페이지 제작</p>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">랜딩페이지 원클릭 자동 배포</p>
-                        </div>
-                      </Link>
-                    </div>
-                  </div>
-
-                  {/* Column 4: Sound & Utility */}
-                  {/* Column 4: Sound Hub */}
-                  <div>
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-zinc-500 mb-3 pl-1">사운드 허브</h3>
-                    <div className="flex flex-col gap-1">
-                      <Link href="/lyric-generator" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
-                        <div className="p-2 bg-pink-500/10 rounded-xl text-pink-500 border border-pink-500/10 shrink-0">
-                          <Music size={16} />
-                        </div>
-                        <div className="text-left">
-                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">가사 소재 허브</p>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">AI 사운드 및 가사 창작</p>
-                        </div>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
 
           {/* 미디어 라이브러리 Menu Item (AI 도구 오른쪽에 위치) */}
           <Link
@@ -1370,33 +1253,7 @@ export default function Header() {
           )}
 
           <div className="grid gap-2">
-            {/* 1. AI 도구 아코디언 */}
-            <div>
-              <button
-                onClick={() => setIsMobMegaOpen((prev) => !prev)}
-                className="w-full flex items-center justify-between rounded-xl border border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 px-4 py-3 text-sm font-black text-slate-800 dark:text-white"
-              >
-                <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-violet-500" />
-                  <span>AI 도구</span>
-                </div>
-                <ChevronDown
-                  size={15}
-                  className={`text-slate-400 dark:text-zinc-350 transition-transform duration-200 ${isMobMegaOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-              {isMobMegaOpen && (
-                <div className="mt-1.5 ml-2 pl-3 border-l-2 border-violet-500/30 grid gap-1.5 py-1">
-                  <Link href="/studio/writing/creaibox/new-post" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">AI 새글쓰기</Link>
-                  <Link href="/studio/writing/naver/blog-automation" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">1인 블로그 자동화</Link>
-                  <Link href="/studio/design/creative-studio" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">AI 이미지 스튜디오</Link>
-                  <Link href="/studio/music/lyric-generator" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">AI 작사/작곡</Link>
-                  <Link href="/studio/video/video-generator" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">AI 비디오 스튜디오</Link>
-                  <Link href="/studio/music/sound-hub" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">사운드 허브</Link>
-                  <Link href="/studio/utility-tools" onClick={() => setIsMobileMenuOpen(false)} className="text-xs font-bold text-slate-600 dark:text-zinc-400 py-1 hover:text-violet-500">유틸리티 도구</Link>
-                </div>
-              )}
-            </div>
+
 
             {/* 미디어 라이브러리 (모바일 - AI 도구 오른쪽/다음 위치) */}
             <Link

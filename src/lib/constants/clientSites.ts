@@ -19,4 +19,5 @@ export const CUSTOM_CLIENT_SITES: string[] = [
   "starlight-ent",
   "woolcraft",
   "aura-merino",
+  "auramerino",
 ];

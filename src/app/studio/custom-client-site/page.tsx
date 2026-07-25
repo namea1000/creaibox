@@ -42,6 +42,13 @@ import {
   Monitor,
   Tablet,
   Smartphone,
+  Bot,
+  Terminal,
+  Copy,
+  Clock,
+  User,
+  MessageSquareCode,
+  CheckCircle,
 } from "lucide-react";
 
 export interface CustomMenuItem {
@@ -50,6 +57,153 @@ export interface CustomMenuItem {
   url: string;
   isRightAligned?: boolean;
 }
+
+export interface AdminRequestItem {
+  id: string;
+  userId: string;
+  userNickname: string;
+  companyName: string;
+  category: string;
+  themeColor: string;
+  features: string[];
+  refUrl: string;
+  detail: string;
+  status: "pending" | "building" | "completed";
+  createdAt: string;
+}
+
+const INITIAL_ADMIN_REQUESTS: AdminRequestItem[] = [
+  {
+    id: "req-101",
+    userId: "usr_sotong",
+    userNickname: "소통과채움 협동조합",
+    companyName: "소통과 채움",
+    category: "Business (행사/기획/렌탈)",
+    themeColor: "딥 블루 다크 톤",
+    features: ["실적/포트폴리오 갤러리 탭", "실시간 온라인 견적신청 폼", "전용 블로그 카운터", "DoFollow SEO 가산점 Engine"],
+    refUrl: "https://sotongcheum.creaibox.com",
+    detail: "공공행사 및 지역 축제 기획·렌탈 전문 브랜드사이트입니다. 견적 신청 폼과 갤러리가 강조된 딥 블루 다크 모드로 1:1 풀코드 생성을 요청합니다.",
+    status: "completed",
+    createdAt: "2026-07-25 21:30",
+  },
+  {
+    id: "req-102",
+    userId: "usr_aurashoe",
+    userNickname: "아우라 메리노 스토어",
+    companyName: "아우라 메리노 (Aura Merino)",
+    category: "Shopping",
+    themeColor: "에메랄드 티어 & 블랙",
+    features: ["메리노 울 상품 그리드", "Quick View 팝업 모달", "신발 사이즈 선택기", "장바구니 & 결제 폼"],
+    refUrl: "https://auramerino.creaibox.com",
+    detail: "100% 천연 메리노 울 수제 스니커즈 전문 자사몰입니다. 6종 메인 상품 그리드와 1초 원클릭 마이크로 배포 템플릿 연동 부탁드립니다.",
+    status: "completed",
+    createdAt: "2026-07-25 20:15",
+  },
+  {
+    id: "req-103",
+    userId: "usr_wellness",
+    userNickname: "더채움 웰니스 메디컬",
+    companyName: "더채움 웰니스 센터",
+    category: "Health & Wellness",
+    themeColor: "민트 그린 & 청결한 웰니스 톤",
+    features: ["의료진/강사 프로필", "1:1 진료 상담 예약 폼", "웰니스 케어 카테고리"],
+    refUrl: "https://chaeum-wellness.creaibox.com",
+    detail: "피부과 및 힐링 센터 전용 사이트입니다. 1:1 상담 예약 폼과 카테고리 탭이 명확히 노출되도록 풀코드 생성을 희망합니다.",
+    status: "pending",
+    createdAt: "2026-07-25 19:40",
+  },
+  {
+    id: "req-104",
+    userId: "usr_realestate",
+    userNickname: "스마트 프라임 부동산",
+    companyName: "프라임 공인중개사",
+    category: "Real Estate",
+    themeColor: "다크 슬레이트 & 프리미엄 골드",
+    features: ["매물 검색 필터", "상세 지도 매핑", "프라이빗 매물 상담 폼"],
+    refUrl: "https://primerealestate.creaibox.com",
+    detail: "상가 분양 및 신축 프라이빗 매물 정보 전용 커스텀 사이트입니다. 매물 필터와 매핑 기능 연동 요청드립니다.",
+    status: "completed",
+    createdAt: "2026-07-25 18:20",
+  },
+  {
+    id: "req-105",
+    userId: "usr_edu",
+    userNickname: "에듀플러스 아카데미",
+    companyName: "에듀플러스 코딩학원",
+    category: "Education",
+    themeColor: "딥 네이비 & 럭셔리 블루",
+    features: ["커리큘럼 안내 탭", "강사진 프로필 모달", "입학 상담 신청 폼"],
+    refUrl: "https://eduplus.creaibox.com",
+    detail: "AI/SW 코딩 및 수강생 모집을 위한 아카데미 커스텀 웹사이트입니다. 커리큘럼 모듈 구축 부탁드립니다.",
+    status: "pending",
+    createdAt: "2026-07-25 17:50",
+  },
+  {
+    id: "req-106",
+    userId: "usr_magazine",
+    userNickname: "더 트렌드 매거진",
+    companyName: "더 트렌드 잡지사",
+    category: "Magazine",
+    themeColor: "네온 시안 & 딥 차콜",
+    features: ["주요 기사 헤드라인", "실시간 인기 기사 카운터", "구독 신청 폼"],
+    refUrl: "https://trendmagazine.creaibox.com",
+    detail: "IT/라이프스타일 매거진 포털입니다. 최신 아티클과 카테고리 기사 생성이 매끄러운 템플릿 연동을 원합니다.",
+    status: "completed",
+    createdAt: "2026-07-25 16:10",
+  },
+  {
+    id: "req-107",
+    userId: "usr_auraart",
+    userNickname: "스튜디오 아우라",
+    companyName: "아우라 크리에이티브",
+    category: "Portfolio",
+    themeColor: "딥 바이올렛 & 퍼플",
+    features: ["작품 풀스크린 갤러리", "프로젝트 상세 모달", "외주 문의 폼"],
+    refUrl: "https://studioaura.creaibox.com",
+    detail: "크리에이터 전용 풀스크린 포트폴리오 및 외주 견적 받기 사이트 구축 신청합니다.",
+    status: "pending",
+    createdAt: "2026-07-25 15:30",
+  },
+  {
+    id: "req-108",
+    userId: "usr_gourmet",
+    userNickname: "더 맛있는 쉐프",
+    companyName: "고메 미식회",
+    category: "Restaurant",
+    themeColor: "워밍 앰버 & 다크 브라운",
+    features: ["시그니처 메뉴판 그리드", "테이블 온라인 예약 폼", "오시는 길 지도"],
+    refUrl: "https://gourmetchef.creaibox.com",
+    detail: "파인다이닝 카스텀 레스토랑 웹사이트입니다. 테이블 예약 폼과 디너 코스 안내 페이지 제작 요청합니다.",
+    status: "pending",
+    createdAt: "2026-07-25 14:05",
+  },
+  {
+    id: "req-109",
+    userId: "usr_ent",
+    userNickname: "스타일 엔터테인먼트",
+    companyName: "스타일 엔터",
+    category: "Entertainment",
+    themeColor: "인디고 & 네온 퍼플",
+    features: ["아티스트 라인업", "오디션/캐스팅 신청 폼", "공연 미디어 갤러리"],
+    refUrl: "https://styleent.creaibox.com",
+    detail: "연예 기획사 및 버스킹 공연 대행 포털 사이트 풀코드 제작 요청입니다.",
+    status: "completed",
+    createdAt: "2026-07-25 12:45",
+  },
+  {
+    id: "req-110",
+    userId: "usr_logistic",
+    userNickname: "글로벌 로지스틱스",
+    companyName: "글로벌 물류 시스템",
+    category: "Business",
+    themeColor: "차콜 & 로지스틱 옐로우",
+    features: ["국제 물류 견적 신청", "실시간 화물 트래킹 폼", "회사 소개 탭"],
+    refUrl: "https://globallogistics.creaibox.com",
+    detail: "국제 화물 물류 및 운송 서비스 커스텀 웹사이트 제작 요청입니다.",
+    status: "pending",
+    createdAt: "2026-07-25 11:15",
+  },
+];
 
 // --- Template Items Definition ---
 interface CustomTemplate {
@@ -252,7 +406,7 @@ const CUSTOM_TEMPLATES: CustomTemplate[] = [
     category: "Shopping",
     description: "100% 천연 메리노 울 & 캐시미어 수제 스니커즈 전문 이커머스 스토어 (Aura Merino 시그니처 템플릿)",
     features: ["메리노 울 상품 6종 그리드", "Quick View 팝업 모달", "신발 사이즈 선택기", "장바구니 드로어 & 결제", "DoFollow SEO 전용 블로그", "1초 원클릭 마이크로 배포"],
-    previewUrl: "http://aura-merino.localhost:3000",
+    previewUrl: "https://auramerino.creaibox.com",
     badge: "🔥 1위 쇼핑몰",
     accentColor: "from-emerald-600 to-teal-600",
     bgGradient: "from-emerald-950/40 via-slate-900 to-teal-950/40",
@@ -261,9 +415,15 @@ const CUSTOM_TEMPLATES: CustomTemplate[] = [
 ];
 
 export default function CustomClientSiteStudioPage() {
-  const [activeTab, setActiveTab] = useState<"marketplace" | "manage" | "request" | "assetization">("marketplace");
+  const [activeTab, setActiveTab] = useState<"marketplace" | "manage" | "request" | "assetization" | "admin_dashboard">("marketplace");
   const [selectedCategory, setSelectedCategory] = useState<string>("전체 테마");
   const [searchQuery, setSearchQuery] = useState<string>("");
+
+  // Admin Dashboard State
+  const [adminRequests, setAdminRequests] = useState<AdminRequestItem[]>(INITIAL_ADMIN_REQUESTS);
+  const [adminFilter, setAdminFilter] = useState<"all" | "pending" | "completed">("all");
+  const [selectedPromptModal, setSelectedPromptModal] = useState<AdminRequestItem | null>(null);
+  const [copiedPrompt, setCopiedPrompt] = useState<boolean>(false);
 
   // Preview Modal State (KIMI Style with 3-Device Viewport Mode)
   const [previewModalTemplate, setPreviewModalTemplate] = useState<CustomTemplate | null>(null);
@@ -573,6 +733,18 @@ export default function CustomClientSiteStudioPage() {
         >
           <Store size={16} />
           <span>4️⃣ 템플릿 자산화 & 리셀링</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("admin_dashboard")}
+          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 ${
+            activeTab === "admin_dashboard"
+              ? "bg-gradient-to-r from-rose-600 via-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/20 scale-102"
+              : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-rose-500/30"
+          }`}
+        >
+          <Bot size={16} className="text-rose-400 animate-pulse" />
+          <span>5️⃣ 👑 관리자: 커스텀 신청 현황 ({adminRequests.length}건)</span>
         </button>
       </div>
 
@@ -1265,6 +1437,292 @@ export default function CustomClientSiteStudioPage() {
                   블로그 포스팅과 기본 정보는 고객이 직접 수정하고, 디자인 개편은 AI가 전담 케어합니다.
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- TAB 5: 👑 관리자: 커스텀 신청 현황 (Admin Custom Request Dashboard) --- */}
+      {activeTab === "admin_dashboard" && (
+        <div className="space-y-8 animate-fade-in-up">
+          {/* Header Summary Banner */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-rose-950/60 via-purple-950/60 to-slate-900 border border-rose-500/30 p-6 md:p-8 shadow-2xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 rounded-full bg-rose-500/20 border border-rose-500/40 px-3 py-1 text-xs font-black text-rose-300">
+                  <Bot size={14} className="animate-pulse text-rose-400" />
+                  <span>관리자 전용 AI 에이전트 커스텀 관제탑</span>
+                </div>
+                <h2 className="text-xl md:text-2xl font-black text-white">
+                  👑 회원 커스텀 웹사이트 신청 현황 ({adminRequests.length}건)
+                </h2>
+                <p className="text-xs md:text-sm text-slate-300 font-medium max-w-2xl leading-relaxed">
+                  회원분들이 신청한 커스텀 제작 명세서를 한눈에 파악하세요. 각 신청 카드의{" "}
+                  <strong className="text-rose-400 font-bold">[🤖 AI 에이전트 자동 제작 진행하기]</strong> 버튼을 누르면 안티그래비티 1:1 풀코드 생성 프로세스가 실행됩니다.
+                </p>
+              </div>
+
+              {/* Status Counters */}
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="rounded-2xl bg-slate-950/80 border border-slate-800 p-4 text-center min-w-[100px]">
+                  <p className="text-[10px] font-bold text-slate-400">총 신청 건수</p>
+                  <p className="text-2xl font-black text-white">{adminRequests.length}건</p>
+                </div>
+                <div className="rounded-2xl bg-amber-950/30 border border-amber-500/30 p-4 text-center min-w-[100px]">
+                  <p className="text-[10px] font-bold text-amber-400">AI 제작 대기</p>
+                  <p className="text-2xl font-black text-amber-300">
+                    {adminRequests.filter((r) => r.status === "pending").length}건
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-emerald-950/30 border border-emerald-500/30 p-4 text-center min-w-[100px]">
+                  <p className="text-[10px] font-bold text-emerald-400">구축 완료</p>
+                  <p className="text-2xl font-black text-emerald-300">
+                    {adminRequests.filter((r) => r.status === "completed").length}건
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Filter Toolbar */}
+          <div className="flex items-center justify-between gap-4 bg-slate-900/60 p-4 rounded-3xl border border-slate-800">
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+              <button
+                onClick={() => setAdminFilter("all")}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                  adminFilter === "all"
+                    ? "bg-rose-600 text-white shadow-md shadow-rose-600/20"
+                    : "bg-slate-800 text-slate-400 hover:text-white"
+                }`}
+              >
+                전체 보기 ({adminRequests.length})
+              </button>
+              <button
+                onClick={() => setAdminFilter("pending")}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                  adminFilter === "pending"
+                    ? "bg-amber-600 text-white shadow-md shadow-amber-600/20"
+                    : "bg-slate-800 text-slate-400 hover:text-white"
+                }`}
+              >
+                🟡 AI 제작 대기 ({adminRequests.filter((r) => r.status === "pending").length})
+              </button>
+              <button
+                onClick={() => setAdminFilter("completed")}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                  adminFilter === "completed"
+                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
+                    : "bg-slate-800 text-slate-400 hover:text-white"
+                }`}
+              >
+                🟢 구축 완료 ({adminRequests.filter((r) => r.status === "completed").length})
+              </button>
+            </div>
+          </div>
+
+          {/* 10 Request Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {adminRequests
+              .filter((req) => (adminFilter === "all" ? true : req.status === adminFilter))
+              .map((req) => (
+                <div
+                  key={req.id}
+                  className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 space-y-5 hover:border-slate-700 transition-all shadow-xl relative overflow-hidden group"
+                >
+                  <div className="flex items-start justify-between gap-3 border-b border-slate-800/80 pb-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                          {req.category}
+                        </span>
+                        <span className="text-xs text-slate-400 font-bold">{req.createdAt}</span>
+                      </div>
+                      <h3 className="text-base font-black text-white flex items-center gap-2">
+                        <span>{req.companyName}</span>
+                        <span className="text-xs text-slate-400 font-normal">({req.userNickname})</span>
+                      </h3>
+                    </div>
+
+                    {/* Status Badge */}
+                    <div>
+                      {req.status === "pending" && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500/10 text-amber-300 border border-amber-500/30 animate-pulse">
+                          <Clock size={12} />
+                          🟡 AI 제작 대기
+                        </span>
+                      )}
+                      {req.status === "building" && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                          <RefreshCw size={12} className="animate-spin" />
+                          ⚡ AI 에이전트 코딩중
+                        </span>
+                      )}
+                      {req.status === "completed" && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+                          <CheckCircle2 size={12} />
+                          🟢 구축 완료 (라이브)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Request Specs */}
+                  <div className="space-y-3">
+                    <div className="text-xs text-slate-300 space-y-1">
+                      <p className="font-bold text-slate-400">🎨 희망 테마 & 컨셉:</p>
+                      <p className="text-cyan-300 font-medium bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
+                        {req.themeColor}
+                      </p>
+                    </div>
+
+                    <div className="text-xs text-slate-300 space-y-1">
+                      <p className="font-bold text-slate-400">⚙️ 선택 특수기능:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {req.features.map((f, i) => (
+                          <span
+                            key={i}
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-950 text-slate-300 border border-slate-800"
+                          >
+                            ✓ {f}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="text-xs text-slate-300 space-y-1">
+                      <p className="font-bold text-slate-400">📝 상세 요구사항 (프롬프트 명세):</p>
+                      <p className="text-slate-200 bg-slate-950 p-3 rounded-xl border border-slate-800/80 leading-relaxed">
+                        {req.detail}
+                      </p>
+                    </div>
+
+                    {req.refUrl && (
+                      <div className="text-xs text-slate-400 flex items-center gap-1.5">
+                        <span>🔗 레퍼런스:</span>
+                        <a
+                          href={req.refUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-cyan-400 hover:underline flex items-center gap-1"
+                        >
+                          {req.refUrl} <ExternalLink size={11} />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Button: Trigger AI Build Command */}
+                  <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-3">
+                    <button
+                      onClick={() => {
+                        setAdminRequests((prev) =>
+                          prev.map((item) => (item.id === req.id ? { ...item, status: "completed" } : item))
+                        );
+                        setSelectedPromptModal(req);
+                      }}
+                      className={`flex-1 flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-xs font-black transition-all cursor-pointer ${
+                        req.status === "completed"
+                          ? "bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700"
+                          : "bg-gradient-to-r from-rose-600 via-purple-600 to-indigo-600 text-white hover:brightness-110 shadow-lg shadow-purple-600/20"
+                      }`}
+                    >
+                      <Bot size={15} className="text-rose-300" />
+                      <span>
+                        {req.status === "completed"
+                          ? "🤖 AI 에이전트 풀코드 생성 완료 (재실행)"
+                          : "🤖 AI 에이전트 자동 제작 진행하기"}
+                      </span>
+                    </button>
+
+                    {req.status === "completed" && (
+                      <a
+                        href={req.refUrl || "https://sotongcheum.creaibox.com"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 rounded-2xl bg-cyan-500/10 border border-cyan-400/30 px-4 py-3 text-xs font-black text-cyan-300 hover:bg-cyan-500/20 transition-all shrink-0"
+                      >
+                        <Eye size={13} />
+                        <span>시안 미리보기</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* --- ADMIN AI EXECUTION PROMPT MODAL --- */}
+      {selectedPromptModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 animate-fade-in">
+          <div className="w-full max-w-2xl rounded-3xl border border-purple-500/40 bg-slate-900 p-6 md:p-8 space-y-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-2 text-rose-400">
+                <Bot size={22} className="animate-bounce" />
+                <h3 className="text-lg font-black text-white">
+                  안티그래비티 AI 에이전트 자동 제작 수행 완료
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedPromptModal(null)}
+                className="text-slate-400 hover:text-white text-sm font-bold cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black">
+                <CheckCircle2 size={16} />
+                <span>
+                  신청 건 [{selectedPromptModal.companyName}]의 안티그래비티 1:1 풀코드 생성 명령이 성공적으로 인식되었습니다!
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-300 flex items-center justify-between">
+                  <span>💻 안티그래비티 AI 에이전트 실행 명령 프롬프트 (자동 생성됨)</span>
+                  <button
+                    onClick={() => {
+                      const text = `안티그래비티 AI 파트너 생성 명령:\n유저 [${selectedPromptModal.companyName}]의 커스텀 웹사이트 100% 풀코드를 생성하라.\n- 업종: ${selectedPromptModal.category}\n- 테마: ${selectedPromptModal.themeColor}\n- 필수 기능: ${selectedPromptModal.features.join(", ")}\n- 상세: ${selectedPromptModal.detail}`;
+                      navigator.clipboard.writeText(text);
+                      setCopiedPrompt(true);
+                      setTimeout(() => setCopiedPrompt(false), 2000);
+                    }}
+                    className="flex items-center gap-1 text-[11px] font-extrabold text-cyan-400 hover:underline cursor-pointer"
+                  >
+                    {copiedPrompt ? <Check size={12} /> : <Copy size={12} />}
+                    <span>{copiedPrompt ? "복사 완료!" : "명령어 복사하기"}</span>
+                  </button>
+                </label>
+
+                <textarea
+                  readOnly
+                  rows={6}
+                  value={`안티그래비티 AI 파트너 생성 명령:\n유저 [${selectedPromptModal.companyName}]의 커스텀 웹사이트 100% 풀코드를 생성하라.\n- 업종: ${selectedPromptModal.category}\n- 테마: ${selectedPromptModal.themeColor}\n- 필수 기능: ${selectedPromptModal.features.join(", ")}\n- 상세: ${selectedPromptModal.detail}`}
+                  className="w-full rounded-2xl bg-slate-950 border border-slate-800 p-4 text-xs font-mono font-bold text-cyan-300 leading-relaxed outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-800 flex items-center justify-end gap-3">
+              <a
+                href={selectedPromptModal.refUrl || "https://sotongcheum.creaibox.com"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-2xl bg-cyan-500 px-6 py-3.5 text-xs font-black text-slate-950 hover:bg-cyan-400 transition-all"
+              >
+                <Eye size={15} /> <span>생성된 라이브 사이트 확인하기</span>
+              </a>
+              <button
+                onClick={() => {
+                  setSelectedPromptModal(null);
+                  setActiveTab("manage");
+                }}
+                className="rounded-2xl border border-slate-700 bg-slate-800 px-6 py-3.5 text-xs font-black text-white hover:bg-slate-700 transition-all cursor-pointer"
+              >
+                완료 & 내 커스텀 관리로 이동
+              </button>
             </div>
           </div>
         </div>
