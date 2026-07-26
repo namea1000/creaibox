@@ -72,9 +72,45 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily" as const,
       priority: 0.8,
     },
-    // 키워드 트렌드
+    // 키워드 트렌드 파워 허브 (SEO 수집 대상)
     {
       url: "https://creaibox.com/keyword-trend",
+      lastModified: new Date(),
+      changeFrequency: "daily" as const,
+      priority: 0.9,
+    },
+    {
+      url: "https://creaibox.com/studio/keyword/realtime",
+      lastModified: new Date(),
+      changeFrequency: "daily" as const,
+      priority: 1.0,
+    },
+    {
+      url: "https://creaibox.com/studio/keyword/tool",
+      lastModified: new Date(),
+      changeFrequency: "daily" as const,
+      priority: 0.9,
+    },
+    {
+      url: "https://creaibox.com/studio/keyword/blog-index",
+      lastModified: new Date(),
+      changeFrequency: "daily" as const,
+      priority: 0.9,
+    },
+    {
+      url: "https://creaibox.com/studio/keyword/google-trends",
+      lastModified: new Date(),
+      changeFrequency: "daily" as const,
+      priority: 0.9,
+    },
+    {
+      url: "https://creaibox.com/studio/shopping/keyword",
+      lastModified: new Date(),
+      changeFrequency: "daily" as const,
+      priority: 0.9,
+    },
+    {
+      url: "https://creaibox.com/studio/keyword/shopping-insight",
       lastModified: new Date(),
       changeFrequency: "daily" as const,
       priority: 0.9,
