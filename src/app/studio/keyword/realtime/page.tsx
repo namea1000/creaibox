@@ -342,7 +342,11 @@ export default function RealtimeKeywordPage() {
                   {item.newsTitle && (
                     <div className="pl-10 text-xs">
                       <a
-                        href={item.newsUrl || `https://www.google.com/search?q=${encodeURIComponent(item.keyword)}`}
+                        href={
+                          item.newsUrl && !item.newsUrl.endsWith("news.google.com") && !item.newsUrl.endsWith("news.google.com/")
+                            ? item.newsUrl
+                            : `https://www.google.com/search?q=${encodeURIComponent(item.keyword + " " + (item.newsTitle || ""))}&tbm=nws`
+                        }
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-zinc-400 hover:text-blue-400 transition-colors line-clamp-1 flex items-center gap-1"
