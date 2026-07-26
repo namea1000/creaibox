@@ -39,12 +39,16 @@ export default function RealtimeKeywordPage() {
   const [selectedHour, setSelectedHour] = useState<number>(() => new Date().getHours());
 
   const [loading, setLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [naverKeywords, setNaverKeywords] = useState<RealtimeKeywordItem[]>([]);
   const [googleKeywords, setGoogleKeywords] = useState<RealtimeKeywordItem[]>([]);
   const [copiedKeyword, setCopiedKeyword] = useState<string | null>(null);
 
   const fetchRealtimeTrends = async (date: string, hour: number) => {
-    setLoading(true);
+    if (naverKeywords.length === 0 && googleKeywords.length === 0) {
+      setLoading(true);
+    }
+    setIsFetching(true);
     try {
       // Fetch Google Trends
       const googleRes = await fetch(`/api/google/trends?geo=KR&date=${date}&hour=${hour}`);
@@ -117,6 +121,7 @@ export default function RealtimeKeywordPage() {
       console.error("Realtime trends fetch error:", err);
     } finally {
       setLoading(false);
+      setIsFetching(false);
     }
   };
 
@@ -229,9 +234,12 @@ export default function RealtimeKeywordPage() {
             </select>
           </div>
 
-          <div className="ml-auto text-xs text-zinc-400 font-mono">
-            선택 일시: <span className="text-emerald-400 font-bold">{selectedDate}</span>{" "}
-            <span className="text-blue-400 font-bold">{selectedHour}시</span> 데이터
+          <div className="ml-auto text-xs text-zinc-400 font-mono flex items-center gap-1.5">
+            {isFetching && <RefreshCw size={12} className="animate-spin text-emerald-400" />}
+            <span>
+              선택 일시: <span className="text-emerald-400 font-bold">{selectedDate}</span>{" "}
+              <span className="text-blue-400 font-bold">{selectedHour}시</span> 데이터
+            </span>
           </div>
         </div>
       </div>
