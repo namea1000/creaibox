@@ -101,7 +101,13 @@
   - 클라이언트 웹사이트 빌더 기획안: [`client_site_builder_proposal.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/client_site_builder_proposal.md)
   - 추천 프로그램 기획서: [`referral-program-proposal.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/referral-program-proposal.md)
 - [x] **🌐 CreAibox Domain Reseller 및 Vercel Domains API 원클릭 도메인 자동화 사업계획서 수록 (#4)**
-  - 📖 사업계획서 & 기술 구현안: [`vercel-domains-api-implementation-plan.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/vercel-domains-api-implementation-plan.md) 수록 완료
+  - 📖 사업계획서 & 기술 구현안: [`vercel-domains-api-implementation-plan.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/vercel-domains-api-implementation-plan.md) (.kr, .co.kr 국내 ccTLD, 한글 퓨니코드 IDN, Vercel 본사 대비 초격차 하이브리드 멀티 라우팅 아키텍처 및 법적 명시 조항 전면 추가 완료)
+- [x] **📦 타 블로그 통째 이관 센터 구축 (네이버/티스토리/워드프레스 1초 가져오기 & 구글 드라이브 DB 및 블로그 원고 관리함 자동 동기화)**
+  - 📖 운용 매뉴얼 수록: [`external-blog-migration-manual.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/external-blog-migration-manual.md) 수록 완료
+- [x] **🚀 기존 홈페이지 1초 AI 자동 이관 매뉴얼 수록 (이중 저장소 파이프라인 & 1초 서브도메인 통째 개설)**
+  - 📖 운용 매뉴얼 수록: [`website-ai-migration-manual.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/website-ai-migration-manual.md) 수록 완료
+- [x] **🟢 네이버 아이디로 로그인 ("네아로") 연동 & 운용 매뉴얼 수록 (OAuth 2.0 & Supabase Auth 자동 회원가입)**
+  - 📖 운용 매뉴얼 수록: [`naver-login-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/naver-login-guide.md) 수록 완료
 
 
 

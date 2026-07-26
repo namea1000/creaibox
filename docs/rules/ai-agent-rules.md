@@ -24,6 +24,11 @@ AI Agents MUST NOT declare success or finish a user request turn without verifyi
 2. `docs/project/<YYYY><MonthName>Devlog.md` has been updated for today's work.
 3. `docs/project/<YYYY><MonthName>Walkthrough.md` has been updated for today's work.
 
+### 4. Mandatory Infrastructure Branding Rule (인프라 브랜딩 명칭 의무 규칙)
+- NEVER use third-party internal infrastructure names like "Google Drive" or "구글 드라이브" in any user-facing UI, documentation, marketing materials, or API response messages.
+- ALWAYS use **"CreAibox 클라우드 DB"** (or **"creaibox.com 클라우드 DB / 원고 보관함"**).
+- All future documentation, user manuals, marketing materials, and code prompts MUST adhere strictly to "CreAibox 클라우드 DB".
+
 # ==================================================
 
 # Documentation Rules

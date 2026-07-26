@@ -157,6 +157,16 @@ export default function LoginPage() {
             카카오톡으로 시작하기
           </button>
 
+          <button
+            type="button"
+            onClick={() => {
+              window.location.href = "/api/auth/naver/login";
+            }}
+            className="w-full flex items-center justify-center gap-3 bg-[#03C75A] hover:bg-[#02b350] text-white py-3 rounded-full font-bold text-sm transition-all shadow-sm cursor-pointer"
+          >
+            <span className="font-black text-base leading-none">N</span>
+            네이버 아이디로 로그인
+          </button>
         </div>
 
         <div className="flex items-center gap-4 py-2">

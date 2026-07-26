@@ -33,6 +33,10 @@ import {
   HelpCircle,
   Lock,
   Maximize2,
+  ChevronDown,
+  ChevronUp,
+  Video,
+  Activity,
   Tag,
   Flame,
   Plus,
@@ -205,6 +209,111 @@ const INITIAL_ADMIN_REQUESTS: AdminRequestItem[] = [
     createdAt: "2026-07-25 11:15",
   },
 ];
+
+// --- Industry Tailored Design & Color Presets Definition (10 per Industry) ---
+interface DesignPreset {
+  id: string;
+  name: string;
+  colors: string[];
+  vibe: string;
+  tag: string;
+  description: string;
+}
+
+const INDUSTRY_DESIGN_PRESETS: Record<string, DesignPreset[]> = {
+  "Shopping": [
+    { id: "s1", name: "럭셔리 다크 & 골드", colors: ["#09090b", "#d4af37", "#f59e0b"], vibe: "명품/럭셔리 패션 브랜드", tag: "명품/패션", description: "고급스러운 딥 다크와 골드 포인트 메인 톤" },
+    { id: "s2", name: "네온 바이올렛 & 핑크", colors: ["#0f172a", "#8b5cf6", "#ec4899"], vibe: "트렌디 스트릿 패션", tag: "MZ/스트릿", description: "비비드 네온과 딥 퍼플의 감각적 조화" },
+    { id: "s3", name: "클린 미니멀 화이트 & 스노우", colors: ["#ffffff", "#64748b", "#0f172a"], vibe: "애플 스타일 여백 모던", tag: "미니멀리즘", description: "여백과 또렷한 가독성 중심 산뜻함" },
+    { id: "s4", name: "오가닉 베이지 & 포레스트", colors: ["#fef3c7", "#15803d", "#78350f"], vibe: "친환경 웰빙 비건 뷰티", tag: "오가닉/뷰티", description: "자연 친화적인 따뜻한 베이지와 차분 그린" },
+    { id: "s5", name: "파스텔 로즈 & 크림", colors: ["#fff1f2", "#f43f5e", "#fb7185"], vibe: "사랑스러운 라이프스타일", tag: "화장품/코스메틱", description: "여성스럽고 포근한 파스텔 핑크 감성" },
+    { id: "s6", name: "다크 슬레이트 & 오렌지 팝", colors: ["#1e293b", "#ea580c", "#ffedd5"], vibe: "스포티 아웃도어 가전", tag: "스포츠/아웃도어", description: "역동적인 활동성과 강력한 포인트" },
+    { id: "s7", name: "시안 블루 & 오션 브리즈", colors: ["#06b6d4", "#0284c7", "#ecfeff"], vibe: "청량한 여름 리빙 용품", tag: "리빙/생활용품", description: "시원하고 깨끗한 아쿠아 블루 감성" },
+    { id: "s8", name: "에스프레소 우드 & 샌드", colors: ["#451a03", "#d97706", "#fef3c7"], vibe: "핸드메이드 원목 수제품", tag: "가구/수공예", description: "클래식하고 아날로그적인 감성 브라운" },
+    { id: "s9", name: "티타늄 메탈 & 일렉트릭 블루", colors: ["#0f172a", "#3b82f6", "#94a3b8"], vibe: "테크니컬 디지털 스마트기기", tag: "디지털/IT가전", description: "첨단 신뢰감과 기술력이 돋보이는 블루" },
+    { id: "s10", name: "코랄 핑크 & 차콜 팝", colors: ["#334155", "#ff6b6b", "#f8fafc"], vibe: "디자이너 수제 굿즈", tag: "굿즈/아트", description: "차분한 쿨그레이에 코랄 팝 포인트" },
+  ],
+  "Medical": [
+    { id: "m1", name: "대학병원 세린 블루 & 틸", colors: ["#0284c7", "#0d9488", "#f0f9ff"], vibe: "신뢰 높은 전문 의학 톤", tag: "종합병원/내과", description: "환자에게 깊은 안도감을 주는 의학 블루" },
+    { id: "m2", name: "로즈 골드 & 에스테틱", colors: ["#fda4af", "#e11d48", "#fff1f2"], vibe: "프리미엄 성형 피부 뷰티", tag: "성형외과/피부과", description: "매끄럽고 고급스러운 피부 뷰티 톤" },
+    { id: "m3", name: "에메랄드 케어 & 민트", colors: ["#059669", "#34d399", "#ecfdf5"], vibe: "편안한 힐링 치과 안과", tag: "치과/안과", description: "치료 두려움을 완화하는 자연 민트" },
+    { id: "m4", name: "전통 한방 딥브라운 & 샌드", colors: ["#78350f", "#b45309", "#fef3c7"], vibe: "온화한 전통 한의원 힐링", tag: "한의원/한방병원", description: "자연 친화적이고 기운을 돋우는 한방 톤" },
+    { id: "m5", name: "하이테크 시안 & 정밀 퓨처", colors: ["#06b6d4", "#0f172a", "#38bdf8"], vibe: "첨단 수술 정형 외과", tag: "정형외과/첨단수술", description: "최신 의료장비와 정밀 수술의 하이테크" },
+    { id: "m6", name: "웜 옐로우 & 패밀리 케어", colors: ["#d97706", "#f59e0b", "#fffbeb"], vibe: "친근한 소아과 가정의학", tag: "소아과/가정의학", description: "아이와 부모가 함께 편안한 웜 톤" },
+    { id: "m7", name: "시그니처 바이올렛 & 검진", colors: ["#7e22ce", "#a855f7", "#faf5ff"], vibe: "고급 줄기세포 건강검진", tag: "검진센터/안티에이징", description: "세련되고 권위 있는 시그니처 퍼플" },
+    { id: "m8", name: "투명한 스카이 & 크리스탈", colors: ["#38bdf8", "#e0f2fe", "#ffffff"], vibe: "맑고 깨끗한 라식 검진", tag: "안과/시력교정", description: "맑고 또렷한 시야를 상징하는 라식 스카이" },
+    { id: "m9", name: "딥 사파이어 & 도수 통증", colors: ["#1e3a8a", "#2563eb", "#eff6ff"], vibe: "해부학적 전문 도수 치료", tag: "재활/통증의학과", description: "체계적인 해부학 신뢰의 사파이어" },
+    { id: "m10", name: "라벤더 밸런스 & 멘탈", colors: ["#6b21a8", "#c084fc", "#f3e8ff"], vibe: "마음 편한 멘탈케어 수면", tag: "신경정신/수면클리닉", description: "마음의 평온을 불러오는 은은한 라벤더" },
+  ],
+  "Corporate": [
+    { id: "c1", name: "네이비 실버 & 사파이어", colors: ["#0f172a", "#1e40af", "#94a3b8"], vibe: "글로벌 B2B 대기업 신뢰", tag: "대기업/B2B", description: "전 세계적으로 검증된 정통 비즈니스" },
+    { id: "c2", name: "네온 틸 & 실리콘 블랙", colors: ["#09090b", "#14b8a6", "#22d3ee"], vibe: "혁신 IT 스타트업 다크", tag: "IT/스타트업", description: "미래지향적이고 감각적인 딥 다크 테크" },
+    { id: "c3", name: "포레스트 그린 & ESG", colors: ["#064e3b", "#047857", "#f0fdf4"], vibe: "지속가능 친환경 신재생", tag: "ESG/신재생에너지", description: "지속가능경영을 강조하는 신뢰 그린" },
+    { id: "c4", name: "프라이빗 브론즈 & 골드", colors: ["#450a0a", "#b45309", "#78350f"], vibe: "프라이빗 금융 자산관리", tag: "금융/투투자산", description: "견고한 자산 수호와 프리미엄 골드" },
+    { id: "c5", name: "쿨 그레이 & 블루 칩", colors: ["#1e293b", "#475569", "#e2e8f0"], vibe: "정교한 엔지니어링 제조", tag: "제조/건설/엔지니어링", description: "오차 없는 품질 보증 쿨그레이" },
+    { id: "c6", name: "버건디 와인 & 경영 자문", colors: ["#881337", "#be123c", "#fff1f2"], vibe: "권위 있는 전문 컨설팅", tag: "회계/경영자문", description: "깊이 있는 지식과 인사이트 톤" },
+    { id: "c7", name: "바이올렛 & AI 데이터", colors: ["#581c87", "#7c3aed", "#1e1b4b"], vibe: "차세대 AI 딥테크 기업", tag: "AI/데이터/클라우드", description: "지능형 알고리즘을 지칭하는 퍼플" },
+    { id: "c8", name: "에너제틱 오렌지 & 물류", colors: ["#c2410c", "#ea580c", "#fff7ed"], vibe: "모빌리티 글로벌 물류", tag: "물류/해운/유통", description: "속도감과 강렬한 물류 커넥션" },
+    { id: "c9", name: "인디고 & 스마트 오피스", colors: ["#312e81", "#4338ca", "#e0e7ff"], vibe: "스마트 업무 SaaS 솔루션", tag: "SaaS/소프트웨어", description: "스마트 워크 자동화를 대표하는 인디고" },
+    { id: "c10", name: "샌드 스톤 & 에이전시", colors: ["#78716c", "#a8a29e", "#f5f5f4"], vibe: "감각적인 크리에이티브 집단", tag: "기획/에이전시", description: "감각적이고 미니멀한 디자인 하우스" },
+  ],
+  "Law": [
+    { id: "l1", name: "정의의 딥 네이비 & 메이저 골드", colors: ["#020617", "#1e293b", "#d4af37"], vibe: "100% 승소 신뢰 메이저 로펌", tag: "로펌/변호사", description: "법률의 엄중함과 독보적 승소 신뢰감" },
+    { id: "l2", name: "차콜 블랙 & 보르도 와인", colors: ["#18181b", "#881337", "#f43f5e"], vibe: "품격 있는 형사 이혼 전문", tag: "형사/이혼전문", description: "승부를 가르는 강인하고 명확한 톤" },
+    { id: "l3", name: "포레스트 딥그린 & 브라스", colors: ["#064e3b", "#065f46", "#fef3c7"], vibe: "세무 회계법인 절세 전문", tag: "세무사/회계사", description: "성실과 정직한 절세를 상징하는 딥그린" },
+    { id: "l4", name: "스마트 인디고 & IP 블루", colors: ["#1e1b4b", "#3730a3", "#e0e7ff"], vibe: "특허 지식재산권 변리사", tag: "변리사/IP", description: "기술 가치를 수호하는 지식 인디고" },
+    { id: "l5", name: "미드나잇 차콜 & 머스터드", colors: ["#0f172a", "#d97706", "#fbbf24"], vibe: "노동 법무 인사 전문가", tag: "노무사/기업법무", description: "공정함과 명확한 솔루션의 머스터드" },
+    { id: "l6", name: "사파이어 딥 & 실버 쉴드", colors: ["#1e3a8a", "#3b82f6", "#f8fafc"], vibe: "법무사 행정사 안심 등기", tag: "법무사/행정사", description: "등기 및 인허가 절차의 완벽한 보증" },
+    { id: "l7", name: "로얄 셰도우 & 샴페인", colors: ["#111827", "#ca8a04", "#fef08a"], vibe: "기업 M&A 소송 자문", tag: "기업소송/M&A", description: "거대한 분쟁을 결단하는 로얄 골드" },
+    { id: "l8", name: "웜 에스프레소 & 샌드", colors: ["#451a03", "#78350f", "#fef3c7"], vibe: "가사 상속 경청 법률", tag: "상속/가사전문", description: "의뢰인의 마음을 보듬는 따뜻한 톤" },
+    { id: "l9", name: "쿨그레이 & 티타늄", colors: ["#334155", "#64748b", "#f1f5f9"], vibe: "손해사정 정확 산정", tag: "손해사정사", description: "객관적이고 명확한 손해 산정 티타늄" },
+    { id: "l10", name: "포레스트 블랙 & 에메랄드", colors: ["#022c22", "#059669", "#ecfdf5"], vibe: "부동산 자산 수호 전문", tag: "부동산변호사", description: "부동산 자산 보호와 안정을 주는 톤" },
+  ],
+  "Education": [
+    { id: "e1", name: "스마트 네이비 & 옐로우", colors: ["#1e3a8a", "#eab308", "#fef9c3"], vibe: "수능 입시 전문 명문 학원", tag: "입시/보습학원", description: "합격의 성취감과 고도의 몰입감" },
+    { id: "e2", name: "소프트 스카이 & 파스텔 그린", colors: ["#0284c7", "#10b981", "#e0f2fe"], vibe: "유치원 어린이 영유 학원", tag: "유아/어린이", description: "밝고 안전한 파스텔 커뮤니케이션" },
+    { id: "e3", name: "코딩 네온 & 다크 코딩", colors: ["#09090b", "#06b6d4", "#a855f7"], vibe: "IT 부트캠프 소프웨어", tag: "코딩/컴퓨터", description: "미래 개발자를 양성하는 네온 톤" },
+    { id: "e4", name: "아카데믹 딥레드 & 아이보리", colors: ["#7f1d1d", "#991b1b", "#fef2f2"], vibe: "전통 어학원 토플 유학", tag: "어학원/유학", description: "학문의 깊이와 글로벌 감성의 딥레드" },
+    { id: "e5", name: "버건디 & 아이비 골드", colors: ["#4c0519", "#881337", "#fef08a"], vibe: "국제학교 명문 유학원", tag: "국제학교/유학", description: "아이비리그 명문의 전통과 품격" },
+    { id: "e6", name: "바이올렛 드림 & 코랄", colors: ["#6b21a8", "#ec4899", "#fdf2f8"], vibe: "예체능 미술 음악 무용", tag: "미술/음악/무용", description: "창의력과 예술적 영감을 부여하는 톤" },
+    { id: "e7", name: "포레스트 그린 & 몰입", colors: ["#14532d", "#854d0e", "#fef3c7"], vibe: "스터디카페 프리미엄 독서실", tag: "스터디카페", description: "눈이 편안하고 고도의 집중력을 발휘" },
+    { id: "e8", name: "오렌지 펄스 & 체대 입시", colors: ["#c2410c", "#0d9488", "#ffedd5"], vibe: "체대입시 스포츠 아카데미", tag: "체육/스포츠", description: "열정과 승부욕을 불러일으키는 톤" },
+    { id: "e9", name: "샌드 오가닉 & 제과 바리스타", colors: ["#78350f", "#d97706", "#fffbeb"], vibe: "직업전문 요리 바리스타", tag: "직업전문/요리", description: "실용 기술과 따뜻한 노하우 전수" },
+    { id: "e10", name: "쿨그레이 & 일렉트릭 블루", colors: ["#334155", "#2563eb", "#eff6ff"], vibe: "온라인 VOD 인강 클래스", tag: "인강/VOD플랫폼", description: "언제 어디서나 학습하는 디지털 가독성" },
+  ],
+  "General": [
+    { id: "g1", name: "모던 딥 블루 & 시안 액센트", colors: ["#0f172a", "#0284c7", "#38bdf8"], vibe: "가장 인기 있는 모던 비즈니스", tag: "기본 범용 추천", description: "모든 업종에 무난하고 완성도 높은 블루" },
+    { id: "g2", name: "럭셔리 딥 차콜 & 샴페인 골드", colors: ["#18181b", "#d4af37", "#fef08a"], vibe: "고급스러운 럭셔리 다크 톤", tag: "고급 브랜드", description: "시선을 사로잡는 프리미엄 명품 브랜드 톤" },
+    { id: "g3", name: "내추럴 에메랄드 & 샌드", colors: ["#065f46", "#10b981", "#f0fdf4"], vibe: "자연 친화적이고 눈이 편안한 톤", tag: "친환경/라이프", description: "신선함과 신뢰를 선사하는 생태계 그린" },
+    { id: "g4", name: "크리스탈 클린 화이트 & 쿨 그레이", colors: ["#ffffff", "#64748b", "#0f172a"], vibe: "미니멀리즘 산뜻한 백그라운드", tag: "심플 미니멀", description: "깔끔하고 또렷한 글자 가독성 중심" },
+    { id: "g5", name: "네온 퍼플 & 사이버 미드나잇", colors: ["#020617", "#7c3aed", "#e879f9"], vibe: "감각적인 최신 웹 3.0 트렌드", tag: "트렌디/미디어", description: "젊은 세대를 사로잡는 보라빛 트렌디 톤" },
+    { id: "g6", name: "웜 버건디 & 로즈 페탈", colors: ["#881337", "#f43f5e", "#fff1f2"], vibe: "따뜻하고 우아한 감성 톤", tag: "감성/라이프", description: "마음을 여는 따스한 로즈 보르도 레어 톤" },
+    { id: "g7", name: "에너제틱 오렌지 & 딥 스카이", colors: ["#ea580c", "#0284c7", "#ffedd5"], vibe: "생동감 넘치는 비즈니스 스파크", tag: "활력/서비스", description: "고객 유입과 구매 전환율을 극대화" },
+    { id: "g8", name: "클래식 우드 & 코지 베이지", colors: ["#451a03", "#b45309", "#fef3c7"], vibe: "아늑하고 포근한 가구/카페 톤", tag: "아날로그/코지", description: "오랜 전통과 안정감을 전달하는 우드" },
+    { id: "g9", name: "티타늄 쿨 메탈 & 틸", colors: ["#1e293b", "#0d9488", "#ccfbf1"], vibe: "차갑고 날카로운 엔지니어링", tag: "기술/제조", description: "오차 없는 품질 보증 테크" },
+    { id: "g10", name: "파스텔 옐로우 & 소프트 바이올렛", colors: ["#fef08a", "#a855f7", "#faf5ff"], vibe: "친근하고 밝은 소통 톤", tag: "커뮤니티/모임", description: "경계심을 풀고 친근함을 전하는 유채색" },
+  ],
+};
+
+const getDesignPresetsForCategory = (catName: string): DesignPreset[] => {
+  const c = (catName || "").toLowerCase();
+  if (c.includes("shopping") || c.includes("store") || c.includes("외식") || c.includes("패션") || c.includes("뷰티")) {
+    return INDUSTRY_DESIGN_PRESETS["Shopping"];
+  }
+  if (c.includes("health") || c.includes("medical") || c.includes("병원") || c.includes("의원")) {
+    return INDUSTRY_DESIGN_PRESETS["Medical"];
+  }
+  if (c.includes("business") || c.includes("corporate") || c.includes("기획") || c.includes("렌탈") || c.includes("행사")) {
+    return INDUSTRY_DESIGN_PRESETS["Corporate"];
+  }
+  if (c.includes("law") || c.includes("real estate") || c.includes("법무") || c.includes("세무") || c.includes("전문직")) {
+    return INDUSTRY_DESIGN_PRESETS["Law"];
+  }
+  if (c.includes("education") || c.includes("교육") || c.includes("학원")) {
+    return INDUSTRY_DESIGN_PRESETS["Education"];
+  }
+  return INDUSTRY_DESIGN_PRESETS["General"];
+};
 
 // --- Template Items Definition ---
 interface CustomTemplate {
@@ -416,9 +525,40 @@ const CUSTOM_TEMPLATES: CustomTemplate[] = [
 ];
 
 export default function CustomClientSiteStudioPage() {
-  const [activeTab, setActiveTab] = useState<"marketplace" | "manage" | "request" | "assetization" | "admin_dashboard" | "domain_seller">("marketplace");
+  const [activeTab, setActiveTab] = useState<"marketplace" | "migration" | "manage" | "request" | "admin_dashboard">("marketplace");
   const [selectedCategory, setSelectedCategory] = useState<string>("전체 테마");
   const [searchQuery, setSearchQuery] = useState<string>("");
+
+  // Site AI Migration State
+  const [migrationUrl, setMigrationUrl] = useState("");
+  const [isMigrating, setIsMigrating] = useState(false);
+  const [migrationResult, setMigrationResult] = useState<any | null>(null);
+  const [expandedMigrationFaq, setExpandedMigrationFaq] = useState<number | null>(0);
+
+  const handleSiteMigration = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!migrationUrl.trim()) return;
+
+    setIsMigrating(true);
+    try {
+      const res = await fetch("/api/studio/site-migration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUrl: migrationUrl }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        setMigrationResult(data.data);
+      } else {
+        alert(data.error || "홈페이지 이관 실패");
+      }
+    } catch {
+      alert("홈페이지 AI 이관 중 오류가 발생했습니다.");
+    } finally {
+      setIsMigrating(false);
+    }
+  };
 
   // Admin Dashboard State
   const [adminRequests, setAdminRequests] = useState<AdminRequestItem[]>(INITIAL_ADMIN_REQUESTS);
@@ -496,11 +636,30 @@ export default function CustomClientSiteStudioPage() {
   // Request Form State
   const [reqCategory, setReqCategory] = useState<string>("행사/기획/렌탈");
   const [reqConcept, setReqConcept] = useState<string>("딥 블루 & 세련되고 신뢰감 있는 브랜드 다크 톤");
+  const [reqHeaderMenus, setReqHeaderMenus] = useState<string[]>([
+    "홈 (Home)",
+    "회사소개 / 브랜드 스토리",
+    "주요 서비스 / 포트폴리오",
+    "실적 갤러리 & 성공 사례",
+    "온라인 견적 / 예약 신청",
+    "Blog (공식 블로그)",
+    "Contact & 1:1 상담",
+  ]);
   const [reqFeatures, setReqFeatures] = useState<string[]>([
     "실적/포트폴리오 갤러리 탭",
     "실시간 온라인 견적신청 폼",
     "전용 블로그 & 조회수 카운터",
     "DoFollow SEO 백링크 가산점 엔진",
+  ]);
+
+  // Auth & DB Extra Option State
+  const [enableAuthDb, setEnableAuthDb] = useState<boolean>(false);
+  const [reqAuthMethods, setReqAuthMethods] = useState<string[]>([
+    "카카오 1초 소셜 로그인 (Kakao OAuth)",
+    "일반 이메일 & 비밀번호 회원가입",
+  ]);
+  const [reqAuthFeatures, setReqAuthFeatures] = useState<string[]>([
+    "회원 전용 마이페이지 (내 견적/예약/결제 내역 조회)",
   ]);
   const [reqRefUrl, setReqRefUrl] = useState<string>("");
   const [reqDetail, setReqDetail] = useState<string>("");
@@ -710,7 +869,7 @@ export default function CustomClientSiteStudioPage() {
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-4">
         <button
           onClick={() => setActiveTab("marketplace")}
-          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 ${
+          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 cursor-pointer ${
             activeTab === "marketplace"
               ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-600/20 scale-102"
               : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800"
@@ -721,44 +880,44 @@ export default function CustomClientSiteStudioPage() {
         </button>
 
         <button
+          onClick={() => setActiveTab("migration")}
+          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 cursor-pointer ${
+            activeTab === "migration"
+              ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/20 scale-102"
+              : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-indigo-500/30"
+          }`}
+        >
+          <Globe size={16} className="text-indigo-400 animate-pulse" />
+          <span>2️⃣ 🚀 기존 홈페이지 1초 AI 이관</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab("manage")}
-          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 ${
+          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 cursor-pointer ${
             activeTab === "manage"
               ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/20 scale-102"
               : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800"
           }`}
         >
           <Settings2 size={16} />
-          <span>2️⃣ 내 커스텀 사이트 관리</span>
+          <span>3️⃣ 내 커스텀 사이트 관리</span>
         </button>
 
         <button
           onClick={() => setActiveTab("request")}
-          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 ${
+          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 cursor-pointer ${
             activeTab === "request"
               ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-600/20 scale-102"
               : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800"
           }`}
         >
           <Cpu size={16} />
-          <span>3️⃣ AI 커스텀 신규 제작 신청</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("assetization")}
-          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 ${
-            activeTab === "assetization"
-              ? "bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-600/20 scale-102"
-              : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800"
-          }`}
-        >
-          <Store size={16} />
-          <span>4️⃣ 템플릿 자산화 & 리셀링</span>
+          <span>4️⃣ AI 커스텀 신규 제작 신청</span>
         </button>
 
         <button
           onClick={() => setActiveTab("admin_dashboard")}
-          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 ${
+          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 cursor-pointer ${
             activeTab === "admin_dashboard"
               ? "bg-gradient-to-r from-rose-600 via-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/20 scale-102"
               : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-rose-500/30"
@@ -768,17 +927,6 @@ export default function CustomClientSiteStudioPage() {
           <span>5️⃣ 👑 관리자: 커스텀 신청 현황 ({adminRequests.length}건)</span>
         </button>
 
-        <button
-          onClick={() => setActiveTab("domain_seller")}
-          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 ${
-            activeTab === "domain_seller"
-              ? "bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 text-white shadow-lg shadow-cyan-600/20 scale-102"
-              : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-cyan-500/30"
-          }`}
-        >
-          <Globe size={16} className="text-cyan-400 animate-pulse" />
-          <span>6️⃣ 🌐 도메인 조회 & 1초 구매·이관 센터</span>
-        </button>
       </div>
 
       {/* --- TAB 1: 템플릿 쇼핑 & 1초 구축 (Custom Template Marketplace) --- */}
@@ -950,7 +1098,346 @@ export default function CustomClientSiteStudioPage() {
         </div>
       )}
 
-      {/* --- TAB 2: 내 커스텀 사이트 관리 (Active Custom Site Manager) --- */}
+      {/* --- TAB 2: 🚀 기존 홈페이지 1초 AI 이관 센터 --- */}
+      {activeTab === "migration" && (
+        <div className="space-y-8 animate-fade-in-up">
+          <div className="rounded-3xl border border-indigo-500/30 bg-slate-900/90 p-6 lg:p-8 space-y-6 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl -z-10 pointer-events-none" />
+
+            <div className="space-y-2">
+              <span className="text-[10px] font-black tracking-wider text-indigo-400 uppercase bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-500/20">
+                AI Full-Automated Site Migration Engine
+              </span>
+              <h2 className="text-xl font-black text-white flex items-center gap-2">
+                <Globe className="text-indigo-400" /> 기존 타사 홈페이지 URL 입력 시 1초 만에 CreAibox 통째 이관
+              </h2>
+              <p className="text-xs font-medium text-slate-300 max-w-3xl leading-relaxed">
+                기존 홈페이지(식당, 병원, 상가, 법률사무소 등)의 주소를 입력하시면 AI 웹 스크레이퍼가 텍스트, 브랜드 이미지, 전화번호, 위치 정보를 파싱하여 0.00초 만에 CreAibox 모던 자사몰 사이트(<code className="text-indigo-300 font-mono">000.creaibox.com</code>)로 복사 생성합니다.
+              </p>
+            </div>
+
+            <form onSubmit={handleSiteMigration} className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                  <input
+                    type="text"
+                    value={migrationUrl}
+                    onChange={(e) => setMigrationUrl(e.target.value)}
+                    placeholder="이관할 기존 홈페이지 주소 입력 (예: my-hospital.co.kr, cafe-menu.com)"
+                    className="w-full rounded-2xl bg-slate-950 border border-slate-800 pl-12 pr-4 py-4 text-sm font-bold text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none shadow-inner"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isMigrating}
+                  className="rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 px-8 py-4 text-sm font-black text-white hover:brightness-110 transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 whitespace-nowrap"
+                >
+                  {isMigrating ? <RefreshCw size={18} className="animate-spin" /> : <Zap size={18} />}
+                  <span>1초 AI 이관 시작하기</span>
+                </button>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-slate-800/60">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+                  <input
+                    type="checkbox"
+                    id="site-terms-check"
+                    defaultChecked
+                    required
+                    className="rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  />
+                  <label htmlFor="site-terms-check" className="cursor-pointer">
+                    본인 소유 또는 정당한 권한을 위임받은 웹사이트 콘텐츠임을 확인하며, 타인 저작권 도용 시 모든 법적 책임은 신청자 본인에게 있음을 동의합니다. (필수)
+                  </label>
+                </div>
+
+                <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300 font-medium leading-relaxed flex items-start gap-2">
+                  <Sparkles size={16} className="text-amber-300 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-white">💡 이관 및 재발행 안내</span>: 기존 홈페이지를 닫고 완전히 옮겨오실 경우 원본 그대로 100% 정상 검색 노출됩니다.<br />
+                    기존 사이트/블로그를 병행 유지하시려면, 이관 완료 후 <span className="font-bold text-amber-300">'커스텀 사이트 관리 ➔ AI 모던 재구성'</span> 메뉴에서 원클릭으로 텍스트를 새로 다듬으실 수 있습니다.
+                  </div>
+                </div>
+              </div>
+            </form>
+
+            {/* Migration Results Display */}
+            {migrationResult && (
+              <div className="rounded-2xl border border-indigo-500/30 bg-slate-950 p-6 space-y-4 text-xs font-medium text-slate-300 animate-fade-in-up">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <div className="flex items-center gap-2 text-indigo-400 font-black text-sm">
+                    <CheckCircle2 size={16} /> 기존 홈페이지 AI 자동 이관 성공!
+                  </div>
+                  <span className="text-[11px] text-slate-400">{migrationResult.migratedAt}</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800">
+                    <span className="text-[10px] text-slate-400 font-bold block">이관된 서브도메인 주소</span>
+                    <a
+                      href={`http://${migrationResult.migratedSubdomain}.localhost:3000`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-indigo-400 font-black text-sm underline flex items-center gap-1 mt-1 hover:text-indigo-300"
+                    >
+                      http://{migrationResult.migratedSubdomain}.creaibox.com <ExternalLink size={12} />
+                    </a>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800">
+                    <span className="text-[10px] text-slate-400 font-bold block">⚡ 메인/헤더 자산 저장소 (속도 최적화)</span>
+                    <span className="text-xs text-cyan-300 font-bold mt-1 block">
+                      {migrationResult.mainPageCdnStorage || "CreAibox 초고속 클라우드 CDN (Supabase Storage / Vercel Blob)"}
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800">
+                    <span className="text-[10px] text-slate-400 font-bold block">✍️ 블로그 글/이미지 저장소 (원고 동기화)</span>
+                    <span className="text-xs text-purple-300 font-bold mt-1 block">
+                      {migrationResult.blogArticlesStorage || "크리에이박스 블로그 > 블로그 원고 관리 & CreAibox 클라우드 DB"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 1. AI Migration Live Stats Telemetry Banner */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">누적 홈페이지 이관 성공</span>
+              <div className="text-2xl font-black text-indigo-400 flex items-center gap-1.5">
+                <span>1,280+</span>
+                <span className="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded">건</span>
+              </div>
+              <p className="text-[10px] text-slate-500 font-medium">전국 식당, 병원, 법률사무소 1초 전환 완료</p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">평균 AI 이관 소요 시간</span>
+              <div className="text-2xl font-black text-cyan-400 flex items-center gap-1.5">
+                <span>0.78</span>
+                <span className="text-xs text-cyan-300 font-bold">초</span>
+              </div>
+              <p className="text-[10px] text-slate-500 font-medium">초고속 백엔드 무인 스크레이퍼 처리</p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">SEO 검색 지수 보존율</span>
+              <div className="text-2xl font-black text-emerald-400 flex items-center gap-1.5">
+                <span>100.0%</span>
+              </div>
+              <p className="text-[10px] text-slate-500 font-medium">Title, Description, OG 태그 동기화</p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">원고 관리함 동기화 건수</span>
+              <div className="text-2xl font-black text-purple-400 flex items-center gap-1.5">
+                <span>45,200+</span>
+                <span className="text-xs text-purple-300 font-bold">개</span>
+              </div>
+              <p className="text-[10px] text-slate-500 font-medium">블로그 원고 관리함 자동 동기화</p>
+            </div>
+          </div>
+
+          {/* 2. Dual Storage Architecture & Engine Features Grid */}
+          <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 lg:p-8 space-y-6">
+            <div className="space-y-1">
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <Layers className="text-cyan-400" size={18} /> CreAibox AI 이중 저장소 & 이관 엔진 핵심 특장점
+              </h3>
+              <p className="text-xs text-slate-400 font-medium">
+                기존 타사 구형 홈페이지를 이관할 때 속도와 자산화를 완벽히 분리 처리합니다.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                  <Zap size={20} />
+                </div>
+                <h4 className="text-sm font-black text-white">⚡ 초고속 CDN 자산 보관</h4>
+                <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                  메인 비주얼, 로고, 헤더 페이지 고화질 이미지들을 Supabase CDN으로 0.00초급 전진 배치합니다.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                  <FileText size={20} />
+                </div>
+                <h4 className="text-sm font-black text-white">✍️ 블로그 원고 자동 자산화</h4>
+                <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                  기존 사이트의 블로그/소식 포스팅을 '블로그 원고 관리'함 & CreAibox 클라우드 DB로 동기화합니다.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                  <Video size={20} />
+                </div>
+                <h4 className="text-sm font-black text-white">🎬 비디오 플레이어 제자리 재생</h4>
+                <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                  유튜브, 네이버 비디오, 카카오TV 등 플레이어 임베드가 100% 추출되어 본문에서 바로 재생됩니다.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <ShieldCheck size={20} />
+                </div>
+                <h4 className="text-sm font-black text-white">🔍 SEO 메타 태그 100% 동기화</h4>
+                <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                  Title, Meta Description, OG 카톡 공유 카드 썸네일까지 구글/네이버 검색 지수를 보존합니다.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Successful Migration Showcase Cards */}
+          <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 lg:p-8 space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <h3 className="text-base font-black text-white flex items-center gap-2">
+                  <Award className="text-amber-400" size={18} /> 대표 홈페이지 1초 이관 완료 성공 사례
+                </h3>
+                <p className="text-xs text-slate-400 font-medium">
+                  기존 타사 구형 웹사이트에서 CreAibox 최신 모던 자사몰로 전환된 대표적인 실제 사례입니다.
+                </p>
+              </div>
+              <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
+                100% 라이브 가동 중 ⭕
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                {
+                  company: "소통층의원",
+                  oldDomain: "sotongcheum.co.kr",
+                  newSubdomain: "sotongcheum.creaibox.com",
+                  category: "병원 / 의원",
+                  parsedPages: 6,
+                  speed: "0.74초",
+                  images: 14,
+                },
+                {
+                  company: "아우라 메리노",
+                  oldDomain: "auramerino.com",
+                  newSubdomain: "auramerino.creaibox.com",
+                  category: "의류 / 쇼핑몰",
+                  parsedPages: 8,
+                  speed: "0.81초",
+                  images: 22,
+                },
+                {
+                  company: "바로 법률사무소",
+                  oldDomain: "baro-law.com",
+                  newSubdomain: "baro-law.creaibox.com",
+                  category: "법무 / 전문직",
+                  parsedPages: 5,
+                  speed: "0.69초",
+                  images: 9,
+                },
+              ].map((item, idx) => (
+                <div key={idx} className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-4 hover:border-indigo-500/50 transition-all">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <span className="text-[10px] font-black text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
+                      {item.category}
+                    </span>
+                    <span className="text-[11px] font-mono text-emerald-400 font-bold flex items-center gap-1">
+                      <Zap size={12} /> {item.speed} 이관 완료
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-black text-white">{item.company}</h4>
+                    <p className="text-[11px] text-slate-500 font-mono">기존: {item.oldDomain}</p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-900 border border-slate-800/80 space-y-1.5 text-[11px]">
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span>파싱된 메인/헤더 페이지</span>
+                      <span className="font-bold text-white">{item.parsedPages}개 완료</span>
+                    </div>
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span>이관된 이미지 자산</span>
+                      <span className="font-bold text-white">{item.images}개 (CDN 저장)</span>
+                    </div>
+                    <div className="flex items-center justify-between text-slate-400 pt-1 border-t border-slate-800">
+                      <span>CreAibox 라이브 주소</span>
+                      <a
+                        href={`http://${item.newSubdomain.split(".")[0]}.localhost:3000`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-indigo-400 font-bold underline flex items-center gap-0.5 hover:text-indigo-300"
+                      >
+                        {item.newSubdomain.split(".")[0]}.creaibox.com <ExternalLink size={10} />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 4. Migration Frequently Asked Questions FAQ Accordion */}
+          <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 lg:p-8 space-y-6">
+            <div className="space-y-1">
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <HelpCircle className="text-rose-400" size={18} /> 기존 홈페이지 AI 자동 이관 자주 묻는 질문 (FAQ)
+              </h3>
+              <p className="text-xs text-slate-400 font-medium">
+                기존 타사 구형 웹사이트 이관 시 자주 문의하시는 질문과 답변입니다.
+              </p>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              {[
+                {
+                  q: "이관 후 내 홈페이지 주소는 어떻게 생성되나요?",
+                  a: "이관 즉시 https://000.creaibox.com 형태의 무상 서브도메인이 1초 만에 자동 생성됩니다. 또한 [도메인 조회 & 구매] 메뉴에서 사장님의 독자 도메인(mybrand.com / mybrand.kr)을 연결하실 수 있습니다.",
+                },
+                {
+                  q: "기존 사이트의 블로그 포스팅이나 이미지는 어디로 저장되나요?",
+                  a: "메인 페이지의 비주얼 자산은 초고속 CDN으로, 기존 블로그 글과 본문 이미지들은 [크리에이박스 블로그] -> [블로그 원고 관리]함과 CreAibox 클라우드 DB로 자동 동기화 보관됩니다.",
+                },
+                {
+                  q: "기존 구형 사이트의 네이버/구글 검색 순위가 영향받지 않나요?",
+                  a: "기존 사이트를 닫고 완전히 옮겨오실 경우 Title Tag, Description 메타 태그가 100% 동일하게 이관되므로 검색 지수가 그대로 보존됩니다. 병행 유지 시에는 [커스텀 사이트 관리] -> [AI 모던 재구성] 버튼을 눌러 문장을 원클릭으로 재구성하시면 패널티 없이 완벽 노출됩니다.",
+                },
+                {
+                  q: "유튜브 동영상이나 카카오TV 비디오도 같이 넘어오나요?",
+                  a: "네! 기존 홈페이지 본문에 삽입되어 있던 유튜브, 네이버 비디오, 카카오TV 등 플레이어 임베드 코드(iframe)가 100% 파싱되어 CreAibox 자사몰 본문에서 그대로 제자리 재생(In-place Playback)됩니다.",
+                },
+              ].map((faq, idx) => (
+                <div key={idx} className="rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedMigrationFaq(expandedMigrationFaq === idx ? null : idx)}
+                    className="w-full flex items-center justify-between p-4 text-left hover:bg-slate-900/50 transition-colors"
+                  >
+                    <span className="text-xs sm:text-sm font-black text-slate-200">Q. {faq.q}</span>
+                    {expandedMigrationFaq === idx ? (
+                      <ChevronUp size={16} className="text-slate-400" />
+                    ) : (
+                      <ChevronDown size={16} className="text-slate-400" />
+                    )}
+                  </button>
+
+                  {expandedMigrationFaq === idx && (
+                    <div className="p-4 pt-0 text-xs font-medium text-slate-400 border-t border-slate-900 bg-slate-900/30 leading-relaxed">
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- TAB 3: 내 커스텀 사이트 관리 (Active Custom Site Manager) --- */}
       {activeTab === "manage" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column: Active Site Status & Quick Action */}
@@ -1456,7 +1943,7 @@ export default function CustomClientSiteStudioPage() {
 
       {/* --- TAB 3: AI 커스텀 사이트 신규 제작 신청 (AI Custom Site Concierge) --- */}
       {activeTab === "request" && (
-        <div className="max-w-4xl mx-auto rounded-3xl border border-slate-800 bg-slate-900/80 p-8 sm:p-10 space-y-8">
+        <div className="w-full rounded-3xl border border-slate-800 bg-slate-900/80 p-8 sm:p-10 space-y-8">
           <div className="space-y-2 text-center max-w-2xl mx-auto">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/20 border border-purple-400/30 px-4 py-1 text-xs font-black text-purple-300">
               <Cpu size={14} /> AI 에이전트 1:1 전담 신규 제작 서비스
@@ -1479,35 +1966,178 @@ export default function CustomClientSiteStudioPage() {
             </div>
           )}
 
-          <form onSubmit={handleSendRequest} className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-extrabold text-slate-300">업종 / 산업 분야</label>
-                <select
-                  value={reqCategory}
-                  onChange={(e) => setReqCategory(e.target.value)}
-                  className="w-full rounded-2xl bg-slate-950 border border-slate-800 px-4 py-3 text-xs font-bold text-white focus:border-purple-500 focus:outline-none"
-                >
-                  {categories.filter((c) => c !== "전체 테마").map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
+          <form onSubmit={handleSendRequest} className="space-y-8">
+            {/* Field 1: 업종 / 산업 분야 선택 (Full Width Standalone Block) */}
+            <div className="space-y-2">
+              <label className="text-xs font-extrabold text-slate-200 flex items-center gap-2">
+                <Building2 size={16} className="text-purple-400" />
+                <span>1️⃣ 제작하려는 업종 / 산업 분야 선택</span>
+              </label>
+              <select
+                value={reqCategory}
+                onChange={(e) => setReqCategory(e.target.value)}
+                className="w-full rounded-2xl bg-slate-950 border border-slate-800 px-5 py-4 text-sm font-bold text-white focus:border-purple-500 focus:outline-none shadow-inner cursor-pointer"
+              >
+                {categories.filter((c) => c !== "전체 테마").map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Field 2: [{reqCategory}] 업종 맞춤 추천 디자인 컨셉 & 메인 컬러 (Full Width 5-Column Grid) */}
+            <div className="space-y-4 rounded-3xl bg-slate-950/60 p-6 border border-slate-800/80">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
+                <div className="space-y-0.5">
+                  <label className="text-sm font-black text-white flex items-center gap-2">
+                    <Sparkles size={16} className="text-purple-400" />
+                    <span>2️⃣ [{reqCategory}] 업종 맞춤 추천 디자인 컨셉 & 메인 컬러 (10개 템플릿 예시 중 선택)</span>
+                  </label>
+                  <p className="text-xs font-medium text-slate-400">
+                    원하시는 느낌의 디자인과 컬러 칩을 클릭하시면 AI 에이전트 생성 명세서로 원클릭 자동 세팅됩니다.
+                  </p>
+                </div>
+                <span className="text-xs font-bold text-purple-300 bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/30 shrink-0">
+                  원클릭 자동 세팅 ⭕
+                </span>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-extrabold text-slate-300">희망 디자인 컨셉 & 메인 컬러</label>
+              {/* 5-Column Grid (Wide Cards, 5 items per row x 2 rows = 10 items) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
+                {getDesignPresetsForCategory(reqCategory).map((preset) => {
+                  const isSelected = reqConcept.includes(preset.name);
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() =>
+                        setReqConcept(
+                          `${preset.name} (${preset.vibe}) - Palette: ${preset.colors.join(", ")}`
+                        )
+                      }
+                      className={`p-4 rounded-2xl border text-left flex flex-col justify-between space-y-3 transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-purple-500/20 border-purple-500 ring-2 ring-purple-500/50 shadow-xl shadow-purple-500/20 scale-102"
+                          : "bg-slate-900/90 border-slate-800 hover:border-purple-500/50 hover:bg-slate-900"
+                      }`}
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
+                            {preset.tag}
+                          </span>
+                          {isSelected && <CheckCircle2 size={16} className="text-purple-400 shrink-0" />}
+                        </div>
+                        <p className="text-xs font-black text-white leading-snug">{preset.name}</p>
+                        <p className="text-[11px] text-slate-400 font-medium leading-relaxed">{preset.description}</p>
+                      </div>
+
+                      {/* Color Swatch Circles */}
+                      <div className="flex items-center gap-1.5 pt-2.5 border-t border-slate-800">
+                        {preset.colors.map((c, i) => (
+                          <span
+                            key={i}
+                            className="w-4 h-4 rounded-full border border-white/20 shadow-md"
+                            style={{ backgroundColor: c }}
+                            title={c}
+                          />
+                        ))}
+                        <span className="text-[10px] text-slate-400 font-mono ml-auto font-bold truncate max-w-[65px]">
+                          {preset.colors[1]}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="space-y-1.5 pt-2">
+                <label className="text-[11px] font-bold text-slate-400">선택된 디자인 컨셉 & 메인 컬러 명세 (필요 시 직접 세부 수정도 가능)</label>
                 <input
                   type="text"
                   value={reqConcept}
                   onChange={(e) => setReqConcept(e.target.value)}
-                  className="w-full rounded-2xl bg-slate-950 border border-slate-800 px-4 py-3 text-xs font-bold text-white focus:border-purple-500 focus:outline-none"
-                  placeholder="예: 딥 블루 & 고급스러운 감성 다크 톤"
+                  className="w-full rounded-2xl bg-slate-900 border border-slate-800 px-4 py-3 text-xs font-bold text-purple-300 focus:border-purple-500 focus:outline-none shadow-inner"
+                  placeholder="상단 10개 예시 중 선택하거나 직접 입력해 주세요"
                 />
               </div>
             </div>
 
-            <div className="space-y-3">
-              <label className="text-xs font-extrabold text-slate-300">필요한 특수 기능 선택 (복수 선택 가능)</label>
+            {/* Field 3: GNB 헤더 상단 메뉴 구성 선택 (Header GNB Menu Selection) */}
+            <div className="space-y-4 rounded-3xl bg-slate-950/60 p-6 border border-slate-800/80">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
+                <div className="space-y-0.5">
+                  <label className="text-sm font-black text-white flex items-center gap-2">
+                    <ListPlus size={16} className="text-amber-400" />
+                    <span>3️⃣ 상단 GNB 헤더 메뉴 구성 선택 (복수 선택 가능)</span>
+                  </label>
+                  <p className="text-xs font-medium text-slate-400">
+                    홈페이지 상단 네비게이션(GNB)에 탑재할 메인 헤더 메뉴를 자유롭게 선택해 주세요. (추천 5~7개 자동 선택)
+                  </p>
+                </div>
+                <span className="text-xs font-bold text-amber-300 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/30 shrink-0">
+                  권장 5~7개 탑재 📌
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                {[
+                  { name: "홈 (Home)", isRequired: true, desc: "메인 비주얼 랜딩 페이지" },
+                  { name: "회사소개 / 브랜드 스토리", isRequired: true, desc: "CEO 인사말, 비전, 연혁" },
+                  { name: "주요 서비스 / 포트폴리오", isRequired: true, desc: "업종별 핵심 서비스 쇼케이스" },
+                  { name: "실적 갤러리 & 성공 사례", isRequired: false, desc: "프로젝트 갤러리 및 성과" },
+                  { name: "온라인 견적 / 예약 신청", isRequired: true, desc: "실시간 견적 및 예약 폼" },
+                  { name: "고객 후기 / 렌탈 리뷰", isRequired: false, desc: "고객 생생 후기 & 비포애프터" },
+                  { name: "자주 묻는 질문 (FAQ)", isRequired: false, desc: "주요 CS 질문 & 답변 모달" },
+                  { name: "Blog (공식 블로그)", isRequired: true, desc: "SEO 원고 자동 발행 백링크", isRight: true },
+                  { name: "Contact & 1:1 상담", isRequired: true, desc: "GNB 우측 1:1 상담 버튼", isRight: true },
+                  { name: "인기 랭킹 & 트렌드 칼럼", isRequired: false, desc: "인기 아티클 랭킹 리스트" },
+                ].map((item) => {
+                  const isChecked = reqHeaderMenus.includes(item.name);
+                  return (
+                    <button
+                      type="button"
+                      key={item.name}
+                      onClick={() => {
+                        if (isChecked) {
+                          setReqHeaderMenus(reqHeaderMenus.filter((m) => m !== item.name));
+                        } else {
+                          setReqHeaderMenus([...reqHeaderMenus, item.name]);
+                        }
+                      }}
+                      className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between space-y-2.5 transition-all cursor-pointer ${
+                        isChecked
+                          ? "bg-amber-500/15 border-amber-500 ring-1 ring-amber-500/40 shadow-lg shadow-amber-500/10"
+                          : "bg-slate-900/80 border-slate-800 hover:border-amber-500/40 hover:bg-slate-900"
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${
+                            item.isRight
+                              ? "bg-cyan-500/10 text-cyan-300 border-cyan-500/20"
+                              : item.isRequired
+                              ? "bg-amber-500/10 text-amber-300 border-amber-500/20"
+                              : "bg-slate-800 text-slate-400 border-slate-700"
+                          }`}>
+                            {item.isRight ? "우측 CTA" : item.isRequired ? "필수 메뉴" : "선택 옵션"}
+                          </span>
+                          {isChecked && <CheckCircle2 size={14} className="text-amber-400 shrink-0" />}
+                        </div>
+                        <p className="text-xs font-black text-white leading-snug">{item.name}</p>
+                        <p className="text-[10px] text-slate-400 font-medium leading-tight">{item.desc}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Field 4: 필요한 특수 기능 선택 (복수 선택 가능) */}
+            <div className="space-y-3 pt-2">
+              <label className="text-xs font-extrabold text-slate-200 flex items-center gap-2">
+                <Zap size={16} className="text-purple-400" />
+                <span>4️⃣ 필요한 특수 기능 선택 (복수 선택 가능)</span>
+              </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
                   "실적/포트폴리오 갤러리 탭",
@@ -1541,6 +2171,138 @@ export default function CustomClientSiteStudioPage() {
                   );
                 })}
               </div>
+            </div>
+
+            {/* Field 5: 👑 전용 회원가입 & 백엔드 DB 서버 구축 옵션 (유료 특수 옵션 - 가격 미정) */}
+            <div className="space-y-5 rounded-3xl bg-gradient-to-r from-purple-950/40 via-slate-950/80 to-blue-950/40 p-6 border border-purple-500/30">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck size={18} className="text-purple-400" />
+                    <h3 className="text-base font-black text-white">
+                      5️⃣ 👑 사용자 회원가입 & 백엔드 DB 서버 통합 구축 (유료 추가 옵션)
+                    </h3>
+                  </div>
+                  <p className="text-xs font-medium text-slate-300 leading-relaxed">
+                    회원가입 기능 추가 시 소셜 로그인(카카오/네이버/구글), 회원 전용 DB 데이터베이스, 마이페이지 및 보안 세션 엔진이 통째로 백엔드에 구축됩니다.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-xs font-black text-amber-300 bg-amber-500/10 px-3 py-1.5 rounded-full border border-amber-500/30">
+                    💰 구축 비용: 가격 미정 (맞춤 견적 협의)
+                  </span>
+                  <label className="flex items-center gap-2 cursor-pointer bg-purple-500/20 px-3.5 py-1.5 rounded-full border border-purple-400/40 hover:bg-purple-500/30 transition-all">
+                    <input
+                      type="checkbox"
+                      checked={enableAuthDb}
+                      onChange={(e) => setEnableAuthDb(e.target.checked)}
+                      className="w-4 h-4 rounded accent-purple-500 cursor-pointer"
+                    />
+                    <span className="text-xs font-black text-purple-200">
+                      {enableAuthDb ? "회원 DB 구축 신청 ⭕" : "회원 DB 미사용 ❌"}
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {enableAuthDb && (
+                <div className="space-y-6 pt-2 animate-fade-in-up">
+                  {/* Group A: 🔑 회원가입 & 로그인 인증 수단 선택 */}
+                  <div className="space-y-3">
+                    <label className="text-xs font-extrabold text-purple-300 flex items-center gap-1.5">
+                      <Lock size={14} className="text-purple-400" />
+                      <span>🔑 로그인 & 회원가입 인증 수단 선택 (복수 선택 가능)</span>
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                      {[
+                        { name: "카카오 1초 소셜 로그인 (Kakao OAuth)", desc: "국내 모바일 회원 전환율 1위" },
+                        { name: "네이버 1초 소셜 로그인 (Naver OAuth)", desc: "네이버 연동 간편인증 시스템" },
+                        { name: "구글 소셜 로그인 (Google OAuth)", desc: "글로벌 표준 구글 원클릭 가입" },
+                        { name: "일반 이메일 & 비밀번호 회원가입", desc: "이메일 인증 및 암호화 가입" },
+                      ].map((item) => {
+                        const isChecked = reqAuthMethods.includes(item.name);
+                        return (
+                          <button
+                            type="button"
+                            key={item.name}
+                            onClick={() => {
+                              if (isChecked) {
+                                setReqAuthMethods(reqAuthMethods.filter((m) => m !== item.name));
+                              } else {
+                                setReqAuthMethods([...reqAuthMethods, item.name]);
+                              }
+                            }}
+                            className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between space-y-2 transition-all cursor-pointer ${
+                              isChecked
+                                ? "bg-purple-500/20 border-purple-400 ring-1 ring-purple-400/40 text-purple-100"
+                                : "bg-slate-900/90 border-slate-800 text-slate-400 hover:text-white"
+                            }`}
+                          >
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[9px] font-black text-purple-300 bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20">
+                                  Auth
+                                </span>
+                                {isChecked && <CheckCircle2 size={14} className="text-purple-400 shrink-0" />}
+                              </div>
+                              <p className="text-xs font-extrabold text-white leading-snug">{item.name}</p>
+                              <p className="text-[10px] text-slate-400 leading-tight">{item.desc}</p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Group B: 👤 회원 전용 마이페이지 & 멤버십 기능 선택 */}
+                  <div className="space-y-3 pt-2 border-t border-slate-800/80">
+                    <label className="text-xs font-extrabold text-cyan-300 flex items-center gap-1.5">
+                      <Cpu size={14} className="text-cyan-400" />
+                      <span>👤 회원 전용 마이페이지 & 멤버십 엔진 (복수 선택 가능)</span>
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                      {[
+                        { name: "회원 전용 마이페이지 (내 견적/예약/결제 내역 조회)", desc: "개인별 이력 및 진행 상태 확인" },
+                        { name: "회원 등급제 엔진 (일반 / VIP / 파트너 혜택 구분)", desc: "회원 등급별 할인 및 혜택 차등" },
+                        { name: "회원가입 축하 자동 쿠폰 & 포인트 적립", desc: "가입 즉시 자동 혜택 부여" },
+                        { name: "카카오 알림톡 / SMS 본인 인증", desc: "휴대폰 번호 실명 및 봇 방지 인증" },
+                      ].map((item) => {
+                        const isChecked = reqAuthFeatures.includes(item.name);
+                        return (
+                          <button
+                            type="button"
+                            key={item.name}
+                            onClick={() => {
+                              if (isChecked) {
+                                setReqAuthFeatures(reqAuthFeatures.filter((f) => f !== item.name));
+                              } else {
+                                setReqAuthFeatures([...reqAuthFeatures, item.name]);
+                              }
+                            }}
+                            className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between space-y-2 transition-all cursor-pointer ${
+                              isChecked
+                                ? "bg-cyan-500/20 border-cyan-400 ring-1 ring-cyan-400/40 text-cyan-100"
+                                : "bg-slate-900/90 border-slate-800 text-slate-400 hover:text-white"
+                            }`}
+                          >
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[9px] font-black text-cyan-300 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">
+                                  DB Engine
+                                </span>
+                                {isChecked && <CheckCircle2 size={14} className="text-cyan-400 shrink-0" />}
+                              </div>
+                              <p className="text-xs font-extrabold text-white leading-snug">{item.name}</p>
+                              <p className="text-[10px] text-slate-400 leading-tight">{item.desc}</p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -1579,8 +2341,8 @@ export default function CustomClientSiteStudioPage() {
         </div>
       )}
 
-      {/* --- TAB 4: 템플릿 자산화 & 리셀링 파트너십 (Template Assetization) --- */}
-      {activeTab === "assetization" && (
+      {/* --- TAB 4 (REMOVED: Assetization) --- */}
+      {false && (
         <div className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 space-y-3">
@@ -1936,8 +2698,8 @@ export default function CustomClientSiteStudioPage() {
         </div>
       )}
 
-      {/* --- TAB 6: 🌐 도메인 조회 & 1초 구매·이관 센터 (Domain Seller Hub) --- */}
-      {activeTab === "domain_seller" && (
+      {/* --- TAB 6 (REMOVED: Use /studio/domain-search instead) --- */}
+      {false && (
         <div className="space-y-8 animate-fade-in-up">
           {/* Hero Banner */}
           <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-950 to-cyan-950/40 p-8 lg:p-10 shadow-2xl">

@@ -482,7 +482,7 @@ export default function CreaiboxRecreateTab() {
               ) : (
                 <>
                   <Wand2 size={16} />
-                  <span>🟢 네이버용 AI 원고 재창조 실행</span>
+                  <span>✨ 원본 글 AI 재창조 & 네이버/SNS AI 재발행</span>
                 </>
               )}
             </button>
