@@ -34,50 +34,17 @@ export async function GET(request: Request) {
   const date = requestUrl.searchParams.get("date");
   const hour = Number(requestUrl.searchParams.get("hour") || "12");
 
-  const LAUNCH_DATE = "2026-07-26";
   const todayStr = new Date().toISOString().split("T")[0];
+  const targetDate = date || todayStr;
+  const isPast = targetDate < todayStr;
 
-  // 1. 구축일(2026-07-26) 이전인 경우 -> 데이터 없음 선언 (가짜 데이터 금지)
-  if (date && date < LAUNCH_DATE) {
-    return NextResponse.json({
-      isBeforeArchiving: true,
-      launchDate: LAUNCH_DATE,
-      results: [],
-      message: `CreAibox DB 실시간 아카이빙 구축(${LAUNCH_DATE}) 이전 데이터입니다.`,
-    });
-  }
-
-  const isPast = date && date < todayStr;
-
-  // 2. 오늘 데이터인 경우 -> 실시간 라이브 API 연동
-  if (!isPast) {
-    const defaultBody = {
-      startDate: todayStr,
-      endDate: todayStr,
-      timeUnit: "date",
-      keywordGroups: NAVER_TRENDS_POOL.slice(0, 5).map((item) => ({
-        groupName: item.title,
-        keywords: [item.title],
-      })),
-    };
-
-    try {
-      const data = await fetchNaverDataLabTrend(defaultBody);
-      if (data && data.results && Array.isArray(data.results) && data.results.length >= 10) {
-        return NextResponse.json(data);
-      }
-    } catch (err) {
-      console.error("Naver DataLab API GET error:", err);
-    }
-  }
-
-  // 3. 과거 구축일 이후 데이터인 경우 -> CreAibox 클라우드 DB에서 실제 보관 데이터 조회
-  if (date) {
-    const dbRecords = await getHistoricalHourlyKeywords(date, hour, "naver");
+  // 1. 과거 날짜 요청 시 CreAibox 클라우드 DB 보관 기록 우선 조회
+  if (isPast) {
+    const dbRecords = await getHistoricalHourlyKeywords(targetDate, hour, "naver");
     if (dbRecords && dbRecords.length > 0) {
       return NextResponse.json({
-        startDate: date,
-        endDate: date,
+        startDate: targetDate,
+        endDate: targetDate,
         results: dbRecords.map((r) => ({
           title: r.keyword,
           keywords: [r.keyword],
@@ -90,11 +57,40 @@ export async function GET(request: Request) {
     }
   }
 
-  // Fallback: 오늘 라이브 API 대기 중 기본 시드 (오늘 날짜 전용)
+  // 2. 네이버 DataLab 실시간 / 일간 트렌드 API 연동 (오늘 및 과거 날짜 요청 지원)
+  const defaultBody = {
+    startDate: targetDate,
+    endDate: targetDate,
+    timeUnit: "date",
+    keywordGroups: NAVER_TRENDS_POOL.slice(0, 5).map((item) => ({
+      groupName: item.title,
+      keywords: [item.title],
+    })),
+  };
+
+  try {
+    const data = await fetchNaverDataLabTrend(defaultBody);
+    if (data && data.results && Array.isArray(data.results) && data.results.length >= 10) {
+      return NextResponse.json(data);
+    }
+  } catch (err) {
+    console.error("Naver DataLab API GET error:", err);
+  }
+
+  // 3. 과거 날짜 데이터가 API 및 DB에 완전히 존재하지 않는 경우 -> 수집 불가 안내
+  if (isPast) {
+    return NextResponse.json({
+      isBeforeArchiving: true,
+      results: [],
+      message: "네이버 DataLab 및 DB 수집 가능 기간 이전의 데이터입니다.",
+    });
+  }
+
+  // 오늘 라이브 기본 연동
   return NextResponse.json({
-    startDate: date || todayStr,
-    endDate: date || todayStr,
-    results: NAVER_TRENDS_POOL.slice(0, 20).map((item, idx) => ({
+    startDate: targetDate,
+    endDate: targetDate,
+    results: NAVER_TRENDS_POOL.slice(0, 20).map((item) => ({
       title: item.title,
       keywords: [item.title],
       ratio: item.ratio,

@@ -235,20 +235,13 @@ export default function RealtimeKeywordPage() {
               <RefreshCw className="animate-spin text-emerald-400" size={18} />
               네이버 실시간 검색어를 가져오는 중입니다...
             </div>
-          ) : selectedDate < "2026-07-26" ? (
-            <div className="p-10 text-center bg-zinc-950/80 border border-amber-500/30 rounded-2xl space-y-3">
-              <AlertCircle className="mx-auto text-amber-400" size={32} />
-              <h4 className="text-sm font-bold text-white">CreAibox DB 구축 이전 데이터입니다</h4>
-              <p className="text-xs text-zinc-400 leading-relaxed max-w-xs mx-auto">
-                네이버에서는 구축일(<span className="text-amber-400 font-bold">2026년 7월 26일</span>) 이전의 실시간 급상승 검색어를 제공하지 않습니다. <br />
-                <span className="text-emerald-400 font-bold">2026-07-26 이후 데이터만 보관 및 조회됩니다.</span>
-              </p>
-            </div>
           ) : naverKeywords.length === 0 ? (
-            <div className="p-10 text-center bg-zinc-950/80 border border-zinc-800 rounded-2xl space-y-2">
-              <AlertCircle className="mx-auto text-zinc-500" size={32} />
-              <h4 className="text-sm font-bold text-zinc-300">보관된 기록이 없습니다</h4>
-              <p className="text-xs text-zinc-500">해당 일시의 네이버 키워드 아카이빙이 아직 존재하지 않습니다.</p>
+            <div className="p-10 text-center bg-zinc-950/80 border border-amber-500/20 rounded-2xl space-y-2">
+              <AlertCircle className="mx-auto text-amber-400/80" size={32} />
+              <h4 className="text-sm font-bold text-zinc-200">조회할 수 있는 아카이빙 데이터가 없습니다</h4>
+              <p className="text-xs text-zinc-400 max-w-xs mx-auto leading-relaxed">
+                선택하신 일시의 데이터는 네이버 DataLab 및 CreAibox DB 수집 기간 이전이거나 아카이빙 기록이 존재하지 않습니다.
+              </p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -327,20 +320,13 @@ export default function RealtimeKeywordPage() {
               <RefreshCw className="animate-spin text-blue-400" size={18} />
               구글 실시간 트렌드를 수집하는 중입니다...
             </div>
-          ) : selectedDate < "2026-07-26" ? (
-            <div className="p-10 text-center bg-zinc-950/80 border border-amber-500/30 rounded-2xl space-y-3">
-              <AlertCircle className="mx-auto text-amber-400" size={32} />
-              <h4 className="text-sm font-bold text-white">CreAibox DB 구축 이전 데이터입니다</h4>
-              <p className="text-xs text-zinc-400 leading-relaxed max-w-xs mx-auto">
-                구글에서는 구축일(<span className="text-amber-400 font-bold">2026년 7월 26일</span>) 이전의 실시간 급상승 검색어를 제공하지 않습니다. <br />
-                <span className="text-blue-400 font-bold">2026-07-26 이후 데이터만 보관 및 조회됩니다.</span>
-              </p>
-            </div>
           ) : googleKeywords.length === 0 ? (
-            <div className="p-10 text-center bg-zinc-950/80 border border-zinc-800 rounded-2xl space-y-2">
-              <AlertCircle className="mx-auto text-zinc-500" size={32} />
-              <h4 className="text-sm font-bold text-zinc-300">보관된 기록이 없습니다</h4>
-              <p className="text-xs text-zinc-500">해당 일시의 구글 키워드 아카이빙이 아직 존재하지 않습니다.</p>
+            <div className="p-10 text-center bg-zinc-950/80 border border-amber-500/20 rounded-2xl space-y-2">
+              <AlertCircle className="mx-auto text-amber-400/80" size={32} />
+              <h4 className="text-sm font-bold text-zinc-200">조회할 수 있는 아카이빙 데이터가 없습니다</h4>
+              <p className="text-xs text-zinc-400 max-w-xs mx-auto leading-relaxed">
+                선택하신 일시의 데이터는 구글 트렌드 및 CreAibox DB 수집 기간 이전이거나 아카이빙 기록이 존재하지 않습니다.
+              </p>
             </div>
           ) : (
             <div className="space-y-2">

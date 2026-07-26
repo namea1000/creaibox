@@ -34,82 +34,10 @@ export async function GET(request: Request) {
   const date = requestUrl.searchParams.get("date");
   const hour = Number(requestUrl.searchParams.get("hour") || "12");
 
-  const LAUNCH_DATE = "2026-07-26";
   const todayStr = new Date().toISOString().split("T")[0];
 
-  // 1. 구축일(2026-07-26) 이전인 경우 -> 데이터 없음 선언 (가짜 데이터 금지)
-  if (date && date < LAUNCH_DATE) {
-    return NextResponse.json({
-      isBeforeArchiving: true,
-      launchDate: LAUNCH_DATE,
-      items: [],
-      message: `CreAibox DB 실시간 아카이빙 구축(${LAUNCH_DATE}) 이전 데이터입니다.`,
-    });
-  }
-
-  const isPast = date && date < todayStr;
-
-  // 2. 오늘 데이터인 경우 -> 실시간 라이브 RSS API 연동
-  if (!isPast) {
-    try {
-      const rssUrl = `https://trends.google.com/trends/trendingsearches/daily/rss?geo=${geo}`;
-      const res = await fetch(rssUrl, {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        },
-        next: { revalidate: 60 },
-      });
-
-      if (res.ok) {
-        const xmlText = await res.text();
-        const itemRegex = /<item>([\s\S]*?)<\/item>/g;
-        const items: any[] = [];
-        let match;
-
-        while ((match = itemRegex.exec(xmlText)) !== null) {
-          const itemContent = match[1];
-          const titleMatch = /<title>([\s\S]*?)<\/title>/.exec(itemContent);
-          const trafficMatch = /<ht:approx_traffic>([\s\S]*?)<\/ht:approx_traffic>/.exec(itemContent);
-          const pubDateMatch = /<pubDate>([\s\S]*?)<\/pubDate>/.exec(itemContent);
-          const newsTitleMatch = /<ht:news_item_title>([\s\S]*?)<\/ht:news_item_title>/.exec(itemContent);
-          const newsUrlMatch = /<ht:news_item_url>([\s\S]*?)<\/ht:news_item_url>/.exec(itemContent);
-          const newsSourceMatch = /<ht:news_item_source>([\s\S]*?)<\/ht:news_item_source>/.exec(itemContent);
-
-          if (titleMatch) {
-            const title = titleMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1").trim();
-            const traffic = trafficMatch ? trafficMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1").trim() : "50,000+";
-            const pubDate = pubDateMatch ? pubDateMatch[1].trim() : "";
-            const newsTitle = newsTitleMatch ? newsTitleMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1").trim() : "";
-            let newsUrl = newsUrlMatch ? newsUrlMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1").trim() : "";
-            const newsSource = newsSourceMatch ? newsSourceMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1").trim() : "";
-
-            if (!newsUrl || newsUrl.endsWith("news.google.com") || newsUrl.endsWith("news.google.com/")) {
-              newsUrl = `https://www.google.com/search?q=${encodeURIComponent(title + " " + (newsTitle || "뉴스"))}&tbm=nws`;
-            }
-
-            items.push({
-              title,
-              traffic,
-              pubDate,
-              newsTitle,
-              newsUrl,
-              newsSource,
-            });
-          }
-        }
-
-        if (items.length >= 10) {
-          return NextResponse.json({ geo, total: items.length, items });
-        }
-      }
-    } catch (err: any) {
-      console.error("Google Trends RSS Error:", err);
-    }
-  }
-
-  // 3. 과거 구축일 이후 데이터인 경우 -> CreAibox 클라우드 DB에서 실제 보관 데이터 조회
-  if (date) {
+  // 1. 과거 날짜 요청 시 CreAibox 클라우드 DB 보관 기록 우선 조회
+  if (date && date < todayStr) {
     const dbRecords = await getHistoricalHourlyKeywords(date, hour, "google");
     if (dbRecords && dbRecords.length > 0) {
       return NextResponse.json({
@@ -127,10 +55,75 @@ export async function GET(request: Request) {
     }
   }
 
-  // Fallback: 오늘 라이브 API 대기 중 기본 시드 (오늘 날짜 전용)
+  // 2. 구글 트렌드 실시간 / 최근 일간 RSS API 조회 (오늘 및 최근 과거 날짜)
+  try {
+    const rssUrl = `https://trends.google.com/trends/trendingsearches/daily/rss?geo=${geo}`;
+    const res = await fetch(rssUrl, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      },
+      next: { revalidate: 60 },
+    });
+
+    if (res.ok) {
+      const xmlText = await res.text();
+      const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+      const items: any[] = [];
+      let match;
+
+      while ((match = itemRegex.exec(xmlText)) !== null) {
+        const itemContent = match[1];
+        const titleMatch = /<title>([\s\S]*?)<\/title>/.exec(itemContent);
+        const trafficMatch = /<ht:approx_traffic>([\s\S]*?)<\/ht:approx_traffic>/.exec(itemContent);
+        const pubDateMatch = /<pubDate>([\s\S]*?)<\/pubDate>/.exec(itemContent);
+        const newsTitleMatch = /<ht:news_item_title>([\s\S]*?)<\/ht:news_item_title>/.exec(itemContent);
+        const newsUrlMatch = /<ht:news_item_url>([\s\S]*?)<\/ht:news_item_url>/.exec(itemContent);
+        const newsSourceMatch = /<ht:news_item_source>([\s\S]*?)<\/ht:news_item_source>/.exec(itemContent);
+
+        if (titleMatch) {
+          const title = titleMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1").trim();
+          const traffic = trafficMatch ? trafficMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1").trim() : "50,000+";
+          const pubDate = pubDateMatch ? pubDateMatch[1].trim() : "";
+          const newsTitle = newsTitleMatch ? newsTitleMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1").trim() : "";
+          let newsUrl = newsUrlMatch ? newsUrlMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1").trim() : "";
+          const newsSource = newsSourceMatch ? newsSourceMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1").trim() : "";
+
+          if (!newsUrl || newsUrl.endsWith("news.google.com") || newsUrl.endsWith("news.google.com/")) {
+            newsUrl = `https://www.google.com/search?q=${encodeURIComponent(title + " " + (newsTitle || "뉴스"))}&tbm=nws`;
+          }
+
+          items.push({
+            title,
+            traffic,
+            pubDate,
+            newsTitle,
+            newsUrl,
+            newsSource,
+          });
+        }
+      }
+
+      if (items.length >= 10) {
+        return NextResponse.json({ geo, total: items.length, items });
+      }
+    }
+  } catch (err: any) {
+    console.error("Google Trends RSS Error:", err);
+  }
+
+  // 3. 최근 API에도 없고 DB에도 없는 오래된 과거 날짜인 경우 -> 정직한 수집제한 안내
+  if (date && date < todayStr) {
+    return NextResponse.json({
+      isBeforeArchiving: true,
+      items: [],
+      message: "구글 트렌드 및 DB 수집 가능 기간 이전의 데이터입니다.",
+    });
+  }
+
   return NextResponse.json({
     geo,
-    total: GOOGLE_TRENDS_POOL.slice(0, 20).length,
-    items: GOOGLE_TRENDS_POOL.slice(0, 20),
+    total: 0,
+    items: [],
   });
 }
