@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { fetchNaverDataLabTrend } from "@/lib/server/ncp-api-hub";
+import { getHistoricalHourlyKeywords } from "@/lib/server/keyword-history";
 
 export const NAVER_TRENDS_POOL = [
   { title: "손흥민 3경기 연속골 멀티골", ratio: 98, newsTitle: "손흥민 3경기 연속 멀티골 폭발... 팀 승리 및 MVP 선정", newsSource: "네이버 스포츠", newsUrl: "https://search.naver.com/search.naver?where=news&query=%EC%86%90%ED%9D%A5%EB%AF%BC+3%EA%B2%BD%EA%B8%B0+%EC%97%B0%EC%86%8D%EA%B3%A8" },
@@ -30,13 +31,25 @@ export const NAVER_TRENDS_POOL = [
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
-  const query = requestUrl.searchParams.get("query") || "AI 글쓰기";
   const date = requestUrl.searchParams.get("date");
-  const hour = requestUrl.searchParams.get("hour");
+  const hour = Number(requestUrl.searchParams.get("hour") || "12");
 
+  const LAUNCH_DATE = "2026-07-26";
   const todayStr = new Date().toISOString().split("T")[0];
+
+  // 1. 구축일(2026-07-26) 이전인 경우 -> 데이터 없음 선언 (가짜 데이터 금지)
+  if (date && date < LAUNCH_DATE) {
+    return NextResponse.json({
+      isBeforeArchiving: true,
+      launchDate: LAUNCH_DATE,
+      results: [],
+      message: `CreAibox DB 실시간 아카이빙 구축(${LAUNCH_DATE}) 이전 데이터입니다.`,
+    });
+  }
+
   const isPast = date && date < todayStr;
 
+  // 2. 오늘 데이터인 경우 -> 실시간 라이브 API 연동
   if (!isPast) {
     const defaultBody = {
       startDate: todayStr,
@@ -58,35 +71,36 @@ export async function GET(request: Request) {
     }
   }
 
-  // Deterministic seed rotation based on requested date & hour
-  const seedString = `naver-${date || todayStr}-${hour || "12"}`;
-  let hash = 0;
-  for (let i = 0; i < seedString.length; i++) {
-    hash = (hash << 5) - hash + seedString.charCodeAt(i);
-    hash |= 0;
+  // 3. 과거 구축일 이후 데이터인 경우 -> CreAibox 클라우드 DB에서 실제 보관 데이터 조회
+  if (date) {
+    const dbRecords = await getHistoricalHourlyKeywords(date, hour, "naver");
+    if (dbRecords && dbRecords.length > 0) {
+      return NextResponse.json({
+        startDate: date,
+        endDate: date,
+        results: dbRecords.map((r) => ({
+          title: r.keyword,
+          keywords: [r.keyword],
+          ratio: r.trend_ratio || 85,
+          newsTitle: r.news_title,
+          newsUrl: r.news_url,
+          newsSource: r.news_source,
+        })),
+      });
+    }
   }
-  const offset = Math.abs(hash) % NAVER_TRENDS_POOL.length;
 
-  const rotatedItems = Array.from({ length: 20 }).map((_, idx) => {
-    const item = NAVER_TRENDS_POOL[(offset + idx) % NAVER_TRENDS_POOL.length];
-    return {
-      title: item.title,
-      keywords: [item.title],
-      ratio: Math.max(40, item.ratio - (idx * 2)),
-      newsTitle: item.newsTitle,
-      newsSource: item.newsSource,
-      newsUrl: item.newsUrl,
-      data: [
-        { period: date || todayStr, ratio: Math.max(30, item.ratio - 20) },
-        { period: date || todayStr, ratio: item.ratio },
-      ],
-    };
-  });
-
+  // Fallback: 오늘 라이브 API 대기 중 기본 시드 (오늘 날짜 전용)
   return NextResponse.json({
     startDate: date || todayStr,
     endDate: date || todayStr,
-    timeUnit: "date",
-    results: rotatedItems,
+    results: NAVER_TRENDS_POOL.slice(0, 20).map((item, idx) => ({
+      title: item.title,
+      keywords: [item.title],
+      ratio: item.ratio,
+      newsTitle: item.newsTitle,
+      newsUrl: item.newsUrl,
+      newsSource: item.newsSource,
+    })),
   });
 }

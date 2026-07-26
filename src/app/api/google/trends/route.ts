@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getHistoricalHourlyKeywords } from "@/lib/server/keyword-history";
 
 export const GOOGLE_TRENDS_POOL = [
   { title: "KBO 프로야구 경기 일정", traffic: "200,000+", pubDate: "1시간 전", newsTitle: "프로야구 주말 3연전 긴급 총력전... 승차 지각변동", newsSource: "스포츠경향", newsUrl: "https://www.google.com/search?q=KBO+프로야구+경기+일정&tbm=nws" },
@@ -31,12 +32,24 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const geo = requestUrl.searchParams.get("geo") || "KR";
   const date = requestUrl.searchParams.get("date");
-  const hour = requestUrl.searchParams.get("hour");
+  const hour = Number(requestUrl.searchParams.get("hour") || "12");
 
+  const LAUNCH_DATE = "2026-07-26";
   const todayStr = new Date().toISOString().split("T")[0];
+
+  // 1. 구축일(2026-07-26) 이전인 경우 -> 데이터 없음 선언 (가짜 데이터 금지)
+  if (date && date < LAUNCH_DATE) {
+    return NextResponse.json({
+      isBeforeArchiving: true,
+      launchDate: LAUNCH_DATE,
+      items: [],
+      message: `CreAibox DB 실시간 아카이빙 구축(${LAUNCH_DATE}) 이전 데이터입니다.`,
+    });
+  }
+
   const isPast = date && date < todayStr;
 
-  // If live RSS is requested for today
+  // 2. 오늘 데이터인 경우 -> 실시간 라이브 RSS API 연동
   if (!isPast) {
     try {
       const rssUrl = `https://trends.google.com/trends/trendingsearches/daily/rss?geo=${geo}`;
@@ -95,26 +108,29 @@ export async function GET(request: Request) {
     }
   }
 
-  // Deterministic seed rotation based on requested date & hour
-  const seedString = `${date || todayStr}-${hour || "12"}`;
-  let hash = 0;
-  for (let i = 0; i < seedString.length; i++) {
-    hash = (hash << 5) - hash + seedString.charCodeAt(i);
-    hash |= 0;
+  // 3. 과거 구축일 이후 데이터인 경우 -> CreAibox 클라우드 DB에서 실제 보관 데이터 조회
+  if (date) {
+    const dbRecords = await getHistoricalHourlyKeywords(date, hour, "google");
+    if (dbRecords && dbRecords.length > 0) {
+      return NextResponse.json({
+        geo,
+        total: dbRecords.length,
+        items: dbRecords.map((r) => ({
+          title: r.keyword,
+          traffic: r.search_volume || "100K+",
+          pubDate: `${date} ${hour}:00`,
+          newsTitle: r.news_title,
+          newsUrl: r.news_url,
+          newsSource: r.news_source,
+        })),
+      });
+    }
   }
-  const offset = Math.abs(hash) % GOOGLE_TRENDS_POOL.length;
 
-  const rotatedItems = Array.from({ length: 20 }).map((_, idx) => {
-    const item = GOOGLE_TRENDS_POOL[(offset + idx) % GOOGLE_TRENDS_POOL.length];
-    return {
-      ...item,
-      pubDate: isPast ? `${date} ${hour || 12}:00 아카이빙 기록` : item.pubDate,
-    };
-  });
-
+  // Fallback: 오늘 라이브 API 대기 중 기본 시드 (오늘 날짜 전용)
   return NextResponse.json({
     geo,
-    total: rotatedItems.length,
-    items: rotatedItems,
+    total: GOOGLE_TRENDS_POOL.slice(0, 20).length,
+    items: GOOGLE_TRENDS_POOL.slice(0, 20),
   });
 }

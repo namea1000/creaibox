@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Newspaper,
   Search,
+  AlertCircle,
   Zap,
 } from "lucide-react";
 
@@ -53,7 +54,7 @@ export default function RealtimeKeywordPage() {
       // Fetch Google Trends
       const googleRes = await fetch(`/api/google/trends?geo=KR&date=${date}&hour=${hour}`);
       const googleData = await googleRes.json();
-      if (googleData.items && Array.isArray(googleData.items)) {
+      if (googleData.items && Array.isArray(googleData.items) && googleData.items.length > 0) {
         setGoogleKeywords(
           googleData.items.slice(0, 20).map((g: any, i: number) => ({
             rank: i + 1,
@@ -65,12 +66,14 @@ export default function RealtimeKeywordPage() {
             newsSource: g.newsSource,
           }))
         );
+      } else {
+        setGoogleKeywords([]);
       }
 
       // Fetch Naver Realtime DataLab Trend
       const naverRes = await fetch(`/api/naver/trend?date=${date}&hour=${hour}`);
       const naverData = await naverRes.json();
-      if (naverData.results && Array.isArray(naverData.results)) {
+      if (naverData.results && Array.isArray(naverData.results) && naverData.results.length > 0) {
         setNaverKeywords(
           naverData.results.slice(0, 20).map((n: any, i: number) => ({
             rank: i + 1,
@@ -84,38 +87,7 @@ export default function RealtimeKeywordPage() {
           }))
         );
       } else {
-        // Fallback Naver seed keywords if live datalab endpoint is pending
-        const seedKeywords = [
-          "손흥민 3경기 연속골",
-          "모두의 토론회 장관님들",
-          "서초구 난생처음 공항발착",
-          "성수대교 단차 점검",
-          "캣츠아이, 애니멀 스포티파이 4위!",
-          "홍준표 때문에 정권이",
-          "오싹한 연애",
-          "사랑이 온다 11.7% 출발",
-          "소지섭, 서수민과 워크",
-          "리버풀 대 선덜랜드",
-          "한옥 건축 현대화",
-          "여름 휴가철 고속도로 정체",
-          "무풍 에어컨 신제품",
-          "LG디스플레이 실적 발표",
-          "고소영 연예계 복귀",
-          "박재현 단독 인터뷰",
-          "전기자전거 혜택",
-          "최저임금 협상 타결",
-          "국내 여행지 베스트 10",
-          "초당옥수수 레시피",
-        ];
-        setNaverKeywords(
-          seedKeywords.map((kw, i) => ({
-            rank: i + 1,
-            keyword: kw,
-            traffic: `지수 ${98 - i * 4}`,
-            changeBadge: i % 4 === 0 ? "NEW" : i % 2 === 0 ? "▲" : "▼",
-            trendRatio: 98 - i * 4,
-          }))
-        );
+        setNaverKeywords([]);
       }
     } catch (err) {
       console.error("Realtime trends fetch error:", err);
@@ -263,6 +235,21 @@ export default function RealtimeKeywordPage() {
               <RefreshCw className="animate-spin text-emerald-400" size={18} />
               네이버 실시간 검색어를 가져오는 중입니다...
             </div>
+          ) : selectedDate < "2026-07-26" ? (
+            <div className="p-10 text-center bg-zinc-950/80 border border-amber-500/30 rounded-2xl space-y-3">
+              <AlertCircle className="mx-auto text-amber-400" size={32} />
+              <h4 className="text-sm font-bold text-white">CreAibox DB 구축 이전 데이터입니다</h4>
+              <p className="text-xs text-zinc-400 leading-relaxed max-w-xs mx-auto">
+                네이버에서는 구축일(<span className="text-amber-400 font-bold">2026년 7월 26일</span>) 이전의 실시간 급상승 검색어를 제공하지 않습니다. <br />
+                <span className="text-emerald-400 font-bold">2026-07-26 이후 데이터만 보관 및 조회됩니다.</span>
+              </p>
+            </div>
+          ) : naverKeywords.length === 0 ? (
+            <div className="p-10 text-center bg-zinc-950/80 border border-zinc-800 rounded-2xl space-y-2">
+              <AlertCircle className="mx-auto text-zinc-500" size={32} />
+              <h4 className="text-sm font-bold text-zinc-300">보관된 기록이 없습니다</h4>
+              <p className="text-xs text-zinc-500">해당 일시의 네이버 키워드 아카이빙이 아직 존재하지 않습니다.</p>
+            </div>
           ) : (
             <div className="space-y-2">
               {naverKeywords.map((item) => (
@@ -339,6 +326,21 @@ export default function RealtimeKeywordPage() {
             <div className="p-12 text-center text-zinc-400 text-xs flex items-center justify-center gap-2">
               <RefreshCw className="animate-spin text-blue-400" size={18} />
               구글 실시간 트렌드를 수집하는 중입니다...
+            </div>
+          ) : selectedDate < "2026-07-26" ? (
+            <div className="p-10 text-center bg-zinc-950/80 border border-amber-500/30 rounded-2xl space-y-3">
+              <AlertCircle className="mx-auto text-amber-400" size={32} />
+              <h4 className="text-sm font-bold text-white">CreAibox DB 구축 이전 데이터입니다</h4>
+              <p className="text-xs text-zinc-400 leading-relaxed max-w-xs mx-auto">
+                구글에서는 구축일(<span className="text-amber-400 font-bold">2026년 7월 26일</span>) 이전의 실시간 급상승 검색어를 제공하지 않습니다. <br />
+                <span className="text-blue-400 font-bold">2026-07-26 이후 데이터만 보관 및 조회됩니다.</span>
+              </p>
+            </div>
+          ) : googleKeywords.length === 0 ? (
+            <div className="p-10 text-center bg-zinc-950/80 border border-zinc-800 rounded-2xl space-y-2">
+              <AlertCircle className="mx-auto text-zinc-500" size={32} />
+              <h4 className="text-sm font-bold text-zinc-300">보관된 기록이 없습니다</h4>
+              <p className="text-xs text-zinc-500">해당 일시의 구글 키워드 아카이빙이 아직 존재하지 않습니다.</p>
             </div>
           ) : (
             <div className="space-y-2">
