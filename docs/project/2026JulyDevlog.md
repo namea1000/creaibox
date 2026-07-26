@@ -60,6 +60,7 @@ mier
   - **통합 키워드 & 쇼핑 2대 파워 허브 개편 완료 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx))**:
     - **`🔍 키워드 트렌드 분석`**: loword.co.kr 스타일 2열 실시간 검색어 비교(네이버 20개 vs 구글 20개, 날짜/시간별 Supabase DB 아카이빙), 키워드 정밀 도구(검색량 추이 차트, SERP 배치, 연관어, CPC), 네이버 블로그 지수 진단(아이디 검진, 최적/준최 레벨 측정, 리더보드) 탑재.
     - **`🛒 쇼핑 키워드 & 아이템 소싱`**: itemscout.io 스타일 쇼핑 키워드 정밀 분석(쇼핑 검색량, 총 등록 상품수, 0.72 꿀키워드 경쟁강도), datalab.naver.com 분야별 1달/3달 인기검색어 TOP 500 및 클릭량/성별/연령 비중 차트 수록 완료.
+  - **실시간 급상승 키워드 1시간 아카이빙 & 자원 최적화 운용 매뉴얼 작성 ([`keyword-trending-archiving-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/keyword-trending-archiving-guide.md))**: 1시간 스냅샷 레코드 용량 계산(레코드당 0.35KB, 하루 0.33MB, 1년 120MB 미만의 극도로 가벼운 구조), Lazy Archiving(온디맨드 사용자 접속시 0.1초 자동 동기화), NCP Cloud Functions 및 DB Native Cron 병행 운용 가이드 문서화 완료.
   - **전체 14개 메인 메뉴 그룹 전수 검증**: `npx tsc --noEmit` 검증 0 에러 무결성 확인.
 
 ---
