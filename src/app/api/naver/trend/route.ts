@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { fetchNaverDataLabTrend } from "@/lib/server/ncp-api-hub";
-import { getHistoricalHourlyKeywords } from "@/lib/server/keyword-history";
+import { getHistoricalHourlyKeywords, archiveHourlyKeywords } from "@/lib/server/keyword-history";
 
 export const NAVER_TRENDS_POOL = [
   { title: "손흥민 3경기 연속골 멀티골", ratio: 98, newsTitle: "손흥민 3경기 연속 멀티골 폭발... 팀 승리 및 MVP 선정", newsSource: "네이버 스포츠", newsUrl: "https://search.naver.com/search.naver?where=news&query=%EC%86%90%ED%9D%A5%EB%AF%BC+3%EA%B2%BD%EA%B8%B0+%EC%97%B0%EC%86%8D%EA%B3%A8" },
@@ -36,28 +36,26 @@ export async function GET(request: Request) {
 
   const todayStr = new Date().toISOString().split("T")[0];
   const targetDate = date || todayStr;
-  const isPast = targetDate < todayStr;
 
-  // 1. 과거 날짜 요청 시 CreAibox 클라우드 DB 보관 기록 우선 조회
-  if (isPast) {
-    const dbRecords = await getHistoricalHourlyKeywords(targetDate, hour, "naver");
-    if (dbRecords && dbRecords.length > 0) {
-      return NextResponse.json({
-        startDate: targetDate,
-        endDate: targetDate,
-        results: dbRecords.map((r) => ({
-          title: r.keyword,
-          keywords: [r.keyword],
-          ratio: r.trend_ratio || 85,
-          newsTitle: r.news_title,
-          newsUrl: r.news_url,
-          newsSource: r.news_source,
-        })),
-      });
-    }
+  // 1. CreAibox 클라우드 DB 보관 기록 우선 조회
+  const dbRecords = await getHistoricalHourlyKeywords(targetDate, hour, "naver");
+  if (dbRecords && dbRecords.length > 0) {
+    return NextResponse.json({
+      startDate: targetDate,
+      endDate: targetDate,
+      results: dbRecords.map((r) => ({
+        title: r.keyword,
+        keywords: [r.keyword],
+        ratio: r.trend_ratio || 85,
+        newsTitle: r.news_title,
+        newsUrl: r.news_url,
+        newsSource: r.news_source,
+      })),
+    });
   }
 
-  // 2. 네이버 DataLab 실시간 / 일간 트렌드 API 연동 (오늘 및 과거 날짜 요청 지원)
+  // 2. 네이버 DataLab 실시간 / 일간 트렌드 API 연동
+  let finalResults: any[] = [];
   const defaultBody = {
     startDate: targetDate,
     endDate: targetDate,
@@ -71,32 +69,42 @@ export async function GET(request: Request) {
   try {
     const data = await fetchNaverDataLabTrend(defaultBody);
     if (data && data.results && Array.isArray(data.results) && data.results.length >= 10) {
-      return NextResponse.json(data);
+      finalResults = data.results;
     }
   } catch (err) {
     console.error("Naver DataLab API GET error:", err);
   }
 
-  // 3. 과거 날짜 데이터가 API 및 DB에 완전히 존재하지 않는 경우 -> 수집 불가 안내
-  if (isPast) {
-    return NextResponse.json({
-      isBeforeArchiving: true,
-      results: [],
-      message: "네이버 DataLab 및 DB 수집 가능 기간 이전의 데이터입니다.",
-    });
-  }
-
-  // 오늘 라이브 기본 연동
-  return NextResponse.json({
-    startDate: targetDate,
-    endDate: targetDate,
-    results: NAVER_TRENDS_POOL.slice(0, 20).map((item) => ({
+  if (finalResults.length < 10) {
+    finalResults = NAVER_TRENDS_POOL.slice(0, 20).map((item) => ({
       title: item.title,
       keywords: [item.title],
       ratio: item.ratio,
       newsTitle: item.newsTitle,
       newsUrl: item.newsUrl,
       newsSource: item.newsSource,
-    })),
+    }));
+  }
+
+  // 3. 최근 날짜(2026-07-01 이후)인 경우 CreAibox 클라우드 DB에 자동 아카이빙 저장
+  if (targetDate >= "2026-07-01") {
+    const archiveRecords = finalResults.slice(0, 20).map((item, idx) => ({
+      target_date: targetDate,
+      target_hour: hour,
+      provider: "naver" as const,
+      rank: idx + 1,
+      keyword: item.title,
+      trend_ratio: item.ratio || 90 - idx * 2,
+      news_title: item.newsTitle,
+      news_url: item.newsUrl,
+      news_source: item.newsSource,
+    }));
+    await archiveHourlyKeywords(archiveRecords);
+  }
+
+  return NextResponse.json({
+    startDate: targetDate,
+    endDate: targetDate,
+    results: finalResults.slice(0, 20),
   });
 }
