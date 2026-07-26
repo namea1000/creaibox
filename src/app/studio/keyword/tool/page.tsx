@@ -19,15 +19,30 @@ import {
   ShieldCheck,
   Zap,
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { KeywordToolResult } from "@/lib/server/keyword-tool-engine";
 
 export default function LowordKeywordToolPage() {
+  const searchParams = useSearchParams();
+  const paramKw = searchParams.get("keyword");
+  const paramProv = searchParams.get("provider") as "naver" | "google" | null;
+
   const [provider, setProvider] = useState<"naver" | "google">("naver");
   const [inputKw, setInputKw] = useState("나이키");
   const [searchKw, setSearchKw] = useState("나이키");
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<KeywordToolResult | null>(null);
   const [copiedText, setCopiedText] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (paramKw) {
+      const decodedKw = decodeURIComponent(paramKw);
+      const targetProv = paramProv || "naver";
+      setInputKw(decodedKw);
+      setSearchKw(decodedKw);
+      if (paramProv) setProvider(targetProv);
+    }
+  }, [paramKw, paramProv]);
 
   const fetchKeywordAnalysis = async (kw: string, prov: "naver" | "google") => {
     setLoading(true);

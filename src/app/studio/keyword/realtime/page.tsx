@@ -16,6 +16,7 @@ import {
   Copy,
   CheckCircle2,
   Newspaper,
+  Search,
   Zap,
 } from "lucide-react";
 
@@ -301,9 +302,16 @@ export default function RealtimeKeywordPage() {
 
                       <Link
                         href={`/studio/writing/creaibox/new-post?keyword=${encodeURIComponent(item.keyword)}`}
-                        className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-500/20 flex items-center gap-1"
+                        className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-500/20 flex items-center gap-1 shrink-0"
                       >
                         <Sparkles size={12} /> AI 자동 글쓰기
+                      </Link>
+                      <Link
+                        href={`/studio/keyword/tool?keyword=${encodeURIComponent(item.keyword)}&provider=naver`}
+                        className="px-2.5 py-1 rounded-xl bg-zinc-800 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 text-xs font-bold transition-all flex items-center gap-1 shadow-sm shrink-0"
+                        title="키워드 정밀 분석 도구로 바로 이동하여 자동 분석 실행"
+                      >
+                        <Search size={12} /> 키워드 정밀 분석
                       </Link>
                     </div>
                   </div>
@@ -375,9 +383,16 @@ export default function RealtimeKeywordPage() {
 
                       <Link
                         href={`/studio/writing/creaibox/new-post?keyword=${encodeURIComponent(item.keyword)}`}
-                        className="px-2.5 py-1 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-1"
+                        className="px-2.5 py-1 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-1 shrink-0"
                       >
                         <Sparkles size={12} /> AI 자동 글쓰기
+                      </Link>
+                      <Link
+                        href={`/studio/keyword/tool?keyword=${encodeURIComponent(item.keyword)}&provider=google`}
+                        className="px-2.5 py-1 rounded-xl bg-zinc-800 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 text-xs font-bold transition-all flex items-center gap-1 shadow-sm shrink-0"
+                        title="키워드 정밀 분석 도구로 바로 이동하여 자동 분석 실행"
+                      >
+                        <Search size={12} /> 키워드 정밀 분석
                       </Link>
                     </div>
                   </div>
