@@ -269,67 +269,57 @@ export default function RealtimeKeywordPage() {
               {naverKeywords.map((item) => (
                 <div
                   key={item.rank}
-                  className="p-3 rounded-2xl bg-black/50 border border-zinc-800/80 hover:border-emerald-500/40 transition-all group space-y-1.5"
+                  className="p-2.5 px-3.5 rounded-2xl bg-black/50 border border-zinc-800/80 hover:border-emerald-500/40 transition-all group flex items-center justify-between gap-2"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="w-6 h-6 rounded-lg bg-zinc-800 text-zinc-300 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                        {item.rank}
-                      </span>
-                      <span className="font-bold text-sm text-white group-hover:text-emerald-400 transition-colors truncate">
-                        {item.keyword}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {item.changeBadge === "NEW" ? (
-                        <span className="text-[9px] font-black text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 shrink-0">
-                          NEW
-                        </span>
-                      ) : item.changeBadge === "▲" ? (
-                        <span className="text-xs font-bold text-rose-400 shrink-0">▲</span>
-                      ) : (
-                        <span className="text-xs font-bold text-blue-400 shrink-0">▼</span>
-                      )}
-
-                      <button
-                        onClick={() => handleCopy(item.keyword)}
-                        className="p-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-all shrink-0"
-                        title="키워드 복사"
-                      >
-                        {copiedKeyword === item.keyword ? <CheckCircle2 size={13} className="text-emerald-400" /> : <Copy size={13} />}
-                      </button>
-
-                      <Link
-                        href={`/studio/writing/creaibox/new-post?keyword=${encodeURIComponent(item.keyword)}`}
-                        className="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition-all shadow-sm flex items-center gap-1 shrink-0 whitespace-nowrap"
-                      >
-                        <Sparkles size={11} /> AI 글쓰기
-                      </Link>
-                      <Link
-                        href={`/studio/keyword/tool?keyword=${encodeURIComponent(item.keyword)}&provider=naver`}
-                        className="px-2 py-1 rounded-lg bg-zinc-800/90 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 text-[11px] font-bold transition-all flex items-center gap-1 shrink-0 whitespace-nowrap"
-                        title="키워드 정밀 분석 도구로 바로 이동하여 자동 분석 실행"
-                      >
-                        <Search size={11} /> 정밀분석
-                      </Link>
-                    </div>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-6 h-6 rounded-lg bg-zinc-800 text-zinc-300 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                      {item.rank}
+                    </span>
+                    <a
+                      href={`https://search.naver.com/search.naver?query=${encodeURIComponent(item.keyword)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-sm text-white hover:text-emerald-400 transition-colors truncate flex items-center gap-1 group/link"
+                      title="클릭 시 네이버 검색창에서 즉시 검색 조회"
+                    >
+                      <span>{item.keyword}</span>
+                      <ExternalLink size={10} className="opacity-0 group-hover/link:opacity-100 transition-opacity text-emerald-400 shrink-0" />
+                    </a>
                   </div>
 
-                  {item.newsTitle && (
-                    <div className="pl-8 text-xs">
-                      <a
-                        href={item.newsUrl || `https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(item.keyword)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-zinc-400 hover:text-emerald-400 transition-colors line-clamp-1 flex items-center gap-1"
-                      >
-                        <Newspaper size={11} className="text-emerald-400 shrink-0" />
-                        {item.newsTitle}
-                        <ExternalLink size={9} className="shrink-0 text-zinc-500" />
-                      </a>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {item.changeBadge === "NEW" ? (
+                      <span className="text-[9px] font-black text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 shrink-0">
+                        NEW
+                      </span>
+                    ) : item.changeBadge === "▲" ? (
+                      <span className="text-xs font-bold text-rose-400 shrink-0">▲</span>
+                    ) : (
+                      <span className="text-xs font-bold text-blue-400 shrink-0">▼</span>
+                    )}
+
+                    <button
+                      onClick={() => handleCopy(item.keyword)}
+                      className="p-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-all shrink-0"
+                      title="키워드 복사"
+                    >
+                      {copiedKeyword === item.keyword ? <CheckCircle2 size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                    </button>
+
+                    <Link
+                      href={`/studio/writing/creaibox/new-post?keyword=${encodeURIComponent(item.keyword)}`}
+                      className="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition-all shadow-sm flex items-center gap-1 shrink-0 whitespace-nowrap"
+                    >
+                      <Sparkles size={11} /> AI 글쓰기
+                    </Link>
+                    <Link
+                      href={`/studio/keyword/tool?keyword=${encodeURIComponent(item.keyword)}&provider=naver`}
+                      className="px-2 py-1 rounded-lg bg-zinc-800/90 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 text-[11px] font-bold transition-all flex items-center gap-1 shrink-0 whitespace-nowrap"
+                      title="키워드 정밀 분석 도구로 바로 이동하여 자동 분석 실행"
+                    >
+                      <Search size={11} /> 정밀분석
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>
@@ -356,65 +346,51 @@ export default function RealtimeKeywordPage() {
               {googleKeywords.map((item) => (
                 <div
                   key={item.rank}
-                  className="p-3 rounded-2xl bg-black/50 border border-zinc-800/80 hover:border-blue-500/40 transition-all group space-y-1.5"
+                  className="p-2.5 px-3.5 rounded-2xl bg-black/50 border border-zinc-800/80 hover:border-blue-500/40 transition-all group flex items-center justify-between gap-2"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="w-6 h-6 rounded-lg bg-zinc-800 text-zinc-300 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                        {item.rank}
-                      </span>
-                      <span className="font-bold text-sm text-white group-hover:text-blue-400 transition-colors truncate">
-                        {item.keyword}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-[9px] font-black text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20 font-mono shrink-0">
-                        🔥 {item.traffic}
-                      </span>
-
-                      <button
-                        onClick={() => handleCopy(item.keyword)}
-                        className="p-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-all shrink-0"
-                        title="키워드 복사"
-                      >
-                        {copiedKeyword === item.keyword ? <CheckCircle2 size={13} className="text-emerald-400" /> : <Copy size={13} />}
-                      </button>
-
-                      <Link
-                        href={`/studio/writing/creaibox/new-post?keyword=${encodeURIComponent(item.keyword)}`}
-                        className="px-2 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold transition-all shadow-sm flex items-center gap-1 shrink-0 whitespace-nowrap"
-                      >
-                        <Sparkles size={11} /> AI 글쓰기
-                      </Link>
-                      <Link
-                        href={`/studio/keyword/tool?keyword=${encodeURIComponent(item.keyword)}&provider=google`}
-                        className="px-2 py-1 rounded-lg bg-zinc-800/90 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 text-[11px] font-bold transition-all flex items-center gap-1 shrink-0 whitespace-nowrap"
-                        title="키워드 정밀 분석 도구로 바로 이동하여 자동 분석 실행"
-                      >
-                        <Search size={11} /> 정밀분석
-                      </Link>
-                    </div>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-6 h-6 rounded-lg bg-zinc-800 text-zinc-300 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                      {item.rank}
+                    </span>
+                    <a
+                      href={`https://www.google.com/search?q=${encodeURIComponent(item.keyword)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-sm text-white hover:text-blue-400 transition-colors truncate flex items-center gap-1 group/link"
+                      title="클릭 시 구글 검색창에서 즉시 검색 조회"
+                    >
+                      <span>{item.keyword}</span>
+                      <ExternalLink size={10} className="opacity-0 group-hover/link:opacity-100 transition-opacity text-blue-400 shrink-0" />
+                    </a>
                   </div>
 
-                  {item.newsTitle && (
-                    <div className="pl-8 text-xs">
-                      <a
-                        href={
-                          item.newsUrl && !item.newsUrl.endsWith("news.google.com") && !item.newsUrl.endsWith("news.google.com/")
-                            ? item.newsUrl
-                            : `https://www.google.com/search?q=${encodeURIComponent(item.keyword + " " + (item.newsTitle || ""))}&tbm=nws`
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-zinc-400 hover:text-blue-400 transition-colors line-clamp-1 flex items-center gap-1"
-                      >
-                        <Newspaper size={11} className="text-blue-400 shrink-0" />
-                        {item.newsTitle}
-                        <ExternalLink size={9} className="shrink-0 text-zinc-500" />
-                      </a>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[9px] font-black text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20 font-mono shrink-0">
+                      🔥 {item.traffic}
+                    </span>
+
+                    <button
+                      onClick={() => handleCopy(item.keyword)}
+                      className="p-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-all shrink-0"
+                      title="키워드 복사"
+                    >
+                      {copiedKeyword === item.keyword ? <CheckCircle2 size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                    </button>
+
+                    <Link
+                      href={`/studio/writing/creaibox/new-post?keyword=${encodeURIComponent(item.keyword)}`}
+                      className="px-2 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold transition-all shadow-sm flex items-center gap-1 shrink-0 whitespace-nowrap"
+                    >
+                      <Sparkles size={11} /> AI 글쓰기
+                    </Link>
+                    <Link
+                      href={`/studio/keyword/tool?keyword=${encodeURIComponent(item.keyword)}&provider=google`}
+                      className="px-2 py-1 rounded-lg bg-zinc-800/90 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 text-[11px] font-bold transition-all flex items-center gap-1 shrink-0 whitespace-nowrap"
+                      title="키워드 정밀 분석 도구로 바로 이동하여 자동 분석 실행"
+                    >
+                      <Search size={11} /> 정밀분석
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>
