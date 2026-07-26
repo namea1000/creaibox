@@ -4,7 +4,25 @@ mier
 
 이 문서는 2026년 7월 동안 CreAibox 프로젝트에서 진행된 일자별 개발 세부 작업 내역과 핵심 아키텍처 결정 사항을 기록합니다.
 
-### 🗓️ 2026-07-25 (토) - 오늘
+### 🗓️ 2026-07-26 (일) - 오늘
+
+#### 1. 에이전트 룰 신설: 가짜 데이터 전면 금지 및 부재 사유 명시 규칙 (`Strict Zero Fake Data Rule`)
+* **구현 요약**: 서비스 신뢰성과 데이터 정직성을 보장하기 위해, 시스템 구축 중 가짜(Mock/Dummy/Seed) 데이터를 합성/생성하여 노출하는 행위를 100% 금지하는 규칙을 Agent Rules 문서에 긴급 제정 및 적용했습니다.
+* **작업 상세**:
+  - **[AGENTS.md](file:///Users/a1234/Local%20Sites/creaibox/AGENTS.md) & [ai-agent-rules.md](file:///Users/a1234/Local%20Sites/creaibox/docs/rules/ai-agent-rules.md) 개정**:
+    - `Strict Zero Fake Data Rule (가짜 데이터 생성 전면 금지 및 사유 명시 의무)` 항목 신설.
+    - 데이터가 존재하지 않는 경우 가짜 조합 키워드를 보여주지 않고 **데이터가 없음**을 명확히 표시하며 사유(예: 구축 이전 날짜, API 미제공 등)를 투명하게 설명할 것 명시.
+  - **시드 로테이션 모듈 전면 제거**: [`/api/naver/trend/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/naver/trend/route.ts) 및 [`/api/google/trends/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/google/trends/route.ts)의 가짜 시드 무한 회전 코드 100% 삭제.
+  - **고신뢰 안내 카드 탑재 ([`realtime/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/realtime/page.tsx))**: 데이터가 없는 기간의 경우 가짜 목록 대신 솔직하고 투명한 `조회할 수 있는 아카이빙 데이터가 없습니다` 엠프티 스테이트 카드 렌더링.
+
+#### 2. 키워드 트렌드 1줄 컴팩트 UI & 키워드 클릭 시 네이버/구글 직통 검색 연동
+* **구현 요약**: 실시간 키워드 카드의 2행 중복 요소를 제거하고 단 1줄 컴팩트 레이아웃으로 줄였으며, 키워드 명칭 자체 클릭 시 네이버/구글 라이브 검색창으로 직행 조회되도록 파이프라인을 완성했습니다.
+* **작업 상세**:
+  - **`🔍 키워드 정밀 분석` & `✨ AI 글쓰기` 단 1줄 원클릭 연동**: 키워드 도구(`?keyword=...&provider=...`) 다이렉트 이동 및 자동 분석 파이프라인 연동.
+  - **키워드 명칭 직통 검색**: 키워드 텍스트 클릭 시 해당 포털 검색창으로 연결.
+  - **API 남용 방지**: `실시간 새로고침` 버튼을 제거하여 무분별한 외부 통신 차단.
+
+### 🗓️ 2026-07-25 (토)
 
 #### 1. 구글 검색엔진 실시간 색인 (Google Indexing API) 인프라 연동 & 서치콘솔 소유자 승인 완료
 * **구현 요약**: 사용자가 블로그 포스트나 웹사이트 글을 작성할 때 구글 검색 로봇(Googlebot)에 실시간으로 수집 핑(Ping)을 전송하기 위한 Google Indexing API 인프라 구축 및 서치콘솔 권한 연동을 완료했습니다.
