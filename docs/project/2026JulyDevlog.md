@@ -57,7 +57,9 @@ mier
   - **Google Indexing API 일일 쿼터 증액 신청 가이드 확립 ([`google-indexing-api-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/google-indexing-api-guide.md))**: 기본 200건/일 쿼터를 2,000~10,000건/일 이상으로 확대하기 위한 GCP 콘솔 직관 링크 및 영문 신청 사유 양식 가이드 정리 연동.
   - **스튜디오 탑바 위젯 메뉴 반응형 아이콘 전용 모드 및 텍스트 세로 찌그러짐 방지 ([`StudioTopbar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/StudioTopbar.tsx))**: 창 폭 축소 시 "내 콘텐츠 보관함", "관리 대시보드" 등 텍스트가 줄바꿈되어 세로로 깨지던 현상을 `whitespace-nowrap`과 `hidden 2xl:inline` 반응형 분기문으로 정비하여, 화면 축소 시 글자 없이 깔끔하게 이모티콘/아이콘 전용 뱃지 버튼으로 즉시 전환되도록 개선.
   - **브라우저 네이티브 지연 툴팁 완전 제거 & 0ms 실시간 직관 툴팁 탑재 ([`StudioTopbar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/StudioTopbar.tsx))**: 마우스 호버 시 0.5~1초간 뜸들이던 브라우저 네이티브 `title` 속성을 전면 제거하고, 마우스 오버 0.00초(0ms) 동기 시점에 즉시 반응하여 뜨는 `duration-75` 초고속 커스텀 말풍선 툴팁 시스템으로 전면 개선.
-  - **구글 트렌드(Google Trends) 실시간 급상승 키워드 센터 구축 완료 ([`/api/google/trends`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/google/trends/route.ts), [`/studio/keyword/google-trends`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/google-trends/page.tsx), [`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx))**: 구글 트렌드 공식 Daily RSS 파싱 백엔드 라우트 및 국가별(대한민국, 미국, 일본, 영국) 실시간 급상승 검색어 TOP 20 시각화 대시보드 구축 완료. 사이드바 '키워드 트렌드 분석' 메뉴 첫 번째 항목으로 수록 및 원클릭 AI 글쓰기 파이프라인 탑재.
+  - **통합 키워드 & 쇼핑 2대 파워 허브 개편 완료 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx))**:
+    - **`🔍 키워드 트렌드 분석`**: loword.co.kr 스타일 2열 실시간 검색어 비교(네이버 20개 vs 구글 20개, 날짜/시간별 Supabase DB 아카이빙), 키워드 정밀 도구(검색량 추이 차트, SERP 배치, 연관어, CPC), 네이버 블로그 지수 진단(아이디 검진, 최적/준최 레벨 측정, 리더보드) 탑재.
+    - **`🛒 쇼핑 키워드 & 아이템 소싱`**: itemscout.io 스타일 쇼핑 키워드 정밀 분석(쇼핑 검색량, 총 등록 상품수, 0.72 꿀키워드 경쟁강도), datalab.naver.com 분야별 1달/3달 인기검색어 TOP 500 및 클릭량/성별/연령 비중 차트 수록 완료.
   - **전체 14개 메인 메뉴 그룹 전수 검증**: `npx tsc --noEmit` 검증 0 에러 무결성 확인.
 
 ---

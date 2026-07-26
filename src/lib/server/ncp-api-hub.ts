@@ -5,6 +5,14 @@ const SECRET_KEY = process.env.NCP_IAM_SECRET_KEY || "";
 const NAVER_CLIENT_ID = process.env.NAVER_CLIENT_ID || "";
 const NAVER_CLIENT_SECRET = process.env.NAVER_CLIENT_SECRET || "";
 
+export function makeNaverOpenApiHeaders() {
+  return {
+    "X-Naver-Client-Id": NAVER_CLIENT_ID,
+    "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
+    "Content-Type": "application/json",
+  };
+}
+
 export function makeNcpSignature(method: string, url: string, timestamp: string): string {
   const space = " ";
   const newLine = "\n";

@@ -286,7 +286,7 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
             {[
               { icon: <PenLine size={14} />, label: "크리에이박스 글쓰기", href: "/studio/writing/creaibox/new-post", color: "text-blue-500 hover:bg-blue-500/10 hover:text-blue-300" },
               { icon: <Edit3 size={14} />, label: "네이버 글쓰기", href: "/studio/writing/naver/create", color: "text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-300" },
-              { icon: <TrendingUp size={14} />, label: "네이버 검색·쇼핑·트렌드", href: "/studio/naver-trend", color: "text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300" },
+              { icon: <TrendingUp size={14} />, label: "실시간 급상승 키워드", href: "/studio/keyword/realtime", color: "text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300" },
               { icon: <TrendingUp size={14} />, label: "유튜브 트렌드", href: "/youtube-trend", color: "text-red-500 hover:bg-red-500/10 hover:text-red-300" },
               { icon: <LineChart size={14} />, label: "키워드 트렌드", href: "/keyword-trend", color: "text-amber-500 hover:bg-amber-500/10 hover:text-amber-300" },
               { icon: <ImageIcon size={14} />, label: "디자인 스튜디오", href: "/design", color: "text-fuchsia-500 hover:bg-fuchsia-500/10 hover:text-fuchsia-300" },
