@@ -119,6 +119,17 @@ export default function RealtimeKeywordPage() {
     }
   };
 
+  const now = new Date();
+  const todayStr = now.toISOString().split("T")[0];
+  const currentHour = now.getHours();
+  const isToday = selectedDate === todayStr;
+
+  useEffect(() => {
+    if (!isToday) {
+      setSelectedHour(12);
+    }
+  }, [selectedDate, isToday]);
+
   useEffect(() => {
     fetchRealtimeTrends(selectedDate, selectedHour);
   }, [selectedDate, selectedHour]);
@@ -133,15 +144,9 @@ export default function RealtimeKeywordPage() {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() + days);
     const newDateStr = d.toISOString().split("T")[0];
-    const todayStr = new Date().toISOString().split("T")[0];
     if (newDateStr > todayStr) return;
     setSelectedDate(newDateStr);
   };
-
-  const now = new Date();
-  const todayStr = now.toISOString().split("T")[0];
-  const currentHour = now.getHours();
-  const isToday = selectedDate === todayStr;
 
   return (
     <div className="space-y-6">
@@ -211,19 +216,24 @@ export default function RealtimeKeywordPage() {
             </span>
             <select
               value={selectedHour}
-              onChange={(e) => setSelectedHour(Number(e.target.value))}
-              className="bg-zinc-900 border border-zinc-700/60 text-white font-bold text-xs px-3 py-2 rounded-xl outline-none"
+              onChange={(e) => isToday && setSelectedHour(Number(e.target.value))}
+              disabled={!isToday}
+              className="bg-zinc-900 border border-zinc-700/60 text-white font-bold text-xs px-3 py-2 rounded-xl outline-none disabled:opacity-80 disabled:cursor-not-allowed"
             >
-              {Array.from({ length: 24 }).map((_, h) => {
-                const isFuture = isToday && h > currentHour;
-                const isCurrent = isToday && h === currentHour;
+              {isToday ? (
+                Array.from({ length: 24 }).map((_, h) => {
+                  const isFuture = h > currentHour;
+                  const isCurrent = h === currentHour;
 
-                return (
-                  <option key={h} value={h} disabled={isFuture} className={isFuture ? "text-zinc-600 bg-zinc-950" : ""}>
-                    {h < 10 ? `0${h}` : h}시 {isCurrent ? "(현재)" : isFuture ? "(미집계)" : "(과거 기록)"}
-                  </option>
-                );
-              })}
+                  return (
+                    <option key={h} value={h} disabled={isFuture} className={isFuture ? "text-zinc-600 bg-zinc-950" : ""}>
+                      {h < 10 ? `0${h}` : h}시 {isCurrent ? "(현재)" : isFuture ? "(미집계)" : "(과거 기록)"}
+                    </option>
+                  );
+                })
+              ) : (
+                <option value={12}>12시 (일간 대표 스냅샷)</option>
+              )}
             </select>
           </div>
 
