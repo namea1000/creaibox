@@ -146,7 +146,7 @@ export default function RealtimeKeywordPage() {
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 Live Portals Sync
               </span>
-              <span className="text-xs text-zinc-400 font-mono">Loword-Style Comparative Analysis</span>
+              <span className="text-xs text-zinc-400 font-mono">CreAibox Realtime Intelligence</span>
             </div>
 
             <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center gap-3">
@@ -154,8 +154,8 @@ export default function RealtimeKeywordPage() {
               현재 이 시간, 실시간으로 뜨고 있는 검색어
             </h1>
 
-            <p className="text-zinc-400 text-sm max-w-2xl font-medium">
-              네이버 실시간 검색어 20개와 구글 실시간 급상승 검색어 20개를 1:1 비교 분석하고 Supabase DB에 자동으로 아카이빙합니다.
+            <p className="text-zinc-400 text-sm whitespace-nowrap font-medium">
+              네이버 실시간 검색어 20개와 구글 실시간 급상승 검색어 20개를 1:1 비교 분석하고 CreAibox 클라우드 DB에 자동으로 아카이빙합니다.
             </p>
           </div>
 

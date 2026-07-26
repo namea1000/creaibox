@@ -75,7 +75,7 @@ export default function NaverBlogScorePage() {
       <div className="bg-gradient-to-r from-emerald-950/40 via-zinc-900/80 to-teal-950/40 border border-emerald-500/20 p-6 md:p-8 rounded-3xl backdrop-blur-xl shadow-2xl space-y-6">
         <div className="text-center max-w-2xl mx-auto space-y-2">
           <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black tracking-widest uppercase">
-            Loword-Style Blog Audit Engine
+            CreAibox Blog Audit Engine
           </span>
           <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight">
             네이버 블로그 지수 진단

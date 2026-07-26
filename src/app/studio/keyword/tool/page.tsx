@@ -66,7 +66,7 @@ export default function LowordKeywordToolPage() {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-1">
             <span className="px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-black tracking-widest uppercase">
-              Loword Keyword Intelligence
+              CreAibox Keyword Intelligence
             </span>
             <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center gap-3">
               <Search className="text-cyan-400" size={32} />
