@@ -63,7 +63,10 @@ export async function GET(request: Request) {
   const hour = Number(requestUrl.searchParams.get("hour") || new Date().getHours());
 
   const todayStr = new Date().toISOString().split("T")[0];
+  const currentHour = new Date().getHours();
+
   const targetDate = date || todayStr;
+  const isPast = targetDate < todayStr || (targetDate === todayStr && hour < currentHour);
 
   // 1. CreAibox 클라우드 DB 보관 기록 우선 조회
   const dbRecords = await getHistoricalHourlyKeywords(targetDate, hour, "google");
@@ -82,10 +85,20 @@ export async function GET(request: Request) {
     });
   }
 
-  // 2. 구글 공식 트렌드 웹페이지 실시간 데이터 직접 연동 (Google Trends Realtime API)
+  // 2. 과거 시간대/날짜인데 DB 보관 데이터가 없는 경우 -> 현재 실시간 데이터로 덮어쓰지 않고 엠프티 안내
+  if (isPast) {
+    return NextResponse.json({
+      geo,
+      total: 0,
+      items: [],
+      message: `선택하신 일시(${targetDate} ${hour}시)의 구글 실시간 아카이빙 데이터가 CreAibox DB에 보관되어 있지 않습니다.`,
+    });
+  }
+
+  // 3. 현재 시간대 요청 시 -> 구글 공식 트렌드 웹페이지 실시간 데이터 직접 연동 (Google Trends Realtime API)
   let liveItems: any[] = await fetchOfficialGoogleTrends();
 
-  // 3. 라이브 데이터가 존재하면 CreAibox 클라우드 DB에 즉시 아카이빙 적재
+  // 4. 라이브 데이터가 존재하면 CreAibox 클라우드 DB에 (targetDate, hour) 기준으로 적재
   if (liveItems.length > 0) {
     const archiveRecords = liveItems.slice(0, 20).map((item, idx) => ({
       target_date: targetDate,
