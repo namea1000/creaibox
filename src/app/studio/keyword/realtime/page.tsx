@@ -73,6 +73,9 @@ export default function RealtimeKeywordPage() {
             traffic: `지수 ${n.ratio || 90}`,
             changeBadge: i % 3 === 0 ? "NEW" : i % 2 === 0 ? "▲" : "▼",
             trendRatio: n.ratio || 85,
+            newsTitle: n.newsTitle || `${n.title} 관련 네이버 실시간 뉴스 이슈`,
+            newsUrl: n.newsUrl || `https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(n.title)}`,
+            newsSource: n.newsSource || "네이버 뉴스",
           }))
         );
       } else {
@@ -242,43 +245,60 @@ export default function RealtimeKeywordPage() {
               {naverKeywords.map((item) => (
                 <div
                   key={item.rank}
-                  className="flex items-center justify-between p-3 rounded-2xl bg-black/50 border border-zinc-800/80 hover:border-emerald-500/40 transition-all group"
+                  className="p-3.5 rounded-2xl bg-black/50 border border-zinc-800/80 hover:border-emerald-500/40 transition-all group space-y-2"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="w-7 h-7 rounded-xl bg-zinc-800 text-zinc-300 font-black text-xs flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                      {item.rank}
-                    </span>
-                    <span className="font-bold text-sm text-white group-hover:text-emerald-400 transition-colors">
-                      {item.keyword}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    {item.changeBadge === "NEW" ? (
-                      <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                        NEW
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="w-7 h-7 rounded-xl bg-zinc-800 text-zinc-300 font-black text-xs flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                        {item.rank}
                       </span>
-                    ) : item.changeBadge === "▲" ? (
-                      <span className="text-xs font-bold text-rose-400">▲</span>
-                    ) : (
-                      <span className="text-xs font-bold text-blue-400">▼</span>
-                    )}
+                      <span className="font-bold text-sm text-white group-hover:text-emerald-400 transition-colors">
+                        {item.keyword}
+                      </span>
+                    </div>
 
-                    <button
-                      onClick={() => handleCopy(item.keyword)}
-                      className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-all"
-                      title="키워드 복사"
-                    >
-                      {copiedKeyword === item.keyword ? <CheckCircle2 size={14} className="text-emerald-400" /> : <Copy size={14} />}
-                    </button>
+                    <div className="flex items-center gap-3">
+                      {item.changeBadge === "NEW" ? (
+                        <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                          NEW
+                        </span>
+                      ) : item.changeBadge === "▲" ? (
+                        <span className="text-xs font-bold text-rose-400">▲</span>
+                      ) : (
+                        <span className="text-xs font-bold text-blue-400">▼</span>
+                      )}
 
-                    <Link
-                      href={`/studio/writing/creaibox/new-post?keyword=${encodeURIComponent(item.keyword)}`}
-                      className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-500/20 flex items-center gap-1"
-                    >
-                      <Sparkles size={12} /> 작성
-                    </Link>
+                      <button
+                        onClick={() => handleCopy(item.keyword)}
+                        className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-all"
+                        title="키워드 복사"
+                      >
+                        {copiedKeyword === item.keyword ? <CheckCircle2 size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                      </button>
+
+                      <Link
+                        href={`/studio/writing/creaibox/new-post?keyword=${encodeURIComponent(item.keyword)}`}
+                        className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-500/20 flex items-center gap-1"
+                      >
+                        <Sparkles size={12} /> 작성
+                      </Link>
+                    </div>
                   </div>
+
+                  {item.newsTitle && (
+                    <div className="pl-10 text-xs">
+                      <a
+                        href={item.newsUrl || `https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(item.keyword)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-zinc-400 hover:text-emerald-400 transition-colors line-clamp-1 flex items-center gap-1"
+                      >
+                        <Newspaper size={11} className="text-emerald-400 shrink-0" />
+                        {item.newsTitle}
+                        <ExternalLink size={9} className="shrink-0 text-zinc-500" />
+                      </a>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
