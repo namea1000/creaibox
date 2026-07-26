@@ -172,15 +172,6 @@ export default function RealtimeKeywordPage() {
               네이버 실시간 검색어 20개와 구글 실시간 급상승 검색어 20개를 1:1 비교 분석하고 CreAibox 클라우드 DB에 자동으로 아카이빙합니다.
             </p>
           </div>
-
-          <button
-            onClick={() => fetchRealtimeTrends(selectedDate, selectedHour)}
-            disabled={loading}
-            className="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-2xl transition-all font-bold text-xs flex items-center gap-2"
-          >
-            <RefreshCw className={loading ? "animate-spin text-emerald-400" : ""} size={16} />
-            실시간 새로고침
-          </button>
         </div>
 
         {/* 🗓️ loword 스타일 날짜 및 시간대 선택 바 */}
