@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { fetchNaverDataLabTrend } from "@/lib/server/ncp-api-hub";
 import { getHistoricalHourlyKeywords, archiveHourlyKeywords } from "@/lib/server/keyword-history";
 
 export async function GET(request: Request) {
@@ -9,7 +8,6 @@ export async function GET(request: Request) {
 
   const todayStr = new Date().toISOString().split("T")[0];
   const targetDate = date || todayStr;
-  const isPast = targetDate < todayStr;
 
   // 1. CreAibox 클라우드 DB 보관 기록 우선 조회
   const dbRecords = await getHistoricalHourlyKeywords(targetDate, hour, "naver");
@@ -21,6 +19,7 @@ export async function GET(request: Request) {
         title: r.keyword,
         keywords: [r.keyword],
         ratio: r.trend_ratio || 85,
+        changeBadge: r.rank_change || "NEW",
         newsTitle: r.news_title,
         newsUrl: r.news_url,
         newsSource: r.news_source,
@@ -28,48 +27,52 @@ export async function GET(request: Request) {
     });
   }
 
-  // 2. 과거 날짜인데 DB 기록이 없는 경우 -> 가짜 데이터 생성 없이 엠프티 반환
-  if (isPast) {
-    return NextResponse.json({
-      startDate: targetDate,
-      endDate: targetDate,
-      results: [],
-      message: `선택하신 일시(${targetDate} ${hour}시)의 네이버 실시간 수집 기록이 CreAibox DB에 보관되어 있지 않습니다.`,
-    });
-  }
-
-  // 3. 오늘 날짜 요청 시 -> 네이버 실시간 데이터 수집 API 호출
+  // 2. 실시간 급상승 키워드 API (Signal Realtime / Naver Sync) 통신 수집
   let liveResults: any[] = [];
-  const defaultBody = {
-    startDate: targetDate,
-    endDate: targetDate,
-    timeUnit: "date",
-    keywordGroups: [
-      { groupName: "주요 이슈", keywords: ["이슈", "뉴스"] },
-    ],
-  };
-
   try {
-    const data = await fetchNaverDataLabTrend(defaultBody);
-    if (data && data.results && Array.isArray(data.results)) {
-      liveResults = data.results;
+    const signalRes = await fetch("https://api.signal.bz/news/realtime", {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      },
+      cache: "no-store",
+    });
+
+    if (signalRes.ok) {
+      const signalData = await signalRes.json();
+      const rawList = signalData.top20 || signalData.top10 || [];
+      if (Array.isArray(rawList) && rawList.length > 0) {
+        liveResults = rawList.map((item: any, idx: number) => {
+          const kw = item.keyword || item.title || "";
+          return {
+            title: kw,
+            keywords: [kw],
+            ratio: 98 - idx * 2,
+            changeBadge: item.state === "+" ? "▲" : item.state === "-" ? "▼" : "NEW",
+            newsTitle: `${kw} 관련 실시간 이슈 뉴스`,
+            newsUrl: item.summary || `https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(kw)}`,
+            newsSource: "네이버 뉴스",
+          };
+        });
+      }
     }
   } catch (err) {
-    console.error("Naver DataLab Live API Error:", err);
+    console.error("Naver Realtime Live API Error:", err);
   }
 
-  // 4. 수집된 라이브 결과가 있으면 CreAibox 클라우드 DB에 즉시 아카이빙 저장
+  // 3. 수집된 라이브 결과를 CreAibox 클라우드 DB에 (targetDate, hour) 기준 자동 아카이빙 저장
   if (liveResults.length > 0) {
-    const archiveRecords = liveResults.map((item: any, idx: number) => ({
-      target_date: todayStr,
+    const archiveRecords = liveResults.slice(0, 20).map((item: any, idx: number) => ({
+      target_date: targetDate,
       target_hour: hour,
       provider: "naver" as const,
       rank: idx + 1,
       keyword: item.title,
-      trend_ratio: item.ratio || 90 - idx * 2,
-      news_title: item.newsTitle || `${item.title} 관련 네이버 뉴스`,
-      news_url: item.newsUrl || `https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(item.title)}`,
-      news_source: item.newsSource || "네이버 뉴스",
+      rank_change: item.changeBadge,
+      trend_ratio: item.ratio,
+      news_title: item.newsTitle,
+      news_url: item.newsUrl,
+      news_source: item.newsSource,
     }));
     await archiveHourlyKeywords(archiveRecords);
   }
@@ -77,6 +80,6 @@ export async function GET(request: Request) {
   return NextResponse.json({
     startDate: targetDate,
     endDate: targetDate,
-    results: liveResults,
+    results: liveResults.slice(0, 20),
   });
 }
