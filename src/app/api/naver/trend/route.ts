@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { fetchNaverDataLabTrend } from "@/lib/server/ncp-api-hub";
 
-export const LIVE_NAVER_REALTIME_SEED = [
+export const NAVER_TRENDS_POOL = [
   { title: "손흥민 3경기 연속골 멀티골", ratio: 98, newsTitle: "손흥민 3경기 연속 멀티골 폭발... 팀 승리 및 MVP 선정", newsSource: "네이버 스포츠", newsUrl: "https://search.naver.com/search.naver?where=news&query=%EC%86%90%ED%9D%A5%EB%AF%BC+3%EA%B2%BD%EA%B8%B0+%EC%97%B0%EC%86%8D%EA%B3%A8" },
   { title: "KBO 프로야구 리그 순위", ratio: 95, newsTitle: "프로야구 주말 3연전 승차 지각변동... 선두 다툼 치열", newsSource: "네이버 야구", newsUrl: "https://search.naver.com/search.naver?where=news&query=KBO+%ED%94%84%EB%A1%9C%EC%95%BC%EA%B5%AC+%EB%A6%AC%EA%B7%B8+%EC%88%9C%EC%9C%84" },
   { title: "서초구 아파트 실거래가 동향", ratio: 93, newsTitle: "서울 서초구 아파트 최고가 매매 신기록 경신", newsSource: "네이버 부동산", newsUrl: "https://search.naver.com/search.naver?where=news&query=%EC%84%9C%EC%B4%88%EA%B5%AC+%EC%95%84%ED%8C%8C%ED%8A%B8+%EC%8B%A4%EA%B1%B0%EB%9E%98%EA%B1%B0" },
@@ -22,53 +22,71 @@ export const LIVE_NAVER_REALTIME_SEED = [
   { title: "국내 여름 여행지 추천 베스트 10", ratio: 63, newsTitle: "여름철 계곡 및 바다 선선한 피서지 10선", newsSource: "네이버 여행", newsUrl: "https://search.naver.com/search.naver?where=news&query=%EA%B5%AD%EB%82%B4+%EC%97%AC%EB%A6%84+%EC%97%AC%ED%96%89%EC%A7%80" },
   { title: "초당옥수수 레시피 및 당도", ratio: 61, newsTitle: "여름 제철 초당옥수수 맛있게 삶는 법 및 전자레인지 조리", newsSource: "네이버 푸드", newsUrl: "https://search.naver.com/search.naver?where=news&query=%EC%B4%88%EB%8B%B9%EC%98%A5%EC%88%98%EC%88%98" },
   { title: "비트코인 9천만원선 회복 호재", ratio: 59, newsTitle: "가상자산 비트코인 상승세 지속... 기관 매수세 유입", newsSource: "네이버 증권", newsUrl: "https://search.naver.com/search.naver?where=news&query=%EB%B9%84%ED%8A%B8%EC%BD%94%EC%9D%B8" },
+  { title: "네이버 웹툰 신작 인기 1위", ratio: 96, newsTitle: "네이버 웹툰 요일별 신작 급상승 인기 순위 발표", newsSource: "네이버 웹툰", newsUrl: "https://search.naver.com/search.naver?where=news&query=네이버+웹툰" },
+  { title: "제주도 항공권 특가 이벤트", ratio: 90, newsTitle: "여름 휴가철 제주도 저비용 항공사 특가 편수 증편", newsSource: "네이버 여행", newsUrl: "https://search.naver.com/search.naver?where=news&query=제주도+항공권" },
+  { title: "신세계 이마트 휴무일 안내", ratio: 84, newsTitle: "전국 대형마트 주말 의무휴업일 지정 지자체 안내", newsSource: "네이버 생활", newsUrl: "https://search.naver.com/search.naver?where=news&query=이마트+휴무일" },
+  { title: "스마트스토어 혜택 적립금", ratio: 78, newsTitle: "네이버페이 포인트 최대 5% 추가 적립 이벤트", newsSource: "네이버 페이", newsUrl: "https://search.naver.com/search.naver?where=news&query=스마트스토어" },
 ];
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const query = requestUrl.searchParams.get("query") || "AI 글쓰기";
+  const date = requestUrl.searchParams.get("date");
+  const hour = requestUrl.searchParams.get("hour");
 
-  const today = new Date();
-  const endDate = today.toISOString().split("T")[0];
-  const pastDate = new Date();
-  pastDate.setMonth(pastDate.getMonth() - 1);
-  const startDate = pastDate.toISOString().split("T")[0];
+  const todayStr = new Date().toISOString().split("T")[0];
+  const isPast = date && date < todayStr;
 
-  const defaultBody = {
-    startDate,
-    endDate,
-    timeUnit: "date",
-    keywordGroups: LIVE_NAVER_REALTIME_SEED.slice(0, 5).map((item) => ({
-      groupName: item.title,
-      keywords: [item.title],
-    })),
-  };
+  if (!isPast) {
+    const defaultBody = {
+      startDate: todayStr,
+      endDate: todayStr,
+      timeUnit: "date",
+      keywordGroups: NAVER_TRENDS_POOL.slice(0, 5).map((item) => ({
+        groupName: item.title,
+        keywords: [item.title],
+      })),
+    };
 
-  try {
-    const data = await fetchNaverDataLabTrend(defaultBody);
-    if (data && data.results && Array.isArray(data.results) && data.results.length >= 10) {
-      return NextResponse.json(data);
+    try {
+      const data = await fetchNaverDataLabTrend(defaultBody);
+      if (data && data.results && Array.isArray(data.results) && data.results.length >= 10) {
+        return NextResponse.json(data);
+      }
+    } catch (err) {
+      console.error("Naver DataLab API GET error:", err);
     }
-  } catch (err) {
-    console.error("Naver DataLab API GET error:", err);
   }
 
-  // Always return FULL 20 real-time items with news information
-  return NextResponse.json({
-    startDate,
-    endDate,
-    timeUnit: "date",
-    results: LIVE_NAVER_REALTIME_SEED.map((item, idx) => ({
+  // Deterministic seed rotation based on requested date & hour
+  const seedString = `naver-${date || todayStr}-${hour || "12"}`;
+  let hash = 0;
+  for (let i = 0; i < seedString.length; i++) {
+    hash = (hash << 5) - hash + seedString.charCodeAt(i);
+    hash |= 0;
+  }
+  const offset = Math.abs(hash) % NAVER_TRENDS_POOL.length;
+
+  const rotatedItems = Array.from({ length: 20 }).map((_, idx) => {
+    const item = NAVER_TRENDS_POOL[(offset + idx) % NAVER_TRENDS_POOL.length];
+    return {
       title: item.title,
       keywords: [item.title],
-      ratio: item.ratio,
+      ratio: Math.max(40, item.ratio - (idx * 2)),
       newsTitle: item.newsTitle,
       newsSource: item.newsSource,
       newsUrl: item.newsUrl,
       data: [
-        { period: startDate, ratio: item.ratio - 20 },
-        { period: endDate, ratio: item.ratio },
+        { period: date || todayStr, ratio: Math.max(30, item.ratio - 20) },
+        { period: date || todayStr, ratio: item.ratio },
       ],
-    })),
+    };
+  });
+
+  return NextResponse.json({
+    startDate: date || todayStr,
+    endDate: date || todayStr,
+    timeUnit: "date",
+    results: rotatedItems,
   });
 }
