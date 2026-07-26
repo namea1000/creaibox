@@ -132,8 +132,16 @@ export default function RealtimeKeywordPage() {
   const handleDateChange = (days: number) => {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() + days);
-    setSelectedDate(d.toISOString().split("T")[0]);
+    const newDateStr = d.toISOString().split("T")[0];
+    const todayStr = new Date().toISOString().split("T")[0];
+    if (newDateStr > todayStr) return;
+    setSelectedDate(newDateStr);
   };
+
+  const now = new Date();
+  const todayStr = now.toISOString().split("T")[0];
+  const currentHour = now.getHours();
+  const isToday = selectedDate === todayStr;
 
   return (
     <div className="space-y-6">
@@ -206,11 +214,16 @@ export default function RealtimeKeywordPage() {
               onChange={(e) => setSelectedHour(Number(e.target.value))}
               className="bg-zinc-900 border border-zinc-700/60 text-white font-bold text-xs px-3 py-2 rounded-xl outline-none"
             >
-              {Array.from({ length: 24 }).map((_, h) => (
-                <option key={h} value={h}>
-                  {h < 10 ? `0${h}` : h}시 ({h === new Date().getHours() ? "현재" : "과거 기록"})
-                </option>
-              ))}
+              {Array.from({ length: 24 }).map((_, h) => {
+                const isFuture = isToday && h > currentHour;
+                const isCurrent = isToday && h === currentHour;
+
+                return (
+                  <option key={h} value={h} disabled={isFuture} className={isFuture ? "text-zinc-600 bg-zinc-950" : ""}>
+                    {h < 10 ? `0${h}` : h}시 {isCurrent ? "(현재)" : isFuture ? "(미집계)" : "(과거 기록)"}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
