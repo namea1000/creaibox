@@ -177,7 +177,7 @@ export default function SignupPage() {
           <button
             type="button"
             onClick={() => {
-              window.location.href = "/api/auth/naver/login";
+              window.location.href = "/api/auth/naver/login?prompt=select_account";
             }}
             className="w-full flex items-center justify-center gap-3 bg-[#03C75A] hover:bg-[#02b350] text-white py-3 rounded-full font-bold text-sm transition-all shadow-sm cursor-pointer"
           >

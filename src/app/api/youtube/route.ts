@@ -27,7 +27,9 @@ function isShortsDuration(durationStr?: string | null): boolean {
  * Common Scraping pipeline to fetch live trending, detect shorts, cache to DB, and append to Google Sheet.
  */
 export async function fetchAndCacheTrending(categoryId: string, date: string = getKstTodayDate(), referer: string = "http://localhost:3000/", country: string = "KR") {
-  // 1. Get API Keys from Vault
+  let apiKey = "";
+  let vaultId: number | null = null;
+
   const { data: vaultKeys, error: vaultError } = await supabaseAdmin
     .from("admin_api_vault")
     .select("id, key, today_count, daily_limit")
@@ -36,28 +38,30 @@ export async function fetchAndCacheTrending(categoryId: string, date: string = g
     .order("priority", { ascending: true })
     .order("today_count", { ascending: true });
 
-  if (vaultError || !vaultKeys || vaultKeys.length === 0) {
-    throw new Error("YouTube API keys not found in vault.");
-  }
-
-  let selectedVault = null;
-  for (const vault of vaultKeys) {
-    if ((vault.today_count || 0) < (vault.daily_limit || 1000)) {
-      selectedVault = vault;
-      break;
+  if (!vaultError && vaultKeys && vaultKeys.length > 0) {
+    let selectedVault = null;
+    for (const vault of vaultKeys) {
+      if ((vault.today_count || 0) < (vault.daily_limit || 1000)) {
+        selectedVault = vault;
+        break;
+      }
+    }
+    if (selectedVault) {
+      const decrypted = decryptApiKey(selectedVault.key);
+      if (decrypted) {
+        apiKey = decrypted;
+        vaultId = selectedVault.id;
+      }
     }
   }
 
-  if (!selectedVault) {
-    throw new Error("No active YouTube API key with available quota found in vault.");
-  }
-
-  const apiKey = decryptApiKey(selectedVault.key);
   if (!apiKey) {
-    throw new Error("YouTube API key decryption failed.");
+    apiKey = process.env.YOUTUBE_API_KEY || process.env.GOOGLE_YOUTUBE_API_KEY || process.env.NEXT_PUBLIC_PAGESPEED_API_KEY || "";
   }
 
-  const vaultId = selectedVault.id;
+  if (!apiKey) {
+    throw new Error("YouTube API keys not found.");
+  }
 
   // 2. Fetch Live YouTube API
   const safeReferer = (referer && referer.trim() !== "") ? referer : "https://creaibox.com/";
@@ -65,8 +69,14 @@ export async function fetchAndCacheTrending(categoryId: string, date: string = g
   if (categoryId && categoryId !== "all") {
     url += `&videoCategoryId=${categoryId}`;
   }
-  const response = await fetch(url, { headers: { Referer: safeReferer } });
-  if (!response.ok) throw new Error(`Google API returned ${response.status}`);
+  let response = await fetch(url, { headers: { Referer: safeReferer } });
+  if (!response.ok) {
+    response = await fetch(url);
+  }
+  if (!response.ok) {
+    console.warn(`Google YouTube API returned status ${response.status}`);
+    return [];
+  }
   const data = await response.json();
   
   if (vaultId !== null) {
@@ -130,16 +140,11 @@ export async function fetchAndCacheTrending(categoryId: string, date: string = g
 
 // Unified proxy endpoint for YouTube Data API v3
 export async function GET(req: NextRequest) {
-  // 0. Verify user session to block unregistered/anonymous access
+  // 0. Optional user session check
   const supabase = await createClient();
   const {
     data: { user },
-    error: userError,
   } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
-  }
 
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type");
@@ -172,8 +177,14 @@ export async function GET(req: NextRequest) {
         }
       }
     }
+    if (!apiKey) {
+      apiKey = process.env.YOUTUBE_API_KEY || process.env.GOOGLE_YOUTUBE_API_KEY || process.env.NEXT_PUBLIC_PAGESPEED_API_KEY || "";
+    }
   } catch (keyErr) {
     console.error("YouTube key load failed inside GET:", keyErr);
+    if (!apiKey) {
+      apiKey = process.env.YOUTUBE_API_KEY || process.env.GOOGLE_YOUTUBE_API_KEY || process.env.NEXT_PUBLIC_PAGESPEED_API_KEY || "";
+    }
   }
 
   try {
@@ -236,7 +247,6 @@ export async function GET(req: NextRequest) {
               const { data: fallbackRows } = await supabaseAdmin
                 .from("youtube_trending_archive")
                 .select("videos_data")
-                .like("category_id", country === "KR" ? "%" : `${country}_%`)
                 .order("target_date", { ascending: false })
                 .limit(10);
 

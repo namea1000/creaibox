@@ -108,6 +108,10 @@
   - 📖 운용 매뉴얼 수록: [`website-ai-migration-manual.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/website-ai-migration-manual.md) 수록 완료
 - [x] **🟢 네이버 아이디로 로그인 ("네아로") 연동 & 운용 매뉴얼 수록 (OAuth 2.0 & Supabase Auth 자동 회원가입)**
   - 📖 운용 매뉴얼 수록: [`naver-login-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/naver-login-guide.md) 수록 완료
+- [x] **🟢 네이버 검색·쇼핑·트렌드 AI HUB 센터 구축 완료 (`/naver-trend`)**
+  - NAVER API HUB 9대 API 연동, 검색어 트렌드 랩, 쇼핑 인사이트, 실시간 라이브 검색 탐색 및 AI 글쓰기 원클릭 파이프라인 탑재 완료
+- [x] **🌐 구글 트렌드 (Google Trends) 실시간 분석 센터 구축 완료 (`/studio/keyword/google-trends`)**
+  - Google Trends 공식 Daily RSS 연동, 대한민국/미국/일본/영국 실시간 급상승 키워드 TOP 20, 100,000+ 트래픽 지수 및 연관 뉴스 이슈 파이프라인 수록 완료
 
 
 

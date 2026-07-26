@@ -67,6 +67,15 @@ export async function GET(request: Request) {
         return NextResponse.redirect(new URL("/login?error=user_creation_failed", requestUrl.origin));
       }
       user = newUser.user;
+    } else {
+      // Update existing user metadata to reflect Naver login
+      await supabaseAdmin.auth.admin.updateUserById(user.id, {
+        user_metadata: {
+          ...user.user_metadata,
+          provider: "naver",
+          naver_id: naverUser.id,
+        },
+      });
     }
 
     // 4. Generate OTP token and verify on server side to set real HTTP Session Cookies!

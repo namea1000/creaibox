@@ -19,6 +19,7 @@ import {
   Target,
   Hash,
   Radar,
+  Globe,
 } from "lucide-react";
 
 export default function KeywordTrendHomePage() {
@@ -30,6 +31,13 @@ export default function KeywordTrendHomePage() {
   ];
 
   const keywordMenus = [
+    {
+      title: "구글 트렌드 분석",
+      desc: "구글 대한민국 실시간 급상승 키워드 TOP 20 및 관련 이슈를 분석합니다.",
+      href: "/studio/keyword/google-trends",
+      icon: Globe,
+      color: "from-blue-600 to-indigo-600",
+    },
     {
       title: "키워드 대량 조회",
       desc: "여러 키워드의 검색량, 경쟁도, 트렌드를 한 번에 확인합니다.",

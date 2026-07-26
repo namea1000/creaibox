@@ -1643,7 +1643,7 @@ export default function MyPage() {
                       <LogIn size={14} className="text-zinc-700" /> Auth Provider
                     </span>
                     <span className="rounded-xl border border-emerald-500/10 bg-emerald-500/5 px-4 py-2 text-[10px] font-black uppercase italic tracking-widest text-emerald-500">
-                      {user?.app_metadata?.provider || "email"} AUTHENTICATED
+                      {user?.user_metadata?.provider || user?.app_metadata?.provider || "email"} AUTHENTICATED
                     </span>
                   </div>
 
