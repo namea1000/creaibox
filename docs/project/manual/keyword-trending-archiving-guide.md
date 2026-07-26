@@ -12,11 +12,11 @@
 
 ## 2. 🌐 포털별 데이터 수집 및 제공 범위
 
-| 구 분 | 구글 (Google Trends) | 네이버 (Naver DataLab) | CreAibox 클라우드 DB 타임머신 |
-| :--- | :--- | :--- | :--- |
-| **실시간 순위** | 최근 48시간 ~ 7일 라이브 랭킹 | 실시간 상위 검색어 20개 라이브 | **저장 시점부터 영구 아카이빙** |
-| **통계 추이** | 2004년 ~ 현재 (상대 지수) | 2016년 1월 ~ 현재 (약 10년치) | **시간대별(00시~23시) TOP 20 완벽 보관** |
-| **연관 정보** | 연관 뉴스 헤드라인, 검색 트래픽 | 검색 비중 지수, 연관 키워드 | **뉴스 헤드라인, 출처, 직링크 1:1 저장** |
+| 구 분                 | 구글 (Google Trends)            | 네이버 (Naver DataLab)         | CreAibox 클라우드 DB 타임머신                  |
+| :-------------------- | :------------------------------ | :----------------------------- | :--------------------------------------------- |
+| **실시간 순위** | 최근 48시간 ~ 7일 라이브 랭킹   | 실시간 상위 검색어 20개 라이브 | **저장 시점부터 영구 아카이빙**          |
+| **통계 추이**   | 2004년 ~ 현재 (상대 지수)       | 2016년 1월 ~ 현재 (약 10년치)  | **시간대별(00시~23시) TOP 20 완벽 보관** |
+| **연관 정보**   | 연관 뉴스 헤드라인, 검색 트래픽 | 검색 비중 지수, 연관 키워드    | **뉴스 헤드라인, 출처, 직링크 1:1 저장** |
 
 ---
 
@@ -26,7 +26,7 @@
 
 1. **레코드 1개당 크기**: 약 **0.35 KB** (키워드, 순위, 뉴스 제목, 링크 등)
 2. **1시간당 저장 용량**: 40개 레코드 × 0.35 KB = **약 14 KB / 1시간**
-3. **1일(24시간) 누적 용량**: 14 KB × 24시간 = **약 0.33 MB (336 KB) / 1일**
+3. **1일(24시간) 누적 용량**: 14 KB × 24시간 = **약 0.33 MB (336 KB) / 1일네이**
 4. **1달(30일) 누적 용량**: 0.33 MB × 30일 = **약 10 MB / 1달**
 5. **1년(365일) 누적 용량**: 0.33 MB × 365일 = **약 120 MB / 1년**
 
@@ -39,20 +39,24 @@
 Vercel Serverless CPU 및 빌드/실행 비용을 제로화(0%)하기 위해 다음 3가지 백엔드 엔진을 병행 운용합니다.
 
 ### ① Lazy Archiving (온디맨드 자동 수집 방식 - 주력)
+
 - 별도의 상시 데몬을 돌리지 않고, 일반 방문자나 사용자가 실시간 키워드 페이지를 접속하거나 시간대(예: 16시)를 클릭할 때 백엔드 API에서:
   > *"선택한 일시의 20개 스냅샷이 CreAibox 클라우드 DB에 존재하는가?"*
+  >
 - 확인 후 미존재 시 **0.1초 만에 포털 데이터를 수집함과 동시에 DB에 자동 캐시 저장(`upsert`)**합니다.
 - **Vercel CPU 소모량 0%, 서버 자원 낭비 0%**로 작동합니다.
 
 ### ② NCP (Naver Cloud Platform) Cloud Functions / Cron
-- Naver Cloud Platform의 Serverless Trigger가 1시간 주기로 콜백 라우트([`/api/cron/sync-trending`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/cron/sync-trending/route.ts))를 무인 호출하여 수집합니다.
+
+- Naver Cloud Platform의 Serverless Trigger가 1시간 주기로 콜백 라우트([`/api/cron/sync-trending`](<file:///Users/a1234/Local%20Sites/creaibox/src/app/api/cron/sync-trending/route.ts>))를 무인 호출하여 수집합니다.
 - Vercel의 CPU 자원을 일절 소모하지 않습니다.
 
 ### ③ Database Native Cron (`pg_cron`)
+
 - `CreAibox 클라우드 DB` 내부 스케줄러가 백엔드 API 호출을 직접 수행하여 웹서버(Vercel)를 거치지 않고 DB 레벨에서 바로 처리합니다.
 
 ---
 
 ## 5. 🧹 데이터 자동 다이어트 (Retention Clean-up) Policy
 
-- [`keyword-history.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/keyword-history.ts) 내 `cleanupOldKeywordRecords(daysToKeep = 90)` 함수가 탑재되어 있어, 90일 또는 180일이 지난 오래된 미세 시간별 관련 뉴스는 자동으로 정리 삭제하여 DB 용량을 항시 최적 상태로 유지합니다.
+- [`keyword-history.ts`](<file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/keyword-history.ts>) 내 `cleanupOldKeywordRecords(daysToKeep = 90)` 함수가 탑재되어 있어, 90일 또는 180일이 지난 오래된 미세 시간별 관련 뉴스는 자동으로 정리 삭제하여 DB 용량을 항시 최적 상태로 유지합니다.

@@ -14,8 +14,26 @@ export interface HourlyKeywordRecord {
   news_source?: string;
 }
 
+// 서버 메모리 캐시
+const memoryKeywordCache = new Map<string, HourlyKeywordRecord[]>();
+
+export function clearMemoryCacheForProvider(provider: "google" | "naver") {
+  for (const key of memoryKeywordCache.keys()) {
+    if (key.endsWith(`_${provider}`)) {
+      memoryKeywordCache.delete(key);
+    }
+  }
+}
+
 export async function archiveHourlyKeywords(records: HourlyKeywordRecord[]) {
   if (!records || records.length === 0) return;
+  const first = records[0];
+  const cacheKey = `${first.target_date}_${first.target_hour}_${first.provider}`;
+
+  // 1. 메모리 캐시에 저장
+  memoryKeywordCache.set(cacheKey, records);
+
+  // 2. Supabase DB 저장 시도
   try {
     const { error } = await supabaseAdmin
       .from("keyword_trending_history")
@@ -29,6 +47,21 @@ export async function archiveHourlyKeywords(records: HourlyKeywordRecord[]) {
 }
 
 export async function getHistoricalHourlyKeywords(targetDate: string, targetHour: number, provider: "naver" | "google") {
+  const cacheKey = `${targetDate}_${targetHour}_${provider}`;
+
+  // 구글 과거 날짜 데이터 요청 시 구형 무한캐시 비우기
+  const todayStr = new Date().toISOString().split("T")[0];
+  if (provider === "google" && targetDate < todayStr) {
+    memoryKeywordCache.delete(cacheKey);
+    return null;
+  }
+
+  // 1. 메모리 캐시 확인
+  if (memoryKeywordCache.has(cacheKey)) {
+    return memoryKeywordCache.get(cacheKey) || null;
+  }
+
+  // 2. Supabase DB 조회 시도
   try {
     const { data, error } = await supabaseAdmin
       .from("keyword_trending_history")
@@ -38,12 +71,13 @@ export async function getHistoricalHourlyKeywords(targetDate: string, targetHour
       .eq("provider", provider)
       .order("rank", { ascending: true });
 
-    if (error || !data || data.length === 0) {
-      return null;
+    if (!error && data && data.length > 0) {
+      memoryKeywordCache.set(cacheKey, data);
+      return data;
     }
-    return data;
   } catch (err) {
     console.error("getHistoricalHourlyKeywords error:", err);
-    return null;
   }
+
+  return null;
 }

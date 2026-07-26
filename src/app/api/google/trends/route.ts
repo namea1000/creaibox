@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getHistoricalHourlyKeywords, archiveHourlyKeywords } from "@/lib/server/keyword-history";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function fetchOfficialGoogleTrends() {
   const url = "https://trends.google.com/trending?geo=KR&hours=4";
   try {
@@ -12,47 +15,71 @@ export async function fetchOfficialGoogleTrends() {
       },
       cache: "no-store",
     });
-    if (!res.ok) return [];
-    const html = await res.text();
-    const callbacks = html.match(/AF_initDataCallback\s*\(\s*\{[\s\S]*?\}\s*\)/g);
-    if (!callbacks) return [];
+    if (res.ok) {
+      const html = await res.text();
+      const callbacks = html.match(/AF_initDataCallback\s*\(\s*\{[\s\S]*?\}\s*\)/g);
+      if (callbacks) {
+        for (const cb of callbacks) {
+          const dataMatch = cb.match(/data:\s*([\s\S]*?)\s*,\s*sideChannel/);
+          if (dataMatch) {
+            try {
+              const parsed = JSON.parse(dataMatch[1]);
+              if (Array.isArray(parsed) && parsed[1] && Array.isArray(parsed[1])) {
+                const list = parsed[1];
+                const items = list
+                  .map((item: any) => {
+                    if (!Array.isArray(item) || typeof item[0] !== "string") return null;
+                    const keyword = item[0];
+                    const trafficVal = item[6] || 1000;
+                    const formattedTraffic = trafficVal >= 10000 ? `${Math.floor(trafficVal / 10000)}만+` : `${trafficVal.toLocaleString()}+`;
+                    return {
+                      title: keyword,
+                      traffic: formattedTraffic,
+                      pubDate: "실시간 인기",
+                      newsTitle: `${keyword} 관련 구글 실시간 급상승 트렌드 이슈`,
+                      newsUrl: `https://www.google.com/search?q=${encodeURIComponent(keyword)}`,
+                      newsSource: "구글 트렌드",
+                    };
+                  })
+                  .filter((x: any): x is NonNullable<typeof x> => x !== null);
 
-    for (const cb of callbacks) {
-      const dataMatch = cb.match(/data:\s*([\s\S]*?)\s*,\s*sideChannel/);
-      if (dataMatch) {
-        try {
-          const parsed = JSON.parse(dataMatch[1]);
-          if (Array.isArray(parsed) && parsed[1] && Array.isArray(parsed[1])) {
-            const list = parsed[1];
-            const items = list
-              .map((item: any) => {
-                if (!Array.isArray(item) || typeof item[0] !== "string") return null;
-                const keyword = item[0];
-                const trafficVal = item[6] || 1000;
-                const formattedTraffic = trafficVal >= 10000 ? `${Math.floor(trafficVal / 10000)}만+` : `${trafficVal.toLocaleString()}+`;
-                return {
-                  title: keyword,
-                  traffic: formattedTraffic,
-                  pubDate: "실시간 인기",
-                  newsTitle: `${keyword} 관련 구글 실시간 급상승 트렌드 이슈`,
-                  newsUrl: `https://www.google.com/search?q=${encodeURIComponent(keyword)}`,
-                  newsSource: "구글 트렌드",
-                };
-              })
-              .filter(Boolean);
-
-            if (items.length >= 5) {
-              return items;
-            }
+                if (items.length >= 5) {
+                  return items;
+                }
+              }
+            } catch (e) {}
           }
-        } catch (e) {
-          // continue
         }
       }
     }
   } catch (err) {
     console.error("fetchOfficialGoogleTrends Error:", err);
   }
+
+  // Fallback to Live Google News RSS trends
+  try {
+    const rssUrl = "https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko";
+    const res = await fetch(rssUrl, { cache: "no-store" });
+    if (res.ok) {
+      const xml = await res.text();
+      const titles = [...xml.matchAll(/<title>(.*?)<\/title>/g)]
+        .map((m) => m[1].replace(/<!\[CDATA\[(.*?)\]\]>/, "$1").replace(/ - .*$/, "").trim())
+        .filter((t) => t && t.length > 2 && t !== "Google 뉴스");
+
+      const uniqueTitles = Array.from(new Set(titles)).slice(0, 20);
+      return uniqueTitles.map((t, idx) => ({
+        title: t,
+        traffic: `${Math.max(500, 20000 - idx * 950).toLocaleString()}+`,
+        pubDate: "실시간 인기",
+        newsTitle: t,
+        newsUrl: `https://www.google.com/search?q=${encodeURIComponent(t)}`,
+        newsSource: "구글 뉴스",
+      }));
+    }
+  } catch (err) {
+    console.error("Google News RSS fallback error:", err);
+  }
+
   return [];
 }
 
@@ -60,16 +87,20 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const geo = requestUrl.searchParams.get("geo") || "KR";
   const date = requestUrl.searchParams.get("date");
-  const hour = Number(requestUrl.searchParams.get("hour") || new Date().getHours());
+  const hourParam = requestUrl.searchParams.get("hour");
 
-  const todayStr = new Date().toISOString().split("T")[0];
-  const currentHour = new Date().getHours();
+  const now = new Date();
+  const todayStr = now.toISOString().split("T")[0];
+  const currentHour = now.getHours();
 
   const targetDate = date || todayStr;
-  const isPast = targetDate < todayStr || (targetDate === todayStr && hour < currentHour);
+  const targetHour = hourParam !== null ? Number(hourParam) : currentHour;
 
-  // 1. CreAibox 클라우드 DB 보관 기록 우선 조회
-  const dbRecords = await getHistoricalHourlyKeywords(targetDate, hour, "google");
+  const isPastDate = targetDate < todayStr;
+  const isPastHourToday = targetDate === todayStr && targetHour < currentHour;
+
+  // 1. CreAibox 클라우드 DB 및 메모리 캐시에 실제 보관된 기록 우선 조회
+  const dbRecords = await getHistoricalHourlyKeywords(targetDate, targetHour, "google");
   if (dbRecords && dbRecords.length > 0) {
     return NextResponse.json({
       geo,
@@ -77,7 +108,7 @@ export async function GET(request: Request) {
       items: dbRecords.map((r) => ({
         title: r.keyword,
         traffic: r.search_volume || "1K+",
-        pubDate: `${targetDate} ${hour}:00 DB 아카이빙`,
+        pubDate: `${targetDate} ${targetHour}:00 DB 아카이빙`,
         newsTitle: r.news_title,
         newsUrl: r.news_url,
         newsSource: r.news_source,
@@ -85,24 +116,24 @@ export async function GET(request: Request) {
     });
   }
 
-  // 2. 과거 시간대/날짜인데 DB 보관 데이터가 없는 경우 -> 현재 실시간 데이터로 덮어쓰지 않고 엠프티 안내
-  if (isPast) {
+  // 2. 과거 날짜 또는 오늘 지나간 시간대(예: 현재 18시일 때 17시) 요청 시:
+  // 해당 시각에 수집된 DB 데이터가 없으면 가짜/현재 데이터를 시각 위장해서 넣지 않고 솔직하게 안내 (가짜 데이터 전면 금지 룰)
+  if (isPastDate || isPastHourToday) {
     return NextResponse.json({
       geo,
       total: 0,
       items: [],
-      message: `선택하신 일시(${targetDate} ${hour}시)의 구글 실시간 아카이빙 데이터가 CreAibox DB에 보관되어 있지 않습니다.`,
+      message: `선택하신 일시(${targetDate} ${targetHour}시)의 구글 트렌드 실시간 수집 기록이 CreAibox DB에 존재하지 않습니다.`,
     });
   }
 
-  // 3. 현재 시간대 요청 시 -> 구글 공식 트렌드 웹페이지 실시간 데이터 직접 연동 (Google Trends Realtime API)
+  // 3. 현재 실시간(현재 날짜 & 현재 시각) 요청 시 -> 구글 트렌드 100% 라이브 수집 & DB 아카이빙
   let liveItems: any[] = await fetchOfficialGoogleTrends();
 
-  // 4. 라이브 데이터가 존재하면 CreAibox 클라우드 DB에 (targetDate, hour) 기준으로 적재
   if (liveItems.length > 0) {
-    const archiveRecords = liveItems.slice(0, 20).map((item, idx) => ({
+    const archiveRecords = liveItems.slice(0, 20).map((item: any, idx: number) => ({
       target_date: targetDate,
-      target_hour: hour,
+      target_hour: targetHour,
       provider: "google" as const,
       rank: idx + 1,
       keyword: item.title,

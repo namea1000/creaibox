@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { ItemScoutShoppingKeyword } from "@/lib/server/shopping-keyword-engine";
 
-export default function ItemScoutShoppingKeywordPage() {
+export default function ShoppingKeywordPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [inputVal, setInputVal] = useState("");
   const [loading, setLoading] = useState(true);
@@ -33,7 +33,7 @@ export default function ItemScoutShoppingKeywordPage() {
       if (data.dailyTrends) setDailyTrends(data.dailyTrends);
       if (data.weeklyTrends) setWeeklyTrends(data.weeklyTrends);
     } catch (err) {
-      console.error("ItemScout shopping keyword fetch error:", err);
+      console.error("Shopping keyword fetch error:", err);
     } finally {
       setLoading(false);
     }
@@ -61,14 +61,14 @@ export default function ItemScoutShoppingKeywordPage() {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-black tracking-widest uppercase">
-              ItemScout E-Commerce Intelligence
+              CreAibox E-Commerce Intelligence
             </span>
-            <span className="text-xs text-zinc-400 font-mono">itemscout.io/keyword</span>
+            <span className="text-xs text-zinc-400 font-mono">creaibox.com/shopping/keyword</span>
           </div>
 
           <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center gap-3">
             <ShoppingBag className="text-blue-400" size={32} />
-            쇼핑 키워드 정밀 분석 (ItemScout 스타일 꿀키워드)
+            쇼핑 키워드 정밀 분석
           </h1>
 
           <p className="text-zinc-400 text-sm max-w-2xl font-medium">
@@ -104,7 +104,7 @@ export default function ItemScoutShoppingKeywordPage() {
           <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
             <h3 className="text-base font-black text-white flex items-center gap-2">
               <Flame size={20} className="text-orange-500" />
-              일간 트렌드 키워드 (ItemScout Daily)
+              일간 쇼핑 트렌드 키워드
             </h3>
             <span className="text-xs text-blue-400 font-mono font-bold">실시간 수집</span>
           </div>
@@ -148,26 +148,20 @@ export default function ItemScoutShoppingKeywordPage() {
 
                     <div className="text-right">
                       <span className="text-zinc-400 block text-[10px]">등록 상품수</span>
-                      <span className="text-zinc-300">{item.productCount.toLocaleString()}</span>
+                      <span className="text-zinc-300 font-bold">{item.productCount.toLocaleString()}</span>
                     </div>
 
                     <div className="text-right">
                       <span className="text-zinc-400 block text-[10px]">경쟁강도</span>
-                      <span
-                        className={`font-bold ${
-                          item.competitionRatio < 0.5
-                            ? "text-emerald-400"
-                            : item.competitionRatio < 1.0
-                            ? "text-amber-400"
-                            : "text-rose-400"
-                        }`}
-                      >
-                        {item.competitionRatio}
-                      </span>
+                      <span className="font-bold text-amber-400">{item.competitionRatio}</span>
                     </div>
 
-                    <button onClick={() => handleCopy(item.keyword)} className="p-1.5 text-zinc-500 hover:text-white">
-                      {copiedKw === item.keyword ? <CheckCircle2 size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                    <button
+                      onClick={() => handleCopy(item.keyword)}
+                      className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-all ml-1"
+                      title="키워드 복사"
+                    >
+                      {copiedKw === item.keyword ? <CheckCircle2 size={13} className="text-emerald-400" /> : <Copy size={13} />}
                     </button>
                   </div>
                 </div>
@@ -181,7 +175,7 @@ export default function ItemScoutShoppingKeywordPage() {
           <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
             <h3 className="text-base font-black text-white flex items-center gap-2">
               <Award size={20} className="text-amber-400" />
-              주간 트렌드 키워드 (ItemScout Weekly)
+              주간 쇼핑 트렌드 키워드
             </h3>
             <span className="text-xs text-amber-400 font-mono font-bold">7일 누적</span>
           </div>

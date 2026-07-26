@@ -222,12 +222,16 @@ export default function RealtimeKeywordPage() {
         <div className="bg-zinc-900/40 border border-emerald-500/20 p-6 rounded-3xl space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
             <div className="flex items-center gap-2">
-              <span className="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 font-black text-xs flex items-center justify-center border border-emerald-500/30">
+              <span className="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 font-black text-xs flex items-center justify-center border border-emerald-500/30 shrink-0">
                 N
               </span>
-              <h3 className="text-base font-black text-white">네이버 실시간 검색어 TOP 20</h3>
+              <div>
+                <h3 className="text-base font-black text-white">네이버 실시간 검색어 TOP 20</h3>
+                <p className="text-[11px] text-emerald-400/90 font-medium mt-0.5">
+                  포털 실시간 트렌드 &amp; 뉴스 열독 통합 지수 (Search &amp; News Engagement Index)
+                </p>
+              </div>
             </div>
-            <span className="text-xs text-emerald-400 font-mono font-bold">DataLab Live Ratio</span>
           </div>
 
           {loading ? (
@@ -309,10 +313,14 @@ export default function RealtimeKeywordPage() {
         <div className="bg-zinc-900/40 border border-blue-500/20 p-6 rounded-3xl space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
             <div className="flex items-center gap-2">
-              <Globe className="text-blue-400" size={22} />
-              <h3 className="text-base font-black text-white">구글 실시간 검색어 TOP 20 (Google Trends)</h3>
+              <Globe className="text-blue-400 shrink-0" size={22} />
+              <div>
+                <h3 className="text-base font-black text-white">구글 실시간 검색어 TOP 20 (Google Trends)</h3>
+                <p className="text-[11px] text-blue-400/90 font-medium mt-0.5">
+                  순수 검색량 급상승 알림 (Search Spike Volume)
+                </p>
+              </div>
             </div>
-            <span className="text-xs text-blue-400 font-mono font-bold">Search Volume 200K+</span>
           </div>
 
           {loading ? (

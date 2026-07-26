@@ -20,6 +20,10 @@ Additional references:
   1. 가짜 데이터를 임의로 생성하거나 진짜처럼 포장하지 말고, **데이터가 없음**을 명확하고 솔직하게 UI에 표시한다.
   2. 왜 데이터가 없는지 **명확한 사유(예: "CreAibox DB 구축 이전 기간이거나 포털 API 제공 범위 외 데이터입니다")**를 사용자에게 투명하게 설명한다.
 
+### Mandatory Git Push Rule (개발자 직접 명령 전 깃 푸시 절대 금지)
+- **개발자(사용자)가 명시적으로 "깃 푸시해", "git push 수행해"라고 직접 명령하기 전에는 AI 에이전트가 자율적으로 `git push`를 절대 수행하지 않는다.**
+- 에이전트는 코드 수정, 로컬 테스트 및 빌드 검증(`npx tsc --noEmit`)까지만 진행하고, `git push` 단계는 개발자의 명시적 지시가 있을 때만 실행한다.
+
 ### TODO Roadmap Rule
 When the user asks to record or manage future tasks (e.g., "앞으로 할 일에 추가해놔", "할 일 추가"):
 - Always update `@docs/project/todo-roadmap.md` with the requested checklist items.

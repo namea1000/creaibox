@@ -2,46 +2,17 @@ import { NextResponse } from "next/server";
 import { fetchNaverDataLabTrend } from "@/lib/server/ncp-api-hub";
 import { getHistoricalHourlyKeywords, archiveHourlyKeywords } from "@/lib/server/keyword-history";
 
-export async function fetchRealtimeNaverRanks() {
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export async function fetchRealtimeNaverRanks(dateStr?: string) {
   const allItems: any[] = [];
+  const dateFormatted = dateStr ? dateStr.replace(/-/g, "") : "";
 
-  // 1. Signal Realtime Ranks
-  try {
-    const signalRes = await fetch("https://api.signal.bz/news/realtime", {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-      },
-      cache: "no-store",
-    });
-
-    if (signalRes.ok) {
-      const signalData = await signalRes.json();
-      const rawList = signalData.top20 || signalData.top10 || [];
-      if (Array.isArray(rawList)) {
-        rawList.forEach((item: any) => {
-          const kw = item.keyword || item.title || "";
-          if (kw && !allItems.some((x) => x.title === kw)) {
-            allItems.push({
-              title: kw,
-              keywords: [kw],
-              changeBadge: item.state === "+" ? "▲" : item.state === "-" ? "▼" : "NEW",
-              newsTitle: `${kw} 관련 네이버 실시간 이슈`,
-              newsUrl: item.summary || `https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(kw)}`,
-              newsSource: "네이버 뉴스",
-            });
-          }
-        });
-      }
-    }
-  } catch (err) {
-    console.error("Signal API fetch error:", err);
-  }
-
-  // 2. Naver Popular Ranking News (Supplement to reach 20 items)
-  if (allItems.length < 20) {
+  if (dateFormatted) {
+    // Past date daily fetching via Naver Popular Day Ranks (Original Headline Titles)
     try {
-      const popularUrl = "https://news.naver.com/main/ranking/popularDay.naver";
+      const popularUrl = `https://news.naver.com/main/ranking/popularDay.naver?date=${dateFormatted}`;
       const res = await fetch(popularUrl, {
         headers: {
           "User-Agent":
@@ -57,24 +28,97 @@ export async function fetchRealtimeNaverRanks() {
         const reg = /<a href="([^"]*)" class="list_title[^"]*"[^>]*>([\s\S]*?)<\/a>/g;
         let match;
 
+        const candidates: any[] = [];
         while ((match = reg.exec(html)) !== null) {
-          const raw = match[2].replace(/<[^>]+>/g, "").trim();
-          const clean = raw.split(" - ")[0].split("…")[0].trim();
-          if (clean && clean.length >= 2 && !allItems.some((x) => x.title === clean)) {
-            allItems.push({
-              title: clean,
-              keywords: [clean],
+          const rawHeadline = match[2].replace(/<[^>]+>/g, "").trim();
+          if (rawHeadline && rawHeadline.length >= 2 && !candidates.some((x) => x.title === rawHeadline)) {
+            candidates.push({
+              title: rawHeadline,
+              keywords: [rawHeadline],
               changeBadge: "NEW",
-              newsTitle: raw,
+              newsTitle: rawHeadline,
               newsUrl: match[1].startsWith("http") ? match[1] : `https://news.naver.com${match[1]}`,
               newsSource: "네이버 랭킹뉴스",
             });
-            if (allItems.length >= 20) break;
           }
+        }
+
+        candidates.sort((a, b) => a.title.localeCompare(b.title, "ko"));
+        allItems.push(...candidates.slice(0, 20));
+      }
+    } catch (err) {
+      console.error("Naver Past Daily News fetch error:", err);
+    }
+  } else {
+    // Today live realtime fetching
+    try {
+      const signalRes = await fetch("https://api.signal.bz/news/realtime", {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        },
+        cache: "no-store",
+      });
+
+      if (signalRes.ok) {
+        const signalData = await signalRes.json();
+        const rawList = signalData.top20 || signalData.top10 || [];
+        if (Array.isArray(rawList)) {
+          rawList.forEach((item: any) => {
+            const headline = item.keyword || item.title || "";
+            if (headline && !allItems.some((x) => x.title === headline)) {
+              allItems.push({
+                title: headline,
+                keywords: [headline],
+                changeBadge: item.state === "+" ? "▲" : item.state === "-" ? "▼" : "NEW",
+                newsTitle: headline,
+                newsUrl: item.summary || `https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(headline)}`,
+                newsSource: "네이버 뉴스",
+              });
+            }
+          });
         }
       }
     } catch (err) {
-      console.error("Naver Popular News fetch error:", err);
+      console.error("Signal API fetch error:", err);
+    }
+
+    if (allItems.length < 20) {
+      try {
+        const popularUrl = "https://news.naver.com/main/ranking/popularDay.naver";
+        const res = await fetch(popularUrl, {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          },
+          cache: "no-store",
+        });
+
+        if (res.ok) {
+          const buffer = await res.arrayBuffer();
+          const decoder = new TextDecoder("euc-kr");
+          const html = decoder.decode(buffer);
+          const reg = /<a href="([^"]*)" class="list_title[^"]*"[^>]*>([\s\S]*?)<\/a>/g;
+          let match;
+
+          while ((match = reg.exec(html)) !== null) {
+            const rawHeadline = match[2].replace(/<[^>]+>/g, "").trim();
+            if (rawHeadline && rawHeadline.length >= 2 && !allItems.some((x) => x.title === rawHeadline)) {
+              allItems.push({
+                title: rawHeadline,
+                keywords: [rawHeadline],
+                changeBadge: "NEW",
+                newsTitle: rawHeadline,
+                newsUrl: match[1].startsWith("http") ? match[1] : `https://news.naver.com${match[1]}`,
+                newsSource: "네이버 랭킹뉴스",
+              });
+              if (allItems.length >= 20) break;
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Naver Popular News fetch error:", err);
+      }
     }
   }
 
@@ -88,16 +132,20 @@ export async function fetchRealtimeNaverRanks() {
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const date = requestUrl.searchParams.get("date");
-  const hour = Number(requestUrl.searchParams.get("hour") || new Date().getHours());
+  const hourParam = requestUrl.searchParams.get("hour");
 
-  const todayStr = new Date().toISOString().split("T")[0];
-  const currentHour = new Date().getHours();
+  const now = new Date();
+  const todayStr = now.toISOString().split("T")[0];
+  const currentHour = now.getHours();
 
   const targetDate = date || todayStr;
-  const isPast = targetDate < todayStr || (targetDate === todayStr && hour < currentHour);
+  const targetHour = hourParam !== null ? Number(hourParam) : currentHour;
 
-  // 1. CreAibox 클라우드 DB 보관 기록 우선 조회
-  const dbRecords = await getHistoricalHourlyKeywords(targetDate, hour, "naver");
+  const isPastDate = targetDate < todayStr;
+  const isPastHourToday = targetDate === todayStr && targetHour < currentHour;
+
+  // 1. CreAibox 클라우드 DB 및 메모리 캐시에 실제 저장된 과거 기록 조회
+  const dbRecords = await getHistoricalHourlyKeywords(targetDate, targetHour, "naver");
   if (dbRecords && dbRecords.length > 0) {
     return NextResponse.json({
       startDate: targetDate,
@@ -114,20 +162,53 @@ export async function GET(request: Request) {
     });
   }
 
-  // 2. 과거 시간대/날짜인데 DB 보관 데이터가 없는 경우 -> 현재 실시간 데이터로 덮어쓰지 않고 엠프티 안내
-  if (isPast) {
+  // 2. 과거 날짜 요청 시 -> 네이버 실제 해당 과거 날짜의 일간 랭킹 기사제목 수집
+  if (isPastDate) {
+    const pastResults = await fetchRealtimeNaverRanks(targetDate);
+    if (pastResults.length > 0) {
+      const archiveRecords = pastResults.slice(0, 20).map((item: any, idx: number) => ({
+        target_date: targetDate,
+        target_hour: targetHour,
+        provider: "naver" as const,
+        rank: idx + 1,
+        keyword: item.title,
+        rank_change: item.changeBadge,
+        trend_ratio: item.ratio,
+        news_title: item.newsTitle,
+        news_url: item.newsUrl,
+        news_source: item.newsSource,
+      }));
+      await archiveHourlyKeywords(archiveRecords);
+
+      return NextResponse.json({
+        startDate: targetDate,
+        endDate: targetDate,
+        results: pastResults.slice(0, 20),
+      });
+    }
+
     return NextResponse.json({
       startDate: targetDate,
       endDate: targetDate,
       results: [],
-      message: `선택하신 일시(${targetDate} ${hour}시)의 실시간 아카이빙 데이터가 CreAibox DB에 보관되어 있지 않습니다.`,
+      message: `선택하신 날짜(${targetDate})의 네이버 수집 기록이 존재하지 않습니다.`,
     });
   }
 
-  // 3. 현재 시간대 요청 시 -> 네이버 20개 실시간 급상승 키워드 100% 라이브 수집
+  // 3. 오늘 지난 시간대(예: 현재 18시일 때 17시) 요청 시:
+  // 해당 시각에 실제 수집된 DB 기록이 없으면, 현재 라이브 데이터를 과거 시각 데이터로 위장하지 않고 솔직하게 없음을 알림 (가짜 데이터 전면 금지 룰 준수)
+  if (isPastHourToday) {
+    return NextResponse.json({
+      startDate: targetDate,
+      endDate: targetDate,
+      results: [],
+      message: `선택하신 시간대(${targetDate} ${targetHour}시)는 해당 시각에 수집된 CreAibox DB 기록이 존재하지 않는 시간대입니다.`,
+    });
+  }
+
+  // 4. 현재 실시간(현재 날짜 & 현재 시각) 요청 시 -> 네이버 실시간 라이브 20개 진짜 수집 & DB 아카이빙
   const liveResults = await fetchRealtimeNaverRanks();
 
-  // NCP DataLab API 결합
   if (liveResults.length > 0) {
     try {
       const dataLabBody = {
@@ -141,13 +222,11 @@ export async function GET(request: Request) {
       };
       await fetchNaverDataLabTrend(dataLabBody);
     } catch (e) {}
-  }
 
-  // 4. 수집된 20개 리얼 라이브 결과를 CreAibox 클라우드 DB에 (targetDate, hour) 기준으로 적재
-  if (liveResults.length > 0) {
+    // 현재 시각 수집 결과를 CreAibox 클라우드 DB 및 메모리 캐시에 적재
     const archiveRecords = liveResults.slice(0, 20).map((item: any, idx: number) => ({
       target_date: targetDate,
-      target_hour: hour,
+      target_hour: targetHour,
       provider: "naver" as const,
       rank: idx + 1,
       keyword: item.title,

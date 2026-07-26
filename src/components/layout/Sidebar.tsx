@@ -340,7 +340,7 @@ export default function Sidebar({
         children: [
           { name: "🛍️ 쇼핑 키워드 정밀 분석", href: "/studio/shopping/keyword", icon: ShoppingBag },
           { name: "📊 네이버 쇼핑 인사이트", href: "/studio/keyword/shopping-insight", icon: BarChart3 },
-          { name: "📦 쇼핑 랭킹 추적 & 소싱 HUB", href: "/studio/shopping/keyword", icon: Layers },
+          { name: "📦 쇼핑 랭킹 추적 & 소싱 HUB", href: "/studio/shopping/sourcing", icon: Layers },
         ],
       },
       {
@@ -781,7 +781,7 @@ export default function Sidebar({
 
               return (
                 <Link
-                  key={child.href}
+                  key={`${child.href}_${child.name}`}
                   href={child.href}
                   onClick={() => {
                     setOptimisticActiveKey(group.key);
