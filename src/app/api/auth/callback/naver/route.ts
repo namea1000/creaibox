@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/utils/supabase/server";
+import { createAdminClient, createClient } from "@/utils/supabase/server";
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -69,17 +69,22 @@ export async function GET(request: Request) {
       user = newUser.user;
     }
 
-    // Generate magic link session for instant auto login
+    // 4. Generate OTP token and verify on server side to set real HTTP Session Cookies!
     const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
       type: "magiclink",
       email,
     });
 
-    if (linkErr || !linkData.properties?.action_link) {
-      return NextResponse.redirect(new URL("/", requestUrl.origin));
+    if (linkData?.properties?.email_otp) {
+      const supabaseServer = await createClient();
+      await supabaseServer.auth.verifyOtp({
+        email,
+        token: linkData.properties.email_otp,
+        type: "email",
+      });
     }
 
-    return NextResponse.redirect(linkData.properties.action_link);
+    return NextResponse.redirect(new URL("/", requestUrl.origin));
   } catch (err: any) {
     console.error("Naver OAuth error:", err);
     return NextResponse.redirect(
