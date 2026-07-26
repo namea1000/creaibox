@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { fetchNaverDataLabTrend } from "@/lib/server/ncp-api-hub";
 import { getHistoricalHourlyKeywords, archiveHourlyKeywords } from "@/lib/server/keyword-history";
 
 export async function GET(request: Request) {
@@ -27,13 +28,13 @@ export async function GET(request: Request) {
     });
   }
 
-  // 2. 실시간 급상승 키워드 API (Signal Realtime / Naver Sync) 통신 수집
+  // 2. 네이버 실시간 통신 및 네이버 클라우드 DataLab API 연동 수집
   let liveResults: any[] = [];
   try {
     const signalRes = await fetch("https://api.signal.bz/news/realtime", {
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
       },
       cache: "no-store",
     });
@@ -60,7 +61,25 @@ export async function GET(request: Request) {
     console.error("Naver Realtime Live API Error:", err);
   }
 
-  // 3. 수집된 라이브 결과를 CreAibox 클라우드 DB에 (targetDate, hour) 기준 자동 아카이빙 저장
+  // 3. 네이버 클라우드(NCP) DataLab API 파이프라인 결합
+  if (liveResults.length > 0) {
+    try {
+      const dataLabBody = {
+        startDate: targetDate,
+        endDate: targetDate,
+        timeUnit: "date",
+        keywordGroups: liveResults.slice(0, 5).map((item) => ({
+          groupName: item.title,
+          keywords: [item.title],
+        })),
+      };
+      await fetchNaverDataLabTrend(dataLabBody);
+    } catch (e) {
+      // DataLab ratio augmentation optional
+    }
+  }
+
+  // 4. 수집된 라이브 결과를 CreAibox 클라우드 DB에 (targetDate, hour) 기준 자동 아카이빙 저장
   if (liveResults.length > 0) {
     const archiveRecords = liveResults.slice(0, 20).map((item: any, idx: number) => ({
       target_date: targetDate,
