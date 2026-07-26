@@ -280,7 +280,7 @@ export default function RealtimeKeywordPage() {
                         href={`/studio/writing/creaibox/new-post?keyword=${encodeURIComponent(item.keyword)}`}
                         className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-500/20 flex items-center gap-1"
                       >
-                        <Sparkles size={12} /> 작성
+                        <Sparkles size={12} /> AI 자동 글쓰기
                       </Link>
                     </div>
                   </div>
@@ -354,7 +354,7 @@ export default function RealtimeKeywordPage() {
                         href={`/studio/writing/creaibox/new-post?keyword=${encodeURIComponent(item.keyword)}`}
                         className="px-2.5 py-1 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-1"
                       >
-                        <Sparkles size={12} /> 작성
+                        <Sparkles size={12} /> AI 자동 글쓰기
                       </Link>
                     </div>
                   </div>
