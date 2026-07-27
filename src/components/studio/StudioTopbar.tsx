@@ -229,7 +229,7 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
     }
   };
   return (
-    <div className="sticky top-0 lg:top-16 z-40 h-16 border-b border-zinc-200 dark:border-zinc-800/80 bg-white/95 dark:bg-[#06080d]/95 pl-4 pr-5 backdrop-blur-xl transition-colors duration-300 lg:pl-5 lg:pr-8">
+    <div className="shrink-0 h-16 w-full z-40 border-b border-zinc-200 dark:border-zinc-800/80 bg-white/95 dark:bg-[#06080d]/95 pl-4 pr-5 backdrop-blur-xl transition-colors duration-300 lg:pl-5 lg:pr-8 select-none">
       <div className="flex h-full items-center gap-3">
         <button
           onClick={() => setIsMobileOpen(true)}

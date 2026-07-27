@@ -813,9 +813,10 @@ export default function Sidebar({
 
   return (
     <aside
+      id="global-studio-sidebar"
       className={`
         fixed left-0 top-0 z-[110] flex h-screen flex-col border-r border-zinc-200 dark:border-zinc-800/80
-        bg-white dark:bg-[#090e15] transition-all duration-300 ease-in-out lg:sticky lg:top-16 lg:h-[calc(100vh-64px)] lg:z-[90]
+        bg-white dark:bg-[#090e15] transition-all duration-300 ease-in-out lg:relative lg:top-0 lg:h-full lg:z-30
         ${isCollapsed ? "lg:w-14" : "lg:w-[220px]"}
         ${isMobileOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"}
       `}

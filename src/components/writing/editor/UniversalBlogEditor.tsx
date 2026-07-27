@@ -88,6 +88,7 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import { FontFamily } from "@tiptap/extension-font-family";
 import {
   AlignCenter,
+  AlignJustify,
   AlignLeft,
   AlignRight,
   ArrowDown,
@@ -119,10 +120,13 @@ import {
   Link2,
   List,
   ListOrdered,
+  Maximize2,
+  Minimize2,
   Minus,
   MessageSquareQuote,
   PanelLeftClose,
   PanelLeftOpen,
+  Paperclip,
   Printer,
   Quote,
   Redo,
@@ -291,6 +295,8 @@ interface ImageBlock {
 }
 
 interface UniversalBlogEditorProps {
+  isFocusMode?: boolean;
+  onToggleFocusMode?: () => void;
   selectedPersonaId?: string | null;
   setSelectedPersonaId?: (v: string | null) => void;
   selectedKnowledgeId?: string | null;
@@ -744,6 +750,8 @@ function downloadFile(filename: string, content: string) {
 }
 
 export default function UniversalBlogEditor({
+  isFocusMode = false,
+  onToggleFocusMode,
   title,
   setTitle,
   content,
@@ -1173,6 +1181,15 @@ export default function UniversalBlogEditor({
   const [isDividerDropdownOpen, setIsDividerDropdownOpen] = useState(false);
   const dividerDropdownRef = useRef<HTMLDivElement>(null);
 
+  const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
+  const downloadMenuRef = useRef<HTMLDivElement>(null);
+
+  const [isTextAlignDropdownOpen, setIsTextAlignDropdownOpen] = useState(false);
+  const textAlignDropdownRef = useRef<HTMLDivElement>(null);
+
+  const [isVerticalAlignDropdownOpen, setIsVerticalAlignDropdownOpen] = useState(false);
+  const verticalAlignDropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (contentDropdownRef.current && !contentDropdownRef.current.contains(event.target as Node)) {
@@ -1192,6 +1209,15 @@ export default function UniversalBlogEditor({
       }
       if (dividerDropdownRef.current && !dividerDropdownRef.current.contains(event.target as Node)) {
         setIsDividerDropdownOpen(false);
+      }
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target as Node)) {
+        setIsDownloadMenuOpen(false);
+      }
+      if (textAlignDropdownRef.current && !textAlignDropdownRef.current.contains(event.target as Node)) {
+        setIsTextAlignDropdownOpen(false);
+      }
+      if (verticalAlignDropdownRef.current && !verticalAlignDropdownRef.current.contains(event.target as Node)) {
+        setIsVerticalAlignDropdownOpen(false);
       }
       setActiveTableDropdown(null);
     }
@@ -1991,12 +2017,23 @@ export default function UniversalBlogEditor({
 
         if (!user) return;
 
+        console.log("삭제 감지 URL:", removedUrls);
+
+        // CreAibox 클라우드 DB (Google Drive) 및 Storage / DB 영구 삭제 API 호출
+        try {
+          await fetch("/api/file-upload/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fileUrls: removedUrls }),
+          });
+          console.log("CreAibox 클라우드 DB (Google Drive) 파일 영구 삭제 성공");
+        } catch (apiErr) {
+          console.error("CreAibox 클라우드 DB 삭제 API 호출 실패:", apiErr);
+        }
+
         const removedPaths = removedUrls
           .map((url) => getStoragePathFromPublicUrl(url))
           .filter(Boolean) as string[];
-
-        console.log("삭제 감지 URL:", removedUrls);
-        console.log("삭제 감지 Storage Path:", removedPaths);
 
         if (removedPaths.length === 0) return;
 
@@ -2015,14 +2052,11 @@ export default function UniversalBlogEditor({
           return sourceIdMatches(row, manuscriptId) || pathBelongsToManuscript(rowPath, manuscriptId);
         });
 
-        console.log("삭제 대상 DB rows:", matchedRows);
-
-        if (matchedRows.length === 0) return;
-
-        const result = await deleteGeneratedImageRows(matchedRows);
-        console.log("본문 이미지 DB/Storage 삭제 완료:", result);
+        if (matchedRows.length > 0) {
+          await deleteGeneratedImageRows(matchedRows);
+        }
       } catch (error) {
-        console.error("본문 이미지 삭제 동기화 실패:", error);
+        console.error("본문 파일/이미지 삭제 동기화 실패:", error);
       }
     },
     [deleteGeneratedImageRows, manuscriptId, supabase]
@@ -2133,6 +2167,93 @@ export default function UniversalBlogEditor({
       await insertContentImageFile(file);
     },
     [insertContentImageFile]
+  );
+
+  const [isAttachmentUploading, setIsAttachmentUploading] = useState(false);
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleEditorAttachmentUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(event.target.files || []);
+      event.target.value = "";
+
+      if (!files.length || !editor) return;
+
+      setIsAttachmentUploading(true);
+
+      try {
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+        for (const file of files) {
+          // 1. 용량 제한 검증 (5MB)
+          if (file.size > MAX_FILE_SIZE) {
+            const sizeInMb = (file.size / (1024 * 1024)).toFixed(2);
+            alert(`[${file.name}] 파일 용량이 5MB를 초과하여 업로드할 수 없습니다. (선택한 용량: ${sizeInMb}MB)\n첨부파일은 5MB 이하의 이미지 및 문서 파일만 업로드 가능합니다.`);
+            continue;
+          }
+
+          // 2. 영상 및 미디어 파일 차단 검증
+          const mimeType = (file.type || "").toLowerCase();
+          const ext = (file.name.split(".").pop() || "").toLowerCase();
+          const blockedExtensions = [
+            "mp4", "mov", "avi", "mkv", "wmv", "flv", "webm", "m4v", "3gp",
+            "mp3", "wav", "flac", "aac", "ogg", "wma",
+            "exe", "dmg", "pkg", "deb", "rpm", "iso", "bin"
+          ];
+
+          if (mimeType.startsWith("video/") || mimeType.startsWith("audio/") || blockedExtensions.includes(ext)) {
+            alert(`[${file.name}] 영상 및 미디어 파일은 업로드할 수 없습니다.\n이미지 및 문서 파일(PDF, Word, Excel, HWP, PPT, TXT, ZIP 등)만 첨부 가능합니다.`);
+            continue;
+          }
+
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("sourceType", contentImageSourceType);
+          if (manuscriptId) formData.append("sourceId", String(manuscriptId));
+          formData.append("title", title || "");
+          formData.append("targetKeyword", targetKeyword || "");
+
+          const response = await fetch("/api/file-upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          const result = await response.json();
+          if (!response.ok) {
+            throw new Error(result.error || `${file.name} 업로드에 실패했습니다.`);
+          }
+
+          const { url, fileName, size } = result.file;
+          const formattedSize = (sizeInBytes: number) => {
+            if (!sizeInBytes || sizeInBytes === 0) return "0 B";
+            const k = 1024;
+            const sizes = ["B", "KB", "MB", "GB"];
+            const i = Math.floor(Math.log(sizeInBytes) / Math.log(k));
+            return parseFloat((sizeInBytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+          };
+
+          const fileSizeStr = formattedSize(size);
+          const safeName = (fileName || "첨부파일")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+          const attachmentHtml = `<p class="cb-attachment-row" style="margin:6px 0;padding:6px 12px;border:1px solid rgba(255,255,255,0.12);background:#131722;border-radius:8px;display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#f4f4f5;line-height:1.4;"><span style="font-size:14px;flex-shrink:0;">📎</span><span style="font-weight:700;color:#ffffff;word-break:break-all;">${safeName}</span><a href="${url}" target="_blank" download="${safeName}" style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;font-size:11px;font-weight:700;color:#ffffff;background:#7c3aed;border-radius:4px;text-decoration:none;margin-left:6px;flex-shrink:0;cursor:pointer;">⬇️ 다운로드</a></p>`;
+
+          editor.chain().focus().insertContent(attachmentHtml).run();
+        }
+
+        syncLatestContent();
+      } catch (error: any) {
+        console.error("파일 첨부 업로드 실패:", error);
+        alert(error instanceof Error ? error.message : "파일 첨부에 실패했습니다.");
+      } finally {
+        setIsAttachmentUploading(false);
+      }
+    },
+    [contentImageSourceType, editor, manuscriptId, syncLatestContent, targetKeyword, title]
   );
 
   const handleCleanupUnusedImages = useCallback(async () => {
@@ -2411,55 +2532,191 @@ export default function UniversalBlogEditor({
     editor.chain().focus().insertContentAt(0, tocHtml).run();
   };
 
-  const handleDownload = () => {
+  const getSafeTitle = useCallback(() => {
+    return (
+      (title || targetKeyword || "blog-post")
+        .slice(0, 50)
+        .replace(/[\\/:*?"<>|]/g, "")
+        .trim() || "blog-post"
+    );
+  }, [targetKeyword, title]);
+
+  const handleDownloadTxt = useCallback(() => {
+    setIsDownloadMenuOpen(false);
     const html = editor?.getHTML() ?? content;
-    const safeTitle =
-      (title || targetKeyword || "blog-post").slice(0, 40).replace(/[\\/:*?"<>|]/g, "").trim() ||
-      "blog-post";
+    const safeTitle = getSafeTitle();
 
-    downloadFile(`${safeTitle}.html`, `<!doctype html><html><body><h1>${escapeHtml(title)}</h1>${html}</body></html>`);
-  };
+    let text = html
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>/gi, "\n\n")
+      .replace(/<\/h[1-6]>/gi, "\n\n")
+      .replace(/<\/li>/gi, "\n")
+      .replace(/<li\b[^>]*>/gi, "• ")
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&gt;/gi, ">")
+      .replace(/&lt;/gi, "<")
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'")
+      .replace(/&amp;/gi, "&");
 
-  const handlePreview = () => {
+    const fullText = `${title ? title + "\n\n" + "=".repeat(40) + "\n\n" : ""}${text.trim()}`;
+    const blob = new Blob(["\ufeff" + fullText], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${safeTitle}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [content, editor, getSafeTitle, title]);
+
+  const handleDownloadWord = useCallback(() => {
+    setIsDownloadMenuOpen(false);
     const html = editor?.getHTML() ?? content;
-    const previewWindow = window.open("", "_blank", "noopener,noreferrer");
-    if (!previewWindow) return;
+    const safeTitle = getSafeTitle();
 
-    previewWindow.document.open();
-    previewWindow.document.write(`
+    const wordContent = `
+      <html xmlns:o="urn:schemas-microsoft-microsoft-com:office:office"
+            xmlns:w="urn:schemas-microsoft-microsoft-com:office:word"
+            xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8">
+        <title>${escapeHtml(title || "원고")}</title>
+        <style>
+          body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; font-size: 11pt; line-height: 1.6; color: #111; }
+          h1 { font-size: 20pt; font-weight: bold; color: #111; margin-bottom: 16pt; }
+          h2 { font-size: 16pt; font-weight: bold; color: #222; margin-top: 20pt; margin-bottom: 12pt; }
+          h3 { font-size: 13pt; font-weight: bold; color: #333; margin-top: 16pt; margin-bottom: 8pt; }
+          p { margin-bottom: 10pt; line-height: 1.8; }
+          img { max-width: 100%; height: auto; }
+          table { border-collapse: collapse; width: 100%; margin-bottom: 12pt; }
+          th, td { border: 1px solid #ccc; padding: 6pt; }
+        </style>
+      </head>
+      <body>
+        <h1>${escapeHtml(title || "제목 없음")}</h1>
+        ${html}
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob(["\ufeff" + wordContent], { type: "application/msword;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${safeTitle}.docx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [content, editor, getSafeTitle, title]);
+
+  const handleDownloadHwp = useCallback(() => {
+    setIsDownloadMenuOpen(false);
+    const html = editor?.getHTML() ?? content;
+    const safeTitle = getSafeTitle();
+
+    const hwpContent = `
+      <!DOCTYPE html>
+      <html lang="ko">
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <meta name="referrer" content="no-referrer" />
+        <title>${escapeHtml(title || "원고")}</title>
+        <style>
+          body { font-family: 'Malgun Gothic', '한컴바탕', '바탕', sans-serif; font-size: 10pt; line-height: 1.6; color: #000; }
+          h1 { font-size: 18pt; font-weight: bold; margin-bottom: 14pt; }
+          h2 { font-size: 14pt; font-weight: bold; margin-top: 16pt; margin-bottom: 10pt; }
+          h3 { font-size: 12pt; font-weight: bold; margin-top: 14pt; margin-bottom: 6pt; }
+          p { margin-bottom: 8pt; line-height: 1.8; }
+          img { max-width: 100%; height: auto; }
+          table { border-collapse: collapse; width: 100%; margin-bottom: 10pt; }
+          th, td { border: 1px solid #888; padding: 5pt; }
+        </style>
+      </head>
+      <body>
+        <h1>${escapeHtml(title || "제목 없음")}</h1>
+        ${html}
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob(["\ufeff" + hwpContent], { type: "application/x-hwp;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${safeTitle}.hwp`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [content, editor, getSafeTitle, title]);
+
+  const handleDownloadHtml = useCallback(() => {
+    setIsDownloadMenuOpen(false);
+    const html = editor?.getHTML() ?? content;
+    const safeTitle = getSafeTitle();
+    const fullHtml = `<!doctype html><html lang="ko"><head><meta charset="utf-8"/><title>${escapeHtml(title || "원고")}</title></head><body><h1>${escapeHtml(title || "제목 없음")}</h1>${html}</body></html>`;
+    const blob = new Blob(["\ufeff" + fullHtml], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${safeTitle}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [content, editor, getSafeTitle, title]);
+
+  const handlePreview = useCallback(() => {
+    const html = editor?.getHTML() ?? content;
+    const fullDoc = `
       <!doctype html>
       <html lang="ko">
         <head>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <meta name="referrer" content="no-referrer" />
           <title>${escapeHtml(title || "미리보기")}</title>
           <style>
-            body { margin: 0; padding: 48px 24px; background: #f5f5f4; color: #18181b; font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", sans-serif; }
-            .sheet { max-width: 920px; margin: 0 auto; background: white; padding: 56px 64px; box-shadow: 0 20px 60px rgba(0,0,0,0.08); border-radius: 24px; }
-            h1 { margin: 0 0 24px; font-size: 2.25rem; line-height: 1.2; font-weight: 900; }
-            h2 { margin: 48px 0 18px; font-size: 1.7rem; line-height: 1.35; font-weight: 900; }
-            h3 { margin: 40px 0 16px; font-size: 1.35rem; line-height: 1.45; font-weight: 800; }
-            p, li { font-size: 1.08rem; line-height: 2; }
+            body { margin: 0; padding: 48px 24px; background: #0b0f17; color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", sans-serif; }
+            .sheet { max-width: 920px; margin: 0 auto; background: #131722; color: #f4f4f5; padding: 56px 64px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); }
+            h1 { margin: 0 0 24px; font-size: 2.25rem; line-height: 1.2; font-weight: 900; color: #ffffff; }
+            h2 { margin: 48px 0 18px; font-size: 1.7rem; line-height: 1.35; font-weight: 900; color: #f4f4f5; border-bottom: 1px solid #27272a; padding-bottom: 8px; }
+            h3 { margin: 40px 0 16px; font-size: 1.35rem; line-height: 1.45; font-weight: 800; color: #e4e4e7; }
+            p, li { font-size: 1.08rem; line-height: 2; color: #d4d4d8; }
             ul, ol { margin: 0 0 28px 24px; }
-            blockquote { margin: 32px 0; padding: 20px 24px; background: #f4f4f5; border-radius: 6px; color: #52525b; }
+            blockquote { margin: 32px 0; padding: 20px 24px; background: #18181b; border-left: 4px solid #8b5cf6; border-radius: 6px; color: #a1a1aa; }
             table { width: 100%; border-collapse: collapse; margin: 28px 0; }
-            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-            th { background: #f4f4f5; }
-            pre { background: #18181b; color: white; padding: 18px; border-radius: 16px; overflow-x: auto; }
-            img { max-width: 100%; height: auto; border-radius: 6px; }
-            iframe { width: 100%; max-width: 100%; border-radius: 6px; }
+            th, td { border: 1px solid #27272a; padding: 12px; text-align: left; }
+            th { background: #18181b; color: #f4f4f5; }
+            pre { background: #18181b; color: #a7f3d0; padding: 18px; border-radius: 16px; overflow-x: auto; }
+            img { max-width: 100%; height: auto; border-radius: 8px; margin: 16px 0; display: block; }
+            iframe { width: 100%; max-width: 100%; border-radius: 8px; }
           </style>
         </head>
         <body>
+          <div style="position: fixed; top: 20px; right: 24px; z-index: 9999;">
+            <button onclick="window.close()" style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px; background: #27272a; color: #f4f4f5; border: 1px solid rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 800; box-shadow: 0 10px 25px rgba(0,0,0,0.5); transition: all 0.2s;" onmouseover="this.style.background='#ef4444';this.style.borderColor='#f87171';this.style.color='#fff';" onmouseout="this.style.background='#27272a';this.style.borderColor='rgba(255,255,255,0.2)';this.style.color='#f4f4f5';">
+              ✕ 미리보기 닫기
+            </button>
+          </div>
           <article class="sheet">
             <h1>${escapeHtml(title || "제목 없음")}</h1>
             ${html}
           </article>
         </body>
       </html>
-    `);
-    previewWindow.document.close();
-  };
+    `;
+
+    const blob = new Blob([fullDoc], { type: "text/html;charset=utf-8" });
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, "_blank");
+  }, [content, editor, title]);
 
   const ToolbarButton = ({
     onClick,
@@ -2484,16 +2741,17 @@ export default function UniversalBlogEditor({
       onMouseDown={onMouseDown}
       disabled={disabled || !editor}
       title={title}
-      className={`flex shrink-0 items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-bold transition-all disabled:cursor-not-allowed disabled:opacity-40 ${active ? "bg-blue-500/15 text-blue-300" : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
-        } ${className}`}
+      className={`flex shrink-0 items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-bold transition-all disabled:cursor-not-allowed disabled:opacity-40 ${
+        active ? "bg-blue-500/20 text-blue-300" : "text-zinc-200 hover:bg-zinc-800/80 hover:text-white"
+      } ${className}`}
     >
       {children}
     </button>
   );
 
   return (
-    <div className="flex h-full min-h-[750px] flex-col overflow-hidden bg-[#0a0c10]">
-      <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-zinc-800 bg-gradient-to-r from-[#131722] via-[#141926] to-[#10141f] px-4">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#0a0c10]">
+      <div className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-3 border-b border-zinc-800 bg-gradient-to-r from-[#131722] via-[#141926] to-[#10141f] px-4">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex shrink-0 items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
@@ -2507,6 +2765,31 @@ export default function UniversalBlogEditor({
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
+          {onToggleFocusMode && (
+            <button
+              type="button"
+              onClick={onToggleFocusMode}
+              className={`flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+                isFocusMode
+                  ? "border-violet-500 bg-violet-600/20 text-violet-200 hover:bg-violet-600/30 shadow-[0_0_12px_rgba(124,58,237,0.3)]"
+                  : "border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+              }`}
+              title={isFocusMode ? "좌우 패널 다시 표시하기" : "좌우 패널을 숨기고 편집에만 집중하기"}
+            >
+              {isFocusMode ? (
+                <>
+                  <Minimize2 size={13} className="text-violet-400" />
+                  <span>편집 창 원복</span>
+                </>
+              ) : (
+                <>
+                  <Maximize2 size={13} className="text-zinc-400" />
+                  <span>편집 전체 화면</span>
+                </>
+              )}
+            </button>
+          )}
+
           <button
             onClick={handleLocalCopy}
             className={`flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-bold transition-all ${
@@ -2526,18 +2809,90 @@ export default function UniversalBlogEditor({
             )}
           </button>
 
-          <button onClick={handleDownload} className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:bg-zinc-800">
-            <Download size={13} /> 다운로드
+          {/* 다운로드 드롭다운 메뉴 */}
+          <div ref={downloadMenuRef} className="relative inline-block">
+            <button
+              type="button"
+              onClick={() => setIsDownloadMenuOpen((prev) => !prev)}
+              className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:bg-zinc-800 cursor-pointer"
+            >
+              <Download size={13} />
+              다운로드
+              <ChevronDown size={12} className={`transition-transform ${isDownloadMenuOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {isDownloadMenuOpen && (
+              <div className="absolute right-0 top-full z-50 mt-1.5 w-56 rounded-xl border border-zinc-800 bg-[#131722] p-1.5 shadow-2xl backdrop-blur-xl">
+                <button
+                  type="button"
+                  onClick={handleDownloadWord}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-zinc-200 hover:bg-violet-600/20 hover:text-violet-300 transition cursor-pointer text-left"
+                >
+                  <FileText size={14} className="text-blue-400 shrink-0" />
+                  <div>
+                    <div>MS Word 문서 (.docx)</div>
+                    <div className="text-[10px] font-normal text-zinc-400">워드 전용 양식으로 저장</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDownloadHwp}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-zinc-200 hover:bg-violet-600/20 hover:text-violet-300 transition cursor-pointer text-left"
+                >
+                  <FileText size={14} className="text-emerald-400 shrink-0" />
+                  <div>
+                    <div>아래아한글 문서 (.hwp)</div>
+                    <div className="text-[10px] font-normal text-zinc-400">한글과컴퓨터 전용 양식</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDownloadTxt}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-zinc-200 hover:bg-violet-600/20 hover:text-violet-300 transition cursor-pointer text-left"
+                >
+                  <FileText size={14} className="text-amber-400 shrink-0" />
+                  <div>
+                    <div>텍스트 파일 (.txt)</div>
+                    <div className="text-[10px] font-normal text-zinc-400">일반 텍스트로 저장</div>
+                  </div>
+                </button>
+
+                <div className="my-1 border-t border-zinc-800" />
+
+                <button
+                  type="button"
+                  onClick={handleDownloadHtml}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-zinc-200 hover:bg-violet-600/20 hover:text-violet-300 transition cursor-pointer text-left"
+                >
+                  <FileCode size={14} className="text-violet-400 shrink-0" />
+                  <div>
+                    <div>웹 HTML 문서 (.html)</div>
+                    <div className="text-[10px] font-normal text-zinc-400">웹 표준 소스로 저장</div>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button onClick={handlePreview} className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:bg-zinc-800 cursor-pointer">
+            <Eye size={13} /> 미리보기
           </button>
 
-          <button onClick={handlePreview} className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:bg-zinc-800">
-            <Eye size={13} /> 미리보기
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:bg-zinc-800 cursor-pointer"
+            title="페이지 새로고침"
+          >
+            <RefreshCw size={13} /> 새로고침
           </button>
 
           <button
             onClick={() => handleSaveClick(isDetailMode ? "completed" : undefined)}
             disabled={isSaving}
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 px-3.5 py-2 text-xs font-black text-zinc-200 transition-all hover:bg-zinc-700 disabled:opacity-60"
+            className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:bg-zinc-800 disabled:opacity-60 cursor-pointer"
           >
             {saveFeedback === "saved" ? <CheckCircle2 size={13} /> : <Save size={13} />}
             {isSaving ? "저장중..." : saveFeedback === "saved" ? "저장완료" : "원고 저장"}
@@ -2546,10 +2901,10 @@ export default function UniversalBlogEditor({
       </div>
 
       {/* 🌟 에디터 2.0 3열 서식 툴바 */}
-      <div className="shrink-0 border-b border-zinc-800 bg-[#0b0d12] flex flex-col">
+      <div className="sticky top-14 z-20 shrink-0 border-b border-zinc-800 bg-[#0b0d12] flex flex-col">
         
         {/* [1열]: 텍스트 기본 서식 및 폰트 */}
-        <div className="flex flex-nowrap items-center gap-1.5 px-4 py-2 border-b border-zinc-900/60 overflow-x-auto scrollbar-none select-none shrink-0">
+        <div className="relative z-50 flex h-14 flex-nowrap items-center gap-1.5 px-4 py-2 border-b border-zinc-800 bg-zinc-950/20 overflow-visible select-none shrink-0">
           <ToolbarButton
             onClick={() => editor?.chain().focus().undo().run()}
             disabled={!editor?.can().undo()}
@@ -2676,7 +3031,7 @@ export default function UniversalBlogEditor({
 
           {/* 글자색 */}
           <div className="flex shrink-0 items-center gap-1" title="글자 색상">
-            <span className="text-[10px] font-black text-zinc-500 mr-0.5">글자색</span>
+            <span className="text-xs font-bold text-zinc-200 mr-0.5">글자색</span>
             <input
               type="color"
               onChange={(e) => (editor?.chain().focus() as any).setColor(e.target.value).run()}
@@ -2685,7 +3040,7 @@ export default function UniversalBlogEditor({
             />
             <button
               onClick={() => (editor?.chain().focus() as any).unsetColor().run()}
-              className="p-1 rounded bg-zinc-900 border border-zinc-850 hover:border-zinc-700 text-zinc-400 hover:text-white transition"
+              className="p-1 rounded bg-zinc-900 border border-zinc-850 hover:border-zinc-700 text-zinc-300 hover:text-white transition"
               title="글자색 초기화"
             >
               <Eraser size={11} />
@@ -2694,7 +3049,7 @@ export default function UniversalBlogEditor({
 
           {/* 형광펜 색상 */}
           <div className="flex shrink-0 items-center gap-1" title="글자 형광펜(배경색)">
-            <span className="text-[10px] font-black text-zinc-500 mr-0.5">형광펜</span>
+            <span className="text-xs font-bold text-zinc-200 mr-0.5">형광펜</span>
             <input
               type="color"
               onChange={(e) => (editor?.chain().focus() as any).setHighlightColor(e.target.value).run()}
@@ -2703,7 +3058,7 @@ export default function UniversalBlogEditor({
             />
             <button
               onClick={() => (editor?.chain().focus() as any).unsetHighlightColor().run()}
-              className="p-1 rounded bg-zinc-900 border border-zinc-850 hover:border-zinc-700 text-zinc-400 hover:text-white transition"
+              className="p-1 rounded bg-zinc-900 border border-zinc-850 hover:border-zinc-700 text-zinc-300 hover:text-white transition"
               title="형광펜 초기화"
             >
               <Eraser size={11} />
@@ -2746,63 +3101,180 @@ export default function UniversalBlogEditor({
 
           <div className="mx-1.5 h-4 w-px bg-zinc-800" />
 
-          <ToolbarButton
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => editor?.chain().focus().setTextAlign("left").run()}
-            title="텍스트 왼쪽 정렬"
-          >
-            <AlignLeft size={15} />
-          </ToolbarButton>
+          {/* 1. 가로 정렬 드롭다운 (네이버 블로그 스타일 1개 통합 버튼) */}
+          <div ref={textAlignDropdownRef} className="relative inline-block">
+            <ToolbarButton
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setIsTextAlignDropdownOpen((prev) => !prev)}
+              active={
+                editor?.isActive({ textAlign: "left" }) ||
+                editor?.isActive({ textAlign: "center" }) ||
+                editor?.isActive({ textAlign: "right" }) ||
+                editor?.isActive({ textAlign: "justify" })
+              }
+              title="가로 정렬 선택 (왼쪽, 가운데, 오른쪽, 양쪽)"
+              className="px-2"
+            >
+              {editor?.isActive({ textAlign: "center" }) ? (
+                <AlignCenter size={15} className="text-emerald-400" />
+              ) : editor?.isActive({ textAlign: "right" }) ? (
+                <AlignRight size={15} className="text-emerald-400" />
+              ) : editor?.isActive({ textAlign: "justify" }) ? (
+                <AlignJustify size={15} className="text-emerald-400" />
+              ) : (
+                <AlignLeft size={15} className="text-zinc-200" />
+              )}
+              <ChevronDown size={10} className="text-zinc-400 ml-0.5" />
+            </ToolbarButton>
 
-          <ToolbarButton
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => editor?.chain().focus().setTextAlign("center").run()}
-            title="텍스트 가운데 정렬"
-          >
-            <AlignCenter size={15} />
-          </ToolbarButton>
+            {isTextAlignDropdownOpen && (
+              <div className="absolute left-0 top-full z-[100] mt-1.5 w-36 rounded-xl border border-zinc-800 bg-[#131722] p-1.5 shadow-2xl backdrop-blur-xl">
+                <button
+                  type="button"
+                  onClick={() => {
+                    editor?.chain().focus().setTextAlign("left").run();
+                    setIsTextAlignDropdownOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer text-left ${
+                    editor?.isActive({ textAlign: "left" })
+                      ? "bg-emerald-500/20 text-emerald-300"
+                      : "text-zinc-200 hover:bg-zinc-800/80 hover:text-white"
+                  }`}
+                >
+                  <AlignLeft size={14} className="shrink-0" />
+                  <span>왼쪽 정렬</span>
+                </button>
 
-          <ToolbarButton
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => editor?.chain().focus().setTextAlign("right").run()}
-            title="텍스트 오른쪽 정렬"
-          >
-            <AlignRight size={15} />
-          </ToolbarButton>
+                <button
+                  type="button"
+                  onClick={() => {
+                    editor?.chain().focus().setTextAlign("center").run();
+                    setIsTextAlignDropdownOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer text-left ${
+                    editor?.isActive({ textAlign: "center" })
+                      ? "bg-emerald-500/20 text-emerald-300"
+                      : "text-zinc-200 hover:bg-zinc-800/80 hover:text-white"
+                  }`}
+                >
+                  <AlignCenter size={14} className="shrink-0" />
+                  <span>가운데 정렬</span>
+                </button>
 
-          <div className="mx-1.5 h-4 w-px bg-zinc-800" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    editor?.chain().focus().setTextAlign("right").run();
+                    setIsTextAlignDropdownOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer text-left ${
+                    editor?.isActive({ textAlign: "right" })
+                      ? "bg-emerald-500/20 text-emerald-300"
+                      : "text-zinc-200 hover:bg-zinc-800/80 hover:text-white"
+                  }`}
+                >
+                  <AlignRight size={14} className="shrink-0" />
+                  <span>오른쪽 정렬</span>
+                </button>
 
-          {/* 표 세로 정렬 도구 (1열 병합) */}
-          <ToolbarButton
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => setCellVerticalAlign("top")}
-            active={isCellVerticalAlignActive("top")}
-            title="표 셀 세로 위 정렬"
-          >
-            <ArrowUp size={15} />
-          </ToolbarButton>
+                <button
+                  type="button"
+                  onClick={() => {
+                    editor?.chain().focus().setTextAlign("justify").run();
+                    setIsTextAlignDropdownOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer text-left ${
+                    editor?.isActive({ textAlign: "justify" })
+                      ? "bg-emerald-500/20 text-emerald-300"
+                      : "text-zinc-200 hover:bg-zinc-800/80 hover:text-white"
+                  }`}
+                >
+                  <AlignJustify size={14} className="shrink-0" />
+                  <span>양쪽 정렬</span>
+                </button>
+              </div>
+            )}
+          </div>
 
-          <ToolbarButton
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => setCellVerticalAlign("middle")}
-            active={isCellVerticalAlignActive("middle")}
-            title="표 셀 세로 가운데 정렬"
-          >
-            <ChevronsUpDown size={15} />
-          </ToolbarButton>
+          {/* 2. 세로 정렬 드롭다운 (네이버 블로그 스타일 1개 통합 버튼) */}
+          <div ref={verticalAlignDropdownRef} className="relative inline-block">
+            <ToolbarButton
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setIsVerticalAlignDropdownOpen((prev) => !prev)}
+              active={
+                isCellVerticalAlignActive("top") ||
+                isCellVerticalAlignActive("middle") ||
+                isCellVerticalAlignActive("bottom")
+              }
+              title="세로 정렬 선택 (위, 가운데, 아래)"
+              className="px-2"
+            >
+              {isCellVerticalAlignActive("top") ? (
+                <ArrowUp size={15} className="text-emerald-400" />
+              ) : isCellVerticalAlignActive("bottom") ? (
+                <ArrowDown size={15} className="text-emerald-400" />
+              ) : (
+                <ChevronsUpDown size={15} className="text-zinc-200" />
+              )}
+              <ChevronDown size={10} className="text-zinc-400 ml-0.5" />
+            </ToolbarButton>
 
-          <ToolbarButton
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => setCellVerticalAlign("bottom")}
-            active={isCellVerticalAlignActive("bottom")}
-            title="표 셀 세로 아래 정렬"
-          >
-            <ArrowDown size={15} />
-          </ToolbarButton>
+            {isVerticalAlignDropdownOpen && (
+              <div className="absolute left-0 top-full z-[100] mt-1.5 w-36 rounded-xl border border-zinc-800 bg-[#131722] p-1.5 shadow-2xl backdrop-blur-xl">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCellVerticalAlign("top");
+                    setIsVerticalAlignDropdownOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer text-left ${
+                    isCellVerticalAlignActive("top")
+                      ? "bg-emerald-500/20 text-emerald-300"
+                      : "text-zinc-200 hover:bg-zinc-800/80 hover:text-white"
+                  }`}
+                >
+                  <ArrowUp size={14} className="shrink-0" />
+                  <span>위쪽 정렬</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCellVerticalAlign("middle");
+                    setIsVerticalAlignDropdownOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer text-left ${
+                    isCellVerticalAlignActive("middle")
+                      ? "bg-emerald-500/20 text-emerald-300"
+                      : "text-zinc-200 hover:bg-zinc-800/80 hover:text-white"
+                  }`}
+                >
+                  <ChevronsUpDown size={14} className="shrink-0" />
+                  <span>가운데 정렬</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCellVerticalAlign("bottom");
+                    setIsVerticalAlignDropdownOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer text-left ${
+                    isCellVerticalAlignActive("bottom")
+                      ? "bg-emerald-500/20 text-emerald-300"
+                      : "text-zinc-200 hover:bg-zinc-800/80 hover:text-white"
+                  }`}
+                >
+                  <ArrowDown size={14} className="shrink-0" />
+                  <span>아래쪽 정렬</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* [2열]: 레이아웃 삽입, 유틸리티, 설정 모달들 */}
-        <div className="flex flex-nowrap items-center gap-1.5 px-4 py-2 border-b border-zinc-800 bg-zinc-950/20 overflow-visible relative z-30 select-none shrink-0">
+        <div className="relative z-40 flex flex-nowrap items-center gap-1.5 px-4 py-2 border-b border-zinc-800 bg-zinc-950/20 overflow-visible select-none shrink-0">
           <input type="file" accept="image/*" ref={fileInputRef} onChange={handleEditorImageUpload} className="hidden" />
 
           {/* 사진 업로드 버튼 */}
@@ -2821,6 +3293,30 @@ export default function UniversalBlogEditor({
             <ImageIcon size={14} /> URL이미지
           </ToolbarButton>
 
+          {/* 파일 첨부 버튼 (CreAibox 클라우드 DB 연동) */}
+          <input
+            type="file"
+            ref={attachmentInputRef}
+            onChange={handleEditorAttachmentUpload}
+            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.hwp,.hwpx,.csv,.zip,.rar,.7z"
+            multiple
+            className="hidden"
+          />
+
+          <ToolbarButton
+            onClick={() => attachmentInputRef.current?.click()}
+            disabled={isAttachmentUploading}
+            className="border border-zinc-800 bg-zinc-900/50 hover:bg-violet-500/10 hover:text-violet-300"
+            title="CreAibox 클라우드 DB 원고 보관함에 첨부 파일 업로드 및 본문 삽입"
+          >
+            {isAttachmentUploading ? (
+              <RefreshCw size={14} className="animate-spin text-violet-400" />
+            ) : (
+              <Paperclip size={14} className="text-violet-400" />
+            )}
+            <span>{isAttachmentUploading ? "첨부중..." : "파일 첨부"}</span>
+          </ToolbarButton>
+
           <div className="mx-1 h-4 w-px bg-zinc-800" />
 
           {/* 🌟 인용구 & 말풍선 보강 모듈 드롭다운 */}
@@ -2829,11 +3325,10 @@ export default function UniversalBlogEditor({
               onClick={() => setIsQuoteDropdownOpen((prev) => !prev)}
               active={editor?.isActive("blockquote") || isQuoteDropdownOpen}
               title="인용구 및 말풍선 박스 모듈 삽입"
-              className="border border-violet-500/40 bg-gradient-to-r from-violet-950/60 to-indigo-950/60 text-violet-200 hover:border-violet-400 hover:text-white px-3 py-1.5 shadow-[0_0_12px_rgba(139,92,246,0.2)]"
             >
-              <Quote size={14} className="text-violet-400" />
-              <span className="text-xs font-black text-violet-300">인용구 & 말풍선</span>
-              <ChevronDown size={12} className="text-violet-400" />
+              <Quote size={14} />
+              <span>인용구 & 말풍선</span>
+              <ChevronDown size={12} />
             </ToolbarButton>
 
             {isQuoteDropdownOpen && (
@@ -3008,11 +3503,10 @@ export default function UniversalBlogEditor({
               onClick={() => setIsStickerDropdownOpen((prev) => !prev)}
               active={isStickerDropdownOpen}
               title="스티커 및 이모티콘 뱃지 삽입"
-              className="border border-emerald-500/40 bg-gradient-to-r from-emerald-950/60 to-teal-950/60 text-emerald-200 hover:border-emerald-400 hover:text-white px-3 py-1.5 shadow-[0_0_12px_rgba(16,185,129,0.2)]"
             >
-              <Smile size={14} className="text-emerald-400" />
-              <span className="text-xs font-black text-emerald-300">스티커</span>
-              <ChevronDown size={12} className="text-emerald-400" />
+              <Smile size={14} />
+              <span>스티커</span>
+              <ChevronDown size={12} />
             </ToolbarButton>
 
             {isStickerDropdownOpen && (
@@ -3124,13 +3618,13 @@ export default function UniversalBlogEditor({
                 }
               }}
               defaultValue="none"
-              className="h-9 rounded-lg border border-zinc-800 bg-black/40 px-2.5 text-xs text-white outline-none focus:border-violet-500 font-bold text-center"
+              className="h-9 rounded-lg border-0 bg-transparent px-2 text-xs font-bold text-zinc-300 hover:bg-zinc-800/60 hover:text-white outline-none cursor-pointer transition text-center"
               title="영문 대소문자 변환"
             >
-              <option value="none" disabled>Aa 대소문자 변환</option>
-              <option value="upper">UPPERCASE (대문자)</option>
-              <option value="lower">lowercase (소문자)</option>
-              <option value="capitalize">Capitalize (첫글자 대문자)</option>
+              <option value="none" disabled className="bg-[#131722] text-zinc-400">Aa 대소문자 변환</option>
+              <option value="upper" className="bg-[#131722] text-zinc-200">UPPERCASE (대문자)</option>
+              <option value="lower" className="bg-[#131722] text-zinc-200">lowercase (소문자)</option>
+              <option value="capitalize" className="bg-[#131722] text-zinc-200">Capitalize (첫글자 대문자)</option>
             </select>
           </div>
 
@@ -3156,11 +3650,10 @@ export default function UniversalBlogEditor({
               onClick={() => setIsDividerDropdownOpen((prev) => !prev)}
               active={isDividerDropdownOpen}
               title="네이버 스타일 다양한 구분선 삽입"
-              className="border border-sky-500/40 bg-sky-950/20 text-sky-200 hover:border-sky-400 hover:text-white px-2.5 py-1.5"
             >
-              <Minus size={14} className="text-sky-400" />
-              <span className="text-xs font-bold">구분선</span>
-              <ChevronDown size={12} className="text-sky-400" />
+              <Minus size={14} />
+              <span>구분선</span>
+              <ChevronDown size={12} />
             </ToolbarButton>
 
             {isDividerDropdownOpen && (
@@ -3297,7 +3790,7 @@ export default function UniversalBlogEditor({
         </div>
 
         {/* [3열]: AI 자동 수정보완 커스텀 커맨드 툴바 (프리미엄 통일 디자인) */}
-        <div className="relative z-40 flex items-center justify-between gap-3 pl-0 pr-4 h-12 bg-gradient-to-r from-[#0b0d18] via-[#101326] to-[#0b0d18] border-y border-violet-500/25 shadow-[inset_0_1px_0_rgba(139,92,246,0.18)] select-none shrink-0 overflow-visible">
+        <div className="relative z-30 flex items-center justify-between gap-3 pl-0 pr-4 h-12 bg-gradient-to-r from-[#0b0d18] via-[#101326] to-[#0b0d18] border-b border-zinc-800 select-none shrink-0 overflow-visible">
           {/* 왼쪽 AI 그룹 */}
           <div className="flex flex-nowrap items-center gap-2 overflow-visible flex-1 min-w-0 h-full">
             {/* 맨 왼쪽 상하까지 통으로 막힌 AI 자동 수정보완 섹션 뱃지 타이틀 블록 */}
@@ -3313,7 +3806,7 @@ export default function UniversalBlogEditor({
                 onClick={() => setIsContentDropdownOpen((prev) => !prev)}
                 disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch || isSpinRecreating}
                 title="AI 내용 보강 (분량 늘리기)"
-                className="h-8 px-3 rounded-xl border border-violet-500/25 bg-violet-950/25 text-violet-200 text-[12px] font-bold tracking-tight hover:border-violet-400/60 hover:bg-violet-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                className="h-8 px-3 rounded-lg border border-violet-500/25 bg-violet-950/25 text-violet-200 text-[12px] font-bold tracking-tight hover:border-violet-400/60 hover:bg-violet-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
               >
                 {isEnhancingContent ? (
                   <RefreshCw size={13} className="animate-spin text-violet-400" />
@@ -3323,7 +3816,7 @@ export default function UniversalBlogEditor({
                 <span>내용 보강</span>
               </button>
               {isContentDropdownOpen && (
-                <div className="absolute left-0 top-full mt-1.5 w-44 rounded-2xl border border-violet-500/40 bg-[#0e101d] py-2 shadow-[0_16px_40px_rgba(0,0,0,0.95)] z-[100]">
+                <div className="absolute left-0 top-full mt-1.5 w-44 rounded-xl border border-violet-500/40 bg-[#0e101d] py-2 shadow-[0_16px_40px_rgba(0,0,0,0.95)] z-[100]">
                   <div className="px-3 py-1 text-[9px] font-black text-violet-400/80 uppercase tracking-wider">
                     내용 분량 보강
                   </div>
@@ -3350,7 +3843,7 @@ export default function UniversalBlogEditor({
               onClick={() => handleEnhanceContent("recreate_spin")}
               disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch || isSpinRecreating}
               title="Spin-Rewriting Engine으로 원문 글 재창조"
-              className="h-8 px-3 rounded-xl border border-violet-500/25 bg-violet-950/25 text-violet-200 text-[12px] font-bold tracking-tight hover:border-violet-400/60 hover:bg-violet-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              className="h-8 px-3 rounded-lg border border-violet-500/25 bg-violet-950/25 text-violet-200 text-[12px] font-bold tracking-tight hover:border-violet-400/60 hover:bg-violet-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
             >
               {isSpinRecreating ? (
                 <RefreshCw size={13} className="animate-spin text-emerald-400" />
@@ -3367,7 +3860,7 @@ export default function UniversalBlogEditor({
                 onClick={() => setIsTocDropdownOpen((prev) => !prev)}
                 disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch || isSpinRecreating}
                 title="AI 목차 보강 (새 소주제 추가)"
-                className="h-8 px-3 rounded-xl border border-violet-500/25 bg-violet-950/25 text-violet-200 text-[12px] font-bold tracking-tight hover:border-violet-400/60 hover:bg-violet-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                className="h-8 px-3 rounded-lg border border-violet-500/25 bg-violet-950/25 text-violet-200 text-[12px] font-bold tracking-tight hover:border-violet-400/60 hover:bg-violet-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
               >
                 {isEnhancingToc ? (
                   <RefreshCw size={13} className="animate-spin text-violet-400" />
@@ -3445,7 +3938,7 @@ export default function UniversalBlogEditor({
               onClick={() => handleEnhanceContent("polish")}
               disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch || isSpinRecreating}
               title="AI 글 다듬기 (문맥 및 표현 다듬기)"
-              className="h-8 px-3 rounded-xl border border-violet-500/25 bg-violet-950/25 text-violet-200 text-[12px] font-bold tracking-tight hover:border-violet-400/60 hover:bg-violet-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              className="h-8 px-3 rounded-lg border border-violet-500/25 bg-violet-950/25 text-violet-200 text-[12px] font-bold tracking-tight hover:border-violet-400/60 hover:bg-violet-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
             >
               {isPolishing ? (
                 <RefreshCw size={13} className="animate-spin text-violet-400" />
@@ -3462,7 +3955,7 @@ export default function UniversalBlogEditor({
                 onClick={() => setIsPostTypeDropdownOpen((prev) => !prev)}
                 disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch || isSpinRecreating}
                 title="AI 글 타입 변경"
-                className="h-8 px-3 rounded-xl border border-violet-500/25 bg-violet-950/25 text-violet-200 text-[12px] font-bold tracking-tight hover:border-violet-400/60 hover:bg-violet-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                className="h-8 px-3 rounded-lg border border-violet-500/25 bg-violet-950/25 text-violet-200 text-[12px] font-bold tracking-tight hover:border-violet-400/60 hover:bg-violet-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
               >
                 {isChangingPostType ? (
                   <RefreshCw size={13} className="animate-spin text-violet-400" />
@@ -3512,7 +4005,7 @@ export default function UniversalBlogEditor({
               onClick={() => handleEnhanceContent("apply_google_search")}
               disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch || isSpinRecreating}
               title="Google Search 실시간 웹 검색 정보 반영"
-              className="h-8 px-3 rounded-xl border border-violet-500/25 bg-violet-950/25 text-violet-200 text-[12px] font-bold tracking-tight hover:border-violet-400/60 hover:bg-violet-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              className="h-8 px-3 rounded-lg border border-violet-500/25 bg-violet-950/25 text-violet-200 text-[12px] font-bold tracking-tight hover:border-violet-400/60 hover:bg-violet-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
             >
               {isApplyingSearch ? (
                 <RefreshCw size={13} className="animate-spin text-emerald-400" />
@@ -3529,7 +4022,7 @@ export default function UniversalBlogEditor({
               type="button"
               onClick={() => setIsEditorialModalOpen(true)}
               title="에디토리얼 설정"
-              className="h-8 px-3 rounded-xl border border-indigo-500/25 bg-indigo-950/20 text-indigo-200 text-[12px] font-bold tracking-tight hover:border-indigo-400/50 hover:bg-indigo-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              className="h-8 px-3 rounded-lg border border-indigo-500/25 bg-indigo-950/20 text-indigo-200 text-[12px] font-bold tracking-tight hover:border-indigo-400/50 hover:bg-indigo-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
             >
               <FileText size={13} className="text-indigo-400" />
               <span>에디토리얼 설정</span>
@@ -3540,7 +4033,7 @@ export default function UniversalBlogEditor({
               type="button"
               onClick={() => setIsKnowledgePersonaModalOpen(true)}
               title="페르소나 및 참조 지식 설정"
-              className="h-8 px-3 rounded-xl border border-indigo-500/25 bg-indigo-950/20 text-indigo-200 text-[12px] font-bold tracking-tight hover:border-indigo-400/50 hover:bg-indigo-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              className="h-8 px-3 rounded-lg border border-indigo-500/25 bg-indigo-950/20 text-indigo-200 text-[12px] font-bold tracking-tight hover:border-indigo-400/50 hover:bg-indigo-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
             >
               <Brain size={13} className={selectedPersonaId || selectedKnowledgeId ? "text-violet-400 animate-pulse" : "text-indigo-400"} />
               <span>지식 & 페르소나 설정</span>
@@ -3554,23 +4047,10 @@ export default function UniversalBlogEditor({
               type="button"
               onClick={() => setIsInternalLinkModalOpen(true)}
               title="본문에 내부 블로그 글 링크 카드 삽입"
-              className="h-8 px-3 rounded-xl border border-indigo-500/25 bg-indigo-950/20 text-indigo-200 text-[12px] font-bold tracking-tight hover:border-indigo-400/50 hover:bg-indigo-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              className="h-8 px-3 rounded-lg border border-indigo-500/25 bg-indigo-950/20 text-indigo-200 text-[12px] font-bold tracking-tight hover:border-indigo-400/50 hover:bg-indigo-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
             >
               <Link2 size={13} className="text-indigo-400" />
               <span>내부 링크 콘텐츠 추가</span>
-            </button>
-          </div>
-
-          {/* 우측 끝 새로고침 버튼 */}
-          <div className="flex shrink-0 items-center pl-3 border-l border-violet-500/25">
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="h-8 px-3 rounded-xl border border-zinc-800 bg-zinc-900/90 text-zinc-300 hover:border-zinc-700 hover:bg-zinc-800 hover:text-white transition-all text-[11px] font-bold flex items-center gap-1.5 cursor-pointer shadow-sm whitespace-nowrap"
-              title="페이지 새로고침"
-            >
-              <RefreshCw size={11} className="text-violet-400" />
-              <span>새로고침</span>
             </button>
           </div>
         </div>
@@ -4275,6 +4755,34 @@ export default function UniversalBlogEditor({
           width: 120px;
           height: 120px;
           object-fit: contain;
+        }
+
+        .ProseMirror .cb-attachment-row {
+          display: inline-flex !important;
+          align-items: center !important;
+          gap: 8px !important;
+          margin: 6px 0 !important;
+          padding: 6px 12px !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          background: #131722 !important;
+          border-radius: 8px !important;
+          color: #f4f4f5 !important;
+          font-size: 13px !important;
+          line-height: 1.4 !important;
+        }
+
+        .ProseMirror .cb-attachment-row a {
+          display: inline-flex !important;
+          align-items: center !important;
+          gap: 3px !important;
+          padding: 2px 8px !important;
+          font-size: 11px !important;
+          font-weight: 700 !important;
+          color: #ffffff !important;
+          background: #7c3aed !important;
+          border-radius: 4px !important;
+          text-decoration: none !important;
+          margin-left: 6px !important;
         }
 
         .ProseMirror pre {

@@ -17,12 +17,12 @@ export default function StudioLayout({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
-    <div className="flex flex-col h-screen overflow-x-auto bg-zinc-50 dark:bg-[#06080d] text-zinc-800 dark:text-zinc-100 transition-colors duration-300">
+    <div className="flex flex-col h-screen overflow-hidden bg-zinc-50 dark:bg-[#06080d] text-zinc-800 dark:text-zinc-100 transition-colors duration-300">
       {/* 최상단 메인 헤더 */}
       <Header />
 
       {/* 메인 헤더 아래 스튜디오 작업 영역 */}
-      <div className="flex flex-1 min-h-0 pt-16">
+      <div className="flex flex-1 min-h-0">
         {/* Sidebar */}
         <Sidebar
           isCollapsed={isCollapsed}

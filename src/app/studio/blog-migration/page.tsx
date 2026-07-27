@@ -210,11 +210,11 @@ export default function ExternalBlogMigrationPage() {
                 onChange={(e) => setImportCount(e.target.value)}
                 className="rounded-2xl bg-slate-950 border border-slate-800 px-4 py-4 text-xs font-bold text-slate-200 focus:border-purple-500 focus:outline-none cursor-pointer"
               >
-                <option value="10">최근 10개 원고 수집</option>
-                <option value="30">최근 30개 원고 수집</option>
+                <option value="all">🚀 블로그 전체 글 수집 (120개 통째 이관)</option>
+                <option value="120">120개 원고 전량 수집</option>
                 <option value="50">최근 50개 원고 수집</option>
-                <option value="100">최근 100개 수집</option>
-                <option value="all">🚀 블로그 전체 글 수집</option>
+                <option value="30">최근 30개 원고 수집</option>
+                <option value="10">최근 10개 원고 수집</option>
               </select>
 
               <button

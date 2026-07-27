@@ -12,6 +12,19 @@ interface PostDetailPageProps {
   params: Promise<{ slug: string }>;
 }
 
+function looksLikeHtml(content: string) {
+  return /<\/?(p|h[1-6]|div|table|blockquote|ul|ol|li|img|iframe|hr|br|strong|em|a)\b/i.test(content);
+}
+
+function sanitizePublishedHtml(content: string) {
+  return content
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
+    .replace(/\s+on\w+=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/\s+(href|src)=["']\s*javascript:[^"']*["']/gi, "")
+    .replace(/\s+srcdoc=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+}
+
 const blogMarkdownComponents: Components = {
   h1: ({ children }) => (
     <h1 className="mb-6 border-b border-zinc-800 pb-4 text-2xl font-extrabold tracking-tight text-white">
@@ -44,7 +57,7 @@ const blogMarkdownComponents: Components = {
     </ol>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="my-6 border-l-4 border-emerald-500 bg-emerald-950/40 p-4 text-zinc-200 rounded-r-2xl italic">
+    <blockquote className="my-6 border-l-4 border-emerald-500 bg-emerald-950/30 p-4 text-zinc-300 rounded-r-2xl italic">
       {children}
     </blockquote>
   ),
@@ -85,15 +98,18 @@ export default async function CommufillPostDetailPage(props: PostDetailPageProps
     notFound();
   }
 
-  // Real-time DB view count increment (+1)
+  // Increment real-time DB view count (+1)
   const currentViews = Number(post.views || 0);
   void supabase
     .from("writing_creaibox_posts")
     .update({ views: currentViews + 1 })
     .eq("id", post.id);
 
+  const rawContent = post.content || "";
+  const isHtml = looksLikeHtml(rawContent);
+
   return (
-    <div className="max-w-4xl w-full mx-auto px-6 py-12 text-zinc-100">
+    <div className="max-w-4xl w-full mx-auto px-6 py-12">
       <div className="mb-8">
         <Link
           href="/blog"
@@ -115,10 +131,18 @@ export default async function CommufillPostDetailPage(props: PostDetailPageProps
           </h1>
         </header>
 
-        <div className="prose prose-invert max-w-none">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={blogMarkdownComponents}>
-            {post.content || ""}
-          </ReactMarkdown>
+        <div className="prose prose-invert max-w-none text-zinc-200 leading-relaxed [&_img]:rounded-2xl [&_img]:my-6 [&_img]:shadow-md [&_img]:max-w-full [&_a]:text-emerald-400 [&_a]:underline font-medium">
+          {isHtml ? (
+            <div
+              dangerouslySetInnerHTML={{
+                __html: sanitizePublishedHtml(rawContent),
+              }}
+            />
+          ) : (
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={blogMarkdownComponents}>
+              {rawContent}
+            </ReactMarkdown>
+          )}
         </div>
       </article>
     </div>

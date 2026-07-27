@@ -591,15 +591,15 @@ export default function CustomClientSiteStudioPage() {
   const [heroSlogan, setHeroSlogan] = useState<string>("2026년 자율 AI 에이전트와 웹 서비스의 대격변");
   const [logoUrl, setLogoUrl] = useState<string>("");
 
-  // Dynamic Custom GNB Menus State
+  // Dynamic Custom GNB Menus State (Default matches 소통과 채움 GNB)
   const [customMenus, setCustomMenus] = useState<CustomMenuItem[]>([
     { id: "1", label: "홈", url: "/" },
-    { id: "2", label: "AI & 테크", url: "#articles" },
-    { id: "3", label: "디자인 & UI/UX", url: "#articles" },
-    { id: "4", label: "마케팅 & 인사이트", url: "#articles" },
-    { id: "5", label: "인기 랭킹", url: "#ranking" },
-    { id: "6", label: "Blog (블로그)", url: "#articles", isRightAligned: true },
-    { id: "7", label: "Contact & 구독하기", url: "#contact", isRightAligned: true },
+    { id: "2", label: "회사소개", url: "/about" },
+    { id: "3", label: "사업영역", url: "/#business" },
+    { id: "4", label: "행사렌탈", url: "/#rental" },
+    { id: "5", label: "실적갤러리", url: "/#portfolio" },
+    { id: "6", label: "블로그", url: "/blog" },
+    { id: "7", label: "견적문의", url: "/contact", isRightAligned: true },
   ]);
 
   // PG Payment Gateway State
@@ -757,6 +757,16 @@ export default function CustomClientSiteStudioPage() {
         .eq("id", user.id);
 
       if (error) throw error;
+
+      // Broadcast update to shared server cache
+      try {
+        await fetch("/api/clients/config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ brandId: "sotongcheum", config: newCfg }),
+        });
+      } catch (e) {}
+
       setSaveSuccessMsg("✅ 커스텀 사이트 설정이 성공적으로 저장되었습니다! 홈페이지에 실시간 반영됩니다.");
     } catch (err: unknown) {
       console.error(err);

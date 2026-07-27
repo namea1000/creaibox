@@ -87,30 +87,32 @@ export default async function CommufillBlogPage() {
               key={post.id}
               className="group flex flex-col rounded-3xl border border-zinc-800 bg-zinc-900/80 p-6 shadow-sm hover:shadow-lg hover:border-emerald-500/60 transition-all duration-300"
             >
-              <div className="space-y-3 flex-1">
-                <div className="flex items-center gap-2 text-xs font-bold text-zinc-500">
-                  <CalendarDays size={14} className="text-emerald-400" />
-                  <span>{formatDate(post.created_at)}</span>
+              <div className="flex-1 flex flex-col justify-between space-y-3">
+                <div className="space-y-3 flex-1">
+                  <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors line-clamp-2 leading-snug">
+                    <Link href={`/blog/${post.slug}`}>
+                      {post.title}
+                    </Link>
+                  </h3>
+
+                  <p className="text-xs font-medium text-zinc-400 leading-relaxed line-clamp-3">
+                    {buildExcerpt(post)}
+                  </p>
                 </div>
 
-                <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors line-clamp-2 leading-snug">
-                  <Link href={`/blog/${post.slug}`}>
-                    {post.title}
+                <div className="pt-6 mt-6 border-t border-zinc-800/80 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-500">
+                    <CalendarDays size={14} className="text-emerald-400" />
+                    <span>{formatDate(post.created_at)}</span>
+                  </div>
+
+                  <Link
+                    href={`/blog/${post.slug}`}
+                    className="inline-flex items-center gap-1.5 text-xs font-extrabold text-emerald-400 group-hover:text-emerald-300 hover:underline"
+                  >
+                    글 더보기 <ArrowRight size={14} />
                   </Link>
-                </h3>
-
-                <p className="text-xs font-medium text-zinc-400 leading-relaxed line-clamp-3">
-                  {buildExcerpt(post)}
-                </p>
-              </div>
-
-              <div className="pt-6 mt-6 border-t border-zinc-800/80 flex items-center justify-between">
-                <Link
-                  href={`/blog/${post.slug}`}
-                  className="inline-flex items-center gap-1.5 text-xs font-extrabold text-emerald-400 group-hover:text-emerald-300 hover:underline"
-                >
-                  포스팅 읽기 <ArrowRight size={14} />
-                </Link>
+                </div>
               </div>
             </article>
           ))}

@@ -3,7 +3,18 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
-import { ArrowLeft, Check, ChevronDown, Globe, PanelLeftClose, PanelLeftOpen, RotateCcw, Search, Send } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, Globe, PanelLeftClose, PanelLeftOpen, RotateCcw, Search, Send, Trash2 } from "lucide-react";
+
+function formatShortDateTime(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const mins = String(date.getMinutes()).padStart(2, "0");
+  return `${month}.${day} ${hours}:${mins}`;
+}
 
 function getManuscriptDomainLabel(
   manuscript: StudioManuscriptRecord,
@@ -520,6 +531,18 @@ export default function CreaiboxManuscriptDetailPage() {
   const { data: queryList = [], refetch: refetchList } = useCreaiboxManuscriptsQuery();
 
   const [cachedList, setCachedList] = useState<StudioManuscriptRecord[]>(() => readCachedList());
+  const [isFocusMode, setIsFocusMode] = useState(false);
+
+  useEffect(() => {
+    if (isFocusMode) {
+      document.body.classList.add("editor-focus-mode");
+    } else {
+      document.body.classList.remove("editor-focus-mode");
+    }
+    return () => {
+      document.body.classList.remove("editor-focus-mode");
+    };
+  }, [isFocusMode]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sidebarTab, setSidebarTab] = useState<"domain" | "search">("domain");
   const [sidebarDomainFilter, setSidebarDomainFilter] = useState("all");
@@ -789,7 +812,6 @@ export default function CreaiboxManuscriptDetailPage() {
   useEffect(() => {
     queueMicrotask(() => {
       setIsMounted(true);
-      setIsListSidebarCollapsed(true);
     });
   }, [searchParams]);
 
@@ -1874,6 +1896,44 @@ export default function CreaiboxManuscriptDetailPage() {
     [queryClient, hasLocalEdits, handleSave]
   );
 
+  const handleDeleteManuscript = useCallback(
+    async (targetItem: StudioManuscriptRecord) => {
+      const confirmDelete = window.confirm(`"${targetItem.title || "원고"}" 원고를 영구 삭제하시겠습니까?`);
+      if (!confirmDelete) return;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        window.alert("로그인을 하셔야 이용하실 수 있습니다.");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("writing_creaibox_posts")
+        .delete()
+        .eq("id", targetItem.id)
+        .eq("user_id", user.id);
+
+      if (error) {
+        window.alert(`삭제 실패: ${error.message}`);
+        return;
+      }
+
+      const nextList = sidebarList.filter((item) => item.id !== targetItem.id);
+      setCachedList(nextList);
+      writeCachedList(nextList);
+      queryClient.setQueryData(creaiboxManuscriptKeys.list, nextList);
+
+      if (targetItem.id === data?.id) {
+        if (nextList.length > 0) {
+          handleOpenManuscript(nextList[0]);
+        } else {
+          router.push("/studio/writing/creaibox/list");
+        }
+      }
+    },
+    [data?.id, handleOpenManuscript, queryClient, router, sidebarList, supabase]
+  );
+
   const navigateByOffset = useCallback(
     (offset: number) => {
       if (!isMounted || filteredManuscripts.length === 0) return;
@@ -2344,207 +2404,230 @@ export default function CreaiboxManuscriptDetailPage() {
 
   return (
     <div className="h-full w-full overflow-hidden bg-[#0a0d12] text-white">
-      <div 
-        className={`grid h-full w-full transition-all duration-300 ${
-          isListSidebarCollapsed 
-            ? "grid-cols-[0px_360px_minmax(0,1fr)_420px]" 
-            : "grid-cols-[360px_360px_minmax(0,1fr)_420px]"
-        }`}
-      >
+      <div className="flex h-full w-full overflow-hidden">
 
         {/* 왼쪽 글 목록 */}
-        <aside 
-          className={`h-full overflow-hidden border-r border-violet-500/20 bg-[#0b0f15] text-[13px] transition-all duration-300 ${
-            isListSidebarCollapsed 
-              ? "w-0 border-r-0" 
-              : "w-[360px]"
-          }`}
-        >
-          <div className="flex h-full w-[360px] flex-col overflow-hidden">
-            {/* 목록으로 돌아가기 Header (옆 에디터 "Creaibox Tiptap Blog Editor" 제목 있는 라인에 맞춰 라인을 쳐 주고, 박스 없이 텍스트만) */}
-            <div className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-800 bg-[#0c1017] px-4">
-              <button
-                type="button"
-                onClick={() => {
-                  if (hasLocalEdits) {
-                    void handleSave();
-                  }
-                  router.push("/studio/writing/creaibox/list");
-                }}
-                className="flex items-center gap-2 text-[13px] font-black text-white/80 transition hover:text-white cursor-pointer"
-              >
-                <ArrowLeft className="h-4 w-4 text-violet-300" />
-                목록으로 돌아가기
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsListSidebarCollapsed(true)}
-                className="flex h-8.5 items-center gap-1.5 px-3 rounded-xl border border-violet-500/40 bg-violet-950/30 text-violet-300 hover:bg-violet-600 hover:border-violet-400 hover:text-white transition-all shadow-sm cursor-pointer"
-                title="원고 목록 접기"
-              >
-                <PanelLeftClose size={16} />
-                <span className="text-xs font-black tracking-wide">목록 접기</span>
-              </button>
-            </div>
-
-            {/* 원고 도메인 / 원고 검색 2탭 분리 컨트롤 */}
-            <div className="p-4 pb-0 shrink-0">
-              <div className="flex rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-1 mb-3">
+        {!isFocusMode && !isListSidebarCollapsed && (
+          <aside className="h-full w-[360px] shrink-0 overflow-hidden border-r border-violet-500/20 bg-[#0b0f15] text-[13px] transition-all duration-300">
+            <div className="flex h-full w-[360px] flex-col overflow-hidden">
+              {/* 목록으로 돌아가기 Header (옆 에디터 "Creaibox Tiptap Blog Editor" 제목 있는 라인에 맞춰 라인을 쳐 주고, 박스 없이 텍스트만) */}
+              <div className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-800 bg-gradient-to-r from-[#131722] via-[#141926] to-[#10141f] px-4">
                 <button
                   type="button"
-                  onClick={() => setSidebarTab("domain")}
-                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[12px] font-bold transition cursor-pointer ${
-                    sidebarTab === "domain"
-                      ? "bg-violet-600 text-white shadow-md shadow-violet-950/30"
-                      : "text-zinc-400 hover:text-white"
-                  }`}
+                  onClick={() => {
+                    if (hasLocalEdits) {
+                      void handleSave();
+                    }
+                    router.push("/studio/writing/creaibox/list");
+                  }}
+                  className="flex items-center gap-2 text-[13px] font-black text-white/80 transition hover:text-white cursor-pointer"
                 >
-                  <Globe className="h-3.5 w-3.5" />
-                  도메인
+                  <ArrowLeft className="h-4 w-4 text-violet-300" />
+                  목록으로 돌아가기
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSidebarTab("search")}
-                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[12px] font-bold transition cursor-pointer ${
-                    sidebarTab === "search"
-                      ? "bg-violet-600 text-white shadow-md shadow-violet-950/30"
-                      : "text-zinc-400 hover:text-white"
-                  }`}
+                  onClick={() => setIsListSidebarCollapsed(true)}
+                  className="flex h-8.5 items-center gap-1.5 px-3 rounded-xl border border-violet-500/40 bg-violet-950/30 text-violet-300 hover:bg-violet-600 hover:border-violet-400 hover:text-white transition-all shadow-sm cursor-pointer"
+                  title="원고 목록 접기"
                 >
-                  <Search className="h-3.5 w-3.5" />
-                  원고 검색
+                  <PanelLeftClose size={16} />
+                  <span className="text-xs font-black tracking-wide">목록 접기</span>
                 </button>
               </div>
 
-              {/* 탭 1: 도메인 선택 드롭다운 */}
-              {sidebarTab === "domain" && (
-                <div className="relative mb-3">
-                  <Globe className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300/70" />
-                  <select
-                    value={sidebarDomainFilter}
-                    onChange={(event) => setSidebarDomainFilter(event.target.value)}
-                    className="w-full rounded-xl border border-zinc-800/80 bg-zinc-950/40 py-2.5 pl-10 pr-8 text-[13px] font-semibold text-white outline-none transition focus:border-violet-500/50 appearance-none cursor-pointer"
+              {/* 원고 도메인 / 원고 검색 2탭 분리 컨트롤 */}
+              <div className="p-4 pb-0 shrink-0">
+                <div className="flex rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-1 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setSidebarTab("domain")}
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[12px] font-bold transition cursor-pointer ${
+                      sidebarTab === "domain"
+                        ? "bg-violet-600 text-white shadow-md shadow-violet-950/30"
+                        : "text-zinc-400 hover:text-white"
+                    }`}
                   >
-                    <option value="all" className="bg-[#0b0f15] text-white">📑 전체 글목록 보기</option>
-                    {sidebarDomainOptions.map((domain) => (
-                      <option key={domain} value={domain} className="bg-[#0b0f15] text-white">
-                        {domain}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                    <Globe className="h-3.5 w-3.5" />
+                    도메인
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSidebarTab("search")}
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[12px] font-bold transition cursor-pointer ${
+                      sidebarTab === "search"
+                        ? "bg-violet-600 text-white shadow-md shadow-violet-950/30"
+                        : "text-zinc-400 hover:text-white"
+                    }`}
+                  >
+                    <Search className="h-3.5 w-3.5" />
+                    원고 검색
+                  </button>
                 </div>
-              )}
 
-              {/* 탭 2: 원고 검색 입력창 */}
-              {sidebarTab === "search" && (
-                <div className="relative mb-3">
-                  <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300/60" />
-                  <input
-                    value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
-                    placeholder="원고 제목 또는 검색 키워드 입력..."
-                    className="w-full rounded-xl border border-zinc-800/80 bg-zinc-950/30 py-2.5 pl-10 pr-4 text-[13px] font-medium text-white outline-none transition placeholder:text-white/30 focus:border-violet-500/50"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* 스크롤 가능한 원고 리스트 본문 */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 pt-0">
-              <div ref={manuscriptListRef} className="space-y-2">
-                {filteredManuscripts.map((manuscript) => {
-                  const active = manuscript.id === data.id;
-                  const routeId = String(manuscript.displayId ?? manuscript.id);
-
-                  return (
-                    <button
-                      key={manuscript.id}
-                      data-manuscript-id={routeId}
-                      onClick={() => handleOpenManuscript(manuscript)}
-                      className={`w-full rounded-xl border p-3.5 text-left transition ${active
-                        ? "border-violet-500/60 bg-violet-950/15"
-                        : "border-zinc-800/80 bg-zinc-950/30 hover:border-violet-500/35 hover:bg-zinc-900/40"
-                        }`}
+                {/* 탭 1: 도메인 선택 드롭다운 */}
+                {sidebarTab === "domain" && (
+                  <div className="relative mb-3">
+                    <Globe className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300/70" />
+                    <select
+                      value={sidebarDomainFilter}
+                      onChange={(event) => setSidebarDomainFilter(event.target.value)}
+                      className="w-full rounded-xl border border-zinc-800/80 bg-zinc-950/40 py-2.5 pl-10 pr-8 text-[13px] font-semibold text-white outline-none transition focus:border-violet-500/50 appearance-none cursor-pointer"
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className={`line-clamp-2 text-[13px] font-black leading-tight ${active ? "text-violet-300" : "text-zinc-100"}`}>
-                          {manuscript.title}
-                        </div>
-                        {active && <Check className="mt-0.5 h-3 w-3 shrink-0 text-violet-300" />}
+                      <option value="all" className="bg-[#0b0f15] text-white">📑 전체 글목록 보기</option>
+                      {sidebarDomainOptions.map((domain) => (
+                        <option key={domain} value={domain} className="bg-[#0b0f15] text-white">
+                          {domain}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                  </div>
+                )}
+
+                {/* 탭 2: 원고 검색 입력창 */}
+                {sidebarTab === "search" && (
+                  <div className="relative mb-3">
+                    <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300/60" />
+                    <input
+                      value={searchTerm}
+                      onChange={(event) => setSearchTerm(event.target.value)}
+                      placeholder="원고 제목 또는 검색 키워드 입력..."
+                      className="w-full rounded-xl border border-zinc-800/80 bg-zinc-950/30 py-2.5 pl-10 pr-4 text-[13px] font-medium text-white outline-none transition placeholder:text-white/30 focus:border-violet-500/50"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* 스크롤 가능한 원고 리스트 본문 */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-4 pt-0">
+                <div ref={manuscriptListRef} className="space-y-2">
+                  {filteredManuscripts.map((manuscript) => {
+                    const active = manuscript.id === data.id;
+                    const routeId = String(manuscript.displayId ?? manuscript.id);
+                    const wordCountNum = manuscript.wordCount || (manuscript.content || "").replace(/\s+/g, "").length;
+
+                    return (
+                      <div
+                        key={manuscript.id}
+                        className="group relative w-full"
+                      >
+                        <button
+                          type="button"
+                          data-manuscript-id={routeId}
+                          onClick={() => handleOpenManuscript(manuscript)}
+                          className={`w-full rounded-xl border p-3 text-left transition cursor-pointer ${active
+                            ? "border-violet-500/60 bg-violet-950/20 shadow-sm"
+                            : "border-zinc-800/80 bg-zinc-950/30 hover:border-violet-500/35 hover:bg-zinc-900/40"
+                            }`}
+                        >
+                          <div className="flex items-start justify-between gap-2 pr-6">
+                            <div className={`truncate text-[13px] font-black leading-tight ${active ? "text-violet-200" : "text-zinc-100"}`}>
+                              {manuscript.title || "제목 없음"}
+                            </div>
+                            {active && <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-300" />}
+                          </div>
+
+                          <div className="mt-2.5 flex items-center justify-between gap-2 text-[11px]">
+                            <div className="flex items-center gap-2">
+                              {manuscript.status === "published" ? (
+                                <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/35 bg-emerald-500/10 px-1.5 py-0.5 text-[10.5px] font-extrabold text-emerald-400">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                  발행 완료
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded-md border border-zinc-700/60 bg-zinc-800/60 px-1.5 py-0.5 text-[10.5px] font-bold text-zinc-400">
+                                  임시 저장
+                                </span>
+                              )}
+
+                              <span className="font-medium text-zinc-400 text-[11px]">
+                                {formatShortDateTime(manuscript.updatedAt || manuscript.createdAt)}
+                              </span>
+                            </div>
+                          </div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleDeleteManuscript(manuscript);
+                          }}
+                          className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-all duration-150 p-1.5 rounded-lg border border-rose-500/30 bg-rose-950/70 text-rose-300 hover:bg-rose-600 hover:text-white hover:border-rose-400 cursor-pointer shadow-md z-10"
+                          title="원고 삭제"
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       </div>
-                      <div className="mt-2 flex items-center gap-1.5">
-                        <span className="inline-flex rounded-md border border-violet-500/30 bg-violet-500/10 px-1.5 py-0.5 text-[13px] font-black uppercase tracking-[0.16em] text-violet-300">
-                          {manuscript.postType === "recreate" ? "RECREATE" : "CREATE"}
-                        </span>
-                        <span className="line-clamp-1 text-[13px] font-medium text-zinc-500">
-                          #{manuscript.targetKeyword || "키워드 없음"}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
-        </aside>
+          </aside>
+        )}
 
         {/* AI 자동 글쓰기 및 재창조 패널 (Column 2) */}
-        <aside className="h-full w-[360px] overflow-hidden border-r border-white/10 bg-[#0b0f15] shrink-0">
-          <CreaiboxAiWritingPanel
-            activeAiTab={activeAiTab}
-            setActiveAiTab={setActiveAiTab}
-            isListSidebarCollapsed={isListSidebarCollapsed}
-            onToggleListSidebar={() => setIsListSidebarCollapsed(!isListSidebarCollapsed)}
-            aiTargetKeyword={aiTargetKeyword}
-            setAiTargetKeyword={setAiTargetKeyword}
-            aiContentType={aiContentType}
-            setAiContentType={setAiContentType}
-            aiPostType={aiPostType}
-            setAiPostType={setAiPostType}
-            aiSelectedTone={aiSelectedTone}
-            setAiSelectedTone={setAiSelectedTone}
-            aiWordCountGoal={aiWordCountGoal}
-            setAiWordCountGoal={setAiWordCountGoal}
-            aiStrategyLevel={aiStrategyLevel}
-            setAiStrategyLevel={setAiStrategyLevel}
-            aiResultFormat={aiResultFormat}
-            setAiResultFormat={setAiResultFormat}
-            aiLargeCategory={aiLargeCategory}
-            setAiLargeCategory={setAiLargeCategory}
-            aiMainTopic={aiMainTopic}
-            setAiMainTopic={setAiMainTopic}
-            aiSubTopic={aiSubTopic}
-            setAiSubTopic={setAiSubTopic}
-            aiReferenceNote={aiReferenceNote}
-            setAiReferenceNote={setAiReferenceNote}
-            aiUseSearch={aiUseSearch}
-            setAiUseSearch={setAiUseSearch}
-            recreateUrl={recreateUrl}
-            setRecreateUrl={setRecreateUrl}
-            pdfFile={pdfFile}
-            setPdfFile={setPdfFile}
-            pdfFileName={pdfFileName}
-            setPdfFileName={setPdfFileName}
-            isPdfDragging={isPdfDragging}
-            setIsPdfDragging={setIsPdfDragging}
-            isAiGenerating={isAiGenerating}
-            isFetchingOriginal={isFetchingOriginal}
-            isRecreating={isRecreating}
-            isPdfExtracting={isPdfExtracting}
-            aiStatusMessage={aiStatusMessage}
-            aiErrorMessage={aiErrorMessage}
-            onGenerate={handleAiGenerateTrigger}
-            onFetchOriginalText={handleFetchOriginalText}
-            onStartRecreation={handleStartRecreation}
-            onPdfExtract={handlePdfExtract}
-            onStartPdfRecreation={handleStartPdfRecreation}
-          />
-        </aside>
+        {!isFocusMode && (
+          <aside className="h-full w-[360px] shrink-0 overflow-hidden border-r border-white/10 bg-[#0b0f15] transition-all duration-300">
+            <CreaiboxAiWritingPanel
+              activeAiTab={activeAiTab}
+              setActiveAiTab={setActiveAiTab}
+              isListSidebarCollapsed={isListSidebarCollapsed}
+              onToggleListSidebar={() => setIsListSidebarCollapsed(!isListSidebarCollapsed)}
+              aiTargetKeyword={aiTargetKeyword}
+              setAiTargetKeyword={setAiTargetKeyword}
+              aiContentType={aiContentType}
+              setAiContentType={setAiContentType}
+              aiPostType={aiPostType}
+              setAiPostType={setAiPostType}
+              aiSelectedTone={aiSelectedTone}
+              setAiSelectedTone={setAiSelectedTone}
+              aiWordCountGoal={aiWordCountGoal}
+              setAiWordCountGoal={setAiWordCountGoal}
+              aiStrategyLevel={aiStrategyLevel}
+              setAiStrategyLevel={setAiStrategyLevel}
+              aiResultFormat={aiResultFormat}
+              setAiResultFormat={setAiResultFormat}
+              aiLargeCategory={aiLargeCategory}
+              setAiLargeCategory={setAiLargeCategory}
+              aiMainTopic={aiMainTopic}
+              setAiMainTopic={setAiMainTopic}
+              aiSubTopic={aiSubTopic}
+              setAiSubTopic={setAiSubTopic}
+              aiReferenceNote={aiReferenceNote}
+              setAiReferenceNote={setAiReferenceNote}
+              aiUseSearch={aiUseSearch}
+              setAiUseSearch={setAiUseSearch}
+              recreateUrl={recreateUrl}
+              setRecreateUrl={setRecreateUrl}
+              pdfFile={pdfFile}
+              setPdfFile={setPdfFile}
+              pdfFileName={pdfFileName}
+              setPdfFileName={setPdfFileName}
+              isPdfDragging={isPdfDragging}
+              setIsPdfDragging={setIsPdfDragging}
+              isAiGenerating={isAiGenerating}
+              isFetchingOriginal={isFetchingOriginal}
+              isRecreating={isRecreating}
+              isPdfExtracting={isPdfExtracting}
+              aiStatusMessage={aiStatusMessage}
+              aiErrorMessage={aiErrorMessage}
+              onGenerate={handleAiGenerateTrigger}
+              onFetchOriginalText={handleFetchOriginalText}
+              onStartRecreation={handleStartRecreation}
+              onPdfExtract={handlePdfExtract}
+              onStartPdfRecreation={handleStartPdfRecreation}
+            />
+          </aside>
+        )}
 
         {/* 가운데 에디터 - 유동 영역 */}
-        <main className="h-full min-w-0 overflow-hidden bg-white">
+        <main className="h-full min-w-0 flex-1 overflow-hidden bg-white">
           <UniversalBlogEditor
+            isFocusMode={isFocusMode}
+            onToggleFocusMode={() => setIsFocusMode((prev) => !prev)}
             title={data.title ?? ""}
             setTitle={(value) => updateLocalData({ title: value })}
             content={data.content ?? ""}
@@ -2589,13 +2672,14 @@ export default function CreaiboxManuscriptDetailPage() {
         </main>
 
         {/* 오른쪽 발행 정보 */}
-        <aside className="h-full overflow-y-auto custom-scrollbar border-l border-white/10 bg-[#0b0f15]">
-          <div className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-zinc-800 bg-gradient-to-r from-[#131722] via-[#141926] to-[#10141f] px-5">
+        {!isFocusMode && (
+          <aside className="flex h-full w-[420px] shrink-0 flex-col overflow-hidden border-l border-white/10 bg-[#0b0f15] transition-all duration-300">
+          <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-zinc-800 bg-gradient-to-r from-[#131722] via-[#141926] to-[#10141f] px-5 relative">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => void handlePublish()}
                 disabled={isSaving}
-                className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#4f46e5] via-[#7c3aed] to-[#ec4899] px-3.5 py-2 text-xs font-black text-white shadow-[0_8px_18px_rgba(124,58,237,0.18)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#4f46e5] via-[#7c3aed] to-[#ec4899] px-3.5 py-2 text-xs font-black text-white shadow-[0_8px_18px_rgba(124,58,237,0.18)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
               >
                 <Send className="h-3.5 w-3.5" />
                 {isSaving ? "처리 중..." : data?.status === "published" ? "블로그 재발행" : "블로그 발행"}
@@ -2603,7 +2687,7 @@ export default function CreaiboxManuscriptDetailPage() {
               <button
                 onClick={() => void handleCancelPublish()}
                 disabled={isSaving}
-                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition hover:border-rose-400/35 hover:bg-rose-500/10 hover:text-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition hover:border-rose-400/35 hover:bg-rose-500/10 hover:text-rose-100 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 발행 취소
@@ -2621,89 +2705,93 @@ export default function CreaiboxManuscriptDetailPage() {
             )}
           </div>
 
-          <section className="border-b border-zinc-800 text-white">
-            <div className="sticky top-14 z-20 grid h-14 grid-cols-4 border-b border-white/10 bg-[#0b0f15]">
-              {[
-                { key: "seo", label: "SEO 최적화" },
-                { key: "thumbnail", label: "썸네일" },
-                { key: "contentImage", label: "본문 이미지" },
-                { key: "schema", label: "스키마" },
-              ].map((tab) => {
-                const active = publishingPanelTab === tab.key;
+          <div className="grid h-14 shrink-0 grid-cols-4 border-b border-white/10 bg-[#0b0f15]">
+            {[
+              { key: "seo", label: "SEO 최적화" },
+              { key: "thumbnail", label: "썸네일" },
+              { key: "contentImage", label: "본문 이미지" },
+              { key: "schema", label: "스키마" },
+            ].map((tab) => {
+              const active = publishingPanelTab === tab.key;
 
-                return (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => setPublishingPanelTab(tab.key as PublishingPanelTab)}
-                    className={`relative border-r border-white/10 text-sm font-black transition last:border-r-0 ${active
-                      ? "bg-blue-500/8 text-blue-200"
-                      : "text-white/45 hover:bg-white/[0.025] hover:text-blue-100"
-                      }`}
-                  >
-                    {tab.label}
-                    {active && (
-                      <span className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-400" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setPublishingPanelTab(tab.key as PublishingPanelTab)}
+                  className={`relative border-r border-white/10 text-[13px] font-bold transition last:border-r-0 cursor-pointer ${
+                    active
+                      ? "bg-blue-500/15 text-white font-bold"
+                      : "text-zinc-300 font-bold hover:bg-white/[0.05] hover:text-white"
+                  }`}
+                >
+                  {tab.label}
+                  {active && (
+                    <span className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-400" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            <section className="border-b border-zinc-800 text-white">
+              {publishingPanelTab === "seo" && (
+                <CreaiboxSeoOptimizationPanel
+                  data={data}
+                  updateLocalData={updateLocalData}
+                  userRole={userRole}
+                  userBrandId={userBrandId}
+                  userBrandIds={userBrandIds}
+                  extraConfigs={extraConfigs}
+                  onGenerateSeo={handleGenerateSeo}
+                  isGeneratingSeo={isGeneratingSeo}
+                />
+              )}
+              {publishingPanelTab === "thumbnail" && (
+                <CreaiboxThumbnailPanel data={data} />
+              )}
+              {publishingPanelTab === "contentImage" && <CreaiboxContentImagePanel data={data} />}
+              {publishingPanelTab === "schema" && (
+                <CreaiboxSchemaPanel data={data} updateLocalData={updateLocalData} />
+              )}
+            </section>
 
             {publishingPanelTab === "seo" && (
-              <CreaiboxSeoOptimizationPanel
-                data={data}
-                updateLocalData={updateLocalData}
-                userRole={userRole}
-                userBrandId={userBrandId}
-                userBrandIds={userBrandIds}
-                extraConfigs={extraConfigs}
-                onGenerateSeo={handleGenerateSeo}
-                isGeneratingSeo={isGeneratingSeo}
-              />
+              <div>
+                <CreaiboxAnalysisTower
+                  seoScore={0}
+                  seoChecks={{
+                    titleKeyword: false,
+                    contentDensity: false,
+                    duplicateSafe: true,
+                    lengthCheck: false,
+                    structureCheck: false,
+                    subHeadingCheck: false,
+                  }}
+                  posRatio={{
+                    noun: 0,
+                    verb: 0,
+                    other: 0,
+                  }}
+                  frequencies={[]}
+                  content={data.content ?? ""}
+                  title={data.title ?? ""}
+                  focusKeyword={data.focusKeyword ?? data.targetKeyword ?? ""}
+                  metaDescription={data.metaDescription ?? ""}
+                  slug={data.slug ?? ""}
+                  canonicalUrl={data.canonicalUrl ?? ""}
+                  seoTags={data.seoTags ?? []}
+                  crawlabilityScore={0}
+                  isDensitySafe={true}
+                  isDetailMode
+                  updateLocalData={updateLocalData}
+                />
+              </div>
             )}
-            {publishingPanelTab === "thumbnail" && (
-              <CreaiboxThumbnailPanel data={data} />
-            )}
-            {publishingPanelTab === "contentImage" && <CreaiboxContentImagePanel data={data} />}
-            {publishingPanelTab === "schema" && (
-              <CreaiboxSchemaPanel data={data} updateLocalData={updateLocalData} />
-            )}
-          </section>
-
-          {publishingPanelTab === "seo" && (
-            <div>
-              <CreaiboxAnalysisTower
-                seoScore={0}
-                seoChecks={{
-                  titleKeyword: false,
-                  contentDensity: false,
-                  duplicateSafe: true,
-                  lengthCheck: false,
-                  structureCheck: false,
-                  subHeadingCheck: false,
-                }}
-                posRatio={{
-                  noun: 0,
-                  verb: 0,
-                  other: 0,
-                }}
-                frequencies={[]}
-                content={data.content ?? ""}
-                title={data.title ?? ""}
-                focusKeyword={data.focusKeyword ?? data.targetKeyword ?? ""}
-                metaDescription={data.metaDescription ?? ""}
-                slug={data.slug ?? ""}
-                canonicalUrl={data.canonicalUrl ?? ""}
-                seoTags={data.seoTags ?? []}
-                crawlabilityScore={0}
-                isDensitySafe={true}
-                isDetailMode
-                updateLocalData={updateLocalData}
-              />
-            </div>
-          )}
+          </div>
         </aside>
+        )}
       </div>
     </div>
   );

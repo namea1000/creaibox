@@ -30,6 +30,19 @@ export default function NaverManuscriptDetailPage() {
   const selectedFromList = useMemo(() => list.find((item) => String(item.id) === manuscriptId) ?? null, [list, manuscriptId]);
   const { data: detail, isLoading: isDetailLoading } = useNaverManuscriptDetailQuery(manuscriptId, selectedFromList ?? undefined);
 
+  const [isFocusMode, setIsFocusMode] = useState(false);
+
+  useEffect(() => {
+    if (isFocusMode) {
+      document.body.classList.add("editor-focus-mode");
+    } else {
+      document.body.classList.remove("editor-focus-mode");
+    }
+    return () => {
+      document.body.classList.remove("editor-focus-mode");
+    };
+  }, [isFocusMode]);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [hasLocalEdits, setHasLocalEdits] = useState(false);
@@ -341,72 +354,76 @@ ${promptInstruction}
 
   return (
     <div className="h-full w-full overflow-hidden bg-[#0a0d12] text-white">
-      <div className="grid h-full w-full grid-cols-[360px_minmax(0,1fr)_380px]">
+      <div className="flex h-full w-full overflow-hidden">
 
         {/* 왼쪽 글 목록 */}
-        <aside className="h-full overflow-y-auto custom-scrollbar border-r border-emerald-500/20 bg-[#0b0f15] p-4 text-[13px]">
-          <button
-            type="button"
-            onClick={() => {
-              if (hasLocalEdits) {
-                void handleSave();
-              }
-              router.replace("/studio/writing/naver/list");
-            }}
-            className="mb-5 flex w-full items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-left text-[13px] font-bold text-white/80 transition hover:border-emerald-400/40 hover:bg-emerald-500/10"
-          >
-            <ArrowLeft className="h-4 w-4 text-emerald-300" />
-            목록으로 돌아가기
-          </button>
+        {!isFocusMode && (
+          <aside className="h-full w-[360px] shrink-0 overflow-y-auto custom-scrollbar border-r border-emerald-500/20 bg-[#0b0f15] p-4 text-[13px] transition-all duration-300">
+            <button
+              type="button"
+              onClick={() => {
+                if (hasLocalEdits) {
+                  void handleSave();
+                }
+                router.replace("/studio/writing/naver/list");
+              }}
+              className="mb-5 flex w-full items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-left text-[13px] font-bold text-white/80 transition hover:border-emerald-400/40 hover:bg-emerald-500/10"
+            >
+              <ArrowLeft className="h-4 w-4 text-emerald-300" />
+              목록으로 돌아가기
+            </button>
 
-          <div className="relative mb-5">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-300/60" />
-            <input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="원고 검색..."
-              className="w-full rounded-xl border border-zinc-800/80 bg-zinc-950/30 py-3 pl-11 pr-4 text-[13px] font-medium text-white outline-none transition placeholder:text-white/30 focus:border-emerald-500/50"
-            />
-          </div>
+            <div className="relative mb-5">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-300/60" />
+              <input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="원고 검색..."
+                className="w-full rounded-xl border border-zinc-800/80 bg-zinc-950/30 py-3 pl-11 pr-4 text-[13px] font-medium text-white outline-none transition placeholder:text-white/30 focus:border-emerald-500/50"
+              />
+            </div>
 
-          <div ref={manuscriptListRef} className="space-y-2">
-            {(isMounted ? filteredList : []).map((item) => {
-              const active = String(item.id) === manuscriptId;
+            <div ref={manuscriptListRef} className="space-y-2">
+              {(isMounted ? filteredList : []).map((item) => {
+                const active = String(item.id) === manuscriptId;
 
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  data-manuscript-id={item.id}
-                  onClick={() => handleOpenNaverManuscript(String(item.id))}
-                  className={`block w-full rounded-xl border p-3.5 text-left transition ${active
-                      ? "border-emerald-500/60 bg-emerald-950/15"
-                      : "border-zinc-800/80 bg-zinc-950/30 hover:border-emerald-500/35 hover:bg-zinc-900/40"
-                    }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className={`line-clamp-2 text-[13px] font-black leading-tight ${active ? "text-emerald-300" : "text-zinc-100"}`}>
-                      {item.title}
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    data-manuscript-id={item.id}
+                    onClick={() => handleOpenNaverManuscript(String(item.id))}
+                    className={`block w-full rounded-xl border p-3.5 text-left transition ${active
+                        ? "border-emerald-500/60 bg-emerald-950/15"
+                        : "border-zinc-800/80 bg-zinc-950/30 hover:border-emerald-500/35 hover:bg-zinc-900/40"
+                      }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className={`line-clamp-2 text-[13px] font-black leading-tight ${active ? "text-emerald-300" : "text-zinc-100"}`}>
+                        {item.title}
+                      </div>
+                      {active && <Check className="mt-0.5 h-3 w-3 shrink-0 text-emerald-300" />}
                     </div>
-                    {active && <Check className="mt-0.5 h-3 w-3 shrink-0 text-emerald-300" />}
-                  </div>
-                  <div className="mt-2 flex items-center gap-1.5">
-                    <span className="inline-flex rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[13px] font-black uppercase tracking-[0.16em] text-emerald-300">
-                      {item.postType === "recreate" ? "RECREATE" : "CREATE"}
-                    </span>
-                    <span className="line-clamp-1 text-[13px] font-medium text-zinc-500">
-                      #{item.targetKeyword ?? item.keyword ?? "키워드 없음"}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </aside>
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <span className="inline-flex rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[13px] font-black uppercase tracking-[0.16em] text-emerald-300">
+                        {item.postType === "recreate" ? "RECREATE" : "CREATE"}
+                      </span>
+                      <span className="line-clamp-1 text-[13px] font-medium text-zinc-500">
+                        #{item.targetKeyword ?? item.keyword ?? "키워드 없음"}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+        )}
 
         {/* 가운데 에디터 */}
-        <main className="h-full min-w-0 overflow-hidden bg-white">
+        <main className="h-full min-w-0 flex-1 overflow-hidden bg-white">
           <UniversalBlogEditor
+            isFocusMode={isFocusMode}
+            onToggleFocusMode={() => setIsFocusMode((prev) => !prev)}
             title={data?.title ?? ""}
             setTitle={(value) => updateLocalData({ title: value })}
             content={data?.content ?? ""}
@@ -442,7 +459,8 @@ ${promptInstruction}
         </main>
 
         {/* 오른쪽 관제탑 */}
-        <aside className="h-full overflow-y-auto custom-scrollbar border-l border-white/10 bg-[#0d0f14] p-4">
+        {!isFocusMode && (
+          <aside className="h-full w-[380px] shrink-0 overflow-y-auto custom-scrollbar border-l border-white/10 bg-[#0d0f14] p-4 transition-all duration-300">
           <NaverAnalysisTower
             seoScore={100}
             seoChecks={{
@@ -468,6 +486,7 @@ ${promptInstruction}
             isDetailMode
           />
         </aside>
+        )}
       </div>
     </div>
   );

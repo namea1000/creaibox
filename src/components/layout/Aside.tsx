@@ -126,6 +126,7 @@ export default function Aside() {
 
   return (
     <aside
+      id="global-studio-aside"
       className={`
         hidden xl:flex h-[calc(100vh-5rem)] shrink-0 flex-col border-l border-zinc-200 dark:border-zinc-800/80
         bg-zinc-50 dark:bg-[#090e15] transition-all duration-300 ease-in-out

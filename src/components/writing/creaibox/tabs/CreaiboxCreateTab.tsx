@@ -940,10 +940,11 @@ export default function CreaiboxCreateTab({
                     key={tab.key}
                     type="button"
                     onClick={() => setPublishingPanelTab(tab.key as PublishingPanelTab)}
-                    className={`relative border-r border-white/10 text-sm font-black transition last:border-r-0 ${active
-                      ? "bg-blue-500/8 text-blue-200"
-                      : "text-white/45 hover:bg-white/[0.025] hover:text-blue-100"
-                      }`}
+                    className={`relative border-r border-white/10 text-[13px] font-bold transition last:border-r-0 cursor-pointer ${
+                      active
+                        ? "bg-blue-500/15 text-white font-bold"
+                        : "text-zinc-300 font-bold hover:bg-white/[0.05] hover:text-white"
+                    }`}
                   >
                     {tab.label}
                     {active && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-400" />}

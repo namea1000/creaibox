@@ -365,7 +365,7 @@ export default function Header() {
   const initials = getInitials();
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-[100] border-b-2 border-slate-300/85 bg-white dark:bg-zinc-950 dark:border-zinc-800 transition-colors duration-300">
+    <header className="sticky top-0 z-[100] h-16 shrink-0 w-full border-b border-slate-300/85 bg-white dark:bg-zinc-950 dark:border-zinc-800/80 transition-colors duration-300">
       <div className="w-full flex h-16 items-center justify-between px-5 lg:px-10">
         <div className="flex w-[160px] shrink-0 items-center">
           <Link href="/" className="flex h-10 items-center overflow-hidden transition hover:scale-[1.02] active:scale-[0.98]">

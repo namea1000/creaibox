@@ -479,6 +479,37 @@ export async function deleteFreeAsset(fileId: string): Promise<void> {
 }
 
 /**
+ * Helper to extract Google Drive file ID from direct URL or ID string
+ */
+export function extractGoogleDriveFileId(fileIdOrUrl: string): string | null {
+  if (!fileIdOrUrl) return null;
+  if (/^[a-zA-Z0-9_-]{20,}$/.test(fileIdOrUrl)) {
+    return fileIdOrUrl;
+  }
+  const match = fileIdOrUrl.match(/\/(?:d|uc\?id=)\/([a-zA-Z0-9_-]{20,})/);
+  if (match && match[1]) return match[1];
+  const paramMatch = fileIdOrUrl.match(/id=([a-zA-Z0-9_-]{20,})/);
+  if (paramMatch && paramMatch[1]) return paramMatch[1];
+  return null;
+}
+
+/**
+ * Deletes a file from Google Drive by file ID or URL.
+ */
+export async function deleteFileFromGoogleDrive(fileIdOrUrl: string): Promise<boolean> {
+  const fileId = extractGoogleDriveFileId(fileIdOrUrl);
+  if (!fileId) return false;
+  try {
+    const drive = getDriveClient();
+    await drive.files.delete({ fileId });
+    return true;
+  } catch (error) {
+    console.error("Google Drive deletion failed for fileId:", fileId, error);
+    return false;
+  }
+}
+
+/**
  * Fetches description and name of a Google Drive file.
  */
 export async function getAssetMetadata(fileId: string): Promise<{ name: string; metadata: any }> {

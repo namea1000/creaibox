@@ -412,34 +412,25 @@ export default function CreaiboxAiWritingPanel({
   return (
     <div className="h-full flex flex-col bg-[#0b0f15] text-zinc-300 select-none">
       {/* 1. Header */}
-      <div className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-zinc-800 bg-[#0d1017] px-4">
+      <div className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-zinc-800 bg-gradient-to-r from-[#131722] via-[#141926] to-[#10141f] px-4">
         {/* Left slot for collapse/expand button */}
         <div className="min-w-[120px] flex items-center justify-start">
-          {onToggleListSidebar && (
+          {onToggleListSidebar && isListSidebarCollapsed && (
             <button
               type="button"
               onClick={onToggleListSidebar}
               className="flex h-8.5 items-center gap-1.5 px-3 rounded-xl border border-violet-500/40 bg-violet-950/30 text-violet-300 hover:bg-violet-600 hover:border-violet-400 hover:text-white transition-all shadow-sm cursor-pointer"
-              title={isListSidebarCollapsed ? "원고 목록 펼치기" : "원고 목록 접기"}
+              title="원고 목록 펼치기"
             >
-              {isListSidebarCollapsed ? (
-                <>
-                  <PanelLeftOpen size={16} />
-                  <span className="text-xs font-black tracking-wide">목록 펼치기</span>
-                </>
-              ) : (
-                <>
-                  <PanelLeftClose size={16} />
-                  <span className="text-xs font-black tracking-wide">목록 접기</span>
-                </>
-              )}
+              <PanelLeftOpen size={16} />
+              <span className="text-xs font-black tracking-wide">목록 펼치기</span>
             </button>
           )}
         </div>
 
-        {/* Center title with same font style as editor title */}
+        {/* Center title with same font style as sidebar */}
         <div className="flex-1 text-center flex items-center justify-center">
-          <span className="truncate text-[0.78rem] font-black uppercase tracking-[0.24em] text-zinc-300">
+          <span className="truncate text-[13px] font-bold text-zinc-200">
             AI 자동 글쓰기 및 재창조
           </span>
         </div>
@@ -461,10 +452,10 @@ export default function CreaiboxAiWritingPanel({
               key={tab.key}
               type="button"
               onClick={() => setActiveAiTab(tab.key as any)}
-              className={`relative border-r border-white/10 text-center px-1 text-sm font-black transition last:border-r-0 ${
+              className={`relative border-r border-white/10 text-center px-1 text-[13px] font-bold transition last:border-r-0 cursor-pointer ${
                 active
-                  ? "bg-violet-500/8 text-violet-200"
-                  : "text-white/45 hover:bg-white/[0.025] hover:text-violet-100"
+                  ? "bg-violet-500/15 text-white font-bold"
+                  : "text-zinc-300 font-bold hover:bg-white/[0.05] hover:text-white"
               }`}
             >
               {tab.label}
@@ -482,12 +473,12 @@ export default function CreaiboxAiWritingPanel({
         {activeAiTab === "write" && (
           <div className="space-y-4 text-left">
             <div className="grid grid-cols-[100px_1fr] items-center gap-3">
-              <label className="text-[11px] font-black text-zinc-400 select-none whitespace-nowrap">1. 콘텐츠 유형</label>
+              <label className="text-[13px] font-bold text-zinc-100 select-none whitespace-nowrap">1. 콘텐츠 유형</label>
               <select
                 value={aiContentType}
                 onChange={(e) => setAiContentType(e.target.value)}
                 disabled={isAiGenerating}
-                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-300 text-xs px-3 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer"
+                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-100 text-[13px] px-3 py-2.5 rounded-lg font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer"
               >
                 <option value="" disabled hidden>선택하세요</option>
                 {[
@@ -510,26 +501,26 @@ export default function CreaiboxAiWritingPanel({
             </div>
 
             <div className="grid grid-cols-[100px_1fr] items-center gap-3">
-              <label className="text-[11px] font-black text-zinc-400 select-none whitespace-nowrap">2. 포스트 타입</label>
+              <label className="text-[13px] font-bold text-zinc-100 select-none whitespace-nowrap">2. 포스트 타입</label>
               <div className="relative w-full" ref={postTypeDropdownRef}>
                 <button
                   type="button"
                   onClick={() => setIsPostTypeOpen(!isPostTypeOpen)}
                   disabled={isAiGenerating}
-                  className="flex h-11 w-full items-center justify-between rounded-xl border border-zinc-800 bg-[#161a23] px-3.5 text-xs text-zinc-300 outline-none focus:border-violet-500 font-bold cursor-pointer"
+                  className="flex h-11 w-full items-center justify-between rounded-lg border border-zinc-800 bg-[#161a23] px-3.5 text-[13px] text-zinc-100 outline-none focus:border-violet-500 font-bold cursor-pointer"
                 >
                   <span className="truncate">{aiPostType || "선택해 주세요"}</span>
-                  <ChevronDown size={14} className={`text-zinc-500 transition-transform duration-200 shrink-0 ml-1 ${isPostTypeOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown size={14} className={`text-zinc-400 transition-transform duration-200 shrink-0 ml-1 ${isPostTypeOpen ? "rotate-180" : ""}`} />
                 </button>
 
                 {isPostTypeOpen && (
-                  <div className="absolute left-0 right-0 z-50 mt-1 max-h-80 overflow-y-auto rounded-xl border border-zinc-800 bg-[#121214] p-2 shadow-2xl custom-scrollbar">
+                  <div className="absolute left-0 right-0 z-50 mt-1 max-h-80 overflow-y-auto rounded-lg border border-zinc-800 bg-[#121214] p-2 shadow-2xl custom-scrollbar">
                     {postTypeOptions.map((item) => {
                       if (item.disabled) {
                         return (
                           <div
                             key={item.label}
-                            className="px-3 py-1.5 text-[10px] font-black text-violet-400 border-b border-zinc-800 mt-2 first:mt-0 bg-zinc-900/40 rounded-md"
+                            className="px-3 py-1.5 text-[11px] font-bold text-violet-400 border-b border-zinc-800 mt-2 first:mt-0 bg-zinc-900/40 rounded-md"
                           >
                             {item.label}
                           </div>
@@ -545,10 +536,10 @@ export default function CreaiboxAiWritingPanel({
                             setAiPostType(item.label);
                             setIsPostTypeOpen(false);
                           }}
-                          className={`flex w-full items-center px-4 py-2.5 text-left text-xs transition duration-150 rounded-lg mt-0.5 first:mt-0 cursor-pointer ${
+                          className={`flex w-full items-center px-4 py-2.5 text-left text-[13px] font-bold transition duration-150 rounded-lg mt-0.5 first:mt-0 cursor-pointer ${
                             isSelected
                               ? "bg-violet-500/20 text-violet-200 font-bold"
-                              : "text-zinc-300 hover:bg-[#161a23] hover:text-white"
+                              : "text-zinc-200 hover:bg-[#161a23] hover:text-white"
                           }`}
                         >
                           {item.label}
@@ -561,12 +552,12 @@ export default function CreaiboxAiWritingPanel({
             </div>
 
             <div className="grid grid-cols-[100px_1fr] items-center gap-3">
-              <label className="text-[11px] font-black text-zinc-400 select-none whitespace-nowrap">3. 말투 선택</label>
+              <label className="text-[13px] font-bold text-zinc-100 select-none whitespace-nowrap">3. 말투 선택</label>
               <select
                 value={aiSelectedTone}
                 onChange={(e) => setAiSelectedTone(e.target.value)}
                 disabled={isAiGenerating}
-                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-300 text-xs px-3 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer"
+                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-100 text-[13px] px-3 py-2.5 rounded-lg font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer"
               >
                 <option value="" disabled hidden>선택하세요</option>
                 {[
@@ -584,12 +575,12 @@ export default function CreaiboxAiWritingPanel({
             </div>
 
             <div className="grid grid-cols-[100px_1fr] items-center gap-3">
-              <label className="text-[11px] font-black text-zinc-400 select-none whitespace-nowrap">4. 목표 글자수</label>
+              <label className="text-[13px] font-bold text-zinc-100 select-none whitespace-nowrap">4. 목표 글자수</label>
               <select
                 value={aiWordCountGoal}
                 onChange={(e) => setAiWordCountGoal(e.target.value)}
                 disabled={isAiGenerating}
-                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-300 text-xs px-3 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer"
+                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-100 text-[13px] px-3 py-2.5 rounded-lg font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer"
               >
                 <option value="" disabled hidden>선택하세요</option>
                 {[
@@ -607,12 +598,12 @@ export default function CreaiboxAiWritingPanel({
             </div>
 
             <div className="grid grid-cols-[100px_1fr] items-center gap-3">
-              <label className="text-[11px] font-black text-zinc-400 select-none whitespace-nowrap">5. 전략 수준</label>
+              <label className="text-[13px] font-bold text-zinc-100 select-none whitespace-nowrap">5. 전략 수준</label>
               <select
                 value={aiStrategyLevel}
                 onChange={(e) => setAiStrategyLevel(e.target.value)}
                 disabled={isAiGenerating}
-                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-300 text-xs px-3 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer"
+                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-100 text-[13px] px-3 py-2.5 rounded-lg font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer"
               >
                 <option value="" disabled hidden>선택하세요</option>
                 {[
@@ -628,12 +619,12 @@ export default function CreaiboxAiWritingPanel({
             </div>
 
             <div className="grid grid-cols-[100px_1fr] items-center gap-3">
-              <label className="text-[11px] font-black text-zinc-400 select-none whitespace-nowrap">6. 결과 구성</label>
+              <label className="text-[13px] font-bold text-zinc-100 select-none whitespace-nowrap">6. 결과 구성</label>
               <select
                 value={aiResultFormat}
                 onChange={(e) => setAiResultFormat(e.target.value)}
                 disabled={isAiGenerating}
-                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-300 text-xs px-3 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer"
+                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-100 text-[13px] px-3 py-2.5 rounded-lg font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer"
               >
                 <option value="" disabled hidden>선택하세요</option>
                 {[
@@ -649,7 +640,7 @@ export default function CreaiboxAiWritingPanel({
             </div>
 
             {/* 🔍 콘텐츠 아이디어 / 키워드 통합 검색 바 */}
-            <div className="relative mb-2 flex flex-col gap-1.5 p-3 rounded-2xl bg-gradient-to-r from-violet-950/40 via-indigo-950/30 to-purple-950/40 border border-violet-500/30 shadow-lg">
+            <div className="relative mb-2 flex flex-col gap-1.5 p-3 rounded-lg bg-gradient-to-r from-violet-950/40 via-indigo-950/30 to-purple-950/40 border border-violet-500/30 shadow-lg">
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-xs font-black text-violet-300">
                   <Sparkles className="h-3.5 w-3.5 text-yellow-400" />
@@ -676,7 +667,7 @@ export default function CreaiboxAiWritingPanel({
                   }}
                   onFocus={() => setIsSearchDropdownOpen(true)}
                   placeholder="주제/키워드 검색 (예: 삼성전자, AI, 부업...)"
-                  className="w-full bg-[#11141c] border border-violet-500/30 text-white text-xs pl-8 pr-7 py-2 rounded-xl font-bold focus:outline-none focus:border-violet-400 placeholder:text-zinc-500"
+                  className="w-full bg-[#11141c] border border-violet-500/30 text-white text-xs pl-8 pr-7 py-2 rounded-lg font-bold focus:outline-none focus:border-violet-400 placeholder:text-zinc-500"
                 />
                 {ideaSearchQuery && (
                   <button
@@ -696,7 +687,7 @@ export default function CreaiboxAiWritingPanel({
               {isSearchDropdownOpen && ideaSearchQuery.trim() !== "" && (
                 <div
                   ref={searchDropdownRef}
-                  className="absolute left-0 right-0 top-full mt-1 z-50 max-h-64 overflow-y-auto rounded-xl border border-violet-500/40 bg-[#0d1017] shadow-2xl p-1.5 custom-scrollbar"
+                  className="absolute left-0 right-0 top-full mt-1 z-50 max-h-64 overflow-y-auto rounded-lg border border-violet-500/40 bg-[#0d1017] shadow-2xl p-1.5 custom-scrollbar"
                 >
                   {searchResults.length === 0 ? (
                     <div className="p-3 text-center text-xs font-semibold text-zinc-400">
@@ -729,7 +720,7 @@ export default function CreaiboxAiWritingPanel({
             </div>
 
             <div className="grid grid-cols-[100px_1fr] items-center gap-3">
-              <label className="text-[11px] font-black text-zinc-400 select-none whitespace-nowrap">7. 대분류</label>
+              <label className="text-[13px] font-bold text-zinc-100 select-none whitespace-nowrap">7. 대분류</label>
               <select
                 value={aiLargeCategory}
                 onChange={(e) => {
@@ -757,7 +748,7 @@ export default function CreaiboxAiWritingPanel({
                   }
                 }}
                 disabled={isAiGenerating}
-                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-300 text-xs px-3 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer"
+                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-100 text-[13px] px-3 py-2.5 rounded-lg font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer"
               >
                 <option value="" className="bg-[#161a23]">대분류 선택</option>
                 {mainGroups.map((group) => (
@@ -769,7 +760,7 @@ export default function CreaiboxAiWritingPanel({
             </div>
 
             <div className="grid grid-cols-[100px_1fr] items-center gap-3">
-              <label className="text-[11px] font-black text-zinc-400 select-none whitespace-nowrap">8. 상세 분야</label>
+              <label className="text-[13px] font-bold text-zinc-100 select-none whitespace-nowrap">8. 상세 분야</label>
               <select
                 value={aiMainTopic}
                 onChange={(e) => {
@@ -795,7 +786,7 @@ export default function CreaiboxAiWritingPanel({
                   }
                 }}
                 disabled={isAiGenerating || !aiLargeCategory}
-                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-300 text-xs px-3 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-100 text-[13px] px-3 py-2.5 rounded-lg font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="" className="bg-[#161a23]">
                   {aiLargeCategory ? "상세 분야 선택" : "대분류를 먼저 선택해 주세요"}
@@ -811,7 +802,7 @@ export default function CreaiboxAiWritingPanel({
             </div>
 
             <div className="grid grid-cols-[100px_1fr] items-center gap-3">
-              <label className="text-[11px] font-black text-zinc-400 select-none whitespace-nowrap">9. 추천 시리즈</label>
+              <label className="text-[13px] font-bold text-zinc-100 select-none whitespace-nowrap">9. 추천 시리즈</label>
               {(() => {
                 const currentCategory = topicCategories.find((c) => c.name === aiMainTopic);
                 const filteredSubTopics = currentCategory
@@ -832,7 +823,7 @@ export default function CreaiboxAiWritingPanel({
                         }}
                         disabled={isAiGenerating}
                         placeholder="추천 시리즈 직접 입력"
-                        className="w-full bg-[#161a23] border border-zinc-800 text-zinc-300 text-xs pl-3 pr-16 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-500 outline-none"
+                        className="w-full bg-[#161a23] border border-zinc-800 text-zinc-100 text-[13px] pl-3 pr-16 py-2.5 rounded-lg font-bold focus:outline-none focus:border-violet-500 outline-none"
                       />
                       <button
                         type="button"
@@ -877,7 +868,7 @@ export default function CreaiboxAiWritingPanel({
                       }
                     }}
                     disabled={isAiGenerating || !aiMainTopic}
-                    className="w-full bg-[#161a23] border border-zinc-800 text-zinc-300 text-xs px-3 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-[#161a23] border border-zinc-800 text-zinc-100 text-[13px] px-3 py-2.5 rounded-lg font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="" className="bg-[#161a23]">
                       {aiMainTopic ? "추천 시리즈 선택" : "상세 분야를 먼저 선택해 주세요"}
@@ -899,7 +890,7 @@ export default function CreaiboxAiWritingPanel({
 
             {/* 10. 타겟 키워드 (2줄 배치) */}
             <div className="flex flex-col gap-1.5 text-left">
-              <label className="text-[11px] font-black text-zinc-400 select-none">10. 타겟 키워드</label>
+              <label className="text-[13px] font-bold text-zinc-100 select-none">10. 타겟 키워드</label>
               {(() => {
                 const currentSubTopic = topicSubTopics.find((s) => s.name === aiSubTopic);
                 const filteredIdeas = currentSubTopic
@@ -917,7 +908,7 @@ export default function CreaiboxAiWritingPanel({
                         onChange={(e) => setAiTargetKeyword(e.target.value)}
                         disabled={isAiGenerating}
                         placeholder="집중적으로 공략할 키워드 입력"
-                        className="w-full bg-[#161a23] border border-zinc-800 text-zinc-300 text-xs pl-3 pr-16 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-500 outline-none"
+                        className="w-full bg-[#161a23] border border-zinc-800 text-zinc-100 text-[13px] pl-3 pr-16 py-2.5 rounded-lg font-bold focus:outline-none focus:border-violet-500 outline-none"
                       />
                       <button
                         type="button"
@@ -947,7 +938,7 @@ export default function CreaiboxAiWritingPanel({
                       }
                     }}
                     disabled={isAiGenerating || !aiSubTopic}
-                    className="w-full bg-[#161a23] border border-zinc-800 text-zinc-300 text-xs px-3 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-[#161a23] border border-zinc-800 text-zinc-100 text-[13px] px-3 py-2.5 rounded-lg font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="" className="bg-[#161a23]">
                       {aiSubTopic ? "타겟 키워드 선택" : "추천 시리즈를 먼저 선택해 주세요"}
@@ -969,24 +960,24 @@ export default function CreaiboxAiWritingPanel({
 
             {/* 11. 참고 사항 (2줄 배치) */}
             <div className="flex flex-col gap-1.5 text-left">
-              <label className="text-[11px] font-black text-zinc-400 select-none">11. 참고 사항</label>
+              <label className="text-[13px] font-bold text-zinc-100 select-none">11. 참고 사항</label>
               <textarea
                 placeholder="추가 지시사항이나 참고할 내용을 기술해 주세요"
                 value={aiReferenceNote}
                 onChange={(e) => setAiReferenceNote(e.target.value)}
                 disabled={isAiGenerating}
-                className="w-full min-h-[70px] bg-[#161a23] border border-zinc-800 text-zinc-300 text-xs px-3 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-500 outline-none resize-none"
+                className="w-full min-h-[70px] bg-[#161a23] border border-zinc-800 text-zinc-100 text-[13px] px-3 py-2.5 rounded-lg font-bold focus:outline-none focus:border-violet-500 outline-none resize-none"
               />
             </div>
 
             {/* 12. 특정 키워드로 글쓰기 (자유 키워드 직접 입력) */}
             <div className="flex flex-col gap-1.5 text-left">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-black text-violet-400 select-none flex items-center gap-1">
+                <label className="text-[13px] font-bold text-violet-300 select-none flex items-center gap-1">
                   <Sparkles size={12} className="text-violet-400" />
                   <span>12. 특정 키워드로 글쓰기 (자유 입력)</span>
                 </label>
-                <span className="text-[10px] font-bold text-zinc-500">
+                <span className="text-[10px] font-bold text-zinc-400">
                   * 직접 입력 시 7~10번 대신 적용
                 </span>
               </div>
@@ -996,7 +987,7 @@ export default function CreaiboxAiWritingPanel({
                 value={aiTargetKeyword}
                 onChange={(e) => setAiTargetKeyword(e.target.value)}
                 disabled={isAiGenerating}
-                className="w-full bg-[#161a23] border border-violet-500/40 text-white text-xs px-3.5 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-500/50 outline-none placeholder:text-zinc-600 transition"
+                className="w-full bg-[#161a23] border border-violet-500/40 text-white text-[13px] px-3.5 py-2.5 rounded-lg font-bold focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-500/50 outline-none placeholder:text-zinc-500 transition"
               />
             </div>
 
@@ -1009,14 +1000,14 @@ export default function CreaiboxAiWritingPanel({
                 disabled={isAiGenerating}
                 className="rounded bg-zinc-900 border border-zinc-800 text-violet-500 focus:ring-violet-500/50 h-3.5 w-3.5 cursor-pointer"
               />
-              <label htmlFor="aiUseSearch" className="text-xs font-bold text-zinc-400 cursor-pointer select-none">
+              <label htmlFor="aiUseSearch" className="text-[13px] font-bold text-zinc-100 cursor-pointer select-none">
                 인터넷 실시간 검색 반영 (Google Search)
               </label>
             </div>
 
             {/* AI 상태 메시지 */}
             {isAiGenerating && (
-              <div className="rounded-xl border border-violet-500/20 bg-violet-950/20 p-3 flex items-start gap-2.5">
+              <div className="rounded-lg border border-violet-500/20 bg-violet-950/20 p-3 flex items-start gap-2.5">
                 <Loader2 className="text-violet-400 shrink-0 mt-0.5 animate-spin" size={15} />
                 <div className="text-[11px] font-bold leading-normal text-violet-200">
                   {aiStatusMessage || "글 작성을 준비하고 있습니다..."}
@@ -1025,7 +1016,7 @@ export default function CreaiboxAiWritingPanel({
             )}
 
             {aiErrorMessage && (
-              <div className="rounded-xl border border-rose-500/20 bg-rose-950/20 p-3 flex items-start gap-2.5">
+              <div className="rounded-lg border border-rose-500/20 bg-rose-950/20 p-3 flex items-start gap-2.5">
                 <AlertTriangle className="text-rose-400 shrink-0 mt-0.5" size={15} />
                 <div className="text-[11px] font-bold leading-normal text-rose-300">
                   {aiErrorMessage}
@@ -1037,7 +1028,7 @@ export default function CreaiboxAiWritingPanel({
               type="button"
               onClick={onGenerate}
               disabled={isAiGenerating || !aiTargetKeyword.trim()}
-              className="w-full h-11 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(124,58,237,0.2)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full h-11 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(124,58,237,0.2)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {isAiGenerating ? (
                 <>
@@ -1058,36 +1049,36 @@ export default function CreaiboxAiWritingPanel({
         {activeAiTab === "recreate" && (
           <div className="space-y-4 text-left">
             <div>
-              <label className="block text-xs font-black text-zinc-400 mb-1.5">가져올 글의 URL 주소</label>
+              <label className="block text-[13px] font-bold text-zinc-100 mb-1.5">가져올 글의 URL 주소</label>
               <input
                 type="text"
                 placeholder="네이버 블로그, 뉴스 기사 등 URL 입력"
                 value={recreateUrl}
                 onChange={(e) => setRecreateUrl(e.target.value)}
                 disabled={isAiGenerating || isFetchingOriginal || isRecreating}
-                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-300 text-xs px-3 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-500 outline-none"
+                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-100 text-[13px] px-3 py-2.5 rounded-lg font-bold focus:outline-none focus:border-violet-500 outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-black text-zinc-400 mb-1.5">타겟 키워드 (선택)</label>
+              <label className="block text-[13px] font-bold text-zinc-100 mb-1.5">타겟 키워드 (선택)</label>
               <input
                 type="text"
                 placeholder="미입력 시 원본 분석 후 자동 선정"
                 value={aiTargetKeyword}
                 onChange={(e) => setAiTargetKeyword(e.target.value)}
                 disabled={isAiGenerating || isFetchingOriginal || isRecreating}
-                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-300 text-xs px-3 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-500 outline-none"
+                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-100 text-[13px] px-3 py-2.5 rounded-lg font-bold focus:outline-none focus:border-violet-500 outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-black text-zinc-400 mb-1.5">말투 선택</label>
+              <label className="block text-[13px] font-bold text-zinc-100 mb-1.5">말투 선택</label>
               <select
                 value={aiSelectedTone}
                 onChange={(e) => setAiSelectedTone(e.target.value)}
                 disabled={isAiGenerating || isFetchingOriginal || isRecreating}
-                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-300 text-xs px-3 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer"
+                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-100 text-[13px] px-3 py-2.5 rounded-lg font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer"
               >
                 <option value="" disabled hidden>선택하세요</option>
                 {[
@@ -1105,12 +1096,12 @@ export default function CreaiboxAiWritingPanel({
             </div>
 
             <div>
-              <label className="block text-xs font-black text-zinc-400 mb-1.5">목표 글자수</label>
+              <label className="block text-[13px] font-bold text-zinc-100 mb-1.5">목표 글자수</label>
               <select
                 value={aiWordCountGoal}
                 onChange={(e) => setAiWordCountGoal(e.target.value)}
                 disabled={isAiGenerating || isFetchingOriginal || isRecreating}
-                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-300 text-xs px-3 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer"
+                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-100 text-[13px] px-3 py-2.5 rounded-lg font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer"
               >
                 <option value="" disabled hidden>선택하세요</option>
                 {[
@@ -1131,7 +1122,7 @@ export default function CreaiboxAiWritingPanel({
                 type="button"
                 onClick={onFetchOriginalText}
                 disabled={isAiGenerating || isFetchingOriginal || isRecreating || !recreateUrl.trim()}
-                className="w-full h-11 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-emerald-500 hover:brightness-110 active:scale-[0.98] text-white font-black text-xs transition-all flex items-center justify-center gap-2 shadow-[0_6px_20px_rgba(16,185,129,0.35)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full h-11 rounded-lg bg-gradient-to-tr from-emerald-600 via-teal-600 to-emerald-500 hover:brightness-110 active:scale-[0.98] text-white font-black text-xs transition-all flex items-center justify-center gap-2 shadow-[0_6px_20px_rgba(16,185,129,0.35)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isFetchingOriginal ? (
                   <>
@@ -1150,7 +1141,7 @@ export default function CreaiboxAiWritingPanel({
                 type="button"
                 onClick={onStartRecreation}
                 disabled={isAiGenerating || isFetchingOriginal || isRecreating || !recreateUrl.trim()}
-                className="w-full h-11 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(124,58,237,0.2)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full h-11 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(124,58,237,0.2)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isRecreating ? (
                   <>
@@ -1166,7 +1157,7 @@ export default function CreaiboxAiWritingPanel({
               </button>
 
               {/* ⚠️ 저작권 방지 및 필수 원문 글 재창조 안내 박스 */}
-              <div className="mt-3 p-4 rounded-2xl border border-amber-500/35 bg-amber-950/25 text-amber-200/90 flex flex-col gap-2.5 shadow-sm">
+              <div className="mt-3 p-4 rounded-lg border border-amber-500/35 bg-amber-950/25 text-amber-200/90 flex flex-col gap-2.5 shadow-sm">
                 <div className="flex items-center gap-2 text-sm font-black text-amber-400">
                   <AlertTriangle size={16} className="shrink-0 text-amber-400" />
                   <span>필독: 원문 사용 및 저작권 주의 안내</span>
@@ -1192,13 +1183,13 @@ export default function CreaiboxAiWritingPanel({
         {activeAiTab === "pdf" && (
           <div className="space-y-4 text-left">
             <div>
-              <label className="block text-xs font-black text-zinc-400 mb-1.5">PDF 파일 드롭 또는 업로드</label>
+              <label className="block text-[13px] font-bold text-zinc-100 mb-1.5">PDF 파일 드롭 또는 업로드</label>
               <div
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
-                className={`flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed py-8 px-4 text-center transition-all ${
+                className={`flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed py-8 px-4 text-center transition-all ${
                   isPdfDragging
                     ? "bg-violet-600/10 border-violet-500 shadow-[0_0_15px_rgba(124,58,237,0.2)]"
                     : "bg-[#161a23] border-zinc-800"
@@ -1231,24 +1222,24 @@ export default function CreaiboxAiWritingPanel({
             </div>
 
             <div>
-              <label className="block text-xs font-black text-zinc-400 mb-1.5">대표 타겟 키워드</label>
+              <label className="block text-[13px] font-bold text-zinc-100 mb-1.5">대표 타겟 키워드</label>
               <input
                 type="text"
                 placeholder="글의 집중 공략 타겟 키워드 입력"
                 value={aiTargetKeyword}
                 onChange={(e) => setAiTargetKeyword(e.target.value)}
                 disabled={isAiGenerating || isPdfExtracting || isRecreating}
-                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-300 text-xs px-3 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-500 outline-none"
+                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-100 text-[13px] px-3 py-2.5 rounded-lg font-bold focus:outline-none focus:border-violet-500 outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-black text-zinc-400 mb-1.5">말투 선택</label>
+              <label className="block text-[13px] font-bold text-zinc-100 mb-1.5">말투 선택</label>
               <select
                 value={aiSelectedTone}
                 onChange={(e) => setAiSelectedTone(e.target.value)}
                 disabled={isAiGenerating || isPdfExtracting || isRecreating}
-                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-300 text-xs px-3 py-2.5 rounded-xl font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer"
+                className="w-full bg-[#161a23] border border-zinc-800 text-zinc-100 text-[13px] px-3 py-2.5 rounded-lg font-bold focus:outline-none focus:border-violet-500 outline-none cursor-pointer"
               >
                 <option value="" disabled hidden>선택하세요</option>
                 {[
@@ -1270,7 +1261,7 @@ export default function CreaiboxAiWritingPanel({
                 type="button"
                 onClick={onPdfExtract}
                 disabled={isPdfExtracting || isRecreating || !pdfFile}
-                className="w-full h-10 rounded-xl border border-zinc-800 bg-[#0e111a] hover:bg-zinc-800 text-zinc-300 font-black text-xs transition flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full h-10 rounded-lg border border-zinc-800 bg-[#0e111a] hover:bg-zinc-800 text-zinc-300 font-black text-xs transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isPdfExtracting ? (
                   <>
@@ -1289,7 +1280,7 @@ export default function CreaiboxAiWritingPanel({
                 type="button"
                 onClick={onStartPdfRecreation}
                 disabled={isPdfExtracting || isRecreating || !pdfFile}
-                className="w-full h-11 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(124,58,237,0.2)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full h-11 rounded-lg bg-gradient-to-r from-violet-600 via-indigo-600 to-fuchsia-600 text-white font-black text-xs hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(124,58,237,0.2)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isRecreating ? (
                   <>

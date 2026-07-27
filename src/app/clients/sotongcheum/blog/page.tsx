@@ -1,7 +1,8 @@
 import React from "react";
 import Link from "next/link";
 import { createAdminClient } from "@/utils/supabase/server";
-import { CalendarDays, Sparkles, BookOpen, ArrowRight } from "lucide-react";
+import { Sparkles } from "lucide-react";
+import BlogListPaginatedView, { BlogItem } from "@/components/blog/BlogListPaginatedView";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,7 @@ interface PublishedPost {
   id: string;
   title: string | null;
   slug: string | null;
+  content: string | null;
   meta_description: string | null;
   focus_keyword: string | null;
   seo_tags: string[] | null;
@@ -23,12 +25,46 @@ function formatDate(value: string | null) {
   return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}.`;
 }
 
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&#x3D;/gi, "=")
+    .replace(/&gt;/gi, ">")
+    .replace(/&lt;/gi, "<")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&amp;/gi, "&")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function buildExcerpt(post: PublishedPost) {
-  const source = (post.meta_description || post.focus_keyword || "소통과 채움 소식").trim();
+  const raw = (post.meta_description || post.focus_keyword || "소통과 채움 소식").trim();
+  const source = decodeHtmlEntities(raw);
   return source.length > 120 ? `${source.slice(0, 120)}...` : source;
 }
 
-export default async function SotongcheumBlogPage() {
+function getPostThumbnail(post: PublishedPost, primaryMap: Record<string, string>): string | null {
+  if (primaryMap[post.id]) return primaryMap[post.id];
+  if (post.slug && primaryMap[post.slug]) return primaryMap[post.slug];
+  if (post.content) {
+    const imgMatch = post.content.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (imgMatch && imgMatch[1] && !imgMatch[1].includes("stat.naver.com")) {
+      return imgMatch[1];
+    }
+  }
+  return null;
+}
+
+export default async function SotongcheumBlogPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ page?: string }> | { page?: string };
+}) {
+  const resolvedParams = searchParams ? await Promise.resolve(searchParams) : {};
+  const rawPage = parseInt(resolvedParams.page || "1", 10);
+  const currentPage = isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
+
   const supabase = await createAdminClient();
 
   // Fetch Profile for sotongcheum
@@ -39,18 +75,67 @@ export default async function SotongcheumBlogPage() {
     .maybeSingle();
 
   let posts: PublishedPost[] = [];
+  let primaryImageMap: Record<string, string> = {};
 
   if (profile?.id) {
     const { data } = await supabase
       .from("writing_creaibox_posts")
-      .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at")
+      .select("id, title, slug, content, meta_description, focus_keyword, seo_tags, canonical_url, created_at")
       .eq("user_id", profile.id)
       .eq("status", "published")
       .not("slug", "is", null)
       .order("created_at", { ascending: false });
 
     posts = (data as PublishedPost[] | null) || [];
+
+    // 🌟 게시글 스마트 정렬 (최신 발행년도/날짜 2026년 -> 2018년 순으로 최상단 노출)
+    posts.sort((a, b) => {
+      const getPostTime = (p: PublishedPost) => {
+        const title = p.title || "";
+        const meta = p.meta_description || "";
+        const text = title + " " + meta;
+        const yearMatch = text.match(/(20\d{2})/);
+        const year = yearMatch ? parseInt(yearMatch[1], 10) : null;
+
+        const dateObj = p.created_at ? new Date(p.created_at) : null;
+        const dbTime = dateObj && !isNaN(dateObj.getTime()) ? dateObj.getTime() : 0;
+
+        if (year) {
+          return new Date(Date.UTC(year, 5, 15)).getTime();
+        }
+        return dbTime;
+      };
+
+      return getPostTime(b) - getPostTime(a);
+    });
+
+    if (posts.length > 0) {
+      const postIds = posts.map((p) => p.id);
+      const postSlugs = posts.map((p) => p.slug).filter(Boolean) as string[];
+      const { data: images } = await supabase
+        .from("generated_images")
+        .select("source_id, image_url, is_primary")
+        .eq("source_type", "writing_creaibox_posts")
+        .in("source_id", [...postIds, ...postSlugs]);
+
+      (images || []).forEach((img: any) => {
+        if (img.source_id && img.image_url) {
+          if (img.is_primary || !primaryImageMap[img.source_id]) {
+            primaryImageMap[img.source_id] = img.image_url;
+          }
+        }
+      });
+    }
   }
+
+  const formattedPosts: BlogItem[] = posts.map((post) => ({
+    id: post.id,
+    title: post.title || "제목 없음",
+    desc: buildExcerpt(post),
+    slug: post.slug || post.id,
+    dateStr: formatDate(post.created_at),
+    thumb: getPostThumbnail(post, primaryImageMap),
+  }));
 
   return (
     <div className="max-w-7xl w-full mx-auto px-6 lg:px-8 py-12">
@@ -70,55 +155,12 @@ export default async function SotongcheumBlogPage() {
         </div>
       </div>
 
-      {/* Posts Grid */}
-      {posts.length === 0 ? (
-        <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center space-y-4 shadow-sm my-8">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 border border-blue-100">
-            <BookOpen size={28} />
-          </div>
-          <h2 className="text-xl font-extrabold text-slate-900">
-            아직 발행된 포스팅이 없습니다.
-          </h2>
-          <p className="text-sm font-semibold text-slate-500 max-w-md mx-auto leading-relaxed">
-            소통과 채움 스튜디오에서 새로운 블로그 글을 작성하고 첫 포스팅을 공유해 보세요!
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {posts.map((post) => (
-            <article
-              key={post.id}
-              className="group flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-300"
-            >
-              <div className="space-y-3 flex-1">
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
-                  <CalendarDays size={14} className="text-blue-500" />
-                  <span>{formatDate(post.created_at)}</span>
-                </div>
-
-                <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
-                  <Link href={`/blog/${post.slug}`}>
-                    {post.title}
-                  </Link>
-                </h3>
-
-                <p className="text-xs font-medium text-slate-600 leading-relaxed line-clamp-3">
-                  {buildExcerpt(post)}
-                </p>
-              </div>
-
-              <div className="pt-6 mt-6 border-t border-slate-100 flex items-center justify-between">
-                <Link
-                  href={`/blog/${post.slug}`}
-                  className="inline-flex items-center gap-1.5 text-xs font-extrabold text-blue-600 group-hover:text-blue-700 hover:underline"
-                >
-                  포스팅 읽기 <ArrowRight size={14} />
-                </Link>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
+      {/* Posts Grid Component with Instant Zero-Latency Switch */}
+      <BlogListPaginatedView
+        posts={formattedPosts}
+        companyName="소통과 채움"
+        initialPage={currentPage}
+      />
     </div>
   );
 }

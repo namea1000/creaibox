@@ -1,16 +1,22 @@
 import React from "react";
 import { createClient } from "@/utils/supabase/server";
 import DynamicSection from "../../components/DynamicSection";
+import BlogListPaginatedView, { BlogItem } from "@/components/blog/BlogListPaginatedView";
 
 interface PageProps {
   params: Promise<{
     brand_id: string;
     slug?: string[];
   }>;
+  searchParams?: Promise<{ page?: string }> | { page?: string };
 }
 
-export default async function DynamicRendererPage({ params }: PageProps) {
+export default async function DynamicRendererPage({ params, searchParams }: PageProps) {
   const { brand_id, slug = [] } = await params;
+  const resolvedSearchParams = searchParams ? await Promise.resolve(searchParams) : {};
+  const rawPage = parseInt(resolvedSearchParams.page || "1", 10);
+  const currentPage = isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
+
   const supabase = await createClient();
 
   // 1. Fetch site settings
@@ -140,7 +146,7 @@ export default async function DynamicRendererPage({ params }: PageProps) {
       // 🌟 Blog List View (/blog)
       const { data: postsRaw = [] } = await supabase
         .from("writing_creaibox_posts")
-        .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at, published_snapshot")
+        .select("id, title, slug, content, meta_description, focus_keyword, seo_tags, canonical_url, created_at, published_snapshot")
         .eq("status", "published")
         .order("created_at", { ascending: false });
 
@@ -151,16 +157,38 @@ export default async function DynamicRendererPage({ params }: PageProps) {
         return urlLower.includes(`://${brand_id.toLowerCase()}.`) || urlLower.includes(`://${brand_id.toLowerCase()}:`);
       });
 
+      // 🌟 게시글 스마트 정렬 (최신 발행년도/날짜 2026년 -> 2018년 순으로 최상단 노출)
+      brandPosts.sort((a: any, b: any) => {
+        const getPostTime = (p: any) => {
+          const snap = p.published_snapshot || {};
+          const title = snap.title || p.title || "";
+          const meta = snap.meta_description || p.meta_description || "";
+          const text = title + " " + meta;
+          const yearMatch = text.match(/(20\d{2})/);
+          const year = yearMatch ? parseInt(yearMatch[1], 10) : null;
+
+          const dateObj = p.created_at ? new Date(p.created_at) : null;
+          const dbTime = dateObj && !isNaN(dateObj.getTime()) ? dateObj.getTime() : 0;
+
+          if (year) {
+            return new Date(Date.UTC(year, 5, 15)).getTime();
+          }
+          return dbTime;
+        };
+
+        return getPostTime(b) - getPostTime(a);
+      });
+
       // Fetch thumbnails
       const postIds = brandPosts.map((p: any) => p.id);
+      const postSlugs = brandPosts.map((p: any) => p.slug).filter(Boolean);
       let imageMap: Record<string, string> = {};
       if (postIds.length > 0) {
         const { data: images } = await supabase
           .from("generated_images")
           .select("source_id, image_url, is_primary")
           .eq("source_type", "writing_creaibox_posts")
-          .eq("image_role", "thumbnail")
-          .in("source_id", postIds);
+          .in("source_id", [...postIds, ...postSlugs]);
 
         (images || []).forEach((img: any) => {
           if (img.source_id && (!imageMap[img.source_id] || img.is_primary)) {
@@ -168,6 +196,43 @@ export default async function DynamicRendererPage({ params }: PageProps) {
           }
         });
       }
+
+      function getPostThumb(post: any): string | null {
+        if (imageMap[post.id]) return imageMap[post.id];
+        if (post.slug && imageMap[post.slug]) return imageMap[post.slug];
+        const content = post.published_snapshot?.content || post.content || "";
+        if (content) {
+          const match = content.match(/<img[^>]+src=["']([^"']+)["']/i);
+          if (match && match[1] && !match[1].includes("stat.naver.com")) {
+            return match[1];
+          }
+        }
+        return null;
+      }
+
+      const formattedPosts: BlogItem[] = brandPosts.map((post: any) => {
+        const snap = post.published_snapshot || {};
+        const title = snap.title || post.title || "제목 없음";
+        const desc = snap.meta_description || post.meta_description || "소개 내용 없음";
+        const postSlugVal = snap.slug || post.slug || post.id;
+        const thumb = getPostThumb(post);
+        const dateStr = post.created_at
+          ? new Date(post.created_at).toLocaleDateString("ko-KR", {
+              year: "numeric",
+              month: "numeric",
+              day: "numeric",
+            })
+          : "";
+
+        return {
+          id: post.id,
+          title,
+          desc,
+          slug: postSlugVal,
+          dateStr,
+          thumb,
+        };
+      });
 
       return (
         <div className="pt-20 pb-24 bg-white min-h-screen">
@@ -177,77 +242,20 @@ export default async function DynamicRendererPage({ params }: PageProps) {
               {site.company_name}
             </span>
             <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-              공식 블로그 & 비즈니스 소식
+              소통과 채움의 최신 소식 & 인사이트
             </h1>
             <p className="mt-3 text-sm font-semibold text-slate-500 max-w-lg mx-auto">
-              {site.company_name}의 전문 인사이트와 최신 소식을 전해드립니다.
+              공공행사 대행, 공동체 축제, 감성 교육 서비스 및 최신 소통 스토리를 만나보세요.
             </p>
           </div>
 
           {/* Posts Grid Container */}
           <div className="max-w-6xl mx-auto px-6 py-12">
-            {brandPosts.length === 0 ? (
-              <div className="py-24 text-center max-w-md mx-auto space-y-3">
-                <h3 className="text-lg font-bold text-slate-800">아직 등록된 블로그 글이 없습니다</h3>
-                <p className="text-xs text-slate-500 font-semibold leading-relaxed">
-                  크리에이박스 에디터를 사용하여 첫 비즈니스 블로그 아티클을 작성해 보세요.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {brandPosts.map((post: any) => {
-                  const snap = post.published_snapshot || {};
-                  const title = snap.title || post.title || "제목 없음";
-                  const desc = snap.meta_description || post.meta_description || "소개 내용 없음";
-                  const postSlugVal = snap.slug || post.slug || post.id;
-                  const thumb = imageMap[post.id];
-                  const dateStr = post.created_at ? new Date(post.created_at).toLocaleDateString("ko-KR", { year: "numeric", month: "short", day: "numeric" }) : "";
-
-                  return (
-                    <a
-                      key={post.id}
-                      href={`/blog/${postSlugVal}`}
-                      className="group bg-[var(--surface)] border border-slate-200/60 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
-                    >
-                      <div>
-                        {/* Thumbnail Panel */}
-                        <div className="aspect-[16/10] bg-slate-100 overflow-hidden relative">
-                          {thumb ? (
-                            <img
-                              src={thumb}
-                              alt={title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-[var(--primary)]/10 to-slate-200 flex items-center justify-center text-slate-400">
-                              <span className="text-xs font-black uppercase text-[var(--primary)]">{site.company_name}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Text Content */}
-                        <div className="p-6 space-y-2">
-                          <span className="text-[11px] font-bold text-slate-400 block">{dateStr}</span>
-                          <h3 className="text-base font-extrabold text-slate-900 group-hover:text-[var(--primary)] transition-colors line-clamp-2 leading-snug">
-                            {title}
-                          </h3>
-                          <p className="text-xs font-semibold text-slate-500 line-clamp-3 leading-relaxed">
-                            {desc}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="px-6 pb-6 pt-2">
-                        <span className="text-xs font-extrabold text-[var(--primary)] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                          <span>자세히 읽기</span>
-                          <span>→</span>
-                        </span>
-                      </div>
-                    </a>
-                  );
-                })}
-              </div>
-            )}
+            <BlogListPaginatedView
+              posts={formattedPosts}
+              companyName={site.company_name}
+              initialPage={currentPage}
+            />
           </div>
         </div>
       );

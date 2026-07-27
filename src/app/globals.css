@@ -136,3 +136,9 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* 몰입 편집 전체 화면 모드 (Focus Mode) */
+body.editor-focus-mode #global-studio-sidebar,
+body.editor-focus-mode #global-studio-aside {
+  display: none !important;
+}

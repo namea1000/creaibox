@@ -53,7 +53,8 @@ function sanitizePublishedHtml(content: string) {
     .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
     .replace(/\s+on\w+=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
     .replace(/\s+(href|src)=["']\s*javascript:[^"']*["']/gi, "")
-    .replace(/\s+srcdoc=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+    .replace(/\s+srcdoc=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/<img /gi, '<img referrerpolicy="no-referrer" ');
 }
 
 const getBlogMarkdownComponents = (theme: "light" | "dark"): Components => ({

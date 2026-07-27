@@ -294,9 +294,10 @@ export async function middleware(request: NextRequest) {
           console.error("Middleware dynamic client lookup failed:", dbErr);
         }
         
+        const search = request.nextUrl.search || "";
         rewritePath = isDynamicClient
-          ? `/clients/dynamic-renderer/${targetBrandId.toLowerCase()}${path}`
-          : `/brand/${targetBrandId.toLowerCase()}${path}`;
+          ? `/clients/dynamic-renderer/${targetBrandId.toLowerCase()}${path}${search}`
+          : `/brand/${targetBrandId.toLowerCase()}${path}${search}`;
       }
         
       const rewriteUrl = new URL(rewritePath, request.url);

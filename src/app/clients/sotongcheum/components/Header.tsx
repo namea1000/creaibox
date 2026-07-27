@@ -11,6 +11,18 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
 
+  const defaultNavLinks = [
+    { name: "홈", href: "/" },
+    { name: "회사소개", href: "/about" },
+    { name: "사업영역", href: "/#business" },
+    { name: "행사렌탈", href: "/#rental" },
+    { name: "실적갤러리", href: "/#portfolio" },
+    { name: "블로그", href: "/blog" },
+    { name: "견적문의", href: "/contact" },
+  ];
+
+  const [navLinks, setNavLinks] = useState(defaultNavLinks);
+
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 20) {
@@ -20,18 +32,51 @@ export default function Header() {
       }
     };
     window.addEventListener("scroll", handleScroll);
+
+    // Dynamic GNB Menu Loading from API & Supabase
+    async function loadDynamicGnb() {
+      try {
+        const res = await fetch("/api/clients/config?brandId=sotongcheum", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.config?.customMenus && Array.isArray(data.config.customMenus) && data.config.customMenus.length > 0) {
+            setNavLinks(
+              data.config.customMenus.map((m: any) => ({
+                name: m.label,
+                href: m.url,
+              }))
+            );
+            return;
+          }
+        }
+      } catch (e) {}
+
+      try {
+        const { createClient } = await import("@/utils/supabase/client");
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("extra_configs")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          if (profile?.extra_configs?.customMenus && Array.isArray(profile.extra_configs.customMenus) && profile.extra_configs.customMenus.length > 0) {
+            setNavLinks(
+              profile.extra_configs.customMenus.map((m: any) => ({
+                name: m.label,
+                href: m.url,
+              }))
+            );
+          }
+        }
+      } catch (e) {}
+    }
+
+    void loadDynamicGnb();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  const navLinks = [
-    { name: "홈", href: "/" },
-    { name: "회사소개", href: "/about" },
-    { name: "사업영역", href: "/#business" },
-    { name: "행사렌탈", href: "/#rental" },
-    { name: "실적갤러리", href: "/#portfolio" },
-    { name: "블로그", href: "/blog" },
-    { name: "견적문의", href: "/contact" },
-  ];
 
   const handleLinkClick = (href: string) => {
     setIsOpen(false);
@@ -57,7 +102,7 @@ export default function Header() {
               {COMPANY_INFO.brandName}
             </span>
             <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest leading-none">
-              Sotong & Cheum
+              Sotong &amp; Cheum
             </span>
           </div>
         </Link>
@@ -98,50 +143,37 @@ export default function Header() {
           </Link>
         </div>
 
-        {/* Mobile Menu Toggle Button */}
+        {/* Mobile menu button */}
         <button
+          type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="md:hidden flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 border border-slate-100 text-slate-700 hover:bg-slate-100 transition-all"
-          aria-label="메뉴 열기"
+          className="md:hidden rounded-xl p-2 text-slate-700 hover:bg-slate-100 transition-colors"
         >
-          {isOpen ? <X size={20} /> : <Menu size={20} />}
+          {isOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
-      {/* Mobile Drawer Menu */}
+      {/* Mobile Drawer */}
       {isOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-slate-100 shadow-xl py-6 px-6 animate-fade-in duration-300 z-50">
-          <div className="flex flex-col gap-4">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  onClick={() => handleLinkClick(link.href)}
-                  className={`text-base font-bold py-2 border-b border-slate-50 ${
-                    isActive ? "text-blue-600" : "text-slate-700 hover:text-slate-900"
-                  }`}
-                >
-                  {link.name}
-                </Link>
-              );
-            })}
-            <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-slate-100">
-              <a
-                href={`tel:${COMPANY_INFO.phone}`}
-                className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 text-sm font-bold text-slate-700"
-              >
-                전화문의 {COMPANY_INFO.phone}
-              </a>
-              <Link
-                href="/contact"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white shadow-md shadow-blue-600/10"
-              >
-                무료 견적 신청
-              </Link>
-            </div>
+        <div className="md:hidden border-t border-slate-200 bg-white px-6 py-4 space-y-3">
+          {navLinks.map((link) => (
+            <Link
+              key={link.name}
+              href={link.href}
+              onClick={() => handleLinkClick(link.href)}
+              className="block py-2 text-sm font-bold text-slate-700 hover:text-blue-600 transition-colors"
+            >
+              {link.name}
+            </Link>
+          ))}
+          <div className="pt-2 border-t border-slate-100">
+            <Link
+              href="/contact"
+              onClick={() => setIsOpen(false)}
+              className="block w-full text-center rounded-xl bg-blue-600 py-3 text-xs font-black text-white"
+            >
+              무료 견적 신청
+            </Link>
           </div>
         </div>
       )}

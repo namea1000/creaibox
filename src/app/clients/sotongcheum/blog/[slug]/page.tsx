@@ -12,6 +12,20 @@ interface PostDetailPageProps {
   params: Promise<{ slug: string }>;
 }
 
+function looksLikeHtml(content: string) {
+  return /<\/?(p|h[1-6]|div|table|blockquote|ul|ol|li|img|iframe|hr|br|strong|em|a)\b/i.test(content);
+}
+
+function sanitizePublishedHtml(content: string) {
+  return content
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
+    .replace(/\s+on\w+=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/\s+(href|src)=["']\s*javascript:[^"']*["']/gi, "")
+    .replace(/\s+srcdoc=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/<img /gi, '<img referrerpolicy="no-referrer" ');
+}
+
 const blogMarkdownComponents: Components = {
   h1: ({ children }) => (
     <h1 className="mb-6 border-b border-slate-200 pb-4 text-2xl font-extrabold tracking-tight text-slate-900">
@@ -32,6 +46,14 @@ const blogMarkdownComponents: Components = {
     <p className="mb-6 text-base leading-relaxed text-slate-700">
       {children}
     </p>
+  ),
+  img: ({ src, alt }) => (
+    <img
+      src={src}
+      alt={alt || "블로그 이미지"}
+      referrerPolicy="no-referrer"
+      className="my-6 max-w-full rounded-2xl shadow-md"
+    />
   ),
   ul: ({ children }) => (
     <ul className="mb-6 list-disc pl-6 text-base text-slate-700 space-y-2">
@@ -92,8 +114,14 @@ export default async function SotongcheumPostDetailPage(props: PostDetailPagePro
     .update({ views: currentViews + 1 })
     .eq("id", post.id);
 
+  const rawContent = post.content || "";
+  const isHtml = looksLikeHtml(rawContent);
+
   return (
     <div className="max-w-4xl w-full mx-auto px-6 py-12">
+      {/* Meta tag to prevent Naver image referer blocking */}
+      <meta name="referrer" content="no-referrer" />
+
       <div className="mb-8">
         <Link
           href="/blog"
@@ -115,10 +143,18 @@ export default async function SotongcheumPostDetailPage(props: PostDetailPagePro
           </h1>
         </header>
 
-        <div className="prose prose-slate max-w-none">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={blogMarkdownComponents}>
-            {post.content || ""}
-          </ReactMarkdown>
+        <div className="prose prose-slate max-w-none text-slate-800 leading-relaxed [&_img]:rounded-2xl [&_img]:my-6 [&_img]:shadow-md [&_img]:max-w-full [&_a]:text-blue-600 [&_a]:underline font-medium">
+          {isHtml ? (
+            <div
+              dangerouslySetInnerHTML={{
+                __html: sanitizePublishedHtml(rawContent),
+              }}
+            />
+          ) : (
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={blogMarkdownComponents}>
+              {rawContent}
+            </ReactMarkdown>
+          )}
         </div>
       </article>
     </div>
