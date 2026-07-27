@@ -78,22 +78,98 @@ export default function BlogListPaginatedView({
 
   return (
     <>
-      {/* 🌟 Interactive Category Filter Tabs */}
-      <div className="flex items-center justify-center gap-2.5 flex-wrap mb-10">
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            type="button"
-            onClick={() => handleCategoryChange(cat)}
-            className={`px-5 py-2.5 rounded-full text-xs font-black transition-all duration-200 border cursor-pointer ${
-              selectedCategory === cat
-                ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/25 scale-105"
-                : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
+      {/* 🌟 Top Header Bar with Category Filter Tabs & Top-Right Pagination Controls */}
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-4 mb-10 pb-4 border-b border-slate-100">
+        {/* Left: Interactive Category Filter Tabs */}
+        <div className="flex items-center gap-2 flex-wrap justify-center lg:justify-start">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => handleCategoryChange(cat)}
+              className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs font-black transition-all duration-200 border cursor-pointer ${
+                selectedCategory === cat
+                  ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/25 scale-105"
+                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Top-Right: Pagination Controls & Page Count Indicator */}
+        {totalPages > 1 && (
+          <div className="flex items-center gap-2.5 flex-shrink-0">
+            <span className="text-[11px] font-bold text-slate-400 hidden sm:inline mr-1">
+              총 <span className="text-black font-black">{totalPosts}</span>개 중{" "}
+              <span className="text-black font-black">{validPage}</span> / {totalPages} 페이지
+            </span>
+
+            {/* Prev Button */}
+            {validPage > 1 ? (
+              <button
+                type="button"
+                onClick={() => handlePageSelect(validPage - 1)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-extrabold text-slate-800 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-black transition-all shadow-sm active:scale-95 cursor-pointer"
+              >
+                <ChevronLeft size={14} /> 이전
+              </button>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-slate-300 bg-slate-50 border border-slate-100 rounded-xl cursor-not-allowed">
+                <ChevronLeft size={14} /> 이전
+              </span>
+            )}
+
+            {/* Page Numbers */}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((pNum) => {
+                  if (totalPages <= 5) return true;
+                  if (pNum === 1 || pNum === totalPages) return true;
+                  return Math.abs(pNum - validPage) <= 1;
+                })
+                .map((pNum, idx, arr) => {
+                  const prev = arr[idx - 1];
+                  const isEllipsis = prev && pNum - prev > 1;
+
+                  return (
+                    <React.Fragment key={pNum}>
+                      {isEllipsis && (
+                        <span className="px-1 text-[11px] font-black text-slate-400">..</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handlePageSelect(pNum)}
+                        className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-xs font-black rounded-lg transition-all cursor-pointer ${
+                          validPage === pNum
+                            ? "bg-black text-white shadow-md border border-black"
+                            : "bg-white text-slate-700 border border-slate-200 hover:border-black hover:bg-slate-50"
+                        }`}
+                      >
+                        {pNum}
+                      </button>
+                    </React.Fragment>
+                  );
+                })}
+            </div>
+
+            {/* Next Button */}
+            {validPage < totalPages ? (
+              <button
+                type="button"
+                onClick={() => handlePageSelect(validPage + 1)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-extrabold text-slate-800 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-black transition-all shadow-sm active:scale-95 cursor-pointer"
+              >
+                다음 <ChevronRight size={14} />
+              </button>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-slate-300 bg-slate-50 border border-slate-100 rounded-xl cursor-not-allowed">
+                다음 <ChevronRight size={14} />
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {filteredPosts.length === 0 ? (
