@@ -453,7 +453,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
 
       <Header />
 
-      <main className="pt-24 flex-1">
+      <main className="pt-6 flex-1">
         <div className="mx-auto max-w-7xl px-6 py-4">
           <Link
             href="/blog"
@@ -466,23 +466,15 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
           <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,2fr)_380px]">
             {/* 왼쪽 2/3 본문 내용 */}
             <article className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm h-fit">
-              <header className="border-b border-zinc-200 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.12),transparent_42%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-6 py-6 md:px-8 md:py-8">
+              <header className="border-b border-zinc-200 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.12),transparent_42%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-6 py-4 md:px-7 md:py-5">
                 <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-blue-700">
                   <Sparkles size={12} />
                   CreAibox Insight
                 </div>
 
-                <h1 className="mt-3 text-2xl font-black leading-[1.3] tracking-[-0.02em] text-zinc-950 md:text-[1.85rem]">
+                <h1 className="mt-2.5 text-xl font-black leading-[1.3] tracking-[-0.02em] text-zinc-950 md:text-[1.65rem]">
                   {post.title}
                 </h1>
-
-                {post.focus_keyword && (
-                  <div className="mt-4 flex flex-wrap items-center gap-4 text-sm font-semibold text-zinc-500">
-                    <span className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-blue-700">
-                      {post.focus_keyword}
-                    </span>
-                  </div>
-                )}
               </header>
 
               <div className="bg-white px-6 py-8 md:px-8">

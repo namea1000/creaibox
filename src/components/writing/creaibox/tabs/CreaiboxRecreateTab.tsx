@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import { copyToNaverSmartEditorClipboard, injectImagesIntoMarkdown } from "@/lib/naver-smarteditor-clipboard";
 import {
   Sparkles,
   Copy,
@@ -69,13 +71,18 @@ export default function CreaiboxRecreateTab() {
   const [originalTitle, setOriginalTitle] = useState<string>("");
   const [originalContent, setOriginalContent] = useState<string>("");
   
+  const [recreatedTitle, setRecreatedTitle] = useState<string>("");
   const [recreatedContent, setRecreatedContent] = useState<string>("");
   const [selectedTone, setSelectedTone] = useState<string>("friendly");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [activeLeftTab, setActiveLeftTab] = useState<"preview" | "edit">("preview");
   const [activeRightTab, setActiveRightTab] = useState<"edit" | "preview">("edit");
   const [fetchLoading, setFetchLoading] = useState<boolean>(true);
+
+  const searchParams = useSearchParams();
+  const targetIdFromUrl = searchParams ? searchParams.get("id") : null;
 
   // Load user's posts from Supabase (user_id filtered) + sessionStorage cache
   useEffect(() => {
@@ -174,11 +181,36 @@ export default function CreaiboxRecreateTab() {
           }
         }
 
+        // 4. If targetIdFromUrl is provided but not in loadedList, fetch it directly
+        if (targetIdFromUrl && !loadedList.some((p) => String(p.id) === String(targetIdFromUrl))) {
+          const { data: exactPost } = await supabase
+            .from("writing_creaibox_posts")
+            .select("id, title, content, created_at, canonical_url, user_id")
+            .eq("id", targetIdFromUrl)
+            .maybeSingle();
+
+          if (exactPost) {
+            loadedList.unshift({
+              id: String(exactPost.id),
+              title: exactPost.title || "제목 없음",
+              content: exactPost.content || "",
+              created_at: exactPost.created_at || new Date().toISOString(),
+              canonical_url: exactPost.canonical_url || "",
+              domainName: getManuscriptDomain(exactPost.canonical_url || ""),
+              user_id: exactPost.user_id,
+            });
+          }
+        }
+
         setPosts(loadedList);
         if (loadedList.length > 0) {
-          setSelectedPostId(loadedList[0].id);
-          setOriginalTitle(loadedList[0].title || "");
-          setOriginalContent(loadedList[0].content || "");
+          const targetItem = targetIdFromUrl
+            ? loadedList.find((p) => String(p.id) === String(targetIdFromUrl)) || loadedList[0]
+            : loadedList[0];
+
+          setSelectedPostId(targetItem.id);
+          setOriginalTitle(targetItem.title || "");
+          setOriginalContent(targetItem.content || "");
         }
       } catch (err) {
         console.error("Failed to load manuscripts:", err);
@@ -187,7 +219,7 @@ export default function CreaiboxRecreateTab() {
       }
     }
     loadPosts();
-  }, [supabase]);
+  }, [supabase, targetIdFromUrl]);
 
   // Extract unique domains list
   const availableDomains = useMemo(() => {
@@ -203,6 +235,12 @@ export default function CreaiboxRecreateTab() {
     if (selectedDomain === "all") return posts;
     return posts.filter((p) => p.domainName === selectedDomain);
   }, [posts, selectedDomain]);
+
+  const currentPostUrl = useMemo(() => {
+    const found = posts.find((p) => String(p.id) === String(selectedPostId));
+    if (!found) return "";
+    return found.canonical_url || "";
+  }, [posts, selectedPostId]);
 
   // When dropdown post changes
   const handleSelectPostChange = (postId: string) => {
@@ -242,7 +280,14 @@ export default function CreaiboxRecreateTab() {
         throw new Error(data.error || "재창조 생성 중 오류가 발생했습니다.");
       }
 
-      setRecreatedContent(data.resultText || "");
+      if (data.recreatedTitle) {
+        setRecreatedTitle(data.recreatedTitle);
+      }
+      const contentWithImg = injectImagesIntoMarkdown(
+        data.recreatedContent || data.resultText || "",
+        originalContent
+      );
+      setRecreatedContent(contentWithImg);
     } catch (err: any) {
       alert(err.message || "원고 재창조에 실패했습니다.");
     } finally {
@@ -250,10 +295,15 @@ export default function CreaiboxRecreateTab() {
     }
   };
 
-  // Copy to Clipboard (Formatted for Naver SmartEditor)
-  const handleCopy = () => {
+  // Copy to Clipboard (Formatted for Naver SmartEditor ONE)
+  const handleCopy = async () => {
     if (!recreatedContent) return;
-    navigator.clipboard.writeText(recreatedContent);
+    await copyToNaverSmartEditorClipboard({
+      title: recreatedTitle || originalTitle,
+      content: recreatedContent,
+      originalContent: originalContent,
+      sourceUrl: currentPostUrl,
+    });
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 3000);
   };
@@ -270,13 +320,28 @@ export default function CreaiboxRecreateTab() {
         ? `[네이버] ${originalTitle}`
         : `[네이버 재창조 원고] ${new Date().toLocaleDateString()}`;
 
-      // Save to writing_creaibox_posts
+      // Update original post with recreated content link
+      if (selectedPostId) {
+        await supabase
+          .from("writing_creaibox_posts")
+          .update({
+            recreated_title: recreatedTitle || originalTitle,
+            recreated_content: recreatedContent,
+            recreated_at: new Date().toISOString(),
+          })
+          .eq("id", selectedPostId);
+      }
+
+      // Save to writing_creaibox_posts as new record
       if (userId) {
         await supabase.from("writing_creaibox_posts").insert({
           user_id: userId,
           title,
           content: recreatedContent,
+          recreated_title: recreatedTitle || originalTitle,
+          recreated_content: recreatedContent,
           post_type: "naver_recreated",
+          parent_id: selectedPostId || null,
           status: "saved",
           created_at: new Date().toISOString(),
         });
@@ -501,9 +566,35 @@ export default function CreaiboxRecreateTab() {
                 1차 크리에이박스 원본 원고 (참고용)
               </h2>
             </div>
-            <span className="text-[11px] font-bold text-zinc-400">
-              글자수: {originalContent.length.toLocaleString()}자
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveLeftTab("preview")}
+                className={`rounded-md px-2.5 py-1 text-[11px] font-bold transition ${
+                  activeLeftTab === "preview"
+                    ? "bg-blue-600 text-white"
+                    : "bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                }`}
+              >
+                <Eye size={12} className="inline mr-1" />
+                미리보기
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveLeftTab("edit")}
+                className={`rounded-md px-2.5 py-1 text-[11px] font-bold transition ${
+                  activeLeftTab === "edit"
+                    ? "bg-blue-600 text-white"
+                    : "bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                }`}
+              >
+                <Edit3 size={12} className="inline mr-1" />
+                원문 소스
+              </button>
+              <span className="text-[11px] font-bold text-zinc-400 ml-1">
+                글자수: {originalContent.length.toLocaleString()}자
+              </span>
+            </div>
           </div>
 
           <div className="p-5 space-y-3 flex-1 flex flex-col">
@@ -514,12 +605,30 @@ export default function CreaiboxRecreateTab() {
               placeholder="원본 원고 제목"
               className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 px-3.5 py-2 text-xs font-bold text-zinc-900 dark:text-zinc-100 outline-none"
             />
-            <textarea
-              value={originalContent}
-              onChange={(e) => setOriginalContent(e.target.value)}
-              placeholder="원본 글 내용을 여기에 직접 입력하거나 위에서 선택해 주세요."
-              className="w-full flex-1 min-h-[420px] rounded-xl border border-zinc-200 dark:border-zinc-700/80 bg-zinc-50/50 dark:bg-zinc-800/40 p-4 text-xs font-medium leading-relaxed text-zinc-800 dark:text-zinc-200 outline-none resize-none focus:border-blue-500"
-            />
+            {activeLeftTab === "preview" ? (
+              <div className="w-full flex-1 min-h-[420px] rounded-xl border border-zinc-200 dark:border-zinc-700/80 bg-zinc-50/50 dark:bg-zinc-800/40 p-4 text-xs font-medium leading-relaxed text-zinc-800 dark:text-zinc-200 overflow-y-auto prose dark:prose-invert max-w-none">
+                {(() => {
+                  const cleanContent = (originalContent || "")
+                    .replace(/<!--[\s\S]*?-->/g, "")
+                    .trim();
+                  if (!cleanContent) {
+                    return <p className="text-zinc-400 italic">*선택하거나 입력된 원본 글 내용이 없습니다.*</p>;
+                  }
+                  const isHtml = /<[a-z][\s\S]*>/i.test(cleanContent);
+                  if (isHtml) {
+                    return <div dangerouslySetInnerHTML={{ __html: cleanContent }} />;
+                  }
+                  return <ReactMarkdown remarkPlugins={[remarkGfm]}>{cleanContent}</ReactMarkdown>;
+                })()}
+              </div>
+            ) : (
+              <textarea
+                value={originalContent}
+                onChange={(e) => setOriginalContent(e.target.value)}
+                placeholder="원본 글 내용을 여기에 직접 입력하거나 위에서 선택해 주세요."
+                className="w-full flex-1 min-h-[420px] rounded-xl border border-zinc-200 dark:border-zinc-700/80 bg-zinc-50/50 dark:bg-zinc-800/40 p-4 text-xs font-medium leading-relaxed text-zinc-800 dark:text-zinc-200 outline-none resize-none focus:border-blue-500 font-mono"
+              />
+            )}
           </div>
         </div>
 
@@ -573,18 +682,36 @@ export default function CreaiboxRecreateTab() {
                   문장 구조 재배치 및 C-Rank / DIA+ 검색 알고리즘 톤앤매너 적용 중
                 </p>
               </div>
-            ) : activeRightTab === "edit" ? (
-              <textarea
-                value={recreatedContent}
-                onChange={(e) => setRecreatedContent(e.target.value)}
-                placeholder="AI 재창조 버튼을 누르면 이 자리에 네이버 블로그에 최적화된 완전히 새로운 원고가 생성됩니다. 사용자가 자유롭게 수정할 수 있습니다."
-                className="w-full flex-1 min-h-[420px] rounded-xl border border-emerald-500/20 bg-emerald-50/10 dark:bg-zinc-950 p-4 text-xs font-medium leading-relaxed text-zinc-900 dark:text-zinc-100 outline-none resize-none focus:border-emerald-500"
-              />
             ) : (
-              <div className="w-full flex-1 min-h-[420px] rounded-xl border border-emerald-500/20 bg-emerald-50/10 dark:bg-zinc-950 p-4 text-xs font-medium leading-relaxed text-zinc-900 dark:text-zinc-100 overflow-y-auto prose dark:prose-invert max-w-none">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {recreatedContent || "*재창조된 내용이 없습니다.*"}
-                </ReactMarkdown>
+              <div className="flex flex-col flex-1 space-y-3">
+                {/* 🌟 100% 변형된 네이버 전용 새 제목 필드 */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-extrabold text-emerald-400 uppercase tracking-wider block">
+                    ✨ 새로 탄생한 네이버 맞춤형 변형 제목 (C-Rank 유사문서 회피용)
+                  </label>
+                  <input
+                    type="text"
+                    value={recreatedTitle || originalTitle}
+                    onChange={(e) => setRecreatedTitle(e.target.value)}
+                    placeholder="AI 재창조 시 100% 새로운 네이버 검색 맞춤형 제목이 생성됩니다."
+                    className="w-full rounded-xl border border-emerald-500/30 bg-emerald-950/20 dark:bg-zinc-950 px-4 py-2.5 text-xs font-bold text-zinc-900 dark:text-zinc-100 outline-none focus:border-emerald-500 shadow-inner"
+                  />
+                </div>
+
+                {activeRightTab === "edit" ? (
+                  <textarea
+                    value={recreatedContent}
+                    onChange={(e) => setRecreatedContent(e.target.value)}
+                    placeholder="AI 재창조 버튼을 누르면 이 자리에 네이버 블로그에 최적화된 완전히 새로운 원고가 생성됩니다. 사용자가 자유롭게 수정할 수 있습니다."
+                    className="w-full flex-1 min-h-[380px] rounded-xl border border-emerald-500/20 bg-emerald-50/10 dark:bg-zinc-950 p-4 text-xs font-medium leading-relaxed text-zinc-900 dark:text-zinc-100 outline-none resize-none focus:border-emerald-500"
+                  />
+                ) : (
+                  <div className="w-full flex-1 min-h-[380px] rounded-xl border border-emerald-500/20 bg-emerald-50/10 dark:bg-zinc-950 p-4 text-xs font-medium leading-relaxed text-zinc-900 dark:text-zinc-100 overflow-y-auto prose dark:prose-invert max-w-none">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {recreatedContent || "*재창조된 내용이 없습니다.*"}
+                    </ReactMarkdown>
+                  </div>
+                )}
               </div>
             )}
 

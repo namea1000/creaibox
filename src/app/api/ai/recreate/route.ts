@@ -35,6 +35,19 @@ function extractGeminiText(data: GeminiGenerateResponse) {
   return text;
 }
 
+function parseRecreatedTitleAndContent(rawText: string, defaultTitle: string) {
+  let title = defaultTitle;
+  let content = rawText;
+
+  // Try extracting top recommended title if present
+  const titleMatch = rawText.match(/1️⃣\s*\([^)]*\):\s*(.+)$/m) || rawText.match(/^#\s+(.+)$/m);
+  if (titleMatch && titleMatch[1]) {
+    title = titleMatch[1].trim();
+  }
+
+  return { title, content };
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -60,11 +73,21 @@ export async function POST(req: NextRequest) {
 당신은 네이버 블로그 C-Rank 및 DIA+ 검색 알고리즘 상위 노출에 최적화된 국내 최고 수준의 전문 AI 콘텐츠 에디터입니다.
 주어진 원본 글(크리에이박스 블로그 글)을 바탕으로, 검색 엔진의 유사 문서(Duplicate Content) 검출 시스템을 100% 통과할 수 있는 독창적인 "네이버 블로그 맞춤형 재창조 원고"를 작성하세요.
 
-[네이버용 4대 재창조 핵심 메커니즘]
-1. 문장 구조 및 어휘 재설계: 단순 단어 치환이 아니라 문장의 주어, 목적어, 서술어 구조를 완전히 다르게 재배치하여 100% 새로운 독립 문장으로 재구성하세요.
-2. 어조 및 톤앤매너 변환: ${toneStyle}를 엄격히 적용하세요.
-3. 도입부 및 마무리 창작: 네이버 블로그 이웃과 친근하게 소통할 수 있는 새로운 서론 인사말과 독자의 댓글/공감을 유도하는 친근한 결론을 새로 창작하세요.
-4. 네이버 검색 키워드 & 소제목 최적화: 네이버 C-Rank / DIA+ 알고리즘이 선호하는 가독성 높은 소제목(##, ###)과 자연스러운 키워드 배치를 적용하세요.
+[네이버용 핵심 재창조 가이드라인]
+1. 🌟 본문 최상단에 [추천 변형 제목 4선] 필수 생성:
+   원고의 맨 최상단(1행)에 사용자가 골라서 제목으로 쓸 수 있도록 C-Rank / DIA+ 검색 알고리즘 및 유사문서 회피에 최적화된 추천 제목 4가지를 아래 양식대로 정확히 생성하세요:
+   💡 [네이버 C-Rank / DIA+ 상위노출 추천 제목 4선]
+   1️⃣ (이슈/클릭 유발형): [변형 제목 1]
+   2️⃣ (스펙/전문성 분석형): [변형 제목 2]
+   3️⃣ (비교/차별화 강조형): [변형 제목 3]
+   4️⃣ (친근한 블로그 후기형): [변형 제목 4]
+   ---
+
+2. 문장 구조 및 어휘 재설계: 단순 단어 치환이 아니라 문장의 주어, 목적어, 서술어 구조를 완전히 다르게 재배치하여 100% 새로운 독립 문장으로 재구성하세요.
+3. 어조 및 톤앤매너 변환: ${toneStyle}를 엄격히 적용하세요.
+4. 도입부 및 마무리 창작: 네이버 블로그 이웃과 친근하게 소통할 수 있는 새로운 서론 인사말과 독자의 댓글/공감을 유도하는 친근한 결론을 새로 창작하세요.
+5. 네이버 검색 키워드 & 소제목 최적화: 네이버 C-Rank / DIA+ 알고리즘이 선호하는 가독성 높은 소제목(##, ###)과 자연스러운 키워드 배치를 적용하세요.
+6. 🌟 네이버 SEO 태그 필수 생성: 원고 본문 맨 마지막 줄(최하단)에는 원고 주제 및 내용과 연관된 네이버 전용 태그 5개~6개를 "#태그1, #태그2, #태그3, #태그4, #태그5" 형태로 한 줄에 정확히 작성하여 반드시 포함시키세요. (예시: #문샷AI키미, #중국AI기술동향, #KimiK3성능, #대규모컨텍스트AI, #중국생성형AI모델)
 
 [출력 가이드]
 - 마크다운(Markdown) 포맷으로 작성하세요.
@@ -84,7 +107,6 @@ ${originalContent}
     const vaultKeys = await getActiveVaultKeys();
 
     if (!vaultKeys || vaultKeys.length === 0) {
-      // Fallback to process.env.GEMINI_API_KEY if vault has no keys
       const envKey = process.env.GEMINI_API_KEY;
       if (!envKey) {
         return NextResponse.json(
@@ -110,8 +132,9 @@ ${originalContent}
       );
 
       const data = await res.json();
-      const resultText = extractGeminiText(data);
-      return NextResponse.json({ resultText });
+      const rawText = extractGeminiText(data);
+      const { title, content } = parseRecreatedTitleAndContent(rawText, originalTitle || "네이버 재창조 원고");
+      return NextResponse.json({ recreatedTitle: title, recreatedContent: content, resultText: content });
     }
 
     let lastError: any = null;
@@ -140,9 +163,10 @@ ${originalContent}
           continue;
         }
 
-        const resultText = extractGeminiText(data);
+        const rawText = extractGeminiText(data);
         await recordVaultSuccess(keyRow.id);
-        return NextResponse.json({ resultText });
+        const { title, content } = parseRecreatedTitleAndContent(rawText, originalTitle || "네이버 재창조 원고");
+        return NextResponse.json({ recreatedTitle: title, recreatedContent: content, resultText: content });
       } catch (err: any) {
         lastError = err;
         await recordVaultFailure(keyRow.id, err.message || "Gemini호출 실패");

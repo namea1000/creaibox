@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { copyToNaverSmartEditorClipboard } from "@/lib/naver-smarteditor-clipboard";
 import { EditorContent, useEditor, Mark, mergeAttributes } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
@@ -1624,7 +1625,7 @@ export default function UniversalBlogEditor({
     return () => clearTimeout(timer);
   }, [saveFeedback]);
 
-  const handleLocalCopy = useCallback(() => {
+  const handleLocalCopy = useCallback(async () => {
     if (handleCopy) {
       handleCopy();
     } else {
@@ -1633,8 +1634,10 @@ export default function UniversalBlogEditor({
       const parsedCopyText = rawContent.replace(/<!--\s*CREAIBOX_SCHEMA_START([\s\S]*?)CREAIBOX_SCHEMA_END\s*-->/gi, (match, jsonCode) => {
         return `\n<script type="application/ld+json">\n${jsonCode.trim()}\n</script>\n`;
       });
-      const copyText = `제목: ${title}\n\n${parsedCopyText}`;
-      navigator.clipboard.writeText(copyText);
+      await copyToNaverSmartEditorClipboard({
+        title,
+        content: parsedCopyText,
+      });
     }
     setCopyFeedback("copied");
     if (copyTimerRef.current) clearTimeout(copyTimerRef.current);

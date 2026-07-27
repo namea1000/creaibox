@@ -2,6 +2,10 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { copyToNaverSmartEditorClipboard } from "@/lib/naver-smarteditor-clipboard";
 import {
   Search,
   AlertCircle,
@@ -17,6 +21,10 @@ import {
   Send,
   FilePlus2,
   X,
+  Sparkles,
+  Copy,
+  Check,
+  ExternalLink,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/utils/supabase/client";
@@ -583,7 +591,23 @@ export default function CreaiboxManuscriptListPage() {
   );
   const allTrashRowsSelected =
     isTrashView && trashPageIds.length > 0 && trashPageIds.every((id) => selectedTrashIds.includes(id));
-  const tableColumnCount = isTrashView ? 10 : 9;
+  const tableColumnCount = isTrashView ? 11 : 10;
+
+  const [recreateModalRecord, setRecreateModalRecord] = useState<{ originalTitle: string; title: string; content: string; id: string; sourceUrl?: string } | null>(null);
+  const [recreateCopyFeedback, setRecreateCopyFeedback] = useState<boolean>(false);
+
+  const recreatedMapByParentId = useMemo(() => {
+    const map: Record<string, StudioManuscriptRecord> = {};
+    manuscripts.forEach((m) => {
+      if (m.recreatedContent) {
+        map[m.id] = m;
+      }
+      if (m.parentId) {
+        map[m.parentId] = m;
+      }
+    });
+    return map;
+  }, [manuscripts]);
 
   useEffect(() => {
     if (!isTrashView && selectedTrashIds.length > 0) {
@@ -1143,6 +1167,7 @@ export default function CreaiboxManuscriptListPage() {
               )}
               <th className="min-w-[320px] px-3 py-3">포스팅 제목</th>
               <th className="w-28 px-3 py-3 text-center whitespace-nowrap">원고 상태</th>
+              <th className="w-44 px-3 py-3 text-center whitespace-nowrap font-bold text-emerald-700 dark:text-emerald-400">네이버/SNS 재발행</th>
               <th className="w-56 px-3 py-3 text-center whitespace-nowrap">도메인 (블로그/홈페이지)</th>
               <th className="w-48 px-3 py-3 text-center whitespace-nowrap">타입</th>
               <th className="w-80 px-3 py-3 text-center whitespace-nowrap">말투</th>
@@ -1293,6 +1318,43 @@ export default function CreaiboxManuscriptListPage() {
                   </span>
                 </td>
 
+                {/* 🌟 네이버/SNS 재발행 컬럼 셀 */}
+                <td className="px-3 py-4 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                  {(() => {
+                    const linkedRecreated = manuscript.recreatedContent ? manuscript : recreatedMapByParentId[manuscript.id];
+                    if (linkedRecreated) {
+                      const recreatedTitle = linkedRecreated.recreatedTitle || linkedRecreated.title || manuscript.title;
+                      const recreatedContent = linkedRecreated.recreatedContent || linkedRecreated.content;
+                      return (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setRecreateModalRecord({
+                              originalTitle: manuscript.title,
+                              title: recreatedTitle,
+                              content: recreatedContent,
+                              id: manuscript.id,
+                              sourceUrl: manuscript.canonicalUrl || "",
+                            })
+                          }
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 transition-all shadow-sm cursor-pointer"
+                        >
+                          <Sparkles size={12} className="text-emerald-600 dark:text-emerald-400" />
+                          🟢 재발행 보기
+                        </button>
+                      );
+                    }
+                    return (
+                      <Link
+                        href={`/writing/creaibox/recreate?id=${manuscript.id}`}
+                        className="inline-flex items-center gap-1 text-[12px] font-semibold text-slate-400 hover:text-blue-600 hover:underline"
+                      >
+                        + 재발행 생성
+                      </Link>
+                    );
+                  })()}
+                </td>
+
                 <td className="px-3 py-4 text-center text-[14px] text-slate-700 whitespace-nowrap">
                   <span className="inline-flex border border-blue-200/80 bg-blue-50/70 px-2.5 py-1 text-[12px] font-bold text-blue-900 rounded-md">
                     {domainLabel}
@@ -1394,6 +1456,112 @@ export default function CreaiboxManuscriptListPage() {
         <div className="mt-6 flex items-center gap-3 border border-red-300 bg-red-50 px-5 py-4 text-[14px] text-red-700">
           <AlertCircle className="h-5 w-5" />
           원고 목록을 불러오지 못했습니다: {fallbackError}
+        </div>
+      )}
+
+      {/* 🌟 네이버/SNS 재발행 원고 미리보기 팝업 모달 */}
+      {recreateModalRecord && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto"
+          onClick={() => setRecreateModalRecord(null)}
+        >
+          <div
+            className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-6 py-4 bg-zinc-50 dark:bg-zinc-900/50">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-zinc-900 dark:text-zinc-100">
+                    네이버 / SNS 맞춤형 재발행 원고
+                  </h3>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    원본 글: {recreateModalRecord.originalTitle}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRecreateModalRecord(null)}
+                className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Content Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
+              {/* Title Section */}
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
+                <span className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block mb-1">
+                  ✨ 네이버 C-Rank 맞춤형 재창조 제목
+                </span>
+                <h4 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                  {recreateModalRecord.title}
+                </h4>
+              </div>
+
+              {/* Manuscript Content Render */}
+              <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 text-sm leading-relaxed prose dark:prose-invert max-w-none">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {recreateModalRecord.content}
+                </ReactMarkdown>
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 dark:border-zinc-800 px-6 py-4 bg-zinc-50 dark:bg-zinc-900/50">
+              <Link
+                href={`/writing/creaibox/recreate?id=${recreateModalRecord.id}`}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:text-blue-600 hover:underline"
+              >
+                <ExternalLink size={14} />
+                재창조 페이지에서 편집하기
+              </Link>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const success = await copyToNaverSmartEditorClipboard({
+                      title: recreateModalRecord.title,
+                      content: recreateModalRecord.content,
+                      sourceUrl: recreateModalRecord.sourceUrl,
+                    });
+                    if (success) {
+                      setRecreateCopyFeedback(true);
+                      setTimeout(() => setRecreateCopyFeedback(false), 2500);
+                    }
+                  }}
+                  className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-extrabold text-white transition-all shadow-md cursor-pointer ${
+                    recreateCopyFeedback ? "bg-emerald-600" : "bg-emerald-500 hover:bg-emerald-600"
+                  }`}
+                >
+                  {recreateCopyFeedback ? (
+                    <>
+                      <Check size={14} /> 복사 완료!
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={14} /> 📋 네이버 스마트에디터 1초 복사
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setRecreateModalRecord(null)}
+                  className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

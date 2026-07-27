@@ -421,7 +421,7 @@ export default function PostClientWrapper({
           {/* Left 2/3 Content column */}
           <div className="space-y-8">
             <article className={`overflow-hidden rounded-xl border transition-all duration-300 ${articleBg}`}>
-              <header className={`px-6 py-6 md:px-8 md:py-8 transition-all duration-300 ${articleHeaderBg}`}>
+              <header className={`px-6 py-4 md:px-7 md:py-5 transition-all duration-300 ${articleHeaderBg}`}>
                 <div className="flex flex-wrap items-center gap-2">
                   {category && (
                     <Link
@@ -436,7 +436,7 @@ export default function PostClientWrapper({
                   </div>
                 </div>
 
-                <h1 className={`mt-6 text-2xl md:text-[1.85rem] font-black leading-[1.3] tracking-[-0.02em] ${titleColor}`}>
+                <h1 className={`mt-2.5 text-xl md:text-[1.65rem] font-black leading-[1.3] tracking-[-0.02em] ${titleColor}`}>
                   {post.title}
                 </h1>
               </header>

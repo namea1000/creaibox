@@ -54,6 +54,10 @@ export interface StudioManuscriptRecord {
   categoryIds?: string[];
   tocEnabled?: boolean;
   publishedSnapshot?: any;
+  recreatedTitle?: string;
+  recreatedContent?: string;
+  recreatedAt?: string;
+  parentId?: string;
 }
 
 interface WritingCreaiboxPostRecord {
@@ -78,6 +82,10 @@ interface WritingCreaiboxPostRecord {
   category_ids?: string[] | null;
   toc_enabled?: boolean | null;
   published_snapshot?: any;
+  recreated_title?: string | null;
+  recreated_content?: string | null;
+  recreated_at?: string | null;
+  parent_id?: string | number | null;
 }
 
 interface WritingNaverPostRecord {
@@ -249,6 +257,10 @@ function mapCreaiboxRecord(record: WritingCreaiboxPostRecord): StudioManuscriptR
       : (record.category_id ? [record.category_id] : []),
     tocEnabled: record.toc_enabled ?? true,
     publishedSnapshot: record.published_snapshot || undefined,
+    recreatedTitle: record.recreated_title || undefined,
+    recreatedContent: record.recreated_content || undefined,
+    recreatedAt: record.recreated_at || undefined,
+    parentId: record.parent_id ? String(record.parent_id) : undefined,
   };
 }
 

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import NaverAnalysisTower from "@/components/writing/naver/NaverAnalysisTower";
+import { copyToNaverSmartEditorClipboard } from "@/lib/naver-smarteditor-clipboard";
 import { Cpu, Link2, FileText, Zap, RefreshCw, Sparkles, ChevronDown, Copy, Download, ExternalLink, Eye, AlertTriangle, FileText as FileTextIcon } from 'lucide-react';
 
 interface KeywordFrequency { word: string; count: number; density: number; status: 'good' | 'warning' | 'danger'; }
@@ -190,8 +191,16 @@ export default function NaverRecreateTab({
       return;
     }
 
-    await navigator.clipboard.writeText(`제목: ${title}\n\n${content}`);
-    alert("📋 재창조 결과 원고가 복사되었습니다!");
+    const success = await copyToNaverSmartEditorClipboard({
+      title,
+      content,
+    });
+
+    if (success) {
+      alert("📋 네이버 스마트에디터 서식(이미지·제목·구분선 포함)으로 복사되었습니다!\n\n네이버 블로그 글쓰기 창에서 붙여넣기(Ctrl+V) 하세요.");
+    } else {
+      alert("📋 재창조 결과 원고가 복사되었습니다!");
+    }
   };
 
   const downloadTxt = () => {

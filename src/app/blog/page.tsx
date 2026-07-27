@@ -137,7 +137,7 @@ export default async function BlogPage(props: {
     <div className="flex flex-col min-h-screen bg-white text-zinc-950 dark:bg-[#06080d] dark:text-slate-100 transition-colors duration-300">
       <Header />
 
-      <main className="pt-24 flex-1">
+      <main className="pt-6 flex-1">
         <section className="mx-auto max-w-7xl px-6 py-4">
           <div className="mb-6 flex items-end justify-between gap-6">
             <div>
