@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ArrowLeft, Check, ChevronDown, Globe, PanelLeftClose, PanelLeftOpen, RotateCcw, Search, Send, Trash2 } from "lucide-react";
@@ -514,7 +514,7 @@ function normalizeCreaiboxRecord(row: CreaiboxRow): StudioManuscriptRecord {
   };
 }
 
-export default function CreaiboxManuscriptDetailPage() {
+function CreaiboxManuscriptDetailContent() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const pathname = usePathname();
@@ -2794,5 +2794,19 @@ export default function CreaiboxManuscriptDetailPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function CreaiboxManuscriptDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen w-full items-center justify-center bg-slate-900 text-slate-400 font-semibold">
+          원고 에디터를 로딩 중입니다...
+        </div>
+      }
+    >
+      <CreaiboxManuscriptDetailContent />
+    </Suspense>
   );
 }

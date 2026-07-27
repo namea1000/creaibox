@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -26,7 +26,7 @@ import {
 import { useSearchParams } from "next/navigation";
 import { KeywordToolResult } from "@/lib/server/keyword-tool-engine";
 
-export default function LowordKeywordToolPage() {
+function LowordKeywordToolContent() {
   const searchParams = useSearchParams();
   const paramKw = searchParams.get("keyword");
   const paramProv = searchParams.get("provider") as "naver" | "google" | null;
@@ -513,5 +513,22 @@ export default function LowordKeywordToolPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function LowordKeywordToolPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-12 text-center text-zinc-400 font-semibold flex items-center justify-center min-h-[400px]">
+          <div className="flex items-center gap-3">
+            <RefreshCw className="animate-spin text-purple-400" size={24} />
+            <span>키워드 탐색 도구를 로딩하고 있습니다...</span>
+          </div>
+        </div>
+      }
+    >
+      <LowordKeywordToolContent />
+    </Suspense>
   );
 }
