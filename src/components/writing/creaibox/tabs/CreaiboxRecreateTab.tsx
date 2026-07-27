@@ -29,6 +29,33 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import OGLinkCard from "@/components/common/OGLinkCard";
+import type { Components } from "react-markdown";
+
+const recreateMarkdownComponents: Components = {
+  p: ({ children }) => {
+    if (typeof children === "string") {
+      const trimmed = children.trim();
+      if (/^https?:\/\/[^\s]+$/.test(trimmed)) {
+        return <OGLinkCard url={trimmed} />;
+      }
+    }
+    if (React.Children.count(children) === 1) {
+      const child = React.Children.toArray(children)[0] as any;
+      if (child && child.type === "a" && child.props?.href) {
+        const href = child.props.href;
+        const linkText = child.props.children;
+        if (
+          typeof linkText === "string" &&
+          (linkText.trim() === href.trim() || /^https?:\/\/[^\s]+$/.test(linkText.trim()))
+        ) {
+          return <OGLinkCard url={href} />;
+        }
+      }
+    }
+    return <p className="mb-4 leading-relaxed">{children}</p>;
+  },
+};
 
 interface PostOption {
   id: string;
@@ -283,10 +310,23 @@ export default function CreaiboxRecreateTab() {
       if (data.recreatedTitle) {
         setRecreatedTitle(data.recreatedTitle);
       }
-      const contentWithImg = injectImagesIntoMarkdown(
+      let contentWithImg = injectImagesIntoMarkdown(
         data.recreatedContent || data.resultText || "",
         originalContent
       );
+
+      if (currentPostUrl) {
+        const cleanUrl = currentPostUrl.trim();
+        if (cleanUrl && !contentWithImg.includes(cleanUrl)) {
+          const hashtagMatch = contentWithImg.match(/^#[^\s#].*$/m);
+          if (hashtagMatch) {
+            contentWithImg = contentWithImg.replace(/^#[^\s#].*$/m, `${cleanUrl}\n\n${hashtagMatch[0]}`);
+          } else {
+            contentWithImg = `${contentWithImg}\n\n${cleanUrl}`;
+          }
+        }
+      }
+
       setRecreatedContent(contentWithImg);
     } catch (err: any) {
       alert(err.message || "원고 재창조에 실패했습니다.");
@@ -707,7 +747,7 @@ export default function CreaiboxRecreateTab() {
                   />
                 ) : (
                   <div className="w-full flex-1 min-h-[380px] rounded-xl border border-emerald-500/20 bg-emerald-50/10 dark:bg-zinc-950 p-4 text-xs font-medium leading-relaxed text-zinc-900 dark:text-zinc-100 overflow-y-auto prose dark:prose-invert max-w-none">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={recreateMarkdownComponents}>
                       {recreatedContent || "*재창조된 내용이 없습니다.*"}
                     </ReactMarkdown>
                   </div>

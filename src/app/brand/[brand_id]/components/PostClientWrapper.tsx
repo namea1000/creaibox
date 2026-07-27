@@ -409,7 +409,7 @@ export default function PostClientWrapper({
       </header>
 
       {/* Main post container */}
-      <main className="mx-auto max-w-7xl px-6 py-4 flex-1 w-full">
+      <main className="mx-auto max-w-[1536px] px-6 py-4 flex-1 w-full">
         <Link
           href="/"
           className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-black transition ${backBtnStyle}`}
@@ -417,7 +417,7 @@ export default function PostClientWrapper({
           <ArrowLeft size={16} /> 블로그 홈으로 돌아가기
         </Link>
 
-        <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,2fr)_380px]">
+        <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,2fr)_420px]">
           {/* Left 2/3 Content column */}
           <div className="space-y-8">
             <article className={`overflow-hidden rounded-xl border transition-all duration-300 ${articleBg}`}>
@@ -639,8 +639,9 @@ export default function PostClientWrapper({
           </div>
 
           {/* 오른쪽 1/3 베스트 글 위젯 (Sticky 적용) */}
-          <aside className={`lg:sticky lg:top-28 h-fit rounded-xl border p-6 transition-all duration-300 ${theme === "dark" ? "border-zinc-800 bg-[#1e222b]/40" : "border-zinc-200 bg-zinc-50"}`}>
-            <div className="mb-4 flex items-center justify-between border-b pb-3 border-zinc-200 dark:border-zinc-800">
+          <aside className={`lg:sticky lg:top-28 h-fit overflow-hidden rounded-xl border transition-all duration-300 ${theme === "dark" ? "border-zinc-800 bg-zinc-950" : "border-zinc-200 bg-white"}`}>
+            {/* 상단 탭 헤더 (음영 적용) */}
+            <div className={`px-6 py-4 flex items-center justify-between border-b ${theme === "dark" ? "bg-zinc-900/80 border-zinc-800" : "bg-zinc-50/90 border-zinc-200"}`}>
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-500">
                   Best Posts
@@ -649,18 +650,19 @@ export default function PostClientWrapper({
                   베스트 글
                 </h2>
               </div>
-              <Star className="text-blue-500" size={20} />
+              <Star className="text-blue-500 fill-blue-500/10" size={20} />
             </div>
 
-            <div className="space-y-1">
+            {/* 하단 리스트 (화이트 바탕 + 콤팩트 세로 균형) */}
+            <div className={`divide-y ${theme === "dark" ? "bg-zinc-950 divide-zinc-800/60" : "bg-white divide-zinc-200/60"}`}>
               {bestPosts.map((bestPost) => {
                 return (
                   <Link
                     key={bestPost.id}
                     href={`/${bestPost.slug}`}
-                    className="group flex items-center gap-4 rounded-none px-2 py-3 transition hover:bg-white/5 border-b border-zinc-200 dark:border-zinc-800/60 last:border-b-0"
+                    className={`group flex items-center gap-3.5 px-6 py-3 transition-colors ${theme === "dark" ? "hover:bg-zinc-900/60" : "hover:bg-zinc-50/80"}`}
                   >
-                    <div className="relative w-16 aspect-[16/9] shrink-0 overflow-hidden rounded-none border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
+                    <div className="relative w-24 sm:w-28 aspect-[16/9] shrink-0 overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
                       {bestPost.thumbnailUrl ? (
                         <img
                           src={bestPost.thumbnailUrl}
@@ -672,8 +674,8 @@ export default function PostClientWrapper({
                       )}
                     </div>
 
-                    <div className="min-w-0 flex-1">
-                      <h3 className={`line-clamp-2 text-[1.05rem] font-normal leading-snug group-hover:text-blue-500 transition-colors ${theme === "dark" ? "text-zinc-300" : "text-zinc-800"}`}>
+                    <div className="min-w-0 flex-1 flex flex-col justify-center">
+                      <h3 className={`line-clamp-2 text-[0.98rem] font-normal leading-[1.5] group-hover:text-blue-500 transition-colors ${theme === "dark" ? "text-zinc-300" : "text-zinc-800"}`}>
                         {bestPost.title}
                       </h3>
                     </div>

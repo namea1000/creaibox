@@ -408,6 +408,92 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
   return meta;
 }
 
+async function transformContentWithOgCards(content: string, supabase: any): Promise<string> {
+  if (!content) return content;
+
+  const urlRegex = /<p[^>]*>\s*(?:<a[^>]*>)?(https?:\/\/[^\s<]+)(?:<\/a>)?\s*<\/p>|(?:^|\n)\s*(https?:\/\/[^\s<]+)\s*(?=\n|$)/gi;
+  const matches = Array.from(content.matchAll(urlRegex));
+  if (matches.length === 0) return content;
+
+  let transformed = content;
+
+  for (const match of matches) {
+    const fullMatch = match[0];
+    const rawUrl = (match[1] || match[2] || "").trim();
+    if (!rawUrl) continue;
+
+    try {
+      const parsedUrl = new URL(rawUrl);
+      const host = parsedUrl.hostname.toLowerCase();
+      const pathname = parsedUrl.pathname;
+
+      let cardTitle = rawUrl;
+      let cardDesc = "";
+      let cardImage: string | null = null;
+      let domain = host.replace(/^www\./, "");
+
+      if ((host.endsWith("creaibox.com") || host === "localhost") && pathname.startsWith("/blog/")) {
+        domain = "creaibox.com";
+        const rawSlug = pathname.replace(/^\/blog\//, "").replace(/\/$/, "");
+        const slug = decodeURIComponent(rawSlug);
+
+        const { data: postData } = await supabase
+          .from("writing_creaibox_posts")
+          .select("id, title, meta_description, focus_keyword")
+          .eq("slug", slug)
+          .limit(1)
+          .maybeSingle();
+
+        if (postData) {
+          cardTitle = postData.title || "CreAibox 블로그 포스팅";
+          cardDesc = postData.meta_description || postData.focus_keyword || "CreAibox 오리지널 인사이트 리포트입니다.";
+
+          const { data: imgData } = await supabase
+            .from("generated_images")
+            .select("source_id, image_url, is_primary")
+            .eq("source_type", "writing_creaibox_posts")
+            .eq("image_role", "thumbnail")
+            .eq("source_id", postData.id);
+
+          const primaryImg = (imgData || []).find((i: any) => i.is_primary) || (imgData || [])[0];
+          if (primaryImg?.image_url) {
+            cardImage = primaryImg.image_url;
+          }
+        }
+      }
+
+      const escapedTitle = cardTitle.replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const escapedDesc = cardDesc.replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+      const ogCardHtml = `
+        <a href="${rawUrl}" target="_blank" rel="noopener noreferrer" class="og-card my-3.5 block max-w-2xl mx-auto overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:border-blue-400 hover:shadow-md no-underline group text-left">
+          ${
+            cardImage
+              ? `<div class="w-full aspect-[16/9] overflow-hidden border-b border-zinc-100 p-0 m-0 leading-none">
+                  <img src="${cardImage}" alt="${escapedTitle}" style="margin: 0 !important; padding: 0 !important; display: block !important;" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
+                 </div>`
+              : ""
+          }
+          <div class="p-4 sm:p-4.5">
+            <h4 class="text-[1.1rem] sm:text-lg font-bold text-zinc-950 group-hover:text-blue-600 line-clamp-2 leading-snug transition-colors" style="margin: 0 !important;">${escapedTitle}</h4>
+            ${escapedDesc ? `<p class="mt-1.5 text-xs text-zinc-500 line-clamp-2 leading-relaxed font-normal" style="margin-top: 6px !important; margin-bottom: 0 !important;">${escapedDesc}</p>` : ""}
+            <div class="mt-2.5 flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
+              <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span>${domain}</span>
+            </div>
+          </div>
+        </a>
+      `;
+
+      transformed = transformed.replace(fullMatch, ogCardHtml);
+    } catch (e) {
+      console.error("OG transformation error:", e);
+    }
+  }
+
+  return transformed;
+}
+
 export default async function BrandPostDetailPage({ params }: PostDetailPageProps) {
   try {
     const { brand_id, slug } = await params;
@@ -530,6 +616,8 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
   if (post.toc_enabled ?? true) {
     normalizedContent = injectTableOfContents(normalizedContent);
   }
+
+  normalizedContent = await transformContentWithOgCards(normalizedContent, supabase);
 
   const canonical = post.canonical_url || `https://${brand_id}.creaibox.com/${slug}`;
 

@@ -138,7 +138,7 @@ export default async function BlogPage(props: {
       <Header />
 
       <main className="pt-6 flex-1">
-        <section className="mx-auto max-w-7xl px-6 py-4">
+        <section className="mx-auto max-w-[1536px] px-6 py-4">
           <div className="mb-6 flex items-end justify-between gap-6">
             <div>
               <h1 className="text-2xl md:text-3xl font-black tracking-tight text-zinc-955 dark:text-white">
@@ -148,40 +148,42 @@ export default async function BlogPage(props: {
           </div>
 
           {publishedPosts.length === 0 ? (
-            <div className="rounded-[28px] border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-slate-900/10 px-8 py-20 text-center">
-              <p className="text-lg font-black text-zinc-950 dark:text-white">아직 발행된 글이 없습니다.</p>
-              <p className="mt-3 text-sm font-medium text-zinc-500 dark:text-slate-455">
-                CreAibox 에디터에서 글을 발행하면 이 공간에 카드 형태로 표시됩니다.
+            <div className="flex min-h-[360px] flex-col items-center justify-center rounded-3xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-slate-900/10 p-12 text-center">
+              <Sparkles className="text-zinc-400 mb-3" size={32} />
+              <p className="text-base font-extrabold text-zinc-700 dark:text-slate-300">
+                발행된 오리지널 인사이트 포스팅이 없습니다.
+              </p>
+              <p className="mt-1 text-xs text-zinc-400">
+                크리에이박스 스튜디오에서 AI 에이전트로 작성된 게시글이 이 곳에 공개 게시됩니다.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,2fr)_380px]">
-              {/* 왼쪽 2/3 글 목록 */}
-              <section className="space-y-6">
+            <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,2fr)_460px]">
+              {/* 왼쪽 2/3 포스팅 카드 리스트 */}
+              <section className="space-y-4">
                 {currentPosts.map((post) => {
-                  const keyword = post.focus_keyword || "CreAibox";
                   const excerpt = buildExcerpt(post);
 
                   return (
                     <Link
                       key={post.id}
                       href={`/blog/${post.slug}`}
-                      className="group flex flex-col md:flex-row gap-7 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-white dark:bg-slate-900/20 p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 dark:hover:border-blue-800 hover:shadow-xl"
+                      className="group flex flex-col md:flex-row gap-5 rounded-2xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-slate-900/40 p-5 shadow-sm transition hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-md"
                     >
-                      <div className="relative h-[170px] w-full md:w-[270px] shrink-0 overflow-hidden rounded-lg bg-zinc-100 dark:bg-slate-950">
+                      <div className="relative h-44 w-full md:w-64 shrink-0 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-950 flex items-center justify-center">
                         {post.thumbnailUrl ? (
                           <img
                             src={post.thumbnailUrl}
                             alt={post.title || "thumbnail"}
-                            className="h-full w-full object-contain bg-zinc-950/20 transition-transform duration-500 group-hover:scale-105"
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         ) : (
-                          <div className="absolute inset-0 bg-slate-100 dark:bg-slate-900" />
+                          <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 via-blue-50 to-cyan-100 dark:from-slate-900 dark:via-blue-950 dark:to-cyan-950" />
                         )}
                       </div>
 
                       <div className="flex min-w-0 flex-1 flex-col justify-center">
-                        <h2 className="line-clamp-2 text-base md:text-[1.125rem] font-bold leading-snug tracking-[-0.01em] text-zinc-950 dark:text-white transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                        <h2 className="line-clamp-2 text-base md:text-[1.125rem] font-bold leading-snug tracking-[-0.01em] text-zinc-955 dark:text-white transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400">
                           {post.title}
                         </h2>
 
@@ -230,41 +232,43 @@ export default async function BlogPage(props: {
               </section>
 
               {/* 오른쪽 1/3 베스트 글 위젯 */}
-              <aside className="lg:sticky lg:top-28 h-fit rounded-xl border border-zinc-200 dark:border-zinc-850 bg-zinc-50 dark:bg-slate-900/20 p-6 shadow-sm">
-                <div className="mb-5 flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-5">
+              <aside className="lg:sticky lg:top-28 h-fit overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm">
+                {/* 상단 탭 헤더 (음영 적용) */}
+                <div className="bg-zinc-50/90 dark:bg-zinc-900/80 border-b border-zinc-200 dark:border-zinc-800 px-6 py-4 flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-600 dark:text-blue-400">
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-600 dark:text-blue-400">
                       Best Posts
                     </p>
-                    <h2 className="mt-1 text-2xl font-black text-zinc-950 dark:text-white">
+                    <h2 className="mt-0.5 text-xl font-black text-zinc-955 dark:text-white">
                       베스트 글
                     </h2>
                   </div>
-                  <Star className="text-blue-500" size={22} />
+                  <Star className="text-blue-500 fill-blue-500/10" size={20} />
                 </div>
 
-                <div className="space-y-1">
+                {/* 하단 리스트 (화이트 바탕 + 콤팩트 세로 균형) */}
+                <div className="bg-white dark:bg-zinc-950 divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
                   {bestPosts.map((post) => {
                     return (
                       <Link
                         key={post.id}
                         href={`/blog/${post.slug}`}
-                        className="group flex items-center gap-4 rounded-none px-2 py-3 transition hover:bg-white dark:hover:bg-slate-900 border-b border-zinc-200/60 dark:border-zinc-800 last:border-b-0"
+                        className="group flex items-center gap-3.5 px-6 py-3 transition hover:bg-zinc-50 dark:hover:bg-zinc-900/60"
                       >
-                        <div className="relative w-16 aspect-[16/9] shrink-0 overflow-hidden rounded-none border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-slate-900/20 flex items-center justify-center">
+                        <div className="relative w-24 sm:w-28 aspect-[16/9] shrink-0 overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
                           {post.thumbnailUrl ? (
                             <img
                               src={post.thumbnailUrl}
                               alt={post.title || "thumbnail"}
-                              className="h-full w-full object-contain bg-zinc-950/20"
+                              className="h-full w-full object-cover"
                             />
                           ) : (
                             <div className="absolute inset-0 bg-slate-100 dark:bg-slate-900" />
                           )}
                         </div>
 
-                        <div className="min-w-0 flex-1">
-                          <h3 className="line-clamp-2 text-xs md:text-[13px] font-bold leading-snug text-zinc-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                        <div className="min-w-0 flex-1 flex flex-col justify-center">
+                          <h3 className="line-clamp-2 text-[0.98rem] font-normal leading-[1.5] text-zinc-800 dark:text-zinc-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">
                             {post.title}
                           </h3>
                         </div>

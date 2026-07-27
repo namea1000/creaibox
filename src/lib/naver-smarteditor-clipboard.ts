@@ -126,8 +126,9 @@ export async function copyToNaverSmartEditorClipboard({
   });
 
   // Convert standalone URLs (e.g. https://creaibox.com/blog/...)
+  // Note: Standalone URLs are NOT wrapped in <a> tags so Naver SmartEditor ONE automatically generates the thumbnail link preview card upon Ctrl+V paste!
   html = html.replace(/(^|\n)(https?:\/\/[^\s<]+)/g, (_match, prefix, url) => {
-    return `${prefix}<p style="margin: 24px 0;"><a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #0284c7; font-weight: 600; text-decoration: underline;">${url}</a></p><p><br></p>`;
+    return `${prefix}<p align="center" style="text-align: center; margin: 24px 0; font-size: 15px; font-weight: 600; color: #0284c7;">${url}</p><p><br></p>`;
   });
 
   // Convert Bold & Italic

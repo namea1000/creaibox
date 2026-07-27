@@ -1,3 +1,4 @@
+import React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -8,6 +9,7 @@ import { createClient, createAdminClient } from "@/utils/supabase/server";
 
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import OGLinkCard from "@/components/common/OGLinkCard";
 
 interface BlogDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -43,11 +45,32 @@ const blogMarkdownComponents: Components = {
       {children}
     </h3>
   ),
-  p: ({ children }) => (
-    <p className="mb-6 text-[1.05rem] leading-[1.8] text-zinc-700">
-      {children}
-    </p>
-  ),
+  p: ({ children }) => {
+    if (typeof children === "string") {
+      const trimmed = children.trim();
+      if (/^https?:\/\/[^\s]+$/.test(trimmed)) {
+        return <OGLinkCard url={trimmed} />;
+      }
+    }
+    if (React.Children.count(children) === 1) {
+      const child = React.Children.toArray(children)[0] as any;
+      if (child && child.type === "a" && child.props?.href) {
+        const href = child.props.href;
+        const linkText = child.props.children;
+        if (
+          typeof linkText === "string" &&
+          (linkText.trim() === href.trim() || /^https?:\/\/[^\s]+$/.test(linkText.trim()))
+        ) {
+          return <OGLinkCard url={href} />;
+        }
+      }
+    }
+    return (
+      <p className="mb-6 text-[1.05rem] leading-[1.8] text-zinc-700">
+        {children}
+      </p>
+    );
+  },
   strong: ({ children }) => (
     <strong className="font-black text-zinc-950">{children}</strong>
   ),
@@ -308,6 +331,92 @@ function insertThumbnailIntoMarkdown(markdown: string, thumbnailUrl: string, tit
   return imgMarkdown + markdown;
 }
 
+async function transformContentWithOgCards(content: string, supabase: any): Promise<string> {
+  if (!content) return content;
+
+  const urlRegex = /<p[^>]*>\s*(?:<a[^>]*>)?(https?:\/\/[^\s<]+)(?:<\/a>)?\s*<\/p>|(?:^|\n)\s*(https?:\/\/[^\s<]+)\s*(?=\n|$)/gi;
+  const matches = Array.from(content.matchAll(urlRegex));
+  if (matches.length === 0) return content;
+
+  let transformed = content;
+
+  for (const match of matches) {
+    const fullMatch = match[0];
+    const rawUrl = (match[1] || match[2] || "").trim();
+    if (!rawUrl) continue;
+
+    try {
+      const parsedUrl = new URL(rawUrl);
+      const host = parsedUrl.hostname.toLowerCase();
+      const pathname = parsedUrl.pathname;
+
+      let cardTitle = rawUrl;
+      let cardDesc = "";
+      let cardImage: string | null = null;
+      let domain = host.replace(/^www\./, "");
+
+      if ((host.endsWith("creaibox.com") || host === "localhost") && pathname.startsWith("/blog/")) {
+        domain = "creaibox.com";
+        const rawSlug = pathname.replace(/^\/blog\//, "").replace(/\/$/, "");
+        const slug = decodeURIComponent(rawSlug);
+
+        const { data: postData } = await supabase
+          .from("writing_creaibox_posts")
+          .select("id, title, meta_description, focus_keyword")
+          .eq("slug", slug)
+          .limit(1)
+          .maybeSingle();
+
+        if (postData) {
+          cardTitle = postData.title || "CreAibox 블로그 포스팅";
+          cardDesc = postData.meta_description || postData.focus_keyword || "CreAibox 오리지널 인사이트 리포트입니다.";
+
+          const { data: imgData } = await supabase
+            .from("generated_images")
+            .select("image_url, is_primary")
+            .eq("source_type", "writing_creaibox_posts")
+            .eq("image_role", "thumbnail")
+            .eq("source_id", postData.id);
+
+          const primaryImg = (imgData || []).find((i: any) => i.is_primary) || (imgData || [])[0];
+          if (primaryImg?.image_url) {
+            cardImage = primaryImg.image_url;
+          }
+        }
+      }
+
+      const escapedTitle = cardTitle.replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const escapedDesc = cardDesc.replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+      const ogCardHtml = `
+        <a href="${rawUrl}" target="_blank" rel="noopener noreferrer" class="og-card my-3.5 block max-w-2xl mx-auto overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:border-blue-400 hover:shadow-md no-underline group text-left">
+          ${
+            cardImage
+              ? `<div class="w-full aspect-[16/9] overflow-hidden p-0 m-0 leading-none">
+                  <img src="${cardImage}" alt="${escapedTitle}" style="margin: 0 !important; padding: 0 !important; display: block !important;" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
+                 </div>`
+              : ""
+          }
+          <div class="p-4 sm:p-4.5">
+            <h4 class="text-[1.1rem] sm:text-lg font-bold text-zinc-950 group-hover:text-blue-600 line-clamp-2 leading-snug transition-colors" style="margin: 0 !important;">${escapedTitle}</h4>
+            ${escapedDesc ? `<p class="mt-1.5 text-xs text-zinc-500 line-clamp-2 leading-relaxed font-normal" style="margin-top: 6px !important; margin-bottom: 0 !important;">${escapedDesc}</p>` : ""}
+            <div class="mt-2.5 flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
+              <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span>${domain}</span>
+            </div>
+          </div>
+        </a>
+      `;
+
+      transformed = transformed.replace(fullMatch, ogCardHtml);
+    } catch (e) {
+      console.error("OG transformation error:", e);
+    }
+  }
+
+  return transformed;
+}
+
 export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   const { slug } = await params;
   const post = await fetchPublishedPost(slug);
@@ -364,6 +473,9 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   const contentWithoutEditorial = (post.content || "").replace(editorialRegex, "").trim();
   const contentWithoutSchemas = contentWithoutEditorial.replace(schemaRegex, "");
   let normalizedContent = normalizePublishedContent(contentWithoutSchemas);
+
+  const supabaseAdmin = await createAdminClient();
+  normalizedContent = await transformContentWithOgCards(normalizedContent, supabaseAdmin);
 
   const canonical = post.canonical_url || `https://creaibox.com/blog/${post.slug || slug}`;
 
@@ -454,7 +566,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
       <Header />
 
       <main className="pt-6 flex-1">
-        <div className="mx-auto max-w-7xl px-6 py-4">
+        <div className="mx-auto max-w-[1536px] px-6 py-4">
           <Link
             href="/blog"
             className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-100 px-4 py-2 text-sm font-black text-zinc-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
@@ -463,7 +575,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
             블로그 목록으로 돌아가기
           </Link>
 
-          <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,2fr)_380px]">
+          <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,2fr)_460px]">
             {/* 왼쪽 2/3 본문 내용 */}
             <article className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm h-fit">
               <header className="border-b border-zinc-200 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.12),transparent_42%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-6 py-4 md:px-7 md:py-5">
@@ -481,7 +593,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                 <div className="w-full">
                   {looksLikeHtml(normalizedContent) ? (
                     <div
-                      className="blog-content text-[1.05rem] leading-[1.8] text-zinc-700 [&_a]:font-bold [&_a]:text-blue-600 [&_a]:underline [&_a]:decoration-blue-300 [&_a]:decoration-2 [&_a]:underline-offset-4 [&_blockquote]:my-8 [&_blockquote]:rounded-[18px] [&_blockquote]:border [&_blockquote]:border-zinc-200 [&_blockquote]:bg-zinc-50 [&_blockquote]:px-6 [&_blockquote]:py-5 [&_blockquote]:font-medium [&_br]:block [&_div[data-youtube-video]]:my-8 [&_h1]:mb-6 [&_h1]:border-b [&_h1]:border-zinc-200 [&_h1]:pb-4 [&_h1]:text-[1.75rem] [&_h1]:font-black [&_h1]:leading-[1.25] [&_h1]:tracking-[-0.03em] [&_h1]:text-zinc-950 [&_h2]:mt-14 [&_h2]:mb-6 [&_h2]:text-[1.35rem] [&_h2]:font-black [&_h2]:leading-[1.35] [&_h2]:tracking-[-0.02em] [&_h2]:text-zinc-950 [&_h3]:mt-10 [&_h3]:mb-4 [&_h3]:text-[1.05rem] [&_h3]:font-black [&_h3]:leading-[1.4] [&_h3]:text-zinc-900 [&_hr]:my-10 [&_hr]:border-zinc-200 [&_iframe]:aspect-video [&_iframe]:h-auto [&_iframe]:w-full [&_iframe]:rounded-[18px] [&_iframe]:border [&_iframe]:border-zinc-200 [&_img]:my-8 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-[18px] [&_li]:pl-1 [&_li]:marker:text-blue-600 [&_ol]:text-[1.05rem] [&_ol]:leading-[1.8] [&_ol]:mb-8 [&_ol]:ml-6 [&_ol]:list-decimal [&_ol]:space-y-3 [&_p]:mb-6 [&_p]:text-[1.05rem] [&_p]:leading-[1.8] [&_p]:text-zinc-700 [&_strong]:font-black [&_strong]:text-zinc-950 [&_table]:my-8 [&_table]:w-full [&_table]:border-collapse [&_table]:overflow-hidden [&_table]:rounded-[16px] [&_td]:border [&_td]:border-zinc-200 [&_td]:px-4 [&_td]:py-3 [&_td]:align-top [&_th]:border [&_th]:border-zinc-200 [&_th]:bg-zinc-50 [&_th]:px-4 [&_th]:py-3 [&_th]:font-black [&_ul]:text-[1.05rem] [&_ul]:leading-[1.8] [&_ul]:mb-8 [&_ul]:ml-6 [&_ul]:list-disc [&_ul]:space-y-3"
+                      className="blog-content text-[1.05rem] leading-[1.8] text-zinc-700 [&_a]:font-bold [&_a]:text-blue-600 [&_a]:underline [&_a]:decoration-blue-300 [&_a]:decoration-2 [&_a]:underline-offset-4 [&_a.og-card]:no-underline [&_a.og-card]:font-normal [&_a.og-card]:text-zinc-950 [&_a.og-card_img]:my-0 [&_a.og-card_img]:m-0 [&_a.og-card_p]:my-0 [&_a.og-card_p]:mb-0 [&_blockquote]:my-8 [&_blockquote]:rounded-[18px] [&_blockquote]:border [&_blockquote]:border-zinc-200 [&_blockquote]:bg-zinc-50 [&_blockquote]:px-6 [&_blockquote]:py-5 [&_blockquote]:font-medium [&_br]:block [&_div[data-youtube-video]]:my-8 [&_h1]:mb-6 [&_h1]:border-b [&_h1]:border-zinc-200 [&_h1]:pb-4 [&_h1]:text-[1.75rem] [&_h1]:font-black [&_h1]:leading-[1.25] [&_h1]:tracking-[-0.03em] [&_h1]:text-zinc-950 [&_h2]:mt-14 [&_h2]:mb-6 [&_h2]:text-[1.35rem] [&_h2]:font-black [&_h2]:leading-[1.35] [&_h2]:tracking-[-0.02em] [&_h2]:text-zinc-950 [&_h3]:mt-10 [&_h3]:mb-4 [&_h3]:text-[1.05rem] [&_h3]:font-black [&_h3]:leading-[1.4] [&_h3]:text-zinc-900 [&_hr]:my-10 [&_hr]:border-zinc-200 [&_iframe]:aspect-video [&_iframe]:h-auto [&_iframe]:w-full [&_iframe]:rounded-[18px] [&_iframe]:border [&_iframe]:border-zinc-200 [&_img]:my-8 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-[18px] [&_li]:pl-1 [&_li]:marker:text-blue-600 [&_ol]:text-[1.05rem] [&_ol]:leading-[1.8] [&_ol]:mb-8 [&_ol]:ml-6 [&_ol]:list-decimal [&_ol]:space-y-3 [&_p]:mb-6 [&_p]:text-[1.05rem] [&_p]:leading-[1.8] [&_p]:text-zinc-700 [&_strong]:font-black [&_strong]:text-zinc-950 [&_table]:my-8 [&_table]:w-full [&_table]:border-collapse [&_table]:overflow-hidden [&_table]:rounded-[16px] [&_td]:border [&_td]:border-zinc-200 [&_td]:px-4 [&_td]:py-3 [&_td]:align-top [&_th]:border [&_th]:border-zinc-200 [&_th]:bg-zinc-50 [&_th]:px-4 [&_th]:py-3 [&_th]:font-black [&_ul]:text-[1.05rem] [&_ul]:leading-[1.8] [&_ul]:mb-8 [&_ul]:ml-6 [&_ul]:list-disc [&_ul]:space-y-3"
                       dangerouslySetInnerHTML={{
                         __html: sanitizePublishedHtml(normalizedContent),
                       }}
@@ -637,8 +749,9 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
             </article>
 
             {/* 오른쪽 1/3 베스트 글 위젯 (Sticky 적용) */}
-            <aside className="lg:sticky lg:top-28 h-fit rounded-xl border border-zinc-200 bg-zinc-50 p-6 shadow-sm">
-              <div className="mb-4 flex items-center justify-between border-b border-zinc-200 pb-3">
+            <aside className="lg:sticky lg:top-28 h-fit overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+              {/* 상단 탭 헤더 (음영 적용) */}
+              <div className="bg-zinc-50/90 border-b border-zinc-200 px-6 py-4 flex items-center justify-between">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-600">
                     Best Posts
@@ -647,18 +760,19 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                     베스트 글
                   </h2>
                 </div>
-                <Star className="text-blue-500" size={20} />
+                <Star className="text-blue-500 fill-blue-500/10" size={20} />
               </div>
 
-              <div className="space-y-1">
+              {/* 하단 리스트 (화이트 바탕 + 콤팩트 세로 균형) */}
+              <div className="bg-white divide-y divide-zinc-200/60">
                 {bestPosts.map((bestPost) => {
                   return (
                     <Link
                       key={bestPost.id}
                       href={`/blog/${bestPost.slug}`}
-                      className="group flex items-center gap-4 rounded-none px-2 py-3 transition hover:bg-white border-b border-zinc-200/60 last:border-b-0"
+                      className="group flex items-center gap-3.5 px-6 py-3 transition hover:bg-zinc-50/80"
                     >
-                      <div className="relative w-16 aspect-[16/9] shrink-0 overflow-hidden rounded-none border border-zinc-200 bg-zinc-50 flex items-center justify-center">
+                      <div className="relative w-24 sm:w-28 aspect-[16/9] shrink-0 overflow-hidden rounded-md border border-zinc-200 bg-zinc-50 flex items-center justify-center">
                         {bestPost.thumbnailUrl ? (
                           <img
                             src={bestPost.thumbnailUrl}
@@ -670,8 +784,8 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                         )}
                       </div>
 
-                      <div className="min-w-0 flex-1">
-                        <h3 className="line-clamp-2 text-[1.05rem] font-normal leading-snug text-zinc-800 group-hover:text-blue-600">
+                      <div className="min-w-0 flex-1 flex flex-col justify-center">
+                        <h3 className="line-clamp-2 text-[0.98rem] font-normal leading-[1.5] text-zinc-800 group-hover:text-blue-600">
                           {bestPost.title}
                         </h3>
                       </div>
