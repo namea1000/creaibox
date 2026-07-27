@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { copyToNaverSmartEditorClipboard, injectImagesIntoMarkdown } from "@/lib/naver-smarteditor-clipboard";
+import { copyToNaverSmartEditorClipboard, injectImagesIntoMarkdown, preserveOriginalUrlAboveHashtags } from "@/lib/naver-smarteditor-clipboard";
 import {
   Sparkles,
   Copy,
@@ -68,25 +68,27 @@ interface PostOption {
 }
 
 function getManuscriptDomain(url?: string | null): string {
-  if (!url) return "📁 미지정 (미발행)";
-  try {
-    const cleanUrl = url.startsWith("http") ? url : `https://${url}`;
-    const parsed = new URL(cleanUrl);
-    const host = parsed.hostname;
-    if (host === "creaibox.com" || host === "www.creaibox.com" || host === "localhost") {
-      return "⭐ creaibox.com (공식)";
-    }
-    if (host.endsWith(".creaibox.com")) {
-      const sub = host.split(".")[0];
-      if (sub === "creaibox" || sub === "www") {
+  if (url) {
+    try {
+      const cleanUrl = url.startsWith("http") ? url : `https://${url}`;
+      const parsed = new URL(cleanUrl);
+      const host = parsed.hostname;
+      if (host === "creaibox.com" || host === "www.creaibox.com" || host === "localhost") {
         return "⭐ creaibox.com (공식)";
       }
-      return `📝 ${host}`;
+      if (host.endsWith(".creaibox.com")) {
+        const sub = host.split(".")[0];
+        if (sub === "creaibox" || sub === "www") {
+          return "⭐ creaibox.com (공식)";
+        }
+        return `📝 ${host}`;
+      }
+      return `🌐 ${host}`;
+    } catch {
+      // ignore
     }
-    return `🌐 ${host}`;
-  } catch {
-    return "📁 미지정 (미발행)";
   }
+  return "⭐ creaibox.com (공식)";
 }
 
 export default function CreaiboxRecreateTab() {
@@ -229,6 +231,37 @@ export default function CreaiboxRecreateTab() {
           }
         }
 
+        // 5. Check for pending_recreate_post from sessionStorage
+        if (typeof window !== "undefined") {
+          const pendingStr = window.sessionStorage.getItem("pending_recreate_post");
+          if (pendingStr) {
+            try {
+              const pendingPost = JSON.parse(pendingStr);
+              if (pendingPost && pendingPost.title) {
+                const existingIdx = loadedList.findIndex((p) => String(p.id) === String(pendingPost.id));
+                if (existingIdx >= 0) {
+                  loadedList[existingIdx] = {
+                    ...loadedList[existingIdx],
+                    title: pendingPost.title,
+                    content: pendingPost.content || loadedList[existingIdx].content,
+                  };
+                } else {
+                  loadedList.unshift({
+                    id: String(pendingPost.id || "pending"),
+                    title: pendingPost.title,
+                    content: pendingPost.content || "",
+                    created_at: new Date().toISOString(),
+                    canonical_url: "",
+                    domainName: "creaibox.com",
+                  });
+                }
+              }
+            } catch (e) {
+              console.error("Failed to parse pending_recreate_post:", e);
+            }
+          }
+        }
+
         setPosts(loadedList);
         if (loadedList.length > 0) {
           const targetItem = targetIdFromUrl
@@ -257,10 +290,19 @@ export default function CreaiboxRecreateTab() {
     return Array.from(domainSet);
   }, [posts]);
 
-  // Filter posts by selected domain
+function isDomainMatch(domainA: string, domainB: string): boolean {
+  if (domainA === domainB) return true;
+  const cleanA = domainA.replace(/^[^\w]+/, "").split("(")[0].trim().toLowerCase();
+  const cleanB = domainB.replace(/^[^\w]+/, "").split("(")[0].trim().toLowerCase();
+  if (cleanA === cleanB) return true;
+  if (cleanA.includes(cleanB) || cleanB.includes(cleanA)) return true;
+  return false;
+}
+
+// Filter posts by selected domain
   const filteredPosts = useMemo(() => {
     if (selectedDomain === "all") return posts;
-    return posts.filter((p) => p.domainName === selectedDomain);
+    return posts.filter((p) => isDomainMatch(p.domainName, selectedDomain));
   }, [posts, selectedDomain]);
 
   const currentPostUrl = useMemo(() => {
@@ -315,19 +357,41 @@ export default function CreaiboxRecreateTab() {
         originalContent
       );
 
-      if (currentPostUrl) {
-        const cleanUrl = currentPostUrl.trim();
-        if (cleanUrl && !contentWithImg.includes(cleanUrl)) {
-          const hashtagMatch = contentWithImg.match(/^#[^\s#].*$/m);
-          if (hashtagMatch) {
-            contentWithImg = contentWithImg.replace(/^#[^\s#].*$/m, `${cleanUrl}\n\n${hashtagMatch[0]}`);
-          } else {
-            contentWithImg = `${contentWithImg}\n\n${cleanUrl}`;
-          }
-        }
-      }
+      contentWithImg = preserveOriginalUrlAboveHashtags(
+        contentWithImg,
+        originalContent,
+        currentPostUrl
+      );
 
       setRecreatedContent(contentWithImg);
+
+      // 🌟 Persist recreated_content and recreated_title to Supabase DB immediately for selectedPostId
+      if (selectedPostId) {
+        const titleToSave = data.recreatedTitle || originalTitle;
+        const nowIso = new Date().toISOString();
+
+        try {
+          await supabase
+            .from("writing_creaibox_posts")
+            .update({
+              recreated_title: titleToSave,
+              recreated_content: contentWithImg,
+              recreated_at: nowIso,
+            })
+            .eq("id", selectedPostId);
+
+          await supabase
+            .from("manuscripts")
+            .update({
+              recreated_title: titleToSave,
+              recreated_content: contentWithImg,
+              recreated_at: nowIso,
+            })
+            .eq("id", selectedPostId);
+        } catch (e) {
+          console.warn("Auto-save recreated post warn:", e);
+        }
+      }
     } catch (err: any) {
       alert(err.message || "원고 재창조에 실패했습니다.");
     } finally {
@@ -497,7 +561,7 @@ export default function CreaiboxRecreateTab() {
               onChange={(e) => {
                 const domain = e.target.value;
                 setSelectedDomain(domain);
-                const available = domain === "all" ? posts : posts.filter((p) => p.domainName === domain);
+                const available = domain === "all" ? posts : posts.filter((p) => isDomainMatch(p.domainName, domain));
                 if (available.length > 0) {
                   setSelectedPostId(available[0].id);
                   setOriginalTitle(available[0].title || "");
@@ -682,7 +746,7 @@ export default function CreaiboxRecreateTab() {
               </h2>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setActiveRightTab("edit")}
                 className={`rounded-md px-2.5 py-1 text-[11px] font-bold transition ${
@@ -705,9 +769,34 @@ export default function CreaiboxRecreateTab() {
                 <Eye size={12} className="inline mr-1" />
                 미리보기
               </button>
-              <span className="text-[11px] font-bold text-zinc-400 ml-2">
+              <span className="text-[11px] font-bold text-zinc-400 mx-1">
                 글자수: {recreatedContent.length.toLocaleString()}자
               </span>
+
+              {/* 🌟 상단 빠르게 누르는 1초 복사 & DB 새글 저장 버튼 */}
+              <button
+                onClick={handleSaveToDb}
+                disabled={!recreatedContent}
+                className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-bold border transition disabled:opacity-50 ${
+                  isSaved
+                    ? "border-blue-500 bg-blue-500/10 text-blue-400"
+                    : "border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                }`}
+              >
+                {isSaved ? <CheckCircle2 size={12} /> : <Save size={12} />}
+                <span>{isSaved ? "DB 저장 완료!" : "💾 DB에 원고 새글로 저장"}</span>
+              </button>
+
+              <button
+                onClick={handleCopy}
+                disabled={!recreatedContent}
+                className={`inline-flex items-center gap-1 rounded-md px-3 py-1 text-[11px] font-black text-white shadow-sm transition disabled:opacity-50 ${
+                  isCopied ? "bg-emerald-700" : "bg-emerald-600 hover:bg-emerald-500"
+                }`}
+              >
+                {isCopied ? <CopyCheck size={12} /> : <Copy size={12} />}
+                <span>{isCopied ? "복사 완료!" : "📋 네이버 스마트에디터 1초 복사"}</span>
+              </button>
             </div>
           </div>
 
@@ -768,7 +857,7 @@ export default function CreaiboxRecreateTab() {
                   }`}
                 >
                   {isSaved ? <CheckCircle2 size={14} /> : <Save size={14} />}
-                  <span>{isSaved ? "DB 저장 완료!" : "DB에 원고 저장"}</span>
+                  <span>{isSaved ? "DB 저장 완료!" : "💾 DB에 원고 새글로 저장"}</span>
                 </button>
               </div>
 

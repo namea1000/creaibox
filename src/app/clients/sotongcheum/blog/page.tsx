@@ -56,6 +56,21 @@ function getPostThumbnail(post: PublishedPost, primaryMap: Record<string, string
   return null;
 }
 
+function inferCategory(post: PublishedPost): string {
+  const text = ((post.title || "") + " " + (post.meta_description || "") + " " + (post.focus_keyword || "") + " " + (post.seo_tags?.join(" ") || "")).toLowerCase();
+  
+  if (text.includes("행사") || text.includes("축제") || text.includes("개소식") || text.includes("준공식") || text.includes("대행")) {
+    return "행사대행";
+  }
+  if (text.includes("교육") || text.includes("테라피") || text.includes("역량") || text.includes("체험") || text.includes("원예")) {
+    return "교육서비스";
+  }
+  if (text.includes("캠프") || text.includes("가족") || text.includes("힐링")) {
+    return "가족캠프";
+  }
+  return "소통소식";
+}
+
 export default async function SotongcheumBlogPage({
   searchParams,
 }: {
@@ -73,6 +88,14 @@ export default async function SotongcheumBlogPage({
     .select("id, brand_id, extra_configs")
     .eq("brand_id", "sotongcheum")
     .maybeSingle();
+
+  const customCategories: string[] = (profile as any)?.extra_configs?.blog_categories || [
+    "전체",
+    "행사대행",
+    "교육서비스",
+    "가족캠프",
+    "소통소식",
+  ];
 
   let posts: PublishedPost[] = [];
   let primaryImageMap: Record<string, string> = {};
@@ -135,6 +158,7 @@ export default async function SotongcheumBlogPage({
     slug: post.slug || post.id,
     dateStr: formatDate(post.created_at),
     thumb: getPostThumbnail(post, primaryImageMap),
+    category: inferCategory(post),
   }));
 
   return (
@@ -155,11 +179,12 @@ export default async function SotongcheumBlogPage({
         </div>
       </div>
 
-      {/* Posts Grid Component with Instant Zero-Latency Switch */}
+      {/* Posts Grid Component with Category Filter Tabs & Instant Zero-Latency Switch */}
       <BlogListPaginatedView
         posts={formattedPosts}
         companyName="소통과 채움"
         initialPage={currentPage}
+        categories={customCategories}
       />
     </div>
   );

@@ -119,12 +119,17 @@ function getManuscriptDomainLabel(
   manuscript: StudioManuscriptRecord,
   clientSiteBrandIds?: Set<string>
 ) {
-  if (manuscript.canonicalUrl) {
+  if (manuscript.canonicalUrl && manuscript.canonicalUrl.trim()) {
+    const rawUrl = manuscript.canonicalUrl.trim();
+    const cleanUrl = rawUrl.startsWith("http://") || rawUrl.startsWith("https://")
+      ? rawUrl
+      : `https://${rawUrl}`;
+
     try {
-      const url = new URL(manuscript.canonicalUrl);
+      const url = new URL(cleanUrl);
       const host = url.hostname.toLowerCase();
 
-      if (host === "creaibox.com" || host === "www.creaibox.com") {
+      if (host === "creaibox.com" || host === "www.creaibox.com" || host === "localhost") {
         return "⭐ creaibox.com (공식)";
       }
 
@@ -141,21 +146,13 @@ function getManuscriptDomainLabel(
 
       return `🌐 ${host}`;
     } catch {
-      if (manuscript.canonicalUrl.includes("creaibox.com")) {
-        const parts = manuscript.canonicalUrl.replace("https://", "").replace("http://", "").split("/");
-        const domain = parts[0] || manuscript.canonicalUrl;
-        if (domain.endsWith(".creaibox.com")) {
-          const sub = domain.split(".")[0];
-          if (clientSiteBrandIds && clientSiteBrandIds.has(sub)) {
-            return `🏢 ${domain}`;
-          }
-          return `📝 ${domain}`;
-        }
-        return `🌐 ${domain}`;
+      if (rawUrl.toLowerCase().includes("creaibox.com")) {
+        return "⭐ creaibox.com (공식)";
       }
+      return `🌐 ${rawUrl}`;
     }
   }
-  return "📁 미지정 (미발행)";
+  return "⭐ creaibox.com (공식)";
 }
 
 const STANDARD_TYPE_OPTIONS = [
@@ -296,6 +293,10 @@ function normalizeCreaiboxRecord(row: CreaiboxRow, index: number): StudioManuscr
       typeof (row.word_count_goal ?? row.wordCountGoal) === "number"
         ? (row.word_count_goal ?? row.wordCountGoal)
         : undefined,
+    recreatedTitle: toStringValue(row.recreated_title ?? row.recreatedTitle),
+    recreatedContent: toStringValue(row.recreated_content ?? row.recreatedContent),
+    recreatedAt: toStringValue(row.recreated_at ?? row.recreatedAt),
+    parentId: row.parent_id ? String(row.parent_id) : row.parentId ? String(row.parentId) : undefined,
   } as StudioManuscriptRecord;
 }
 
@@ -571,15 +572,44 @@ export default function CreaiboxManuscriptListPage() {
     return rows;
   }, [paginatedManuscripts, shouldShowSkeletonRows]);
 
+  const domainFilteredManuscripts = useMemo(() => {
+    const lowerSearch = searchTerm.trim().toLowerCase();
+
+    return manuscripts.filter((manuscript) => {
+      const matchesDomain =
+        tableFilters.domain === "all" ||
+        getManuscriptDomainLabel(manuscript, clientSiteBrandIds) === tableFilters.domain;
+      const matchesContentType =
+        tableFilters.contentType === "all" ||
+        getContentTypeLabel(manuscript) === tableFilters.contentType;
+      const matchesTone =
+        tableFilters.tone === "all" || getToneLabel(manuscript.selectedTone) === tableFilters.tone;
+
+      const title = safeText(manuscript.title).toLowerCase();
+      const targetKeyword = safeText(manuscript.targetKeyword).toLowerCase();
+      const selectedTone = safeText(manuscript.selectedTone).toLowerCase();
+      const domainLabel = getManuscriptDomainLabel(manuscript).toLowerCase();
+
+      const matchesSearch =
+        !lowerSearch ||
+        title.includes(lowerSearch) ||
+        targetKeyword.includes(lowerSearch) ||
+        selectedTone.includes(lowerSearch) ||
+        domainLabel.includes(lowerSearch);
+
+      return matchesDomain && matchesContentType && matchesTone && matchesSearch;
+    });
+  }, [clientSiteBrandIds, manuscripts, searchTerm, tableFilters]);
+
   const tabCounts = useMemo(
     () => ({
-      all: manuscripts.filter((item) => item.status !== "trash").length,
-      draft: manuscripts.filter((item) => item.status === "draft").length,
-      saved: manuscripts.filter((item) => item.status === "saved").length,
-      published: manuscripts.filter((item) => item.status === "published").length,
-      trash: manuscripts.filter((item) => item.status === "trash").length,
+      all: domainFilteredManuscripts.filter((item) => item.status !== "trash").length,
+      draft: domainFilteredManuscripts.filter((item) => item.status === "draft").length,
+      saved: domainFilteredManuscripts.filter((item) => item.status === "saved").length,
+      published: domainFilteredManuscripts.filter((item) => item.status === "published").length,
+      trash: domainFilteredManuscripts.filter((item) => item.status === "trash").length,
     }),
-    [manuscripts]
+    [domainFilteredManuscripts]
   );
 
   const trashPageIds = useMemo(
@@ -1340,7 +1370,7 @@ export default function CreaiboxManuscriptListPage() {
                           className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 transition-all shadow-sm cursor-pointer"
                         >
                           <Sparkles size={12} className="text-emerald-600 dark:text-emerald-400" />
-                          🟢 재발행 보기
+                          재발행 생성 완료
                         </button>
                       );
                     }

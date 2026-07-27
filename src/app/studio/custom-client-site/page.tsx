@@ -35,11 +35,14 @@ import {
   Maximize2,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Video,
   Activity,
   Tag,
   Flame,
   Plus,
+  Pencil,
   Trash2,
   ListPlus,
   X,
@@ -633,6 +636,84 @@ export default function CustomClientSiteStudioPage() {
     setCustomMenus((prev) => prev.filter((_, idx) => idx !== index));
   };
 
+  // Blog Category Customization State
+  const [blogCategories, setBlogCategories] = useState<string[]>([
+    "전체",
+    "행사대행",
+    "교육서비스",
+    "가족캠프",
+    "소통소식",
+  ]);
+  const [newBlogCategory, setNewBlogCategory] = useState<string>("");
+
+  const handleAddBlogCategory = () => {
+    if (!newBlogCategory.trim()) return;
+    if (blogCategories.includes(newBlogCategory.trim())) {
+      alert("이미 존재하는 카테고리입니다.");
+      return;
+    }
+    setBlogCategories((prev) => [...prev, newBlogCategory.trim()]);
+    setNewBlogCategory("");
+  };
+
+  const handleDeleteBlogCategory = (catToDelete: string) => {
+    if (catToDelete === "전체") {
+      alert("'전체' 카테고리는 기본 선택값이므로 삭제할 수 없습니다.");
+      return;
+    }
+    setBlogCategories((prev) => prev.filter((c) => c !== catToDelete));
+  };
+
+  const handleMoveBlogCategory = (index: number, direction: "left" | "right") => {
+    if (direction === "left" && index <= 1) return;
+    if (direction === "right" && index >= blogCategories.length - 1) return;
+
+    const targetIndex = direction === "left" ? index - 1 : index + 1;
+    if (targetIndex <= 0) return;
+
+    setBlogCategories((prev) => {
+      const next = [...prev];
+      const temp = next[index];
+      next[index] = next[targetIndex];
+      next[targetIndex] = temp;
+      return next;
+    });
+  };
+
+  // Blog Category Edit State & Handlers
+  const [editingCategoryIndex, setEditingCategoryIndex] = useState<number | null>(null);
+  const [editingCategoryText, setEditingCategoryText] = useState<string>("");
+
+  const handleStartEditCategory = (index: number, currentName: string) => {
+    setEditingCategoryIndex(index);
+    setEditingCategoryText(currentName);
+  };
+
+  const handleSaveEditCategory = (index: number) => {
+    if (!editingCategoryText.trim()) {
+      alert("카테고리 이름을 입력해 주세요.");
+      return;
+    }
+    const trimmed = editingCategoryText.trim();
+    if (blogCategories.some((c, i) => i !== index && c === trimmed)) {
+      alert("이미 존재하는 카테고리 이름입니다.");
+      return;
+    }
+
+    setBlogCategories((prev) => {
+      const next = [...prev];
+      next[index] = trimmed;
+      return next;
+    });
+    setEditingCategoryIndex(null);
+    setEditingCategoryText("");
+  };
+
+  const handleCancelEditCategory = () => {
+    setEditingCategoryIndex(null);
+    setEditingCategoryText("");
+  };
+
   // Request Form State
   const [reqCategory, setReqCategory] = useState<string>("행사/기획/렌탈");
   const [reqConcept, setReqConcept] = useState<string>("딥 블루 & 세련되고 신뢰감 있는 브랜드 다크 톤");
@@ -695,6 +776,7 @@ export default function CustomClientSiteStudioPage() {
         if (cfg.heroSlogan) setHeroSlogan(cfg.heroSlogan);
         if (cfg.logoUrl) setLogoUrl(cfg.logoUrl);
         if (cfg.customMenus && Array.isArray(cfg.customMenus)) setCustomMenus(cfg.customMenus);
+        if (cfg.blog_categories && Array.isArray(cfg.blog_categories)) setBlogCategories(cfg.blog_categories);
         if (cfg.pgProvider) setPgProvider(cfg.pgProvider);
         if (cfg.pgMid) setPgMid(cfg.pgMid);
         if (cfg.pgApiKey) setPgApiKey(cfg.pgApiKey);
@@ -742,6 +824,7 @@ export default function CustomClientSiteStudioPage() {
         heroSlogan,
         logoUrl,
         customMenus,
+        blog_categories: blogCategories,
         pgProvider,
         pgMid,
         pgApiKey,
@@ -1933,6 +2016,151 @@ export default function CustomClientSiteStudioPage() {
                       </button>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* SECTION 6: 커스텀 블로그 카테고리 관리 (Blog Category Builder) */}
+              <div className="pt-4 border-t border-slate-800/80 space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-extrabold text-white flex items-center gap-1.5">
+                    <Tag size={14} className="text-emerald-400" /> 커스텀 블로그 카테고리 설정 & 관리 (Blog Category Builder)
+                  </label>
+                  <span className="text-[11px] text-slate-400 font-bold">
+                    총 {blogCategories.length}개 카테고리
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 font-medium">
+                  카테고리를 자유롭게 생성/삭제할 수 있으며, 생성된 카테고리는 블로그 상단 필터 탭과 게시글 태그로 **실시간 연동**됩니다.
+                </p>
+
+                {/* Category Addition Input */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={newBlogCategory}
+                    onChange={(e) => setNewBlogCategory(e.target.value)}
+                    placeholder="신규 카테고리명 입력 (예: 현장스케치, 힐링교육)"
+                    className="flex-1 rounded-2xl bg-slate-950 border border-slate-800 px-4 py-2.5 text-xs font-bold text-white focus:border-emerald-500 focus:outline-none"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddBlogCategory();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddBlogCategory}
+                    className="inline-flex items-center gap-1 rounded-2xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer shrink-0"
+                  >
+                    <Plus size={14} />
+                    <span>카테고리 추가</span>
+                  </button>
+                </div>
+
+                {/* Current Category Badges with Edit & Reorder Controls */}
+                <div className="flex items-center gap-2 flex-wrap pt-2">
+                  {blogCategories.map((cat, idx) => {
+                    const isEditing = editingCategoryIndex === idx;
+
+                    if (isEditing) {
+                      return (
+                        <div
+                          key={idx}
+                          className="inline-flex items-center gap-1.5 bg-slate-950 border border-emerald-500 px-3.5 py-1.5 rounded-full text-xs font-black text-white shadow-md shadow-emerald-500/20"
+                        >
+                          <span className="text-emerald-400">#</span>
+                          <input
+                            type="text"
+                            value={editingCategoryText}
+                            onChange={(e) => setEditingCategoryText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleSaveEditCategory(idx);
+                              } else if (e.key === "Escape") {
+                                handleCancelEditCategory();
+                              }
+                            }}
+                            className="bg-transparent border-b border-emerald-400 text-xs font-black text-white px-1 py-0.5 focus:outline-none w-24 sm:w-28"
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleSaveEditCategory(idx)}
+                            className="text-emerald-400 hover:text-emerald-300 transition-colors p-0.5 cursor-pointer ml-1"
+                            title="수정 저장"
+                          >
+                            <Check size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCancelEditCategory}
+                            className="text-slate-400 hover:text-rose-400 transition-colors p-0.5 cursor-pointer"
+                            title="취소"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={cat}
+                        className="inline-flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-3.5 py-1.5 rounded-full text-xs font-black text-slate-200 group"
+                      >
+                        <span className="text-emerald-400">#</span>
+                        <span>{cat}</span>
+
+                        {cat !== "전체" && (
+                          <div className="flex items-center gap-0.5 ml-1 pl-1.5 border-l border-slate-800">
+                            {/* Edit Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleStartEditCategory(idx, cat)}
+                              className="text-slate-400 hover:text-emerald-400 transition-colors p-0.5 cursor-pointer"
+                              title="카테고리 이름 편집(수정)"
+                            >
+                              <Pencil size={12} />
+                            </button>
+
+                            {/* Left Arrow Button */}
+                            <button
+                              type="button"
+                              disabled={idx <= 1}
+                              onClick={() => handleMoveBlogCategory(idx, "left")}
+                              className="text-slate-400 hover:text-cyan-400 disabled:opacity-20 disabled:hover:text-slate-400 transition-colors p-0.5 cursor-pointer"
+                              title="왼쪽(앞)으로 이동"
+                            >
+                              <ChevronLeft size={13} />
+                            </button>
+
+                            {/* Right Arrow Button */}
+                            <button
+                              type="button"
+                              disabled={idx >= blogCategories.length - 1}
+                              onClick={() => handleMoveBlogCategory(idx, "right")}
+                              className="text-slate-400 hover:text-cyan-400 disabled:opacity-20 disabled:hover:text-slate-400 transition-colors p-0.5 cursor-pointer"
+                              title="오른쪽(뒤)으로 이동"
+                            >
+                              <ChevronRight size={13} />
+                            </button>
+
+                            {/* Delete Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteBlogCategory(cat)}
+                              className="text-slate-400 hover:text-rose-400 transition-colors p-0.5 ml-0.5 cursor-pointer"
+                              title="카테고리 삭제"
+                            >
+                              <X size={13} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

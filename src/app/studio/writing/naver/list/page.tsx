@@ -410,15 +410,42 @@ export default function NaverManuscriptListPage() {
     return rows;
   }, [paginatedManuscripts, shouldShowSkeletonRows]);
 
+  const domainFilteredManuscripts = useMemo(() => {
+    const lowerSearch = searchTerm.trim().toLowerCase();
+
+    return manuscripts.filter((manuscript) => {
+      const matchesWritingType =
+        tableFilters.writingType === "all" ||
+        getWritingTypeLabel(manuscript) === tableFilters.writingType;
+      const matchesContentType =
+        tableFilters.contentType === "all" ||
+        getContentTypeLabel(manuscript) === tableFilters.contentType;
+      const matchesTone =
+        tableFilters.tone === "all" || getToneLabel(manuscript.selectedTone) === tableFilters.tone;
+
+      const title = safeText(manuscript.title).toLowerCase();
+      const targetKeyword = safeText(manuscript.targetKeyword).toLowerCase();
+      const selectedTone = safeText(manuscript.selectedTone).toLowerCase();
+
+      const matchesSearch =
+        !lowerSearch ||
+        title.includes(lowerSearch) ||
+        targetKeyword.includes(lowerSearch) ||
+        selectedTone.includes(lowerSearch);
+
+      return matchesWritingType && matchesContentType && matchesTone && matchesSearch;
+    });
+  }, [manuscripts, searchTerm, tableFilters]);
+
   const tabCounts = useMemo(
     () => ({
-      all: manuscripts.filter((item) => item.status !== "trash").length,
-      draft: manuscripts.filter((item) => item.status === "draft").length,
-      saved: manuscripts.filter((item) => item.status === "saved").length,
-      published: manuscripts.filter((item) => item.status === "published").length,
-      trash: manuscripts.filter((item) => item.status === "trash").length,
+      all: domainFilteredManuscripts.filter((item) => item.status !== "trash").length,
+      draft: domainFilteredManuscripts.filter((item) => item.status === "draft").length,
+      saved: domainFilteredManuscripts.filter((item) => item.status === "saved").length,
+      published: domainFilteredManuscripts.filter((item) => item.status === "published").length,
+      trash: domainFilteredManuscripts.filter((item) => item.status === "trash").length,
     }),
-    [manuscripts]
+    [domainFilteredManuscripts]
   );
 
   const trashPageIds = useMemo(

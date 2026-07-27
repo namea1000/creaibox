@@ -74,18 +74,18 @@ export default function ContactForm() {
   return (
     <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-12">
       {/* Contact Card Info (Left) */}
-      <div className="lg:col-span-5 bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-8 sm:p-12 flex flex-col justify-between relative overflow-hidden">
+      <div className="lg:col-span-6 bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-8 sm:p-12 flex flex-col justify-between relative overflow-hidden">
         <div className="absolute top-0 right-0 -translate-y-8 translate-x-8 h-40 w-40 rounded-full bg-white/5 blur-xl" />
         
         <div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-blue-200">
+          <span className="text-[11px] font-black uppercase tracking-widest text-blue-200">
             CONTACT US
           </span>
-          <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-3">
-            처음부터 끝까지 깔끔하게, <br className="hidden sm:inline" />
-            무료 컨설팅 받기
+          <h3 className="text-2xl sm:text-[28px] xl:text-3xl font-extrabold tracking-tight mt-3 leading-snug">
+            <span className="block whitespace-nowrap">처음부터 끝까지 깔끔하게,</span>
+            <span className="block whitespace-nowrap">무료 컨설팅 받기</span>
           </h3>
-          <p className="mt-4 text-xs font-bold leading-relaxed text-blue-100/90">
+          <p className="mt-4 text-xs font-bold leading-relaxed text-blue-100/90 max-w-md">
             행사 성격, 대상 연령대, 교육 테마 등에 맞춤화된 무료 컨설팅과 견적을 지원해 드립니다. 지금 신청해보세요!
           </p>
         </div>
@@ -132,7 +132,7 @@ export default function ContactForm() {
       </div>
 
       {/* Form Area (Right) */}
-      <form onSubmit={handleSubmit} className="lg:col-span-7 p-8 sm:p-12 flex flex-col justify-between relative bg-white">
+      <form onSubmit={handleSubmit} className="lg:col-span-6 p-8 sm:p-12 flex flex-col justify-between relative bg-white">
         {isSuccess ? (
           <div className="flex flex-col items-center justify-center text-center py-16 flex-grow animate-fade-in">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-blue-600 border border-blue-100 shadow-sm mb-6">

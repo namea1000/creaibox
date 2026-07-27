@@ -1,18 +1,58 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { PORTFOLIO_ITEMS } from "../lib/constants";
 import { Calendar, Tag } from "lucide-react";
 
-export default function PortfolioSection() {
+export interface DynamicPortfolioItem {
+  id: string;
+  title: string;
+  date: string;
+  imageUrl: string;
+  category: string;
+  slug: string;
+}
+
+interface PortfolioSectionProps {
+  initialItems?: DynamicPortfolioItem[];
+  tabs?: string[];
+}
+
+export default function PortfolioSection({
+  initialItems = [],
+  tabs = ["전체", "행사대행", "교육서비스", "가족캠프"],
+}: PortfolioSectionProps) {
   const [activeTab, setActiveTab] = useState("전체");
 
-  const tabs = ["전체", "행사대행", "교육서비스", "가족캠프"];
+  // Format static fallback items if initialItems is less than 6
+  const staticFallback: DynamicPortfolioItem[] = PORTFOLIO_ITEMS.map((item) => ({
+    id: item.id,
+    title: item.title,
+    date: item.date,
+    imageUrl: item.imageUrl,
+    category: item.category,
+    slug: item.id,
+  }));
 
-  const filteredItems =
+  // Combine initialItems with fallback to ensure at least 6 cards exist
+  const combinedItems = [...initialItems, ...staticFallback];
+  
+  // Deduplicate by ID
+  const uniqueItemsMap = new Map<string, DynamicPortfolioItem>();
+  combinedItems.forEach((item) => {
+    if (!uniqueItemsMap.has(item.id)) {
+      uniqueItemsMap.set(item.id, item);
+    }
+  });
+  const allItems = Array.from(uniqueItemsMap.values());
+
+  // Filter items based on active tab and limit strictly to top 6 items
+  const filteredItems = (
     activeTab === "전체"
-      ? PORTFOLIO_ITEMS
-      : PORTFOLIO_ITEMS.filter((item) => item.category === activeTab);
+      ? allItems
+      : allItems.filter((item) => item.category === activeTab)
+  ).slice(0, 6);
 
   return (
     <section id="portfolio" className="py-24 bg-white relative scroll-mt-20">
@@ -36,10 +76,10 @@ export default function PortfolioSection() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`rounded-full px-5 py-2 text-xs font-black tracking-wide transition-all duration-200 border ${
+              className={`rounded-full px-5 py-2 text-xs font-black tracking-wide transition-all duration-200 border cursor-pointer ${
                 activeTab === tab
-                  ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-600/10 scale-102"
-                  : "bg-white border-slate-200 text-slate-600 hover:border-slate-350 hover:bg-slate-50"
+                  ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-600/10 scale-105"
+                  : "bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
               }`}
             >
               {tab}
@@ -47,12 +87,13 @@ export default function PortfolioSection() {
           ))}
         </div>
 
-        {/* Gallery Grid */}
+        {/* Gallery Grid (Strictly 6 Cards Layout) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredItems.map((item) => (
-            <div
+            <Link
               key={item.id}
-              className="flex flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm hover:shadow-lg transition-all duration-300 group"
+              href={`/blog/${item.slug}`}
+              className="flex flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
             >
               {/* Photo */}
               <div className="relative h-56 w-full overflow-hidden bg-slate-100">
@@ -65,11 +106,6 @@ export default function PortfolioSection() {
                     (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80";
                   }}
                 />
-                {/* Overlay Badge */}
-                <div className="absolute top-4 left-4 flex items-center gap-1 rounded-lg bg-white/95 backdrop-blur-sm px-2.5 py-1 text-[10px] font-black text-blue-600 shadow-sm border border-blue-50">
-                  <Tag size={10} />
-                  {item.category}
-                </div>
               </div>
 
               {/* Text info */}
@@ -82,10 +118,10 @@ export default function PortfolioSection() {
                     <Calendar size={11} />
                     {item.date}
                   </span>
-                  <span className="text-slate-300">소통과채움</span>
+                  <span className="text-blue-600 font-extrabold group-hover:underline">소통과채움</span>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

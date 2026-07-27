@@ -3724,6 +3724,10 @@ export default function UniversalBlogEditor({
             <Type size={14} /> 맞춤법
           </ToolbarButton>
 
+          <ToolbarButton onClick={() => setIsEditorialModalOpen(true)} title="에디토리얼 설정">
+            <FileText size={14} /> 에디토리얼 설정
+          </ToolbarButton>
+
           <ToolbarButton onClick={() => setIsInternalLinkModalOpen(true)} title="본문에 내부 블로그 글 링크 카드 삽입">
             <Link2 size={14} /> 내부 글 링크 추가
           </ToolbarButton>
@@ -3955,16 +3959,7 @@ export default function UniversalBlogEditor({
               <span>실시간 검색 반영</span>
             </button>
 
-            {/* 에디토리얼 설정 */}
-            <button
-              type="button"
-              onClick={() => setIsEditorialModalOpen(true)}
-              title="에디토리얼 설정"
-              className="h-8 px-3 rounded-lg border border-indigo-500/25 bg-indigo-950/20 text-indigo-200 text-[12px] font-bold tracking-tight hover:border-indigo-400/50 hover:bg-indigo-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
-            >
-              <FileText size={13} className="text-indigo-400" />
-              <span>에디토리얼 설정</span>
-            </button>
+
 
             {/* 지식 & 페르소나 설정 */}
             <button
@@ -4047,20 +4042,21 @@ export default function UniversalBlogEditor({
             <button
               type="button"
               onClick={() => {
-                const target = document.getElementById("recreate-input-box");
-                if (target) {
-                  target.scrollIntoView({ behavior: "smooth", block: "center" });
-                  setTimeout(() => {
-                    const inputEl = target.querySelector("input") || target;
-                    if (inputEl instanceof HTMLInputElement) {
-                      inputEl.value = "네이버/SNS 재발행";
-                      inputEl.dispatchEvent(new Event("input", { bubbles: true }));
-                      inputEl.focus();
-                    }
-                  }, 300);
+                const pathParts = window.location.pathname.split("/").filter(Boolean);
+                const targetId = pathParts[pathParts.length - 1] || "";
+                if (typeof window !== "undefined") {
+                  window.sessionStorage.setItem(
+                    "pending_recreate_post",
+                    JSON.stringify({
+                      id: targetId,
+                      title: title || "",
+                      content: content || editor?.getHTML() || "",
+                    })
+                  );
+                  window.location.href = `/studio/writing/creaibox/recreate?id=${targetId}`;
                 }
               }}
-              title="네이버/SNS 재발행 프롬프트 자동 입력 후 이동"
+              title="사이드바 '네이버/SNS 재발행' 메뉴로 이동 및 현재 글을 1차 크리에이박스 원본 원고로 세팅"
               className="h-8 px-3 rounded-lg border border-emerald-500/30 bg-emerald-950/25 text-emerald-200 text-[12px] font-bold tracking-tight hover:border-emerald-400/60 hover:bg-emerald-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer whitespace-nowrap ml-1"
             >
               <Share2 size={13} className="text-emerald-400" />

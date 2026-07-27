@@ -12,6 +12,17 @@ export interface CopyToNaverClipboardOptions {
   sourceUrl?: string;
 }
 
+export function toAbsoluteUrl(url: string): string {
+  if (!url) return url;
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
+    return url;
+  }
+  if (url.startsWith("/")) {
+    return `https://creaibox.com${url}`;
+  }
+  return `https://creaibox.com/${url}`;
+}
+
 export function extractImagesFromContent(content: string): Array<{ url: string; alt: string }> {
   const images: Array<{ url: string; alt: string }> = [];
   if (!content) return images;
@@ -20,7 +31,7 @@ export function extractImagesFromContent(content: string): Array<{ url: string; 
   const mdMatches = Array.from(content.matchAll(/!\[([^\]]*)\]\(([^)]+)\)/g));
   mdMatches.forEach((m) => {
     const alt = m[1] || "블로그 대표 이미지";
-    const url = m[2];
+    const url = toAbsoluteUrl(m[2]);
     if (url && !images.some((i) => i.url === url)) {
       images.push({ alt, url });
     }
@@ -29,7 +40,7 @@ export function extractImagesFromContent(content: string): Array<{ url: string; 
   // 2. Match HTML img tags: <img ... src="url" ...>
   const htmlMatches = Array.from(content.matchAll(/<img[^>]+src=["']([^"']+)["'][^>]*>/gi));
   htmlMatches.forEach((m) => {
-    const url = m[1];
+    const url = toAbsoluteUrl(m[1]);
     if (url && !images.some((i) => i.url === url)) {
       const altMatch = /alt=["']([^"']+)["']/i.exec(m[0]);
       const alt = altMatch ? altMatch[1] : "블로그 이미지";
@@ -76,6 +87,34 @@ export function injectImagesIntoMarkdown(content: string, originalContent?: stri
   return result;
 }
 
+export function preserveOriginalUrlAboveHashtags(newContent: string, originalContent?: string, canonicalUrl?: string): string {
+  let result = newContent;
+
+  // Extract canonical URL from originalContent if canonicalUrl param is empty
+  let targetUrl = canonicalUrl?.trim() || "";
+
+  if (!targetUrl && originalContent) {
+    const urlMatch = originalContent.match(/https?:\/\/(?:[a-zA-Z0-9-]+\.)?creaibox\.com\/blog\/[^\s<"'()]+/i);
+    if (urlMatch) {
+      targetUrl = urlMatch[0];
+    }
+  }
+
+  // Ensure targetUrl is present standalone right above hashtags line for OG link card generation
+  if (targetUrl) {
+    if (!result.includes(targetUrl)) {
+      const hashtagMatch = result.match(/^#[^\s#].*$/m);
+      if (hashtagMatch) {
+        result = result.replace(/^#[^\s#].*$/m, `${targetUrl}\n\n${hashtagMatch[0]}`);
+      } else {
+        result = `${result}\n\n${targetUrl}`;
+      }
+    }
+  }
+
+  return result;
+}
+
 export async function copyToNaverSmartEditorClipboard({
   title,
   content: rawContent,
@@ -86,18 +125,11 @@ export async function copyToNaverSmartEditorClipboard({
 
   let processedContent = rawContent;
 
-  // 🌟 Inject original post URL right before the hashtag line for Naver link card preview
-  if (sourceUrl) {
-    const cleanUrl = sourceUrl.trim();
-    if (cleanUrl && !processedContent.includes(cleanUrl)) {
-      const hashtagMatch = processedContent.match(/^#[^\s#].*$/m);
-      if (hashtagMatch) {
-        processedContent = processedContent.replace(/^#[^\s#].*$/m, `${cleanUrl}\n\n${hashtagMatch[0]}`);
-      } else {
-        processedContent = `${processedContent}\n\n${cleanUrl}`;
-      }
-    }
-  }
+  // 🌟 Ensure 1st original post URL is placed right above hashtags for Naver thumbnail link card (OG Card)
+  processedContent = preserveOriginalUrlAboveHashtags(processedContent, originalContent, sourceUrl);
+
+  // 🌟 Strip horizontal divider line (---) between 추천 제목 4선 and body content if present
+  processedContent = processedContent.replace(/(💡\s*\[네이버 C-Rank[\s\S]*?4️⃣[^\n]+\n+)\s*(?:<p>)?\s*---+\s*(?:<\/p>)?\n*/g, "$1\n");
 
   // Ensure images from original post are embedded if missing
   const contentWithImages = injectImagesIntoMarkdown(processedContent, originalContent);
@@ -106,18 +138,19 @@ export async function copyToNaverSmartEditorClipboard({
 
   let html = rawMarkdown;
 
-  // Convert Headings
-  html = html.replace(/^### (.*$)/gim, '<h3 style="font-size: 18px; font-weight: 700; color: #111827; margin-top: 28px; margin-bottom: 12px; line-height: 1.5;">$1</h3>');
-  html = html.replace(/^## (.*$)/gim, '<h2 style="font-size: 22px; font-weight: 800; color: #0f172a; margin-top: 36px; margin-bottom: 16px; line-height: 1.4;">$1</h2>');
-  html = html.replace(/^# (.*$)/gim, '<h1 style="font-size: 26px; font-weight: 900; color: #0f172a; margin-top: 40px; margin-bottom: 20px; line-height: 1.3;">$1</h1>');
+  // Convert Headings (supporting both markdown lines and <p>### ...</p> tags)
+  html = html.replace(/(?:<p>)?\s*###\s+(.*?)(?:<\/p>)?(?=\n|<|$)/gim, '<h3 style="font-size: 18px; font-weight: 700; color: #111827; margin-top: 24px; margin-bottom: 10px; line-height: 1.5;">$1</h3>');
+  html = html.replace(/(?:<p>)?\s*##\s+(.*?)(?:<\/p>)?(?=\n|<|$)/gim, '<h2 style="font-size: 22px; font-weight: 800; color: #0f172a; margin-top: 32px; margin-bottom: 14px; line-height: 1.4;">$1</h2>');
+  html = html.replace(/(?:<p>)?\s*#\s+(.*?)(?:<\/p>)?(?=\n|<|$)/gim, '<h1 style="font-size: 26px; font-weight: 900; color: #0f172a; margin-top: 36px; margin-bottom: 16px; line-height: 1.3;">$1</h1>');
 
-  // Convert Dividers / Horizontal Rules
-  html = html.replace(/^---$/gim, '<p><br></p><hr style="border: none; border-top: 2px dashed #cbd5e1; margin: 32px 0;" /><p><br></p>');
+  // Convert Dividers / Horizontal Rules (Zero extra <p><br></p> padding above or below!)
+  html = html.replace(/(?:<p>)?\s*---+\s*(?:<\/p>)?/gim, '<hr style="border: none; border-top: 1px solid #e2e8f0; margin: 16px 0;" />');
 
   // Convert Images: ![alt](url) -> Naver SmartEditor ONE centered image format
   html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_match, alt, url) => {
     const cleanAlt = alt || "블로그 대표 이미지";
-    return `<p align="center" style="text-align: center; margin: 28px 0;"><img src="${url}" alt="${cleanAlt}" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); display: inline-block;" /><br /><span style="font-size: 13px; color: #64748b; margin-top: 8px; display: inline-block; font-weight: 500;">${cleanAlt}</span></p><p><br></p>`;
+    const absUrl = toAbsoluteUrl(url);
+    return `<p align="center" style="text-align: center; margin: 20px 0;"><img src="${absUrl}" alt="${cleanAlt}" style="max-width: 100%; height: auto; display: inline-block;" /><br /><span style="font-size: 13px; color: #64748b; margin-top: 6px; display: inline-block;">${cleanAlt}</span></p>`;
   });
 
   // Convert Links: [text](url)
@@ -125,10 +158,9 @@ export async function copyToNaverSmartEditorClipboard({
     return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #0284c7; font-weight: 600; text-decoration: underline;">${text}</a>`;
   });
 
-  // Convert standalone URLs (e.g. https://creaibox.com/blog/...)
-  // Note: Standalone URLs are NOT wrapped in <a> tags so Naver SmartEditor ONE automatically generates the thumbnail link preview card upon Ctrl+V paste!
+  // Convert standalone URLs: Output pure <p>https://...</p> WITHOUT any inline CSS/styles/colors so Naver SmartEditor ONE automatically generates the thumbnail OG link card!
   html = html.replace(/(^|\n)(https?:\/\/[^\s<]+)/g, (_match, prefix, url) => {
-    return `${prefix}<p align="center" style="text-align: center; margin: 24px 0; font-size: 15px; font-weight: 600; color: #0284c7;">${url}</p><p><br></p>`;
+    return `${prefix}<p>${url}</p>`;
   });
 
   // Convert Bold & Italic
@@ -140,10 +172,10 @@ export async function copyToNaverSmartEditorClipboard({
   // Convert Bullet lists
   html = html.replace(/^\* (.*$)/gim, '<li style="margin-left: 20px; list-style-type: disc; margin-bottom: 8px; font-size: 15px; color: #334155;">$1</li>');
   html = html.replace(/^- (.*$)/gim, '<li style="margin-left: 20px; list-style-type: disc; margin-bottom: 8px; font-size: 15px; color: #334155;">$1</li>');
-  html = html.replace(/((?:<li[^>]*>.*<\/li>\s*)+)/g, '<ul style="margin: 20px 0; padding-left: 10px;">$1</ul><p><br></p>');
+  html = html.replace(/((?:<li[^>]*>.*<\/li>\s*)+)/g, '<ul style="margin: 16px 0; padding-left: 10px;">$1</ul>');
 
   // Convert Blockquotes
-  html = html.replace(/^> (.*$)/gim, '<blockquote style="border-left: 4px solid #0284c7; padding: 14px 18px; margin: 24px 0; background-color: #f0f9ff; color: #0369a1; font-size: 15px; border-radius: 0 8px 8px 0;">$1</blockquote><p><br></p>');
+  html = html.replace(/^> (.*$)/gim, '<blockquote style="border-left: 4px solid #0284c7; padding: 14px 18px; margin: 20px 0; background-color: #f0f9ff; color: #0369a1; font-size: 15px; border-radius: 0 8px 8px 0;">$1</blockquote>');
 
   // Convert Markdown Tables
   html = html.replace(/((?:(?:^|\n)\|[^\n]+\|\s*)+)/g, (match) => {
@@ -180,7 +212,7 @@ export async function copyToNaverSmartEditorClipboard({
 
     if (headerRow.length === 0) return match;
 
-    let tableHtml = `<table style="width: 100%; border-collapse: collapse; margin: 28px 0; font-size: 14px; line-height: 1.6; border: 1px solid #cbd5e1; background-color: #ffffff;">\n`;
+    let tableHtml = `<table style="width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 14px; line-height: 1.6; border: 1px solid #cbd5e1; background-color: #ffffff;">\n`;
     tableHtml += `  <thead>\n    <tr style="background-color: #f1f5f9;">\n`;
     headerRow.forEach((hCell, i) => {
       const align = alignment[i] || "left";
@@ -198,12 +230,12 @@ export async function copyToNaverSmartEditorClipboard({
       });
       tableHtml += `    </tr>\n`;
     });
-    tableHtml += `  </tbody>\n</table><p><br></p>`;
+    tableHtml += `  </tbody>\n</table>`;
 
     return `\n\n${tableHtml}\n\n`;
   });
 
-  // Split into paragraphs by double newlines & add <p><br></p> gaps for Naver SmartEditor
+  // Split into paragraphs by double newlines & format cleanly
   const paragraphBlocks = html
     .split(/\n{2,}/)
     .map((block) => {
@@ -215,15 +247,24 @@ export async function copyToNaverSmartEditorClipboard({
         return trimmed;
       }
       if (/^#[^\s#]/.test(trimmed)) {
-        return `<p style="font-size: 15px; font-weight: 700; color: #475569; margin-top: 32px; margin-bottom: 20px; word-break: break-word;">${trimmed}</p>`;
+        return `<p style="font-size: 15px; font-weight: 700; color: #475569; margin-top: 24px; margin-bottom: 12px; word-break: break-word;">${trimmed}</p>`;
       }
 
       const withBr = trimmed.replace(/\n/g, "<br />");
-      return `<p style="font-size: 16px; line-height: 1.85; color: #1e293b; margin-bottom: 20px; word-break: break-word;">${withBr}</p>`;
+      return `<p style="font-size: 16px; line-height: 1.85; color: #1e293b; margin-bottom: 16px; word-break: break-word;">${withBr}</p>`;
     })
     .filter(Boolean);
 
-  const fullBodyHtml = paragraphBlocks.join("\n<p><br></p>\n");
+  const fullBodyHtml = paragraphBlocks.reduce((acc, currentBlock, idx) => {
+    if (idx === 0) return currentBlock;
+    const previousBlock = paragraphBlocks[idx - 1];
+
+    if (currentBlock.startsWith("<hr") || previousBlock.startsWith("<hr")) {
+      return `${acc}\n${currentBlock}`;
+    }
+
+    return `${acc}\n<p><br></p>\n${currentBlock}`;
+  }, "");
 
   const fullHtml = `<!DOCTYPE html>
 <html>
