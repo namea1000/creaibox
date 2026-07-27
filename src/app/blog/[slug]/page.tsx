@@ -472,7 +472,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                   CreAibox Insight
                 </div>
 
-                <h1 className="mt-2.5 text-xl font-black leading-[1.3] tracking-[-0.02em] text-zinc-950 md:text-[1.65rem]">
+                <h1 className="mt-2.5 text-lg font-black leading-[1.35] tracking-[-0.02em] text-zinc-950 md:text-[1.4rem]">
                   {post.title}
                 </h1>
               </header>
@@ -638,16 +638,16 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
 
             {/* 오른쪽 1/3 베스트 글 위젯 (Sticky 적용) */}
             <aside className="lg:sticky lg:top-28 h-fit rounded-xl border border-zinc-200 bg-zinc-50 p-6 shadow-sm">
-              <div className="mb-5 flex items-center justify-between border-b border-zinc-200 pb-5">
+              <div className="mb-4 flex items-center justify-between border-b border-zinc-200 pb-3">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-600">
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-600">
                     Best Posts
                   </p>
-                  <h2 className="mt-1 text-2xl font-black text-zinc-950">
+                  <h2 className="mt-0.5 text-xl font-black text-zinc-950">
                     베스트 글
                   </h2>
                 </div>
-                <Star className="text-blue-500" size={22} />
+                <Star className="text-blue-500" size={20} />
               </div>
 
               <div className="space-y-1">
@@ -671,7 +671,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <h3 className="line-clamp-2 text-[1.05rem] font-bold leading-snug text-zinc-800 group-hover:text-blue-600">
+                        <h3 className="line-clamp-2 text-[1.05rem] font-normal leading-snug text-zinc-800 group-hover:text-blue-600">
                           {bestPost.title}
                         </h3>
                       </div>

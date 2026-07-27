@@ -436,7 +436,7 @@ export default function PostClientWrapper({
                   </div>
                 </div>
 
-                <h1 className={`mt-2.5 text-xl md:text-[1.65rem] font-black leading-[1.3] tracking-[-0.02em] ${titleColor}`}>
+                <h1 className={`mt-2.5 text-lg md:text-[1.4rem] font-black leading-[1.35] tracking-[-0.02em] ${titleColor}`}>
                   {post.title}
                 </h1>
               </header>
@@ -640,16 +640,16 @@ export default function PostClientWrapper({
 
           {/* 오른쪽 1/3 베스트 글 위젯 (Sticky 적용) */}
           <aside className={`lg:sticky lg:top-28 h-fit rounded-xl border p-6 transition-all duration-300 ${theme === "dark" ? "border-zinc-800 bg-[#1e222b]/40" : "border-zinc-200 bg-zinc-50"}`}>
-            <div className="mb-5 flex items-center justify-between border-b pb-5 border-zinc-200 dark:border-zinc-800">
+            <div className="mb-4 flex items-center justify-between border-b pb-3 border-zinc-200 dark:border-zinc-800">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-500">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-500">
                   Best Posts
                 </p>
-                <h2 className={`mt-1 text-2xl font-black ${theme === "dark" ? "text-white" : "text-zinc-950"}`}>
+                <h2 className={`mt-0.5 text-xl font-black ${theme === "dark" ? "text-white" : "text-zinc-950"}`}>
                   베스트 글
                 </h2>
               </div>
-              <Star className="text-blue-500" size={22} />
+              <Star className="text-blue-500" size={20} />
             </div>
 
             <div className="space-y-1">
@@ -673,7 +673,7 @@ export default function PostClientWrapper({
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <h3 className={`line-clamp-2 text-[1.05rem] font-bold leading-snug group-hover:text-blue-500 transition-colors ${theme === "dark" ? "text-zinc-200" : "text-zinc-850"}`}>
+                      <h3 className={`line-clamp-2 text-[1.05rem] font-normal leading-snug group-hover:text-blue-500 transition-colors ${theme === "dark" ? "text-zinc-300" : "text-zinc-800"}`}>
                         {bestPost.title}
                       </h3>
                     </div>
