@@ -2097,7 +2097,7 @@ function CreaiboxManuscriptDetailContent() {
         } else {
           setIsEnhancingContent(true);
         }
-      } else if (option === "correct" || option === "polish") {
+      } else if (option === "correct" || option === "polish" || option.startsWith("translate:")) {
         setIsPolishing(true);
       } else if (option.startsWith("change_post_type:")) {
         setIsChangingPostType(true);
@@ -2119,6 +2119,23 @@ function CreaiboxManuscriptDetailContent() {
 {
   "title": "재창조된 감각적인 새 제목",
   "content": "<p>재창조된 새로운 본문 통합 HTML 내용</p>"
+}`;
+        } else if (option.startsWith("translate:")) {
+          const targetLang = option.replace("translate:", "");
+          promptInstruction = `[다국어 원고 자동 번역 지침]:
+당신은 최고 수준의 전문 다국어 번역가이자 SEO 에디터입니다.
+제공된 원고의 [제목]과 [본문 HTML] 전체를 [${targetLang}] 언어로 자연스럽고 전문적으로 완벽하게 번역해 주십시오.
+
+[중요 지시사항]:
+1. 원고 제목과 본문 HTML의 모든 문장을 ${targetLang} 언어로 번역해야 합니다.
+2. HTML 태그 구조(<h2>, <h3>, <p>, <strong>, <ul>, <li>, <a>, blockquote 등)와 이미지, 인용구 스타일은 100% 원본 그대로 유지하세요.
+3. 해당 언어 사용자가 읽기에 문맥이 자연스럽고 품격 있는 문체로 번역해 주십시오.
+
+[필수 출력 형식]:
+반드시 아래 JSON 포맷만을 반환해야 합니다 (다른 부연 설명이나 마크다운 백틱 등은 절대로 포함하지 마십시오):
+{
+  "title": "${targetLang}로 번역된 신규 제목",
+  "content": "<p>${targetLang}로 번역된 통합 본문 HTML 내용</p>"
 }`;
         } else if (option.startsWith("expand_")) {
           if (option.includes("toc_")) {
@@ -2224,7 +2241,7 @@ function CreaiboxManuscriptDetailContent() {
         let enhancedHtml = result.text || "";
         enhancedHtml = enhancedHtml.replace(/^```html\s*/i, "").replace(/^```json\s*/i, "").replace(/```$/, "").trim();
 
-        if (option === "recreate_spin") {
+        if (option === "recreate_spin" || option.startsWith("translate:")) {
           let parsed: { title?: string; content?: string } | null = null;
           try {
             parsed = robustParseJson(enhancedHtml);
@@ -2240,7 +2257,12 @@ function CreaiboxManuscriptDetailContent() {
           } else if (enhancedHtml) {
             updateLocalData({ content: enhancedHtml });
           }
-          window.alert("Spin-Rewriting Engine에 의해 제목과 본문 원문 글 재창조가 완료되었습니다!");
+          if (option.startsWith("translate:")) {
+            const targetLang = option.replace("translate:", "");
+            window.alert(`원고 제목과 본문의 [${targetLang}] 다국어 번역이 완료되었습니다!`);
+          } else {
+            window.alert("Spin-Rewriting Engine에 의해 제목과 본문 원문 글 재창조가 완료되었습니다!");
+          }
         } else if (enhancedHtml) {
           // 포스트 타입 변경 성공 시, 데이터 모델의 post_type도 함께 갱신 처리
           if (option.startsWith("change_post_type:")) {

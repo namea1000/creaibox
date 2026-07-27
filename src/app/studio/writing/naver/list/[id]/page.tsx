@@ -14,6 +14,7 @@ import {
   naverManuscriptKeys,
   type StudioManuscriptRecord,
 } from "@/lib/queries/manuscripts";
+import { robustParseJson } from "@/lib/utils";
 
 const supabase = createClient();
 
@@ -172,7 +173,7 @@ export default function NaverManuscriptDetailPage() {
         } else {
           setIsEnhancingContent(true);
         }
-      } else if (option === "correct" || option === "polish") {
+      } else if (option === "correct" || option === "polish" || option.startsWith("translate:")) {
         setIsPolishing(true);
       } else if (option.startsWith("change_post_type:")) {
         setIsChangingPostType(true);
@@ -184,7 +185,24 @@ export default function NaverManuscriptDetailPage() {
         const { data: { user } } = await supabase.auth.getUser();
 
         let promptInstruction = "";
-        if (option.startsWith("expand_")) {
+        if (option.startsWith("translate:")) {
+          const targetLang = option.replace("translate:", "");
+          promptInstruction = `[다국어 원고 자동 번역 지침]:
+당신은 최고 수준의 전문 다국어 번역가이자 SEO 에디터입니다.
+제공된 원고의 [제목]과 [본문 HTML] 전체를 [${targetLang}] 언어로 자연스럽고 전문적으로 완벽하게 번역해 주십시오.
+
+[중요 지시사항]:
+1. 원고 제목과 본문 HTML의 모든 문장을 ${targetLang} 언어로 번역해야 합니다.
+2. HTML 태그 구조(<h2>, <h3>, <p>, <strong>, <ul>, <li>, <a>, blockquote 등)와 이미지, 인용구 스타일은 100% 원본 그대로 유지하세요.
+3. 해당 언어 사용자가 읽기에 문맥이 자연스럽고 품격 있는 문체로 번역해 주십시오.
+
+[필수 출력 형식]:
+반드시 아래 JSON 포맷만을 반환해야 합니다 (다른 부연 설명이나 마크다운 백틱 등은 절대로 포함하지 마십시오):
+{
+  "title": "${targetLang}로 번역된 신규 제목",
+  "content": "<p>${targetLang}로 번역된 통합 본문 HTML 내용</p>"
+}`;
+        } else if (option.startsWith("expand_")) {
           if (option.includes("toc_")) {
             const count = option.replace("expand_toc_", "");
             promptInstruction = `현재 본문에 있는 기존 목차(H2 등)들과 긴밀하게 연관되고 이어지는 새로운 목차(H2 또는 H3 태그)를 정확히 ${count}개 생성하여 추가해 주세요. 또한, 새로 추가된 각 목차 하위에는 상세하고 깊이 있는 설명 문단(글 내용)도 함께 작성해서 본문의 마지막 또는 문맥상 적합한 위치에 자연스럽게 덧붙여 전체 원고의 분량을 확장해 주세요.
@@ -244,9 +262,27 @@ ${promptInstruction}
         }
 
         let enhancedHtml = result.text || "";
-        enhancedHtml = enhancedHtml.replace(/^```html\s*/i, "").replace(/```$/, "").trim();
+        enhancedHtml = enhancedHtml.replace(/^```html\s*/i, "").replace(/^```json\s*/i, "").replace(/```$/, "").trim();
 
-        if (enhancedHtml) {
+        if (option.startsWith("translate:")) {
+          let parsed: { title?: string; content?: string } | null = null;
+          try {
+            parsed = robustParseJson(enhancedHtml);
+          } catch {
+            parsed = null;
+          }
+
+          if (parsed && (parsed.title || parsed.content)) {
+            updateLocalData({
+              ...(parsed.title ? { title: parsed.title } : {}),
+              ...(parsed.content ? { content: parsed.content } : {}),
+            });
+          } else if (enhancedHtml) {
+            updateLocalData({ content: enhancedHtml });
+          }
+          const targetLang = option.replace("translate:", "");
+          window.alert(`원고 제목과 본문의 [${targetLang}] 다국어 번역이 완료되었습니다!`);
+        } else if (enhancedHtml) {
           // 포스트 타입 변경 성공 시, 데이터 모델의 postType도 함께 갱신 처리
           if (option.startsWith("change_post_type:")) {
             const targetType = option.replace("change_post_type:", "");

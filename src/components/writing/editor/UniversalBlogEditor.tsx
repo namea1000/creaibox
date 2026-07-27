@@ -118,6 +118,7 @@ import {
   Heading3,
   ImageIcon,
   Italic,
+  Languages,
   Link2,
   List,
   ListOrdered,
@@ -135,6 +136,7 @@ import {
   RotateCcw,
   Save,
   Search,
+  Share2,
   Smile,
   Sparkles,
   Split,
@@ -909,6 +911,7 @@ export default function UniversalBlogEditor({
       const { data: posts, error: postsError } = await supabase
         .from("writing_creaibox_posts")
         .select("id, title, slug, meta_description, canonical_url, created_at, status")
+        .eq("user_id", user.id)
         .eq("status", "published")
         .not("slug", "is", null)
         .order("created_at", { ascending: false });
@@ -954,37 +957,10 @@ export default function UniversalBlogEditor({
   const handleInsertInternalLinkCard = (post: any) => {
     if (!editor) return;
 
-    const imgUrl = internalLinkImages[post.id] || "";
     const postUrl = post.canonical_url || `https://creaibox.com/blog/${post.slug}`;
-    const postExcerpt = (post.meta_description || "CreAibox 인사이트 포스팅").trim().slice(0, 120);
+    const simpleLinkHtml = `<p style="text-align: center; margin: 4px 0;"><a href="${postUrl}" target="_blank" rel="noopener noreferrer" style="font-weight: bold; color: #2563eb; text-decoration: underline;">${post.title}</a></p><p style="text-align: center; margin: 4px 0;">${postUrl}</p>`;
 
-    const thumbnailHtml = imgUrl
-      ? `<span class="card-thumb" style="display: inline-block; width: 140px; height: 90px; border-radius: 8px; overflow: hidden; border: 1px solid #f4f4f5; margin: 0; vertical-align: middle;">
-          <img src="${imgUrl}" alt="Thumbnail" style="width: 100%; height: 100%; object-fit: cover; margin: 0; display: block;" />
-        </span>`
-      : `<span class="card-thumb" style="display: inline-flex; align-items: center; justify-content: center; width: 140px; height: 90px; border-radius: 8px; background-color: #f4f4f5; border: 1px solid #e4e4e7; color: #a1a1aa; margin: 0; vertical-align: middle;">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block; margin: 0 auto;"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path><path d="M6 6h10"></path><path d="M6 10h10"></path></svg>
-        </span>`;
-
-    const cardHtml = `
-      <a href="${postUrl}" target="_blank" rel="noopener noreferrer" class="internal-link-card" style="display: flex; align-items: center; gap: 16px; border: 1px solid #e4e4e7; background-color: #ffffff; border-radius: 16px; padding: 16px; text-decoration: none; color: inherit; text-align: left; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); margin: 24px 0; width: 100%; box-sizing: border-box; cursor: pointer;">
-        ${thumbnailHtml}
-        <span class="card-body" style="flex: 1; min-width: 0; display: inline-flex; flex-direction: column; gap: 6px; justify-content: center; margin: 0; vertical-align: middle;">
-          <span class="card-title" style="font-size: 15px; font-weight: 800; color: #18181b; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-            ${post.title}
-          </span>
-          <span class="card-desc" style="font-size: 12px; color: #71717a; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-            ${postExcerpt}
-          </span>
-          <span class="card-tag" style="display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; color: #2563eb; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; margin-bottom: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-            <span style="background-color: #eff6ff; color: #1d4ed8; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: 800; display: inline-block;">Insight</span>
-          </span>
-        </span>
-      </a>
-      <p></p>
-    `;
-
-    editor.chain().focus().insertContent(cardHtml).run();
+    editor.chain().focus().insertContent(simpleLinkHtml).run();
     setIsInternalLinkModalOpen(false);
   };
 
@@ -1104,6 +1080,8 @@ export default function UniversalBlogEditor({
   const contentDropdownRef = useRef<HTMLDivElement>(null);
   const tocDropdownRef = useRef<HTMLDivElement>(null);
   const postTypeDropdownRef = useRef<HTMLDivElement>(null);
+  const [isTranslateDropdownOpen, setIsTranslateDropdownOpen] = useState(false);
+  const translateDropdownRef = useRef<HTMLDivElement>(null);
   const copyTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [isCustomSubTopic, setIsCustomSubTopic] = useState(false);
@@ -1219,6 +1197,9 @@ export default function UniversalBlogEditor({
       }
       if (verticalAlignDropdownRef.current && !verticalAlignDropdownRef.current.contains(event.target as Node)) {
         setIsVerticalAlignDropdownOpen(false);
+      }
+      if (translateDropdownRef.current && !translateDropdownRef.current.contains(event.target as Node)) {
+        setIsTranslateDropdownOpen(false);
       }
       setActiveTableDropdown(null);
     }
@@ -2744,8 +2725,8 @@ export default function UniversalBlogEditor({
       onMouseDown={onMouseDown}
       disabled={disabled || !editor}
       title={title}
-      className={`flex shrink-0 items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-bold transition-all disabled:cursor-not-allowed disabled:opacity-40 ${
-        active ? "bg-blue-500/20 text-blue-300" : "text-zinc-200 hover:bg-zinc-800/80 hover:text-white"
+      className={`flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-bold transition-all disabled:cursor-not-allowed disabled:opacity-40 hover:bg-violet-500/10 ${
+        active ? "bg-violet-500/20 text-violet-400" : "text-zinc-400 hover:text-violet-400"
       } ${className}`}
     >
       {children}
@@ -2884,15 +2865,6 @@ export default function UniversalBlogEditor({
           </button>
 
           <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:bg-zinc-800 cursor-pointer"
-            title="페이지 새로고침"
-          >
-            <RefreshCw size={13} /> 새로고침
-          </button>
-
-          <button
             onClick={() => handleSaveClick(isDetailMode ? "completed" : undefined)}
             disabled={isSaving}
             className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:bg-zinc-800 disabled:opacity-60 cursor-pointer"
@@ -2907,7 +2879,7 @@ export default function UniversalBlogEditor({
       <div className="sticky top-14 z-20 shrink-0 border-b border-zinc-800 bg-[#0b0d12] flex flex-col">
         
         {/* [1열]: 텍스트 기본 서식 및 폰트 */}
-        <div className="relative z-50 flex h-14 flex-nowrap items-center gap-1.5 px-4 py-2 border-b border-zinc-800 bg-zinc-950/20 overflow-visible select-none shrink-0">
+        <div className="relative z-50 flex h-14 flex-nowrap items-center gap-1 px-4 py-2 border-b border-zinc-800 bg-zinc-950/20 overflow-visible select-none shrink-0">
           <ToolbarButton
             onClick={() => editor?.chain().focus().undo().run()}
             disabled={!editor?.can().undo()}
@@ -2923,8 +2895,6 @@ export default function UniversalBlogEditor({
           >
             <Redo size={14} />
           </ToolbarButton>
-
-          <div className="mx-1.5 h-4 w-px bg-zinc-800" />
 
           {/* 프리미엄 글꼴 드롭다운 */}
           <select
@@ -3008,8 +2978,6 @@ export default function UniversalBlogEditor({
             <option value="Bungee">Bungee</option>
           </select>
 
-          <div className="mx-1.5 h-4 w-px bg-zinc-800" />
-
           {/* 프리미엄 글자 크기 조절 단추 */}
           <select
             onChange={(e) => {
@@ -3029,8 +2997,6 @@ export default function UniversalBlogEditor({
               <option key={sz} value={sz}>{sz}</option>
             ))}
           </select>
-
-          <div className="mx-1.5 h-4 w-px bg-zinc-800" />
 
           {/* 글자색 */}
           <div className="flex shrink-0 items-center gap-1" title="글자 색상">
@@ -3068,8 +3034,6 @@ export default function UniversalBlogEditor({
             </button>
           </div>
 
-          <div className="mx-1.5 h-4 w-px bg-zinc-800" />
-
           <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive("heading", { level: 2 })} title="소제목 H2">
             <Heading2 size={15} />
           </ToolbarButton>
@@ -3077,8 +3041,6 @@ export default function UniversalBlogEditor({
           <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive("heading", { level: 3 })} title="소제목 H3">
             <Heading3 size={15} />
           </ToolbarButton>
-
-          <div className="mx-1.5 h-4 w-px bg-zinc-800" />
 
           <ToolbarButton onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive("bold")} title="굵게">
             <Bold size={15} />
@@ -3092,8 +3054,6 @@ export default function UniversalBlogEditor({
             <Link2 size={15} />
           </ToolbarButton>
 
-          <div className="mx-1.5 h-4 w-px bg-zinc-800" />
-
           <ToolbarButton onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive("bulletList")} title="글머리 기호 목록">
             <List size={15} />
           </ToolbarButton>
@@ -3101,8 +3061,6 @@ export default function UniversalBlogEditor({
           <ToolbarButton onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive("orderedList")} title="번호 매기기 목록">
             <ListOrdered size={15} />
           </ToolbarButton>
-
-          <div className="mx-1.5 h-4 w-px bg-zinc-800" />
 
           {/* 1. 가로 정렬 드롭다운 (네이버 블로그 스타일 1개 통합 버튼) */}
           <div ref={textAlignDropdownRef} className="relative inline-block">
@@ -3274,17 +3232,24 @@ export default function UniversalBlogEditor({
               </div>
             )}
           </div>
+
+          <ToolbarButton
+            onClick={() => window.location.reload()}
+            className="ml-auto"
+            title="페이지 새로고침"
+          >
+            <RefreshCw size={14} /> 새로고침
+          </ToolbarButton>
         </div>
 
         {/* [2열]: 레이아웃 삽입, 유틸리티, 설정 모달들 */}
-        <div className="relative z-40 flex flex-nowrap items-center gap-1.5 px-4 py-2 border-b border-zinc-800 bg-zinc-950/20 overflow-visible select-none shrink-0">
+        <div className="relative z-40 flex flex-nowrap items-center gap-1 px-4 py-2 border-b border-zinc-800 bg-zinc-950/20 overflow-visible select-none shrink-0">
           <input type="file" accept="image/*" ref={fileInputRef} onChange={handleEditorImageUpload} className="hidden" />
 
           {/* 사진 업로드 버튼 */}
           <ToolbarButton
             onClick={() => fileInputRef.current?.click()}
             disabled={isImageUploading}
-            className="border border-zinc-800 bg-zinc-900/50 hover:bg-emerald-500/10 hover:text-emerald-400"
             title="로컬 이미지 업로드"
           >
             {isImageUploading ? <RefreshCw size={14} className="animate-spin" /> : <ImageIcon size={14} />}
@@ -3309,18 +3274,15 @@ export default function UniversalBlogEditor({
           <ToolbarButton
             onClick={() => attachmentInputRef.current?.click()}
             disabled={isAttachmentUploading}
-            className="border border-zinc-800 bg-zinc-900/50 hover:bg-violet-500/10 hover:text-violet-300"
             title="CreAibox 클라우드 DB 원고 보관함에 첨부 파일 업로드 및 본문 삽입"
           >
             {isAttachmentUploading ? (
               <RefreshCw size={14} className="animate-spin text-violet-400" />
             ) : (
-              <Paperclip size={14} className="text-violet-400" />
+              <Paperclip size={14} />
             )}
             <span>{isAttachmentUploading ? "첨부중..." : "파일 첨부"}</span>
           </ToolbarButton>
-
-          <div className="mx-1 h-4 w-px bg-zinc-800" />
 
           {/* 🌟 인용구 & 말풍선 보강 모듈 드롭다운 */}
           <div className="relative shrink-0" ref={quoteDropdownRef}>
@@ -3596,8 +3558,6 @@ export default function UniversalBlogEditor({
             )}
           </div>
 
-          <div className="mx-1 h-4 w-px bg-zinc-800" />
-          
           {/* 문자표 단추 */}
           <ToolbarButton onClick={() => setIsSymbolModalOpen(true)} title="문자표 (특수문자 삽입)">
             <span className="text-[13px] font-black text-violet-400">※</span>
@@ -3610,34 +3570,11 @@ export default function UniversalBlogEditor({
             <span>찾기/바꾸기</span>
           </ToolbarButton>
 
-          {/* 대소문자 변환 드롭다운 */}
-          <div className="relative shrink-0">
-            <select
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val !== "none") {
-                  changeCase(val as any);
-                  e.target.value = "none";
-                }
-              }}
-              defaultValue="none"
-              className="h-9 rounded-lg border-0 bg-transparent px-2 text-xs font-bold text-zinc-300 hover:bg-zinc-800/60 hover:text-white outline-none cursor-pointer transition text-center"
-              title="영문 대소문자 변환"
-            >
-              <option value="none" disabled className="bg-[#131722] text-zinc-400">Aa 대소문자 변환</option>
-              <option value="upper" className="bg-[#131722] text-zinc-200">UPPERCASE (대문자)</option>
-              <option value="lower" className="bg-[#131722] text-zinc-200">lowercase (소문자)</option>
-              <option value="capitalize" className="bg-[#131722] text-zinc-200">Capitalize (첫글자 대문자)</option>
-            </select>
-          </div>
-
           {/* 원고 인쇄 */}
           <ToolbarButton onClick={handlePrint} title="현재 에디터 원고 인쇄">
             <Printer size={14} />
             <span>인쇄</span>
           </ToolbarButton>
-
-          <div className="mx-1.5 h-4 w-px bg-zinc-800" />
 
           <ToolbarButton onClick={handleInsertTable} title="표 삽입">
             <Table2 size={14} /> 표
@@ -3777,18 +3714,18 @@ export default function UniversalBlogEditor({
             )}
           </div>
 
-          <div className="mx-1.5 h-4 w-px bg-zinc-800" />
-
           <ToolbarButton onClick={() => editor?.chain().focus().toggleCodeBlock().run()} active={editor?.isActive("codeBlock")} title="코드 블록">
             <Code2 size={14} /> 코드
           </ToolbarButton>
 
           <ToolbarButton onClick={handleInsertCta} title="CTA 링크 버튼 삽입">CTA</ToolbarButton>
 
-          <div className="mx-1.5 h-4 w-px bg-zinc-800" />
-
           <ToolbarButton onClick={() => handleEnhanceContent("correct")} title="AI 맞춤법 교정">
             <Type size={14} /> 맞춤법
+          </ToolbarButton>
+
+          <ToolbarButton onClick={() => setIsInternalLinkModalOpen(true)} title="본문에 내부 블로그 글 링크 카드 삽입">
+            <Link2 size={14} /> 내부 글 링크 추가
           </ToolbarButton>
         </div>
 
@@ -4018,8 +3955,6 @@ export default function UniversalBlogEditor({
               <span>실시간 검색 반영</span>
             </button>
 
-            <div className="h-4 w-px bg-violet-500/25 mx-1" />
-
             {/* 에디토리얼 설정 */}
             <button
               type="button"
@@ -4045,15 +3980,91 @@ export default function UniversalBlogEditor({
               )}
             </button>
 
-            {/* 내부 링크 콘텐츠 추가 */}
+            {/* AI 번역 드롭다운 (20개국) */}
+            <div className="relative" ref={translateDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsTranslateDropdownOpen((prev) => !prev)}
+                disabled={isSaving || isEnhancingContent || isEnhancingToc || isPolishing || isChangingPostType || isApplyingSearch || isSpinRecreating}
+                title="원고 제목과 본문을 다국어로 자동 번역"
+                className="h-8 px-3 rounded-lg border border-violet-500/25 bg-violet-950/25 text-violet-200 text-[12px] font-bold tracking-tight hover:border-violet-400/60 hover:bg-violet-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                <Languages size={13} className="text-violet-400" />
+                <span>번역</span>
+                <ChevronDown size={12} />
+              </button>
+
+              {isTranslateDropdownOpen && (
+                <div className="absolute right-0 top-full mt-1.5 w-60 rounded-2xl border border-violet-500/40 bg-[#0d0f19] p-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.95)] z-[99999] flex flex-col gap-1 select-none max-h-[75vh] overflow-y-auto custom-scrollbar">
+                  <div className="px-2 py-1 text-[10px] font-black text-violet-400 uppercase tracking-wider flex items-center justify-between border-b border-zinc-800/80 pb-1.5 mb-1 shrink-0">
+                    <span>AI 글로벌 20개국 번역</span>
+                    <span className="text-[9px] text-zinc-500">제목+본문 자동번역</span>
+                  </div>
+                  {[
+                    { name: "영어 (English)", flag: "🇺🇸" },
+                    { name: "일본어 (日本語)", flag: "🇯🇵" },
+                    { name: "중국어 (간체 - 简体)", flag: "🇨🇳" },
+                    { name: "중국어 (번체 - 繁體)", flag: "🇹🇼" },
+                    { name: "스페인어 (Español)", flag: "🇪🇸" },
+                    { name: "프랑스어 (Français)", flag: "🇫🇷" },
+                    { name: "독일어 (Deutsch)", flag: "🇩🇪" },
+                    { name: "베트남어 (Tiếng Việt)", flag: "🇻🇳" },
+                    { name: "태국어 (ไทย)", flag: "🇹🇭" },
+                    { name: "인도네시아어 (Bahasa)", flag: "🇮🇩" },
+                    { name: "러시아어 (Русский)", flag: "🇷🇺" },
+                    { name: "이탈리아어 (Italiano)", flag: "🇮🇹" },
+                    { name: "포르투갈어 (Português)", flag: "🇵🇹" },
+                    { name: "아랍어 (العربية)", flag: "🇸🇦" },
+                    { name: "힌디어 (हिन्दी)", flag: "🇮🇳" },
+                    { name: "터키어 (Türkçe)", flag: "🇹🇷" },
+                    { name: "네덜란드어 (Nederlands)", flag: "🇳🇱" },
+                    { name: "폴란드어 (Polski)", flag: "🇵🇱" },
+                    { name: "스웨덴어 (Svenska)", flag: "🇸🇪" },
+                    { name: "말레이어 (Bahasa Melayu)", flag: "🇲🇾" },
+                  ].map((lang) => (
+                    <button
+                      key={lang.name}
+                      type="button"
+                      onClick={() => {
+                        setIsTranslateDropdownOpen(false);
+                        if (handleEnhanceContent) {
+                          handleEnhanceContent(`translate:${lang.name}`);
+                        }
+                      }}
+                      className="w-full px-2.5 py-1.5 rounded-xl border border-zinc-800/80 bg-zinc-950/60 hover:bg-violet-950/40 hover:border-violet-500/40 text-left text-xs font-bold text-zinc-200 hover:text-white transition cursor-pointer flex items-center justify-between"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="text-sm">{lang.flag}</span>
+                        <span>{lang.name}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 네이버/SNS 재발행 */}
             <button
               type="button"
-              onClick={() => setIsInternalLinkModalOpen(true)}
-              title="본문에 내부 블로그 글 링크 카드 삽입"
-              className="h-8 px-3 rounded-lg border border-indigo-500/25 bg-indigo-950/20 text-indigo-200 text-[12px] font-bold tracking-tight hover:border-indigo-400/50 hover:bg-indigo-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              onClick={() => {
+                const target = document.getElementById("recreate-input-box");
+                if (target) {
+                  target.scrollIntoView({ behavior: "smooth", block: "center" });
+                  setTimeout(() => {
+                    const inputEl = target.querySelector("input") || target;
+                    if (inputEl instanceof HTMLInputElement) {
+                      inputEl.value = "네이버/SNS 재발행";
+                      inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+                      inputEl.focus();
+                    }
+                  }, 300);
+                }
+              }}
+              title="네이버/SNS 재발행 프롬프트 자동 입력 후 이동"
+              className="h-8 px-3 rounded-lg border border-emerald-500/30 bg-emerald-950/25 text-emerald-200 text-[12px] font-bold tracking-tight hover:border-emerald-400/60 hover:bg-emerald-600/25 hover:text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer whitespace-nowrap ml-1"
             >
-              <Link2 size={13} className="text-indigo-400" />
-              <span>내부 링크 콘텐츠 추가</span>
+              <Share2 size={13} className="text-emerald-400" />
+              <span>네이버/SNS 재발행</span>
             </button>
           </div>
         </div>
