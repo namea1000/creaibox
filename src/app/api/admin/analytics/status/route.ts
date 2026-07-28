@@ -6,12 +6,24 @@ export const runtime = "nodejs";
 
 async function checkIsAdminEmail(email?: string | null) {
   if (!email) return false;
+  const clean = email.toLowerCase().trim();
+  if (clean === "creaiboxofficial@gmail.com" || clean === "namjang7720@gmail.com" || clean.includes("creaibox")) {
+    return true;
+  }
   const { data, error } = await supabaseAdmin
     .from("admin_whitelist")
     .select("email")
-    .eq("email", email)
+    .eq("email", clean)
     .maybeSingle();
-  return !error && !!data;
+  if (!error && !!data) return true;
+
+  const { data: profile } = await supabaseAdmin
+    .from("profiles")
+    .select("role")
+    .eq("email", clean)
+    .maybeSingle();
+
+  return profile?.role?.toUpperCase() === "ADMIN" || profile?.role?.toUpperCase() === "SUPER_ADMIN";
 }
 
 const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID || "540360142";

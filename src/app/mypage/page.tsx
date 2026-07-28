@@ -1065,7 +1065,7 @@ export default function MyPage() {
   return (
     <div className="flex flex-col h-screen w-full overflow-hidden bg-[#05070a] font-sans text-zinc-100">
       <Header />
-      <div className="flex flex-1 min-h-0 pt-16">
+      <div className="flex flex-1 min-h-0">
         <Sidebar
           activeMenu="MyPage"
           isCollapsed={isCollapsed}

@@ -275,9 +275,14 @@ export default function APIVaultAdminPage() {
   };
 
   const fetchUsageAnalytics = useCallback(async () => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
     const { data } = await supabase
       .from("ai_generation_usage_logs")
-      .select("*");
+      .select("created_at, status, estimated_cost, provider, feature_type")
+      .gte("created_at", thirtyDaysAgo.toISOString())
+      .limit(1000);
 
     const logs = data || [];
 

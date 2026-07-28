@@ -251,7 +251,7 @@ export default function APIVaultPage() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#06080d] text-zinc-100">
       <Header />
-      <div className="flex flex-1 min-h-0 pt-16">
+      <div className="flex flex-1 min-h-0">
         <Sidebar
           activeMenu="APIVault"
           isCollapsed={isCollapsed}
