@@ -4,7 +4,8 @@ import { createClient, createAdminClient } from "@/utils/supabase/server";
 
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { formatImageUrl, handleImageError } from "@/utils/image-url";
+import { formatImageUrl } from "@/utils/image-url";
+import SafeImage from "@/components/common/SafeImage";
 
 interface PublishedPost {
   id: string;
@@ -173,10 +174,9 @@ export default async function BlogPage(props: {
                     >
                       <div className="relative h-44 w-full md:w-64 shrink-0 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-950 flex items-center justify-center">
                         {post.thumbnailUrl ? (
-                          <img
+                          <SafeImage
                             src={post.thumbnailUrl}
                             alt={post.title || "thumbnail"}
-                            onError={handleImageError}
                             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         ) : (
@@ -259,10 +259,9 @@ export default async function BlogPage(props: {
                       >
                         <div className="relative w-24 sm:w-28 aspect-[16/9] shrink-0 overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
                           {post.thumbnailUrl ? (
-                            <img
+                            <SafeImage
                               src={post.thumbnailUrl}
                               alt={post.title || "thumbnail"}
-                              onError={handleImageError}
                               className="h-full w-full object-cover"
                             />
                           ) : (

@@ -32,6 +32,14 @@ mier
   - **중앙 이미지 프록시 유틸리티 신설 ([`src/utils/image-url.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/utils/image-url.ts))**: `formatImageUrl(url)` 함수를 생성하여 모든 구글 드라이브 URL을 크리에이박스 서버 프록시([`/api/free-assets/proxy`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/proxy/route.ts))로 자동 라우팅 (200 OK + CDN 캐싱 보장).
   - **서버 프록시 안전성 강화 ([`proxy/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/proxy/route.ts))**: 구글 드라이브 API 호출 실패/404 시 500 에러 대신 고화질 기본 엠프티 이미지로 302 리다이렉트되어 브라우저 엑박이 발생하지 않도록 방어.
   - **프론트엔드 예외 처리 탑재**: [`blog/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/page.tsx), [`blog/[slug]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/%5Bslug%5D/page.tsx), [`BlogClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/BlogClientWrapper.tsx), [`CategoryClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/CategoryClientWrapper.tsx), [`PostClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/PostClientWrapper.tsx) 내 모든 `<img>` 태그에 `formatImageUrl` 및 `onError={handleImageError}` 적용.
+  - **Supabase Storage 우회 업로드 폴백 로직 전면 제거 ([`image-upload/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/image-upload/route.ts), [`image-upload/external/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/image-upload/external/route.ts), [`image-studio/generate/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/image-studio/generate/route.ts))**: Supabase Storage 100GB 쿼터 보호 및 초과 비용 방지를 위해 Supabase Storage 우회 업로드 코드를 100% 삭제하고, 사용자 안내 메시지 브랜딩 명칭(`CreAibox 클라우드 DB 원고 보관함`) 단일화.
+
+#### 3. Server Component 내 이벤트 핸들러(`onError`) 전달로 인한 `/blog` 500 서버 에러 해결
+* **원인 분석**: React Server Component(RSC)인 [`blog/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/page.tsx) 및 [`blog/[slug]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/%5Bslug%5D/page.tsx)에 클라이언트 이벤트 핸들러 `onError={handleImageError}`를 직접 전달함에 따라 Next.js 서버 렌더링 시 `This page couldn't load (500 Server Error)` 예외가 발생함.
+* **해결 작업**:
+  - **클라이언트 전용 안전 이미지 컴포넌트 생성 ([`SafeImage.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/common/SafeImage.tsx))**: `"use client"` 전용 컴포넌트인 `SafeImage`를 신설하여 `onError` 예외 처리 및 대체 이미지 렌더링을 완전히 격리 내재화함.
+  - **서버 컴포넌트 `<img>` 교체**: [`blog/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/page.tsx) 및 [`blog/[slug]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/%5Bslug%5D/page.tsx)의 `<img>` 태그를 `<SafeImage>`로 전면 교체하여 서버 에러 100% 제거.
+  - **빌드 및 타입 검증**: `npx tsc --noEmit` 실행 결과 0 에러 정상 통과.
 
 ### 🗓️ 2026-07-26 (일)
 

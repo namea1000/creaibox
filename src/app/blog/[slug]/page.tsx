@@ -9,7 +9,8 @@ import { createClient, createAdminClient } from "@/utils/supabase/server";
 
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { formatImageUrl, handleImageError } from "@/utils/image-url";
+import { formatImageUrl } from "@/utils/image-url";
+import SafeImage from "@/components/common/SafeImage";
 import OGLinkCard from "@/components/common/OGLinkCard";
 
 interface BlogDetailPageProps {
@@ -690,10 +691,9 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                     >
                       <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center">
                         {prevPost.thumbnailUrl ? (
-                          <img
+                          <SafeImage
                             src={prevPost.thumbnailUrl}
                             alt={prevPost.title || "thumbnail"}
-                            onError={handleImageError}
                             className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                           />
                         ) : (
@@ -723,10 +723,9 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                     >
                       <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center">
                         {nextPost.thumbnailUrl ? (
-                          <img
+                          <SafeImage
                             src={nextPost.thumbnailUrl}
                             alt={nextPost.title || "thumbnail"}
-                            onError={handleImageError}
                             className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                           />
                         ) : (
@@ -777,10 +776,9 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                     >
                       <div className="relative w-24 sm:w-28 aspect-[16/9] shrink-0 overflow-hidden rounded-md border border-zinc-200 bg-zinc-50 flex items-center justify-center">
                         {bestPost.thumbnailUrl ? (
-                          <img
+                          <SafeImage
                             src={bestPost.thumbnailUrl}
                             alt={bestPost.title || "thumbnail"}
-                            onError={handleImageError}
                             className="h-full w-full object-cover"
                           />
                         ) : (

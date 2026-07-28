@@ -358,28 +358,13 @@ export async function POST(req: Request) {
         try {
           imageUrl = await uploadToGoogleDrive(compressedImageBuffer, fileName, "image/webp");
         } catch (gdriveError: any) {
-          console.error("Google Drive upload failed, falling back to Supabase storage:", gdriveError);
+          console.error("CreAibox Cloud DB upload failed:", gdriveError);
+          throw new Error("CreAibox 클라우드 DB 원고 보관함 저장 실패: 원고 보관함 연결 상태 및 저장 공간을 확인해 주세요.");
         }
       }
 
       if (!imageUrl) {
-        const filePath = `${user.id}/image-studio/${fileName}`;
-        const { error: uploadError } = await supabase.storage
-          .from("generated-images")
-          .upload(filePath, compressedImageBuffer, {
-            contentType: "image/webp",
-            upsert: false,
-          });
-
-        if (uploadError) {
-          throw new Error(`Storage upload failed: ${uploadError.message}`);
-        }
-
-        const { data: publicUrlData } = supabase.storage
-          .from("generated-images")
-          .getPublicUrl(filePath);
-
-        imageUrl = publicUrlData.publicUrl;
+        throw new Error("CreAibox 클라우드 DB 인프라가 설정되지 않았거나 이미지 저장에 실패했습니다.");
       }
 
       const { data: inserted, error: insertError } = await supabase

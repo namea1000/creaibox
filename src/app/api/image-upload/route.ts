@@ -56,38 +56,25 @@ export async function POST(req: Request) {
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.webp`;
     let imageUrl = "";
 
-    // 4. Upload to Google Drive if configured, otherwise fallback to Supabase
+    // 4. Upload to CreAibox Cloud DB (Google Drive storage backend) without filling Supabase Storage
     if (isGoogleDriveConfigured()) {
       try {
         imageUrl = await uploadToGoogleDrive(compressedBuffer, fileName, "image/webp", user.id, sourceType || "creaibox");
-        console.log("Uploaded successfully to Google Drive:", imageUrl);
+        console.log("Uploaded successfully to CreAibox Cloud DB:", imageUrl);
       } catch (gdriveError: any) {
-        console.error("Google Drive upload failed, falling back to Supabase storage:", gdriveError);
+        console.error("CreAibox Cloud DB upload failed:", gdriveError);
+        return NextResponse.json(
+          { error: "CreAibox 클라우드 DB 원고 보관함 저장 실패: 원고 보관함 연결 상태 및 저장 공간을 확인해 주세요." },
+          { status: 500 }
+        );
       }
     }
 
-    // Fallback: If Google Drive is not configured or failed, upload to Supabase storage
     if (!imageUrl) {
-      const sourceFolder = (sourceType || "creaibox").replace(/[^a-z0-9_-]/gi, "-");
-      const safeSourceId = sourceId ? String(sourceId) : "unknown";
-      const filePath = `${user.id}/${sourceFolder}-content/${safeSourceId}/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("generated-images")
-        .upload(filePath, compressedBuffer, {
-          contentType: "image/webp",
-          upsert: false,
-        });
-
-      if (uploadError) {
-        throw new Error(`Supabase storage upload failed: ${uploadError.message}`);
-      }
-
-      const { data: publicUrlData } = supabase.storage
-        .from("generated-images")
-        .getPublicUrl(filePath);
-
-      imageUrl = publicUrlData.publicUrl;
+      return NextResponse.json(
+        { error: "CreAibox 클라우드 DB 인프라가 설정되지 않았거나 저장에 실패했습니다." },
+        { status: 500 }
+      );
     }
 
     // 5. Insert record into generated_images database table
