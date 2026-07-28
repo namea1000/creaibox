@@ -41,6 +41,13 @@ mier
   - **서버 컴포넌트 `<img>` 교체**: [`blog/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/page.tsx) 및 [`blog/[slug]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/%5Bslug%5D/page.tsx)의 `<img>` 태그를 `<SafeImage>`로 전면 교체하여 서버 에러 100% 제거.
   - **빌드 및 타입 검증**: `npx tsc --noEmit` 실행 결과 0 에러 정상 통과.
 
+#### 4. 썸네일 비율 최적화: `16:9 블로그/유튜브 표준 썸네일` 명칭 변경, 1순위 최상단 배치 및 디폴트 설정
+* **구현 요약**: 표준 와이드 비율 규격 정착을 위해 썸네일 생성 비율 옵션 중 기존 `16:9 유튜브 썸네일`을 `⭐ 16:9 블로그/유튜브 표준 썸네일`로 명칭 변경하고 셀렉트 박스 최상단(1위)으로 이스컬레이션 배치하였으며, 스튜디오 진입 시 기본 디폴트 선택값으로 설정했습니다.
+* **작업 상세**:
+  - **옵션 명칭 및 순서 재배치 ([`blogImageConstants.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/shared/image-studio/blogImageConstants.ts))**: `aspectRatioOptions` 배열에서 `16:9` 항목의 라벨을 `⭐ 16:9 블로그/유튜브 표준 썸네일`로 변경하고 1번 순서로 배치.
+  - **기본 상태(Default State) 16:9 전환**: [`BlogImageStudioPanel.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/shared/image-studio/BlogImageStudioPanel.tsx) 및 [`CreaiboxContentImagePanel.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/creaibox/tabs/CreaiboxContentImagePanel.tsx)의 `selectedAspectRatio` 기본 상태를 `"16:9"`로 통일.
+  - **빌드 및 타입 검증**: `npx tsc --noEmit` 실행 결과 0 에러 정상 통과.
+
 ### 🗓️ 2026-07-26 (일)
 
 #### 1. 에이전트 룰 신설: 가짜 데이터 전면 금지 및 부재 사유 명시 규칙 (`Strict Zero Fake Data Rule`)

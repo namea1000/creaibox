@@ -172,7 +172,7 @@ export default async function BlogPage(props: {
                       href={`/blog/${post.slug}`}
                       className="group flex flex-col md:flex-row gap-5 rounded-2xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-slate-900/40 p-5 shadow-sm transition hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-md"
                     >
-                      <div className="relative h-44 w-full md:w-64 shrink-0 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-950 flex items-center justify-center">
+                      <div className="relative aspect-[16/9] w-full md:w-72 shrink-0 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-950 flex items-center justify-center">
                         {post.thumbnailUrl ? (
                           <SafeImage
                             src={post.thumbnailUrl}

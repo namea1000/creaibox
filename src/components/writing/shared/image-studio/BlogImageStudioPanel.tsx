@@ -80,7 +80,7 @@ export default function BlogImageStudioPanel({
   const [selectedProvider, setSelectedProvider] = useState(DEFAULT_IMAGE_MODEL);
   const [selectedStyle, setSelectedStyle] = useState("naver-blog-vector");
   const [selectedStyleDetail, setSelectedStyleDetail] = useState("⭐ 정보성 비주얼");
-  const [selectedAspectRatio, setSelectedAspectRatio] = useState(mode === "thumbnail" ? "3:2" : "4:3");
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState("16:9");
   const [selectedThumbnailType, setSelectedThumbnailType] = useState("general-informational");
   const [selectedTextIntensity, setSelectedTextIntensity] = useState("title-points-data");
   const [selectedLayout, setSelectedLayout] = useState("card-infographic");
@@ -256,7 +256,7 @@ export default function BlogImageStudioPanel({
         selectedTextIntensity: "title-points-data",
         selectedLayout: "chart-focused",
         selectedColorTone: "blue-yellow-news",
-        selectedAspectRatio: "3:2",
+        selectedAspectRatio: "16:9",
       };
     }
 
@@ -269,7 +269,7 @@ export default function BlogImageStudioPanel({
         selectedTextIntensity: "title-points-data",
         selectedLayout: "card-infographic",
         selectedColorTone: "blue-yellow-news",
-        selectedAspectRatio: "3:2",
+        selectedAspectRatio: "16:9",
       };
     }
 
@@ -281,7 +281,7 @@ export default function BlogImageStudioPanel({
       selectedTextIntensity: "title-points-data",
       selectedLayout: "card-infographic",
       selectedColorTone: "blue-yellow-news",
-      selectedAspectRatio: "3:2",
+      selectedAspectRatio: "16:9",
     };
   }, [content, getCurrentPreset, targetKeyword, title]);
 

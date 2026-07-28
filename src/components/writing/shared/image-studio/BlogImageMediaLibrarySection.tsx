@@ -14,6 +14,7 @@ import { createClient } from "@/utils/supabase/client";
 import type { GeneratedImage } from "./blogImageTypes";
 import { IMAGE_BUCKET } from "./blogImageConstants";
 import { downloadImageFile, getStoragePathFromPublicUrl } from "./blogImageUtils";
+import { formatImageUrl, handleImageError } from "@/utils/image-url";
 
 interface BlogImageMediaLibrarySectionProps {
   gallery: GeneratedImage[];
@@ -214,8 +215,9 @@ export default function BlogImageMediaLibrarySection({
               >
                 <div className="relative aspect-video w-full overflow-hidden border border-zinc-900 bg-zinc-950 flex items-center justify-center">
                   <img
-                    src={img.url}
+                    src={formatImageUrl(img.url)}
                     alt="Asset"
+                    onError={handleImageError}
                     className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
                   />
 

@@ -49,9 +49,9 @@ export const styleOptions = [
 ];
 
 export const aspectRatioOptions = [
+  { value: "16:9", label: "⭐ 16:9 블로그/유튜브 표준 썸네일" },
   { value: "4:3", label: "⭐ 4:3 일반 웹, 블로그 이미지" },
   { value: "3:2", label: "⭐ 3:2 네이버 블로그 썸네일" },
-  { value: "16:9", label: "⭐ 16:9 유튜브 썸네일" },
   { value: "1:1", label: "⭐ 1:1 SNS 게시물" },
   { value: "4:5", label: "⭐ 4:5 인스타그램 피드" },
   { value: "9:16", label: "⭐ 9:16 쇼츠 / 릴스 / 틱톡" },

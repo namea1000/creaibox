@@ -104,7 +104,7 @@ export default function CreaiboxContentImagePanel({ data }: CreaiboxContentImage
   const [aiCount, setAiCount] = useState<number>(1);
   const [aiStyle, setAiStyle] = useState("naver-blog-vector");
   const [aiStyleDetail, setAiStyleDetail] = useState("⭐ 정보성 비주얼");
-  const [aiAspectRatio, setAiAspectRatio] = useState("3:2");
+  const [aiAspectRatio, setAiAspectRatio] = useState("16:9");
   const [isGenerating, setIsGenerating] = useState(false);
 
   const activeSourceId = String(data?.id || "temp-draft");
