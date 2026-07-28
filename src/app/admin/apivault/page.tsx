@@ -118,6 +118,7 @@ const PLAN_OPTIONS = [
   { value: "free", label: "Free Trial" },
   { value: "creator", label: "Creator" },
   { value: "pro", label: "Pro" },
+  { value: "premier", label: "Premier" },
   { value: "business", label: "Business" },
   { value: "admin", label: "Admin Only" },
 ];
@@ -227,6 +228,7 @@ export default function APIVaultAdminPage() {
     free: 20,
     creator: 50,
     pro: 100,
+    premier: 150,
     business: 200,
     admin: 1000,
   });
@@ -653,11 +655,12 @@ export default function APIVaultAdminPage() {
         </div>
         
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end">
-          <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
             {[
               ["free", "Free Trial (무료체험)"],
               ["creator", "Creator (크리에이터)"],
               ["pro", "Pro (프로)"],
+              ["premier", "Premier (프리미어)"],
               ["business", "Business (비즈니스)"],
               ["admin", "Admin (관리자)"],
             ].map(([key, label]) => (

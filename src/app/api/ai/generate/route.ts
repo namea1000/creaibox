@@ -273,6 +273,7 @@ export async function POST(req: NextRequest) {
       free: 20,
       creator: 50,
       pro: 100,
+      premier: 150,
       business: 200,
       admin: 1000,
     };
