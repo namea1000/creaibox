@@ -76,7 +76,7 @@ interface CountryItem {
   isTop?: boolean;
 }
 
-const ALL_COUNTRIES: CountryItem[] = [
+export const ALL_COUNTRIES: CountryItem[] = [
   // 🇰🇷 동아시아 / 아시아
   { code: "KR", name: "대한민국", flag: "🇰🇷", region: "asia", isTop: true },
   { code: "JP", name: "일본", flag: "🇯🇵", region: "asia", isTop: true },
@@ -175,6 +175,9 @@ export default function RisingVideos() {
   const [bulkCurrentInfo, setBulkCurrentInfo] = useState("");
   const [refreshCooldown, setRefreshCooldown] = useState<number>(0);
 
+  // 🚀 Instant RAM Cache for 0ms fluid category/country tab switching
+  const videoCacheRef = React.useRef<Map<string, any>>(new Map());
+
   // Recover cooldown from localStorage on mount and run a second counter
   useEffect(() => {
     const checkCooldown = () => {
@@ -267,13 +270,47 @@ export default function RisingVideos() {
 
   const fetchTrending = useCallback(async (catId = activeCategory, targetDate = selectedDate, country = selectedCountry, force = false) => {
     setPlayingVideoId(null);
-    setLoading(true);
     setError(null);
     setVisibleCount(20); // Reset page count on new fetch
+
+    const cacheKey = `${country}_${catId}_${targetDate}`;
+
+    if (force) {
+      videoCacheRef.current.delete(cacheKey);
+    } else if (videoCacheRef.current.has(cacheKey)) {
+      // 🚀 0ms Instant RAM cache hit: no loading screen flash!
+      const cached = videoCacheRef.current.get(cacheKey);
+      setVideos(cached.data || []);
+      setSource(cached.source || "cache");
+      return;
+    }
+
+    setLoading(true);
     try {
       const res = await fetch(`/api/youtube?type=trending&categoryId=${catId}&date=${targetDate}&country=${country}${force ? '&force=true' : ''}`);
       if (!res.ok) throw new Error("급상승 비디오 리스트를 가져오는데 실패했습니다.");
       const result = await res.json();
+
+      videoCacheRef.current.set(cacheKey, result);
+
+      // 🚀 Pre-populate category sub-caches from "all" feed ONLY if category videos exist in the feed
+      if (catId === "all" && Array.isArray(result.data)) {
+        CATEGORIES.forEach((cat) => {
+          if (cat.id === "all") return;
+          const catVideos = result.data.filter(
+            (v: any) => v.categoryId === cat.id || v.snippet?.categoryId === cat.id
+          );
+          if (catVideos.length > 0) {
+            const subCacheKey = `${country}_${cat.id}_${targetDate}`;
+            videoCacheRef.current.set(subCacheKey, {
+              source: result.source,
+              data: catVideos,
+              analyzedVideoIds: result.analyzedVideoIds,
+            });
+          }
+        });
+      }
+
       setVideos(result.data || []);
       setSource(result.source);
 
@@ -310,31 +347,53 @@ export default function RisingVideos() {
     if (isBulkLoading) return;
     setIsBulkLoading(true);
     setBulkProgress(0);
-    setBulkTotal(COUNTRIES.length * CATEGORIES.length);
-    setBulkCurrentInfo("일괄 수집을 시작합니다...");
+    setBulkTotal(ALL_COUNTRIES.length);
+    setBulkCurrentInfo("전세계 60개국 전체 트렌드 일괄 수집을 시작합니다...");
+    videoCacheRef.current.clear();
 
     const todayStr = getKstTodayDateStr();
     let completed = 0;
 
     try {
-      for (const country of COUNTRIES) {
-        for (const category of CATEGORIES) {
-          const info = `${country.flag} ${country.name} - ${category.label} 트렌드 분석 수집 중...`;
-          setBulkCurrentInfo(info);
+      for (const country of ALL_COUNTRIES) {
+        const info = `${country.flag} ${country.name} (${country.code}) - 전체 카테고리 트렌드 수집 중...`;
+        setBulkCurrentInfo(info);
 
-          try {
-            await fetch(`/api/youtube?type=trending&categoryId=${category.id}&date=${todayStr}&country=${country.code}`);
-          } catch (e) {
-            console.error(`Error syncing ${country.code} - ${category.label}:`, e);
+        try {
+          const res = await fetch(`/api/youtube?type=trending&categoryId=all&date=${todayStr}&country=${country.code}`);
+          if (res.ok) {
+            const result = await res.json();
+            const cacheKey = `${country.code}_all_${todayStr}`;
+            videoCacheRef.current.set(cacheKey, result);
+
+            // Pre-populate category sub-caches for this country ONLY if category videos exist in feed
+            if (Array.isArray(result.data)) {
+              CATEGORIES.forEach((cat) => {
+                if (cat.id === "all") return;
+                const catVideos = result.data.filter(
+                  (v: any) => v.categoryId === cat.id || v.snippet?.categoryId === cat.id
+                );
+                if (catVideos.length > 0) {
+                  const subCacheKey = `${country.code}_${cat.id}_${todayStr}`;
+                  videoCacheRef.current.set(subCacheKey, {
+                    source: result.source,
+                    data: catVideos,
+                    analyzedVideoIds: result.analyzedVideoIds,
+                  });
+                }
+              });
+            }
           }
-
-          completed++;
-          setBulkProgress(completed);
-
-          await new Promise(resolve => setTimeout(resolve, 200));
+        } catch (e) {
+          console.error(`Error syncing ${country.code}:`, e);
         }
+
+        completed++;
+        setBulkProgress(completed);
+
+        await new Promise(resolve => setTimeout(resolve, 150));
       }
-      setBulkCurrentInfo("🎉 모든 국가 및 카테고리 수집 완료!");
+      setBulkCurrentInfo(`🎉 전세계 ${ALL_COUNTRIES.length}개국 전체 트렌드 일괄 수집 완료!`);
       localStorage.setItem("creaibox_last_refresh_timestamp", Date.now().toString());
       setRefreshCooldown(10800);
       fetchTrending(activeCategory, selectedDate, selectedCountry);
@@ -419,7 +478,7 @@ export default function RisingVideos() {
         className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 disabled:opacity-30 disabled:hover:from-orange-600 px-5 text-xs font-black text-white transition"
       >
         {isBulkLoading ? <Loader2 size={14} className="animate-spin" /> : <Flame size={14} />}
-        {refreshCooldown > 0 ? `수집 완료 (${formatCooldown(refreshCooldown)})` : (isTodaySelected ? "전체 일괄수집" : "일괄수집 불가")}
+        {refreshCooldown > 0 ? `수집 완료 (${formatCooldown(refreshCooldown)})` : (isTodaySelected ? "전체 60개국 일괄수집" : "일괄수집 불가")}
       </button>
 
       <button
@@ -566,13 +625,13 @@ export default function RisingVideos() {
             <div className="grid gap-4 grid-cols-1 xl:grid-cols-2">
               {displayedVideos.map((video, idx) => {
                 const videoId = video.id;
-                const title = video.snippet?.title || "제목 없음";
-                const channel = video.snippet?.channelTitle || "채널 정보 없음";
-                const thumbnail = video.snippet?.thumbnails?.medium?.url || video.snippet?.thumbnails?.default?.url || "/placeholder.jpg";
-                const viewCount = video.statistics?.viewCount || "0";
-                const likeCount = video.statistics?.likeCount || "0";
+                const title = video.snippet?.title || video.title || "제목 없음";
+                const channel = video.snippet?.channelTitle || video.channelTitle || "채널 정보 없음";
+                const thumbnail = video.snippet?.thumbnails?.medium?.url || video.snippet?.thumbnails?.default?.url || video.thumbnails?.medium?.url || video.thumbnails?.default?.url || "/placeholder.jpg";
+                const viewCount = video.statistics?.viewCount || video.viewCount || "0";
+                const likeCount = video.statistics?.likeCount || video.likeCount || "0";
                 
-                const durationInfo = parseDuration(video.contentDetails?.duration);
+                const durationInfo = parseDuration(video.contentDetails?.duration || video.duration);
                 const isShorts = video.isRealShorts !== undefined ? video.isRealShorts : durationInfo.isShorts;
 
                 return (

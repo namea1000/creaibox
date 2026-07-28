@@ -64,10 +64,10 @@
 
 ## 3. ⚙️ 백그라운드 무인 자동화 (Background Automation & Cron)
 
-- [ ] **유튜브 급상승 트렌드 무인 자동 수집 (GitHub Actions)**
-  - `.github/workflows/sync-trending.yml` 매일 자동 갱신 파이프라인 구축
-- [ ] **Vercel Cron 레지스트리 대장(`docs/project/vercel-cron-scheduler-registry.md`) 동기화**
-  - 신규 크론 추가 시 보안 가드(`CRON_SECRET`) 및 대장 등록 준수
+- [x] **유튜브 급상승 트렌드 60개국 및 실시간 검색어 무인 자동 수집 구축**
+  - Vercel Cron (`sync-trending`, `sync-keywords`) 및 5종 자동 수집 매뉴얼(`background-automation-execution-5-methods-guide.md`) 완성
+- [x] **Vercel Cron 레지스트리 대장(`docs/project/vercel-cron-scheduler-registry.md`) 동기화**
+  - 신규 매시간 키워드 크론 등록 및 보안 가드(`CRON_SECRET`) 준수 완료
 - [ ] **Supabase `pg_cron` 데이터 만료 및 스냅샷 자동화**
   - 회원 혜택 만료 안내 및 데이터베이스 주간 스냅샷 백업 스케줄링 점검
 

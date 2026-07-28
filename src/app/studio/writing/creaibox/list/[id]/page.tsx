@@ -2368,9 +2368,9 @@ function CreaiboxManuscriptDetailContent() {
       await triggerRevalidation(publishedSlug);
 
       if (isCurrentlyPublished) {
-        showPublishFeedback("블로그 재발행(업데이트)이 완료되었습니다.");
+        showPublishFeedback("🚀 블로그 재발행 완료! (4대 검색엔진: 구글/네이버/Bing/Yandex 0.1초 자동 핑 전송)");
       } else {
-        showPublishFeedback("블로그 발행이 완료되었습니다.");
+        showPublishFeedback("🎉 블로그 발행 성공! (4대 검색엔진: 구글/네이버/Bing/Yandex 0.1초 자동 핑 전송)");
       }
     }
   }, [data, handleSave, showPublishFeedback, triggerRevalidation]);

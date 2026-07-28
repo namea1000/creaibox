@@ -129,42 +129,26 @@ export const faqData: FAQCategory[] = [
       {
         id: "write-4",
         category: "ai-writer",
-        question: "크리에이박스에서 쓴 글은 구글 검색에 얼마나 빠르게 노출되나요?",
-        answer: "크리에이박스는 **'Google Web Search Indexing API' 실시간 핑 시스템**이 100% 무설정 자동 탑재되어 있습니다.\n\n사용자가 블로그 포스트나 비즈니스 웹사이트 글을 발행하는 즉시, 백엔드 서버가 구글 검색 로봇(Googlebot)으로 수집 요청 핑(Ping)을 전송하여 수 분 내에 구글 검색 엔진에 실시간 색인(Indexing) 처리됩니다.",
-        link: "/studio/writing/creaibox/blog-management",
-        linkLabel: "블로그 관리 스튜디오 바로가기"
+        question: "크리에이박스에서 쓴 글은 구글/네이버/Bing 검색에 얼마나 빠르게 노출되나요?",
+        answer: "크리에이박스는 **4대 글로벌 검색엔진 실시간 핑(Google Indexing API + IndexNow)** 시스템이 100% 무설정 자동 탑재되어 있습니다.\n\n* **구글 (Google)**: Google Indexing API를 통해 0.1초 만에 Googlebot으로 직접 전송\n* **네이버 / Bing / Yandex**: IndexNow 오픈 프로토콜을 통해 실시간 수집 핑 전송\n\n* **본사 메인 블로그** (`creaibox.com/blog/...`)\n* **유저 서브도메인 블로그** (`myblog.creaibox.com/...`)\n* **비즈니스 / 커스텀 웹사이트** (`biz.creaibox.com/...`)\n* **개인 연결 독자 커스텀 도메인** (`mycompany.com/...`)\n\n위 4가지 어떤 도메인 유형이든 발행 즉시 검색 로봇으로 핑을 발송하여 최단 시간 실시간 색인(Indexing) 처리가 완료됩니다.",
+        link: "/help",
+        linkLabel: "SEO 가이드 및 매뉴얼 확인"
       },
       {
         id: "write-5",
         category: "ai-writer",
-        question: "글을 수정하거나 재발행할 때도 구글에 실시간 핑이 전송되나요?",
-        answer: "네, 글 수정 및 재발행 시에도 구글봇에 `URL_UPDATED` 핑이 자동 전송됩니다.\n\n특히 무분별한 핑 남발 및 쿼터 낭비를 방지하기 위해 **1시간 스마트 쿨다운(Cooldown) 및 Trailing Edge Ping 알고리즘**이 적용되어 있어, short-term 연속 수정 시에도 1시간 후 최종 완성본 원고가 구글봇에 100% 수집 반영되도록 보장합니다.",
+        question: "크리에이박스의 24시간 무인 자동 수집(Cron) 시스템은 어떻게 작동하나요?",
+        answer: "사용자가 사이트에 접속해 있지 않아도 Vercel Cron 및 Supabase 백그라운드 로봇이 24시간 365일 무인 작동합니다.\n\n1. **전세계 60개국 유튜브 트렌드 수집**: 매일 아침 06:00 (KST)에 60+개국 13개 카테고리 급상승 트렌드를 무인 수집하여 DB에 적재합니다.\n2. **실시간 검색어 24시간 아카이빙**: 매시간 정각(00~23시) 네이버 TOP 20 & 구글 TOP 20 검색어를 자동 수집하여 24시간 타임머신 이력으로 저장합니다.\n3. **SEO 자동 색인 핑**: 글이 생성되는 즉시 4대 검색엔진(Google, Bing, Yandex, Naver)으로 0.1초 핑을 쏩니다.",
+        link: "/help",
+        linkLabel: "도움말 센터 매뉴얼 보기"
+      },
+      {
+        id: "write-6",
+        category: "ai-writer",
+        question: "글을 수정하거나 재발행할 때도 구글/Bing에 실시간 핑이 전송되나요?",
+        answer: "네, 글 수정 및 재발행 시에도 Googlebot 및 Bing/Yandex/Naver IndexNow 핑이 자동 전송됩니다.\n\n특히 무분별한 핑 남발 및 쿼터 낭비를 방지하기 위해 **1시간 스마트 쿨다운(Cooldown) 및 Trailing Edge Ping 알고리즘**이 적용되어 있어, 짧은 시간 내 연속 수정 시에도 1시간 후 최종 완성본 원고가 100% 수집 반영되도록 보장합니다.",
         link: "/studio/writing/creaibox/blog-management",
         linkLabel: "블로그 설정 및 관리 이동"
-      },
-      {
-        id: "write-6",
-        category: "ai-writer",
-        question: "크리에이박스 글쓰기 스튜디오의 '구조화 스키마(Schema)' 기능은 무엇이며 어떻게 작동하나요?",
-        answer: "구조화 스키마(JSON-LD)는 구글, 네이버 등 검색 엔진의 크롤링 로봇에게 블로그 글의 성격(일반 기사, 자주 묻는 질문(FAQ), 가이드 등)을 기계용 데이터로 정확하게 알려주는 글로벌 SEO 표준 마크업입니다.\n\n[작동 원리 및 사용법]\n1. 스튜디오 글쓰기 우측 '스키마' 탭에서 AI 엔진과 스키마 유형(추천/Article/FAQPage 등)을 선택한 후 [AI 스키마 자동 생성]을 누릅니다.\n2. 생성된 코드를 확인하고 [본문에 적용하기]를 클릭하면, 원고 본문 맨 하단에 눈에 보이지 않는 HTML 주석(Comment) 래퍼 형태로 자동 주입됩니다.\n3. 저장 후 발행(Publish)하면, 시스템이 이 주석을 실시간으로 감지하고 추출하여 기사 페이지의 HTML <head> 내부에 검색엔진용 스크립트로 안전하게 꽂아 넣습니다.",
-        link: "/studio/writing/creaibox/new-post",
-        linkLabel: "글쓰기 스튜디오 스키마 탭 바로가기"
-      },
-      {
-        id: "write-5",
-        category: "ai-writer",
-        question: "내 브랜드 블로그에 구글 애널리틱스(GA4)와 구글 서치콘솔은 어떻게 연동하나요?",
-        answer: "크리에이박스는 번거로운 수동 분석 셋팅 작업을 100% 자동화했습니다.\n\n1. 구글 애널리틱스(GA4) 자동 연동: 브랜드 신청 후 관리자가 승인(도메인 연결)하는 즉시, 크리에이박스 백엔드 서버가 Google Analytics Admin API를 직접 호출하여 해당 도메인 전용 분석 프로퍼티를 자동 개설하고 측정 ID(G-XXXXXX)를 주입합니다. 사용자는 별도의 삽입 작업을 하실 필요가 없습니다.\n2. 구글 서치콘솔 연동: 구글 서치콘솔 등록 화면에서 'URL 접두사' 방식을 선택해 도메인 주소(https://도메인)를 입력한 후 'HTML 태그(메타태그)' 인증 방식을 선택하십시오. 발급받은 키값을 [공식 블로그 관리 > SEO 및 연동 관리] 탭의 입력란에 붙여넣고 저장하시면 1초 만에 소유권 인증이 완료됩니다.",
-        link: "/studio/writing/creaibox/blog-management",
-        linkLabel: "SEO 및 연동 관리 페이지로 이동"
-      },
-      {
-        id: "write-6",
-        category: "ai-writer",
-        question: "내 블로그의 사이트맵(sitemap.xml)과 RSS 피드(/feed)를 왜 직접 검색엔진에 제출해야 하나요?",
-        answer: "구글 서치콘솔과 네이버 서치어드바이저는 보안 및 실소유자 확인을 위해 반드시 본인의 계정으로 사이트맵을 등록받습니다.\n\n[주소 확인 및 제출 방법]\n- 사이트맵 주소: https://[내블로그도메인]/sitemap.xml\n- RSS 피드 주소: https://[내블로그도메인]/feed\n구글 서치콘솔 [Sitemaps] 메뉴 및 네이버 서치어드바이저 [요청] 메뉴에서 위 주소를 복사해서 등록해 주시면 구글/네이버 색인 속도가 수 시간 이내로 대폭 상승합니다.",
-        link: "/studio/writing/creaibox/blog-management",
-        linkLabel: "사이트맵 및 피드 주소 확인하기"
       },
       {
         id: "write-7",

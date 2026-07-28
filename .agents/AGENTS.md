@@ -20,3 +20,12 @@ When creating how-to guides or operation manuals (e.g., "~ 하는 방법", "매�
 ### Unauthenticated Access & Unified Login Prompt Rule (비로그인 자유 둘러보기 및 로그인 팝업 통일)
 - 모든 서비스/스튜디오 화면은 비로그인 상태에서도 UI/레이아웃/폼 텍스트를 자유롭게 구경할 수 있도록 100% 전면 노출한다. (전체 가림막 카드 금지, 폼은 빈값 + 예시 가이드 텍스트 제공)
 - DB 데이터 저장, AI 자동 제작, 원고 작성, 도메인 구매 등 로그인 세션이 필요한 액션 버튼을 클릭할 때는 구식 alert 대신 **"로그인이 필요한 서비스입니다" 전용 팝업 모달**을 띄우고 `[ 🔑 로그인 하러 가기 ]`로 연결한다.
+
+### Mandatory Database Table Creation Prompt Rule (DB 테이블 생성 채팅 알림 의무 규칙)
+- 신규 DB 테이블이 필요하거나 기존 테이블 DDL이 미실행된 상태를 발견하면, AI 에이전트는 즉시 복사해서 Supabase SQL Editor에서 실행할 수 있는 완성형 SQL 구문과 함께 개발자(사용자)에게 채팅창으로 테이블 생성을 명시적으로 요청해야 한다.
+- 테이블 DDL 파일(`docs/database/<table_name>.sql`)을 작성하여 프로젝트에 항상 저장 관리한다.
+
+### Mandatory Background Automation Manual Sync Rule (백그라운드 무인 기능 매뉴얼 최신화 규칙)
+- 향후 신규 무인 자동 수집(Cron), 백그라운드 배치 작업, 또는 자동화 기능이 개발/구동되면, AI 에이전트는 백그라운드 무인 자동화 매뉴얼(`docs/project/manual/background-automation-execution-5-methods-guide.md`)의 "4. 🟢 현재 즉시 구동 중 / 서비스 가능한 무인 기능 (Current Services)" 섹션에 신규 기능을 즉시 등록하고 최신화해야 한다.
+
+

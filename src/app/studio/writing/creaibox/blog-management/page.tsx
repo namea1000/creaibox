@@ -1799,8 +1799,56 @@ export default function BlogManagementPage() {
                   </div>
                 </div>
 
+                {/* ⚡ 4대 글로벌 검색엔진 0.1초 실시간 색인 핑 100% 자동 구동 라이브 배너 */}
+                <div className="lg:col-span-3 mb-2 rounded-[28px] border border-emerald-500/30 bg-gradient-to-r from-emerald-955/60 via-zinc-950 to-blue-955/60 p-6 md:p-8 space-y-4 relative overflow-hidden shadow-2xl">
+                  <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="relative flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                        </span>
+                        <span className="text-[11px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                          ⚡ 100% 무설정 자동 실시간 색인 핑 엔진 가동 중
+                        </span>
+                      </div>
+                      <h3 className="text-xl md:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+                        전세계 4대 글로벌 검색엔진 0.1초 자동 색인 핑 (Auto Indexing Ping)
+                      </h3>
+                      <p className="text-xs text-zinc-300 font-semibold leading-relaxed max-w-3xl">
+                        다른 플랫폼처럼 매번 구글 서치콘솔이나 네이버 서치어드바이저에 접속해 수동으로 URL을 등록하실 필요가 0%입니다! 글을 발행하는 즉시 구글, 네이버, Bing, Yandex 검색 로봇에 0.1초 만에 자동 수집 핑을 송신합니다.
+                      </p>
+                    </div>
+
+                    {/* 4대 로봇 뱃지 카셀 */}
+                    <div className="flex flex-wrap lg:flex-col gap-2 shrink-0">
+                      <div className="px-3.5 py-2 rounded-xl bg-zinc-900/80 border border-emerald-500/30 flex items-center gap-2 text-xs font-black text-white shadow-md">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>Googlebot 0.1초 핑</span>
+                      </div>
+                      <div className="px-3.5 py-2 rounded-xl bg-zinc-900/80 border border-green-500/30 flex items-center gap-2 text-xs font-black text-white shadow-md">
+                        <span className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse"></span>
+                        <span>네이버 SearchAdvisor</span>
+                      </div>
+                      <div className="px-3.5 py-2 rounded-xl bg-zinc-900/80 border border-blue-500/30 flex items-center gap-2 text-xs font-black text-white shadow-md">
+                        <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse"></span>
+                        <span>MS Bing IndexNow</span>
+                      </div>
+                      <div className="px-3.5 py-2 rounded-xl bg-zinc-900/80 border border-amber-500/30 flex items-center gap-2 text-xs font-black text-white shadow-md">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                        <span>Yandex IndexNow</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-zinc-800/80 flex flex-col md:flex-row items-start md:items-center justify-between text-[11px] text-zinc-400 gap-2 font-bold">
+                    <span>💡 <b>스마트 1시간 쿨다운 & Trailing Edge 알고리즘 적용</b>: 글을 여러 번 연속 재수정해도 핑 차단 없이 1시간 뒤 최종 원고가 100% 최단시간 노출 색인됩니다.</span>
+                    <span className="text-emerald-400 shrink-0 font-black">✓ 본사도메인 / 서브도메인 / 개인독자도메인 모두 지원</span>
+                  </div>
+                </div>
+
                 {/* 🌟 SEO & GA4 Premium Visual Insight Guide */}
-                <div className="lg:col-span-3 mt-8 rounded-[32px] border border-zinc-800/80 bg-zinc-900/10 backdrop-blur-xl p-8 md:p-10 space-y-10 relative overflow-hidden">
+                <div className="lg:col-span-3 mt-4 rounded-[32px] border border-zinc-800/80 bg-zinc-900/10 backdrop-blur-xl p-8 md:p-10 space-y-10 relative overflow-hidden">
                   <div className="absolute top-0 right-0 -z-10 h-96 w-96 rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
                   <div className="absolute bottom-0 left-0 -z-10 h-96 w-96 rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none" />
                   

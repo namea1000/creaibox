@@ -418,13 +418,26 @@ export default function SystemAdminPage() {
               <div className="rounded-xl border border-zinc-850 bg-zinc-950/30 p-4 space-y-1.5">
                 <div className="flex justify-between items-center text-[10px]">
                   <span className="text-zinc-300 font-extrabold">유튜브 급상승 자동 수집</span>
-                  <span className="text-cyan-400 font-black">매일 KST 05:00</span>
+                  <span className="text-cyan-400 font-black">매일 KST 06:00</span>
                 </div>
                 <p className="text-[10px] text-zinc-500 font-bold leading-normal">
-                  8개 카테고리 스크래핑, 숏폼 자동 판별, Supabase DB 및 구글 스프레드 시트 누적 적재.
+                  전세계 60개국 전체 카테고리 무인 수집, 숏폼 자동 판별, CreAibox 클라우드 DB 날짜별 1줄 통합 적재.
                 </p>
                 <div className="text-[9px] text-zinc-500 font-mono">
                   Path: /api/cron/sync-trending
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-zinc-850 bg-zinc-950/30 p-4 space-y-1.5">
+                <div className="flex justify-between items-center text-[10px]">
+                  <span className="text-zinc-300 font-extrabold">실시간 검색어 무인 아카이빙</span>
+                  <span className="text-emerald-400 font-black">매시간 정각 (매시간 1회)</span>
+                </div>
+                <p className="text-[10px] text-zinc-500 font-bold leading-normal">
+                  네이버 TOP 20 & 구글 TOP 20 실시간 검색어 및 관련 뉴스 무인 스냅샷, CreAibox 클라우드 DB 날짜별 1줄(`hourly_data`) 통합 적재.
+                </p>
+                <div className="text-[9px] text-zinc-500 font-mono">
+                  Path: /api/cron/sync-keywords
                 </div>
               </div>
             </div>
@@ -445,7 +458,7 @@ export default function SystemAdminPage() {
                     ) : (
                       <div className="text-[9px] text-zinc-400 font-mono mt-1 leading-relaxed">
                         적재날짜: {cronResult.date} <br/>
-                        결과요약: {cronResult.summary?.success}/{cronResult.summary?.total} 개 카테고리 완료
+                        결과요약: {cronResult.summary?.success}/{cronResult.summary?.total} 개 국가 완료
                       </div>
                     )}
                   </div>

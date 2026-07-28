@@ -40,6 +40,13 @@ AI Agents MUST NOT declare success or finish a user request turn without verifyi
 - **개발자(사용자)가 명시적으로 "깃 푸시해", "git push 수행해"라고 직접 명령하기 전에는 AI 에이전트가 자율적으로 `git push`를 절대 수행하지 않는다.**
 - 에이전트는 코드 수정, 로컬 테스트 및 빌드 검증(`npx tsc --noEmit`)까지만 진행하고, `git push` 작업은 개발자의 명시적 지시가 있을 때만 실행한다.
 
+### 7. Mandatory Database Table Creation Prompt Rule (DB 테이블 생성 채팅 알림 의무 규칙)
+- **신규 DB 테이블이 필요하거나 기존 테이블 생성 DDL이 미실행된 상태를 발견한 경우, AI 에이전트는 즉시 복사해서 Supabase SQL Editor에서 실행할 수 있는 완벽한 SQL 구문과 함께 개발자(사용자)에게 채팅창으로 테이블 생성을 명시적으로 요청해야 한다.**
+- 에이전트는 테이블 DDL 파일(`docs/database/<table_name>.sql`)을 항상 프로젝트에 저장 관리하며, 사용자가 SQL을 실행하여 DB 테이블을 생성하도록 명확하게 안내한다.
+
+### 8. Mandatory Background Automation Manual Sync Rule (백그라운드 무인 기능 매뉴얼 최신화 규칙)
+- **향후 신규 무인 자동 수집(Cron), 백그라운드 배치 작업, 또는 자동화 기능이 개발/구동되면, AI 에이전트는 백그라운드 무인 자동화 매뉴얼(`docs/project/manual/background-automation-execution-5-methods-guide.md`)의 "4. 🟢 현재 즉시 구동 중 / 서비스 가능한 무인 기능 (Current Services)" 섹션에 신규 기능을 즉시 등록하고 최신화해야 한다.**
+
 # ==================================================
 
 # Documentation Rules

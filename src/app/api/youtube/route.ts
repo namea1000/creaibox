@@ -109,22 +109,36 @@ export async function fetchAndCacheTrending(categoryId: string, date: string = g
     })
   );
 
-  // 3. Save Cache to Supabase DB (Upsert)
+  // 3. Save Cache to Supabase DB (Daily Unified Bundle: 1 Row per Date)
   const dbCategoryId = country === "KR" ? categoryId : `${country}_${categoryId}`;
   try {
+    const { data: existingRow } = await supabaseAdmin
+      .from("youtube_trending_archive")
+      .select("videos_data")
+      .eq("target_date", date)
+      .eq("category_id", "bundle")
+      .maybeSingle();
+
+    let bundleObj: Record<string, any[]> = {};
+    if (existingRow && existingRow.videos_data && typeof existingRow.videos_data === "object" && !Array.isArray(existingRow.videos_data)) {
+      bundleObj = { ...existingRow.videos_data };
+    }
+
+    bundleObj[dbCategoryId] = enrichedItems;
+
     const { error: upsertError } = await supabaseAdmin
       .from("youtube_trending_archive")
       .upsert({
-        category_id: dbCategoryId,
+        category_id: "bundle",
         target_date: date,
-        videos_data: enrichedItems,
+        videos_data: bundleObj,
         updated_at: new Date().toISOString(),
       }, { onConflict: "target_date, category_id" });
 
     if (upsertError) {
       console.error("Failed to write to Supabase Cache:", upsertError.message);
     } else {
-      console.log(`Successfully cached category ${categoryId} for date ${date} in DB.`);
+      console.log(`Successfully cached category ${dbCategoryId} for date ${date} in Daily Bundle DB.`);
     }
   } catch (dbUpsertErr) {
     console.error("Supabase Cache write encountered error:", dbUpsertErr);
@@ -196,6 +210,55 @@ export async function GET(req: NextRequest) {
         const country = searchParams.get("country") || "KR";
 
         if (categoryId === "all") {
+          // 1. Try reading from Daily Unified Bundle single row for target date
+          try {
+            const { data: bundleRow } = await supabaseAdmin
+              .from("youtube_trending_archive")
+              .select("videos_data")
+              .eq("target_date", date)
+              .eq("category_id", "bundle")
+              .maybeSingle();
+
+            if (bundleRow && bundleRow.videos_data && typeof bundleRow.videos_data === "object" && !Array.isArray(bundleRow.videos_data)) {
+              const bundleObj = bundleRow.videos_data as Record<string, any[]>;
+              const prefix = country === "KR" ? "" : `${country}_`;
+              const combined: any[] = [];
+              const seenIds = new Set<string>();
+
+              Object.keys(bundleObj).forEach((k) => {
+                const isMatch = country === "KR" ? (!k.includes("_") || k.startsWith("KR_")) : k.startsWith(prefix);
+                if (isMatch && Array.isArray(bundleObj[k])) {
+                  bundleObj[k].forEach((v) => {
+                    if (v && v.id && !seenIds.has(v.id)) {
+                      seenIds.add(v.id);
+                      combined.push(v);
+                    }
+                  });
+                }
+              });
+
+              if (combined.length > 0) {
+                console.log(`Daily Bundle Cache Hit: Serving ${country} all categories for date ${date} from DB.`);
+                const videoIds = combined.map((v) => v.id).filter(Boolean);
+                let analyzedVideoIds: string[] = [];
+                if (videoIds.length > 0) {
+                  try {
+                    const { data: analyzedRows } = await supabaseAdmin
+                      .from("youtube_video_analysis")
+                      .select("video_id")
+                      .in("video_id", videoIds);
+                    if (analyzedRows) {
+                      analyzedVideoIds = analyzedRows.map((r) => r.video_id);
+                    }
+                  } catch (analysisErr) {}
+                }
+                return NextResponse.json({ source: "supabase-db-daily-bundle", data: combined, analyzedVideoIds });
+              }
+            }
+          } catch (bundleReadErr) {
+            console.error("Daily Bundle Cache read failed for category all:", bundleReadErr);
+          }
+
           const TARGET_CATEGORIES = ["all", "10", "20", "24", "1", "28", "17", "25"];
           const promises = TARGET_CATEGORIES.map(async (catId) => {
             const dbCategoryId = country === "KR" ? catId : `${country}_${catId}`;
@@ -252,13 +315,25 @@ export async function GET(req: NextRequest) {
 
               if (fallbackRows && fallbackRows.length > 0) {
                 for (const row of fallbackRows) {
-                  if (Array.isArray(row.videos_data)) {
-                    for (const video of row.videos_data) {
+                  const vData = row.videos_data;
+                  if (Array.isArray(vData)) {
+                    for (const video of vData) {
                       if (video && video.id && !seenIds.has(video.id)) {
                         seenIds.add(video.id);
                         combinedVideos.push(video);
                       }
                     }
+                  } else if (vData && typeof vData === "object") {
+                    Object.values(vData).forEach((list: any) => {
+                      if (Array.isArray(list)) {
+                        for (const video of list) {
+                          if (video && video.id && !seenIds.has(video.id)) {
+                            seenIds.add(video.id);
+                            combinedVideos.push(video);
+                          }
+                        }
+                      }
+                    });
                   }
                 }
               }
@@ -292,7 +367,69 @@ export async function GET(req: NextRequest) {
 
         const dbCategoryId = country === "KR" ? categoryId : `${country}_${categoryId}`;
         
-        // 1. Try to read from Supabase Cache for exact target date
+        // 1. Try to read from Daily Unified Bundle single row for target date
+        try {
+          const { data: bundleRow } = await supabaseAdmin
+            .from("youtube_trending_archive")
+            .select("videos_data")
+            .eq("target_date", date)
+            .eq("category_id", "bundle")
+            .maybeSingle();
+
+          if (bundleRow && bundleRow.videos_data && typeof bundleRow.videos_data === "object" && !Array.isArray(bundleRow.videos_data)) {
+            const bundleObj = bundleRow.videos_data as Record<string, any[]>;
+            let targetVideos: any[] = [];
+
+            if (categoryId === "all") {
+              const prefix = country === "KR" ? "" : `${country}_`;
+              const seenIds = new Set<string>();
+              Object.keys(bundleObj).forEach((k) => {
+                const isMatch = country === "KR" ? (!k.includes("_") || k.startsWith("KR_")) : k.startsWith(prefix);
+                if (isMatch && Array.isArray(bundleObj[k])) {
+                  bundleObj[k].forEach((v) => {
+                    if (v && v.id && !seenIds.has(v.id)) {
+                      seenIds.add(v.id);
+                      targetVideos.push(v);
+                    }
+                  });
+                }
+              });
+            } else {
+              const possibleKeys = country === "KR" ? [dbCategoryId, `KR_${dbCategoryId}`] : [dbCategoryId, dbCategoryId.replace(`${country}_`, "")];
+              for (const k of possibleKeys) {
+                if (Array.isArray(bundleObj[k]) && bundleObj[k].length > 0) {
+                  targetVideos = bundleObj[k];
+                  break;
+                }
+              }
+            }
+
+            if (targetVideos.length > 0) {
+              console.log(`Daily Bundle Cache Hit: Serving ${country} / ${categoryId} for date ${date} from DB.`);
+              const videoIds = targetVideos.map((v) => v.id).filter(Boolean);
+              let analyzedVideoIds: string[] = [];
+              if (videoIds.length > 0) {
+                try {
+                  const { data: analyzedRows } = await supabaseAdmin
+                    .from("youtube_video_analysis")
+                    .select("video_id")
+                    .in("video_id", videoIds);
+                  if (analyzedRows) {
+                    analyzedVideoIds = analyzedRows.map((r) => r.video_id);
+                  }
+                } catch (analysisErr) {
+                  console.error("Failed to query analyzed rows in bundle hit path:", analysisErr);
+                }
+              }
+
+              return NextResponse.json({ source: "supabase-db-daily-bundle", data: targetVideos, analyzedVideoIds });
+            }
+          }
+        } catch (bundleReadErr) {
+          console.error("Daily Bundle Cache read failed:", bundleReadErr);
+        }
+
+        // Fallback to legacy individual category rows for target date
         try {
           const { data: cachedRow, error: cacheError } = await supabaseAdmin
             .from("youtube_trending_archive")

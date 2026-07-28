@@ -3,15 +3,19 @@ import { supabaseAdmin } from "@/lib/server/get-free-gemini-key";
 import { createClient } from "@/utils/supabase/server";
 
 export async function GET(req: NextRequest) {
-  // 1. Verify user session
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  // 1. Optional user session check (Graceful unauthenticated access per CreAibox rules)
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (userError || !user) {
-    return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+    if (!user) {
+      return NextResponse.json({ data: [] });
+    }
+  } catch (authErr) {
+    console.warn("Unauthenticated or auth session error in GET /api/youtube/reports:", authErr);
+    return NextResponse.json({ data: [] });
   }
 
   const type = req.nextUrl.searchParams.get("type") || "trending";
@@ -38,7 +42,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ data: [] });
     }
 
-    // 3. Load latest archive records to map full video metadata (only as backup fallback)
+    // 3. Load latest archive records to map full video metadata (supporting both array and bundle object)
     const { data: archives } = await supabaseAdmin
       .from("youtube_trending_archive")
       .select("videos_data")
@@ -48,11 +52,19 @@ export async function GET(req: NextRequest) {
     const videoMap = new Map<string, any>();
     if (archives) {
       for (const archive of archives) {
-        const videos = archive.videos_data || [];
-        for (const v of videos) {
-          if (v && v.id) {
-            videoMap.set(v.id, v);
+        const vData = archive.videos_data;
+        if (Array.isArray(vData)) {
+          for (const v of vData) {
+            if (v && v.id) videoMap.set(v.id, v);
           }
+        } else if (vData && typeof vData === "object") {
+          Object.values(vData).forEach((list: any) => {
+            if (Array.isArray(list)) {
+              for (const v of list) {
+                if (v && v.id) videoMap.set(v.id, v);
+              }
+            }
+          });
         }
       }
     }

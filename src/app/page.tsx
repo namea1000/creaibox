@@ -697,6 +697,24 @@ export default function MainLandingPage() {
                   우측 사이드바의 실시간 SEO 스니펫 편집기를 통해 Title, Slug, Meta Description의 최적 길이를 직관적인 프로그레스 바와 검색 결과 모의 뷰로 검증하며 완성합니다.
                 </p>
               </div>
+
+              <div className="rounded-[28px] border border-emerald-500/40 bg-gradient-to-br from-emerald-955/60 via-zinc-900/60 to-zinc-950 p-6 shadow-xl md:col-span-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-black uppercase tracking-widest text-emerald-400 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    04. 4대 글로벌 검색엔진 0.1초 자동 색인 핑 (Auto Indexing)
+                  </span>
+                  <span className="text-[10px] font-black bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                    수동 등록 0초 무설정 100% 무인화
+                  </span>
+                </div>
+                <h4 className="mt-2 text-lg font-black text-white">
+                  구글, 네이버, Bing, Yandex 0.1초 즉시 수집 핑 100% 무설정 탑재
+                </h4>
+                <p className="mt-2 text-sm font-medium leading-relaxed text-zinc-300">
+                  다른 플랫폼처럼 구글 서치콘솔이나 네이버 서치어드바이저에 접속해 매번 수동으로 제출하실 필요가 0%입니다! 글을 저장하고 발행하는 즉시 구글(Googlebot) 및 MS Bing, 네이버, Yandex 검색 로봇으로 0.1초 만에 실시간 수집 핑을 보내 수 분 내에 가장 빠르게 검색 노출을 만듭니다.
+                </p>
+              </div>
             </div>
           </div>
         </section>

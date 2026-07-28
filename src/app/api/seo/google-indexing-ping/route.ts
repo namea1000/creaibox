@@ -3,6 +3,7 @@ import {
   sendGoogleIndexingPing,
   sendThrottledGoogleIndexingPing,
 } from "@/lib/server/google-indexing";
+import { sendIndexNowPing, sendThrottledIndexNowPing } from "@/lib/server/indexnow";
 
 export async function POST(request: Request) {
   try {
@@ -18,12 +19,16 @@ export async function POST(request: Request) {
 
     if (force) {
       const result = await sendGoogleIndexingPing({ url, type });
+      // Simultaneously trigger Bing, Yandex, and Naver IndexNow ping
+      sendIndexNowPing({ url }).catch((e) => console.warn("IndexNow ping background error:", e));
       return NextResponse.json(result);
     } else {
       const throttledResult = await sendThrottledGoogleIndexingPing({
         url,
         type,
       });
+      // Simultaneously trigger Bing, Yandex, and Naver IndexNow ping (with 1h smart cooldown)
+      sendThrottledIndexNowPing({ url }).catch((e) => console.warn("IndexNow ping background error:", e));
       return NextResponse.json({
         success: true,
         url,

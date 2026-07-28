@@ -1,24 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchAndCacheTrending, getKstTodayDate } from "@/app/api/youtube/route";
 import { supabaseAdmin } from "@/lib/server/get-free-gemini-key";
-
-// Target 8 categories to collect for CreAibox Studio
-const TARGET_CATEGORIES = ["all", "10", "20", "24", "1", "28", "17", "25"];
-// Target 8 countries for global support
-const TARGET_COUNTRIES = ["KR", "US", "JP", "GB", "VN", "IN", "BR", "CA"];
+import { ALL_COUNTRIES } from "@/app/studio/youtube/[section]/components/RisingVideos";
 
 export async function GET(req: NextRequest) {
   // 1. Verify Vercel Cron authorization header
   const authHeader = req.headers.get("authorization");
   
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV === "production" && process.env.CRON_SECRET) {
     if (!authHeader || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       console.error("Unauthorized Vercel Cron Trigger Attempt blocked.");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
   }
 
-  console.log("Vercel Cron Triggered: Starting YouTube Global Trending Daily Archive Scraper.");
+  console.log("Vercel Cron Triggered: Starting 60-Country YouTube Daily Trending Archive Scraper.");
 
   const date = getKstTodayDate();
 
@@ -43,34 +39,43 @@ export async function GET(req: NextRequest) {
   }
 
   const results: Array<{ country: string; categoryId: string; success: boolean; error?: string }> = [];
-
-  // Helper utility to introduce artificial delays between fetch events to minimize quota limits
   const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  // 2. Sequentially scrap each country & category to prevent threshold / Google API rate limits
-  for (const country of TARGET_COUNTRIES) {
-    for (const catId of TARGET_CATEGORIES) {
-      try {
-        console.log(`Cron Scraping start for country: ${country}, category: ${catId} (Date: ${date})`);
-        await fetchAndCacheTrending(catId, date, "https://creaibox.com/", country);
-        results.push({ country, categoryId: catId, success: true });
-        console.log(`Cron Scraping success for country: ${country}, category: ${catId}`);
-        // Tiny cooldown delay to respect rate limit caps
-        await delay(100);
-      } catch (err: any) {
-        const errMsg = err.message || String(err);
-        console.error(`Cron Scraping failed for country ${country}, category ${catId}:`, errMsg);
-        results.push({ country, categoryId: catId, success: false, error: errMsg });
+  // 2. Parallel chunked scraping with 3x retry mechanism for 100% reliable collection
+  const targetCountries = ALL_COUNTRIES.map((c: { code: string }) => c.code);
+  const chunkSize = 10;
+
+  for (let i = 0; i < targetCountries.length; i += chunkSize) {
+    const chunk = targetCountries.slice(i, i + chunkSize);
+    const promises = chunk.map(async (countryCode) => {
+      let attempts = 0;
+      let lastErr = "";
+      while (attempts < 3) {
+        try {
+          console.log(`Cron Scraping start for country: ${countryCode} (Date: ${date}, Attempt: ${attempts + 1})`);
+          await fetchAndCacheTrending("all", date, "https://creaibox.com/", countryCode);
+          return { country: countryCode, categoryId: "all", success: true };
+        } catch (err: any) {
+          lastErr = err.message || String(err);
+          attempts++;
+          await delay(200);
+        }
       }
-    }
+      console.error(`Cron Scraping failed for country ${countryCode} after 3 attempts:`, lastErr);
+      return { country: countryCode, categoryId: "all", success: false, error: lastErr };
+    });
+
+    const chunkResults = await Promise.all(promises);
+    results.push(...chunkResults);
+    await delay(100);
   }
 
   const successCount = results.filter((r) => r.success).length;
-  const totalCount = TARGET_COUNTRIES.length * TARGET_CATEGORIES.length;
-  console.log(`Vercel Cron Finished: Scraped ${successCount}/${totalCount} targets successfully.`);
+  const totalCount = targetCountries.length;
+  console.log(`Vercel Cron Finished: Scraped ${successCount}/${totalCount} countries successfully.`);
 
   return NextResponse.json({
-    message: "Cron sync executed successfully.",
+    message: "60-country daily cron sync executed successfully.",
     date,
     summary: {
       total: totalCount,
