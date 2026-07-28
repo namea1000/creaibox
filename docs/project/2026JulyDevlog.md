@@ -46,6 +46,19 @@ mier
 * **작업 상세**:
   - **옵션 명칭 및 순서 재배치 ([`blogImageConstants.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/shared/image-studio/blogImageConstants.ts))**: `aspectRatioOptions` 배열에서 `16:9` 항목의 라벨을 `⭐ 16:9 블로그/유튜브 표준 썸네일`로 변경하고 1번 순서로 배치.
   - **기본 상태(Default State) 16:9 전환**: [`BlogImageStudioPanel.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/shared/image-studio/BlogImageStudioPanel.tsx) 및 [`CreaiboxContentImagePanel.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/creaibox/tabs/CreaiboxContentImagePanel.tsx)의 `selectedAspectRatio` 기본 상태를 `"16:9"`로 통일.
+  - **프로젝트 매뉴얼 문서화 ([`thumbnail-aspect-ratio-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/thumbnail-aspect-ratio-guide.md))**: 16:9 vs 4:3 심층 비교 분석 및 전문가 관점에서의 최적 권장안 매뉴얼 작성 수록.
+  - **빌드 및 타입 검증**: `npx tsc --noEmit` 실행 결과 0 에러 정상 통과.
+
+#### 5. 표(Table) 렌더링 UI 정밀 개선: 2줄 굵은 라인 및 모서리 끊어짐 해결, 헤더 음영 & 컬러 채우기 강화
+* **원인 분석**: 
+  - `overflow-hidden` 및 `border-radius: 16px`가 `border-collapse: collapse` 표와 조합되면서 모서리 4곳의 테두리 라인이 절단/끊어지는 브라우저 렌더링 현상이 발생함.
+  - 에디터 및 발행 페이지의 테두리가 검은색(`#191e23`) 1px 테두리로 다중 지정되어 2줄로 굵고 투박하게 노출되었으며, 헤더 음영이 지나치게 옅어 시각적 조화가 부족했음.
+* **해결 작업**:
+  - **발행 페이지 렌더러 정밀 교정 ([`blog/[slug]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/%5Bslug%5D/page.tsx))**: 셀 세로 패딩을 `px-3.5 py-2.5`로 조정하여 답답함 없이 여유롭고 쾌적한 셀 높이를 제공함. `<p>` 태그 마진 및 legacy `vertical-align`을 강제 오버라이드하여 발행글에서도 글씨 세로 가운데 정렬이 100% 보장됨.
+  - **에디터 툴바 기능 대폭 확장 ([`UniversalBlogEditor.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/editor/UniversalBlogEditor.tsx))**: 
+    - **최근 직접 선택한 색상 저장 (`recentColors` / `localStorage`)**: "직접 색상 선택" 피커로 지정한 컬러를 브라우저 로컬 저장소(`localStorage`)에 저장하고 최대 5개까지 최근 색상 서클 버튼으로 노출하여 재사용성 극대화.
+    - **표 툴바 내 "글자색" (Font Color) 팝업 메뉴 추가**: 배경색 우측에 글자색 버튼(Baseline 아이콘)을 신설하고, 기본 10종 파스텔/비비드 프리셋, 직접 색상 선택 피커, 최근 선택 색상 서클 및 글자색 초기화 기능을 통합 제공함.
+  - **네이버 스마트에디터 클립보드 호환성 강화 ([`naver-smarteditor-clipboard.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/lib/naver-smarteditor-clipboard.ts))**: 네이버 복사 붙여넣기 시 1줄 테두리(`#cbd5e1`), 적정 패딩 및 헤더 기본 가운데 정렬 100% 유지.
   - **빌드 및 타입 검증**: `npx tsc --noEmit` 실행 결과 0 에러 정상 통과.
 
 ### 🗓️ 2026-07-26 (일)

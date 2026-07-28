@@ -39,7 +39,7 @@ const CustomTableCell = TableCell.extend({
     const attrs = node.attrs;
     const styles: string[] = [];
     if (attrs.backgroundColor) styles.push(`background-color: ${attrs.backgroundColor}`);
-    styles.push(`vertical-align: ${attrs.verticalAlign || 'middle'} !important`);
+    styles.push(`vertical-align: ${attrs.verticalAlign || 'middle'}`);
     if (attrs.textAlign) styles.push(`text-align: ${attrs.textAlign}`);
 
     const styleString = styles.length > 0 ? styles.join("; ") : undefined;
@@ -74,8 +74,8 @@ const CustomTableHeader = TableHeader.extend({
     const attrs = node.attrs;
     const styles: string[] = [];
     if (attrs.backgroundColor) styles.push(`background-color: ${attrs.backgroundColor}`);
-    styles.push(`vertical-align: ${attrs.verticalAlign || 'middle'} !important`);
-    if (attrs.textAlign) styles.push(`text-align: ${attrs.textAlign}`);
+    styles.push(`vertical-align: ${attrs.verticalAlign || 'middle'}`);
+    styles.push(`text-align: ${attrs.textAlign || 'center'}`);
 
     const styleString = styles.length > 0 ? styles.join("; ") : undefined;
     const merged = mergeAttributes(HTMLAttributes, {
@@ -113,6 +113,7 @@ import {
   FileText,
   FileCode,
   Globe,
+  Baseline,
   Heading1,
   Heading2,
   Heading3,
@@ -129,6 +130,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Paperclip,
+  Palette,
   Printer,
   Quote,
   Redo,
@@ -1076,7 +1078,27 @@ export default function UniversalBlogEditor({
   const [isContentDropdownOpen, setIsContentDropdownOpen] = useState(false);
   const [isTocDropdownOpen, setIsTocDropdownOpen] = useState(false);
   const [isPostTypeDropdownOpen, setIsPostTypeDropdownOpen] = useState(false);
-  const [activeTableDropdown, setActiveTableDropdown] = useState<"row" | "col" | "align-h" | "align-v" | "color" | null>(null);
+  const [activeTableDropdown, setActiveTableDropdown] = useState<"row" | "col" | "align-h" | "align-v" | "color" | "textColor" | null>(null);
+  const [recentColors, setRecentColors] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("creaibox_recent_colors");
+      if (saved) setRecentColors(JSON.parse(saved));
+    } catch (e) {}
+  }, []);
+
+  const addRecentColor = useCallback((color: string) => {
+    if (!color) return;
+    setRecentColors((prev) => {
+      const filtered = prev.filter((c) => c.toLowerCase() !== color.toLowerCase());
+      const next = [color, ...filtered].slice(0, 5);
+      try {
+        localStorage.setItem("creaibox_recent_colors", JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+  }, []);
   const contentDropdownRef = useRef<HTMLDivElement>(null);
   const tocDropdownRef = useRef<HTMLDivElement>(null);
   const postTypeDropdownRef = useRef<HTMLDivElement>(null);
@@ -1168,6 +1190,7 @@ export default function UniversalBlogEditor({
 
   const [isVerticalAlignDropdownOpen, setIsVerticalAlignDropdownOpen] = useState(false);
   const verticalAlignDropdownRef = useRef<HTMLDivElement>(null);
+  const tableBubbleMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -1201,7 +1224,9 @@ export default function UniversalBlogEditor({
       if (translateDropdownRef.current && !translateDropdownRef.current.contains(event.target as Node)) {
         setIsTranslateDropdownOpen(false);
       }
-      setActiveTableDropdown(null);
+      if (tableBubbleMenuRef.current && !tableBubbleMenuRef.current.contains(event.target as Node)) {
+        setActiveTableDropdown(null);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
@@ -4161,11 +4186,12 @@ export default function UniversalBlogEditor({
                     return editor.isActive("table");
                   }}
                 >
-                  <div className="relative flex items-center gap-1 rounded-xl border border-zinc-800 bg-[#0e111a]/95 px-3 py-1.5 shadow-2xl backdrop-blur-md text-white z-50">
+                  <div ref={tableBubbleMenuRef} className="relative flex items-center gap-1 rounded-xl border border-zinc-800 bg-[#0e111a]/95 px-3 py-1.5 shadow-2xl backdrop-blur-md text-white z-50">
                     {/* Row operations */}
                     <div className="relative">
                       <button
                         type="button"
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={(e) => {
                           e.stopPropagation();
                           setActiveTableDropdown(activeTableDropdown === "row" ? null : "row");
@@ -4183,6 +4209,7 @@ export default function UniversalBlogEditor({
                         <div className="absolute left-0 top-[110%] z-50 flex w-44 flex-col rounded-xl border border-zinc-850 bg-[#0e111a] p-1 shadow-2xl">
                           <button
                             type="button"
+                            onMouseDown={(e) => e.preventDefault()}
                             onClick={() => {
                               editor.chain().focus().addRowBefore().run();
                               setActiveTableDropdown(null);
@@ -4194,6 +4221,7 @@ export default function UniversalBlogEditor({
                           </button>
                           <button
                             type="button"
+                            onMouseDown={(e) => e.preventDefault()}
                             onClick={() => {
                               editor.chain().focus().addRowAfter().run();
                               setActiveTableDropdown(null);
@@ -4206,6 +4234,7 @@ export default function UniversalBlogEditor({
                           <div className="h-px bg-zinc-850 my-1" />
                           <button
                             type="button"
+                            onMouseDown={(e) => e.preventDefault()}
                             onClick={() => {
                               editor.chain().focus().deleteRow().run();
                               setActiveTableDropdown(null);
@@ -4223,6 +4252,7 @@ export default function UniversalBlogEditor({
                     <div className="relative">
                       <button
                         type="button"
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={(e) => {
                           e.stopPropagation();
                           setActiveTableDropdown(activeTableDropdown === "col" ? null : "col");
@@ -4240,6 +4270,7 @@ export default function UniversalBlogEditor({
                         <div className="absolute left-0 top-[110%] z-50 flex w-44 flex-col rounded-xl border border-zinc-850 bg-[#0e111a] p-1 shadow-2xl">
                           <button
                             type="button"
+                            onMouseDown={(e) => e.preventDefault()}
                             onClick={() => {
                               editor.chain().focus().addColumnBefore().run();
                               setActiveTableDropdown(null);
@@ -4251,6 +4282,7 @@ export default function UniversalBlogEditor({
                           </button>
                           <button
                             type="button"
+                            onMouseDown={(e) => e.preventDefault()}
                             onClick={() => {
                               editor.chain().focus().addColumnAfter().run();
                               setActiveTableDropdown(null);
@@ -4263,6 +4295,7 @@ export default function UniversalBlogEditor({
                           <div className="h-px bg-zinc-850 my-1" />
                           <button
                             type="button"
+                            onMouseDown={(e) => e.preventDefault()}
                             onClick={() => {
                               editor.chain().focus().deleteColumn().run();
                               setActiveTableDropdown(null);
@@ -4281,6 +4314,7 @@ export default function UniversalBlogEditor({
                     {/* Merge/Split */}
                     <button
                       type="button"
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => editor.chain().focus().mergeCells().run()}
                       disabled={!editor.can().mergeCells()}
                       className="flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-zinc-400 hover:bg-zinc-800/80 hover:text-white disabled:opacity-40 disabled:hover:bg-transparent transition"
@@ -4291,6 +4325,7 @@ export default function UniversalBlogEditor({
                     </button>
                     <button
                       type="button"
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => editor.chain().focus().splitCell().run()}
                       disabled={!editor.can().splitCell()}
                       className="flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-zinc-400 hover:bg-zinc-800/80 hover:text-white disabled:opacity-40 disabled:hover:bg-transparent transition"
@@ -4305,6 +4340,7 @@ export default function UniversalBlogEditor({
                     {/* Header Row Toggle */}
                     <button
                       type="button"
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => editor.chain().focus().toggleHeaderRow().run()}
                       className="flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-zinc-400 hover:bg-zinc-800/80 hover:text-white transition"
                       title="헤더 행 설정/해제"
@@ -4453,18 +4489,20 @@ export default function UniversalBlogEditor({
                       </button>
 
                       {activeTableDropdown === "color" && (
-                        <div className="absolute left-0 top-[110%] z-50 flex w-48 flex-col rounded-xl border border-zinc-850 bg-[#0e111a] p-3 shadow-2xl">
+                        <div className="absolute left-0 top-[110%] z-50 flex w-52 flex-col rounded-xl border border-zinc-850 bg-[#0e111a] p-3 shadow-2xl">
                           <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider mb-2">셀 배경색 지정</span>
-                          <div className="grid grid-cols-4 gap-2 mb-2.5">
+                          <div className="grid grid-cols-5 gap-1.5 mb-2.5">
                             {[
                               { color: "#ffffff", label: "흰색" },
-                              { color: "#f4f4f5", label: "회색" },
-                              { color: "#fee2e2", label: "빨강" },
+                              { color: "#f1f5f9", label: "헤더 회색" },
+                              { color: "#eefcf2", label: "네이버 초록" },
+                              { color: "#eff6ff", label: "파스텔 블루" },
+                              { color: "#fffbeb", label: "옐로우" },
+                              { color: "#fdf2f8", label: "소프트 핑크" },
+                              { color: "#f3e8ff", label: "은은한 보라" },
+                              { color: "#fee2e2", label: "소프트 레드" },
                               { color: "#ffedd5", label: "주황" },
-                              { color: "#fef9c3", label: "노랑" },
-                              { color: "#dcfce7", label: "초록" },
-                              { color: "#dbeafe", label: "파랑" },
-                              { color: "#f3e8ff", label: "보라" },
+                              { color: "#e2e8f0", label: "진한 회색" },
                             ].map((item) => (
                               <button
                                 key={item.color}
@@ -4474,16 +4512,62 @@ export default function UniversalBlogEditor({
                                   editor.chain().focus().setCellAttribute('backgroundColor', item.color).run();
                                   setActiveTableDropdown(null);
                                 }}
-                                className="w-8 h-8 rounded-lg border border-zinc-800 transition hover:scale-105 active:scale-95 cursor-pointer relative group"
+                                className="w-7 h-7 rounded-lg border border-zinc-700 transition hover:scale-105 active:scale-95 cursor-pointer relative group"
                                 style={{ backgroundColor: item.color }}
                                 title={item.label}
                               >
-                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-zinc-950 text-[9px] px-1 py-0.5 rounded text-white opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">
+                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-zinc-950 text-[9px] px-1 py-0.5 rounded text-white opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none z-50">
                                   {item.label}
                                 </span>
                               </button>
                             ))}
                           </div>
+
+                          <div className="flex items-center justify-between gap-2 mt-1 mb-2 pt-2 border-t border-zinc-800">
+                            <label className="text-[11px] font-bold text-zinc-300 flex items-center gap-1.5 cursor-pointer hover:text-white transition">
+                              <Palette size={13} className="text-indigo-400" />
+                              <span>직접 색상 선택</span>
+                            </label>
+                            <input
+                              type="color"
+                              defaultValue="#ffffff"
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onChange={(e) => {
+                                const color = e.target.value;
+                                editor.chain().focus().setCellAttribute('backgroundColor', color).run();
+                                addRecentColor(color);
+                              }}
+                              className="w-7 h-7 rounded border border-zinc-700 bg-transparent p-0.5 cursor-pointer"
+                              title="원하는 색상 선택"
+                            />
+                          </div>
+
+                          {recentColors.length > 0 && (
+                            <div className="flex flex-col gap-1 mt-1 mb-2 pt-2 border-t border-zinc-800/80">
+                              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">최근 직접 선택한 색상</span>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {recentColors.map((color, idx) => (
+                                  <button
+                                    key={`${color}-${idx}`}
+                                    type="button"
+                                    onMouseDown={(e) => e.preventDefault()}
+                                    onClick={() => {
+                                      editor.chain().focus().setCellAttribute('backgroundColor', color).run();
+                                      setActiveTableDropdown(null);
+                                    }}
+                                    className="w-6 h-6 rounded-md border border-zinc-700 hover:scale-110 transition cursor-pointer relative group"
+                                    style={{ backgroundColor: color }}
+                                    title={color}
+                                  >
+                                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-zinc-950 text-[9px] px-1 py-0.5 rounded text-white opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none z-50">
+                                      {color}
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
                           <button
                             type="button"
                             onMouseDown={(e) => e.preventDefault()}
@@ -4499,11 +4583,128 @@ export default function UniversalBlogEditor({
                       )}
                     </div>
 
+                    {/* Font Color operations */}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveTableDropdown(activeTableDropdown === "textColor" ? null : "textColor");
+                        }}
+                        className={`flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-bold text-zinc-400 hover:bg-zinc-800/80 hover:text-white transition ${
+                          activeTableDropdown === "textColor" ? "bg-zinc-800 text-white" : ""
+                        }`}
+                        title="글자 폰트 색상 지정"
+                      >
+                        <Baseline size={13} className="text-amber-400" />
+                        <span>글자색</span>
+                        <ChevronDown size={12} />
+                      </button>
+
+                      {activeTableDropdown === "textColor" && (
+                        <div className="absolute left-0 top-[110%] z-50 flex w-52 flex-col rounded-xl border border-zinc-850 bg-[#0e111a] p-3 shadow-2xl">
+                          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider mb-2">글자 폰트 색상 지정</span>
+                          <div className="grid grid-cols-5 gap-1.5 mb-2.5">
+                            {[
+                              { color: "#0f172a", label: "기본 검정" },
+                              { color: "#ffffff", label: "흰색" },
+                              { color: "#dc2626", label: "빨강" },
+                              { color: "#2563eb", label: "파랑" },
+                              { color: "#059669", label: "초록" },
+                              { color: "#d97706", label: "주황" },
+                              { color: "#7c3aed", label: "보라" },
+                              { color: "#475569", label: "회색" },
+                              { color: "#db2777", label: "핑크" },
+                              { color: "#0284c7", label: "스카이블루" },
+                            ].map((item) => (
+                              <button
+                                key={item.color}
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => {
+                                  (editor.chain().focus() as any).setColor(item.color).run();
+                                  setActiveTableDropdown(null);
+                                }}
+                                className="w-7 h-7 rounded-lg border border-zinc-700 transition hover:scale-105 active:scale-95 cursor-pointer relative group flex items-center justify-center font-bold text-xs"
+                                style={{ backgroundColor: item.color === "#ffffff" ? "#1e293b" : "#ffffff", color: item.color }}
+                                title={item.label}
+                              >
+                                A
+                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-zinc-950 text-[9px] px-1 py-0.5 rounded text-white opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none z-50">
+                                  {item.label}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+
+                          <div className="flex items-center justify-between gap-2 mt-1 mb-2 pt-2 border-t border-zinc-800">
+                            <label className="text-[11px] font-bold text-zinc-300 flex items-center gap-1.5 cursor-pointer hover:text-white transition">
+                              <Palette size={13} className="text-amber-400" />
+                              <span>직접 색상 선택</span>
+                            </label>
+                            <input
+                              type="color"
+                              defaultValue="#000000"
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onChange={(e) => {
+                                const color = e.target.value;
+                                (editor.chain().focus() as any).setColor(color).run();
+                                addRecentColor(color);
+                              }}
+                              className="w-7 h-7 rounded border border-zinc-700 bg-transparent p-0.5 cursor-pointer"
+                              title="원하는 글자 색상 선택"
+                            />
+                          </div>
+
+                          {recentColors.length > 0 && (
+                            <div className="flex flex-col gap-1 mt-1 mb-2 pt-2 border-t border-zinc-800/80">
+                              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">최근 직접 선택한 색상</span>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {recentColors.map((color, idx) => (
+                                  <button
+                                    key={`${color}-${idx}`}
+                                    type="button"
+                                    onMouseDown={(e) => e.preventDefault()}
+                                    onClick={() => {
+                                      (editor.chain().focus() as any).setColor(color).run();
+                                      setActiveTableDropdown(null);
+                                    }}
+                                    className="w-6 h-6 rounded-md border border-zinc-700 hover:scale-110 transition cursor-pointer relative group flex items-center justify-center font-bold text-[10px]"
+                                    style={{ backgroundColor: color === "#ffffff" ? "#1e293b" : "#ffffff", color: color }}
+                                    title={color}
+                                  >
+                                    A
+                                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-zinc-950 text-[9px] px-1 py-0.5 rounded text-white opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none z-50">
+                                      {color}
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => {
+                              (editor.chain().focus() as any).unsetColor().run();
+                              setActiveTableDropdown(null);
+                            }}
+                            className="w-full py-1 text-center text-[10px] font-black text-red-400 hover:bg-red-950/20 rounded transition border border-red-500/20"
+                          >
+                            글자색 지우기 (기본값)
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="h-4 w-[1px] bg-zinc-800 mx-1" />
 
                     {/* Delete Table */}
                     <button
                       type="button"
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => editor.chain().focus().deleteTable().run()}
                       className="flex h-8 w-8 items-center justify-center rounded-lg text-red-400 hover:bg-red-950/30 hover:text-red-350 transition"
                       title="표 삭제"
@@ -4812,28 +5013,39 @@ export default function UniversalBlogEditor({
           border-top: 1px solid #e4e4e7;
         }
 
+        .ProseMirror table p,
+        .blog-content table p {
+          margin: 0 !important;
+          padding: 0 !important;
+          line-height: 1.4 !important;
+        }
+
         .ProseMirror table {
           width: 100%;
-          margin: 1.5rem 0;
+          margin: 1rem 0;
           border-collapse: collapse;
           border-radius: 0px !important;
-          border: 1px solid #191e23;
+          border: 1px solid #cbd5e1;
           transition: box-shadow 0.2s ease-in-out;
         }
 
         .ProseMirror th {
-          background: #f8fafc;
-          font-weight: 900;
-          border: 1px solid #191e23;
+          background-color: #f1f5f9;
+          color: #0f172a;
+          font-weight: 700;
+          border: 1px solid #cbd5e1;
+          padding: 7px 12px !important;
+          text-align: center;
+          vertical-align: middle;
         }
 
         .ProseMirror td {
-          border: 1px solid #191e23;
-          min-width: 90px;
-          padding: 0.65rem 0.75rem;
+          border: 1px solid #cbd5e1;
+          min-width: 80px;
+          padding: 7px 12px !important;
           vertical-align: middle;
-          font-size: 0.9rem;
-          line-height: 1.7;
+          font-size: 0.875rem;
+          line-height: 1.5;
         }
 
         /* 표 선택 또는 포커스 시 테두리 파란색 */

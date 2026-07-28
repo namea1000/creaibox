@@ -110,6 +110,34 @@ const blogMarkdownComponents: Components = {
       className="my-8 w-full h-auto rounded-[24px]"
     />
   ),
+  table: ({ children }) => (
+    <div className="my-6 w-full overflow-x-auto">
+      <table className="w-full border-collapse border border-slate-300 bg-white text-sm text-left shadow-none">
+        {children}
+      </table>
+    </div>
+  ),
+  thead: ({ children }) => (
+    <thead className="bg-slate-100 text-zinc-900 border-b border-slate-300">
+      {children}
+    </thead>
+  ),
+  th: ({ children, style }) => (
+    <th
+      style={style}
+      className="border border-slate-300 px-3.5 py-2.5 text-center font-bold text-zinc-900 bg-slate-100 align-middle [&_p]:!my-0 [&_p]:!py-0 [&_p]:!leading-snug"
+    >
+      {children}
+    </th>
+  ),
+  td: ({ children, style }) => (
+    <td
+      style={style}
+      className="border border-slate-300 px-3.5 py-2.5 align-middle text-zinc-700 font-normal [&_p]:!my-0 [&_p]:!py-0 [&_p]:!leading-snug"
+    >
+      {children}
+    </td>
+  ),
 };
 
 function normalizePublishedContent(content: string) {
@@ -595,7 +623,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                 <div className="w-full">
                   {looksLikeHtml(normalizedContent) ? (
                     <div
-                      className="blog-content text-[1.05rem] leading-[1.8] text-zinc-700 [&_a]:font-bold [&_a]:text-blue-600 [&_a]:underline [&_a]:decoration-blue-300 [&_a]:decoration-2 [&_a]:underline-offset-4 [&_a.og-card]:no-underline [&_a.og-card]:font-normal [&_a.og-card]:text-zinc-950 [&_a.og-card_img]:my-0 [&_a.og-card_img]:m-0 [&_a.og-card_p]:my-0 [&_a.og-card_p]:mb-0 [&_blockquote]:my-8 [&_blockquote]:rounded-[18px] [&_blockquote]:border [&_blockquote]:border-zinc-200 [&_blockquote]:bg-zinc-50 [&_blockquote]:px-6 [&_blockquote]:py-5 [&_blockquote]:font-medium [&_br]:block [&_div[data-youtube-video]]:my-8 [&_h1]:mb-6 [&_h1]:border-b [&_h1]:border-zinc-200 [&_h1]:pb-4 [&_h1]:text-[1.75rem] [&_h1]:font-black [&_h1]:leading-[1.25] [&_h1]:tracking-[-0.03em] [&_h1]:text-zinc-950 [&_h2]:mt-14 [&_h2]:mb-6 [&_h2]:text-[1.35rem] [&_h2]:font-black [&_h2]:leading-[1.35] [&_h2]:tracking-[-0.02em] [&_h2]:text-zinc-950 [&_h3]:mt-10 [&_h3]:mb-4 [&_h3]:text-[1.05rem] [&_h3]:font-black [&_h3]:leading-[1.4] [&_h3]:text-zinc-900 [&_hr]:my-10 [&_hr]:border-zinc-200 [&_iframe]:aspect-video [&_iframe]:h-auto [&_iframe]:w-full [&_iframe]:rounded-[18px] [&_iframe]:border [&_iframe]:border-zinc-200 [&_img]:my-8 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-[18px] [&_li]:pl-1 [&_li]:marker:text-blue-600 [&_ol]:text-[1.05rem] [&_ol]:leading-[1.8] [&_ol]:mb-8 [&_ol]:ml-6 [&_ol]:list-decimal [&_ol]:space-y-3 [&_p]:mb-6 [&_p]:text-[1.05rem] [&_p]:leading-[1.8] [&_p]:text-zinc-700 [&_strong]:font-black [&_strong]:text-zinc-950 [&_table]:my-8 [&_table]:w-full [&_table]:border-collapse [&_table]:overflow-hidden [&_table]:rounded-[16px] [&_td]:border [&_td]:border-zinc-200 [&_td]:px-4 [&_td]:py-3 [&_td]:align-top [&_th]:border [&_th]:border-zinc-200 [&_th]:bg-zinc-50 [&_th]:px-4 [&_th]:py-3 [&_th]:font-black [&_ul]:text-[1.05rem] [&_ul]:leading-[1.8] [&_ul]:mb-8 [&_ul]:ml-6 [&_ul]:list-disc [&_ul]:space-y-3"
+                      className="blog-content text-[1.05rem] leading-[1.8] text-zinc-700 [&_a]:font-bold [&_a]:text-blue-600 [&_a]:underline [&_a]:decoration-blue-300 [&_a]:decoration-2 [&_a]:underline-offset-4 [&_a.og-card]:no-underline [&_a.og-card]:font-normal [&_a.og-card]:text-zinc-950 [&_a.og-card_img]:my-0 [&_a.og-card_img]:m-0 [&_a.og-card_p]:my-0 [&_a.og-card_p]:mb-0 [&_blockquote]:my-8 [&_blockquote]:rounded-[18px] [&_blockquote]:border [&_blockquote]:border-zinc-200 [&_blockquote]:bg-zinc-50 [&_blockquote]:px-6 [&_blockquote]:py-5 [&_blockquote]:font-medium [&_br]:block [&_div[data-youtube-video]]:my-8 [&_h1]:mb-6 [&_h1]:border-b [&_h1]:border-zinc-200 [&_h1]:pb-4 [&_h1]:text-[1.75rem] [&_h1]:font-black [&_h1]:leading-[1.25] [&_h1]:tracking-[-0.03em] [&_h1]:text-zinc-950 [&_h2]:mt-14 [&_h2]:mb-6 [&_h2]:text-[1.35rem] [&_h2]:font-black [&_h2]:leading-[1.35] [&_h2]:tracking-[-0.02em] [&_h2]:text-zinc-950 [&_h3]:mt-10 [&_h3]:mb-4 [&_h3]:text-[1.05rem] [&_h3]:font-black [&_h3]:leading-[1.4] [&_h3]:text-zinc-900 [&_hr]:my-10 [&_hr]:border-zinc-200 [&_iframe]:aspect-video [&_iframe]:h-auto [&_iframe]:w-full [&_iframe]:rounded-[18px] [&_iframe]:border [&_iframe]:border-zinc-200 [&_img]:my-8 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-[18px] [&_li]:pl-1 [&_li]:marker:text-blue-600 [&_ol]:text-[1.05rem] [&_ol]:leading-[1.8] [&_ol]:mb-8 [&_ol]:ml-6 [&_ol]:list-decimal [&_ol]:space-y-3 [&_p]:mb-6 [&_p]:text-[1.05rem] [&_p]:leading-[1.8] [&_p]:text-zinc-700 [&_strong]:font-black [&_strong]:text-zinc-950 [&_table]:my-6 [&_table]:w-full [&_table]:border-collapse [&_table]:border [&_table]:border-slate-300 [&_table_p]:!my-0 [&_table_p]:!py-0 [&_table_p]:!leading-snug [&_td]:border [&_td]:border-slate-300 [&_td]:!px-3.5 [&_td]:!py-2.5 [&_td]:!align-middle [&_th]:border [&_th]:border-slate-300 [&_th]:bg-slate-100 [&_th]:text-zinc-900 [&_th]:!px-3.5 [&_th]:!py-2.5 [&_th]:font-bold [&_th]:!text-center [&_th]:!align-middle [&_ul]:text-[1.05rem] [&_ul]:leading-[1.8] [&_ul]:mb-8 [&_ul]:ml-6 [&_ul]:list-disc [&_ul]:space-y-3"
                       dangerouslySetInnerHTML={{
                         __html: sanitizePublishedHtml(normalizedContent),
                       }}

@@ -212,11 +212,11 @@ export async function copyToNaverSmartEditorClipboard({
 
     if (headerRow.length === 0) return match;
 
-    let tableHtml = `<table style="width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 14px; line-height: 1.6; border: 1px solid #cbd5e1; background-color: #ffffff;">\n`;
+    let tableHtml = `<table style="width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 13px; line-height: 1.5; border: 1px solid #cbd5e1; background-color: #ffffff;">\n`;
     tableHtml += `  <thead>\n    <tr style="background-color: #f1f5f9;">\n`;
     headerRow.forEach((hCell, i) => {
-      const align = alignment[i] || "left";
-      tableHtml += `      <th style="border: 1px solid #cbd5e1; padding: 12px 16px; font-weight: 800; color: #0f172a; text-align: ${align}; background-color: #e2e8f0;">${hCell}</th>\n`;
+      const align = alignment[i] && alignment[i] !== "left" ? alignment[i] : "center";
+      tableHtml += `      <th style="border: 1px solid #cbd5e1; padding: 7px 12px; font-weight: 700; color: #0f172a; text-align: ${align}; background-color: #e2e8f0;">${hCell}</th>\n`;
     });
     tableHtml += `    </tr>\n  </thead>\n`;
 
@@ -226,7 +226,7 @@ export async function copyToNaverSmartEditorClipboard({
       tableHtml += `    <tr style="background-color: ${bg};">\n`;
       row.forEach((bCell, i) => {
         const align = alignment[i] || "left";
-        tableHtml += `      <td style="border: 1px solid #cbd5e1; padding: 10px 16px; color: #334155; text-align: ${align}; font-weight: 500;">${bCell}</td>\n`;
+        tableHtml += `      <td style="border: 1px solid #cbd5e1; padding: 6px 12px; color: #334155; text-align: ${align}; font-weight: 500;">${bCell}</td>\n`;
       });
       tableHtml += `    </tr>\n`;
     });
