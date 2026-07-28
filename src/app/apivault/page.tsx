@@ -62,7 +62,11 @@ function ServiceCard({
 
   const handleKeyChange = (value: string) => {
     setApiKey(value);
-    localStorage.setItem(service.storageKey, value);
+    if (value.trim()) {
+      localStorage.setItem(service.storageKey, value);
+    } else {
+      localStorage.removeItem(service.storageKey);
+    }
   };
 
   const handleModelChange = (value: string) => {
@@ -86,7 +90,7 @@ function ServiceCard({
   };
 
   const handleClear = () => {
-    if (!confirm(`${service.name} 설정을 삭제할까요?`)) return;
+    if (!confirm(`${service.name} 설정을 완전히 삭제할까요?`)) return;
 
     setApiKey("");
     localStorage.removeItem(service.storageKey);
@@ -95,6 +99,7 @@ function ServiceCard({
       localStorage.removeItem(service.modelStorageKey);
       setSelectedModel(service.defaultModel || "");
     }
+    alert(`🗑️ ${service.name} 키가 브라우저 스토리지에서 삭제되었습니다.`);
   };
 
   return (
@@ -131,6 +136,10 @@ function ServiceCard({
           <div className="group relative">
             <input
               type="password"
+              id={service.storageKey}
+              name={service.storageKey}
+              autoComplete="new-password"
+              data-lpignore="true"
               value={apiKey}
               onChange={(e) => handleKeyChange(e.target.value)}
               placeholder="여기에 나의 API Key를 입력하세요"
