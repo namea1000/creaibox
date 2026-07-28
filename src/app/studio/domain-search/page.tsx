@@ -59,6 +59,7 @@ export default function DomainSearchPage() {
 
   // State 3: Buying State
   const [buyingDomain, setBuyingDomain] = useState<string | null>(null);
+  const [buySuccessData, setBuySuccessData] = useState<any | null>(null);
 
   // State 4: FAQ Expand States
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
@@ -139,23 +140,20 @@ export default function DomainSearchPage() {
   // Real Domain Buy Handler
   const handleBuyDomain = async (domainName: string) => {
     if (!requireAuth()) return;
-    if (!confirm(`${domainName} 도메인을 18,000원에 구매하시겠습니까?\n(구매 즉시 CreAibox 글로벌 Edge IP로 1초 자동 연동됩니다)`)) {
-      return;
-    }
 
     setBuyingDomain(domainName);
     try {
       const res = await fetch("/api/domains/buy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain: domainName }),
+        body: JSON.stringify({ domain: domainName, mock: true }),
       });
       const data = await res.json();
 
-      if (res.ok) {
-        alert(`🎉 축하합니다! ${domainName} 도메인 구매가 완료되었습니다!\n${data.message}`);
+      if (res.ok && data.success) {
+        setBuySuccessData(data);
       } else {
-        alert(`도메인 구매 실패: ${data.error}`);
+        alert(`도메인 구매 실패: ${data.error || "알 수 없는 오류"}`);
       }
     } catch {
       alert("도메인 결제 처리 중 오류가 발생했습니다.");
@@ -620,6 +618,80 @@ export default function DomainSearchPage() {
                 className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold text-slate-400 bg-slate-800/80 hover:bg-slate-700 rounded-xl transition-all cursor-pointer"
               >
                 <span>둘러보기 계속하기</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Domain Purchase Success / Mock Simulation Modal */}
+      {buySuccessData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
+          <div className="bg-[#0b0f19] border border-blue-500/30 rounded-3xl p-7 max-w-lg w-full text-left space-y-5 shadow-2xl relative overflow-hidden animate-fade-in-up">
+            <button
+              onClick={() => setBuySuccessData(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400 border border-emerald-500/20 shrink-0">
+                <CheckCircle2 size={26} />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                  {buySuccessData.mock ? "모의 테스트 승인 완료" : "실제 카드 결제 승인 완료"}
+                </span>
+                <h2 className="text-lg font-black text-white mt-0.5">
+                  도메인 구매 및 1초 Edge IP 연결 완료
+                </h2>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-3">
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-800/80">
+                <span className="text-xs font-bold text-slate-400">등록 도메인</span>
+                <span className="text-sm font-black text-blue-400 italic">
+                  {buySuccessData.domain}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-800/80">
+                <span className="text-xs font-bold text-slate-400">결제 상태</span>
+                <span className="text-xs font-black text-emerald-400">
+                  연 18,186원 (모의 가상 테스트 승인)
+                </span>
+              </div>
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-800/80">
+                <span className="text-xs font-bold text-slate-400">Edge IP 바인딩</span>
+                <span className="text-xs font-mono font-bold text-slate-200">
+                  76.76.21.21 (A Record)
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-400">SSL 보안 인증서</span>
+                <span className="text-[11px] font-black text-cyan-400">
+                  🔒 ISSUED (1초 자동 발급)
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+              🎉 <strong>{buySuccessData.domain}</strong> 이(가) CreAibox 글로벌 Edge 서버와 성공적으로 바인딩되었습니다. 커스텀 웹사이트 템플릿에서 즉시 사용할 수 있습니다.
+            </p>
+
+            <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
+              <Link
+                href="/studio/client-site-builder"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 text-xs font-extrabold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-lg shadow-blue-500/25 transition-all cursor-pointer text-center"
+              >
+                <span>🚀 커스텀 웹사이트 템플릿에 연결하기</span>
+              </Link>
+              <button
+                onClick={() => setBuySuccessData(null)}
+                className="px-5 py-3 text-xs font-bold text-slate-400 bg-slate-800 hover:bg-slate-700 rounded-xl transition-all cursor-pointer"
+              >
+                <span>확인 및 닫기</span>
               </button>
             </div>
           </div>
