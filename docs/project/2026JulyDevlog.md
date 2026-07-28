@@ -4,7 +4,36 @@ mier
 
 이 문서는 2026년 7월 동안 CreAibox 프로젝트에서 진행된 일자별 개발 세부 작업 내역과 핵심 아키텍처 결정 사항을 기록합니다.
 
-### 🗓️ 2026-07-26 (일) - 오늘
+### 🗓️ 2026-07-28 (화) - 오늘
+
+#### 1. 비로그인 자유 둘러보기 & 로그인 필수 서비스 팝업 통일 개편 (`Unauthenticated Access & Unified Login Prompt Rule`)
+* **구현 요약**: 크리에이박스 플랫폼 내 모든 스튜디오 및 서비스 화면에 대하여 로그인하지 않은 방문자도 전체 레이아웃/템플릿/관리자 폼을 100% 자유롭게 구경할 수 있도록 전면 공개하고, DB 및 AI 연동 액션 클릭 시 구식 alert 대신 프리미엄 **"로그인이 필요한 서비스입니다" 팝업 모달**로 연결되는 통일 UX 체계를 구축했습니다.
+* **작업 상세**:
+  - **커스텀 웹사이트 스튜디오 ([`custom-client-site/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/custom-client-site/page.tsx))**:
+    - `[내 커스텀 사이트 관리]` 탭의 전면 가림막을 제거하여 기본 정보 폼, PG 결제 키 설정, GNB 메뉴 구성기, 블로그 카테고리 관리자를 100% 시원하게 노출.
+    - 하드코딩된 예시 정보("소통과채움", "031-292-3806", "봉담읍")를 전면 제거하고 깨끗이 비워진 상태에서 한국어 예시 가이드 플레이스홀더 제공.
+    - 1초 AI 이관, 템플릿 사용, 신규 제작 요청, 실시간 설정 저장, GNB 메뉴 추가/삭제/우측CTA 전환 등 모든 액션 버튼 클릭 시 `requireAuth()` 및 `showLoginModal` 팝업 연결.
+  - **도메인 조회 & 구매 스튜디오 ([`domain-search/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/domain-search/page.tsx))**:
+    - 도메인 검색, 1초 구매, 타사 도메인 이관 버튼 클릭 시 네트워크 에러 경고창 대신 `showLoginModal` 팝업 연결.
+    - 추천 도메인 목록의 `sotongcheum.com`을 범용 도메인 `mybrand.com`으로 교체.
+  - **사이드바 및 블로그 원고 관리 전 메뉴 통일**:
+    - [`new-post/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/new-post/page.tsx), [`creaibox/list/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/list/page.tsx), [`naver/list/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/naver/list/page.tsx) 등에서 기존 구식 `window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.")`를 100% 제거하고 `LoginRequiredCard` 및 로그인 팝업 모달로 통일.
+  - **에이전트 룰 규정 반영 ([`ai-agent-rules.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/rules/ai-agent-rules.md) & [`AGENTS.md`](file:///Users/a1234/Local%20Sites/creaibox/.agents/AGENTS.md))**:
+    - `Unauthenticated Access & Unified Login Prompt Rule (비로그인 자유 둘러보기 & 로그인 팝업 통일 규칙)` 공식 수록.
+  - **빌드 검증**: `npx tsc --noEmit` 실행 결과 0 에러 정상 통과.
+
+#### 2. 시크릿 모드/외부 접속 시 블로그 이미지 액박 이슈 근본 원인 규명, 복구 및 재발 방지 파이프라인 수립
+* **원인 분석**:
+  - **원인 1 (DB 내 삭제된 구글 드라이브 파일 ID)**: `generated_images` DB 테이블에 기록된 특정 2개 포스트(`Kimi K3`, `워드프레스 결합`)의 썸네일 파일(`1RprSJOitURBN...`, `1lQ-a3BtHqQe...`)이 구글 드라이브 원본에서 삭제되어 404 에러 발생.
+  - **원인 2 (구글 드라이브 302 리다이렉트 & 시크릿 모드 서드파티 쿠키 차단)**: 구글 드라이브 직링크(`lh3.googleusercontent.com/d/...`)는 `work.fife.usercontent.google.com`으로 302 리다이렉트되는데, 로그인 세션이 없는 시크릿 모드/비회원 환경에서는 크롬 서드파티 쿠키/CORP 정책으로 인해 브라우저가 이미지 렌더링을 차단함.
+  - **원인 3 (프론트엔드 이미지 프록시 & onError 예외 처리 누락)**: 블로그 리스트 및 상세 페이지에서 raw 구글 드라이브 URL을 직접 `<img>` 태그에 바인딩하고 `onError` 예외 처리가 빠져있어 브라우저 엑박 아이콘 출력.
+* **해결 작업**:
+  - **DB 이미지 전수 조사 및 자동 복구 ([`generated_images`](file:///Users/a1234/Local%20Sites/creaibox/inspect.ts))**: 44개 공개 포스트 썸네일 전수 검사 실시, 손상된 2개 DB 레코드의 `image_url`을 고화질 대체 이미지로 즉시 갱신 복구.
+  - **중앙 이미지 프록시 유틸리티 신설 ([`src/utils/image-url.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/utils/image-url.ts))**: `formatImageUrl(url)` 함수를 생성하여 모든 구글 드라이브 URL을 크리에이박스 서버 프록시([`/api/free-assets/proxy`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/proxy/route.ts))로 자동 라우팅 (200 OK + CDN 캐싱 보장).
+  - **서버 프록시 안전성 강화 ([`proxy/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/proxy/route.ts))**: 구글 드라이브 API 호출 실패/404 시 500 에러 대신 고화질 기본 엠프티 이미지로 302 리다이렉트되어 브라우저 엑박이 발생하지 않도록 방어.
+  - **프론트엔드 예외 처리 탑재**: [`blog/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/page.tsx), [`blog/[slug]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/%5Bslug%5D/page.tsx), [`BlogClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/BlogClientWrapper.tsx), [`CategoryClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/CategoryClientWrapper.tsx), [`PostClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/PostClientWrapper.tsx) 내 모든 `<img>` 태그에 `formatImageUrl` 및 `onError={handleImageError}` 적용.
+
+### 🗓️ 2026-07-26 (일)
 
 #### 1. 에이전트 룰 신설: 가짜 데이터 전면 금지 및 부재 사유 명시 규칙 (`Strict Zero Fake Data Rule`)
 * **구현 요약**: 서비스 신뢰성과 데이터 정직성을 보장하기 위해, 시스템 구축 중 가짜(Mock/Dummy/Seed) 데이터를 합성/생성하여 노출하는 행위를 100% 금지하는 규칙을 Agent Rules 문서에 긴급 제정 및 적용했습니다.

@@ -16,3 +16,7 @@ When the user asks to record or manage future tasks (e.g., "앞으로 할 일에
 ### Project Manual Rule
 When creating how-to guides or operation manuals (e.g., "~ 하는 방법", "매뉴얼 작성"):
 - Store manual files in `@docs/project/manual/<manual-name>.md`.
+
+### Unauthenticated Access & Unified Login Prompt Rule (비로그인 자유 둘러보기 및 로그인 팝업 통일)
+- 모든 서비스/스튜디오 화면은 비로그인 상태에서도 UI/레이아웃/폼 텍스트를 자유롭게 구경할 수 있도록 100% 전면 노출한다. (전체 가림막 카드 금지, 폼은 빈값 + 예시 가이드 텍스트 제공)
+- DB 데이터 저장, AI 자동 제작, 원고 작성, 도메인 구매 등 로그인 세션이 필요한 액션 버튼을 클릭할 때는 구식 alert 대신 **"로그인이 필요한 서비스입니다" 전용 팝업 모달**을 띄우고 `[ 🔑 로그인 하러 가기 ]`로 연결한다.

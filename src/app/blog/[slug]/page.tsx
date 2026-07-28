@@ -9,6 +9,7 @@ import { createClient, createAdminClient } from "@/utils/supabase/server";
 
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { formatImageUrl, handleImageError } from "@/utils/image-url";
 import OGLinkCard from "@/components/common/OGLinkCard";
 
 interface BlogDetailPageProps {
@@ -220,7 +221,7 @@ async function fetchPublishedPost(slug: string) {
   }
 
   const primaryImg = (images || []).find((img) => img.is_primary) || (images || [])[0];
-  post.thumbnailUrl = primaryImg ? primaryImg.image_url : null;
+  post.thumbnailUrl = primaryImg ? formatImageUrl(primaryImg.image_url) : null;
 
   return post;
 }
@@ -271,7 +272,7 @@ async function fetchPublishedPostsList() {
     const primaryImg = postImages.find((img) => img.is_primary) || postImages[0];
     return {
       ...post,
-      thumbnailUrl: primaryImg ? primaryImg.url : null,
+      thumbnailUrl: primaryImg ? formatImageUrl(primaryImg.url) : null,
     };
   });
 }
@@ -692,6 +693,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                           <img
                             src={prevPost.thumbnailUrl}
                             alt={prevPost.title || "thumbnail"}
+                            onError={handleImageError}
                             className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                           />
                         ) : (
@@ -724,6 +726,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                           <img
                             src={nextPost.thumbnailUrl}
                             alt={nextPost.title || "thumbnail"}
+                            onError={handleImageError}
                             className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                           />
                         ) : (
@@ -777,6 +780,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                           <img
                             src={bestPost.thumbnailUrl}
                             alt={bestPost.title || "thumbnail"}
+                            onError={handleImageError}
                             className="h-full w-full object-cover"
                           />
                         ) : (

@@ -2,12 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Globe } from "lucide-react";
 
 export default function CreaiboxNewPostBridge() {
   const router = useRouter();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showLoginPrompt, setShowLoginPrompt] = useState<boolean>(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -21,8 +23,7 @@ export default function CreaiboxNewPostBridge() {
 
         if (!user) {
           if (active) {
-            window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.");
-            router.replace(`/login?redirect=${encodeURIComponent("/studio/writing/creaibox/new-post")}`);
+            setShowLoginPrompt(true);
           }
           return;
         }
@@ -48,10 +49,9 @@ export default function CreaiboxNewPostBridge() {
         let targetPost = blankPost;
 
         const searchParams = new URLSearchParams(window.location.search);
-        const targetDomain = searchParams.get("domain") || "";
-        const prompt = searchParams.get("prompt") || searchParams.get("keyword") || searchParams.get("q") || "";
-        const autoGenerate = searchParams.get("autoGenerate") || (prompt ? "true" : "false");
-        const initialCanonical = targetDomain ? `https://${targetDomain.toLowerCase()}.creaibox.com/blog` : null;
+        const prompt = searchParams.get("prompt");
+        const keyword = searchParams.get("keyword");
+        const domain = searchParams.get("domain");
 
         if (!targetPost) {
           const payload = {
@@ -61,18 +61,18 @@ export default function CreaiboxNewPostBridge() {
             content: "",
             status: "draft",
             post_type: "create",
-            target_keyword: prompt || "",
+            target_keyword: keyword || prompt || "",
             selected_tone: "전문적이고 통찰력 있는 분석",
             slug: null,
             meta_description: "",
-            focus_keyword: prompt || "",
-            canonical_url: initialCanonical,
+            focus_keyword: keyword || prompt || "",
+            canonical_url: domain ? `https://${domain}.creaibox.com` : null,
             seo_tags: [],
             word_count_goal: null,
             source_mode: "direct",
           };
 
-          const { data: insertedData, error: insertError } = await supabase
+          const { data: newDraft, error: insertError } = await supabase
             .from("writing_creaibox_posts")
             .insert([payload])
             .select("*")
@@ -81,46 +81,71 @@ export default function CreaiboxNewPostBridge() {
           if (insertError) {
             throw new Error(insertError.message);
           }
-          targetPost = insertedData;
+          targetPost = newDraft;
         }
 
-        if (!active || !targetPost) return;
+        if (active && targetPost) {
+          const params = new URLSearchParams();
+          params.set("newPost", "true");
+          if (prompt) params.set("prompt", prompt);
+          if (keyword) params.set("keyword", keyword);
+          if (domain) params.set("domain", domain);
 
-        // routeId 결정 (display_id가 있으면 우선 사용, 없으면 id 사용)
-        const rawDisplayId = targetPost.display_id ?? targetPost.displayId;
-        const routeId =
-          typeof rawDisplayId === "number" && Number.isFinite(rawDisplayId) && rawDisplayId > 0
-            ? String(rawDisplayId)
-            : String(targetPost.id);
-
-        const queryParams = new URLSearchParams();
-        queryParams.set("newPost", "true");
-        if (prompt) {
-          queryParams.set("prompt", prompt);
-          queryParams.set("keyword", prompt);
+          const searchStr = params.toString() ? `?${params.toString()}` : "";
+          router.replace(`/studio/writing/creaibox/list/${targetPost.id}${searchStr}`);
         }
-        if (autoGenerate === "true") {
-          queryParams.set("autoGenerate", "true");
-        }
-        if (targetDomain) {
-          queryParams.set("domain", targetDomain);
-        }
-
-        // 에디터 상세 페이지로 워프 리다이렉트
-        router.replace(`/studio/writing/creaibox/list/${routeId}?${queryParams.toString()}`);
       } catch (err: any) {
+        console.error("Bridge Error:", err);
         if (active) {
-          setErrorMsg(err.message || "새글 작성 도중 에러가 발생했습니다.");
+          setErrorMsg(err.message || "새글 작성 준비 중 오류가 발생했습니다.");
         }
       }
     }
 
-    createNewPostAndRedirect();
+    void createNewPostAndRedirect();
 
     return () => {
       active = false;
     };
   }, [router, supabase]);
+
+  if (showLoginPrompt) {
+    return (
+      <div className="min-h-screen bg-black text-slate-100 flex items-center justify-center p-6 animate-fade-in">
+        <div className="bg-[#0b0f19] border border-slate-800 rounded-3xl p-8 max-w-md w-full text-center space-y-6 shadow-2xl relative overflow-hidden animate-fade-in-up">
+          <div className="mx-auto w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400">
+            <Globe size={28} />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-xl font-extrabold text-white">
+              로그인이 필요한 서비스입니다
+            </h2>
+            <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+              블로그 새글 작성 서비스를 이용하기 위해 로그인이 필요합니다. <br />
+              로그인 후 AI 원고 자동 작성 및 에디터를 활용해 보세요!
+            </p>
+          </div>
+
+          <div className="pt-2 flex flex-col gap-2.5">
+            <Link
+              href="/login?redirect=/studio/writing/creaibox/new-post"
+              className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-extrabold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-lg shadow-blue-500/25 transition-all active:scale-95 cursor-pointer"
+            >
+              <span>🔑 로그인 하러 가기</span>
+            </Link>
+
+            <button
+              onClick={() => router.replace("/studio")}
+              className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold text-slate-400 bg-slate-800/80 hover:bg-slate-700 rounded-xl transition-all cursor-pointer"
+            >
+              <span>스튜디오 홈으로 이동</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-slate-100 flex flex-col items-center justify-center p-6 text-center">

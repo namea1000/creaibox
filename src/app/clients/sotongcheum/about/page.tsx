@@ -113,29 +113,53 @@ export default function AboutPage() {
       <section className="py-20">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* CEO Profile Image / Visual */}
+            {/* Corporate Brand Emblem Visual (Left) */}
             <div className="lg:col-span-5 relative">
-              <div className="aspect-[4/5] overflow-hidden rounded-3xl bg-slate-100 border border-slate-200 shadow-xl relative group">
-                <img
-                  src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=1000&q=80"
-                  alt="김정화 대표"
-                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-80" />
-                <div className="absolute bottom-6 left-6 right-6 text-white">
-                  <p className="text-[11px] font-black text-blue-300 uppercase tracking-widest">SOTONG & CHEUM CEO</p>
-                  <p className="text-xl font-extrabold mt-1">대표이사 {COMPANY_INFO.ceo}</p>
-                  <p className="text-xs text-slate-200 mt-1 font-semibold">화성특례시 기반 지역 공동체 행사 전문기업</p>
+              <div className="aspect-[4/5] rounded-3xl bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 border border-slate-800 shadow-2xl p-8 sm:p-10 flex flex-col justify-between items-center text-center relative overflow-hidden select-none">
+                {/* Background Glow & Pattern */}
+                <div className="absolute -top-20 -right-20 w-56 h-56 bg-blue-600/20 rounded-full blur-3xl" />
+                <div className="absolute -bottom-20 -left-20 w-56 h-56 bg-cyan-600/20 rounded-full blur-3xl" />
+                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:16px_16px]" />
+
+                {/* Top Badge */}
+                <div className="relative z-10 w-full flex items-center justify-between border-b border-white/10 pb-4">
+                  <span className="text-[10px] font-black tracking-widest text-blue-400 uppercase">OFFICIAL BRAND EMBLEM</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 </div>
-              </div>
-              {/* Badge */}
-              <div className="absolute -bottom-5 -right-3 bg-white border border-slate-100 p-5 rounded-2xl shadow-2xl flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/30">
-                  <Heart className="h-5 w-5 fill-current" />
+
+                {/* Center Brand Emblem & Logo */}
+                <div className="relative z-10 my-auto flex flex-col items-center space-y-4">
+                  {/* Official Speech-Bubble Heart Logo Icon Badge */}
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr from-blue-600 to-cyan-500 p-0.5 shadow-2xl shadow-blue-500/30">
+                    <div className="w-full h-full bg-slate-950 rounded-[22px] flex items-center justify-center relative overflow-hidden">
+                      <div className="absolute inset-0 bg-blue-600/20 blur-md" />
+                      <div className="relative flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-2xl bg-blue-600/90 text-white flex items-center justify-center shadow-lg">
+                          <Heart className="w-7 h-7 fill-white text-white" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                      소통과 채움
+                    </h3>
+                    <p className="text-xs font-black tracking-widest text-cyan-400 uppercase mt-1">
+                      SOTONG & CHEUM
+                    </p>
+                  </div>
+
+                  <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md text-slate-200 text-xs font-bold border border-white/15 shadow-inner">
+                    <Sparkles size={12} className="text-cyan-400" />
+                    사람과 지역을 잇는 공동체 문화 플랫폼
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">COMPANY SLOGAN</p>
-                  <p className="text-xs font-black text-slate-900 mt-1 leading-tight">사람과 지역을 잇는 소통과채움</p>
+
+                {/* Bottom Enterprise Info */}
+                <div className="relative z-10 w-full pt-4 border-t border-white/10 text-center">
+                  <p className="text-[11px] font-bold text-slate-300">화성특례시 사회적경제 기업 &middot; 협동조합</p>
+                  <p className="text-[10px] font-semibold text-slate-400 mt-0.5">지역사회와 함께 성장하는 행사 전문기업</p>
                 </div>
               </div>
             </div>
@@ -159,33 +183,56 @@ export default function AboutPage() {
               <div className="text-sm font-medium leading-relaxed text-slate-600 space-y-4 whitespace-pre-line border-t border-slate-100 pt-6">
                 {COMPANY_INFO.greetings}
               </div>
+
+              {/* CEO Info at the Very Bottom of Greetings Area */}
+              <div className="pt-6 border-t border-slate-200 flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <p className="text-[11px] font-black text-blue-600 uppercase tracking-widest">SOTONG & CHEUM CEO</p>
+                  <p className="text-lg font-extrabold text-slate-900 mt-0.5">대표이사 {COMPANY_INFO.ceo}</p>
+                  <p className="text-xs text-slate-500 font-bold mt-0.5">화성특례시 기반 지역 공동체 행사 전문기업</p>
+                </div>
+                <div className="px-4 py-2 bg-slate-50 rounded-xl border border-slate-200/80 text-xs font-black text-slate-700">
+                  소통과채움 협동조합
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Vision & Mission Section */}
-      <section className="py-20 bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 text-white relative overflow-hidden">
+      <section className="py-20 bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 text-white relative overflow-hidden select-none">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:20px_20px]" />
         
         <div className="mx-auto max-w-7xl px-6 lg:px-8 relative z-10 space-y-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-            {/* Vision Card */}
-            <div className="lg:col-span-5 bg-white/10 backdrop-blur-md rounded-3xl border border-white/15 p-8 sm:p-10 flex flex-col justify-between space-y-6 shadow-2xl relative overflow-hidden group">
-              <div className="absolute -top-12 -right-12 w-40 h-40 bg-blue-500/20 rounded-full blur-3xl group-hover:bg-blue-500/30 transition-all duration-500" />
-              <div>
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 text-blue-300 text-xs font-black uppercase tracking-widest border border-blue-400/30 mb-5">
+            {/* Vision Card (With Custom AI Night Festival Background Image Inside Box - Center Aligned) */}
+            <div className="lg:col-span-5 rounded-3xl border border-white/20 p-8 sm:p-10 flex flex-col items-center justify-center text-center space-y-5 shadow-2xl relative overflow-hidden min-h-[380px]">
+              {/* Background Photo Inside Vision Card */}
+              <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
+                <img
+                  src="/images/clients/sotongcheum/sotongcheum_vision_bg.png"
+                  alt="소통과채움 비전 배경"
+                  className="w-full h-full object-cover object-center"
+                />
+                {/* Balanced Translucent Overlay for Full Image Visibility */}
+                <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[0.5px]" />
+              </div>
+
+              {/* Card Content (Relative Z-10, Center Aligned Horizontally & Vertically) */}
+              <div className="relative z-10 flex flex-col items-center justify-center text-center space-y-4">
+                <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/25 text-blue-300 text-xs font-black uppercase tracking-widest border border-blue-400/40 backdrop-blur-md">
                   <Sparkles className="w-4 h-4 text-blue-400" />
                   비전 (VISION)
                 </div>
-                <h3 className="text-2xl font-black text-white sm:text-3xl leading-snug">
+                <h3 className="text-2xl font-black text-white sm:text-3xl leading-snug drop-shadow-md">
                   지역과 사람을 연결하는 <br />
-                  <span className="text-blue-400 bg-gradient-to-r from-blue-400 to-emerald-300 bg-clip-text text-transparent">
+                  <span className="text-blue-400 bg-gradient-to-r from-blue-300 to-emerald-300 bg-clip-text text-transparent">
                     공동체 문화 플랫폼
                   </span>
                 </h3>
               </div>
-              <p className="text-xs font-medium text-slate-300 leading-relaxed border-t border-white/10 pt-5">
+              <p className="relative z-10 text-xs font-medium text-slate-200 leading-relaxed border-t border-white/15 pt-4 text-center max-w-sm mx-auto drop-shadow-sm">
                 소통과채움은 단순한 행사 진행을 넘어, 주민과 지역사회가 참여와 공감을 통해 함께 성장하는 지속가능한 공동체 문화 생태계를 구축합니다.
               </p>
             </div>
@@ -203,35 +250,46 @@ export default function AboutPage() {
                 </h3>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-white/10 pt-6">
-                <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 space-y-2.5 hover:bg-white/10 transition-colors">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/20 text-blue-300 text-xs font-black border border-blue-400/30">01</div>
-                  <p className="text-xs font-black text-white leading-snug">주민이 참여하는 행사 문화 조성</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-white/10 pt-6">
+                <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-4.5 sm:p-4 lg:p-5 border border-white/10 space-y-2.5 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500/20 text-blue-300 text-xs font-black border border-blue-400/30">01</div>
+                    <span className="text-[10px] font-bold text-blue-300/70 uppercase tracking-wider">MISSION 01</span>
+                  </div>
+                  <p className="text-xs sm:text-[11px] md:text-xs font-black text-white leading-snug whitespace-nowrap">주민이 참여하는 행사 문화 조성</p>
                   <p className="text-[11px] text-slate-300 leading-normal">주민이 스스로 주인이 되어 함께 즐기는 행사 기획</p>
                 </div>
-                <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 space-y-2.5 hover:bg-white/10 transition-colors">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-black border border-emerald-400/30">02</div>
-                  <p className="text-xs font-black text-white leading-snug">지역의 가치를 발견하고 확산</p>
-                  <p className="text-[11px] text-slate-300 leading-normal">지역 고유의 고유 문화 자원과 스토리를 발굴</p>
+
+                <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-4.5 sm:p-4 lg:p-5 border border-white/10 space-y-2.5 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-black border border-emerald-400/30">02</div>
+                    <span className="text-[10px] font-bold text-emerald-300/70 uppercase tracking-wider">MISSION 02</span>
+                  </div>
+                  <p className="text-xs sm:text-[11px] md:text-xs font-black text-white leading-snug whitespace-nowrap">지역의 가치를 발견하고 확산</p>
+                  <p className="text-[11px] text-slate-300 leading-normal">지역 고유의 문화 자원과 스토리를 발굴</p>
                 </div>
-                <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 space-y-2.5 hover:bg-white/10 transition-colors">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-300 text-xs font-black border border-indigo-400/30">03</div>
-                  <p className="text-xs font-black text-white leading-snug">지속가능한 공동체 문화 형성</p>
+
+                <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-4.5 sm:p-4 lg:p-5 border border-white/10 space-y-2.5 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-300 text-xs font-black border border-indigo-400/30">03</div>
+                    <span className="text-[10px] font-bold text-indigo-300/70 uppercase tracking-wider">MISSION 03</span>
+                  </div>
+                  <p className="text-xs sm:text-[11px] md:text-xs font-black text-white leading-snug whitespace-nowrap">지속가능한 공동체 문화 형성</p>
                   <p className="text-[11px] text-slate-300 leading-normal">세대 간 갈등을 넘어 지속가능한 연대 형성</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Visual Showcase Strip */}
+          {/* Visual Showcase Strip (Custom AI Real Images) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
             <div className="group relative aspect-[16/9] overflow-hidden rounded-2xl border border-white/15 shadow-lg">
               <img
-                src="https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80"
-                alt="공공행사 및 마을 축제 현장"
+                src="/images/clients/sotongcheum/biz_cultural_event.png"
+                alt="공공행사 및 마을 축제 기획/운영"
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent" />
               <div className="absolute bottom-4 left-4 right-4">
                 <span className="text-[10px] font-extrabold text-blue-300 uppercase tracking-widest">FESTIVAL & EVENT</span>
                 <p className="text-xs font-black text-white mt-0.5">공공행사 & 마을 축제 기획/운영</p>
@@ -240,11 +298,11 @@ export default function AboutPage() {
 
             <div className="group relative aspect-[16/9] overflow-hidden rounded-2xl border border-white/15 shadow-lg">
               <img
-                src="https://images.unsplash.com/photo-1469371670807-013ccf25f16a?auto=format&fit=crop&w=800&q=80"
-                alt="주민 화합 공동체 행사"
+                src="/images/clients/sotongcheum/biz_local_autonomy.png"
+                alt="주민 참여형 소통 축제 현장"
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent" />
               <div className="absolute bottom-4 left-4 right-4">
                 <span className="text-[10px] font-extrabold text-emerald-300 uppercase tracking-widest">COMMUNITY CULTURE</span>
                 <p className="text-xs font-black text-white mt-0.5">주민 참여형 소통 축제 현장</p>
@@ -253,11 +311,11 @@ export default function AboutPage() {
 
             <div className="group relative aspect-[16/9] overflow-hidden rounded-2xl border border-white/15 shadow-lg">
               <img
-                src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80"
-                alt="임직원 및 조직 힐링 교육 프로그램"
+                src="/images/clients/sotongcheum/biz_workshop.png"
+                alt="감성 힐링 & 체험 교육 워크숍"
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent" />
               <div className="absolute bottom-4 left-4 right-4">
                 <span className="text-[10px] font-extrabold text-indigo-300 uppercase tracking-widest">HEALING EDUCATION</span>
                 <p className="text-xs font-black text-white mt-0.5">감성 힐링 & 체험 교육 워크숍</p>

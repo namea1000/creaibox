@@ -1,6 +1,6 @@
 import React from "react";
 import { Metadata } from "next";
-import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/server";
 import { TEMPLATE_REGISTRY } from "@/lib/templates/registry";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
@@ -12,7 +12,7 @@ interface LayoutProps {
 
 export async function generateMetadata({ params }: { params: Promise<{ brand_id: string }> }): Promise<Metadata> {
   const { brand_id } = await params;
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { data: site } = await supabase
     .from("client_sites")
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ brand_id:
 
 export default async function DynamicRendererLayout({ children, params }: LayoutProps) {
   const { brand_id } = await params;
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   // 1. Fetch site settings
   const { data: site } = await supabase

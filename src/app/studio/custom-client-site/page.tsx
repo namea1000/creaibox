@@ -83,13 +83,13 @@ export interface AdminRequestItem {
 const INITIAL_ADMIN_REQUESTS: AdminRequestItem[] = [
   {
     id: "req-101",
-    userId: "usr_sotong",
-    userNickname: "소통과채움 협동조합",
-    companyName: "소통과 채움",
+    userId: "usr_bizhub",
+    userNickname: "스마트 비즈니스 코리아",
+    companyName: "스마트 비즈니스 허브",
     category: "Business (행사/기획/렌탈)",
     themeColor: "딥 블루 다크 톤",
     features: ["실적/포트폴리오 갤러리 탭", "실시간 온라인 견적신청 폼", "전용 블로그 카운터", "DoFollow SEO 가산점 Engine"],
-    refUrl: "https://sotongcheum.creaibox.com",
+    refUrl: "https://bizhub.creaibox.com",
     detail: "공공행사 및 지역 축제 기획·렌탈 전문 브랜드사이트입니다. 견적 신청 폼과 갤러리가 강조된 딥 블루 다크 모드로 1:1 풀코드 생성을 요청합니다.",
     status: "completed",
     createdAt: "2026-07-25 21:30",
@@ -335,7 +335,7 @@ interface CustomTemplate {
 const CUSTOM_TEMPLATES: CustomTemplate[] = [
   {
     id: "sotongcheum",
-    name: "소통과 채움 (Sotongcheum) V1",
+    name: "스마트 비즈니스 (Smart Business Hub) V1",
     category: "Business",
     description: "공공기관 및 기업 행사 대행, 조직 교육, 소통/힐링 프로그램 및 렌탈 운영 전문 프리미엄 커스텀 홈페이지",
     features: ["실적 갤러리 탭", "온라인 견적신청 폼", "전용 블로그 엔진", "DoFollow SEO 백링크", "3종 디바이스 뷰포트", "1초 자동 구축 지원"],
@@ -540,6 +540,7 @@ export default function CustomClientSiteStudioPage() {
 
   const handleSiteMigration = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!requireAuth()) return;
     if (!migrationUrl.trim()) return;
 
     setIsMigrating(true);
@@ -579,44 +580,56 @@ export default function CustomClientSiteStudioPage() {
   const [deploySubdomain, setDeploySubdomain] = useState<string>("");
   const [isDeploying, setIsDeploying] = useState<boolean>(false);
   const [deploySuccess, setDeploySuccess] = useState<boolean>(false);
+  // Auth & Modal State
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
 
-  // Management State
-  const [companyName, setCompanyName] = useState<string>("소통과 채움");
-  const [phone, setPhone] = useState<string>("031-292-3806");
-  const [address, setAddress] = useState<string>("경기도 화성시 봉담읍 삼천병마로 1234");
-  const [email, setEmail] = useState<string>("jenam7720@gmail.com");
-  const [bizNumber, setBizNumber] = useState<string>("123-45-67890");
-  const [description, setDescription] = useState<string>("공공행사부터 마을축제까지, 처음부터 끝까지 깔끔하게! 소통과 채움 협동조합입니다.");
-  const [kakaoLink, setKakaoLink] = useState<string>("https://pf.kakao.com/_example");
+  const requireAuth = (action?: () => void): boolean => {
+    if (!currentUser) {
+      setShowLoginModal(true);
+      return false;
+    }
+    if (action) action();
+    return true;
+  };
+
+  // Management State (Cleared for unauthenticated or fresh users)
+  const [companyName, setCompanyName] = useState<string>("");
+  const [phone, setPhone] = useState<string>("");
+  const [address, setAddress] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [bizNumber, setBizNumber] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+  const [kakaoLink, setKakaoLink] = useState<string>("");
   const [themeColor, setThemeColor] = useState<string>("cyan");
-  const [headerBlogTitle, setHeaderBlogTitle] = useState<string>("Blog (블로그)");
-  const [headerContactTitle, setHeaderContactTitle] = useState<string>("Contact & 구독하기");
-  const [heroSlogan, setHeroSlogan] = useState<string>("2026년 자율 AI 에이전트와 웹 서비스의 대격변");
+  const [headerBlogTitle, setHeaderBlogTitle] = useState<string>("");
+  const [headerContactTitle, setHeaderContactTitle] = useState<string>("");
+  const [heroSlogan, setHeroSlogan] = useState<string>("");
   const [logoUrl, setLogoUrl] = useState<string>("");
 
-  // Dynamic Custom GNB Menus State (Default matches 소통과 채움 GNB)
+  // Dynamic Custom GNB Menus State (Sample structure for visual preview)
   const [customMenus, setCustomMenus] = useState<CustomMenuItem[]>([
-    { id: "1", label: "홈", url: "/" },
+    { id: "1", label: "홈 (Home)", url: "/" },
     { id: "2", label: "회사소개", url: "/about" },
-    { id: "3", label: "사업영역", url: "/#business" },
-    { id: "4", label: "행사렌탈", url: "/#rental" },
-    { id: "5", label: "실적갤러리", url: "/#portfolio" },
-    { id: "6", label: "블로그", url: "/blog" },
-    { id: "7", label: "견적문의", url: "/contact", isRightAligned: true },
+    { id: "3", label: "주요 서비스", url: "/#services" },
+    { id: "4", label: "실적/포트폴리오", url: "/#portfolio" },
+    { id: "5", label: "공지/블로그", url: "/blog" },
+    { id: "6", label: "온라인 견적 신청", url: "/contact", isRightAligned: true },
   ]);
 
   // PG Payment Gateway State
   const [pgProvider, setPgProvider] = useState<string>("portone");
-  const [pgMid, setPgMid] = useState<string>("imp_884920412491");
-  const [pgApiKey, setPgApiKey] = useState<string>("pk_live_creaibox_payment_key_sample");
+  const [pgMid, setPgMid] = useState<string>("");
+  const [pgApiKey, setPgApiKey] = useState<string>("");
   const [enableBankTransfer, setEnableBankTransfer] = useState<boolean>(true);
-  const [bankAccountInfo, setBankAccountInfo] = useState<string>("기업은행 123-456-7890 (예금주: 소통과채움)");
+  const [bankAccountInfo, setBankAccountInfo] = useState<string>("");
   const [enableInquiryPayment, setEnableInquiryPayment] = useState<boolean>(true);
 
   const [isSavingConfig, setIsSavingConfig] = useState<boolean>(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string>("");
 
   const handleAddMenu = () => {
+    if (!requireAuth()) return;
     const newId = String(Date.now());
     setCustomMenus((prev) => [
       ...prev,
@@ -625,6 +638,7 @@ export default function CustomClientSiteStudioPage() {
   };
 
   const handleUpdateMenu = (index: number, key: keyof CustomMenuItem, value: any) => {
+    if (!requireAuth()) return;
     setCustomMenus((prev) => {
       const next = [...prev];
       next[index] = { ...next[index], [key]: value };
@@ -633,6 +647,7 @@ export default function CustomClientSiteStudioPage() {
   };
 
   const handleDeleteMenu = (index: number) => {
+    if (!requireAuth()) return;
     setCustomMenus((prev) => prev.filter((_, idx) => idx !== index));
   };
 
@@ -647,6 +662,7 @@ export default function CustomClientSiteStudioPage() {
   const [newBlogCategory, setNewBlogCategory] = useState<string>("");
 
   const handleAddBlogCategory = () => {
+    if (!requireAuth()) return;
     if (!newBlogCategory.trim()) return;
     if (blogCategories.includes(newBlogCategory.trim())) {
       alert("이미 존재하는 카테고리입니다.");
@@ -657,6 +673,7 @@ export default function CustomClientSiteStudioPage() {
   };
 
   const handleDeleteBlogCategory = (catToDelete: string) => {
+    if (!requireAuth()) return;
     if (catToDelete === "전체") {
       alert("'전체' 카테고리는 기본 선택값이므로 삭제할 수 없습니다.");
       return;
@@ -753,6 +770,7 @@ export default function CustomClientSiteStudioPage() {
   useEffect(() => {
     async function loadConfig() {
       const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
       if (!user) return;
 
       const { data: profile } = await supabase
@@ -873,6 +891,7 @@ export default function CustomClientSiteStudioPage() {
   // Handle Request Submit
   const handleSendRequest = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!requireAuth()) return;
     setIsSubmittingReq(true);
 
     setTimeout(() => {
@@ -1124,12 +1143,14 @@ export default function CustomClientSiteStudioPage() {
 
                         <button
                           onClick={() => {
-                            setDeployModalTemplate(tpl);
-                            setDeploySiteName(`${tpl.name.split(" ")[0]} 내 브랜드`);
-                            setDeploySubdomain(`${tpl.id}-mybrand`);
-                            setDeploySuccess(false);
+                            requireAuth(() => {
+                              setDeployModalTemplate(tpl);
+                              setDeploySiteName(`${tpl.name.split(" ")[0]} 내 브랜드`);
+                              setDeploySubdomain(`${tpl.id}-mybrand`);
+                              setDeploySuccess(false);
+                            });
                           }}
-                          className={`w-full flex items-center justify-center gap-1 rounded-xl bg-gradient-to-r ${tpl.accentColor} py-1.5 text-[10px] sm:text-[11px] font-black text-white hover:brightness-110 transition-all shadow-md`}
+                          className={`w-full flex items-center justify-center gap-1 rounded-xl bg-gradient-to-r ${tpl.accentColor} py-1.5 text-[10px] sm:text-[11px] font-black text-white hover:brightness-110 transition-all shadow-md cursor-pointer`}
                         >
                           <Zap size={11} /> 1초 구축하기
                         </button>
@@ -1532,7 +1553,7 @@ export default function CustomClientSiteStudioPage() {
 
       {/* --- TAB 3: 내 커스텀 사이트 관리 (Active Custom Site Manager) --- */}
       {activeTab === "manage" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
           {/* Left Column: Active Site Status & Quick Action */}
           <div className="space-y-6">
             <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 space-y-6">
@@ -1542,16 +1563,16 @@ export default function CustomClientSiteStudioPage() {
                 </div>
                 <div>
                   <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-400">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" /> 100% 정상 작동 중
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" /> {currentUser ? "100% 정상 작동 중" : "CMS 스튜디오 실시간 편집기"}
                   </span>
-                  <h3 className="text-lg font-black text-white">{companyName} 공식 홈페이지</h3>
+                  <h3 className="text-lg font-black text-white">{companyName ? `${companyName} 공식 홈페이지` : "내 커스텀 홈페이지"}</h3>
                 </div>
               </div>
 
               <div className="space-y-3 pt-4 border-t border-slate-800/80 text-xs font-semibold text-slate-300">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">브랜드 ID</span>
-                  <span className="font-mono text-cyan-300 font-bold">sotongcheum</span>
+                  <span className="font-mono text-cyan-300 font-bold">{companyName ? "sotongcheum" : "mybrand"}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">연결 서브도메인</span>
@@ -1561,7 +1582,7 @@ export default function CustomClientSiteStudioPage() {
                     rel="noopener noreferrer"
                     className="font-mono text-blue-400 hover:underline flex items-center gap-1"
                   >
-                    sotongcheum.localhost:3000 <ExternalLink size={11} />
+                    {companyName ? "sotongcheum.creaibox.com" : "mybrand.creaibox.com"} <ExternalLink size={11} />
                   </a>
                 </div>
                 <div className="flex items-center justify-between">
@@ -1692,7 +1713,7 @@ export default function CustomClientSiteStudioPage() {
                       type="text"
                       value={bankAccountInfo}
                       onChange={(e) => setBankAccountInfo(e.target.value)}
-                      placeholder="예: 기업은행 123-456-7890 (예금주: 소통과채움)"
+                      placeholder="예: 국민은행 123456-04-123456 (예금주: 홍길동)"
                       className="w-full rounded-xl bg-slate-900 border border-slate-800 px-3 py-2 text-xs font-bold text-amber-300 focus:border-emerald-500 focus:outline-none"
                     />
                   )}
@@ -1809,6 +1830,7 @@ export default function CustomClientSiteStudioPage() {
                     type="text"
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="예: (주)크리에이박스 또는 내 상호명"
                     className="w-full rounded-2xl bg-slate-950 border border-slate-800 px-4 py-3 text-xs font-bold text-white focus:border-cyan-500 focus:outline-none"
                     required
                   />
@@ -1822,6 +1844,7 @@ export default function CustomClientSiteStudioPage() {
                     type="text"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
+                    placeholder="예: 02-1234-5678"
                     className="w-full rounded-2xl bg-slate-950 border border-slate-800 px-4 py-3 text-xs font-bold text-white focus:border-cyan-500 focus:outline-none"
                     required
                   />
@@ -1835,6 +1858,7 @@ export default function CustomClientSiteStudioPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    placeholder="예: contact@domain.com"
                     className="w-full rounded-2xl bg-slate-950 border border-slate-800 px-4 py-3 text-xs font-bold text-white focus:border-cyan-500 focus:outline-none"
                     required
                   />
@@ -1848,6 +1872,7 @@ export default function CustomClientSiteStudioPage() {
                     type="text"
                     value={bizNumber}
                     onChange={(e) => setBizNumber(e.target.value)}
+                    placeholder="예: 123-45-67890"
                     className="w-full rounded-2xl bg-slate-950 border border-slate-800 px-4 py-3 text-xs font-bold text-white focus:border-cyan-500 focus:outline-none"
                   />
                 </div>
@@ -1861,6 +1886,7 @@ export default function CustomClientSiteStudioPage() {
                   type="text"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
+                  placeholder="예: 서울특별시 강남구 테헤란로 123"
                   className="w-full rounded-2xl bg-slate-950 border border-slate-800 px-4 py-3 text-xs font-bold text-white focus:border-cyan-500 focus:outline-none"
                   required
                 />
@@ -1874,6 +1900,7 @@ export default function CustomClientSiteStudioPage() {
                   rows={2}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  placeholder="예: 고객 만족을 최우선으로 선도하는 비즈니스 공식 브랜드 웹사이트입니다."
                   className="w-full rounded-2xl bg-slate-950 border border-slate-800 p-4 text-xs font-bold text-white focus:border-cyan-500 focus:outline-none leading-relaxed"
                 />
               </div>
@@ -2823,10 +2850,12 @@ export default function CustomClientSiteStudioPage() {
                   <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-3">
                     <button
                       onClick={() => {
-                        setAdminRequests((prev) =>
-                          prev.map((item) => (item.id === req.id ? { ...item, status: "completed" } : item))
-                        );
-                        setSelectedPromptModal(req);
+                        requireAuth(() => {
+                          setAdminRequests((prev) =>
+                            prev.map((item) => (item.id === req.id ? { ...item, status: "completed" } : item))
+                          );
+                          setSelectedPromptModal(req);
+                        });
                       }}
                       className={`flex-1 flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-xs font-black transition-all cursor-pointer ${
                         req.status === "completed"
@@ -3426,18 +3455,63 @@ export default function CustomClientSiteStudioPage() {
 
                 <button
                   onClick={() => {
-                    const tpl = previewModalTemplate;
-                    setPreviewModalTemplate(null);
-                    setDeployModalTemplate(tpl);
-                    setDeploySiteName(`${tpl.name.split(" ")[0]} 내 브랜드`);
-                    setDeploySubdomain(`${tpl.id}-mybrand`);
-                    setDeploySuccess(false);
+                    requireAuth(() => {
+                      const tpl = previewModalTemplate;
+                      setPreviewModalTemplate(null);
+                      setDeployModalTemplate(tpl);
+                      setDeploySiteName(`${tpl.name.split(" ")[0]} 내 브랜드`);
+                      setDeploySubdomain(`${tpl.id}-mybrand`);
+                      setDeploySuccess(false);
+                    });
                   }}
-                  className={`flex items-center gap-2 rounded-2xl bg-gradient-to-r ${previewModalTemplate.accentColor} px-6 py-2.5 text-xs font-black text-white hover:brightness-110 transition-all shadow-lg`}
+                  className={`flex items-center gap-2 rounded-2xl bg-gradient-to-r ${previewModalTemplate.accentColor} px-6 py-2.5 text-xs font-black text-white hover:brightness-110 transition-all shadow-lg cursor-pointer`}
                 >
                   <Zap size={14} /> 템플릿 사용 (1초 구축)
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Login Prompt Modal Popup for unauthenticated users taking action */}
+      {showLoginModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-[#0b0f19] border border-slate-800 rounded-3xl p-8 max-w-md w-full text-center space-y-6 shadow-2xl relative overflow-hidden animate-fade-in-up">
+            <button
+              onClick={() => setShowLoginModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="mx-auto w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400">
+              <Globe size={28} />
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-xl font-extrabold text-white">
+                로그인이 필요한 서비스입니다
+              </h2>
+              <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+                1초 원클릭 커스텀 웹사이트 구축 및 AI 에이전트 제작 신청을 위해 로그인이 필요합니다. <br />
+                로그인 후 1초 만에 나만의 맞춤형 커스텀 홈페이지를 만들어 보세요!
+              </p>
+            </div>
+
+            <div className="pt-2 flex flex-col gap-2.5">
+              <Link
+                href="/login?redirect=/studio/custom-client-site"
+                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-extrabold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-lg shadow-blue-500/25 transition-all active:scale-95 cursor-pointer"
+              >
+                <span>🔑 로그인 하러 가기</span>
+              </Link>
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold text-slate-400 bg-slate-800/80 hover:bg-slate-700 rounded-xl transition-all cursor-pointer"
+              >
+                <span>둘러보기 계속하기</span>
+              </button>
             </div>
           </div>
         </div>

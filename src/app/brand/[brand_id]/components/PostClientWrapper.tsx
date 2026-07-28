@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { formatImageUrl, handleImageError } from "@/utils/image-url";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ArrowLeft, CalendarDays, Sparkles, Tag, Sun, Moon, Star } from "lucide-react";
@@ -576,8 +577,9 @@ export default function PostClientWrapper({
                       <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-lg bg-zinc-950">
                         {prevPost.thumbnailUrl ? (
                           <img
-                            src={prevPost.thumbnailUrl}
+                            src={formatImageUrl(prevPost.thumbnailUrl)}
                             alt={prevPost.title || "thumbnail"}
+                            onError={handleImageError}
                             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         ) : (
@@ -609,8 +611,9 @@ export default function PostClientWrapper({
                       <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-lg bg-zinc-950">
                         {nextPost.thumbnailUrl ? (
                           <img
-                            src={nextPost.thumbnailUrl}
+                            src={formatImageUrl(nextPost.thumbnailUrl)}
                             alt={nextPost.title || "thumbnail"}
+                            onError={handleImageError}
                             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         ) : (
@@ -665,8 +668,9 @@ export default function PostClientWrapper({
                     <div className="relative w-24 sm:w-28 aspect-[16/9] shrink-0 overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
                       {bestPost.thumbnailUrl ? (
                         <img
-                          src={bestPost.thumbnailUrl}
+                          src={formatImageUrl(bestPost.thumbnailUrl)}
                           alt={bestPost.title || "thumbnail"}
+                          onError={handleImageError}
                           className="h-full w-full object-cover"
                         />
                       ) : (

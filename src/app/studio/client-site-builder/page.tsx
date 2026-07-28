@@ -10,7 +10,7 @@ import Link from "next/link";
 
 export default function ClientSiteBuilderHomePage() {
   const router = useRouter();
-  const { sites, selectedSite, loading } = useSiteBuilder();
+  const { sites, selectedSite, loading, requireAuth } = useSiteBuilder();
   const supabase = createClient();
 
   // Dashboard Stats States
@@ -62,10 +62,10 @@ export default function ClientSiteBuilderHomePage() {
     loadDashboardStats();
   }, [selectedSite]);
 
-  // Case A: User has NO sites created yet (Onboarding UI)
+  // Case A: User has NO sites created yet or is not logged in (Onboarding UI)
   if (sites.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto py-12 px-4 text-center space-y-8 animate-fade-in">
+      <div className="max-w-4xl mx-auto py-8 px-4 text-center space-y-8 animate-fade-in">
         <div className="bg-gradient-to-br from-emerald-500/10 to-blue-500/10 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-8 md:p-12 shadow-sm space-y-6">
           <div className="mx-auto w-16 h-16 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-500">
             <Wand2 size={32} />
@@ -80,13 +80,17 @@ export default function ClientSiteBuilderHomePage() {
           </div>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
-            <Link
-              href="/studio/client-site-builder/builder"
-              className="inline-flex items-center justify-center gap-2 px-6 py-4 text-base font-extrabold text-white bg-slate-950 hover:bg-slate-800 dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-slate-950 rounded-2xl shadow-lg transition-all active:scale-95"
+            <button
+              onClick={() => {
+                requireAuth(() => {
+                  router.push("/studio/client-site-builder/builder");
+                });
+              }}
+              className="inline-flex items-center justify-center gap-2 px-6 py-4 text-base font-extrabold text-white bg-slate-950 hover:bg-slate-800 dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-slate-950 rounded-2xl shadow-lg transition-all active:scale-95 cursor-pointer"
             >
               <span>AI 홈페이지 빌더 시작하기</span>
               <ArrowRight size={18} />
-            </Link>
+            </button>
             <Link
               href="/studio/client-site-builder/themes"
               className="inline-flex items-center justify-center gap-2 px-6 py-4 text-base font-extrabold text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 rounded-2xl transition-all"

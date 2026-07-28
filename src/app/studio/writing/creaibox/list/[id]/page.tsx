@@ -822,7 +822,6 @@ function CreaiboxManuscriptDetailContent() {
       if (!session?.user) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.");
           router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
         }
       }
@@ -1035,7 +1034,6 @@ function CreaiboxManuscriptDetailContent() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         if (!isAutoSave) {
-          window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.");
           router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
         }
         return false;
@@ -1903,7 +1901,7 @@ function CreaiboxManuscriptDetailContent() {
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        window.alert("로그인을 하셔야 이용하실 수 있습니다.");
+        router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
         return;
       }
 

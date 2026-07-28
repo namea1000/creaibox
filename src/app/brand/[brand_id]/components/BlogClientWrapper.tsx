@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { formatImageUrl, handleImageError } from "@/utils/image-url";
 import { 
   CalendarDays, Sparkles, ArrowRight, Rss, ArrowLeft, Tag,
   Sun, Moon, Search, X 
@@ -376,8 +377,9 @@ export default function BlogClientWrapper({
                       <div className="relative aspect-[16/10] md:w-[260px] shrink-0 overflow-hidden rounded-[6px] bg-zinc-950">
                         {post.thumbnailUrl ? (
                           <img
-                            src={post.thumbnailUrl}
+                            src={formatImageUrl(post.thumbnailUrl)}
                             alt={post.title || "thumbnail"}
+                            onError={handleImageError}
                             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         ) : (
@@ -424,8 +426,9 @@ export default function BlogClientWrapper({
                       <div className="relative aspect-[16/10] overflow-hidden bg-zinc-950">
                         {post.thumbnailUrl ? (
                           <img
-                            src={post.thumbnailUrl}
+                            src={formatImageUrl(post.thumbnailUrl)}
                             alt={post.title || "thumbnail"}
+                            onError={handleImageError}
                             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         ) : (

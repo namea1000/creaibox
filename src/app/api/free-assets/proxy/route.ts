@@ -142,6 +142,10 @@ export async function GET(req: NextRequest) {
     }
   } catch (error: any) {
     console.error("Google Drive proxy error:", error);
-    return new Response(`Proxy error: ${error.message}`, { status: 500 });
+    // Redirect to high-quality fallback image so <img> tags in browser never break with 500
+    return Response.redirect(
+      "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
+      302
+    );
   }
 }

@@ -6,6 +6,22 @@
 
 ## 1. 2026년 7월 개발 작업 내역
 
+### 1-0. 비로그인 자유 둘러보기 & 로그인 필수 서비스 팝업 통일 개편
+
+크리에이박스(CreAibox) 플랫폼 내 모든 스튜디오 및 서비스 화면에 대하여 비로그인 사용자도 UI/레이아웃/템플릿/관리자 폼을 자유롭게 탐색할 수 있도록 100% 전면 노출하고, DB/AI 연동 버튼 클릭 시 구식 alert 대신 프리미엄 **"로그인이 필요한 서비스입니다" 팝업 모달**로 연결되도록 통합 개편하였습니다.
+
+* **[MODIFY] [custom-client-site/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/custom-client-site/page.tsx)**:
+  * `[내 커스텀 사이트 관리]` 탭의 차단 가림막을 제거하여 기본 정보, PG 결제 설정, GNB 메뉴 구성기, 블로그 카테고리 관리자를 전면 공개.
+  * 기존 하드코딩 예시 텍스트("소통과채움", "031-292-3806", "봉담읍")를 모두 비우고 일반 가이드 플레이스홀더로 교체.
+  * 1초 AI 이관, 템플릿 구축, 제작 요청, 실시간 설정 저장, GNB 메뉴 추가/삭제/우측CTA 전환 등 모든 액션 버튼에 `requireAuth()` 및 `showLoginModal` 팝업 적용.
+* **[MODIFY] [domain-search/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/domain-search/page.tsx)**:
+  * 도메인 검색, 1초 구매, 타사 이관 버튼에 `requireAuth()` 및 `showLoginModal` 팝업 연결. 네트워크 에러 알림창 100% 제거.
+  * 추천 샘플 도메인 `sotongcheum.com`을 `mybrand.com`으로 교체.
+* **[MODIFY] [writing/creaibox/new-post/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/new-post/page.tsx), [creaibox/list/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/list/page.tsx), [naver/list/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/naver/list/page.tsx)**:
+  * 기존 `window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.")` 팝업창을 전면 제거하고 프리미엄 `LoginRequiredCard` 모달로 통일.
+* **[MODIFY] [ai-agent-rules.md](file:///Users/a1234/Local%20Sites/creaibox/docs/rules/ai-agent-rules.md) & [AGENTS.md](file:///Users/a1234/Local%20Sites/creaibox/.agents/AGENTS.md)**:
+  * `Unauthenticated Access & Unified Login Prompt Rule (비로그인 자유 둘러보기 & 로그인 팝업 통일 규칙)` 제정 및 에이전트 룰 등록.
+
 ### 1-1. 블로그 본문 커스텀 에디토리얼 설정 도입
 
 블로그 본문 최하단에 노출되는 에디토리얼 카드를 사용자의 성격 및 테마에 맞춰 자유롭게 조절하고 커스텀할 수 있도록 모달 환경 및 렌더링 체계를 통합 구축했습니다.

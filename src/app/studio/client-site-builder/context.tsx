@@ -12,6 +12,9 @@ export type SiteBuilderContextType = {
   setIsCreatingNewSite: (val: boolean) => void;
   loading: boolean;
   refreshData: () => Promise<void>;
+  showLoginModal: boolean;
+  setShowLoginModal: (val: boolean) => void;
+  requireAuth: (action?: () => void) => boolean;
 };
 
 const SiteBuilderContext = createContext<SiteBuilderContextType | undefined>(undefined);
@@ -22,8 +25,18 @@ export function SiteBuilderProvider({ children }: { children: React.ReactNode })
   const [sites, setSites] = useState<any[]>([]);
   const [selectedSite, setSelectedSite] = useState<any>(null);
   const [isCreatingNewSite, setIsCreatingNewSite] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const supabase = createClient();
+
+  const requireAuth = (action?: () => void): boolean => {
+    if (!profile) {
+      setShowLoginModal(true);
+      return false;
+    }
+    if (action) action();
+    return true;
+  };
 
   const refreshData = async () => {
     setLoading(true);
@@ -97,6 +110,9 @@ export function SiteBuilderProvider({ children }: { children: React.ReactNode })
         setIsCreatingNewSite,
         loading,
         refreshData,
+        showLoginModal,
+        setShowLoginModal,
+        requireAuth,
       }}
     >
       {children}

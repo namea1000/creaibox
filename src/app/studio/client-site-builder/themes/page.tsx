@@ -10,7 +10,7 @@ import Image from "next/image";
 
 export default function ThemeLibraryPage() {
   const router = useRouter();
-  const { sites, selectedSite, setIsCreatingNewSite, refreshData } = useSiteBuilder();
+  const { sites, selectedSite, setIsCreatingNewSite, refreshData, requireAuth } = useSiteBuilder();
   const supabase = createClient();
 
   const [activeCategory, setActiveCategory] = useState("All");
@@ -62,29 +62,33 @@ export default function ThemeLibraryPage() {
   // Change Theme Action for existing site
   const handleChangeTheme = async (themeId: string) => {
     if (!selectedSite) return;
-    setUpdatingTheme(true);
-    try {
-      const { error } = await supabase
-        .from("client_sites")
-        .update({ template_id: themeId })
-        .eq("id", selectedSite.id);
+    requireAuth(async () => {
+      setUpdatingTheme(true);
+      try {
+        const { error } = await supabase
+          .from("client_sites")
+          .update({ template_id: themeId })
+          .eq("id", selectedSite.id);
 
-      if (error) throw error;
-      alert(`디자인 테마가 '${TEMPLATE_REGISTRY[themeId]?.name}'(으)로 성공적으로 변경 및 배포되었습니다.`);
-      await refreshData();
-      setSelectedThemeId(null);
-    } catch (err) {
-      console.error("Theme change failed:", err);
-      alert("테마 변경에 실패했습니다.");
-    } finally {
-      setUpdatingTheme(false);
-    }
+        if (error) throw error;
+        alert(`디자인 테마가 '${TEMPLATE_REGISTRY[themeId]?.name}'(으)로 성공적으로 변경 및 배포되었습니다.`);
+        await refreshData();
+        setSelectedThemeId(null);
+      } catch (err) {
+        console.error("Theme change failed:", err);
+        alert("테마 변경에 실패했습니다.");
+      } finally {
+        setUpdatingTheme(false);
+      }
+    });
   };
 
   // Create Site with Theme Trigger
   const handleCreateWithTheme = (themeId: string) => {
-    setIsCreatingNewSite(true);
-    router.push(`/studio/client-site-builder/builder?theme=${themeId}`);
+    requireAuth(() => {
+      setIsCreatingNewSite(true);
+      router.push(`/studio/client-site-builder/builder?theme=${themeId}`);
+    });
   };
 
   return (

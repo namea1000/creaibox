@@ -108,7 +108,60 @@ export const CUSTOM_CLIENT_SITES = ["sotongcheum", "commufill"];
 
 ---
 
-## 6. 새로운 커스텀 홈페이지 개발 단계별 워크플로우 (Step-by-Step Guide)
+## 6. 블로그 카테고리 관리 & 메인 실적 갤러리 연동 아키텍처
+
+### 6.1 Studio 인라인 카테고리 편집/수정 & 순서 조정
+- **위치**: `스튜디오 > 커스텀 웹사이트 > 내 커스텀 사이트 관리 > SECTION 6`
+- **기능**:
+  - 카테고리 신규 추가, 삭제 및 좌우 이동(`◀`, `▶`).
+  - **인라인 편집(`✏️` 연필 버튼)**: 클릭 시 인라인 태그 폼으로 전환되며, 카테고리명을 직접 수정 후 `Enter` 또는 `✓` 버튼으로 즉시 저장.
+
+### 6.2 메인 랜딩페이지 PORTFOLIO - 블로그 최신글 6개 실시간 연동
+- 메인 랜딩페이지 `PortfolioSection`은 DB(`writing_creaibox_posts` + `generated_images`)의 발행글 중 **최신 포스팅 6개**를 실시간으로 가져와 상단 1번 위치(Top-Left)에 자동 배치합니다.
+- 신규 글이 발행되면 기존 글들은 오른쪽/하단으로 자동 이동하며, 6번째 카드는 자동으로 밀려나 목록에서 제거되어 **항상 최신 6개 포스팅만 유지**됩니다.
+- 이미지 썸네일 좌측 상단 카테고리 오버레이를 제거하여 시원하고 깔끔한 실사 이미지를 보장합니다.
+
+---
+
+## 7. SNS 카카오톡 링크 공유 메타데이터 (Open Graph) 규약
+
+### 7.1 `layout.tsx` 전용 OG 메타데이터 필수 정의
+서브도메인(`*.creaibox.com`) 및 커스텀 도메인(`brand.com`) 공유 시 CreAibox 본사 썸네일이 아닌 커스텀 브랜드 전용 카드 이미지가 노출되도록 `openGraph` / `twitter` 객체를 `layout.tsx`에 반드시 작성합니다.
+
+```typescript
+export const metadata: Metadata = {
+  title: "소통과채움 | 교육, 행사기획 & 렌탈 전문 기업",
+  description: "공공행사부터 마을축제까지, 처음부터 끝까지 깔끔하게! 소통과채움 협동조합",
+  openGraph: {
+    title: "소통과채움 | 교육, 행사기획 & 렌탈 전문 기업",
+    description: "공공행사부터 마을축제까지, 처음부터 끝까지 깔끔하게!",
+    url: "https://sotongcheum.creaibox.com",
+    siteName: "소통과채움",
+    images: [
+      {
+        url: "https://sotongcheum.creaibox.com/images/clients/sotongcheum/sotongcheum_hero_bg.png",
+        width: 1200,
+        height: 630,
+        alt: "소통과채움 메인 비주얼",
+      },
+    ],
+    locale: "ko_KR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "소통과채움 | 교육, 행사기획 & 렌탈 전문 기업",
+    images: ["https://sotongcheum.creaibox.com/images/clients/sotongcheum/sotongcheum_hero_bg.png"],
+  },
+};
+```
+
+### 7.2 카카오톡 미리보기 캐시 즉시 갱신
+카카오톡에 이전 썸네일 카드가 저장되어 있을 경우 [카카오 디벨로퍼스 OG 캐시 초기화 도구](https://developers.kakao.com/tool/debugger/sharing)에서 URL 제출 후 [초기화]를 실행하면 0초 만에 갱신됩니다.
+
+---
+
+## 8. 새로운 커스텀 홈페이지 개발 단계별 워크플로우 (Step-by-Step Guide)
 
 1. **요구사항 분석 및 브랜드 ID 확정**:
    - 예: 브랜드 ID `newbrand`, 서비스 카테고리, 회사 정보, 테마 컬러 결정.
@@ -117,9 +170,12 @@ export const CUSTOM_CLIENT_SITES = ["sotongcheum", "commufill"];
 3. **디렉토리 및 기본 파일 생성**:
    - `src/app/clients/newbrand/` 생성.
    - `layout.tsx`, `page.tsx`, `lib/constants.ts`, `components/` 구축.
-4. **전용 블로그 라우트 생성**:
+4. **Open Graph 공유 메타데이터 세팅**:
+   - `layout.tsx`에 `openGraph` / `twitter` 카드 메타데이터 반영.
+5. **전용 블로그 라우트 생성**:
    - `src/app/clients/newbrand/blog/page.tsx` 및 `blog/[slug]/page.tsx` 생성. (중복 헤더/푸터 없이 내부 컨텐츠만 렌더링)
-5. **푸터 DoFollow 백링크 적용**:
+6. **푸터 DoFollow 백링크 적용**:
    - `Footer.tsx`에 `https://creaibox.com` 링크 반영.
-6. **정적 무결성 검증**:
+7. **정적 무결성 검증**:
    - 터미널에서 `npx tsc --noEmit` 실행하여 에러 0건 검증 완료 후 배포.
+

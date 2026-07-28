@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 import {
   Search,
   AlertCircle,
@@ -219,7 +220,6 @@ export default function NaverManuscriptListPage() {
         setIsAuthenticated(false);
         setCachedManuscripts([]);
         setFallbackManuscripts([]);
-        window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.");
       } else {
         setIsAuthenticated(true);
         const cachedList = readCachedList();
@@ -482,7 +482,6 @@ export default function NaverManuscriptListPage() {
     async (manuscript: StudioManuscriptRecord) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
-        window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.");
         router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
         return;
       }
@@ -695,7 +694,6 @@ export default function NaverManuscriptListPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.");
       router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
@@ -840,6 +838,37 @@ export default function NaverManuscriptListPage() {
     </div>
   );
 
+  if (isAuthenticated === false) {
+    return (
+      <div className="min-h-[75vh] flex items-center justify-center p-6 animate-fade-in">
+        <div className="bg-[#0b0f19] border border-slate-800 rounded-3xl p-8 max-w-md w-full text-center space-y-6 shadow-2xl relative overflow-hidden animate-fade-in-up">
+          <div className="mx-auto w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400">
+            <Globe size={28} />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-xl font-extrabold text-white">
+              로그인이 필요한 서비스입니다
+            </h2>
+            <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+              네이버 원고 관리 서비스를 이용하기 위해 로그인이 필요합니다. <br />
+              로그인 후 원고 작성 및 스마트에디터 재발행 기능을 이용해 보세요!
+            </p>
+          </div>
+
+          <div className="pt-2 flex flex-col gap-2.5">
+            <Link
+              href={`/login?redirect=${encodeURIComponent(pathname || "/studio/writing/naver/list")}`}
+              className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-extrabold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-lg shadow-blue-500/25 transition-all active:scale-95 cursor-pointer"
+            >
+              <span>🔑 로그인 하러 가기</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f0f0f1] px-6 py-6 text-[14px] text-slate-900">
       <div className="mb-4 flex items-start justify-between gap-4">
@@ -970,7 +999,6 @@ export default function NaverManuscriptListPage() {
             onClick={async () => {
               const { data: { session } } = await supabase.auth.getSession();
               if (!session?.user) {
-                window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.");
                 router.push(`/login?redirect=${encodeURIComponent("/studio/writing/naver/create")}`);
               } else {
                 router.push("/studio/writing/naver/create");

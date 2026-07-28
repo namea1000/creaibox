@@ -119,6 +119,13 @@
 - [x] **🛒 쇼핑 키워드 & 아이템 소싱 파워 허브 구축 완료 (itemscout.io & datalab.naver.com 100% 탑재)**
   - `🛍️ 쇼핑 키워드 정밀 분석` (쇼핑 검색량, 총 등록 상품수, 0.72 꿀키워드 경쟁강도, 일간/주간 랭킹)
   - `📊 네이버 쇼핑 인사이트` (datalab.naver.com 분야별 1달/3달 인기검색어 TOP 500 & 성별/연령 도넛 차트)
+- [x] **🏢 프리미엄 커스텀 기업 홈페이지 개발 지침서 & 카카오톡 링크 공유 OG 메타데이터 고도화 완료**
+  - 📖 전용 운영 지침서: [`custom-client-site-development-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/custom-client-site-development-guide.md)
+  - 📖 전체 운영 매뉴얼: [`custom-client-site-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/custom-client-site-guide.md)
+  - Studio 카테고리 인라인 직접 편집(`✏️`) 및 순서 이동 기능 구축 완료
+  - 메인 랜딩페이지 PORTFOLIO 실적 섹션과 블로그 최신 발행글 6개 실시간 동기화 완료
+  - 서브도메인/커스텀도메인 SNS 카카오톡 링크 공유 시 커스텀 대표 비주얼(`sotongcheum_hero_bg.png`) 및 전용 타이틀 OpenGraph 자동 노출 완성
+
 
 
 

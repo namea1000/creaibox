@@ -68,7 +68,6 @@ export default function NaverManuscriptDetailPage() {
       if (!session?.user) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.");
           router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
         }
       }
@@ -127,7 +126,6 @@ export default function NaverManuscriptDetailPage() {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      window.alert("로그인을 하셔야 사용할 수 있는 메뉴입니다.");
       router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
       return false;
     }

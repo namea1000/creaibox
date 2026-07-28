@@ -1,5 +1,5 @@
 import React from "react";
-import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/server";
 import DynamicSection from "../../components/DynamicSection";
 import BlogListPaginatedView, { BlogItem } from "@/components/blog/BlogListPaginatedView";
 
@@ -17,7 +17,7 @@ export default async function DynamicRendererPage({ params, searchParams }: Page
   const rawPage = parseInt(resolvedSearchParams.page || "1", 10);
   const currentPage = isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   // 1. Fetch site settings
   const { data: site } = await supabase

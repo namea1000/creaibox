@@ -4,6 +4,7 @@ import { createClient, createAdminClient } from "@/utils/supabase/server";
 
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { formatImageUrl, handleImageError } from "@/utils/image-url";
 
 interface PublishedPost {
   id: string;
@@ -122,7 +123,7 @@ export default async function BlogPage(props: {
       const primaryImg = postImages.find((img) => img.is_primary) || postImages[0];
       return {
         ...post,
-        thumbnailUrl: primaryImg ? primaryImg.url : null,
+        thumbnailUrl: primaryImg ? formatImageUrl(primaryImg.url) : null,
       };
     });
   }
@@ -175,6 +176,7 @@ export default async function BlogPage(props: {
                           <img
                             src={post.thumbnailUrl}
                             alt={post.title || "thumbnail"}
+                            onError={handleImageError}
                             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         ) : (
@@ -260,6 +262,7 @@ export default async function BlogPage(props: {
                             <img
                               src={post.thumbnailUrl}
                               alt={post.title || "thumbnail"}
+                              onError={handleImageError}
                               className="h-full w-full object-cover"
                             />
                           ) : (

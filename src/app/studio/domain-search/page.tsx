@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { createClient } from "@/utils/supabase/client";
 import {
   Search,
   Globe,
@@ -16,10 +17,34 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
+  X,
 } from "lucide-react";
 
 export default function DomainSearchPage() {
   const [activeTab, setActiveTab] = useState<string>("search");
+
+  // Auth & Modal State
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
+
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function loadUser() {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+    }
+    void loadUser();
+  }, [supabase]);
+
+  const requireAuth = (action?: () => void): boolean => {
+    if (!currentUser) {
+      setShowLoginModal(true);
+      return false;
+    }
+    if (action) action();
+    return true;
+  };
 
   // State 1: Domain Realtime Availability Check
   const [searchQuery, setSearchQuery] = useState("");
@@ -66,7 +91,7 @@ export default function DomainSearchPage() {
       tag: "1초 무제한 커스텀 사이트 연결",
     },
     {
-      domain: "sotongcheum.com",
+      domain: "mybrand.com",
       available: true,
       wholesalePrice: 18000,
       marketPrice: 25850,
@@ -86,6 +111,7 @@ export default function DomainSearchPage() {
   // Real Search Handler (calls Vercel Domains API + Real DNS)
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!requireAuth()) return;
     if (!searchQuery.trim()) return;
 
     setIsSearching(true);
@@ -112,6 +138,7 @@ export default function DomainSearchPage() {
 
   // Real Domain Buy Handler
   const handleBuyDomain = async (domainName: string) => {
+    if (!requireAuth()) return;
     if (!confirm(`${domainName} 도메인을 18,000원에 구매하시겠습니까?\n(구매 즉시 CreAibox 글로벌 Edge IP로 1초 자동 연동됩니다)`)) {
       return;
     }
@@ -140,6 +167,7 @@ export default function DomainSearchPage() {
   // Real Domain Transfer-In Handler
   const handleTransferDomain = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!requireAuth()) return;
     if (!transferDomain.trim()) return;
 
     setIsTransferring(true);
@@ -554,6 +582,49 @@ export default function DomainSearchPage() {
           </div>
         </div>
       </div>
+
+      {/* Login Prompt Modal Popup for unauthenticated users taking action */}
+      {showLoginModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-[#0b0f19] border border-slate-800 rounded-3xl p-8 max-w-md w-full text-center space-y-6 shadow-2xl relative overflow-hidden animate-fade-in-up">
+            <button
+              onClick={() => setShowLoginModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="mx-auto w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400">
+              <Globe size={28} />
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-xl font-extrabold text-white">
+                로그인이 필요한 서비스입니다
+              </h2>
+              <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+                실시간 도메인 검색·원클릭 구매 및 타사 도메인 1초 이관 서비스를 이용하기 위해 로그인이 필요합니다. <br />
+                로그인 후 1초 만에 나만의 맞춤형 도메인을 연결해 보세요!
+              </p>
+            </div>
+
+            <div className="pt-2 flex flex-col gap-2.5">
+              <Link
+                href="/login?redirect=/studio/domain-search"
+                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-extrabold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-lg shadow-blue-500/25 transition-all active:scale-95 cursor-pointer"
+              >
+                <span>🔑 로그인 하러 가기</span>
+              </Link>
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold text-slate-400 bg-slate-800/80 hover:bg-slate-700 rounded-xl transition-all cursor-pointer"
+              >
+                <span>둘러보기 계속하기</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
