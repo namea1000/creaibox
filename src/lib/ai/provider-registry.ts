@@ -89,8 +89,8 @@ export const AI_PROVIDER_MODEL_OPTIONS: Record<AiProviderId, ModelOption[]> = {
 };
 
 export const AI_PROVIDER_DEFAULT_MODEL: Record<AiProviderId, string> = {
-  gemini_postpay: "gemini-3.1-flash-lite",
-  gemini_free: "gemini-3.1-flash-lite",
+  gemini_postpay: "gemini-2.5-flash",
+  gemini_free: "gemini-2.5-flash",
   groq: "llama-3.1-8b-instant",
   openai: "gpt-4o-mini",
   claude: "claude-3-5-haiku-latest",

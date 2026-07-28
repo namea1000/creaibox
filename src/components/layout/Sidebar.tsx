@@ -123,7 +123,12 @@ export default function Sidebar({
   const pathname = usePathname();
 
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const supabase = useMemo(() => createClient(), []);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -506,6 +511,7 @@ export default function Sidebar({
       // Special case: /writing/creaibox/list/[id] post detail page
       if (normPath.startsWith("/writing/creaibox/list/")) {
         const isNewPostWarp =
+          isMounted &&
           typeof window !== "undefined" &&
           (window.location.search.includes("newPost=true") || window.location.search.includes("newPost"));
 

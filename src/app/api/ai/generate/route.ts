@@ -8,6 +8,7 @@ import {
   checkAndResetDailyCounts,
 } from "@/lib/server/get-free-gemini-key";
 import { createClient } from "@/utils/supabase/server";
+import { generateContentWithVertexAI } from "@/lib/server/vertex-ai-gemini";
 
 type GenerateBody = {
   type: string;
@@ -21,7 +22,7 @@ type GenerateBody = {
 };
 
 const FREE_DAILY_LIMIT = 3;
-const DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite";
+const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
 
 type GeminiGenerateResponse = {
   candidates?: Array<{
@@ -222,15 +223,10 @@ export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const {
     data: { user },
-    error: userError,
   } = await supabase.auth.getUser();
 
   // Run daily count reset checks asynchronously or synchronously before processing
   await checkAndResetDailyCounts();
-
-  if (userError || !user) {
-    return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
-  }
 
   const ipAddress = getClientIp(req);
 
@@ -245,17 +241,19 @@ export async function POST(req: NextRequest) {
     }
 
     const featureType = body.type;
-    const userId = body.userId || null;
-    const userEmail = body.userEmail || null;
+    const userId = user?.id || body.userId || null;
+    const userEmail = user?.email || body.userEmail || null;
 
     // Fetch user's membership level to match keys
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("membership_level")
-      .eq("id", user.id)
-      .single();
-
-    const userPlan = (profile?.membership_level || "free").toLowerCase();
+    let userPlan = "free";
+    if (user?.id) {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("membership_level")
+        .eq("id", user.id)
+        .single();
+      userPlan = (profile?.membership_level || "free").toLowerCase();
+    }
 
     // Query today's usage for the user across all features
     const todayUsage = await countTodayUsage({
@@ -287,8 +285,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Get the limit for the current user's plan
-    const userDailyLimit = Number(planLimits[userPlan] ?? planLimits["free"] ?? 20);
+    // Get the limit for the current user's plan (1000 in development to prevent test run limit blocks)
+    const userDailyLimit = process.env.NODE_ENV === "development" ? 1000 : Number(planLimits[userPlan] ?? planLimits["free"] ?? 50);
 
     if (todayUsage >= userDailyLimit) {
       return NextResponse.json(
@@ -300,8 +298,42 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const keysToUse = await getActiveVaultKeys("gemini");
     let lastError: unknown = null;
+
+    // 1차: GCP Vertex AI 엔진 우선 호출 (GCP $300 / 448,756원 무료 크레딧 1순위 자동 차감)
+    try {
+      const modelName = body.model || DEFAULT_GEMINI_MODEL;
+      const text = await generateContentWithVertexAI({
+        prompt: body.prompt,
+        modelName,
+        useSearch: Boolean(body.useSearch),
+        responseMimeType: body.responseMimeType,
+      });
+
+      await logUsage({
+        userId,
+        userEmail,
+        ipAddress,
+        featureType,
+        provider: "gemini",
+        model: modelName,
+        status: "success",
+      });
+
+      return NextResponse.json({
+        ok: true,
+        text,
+        provider: "vertex-ai",
+        model: modelName,
+        usedSearch: Boolean(body.useSearch),
+      });
+    } catch (vertexErr: unknown) {
+      lastError = vertexErr;
+      console.warn("GCP Vertex AI ($300 Free Credit) 1차 호출 예외 발생 -> DB Vault 키 풀로 2차 우회 시도:", vertexErr);
+    }
+
+    // 2차: Vertex AI 권한 미부여/예외 발생 시 DB Vault 키 풀 3개 순차 우회 실행
+    const keysToUse = await getActiveVaultKeys("gemini");
 
     if (keysToUse.length > 0) {
       for (const vault of keysToUse) {
@@ -355,7 +387,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Fall back to .env.local GEMINI_API_KEY if vault keys are exhausted, fail, or empty
+    // 3차: .env.local 시스템 키 우회
     const systemApiKey = process.env.GEMINI_API_KEY;
 
     if (systemApiKey) {

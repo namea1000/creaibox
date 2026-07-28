@@ -78,6 +78,11 @@ CreAibox의 SEO 자동 색인 엔진은 어떤 형태의 도메인이든 **전�
 ### ④ 유튜브 인기 영상 Gemini AI 자동 분석 리포트 DB 적재
 - 수집된 트렌드 영상들의 떡상 흥행 코드와 기획안을 Gemini AI가 자동 분석하여 DB 리포트로 저장 제공.
 
+### ⑤ 🟢 GCP Vertex AI ($300 / 448,756원 무료 크레딧) AI 글쓰기 및 실시간 구글 검색 자동화 엔진 (현재 100% 구동 중)
+- **상태**: **🟢 현재 100% 실시간 자동 구동 중** ([`vertex-ai-gemini.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/vertex-ai-gemini.ts), [`ai/generate/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/ai/generate/route.ts))
+- 일반 사용자의 AI 원고 작성 및 글쓰기 요청 시, GCP 서비스 계정 OAuth2를 기반으로 구글 클라우드 계정의 $300 무료 크레딧을 소비하며 `gemini-2.5-flash` 모델과 실시간 구글 검색 그라운딩(`googleSearch`)을 무제한 1순위로 무상 자동 가동.
+- 상세 구축/운용 및 IAM 권한 트러블슈팅 매뉴얼: [`docs/project/manual/gcp-vertex-ai-service-setup-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/gcp-vertex-ai-service-setup-guide.md)
+
 ---
 
 ## 5. 🚀 앞으로 개발하며 장기적으로 확장할 무인 서비스 5선 (Future Roadmap)

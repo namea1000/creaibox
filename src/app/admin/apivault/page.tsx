@@ -223,7 +223,7 @@ export default function APIVaultAdminPage() {
     [adminEmail]
   );
 
-  const [planLimits, setPlanLimits] = useState<Record<string, number>>({
+  const [planLimits, setPlanLimits] = useState<Record<string, number | string>>({
     free: 20,
     creator: 50,
     pro: 100,
@@ -250,13 +250,17 @@ export default function APIVaultAdminPage() {
   const handleSavePlanLimits = async () => {
     setLimitsLoading(true);
     try {
+      const sanitizedLimits: Record<string, number> = {};
+      for (const [k, v] of Object.entries(planLimits)) {
+        sanitizedLimits[k] = typeof v === "number" ? v : Number(v) || 0;
+      }
       const response = await fetch("/api/admin/plan-limits", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-admin-email": adminEmail,
         },
-        body: JSON.stringify(planLimits),
+        body: JSON.stringify(sanitizedLimits),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "수정 실패");
@@ -637,14 +641,19 @@ export default function APIVaultAdminPage() {
         </div>
       </section>
 
-      <section className="mb-4 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 shadow-2xl backdrop-blur-xl">
-        <h3 className="mb-3 flex items-center gap-2 text-xs font-black uppercase italic text-white">
-          <ShieldAlert className="text-red-500" size={14} />
-          요금제별 일일 사용 제한 설정 (Plan Daily Limits)
-        </h3>
+      <section className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-5 md:p-6 shadow-2xl backdrop-blur-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800/80 pb-3">
+          <h3 className="flex items-center gap-2.5 text-base md:text-lg font-black tracking-tight text-white">
+            <ShieldAlert className="text-red-500" size={20} />
+            요금제별 일일 사용 제한 설정 (Plan Daily Limits)
+          </h3>
+          <span className="text-xs font-bold text-zinc-400">
+            💡 사용자가 개인 API 키를 등록하지 않았을 때 적용되는 1일 최대 사용 회수입니다.
+          </span>
+        </div>
         
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
-          <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-5">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end">
+          <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {[
               ["free", "Free Trial (무료체험)"],
               ["creator", "Creator (크리에이터)"],
@@ -652,34 +661,71 @@ export default function APIVaultAdminPage() {
               ["business", "Business (비즈니스)"],
               ["admin", "Admin (관리자)"],
             ].map(([key, label]) => (
-              <div key={key} className="space-y-1">
-                <label className="ml-1 text-[9px] font-black uppercase tracking-widest text-blue-500">
-                  {label}
+              <div key={key} className="space-y-2">
+                <label className="ml-1 text-xs md:text-sm font-black uppercase tracking-wider text-blue-400 flex items-center justify-between">
+                  <span className="truncate">{label}</span>
+                  <span className="text-[10px] text-zinc-500 font-bold shrink-0">일/회</span>
                 </label>
-                <input
-                  type="number"
-                  value={planLimits[key] ?? ""}
-                  onChange={(e) =>
-                    setPlanLimits({
-                      ...planLimits,
-                      [key]: Number(e.target.value),
-                    })
-                  }
-                  className="input-vault !py-2 !px-3 text-xs"
-                  placeholder="한도 입력"
-                />
+                <div className="relative flex items-center rounded-xl border border-zinc-700 bg-zinc-955 shadow-inner focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/30">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPlanLimits({
+                        ...planLimits,
+                        [key]: Math.max(0, Number(planLimits[key] || 0) - 5),
+                      })
+                    }
+                    className="px-3.5 py-3 text-zinc-400 hover:text-white hover:bg-zinc-800/80 rounded-l-xl transition-all font-black text-base md:text-lg select-none shrink-0"
+                    title="5회 감소"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    value={planLimits[key] === undefined || planLimits[key] === null ? "" : planLimits[key]}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "") {
+                        setPlanLimits((prev) => ({ ...prev, [key]: "" as any }));
+                      } else {
+                        const num = parseInt(val, 10);
+                        setPlanLimits((prev) => ({ ...prev, [key]: isNaN(num) ? 0 : num }));
+                      }
+                    }}
+                    onBlur={() => {
+                      if (planLimits[key] === "" || planLimits[key] === undefined || planLimits[key] === null) {
+                        setPlanLimits((prev) => ({ ...prev, [key]: 0 }));
+                      }
+                    }}
+                    className="w-full bg-transparent py-2.5 px-2 text-center text-lg md:text-xl font-black text-emerald-400 focus:outline-none tracking-wider min-w-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    placeholder="0"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPlanLimits({
+                        ...planLimits,
+                        [key]: Number(planLimits[key] || 0) + 5,
+                      })
+                    }
+                    className="px-3.5 py-3 text-zinc-400 hover:text-white hover:bg-zinc-800/80 rounded-r-xl transition-all font-black text-base md:text-lg select-none shrink-0"
+                    title="5회 증가"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
             ))}
           </div>
 
-          <div className="lg:w-auto">
+          <div className="lg:w-auto shrink-0 pt-2 lg:pt-0">
             <button
               type="button"
               onClick={handleSavePlanLimits}
               disabled={limitsLoading}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-xs font-black uppercase text-white transition-all hover:bg-blue-500 disabled:opacity-60"
+              className="w-full lg:w-auto flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 px-8 py-3.5 text-sm md:text-base font-black uppercase text-white shadow-lg shadow-blue-900/40 transition-all disabled:opacity-60"
             >
-              {limitsLoading ? "Saving..." : "Save Limits"}
+              {limitsLoading ? "저장 중..." : "한도 저장 (Save Limits)"}
             </button>
           </div>
         </div>

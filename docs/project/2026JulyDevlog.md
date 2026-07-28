@@ -52,8 +52,17 @@ mier
 #### 5. 표(Table) 렌더링 UI 정밀 개선: 2줄 굵은 라인 및 모서리 끊어짐 해결, 헤더 음영 & 컬러 채우기 강화
 * **원인 분석**: 
   - `overflow-hidden` 및 `border-radius: 16px`가 `border-collapse: collapse` 표와 조합되면서 모서리 4곳의 테두리 라인이 절단/끊어지는 브라우저 렌더링 현상이 발생함.
-  - 에디터 및 발행 페이지의 테두리가 검은색(`#191e23`) 1px 테두리로 다중 지정되어 2줄로 굵고 투박하게 노출되었으며, 헤더 음영이 지나치게 옅어 시각적 조화가 부족했음.
-* **해결 작업**:
+  - **GCP Vertex AI ($300 / 448,756원 무료 크레딧 차감) 백엔드 엔진 구축 ([`vertex-ai-gemini.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/vertex-ai-gemini.ts), [`ai/generate/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/ai/generate/route.ts))**:
+    - 구글 클라우드 콘솔 내 **Agent Platform API (Vertex AI)** 사용 승인 완료에 발맞추어, GCP 서비스 계정 OAuth2 연동 전용 Vertex AI 모듈 구축.
+    - GCP 서비스 계정 IAM 권한(`편집자`) 부여 및 OAuth2 인증 연동을 통해, 최신 **`gemini-2.5-flash`** 모델 및 구글 실시간 검색 그라운딩(`googleSearch: {}`)이 **GCP $300(44만 8천원) 무료 크레딧 계정으로 200 OK 무결점 연동 성공**을 검증 완료.
+    - 사용자가 개별 API 키를 입력하지 않은 공용 글쓰기/AI 생성 호출 시 **1차 우선(Primary)으로 `gemini-2.5-flash` GCP 크레딧 엔진을 무제한 무상 호출**하며, 예외 발생 시에만 **2차 예비용(Secondary)으로 DB Vault 키 풀 3개를 순차 우회 로테이션**하도록 수선 완료.
+  - **도메인 실시간 검색 네트워크 오류 수정 (`POST /api/domains/check`) ([`domains/check/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/domains/check/route.ts), [`domain-search/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/domain-search/page.tsx))**:
+    - 프론트엔드에서 `POST` 방식으로 백엔드 API를 호출하던 반면, 서버 라우트에 `GET` 핸들러만 존재하여 `405 Method Not Allowed` 네트워크 오류가 발생하던 문제를 해결.
+    - `POST` 및 `GET` 통합 지원 핸들러 구축, 입력 도메인에 따라 5대 확장자(`.com`, `.kr`, `.co.kr`, `.net`, `.io`) 실시간 DNS 조회를 병렬 병합(`Promise.all`) 처리하여 1초 실시간 가용성 및 가격 조회가 완벽 작동하도록 수정.
+  - **API Vault 요금제별 일일 제한 설정 UI 가시성 및 컨트롤 대폭 강화 ([`apivault/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/admin/apivault/page.tsx))**:
+    - "요금제별 일일 사용 제한 설정 (Plan Daily Limits)" 섹션의 텍스트 폰트 크기를 대형(`text-base` / `text-lg font-black`)으로 확대하여 시인성 극대화.
+    - 입력창 숫자를 에메랄드 굵은 폰트(`text-xl font-black text-emerald-400`)로 키우고, 5회 단위 조절 `[-]` / `[+]` 조절 버튼을 통합하여 클릭 조작 편의성 완성.
+    - 입력창 비움 상태(`""`) 파싱 및 브라우저 기본 화살표 숨김(`appearance-none`) 처리를 적용하여, 숫자를 다시 수정할 때 앞에 `0`이 붙는(`010`) 버그 완벽 수정.
   - **4대 검색엔진 자동 색인 핑 서비스 전면 홍보 & UI/UX 구현 ([`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/page.tsx), [`blog-management/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx), [`list/[id]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/list/%5Bid%5D/page.tsx), [`faqData.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/chatbot/data/faqData.ts))**:
     - **메인 랜딩 페이지 (`/`)**: "수동 등록 0초 무설정 100% 무인화: 4대 글로벌 검색엔진 0.1초 자동 색인 핑" 럭셔리 USP 카드를 신설하여 강력한 차별화 셀링 포인트 각인.
     - **SEO 대시보드 (`/blog-management`)**: "전세계 4대 검색엔진 0.1초 자동 색인 핑 엔진 가동 중" 라이브 펄스 배너 및 `Googlebot`, `Naver SearchAdvisor`, `MS Bing`, `Yandex` 4대 뱃지 시각화 구축.

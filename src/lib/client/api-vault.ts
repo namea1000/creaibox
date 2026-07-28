@@ -352,8 +352,8 @@ export async function generateGeminiContentWithFallback({
     };
   }
 
-  if (userConfig) {
-    const effectiveUseSearch = userConfig.provider === "gemini_postpay" && useSearch;
+  if (userConfig && userConfig.provider === "gemini_postpay") {
+    const effectiveUseSearch = useSearch;
 
     return {
       text: await generateGeminiContent({
