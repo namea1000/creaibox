@@ -83,6 +83,39 @@ function formatBoldText(text: string) {
   });
 }
 
+function getThumbnailUrl(video: any): string {
+  if (!video) return "/placeholder.jpg";
+  if (typeof video.thumbnail === "string" && video.thumbnail) return video.thumbnail;
+  if (typeof video.thumbnailUrl === "string" && video.thumbnailUrl) return video.thumbnailUrl;
+  
+  const snippet = video.snippet;
+  const thumbnails = snippet?.thumbnails || video.thumbnails;
+  
+  if (thumbnails) {
+    if (thumbnails.maxres?.url) return thumbnails.maxres.url;
+    if (thumbnails.high?.url) return thumbnails.high.url;
+    if (thumbnails.medium?.url) return thumbnails.medium.url;
+    if (thumbnails.default?.url) return thumbnails.default.url;
+  }
+  
+  const videoId = typeof video.id === "string" ? video.id : video.videoId;
+  if (videoId && typeof videoId === "string") {
+    return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+  }
+  
+  return "/placeholder.jpg";
+}
+
+function getVideoTitle(video: any): string {
+  if (!video) return "제목 없음";
+  return video.snippet?.title || video.title || "제목 없음";
+}
+
+function getVideoChannel(video: any): string {
+  if (!video) return "채널 정보 없음";
+  return video.snippet?.channelTitle || video.channelTitle || video.channelName || "채널 정보 없음";
+}
+
 export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onVideoSelect, reportType = "trending" }: VideoAnalysisModalProps) {
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<string | null>(null);
@@ -157,6 +190,8 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
   }, [isOpen, video]);
 
   const fetchAnalysis = async () => {
+    if (!video) return;
+    
     if (video.analysis_content) {
       setAnalysis(video.analysis_content);
       setLoading(false);
@@ -173,11 +208,11 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          videoId: video.id,
-          title: video.snippet?.title,
-          channelTitle: video.snippet?.channelTitle,
-          description: video.snippet?.description,
-          tags: video.snippet?.tags,
+          videoId: typeof video.id === "string" ? video.id : video.videoId,
+          title: getVideoTitle(video),
+          channelTitle: getVideoChannel(video),
+          description: video.snippet?.description || video.description,
+          tags: video.snippet?.tags || video.tags,
           statistics: video.statistics,
           reportType,
           videoMetadata: video
@@ -196,9 +231,9 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
   if (!isOpen || !video) return null;
 
   // View, Like, Comment stats calculations
-  const viewCount = Number(video.statistics?.viewCount || 0);
-  const likeCount = Number(video.statistics?.likeCount || 0);
-  const commentCount = Number(video.statistics?.commentCount || 0);
+  const viewCount = Number(video.statistics?.viewCount || video.viewCount || 0);
+  const likeCount = Number(video.statistics?.likeCount || video.likeCount || 0);
+  const commentCount = Number(video.statistics?.commentCount || video.commentCount || 0);
 
   const likeRatio = viewCount > 0 ? (likeCount / viewCount) * 100 : 0;
   const commentRatio = viewCount > 0 ? (commentCount / viewCount) * 100 : 0;
@@ -218,6 +253,10 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
 
   const likeGrade = getLikeGrade(likeRatio);
   const commentGrade = getCommentGrade(commentRatio);
+
+  const modalThumbnail = getThumbnailUrl(video);
+  const modalTitle = getVideoTitle(video);
+  const modalChannel = getVideoChannel(video);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-fade-in">
@@ -270,15 +309,26 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
           {/* Section 1: Video Title Header */}
           <div className="flex gap-4 p-4 rounded-2xl border border-zinc-800/80 bg-zinc-950/25">
             <img
-              src={video.snippet?.thumbnails?.medium?.url || "/placeholder.jpg"}
-              alt="thumbnail"
+              src={modalThumbnail}
+              alt={modalTitle}
               className="h-20 aspect-video rounded-xl object-cover border border-zinc-800"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (target.src !== "/placeholder.jpg") {
+                  const videoId = typeof video.id === "string" ? video.id : video.videoId;
+                  if (videoId && !target.src.includes("hqdefault.jpg")) {
+                    target.src = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+                  } else {
+                    target.src = "/placeholder.jpg";
+                  }
+                }
+              }}
             />
             <div className="flex flex-col justify-center">
               <h3 className="text-xs font-black text-zinc-100 line-clamp-2 leading-snug">
-                {video.snippet?.title}
+                {modalTitle}
               </h3>
-              <p className="text-[10px] text-zinc-500 font-bold mt-1.5">{video.snippet?.channelTitle}</p>
+              <p className="text-[10px] text-zinc-500 font-bold mt-1.5">{modalChannel}</p>
             </div>
           </div>
 

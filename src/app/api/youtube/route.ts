@@ -204,6 +204,25 @@ export async function GET(req: NextRequest) {
   try {
     // 1. Route request to appropriate Google API calls
     switch (type) {
+      case "trending-bundle": {
+        const date = searchParams.get("date") || getKstTodayDate();
+        try {
+          const { data: bundleRow } = await supabaseAdmin
+            .from("youtube_trending_archive")
+            .select("videos_data")
+            .eq("target_date", date)
+            .eq("category_id", "bundle")
+            .maybeSingle();
+
+          if (bundleRow && bundleRow.videos_data && typeof bundleRow.videos_data === "object" && !Array.isArray(bundleRow.videos_data)) {
+            return NextResponse.json({ source: "supabase-db-daily-bundle-all", bundle: bundleRow.videos_data });
+          }
+        } catch (err) {
+          console.error("trending-bundle fetch error:", err);
+        }
+        return NextResponse.json({ bundle: {} });
+      }
+
       case "trending": {
         const categoryId = searchParams.get("categoryId") || "all";
         const date = searchParams.get("date") || getKstTodayDate();

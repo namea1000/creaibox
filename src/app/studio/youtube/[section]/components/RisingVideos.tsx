@@ -204,17 +204,70 @@ export default function RisingVideos() {
     return `${m}분 ${s}초 남음`;
   };
 
-  // 1. Recover recent analyzed reports from localStorage on mount
+  // 1. Fetch recent analyzed reports directly from DB (allowing incognito mode & non-logged in users to see all reports)
   useEffect(() => {
-    const cached = localStorage.getItem("creaibox_recent_analyzed_videos");
-    if (cached) {
+    async function loadRecentReportsFromDb() {
       try {
-        setAnalyzedVideos(JSON.parse(cached));
+        const res = await fetch("/api/youtube/reports?type=trending");
+        const json = await res.json();
+        if (json.data && Array.isArray(json.data) && json.data.length > 0) {
+          setAnalyzedVideos(json.data);
+          localStorage.setItem("creaibox_recent_analyzed_videos", JSON.stringify(json.data.slice(0, 30)));
+          return;
+        }
       } catch (e) {
-        console.error("Failed to restore recent analyzed videos:", e);
+        console.error("Failed to load recent reports from DB:", e);
+      }
+      const cached = localStorage.getItem("creaibox_recent_analyzed_videos");
+      if (cached) {
+        try {
+          setAnalyzedVideos(JSON.parse(cached));
+        } catch (e) {}
       }
     }
+    loadRecentReportsFromDb();
   }, []);
+
+  // ⚡ 0ms Instant RAM Cache Warm-up for ALL 60 Countries on mount
+  useEffect(() => {
+    async function prewarmBundleCache() {
+      try {
+        const res = await fetch(`/api/youtube?type=trending-bundle&date=${selectedDate}`);
+        const json = await res.json();
+        if (json && json.bundle && typeof json.bundle === "object") {
+          const bundleObj = json.bundle as Record<string, any[]>;
+          Object.keys(bundleObj).forEach((dbCatKey) => {
+            if (Array.isArray(bundleObj[dbCatKey]) && bundleObj[dbCatKey].length > 0) {
+              const parts = dbCatKey.split("_");
+              let countryCode = "KR";
+              let catCode = dbCatKey;
+              if (parts.length === 2 && ALL_COUNTRIES.some((c) => c.code === parts[0])) {
+                countryCode = parts[0];
+                catCode = parts[1];
+              }
+              const key = `${countryCode}_${catCode}_${selectedDate}`;
+              videoCacheRef.current.set(key, {
+                source: "supabase-db-daily-bundle",
+                data: bundleObj[dbCatKey],
+              });
+            }
+          });
+
+          // If current selected country key is in RAM cache, set videos immediately
+          const currentKey = `${selectedCountry}_${activeCategory}_${selectedDate}`;
+          if (videoCacheRef.current.has(currentKey)) {
+            const cached = videoCacheRef.current.get(currentKey);
+            setVideos(cached.data || []);
+            setSource(cached.source || "supabase-db-daily-bundle");
+            setLoading(false);
+          }
+        }
+      } catch (e) {
+        console.error("prewarmBundleCache error:", e);
+      }
+    }
+    prewarmBundleCache();
+  }, [selectedDate]);
 
   // Infinite scroll listener to progressively reveal videos as user scrolls down
   useEffect(() => {
@@ -615,7 +668,7 @@ export default function RisingVideos() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-24 gap-3">
               <Loader2 className="animate-spin text-orange-500" size={32} />
-              <p className="text-xs font-bold text-zinc-500">실시간 유튜브 트렌드 스캔 중...</p>
+              <p className="text-xs font-bold text-zinc-400">CreAibox DB 일괄 보관함 트렌드 분석 리포트 로딩 중...</p>
             </div>
           ) : filteredVideos.length === 0 ? (
             <div className="text-center py-20 border border-zinc-850 rounded-2xl bg-zinc-950/20">
@@ -862,10 +915,16 @@ export default function RisingVideos() {
               </div>
             ) : (
               analyzedVideos.map((video: any, index: number) => {
-                const title = video.snippet?.title || "제목 없음";
-                const channel = video.snippet?.channelTitle || "채널 정보 없음";
-                const thumbnail = video.snippet?.thumbnails?.medium?.url || video.snippet?.thumbnails?.default?.url || "/placeholder.jpg";
-                const viewCount = video.statistics?.viewCount || "0";
+                const title = video.snippet?.title || video.title || "제목 없음";
+                const channel = video.snippet?.channelTitle || video.channelTitle || video.channelName || "채널 정보 없음";
+                const videoId = typeof video.id === "string" ? video.id : video.videoId;
+                const thumbnail = video.snippet?.thumbnails?.medium?.url ||
+                  video.snippet?.thumbnails?.default?.url ||
+                  video.thumbnails?.medium?.url ||
+                  video.thumbnails?.default?.url ||
+                  video.thumbnail ||
+                  (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : "/placeholder.jpg");
+                const viewCount = video.statistics?.viewCount || video.viewCount || "0";
                 
                 return (
                   <div
@@ -879,6 +938,14 @@ export default function RisingVideos() {
                         src={thumbnail}
                         alt={title}
                         className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (videoId && !target.src.includes("hqdefault.jpg")) {
+                            target.src = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+                          } else {
+                            target.src = "/placeholder.jpg";
+                          }
+                        }}
                       />
                     </div>
 

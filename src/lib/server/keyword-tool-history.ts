@@ -43,14 +43,29 @@ export async function archiveDualKeywordReport(naverRes: KeywordToolResult, goog
     // history fetch fallback
   }
 
+  const todayStr = new Date(now).toISOString().split("T")[0]; // YYYY-MM-DD
+
   const newSnapshot = {
     date: now,
-    dateStr: new Date(now).toLocaleDateString("ko-KR"),
+    dateStr: new Date(now).toLocaleDateString("ko-KR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
     naver: naverRes,
     google: googleRes,
   };
 
-  const updatedHistory = [newSnapshot, ...existingHistory];
+  // 같은 날짜(YYYY-MM-DD) 내 중복 스냅샷은 최신 상태로 깔끔하게 갱신하고, 다른 날짜 이력은 100% 보존
+  const historyWithoutToday = existingHistory.filter((item: any) => {
+    if (!item || !item.date) return true;
+    const itemDateStr = new Date(item.date).toISOString().split("T")[0];
+    return itemDateStr !== todayStr;
+  });
+
+  const updatedHistory = [newSnapshot, ...historyWithoutToday];
 
   const combinedItem: KeywordToolReportItem = {
     id: `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,

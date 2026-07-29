@@ -1,27 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/server/get-free-gemini-key";
-import { createClient } from "@/utils/supabase/server";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
-  // 1. Optional user session check (Graceful unauthenticated access per CreAibox rules)
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ data: [] });
-    }
-  } catch (authErr) {
-    console.warn("Unauthenticated or auth session error in GET /api/youtube/reports:", authErr);
-    return NextResponse.json({ data: [] });
-  }
-
   const type = req.nextUrl.searchParams.get("type") || "trending";
 
   try {
-    // 2. Fetch rows from youtube_video_analysis with report_type filter
+    // 1. Fetch rows from youtube_video_analysis with report_type filter (Publicly accessible to incognito & all users)
     let dbQuery = supabaseAdmin
       .from("youtube_video_analysis")
       .select("video_id, analysis_content, video_metadata, report_type, created_at");
@@ -32,7 +19,7 @@ export async function GET(req: NextRequest) {
       dbQuery = dbQuery.or("report_type.eq.trending,report_type.is.null");
     }
 
-    const { data: analyses, error: analysisError } = await dbQuery.order("created_at", { ascending: false });
+    const { data: analyses, error: analysisError } = await dbQuery.order("created_at", { ascending: false }).limit(30);
 
     if (analysisError) {
       return NextResponse.json({ error: analysisError.message }, { status: 500 });
@@ -42,7 +29,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ data: [] });
     }
 
-    // 3. Load latest archive records to map full video metadata (supporting both array and bundle object)
+    // 2. Load latest archive records to map full video metadata (supporting both array and bundle object)
     const { data: archives } = await supabaseAdmin
       .from("youtube_trending_archive")
       .select("videos_data")
@@ -69,40 +56,21 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 4. Merge analysis and video details (Using direct video_metadata or trending archive)
+    // 3. Merge analysis and video details (Using direct video_metadata or trending archive)
     const mergedList = analyses.map((analysis) => {
       const videoId = analysis.video_id;
       const dbMeta = (analysis as any).video_metadata;
       const matchedVideo = dbMeta || videoMap.get(videoId);
 
-      // Fix broken mock photo ID url in video_metadata snippet
-      if (matchedVideo?.snippet?.thumbnails?.medium?.url) {
-        let thumbUrl = matchedVideo.snippet.thumbnails.medium.url;
-        if (thumbUrl.includes("photo-161800518") || thumbUrl.includes("photo-1618005")) {
-          const unsplashIds = [
-            "1498050108023-c5249f4df085",
-            "1518770660439-4636190af475",
-            "1542751371-adc38448a05e",
-            "1470225620780-dba8ba36b745",
-            "1508098682722-e99c43a406b2"
-          ];
-          const hashIndex = Math.abs(videoId.split("").reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0));
-          const photoId = unsplashIds[hashIndex % unsplashIds.length];
-          matchedVideo.snippet.thumbnails.medium.url = `https://images.unsplash.com/photo-${photoId}?w=400&h=225&fit=crop`;
-        }
-      }
-
       // Extract country from dbMeta or default to KR
       let country = matchedVideo?.country || matchedVideo?.snippet?.country || "";
       if (!country) {
-        // Fallback: try parsing title if it starts with [US], [GB], etc.
-        const title = matchedVideo?.snippet?.title || "";
+        const title = matchedVideo?.snippet?.title || matchedVideo?.title || "";
         const countryMatch = title.match(/^\[([A-Z]{2})\]/);
         if (countryMatch) {
           country = countryMatch[1];
         } else {
-          // If channel Title contains country name or handle has country prefix
-          const channelTitle = matchedVideo?.snippet?.channelTitle || "";
+          const channelTitle = matchedVideo?.snippet?.channelTitle || matchedVideo?.channelTitle || "";
           if (channelTitle.startsWith("US ")) country = "US";
           else if (channelTitle.startsWith("JP ")) country = "JP";
           else if (channelTitle.startsWith("GB ")) country = "GB";
@@ -110,7 +78,7 @@ export async function GET(req: NextRequest) {
           else if (channelTitle.startsWith("IN ")) country = "IN";
           else if (channelTitle.startsWith("BR ")) country = "BR";
           else if (channelTitle.startsWith("CA ")) country = "CA";
-          else country = "KR"; // Default to South Korea
+          else country = "KR";
         }
       }
 
@@ -120,19 +88,21 @@ export async function GET(req: NextRequest) {
         created_at: analysis.created_at,
         analysis_content: analysis.analysis_content,
         country: country || "KR",
-        // Fallback structures if the original metadata is aged out
+        title: matchedVideo?.snippet?.title || matchedVideo?.title || `분석된 비디오 (${videoId})`,
+        channelTitle: matchedVideo?.snippet?.channelTitle || matchedVideo?.channelTitle || "-",
+        thumbnail: matchedVideo?.snippet?.thumbnails?.medium?.url || matchedVideo?.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
         snippet: matchedVideo?.snippet || {
-          title: `분석된 비디오 (${videoId})`,
-          channelTitle: "-",
+          title: matchedVideo?.title || `분석된 비디오 (${videoId})`,
+          channelTitle: matchedVideo?.channelTitle || "-",
           thumbnails: {
-            medium: { url: "/placeholder.jpg" },
-            default: { url: "/placeholder.jpg" }
+            medium: { url: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` },
+            default: { url: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` }
           }
         },
         statistics: matchedVideo?.statistics || {
-          viewCount: "0",
-          likeCount: "0",
-          commentCount: "0"
+          viewCount: matchedVideo?.viewCount || "0",
+          likeCount: matchedVideo?.likeCount || "0",
+          commentCount: matchedVideo?.commentCount || "0"
         }
       };
     });
