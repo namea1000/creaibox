@@ -674,8 +674,11 @@ export default function RisingVideos() {
               <p className="text-xs font-bold text-zinc-400">CreAibox DB 일괄 보관함 트렌드 분석 리포트 로딩 중...</p>
             </div>
           ) : filteredVideos.length === 0 ? (
-            <div className="text-center py-20 border border-zinc-850 rounded-2xl bg-zinc-950/20">
-              <p className="text-xs text-zinc-500 font-bold">이 조건에 부합하는 트렌드 영상이 없습니다.</p>
+            <div className="text-center py-20 border border-zinc-850 rounded-2xl bg-zinc-950/20 space-y-3">
+              <p className="text-sm text-zinc-300 font-black">📭 아직 수집된 {getCountryName(selectedCountry)} 트렌드 데이터가 없습니다.</p>
+              <p className="text-xs text-zinc-500 font-bold">
+                상단의 <span className="text-orange-500 font-black">"전체 60개국 일괄수집"</span> 버튼을 클릭하시거나 일일 무인 자동 수집을 기다려 주세요.
+              </p>
             </div>
           ) : (
             <div className="grid gap-4 grid-cols-1 xl:grid-cols-2">
