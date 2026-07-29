@@ -238,12 +238,14 @@ export default function RisingVideos() {
           const bundleObj = json.bundle as Record<string, any[]>;
           Object.keys(bundleObj).forEach((dbCatKey) => {
             if (Array.isArray(bundleObj[dbCatKey]) && bundleObj[dbCatKey].length > 0) {
-              const parts = dbCatKey.split("_");
               let countryCode = "KR";
               let catCode = dbCatKey;
-              if (parts.length === 2 && ALL_COUNTRIES.some((c) => c.code === parts[0])) {
-                countryCode = parts[0];
-                catCode = parts[1];
+              if (dbCatKey.includes("_")) {
+                const parts = dbCatKey.split("_");
+                if (ALL_COUNTRIES.some((c) => c.code === parts[0])) {
+                  countryCode = parts[0];
+                  catCode = dbCatKey.slice(parts[0].length + 1);
+                }
               }
               const key = `${countryCode}_${catCode}_${selectedDate}`;
               videoCacheRef.current.set(key, {
@@ -338,6 +340,7 @@ export default function RisingVideos() {
       return;
     }
 
+    setVideos([]); // 🚀 Clear old country videos so stale country videos are never shown
     setLoading(true);
     try {
       const res = await fetch(`/api/youtube?type=trending&categoryId=${catId}&date=${targetDate}&country=${country}${force ? '&force=true' : ''}`);

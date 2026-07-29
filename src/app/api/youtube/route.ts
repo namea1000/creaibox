@@ -12,7 +12,7 @@ export function getKstTodayDate(): string {
   return kstDate.toISOString().split("T")[0]; // YYYY-MM-DD
 }
 
-function isShortsDuration(durationStr?: string | null): boolean {
+export function isShortsDuration(durationStr?: string | null): boolean {
   if (!durationStr) return false;
   const match = durationStr.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
   if (!match) return false;
@@ -84,32 +84,15 @@ export async function fetchAndCacheTrending(categoryId: string, date: string = g
   }
 
   const items = data.items || [];
-  const enrichedItems = await Promise.all(
-    items.map(async (item: any) => {
-      const videoId = item.id;
-      let isRealShorts = false;
-      try {
-        const isUnderOneMinute = isShortsDuration(item.contentDetails?.duration);
-        if (isUnderOneMinute) {
-          const checkRes = await fetch(`https://www.youtube.com/shorts/${videoId}`, {
-            method: "HEAD",
-            headers: {
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            }
-          });
-          isRealShorts = checkRes.url.includes("/shorts/");
-        }
-      } catch (e) {
-        isRealShorts = isShortsDuration(item.contentDetails?.duration);
-      }
-      return {
-        ...item,
-        isRealShorts,
-      };
-    })
-  );
+  const enrichedItems = items.map((item: any) => {
+    const isRealShorts = isShortsDuration(item.contentDetails?.duration);
+    return {
+      ...item,
+      isRealShorts,
+    };
+  });
 
-  // 3. Save Cache to Supabase DB (Daily Unified Bundle: 1 Row per Date)
+  // 3. Save Cache to Supabase DB (Strict Single Bundle Row per Date: category_id = "bundle")
   const dbCategoryId = country === "KR" ? categoryId : `${country}_${categoryId}`;
   try {
     const { data: existingRow } = await supabaseAdmin
@@ -123,10 +106,9 @@ export async function fetchAndCacheTrending(categoryId: string, date: string = g
     if (existingRow && existingRow.videos_data && typeof existingRow.videos_data === "object" && !Array.isArray(existingRow.videos_data)) {
       bundleObj = { ...existingRow.videos_data };
     }
-
     bundleObj[dbCategoryId] = enrichedItems;
 
-    const { error: upsertError } = await supabaseAdmin
+    await supabaseAdmin
       .from("youtube_trending_archive")
       .upsert({
         category_id: "bundle",
@@ -134,12 +116,8 @@ export async function fetchAndCacheTrending(categoryId: string, date: string = g
         videos_data: bundleObj,
         updated_at: new Date().toISOString(),
       }, { onConflict: "target_date, category_id" });
-
-    if (upsertError) {
-      console.error("Failed to write to Supabase Cache:", upsertError.message);
-    } else {
-      console.log(`Successfully cached category ${dbCategoryId} for date ${date} in Daily Bundle DB.`);
-    }
+      
+    console.log(`Successfully cached category ${dbCategoryId} for date ${date} in Single Bundle DB Row.`);
   } catch (dbUpsertErr) {
     console.error("Supabase Cache write encountered error:", dbUpsertErr);
   }
@@ -207,15 +185,21 @@ export async function GET(req: NextRequest) {
       case "trending-bundle": {
         const date = searchParams.get("date") || getKstTodayDate();
         try {
-          const { data: bundleRow } = await supabaseAdmin
+          const { data: rows } = await supabaseAdmin
             .from("youtube_trending_archive")
-            .select("videos_data")
-            .eq("target_date", date)
-            .eq("category_id", "bundle")
-            .maybeSingle();
+            .select("category_id, videos_data")
+            .eq("target_date", date);
 
-          if (bundleRow && bundleRow.videos_data && typeof bundleRow.videos_data === "object" && !Array.isArray(bundleRow.videos_data)) {
-            return NextResponse.json({ source: "supabase-db-daily-bundle-all", bundle: bundleRow.videos_data });
+          if (rows && rows.length > 0) {
+            const bundleObj: Record<string, any[]> = {};
+            for (const r of rows) {
+              if (r.category_id === "bundle" && r.videos_data && typeof r.videos_data === "object" && !Array.isArray(r.videos_data)) {
+                Object.assign(bundleObj, r.videos_data);
+              } else if (Array.isArray(r.videos_data)) {
+                bundleObj[r.category_id] = r.videos_data;
+              }
+            }
+            return NextResponse.json({ source: "supabase-db-daily-bundle-all", bundle: bundleObj });
           }
         } catch (err) {
           console.error("trending-bundle fetch error:", err);
