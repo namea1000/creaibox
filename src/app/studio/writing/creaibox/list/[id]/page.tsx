@@ -544,8 +544,8 @@ function CreaiboxManuscriptDetailContent() {
     };
   }, [isFocusMode]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sidebarTab, setSidebarTab] = useState<"domain" | "search">("domain");
   const [sidebarDomainFilter, setSidebarDomainFilter] = useState("all");
+  const [sidebarStatusFilter, setSidebarStatusFilter] = useState<"all" | "published" | "draft">("all");
   const [clientSiteBrandIds, setClientSiteBrandIds] = useState<Set<string>>(new Set());
   const [hasLocalEdits, setHasLocalEdits] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -989,6 +989,12 @@ function CreaiboxManuscriptDetailContent() {
         if (itemDomain !== sidebarDomainFilter) return false;
       }
 
+      if (sidebarStatusFilter !== "all") {
+        const isPublished = item.status === "published";
+        if (sidebarStatusFilter === "published" && !isPublished) return false;
+        if (sidebarStatusFilter === "draft" && isPublished) return false;
+      }
+
       if (lower) {
         const title = (item.title || "").toLowerCase();
         const targetKeyword = (item.targetKeyword || "").toLowerCase();
@@ -997,7 +1003,7 @@ function CreaiboxManuscriptDetailContent() {
 
       return true;
     });
-  }, [clientSiteBrandIds, sidebarDomainFilter, sidebarList, searchTerm]);
+  }, [clientSiteBrandIds, sidebarDomainFilter, sidebarStatusFilter, sidebarList, searchTerm]);
 
   const persistCaches = useCallback(
     (nextRecord: StudioManuscriptRecord) => {
@@ -2456,71 +2462,77 @@ function CreaiboxManuscriptDetailContent() {
                 </button>
               </div>
 
-              {/* 원고 도메인 / 원고 검색 2탭 분리 컨트롤 */}
-              <div className="p-4 pb-0 shrink-0">
-                <div className="flex rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-1 mb-3">
-                  <button
-                    type="button"
-                    onClick={() => setSidebarTab("domain")}
-                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[12px] font-bold transition cursor-pointer ${
-                      sidebarTab === "domain"
-                        ? "bg-violet-600 text-white shadow-md shadow-violet-950/30"
-                        : "text-zinc-400 hover:text-white"
-                    }`}
-                  >
-                    <Globe className="h-3.5 w-3.5" />
-                    도메인
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSidebarTab("search")}
-                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[12px] font-bold transition cursor-pointer ${
-                      sidebarTab === "search"
-                        ? "bg-violet-600 text-white shadow-md shadow-violet-950/30"
-                        : "text-zinc-400 hover:text-white"
-                    }`}
-                  >
-                    <Search className="h-3.5 w-3.5" />
-                    원고 검색
-                  </button>
+              {/* 원고 검색, 도메인, 발행 상태 통합 필터 (좌우 꽉 채운 구분선 및 세로 구분선 구조) */}
+              <div className="shrink-0">
+                {/* 1. 검색창 (좌우 꽉 찬 구분선) */}
+                <div className="w-full border-b border-zinc-800/80 px-4 py-2.5">
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
+                    <input
+                      value={searchTerm}
+                      onChange={(event) => setSearchTerm(event.target.value)}
+                      placeholder="원고 제목 또는 검색 키워드 입력..."
+                      className="w-full bg-transparent py-1 pl-6 pr-2 text-[12.5px] font-medium text-white placeholder:text-zinc-500 outline-none transition"
+                    />
+                  </div>
                 </div>
 
-                {/* 탭 1: 도메인 선택 드롭다운 */}
-                {sidebarTab === "domain" && (
-                  <div className="relative mb-3">
-                    <Globe className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300/70" />
+                {/* 2. 도메인 선택 (좌우 꽉 찬 구분선 + 세로 구분선) */}
+                <div className="w-full border-b border-zinc-800/80 px-4 py-2 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 shrink-0 text-zinc-400">
+                    <Globe className="h-3.5 w-3.5 text-violet-400" />
+                    <span className="text-[12px] font-bold text-zinc-300">도메인</span>
+                  </div>
+
+                  {/* 세로 구분선 */}
+                  <div className="h-3.5 w-[1px] bg-zinc-800 shrink-0 mx-1" />
+
+                  <div className="relative min-w-0 flex-1">
                     <select
                       value={sidebarDomainFilter}
                       onChange={(event) => setSidebarDomainFilter(event.target.value)}
-                      className="w-full rounded-xl border border-zinc-800/80 bg-zinc-950/40 py-2.5 pl-10 pr-8 text-[13px] font-semibold text-white outline-none transition focus:border-violet-500/50 appearance-none cursor-pointer"
+                      className="w-full bg-transparent py-1 pl-1 pr-6 text-[12px] font-semibold text-zinc-200 outline-none cursor-pointer hover:text-white transition text-ellipsis overflow-hidden whitespace-nowrap appearance-none"
                     >
-                      <option value="all" className="bg-[#0b0f15] text-white">📑 전체 글목록 보기</option>
+                      <option value="all" className="bg-[#0b0f15] text-white">📑 전체 도메인 보기</option>
                       {sidebarDomainOptions.map((domain) => (
                         <option key={domain} value={domain} className="bg-[#0b0f15] text-white">
                           {domain}
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                    <ChevronDown className="pointer-events-none absolute right-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
                   </div>
-                )}
+                </div>
 
-                {/* 탭 2: 원고 검색 입력창 */}
-                {sidebarTab === "search" && (
-                  <div className="relative mb-3">
-                    <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-300/60" />
-                    <input
-                      value={searchTerm}
-                      onChange={(event) => setSearchTerm(event.target.value)}
-                      placeholder="원고 제목 또는 검색 키워드 입력..."
-                      className="w-full rounded-xl border border-zinc-800/80 bg-zinc-950/30 py-2.5 pl-10 pr-4 text-[13px] font-medium text-white outline-none transition placeholder:text-white/30 focus:border-violet-500/50"
-                    />
+                {/* 3. 발행 상태 필터 (좌우 꽉 찬 구분선) */}
+                <div className="w-full border-b border-zinc-800/80 px-4 py-2 flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold text-zinc-400 shrink-0">상태</span>
+                  
+                  <div className="flex items-center gap-1">
+                    {[
+                      { id: "all", label: "전체" },
+                      { id: "published", label: "🟢 발행완료" },
+                      { id: "draft", label: "⚪ 임시저장" },
+                    ].map((st) => (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => setSidebarStatusFilter(st.id as any)}
+                        className={`px-2 py-0.5 text-[11px] font-extrabold rounded-md transition cursor-pointer ${
+                          sidebarStatusFilter === st.id
+                            ? "bg-violet-600/30 text-violet-300 border border-violet-500/40 shadow-sm"
+                            : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50"
+                        }`}
+                      >
+                        {st.label}
+                      </button>
+                    ))}
                   </div>
-                )}
+                </div>
               </div>
 
-              {/* 스크롤 가능한 원고 리스트 본문 */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-4 pt-0">
+              {/* 스크롤 가능한 원고 리스트 본문 (상단 여백 pt-3.5 추가) */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-4 pt-3.5">
                 <div ref={manuscriptListRef} className="space-y-2">
                   {filteredManuscripts.map((manuscript) => {
                     const active = manuscript.id === data.id;

@@ -116,14 +116,13 @@ export async function GET(request: Request) {
     });
   }
 
-  // 2. 과거 날짜 또는 오늘 지나간 시간대(예: 현재 18시일 때 17시) 요청 시:
-  // 해당 시각에 수집된 DB 데이터가 없으면 가짜/현재 데이터를 시각 위장해서 넣지 않고 솔직하게 안내 (가짜 데이터 전면 금지 룰)
+  // 2. 과거 날짜 또는 오늘 지나간 시간대 요청 시 DB 기록이 없으면 100% 솔직하게 없음을 알림 (Strict Zero Fake Data Rule 준수)
   if (isPastDate || isPastHourToday) {
     return NextResponse.json({
       geo,
       total: 0,
       items: [],
-      message: `선택하신 일시(${targetDate} ${targetHour}시)의 구글 트렌드 실시간 수집 기록이 CreAibox DB에 존재하지 않습니다.`,
+      message: `선택하신 일시(${targetDate} ${targetHour}시)는 구글 포털 API의 과거 시간대 실시간 미제공 범위이거나 CreAibox DB 자동 수집 구축 이전 시점의 데이터입니다.`,
     });
   }
 

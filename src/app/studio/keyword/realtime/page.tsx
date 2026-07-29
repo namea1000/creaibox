@@ -103,12 +103,6 @@ export default function RealtimeKeywordPage() {
   const isToday = selectedDate === todayStr;
 
   useEffect(() => {
-    if (!isToday) {
-      setSelectedHour(12);
-    }
-  }, [selectedDate, isToday]);
-
-  useEffect(() => {
     fetchRealtimeTrends(selectedDate, selectedHour);
   }, [selectedDate, selectedHour]);
 
@@ -116,6 +110,17 @@ export default function RealtimeKeywordPage() {
     navigator.clipboard.writeText(kw);
     setCopiedKeyword(kw);
     setTimeout(() => setCopiedKeyword(null), 2000);
+  };
+
+  const handleHourChange = (delta: number) => {
+    let nextHour = selectedHour + delta;
+    if (nextHour < 0) {
+      nextHour = 23;
+    } else if (nextHour > 23) {
+      nextHour = 0;
+    }
+    if (isToday && nextHour > currentHour) return;
+    setSelectedHour(nextHour);
   };
 
   const handleDateChange = (days: number) => {
@@ -154,13 +159,15 @@ export default function RealtimeKeywordPage() {
         {/* 🗓️ loword 스타일 날짜 및 시간대 선택 바 */}
         <div className="flex flex-wrap items-center gap-4 bg-black/60 p-4 rounded-2xl border border-zinc-800">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-zinc-400 flex items-center gap-1">
-              <Calendar size={14} className="text-emerald-400" /> 날짜 선택
+            <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+              <Calendar size={15} className="text-emerald-400" /> 날짜 선택
             </span>
-            <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-700/60 rounded-xl px-2 py-1">
+            <div className="flex items-center gap-1 bg-zinc-900 border border-emerald-500/40 rounded-xl px-2 py-1 shadow-sm">
               <button
+                type="button"
                 onClick={() => handleDateChange(-1)}
-                className="p-1 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white"
+                className="p-1 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition cursor-pointer"
+                title="이전 날짜 (-1일)"
               >
                 <ChevronLeft size={16} />
               </button>
@@ -168,11 +175,14 @@ export default function RealtimeKeywordPage() {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="bg-transparent text-white font-mono font-bold text-xs px-2 py-1 outline-none cursor-pointer"
+                className="bg-transparent text-white font-mono font-bold text-xs px-2 py-1 outline-none cursor-pointer [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:scale-125 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert-[70%] [&::-webkit-calendar-picker-indicator]:sepia-[100%] [&::-webkit-calendar-picker-indicator]:saturate-[1000%] [&::-webkit-calendar-picker-indicator]:hue-rotate-[90deg] [&::-webkit-calendar-picker-indicator]:hover:scale-150 transition-all"
               />
               <button
+                type="button"
                 onClick={() => handleDateChange(1)}
-                className="p-1 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white"
+                disabled={selectedDate >= todayStr}
+                className="p-1 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+                title="다음 날짜 (+1일)"
               >
                 <ChevronRight size={16} />
               </button>
@@ -183,27 +193,48 @@ export default function RealtimeKeywordPage() {
             <span className="text-xs font-bold text-zinc-400 flex items-center gap-1">
               <Clock size={14} className="text-blue-400" /> 시간대 선택
             </span>
-            <select
-              value={selectedHour}
-              onChange={(e) => isToday && setSelectedHour(Number(e.target.value))}
-              disabled={!isToday}
-              className="bg-zinc-900 border border-zinc-700/60 text-white font-bold text-xs px-3 py-2 rounded-xl outline-none disabled:opacity-80 disabled:cursor-not-allowed"
-            >
-              {isToday ? (
-                Array.from({ length: 24 }).map((_, h) => {
-                  const isFuture = h > currentHour;
-                  const isCurrent = h === currentHour;
+            <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-700/60 rounded-xl px-2 py-1">
+              <button
+                type="button"
+                onClick={() => handleHourChange(-1)}
+                className="p-1 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition cursor-pointer"
+                title="이전 시간대 (-1시간)"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              <select
+                value={selectedHour}
+                onChange={(e) => setSelectedHour(Number(e.target.value))}
+                className="bg-transparent text-white font-mono font-bold text-xs px-2 py-1 outline-none cursor-pointer"
+              >
+                {Array.from({ length: 24 }).map((_, h) => {
+                  const isFuture = isToday && h > currentHour;
+                  const isCurrent = isToday && h === currentHour;
 
                   return (
-                    <option key={h} value={h} disabled={isFuture} className={isFuture ? "text-zinc-600 bg-zinc-950" : ""}>
-                      {h < 10 ? `0${h}` : h}시 {isCurrent ? "(현재)" : isFuture ? "(미집계)" : "(과거 기록)"}
+                    <option
+                      key={h}
+                      value={h}
+                      disabled={isFuture}
+                      className={isFuture ? "text-zinc-600 bg-zinc-950" : "bg-zinc-900 text-white"}
+                    >
+                      {h < 10 ? `0${h}` : h}시 {isCurrent ? "(현재)" : isFuture ? "(미집계)" : "(아카이빙 기록)"}
                     </option>
                   );
-                })
-              ) : (
-                <option value={12}>12시 (일간 대표 스냅샷)</option>
-              )}
-            </select>
+                })}
+              </select>
+
+              <button
+                type="button"
+                onClick={() => handleHourChange(1)}
+                disabled={isToday && selectedHour >= currentHour}
+                className="p-1 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+                title="다음 시간대 (+1시간)"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
 
           <div className="ml-auto text-xs text-zinc-400 font-mono flex items-center gap-1.5">
@@ -240,11 +271,12 @@ export default function RealtimeKeywordPage() {
               네이버 실시간 검색어를 가져오는 중입니다...
             </div>
           ) : naverKeywords.length === 0 ? (
-            <div className="p-10 text-center bg-zinc-950/80 border border-amber-500/20 rounded-2xl space-y-2">
-              <AlertCircle className="mx-auto text-amber-400/80" size={32} />
-              <h4 className="text-sm font-bold text-zinc-200">조회할 수 있는 아카이빙 데이터가 없습니다</h4>
-              <p className="text-xs text-zinc-400 max-w-xs mx-auto leading-relaxed">
-                선택하신 일시의 데이터는 네이버 DataLab 및 CreAibox DB 수집 기간 이전이거나 아카이빙 기록이 존재하지 않습니다.
+            <div className="p-10 text-center bg-zinc-950/80 border border-amber-500/20 rounded-2xl space-y-3">
+              <AlertCircle className="mx-auto text-amber-400/80" size={36} />
+              <h4 className="text-base font-bold text-zinc-200">조회할 수 있는 아카이빙 데이터가 없습니다</h4>
+              <p className="text-sm font-medium text-zinc-300 w-full mx-auto leading-relaxed whitespace-pre-line [word-break:keep-all]">
+                선택하신 일시의 데이터는 CreAibox DB 수집 기간 이전이거나 아카이빙 기록이 존재하지 않습니다.{"\n"}
+                (2026년 7월 29일부터 개발을 완료하여 네이버 실시간 검색어 수집을 시작하였습니다.)
               </p>
             </div>
           ) : (
@@ -329,11 +361,12 @@ export default function RealtimeKeywordPage() {
               구글 실시간 트렌드를 수집하는 중입니다...
             </div>
           ) : googleKeywords.length === 0 ? (
-            <div className="p-10 text-center bg-zinc-950/80 border border-amber-500/20 rounded-2xl space-y-2">
-              <AlertCircle className="mx-auto text-amber-400/80" size={32} />
-              <h4 className="text-sm font-bold text-zinc-200">조회할 수 있는 아카이빙 데이터가 없습니다</h4>
-              <p className="text-xs text-zinc-400 max-w-xs mx-auto leading-relaxed">
-                선택하신 일시의 데이터는 구글 트렌드 및 CreAibox DB 수집 기간 이전이거나 아카이빙 기록이 존재하지 않습니다.
+            <div className="p-10 text-center bg-zinc-950/80 border border-amber-500/20 rounded-2xl space-y-3">
+              <AlertCircle className="mx-auto text-amber-400/80" size={36} />
+              <h4 className="text-base font-bold text-zinc-200">조회할 수 있는 아카이빙 데이터가 없습니다</h4>
+              <p className="text-sm font-medium text-zinc-300 w-full mx-auto leading-relaxed whitespace-pre-line [word-break:keep-all]">
+                선택하신 일시의 데이터는 CreAibox DB 수집 기간 이전이거나 아카이빙 기록이 존재하지 않습니다.{"\n"}
+                (2026년 7월 29일부터 개발을 완료하여 구글 실시간 검색어 수집을 시작하였습니다.)
               </p>
             </div>
           ) : (

@@ -81,13 +81,6 @@ export async function getHistoricalHourlyKeywords(targetDate: string, targetHour
   const targetHourStr = String(targetHour);
   const cacheKey = `${targetDate}_${targetHourStr}_${provider}`;
 
-  // 구글 과거 날짜 데이터 요청 시 구형 무한캐시 비우기
-  const todayStr = new Date().toISOString().split("T")[0];
-  if (provider === "google" && targetDate < todayStr) {
-    memoryKeywordCache.delete(cacheKey);
-    return null;
-  }
-
   // 1. 메모리 캐시 확인
   if (memoryKeywordCache.has(cacheKey)) {
     return memoryKeywordCache.get(cacheKey) || null;

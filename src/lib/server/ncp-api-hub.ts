@@ -91,3 +91,87 @@ export async function fetchNaverDataLabTrend(body: any) {
     return { results: [] };
   }
 }
+
+// 🟢 네이버 실검/연관검색어 실측 API (Naver Realtime Auto-complete API)
+export async function fetchNaverAutoComplete(query: string): Promise<string[]> {
+  try {
+    const url = `https://ac.search.naver.com/nx/ac?q=${encodeURIComponent(
+      query
+    )}&con=1&frm=nv&ans=2&r_format=json&r_enc=UTF-8&r_unicode=0&t_koreng=1&run=2&rev=4&q_enc=UTF-8`;
+
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      },
+      cache: "no-store",
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.items && Array.isArray(data.items)) {
+        const keywords: string[] = [];
+        data.items.forEach((group: any) => {
+          if (Array.isArray(group)) {
+            group.forEach((item: any) => {
+              if (Array.isArray(item) && typeof item[0] === "string") {
+                keywords.push(item[0]);
+              }
+            });
+          }
+        });
+        if (keywords.length > 0) return Array.from(new Set(keywords));
+      }
+    }
+  } catch (err) {
+    console.error("fetchNaverAutoComplete error:", err);
+  }
+  return [];
+}
+
+// 🔵 구글 실시간 뉴스 RSS API (Google Realtime News RSS API - No key required, 100% Real Data)
+export async function fetchGoogleNewsRss(query: string): Promise<Array<{ title: string; source: string; pubDate: string; url: string }>> {
+  try {
+    const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=ko&gl=KR&ceid=KR:ko`;
+    const res = await fetch(rssUrl, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      },
+      cache: "no-store",
+    });
+
+    if (res.ok) {
+      const xml = await res.text();
+      const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+      let match;
+      const list: Array<{ title: string; source: string; pubDate: string; url: string }> = [];
+
+      while ((match = itemRegex.exec(xml)) !== null && list.length < 8) {
+        const itemContent = match[1];
+        const titleMatch = /<title>([\s\S]*?)<\/title>/.exec(itemContent);
+        const linkMatch = /<link>([\s\S]*?)<\/link>/.exec(itemContent);
+        const sourceMatch = /<source[^>]*>([\s\S]*?)<\/source>/.exec(itemContent);
+        const pubDateMatch = /<pubDate>([\s\S]*?)<\/pubDate>/.exec(itemContent);
+
+        if (titleMatch) {
+          const fullTitle = titleMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1").trim();
+          const cleanTitle = fullTitle.split(" - ")[0].trim();
+          const newsSource = sourceMatch ? sourceMatch[1].trim() : fullTitle.split(" - ")[1] || "뉴스";
+          const newsUrl = linkMatch ? linkMatch[1].trim() : `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+
+          list.push({
+            title: cleanTitle,
+            source: newsSource,
+            pubDate: pubDateMatch ? "최근 이슈" : "실시간 뉴스",
+            url: newsUrl,
+          });
+        }
+      }
+      return list;
+    }
+  } catch (err) {
+    console.error("fetchGoogleNewsRss error:", err);
+  }
+  return [];
+}
