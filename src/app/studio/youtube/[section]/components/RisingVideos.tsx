@@ -603,38 +603,6 @@ export default function RisingVideos() {
               <span>{ct.name}</span>
             </button>
           ))}
-
-          {/* 주요 12개국 모드일 때만 기타 국가 드롭다운 탭 함께 노출 */}
-          {selectedRegionGroup === "top" && (() => {
-            const selectedOther = OTHER_COUNTRIES.find((c) => c.code === selectedCountry);
-            return (
-              <div className="relative inline-block shrink-0">
-                <select
-                  value={selectedOther ? selectedCountry : ""}
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      handleCountryChange(e.target.value);
-                    }
-                  }}
-                  className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition cursor-pointer outline-none border-2 appearance-none pr-8 flex items-center gap-1.5 ${
-                    selectedOther
-                      ? "bg-orange-950/40 border-orange-500/70 text-white shadow-lg shadow-orange-950/40 transform scale-105"
-                      : "bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-800 hover:text-white"
-                  }`}
-                >
-                  <option value="" disabled className="bg-zinc-900 text-zinc-400 font-bold">
-                    🌐 {selectedOther ? `${selectedOther.flag} ${selectedOther.name} (${selectedOther.code})` : `기타 국가 (${OTHER_COUNTRIES.length}개국)`}
-                  </option>
-                  {OTHER_COUNTRIES.map((ct) => (
-                    <option key={ct.code} value={ct.code} className="bg-zinc-900 text-white py-1 font-bold">
-                      {ct.flag} {ct.name} ({ct.code})
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400" />
-              </div>
-            );
-          })()}
         </div>
 
         {/* Separator Divider */}
