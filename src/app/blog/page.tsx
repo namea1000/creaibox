@@ -98,10 +98,11 @@ export default async function BlogPage(props: {
     const postIds = publishedPostsRaw.map((p) => p.id);
     const { data: images, error: imagesError } = await supabase
       .from("generated_images")
-      .select("source_id, image_url, is_primary")
+      .select("source_id, image_url, is_primary, created_at")
       .eq("source_type", "writing_creaibox_posts")
-      .eq("image_role", "thumbnail")
-      .in("source_id", postIds);
+      .in("source_id", postIds)
+      .order("is_primary", { ascending: false })
+      .order("created_at", { ascending: false });
 
     if (imagesError) {
       console.error("썸네일 이미지 조회 실패:", imagesError.message);

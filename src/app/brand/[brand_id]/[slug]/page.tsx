@@ -293,10 +293,11 @@ const fetchPost = cache(async (brandId: string, slug: string) => {
   // 3. Fetch Thumbnail
   const { data: images } = await supabase
     .from("generated_images")
-    .select("image_url, is_primary")
+    .select("image_url, is_primary, created_at")
     .eq("source_type", "writing_creaibox_posts")
-    .eq("image_role", "thumbnail")
-    .eq("source_id", post.id);
+    .eq("source_id", post.id)
+    .order("is_primary", { ascending: false })
+    .order("created_at", { ascending: false });
 
   const primaryImg = (images || []).find((img) => img.is_primary) || (images || [])[0];
   post.thumbnailUrl = primaryImg ? primaryImg.image_url : null;
@@ -450,10 +451,11 @@ async function transformContentWithOgCards(content: string, supabase: any): Prom
 
           const { data: imgData } = await supabase
             .from("generated_images")
-            .select("source_id, image_url, is_primary")
+            .select("source_id, image_url, is_primary, created_at")
             .eq("source_type", "writing_creaibox_posts")
-            .eq("image_role", "thumbnail")
-            .eq("source_id", postData.id);
+            .eq("source_id", postData.id)
+            .order("is_primary", { ascending: false })
+            .order("created_at", { ascending: false });
 
           const primaryImg = (imgData || []).find((i: any) => i.is_primary) || (imgData || [])[0];
           if (primaryImg?.image_url) {
@@ -573,10 +575,11 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
       
       const { data: images } = await supabase
         .from("generated_images")
-        .select("source_id, image_url, is_primary")
+        .select("source_id, image_url, is_primary, created_at")
         .eq("source_type", "writing_creaibox_posts")
-        .eq("image_role", "thumbnail")
-        .in("source_id", filteredIds);
+        .in("source_id", filteredIds)
+        .order("is_primary", { ascending: false })
+        .order("created_at", { ascending: false });
 
       const imageMap: Record<string, string> = {};
       (images || []).forEach((img) => {

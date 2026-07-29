@@ -249,10 +249,11 @@ export default async function BrandBlogHome({ params }: BrandPageProps) {
     const postIds = postsRaw.map((p) => p.id);
     const { data: images } = await supabase
       .from("generated_images")
-      .select("source_id, image_url, is_primary")
+      .select("source_id, image_url, is_primary, created_at")
       .eq("source_type", "writing_creaibox_posts")
-      .eq("image_role", "thumbnail")
-      .in("source_id", postIds);
+      .in("source_id", postIds)
+      .order("is_primary", { ascending: false })
+      .order("created_at", { ascending: false });
 
     const imageMap: Record<string, { url: string; is_primary: boolean }[]> = {};
     (images || []).forEach((img) => {

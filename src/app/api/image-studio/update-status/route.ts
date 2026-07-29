@@ -61,8 +61,7 @@ export async function POST(req: NextRequest) {
         .from("generated_images")
         .update({ is_primary: false })
         .eq("source_type", sourceType)
-        .eq("source_id", currentSourceId)
-        .eq("image_role", imageRole);
+        .eq("source_id", currentSourceId);
 
       if (clearError) {
         console.error("Clear primary error:", clearError);

@@ -42,10 +42,11 @@ export async function GET(req: NextRequest) {
         // Fetch primary thumbnail image
         const { data: imgData } = await supabase
           .from("generated_images")
-          .select("image_url, is_primary")
+          .select("image_url, is_primary, created_at")
           .eq("source_type", "writing_creaibox_posts")
-          .eq("image_role", "thumbnail")
-          .eq("source_id", postData.id);
+          .eq("source_id", postData.id)
+          .order("is_primary", { ascending: false })
+          .order("created_at", { ascending: false });
 
         const primaryImg = (imgData || []).find((i) => i.is_primary) || (imgData || [])[0];
 

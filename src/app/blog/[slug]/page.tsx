@@ -240,10 +240,11 @@ async function fetchPublishedPost(slug: string) {
   // Fetch thumbnail for this post
   const { data: images, error: imagesError } = await supabase
     .from("generated_images")
-    .select("image_url, is_primary")
+    .select("image_url, is_primary, created_at")
     .eq("source_type", "writing_creaibox_posts")
-    .eq("image_role", "thumbnail")
-    .eq("source_id", post.id);
+    .eq("source_id", post.id)
+    .order("is_primary", { ascending: false })
+    .order("created_at", { ascending: false });
 
   if (imagesError) {
     console.error("썸네일 이미지 조회 실패:", imagesError.message);
@@ -279,10 +280,11 @@ async function fetchPublishedPostsList() {
   const postIds = publishedPostsRaw.map((p) => p.id);
   const { data: images } = await supabase
     .from("generated_images")
-    .select("source_id, image_url, is_primary")
+    .select("source_id, image_url, is_primary, created_at")
     .eq("source_type", "writing_creaibox_posts")
-    .eq("image_role", "thumbnail")
-    .in("source_id", postIds);
+    .in("source_id", postIds)
+    .order("is_primary", { ascending: false })
+    .order("created_at", { ascending: false });
 
   const imageMap: Record<string, { url: string; is_primary: boolean }[]> = {};
   (images || []).forEach((img) => {
@@ -403,10 +405,11 @@ async function transformContentWithOgCards(content: string, supabase: any): Prom
 
           const { data: imgData } = await supabase
             .from("generated_images")
-            .select("image_url, is_primary")
+            .select("image_url, is_primary, created_at")
             .eq("source_type", "writing_creaibox_posts")
-            .eq("image_role", "thumbnail")
-            .eq("source_id", postData.id);
+            .eq("source_id", postData.id)
+            .order("is_primary", { ascending: false })
+            .order("created_at", { ascending: false });
 
           const primaryImg = (imgData || []).find((i: any) => i.is_primary) || (imgData || [])[0];
           if (primaryImg?.image_url) {

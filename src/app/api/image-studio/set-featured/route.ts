@@ -36,8 +36,7 @@ export async function POST(req: NextRequest) {
       .from("generated_images")
       .update({ is_primary: false })
       .eq("source_type", sourceType)
-      .eq("source_id", String(sourceId))
-      .eq("image_role", imageRole);
+      .eq("source_id", String(sourceId));
 
     if (clearError) {
       console.error("Set featured image - clear error:", clearError);
