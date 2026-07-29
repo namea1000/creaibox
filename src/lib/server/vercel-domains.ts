@@ -185,3 +185,43 @@ export async function assignDomainToProject(domainName: string) {
 
   return await res.json();
 }
+
+/**
+ * 5. Vercel 도메인 DNS 레코드 자동 추가 (Resend / Custom DNS Record Injection)
+ */
+export async function addDnsRecordToVercel(domainName: string, record: {
+  name: string;
+  type: string;
+  value: string;
+  priority?: number;
+}) {
+  const headers = getHeaders();
+  const teamQuery = getTeamQuery();
+  const asciiDomain = domainToASCII(domainName.toLowerCase().trim());
+
+  const body: any = {
+    name: record.name,
+    type: record.type,
+    value: record.value,
+  };
+  if (record.priority !== undefined) {
+    if (record.type === "MX") {
+      body.mxPriority = record.priority;
+    } else {
+      body.priority = record.priority;
+    }
+  }
+
+  const res = await fetch(`${VERCEL_API_URL}/v2/domains/${asciiDomain}/records${teamQuery}`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.error?.message || `Vercel DNS 레코드 추가 실패: ${record.type} ${record.name}`);
+  }
+
+  return await res.json();
+}

@@ -18,7 +18,9 @@ import {
   ChevronDown,
   ChevronUp,
   X,
+  Mail,
 } from "lucide-react";
+import EmailForwardingManager from "./components/EmailForwardingManager";
 
 export default function DomainSearchPage() {
   const [activeTab, setActiveTab] = useState<string>("search");
@@ -248,6 +250,18 @@ export default function DomainSearchPage() {
         </button>
 
         <button
+          onClick={() => scrollToSection("email")}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 cursor-pointer ${
+            activeTab === "email"
+              ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/20 scale-102"
+              : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800"
+          }`}
+        >
+          <Mail size={16} />
+          <span>3️⃣ ✉️ 커스텀 이메일 1초 연동</span>
+        </button>
+
+        <button
           onClick={() => scrollToSection("comparison")}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 cursor-pointer ${
             activeTab === "comparison"
@@ -256,19 +270,19 @@ export default function DomainSearchPage() {
           }`}
         >
           <Award size={16} />
-          <span>3️⃣ 📊 국내외 도메인 팩트 가격 비교</span>
+          <span>4️⃣ 📊 국내외 도메인 팩트 가격 비교</span>
         </button>
 
         <button
           onClick={() => scrollToSection("perks")}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 cursor-pointer ${
             activeTab === "perks"
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-600/20 scale-102"
+              ? "bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg shadow-pink-600/20 scale-102"
               : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800"
           }`}
         >
           <Crown size={16} />
-          <span>4️⃣ 👑 비즈니스 회원 0원 혜택 안내</span>
+          <span>5️⃣ 👑 비즈니스 회원 0원 혜택 안내</span>
         </button>
 
         <button
@@ -280,7 +294,7 @@ export default function DomainSearchPage() {
           }`}
         >
           <HelpCircle size={16} />
-          <span>5️⃣ ❓ 자주 묻는 질문 (FAQ)</span>
+          <span>6️⃣ ❓ 자주 묻는 질문 (FAQ)</span>
         </button>
       </div>
 
@@ -463,7 +477,15 @@ export default function DomainSearchPage() {
         </div>
       </div>
 
-      {/* --- SECTION 3: 📊 국내외 도메인 팩트 가격 비교 --- */}
+      {/* --- SECTION 3: ✉️ 커스텀 이메일 1초 연동 --- */}
+      <div id="section-email" className="space-y-8 scroll-mt-24">
+        <EmailForwardingManager
+          currentUser={currentUser}
+          onRequireAuth={requireAuth}
+        />
+      </div>
+
+      {/* --- SECTION 4: 📊 국내외 도메인 팩트 가격 비교 --- */}
       <div id="section-comparison" className="space-y-8 scroll-mt-24">
         <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 lg:p-8 space-y-4">
           <div className="space-y-1">

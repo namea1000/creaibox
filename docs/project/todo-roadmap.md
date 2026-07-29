@@ -131,6 +131,29 @@
   - 메인 랜딩페이지 PORTFOLIO 실적 섹션과 블로그 최신 발행글 6개 실시간 동기화 완료
   - 서브도메인/커스텀도메인 SNS 카카오톡 링크 공유 시 커스텀 대표 비주얼(`sotongcheum_hero_bg.png`) 및 전용 타이틀 OpenGraph 자동 노출 완성
 
+---
+
+## 8. 📧 커스텀 도메인 이메일 시스템 (Custom Domain Email System)
+
+자사 대표 메일(`ceo@creaibox.com`) 무료 구축, 가입 유저 커스텀 이메일(`user@downhubs.com`), 및 B2B 고객사 도메인 이메일(`contact@clientdomain.com`) 1초 연동 인프라 구축 대장입니다.
+
+- 📖 아키텍처 기술 설계서: [`custom-domain-email-system-spec.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/custom-domain-email-system-spec.md)
+- 📖 운용 가이드 매뉴얼: [`custom-domain-email-system-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/custom-domain-email-system-guide.md)
+
+- [x] **자사 이메일 무보수 무료 연동 기획 및 Vercel DNS 파이프라인 정리**
+  - Vercel 네임서버 유지 상태에서 ImprovMX / Resend MX 레코드 주입 구조 정립 완료
+- [x] **Gmail 앱 연동 수발신 설정 가이드 작성**
+  - 개인 Gmail(`@gmail.com`)에서 `ceo@creaibox.com` 이름으로 전세계에 발신/답장하는 SMTP 가이드 정리 완료
+- [ ] **Resend Domains API & Vercel Domains API 원클릭 무인 1초 이메일 주입 엔진 구현**
+  - B2B 고객사 도메인 등록 시 Vercel DNS API (`createDomainRecord`) 백그라운드 1초 자동 주입 파이프라인 탑재 예정
+- [ ] **고객사 플랜별 일일/월간 발송 쿼터(Quota Throttling) 및 스팸 차단 안전 모듈 탑재**
+  - 고객사별 일일 50~300건 쿼터 초과 시 자동 발송 차단 및 추가 쿼터 팩 결제 상품 연동
+- [ ] **헤비 고객사 전용 API 키 입력 (BYOK: Bring Your Own Key) 옵션 제공**
+  - 일 수천~수만 건 대량 메일 발송 고객사 대상 자가 Resend API 키 등록 모듈 구축 예정
+- [ ] **CreAibox 대시보드 내 전용 웹메일 수발신함 UI 및 Supabase DB 연동 (`/studio/email`)**
+  - `user_emails` 테이블 기반 수신함/발신함/메일 작성 웹 콘솔 구축 예정
+
+
 
 
 
