@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
 import { sendEmailViaResend } from "@/lib/server/resend-email";
 
 // Initialize Supabase Admin client for webhook background routing
@@ -107,22 +108,40 @@ export async function POST(req: NextRequest) {
       try {
         const resendApiKey = process.env.RESEND_API_KEY;
         if (resendApiKey) {
-          const endpointsToTry = [
-            `https://api.resend.com/emails/receiving/${emailId}`,
-            `https://api.resend.com/emails/inbound/${emailId}`,
-            `https://api.resend.com/emails/${emailId}`,
-          ];
+          const resend = new Resend(resendApiKey);
 
-          for (const ep of endpointsToTry) {
-            const fetchRes = await fetch(ep, {
-              headers: { Authorization: `Bearer ${resendApiKey}` },
-            });
-            if (fetchRes.ok) {
-              const fetchedData = await fetchRes.json();
-              console.log(`[Resend Fetch Inbound] Success from ${ep}:`, JSON.stringify(fetchedData));
-              rawHtml = rawHtml || extractString(fetchedData.html) || extractString(fetchedData.html_body);
-              rawText = rawText || extractString(fetchedData.text) || extractString(fetchedData.text_body) || extractString(fetchedData.body);
-              if (rawHtml || rawText) break;
+          // 1. Try Resend SDK get method
+          try {
+            const resendGet = (await (resend.emails as any).receiving?.get?.(emailId)) || (await resend.emails.get(emailId));
+            const resData = resendGet?.data || resendGet;
+            if (resData) {
+              rawHtml = extractString(resData.html) || extractString(resData.html_body);
+              rawText = extractString(resData.text) || extractString(resData.text_body) || extractString(resData.body);
+            }
+          } catch (sdkErr) {
+            console.warn("Resend SDK get failed, trying REST API fetch:", sdkErr);
+          }
+
+          // 2. Fallback REST API endpoints
+          if (!rawHtml && !rawText) {
+            const endpointsToTry = [
+              `https://api.resend.com/emails/receiving/${emailId}`,
+              `https://api.resend.com/emails/inbound/${emailId}`,
+              `https://api.resend.com/emails/${emailId}`,
+            ];
+
+            for (const ep of endpointsToTry) {
+              const fetchRes = await fetch(ep, {
+                headers: { Authorization: `Bearer ${resendApiKey}` },
+              });
+              if (fetchRes.ok) {
+                const fetchedJson = await fetchRes.json();
+                const targetObj = fetchedJson.data || fetchedJson;
+                console.log(`[Resend Fetch Inbound] Success from ${ep}:`, JSON.stringify(targetObj));
+                rawHtml = rawHtml || extractString(targetObj.html) || extractString(targetObj.html_body);
+                rawText = rawText || extractString(targetObj.text) || extractString(targetObj.text_body) || extractString(targetObj.body);
+                if (rawHtml || rawText) break;
+              }
             }
           }
         }
