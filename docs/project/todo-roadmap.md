@@ -157,6 +157,29 @@
 - [ ] **헤비 고객사 전용 API 키 입력 (BYOK: Bring Your Own Key) 옵션 제공**
   - 일 수천~수만 건 대량 메일 발송 고객사 대상 자가 Resend API 키 등록 모듈 구축 예정
 
+---
+
+## 9. 🗺️ Google Maps Platform API 서비스 구축 (Google Maps Integration)
+
+Google Maps Platform (Places, Maps JS, Routes, Distance Matrix API) 기반 위치 지능형 연동 및 AI 서비스 구축 로드맵 대장입니다.
+
+> 💡 **비용 절감 및 가성비 최우선 방침에 따라 구글 맵 유료 구독은 추후 보류하며, 서비스 필요 시 100% 무료 카카오/네이버 지도 API(월 900만~1,000만 건 무료)로 대체 개발 예정입니다.**
+
+- 📖 전용 운용 가이드 매뉴얼: [`google-maps-platform-api-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/google-maps-platform-api-guide.md)
+- 📖 전용 장소 API 매뉴얼: [`google-places-api-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/google-places-api-guide.md)
+
+- [x] **Google Maps Platform API 서비스 구축 매뉴얼 수립 완료**
+  - Places API, Maps JS, Routes & Distance Matrix API 기획 및 5대 실전 서비스 구축 과제 정의 완료
+- [x] **Google Places API (New/v1) 전용 구축 및 연동 가이드 작성 완료**
+  - Text Search, Place Details, Autocomplete, Field Masking (`X-Goog-FieldMask`) 90% 비용 절감 기획 및 TypeScript 스니펫 수립 완료
+- [ ] **[추후 보류] AI 커스텀 웹사이트 빌더 (`/client-site-builder`) 3D 커스텀 지도 및 주소 자동완성 연동**
+  - 필요 시 100% 무료 카카오/네이버 주소 자동완성 및 지도 모듈 대체 연동 예정
+- [ ] **[추후 보류] AI 맛집/여행 블로그 자동 글쓰기 (장소/별점/리뷰 실시간 수집 연동)**
+  - Zero Fake Data 원칙 준수 100% 진짜 장소 데이터 무료 파이프라인 대체 연동 예정
+- [ ] **[추후 보류] AI 동선 최적화 여행 코스 & 위치 기반(LBS) 상권 핀 탐색기 구축**
+  - 카카오/네이버 무료 지도 API 기반 대체 개발 예정
+
+
 
 
 
