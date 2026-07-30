@@ -1,12 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { Resend } from "resend";
-import { sendEmailViaResend } from "@/lib/server/resend-email";
+import { getResendClient, sendEmailViaResend } from "@/lib/server/resend-email";
 
 // Initialize Supabase Admin client for webhook background routing
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+/**
+ * Helper to safely extract string content from any payload property
+ */
+function extractString(val: any): string {
+  if (!val) return "";
+  if (typeof val === "string") return val.trim();
+  if (typeof val === "object") {
+    if (typeof val.text === "string") return val.text.trim();
+    if (typeof val.html === "string") return val.html.trim();
+    if (typeof val.body === "string") return val.body.trim();
+    if (typeof val.content === "string") return val.content.trim();
+    try {
+      return JSON.stringify(val);
+    } catch {
+      return String(val);
+    }
+  }
+  return String(val).trim();
+}
 
 /**
  * Resend Inbound Email Webhook Handler
@@ -19,7 +38,7 @@ export async function POST(req: NextRequest) {
     const payload = await req.json();
     console.log("📥 Resend Inbound Webhook Received:", JSON.stringify(payload, null, 2));
 
-    // Resend Inbound Webhook payload Structure (Flexible parsing)
+    // Resend Inbound Webhook payload Structure
     const emailData = payload.data || payload;
     const from = emailData.from || payload.from;
     const to = emailData.to || payload.to;
@@ -29,7 +48,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "No 'to' or 'from' address found" }, { status: 400 });
     }
 
-    // Extract recipient email (e.g., "ceo@creaibox.com" or "contact@creaibox.com")
+    // Extract recipient email (e.g., "ceo@creaibox.com")
     const recipientStr = Array.isArray(to) ? to[0] : to;
     const cleanRecipient = recipientStr.toLowerCase().trim().replace(/.*<([^>]+)>.*/, "$1");
 
@@ -59,32 +78,12 @@ export async function POST(req: NextRequest) {
       console.log(`No specific rule found. Using default fallback: ${forwardTarget}`);
     }
 
-    // Helper to safely extract string from any field (string, object, array)
-    const extractString = (val: any): string => {
-      if (!val) return "";
-      if (typeof val === "string") return val.trim();
-      if (typeof val === "object") {
-        if (typeof val.text === "string") return val.text.trim();
-        if (typeof val.html === "string") return val.html.trim();
-        if (typeof val.body === "string") return val.body.trim();
-        if (typeof val.content === "string") return val.content.trim();
-        try {
-          return JSON.stringify(val);
-        } catch {
-          return String(val);
-        }
-      }
-      return String(val).trim();
-    };
-
-    // Extract HTML & Text body from all possible webhook payload formats
+    // 1. Direct Webhook Body Extraction
     let rawHtml =
       extractString(emailData.html) ||
       extractString(emailData.html_body) ||
       extractString(emailData.htmlBody) ||
-      extractString(emailData.htmlContent) ||
-      extractString(payload.html) ||
-      extractString(payload.html_body);
+      extractString(payload.html);
 
     let rawText =
       extractString(emailData.text) ||
@@ -92,65 +91,87 @@ export async function POST(req: NextRequest) {
       extractString(emailData.textBody) ||
       extractString(emailData.plain_text) ||
       extractString(emailData.plainText) ||
-      extractString(emailData.text_content) ||
       extractString(emailData.body) ||
       extractString(emailData.content) ||
-      extractString(emailData.snippet) ||
       extractString(payload.text) ||
-      extractString(payload.text_body) ||
-      extractString(payload.body) ||
-      extractString(payload.content);
+      extractString(payload.body);
 
     const emailId = emailData.email_id || emailData.id || payload.email_id || payload.id;
+    console.log(`Target Email ID: ${emailId}`);
 
-    // Try fetching full email content from Resend API if body is missing
+    // 2. Fetch Email Body via Resend SDK & REST API if body is missing in webhook
     if (!rawHtml && !rawText && emailId) {
-      try {
-        const resendApiKey = process.env.RESEND_API_KEY;
-        if (resendApiKey) {
-          const resend = new Resend(resendApiKey);
+      const resendApiKey = process.env.RESEND_API_KEY;
 
-          // 1. Try Resend SDK get method
-          try {
-            const resendGet = (await (resend.emails as any).receiving?.get?.(emailId)) || (await resend.emails.get(emailId));
-            const resData = resendGet?.data || resendGet;
-            if (resData) {
-              rawHtml = extractString(resData.html) || extractString(resData.html_body);
-              rawText = extractString(resData.text) || extractString(resData.text_body) || extractString(resData.body);
-            }
-          } catch (sdkErr) {
-            console.warn("Resend SDK get failed, trying REST API fetch:", sdkErr);
+      if (resendApiKey) {
+        // Attempt 1: Resend SDK get
+        try {
+          const resend = getResendClient();
+          const res = await resend.emails.get(emailId);
+          const resData = (res as any)?.data || res;
+          if (resData) {
+            rawHtml = extractString(resData.html) || extractString(resData.html_body);
+            rawText = extractString(resData.text) || extractString(resData.text_body) || extractString(resData.body);
           }
+        } catch (sdkErr: any) {
+          console.warn("[Resend SDK fetch failed]:", sdkErr?.message || sdkErr);
+        }
 
-          // 2. Fallback REST API endpoints
-          if (!rawHtml && !rawText) {
-            const endpointsToTry = [
-              `https://api.resend.com/emails/receiving/${emailId}`,
-              `https://api.resend.com/emails/inbound/${emailId}`,
-              `https://api.resend.com/emails/${emailId}`,
-            ];
+        // Attempt 2: REST API Endpoints
+        if (!rawHtml && !rawText) {
+          const endpointsToTry = [
+            `https://api.resend.com/emails/${emailId}`,
+            `https://api.resend.com/emails/receiving/${emailId}`,
+            `https://api.resend.com/emails/inbound/${emailId}`,
+          ];
 
-            for (const ep of endpointsToTry) {
+          for (const ep of endpointsToTry) {
+            try {
               const fetchRes = await fetch(ep, {
-                headers: { Authorization: `Bearer ${resendApiKey}` },
+                headers: {
+                  Authorization: `Bearer ${resendApiKey}`,
+                  "Content-Type": "application/json",
+                },
               });
+
               if (fetchRes.ok) {
                 const fetchedJson = await fetchRes.json();
-                const targetObj = fetchedJson.data || fetchedJson;
-                console.log(`[Resend Fetch Inbound] Success from ${ep}:`, JSON.stringify(targetObj));
-                rawHtml = rawHtml || extractString(targetObj.html) || extractString(targetObj.html_body);
-                rawText = rawText || extractString(targetObj.text) || extractString(targetObj.text_body) || extractString(targetObj.body);
+                console.log(`[Resend REST Fetch Success from ${ep}]:`, JSON.stringify(fetchedJson));
+                const item = fetchedJson.data || fetchedJson;
+
+                rawHtml = rawHtml || extractString(item.html) || extractString(item.html_body);
+                rawText = rawText || extractString(item.text) || extractString(item.text_body) || extractString(item.body);
                 if (rawHtml || rawText) break;
+              } else {
+                console.warn(`[Resend REST Fetch ${ep}] Status: ${fetchRes.status}`);
               }
+            } catch (err: any) {
+              console.warn(`[Resend REST Fetch ${ep}] Error:`, err?.message);
             }
           }
         }
-      } catch (apiErr) {
-        console.error("Resend API fetch error:", apiErr);
+
+        // Attempt 3: 600ms Retry delay for index propagation
+        if (!rawHtml && !rawText) {
+          console.log("Waiting 600ms for Resend index propagation...");
+          await new Promise((resolve) => setTimeout(resolve, 600));
+
+          try {
+            const resend = getResendClient();
+            const retryRes = await resend.emails.get(emailId);
+            const retryData = (retryRes as any)?.data || retryRes;
+            if (retryData) {
+              rawHtml = extractString(retryData.html);
+              rawText = extractString(retryData.text) || extractString(retryData.body);
+            }
+          } catch (retryErr: any) {
+            console.warn("[Resend Retry Error]:", retryErr?.message);
+          }
+        }
       }
     }
 
-    // Construct forward email body
+    // Construct Forwarding Email Body
     let bodySection = "";
     if (rawHtml && rawHtml.trim()) {
       bodySection = rawHtml;
@@ -178,11 +199,11 @@ export async function POST(req: NextRequest) {
     `;
 
     const sendResult = await sendEmailViaResend({
-      from: cleanRecipient, // 발신자를 원래 수신주소(ceo@creaibox.com)로 지정
+      from: cleanRecipient,
       to: forwardTarget,
       subject: forwardSubject,
       html: forwardHtml,
-      replyTo: from, // 답장 누르면 원발신자에게 답장되도록 지정!
+      replyTo: from,
     });
 
     console.log("✅ Stateless Forwarding completed successfully:", sendResult);
