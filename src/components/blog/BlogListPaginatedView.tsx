@@ -188,7 +188,7 @@ export default function BlogListPaginatedView({
             >
               <div>
                 {/* Thumbnail Panel */}
-                <div className="aspect-[16/10] bg-slate-100 overflow-hidden relative">
+                <div className="aspect-[16/9] bg-slate-100 overflow-hidden relative">
                   {post.thumb ? (
                     <img
                       src={post.thumb}
