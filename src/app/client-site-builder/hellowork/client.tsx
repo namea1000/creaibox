@@ -144,22 +144,22 @@ export default function HelloWorkClientPage() {
               </p>
 
               {/* Feature Pills */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs font-bold text-slate-300 max-w-xl mx-auto lg:mx-0">
-                <div className="flex items-center gap-2 rounded-xl bg-slate-900/90 border border-slate-800 p-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 text-xs font-bold text-slate-300 max-w-xl mx-auto lg:mx-0">
+                <div className="flex items-center gap-2 rounded-xl bg-slate-900/90 border border-slate-800 p-2.5 sm:p-3">
                   <Clock size={16} className="text-amber-400 shrink-0" />
-                  <span>24시간 365일</span>
+                  <span className="whitespace-nowrap">24시간 365일</span>
                 </div>
-                <div className="flex items-center gap-2 rounded-xl bg-slate-900/90 border border-slate-800 p-3">
+                <div className="flex items-center gap-2 rounded-xl bg-slate-900/90 border border-slate-800 p-2.5 sm:p-3">
                   <Award size={16} className="text-amber-400 shrink-0" />
-                  <span>데스커 & 시디즈</span>
+                  <span className="whitespace-nowrap">데스커 & 시디즈</span>
                 </div>
-                <div className="flex items-center gap-2 rounded-xl bg-slate-900/90 border border-slate-800 p-3">
+                <div className="flex items-center gap-2 rounded-xl bg-slate-900/90 border border-slate-800 p-2.5 sm:p-3">
                   <Building2 size={16} className="text-amber-400 shrink-0" />
-                  <span>비상주 사업자 주소</span>
+                  <span className="whitespace-nowrap">비상주 사업자 주소</span>
                 </div>
-                <div className="flex items-center gap-2 rounded-xl bg-slate-900/90 border border-slate-800 p-3">
+                <div className="flex items-center gap-2 rounded-xl bg-slate-900/90 border border-slate-800 p-2.5 sm:p-3">
                   <Coffee size={16} className="text-amber-400 shrink-0" />
-                  <span>원두커피 무제한</span>
+                  <span className="whitespace-nowrap">원두커피 무제한</span>
                 </div>
               </div>
 
@@ -219,15 +219,14 @@ export default function HelloWorkClientPage() {
       <section id="services" className="py-20 bg-slate-900/40 border-b border-slate-800/60">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           
-          <div className="text-center max-w-3xl mx-auto space-y-4 mb-16">
+          <div className="text-center max-w-4xl mx-auto space-y-4 mb-16">
             <span className="text-xs font-black tracking-widest text-amber-400 uppercase bg-amber-400/10 px-3 py-1 rounded-full border border-amber-400/20">
               WHY HELLO WORK BUL DANG
             </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-white">
-              왜 많은 수험생과 사업자가 <br className="sm:hidden" />
-              <span className="text-amber-400">헬로우워크</span>를 선택할까요?
+            <h2 className="text-xl sm:text-3xl lg:text-4xl font-black text-white whitespace-nowrap tracking-tight">
+              왜 많은 수험생과 사업자가 <span className="text-amber-400">헬로우워크</span>를 선택할까요?
             </h2>
-            <p className="text-sm sm:text-base text-slate-400 font-medium">
+            <p className="text-sm sm:text-base text-slate-400 font-medium whitespace-nowrap">
               시끄럽고 번잡한 일반 스터디카페나 집에서는 얻을 수 없는 압도적 몰입감을 약속합니다.
             </p>
           </div>
@@ -345,14 +344,14 @@ export default function HelloWorkClientPage() {
                     <span>비상주 오피스 추천 대상</span>
                     <span className="text-xs text-amber-400">BENEFITS</span>
                   </h4>
-                  <div className="space-y-3 text-xs text-slate-300 font-medium">
-                    <p className="p-3 rounded-xl bg-slate-900 border border-slate-800/80">
+                  <div className="space-y-3 text-[11px] sm:text-xs text-slate-300 font-medium">
+                    <p className="p-3 rounded-xl bg-slate-900 border border-slate-800/80 whitespace-nowrap overflow-x-auto">
                       💡 <strong>전자상거래 & 쇼핑몰</strong>: 집 주소 노출 없이 불당동 사업자등록이 필요한 대표님
                     </p>
-                    <p className="p-3 rounded-xl bg-slate-900 border border-slate-800/80">
+                    <p className="p-3 rounded-xl bg-slate-900 border border-slate-800/80 whitespace-nowrap overflow-x-auto">
                       💡 <strong>프리랜서 & 1인 기업</strong>: 출장이 잦거나 집에서 주로 작업하시는 창업자분
                     </p>
-                    <p className="p-3 rounded-xl bg-slate-900 border border-slate-800/80">
+                    <p className="p-3 rounded-xl bg-slate-900 border border-slate-800/80 whitespace-nowrap overflow-x-auto">
                       💡 <strong>지사 & 관공서 수주</strong>: 천안 서북구 지역 법인/개인 지사 주소지가 필요한 기업
                     </p>
                   </div>
@@ -447,7 +446,7 @@ export default function HelloWorkClientPage() {
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-slate-400">도로명 주소</h4>
-                    <p className="text-sm font-bold text-white mt-1">충남 천안시 서북구 불당23로 70 (정우프라자 7층 701~702호)</p>
+                    <p className="text-xs sm:text-sm font-bold text-white mt-1 whitespace-nowrap">충남 천안시 서북구 불당23로 70 (정우프라자 7층 701~702호)</p>
                   </div>
                 </div>
 
