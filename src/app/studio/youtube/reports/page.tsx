@@ -16,7 +16,8 @@ import {
   ThumbsUp,
   MessageSquare,
   Layers,
-  Clock
+  Clock,
+  Trophy
 } from "lucide-react";
 import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
@@ -220,7 +221,6 @@ export default function YoutubeReportsPage() {
 
   return (
     <div className="min-h-screen bg-[#060608] px-6 py-8 text-zinc-100">
-      {/* Page Header */}
       <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
           <span className="inline-flex items-center gap-1.5 border border-orange-500/30 bg-orange-500/10 px-2.5 py-1 text-xs font-black uppercase tracking-wider text-orange-400 rounded-full mb-3">
@@ -229,14 +229,13 @@ export default function YoutubeReportsPage() {
           </span>
           <h1 className="text-3xl font-black text-white flex items-center gap-2">
             <FileText className="text-orange-500" size={28} />
-            급상승 영상 분석 리포트
+            영상분석 리포트
           </h1>
           <p className="mt-2 text-sm text-zinc-400 max-w-2xl font-medium leading-relaxed">
-            Gemini AI가 정밀 분석한 대한민국 유튜브 급상승 영상의 흥행 코드와 Remix 기획안 히스토리를 제공합니다.
+            Gemini AI가 정밀 분석한 대한민국 유튜브 급상승 영상 및 인기 영상의 흥행 코드와 Remix 기획안 히스토리를 제공합니다.
           </p>
         </div>
 
-        {/* Search Bar */}
         <div className="relative w-full max-w-xs shrink-0">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
           <input
@@ -252,9 +251,7 @@ export default function YoutubeReportsPage() {
         </div>
       </div>
 
-      {/* Filter Options Area - Matched with Music Library Page */}
       <div className="mb-4 flex flex-wrap items-center gap-2 text-[14px]">
-        {/* Category Option */}
         <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-350 font-bold rounded-lg">
           <Layers className="h-4 w-4 text-orange-500 animate-pulse" />
           <span>카테고리</span>
@@ -275,7 +272,6 @@ export default function YoutubeReportsPage() {
           </select>
         </label>
 
-        {/* Views Option */}
         <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-355 font-bold rounded-lg">
           <Eye className="h-4 w-4 text-orange-500" />
           <span>조회수</span>
@@ -293,7 +289,6 @@ export default function YoutubeReportsPage() {
           </select>
         </label>
 
-        {/* Likes Option */}
         <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-355 font-bold rounded-lg">
           <ThumbsUp className="h-4 w-4 text-orange-500" />
           <span>좋아요수</span>
@@ -311,7 +306,6 @@ export default function YoutubeReportsPage() {
           </select>
         </label>
 
-        {/* Date Range Option */}
         <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-355 font-bold rounded-lg">
           <Clock className="h-4 w-4 text-orange-500" />
           <span>분석 기간</span>
@@ -338,28 +332,28 @@ export default function YoutubeReportsPage() {
         {paginationControls}
       </div>
 
-      {/* Main Table Layout */}
       <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0d0d12] shadow-2xl shadow-black/30">
         <table className="w-full border-collapse text-[14px]">
           <thead>
             <tr className="border-b border-amber-300/30 bg-amber-400/15 text-left text-[14px] font-black uppercase tracking-wider text-amber-100">
-              <th className="w-16 px-4 py-3.5 text-center">번호</th>
-              <th className="w-24 px-4 py-3.5 text-center">썸네일</th>
-              <th className="min-w-[280px] px-4 py-3.5">영상 제목</th>
-              <th className="w-32 px-4 py-3.5 text-center">카테고리</th>
-              <th className="w-44 px-4 py-3.5 text-center">채널명</th>
-              <th className="w-28 px-4 py-3.5 text-center">조회수</th>
-              <th className="w-28 px-4 py-3.5 text-center">좋아요수</th>
-              <th className="w-28 px-4 py-3.5 text-center">댓글수</th>
-              <th className="w-32 px-4 py-3.5 text-center">상태</th>
-              <th className="w-44 px-4 py-3.5 text-center">분석일</th>
+              <th className="w-14 px-3 py-3.5 text-center">번호</th>
+              <th className="w-20 px-3 py-3.5 text-center">썸네일</th>
+              <th className="min-w-[240px] px-4 py-3.5">영상 제목</th>
+              <th className="w-28 px-3 py-3.5 text-center">구분</th>
+              <th className="w-28 px-3 py-3.5 text-center">카테고리</th>
+              <th className="w-40 px-3 py-3.5 text-center">채널명</th>
+              <th className="w-24 px-3 py-3.5 text-center">조회수</th>
+              <th className="w-24 px-3 py-3.5 text-center">좋아요수</th>
+              <th className="w-24 px-3 py-3.5 text-center">댓글수</th>
+              <th className="w-28 px-3 py-3.5 text-center">상태</th>
+              <th className="w-36 px-3 py-3.5 text-center">분석일</th>
             </tr>
           </thead>
 
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={10} className="h-48 text-center text-zinc-500 py-8">
+                <td colSpan={11} className="h-48 text-center text-zinc-500 py-8">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
                     <span className="text-xs font-bold mt-1 text-zinc-400">분석 리포트를 불러오는 중입니다.</span>
@@ -370,7 +364,7 @@ export default function YoutubeReportsPage() {
 
             {!isLoading && paginatedReports.length === 0 && (
               <tr>
-                <td colSpan={10} className="h-48 text-center text-zinc-500 font-bold py-8">
+                <td colSpan={11} className="h-48 text-center text-zinc-500 font-bold py-8">
                   조건에 일치하는 분석 AI 리포트 내역이 없습니다.
                 </td>
               </tr>
@@ -389,17 +383,18 @@ export default function YoutubeReportsPage() {
               const likeCount = report.statistics?.likeCount || "0";
               const commentCount = report.statistics?.commentCount || "0";
 
+              const reportSource = (report as any).source || (report as any).report_type || (report as any).type || "";
+              const isPopular = reportSource === "popular" || reportSource === "most-viewed" || title.includes("[인기]");
+
               return (
                 <tr
                   key={report.id}
                   onClick={() => handleOpenReport(report)}
                   className="group cursor-pointer border-b border-white/5 align-middle transition odd:bg-white/[0.01] even:bg-white/[0.02] hover:bg-orange-500/10"
                 >
-                  {/* Number */}
-                  <td className="px-4 py-3.5 text-center text-zinc-400 font-bold">{rowNumber}</td>
+                  <td className="px-3 py-3.5 text-center text-zinc-400 font-bold">{rowNumber}</td>
 
-                  {/* Thumbnail */}
-                  <td className="px-4 py-3.5 text-center align-middle">
+                  <td className="px-3 py-3.5 text-center align-middle">
                     <div className="relative inline-block h-12 w-20 overflow-hidden rounded bg-zinc-950 border border-zinc-800">
                       <Image
                         src={thumbnail}
@@ -412,7 +407,6 @@ export default function YoutubeReportsPage() {
                     </div>
                   </td>
 
-                  {/* Title */}
                   <td className="px-4 py-3.5 align-middle">
                     <button
                       type="button"
@@ -426,8 +420,21 @@ export default function YoutubeReportsPage() {
                     </button>
                   </td>
 
-                  {/* Category Name (NEW Column) */}
-                  <td className="px-4 py-3.5 text-center align-middle">
+                  <td className="px-3 py-3.5 text-center align-middle">
+                    {isPopular ? (
+                      <span className="inline-flex items-center justify-center gap-1 rounded-lg border border-yellow-500/40 bg-yellow-500/20 px-2.5 py-1 text-xs font-black text-yellow-300 shadow">
+                        <Trophy size={11} className="text-yellow-400" />
+                        <span>인기</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center justify-center gap-1 rounded-lg border border-orange-500/40 bg-orange-500/20 px-2.5 py-1 text-xs font-black text-orange-300 shadow">
+                        <TrendingUp size={11} className="text-orange-400" />
+                        <span>급상승</span>
+                      </span>
+                    )}
+                  </td>
+
+                  <td className="px-3 py-3.5 text-center align-middle">
                     <span className="inline-flex border border-zinc-800 bg-zinc-900 px-2 py-0.5 text-xs font-bold text-zinc-300 rounded">
                       {categoryName}
                     </span>

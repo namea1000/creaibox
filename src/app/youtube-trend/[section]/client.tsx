@@ -6,6 +6,7 @@ import PublicStudioLayout from "@/components/layout/PublicStudioLayout";
 
 import ChannelDetail from "@/app/studio/youtube/[section]/components/ChannelDetail";
 import RisingVideos from "@/app/studio/youtube/[section]/components/RisingVideos";
+import PopularVideos from "@/app/studio/youtube/[section]/components/PopularVideos";
 import ChannelCompare from "@/app/studio/youtube/[section]/components/ChannelCompare";
 import CpmCalculator from "@/app/studio/youtube/[section]/components/CpmCalculator";
 import YoutubeSeo from "@/app/studio/youtube/[section]/components/YoutubeSeo";
@@ -30,6 +31,8 @@ export default function PublicYoutubeSectionClient() {
         return <ChannelDetail />;
       case "rising":
         return <RisingVideos />;
+      case "popular":
+        return <PopularVideos />;
       case "compare":
         return <ChannelCompare />;
       case "cpm":

@@ -21,11 +21,35 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { section } = await params;
-  const sectionTitle = sectionNames[section] || "크리에이박스 AI 글쓰기";
+  const sectionTitle = sectionNames[section] || "AI 블로그 글쓰기 스튜디오";
+  const title = `${sectionTitle} - AI 글쓰기`;
+  const description = `크리에이박스 CreAibox의 ${sectionTitle} 도구입니다. 최첨단 AI 인공지능으로 네이버 및 티스토리 고품질 원고를 순식간에 기획하고 스마트하게 발행해 보세요.`;
   return {
-    title: `${sectionTitle} | 크리에이박스 CreAibox`,
-    description: `크리에이박스 CreAibox의 대외 공개용 ${sectionTitle} 도구입니다. 최첨단 인공지능 알고리즘으로 양질의 포스팅 글을 순식간에 기획하고 스마트하게 다듬어 보세요.`,
-    keywords: ["크리에이박스", "creaibox", sectionTitle, "블로그 자동 글쓰기", "AI 글쓰기 프로그램"]
+    title,
+    description,
+    keywords: ["크리에이박스", "creaibox", sectionTitle, "블로그 자동 글쓰기", "AI 글쓰기 프로그램"],
+    openGraph: {
+      title: `${title} | 크리에이박스 CreAibox`,
+      description,
+      url: `https://creaibox.com/writing/creaibox/${section}`,
+      siteName: "CreAibox",
+      images: [
+        {
+          url: "/images/seo/business.webp",
+          width: 1200,
+          height: 630,
+          alt: sectionTitle,
+        },
+      ],
+      locale: "ko_KR",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} | 크리에이박스 CreAibox`,
+      description,
+      images: ["/images/seo/business.webp"],
+    },
   };
 }
 

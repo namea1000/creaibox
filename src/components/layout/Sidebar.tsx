@@ -43,6 +43,7 @@ import {
   Gauge,
   DownloadCloud,
   BadgeDollarSign,
+  Trophy,
   LineChart,
   TrendingUp,
   ShoppingBag,
@@ -356,7 +357,8 @@ export default function Sidebar({
         color: "text-red-400",
         children: [
           { name: "급상승 영상 트렌드", href: "/youtube-trend/rising", icon: TrendingUp },
-          { name: "급상승 영상분석 리포트", href: "/youtube-trend/reports", icon: FileText },
+          { name: "인기 영상 조회수 랭킹", href: "/youtube-trend/popular", icon: Trophy },
+          { name: "영상분석 리포트", href: "/youtube-trend/reports", icon: FileText },
           { name: "유튜브 랭킹 TOP 300", href: "/youtube-trend/top300", icon: Award },
           { name: "인기채널 영상분석", href: "/youtube-trend/channel", icon: Users },
           { name: "인기채널 영상분석 리포트", href: "/youtube-trend/channel-reports", icon: FileText },

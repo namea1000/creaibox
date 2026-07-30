@@ -65,7 +65,7 @@ CreAibox의 SEO 자동 색인 엔진은 어떤 형태의 도메인이든 **전�
 ## 4. 🟢 현재 즉시 구동 중 / 서비스 가능한 무인 기능 (Current Services)
 
 ### ① 전세계 60개국 유튜브 전체 트렌드 무인 일괄 수집
-- 매일 아침 06:00 (KST)에 60+개국 13개 카테고리 트렌드를 무인 수집하여 DB 1줄(`bundle`)에 자동 보관. ([`/api/cron/sync-trending`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/cron/sync-trending/route.ts))
+- 매일 아침 06:00 (KST)에 60+개국 15개 카테고리 트렌드를 무인 수집하여 DB 1줄(`bundle`)에 자동 보관. ([`/api/cron/sync-trending`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/cron/sync-trending/route.ts))
 
 ### ② 포털 실시간 검색어 24시간 무인 아카이빙 (네이버 & 구글 TOP 20)
 - 매시간 정각(00~23시) 네이버/구글 랭킹과 관련 뉴스 기사를 긁어와 DB 1줄(`hourly_data`)에 타임머신 이력으로 저장. ([`/api/cron/sync-keywords`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/cron/sync-keywords/route.ts))
@@ -82,6 +82,11 @@ CreAibox의 SEO 자동 색인 엔진은 어떤 형태의 도메인이든 **전�
 - **상태**: **🟢 현재 100% 실시간 자동 구동 중** ([`vertex-ai-gemini.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/vertex-ai-gemini.ts), [`ai/generate/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/ai/generate/route.ts))
 - 일반 사용자의 AI 원고 작성 및 글쓰기 요청 시, GCP 서비스 계정 OAuth2를 기반으로 구글 클라우드 계정의 $300 무료 크레딧을 소비하며 `gemini-2.5-flash` 모델과 실시간 구글 검색 그라운딩(`googleSearch`)을 무제한 1순위로 무상 자동 가동.
 - 상세 구축/운용 및 IAM 권한 트러블슈팅 매뉴얼: [`docs/project/manual/gcp-vertex-ai-service-setup-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/gcp-vertex-ai-service-setup-guide.md)
+
+### ⑥ 🟢 👑 인기 영상 조회수 랭킹 매일 밤 자정 직전 무인 자동 아카이빙 (Daily Final Popular Ranking Archive - 현재 100% 구동 중)
+- **상태**: **🟢 현재 100% 실시간 자동 구동 중** ([`/api/cron/sync-popular`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/cron/sync-popular/route.ts))
+- **실행 주기**: 매일 밤 KST 23:50 (14:50 UTC) 자정 10분 전 자동 가동 (`vercel.json` 규격).
+- **기능**: 전 세계 60개국 전체 및 카테고리/기간별 인기 영상 조회수 랭킹을 무인 수집하여, 당일 1개 Row(`youtube_popular_archive`)에 **'당일 최종 확정 랭킹 스냅샷(Final Daily Snapshot)'**으로 자동 업데이트 및 100% 보존함.
 
 ---
 

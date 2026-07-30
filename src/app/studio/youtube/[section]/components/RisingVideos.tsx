@@ -45,15 +45,15 @@ const CATEGORIES = [
   { label: "음악/댄스/가수", id: "10" },
   { label: "게임", id: "20" },
   { label: "엔터테인먼트/방송", id: "24" },
+  { label: "코미디/유머", id: "23" },
   { label: "영화/만화/애니", id: "1" },
   { label: "음식/요리/뷰티", id: "26" },
   { label: "뉴스/정치/경제", id: "25" },
-  { label: "취미/여행/일상", id: "22" },
+  { label: "취미/일상", id: "22" },
   { label: "IT/기술/컴퓨터", id: "28" },
-  { label: "교육/강의", id: "27" },
   { label: "애완/반려동물", id: "15" },
   { label: "스포츠/운동", id: "17" },
-  { label: "자동차", id: "2" }
+  { label: "자동차", id: "2" },
 ];
 
 const REGIONAL_GROUPS = [
@@ -77,24 +77,27 @@ interface CountryItem {
 }
 
 export const ALL_COUNTRIES: CountryItem[] = [
-  // 🇰🇷 동아시아 / 아시아
+  // 🇰🇷 동아시아 / 아시아 (9개국)
   { code: "KR", name: "대한민국", flag: "🇰🇷", region: "asia", isTop: true },
   { code: "JP", name: "일본", flag: "🇯🇵", region: "asia", isTop: true },
   { code: "TW", name: "대만", flag: "🇹🇼", region: "asia" },
   { code: "HK", name: "홍콩", flag: "🇭🇰", region: "asia" },
+  { code: "MO", name: "마카오", flag: "🇲🇴", region: "asia" },
+  { code: "MN", name: "몽골", flag: "🇲🇳", region: "asia" },
   { code: "IN", name: "인도", flag: "🇮🇳", region: "asia", isTop: true },
   { code: "PK", name: "파키스탄", flag: "🇵🇰", region: "asia" },
   { code: "BD", name: "방글라데시", flag: "🇧🇩", region: "asia" },
 
-  // 🌴 동남아시아
+  // 🌴 동남아시아 (7개국)
   { code: "VN", name: "베트남", flag: "🇻🇳", region: "southeast_asia", isTop: true },
   { code: "TH", name: "태국", flag: "🇹🇭", region: "southeast_asia" },
   { code: "ID", name: "인도네시아", flag: "🇮🇩", region: "southeast_asia" },
   { code: "PH", name: "필리핀", flag: "🇵🇭", region: "southeast_asia" },
   { code: "SG", name: "싱가포르", flag: "🇸🇬", region: "southeast_asia" },
   { code: "MY", name: "말레이시아", flag: "🇲🇾", region: "southeast_asia" },
+  { code: "KH", name: "캄보디아", flag: "🇰🇭", region: "southeast_asia" },
 
-  // 🏰 유럽
+  // 🏰 유럽 (24개국)
   { code: "GB", name: "영국", flag: "🇬🇧", region: "europe", isTop: true },
   { code: "DE", name: "독일", flag: "🇩🇪", region: "europe", isTop: true },
   { code: "FR", name: "프랑스", flag: "🇫🇷", region: "europe", isTop: true },
@@ -113,23 +116,27 @@ export const ALL_COUNTRIES: CountryItem[] = [
   { code: "PT", name: "포르투갈", flag: "🇵🇹", region: "europe" },
   { code: "GR", name: "그리스", flag: "🇬🇷", region: "europe" },
   { code: "CZ", name: "체코", flag: "🇨🇿", region: "europe" },
+  { code: "SK", name: "슬로바키아", flag: "🇸🇰", region: "europe" },
+  { code: "HR", name: "크로아티아", flag: "🇭🇷", region: "europe" },
+  { code: "EE", name: "에스토니아", flag: "🇪🇪", region: "europe" },
   { code: "HU", name: "헝가리", flag: "🇭🇺", region: "europe" },
   { code: "RO", name: "루마니아", flag: "🇷🇴", region: "europe" },
   { code: "UA", name: "우크라이나", flag: "🇺🇦", region: "europe" },
 
-  // 🦅 북미
+  // 🦅 북미 (3개국)
   { code: "US", name: "미국", flag: "🇺🇸", region: "north_america", isTop: true },
   { code: "CA", name: "캐나다", flag: "🇨🇦", region: "north_america", isTop: true },
   { code: "MX", name: "멕시코", flag: "🇲🇽", region: "north_america" },
 
-  // 💃 중남미
+  // 💃 중남미 (6개국)
   { code: "BR", name: "브라질", flag: "🇧🇷", region: "latin_america", isTop: true },
   { code: "AR", name: "아르헨티나", flag: "🇦🇷", region: "latin_america" },
   { code: "CL", name: "칠레", flag: "🇨🇱", region: "latin_america" },
   { code: "CO", name: "콜롬비아", flag: "🇨🇴", region: "latin_america" },
   { code: "PE", name: "페루", flag: "🇵🇪", region: "latin_america" },
+  { code: "UY", name: "우루과이", flag: "🇺🇾", region: "latin_america" },
 
-  // 🕌 중동 / 아프리카
+  // 🕌 중동 / 아프리카 (9개국)
   { code: "SA", name: "사우디아라비아", flag: "🇸🇦", region: "middle_east_africa" },
   { code: "AE", name: "아랍에미리트", flag: "🇦🇪", region: "middle_east_africa" },
   { code: "EG", name: "이집트", flag: "🇪🇬", region: "middle_east_africa" },
@@ -138,8 +145,9 @@ export const ALL_COUNTRIES: CountryItem[] = [
   { code: "ZA", name: "남아프리카공화국", flag: "🇿🇦", region: "middle_east_africa" },
   { code: "NG", name: "나이지리아", flag: "🇳🇬", region: "middle_east_africa" },
   { code: "KE", name: "케냐", flag: "🇰🇪", region: "middle_east_africa" },
+  { code: "MA", name: "모로코", flag: "🇲🇦", region: "middle_east_africa" },
 
-  // 🦘 오세아니아
+  // 🦘 오세아니아 (2개국)
   { code: "AU", name: "호주", flag: "🇦🇺", region: "oceania", isTop: true },
   { code: "NZ", name: "뉴질랜드", flag: "🇳🇿", region: "oceania" },
 ];
@@ -149,6 +157,7 @@ const OTHER_COUNTRIES = ALL_COUNTRIES.filter((c) => !c.isTop);
 
 export default function RisingVideos() {
   const [loading, setLoading] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState<"db" | "youtube" | null>(null);
   const [videos, setVideos] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState("all");
@@ -342,10 +351,35 @@ export default function RisingVideos() {
 
     setVideos([]); // 🚀 Clear old country videos so stale country videos are never shown
     setLoading(true);
+    setLoadingStatus("db");
+
     try {
-      const res = await fetch(`/api/youtube?type=trending&categoryId=${catId}&date=${targetDate}&country=${country}${force ? '&force=true' : ''}`);
-      if (!res.ok) throw new Error("급상승 비디오 리스트를 가져오는데 실패했습니다.");
-      const result = await res.json();
+      let result: any = null;
+
+      // 1-Step: Check Supabase DB Cache first
+      if (!force) {
+        try {
+          const cacheCheckRes = await fetch(`/api/youtube?type=trending&categoryId=${catId}&date=${targetDate}&country=${country}&cacheOnly=true`);
+          if (cacheCheckRes.ok) {
+            const cacheJson = await cacheCheckRes.json();
+            if (cacheJson && cacheJson.data && Array.isArray(cacheJson.data) && cacheJson.data.length > 0) {
+              result = cacheJson;
+            }
+          }
+        } catch (cacheErr) {
+          console.warn("DB Cache check error:", cacheErr);
+        }
+      }
+
+      // 2-Step: If DB Cache Miss (or force refresh), switch status to YouTube API live fetch!
+      if (!result) {
+        setLoadingStatus("youtube");
+        const res = await fetch(`/api/youtube?type=trending&categoryId=${catId}&date=${targetDate}&country=${country}${force ? '&force=true' : ''}`);
+        if (!res.ok) throw new Error("급상승 비디오 리스트를 가져오는데 실패했습니다.");
+        result = await res.json();
+      }
+
+
 
       videoCacheRef.current.set(cacheKey, result);
 
@@ -392,6 +426,7 @@ export default function RisingVideos() {
       setError(err.message || "오류가 발생했습니다.");
     } finally {
       setLoading(false);
+      setLoadingStatus(null);
     }
   }, [activeCategory, selectedDate, selectedCountry]);
 
@@ -519,7 +554,7 @@ export default function RisingVideos() {
           </h2>
           <div className="space-y-1.5">
             <p className="text-sm text-zinc-200 leading-relaxed font-black">
-              현재 유튜브 {getCountryName(selectedCountry)} 급상승 트렌드 리스트에 등록된 상위 인기 동영상 리스트를 가져와 조회수 분석을 제공합니다.
+              🔥 <span className="text-orange-400 font-bold">급상승 영상 트렌드</span>: 유튜브 실시간 알고리즘이 선정한 <span className="text-white font-bold">지금 이 시각 유행/시청 유입 반응이 가장 폭발적인 급상승 이슈 랭킹</span>을 제공합니다. (💡 <span className="text-zinc-400 font-medium">누적 총 조회수 1위~50위 매머드급 랭킹은 '👑 인기 영상 조회수 랭킹' 메뉴에서 확인하세요.</span>)
             </p>
             <p className="text-xs text-zinc-400 leading-relaxed font-bold">
               각 영상 하단의 <span className="text-orange-500 font-black">"AI 데이터 분석 리포트"</span> 버튼을 클릭하면 고성능 <span className="text-orange-500 font-black">"AI Gemini Pro"</span>가 시청자 반응 지표와 핵심 바이럴 요인, 내 채널용 변형 기획안을 포함한 정밀 보고서를 작성해 팝업합니다.
@@ -637,9 +672,26 @@ export default function RisingVideos() {
           )}
 
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-24 gap-3">
-              <Loader2 className="animate-spin text-orange-500" size={32} />
-              <p className="text-xs font-bold text-zinc-400">CreAibox DB 일괄 보관함 트렌드 분석 리포트 로딩 중...</p>
+            <div className="flex flex-col items-center justify-center py-20 gap-3.5 bg-zinc-900/40 rounded-2xl border border-zinc-800/80 p-8 shadow-inner">
+              <Loader2 className="animate-spin text-orange-500" size={36} />
+              {loadingStatus === "youtube" ? (
+                <div className="text-center space-y-1">
+                  <p className="text-sm font-black text-orange-400 flex items-center justify-center gap-2">
+                    <span>🌐</span>
+                    <span>[{getCountryName(selectedCountry)}] YouTube API 실시간 트렌드 데이터 수집 중...</span>
+                  </p>
+                  <p className="text-xs text-zinc-400 font-medium">
+                    DB 미수집 국가로, 15개 카테고리 실시간 인기 통합 수집 후 DB에 자동 저장 중입니다.
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center space-y-1">
+                  <p className="text-xs font-bold text-zinc-300 flex items-center justify-center gap-2">
+                    <span>💾</span>
+                    <span>[{getCountryName(selectedCountry)}] CreAiBox DB 클라우드 트렌드 보관함 읽는 중...</span>
+                  </p>
+                </div>
+              )}
             </div>
           ) : filteredVideos.length === 0 ? (
             <div className="text-center py-20 border border-zinc-850 rounded-2xl bg-zinc-950/20 space-y-3">

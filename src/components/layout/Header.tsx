@@ -592,8 +592,8 @@ export default function Header() {
                           <FileText size={16} />
                         </div>
                         <div className="text-left">
-                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">급상승 영상분석 리포트</p>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">급상승 영상 AI 리포트</p>
+                          <p className="text-xs font-black text-slate-800 dark:text-zinc-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">영상분석 리포트</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">유튜브 영상 AI 리포트</p>
                         </div>
                       </Link>
                       <Link href="/youtube-trend/channel" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">

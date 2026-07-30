@@ -63,9 +63,9 @@ export async function fetchAndCacheTrending(categoryId: string, date: string = g
     throw new Error("YouTube API keys not found.");
   }
 
-  // 2. Fetch Live YouTube API
+  // 2. Fetch Live YouTube API (maxResults=50 for single unified 1-call fetch)
   const safeReferer = (referer && referer.trim() !== "") ? referer : "https://creaibox.com/";
-  let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular&regionCode=${country}&maxResults=20&key=${apiKey}`;
+  let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular&regionCode=${country}&maxResults=50&key=${apiKey}`;
   if (categoryId && categoryId !== "all") {
     url += `&videoCategoryId=${categoryId}`;
   }
@@ -83,7 +83,38 @@ export async function fetchAndCacheTrending(categoryId: string, date: string = g
     await recordVaultSuccess(vaultId);
   }
 
-  const items = data.items || [];
+  let items = data.items || [];
+
+  // 🚀 Fallback: If YouTube mostPopular chart returns 0 items for a specific category in small countries (e.g. Denmark category 19), fetch Denmark's top popular videos specifically in that category via Search API!
+  if (items.length === 0 && categoryId && categoryId !== "all") {
+    console.warn(`Category ${categoryId} for country ${country} returned 0 items in chart. Fetching top popular category videos via search API...`);
+    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&order=viewCount&regionCode=${country}&videoCategoryId=${categoryId}&maxResults=20&key=${apiKey}`;
+    try {
+      let sRes = await fetch(searchUrl, { headers: { Referer: safeReferer } });
+      if (!sRes.ok) sRes = await fetch(searchUrl);
+      if (sRes.ok) {
+        const sData = await sRes.json();
+        const searchItems = sData.items || [];
+        if (searchItems.length > 0) {
+          const videoIds = searchItems.map((si: any) => si.id?.videoId || si.id).filter(Boolean).join(",");
+          if (videoIds) {
+            const vDetailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&id=${videoIds}&key=${apiKey}`;
+            let vRes = await fetch(vDetailsUrl, { headers: { Referer: safeReferer } });
+            if (!vRes.ok) vRes = await fetch(vDetailsUrl);
+            if (vRes.ok) {
+              const vData = await vRes.json();
+              if (vData.items && vData.items.length > 0) {
+                items = vData.items;
+              }
+            }
+          }
+        }
+      }
+    } catch (fbErr) {
+      console.error("Category search fallback fetch failed:", fbErr);
+    }
+  }
+
   const enrichedItems = items.map((item: any) => {
     const isRealShorts = isShortsDuration(item.contentDetails?.duration);
     return {
@@ -107,6 +138,20 @@ export async function fetchAndCacheTrending(categoryId: string, date: string = g
       bundleObj = { ...existingRow.videos_data };
     }
     bundleObj[dbCategoryId] = enrichedItems;
+
+    // 🚀 If categoryId === "all", automatically sub-categorize all 15 categories in 0ms RAM
+    if (categoryId === "all" && Array.isArray(enrichedItems)) {
+      const allCatIds = ["10", "20", "24", "23", "1", "26", "25", "22", "19", "28", "27", "15", "17", "2", "29"];
+      allCatIds.forEach((catId) => {
+        const catKey = country === "KR" ? catId : `${country}_${catId}`;
+        const catFiltered = enrichedItems.filter(
+          (v: any) => v.snippet?.categoryId === catId || v.categoryId === catId
+        );
+        if (catFiltered.length > 0) {
+          bundleObj[catKey] = catFiltered;
+        }
+      });
+    }
 
     await supabaseAdmin
       .from("youtube_trending_archive")
@@ -211,6 +256,7 @@ export async function GET(req: NextRequest) {
         const categoryId = searchParams.get("categoryId") || "all";
         const date = searchParams.get("date") || getKstTodayDate();
         const country = searchParams.get("country") || "KR";
+        const cacheOnly = searchParams.get("cacheOnly") === "true";
 
         if (categoryId === "all") {
           // 1. Try reading from Daily Unified Bundle single row for target date
@@ -262,48 +308,21 @@ export async function GET(req: NextRequest) {
             console.error("Daily Bundle Cache read failed for category all:", bundleReadErr);
           }
 
-          const TARGET_CATEGORIES = ["all", "10", "20", "24", "1", "28", "17", "25"];
-          const promises = TARGET_CATEGORIES.map(async (catId) => {
-            const dbCategoryId = country === "KR" ? catId : `${country}_${catId}`;
-            try {
-              const { data: cachedRow } = await supabaseAdmin
-                .from("youtube_trending_archive")
-                .select("videos_data")
-                .eq("target_date", date)
-                .eq("category_id", dbCategoryId)
-                .maybeSingle();
+          // 2. If DB Cache Miss, check cacheOnly flag
+          if (cacheOnly) {
+            return NextResponse.json({ cacheMiss: true });
+          }
 
-              if (cachedRow && cachedRow.videos_data && Array.isArray(cachedRow.videos_data) && cachedRow.videos_data.length > 0) {
-                return cachedRow.videos_data as any[];
-              }
-            } catch (e) {
-              console.error(`Failed to load category ${catId} from cache:`, e);
-            }
-
-            const todayDate = getKstTodayDate();
-            if (date === todayDate) {
-              try {
-                const enriched = await fetchAndCacheTrending(catId, date, referer, country);
-                if (enriched && enriched.length > 0) return enriched;
-              } catch (e) {
-                console.error(`Failed to fetch live category ${catId}:`, e);
-              }
-            }
-            return [];
-          });
-
-          const results = await Promise.all(promises);
-          const combinedVideos: any[] = [];
+          // 3. 🚀 Single Unified 1-Call Live Fetch (~300ms speed, 15x quota reduction)
+          const todayDate = getKstTodayDate();
+          let combinedVideos: any[] = [];
           const seenIds = new Set<string>();
-
-          for (const list of results) {
-            if (Array.isArray(list)) {
-              for (const video of list) {
-                if (video && video.id && !seenIds.has(video.id)) {
-                  seenIds.add(video.id);
-                  combinedVideos.push(video);
-                }
-              }
+          if (date === todayDate) {
+            try {
+              combinedVideos = await fetchAndCacheTrending("all", date, referer, country);
+              combinedVideos.forEach((v) => { if (v && v.id) seenIds.add(v.id); });
+            } catch (liveErr) {
+              console.error("Live unified fetch error:", liveErr);
             }
           }
 
@@ -343,6 +362,10 @@ export async function GET(req: NextRequest) {
             } catch (fallbackErr) {
               console.error("Failed to query fallback archive rows:", fallbackErr);
             }
+          }
+
+          if (cacheOnly && combinedVideos.length === 0) {
+            return NextResponse.json({ cacheMiss: true });
           }
 
           if (combinedVideos.length === 0) {

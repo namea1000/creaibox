@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 
 import ChannelDetail from "./components/ChannelDetail";
 import RisingVideos from "./components/RisingVideos";
+import PopularVideos from "./components/PopularVideos";
 import ChannelCompare from "./components/ChannelCompare";
 import CpmCalculator from "./components/CpmCalculator";
 import YoutubeSeo from "./components/YoutubeSeo";
@@ -21,6 +22,7 @@ import YoutubeVideoSearch from "./components/YoutubeVideoSearch";
 const sectionNames: Record<string, string> = {
   channel: "채널 상세 분석",
   rising: "급상승 영상 트렌드",
+  popular: "인기 영상 조회수 랭킹",
   compare: "경쟁 채널 비교",
   cpm: "광고 단가 계산기",
   seo: "유튜브 SEO 분석",
@@ -43,6 +45,8 @@ export default function YoutubeSectionPage() {
         return <ChannelDetail />;
       case "rising":
         return <RisingVideos />;
+      case "popular":
+        return <PopularVideos />;
       case "compare":
         return <ChannelCompare />;
       case "cpm":

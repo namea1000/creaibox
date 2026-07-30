@@ -22,15 +22,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { section } = await params;
   const segments = section || [];
   const path = segments.join("/");
-  const sectionTitle = sectionNames[path] || "AI 비디오 스튜디오";
+  const sectionTitle = sectionNames[path] || "AI 영상 편집기 & 비디오 스튜디오";
+  const title = `${sectionTitle} - 영상 편집`;
+  const description = `크리에이박스 CreAibox의 ${sectionTitle} 솔루션입니다. 브라우저 기반의 AI 영상 편집기 및 쇼츠 제작기를 통해 임팩트 있는 비디오를 기획 및 랜더링해 보세요.`;
   return {
-    title: sectionTitle + " | 크리에이박스 CreAibox",
-    description: "크리에이박스 CreAibox의 대외 공개용 " + sectionTitle + " 솔루션입니다. 브라우저 기반의 AI 영상 편집기 및 쇼츠 제작기를 통해 임팩트 있는 비디오를 기획 및 랜더링해 보세요.",
+    title,
+    description,
     keywords: ["크리에이박스", "creaibox", sectionTitle, "AI 비디오 제작", "쇼츠 만들기 프로그램"],
     openGraph: {
-      title: sectionTitle + " | 크리에이박스 CreAibox",
-      description: "크리에이박스 CreAibox의 대외 공개용 " + sectionTitle + " 솔루션입니다. 브라우저 기반의 AI 영상 편집기 및 쇼츠 제작기를 통해 임팩트 있는 비디오를 기획 및 랜더링해 보세요.",
+      title: `${title} | 크리에이박스 CreAibox`,
+      description,
       url: "https://creaibox.com/video/" + path,
+      siteName: "CreAibox",
       images: [
         {
           url: "/images/seo/video-editor.webp",
@@ -39,11 +42,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           alt: sectionTitle,
         },
       ],
+      locale: "ko_KR",
+      type: "website",
     },
     twitter: {
       card: "summary_large_image",
-      title: sectionTitle + " | 크리에이박스 CreAibox",
-      description: "크리에이박스 CreAibox의 대외 공개용 " + sectionTitle + " 솔루션입니다. 브라우저 기반의 AI 영상 편집기 및 쇼츠 제작기를 통해 임팩트 있는 비디오를 기획 및 랜더링해 보세요.",
+      title: `${title} | 크리에이박스 CreAibox`,
+      description,
       images: ["/images/seo/video-editor.webp"],
     },
   };

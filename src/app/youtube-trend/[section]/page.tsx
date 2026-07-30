@@ -12,7 +12,7 @@ const sectionNames: Record<string, string> = {
   thumbnail: "썸네일 CTR 연구소",
   title: "AI 제목 생성기",
   report: "콘텐츠 전략 리포트",
-  reports: "급상승 영상분석 리포트",
+  reports: "영상분석 리포트",
   "channel-reports": "인기채널 영상분석 리포트",
   workflow: "유튜브 자동 제작 연결",
   top300: "유튜브 랭킹 TOP 300",
@@ -27,11 +27,37 @@ interface Props {
 
 // 🌟 네이버/구글 검색 노출 최적화용 "크리에이박스 CreAibox" 브랜드 키워드 동적 메타데이터 주입!
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const name = sectionNames[params.section] || "유튜브 트렌드 분석";
+  const resolvedParams = await params;
+  const sectionKey = resolvedParams?.section || "top300";
+  const name = sectionNames[sectionKey] || "급상승 유튜브 트랜드";
+  const title = `${name} - 유튜브 트렌드`;
+  const description = `크리에이박스 CreAibox에서 제공하는 ${name} 솔루션입니다. 국내외 인기 유튜브 채널 랭킹, 실시간 급상승 영상 분석 및 AI 아웃라이어 조회를 경험해 보세요.`;
   return {
-    title: `${name} | 크리에이박스 CreAibox`,
-    description: `크리에이박스 CreAibox에서 제공하는 고도화된 유튜브 ${name} 도구입니다. 최신 지표 추적 및 AI 기반 분석 솔루션으로 채널 성장을 극대화해 보세요.`,
-    keywords: ["크리에이박스", "creaibox", name, "유튜브 분석", "인플루언서 랭킹"]
+    title,
+    description,
+    keywords: ["크리에이박스", "creaibox", name, "유튜브 분석", "인플루언서 랭킹", "인기 동영상"],
+    openGraph: {
+      title: `${title} | 크리에이박스 CreAibox`,
+      description,
+      url: `https://creaibox.com/youtube-trend/${sectionKey}`,
+      siteName: "CreAibox",
+      images: [
+        {
+          url: "/images/seo/youtube-trend.webp",
+          width: 1200,
+          height: 630,
+          alt: "크리에이박스 유튜브 트렌드 분석",
+        },
+      ],
+      locale: "ko_KR",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} | 크리에이박스 CreAibox`,
+      description,
+      images: ["/images/seo/youtube-trend.webp"],
+    },
   };
 }
 

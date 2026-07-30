@@ -27,15 +27,20 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const name = sectionNames[params.section] || "디자인 스튜디오";
+  const resolvedParams = await params;
+  const sectionKey = resolvedParams?.section || "templates";
+  const name = sectionNames[sectionKey] || "디자인 스튜디오";
+  const title = `${name} - 차세대 디자인`;
+  const description = `크리에이박스 CreAibox에서 제공하는 차세대 AI 기반 ${name} 솔루션입니다. 브라우저에서 템플릿과 캔버스를 활용하여 웹 배너, 포스터, 유튜브 썸네일을 즉시 무료로 제작해 보세요.`;
   return {
-    title: name + " | 크리에이박스 CreAibox",
-    description: "크리에이박스 CreAibox에서 제공하는 차세대 AI 기반 " + name + " 도구입니다. 복잡한 설치 없이 브라우저 상에서 고퀄리티 비주얼 에셋을 즉시 제작해 보세요.",
+    title,
+    description,
     keywords: ["크리에이박스", "creaibox", name, "무료 디자인 툴", "AI 이미지 편집"],
     openGraph: {
-      title: name + " | 크리에이박스 CreAibox",
-      description: "크리에이박스 CreAibox에서 제공하는 차세대 AI 기반 " + name + " 도구입니다. 복잡한 설치 없이 브라우저 상에서 고퀄리티 비주얼 에셋을 즉시 제작해 보세요.",
-      url: "https://creaibox.com/design/" + params.section,
+      title: `${title} | 크리에이박스 CreAibox`,
+      description,
+      url: `https://creaibox.com/design/${sectionKey}`,
+      siteName: "CreAibox",
       images: [
         {
           url: "/images/seo/themes.webp",
@@ -44,11 +49,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           alt: name,
         },
       ],
+      locale: "ko_KR",
+      type: "website",
     },
     twitter: {
       card: "summary_large_image",
-      title: name + " | 크리에이박스 CreAibox",
-      description: "크리에이박스 CreAibox에서 제공하는 차세대 AI 기반 " + name + " 도구입니다. 복잡한 설치 없이 브라우저 상에서 고퀄리티 비주얼 에셋을 즉시 제작해 보세요.",
+      title: `${title} | 크리에이박스 CreAibox`,
+      description,
       images: ["/images/seo/themes.webp"],
     },
   };

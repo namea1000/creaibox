@@ -5,6 +5,58 @@ import { getHistoricalHourlyKeywords, archiveHourlyKeywords } from "@/lib/server
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+function extractCleanKeyword(rawTitle: string): string {
+  if (!rawTitle) return "";
+  let clean = rawTitle.replace(/^[“"'"'\[\(]+|[”"'"'\]\)]+$/g, "").trim();
+
+  // Quote pattern like "하느님의 만지심"...
+  const quoteMatch = rawTitle.match(/[“"']([^“"'\n]{2,20})[”"']/);
+  if (quoteMatch && quoteMatch[1] && quoteMatch[1].trim().length >= 2) {
+    return quoteMatch[1].trim();
+  }
+
+  // Split by punctuation
+  const parts = clean.split(/(?:\.\.\.|\.\.\.\s*|…|·|:|;|-|,|\s{2,})/);
+  if (parts.length > 0 && parts[0].trim().length >= 2) {
+    const firstPart = parts[0].trim().replace(/^[“"'"'\[\(]+|[”"'"'\]\)]+$/g, "");
+    if (firstPart.length >= 2 && firstPart.length <= 15) {
+      return firstPart;
+    }
+  }
+
+  const words = clean.split(/\s+/).filter((w) => w.length > 0);
+  if (words.length <= 3) return clean;
+  return words.slice(0, 3).join(" ");
+}
+
+async function fetchNaverNewsHeadline(keyword: string): Promise<{ title: string; url: string }> {
+  try {
+    const url = `https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(keyword)}`;
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      },
+      cache: "no-store",
+    });
+    if (res.ok) {
+      const html = await res.text();
+      const titleMatch = html.match(/class="news_tit"[^>]*title="([^"]+)"/);
+      const hrefMatch = html.match(/class="news_tit"[^>]*href="([^"]+)"/);
+      if (titleMatch && titleMatch[1]) {
+        return {
+          title: titleMatch[1].replace(/<[^>]+>/g, "").trim(),
+          url: hrefMatch ? hrefMatch[1] : url,
+        };
+      }
+    }
+  } catch (e) {}
+  return {
+    title: `${keyword} 관련 네이버 실시간 주요 뉴스 이슈`,
+    url: `https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(keyword)}`,
+  };
+}
+
 export async function fetchRealtimeNaverRanks(dateStr?: string) {
   const allItems: any[] = [];
   const dateFormatted = dateStr ? dateStr.replace(/-/g, "") : "";
@@ -31,10 +83,11 @@ export async function fetchRealtimeNaverRanks(dateStr?: string) {
         const candidates: any[] = [];
         while ((match = reg.exec(html)) !== null) {
           const rawHeadline = match[2].replace(/<[^>]+>/g, "").trim();
-          if (rawHeadline && rawHeadline.length >= 2 && !candidates.some((x) => x.title === rawHeadline)) {
+          if (rawHeadline && rawHeadline.length >= 2 && !candidates.some((x) => x.newsTitle === rawHeadline)) {
+            const cleanKw = extractCleanKeyword(rawHeadline);
             candidates.push({
-              title: rawHeadline,
-              keywords: [rawHeadline],
+              title: cleanKw || rawHeadline,
+              keywords: [cleanKw || rawHeadline],
               changeBadge: "NEW",
               newsTitle: rawHeadline,
               newsUrl: match[1].startsWith("http") ? match[1] : `https://news.naver.com${match[1]}`,
@@ -64,17 +117,24 @@ export async function fetchRealtimeNaverRanks(dateStr?: string) {
         const signalData = await signalRes.json();
         const rawList = signalData.top20 || signalData.top10 || [];
         if (Array.isArray(rawList)) {
-          rawList.forEach((item: any) => {
-            const headline = item.keyword || item.title || "";
-            if (headline && !allItems.some((x) => x.title === headline)) {
-              allItems.push({
-                title: headline,
-                keywords: [headline],
-                changeBadge: item.state === "+" ? "▲" : item.state === "-" ? "▼" : "NEW",
-                newsTitle: headline,
-                newsUrl: item.summary || `https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(headline)}`,
-                newsSource: "네이버 뉴스",
-              });
+          const signalProms = rawList.map(async (item: any) => {
+            const kw = item.keyword || item.title || "";
+            if (!kw) return null;
+            const cleanKw = extractCleanKeyword(kw);
+            const newsInfo = await fetchNaverNewsHeadline(cleanKw || kw);
+            return {
+              title: cleanKw || kw,
+              keywords: [cleanKw || kw],
+              changeBadge: item.state === "+" ? "▲" : item.state === "-" ? "▼" : "NEW",
+              newsTitle: newsInfo.title,
+              newsUrl: newsInfo.url,
+              newsSource: "네이버 뉴스",
+            };
+          });
+          const fetchedItems = (await Promise.all(signalProms)).filter(Boolean);
+          fetchedItems.forEach((it: any) => {
+            if (it && !allItems.some((x) => x.title === it.title)) {
+              allItems.push(it);
             }
           });
         }
@@ -103,10 +163,11 @@ export async function fetchRealtimeNaverRanks(dateStr?: string) {
 
           while ((match = reg.exec(html)) !== null) {
             const rawHeadline = match[2].replace(/<[^>]+>/g, "").trim();
-            if (rawHeadline && rawHeadline.length >= 2 && !allItems.some((x) => x.title === rawHeadline)) {
+            if (rawHeadline && rawHeadline.length >= 2 && !allItems.some((x) => x.newsTitle === rawHeadline)) {
+              const cleanKw = extractCleanKeyword(rawHeadline);
               allItems.push({
-                title: rawHeadline,
-                keywords: [rawHeadline],
+                title: cleanKw || rawHeadline,
+                keywords: [cleanKw || rawHeadline],
                 changeBadge: "NEW",
                 newsTitle: rawHeadline,
                 newsUrl: match[1].startsWith("http") ? match[1] : `https://news.naver.com${match[1]}`,

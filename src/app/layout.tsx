@@ -29,7 +29,10 @@ const notoSansKR = Noto_Sans_KR({
 
 export const metadata = {
   metadataBase: new URL("https://creaibox.com"),
-  title: "크리에이박스(CreAibox) | 올인원 AI 콘텐츠 스튜디오",
+  title: {
+    default: "크리에이박스(CreAibox) | 올인원 AI 콘텐츠 스튜디오",
+    template: "%s | 크리에이박스 CreAibox",
+  },
   description:
     "AI 글쓰기부터 이미지 생성, 음악, 홈페이지 제작까지. 크리에이박스는 크리에이터를 위한 올인원 AI 콘텐츠 스튜디오입니다.",
   alternates: {

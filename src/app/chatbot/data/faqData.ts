@@ -247,6 +247,22 @@ export const faqData: FAQCategory[] = [
         linkLabel: "유튜브 성과 분석 보고서 이동"
       },
       {
+        id: "anal-4",
+        category: "analytics",
+        question: "유튜브 '👑 인기 영상 조회수 랭킹'과 '🔥 급상승 영상 트렌드'의 차이점은 무엇인가요?",
+        answer: "두 메뉴는 분석 목적과 알고리즘이 명확히 다릅니다.\n\n1. 🔥 **급상승 영상 트렌드 (Trending)**: 유튜브 알고리즘이 선정한 실시간 이슈/급상승 랭킹입니다. 조회수가 10만 뷰라도 방금 업로드되어 시청 유입 속도가 폭발적인 영상을 분석할 때 유용합니다.\n2. 👑 **인기 영상 조회수 랭킹 (Most-Viewed)**: 실제 누적 조회수(Total View Count) 최상위 랭킹입니다. 수백만~수억 뷰 이상의 압도적 조회수를 기록한 장르별 1위~50위 통산 대박 영상과 스테디셀러를 벤치마킹할 때 활용합니다.",
+        link: "/youtube-trend/popular",
+        linkLabel: "인기 영상 조회수 랭킹 바로가기"
+      },
+      {
+        id: "anal-5",
+        category: "analytics",
+        question: "유튜브 인기 랭킹에서 과거 날짜 조회가 가능한 원리가 무엇인가요? (유튜브 API 제한사항)",
+        answer: "YouTube Data API v3 공식 스펙상 과거 특정 날짜 시점의 조회수를 소급 조회하는 파라미터는 존재하지 않습니다.\n\n따라서 크리에이박스는 **매일매일 그날 당시에 수집된 랭킹 데이터를 CreAiBox 클라우드 DB(youtube_popular_archive)에 100% 실전 스냅샷으로 영구 보존**합니다.\n\n달력에서 과거 날짜를 선택하시면 해당 당일에 CreAiBox DB 보관함에 축적된 100% 진짜 과거 스냅샷이 즉시 로딩되며, DB 구축 이전이나 미수집 날짜의 경우 가짜 데이터를 임의로 합성하지 않고 솔직하게 안내합니다.",
+        link: "/youtube-trend/popular",
+        linkLabel: "과거 랭킹 히스토리 보관함 보기"
+      },
+      {
         id: "anal-3",
         category: "analytics",
         question: "자료 분석 스튜디오(PDF 요약)는 어떤 기능인가요?",

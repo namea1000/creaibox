@@ -66,6 +66,8 @@
 
 - [x] **유튜브 급상승 트렌드 60개국 및 실시간 검색어 무인 자동 수집 구축**
   - Vercel Cron (`sync-trending`, `sync-keywords`) 및 5종 자동 수집 매뉴얼(`background-automation-execution-5-methods-guide.md`) 완성
+- [x] **유튜브 인기 영상 조회수 랭킹 (Most Viewed) 신규 메뉴 및 DB 구축 완료**
+  - 전 세계 60개국 & 15개 카테고리별 기간별(7일/30일/역대전체) 조회수 최상위 랭킹 메뉴(`/youtube-trend/popular`), 백엔드 API(`/api/youtube/popular`), DB 보관함(`youtube_popular_archive`), 및 운영 매뉴얼(`youtube-popular-videos-ranking-guide.md`) 구축 완료
 - [x] **Vercel Cron 레지스트리 대장(`docs/project/vercel-cron-scheduler-registry.md`) 동기화**
   - 신규 매시간 키워드 크론 등록 및 보안 가드(`CRON_SECRET`) 준수 완료
 - [ ] **Supabase `pg_cron` 데이터 만료 및 스냅샷 자동화**
@@ -141,17 +143,19 @@
 - 📖 운용 가이드 매뉴얼: [`custom-domain-email-system-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/custom-domain-email-system-guide.md)
 
 - [x] **자사 이메일 무보수 무료 연동 기획 및 Vercel DNS 파이프라인 정리**
-  - Vercel 네임서버 유지 상태에서 ImprovMX / Resend MX 레코드 주입 구조 정립 완료
+  - Vercel 네임서버 유지 상태에서 Resend 5대 DNS 레코드 Vercel Domains API 백그라운드 1초 자동 주입 완료
 - [x] **Gmail 앱 연동 수발신 설정 가이드 작성**
-  - 개인 Gmail(`@gmail.com`)에서 `ceo@creaibox.com` 이름으로 전세계에 발신/답장하는 SMTP 가이드 정리 완료
-- [ ] **Resend Domains API & Vercel Domains API 원클릭 무인 1초 이메일 주입 엔진 구현**
-  - B2B 고객사 도메인 등록 시 Vercel DNS API (`createDomainRecord`) 백그라운드 1초 자동 주입 파이프라인 탑재 예정
+  - 개인 Gmail(`@gmail.com`)에서 `ceo@creaibox.com` 이름으로 전세계에 발신/답장하는 Resend SMTP 가이드 정리 완료
+- [x] **Resend Domains API & Vercel Domains API 원클릭 무인 1초 이메일 주입 엔진 구현**
+  - B2B 고객사 도메인 등록 시 Vercel DNS API (`addDnsRecordToVercel`) 백그라운드 1초 자동 주입 파이프라인 구축 완료
+- [x] **CreAibox 대시보드 내 커스텀 이메일 포워딩 연동 UI 및 API 구축 (/studio/domain-search)**
+  - `EmailForwardingManager.tsx` UI, `/api/email-forwarding` CRUD API 및 `docs/database/email_forwarding_rules.sql` DDL 구축 완료
+- [x] **Resend Inbound Webhook 실시간 무상태(Stateless Zero-DB) 포워딩 엔진 구축**
+  - `/api/webhooks/resend-inbound` 무상태 실시간 포워딩 백엔드 모듈 개발 완료
 - [ ] **고객사 플랜별 일일/월간 발송 쿼터(Quota Throttling) 및 스팸 차단 안전 모듈 탑재**
-  - 고객사별 일일 50~300건 쿼터 초과 시 자동 발송 차단 및 추가 쿼터 팩 결제 상품 연동
+  - 고객사별 일일 50~300건 쿼터 초과 시 자동 발송 차단 및 추가 쿼터 팩 결제 상품 연동 예정
 - [ ] **헤비 고객사 전용 API 키 입력 (BYOK: Bring Your Own Key) 옵션 제공**
   - 일 수천~수만 건 대량 메일 발송 고객사 대상 자가 Resend API 키 등록 모듈 구축 예정
-- [ ] **CreAibox 대시보드 내 전용 웹메일 수발신함 UI 및 Supabase DB 연동 (`/studio/email`)**
-  - `user_emails` 테이블 기반 수신함/발신함/메일 작성 웹 콘솔 구축 예정
 
 
 

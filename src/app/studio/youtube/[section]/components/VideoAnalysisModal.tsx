@@ -9,7 +9,7 @@ interface VideoAnalysisModalProps {
   video: any;
   videos?: any[];
   onVideoSelect?: (video: any) => void;
-  reportType?: "trending" | "channel";
+  reportType?: "trending" | "popular" | "channel";
 }
 
 /**

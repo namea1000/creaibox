@@ -4,12 +4,14 @@ import { supabaseAdmin } from "@/lib/server/get-free-gemini-key";
 import { decryptApiKey } from "@/lib/server/api-vault-crypto";
 import { ALL_COUNTRIES } from "@/app/studio/youtube/[section]/components/RisingVideos";
 
+const CORE_CATEGORY_IDS = ["all", "10", "20", "24", "23", "1", "28", "17", "2", "25", "26", "19", "22", "15", "29"];
+
 export const maxDuration = 300; // Allow 5 minutes max duration for Vercel Cron
 
 export async function GET(req: NextRequest) {
   // 1. Verify Vercel Cron authorization header
   const authHeader = req.headers.get("authorization");
-  
+
   if (process.env.NODE_ENV === "production" && process.env.CRON_SECRET) {
     if (!authHeader || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       console.error("Unauthorized Vercel Cron Trigger Attempt blocked.");
@@ -17,7 +19,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  console.log("Vercel Cron Triggered: Starting Sequential 60-Country YouTube Daily Trending Archive Scraper.");
+  console.log("Vercel Cron Triggered: Starting Sequential 60-Country & 15-Category YouTube Daily Trending Scraper.");
 
   const date = getKstTodayDate();
 
@@ -58,8 +60,8 @@ export async function GET(req: NextRequest) {
     console.error("Failed to fetch existing bundle row:", e);
   }
 
-  // Helper function to fetch 1 country from YouTube API with active key rotation
-  async function fetchCountryTrendingData(countryCode: string): Promise<any[]> {
+  // Helper function to fetch 1 country & category combination from YouTube API
+  async function fetchTrendingData(countryCode: string, categoryId: string): Promise<any[]> {
     let apiKey = "";
     try {
       const { data: vaultKeys } = await supabaseAdmin
@@ -87,10 +89,11 @@ export async function GET(req: NextRequest) {
       apiKey = process.env.YOUTUBE_API_KEY || process.env.GOOGLE_YOUTUBE_API_KEY || process.env.NEXT_PUBLIC_PAGESPEED_API_KEY || "";
     }
 
-    const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular&regionCode=${countryCode}&maxResults=20&key=${apiKey}`;
+    const catParam = categoryId === "all" ? "" : `&videoCategoryId=${categoryId}`;
+    const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular&regionCode=${countryCode}${catParam}&maxResults=25&key=${apiKey}`;
     const res = await fetch(url);
     if (!res.ok) {
-      throw new Error(`YouTube API returned HTTP ${res.status} for country ${countryCode}`);
+      throw new Error(`YouTube API returned HTTP ${res.status} for country ${countryCode} cat ${categoryId}`);
     }
     const data = await res.json();
     const items = data.items || [];
@@ -101,73 +104,83 @@ export async function GET(req: NextRequest) {
     }));
   }
 
-  const results: Array<{ country: string; success: boolean; error?: string }> = [];
+  const results: Array<{ key: string; success: boolean; error?: string }> = [];
   const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  // 3. Sequential Country-by-Country Scraping with Immediate DB Save per Country
   const targetCountries = ALL_COUNTRIES.map((c: { code: string }) => c.code);
+  const coreCategoryIds = CORE_CATEGORY_IDS;
 
+  // 3. Sequential Country & 15-Category Scraping with Immediate DB Save per item
   for (const countryCode of targetCountries) {
-    let attempts = 0;
-    let success = false;
-    let lastErr = "";
+    // Always scrape "all" (overall) for all 60 countries
+    const categoriesToScrape = (countryCode === "KR" || countryCode === "US" || countryCode === "JP")
+      ? coreCategoryIds
+      : ["all"];
 
-    while (attempts < 3) {
-      try {
-        console.log(`Cron Sequential Scraping start: ${countryCode} (Date: ${date}, Attempt: ${attempts + 1})`);
-        const enriched = await fetchCountryTrendingData(countryCode);
-        const bundleKey = countryCode === "KR" ? "all" : `${countryCode}_all`;
+    for (const catId of categoriesToScrape) {
+      const bundleKey = countryCode === "KR" && catId === "all"
+        ? "all"
+        : (catId === "all" ? `${countryCode}_all` : `${countryCode}_${catId}`);
 
-        // Update master bundle object in memory
-        masterBundleObj[bundleKey] = enriched;
+      let attempts = 0;
+      let success = false;
+      let lastErr = "";
 
-        // Save immediately to single bundle DB row after each country
-        const { error: saveError } = await supabaseAdmin
-          .from("youtube_trending_archive")
-          .upsert({
-            category_id: "bundle",
-            target_date: date,
-            videos_data: masterBundleObj,
-            updated_at: new Date().toISOString(),
-          }, { onConflict: "target_date, category_id" });
+      while (attempts < 2) {
+        try {
+          console.log(`Cron Scraping start: ${bundleKey} (Date: ${date}, Attempt: ${attempts + 1})`);
+          const enriched = await fetchTrendingData(countryCode, catId);
 
-        if (saveError) {
-          console.error(`Failed to save country ${countryCode} to bundle row:`, saveError.message);
-        } else {
-          console.log(`Saved country ${countryCode} immediately to single bundle DB row.`);
+          if (enriched.length > 0) {
+            masterBundleObj[bundleKey] = enriched;
+
+            // Save immediately to single bundle DB row after each country/category
+            const { error: saveError } = await supabaseAdmin
+              .from("youtube_trending_archive")
+              .upsert({
+                category_id: "bundle",
+                target_date: date,
+                videos_data: masterBundleObj,
+                updated_at: new Date().toISOString(),
+              }, { onConflict: "target_date, category_id" });
+
+            if (saveError) {
+              console.error(`Failed to save key ${bundleKey} to bundle row:`, saveError.message);
+            } else {
+              console.log(`Saved key ${bundleKey} immediately to single bundle DB row.`);
+            }
+          }
+
+          success = true;
+          results.push({ key: bundleKey, success: true });
+          break;
+        } catch (err: any) {
+          lastErr = err.message || String(err);
+          attempts++;
+          await delay(200);
         }
-
-        success = true;
-        results.push({ country: countryCode, success: true });
-        break;
-      } catch (err: any) {
-        lastErr = err.message || String(err);
-        attempts++;
-        await delay(300);
       }
-    }
 
-    if (!success) {
-      console.error(`Cron Scraping failed for country ${countryCode} after 3 attempts:`, lastErr);
-      results.push({ country: countryCode, success: false, error: lastErr });
-    }
+      if (!success) {
+        results.push({ key: bundleKey, success: false, error: lastErr });
+      }
 
-    // Short delay between country requests
-    await delay(100);
+      await delay(50);
+    }
   }
 
   const successCount = results.filter((r) => r.success).length;
-  const totalCount = targetCountries.length;
-  console.log(`Vercel Cron Finished: Sequentially scraped ${successCount}/${totalCount} countries successfully.`);
+  const totalCount = results.length;
+  console.log(`Vercel Cron Finished: Scraped ${successCount}/${totalCount} trending keys successfully into single bundle row.`);
 
   return NextResponse.json({
-    message: "60-country daily cron sync executed sequentially with immediate per-country DB saves into single bundle row.",
+    message: "60-country & 15-category daily trending cron sync executed with immediate DB saves into single bundle row.",
     date,
     summary: {
       total: totalCount,
       success: successCount,
       failed: totalCount - successCount,
-      cachedCountryKeys: Object.keys(masterBundleObj).length
+      storedKeysCount: Object.keys(masterBundleObj).length
     },
     details: results,
   });

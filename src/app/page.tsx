@@ -24,6 +24,7 @@ import {
   Search,
   Lightbulb,
   ChevronRight,
+  Flame,
 } from "lucide-react";
 
 export default function MainLandingPage() {
@@ -43,6 +44,34 @@ export default function MainLandingPage() {
     "예) 메타버스 및 웹3.0 시대의 비즈니스 트렌드 분석해줘",
   ];
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const heroInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const [realtimeKeywords, setRealtimeKeywords] = useState<{ rank: number; keyword: string; badge?: string }[]>([]);
+  const [keywordBatchIndex, setKeywordBatchIndex] = useState(0);
+  const [isRotating, setIsRotating] = useState(false);
+
+  const fallbackKeywords = [
+    { rank: 1, keyword: "미래형 대통령 인재", badge: "NEW" },
+    { rank: 2, keyword: "행정 수도 이전", badge: "▲" },
+    { rank: 3, keyword: "서초 삼성 스마트폰", badge: "NEW" },
+    { rank: 4, keyword: "극장가 점령 신작", badge: "▲" },
+    { rank: 5, keyword: "선명한 ULED 화질", badge: "NEW" },
+    { rank: 6, keyword: "바이오헬스 투자 확대", badge: "▲" },
+    { rank: 7, keyword: "공공기관 임직원수", badge: "NEW" },
+    { rank: 8, keyword: "문정동 송파구 인접", badge: "▲" },
+    { rank: 9, keyword: "소자본 1인 창업", badge: "NEW" },
+    { rank: 10, keyword: "유튜브 쇼츠 떡상 비법", badge: "▲" },
+    { rank: 11, keyword: "인공지능 이미지 생성기", badge: "NEW" },
+    { rank: 12, keyword: "부동산 양도세 절세", badge: "▲" },
+    { rank: 13, keyword: "초보자 다이어트 식단", badge: "NEW" },
+    { rank: 14, keyword: "서울 근교 감성 캠핑장", badge: "▲" },
+    { rank: 15, keyword: "메타버스 비즈니스 모델", badge: "NEW" },
+    { rank: 16, keyword: "퍼스널 브랜딩 블로그", badge: "▲" },
+    { rank: 17, keyword: "직장인 스트레스 해소", badge: "NEW" },
+    { rank: 18, keyword: "여름 동남아 휴양지", badge: "▲" },
+    { rank: 19, keyword: "전기차 보조금 신청", badge: "NEW" },
+    { rank: 20, keyword: "네이버 블로그 지수", badge: "▲" },
+  ];
 
   const subCategories = [
     { name: "AI & 기술", sub: "AI & Tech", count: "535개 아이디어", emoji: "🤖" },
@@ -118,6 +147,50 @@ export default function MainLandingPage() {
 
     return () => clearInterval(timer);
   }, []);
+
+  React.useEffect(() => {
+    async function loadTrends() {
+      try {
+        const res = await fetch("/api/naver/trend");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.results && Array.isArray(data.results) && data.results.length > 0) {
+            setRealtimeKeywords(
+              data.results.slice(0, 20).map((r: any, idx: number) => ({
+                rank: idx + 1,
+                keyword: r.title || r.keyword,
+                badge: r.changeBadge || (idx % 2 === 0 ? "NEW" : "▲"),
+              }))
+            );
+          }
+        }
+      } catch (e) {}
+    }
+    loadTrends();
+  }, []);
+
+  React.useEffect(() => {
+    const rotateTimer = setInterval(() => {
+      setIsRotating(true);
+      setTimeout(() => {
+        setKeywordBatchIndex((prev) => (prev + 1) % 4);
+        setIsRotating(false);
+      }, 350);
+    }, 10000);
+
+    return () => clearInterval(rotateTimer);
+  }, []);
+
+  const displayList = realtimeKeywords.length >= 20 ? realtimeKeywords : fallbackKeywords;
+  const currentBatch = displayList.slice(keywordBatchIndex * 5, (keywordBatchIndex + 1) * 5);
+
+  const handleKeywordClick = (kw: string) => {
+    setSearchQuery(kw);
+    if (heroInputRef.current) {
+      heroInputRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      heroInputRef.current.focus();
+    }
+  };
 
   const getSmartRoute = (query: string): string => {
     const q = query.toLowerCase().trim();
@@ -297,21 +370,21 @@ export default function MainLandingPage() {
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="flex items-center justify-start md:justify-center gap-2 overflow-x-auto py-2.5 scrollbar-none flex-nowrap">
               {[
-                { icon: <Sparkles size={15} />, label: "스튜디오 홈", href: "/studio", color: "text-violet-400 border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/20 font-black" },
-                { icon: <PenLine size={15} />, label: "블로그 글쓰기", href: "/writing/creaibox/new-post", color: "text-blue-400 border-zinc-800 bg-zinc-900/90 hover:bg-zinc-800 hover:border-blue-500/40" },
-                { icon: <Video size={15} />, label: "영상 편집기", href: "/video-editor", color: "text-pink-400 border-zinc-800 bg-zinc-900/90 hover:bg-zinc-800 hover:border-pink-500/40" },
-                { icon: <ImageIcon size={15} />, label: "이미지 스튜디오", href: "/design", color: "text-violet-400 border-zinc-800 bg-zinc-900/90 hover:bg-zinc-800 hover:border-violet-500/40" },
-                { icon: <TrendingUp size={15} />, label: "유튜브 트랜드 분석", href: "/youtube-trend", color: "text-red-400 border-zinc-800 bg-zinc-900/90 hover:bg-zinc-800 hover:border-red-500/40" },
-                { icon: <Search size={15} />, label: "키워드 트랜드 분석", href: "/keyword-trend", color: "text-amber-400 border-zinc-800 bg-zinc-900/90 hover:bg-zinc-800 hover:border-amber-500/40" },
-                { icon: <Globe size={15} />, label: "커스텀 웹사이트", href: "/studio/custom-client-site", color: "text-indigo-400 border-zinc-800 bg-zinc-900/90 hover:bg-zinc-800 hover:border-indigo-500/40" },
+                { icon: <Sparkles size={16} />, label: "스튜디오 홈", href: "/studio", color: "text-violet-400 border-violet-500/50 bg-violet-500/15 hover:bg-violet-500/25 font-black shadow-lg shadow-violet-500/10" },
+                { icon: <Globe size={16} />, label: "커스텀 웹사이트", href: "/studio/custom-client-site", color: "text-indigo-400 border-zinc-800/90 bg-zinc-900/90 hover:bg-zinc-800 hover:border-indigo-500/50" },
+                { icon: <PenLine size={16} />, label: "블로그 글쓰기", href: "/writing/creaibox/new-post", color: "text-blue-400 border-zinc-800/90 bg-zinc-900/90 hover:bg-zinc-800 hover:border-blue-500/50" },
+                { icon: <Search size={16} />, label: "급상승 키워드 트랜드", href: "/keyword-trend", color: "text-amber-400 border-zinc-800/90 bg-zinc-900/90 hover:bg-zinc-800 hover:border-amber-500/50" },
+                { icon: <TrendingUp size={16} />, label: "급상승 유튜브 트랜드", href: "/youtube-trend", color: "text-red-400 border-zinc-800/90 bg-zinc-900/90 hover:bg-zinc-800 hover:border-red-500/50" },
+                { icon: <Video size={16} />, label: "영상 편집기", href: "/video-editor", color: "text-pink-400 border-zinc-800/90 bg-zinc-900/90 hover:bg-zinc-800 hover:border-pink-500/50" },
+                { icon: <ImageIcon size={16} />, label: "이미지 스튜디오", href: "/design", color: "text-violet-400 border-zinc-800/90 bg-zinc-900/90 hover:bg-zinc-800 hover:border-violet-500/50" },
               ].map((item, index) => (
                 <Link
                   key={index}
                   href={item.href}
-                  className={`flex items-center gap-2 rounded-md border px-3.5 py-1.5 text-xs font-bold transition shrink-0 ${item.color}`}
+                  className={`flex items-center gap-2 rounded-lg border-2 px-3.5 py-2 text-xs sm:text-xs font-black transition shrink-0 hover:scale-[1.02] ${item.color}`}
                 >
                   {item.icon}
-                  <span className="text-zinc-200 font-extrabold">{item.label}</span>
+                  <span className="text-zinc-100 font-black">{item.label}</span>
                 </Link>
               ))}
             </div>
@@ -378,6 +451,7 @@ export default function MainLandingPage() {
               <div className="relative flex items-center rounded-3xl border border-slate-800 dark:border-zinc-800 bg-slate-900 dark:bg-zinc-900 p-2 shadow-xl focus-within:border-violet-400 transition">
                 <Search className="ml-4 text-zinc-500 shrink-0" size={20} />
                 <input
+                  ref={heroInputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -409,6 +483,49 @@ export default function MainLandingPage() {
                 <Lightbulb size={18} />
                 콘텐츠 아이디어 허브
               </button>
+            </div>
+          </div>
+        </section>
+
+        {/* ⚡ Special Realtime Trending Keywords Section (Ultra-Slim Single Line Bar) */}
+        <section className="relative bg-gradient-to-r from-emerald-950/90 via-zinc-950 to-violet-950/90 border-y border-emerald-500/30 py-3 px-6 shadow-2xl overflow-hidden backdrop-blur-2xl">
+          {/* Background Ambient Glow Orbs */}
+          <div className="absolute left-10 top-1/2 -translate-y-1/2 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute right-10 top-1/2 -translate-y-1/2 w-80 h-80 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-4">
+            {/* Left Title Label (Clickable Link to Sidebar Realtime Keyword Page) */}
+            <Link
+              href="/studio/keyword/realtime"
+              className="flex items-center gap-2.5 shrink-0 group/title cursor-pointer hover:opacity-90 transition"
+              title="클릭 시 실시간 급상승 키워드 전체 대시보드로 바로 이동합니다"
+            >
+              <span className="relative flex h-2.5 w-2.5 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+              </span>
+              <Flame className="text-amber-400 animate-pulse shrink-0" size={18} />
+              <h3 className="text-sm font-black tracking-tight text-white group-hover/title:text-emerald-400 transition-colors whitespace-nowrap flex items-center gap-1">
+                <span>실시간 급상승 키워드 &amp; 뉴스</span>
+                <ChevronRight size={14} className="text-zinc-400 group-hover/title:text-emerald-400 transition-colors" />
+              </h3>
+            </Link>
+
+            {/* Right: 5 Keywords in 1 Single Horizontal Line */}
+            <div
+              className={`flex-1 grid grid-cols-2 sm:grid-cols-5 gap-2 w-full transition-all duration-500 transform ${
+                isRotating ? "opacity-0 scale-[0.98] translate-y-1" : "opacity-100 scale-100 translate-y-0"
+              }`}
+            >
+              {currentBatch.map((item) => (
+                <button
+                  key={item.rank}
+                  onClick={() => handleKeywordClick(item.keyword)}
+                  className="group flex items-center justify-center py-1.5 px-3 rounded-xl hover:bg-white/10 text-white font-black text-xs sm:text-sm transition-all duration-300 cursor-pointer hover:scale-105 hover:text-emerald-300 text-center truncate"
+                >
+                  <span className="truncate">{item.keyword}</span>
+                </button>
+              ))}
             </div>
           </div>
         </section>

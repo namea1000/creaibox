@@ -5,6 +5,10 @@
       "schedule": "0 21 * * *"
     },
     {
+      "path": "/api/cron/sync-popular",
+      "schedule": "50 14 * * *"
+    },
+    {
       "path": "/api/cron/sync-keywords",
       "schedule": "0 * * * *"
     }

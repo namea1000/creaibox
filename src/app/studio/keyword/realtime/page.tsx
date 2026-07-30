@@ -248,18 +248,18 @@ export default function RealtimeKeywordPage() {
       </div>
 
       {/* ⚔️ 2열 실시간 비교 대시보드 (좌: 네이버 20개 / 우: 구글 20개) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 🟢 좌측: 네이버 실시간 검색어 20개 */}
-        <div className="bg-zinc-900/40 border border-emerald-500/20 p-6 rounded-3xl space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* 🟢 좌측: 네이버 실시간 검색어 20개 (스판 7~8: 핵심 키워드 + 원본 기사제목 통합) */}
+        <div className="lg:col-span-7 xl:col-span-8 bg-zinc-900/40 border border-emerald-500/20 p-6 rounded-3xl space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
             <div className="flex items-center gap-2">
               <span className="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 font-black text-xs flex items-center justify-center border border-emerald-500/30 shrink-0">
                 N
               </span>
               <div>
-                <h3 className="text-base font-black text-white">네이버 실시간 검색어 TOP 20</h3>
+                <h3 className="text-base font-black text-white">네이버 실시간 검색어 &amp; 이슈 기사 TOP 20</h3>
                 <p className="text-[11px] text-emerald-400/90 font-medium mt-0.5">
-                  포털 실시간 트렌드 &amp; 뉴스 열독 통합 지수 (Search &amp; News Engagement Index)
+                  핵심 검색어 키워드 + 네이버 실시간 원본 이슈 기사 제목 일합 연동
                 </p>
               </div>
             </div>
@@ -284,22 +284,38 @@ export default function RealtimeKeywordPage() {
               {naverKeywords.map((item) => (
                 <div
                   key={item.rank}
-                  className="p-2.5 px-3.5 rounded-2xl bg-black/50 border border-zinc-800/80 hover:border-emerald-500/40 transition-all group flex items-center justify-between gap-2"
+                  className="p-2.5 px-3.5 rounded-2xl bg-black/50 border border-zinc-800/80 hover:border-emerald-500/40 transition-all group flex items-center justify-between gap-2.5"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
                     <span className="w-6 h-6 rounded-lg bg-zinc-800 text-zinc-300 font-black text-xs flex items-center justify-center shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
                       {item.rank}
                     </span>
+
+                    {/* 1. 정제된 2~4단어 핵심 키워드 뱃지 */}
                     <a
                       href={`https://search.naver.com/search.naver?query=${encodeURIComponent(item.keyword)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-bold text-sm text-white hover:text-emerald-400 transition-colors truncate flex items-center gap-1 group/link"
-                      title="클릭 시 네이버 검색창에서 즉시 검색 조회"
+                      className="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/30 hover:text-white text-xs font-black shrink-0 transition flex items-center gap-1 group/link"
+                      title="클릭 시 네이버 검색창에서 핵심 키워드로 즉시 조회"
                     >
                       <span>{item.keyword}</span>
-                      <ExternalLink size={10} className="opacity-0 group-hover/link:opacity-100 transition-opacity text-emerald-400 shrink-0" />
+                      <ExternalLink size={10} className="opacity-70 group-hover/link:opacity-100 transition-opacity text-emerald-400 shrink-0" />
                     </a>
+
+                    {/* 2. 원본 실시간 이슈 기사 제목 */}
+                    {item.newsTitle && (
+                      <a
+                        href={item.newsUrl || `https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(item.keyword)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-zinc-300 hover:text-white font-medium truncate transition"
+                        title={`네이버 원본 기사: ${item.newsTitle}`}
+                      >
+                        <span className="text-zinc-500 mr-1 font-normal">|</span>
+                        <span>{item.newsTitle}</span>
+                      </a>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -341,8 +357,8 @@ export default function RealtimeKeywordPage() {
           )}
         </div>
 
-        {/* 🔵 우측: 구글 실시간 검색어 20개 (구글 트렌드 Trending Now) */}
-        <div className="bg-zinc-900/40 border border-blue-500/20 p-6 rounded-3xl space-y-4">
+        {/* 🔵 우측: 구글 실시간 검색어 20개 (스판 4~5: 가로 너비 축소) */}
+        <div className="lg:col-span-5 xl:col-span-4 bg-zinc-900/40 border border-blue-500/20 p-6 rounded-3xl space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
             <div className="flex items-center gap-2">
               <Globe className="text-blue-400 shrink-0" size={22} />

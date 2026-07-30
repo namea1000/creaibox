@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     if (type === "channel") {
       dbQuery = dbQuery.eq("report_type", "channel");
     } else {
-      dbQuery = dbQuery.or("report_type.eq.trending,report_type.is.null");
+      dbQuery = dbQuery.or("report_type.eq.trending,report_type.eq.popular,report_type.is.null");
     }
 
     const { data: analyses, error: analysisError } = await dbQuery.order("created_at", { ascending: false }).limit(30);
@@ -85,6 +85,8 @@ export async function GET(req: NextRequest) {
       return {
         id: videoId,
         video_id: videoId,
+        report_type: analysis.report_type || "trending",
+        source: analysis.report_type || "trending",
         created_at: analysis.created_at,
         analysis_content: analysis.analysis_content,
         country: country || "KR",

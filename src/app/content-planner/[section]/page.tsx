@@ -19,11 +19,35 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { section } = await params;
-  const sectionTitle = sectionNames[section] || "AI 콘텐츠 플래너";
+  const sectionTitle = sectionNames[section] || "콘텐츠 아이디어 허브";
+  const title = `${sectionTitle} - 콘텐츠 기획`;
+  const description = `크리에이박스 CreAibox의 ${sectionTitle} 솔루션입니다. 체계적인 아이디어 스케치, 키워드 시리즈 추천 및 콘텐츠 캘린더를 AI로 편리하게 기획해 보세요.`;
   return {
-    title: `${sectionTitle} | 크리에이박스 CreAibox`,
-    description: `크리에이박스 CreAibox의 대외 공개용 ${sectionTitle} 솔루션입니다. 체계적인 아이디어 스케치부터 콘텐츠 캘린더 관리까지 AI로 편리하게 자동화해 보세요.`,
-    keywords: ["크리에이박스", "creaibox", sectionTitle, "AI 콘텐츠 플래너", "마케팅 캘린더"]
+    title,
+    description,
+    keywords: ["크리에이박스", "creaibox", sectionTitle, "AI 콘텐츠 플래너", "마케팅 캘린더"],
+    openGraph: {
+      title: `${title} | 크리에이박스 CreAibox`,
+      description,
+      url: `https://creaibox.com/content-planner/${section}`,
+      siteName: "CreAibox",
+      images: [
+        {
+          url: "/images/seo/content-planner.webp",
+          width: 1200,
+          height: 630,
+          alt: sectionTitle,
+        },
+      ],
+      locale: "ko_KR",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} | 크리에이박스 CreAibox`,
+      description,
+      images: ["/images/seo/content-planner.webp"],
+    },
   };
 }
 

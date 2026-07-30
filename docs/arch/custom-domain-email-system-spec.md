@@ -156,11 +156,12 @@ create table if not exists public.domain_send_quotas (
 
 ---
 
-## 7. 🔮 향후 단계별 구현 로드맵
+## 7. 🔮 단계별 구축 완료 상태 (Implementation Status)
 
-1. **Phase 1 (자사 이메일 구축)**:
-   - `ceo@creaibox.com` ImprovMX / Resend 무료 연동 및 Gmail 수발신 설정 가이드 작성.
-2. **Phase 2 (사용자/고객사 자동 발신 구현)**:
-   - Resend API 백엔드 모듈 연동 및 `/studio/email` 내 웹메일 수발신 UI 구축.
-3. **Phase 3 (B2B 1초 무인 DNS 연동 자동화)**:
-   - Vercel Domains API + Resend Domains API 1클릭 이메일 서버 활성화 엔진 완료.
+1. **Phase 1 (자사 이메일 구축 & Resend Domain Verified) [완료 ✅]**:
+   - `creaibox.com` Resend 도메인 인증 완료 (`Verified ✅`) 및 Vercel DNS API 자동 레코드 5개 주입 완료.
+2. **Phase 2 (사용자/고객사 포워딩 관리 UI & 백엔드 Webhook) [완료 ✅]**:
+   - `EmailForwardingManager.tsx` UI 탑재 및 `/api/email-forwarding` CRUD API 완료.
+   - Resend Inbound Webhook (`/api/webhooks/resend-inbound`) 무상태 포워딩 엔진 구축 완료.
+3. **Phase 3 (B2B 1초 무인 DNS 연동 자동화 모듈) [완료 ✅]**:
+   - Vercel Domains API + Resend SDK 결합 모듈 (`src/lib/server/resend-email.ts` & `src/lib/server/vercel-domains.ts`) 탑재 완료.
