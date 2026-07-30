@@ -30,6 +30,11 @@ export default function VideoEditorPlaybackController() {
   const lastUiPublishRef = useRef(currentTime);
   const lastAutoSelectedClipIdRef = useRef<string | null>(null);
   const prevIsPlayingRef = useRef(isPlaying);
+  const selectedClipIdRef = useRef(selectedClipId);
+
+  useEffect(() => {
+    selectedClipIdRef.current = selectedClipId;
+  }, [selectedClipId]);
 
   useEffect(() => {
     const wasPlaying = prevIsPlayingRef.current;
@@ -50,13 +55,13 @@ export default function VideoEditorPlaybackController() {
       );
     }
 
-    if (isPlaying && !wasPlaying && selectedClipId) {
-      const selectedClip = clips.find((c) => c.id === selectedClipId);
+    if (isPlaying && !wasPlaying && selectedClipIdRef.current) {
+      const selectedClip = clips.find((c) => c.id === selectedClipIdRef.current);
       if (selectedClip && selectedClip.type === "visualizer") {
         selectClip(null);
       }
     }
-  }, [isPlaying, totalDuration, selectedClipId, clips, setCurrentTime, selectClip]);
+  }, [isPlaying, totalDuration, clips, setCurrentTime, selectClip]);
 
   useEffect(() => {
     const timeDiff = Math.abs(currentTime - playbackTimeRef.current);
@@ -138,7 +143,7 @@ export default function VideoEditorPlaybackController() {
 
       if (
         visibleClip &&
-        visibleClip.id !== selectedClipId &&
+        visibleClip.id !== selectedClipIdRef.current &&
         visibleClip.id !== lastAutoSelectedClipIdRef.current
       ) {
         lastAutoSelectedClipIdRef.current = visibleClip.id;
@@ -164,7 +169,6 @@ export default function VideoEditorPlaybackController() {
     isPlaying,
     totalDuration,
     clips,
-    selectedClipId,
     setCurrentTime,
     setIsPlaying,
     selectClip,

@@ -1337,55 +1337,52 @@ function getMediaDuration(file: File): Promise<number> {
           if (parsed.exportQuality) setExportQuality(parsed.exportQuality);
 
           if (Array.isArray(parsed.mediaItems)) {
-            const restoredMedia = await Promise.all(
-              parsed.mediaItems.map(async (item: VideoEditorMediaItem) => {
-                const isLocal = !item.url || item.url.startsWith("blob:");
-                if (isLocal) {
-                  const cachedFile = await getFileFromCache(item.id);
-                  if (cachedFile) {
-                    const newUrl = URL.createObjectURL(cachedFile);
-                    
-                    // Background healing: If the item was uploaded before the ratio patch
-                    // and is missing its dimensions or has a horizontal thumbnail for a vertical media,
-                    // we dynamically detect dimensions and update its thumbnail.
-                    let width = item.width;
-                    let height = item.height;
-                    let thumbUrl = item.thumbnailUrl;
+            const restoredMedia: VideoEditorMediaItem[] = [];
+            for (const item of parsed.mediaItems) {
+              const isLocal = !item.url || item.url.startsWith("blob:");
+              if (isLocal) {
+                const cachedFile = await getFileFromCache(item.id);
+                if (cachedFile) {
+                  const newUrl = URL.createObjectURL(cachedFile);
 
-                    if (!width || !height) {
-                      try {
-                        if (item.type === "image") {
-                          const dims = await getImageDimensions(cachedFile);
-                          width = dims.width;
-                          height = dims.height;
-                          thumbUrl = newUrl;
-                        } else if (item.type === "video") {
-                          const thumbResult = await getVideoThumbnail(cachedFile);
-                          width = thumbResult.width;
-                          height = thumbResult.height;
-                          thumbUrl = thumbResult.url;
-                        }
-                      } catch (e) {
-                        console.warn("[VideoEditorContext] Restored item healing failed:", item.name, e);
+                  let width = item.width;
+                  let height = item.height;
+                  let thumbUrl = item.thumbnailUrl;
+
+                  if (!width || !height) {
+                    try {
+                      if (item.type === "image") {
+                        const dims = await getImageDimensions(cachedFile);
+                        width = dims.width;
+                        height = dims.height;
+                        thumbUrl = newUrl;
+                      } else if (item.type === "video" && !thumbUrl) {
+                        const thumbResult = await getVideoThumbnail(cachedFile);
+                        width = thumbResult.width;
+                        height = thumbResult.height;
+                        thumbUrl = thumbResult.url;
                       }
+                    } catch (e) {
+                      console.warn("[VideoEditorContext] Restored item healing failed:", item.name, e);
                     }
-
-                    return {
-                      ...item,
-                      url: newUrl,
-                      file: cachedFile,
-                      thumbnailUrl: thumbUrl || item.thumbnailUrl,
-                      width,
-                      height,
-                    };
                   }
+
+                  restoredMedia.push({
+                    ...item,
+                    url: newUrl,
+                    file: cachedFile,
+                    thumbnailUrl: thumbUrl || item.thumbnailUrl,
+                    width,
+                    height,
+                  });
+                  continue;
                 }
-                return {
-                  ...item,
-                  url: item.url && !item.url.startsWith("blob:") ? item.url : "",
-                };
-              })
-            );
+              }
+              restoredMedia.push({
+                ...item,
+                url: item.url && !item.url.startsWith("blob:") ? item.url : "",
+              });
+            }
             setMediaItems(restoredMedia);
           }
 
