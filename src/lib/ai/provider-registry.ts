@@ -22,15 +22,23 @@ export type ApiVaultServiceItem = {
 export const GEMINI_MODELS: ModelOption[] = [
   {
     value: "gemini-3.1-flash-lite",
-    label: "gemini-3.1-flash-lite 🟢 최신 Lite · 저비용 · 빠른 생성 · 대량 작업 추천",
+    label: "gemini-3.1-flash-lite 🟢 구글 최신 3.1 Lite · 초고속 · 에이전트 & 대량 생성",
+  },
+  {
+    value: "gemini-3.1-pro-preview",
+    label: "gemini-3.1-pro-preview 🧠 구글 최신 3.1 Pro Preview · 최첨단 코딩 & 깊은 추론",
   },
   {
     value: "gemini-3-flash-preview",
-    label: "gemini-3-flash-preview ⚡ 최신 Preview · 고속 생성 · 검색 및 그라운딩 최적화",
+    label: "gemini-3-flash-preview ⚡ 구글 3 Flash Preview · 구글 검색 그라운딩 최적화",
   },
   {
     value: "gemini-2.5-flash",
-    label: "gemini-2.5-flash 🚀 안정적인 실전용 · 블로그/자동화/대량생성 추천",
+    label: "gemini-2.5-flash 🚀 안정적인 2.5 Flash · 고품질 원고 생성",
+  },
+  {
+    value: "gemini-2.5-pro",
+    label: "gemini-2.5-pro 📚 2.5 Pro · 깊은 분석 작업",
   },
 ];
 
@@ -89,8 +97,8 @@ export const AI_PROVIDER_MODEL_OPTIONS: Record<AiProviderId, ModelOption[]> = {
 };
 
 export const AI_PROVIDER_DEFAULT_MODEL: Record<AiProviderId, string> = {
-  gemini_postpay: "gemini-2.5-flash",
-  gemini_free: "gemini-2.5-flash",
+  gemini_postpay: "gemini-3.1-flash-lite",
+  gemini_free: "gemini-3.1-flash-lite",
   groq: "llama-3.1-8b-instant",
   openai: "gpt-4o-mini",
   claude: "claude-3-5-haiku-latest",

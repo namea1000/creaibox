@@ -58,46 +58,71 @@ export async function POST(req: NextRequest) {
       console.log(`No specific rule found. Using default fallback: ${forwardTarget}`);
     }
 
+    // Helper to safely extract string from any field (string, object, array)
+    const extractString = (val: any): string => {
+      if (!val) return "";
+      if (typeof val === "string") return val.trim();
+      if (typeof val === "object") {
+        if (typeof val.text === "string") return val.text.trim();
+        if (typeof val.html === "string") return val.html.trim();
+        if (typeof val.body === "string") return val.body.trim();
+        if (typeof val.content === "string") return val.content.trim();
+        try {
+          return JSON.stringify(val);
+        } catch {
+          return String(val);
+        }
+      }
+      return String(val).trim();
+    };
+
     // Extract HTML & Text body from all possible webhook payload formats
     let rawHtml =
-      emailData.html ||
-      emailData.html_body ||
-      emailData.htmlBody ||
-      payload.html ||
-      payload.html_body ||
-      "";
+      extractString(emailData.html) ||
+      extractString(emailData.html_body) ||
+      extractString(emailData.htmlBody) ||
+      extractString(emailData.htmlContent) ||
+      extractString(payload.html) ||
+      extractString(payload.html_body);
+
     let rawText =
-      emailData.text ||
-      emailData.text_body ||
-      emailData.textBody ||
-      emailData.body ||
-      emailData.content ||
-      payload.text ||
-      payload.body ||
-      "";
+      extractString(emailData.text) ||
+      extractString(emailData.text_body) ||
+      extractString(emailData.textBody) ||
+      extractString(emailData.plain_text) ||
+      extractString(emailData.plainText) ||
+      extractString(emailData.text_content) ||
+      extractString(emailData.body) ||
+      extractString(emailData.content) ||
+      extractString(emailData.snippet) ||
+      extractString(payload.text) ||
+      extractString(payload.text_body) ||
+      extractString(payload.body) ||
+      extractString(payload.content);
 
     const emailId = emailData.email_id || emailData.id || payload.email_id || payload.id;
 
-    // Try fetching full email content from Resend API if API key has permission and body is missing
+    // Try fetching full email content from Resend API if body is missing
     if (!rawHtml && !rawText && emailId) {
       try {
         const resendApiKey = process.env.RESEND_API_KEY;
         if (resendApiKey) {
-          const fetchRes = await fetch(`https://api.resend.com/emails/inbound/${emailId}`, {
-            headers: { Authorization: `Bearer ${resendApiKey}` },
-          });
-          if (fetchRes.ok) {
-            const fetchedData = await fetchRes.json();
-            rawHtml = fetchedData.html || fetchedData.html_body || "";
-            rawText = fetchedData.text || fetchedData.text_body || fetchedData.body || "";
-          } else {
-            const fetchRes2 = await fetch(`https://api.resend.com/emails/${emailId}`, {
+          const endpointsToTry = [
+            `https://api.resend.com/emails/receiving/${emailId}`,
+            `https://api.resend.com/emails/inbound/${emailId}`,
+            `https://api.resend.com/emails/${emailId}`,
+          ];
+
+          for (const ep of endpointsToTry) {
+            const fetchRes = await fetch(ep, {
               headers: { Authorization: `Bearer ${resendApiKey}` },
             });
-            if (fetchRes2.ok) {
-              const fetchedData2 = await fetchRes2.json();
-              rawHtml = fetchedData2.html || fetchedData2.html_body || "";
-              rawText = fetchedData2.text || fetchedData2.text_body || fetchedData2.body || "";
+            if (fetchRes.ok) {
+              const fetchedData = await fetchRes.json();
+              console.log(`[Resend Fetch Inbound] Success from ${ep}:`, JSON.stringify(fetchedData));
+              rawHtml = rawHtml || extractString(fetchedData.html) || extractString(fetchedData.html_body);
+              rawText = rawText || extractString(fetchedData.text) || extractString(fetchedData.text_body) || extractString(fetchedData.body);
+              if (rawHtml || rawText) break;
             }
           }
         }

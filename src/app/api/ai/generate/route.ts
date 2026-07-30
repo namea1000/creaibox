@@ -388,8 +388,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3차: .env.local 시스템 키 우회
-    const systemApiKey = process.env.GEMINI_API_KEY;
+    // 3차: .env.local 시스템 키 우회 (GEMINI_API_KEY, GOOGLE_API_KEY 지원)
+    const systemApiKey =
+      process.env.GEMINI_API_KEY ||
+      process.env.GOOGLE_API_KEY ||
+      process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
     if (systemApiKey) {
       try {

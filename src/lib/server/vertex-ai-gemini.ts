@@ -75,13 +75,16 @@ export async function generateContentWithVertexAI({
 
   const accessToken = await getVertexAccessToken(creds.clientEmail, creds.privateKey);
 
-  // Build model candidates: user requested model first (e.g. gemini-2.5-flash), then fallbacks
+  const requestedModel = modelName || "gemini-3.1-flash-lite";
+
+  // Build model candidates: requested model first (e.g. gemini-3.1-flash-lite), then fallbacks
   const modelCandidates = Array.from(
     new Set([
-      modelName || "gemini-2.5-flash",
+      requestedModel,
+      "gemini-3.1-flash-lite",
+      "gemini-3.1-pro-preview",
+      "gemini-3-flash-preview",
       "gemini-2.5-flash",
-      "gemini-2.5-pro",
-      "gemini-1.5-flash",
     ])
   );
 
@@ -125,30 +128,49 @@ export async function generateContentWithVertexAI({
   }
 
   let lastErr: Error | null = null;
+  const systemApiKey =
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
   for (const targetModel of modelCandidates) {
-    const endpoints = [
-      `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent`,
-      `https://${location}-aiplatform.googleapis.com/v1/projects/${creds.projectId}/locations/${location}/publishers/google/models/${targetModel}:generateContent`,
+    const endpoints: Array<{ url: string; headers: Record<string, string> }> = [
+      // 1순위: GCP $300불 크레딧 전용 Vertex AI Service Account OAuth 엔드포인트
+      {
+        url: `https://${location}-aiplatform.googleapis.com/v1/projects/${creds.projectId}/locations/${location}/publishers/google/models/${targetModel}:generateContent`,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+      // 2순위: Developer API 엔드포인트
+      {
+        url: systemApiKey
+          ? `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${encodeURIComponent(systemApiKey)}`
+          : `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent`,
+        headers: {
+          "Content-Type": "application/json",
+          ...(systemApiKey
+            ? { "x-goog-api-key": systemApiKey }
+            : { Authorization: `Bearer ${accessToken}` }),
+        },
+      },
     ];
 
-    for (const endpoint of endpoints) {
-      console.log(`[GCP OAuth Execution] Trying Model: ${targetModel}, Endpoint: ${endpoint}, useSearch: ${Boolean(useSearch)}`);
+    for (const ep of endpoints) {
+      console.log(`[GCP OAuth $300 Credit Execution] Trying Model: ${targetModel}, Endpoint: ${ep.url}`);
 
       try {
-        const res = await fetch(endpoint, {
+        const res = await fetch(ep.url, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
+          headers: ep.headers,
           body: JSON.stringify(payload),
         });
 
         if (!res.ok) {
           const errorJson = await res.json().catch(() => ({}));
           const errorMessage = errorJson.error?.message || `GCP API 응답 오류 (${targetModel}: HTTP ${res.status})`;
-          console.warn(`[GCP API Warning] ${targetModel} 호출 실패, 다음 엔드포인트/모델로 우회 시도:`, errorMessage);
+          console.warn(`[GCP API Warning] ${targetModel} 호출 실패:`, errorMessage);
           lastErr = new Error(errorMessage);
           continue;
         }
@@ -160,7 +182,7 @@ export async function generateContentWithVertexAI({
           throw new Error(`GCP AI (${targetModel})로부터 올바른 텍스트 응답을 받지 못했습니다.`);
         }
 
-        console.log(`[GCP OAuth Success] Model ${targetModel} successfully generated output!`);
+        console.log(`[GCP OAuth $300 Credit Success] Model ${targetModel} successfully generated output!`);
         return text;
       } catch (err: any) {
         lastErr = err;
