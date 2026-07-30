@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createAdminClient } from "@/utils/supabase/server";
 import { CalendarDays, Sparkles, BookOpen, ArrowRight } from "lucide-react";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 interface PublishedPost {
   id: string;

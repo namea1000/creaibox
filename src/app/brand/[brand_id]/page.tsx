@@ -7,7 +7,7 @@ import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import BlogClientWrapper from "./components/BlogClientWrapper";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 interface PublishedPost {
   id: string;
@@ -20,7 +20,6 @@ interface PublishedPost {
   category_id?: string | null;
   thumbnailUrl?: string | null;
   canonical_url?: string | null;
-  published_snapshot?: any;
 }
 
 interface BlogCategory {
@@ -219,7 +218,7 @@ export default async function BrandBlogHome({ params }: BrandPageProps) {
       .order("created_at", { ascending: true }),
     supabase
       .from("writing_creaibox_posts")
-      .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at, category_id, published_snapshot")
+      .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at, category_id")
       .eq("user_id", profile.id)
       .eq("status", "published")
       .not("slug", "is", null)
@@ -269,23 +268,10 @@ export default async function BrandBlogHome({ params }: BrandPageProps) {
       const postImages = imageMap[post.id] || [];
       const primaryImg = postImages.find((img) => img.is_primary) || postImages[0];
       
-      const finalPost = {
+      return {
         ...post,
         thumbnailUrl: primaryImg ? primaryImg.url : null,
       };
-
-      if (post.published_snapshot) {
-        const snapshot = post.published_snapshot as any;
-        finalPost.title = snapshot.title ?? finalPost.title;
-        finalPost.slug = snapshot.slug ?? finalPost.slug;
-        finalPost.meta_description = snapshot.meta_description ?? finalPost.meta_description;
-        finalPost.focus_keyword = snapshot.focus_keyword ?? finalPost.focus_keyword;
-        finalPost.seo_tags = snapshot.seo_tags ?? finalPost.seo_tags;
-        finalPost.canonical_url = snapshot.canonical_url ?? finalPost.canonical_url;
-        finalPost.category_id = snapshot.category_id ?? finalPost.category_id;
-      }
-
-      return finalPost;
     });
   }
 

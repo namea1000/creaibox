@@ -7,7 +7,7 @@ import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import CategoryClientWrapper from "../../components/CategoryClientWrapper";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 interface PublishedPost {
   id: string;
@@ -178,7 +178,7 @@ export default async function BrandCategoryPage({ params }: CategoryPageProps) {
       .order("created_at", { ascending: true }),
     supabase
       .from("writing_creaibox_posts")
-      .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at, category_id, category_ids, published_snapshot")
+      .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at, category_id, category_ids")
       .eq("user_id", profile.id)
       .eq("status", "published")
       .not("slug", "is", null)

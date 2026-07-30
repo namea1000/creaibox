@@ -4,7 +4,7 @@ import { createAdminClient } from "@/utils/supabase/server";
 import { Sparkles } from "lucide-react";
 import BlogListPaginatedView, { BlogItem } from "@/components/blog/BlogListPaginatedView";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 interface PublishedPost {
   id: string;
@@ -103,7 +103,7 @@ export default async function SotongcheumBlogPage({
   if (profile?.id) {
     const { data } = await supabase
       .from("writing_creaibox_posts")
-      .select("id, title, slug, content, meta_description, focus_keyword, seo_tags, canonical_url, created_at")
+      .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at")
       .eq("user_id", profile.id)
       .eq("status", "published")
       .not("slug", "is", null)

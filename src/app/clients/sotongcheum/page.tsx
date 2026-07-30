@@ -6,7 +6,7 @@ import PortfolioSection, { DynamicPortfolioItem } from "./components/PortfolioSe
 import ContactForm from "./components/ContactForm";
 import { createAdminClient } from "@/utils/supabase/server";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function SotongcheumLandingPage() {
   const supabase = await createAdminClient();
@@ -30,7 +30,7 @@ export default async function SotongcheumLandingPage() {
   if (profile?.id) {
     const { data: posts } = await supabase
       .from("writing_creaibox_posts")
-      .select("id, title, slug, content, meta_description, focus_keyword, seo_tags, created_at")
+      .select("id, title, slug, meta_description, focus_keyword, seo_tags, created_at")
       .eq("user_id", profile.id)
       .eq("status", "published")
       .not("slug", "is", null)

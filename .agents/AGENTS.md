@@ -28,4 +28,9 @@ When creating how-to guides or operation manuals (e.g., "~ 하는 방법", "매�
 ### Mandatory Background Automation Manual Sync Rule (백그라운드 무인 기능 매뉴얼 최신화 규칙)
 - 향후 신규 무인 자동 수집(Cron), 백그라운드 배치 작업, 또는 자동화 기능이 개발/구동되면, AI 에이전트는 백그라운드 무인 자동화 매뉴얼(`docs/project/manual/background-automation-execution-5-methods-guide.md`)의 "4. 🟢 현재 즉시 구동 중 / 서비스 가능한 무인 기능 (Current Services)" 섹션에 신규 기능을 즉시 등록하고 최신화해야 한다.
 
+### Mandatory Client Site Egress & Aspect Ratio Standard Rule (클라이언트 사이트 트래픽 감축 및 16:9 비율 영구 표준 규칙)
+- **규칙 1 (카드 썸네일 16:9 비율 고정)**: 향후 신규 제작하는 모든 커스텀 클라이언트 사이트, 비즈니스 홈페이지, 브랜드 블로그의 카드 썸네일 프레임은 반드시 `aspect-[16/9]` (16:9 비율)만 사용하여 썸네일 텍스트 좌우 잘림을 100% 방지한다.
+- **규칙 2 (Egress 트래픽 방어 - 목록 조회 시 본문 컬럼 제외)**: 블로그 목록, 카테고리 목록, 포트폴리오 목록 쿼리 작성 시 무거운 원고 본문 전체 HTML(`content`)이나 JSON 덤프(`published_snapshot`) 컬럼을 절대 `select()`에 포함하지 않고 경량 메타 필드만 수집한다.
+- **규칙 3 (Vercel Edge CDN Revalidate 필수 지정)**: 공개용 커스텀 블로그 및 비즈니스 홈페이지에는 `export const dynamic = "force-dynamic"`을 금지하고 `export const revalidate = 60;` (상세 300) CDN 캐싱을 필수 적용하여 Supabase DB 트래픽 소모를 95% 이상 영구 방어한다.
+
 

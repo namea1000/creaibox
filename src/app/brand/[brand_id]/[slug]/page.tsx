@@ -6,7 +6,7 @@ import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import PostClientWrapper from "../components/PostClientWrapper";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 interface PublishedPostDetail {
   id: string;
