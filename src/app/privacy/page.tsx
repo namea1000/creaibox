@@ -8,7 +8,7 @@ export default function PrivacyPage() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="w-full min-h-screen bg-slate-50 text-slate-800 pt-20 overflow-hidden relative">
+    <div className="w-full min-h-screen bg-slate-50 text-slate-800 overflow-hidden relative">
       <Header />
 
       {/* 🌌 배경 은은한 법적 신뢰감 그라데이션 */}

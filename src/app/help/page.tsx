@@ -51,7 +51,7 @@ export default function HelpCenterPage() {
   });
 
   return (
-    <div className="w-full min-h-screen bg-slate-50 text-slate-800 dark:bg-[#06080d] dark:text-slate-100 pt-20 overflow-hidden relative transition-colors duration-300">
+    <div className="w-full min-h-screen bg-slate-50 text-slate-800 dark:bg-[#06080d] dark:text-slate-100 overflow-hidden relative transition-colors duration-300">
       <Header />
 
       <div className="max-w-4xl mx-auto px-6 py-20 relative z-10">

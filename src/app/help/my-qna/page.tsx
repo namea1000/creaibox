@@ -79,7 +79,7 @@ export default function MyQnaPage() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-slate-50 text-slate-800 dark:bg-[#06080d] dark:text-slate-100 pt-20 overflow-hidden relative transition-colors duration-300">
+    <div className="w-full min-h-screen bg-slate-50 text-slate-800 dark:bg-[#06080d] dark:text-slate-100 overflow-hidden relative transition-colors duration-300">
       <Header />
 
       <div className="max-w-4xl mx-auto px-6 py-12 relative z-10 space-y-6">
