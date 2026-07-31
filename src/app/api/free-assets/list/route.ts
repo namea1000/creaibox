@@ -3,6 +3,80 @@ import { createClient } from "@/utils/supabase/server";
 import fs from "fs";
 import path from "path";
 
+function sanitizeAssetTitle(
+  title?: string | null,
+  name?: string | null,
+  prompt?: string | null,
+  tags?: string[] | null,
+  mediaType?: string | null,
+  themeCategory?: string | null
+): string {
+  let clean = (title || "").trim();
+
+  // If title is empty or missing, fallback to name
+  if (!clean && name) {
+    clean = name.replace(/\.[^/.]+$/, "").replace(/_/g, " ").trim();
+  }
+
+  // 1. Strip Midjourney / Namu AI parameter clutter & hex hashes
+  clean = clean
+    .replace(/^namu\s*/gi, "")
+    .replace(/ar\s*169\s*/gi, "")
+    .replace(/ar\s*169\s*raw\s*v\s*[\d\.\s]+/gi, "")
+    .replace(/raw\s*v\s*[\d\.\s]+/gi, "")
+    .replace(/\b[0-9a-f]{8}[0-9a-f\s-]{12,}\b/gi, "")
+    .replace(/\b[0-9a-f]{16,}\b/gi, "")
+    .replace(/_\d{8,}/g, "")
+    .trim();
+
+  // 2. Filter out raw/generic internal fallback words ("날것", "날것 AI 스타일", "AI 스타일", "제목 없음", "Namu")
+  const isGenericOrRaw =
+    !clean ||
+    clean.length < 2 ||
+    /날것/i.test(clean) ||
+    /AI\s*스타일/i.test(clean) ||
+    /^namu/i.test(clean) ||
+    /^untitled/i.test(clean) ||
+    /^image_\d+$/i.test(clean) ||
+    /^[0-9a-f_\s-]+$/i.test(clean);
+
+  if (isGenericOrRaw) {
+    // Attempt 1: Extract meaningful clean title from prompt
+    if (prompt && prompt.trim().length > 3) {
+      let cleanPrompt = prompt
+        .replace(/--[a-z]+\s+[^\s]+/gi, "")
+        .replace(/hd|4k|8k|masterpiece|cinematic|high resolution|shutterstock style|hyperrealistic/gi, "")
+        .trim();
+
+      if (cleanPrompt.length >= 3) {
+        clean = cleanPrompt.length > 35 ? cleanPrompt.slice(0, 32) + "..." : cleanPrompt;
+        return clean;
+      }
+    }
+
+    // Attempt 2: Extract from tags or themeCategory
+    if (tags && Array.isArray(tags) && tags.length > 0) {
+      const validTags = tags.filter(
+        (t) => t && t.length >= 2 && !["ai", "image", "photo", "bgm", "music", "날것", "스타일"].includes(t.toLowerCase())
+      );
+      if (validTags.length > 0) {
+        return `${validTags.slice(0, 2).join(" ")} 비주얼 에셋`;
+      }
+    }
+
+    if (themeCategory && themeCategory.trim()) {
+      return `${themeCategory} 감성 미디어`;
+    }
+
+    // Fallback: Descriptive Korean Default based on mediaType
+    if (mediaType === "video") return "프리미엄 비디오 에셋";
+    if (mediaType === "music") return "감성 배경음악 에셋";
+    return "프리미엄 감성 비주얼 에셋";
+  }
+
+  return clean.replace(/\s{2,}/g, " ");
+}
+
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -130,6 +204,14 @@ export async function GET() {
     const formattedFiles = (files || []).map((file) => {
       const emailKey = file.uploader ? file.uploader.toLowerCase() : "";
       const displayUploader = emailToNicknameMap[emailKey] || file.uploader;
+      const cleanTitle = sanitizeAssetTitle(
+        file.title,
+        file.file_name,
+        file.prompt,
+        file.tags,
+        file.media_type,
+        file.theme_category
+      );
 
       return {
         id: file.gdrive_file_id,
@@ -139,7 +221,7 @@ export async function GET() {
         mimeType: file.mime_type,
         size: file.width ? 0 : 0,
         createdAt: file.created_at,
-        title: file.title,
+        title: cleanTitle,
         tags: file.tags || [],
         mediaType: file.media_type,
         uploader: displayUploader,
