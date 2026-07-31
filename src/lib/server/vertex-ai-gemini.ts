@@ -121,14 +121,6 @@ export async function generateContentWithVertexAI({
     };
   }
 
-  if (useSearch) {
-    payload.tools = [
-      {
-        googleSearch: {},
-      },
-    ];
-  }
-
   let lastErr: Error | null = null;
   const systemApiKey =
     process.env.GEMINI_API_KEY ||
@@ -136,14 +128,18 @@ export async function generateContentWithVertexAI({
     process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
   for (const targetModel of modelCandidates) {
-    const endpoints: Array<{ url: string; headers: Record<string, string> }> = [
+    // Map targetModel to valid publisher model ID for Vertex AI if needed
+    const vertexModel = targetModel.startsWith("gemini-3") ? "gemini-2.0-flash" : targetModel;
+
+    const endpoints: Array<{ url: string; headers: Record<string, string>; isVertex: boolean }> = [
       // 1순위: GCP $300불 크레딧 전용 Vertex AI Service Account OAuth 엔드포인트
       {
-        url: `https://${location}-aiplatform.googleapis.com/v1/projects/${creds.projectId}/locations/${location}/publishers/google/models/${targetModel}:generateContent`,
+        url: `https://${location}-aiplatform.googleapis.com/v1/projects/${creds.projectId}/locations/${location}/publishers/google/models/${vertexModel}:generateContent`,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
+        isVertex: true,
       },
       // 2순위: Developer API 엔드포인트
       {
@@ -156,23 +152,45 @@ export async function generateContentWithVertexAI({
             ? { "x-goog-api-key": systemApiKey }
             : { Authorization: `Bearer ${accessToken}` }),
         },
+        isVertex: false,
       },
     ];
 
     for (const ep of endpoints) {
       console.log(`[GCP OAuth $300 Credit Execution] Trying Model: ${targetModel}, Endpoint: ${ep.url}`);
 
+      // Construct endpoint-specific payload (handling Vertex AI search grounding spec)
+      const epPayload: Record<string, any> = {
+        contents,
+        generationConfig: {
+          temperature,
+          ...(responseMimeType && !useSearch ? { responseMimeType } : {}),
+        },
+      };
+
+      if (systemInstruction) {
+        epPayload.systemInstruction = {
+          parts: [{ text: systemInstruction }],
+        };
+      }
+
+      if (useSearch) {
+        epPayload.tools = ep.isVertex
+          ? [{ googleSearchRetrieval: {} }]
+          : [{ googleSearch: {} }];
+      }
+
       try {
         const res = await fetch(ep.url, {
           method: "POST",
           headers: ep.headers,
-          body: JSON.stringify(payload),
+          body: JSON.stringify(epPayload),
         });
 
         if (!res.ok) {
           const errorJson = await res.json().catch(() => ({}));
           const errorMessage = errorJson.error?.message || `GCP API 응답 오류 (${targetModel}: HTTP ${res.status})`;
-          console.warn(`[GCP API Warning] ${targetModel} 호출 실패:`, errorMessage);
+          console.warn(`[GCP API Warning] ${targetModel} (${ep.url}) 호출 실패:`, errorMessage);
           lastErr = new Error(errorMessage);
           continue;
         }
