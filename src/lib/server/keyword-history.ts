@@ -77,6 +77,15 @@ export async function archiveHourlyKeywords(records: HourlyKeywordRecord[]) {
   }
 }
 
+function withTimeout<T>(promise: PromiseLike<T>, timeoutMs = 2000): Promise<T> {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error("Supabase query timeout")), timeoutMs)
+    ),
+  ]);
+}
+
 export async function getHistoricalHourlyKeywords(targetDate: string, targetHour: number, provider: "naver" | "google") {
   const targetHourStr = String(targetHour);
   const cacheKey = `${targetDate}_${targetHourStr}_${provider}`;
@@ -86,13 +95,15 @@ export async function getHistoricalHourlyKeywords(targetDate: string, targetHour
     return memoryKeywordCache.get(cacheKey) || null;
   }
 
-  // 2. Supabase DB 1-Row-Per-Date 번들 조회 시도
+  // 2. Supabase DB 1-Row-Per-Date 번들 조회 시도 (2초 타임아웃 방어)
   try {
-    const { data: bundleRow } = await supabaseAdmin
-      .from("keyword_trending_history")
-      .select("hourly_data")
-      .eq("target_date", targetDate)
-      .maybeSingle();
+    const { data: bundleRow } = await withTimeout(
+      supabaseAdmin
+        .from("keyword_trending_history")
+        .select("hourly_data")
+        .eq("target_date", targetDate)
+        .maybeSingle()
+    );
 
     if (bundleRow && bundleRow.hourly_data && typeof bundleRow.hourly_data === "object" && !Array.isArray(bundleRow.hourly_data)) {
       const hourlyObj = bundleRow.hourly_data as Record<string, Record<string, any[]>>;
@@ -103,7 +114,7 @@ export async function getHistoricalHourlyKeywords(targetDate: string, targetHour
       }
     }
   } catch (err) {
-    console.error("getHistoricalHourlyKeywords bundle read error:", err);
+    console.error("getHistoricalHourlyKeywords bundle read error/timeout:", err);
   }
 
   // 3. 레거시 개별 Row 구조 폴백 조회
