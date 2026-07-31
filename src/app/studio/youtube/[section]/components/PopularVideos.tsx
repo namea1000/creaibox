@@ -550,7 +550,7 @@ export default function PopularVideos() {
                   <span>[{getCountryName(selectedCountry)}] YouTube API 인기 영상 조회수 랭킹 데이터 수집 중...</span>
                 </p>
                 <p className="text-xs text-zinc-400 font-medium">
-                  DB 미수집 조건으로, 15개 카테고리 실시간 인기 통합 수집 후 DB에 자동 저장 중입니다.
+                  DB 미수집 조건으로, 12개 카테고리 실시간 인기 통합 수집 후 DB에 자동 저장 중입니다.
                 </p>
               </div>
             ) : (

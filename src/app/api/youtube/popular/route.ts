@@ -71,11 +71,24 @@ export async function GET(req: NextRequest) {
   // 1. Try reading from Supabase DB `youtube_popular_archive` Single Daily Bundle Row
   if (!force) {
     try {
-      const { data: cachedRow } = await supabaseAdmin
+      let { data: cachedRow } = await supabaseAdmin
         .from("youtube_popular_archive")
-        .select("videos_data")
+        .select("videos_data, target_date")
         .eq("target_date", date)
         .maybeSingle();
+
+      if (!cachedRow || !cachedRow.videos_data) {
+        const { data: latestRow } = await supabaseAdmin
+          .from("youtube_popular_archive")
+          .select("videos_data, target_date")
+          .order("target_date", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (latestRow && latestRow.videos_data) {
+          cachedRow = latestRow;
+        }
+      }
 
       if (cachedRow && cachedRow.videos_data && typeof cachedRow.videos_data === "object") {
         const bundleObj = cachedRow.videos_data as Record<string, any>;
@@ -99,7 +112,7 @@ export async function GET(req: NextRequest) {
 
         const cachedVideos = categoriesBundle[categoryId] !== undefined ? categoriesBundle[categoryId] : (bundleObj[bundleKey] || []);
         if (Array.isArray(cachedVideos) && cachedVideos.length > 0) {
-          console.log(`Popular Daily Bundle Hit: Serving ${bundleKey} for date ${date} from Single DB Row.`);
+          console.log(`Popular Daily Bundle Hit: Serving ${bundleKey} for date ${cachedRow.target_date || date} from Single DB Row.`);
           const videoIds = cachedVideos.map((v: any) => v.id).filter(Boolean);
           let analyzedVideoIds: string[] = [];
           if (videoIds.length > 0) {
@@ -117,7 +130,8 @@ export async function GET(req: NextRequest) {
             source: "supabase-db-popular-bundle",
             data: cachedVideos,
             categoriesBundle,
-            analyzedVideoIds
+            analyzedVideoIds,
+            servedDate: cachedRow.target_date || date
           });
         }
       }

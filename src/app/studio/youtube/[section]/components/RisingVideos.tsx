@@ -681,7 +681,7 @@ export default function RisingVideos() {
                     <span>[{getCountryName(selectedCountry)}] YouTube API 실시간 트렌드 데이터 수집 중...</span>
                   </p>
                   <p className="text-xs text-zinc-400 font-medium">
-                    DB 미수집 국가로, 15개 카테고리 실시간 인기 통합 수집 후 DB에 자동 저장 중입니다.
+                    DB 미수집 국가로, 12개 카테고리 실시간 인기 통합 수집 후 DB에 자동 저장 중입니다.
                   </p>
                 </div>
               ) : (
