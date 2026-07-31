@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
   const sectionKey = resolvedParams?.section || "realtime";
   const name = sectionNames[sectionKey] || "실시간 급상승 키워드";
-  const title = `${name} - 키워드 트렌드`;
+  const title = `${name} - 키워드 트렌드 | 크리에이박스 CreAiBox`;
   const description = `크리에이박스 CreAibox에서 제공하는 ${name} 솔루션입니다. 네이버 및 구글 실시간 키워드 통계, 연관 검색어 발굴 및 최신 트렌드를 확인해 보세요.`;
   return {
     title,

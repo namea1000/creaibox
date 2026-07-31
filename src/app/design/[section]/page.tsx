@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
   const sectionKey = resolvedParams?.section || "templates";
   const name = sectionNames[sectionKey] || "디자인 스튜디오";
-  const title = `${name} - 차세대 디자인`;
+  const title = `${name} - 차세대 디자인 | 크리에이박스 CreAiBox`;
   const description = `크리에이박스 CreAibox에서 제공하는 차세대 AI 기반 ${name} 솔루션입니다. 브라우저에서 템플릿과 캔버스를 활용하여 웹 배너, 포스터, 유튜브 썸네일을 즉시 무료로 제작해 보세요.`;
   return {
     title,

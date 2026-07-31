@@ -4,6 +4,28 @@ mier
 
 이 문서는 2026년 7월 동안 CreAibox 프로젝트에서 진행된 일자별 개발 세부 작업 내역과 핵심 아키텍처 결정 사항을 기록합니다.
 
+### 🗓️ 2026-07-31 (금) - 오늘
+
+#### 1. 유튜브 트렌드 스마트 DB 백업(Fail-Safe) 적용 & 12개 카테고리 수정
+* **작업 상세**:
+  - **카테고리 수정**: `PopularVideos.tsx` 및 `RisingVideos.tsx` 로딩 스피너의 구식 하드코딩 문구("15개 카테고리")를 실제 버튼 개수인 **"12개 카테고리"**로 일치 수정.
+  - **스마트 DB 백업(Fail-Safe) 복구 구축 ([`api/youtube/popular/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/youtube/popular/route.ts))**:
+    - 당일 크론(23:50 KST 구동) 생성 전인 낮 시간대 접속 시, `target_date` DB 기록이 없더라도 DB 내 최신 수집 일자(어제 밤 23:50 수집 데이터)를 자동으로 즉시 fallback 호출하도록 개별 백엔드 개선.
+    - 실시간 라이브 API 타임아웃이나 할당량 제한(Quota Limit) 시 빨간 에러 창이나 빈 화면 대신 0초 만에 완벽한 비디오 목록을 렌더링하도록 완성.
+
+#### 2. 좌측 사이드바 메인 메뉴 그룹 재배치 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx))
+* **구현 요약**: "크리에이박스 블로그" 바로 아래에 "키워드 트렌드 분석", "쇼핑 키워드 & 아이템 소싱", "유튜브 트렌드 분석" 메뉴를 연달아 배치하여 콘텐츠 기획 및 트렌드 조사의 연결성을 대폭 강화.
+
+#### 3. 전 커스텀 템플릿/클라이언트 사이트 동적 SEO 메타데이터 자동화 구축 (`Mandatory Client Site Universal SEO Rule`)
+* **작업 상세**:
+  - `clients/[client_id]/page.tsx`, `news/[[...section]]/page.tsx`, `keyword-trend/[section]/page.tsx`, `design/[section]/page.tsx` 등 모든 동적 서브페이지에 100% 개별 `generateMetadata()` 주입.
+  - **3단계 자동화 대책**:
+    1. DB 세팅된 경우 유저 지정 브랜드 명칭 자동 반영 (`profiles.extra_configs.site_title`).
+    2. 사전 매핑 딕셔너리(`clientNames`) 한국어 우대 표기.
+    3. 미래 신규 템플릿 생성 시 URL 하이픈 자동 파싱 텍스트 변환기 (Auto-Formatter) 작동 (`luxury-golf` ➔ `Luxury Golf 비즈니스 템플릿 | 크리에이박스 CreAiBox`).
+  - 네이버 서치어드바이저 88개/85개 중복 Title/Description 경고를 차기 수집 시 0개로 소멸시키도록 조치 완비.
+* **빌드 검증**: `npx tsc --noEmit` 0 에러 완전 통과.
+
 ### 🗓️ 2026-07-30 (목)
 
 #### 1. Supabase DB Egress 98% 감축 최적화 & 커스텀 블로그 카드 16:9 영구 표준화 수립 (`Mandatory Client Site Egress & Aspect Ratio Standard Rule`)

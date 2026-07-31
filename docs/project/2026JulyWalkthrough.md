@@ -6,6 +6,16 @@
 
 ## 1. 2026년 7월 개발 작업 내역
 
+### 1-00. 유튜브 트렌드 백업 / Egress 최적화 / 사이드바 메뉴 재배치 및 전 커스텀 템플릿 SEO 자동화
+* **유튜브 트렌드 스마트 DB 백업(Fail-Safe) 복구**:
+  * [`PopularVideos.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/PopularVideos.tsx) 및 [`RisingVideos.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx) 카테고리 개수를 15개 ➔ **12개**로 보정.
+  * [`api/youtube/popular/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/youtube/popular/route.ts)에 스마트 DB Fallback을 적용하여 당일 크론 미생성 시간대 접속 시에도 어제 수집된 최신 DB 데이터를 0초 만에 로딩하도록 보완.
+* **좌측 사이드바 메인 메뉴 그룹 재배치**:
+  * [`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx) 메뉴 그룹을 재구성하여 "크리에이박스 블로그" 바로 아래에 "키워드 트렌드 분석", "쇼핑 키워드 & 아이템 소싱", "유튜브 트렌드 분석" 메뉴를 연달아 나열.
+* **전 커스텀 템플릿/클라이언트 사이트 동적 SEO 메타데이터 자동화 구축**:
+  * [`clients/[client_id]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/%5Bclient_id%5D/page.tsx), [`news/[[...section]]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/news/%5B%5B...section%5D%5D/page.tsx), [`keyword-trend/[section]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/keyword-trend/%5Bsection%5D/page.tsx), [`design/[section]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/design/%5Bsection%5D/page.tsx) 전체에 1:1 dynamic `generateMetadata()` 주입.
+  * DB 브랜드 상호 자동 매핑, `clientNames` 한글 사전 및 하이픈 Auto-Formatter fallback 시스템을 구축하여 향후 추가되는 모든 신규 템플릿 URL이 100% 독자적인 고유 Title을 출력하도록 세팅.
+
 ### 1-0. 비로그인 자유 둘러보기 & 로그인 필수 서비스 팝업 통일 개편
 
 크리에이박스(CreAibox) 플랫폼 내 모든 스튜디오 및 서비스 화면에 대하여 비로그인 사용자도 UI/레이아웃/템플릿/관리자 폼을 자유롭게 탐색할 수 있도록 100% 전면 노출하고, DB/AI 연동 버튼 클릭 시 구식 alert 대신 프리미엄 **"로그인이 필요한 서비스입니다" 팝업 모달**로 연결되도록 통합 개편하였습니다.

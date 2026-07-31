@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const segments = section || [];
   const path = segments.join("/");
   const sectionTitle = sectionNames[path] || "AI 뉴스 콘텐츠 스튜디오";
-  const title = `${sectionTitle} - 실시간 뉴스`;
+  const title = `${sectionTitle} | 크리에이박스 CreAiBox`;
   const description = `크리에이박스 CreAibox의 ${sectionTitle} 공간입니다. 실시간 수집 및 요약 분석 가공 모듈을 활용하여 핵심 속보 중심의 뉴스를 자동 정제하고 퍼블리싱해 보세요.`;
   return {
     title,
