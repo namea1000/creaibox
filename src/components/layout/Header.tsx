@@ -405,7 +405,7 @@ export default function Header() {
             onMouseEnter={() => setIsKeywordMenuOpen(true)}
             onMouseLeave={() => setIsKeywordMenuOpen(false)}
           >
-            <Link href="/keyword-trend" className="flex items-center gap-1 text-sm font-extrabold text-slate-700 dark:text-white transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3 whitespace-nowrap">
+            <Link href="/studio/keyword/realtime" className="flex items-center gap-1 text-sm font-extrabold text-slate-700 dark:text-white transition-all hover:text-violet-600 dark:hover:text-violet-400 py-3 whitespace-nowrap">
               키워드 트렌드
             </Link>
 
