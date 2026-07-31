@@ -61,7 +61,7 @@ async function getVertexAccessToken(clientEmail: string, privateKey: string) {
  */
 export async function generateContentWithVertexAI({
   prompt,
-  modelName = "gemini-2.5-flash",
+  modelName = "gemini-1.5-flash",
   location = "us-central1",
   systemInstruction,
   temperature = 0.7,
@@ -77,14 +77,14 @@ export async function generateContentWithVertexAI({
 
   const requestedModel = modelName || "gemini-3.1-flash-lite";
 
-  // Build model candidates: requested model first (e.g. gemini-3.1-flash-lite), then fallbacks
+  // Build model candidates: requested model first (e.g. gemini-3.1-flash-lite), then active Vertex AI fallbacks
   const modelCandidates = Array.from(
     new Set([
       requestedModel,
       "gemini-3.1-flash-lite",
-      "gemini-3.1-pro-preview",
-      "gemini-3-flash-preview",
-      "gemini-2.5-flash",
+      "gemini-2.0-flash",
+      "gemini-1.5-flash",
+      "gemini-1.5-pro",
     ])
   );
 

@@ -33,12 +33,16 @@ export const GEMINI_MODELS: ModelOption[] = [
     label: "gemini-3-flash-preview ⚡ 구글 3 Flash Preview · 구글 검색 그라운딩 최적화",
   },
   {
-    value: "gemini-2.5-flash",
-    label: "gemini-2.5-flash 🚀 안정적인 2.5 Flash · 고품질 원고 생성",
+    value: "gemini-2.0-flash",
+    label: "gemini-2.0-flash ⚡ 구글 2.0 Flash · 최신 차세대 · 실시간 검색 반영",
   },
   {
-    value: "gemini-2.5-pro",
-    label: "gemini-2.5-pro 📚 2.5 Pro · 깊은 분석 작업",
+    value: "gemini-1.5-flash",
+    label: "gemini-1.5-flash 🚀 구글 1.5 Flash · 초고속 · 원고 생성",
+  },
+  {
+    value: "gemini-1.5-pro",
+    label: "gemini-1.5-pro 📚 구글 1.5 Pro · 깊은 분석 작업",
   },
 ];
 
