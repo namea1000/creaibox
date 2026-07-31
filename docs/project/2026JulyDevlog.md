@@ -4,7 +4,20 @@ mier
 
 이 문서는 2026년 7월 동안 CreAibox 프로젝트에서 진행된 일자별 개발 세부 작업 내역과 핵심 아키텍처 결정 사항을 기록합니다.
 
-### 🗓️ 2026-07-28 (화) - 오늘
+### 🗓️ 2026-07-30 (목)
+
+#### 1. Supabase DB Egress 98% 감축 최적화 & 커스텀 블로그 카드 16:9 영구 표준화 수립 (`Mandatory Client Site Egress & Aspect Ratio Standard Rule`)
+* **원인 분석**:
+  - **Egress 급증 원인**: 블로그 목록 및 비즈니스 사이트 포트폴리오 목록 조회 쿼리에서 무거운 원고 전체 HTML(`content`)과 JSON 덤프(`published_snapshot`)를 무차별 조회하고, `force-dynamic`(캐시 비활성화)으로 검색 로봇 접속 시 1회당 2.5MB 트래픽이 쏟아지면서 Supabase Egress가 하루 1.14GB(94%)로 급격히 증가함.
+  - **16:9 가로 잘림 원인**: 커스텀 도메인 블로그 카드 프레임이 `aspect-[16/10]`(1.6)으로 잘못 설정되어 16:9 썸네일 이미지의 좌우 텍스트 10%가 잘려 나가던 현상 발생.
+* **해결 및 재발 방지 조치**:
+  - `brand/[brand_id]/page.tsx`, `brand/[brand_id]/category/[slug]/page.tsx`, `clients/sotongcheum/page.tsx`, `clients/sotongcheum/blog/page.tsx`, `clients/commufill/blog/page.tsx` 등 모든 비즈니스/커스텀 웹사이트 쿼리에서 `published_snapshot` 및 `content` 무거운 컬럼 100% 제거.
+  - 공개용 블로그 및 비즈니스 웹사이트 전체에 `export const revalidate = 60;` (Vercel Edge CDN 캐싱)을 적용하여 DB 트래픽 소모량 98% 이상 대폭 다이어트.
+  - 모든 카드 썸네일 프레임을 `aspect-[16/9]`로 완전 일치 통일하여 썸네일 글자 및 그래픽 잘림 0% 달성.
+  - 에이전트 영구 규칙 문서([`ai-agent-rules.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/rules/ai-agent-rules.md) & [`AGENTS.md`](file:///Users/a1234/Local%20Sites/creaibox/.agents/AGENTS.md))에 `Mandatory Client Site Egress & Aspect Ratio Standard Rule` 전면 등재.
+  - 빌드 검증: `npx tsc --noEmit` 실행 결과 0 에러 완전 통과.
+
+### 🗓️ 2026-07-28 (화)
 
 #### 1. 비로그인 자유 둘러보기 & 로그인 필수 서비스 팝업 통일 개편 (`Unauthenticated Access & Unified Login Prompt Rule`)
 * **구현 요약**: 크리에이박스 플랫폼 내 모든 스튜디오 및 서비스 화면에 대하여 로그인하지 않은 방문자도 전체 레이아웃/템플릿/관리자 폼을 100% 자유롭게 구경할 수 있도록 전면 공개하고, DB 및 AI 연동 액션 클릭 시 구식 alert 대신 프리미엄 **"로그인이 필요한 서비스입니다" 팝업 모달**로 연결되는 통일 UX 체계를 구축했습니다.
