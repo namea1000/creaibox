@@ -314,7 +314,7 @@ async function fetchCreaiboxManuscripts(): Promise<StudioManuscriptRecord[]> {
 
   const { data, error } = await supabase
     .from("writing_creaibox_posts")
-    .select("*")
+    .select("id, display_id, created_at, updated_at, title, content, post_type, status, target_keyword, selected_tone, slug, meta_description, focus_keyword, canonical_url, seo_tags, word_count_goal, source_mode, category_id, category_ids, toc_enabled, parent_id")
     .eq("user_id", userId)
     .neq("status", "trash")
     .order("created_at", { ascending: false });

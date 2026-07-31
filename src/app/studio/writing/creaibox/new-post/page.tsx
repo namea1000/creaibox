@@ -28,14 +28,15 @@ export default function CreaiboxNewPostBridge() {
           return;
         }
 
-        // Check if there is already a blank draft post for this user to prevent cluttering
+        // Check if there is already a blank draft post for this user to prevent cluttering (lightweight query)
         const { data: existingDrafts, error: queryError } = await supabase
           .from("writing_creaibox_posts")
-          .select("*")
+          .select("id, title, status, content")
           .eq("user_id", user.id)
           .eq("title", "새글 제목을 수정해 주세요")
           .eq("status", "draft")
-          .order("id", { ascending: false });
+          .order("id", { ascending: false })
+          .limit(5);
 
         if (queryError) {
           console.error("Query blank post failed:", queryError);
@@ -75,7 +76,7 @@ export default function CreaiboxNewPostBridge() {
           const { data: newDraft, error: insertError } = await supabase
             .from("writing_creaibox_posts")
             .insert([payload])
-            .select("*")
+            .select("id")
             .single();
 
           if (insertError) {
