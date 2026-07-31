@@ -1299,7 +1299,7 @@ function CreaiboxManuscriptDetailContent() {
         ...new Set(
           vaultConfig?.provider === "groq"
             ? [vaultConfig.model]
-            : [vaultConfig?.model || "gemini-1.5-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"]
+            : [vaultConfig?.model || "gemini-3.1-flash-lite", "gemini-3.1-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash"]
         ),
       ];
       const searchModes = useSearch ? [true, false] : [false];

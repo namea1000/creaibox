@@ -316,7 +316,7 @@ export default function FreeAssetsLibraryPage() {
   const [likedAssetIds, setLikedAssetIds] = useState<Set<string>>(new Set());
   const [bookmarkedAssetIds, setBookmarkedAssetIds] = useState<Set<string>>(new Set());
   const [activeFilterTab, setActiveFilterTab] = useState<"ratio" | "generation" | "style" | "postType" | "category" | null>(null);
-  const [selectedMediaType, setSelectedMediaType] = useState<string>("all");
+  const [selectedMediaType, setSelectedMediaType] = useState<string>("photo");
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>("all");
   const [selectedGenerationType, setSelectedGenerationType] = useState<string>("all");
   const [selectedThemeCategory, setSelectedThemeCategory] = useState<string>("all");
@@ -340,7 +340,11 @@ export default function FreeAssetsLibraryPage() {
   useEffect(() => {
     try {
       const savedMediaType = localStorage.getItem("free_assets_media_type");
-      if (savedMediaType) setSelectedMediaType(savedMediaType);
+      if (savedMediaType && savedMediaType !== "all") {
+        setSelectedMediaType(savedMediaType);
+      } else {
+        setSelectedMediaType("photo");
+      }
 
       const savedAspectRatio = localStorage.getItem("free_assets_aspect_ratio");
       if (savedAspectRatio) setSelectedAspectRatio(savedAspectRatio);
@@ -2301,7 +2305,6 @@ function sanitizeTitle(
           {/* 픽사베이 스타일 상단 미디어 분류 탭 */}
           <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1.5 mt-4 text-sm font-medium">
             {[
-              { id: "all", label: "통합 에셋", icon: ImageIcon },
               { id: "photo", label: "이미지", icon: ImageIcon },
               { id: "video", label: "비디오", icon: Video },
               { id: "music", label: "음악/사운드", icon: Music },
@@ -2808,7 +2811,6 @@ function sanitizeTitle(
           {/* 미디어 유형 카테고리 탭 (배경 테두리 없이 깔끔하게 텍스트+아이콘만) */}
           <div className="flex flex-wrap gap-6 items-center shrink-0">
             {[
-              { id: "all", label: "통합 에셋", icon: ImageIcon },
               { id: "photo", label: "이미지", icon: ImageIcon },
               { id: "video", label: "비디오", icon: Video },
               { id: "music", label: "음악/사운드", icon: Music },
