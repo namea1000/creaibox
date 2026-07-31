@@ -1210,7 +1210,10 @@ function CreaiboxManuscriptDetailContent() {
     setAiErrorMessage("");
 
     try {
-      const vaultConfig = getUserAiVaultConfig();
+      let vaultConfig = getUserAiVaultConfig();
+      if (vaultConfig && (vaultConfig.model === "gemini-1.5-flash" || !vaultConfig.model)) {
+        vaultConfig = { ...vaultConfig, model: "gemini-3.1-flash-lite" };
+      }
       const finalWordCountGoal = wordCountGoal || "1500";
       const lengthPrompt = getLengthPrompt(finalWordCountGoal);
 
