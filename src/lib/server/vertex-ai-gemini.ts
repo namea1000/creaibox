@@ -15,11 +15,13 @@ function getServiceAccountCredentials() {
   if (jsonString) {
     try {
       const parsed = JSON.parse(jsonString);
-      return {
-        clientEmail: parsed.client_email,
-        privateKey: parsed.private_key,
-        projectId: parsed.project_id || "project-51796415-94e5-4403-ad7",
-      };
+      if (parsed.client_email && parsed.private_key) {
+        return {
+          clientEmail: parsed.client_email,
+          privateKey: parsed.private_key.replace(/\\n/g, "\n"),
+          projectId: parsed.project_id || "project-51796415-94e5-4403-ad7",
+        };
+      }
     } catch {}
   }
 
@@ -28,7 +30,7 @@ function getServiceAccountCredentials() {
   const projectId = process.env.GCP_PROJECT_ID || "project-51796415-94e5-4403-ad7";
 
   if (clientEmail && privateKey) {
-    return { clientEmail, privateKey, projectId };
+    return { clientEmail, privateKey: privateKey.replace(/\\n/g, "\n"), projectId };
   }
 
   return null;
