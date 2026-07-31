@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { fetchNaverDataLabTrend } from "@/lib/server/ncp-api-hub";
 import { getHistoricalHourlyKeywords, archiveHourlyKeywords } from "@/lib/server/keyword-history";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 function extractCleanKeyword(rawTitle: string): string {
   if (!rawTitle) return "";

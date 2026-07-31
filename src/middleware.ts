@@ -51,7 +51,14 @@ export async function middleware(request: NextRequest) {
     path.startsWith("/brand");
 
   if (!isTenantBlog) {
-    await supabase.auth.getUser();
+    try {
+      await Promise.race([
+        supabase.auth.getUser(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Auth timeout")), 1500)),
+      ]);
+    } catch (e) {
+      // Supabase Egress throttle or network delay safeguard - fail-safe proceed
+    }
   }
 
   // static assets, api, nextJS internals 제외

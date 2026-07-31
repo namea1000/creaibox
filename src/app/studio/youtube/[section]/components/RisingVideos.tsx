@@ -237,48 +237,63 @@ export default function RisingVideos() {
     loadRecentReportsFromDb();
   }, []);
 
-  // ⚡ 0ms Instant RAM Cache Warm-up for ALL 60 Countries on mount
+const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
+
+  // ⚡ 0ms Instant RAM Cache Warm-up for ALL 60 Countries on mount (Non-blocking async)
   useEffect(() => {
+    let isCancelled = false;
+
     async function prewarmBundleCache() {
       try {
         const res = await fetch(`/api/youtube?type=trending-bundle&date=${selectedDate}`);
+        if (!res.ok) return;
         const json = await res.json();
+        if (isCancelled) return;
+
         if (json && json.bundle && typeof json.bundle === "object") {
           const bundleObj = json.bundle as Record<string, any[]>;
-          Object.keys(bundleObj).forEach((dbCatKey) => {
-            if (Array.isArray(bundleObj[dbCatKey]) && bundleObj[dbCatKey].length > 0) {
-              let countryCode = "KR";
-              let catCode = dbCatKey;
-              if (dbCatKey.includes("_")) {
-                const parts = dbCatKey.split("_");
-                if (ALL_COUNTRIES.some((c) => c.code === parts[0])) {
-                  countryCode = parts[0];
-                  catCode = dbCatKey.slice(parts[0].length + 1);
-                }
-              }
-              const key = `${countryCode}_${catCode}_${selectedDate}`;
-              videoCacheRef.current.set(key, {
-                source: "supabase-db-daily-bundle",
-                data: bundleObj[dbCatKey],
-              });
-            }
-          });
 
-          // If current selected country key is in RAM cache, set videos immediately
-          const currentKey = `${selectedCountry}_${activeCategory}_${selectedDate}`;
-          if (videoCacheRef.current.has(currentKey)) {
-            const cached = videoCacheRef.current.get(currentKey);
-            setVideos(cached.data || []);
-            setSource(cached.source || "supabase-db-daily-bundle");
-            setLoading(false);
-          }
+          setTimeout(() => {
+            if (isCancelled) return;
+            Object.keys(bundleObj).forEach((dbCatKey) => {
+              if (Array.isArray(bundleObj[dbCatKey]) && bundleObj[dbCatKey].length > 0) {
+                let countryCode = "KR";
+                let catCode = dbCatKey;
+                if (dbCatKey.includes("_")) {
+                  const parts = dbCatKey.split("_");
+                  if (COUNTRY_CODES.has(parts[0])) {
+                    countryCode = parts[0];
+                    catCode = dbCatKey.slice(parts[0].length + 1);
+                  }
+                }
+                const key = `${countryCode}_${catCode}_${selectedDate}`;
+                videoCacheRef.current.set(key, {
+                  source: "supabase-db-daily-bundle",
+                  data: bundleObj[dbCatKey],
+                });
+              }
+            });
+
+            // If current selected country key is in RAM cache, set videos immediately
+            const currentKey = `${selectedCountry}_${activeCategory}_${selectedDate}`;
+            if (videoCacheRef.current.has(currentKey)) {
+              const cached = videoCacheRef.current.get(currentKey);
+              setVideos(cached.data || []);
+              setSource(cached.source || "supabase-db-daily-bundle");
+              setLoading(false);
+            }
+          }, 0);
         }
       } catch (e) {
         console.error("prewarmBundleCache error:", e);
       }
     }
+
     prewarmBundleCache();
-  }, [selectedDate]);
+    return () => {
+      isCancelled = true;
+    };
+  }, [selectedDate, selectedCountry, activeCategory]);
 
   // Infinite scroll listener to progressively reveal videos as user scrolls down
   useEffect(() => {
