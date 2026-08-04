@@ -63,7 +63,7 @@ async function getVertexAccessToken(clientEmail: string, privateKey: string) {
  */
 export async function generateContentWithVertexAI({
   prompt,
-  modelName = "gemini-1.5-flash",
+  modelName = "gemini-3.1-flash-lite",
   location = "us-central1",
   systemInstruction,
   temperature = 0.7,

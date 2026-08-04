@@ -27,7 +27,7 @@ type Note = {
   user_id: string;
   folder_id: string | null;
   title: string;
-  content: string | null;
+  content?: string | null; // 목록 로드 시 생략됨 - 노트 선택 시에만 fetch
   excerpt: string | null;
   is_favorite: boolean;
   is_pinned: boolean;
@@ -68,6 +68,7 @@ export default function CreNoteWidget() {
 
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const [contentLoading, setContentLoading] = useState(false);
 
   const [panelWidth, setPanelWidth] = useState(() =>
     typeof window !== "undefined" ? Math.max(Math.round(window.innerWidth * 0.5), 560) : 720
@@ -292,12 +293,16 @@ export default function CreNoteWidget() {
   }
 
   async function ensureDefaultFolder(uid: string): Promise<Folder | null> {
-    const { data } = await supabase
+    const { data: rows } = await supabase
       .from("cre_note_folders")
       .select("id,user_id,name")
       .eq("user_id", uid)
       .eq("name", "기본")
-      .maybeSingle();
+      .eq("is_archived", false)
+      .order("created_at", { ascending: true })
+      .limit(1);
+
+    const data = rows && rows.length > 0 ? rows[0] : null;
 
     if (data) return data;
 
@@ -340,9 +345,10 @@ export default function CreNoteWidget() {
   }
 
   async function loadNotes(uid: string) {
+    // ✅ Egress 최적화: content 컬럼 제외 (노트 선택 시에만 별도 fetch)
     const { data, error } = await supabase
       .from("cre_notes")
-      .select("*")
+      .select("id, user_id, folder_id, title, excerpt, is_favorite, is_pinned, is_archived, is_deleted, created_at, updated_at")
       .eq("user_id", uid)
       .order("is_pinned", { ascending: false })
       .order("is_favorite", { ascending: false })
@@ -506,10 +512,37 @@ export default function CreNoteWidget() {
     expandFolder(fallbackFolder.id);
   }
 
-  function selectNote(note: Note) {
+  async function selectNote(note: Note) {
     setActiveNote(note);
     setTitle(note.title ?? "제목 없음");
-    setContent(note.content ?? "");
+
+    // content가 이미 로드된 경우 (createNote / toggle 류에서 select("*")로 온 경우)
+    if (note.content !== undefined) {
+      setContent(note.content ?? "");
+      return;
+    }
+
+    // content 미로드 → DB에서 별도 fetch
+    setContent("");
+    setContentLoading(true);
+
+    const { data } = await supabase
+      .from("cre_notes")
+      .select("content")
+      .eq("id", note.id)
+      .single();
+
+    const loadedContent = data?.content ?? "";
+    setContent(loadedContent);
+    setContentLoading(false);
+
+    // 로드된 content를 메모리에 캐시 (같은 노트 재선택 시 재fetch 방지)
+    setNotes((prev) =>
+      prev.map((n) => (n.id === note.id ? { ...n, content: loadedContent } : n))
+    );
+    setActiveNote((prev) =>
+      prev?.id === note.id ? { ...prev, content: loadedContent } : prev
+    );
   }
 
   function expandFolder(targetFolderId: string) {
@@ -1557,15 +1590,24 @@ export default function CreNoteWidget() {
 
                 </div>
 
-                <textarea
-                  id="cre-note-editor"
-                  value={content}
-                  onChange={(e) => handleContentChange(e.target.value)}
-                  onKeyDown={handleEditorKeyDown}
-                  placeholder="작업하면서 떠오른 아이디어, 할 일, 임시 문장을 적어두세요..."
-                  className="min-h-0 flex-1 resize-none bg-transparent p-4 text-sm leading-7 text-zinc-200 outline-none placeholder:text-zinc-600 disabled:opacity-60"
-                  disabled={activeNote.is_deleted}
-                />
+                {contentLoading ? (
+                  <div className="flex min-h-0 flex-1 items-center justify-center">
+                    <div className="flex flex-col items-center gap-2 text-zinc-600">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-700 border-t-emerald-500" />
+                      <span className="text-xs">불러오는 중...</span>
+                    </div>
+                  </div>
+                ) : (
+                  <textarea
+                    id="cre-note-editor"
+                    value={content}
+                    onChange={(e) => handleContentChange(e.target.value)}
+                    onKeyDown={handleEditorKeyDown}
+                    placeholder="작업하면서 떠오른 아이디어, 할 일, 임시 문장을 적어두세요..."
+                    className="min-h-0 flex-1 resize-none bg-transparent p-4 text-sm leading-7 text-zinc-200 outline-none placeholder:text-zinc-600 disabled:opacity-60"
+                    disabled={activeNote.is_deleted}
+                  />
+                )}
 
                 <div className="flex h-11 items-center justify-between border-t border-white/10 px-4 text-xs text-zinc-500">
                   <span>{content.length.toLocaleString()}자</span>

@@ -176,8 +176,30 @@ Google Maps Platform (Places, Maps JS, Routes, Distance Matrix API) 기반 위�
   - 필요 시 100% 무료 카카오/네이버 주소 자동완성 및 지도 모듈 대체 연동 예정
 - [ ] **[추후 보류] AI 맛집/여행 블로그 자동 글쓰기 (장소/별점/리뷰 실시간 수집 연동)**
   - Zero Fake Data 원칙 준수 100% 진짜 장소 데이터 무료 파이프라인 대체 연동 예정
-- [ ] **[추후 보류] AI 동선 최적화 여행 코스 & 위치 기반(LBS) 상권 핀 탐색기 구축**
-  - 카카오/네이버 무료 지도 API 기반 대체 개발 예정
+
+
+
+---
+
+## 10. 🛡️ Reserved Brand IDs & 브랜드 ID 2차 안전 검증 시스템 (Brand Security & Scalability)
+
+CreAibox 브랜드 ID(`{brand_id}.creaibox.com`) 예약어/블랙리스트 Egress 99% 절감 최적화, Groq LLaMA 3.3 70B AI 기반 트렌드 자동 탐지 및 2차 안전 심사 모듈 완료 대장입니다.
+
+- 📖 전용 아키텍처 및 운용 가이드: [`reserved-brand-ids.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/database/reserved-brand-ids.md)
+
+- [x] **하이브리드 브랜드 검증 및 Supabase DB Egress 99% 절감 구조 전환**
+  - 고정 정적 6개 카테고리(13,396개)를 `reservedBrandsStatic.ts` 메모리 Set으로 전환 및 DB rows 삭제 (~59,000개 축소).
+  - 관리자 API `select("*")` 전체 로드 제거 및 페이지네이션(`range()`) 적용 완료.
+- [x] **Groq LLaMA 3.3 70B AI 신규 트렌드 브랜드 100개 대량 탐지 모듈 연동**
+  - `/api/admin/brands/scan` API 구축 및 `/admin/reserved-words` 상단 `[ AI Trend Scan ]` 팝업 연동.
+  - 16개 동적 카테고리 전체 지원, 삼중 필터링 및 `upsert(ignoreDuplicates: true)` 중복 에러 완전 방어 완료.
+- [x] **예약어 관리 목록 `Target Entity (대상 기관/브랜드)` 스마트 뱃지 컬럼 추가**
+  - `/admin/reserved-words` 테이블에 에메랄드 뱃지 배치 및 `parseReasonEntity` 헬퍼를 통한 기관명/상표명 자동 추출 연동 완료.
+- [x] **서브도메인 신청 심사 2차 AI & Web 안전 검증 모듈 구축**
+  - `/admin/brands` 심사 행에 `[ ✨ AI 검증 ]` 버튼 추가 및 `/api/admin/brands/verify` 백엔드 연동.
+  - 위험도 뱃지(`SAFE`/`WARNING`/`DANGER`), 위험점수(0~100), AI 종합 리포트 모달 구현.
+  - Google / Naver 1초 실시간 검색 딥링크 연동 및 `[ 🟢 승인 ]` / `[ 🔴 거절 & 예약어 DB 등록 ]` 원클릭 일괄 처리 연동 완료.
+
 
 
 

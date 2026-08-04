@@ -32,3 +32,7 @@ When the user asks to record or manage future tasks (e.g., "앞으로 할 일에
 ### Project Manual Rule
 When creating how-to guides or operation manuals (e.g., "~ 하는 방법", "매뉴얼 작성"):
 - Store manual files in `@docs/project/manual/<manual-name>.md`.
+
+### Mandatory Vertex AI & Gemini Primary Engine Standard Rule (gemini-3.1-flash-lite 1순위 의무화 규칙)
+- 모든 GCP Vertex AI 및 Gemini AI 연동 백엔드 모듈, API 라우트, AI 스캐너 및 배치 스크립트에서 최우선 1순위 기본 구동 엔진은 무조건 `gemini-3.1-flash-lite` 모델로 1순위 배치해야 한다.
+- `gemini-3.1-flash-lite`는 극상의 초고속 응답 속도와 최저 토큰 비용(Ultra-low cost)을 자랑하므로 대용량 배치 처리, 트렌드 스캔, 키워드 사유 생성, 자동 검증 엔진의 1순위 표준 모델로 사용한다. (fallback 시에만 `gemini-2.5-flash` 활용)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/utils/supabase/server";
+import { getMatchedEnglishBrandTerms } from "@/lib/constants/knownEntityMap";
 
 export const runtime = "nodejs";
 
@@ -36,6 +37,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized. Admin privileges required." }, { status: 403 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const page = Math.max(0, parseInt(searchParams.get("page") ?? "0", 10));
+    const limit = Math.min(100, Math.max(10, parseInt(searchParams.get("limit") ?? "50", 10)));
+    const start = page * limit;
+    const end = start + limit - 1;
+
+    // 검색, 정렬, 카테고리, 날짜 필터 파라미터
+    const sort = searchParams.get("sort") ?? "desc"; // 기본: 최신순 (desc)
+    const dateFilter = searchParams.get("dateFilter") ?? "all";
+    const q = (searchParams.get("q") ?? "").trim().toLowerCase();
+    const category = searchParams.get("category") ?? "ALL";
+
     // 1. Fetch profiles with brand/domain info
     const { data: profiles, error: profilesErr } = await adminSupabase
       .from("profiles")
@@ -65,11 +78,47 @@ export async function GET(req: NextRequest) {
       return hasBrandId || hasRequestedBrand || hasAdditionalBrands || hasCustomDomain || hasFlatCustomDomain;
     });
 
-    // 2. Fetch reserved brand IDs (blacklist)
-    const { data: blacklist, error: blacklistErr } = await adminSupabase
+    // 2. Fetch reserved brand IDs (blacklist) - ✅ 동적 쿼리 (정렬, 날짜필터, 검색어, 카테고리)
+    let query = adminSupabase
       .from("reserved_brand_ids")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .select("*", { count: "exact" });
+
+    // 카테고리 필터
+    if (category !== "ALL") {
+      query = query.eq("category", category);
+    }
+
+    // 검색어 필터 (brand_id, reason, 또는 한글 키워드 영문 ilike 매칭)
+    if (q) {
+      const engTerms = getMatchedEnglishBrandTerms(q);
+      if (engTerms.length > 0) {
+        // 매칭된 영문 키워드들(예: samsung, coupang)에 대해 brand_id.ilike.%term% 조건 추가
+        const termConditions = engTerms.map(term => `brand_id.ilike.%${term}%`).join(",");
+        query = query.or(`brand_id.ilike.%${q}%,reason.ilike.%${q}%,${termConditions}`);
+      } else {
+        query = query.or(`brand_id.ilike.%${q}%,reason.ilike.%${q}%`);
+      }
+    }
+
+    // 날짜 필터
+    if (dateFilter === "today") {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      query = query.gte("created_at", todayStart.toISOString());
+    } else if (dateFilter === "7days") {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      query = query.gte("created_at", sevenDaysAgo.toISOString());
+    } else if (dateFilter === "30days") {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      query = query.gte("created_at", thirtyDaysAgo.toISOString());
+    }
+
+    // 정렬 (created_at desc / asc)
+    query = query.order("created_at", { ascending: sort === "asc" }).range(start, end);
+
+    const { data: blacklist, error: blacklistErr, count } = await query;
 
     if (blacklistErr) throw blacklistErr;
 
@@ -77,12 +126,16 @@ export async function GET(req: NextRequest) {
       success: true,
       requests: filteredRequests,
       blacklist: blacklist || [],
+      blacklistTotal: count ?? 0,
+      blacklistPage: page,
+      blacklistLimit: limit,
     });
   } catch (error: any) {
     console.error("GET /api/admin/brands error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
 
 // POST: Manage Blacklist (Add/Delete reserved brand IDs)
 export async function POST(req: NextRequest) {

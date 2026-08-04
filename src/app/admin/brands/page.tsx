@@ -4,7 +4,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { 
   ShieldCheck, Globe, CheckCircle2, XCircle, Trash2, Plus, 
-  Search, RefreshCw, AlertCircle, Ban, CalendarDays, AlertTriangle, Filter
+  Search, RefreshCw, AlertCircle, Ban, CalendarDays, AlertTriangle, Filter,
+  Sparkles, ExternalLink, Bot, ShieldAlert, X
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -80,6 +81,22 @@ export default function AdminBrandsPage() {
     value: string;
   } | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+
+  // AI Brand Audit Modal states
+  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+  const [isAuditing, setIsAuditing] = useState(false);
+  const [auditTarget, setAuditTarget] = useState<{ userId: string; brandId: string; nickname: string } | null>(null);
+  const [auditResult, setAuditResult] = useState<{
+    brand_id: string;
+    safety_level: "SAFE" | "WARNING" | "DANGER";
+    risk_score: number;
+    entity_match: string;
+    analysis_report: string;
+    category_recommendation: string;
+    recommendation: "APPROVE" | "REJECT_AND_BLOCK";
+    google_search_url: string;
+    naver_search_url: string;
+  } | null>(null);
 
   // ESC Key listener for Modal
   useEffect(() => {
@@ -430,6 +447,79 @@ export default function AdminBrandsPage() {
     }
   };
 
+  // 12. AI & Web 정밀 심사 실행
+  const handleRunAiAudit = async (userId: string, brandId: string, nickname: string) => {
+    setAuditTarget({ userId, brandId, nickname });
+    setIsAuditModalOpen(true);
+    setIsAuditing(true);
+    setAuditResult(null);
+
+    try {
+      const res = await fetch("/api/admin/brands/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brand_id: brandId }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "AI 정밀 심사 실패");
+
+      setAuditResult(json.result);
+    } catch (e: any) {
+      alert(`AI 심사 오류: ${e.message}`);
+    } finally {
+      setIsAuditing(false);
+    }
+  };
+
+  // 13. 거절 및 예약어 DB 일괄 등록 처리
+  const handleRejectAndBlockToReservedWord = async () => {
+    if (!auditTarget || !auditResult) return;
+
+    const { userId, brandId } = auditTarget;
+    const reasonText = `[AI 심사 거절] ${auditResult.entity_match !== "없음" ? `[${auditResult.entity_match}] ` : ""}${auditResult.analysis_report}`;
+
+    if (!confirm(`'${brandId}' 신청을 [거절]하고 동시에 예약어(블랙리스트) DB에 등록하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      // 1. 프로필 반려 상태로 업데이트
+      const { error: profileErr } = await supabase
+        .from("profiles")
+        .update({
+          brand_id_status: "REJECTED",
+          brand_id_rejection_reason: reasonText,
+        })
+        .eq("id", userId);
+
+      if (profileErr) throw profileErr;
+
+      // 2. reserved_brand_ids 에 등록 (upsert)
+      const res = await fetch("/api/admin/brands", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "add_reserved",
+          brandId,
+          reason: reasonText,
+          category: auditResult.category_recommendation || "TRADEMARK",
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "예약어 추가 실패");
+
+      alert(`🚫 '${brandId}' 신청이 거절되었으며, 예약어 DB에 성공적으로 등록되었습니다.`);
+      setIsAuditModalOpen(false);
+      setAuditTarget(null);
+      setAuditResult(null);
+      await fetchAdminData();
+    } catch (e: any) {
+      alert(`처리에 실패했습니다: ${e.message}`);
+    }
+  };
+
   // 11. Action: Delete Blacklist Item
   const handleDeleteReserved = async (id: string, brandId: string) => {
     if (!confirm(`예약어 '${brandId}'을(를) 삭제하시겠습니까?`)) return;
@@ -769,9 +859,18 @@ export default function AdminBrandsPage() {
                                     <span className="text-zinc-600 italic">미신청</span>
                                   ) : (
                                     <div className="space-y-2 text-left">
-                                      <div className="flex items-center gap-1.5 font-mono text-white font-black italic">
+                                      <div className="flex items-center gap-2 font-mono text-white font-black italic">
                                         <Globe size={13} className="text-blue-400" />
                                         {brandId}.creaibox.com
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRunAiAudit(req.id, brandId, req.nickname)}
+                                          className="ml-1 inline-flex items-center gap-1 rounded-lg border border-purple-500/30 bg-purple-600/10 hover:bg-purple-600/20 px-2 py-0.5 text-[9px] font-black text-purple-300 transition-all active:scale-95"
+                                          title="AI & Web 정밀 심사 실행"
+                                        >
+                                          <Sparkles size={10} className="text-purple-400" />
+                                          AI 검증
+                                        </button>
                                       </div>
                                       
                                       <div className="flex items-center gap-2">
@@ -1172,6 +1271,140 @@ export default function AdminBrandsPage() {
                 반려 완료
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* AI 브랜드 정밀 검증 모달 */}
+      {isAuditModalOpen && auditTarget && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-xl rounded-[30px] border border-purple-500/30 bg-[#0c0e14] p-8 text-left shadow-2xl animate-in fade-in zoom-in duration-200">
+            {/* Header */}
+            <div className="flex justify-between items-center border-b border-zinc-800 pb-5 mb-6">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                  <Sparkles size={18} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black uppercase italic text-white tracking-tight">AI & Web Brand Safety Audit</h3>
+                  <p className="text-[11px] font-semibold text-purple-400/80">
+                    신청자: <strong className="text-white">{auditTarget.nickname}</strong> | 브랜드 ID: <strong className="text-white font-mono">{auditTarget.brandId}</strong>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsAuditModalOpen(false);
+                  setAuditResult(null);
+                  setAuditTarget(null);
+                }}
+                className="text-zinc-500 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Body */}
+            {isAuditing ? (
+              <div className="flex flex-col items-center justify-center py-12 space-y-3 text-purple-400">
+                <RefreshCw size={32} className="animate-spin" />
+                <p className="text-xs font-bold animate-pulse">LLaMA 3.3 AI 모델이 상표권, 공공기관, 유해성 및 웹 위험도를 정밀 분석 중입니다...</p>
+              </div>
+            ) : auditResult ? (
+              <div className="space-y-6">
+                {/* 1. 위험도 및 뱃지 요약 카드 */}
+                <div className="grid grid-cols-3 gap-3 rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-center">
+                  <div>
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase mb-1">안전 판정</p>
+                    {auditResult.safety_level === "SAFE" && (
+                      <span className="inline-block px-3 py-1 text-xs font-black rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+                        🟢 SAFE (안전)
+                      </span>
+                    )}
+                    {auditResult.safety_level === "WARNING" && (
+                      <span className="inline-block px-3 py-1 text-xs font-black rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-400">
+                        🟡 WARNING (주의)
+                      </span>
+                    )}
+                    {auditResult.safety_level === "DANGER" && (
+                      <span className="inline-block px-3 py-1 text-xs font-black rounded-lg border border-red-500/30 bg-red-500/10 text-red-400">
+                        🔴 DANGER (위험)
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase mb-1">위험 점수</p>
+                    <p className={`text-xl font-black ${auditResult.risk_score > 50 ? "text-red-400" : auditResult.risk_score > 20 ? "text-amber-400" : "text-emerald-400"}`}>
+                      {auditResult.risk_score} / 100
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase mb-1">매칭 상표/기관</p>
+                    <p className="text-sm font-black text-white truncate px-1" title={auditResult.entity_match}>
+                      {auditResult.entity_match}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 2. AI 분석 심사의견 */}
+                <div className="rounded-2xl border border-purple-500/20 bg-purple-500/5 p-4 space-y-1 text-left">
+                  <div className="flex items-center gap-1.5 text-purple-300 text-xs font-black">
+                    <Bot size={15} />
+                    AI 심사 종합 의견
+                  </div>
+                  <p className="text-xs font-medium text-zinc-300 leading-relaxed">
+                    {auditResult.analysis_report}
+                  </p>
+                </div>
+
+                {/* 3. 외부 실시간 검색 이동 버튼 (구글 / 네이버) */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-zinc-500 uppercase tracking-wider pl-1">실시간 포털 직접 검색 (1초 이동)</label>
+                  <div className="flex gap-3">
+                    <a
+                      href={auditResult.google_search_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 py-3 text-xs font-bold text-zinc-300 hover:text-white transition-all"
+                    >
+                      <Globe size={14} className="text-blue-400" />
+                      Google 검색확인 <ExternalLink size={12} />
+                    </a>
+                    <a
+                      href={auditResult.naver_search_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 py-3 text-xs font-bold text-zinc-300 hover:text-white transition-all"
+                    >
+                      <Globe size={14} className="text-emerald-400" />
+                      Naver 검색확인 <ExternalLink size={12} />
+                    </a>
+                  </div>
+                </div>
+
+                {/* 4. 최종 승인 / 거절 액션 버튼 */}
+                <div className="flex gap-3 pt-4 border-t border-zinc-800">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      handleApprove(e as any, auditTarget.userId, auditTarget.brandId);
+                      setIsAuditModalOpen(false);
+                    }}
+                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 py-4 text-xs font-black uppercase italic tracking-wider text-white shadow-lg transition-all"
+                  >
+                    <CheckCircle2 size={15} />
+                    승인 (APPROVED)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRejectAndBlockToReservedWord}
+                    className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-red-600 hover:bg-red-500 py-4 text-xs font-black uppercase italic tracking-wider text-white shadow-lg transition-all"
+                  >
+                    <ShieldAlert size={15} />
+                    거절 & 예약어 DB 등록
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       )}

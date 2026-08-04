@@ -88,6 +88,10 @@ CreAibox의 SEO 자동 색인 엔진은 어떤 형태의 도메인이든 **전�
 - **실행 주기**: 매일 밤 KST 23:50 (14:50 UTC) 자정 10분 전 자동 가동 (`vercel.json` 규격).
 - **기능**: 전 세계 60개국 전체 및 카테고리/기간별 인기 영상 조회수 랭킹을 무인 수집하여, 당일 1개 Row(`youtube_popular_archive`)에 **'당일 최종 확정 랭킹 스냅샷(Final Daily Snapshot)'**으로 자동 업데이트 및 100% 보존함.
 
+### ⑦ 🟢 ⚡ 16개 전체 카테고리 자율 AI 브랜드 100개 대량 탐지 및 DB 자동 수집 무인 엔진 (현재 100% 구동 중)
+- **상태**: **🟢 현재 100% 실시간 자동 구동 중** ([`/api/admin/brands/scan-all`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/admin/brands/scan-all/route.ts))
+- **기능**: 버튼 1회 클릭 시 Groq LLaMA 3.3 70B AI 모델이 16개 전체 동적 카테고리(AI, 핀테크, 상표, 의료, 공공기관, 가상자산 등)에서 총 1,600개 키워드를 자율 스캔하여, 삼중 필터링을 거친 순수 미등록 신규 브랜드 아이디만 Supabase DB에 `upsert(ignoreDuplicates: true)`로 자동 수집 및 일괄 영구 저장함.
+
 ---
 
 ## 5. 🚀 앞으로 개발하며 장기적으로 확장할 무인 서비스 5선 (Future Roadmap)
