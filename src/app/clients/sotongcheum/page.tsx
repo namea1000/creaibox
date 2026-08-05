@@ -30,7 +30,7 @@ export default async function SotongcheumLandingPage() {
   if (profile?.id) {
     const { data: posts } = await supabase
       .from("writing_creaibox_posts")
-      .select("id, title, slug, meta_description, focus_keyword, seo_tags, created_at")
+      .select("id, title, slug, content, meta_description, focus_keyword, seo_tags, created_at")
       .eq("user_id", profile.id)
       .eq("status", "published")
       .not("slug", "is", null)
@@ -70,9 +70,13 @@ export default async function SotongcheumLandingPage() {
       dynamicPortfolioItems = posts.map((p: any) => {
         let thumb = primaryMap[p.id] || primaryMap[p.slug];
         if (!thumb && p.content) {
-          const imgMatch = p.content.match(/<img[^>]+src=["']([^"']+)["']/i);
-          if (imgMatch && imgMatch[1] && !imgMatch[1].includes("stat.naver.com")) {
-            thumb = imgMatch[1];
+          const imgMatches = Array.from(p.content.matchAll(/<img[^>]+src=["']([^"']+)["']/gi));
+          for (const match of imgMatches as RegExpMatchArray[]) {
+            const src = match[1];
+            if (src && !src.includes("stat.naver.com")) {
+              thumb = src;
+              break;
+            }
           }
         }
 
@@ -93,7 +97,7 @@ export default async function SotongcheumLandingPage() {
           id: p.id,
           title: p.title || "소통과 채움 현장 실적",
           date: dateStr,
-          imageUrl: thumb || "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80",
+          imageUrl: thumb || "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80",
           category: cat,
           slug: p.slug || p.id,
         };

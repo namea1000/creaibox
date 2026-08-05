@@ -152,6 +152,19 @@
   - `EmailForwardingManager.tsx` UI, `/api/email-forwarding` CRUD API 및 `docs/database/email_forwarding_rules.sql` DDL 구축 완료
 - [x] **Resend Inbound Webhook 실시간 무상태(Stateless Zero-DB) 포워딩 엔진 구축**
   - `/api/webhooks/resend-inbound` 무상태 실시간 포워딩 백엔드 모듈 개발 완료
+- [x] **관리자 센터 Resend 이메일 & 도메인 통합 모니터링 대시보드 구축 완료 (/admin/resend)**
+  - 등록 도메인 수, 생성된 이메일 별칭 계정 수, 실시간 Inbound/Outbound 이력 KPI 및 3대 탭(도메인계정/수신이력/발송이력) 구축 완료
+  - Resend `emails.receiving.get` API 및 `Array.isArray` 2단계 언팩 방어 파이프라인 적용 완료
+  - 📖 아키텍처 기술 명세서: [`resend-email-monitoring-architecture.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/resend-email-monitoring-architecture.md)
+  - 📖 운용 가이드 매뉴얼: [`resend-email-domain-monitoring-manual.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/resend-email-domain-monitoring-manual.md)
+- [x] **creaibox.com 서비스 필수 공식 이메일 계정 7대 마스터 가이드 구축 완료**
+  - `noreply@`, `auth@`, `support@`, `ceo@`, `contact@`, `billing@`, `admin@` 등 7대 전용 계정 정의 및 Supabase/Resend 연동 가이드 수록 완료
+  - 📖 전용 운용 매뉴얼: [`creaibox-official-email-accounts-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/creaibox-official-email-accounts-guide.md)
+- [x] **모든 회원가입 수단(Google, Naver, Kakao, Email) 신규 가입 축하 웰컴 이메일 파이프라인 구축 완료**
+  - OAuth 및 이메일 인증 완료 콜백 라우트에서 `sendWelcomeEmail` 비동기 발송 및 `welcome_email_sent` 중복 방지 플래그 연동 완료
+  - `noreply@creaibox.com` (Reply-To: `support@creaibox.com`) 프리미엄 다크 테마 HTML 웰컴 메일 및 실시간 발송 테스트 검증 완료
+- [ ] **글로벌 영문 사이트 오픈 시 유저 Locale 기반 자동 언어 분기 인증 이메일 발송 파이프라인 연동**
+  - 글로벌 사용자 접속 시 Supabase Auth Hook / Send Email API를 통해 브라우저 Locale(ko/en)에 따라 100% 영문 단독 메일 템플릿 자동 분기 발송 구축 예정
 - [ ] **고객사 플랜별 일일/월간 발송 쿼터(Quota Throttling) 및 스팸 차단 안전 모듈 탑재**
   - 고객사별 일일 50~300건 쿼터 초과 시 자동 발송 차단 및 추가 쿼터 팩 결제 상품 연동 예정
 - [ ] **헤비 고객사 전용 API 키 입력 (BYOK: Bring Your Own Key) 옵션 제공**

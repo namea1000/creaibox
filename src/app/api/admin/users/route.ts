@@ -83,6 +83,15 @@ export async function GET(req: NextRequest) {
         ? 2
         : 1;
 
+    const displayName =
+      user.user_metadata?.display_name ||
+      user.user_metadata?.full_name ||
+      user.user_metadata?.name ||
+      profile?.display_name ||
+      profile?.full_name ||
+      profile?.nickname ||
+      "-";
+
     return {
       id: user.id,
       email: emailStr || "-",
@@ -90,7 +99,9 @@ export async function GET(req: NextRequest) {
         profile?.nickname ||
         user.user_metadata?.full_name ||
         user.user_metadata?.name ||
+        user.user_metadata?.display_name ||
         "Unknown",
+      displayName,
       nickname: profile?.nickname || null,
       brandId: profile?.brand_id || null,
       approvedBrands,

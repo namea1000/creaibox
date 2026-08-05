@@ -92,6 +92,10 @@ CreAibox의 SEO 자동 색인 엔진은 어떤 형태의 도메인이든 **전�
 - **상태**: **🟢 현재 100% 실시간 자동 구동 중** ([`/api/admin/brands/scan-all`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/admin/brands/scan-all/route.ts))
 - **기능**: 버튼 1회 클릭 시 Groq LLaMA 3.3 70B AI 모델이 16개 전체 동적 카테고리(AI, 핀테크, 상표, 의료, 공공기관, 가상자산 등)에서 총 1,600개 키워드를 자율 스캔하여, 삼중 필터링을 거친 순수 미등록 신규 브랜드 아이디만 Supabase DB에 `upsert(ignoreDuplicates: true)`로 자동 수집 및 일괄 영구 저장함.
 
+### ⑧ 🟢 ✉️ Resend 커스텀 도메인 이메일 무상태 실시간 수신-포워딩 백그라운드 웹훅 (현재 100% 구동 중)
+- **상태**: **🟢 현재 100% 실시간 자동 구동 중** ([`/api/webhooks/resend-inbound`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/webhooks/resend-inbound/route.ts))
+- **기능**: 외부(네이버, Gmail 등)에서 커스텀 도메인 이메일(`ceo@creaibox.com`, `user@brand.com`)로 메일 수신 시 Resend 인바운드 웹훅을 통해 백그라운드에서 `resend.emails.receiving.get(emailId)`로 이메일 본문(HTML/Text)을 추출한 뒤, DB 추가 저장(트래픽 소모) 없이 0.1초 만에 지정된 사용자 목적지 이메일로 자동 전달(Forwarding) 발송함.
+
 ---
 
 ## 5. 🚀 앞으로 개발하며 장기적으로 확장할 무인 서비스 5선 (Future Roadmap)

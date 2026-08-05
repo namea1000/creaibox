@@ -43,7 +43,14 @@ export async function GET(req: NextRequest) {
     let domainsList: any[] = [];
     try {
       const domainsRes = await resend.domains.list();
-      domainsList = (domainsRes as any)?.data || domainsRes || [];
+      const raw = (domainsRes as any)?.data;
+      if (Array.isArray(raw)) {
+        domainsList = raw;
+      } else if (Array.isArray(raw?.data)) {
+        domainsList = raw.data;
+      } else {
+        domainsList = [];
+      }
     } catch (dErr: any) {
       console.warn("Resend domains fetch warning:", dErr?.message);
     }
@@ -63,7 +70,14 @@ export async function GET(req: NextRequest) {
     let receivedEmails: any[] = [];
     try {
       const receivingRes = await resend.emails.receiving.list();
-      receivedEmails = (receivingRes as any)?.data?.data || (receivingRes as any)?.data || [];
+      const rawInbound = (receivingRes as any)?.data;
+      if (Array.isArray(rawInbound)) {
+        receivedEmails = rawInbound;
+      } else if (Array.isArray(rawInbound?.data)) {
+        receivedEmails = rawInbound.data;
+      } else {
+        receivedEmails = [];
+      }
     } catch (inboundErr: any) {
       console.warn("Resend inbound emails fetch warning:", inboundErr?.message);
     }
@@ -72,7 +86,14 @@ export async function GET(req: NextRequest) {
     let sentEmails: any[] = [];
     try {
       const sentRes = await resend.emails.list();
-      sentEmails = (sentRes as any)?.data?.data || (sentRes as any)?.data || [];
+      const rawSent = (sentRes as any)?.data;
+      if (Array.isArray(rawSent)) {
+        sentEmails = rawSent;
+      } else if (Array.isArray(rawSent?.data)) {
+        sentEmails = rawSent.data;
+      } else {
+        sentEmails = [];
+      }
     } catch (outboundErr: any) {
       console.warn("Resend outbound emails fetch warning:", outboundErr?.message);
     }

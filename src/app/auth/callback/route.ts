@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createAdminClient } from "@/utils/supabase/server";
+import { sendWelcomeEmail } from "@/lib/server/resend-email";
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -23,6 +24,35 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      // 웰컴 이메일 미발송 신규 가입자 체크 및 자동 발송
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && user.email && !user.user_metadata?.welcome_email_sent) {
+          const userName =
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            user.user_metadata?.display_name ||
+            null;
+
+          // 1. Resend 웰컴 이메일 비동기 트리거
+          void sendWelcomeEmail({
+            userEmail: user.email,
+            userName: userName,
+          });
+
+          // 2. 발송 완료 플래그 기록 (중복 발송 100% 방지)
+          const adminSupabase = await createAdminClient();
+          await adminSupabase.auth.admin.updateUserById(user.id, {
+            user_metadata: {
+              ...user.user_metadata,
+              welcome_email_sent: true,
+            },
+          });
+        }
+      } catch (welcomeErr: any) {
+        console.warn("Welcome email trigger warning:", welcomeErr?.message);
+      }
+
       return NextResponse.redirect(new URL(safeNextPath, requestUrl.origin));
     }
 

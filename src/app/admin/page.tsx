@@ -190,10 +190,8 @@ export default function AdminDashboardPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [vaultKeys, setVaultKeys] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     const fetchAllData = async () => {
       try {
         const supabase = createClient();
@@ -330,7 +328,6 @@ export default function AdminDashboardPage() {
       <section className="grid gap-2.5 grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         {adminMenus.map((menu) => {
           const Icon = menu.icon;
-
           return (
             <Link
               key={menu.href}
@@ -343,12 +340,10 @@ export default function AdminDashboardPage() {
                 >
                   <Icon size={16} />
                 </div>
-
                 <h2 className="text-xs font-black italic text-white transition group-hover:text-blue-400">
                   {menu.title}
                 </h2>
               </div>
-
               <p className="text-[11px] font-medium leading-normal text-zinc-500 group-hover:text-zinc-400 transition-colors">
                 {menu.description}
               </p>

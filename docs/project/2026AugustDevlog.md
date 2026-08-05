@@ -47,5 +47,24 @@
 
 ---
 
-### 4. 🧪 빌드 및 무결성 검증
+### 4. 📧 Resend 이메일 관제 & 도메인 통합 모니터링 시스템 구축
+- **Resend 이메일 통합 관리자 페이지 탑재 (`/admin/resend`)**:
+  - `src/app/admin/resend/page.tsx` 및 `src/app/api/admin/resend/route.ts` 구현.
+  - Resend REST API 연동으로 등록 도메인 목록(DKIM/SPF/MX 검증 상태), 실시간 이메일 수발신 성공/실패 통계 및 인바운드 메일 모니터링 탭 탑재.
+  - Sidebar 관리자 메뉴에 Resend 메일 관제 탭 탑재 및 `/admin` 대시보드 연동 완료.
+- **CreAibox 공식 이메일 4대 계정 헬퍼 모듈 구축 (`src/lib/server/resend-email.ts`)**:
+  - `support@creaibox.com`, `no-reply@creaibox.com`, `billing@creaibox.com`, `security@creaibox.com` 계정 파이프라인 정립.
+  - 회원가입/소셜 로그인(네이버, 카카오 등) 및 비밀번호 변경 등 보안/환영 메일 자동 발송 트리거 연동 (`src/app/api/auth/callback/naver/route.ts`, `src/app/auth/callback/route.ts`).
+- **Resend Inbound Webhook 수신 파이프라인 개발 (`src/app/api/webhooks/resend-inbound/route.ts`)**:
+  - 외부에서 CreAibox 공식 이메일 주소로 수신되는 수신 메일을 실시간 감지하여 DB 및 관리자 뷰에 연동하는 웹훅 구축.
+- **📖 관련 기술 아키텍처 & 운용 매뉴얼 수록**:
+  - `docs/arch/resend-email-monitoring-architecture.md` (아키텍처 명세서)
+  - `docs/project/manual/resend-email-domain-monitoring-manual.md` (실무 운용 매뉴얼)
+  - `docs/project/manual/creaibox-official-email-accounts-guide.md` (공식 이메일 계정 가이드)
+  - `docs/project/manual/background-automation-execution-5-methods-guide.md` (백그라운드 무인 실행 목록 최신화)
+
+---
+
+### 5. 🧪 빌드 및 무결성 검증
 - `npx tsc --noEmit` 실행 결과: **오류 0건 (100% Clean Pass)**
+

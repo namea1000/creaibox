@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient, createClient } from "@/utils/supabase/server";
+import { sendWelcomeEmail } from "@/lib/server/resend-email";
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -59,6 +60,7 @@ export async function GET(request: Request) {
           avatar_url: naverUser.profile_image || "",
           provider: "naver",
           naver_id: naverUser.id,
+          welcome_email_sent: true,
         },
       });
 
@@ -67,6 +69,12 @@ export async function GET(request: Request) {
         return NextResponse.redirect(new URL("/login?error=user_creation_failed", requestUrl.origin));
       }
       user = newUser.user;
+
+      // 네이버 신규 가입 축하 웰컴 이메일 발송
+      void sendWelcomeEmail({
+        userEmail: email,
+        userName: nickname,
+      });
     } else {
       // Update existing user metadata to reflect Naver login
       await supabaseAdmin.auth.admin.updateUserById(user.id, {

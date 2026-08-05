@@ -27,6 +27,7 @@ interface UserProfile {
   id: string;
   email: string;
   name: string;
+  displayName?: string;
   role: UserRole;
   membershipLevel: string;
   status: UserStatus;
@@ -177,6 +178,7 @@ export default function UserManagementPage() {
     return result.filter(
       (user) =>
         user.name.toLowerCase().includes(keyword) ||
+        (user.displayName || "").toLowerCase().includes(keyword) ||
         user.email.toLowerCase().includes(keyword) ||
         user.role.toLowerCase().includes(keyword) ||
         (user.grantReason || "").toLowerCase().includes(keyword)
@@ -569,7 +571,7 @@ export default function UserManagementPage() {
                   <table className="w-full min-w-[1500px] text-left">
                     <thead>
                       <tr className="border-b border-zinc-800/50 bg-zinc-900/30 text-[10px] font-black uppercase tracking-widest text-zinc-500 whitespace-nowrap">
-                        <th className="px-6 py-5">Identity</th>
+                        <th className="px-6 py-5">Identity / Display Name</th>
                         <th className="px-6 py-5">Access Level</th>
                         <th className="px-6 py-5">Brand Domains</th>
                         <th className="px-6 py-5">Trial Usage</th>
@@ -614,16 +616,26 @@ export default function UserManagementPage() {
                                   {user.isManualGrant ? "⭐" : user.name[0]?.toUpperCase() || "U"}
                                 </div>
                                 <div>
-                                  <p className="flex items-center gap-2 text-sm font-black italic text-zinc-200 whitespace-nowrap">
-                                    {user.name}
+                                  <div className="flex items-center gap-2 whitespace-nowrap">
+                                    <p className="text-sm font-black italic text-zinc-200">
+                                      {user.name}
+                                    </p>
+                                    {user.displayName && user.displayName !== "-" && user.displayName !== user.name && (
+                                      <span className="whitespace-nowrap inline-flex items-center gap-1 rounded-md border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-bold not-italic text-cyan-300">
+                                        👤 {user.displayName}
+                                      </span>
+                                    )}
                                     {user.isManualGrant && (
                                       <span className="whitespace-nowrap inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold not-italic text-amber-400">
                                         ⭐ 무상 부여 ({user.grantReason || "VIP"})
                                       </span>
                                     )}
-                                  </p>
-                                  <p className="text-[11px] font-medium tracking-tight text-zinc-600 whitespace-nowrap">
-                                    {user.email}
+                                  </div>
+                                  <p className="text-[11px] font-medium tracking-tight text-zinc-600 whitespace-nowrap flex items-center gap-1.5 mt-0.5">
+                                    <span>{user.email}</span>
+                                    {user.displayName && user.displayName !== "-" && user.displayName === user.name && (
+                                      <span className="text-[10px] text-zinc-500 font-semibold">(Display: {user.displayName})</span>
+                                    )}
                                   </p>
                                 </div>
                               </div>

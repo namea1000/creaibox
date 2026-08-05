@@ -48,9 +48,15 @@ function getPostThumbnail(post: PublishedPost, primaryMap: Record<string, string
   if (primaryMap[post.id]) return primaryMap[post.id];
   if (post.slug && primaryMap[post.slug]) return primaryMap[post.slug];
   if (post.content) {
-    const imgMatch = post.content.match(/<img[^>]+src=["']([^"']+)["']/i);
-    if (imgMatch && imgMatch[1] && !imgMatch[1].includes("stat.naver.com")) {
-      return imgMatch[1];
+    const imgMatches = Array.from(post.content.matchAll(/<img[^>]+src=["']([^"']+)["']/gi));
+    for (const match of imgMatches) {
+      const src = match[1];
+      if (src && !src.includes("stat.naver.com") && !src.includes("post-phinf.pstatic.net/20") && !src.includes("blank.gif")) {
+        return src;
+      }
+      if (src && !src.includes("stat.naver.com")) {
+        return src;
+      }
     }
   }
   return null;
@@ -103,7 +109,7 @@ export default async function SotongcheumBlogPage({
   if (profile?.id) {
     const { data } = await supabase
       .from("writing_creaibox_posts")
-      .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at")
+      .select("id, title, slug, content, meta_description, focus_keyword, seo_tags, canonical_url, created_at")
       .eq("user_id", profile.id)
       .eq("status", "published")
       .not("slug", "is", null)
