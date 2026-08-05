@@ -50,10 +50,12 @@ export interface SmartIntentLinkProps extends LinkProps {
 }
 ```
 
-### 2.2 Vercel Edge CDN Caching Layer (`revalidate = 300`)
-- **캐싱 매커니즘**: Next.js Incremental Static Regeneration (ISR)
+### 2.2 Vercel Edge CDN Caching Layer & Static Bundle Header (`revalidate = 300`)
+- **캐싱 매커니즘**: Next.js Incremental Static Regeneration (ISR) 및 permanent CDN Static Header
 - **Header Specification**:
-  - `Cache-Control: public, max-age=0, s-maxage=300, stale-while-revalidate=60`
+  - `_next/static/:path*`: `Cache-Control: public, max-age=31536000, immutable` (렌더링 차단 0ms 완전 방어)
+  - `/api/free-assets/proxy`: `Cache-Control: public, max-age=31536000, s-maxage=31536000, immutable`
+  - HTML 본문: `Cache-Control: public, max-age=0, s-maxage=300, stale-while-revalidate=60`
 - **서버리스 함수 실행 방어**: Edge CDN에 생성된 5분(300초) 수명의 Static HTML이 응답하므로, 프리패치 요청이 들어와도 Node.js Serverless Container가 스핀업되지 않음.
 
 ---
