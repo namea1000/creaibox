@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import SmartIntentLink from "@/components/common/SmartIntentLink";
 import { createAdminClient } from "@/utils/supabase/server";
 import { CalendarDays, Sparkles, BookOpen, ArrowRight } from "lucide-react";
 
@@ -90,9 +91,9 @@ export default async function CommufillBlogPage() {
               <div className="flex-1 flex flex-col justify-between space-y-3">
                 <div className="space-y-3 flex-1">
                   <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors line-clamp-2 leading-snug">
-                    <Link href={`/blog/${post.slug}`}>
+                    <SmartIntentLink href={`/blog/${post.slug}`}>
                       {post.title}
-                    </Link>
+                    </SmartIntentLink>
                   </h3>
 
                   <p className="text-xs font-medium text-zinc-400 leading-relaxed line-clamp-3">
@@ -106,12 +107,12 @@ export default async function CommufillBlogPage() {
                     <span>{formatDate(post.created_at)}</span>
                   </div>
 
-                  <Link
+                  <SmartIntentLink
                     href={`/blog/${post.slug}`}
                     className="inline-flex items-center gap-1.5 text-xs font-extrabold text-emerald-400 group-hover:text-emerald-300 hover:underline"
                   >
                     글 더보기 <ArrowRight size={14} />
-                  </Link>
+                  </SmartIntentLink>
                 </div>
               </div>
             </article>

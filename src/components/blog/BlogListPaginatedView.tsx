@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import SmartIntentLink from "@/components/common/SmartIntentLink";
 import { CalendarDays, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface BlogItem {
@@ -181,7 +182,7 @@ export default function BlogListPaginatedView({
         /* Posts 3x4 Grid (12 items limit per page) */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {paginatedPosts.map((post) => (
-            <a
+            <SmartIntentLink
               key={post.id}
               href={`/blog/${post.slug}`}
               className="group bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
@@ -229,7 +230,7 @@ export default function BlogListPaginatedView({
                 </span>
               </div>
             </div>
-          </a>
+          </SmartIntentLink>
         ))}
       </div>
       )}

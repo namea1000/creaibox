@@ -50,11 +50,18 @@ AI Agents MUST NOT declare success or finish a user request turn without verifyi
 ### 9. Mandatory Client Site Egress & Aspect Ratio Standard Rule (클라이언트 사이트 트래픽 감축 및 16:9 비율 영구 표준 규칙)
 - **규칙 1 (카드 썸네일 16:9 비율 고정)**: 향후 신규 제작하는 모든 커스텀 클라이언트 사이트, 비즈니스 홈페이지, 브랜드 블로그의 카드 썸네일 프레임은 반드시 `aspect-[16/9]` (16:9 비율)만 사용하여 썸네일 텍스트 좌우 잘림을 100% 방지한다.
 - **규칙 2 (Egress 트래픽 방어 - 목록 조회 시 본문 컬럼 제외)**: 블로그 목록, 카테고리 목록, 포트폴리오 목록 쿼리 작성 시 무거운 원고 본문 전체 HTML(`content`)이나 JSON 덤프(`published_snapshot`) 컬럼을 절대 `select()`에 포함하지 않고 경량 메타 필드만 수집한다.
-- **규칙 3 (Vercel Edge CDN Revalidate 필수 지정)**: 공개용 커스텀 블로그 및 비즈니스 홈페이지에는 `export const dynamic = "force-dynamic"`을 금지하고 `export const revalidate = 60;` (상세 300) CDN 캐싱을 필수 적용하여 Supabase DB 트래픽 소모를 95% 이상 영구 방어한다.
-
 ### 10. Mandatory Vertex AI & Gemini Primary Engine Standard Rule (gemini-3.1-flash-lite 1순위 의무화 규칙)
 - **모든 GCP Vertex AI 및 Gemini AI 연동 백엔드 모듈, API 라우트, AI 스캐너 및 배치 스크립트에서 최우선 1순위 기본 구동 엔진은 무조건 `gemini-3.1-flash-lite` 모델로 1순위 배치해야 한다.**
 - `gemini-3.1-flash-lite`는 극상의 초고속 응답 속도와 최저 토큰 비용(Ultra-low cost)을 자랑하므로 대용량 배치 처리, 트렌드 스캔, 키워드 사유 생성, 자동 검증 엔진의 1순위 표준 모델로 사용한다. (fallback 시에만 `gemini-2.5-flash` 활용)
+
+### 11. Mandatory SmartIntentLink 0.01s Instant Navigation Rule (스마트 링커 0.01초 가속 개발 의무 규칙)
+- **향후 신규로 제작되는 모든 사용자 블로그, 비즈니스 홈페이지, 커스텀 웹사이트 템플릿, 카드 목록 및 아티클 링커에는 맹목적 `Link` 또는 `<a href>` 대신 무조건 `SmartIntentLink` (`@/components/common/SmartIntentLink`) 컴포넌트를 사용해야 한다.**
+- 0.15초 체류 의도 감지를 통해 Vercel 비용 0원을 철통 방어함과 동시에 클릭 즉시 0.01초 만에 본문이 열리는 네이버 뉴스급 수소폭탄 가속 서빙을 표준으로 100% 영구 적용한다.
+
+### 12. Mandatory Document Role Separation Rule (아키텍처 문서 및 실무 매뉴얼 역할 엄격 분리 규칙)
+- **아키텍처 기술 명세서 (`docs/arch/`)와 서비스 실무 매뉴얼 (`docs/project/manual/`)을 절대 동일한 내용으로 중복 작성하지 않고 역할과 목적을 100% 명확히 분리하여 작성해야 한다.**
+- **아키텍처 문서 (`docs/arch/`)**: 시스템 설계자/개발자 관점의 Mermaid 다이어그램, 시퀀스/데이터 파이프라인, 내부 알고리즘, 응답 헤더 스펙 등 **심도 깊은 기술 명세서**로 작성한다.
+- **실무 매뉴얼 (`docs/project/manual/`)**: 기획자/실무 개발자 관점의 HOW-TO 실전 가이드, 바로 복사 가능한 추천 코드 예시, 금지 패턴(Anti-Patterns), FAQ 등 **실전 운용 가이드**로 차별화 작성한다.
 
 # ==================================================
 

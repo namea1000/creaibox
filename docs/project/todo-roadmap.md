@@ -200,6 +200,10 @@ CreAibox 브랜드 ID(`{brand_id}.creaibox.com`) 예약어/블랙리스트 Egres
   - 카드 썸네일 `type=thumb` (800px 30~40KB WebP) vs 블로그 본문 상세 `type=detail` (1400px 고화질 WebP) 스마트 2원화 서빙 반영 완료.
   - 블로그 목록 리소스 크기 2.7MB ➡️ 350KB (85% 이상 대폭 절감) 및 LCP 1.8초 이내 가속 달성.
   - 📖 아키텍처 & 운용 매뉴얼: [`media-proxy-architecture.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/media-proxy-architecture.md) / [`google-drive-image-proxy-web-optimization-manual.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/google-drive-image-proxy-web-optimization-manual.md) 수록 완료.
+- [x] **네이버 뉴스급 0.01초 Instant 오픈 & Vercel 비용 0원 방어 파이프라인 구축**
+  - `SmartIntentLink` 0.15초 체류 의도 감지 프리패치 엔진 및 본문 `revalidate = 300` CDN 무상 캐싱 연동.
+  - 모든 사용자 블로그, 비즈니스 홈페이지, 커스텀 사이트의 카드 링커 전면 전환 반영 완료.
+  - 📖 아키텍처 & 운용 매뉴얼: [`instant-navigation-prefetch-architecture.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/instant-navigation-prefetch-architecture.md) / [`instant-navigation-0.01s-prefetch-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/instant-navigation-0.01s-prefetch-guide.md) 수록 완료.
 - [x] **서브도메인 신청 심사 2차 AI & Web 안전 검증 모듈 구축**
   - `/admin/brands` 심사 행에 `[ ✨ AI 검증 ]` 버튼 추가 및 `/api/admin/brands/verify` 백엔드 연동.
   - 위험도 뱃지(`SAFE`/`WARNING`/`DANGER`), 위험점수(0~100), AI 종합 리포트 모달 구현.

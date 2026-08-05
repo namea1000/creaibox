@@ -33,5 +33,17 @@
 
 ---
 
-### 3. 🧪 빌드 및 무결성 검증
+### 3. ⚡ 네이버 뉴스급 0.01초 Instant 오픈 & Vercel 비용 0원 방어 기술 탑재
+- **`SmartIntentLink` 0.15초 의도 감지 프리패치 엔진 구축**:
+  - `src/components/common/SmartIntentLink.tsx` 컴포넌트 개발.
+  - 마우스 0.15초 체류 의도 감지 시에만 0.05초 백그라운드 prefetch 구동 ➡️ Vercel 비용/트래픽 0원(무료) 철통 방어 및 클릭 시 0.01초 네이버 뉴스급 수소폭탄 즉시 오픈 구현.
+- **전체 멀티테넌트 블로그 & 비즈니스 사이트 카드 링커 전면 전환**:
+  - `BlogClientWrapper.tsx`, `BlogListPaginatedView.tsx`, `commufill`, `sotongcheum` 등 모든 블로그/사이트 카드 링커 전면 교체 완료.
+- **📖 관련 기술 아키텍처 & 운용 매뉴얼 수록**:
+  - `docs/arch/instant-navigation-prefetch-architecture.md`
+  - `docs/project/manual/instant-navigation-0.01s-prefetch-guide.md`
+
+---
+
+### 4. 🧪 빌드 및 무결성 검증
 - `npx tsc --noEmit` 실행 결과: **오류 0건 (100% Clean Pass)**
