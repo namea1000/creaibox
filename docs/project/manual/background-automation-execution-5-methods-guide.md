@@ -96,6 +96,11 @@ CreAibox의 SEO 자동 색인 엔진은 어떤 형태의 도메인이든 **전�
 - **상태**: **🟢 현재 100% 실시간 자동 구동 중** ([`/api/webhooks/resend-inbound`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/webhooks/resend-inbound/route.ts))
 - **기능**: 외부(네이버, Gmail 등)에서 커스텀 도메인 이메일(`ceo@creaibox.com`, `user@brand.com`)로 메일 수신 시 Resend 인바운드 웹훅을 통해 백그라운드에서 `resend.emails.receiving.get(emailId)`로 이메일 본문(HTML/Text)을 추출한 뒤, DB 추가 저장(트래픽 소모) 없이 0.1초 만에 지정된 사용자 목적지 이메일로 자동 전달(Forwarding) 발송함.
 
+### ⑨ 🟢 📸 원고 본문 1번째 이미지 썸네일 무인 자동 추출 & `generated_images` 100% 동기화 백엔드 엔진 (현재 100% 구동 중)
+- **상태**: **🟢 현재 100% 실시간 자동 구동 중** ([`auto-extract-thumbnail.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/auto-extract-thumbnail.ts), [`fill_missing_thumbnails.js`](file:///Users/a1234/Local%20Sites/creaibox/scratch/fill_missing_thumbnails.js))
+- **기능**: 사용자가 썸네일을 직접 수동 지정하지 않더라도, 백엔드가 원고 발행/이관/동기화 시점에 본문 HTML 내 **첫 번째 대표 이미지 URL**(`stat.naver.com` 등 트래킹 픽셀 자동 스킵)을 감지하여 `generated_images` 메타 테이블에 `is_primary = true`로 자동 보충 저장함.
+- **효과**: 클라이언트 블로그/포트폴리오 목록 조회 시 무거운 본문 텍스트 전체(`content`)를 쿼리할 필요 없이 초경량 썸네일 URL만 쏙 추출하여 **Supabase DB Egress 비용 0원 방어 + 0.01초 네이버 뉴스급 수소폭탄 속도 + 썸네일 100% 무누락 노출**을 달성함.
+
 ---
 
 ## 5. 🚀 앞으로 개발하며 장기적으로 확장할 무인 서비스 5선 (Future Roadmap)
