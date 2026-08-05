@@ -11,6 +11,7 @@ import {
 } from "react-icons/si";
 import {
   Users,
+  Mail,
   CreditCard,
   FileText,
   Server,
@@ -55,6 +56,13 @@ const adminMenus: AdminMenu[] = [
     href: "/admin/brands",
     icon: Globe,
     iconColor: "text-emerald-400",
+  },
+  {
+    title: "Resend 이메일 연동 & 모니터링",
+    description: "도메인별 이메일 계정 수, 실시간 발송 및 수신 메일 통계",
+    href: "/admin/resend",
+    icon: Mail,
+    iconColor: "text-purple-400",
   },
   {
     title: "API Gateway Vault",
@@ -182,8 +190,10 @@ export default function AdminDashboardPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [vaultKeys, setVaultKeys] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const fetchAllData = async () => {
       try {
         const supabase = createClient();
