@@ -12,6 +12,9 @@
 2. **원칙 2: 본문 상세 페이지 ISR 필수 보장 (`revalidate = 300`)**
    - `src/app/brand/[brand_id]/[slug]/page.tsx` 등 본문 페이지 상단에 `export const revalidate = 300;`을 필수 지정해야 Vercel 요금이 0원으로 안전하게 유지됩니다.
 
+3. **원칙 3: CSS/JS 정적 번들 1년 무상 CDN 영구 캐싱 헤더 고증**
+   - `next.config.ts`의 `headers()`에 `/_next/static/:path*` 1년 영구 캐스케이드 헤더(`max-age=31536000, immutable`)가 항상 켜져 있어 렌더링 차단 지연시간이 0ms로 방어되는지 점검합니다.
+
 ---
 
 ## 2. 💻 실전 코드 사용법 (Code Examples)
