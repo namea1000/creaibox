@@ -243,7 +243,7 @@ export default function PostClientWrapper({
   // Theme styling helpers based on active state
   const bgStyle = theme === "dark" 
     ? "bg-[#181a20] text-[#e2e8f0]" 
-    : "bg-[#f4f6fa] text-[#1e293b]";
+    : "bg-white sm:bg-[#f4f6fa] text-[#1e293b]";
 
   const headerBg = theme === "dark"
     ? "bg-[#1e222b] border-[#2a2f3a]"
@@ -261,12 +261,12 @@ export default function PostClientWrapper({
     : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-350 hover:bg-zinc-50";
 
   const articleBg = theme === "dark"
-    ? "border-[#2a2f3a] bg-[#1e222b]/40"
-    : "border-[#e2e8f0] bg-white";
+    ? "border-0 sm:border border-[#2a2f3a] bg-transparent sm:bg-[#1e222b]/40 shadow-none sm:shadow-sm"
+    : "border-0 sm:border border-[#e2e8f0] bg-white shadow-none sm:shadow-sm";
 
   const articleHeaderBg = theme === "dark"
-    ? "border-b border-[#2a2f3a] bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.05),transparent_42%)]"
-    : "border-b border-[#e2e8f0] bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.03),transparent_42%)]";
+    ? "border-b border-[#2a2f3a] bg-transparent sm:bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.05),transparent_42%)]"
+    : "border-b border-[#e2e8f0] bg-transparent sm:bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.03),transparent_42%)]";
 
   const tagInsightStyle = theme === "dark"
     ? "border-zinc-800 bg-zinc-900/80 text-zinc-400"
@@ -327,6 +327,27 @@ export default function PostClientWrapper({
           __html: `
             summary::-webkit-details-marker {
               display: none;
+            }
+            .toc-container {
+              width: 100% !important;
+              max-width: 100% !important;
+              box-sizing: border-box !important;
+            }
+            .blog-content table {
+              width: 100% !important;
+              max-width: 100% !important;
+              table-layout: auto !important;
+              word-break: break-word !important;
+            }
+            @media (max-width: 640px) {
+              .toc-container {
+                padding: 1rem !important;
+                margin: 1.25rem 0 !important;
+              }
+              .blog-content table td, .blog-content table th {
+                padding: 0.5rem 0.625rem !important;
+                font-size: 0.8125rem !important;
+              }
             }
             .theme-dark {
               --toc-border: #27272a;
@@ -410,7 +431,7 @@ export default function PostClientWrapper({
       </header>
 
       {/* Main post container */}
-      <main className="mx-auto max-w-[1536px] px-6 py-4 flex-1 w-full">
+      <main className="mx-auto max-w-[1536px] px-3 sm:px-6 py-4 flex-1 w-full">
         <Link
           href="/"
           className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-black transition ${backBtnStyle}`}
@@ -421,8 +442,8 @@ export default function PostClientWrapper({
         <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,2fr)_420px]">
           {/* Left 2/3 Content column */}
           <div className="space-y-8">
-            <article className={`overflow-hidden rounded-xl border transition-all duration-300 ${articleBg}`}>
-              <header className={`px-6 py-4 md:px-7 md:py-5 transition-all duration-300 ${articleHeaderBg}`}>
+            <article className={`overflow-hidden rounded-none sm:rounded-xl transition-all duration-300 ${articleBg}`}>
+              <header className={`px-4 py-4 sm:px-7 sm:py-5 transition-all duration-300 ${articleHeaderBg}`}>
                 <div className="flex flex-wrap items-center gap-2">
                   {category && (
                     <Link
@@ -437,12 +458,12 @@ export default function PostClientWrapper({
                   </div>
                 </div>
 
-                <h1 className={`mt-2.5 text-lg md:text-[1.4rem] font-black leading-[1.35] tracking-[-0.02em] ${titleColor}`}>
+                <h1 className={`mt-2.5 text-xl sm:text-[1.4rem] font-black leading-[1.35] tracking-[-0.02em] ${titleColor}`}>
                   {post.title}
                 </h1>
               </header>
 
-              <div className="px-6 py-8 md:px-8 space-y-8">
+              <div className="px-3 py-6 sm:px-8 space-y-8">
                 <div className="w-full">
                   {looksLikeHtml(cleanContent) ? (
                     <div
