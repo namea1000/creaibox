@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import SmartIntentLink from "@/components/common/SmartIntentLink";
 import { formatImageUrl, handleImageError } from "@/utils/image-url";
 import { 
   CalendarDays, Sparkles, ArrowRight, Rss, ArrowLeft, Tag,
@@ -332,7 +333,7 @@ export default function BlogClientWrapper({
                   const excerpt = buildExcerpt(post);
                   const postCategory = categories.find(c => c.id === post.category_id);
                   return (
-                    <Link
+                    <SmartIntentLink
                       key={post.id}
                       href={`/${post.slug}`}
                       className={`block border-b pb-6 transition-all hover:opacity-80 ${theme === "dark" ? "border-zinc-850" : "border-zinc-200"}`}
@@ -356,7 +357,7 @@ export default function BlogClientWrapper({
                       <p className={`mt-3 text-sm font-bold leading-relaxed line-clamp-2 ${cardDesc}`}>
                         {excerpt}
                       </p>
-                    </Link>
+                    </SmartIntentLink>
                   );
                 })}
               </div>
@@ -369,7 +370,7 @@ export default function BlogClientWrapper({
                   const excerpt = buildExcerpt(post);
                   const postCategory = categories.find(c => c.id === post.category_id);
                   return (
-                    <Link
+                    <SmartIntentLink
                       key={post.id}
                       href={`/${post.slug}`}
                       className={`group flex flex-col md:flex-row gap-6 rounded-xl border p-5 transition-all hover:-translate-y-0.5 ${cardBg}`}
@@ -405,7 +406,7 @@ export default function BlogClientWrapper({
                           </p>
                         </div>
                       </div>
-                    </Link>
+                    </SmartIntentLink>
                   );
                 })}
               </div>
@@ -418,7 +419,7 @@ export default function BlogClientWrapper({
                   const excerpt = buildExcerpt(post);
                   const postCategory = categories.find(c => c.id === post.category_id);
                   return (
-                    <Link
+                    <SmartIntentLink
                       key={post.id}
                       href={`/${post.slug}`}
                       className={`group flex flex-col overflow-hidden rounded-xl border transition-all duration-300 hover:-translate-y-1 ${cardBg}`}
@@ -479,7 +480,7 @@ export default function BlogClientWrapper({
                           </div>
                         </div>
                       </div>
-                    </Link>
+                    </SmartIntentLink>
                   );
                 })}
               </div>
