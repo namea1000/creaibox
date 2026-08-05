@@ -366,7 +366,7 @@ export default function BlogClientWrapper({
             {/* 2. LIST Template */}
             {template === "list" && (
               <div className="space-y-6 max-w-5xl mx-auto">
-                {currentPosts.map((post) => {
+                {currentPosts.map((post, index) => {
                   const excerpt = buildExcerpt(post);
                   const postCategory = categories.find(c => c.id === post.category_id);
                   return (
@@ -378,9 +378,11 @@ export default function BlogClientWrapper({
                       <div className="relative aspect-[16/9] md:w-[260px] shrink-0 overflow-hidden rounded-[6px] bg-zinc-950">
                         {post.thumbnailUrl ? (
                           <img
-                            src={formatImageUrl(post.thumbnailUrl)}
+                            src={formatImageUrl(post.thumbnailUrl, { type: "thumb" })}
                             alt={post.title || "thumbnail"}
                             onError={handleImageError}
+                            loading={index === 0 ? "eager" : "lazy"}
+                            fetchPriority={index === 0 ? "high" : "low"}
                             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         ) : (
@@ -415,7 +417,7 @@ export default function BlogClientWrapper({
             {/* 3. CARD Template (Default) */}
             {template === "card" && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {currentPosts.map((post) => {
+                {currentPosts.map((post, index) => {
                   const excerpt = buildExcerpt(post);
                   const postCategory = categories.find(c => c.id === post.category_id);
                   return (
@@ -427,9 +429,11 @@ export default function BlogClientWrapper({
                       <div className="relative aspect-[16/9] overflow-hidden bg-zinc-950">
                         {post.thumbnailUrl ? (
                           <img
-                            src={formatImageUrl(post.thumbnailUrl)}
+                            src={formatImageUrl(post.thumbnailUrl, { type: "thumb" })}
                             alt={post.title || "thumbnail"}
                             onError={handleImageError}
+                            loading={index === 0 ? "eager" : "lazy"}
+                            fetchPriority={index === 0 ? "high" : "low"}
                             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         ) : (
