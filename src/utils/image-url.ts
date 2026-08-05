@@ -1,21 +1,36 @@
 /**
  * Utility function to format and normalize image URLs across CreAibox.
  * Routes Google Drive & googleusercontent URLs through the server proxy endpoint (/api/free-assets/proxy)
- * to ensure 100% reliable image loading in Incognito mode, mobile, and guest contexts.
+ * with smart WebP compression (thumb: 800px 30~40KB, detail: 1400px high quality).
  */
-export function formatImageUrl(url: string | null | undefined): string {
+export function formatImageUrl(
+  url: string | null | undefined,
+  options?: { type?: "thumb" | "detail" | "content"; w?: number }
+): string {
   if (!url) return "";
   const trimmed = url.trim();
   if (!trimmed) return "";
 
-  // If already proxied or data URI, return directly
-  if (trimmed.startsWith("data:") || trimmed.includes("/api/free-assets/proxy")) {
+  // If already data URI, return directly
+  if (trimmed.startsWith("data:")) {
+    return trimmed;
+  }
+
+  const typeParam = options?.type || "thumb";
+  const widthParam = options?.w ? `&w=${options.w}` : "";
+
+  // If already proxied, append optimization params if missing
+  if (trimmed.includes("/api/free-assets/proxy")) {
+    if (!trimmed.includes("type=") && !trimmed.includes("w=")) {
+      const sep = trimmed.includes("?") ? "&" : "?";
+      return `${trimmed}${sep}type=${typeParam}${widthParam}`;
+    }
     return trimmed;
   }
 
   // Route Google Drive / googleusercontent URLs through server proxy
   if (trimmed.includes("googleusercontent.com") || trimmed.includes("drive.google.com")) {
-    return `/api/free-assets/proxy?url=${encodeURIComponent(trimmed)}`;
+    return `/api/free-assets/proxy?url=${encodeURIComponent(trimmed)}&type=${typeParam}${widthParam}`;
   }
 
   return trimmed;
