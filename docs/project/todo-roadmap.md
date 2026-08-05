@@ -195,18 +195,12 @@ CreAibox 브랜드 ID(`{brand_id}.creaibox.com`) 예약어/블랙리스트 Egres
   - 16개 동적 카테고리 전체 지원, 삼중 필터링 및 `upsert(ignoreDuplicates: true)` 중복 에러 완전 방어 완료.
 - [x] **예약어 관리 목록 `Target Entity (대상 기관/브랜드)` 스마트 뱃지 컬럼 추가**
   - `/admin/reserved-words` 테이블에 에메랄드 뱃지 배치 및 `parseReasonEntity` 헬퍼를 통한 기관명/상표명 자동 추출 연동 완료.
+- [x] **구글 드라이브 이미지 스마트 2원화 WebP 압축 및 중앙 프록시 API 구축**
+  - `/api/free-assets/proxy` 중앙 프록시 라우트 고도화 및 `formatImageUrl` 유틸리티 연동.
+  - 카드 썸네일 `type=thumb` (800px 30~40KB WebP) vs 블로그 본문 상세 `type=detail` (1400px 고화질 WebP) 스마트 2원화 서빙 반영 완료.
+  - 블로그 목록 리소스 크기 2.7MB ➡️ 350KB (85% 이상 대폭 절감) 및 LCP 1.8초 이내 가속 달성.
+  - 📖 아키텍처 & 운용 매뉴얼: [`media-proxy-architecture.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/media-proxy-architecture.md) / [`google-drive-image-proxy-web-optimization-manual.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/google-drive-image-proxy-web-optimization-manual.md) 수록 완료.
 - [x] **서브도메인 신청 심사 2차 AI & Web 안전 검증 모듈 구축**
   - `/admin/brands` 심사 행에 `[ ✨ AI 검증 ]` 버튼 추가 및 `/api/admin/brands/verify` 백엔드 연동.
   - 위험도 뱃지(`SAFE`/`WARNING`/`DANGER`), 위험점수(0~100), AI 종합 리포트 모달 구현.
   - Google / Naver 1초 실시간 검색 딥링크 연동 및 `[ 🟢 승인 ]` / `[ 🔴 거절 & 예약어 DB 등록 ]` 원클릭 일괄 처리 연동 완료.
-
-
-
-
-
-
-
-
-
-
-

@@ -7,17 +7,22 @@ import CookieConsentBanner from "@/components/common/CookieConsentBanner";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
+  preload: true,
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
+  preload: true,
 });
 
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   display: "swap",
+  preload: true,
 });
 
 const notoSansKR = Noto_Sans_KR({
@@ -25,6 +30,7 @@ const notoSansKR = Noto_Sans_KR({
   subsets: ["latin"],
   weight: ["300", "400", "700", "900"],
   display: "swap",
+  preload: true,
 });
 
 export const metadata = {
@@ -87,6 +93,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${notoSansKR.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        <link rel="preconnect" href="https://lh3.googleusercontent.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://drive.google.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://lh3.googleusercontent.com" />
+        <link rel="dns-prefetch" href="https://drive.google.com" />
+      </head>
       <body className="min-h-full bg-white text-slate-900 selection:bg-violet-200/70">
         <QueryProvider>
           {children}
@@ -100,20 +112,22 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebSite",
-              "name": "크리에이박스",
-              "alternateName": "CreAibox",
-              "url": "https://creaibox.com",
-              "description": "올인원 AI 콘텐츠 스튜디오 및 프리미엄 홈페이지 빌더",
-              "potentialAction": {
-                "@type": "SearchAction",
-                "target": "https://creaibox.com/search?q={search_term_string}",
-                "query-input": "required name=search_term_string"
-              }
-            })
+              name: "CreAibox",
+              url: "https://creaibox.com",
+              description:
+                "올인원 AI 콘텐츠 스튜디오 - 원고 작성, 비주얼 에셋, 브랜드 홈페이지 통합 솔루션",
+              publisher: {
+                "@type": "Organization",
+                name: "크리에이박스 (CreAibox)",
+                url: "https://creaibox.com",
+                logo: "https://creaibox.com/icon.png",
+              },
+            }),
           }}
         />
-
-        <GoogleAnalytics gaId="G-SRBFXMN9XQ" />
+        {process.env.NEXT_PUBLIC_GA_ID && (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+        )}
       </body>
     </html>
   );
