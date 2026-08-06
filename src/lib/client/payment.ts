@@ -22,7 +22,7 @@ export async function requestDomainPayment({
   customerName = "CreAibox 회원",
   customerEmail = "customer@creaibox.com",
 }: PaymentRequestData): Promise<{ success: boolean; paymentId: string }> {
-  // 1. 비즈니스 회원 0원 무상 혜택인 경우 즉시 승인
+  // 1. 0원 이하 무료 쿠폰/특약 결제 처리
   if (totalAmount <= 0) {
     return { success: true, paymentId: `FREE_PERK_${Date.now()}` };
   }

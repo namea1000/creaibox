@@ -20,6 +20,8 @@ import {
   X,
   Mail,
 } from "lucide-react";
+import Script from "next/script";
+import { requestDomainPayment } from "@/lib/client/payment";
 import EmailForwardingManager from "./components/EmailForwardingManager";
 
 export default function DomainSearchPage() {
@@ -75,12 +77,12 @@ export default function DomainSearchPage() {
     }
   };
 
-  // Mock initial search sample data
+  // Mock initial search sample data (Synced with Vercel official registrar price)
   const sampleDomains = [
     {
       domain: "auramerino.com",
       available: true,
-      wholesalePrice: 18000,
+      wholesalePrice: 15750, // $11.25 * 1400 = 15,750 KRW
       marketPrice: 25850,
       recommended: true,
       tag: "1초 무제한 커스텀 사이트 연결",
@@ -88,7 +90,7 @@ export default function DomainSearchPage() {
     {
       domain: "auramerino.kr",
       available: true,
-      wholesalePrice: 19000,
+      wholesalePrice: 18900, // $13.50 * 1400 = 18,900 KRW
       marketPrice: 23500,
       recommended: false,
       tag: "1초 무제한 커스텀 사이트 연결",
@@ -96,7 +98,7 @@ export default function DomainSearchPage() {
     {
       domain: "mybrand.com",
       available: true,
-      wholesalePrice: 18000,
+      wholesalePrice: 15750, // $11.25 * 1400 = 15,750 KRW
       marketPrice: 25850,
       recommended: true,
       tag: "1초 무제한 커스텀 사이트 연결",
@@ -104,7 +106,7 @@ export default function DomainSearchPage() {
     {
       domain: "creaibox.io",
       available: false,
-      wholesalePrice: 48000,
+      wholesalePrice: 53186, // $37.99 * 1400 = 53,186 KRW
       marketPrice: 65000,
       recommended: false,
       tag: "이미 타인이 사용 중인 도메인",
@@ -140,15 +142,34 @@ export default function DomainSearchPage() {
   };
 
   // Real Domain Buy Handler
-  const handleBuyDomain = async (domainName: string) => {
+  const handleBuyDomain = async (domainName: string, amount: number = 15750) => {
     if (!requireAuth()) return;
 
     setBuyingDomain(domainName);
     try {
+      // 1. Trigger PortOne V2 PG & Electronic Payment Flow
+      const paymentResult = await requestDomainPayment({
+        orderName: `CreAibox 독립 브랜드 도메인 (${domainName}) 매입`,
+        totalAmount: amount,
+        customerName: currentUser?.user_metadata?.full_name || currentUser?.email || "CreAibox 회원",
+        customerEmail: currentUser?.email || "customer@creaibox.com",
+      });
+
+      if (!paymentResult.success) {
+        throw new Error("결제 승인이 승인되지 않았습니다.");
+      }
+
+      // 2. Call Backend Domain Purchase & DNS Binding API
       const res = await fetch("/api/domains/buy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain: domainName, mock: true }),
+        body: JSON.stringify({
+          domain: domainName,
+          paymentId: paymentResult.paymentId,
+          amount,
+          userEmail: currentUser?.email,
+          mock: paymentResult.paymentId.startsWith("MOCK_") || paymentResult.paymentId.startsWith("FREE_"),
+        }),
       });
       const data = await res.json();
 
@@ -157,8 +178,10 @@ export default function DomainSearchPage() {
       } else {
         alert(`도메인 구매 실패: ${data.error || "알 수 없는 오류"}`);
       }
-    } catch {
-      alert("도메인 결제 처리 중 오류가 발생했습니다.");
+    } catch (err: any) {
+      if (err.message && !err.message.includes("취소")) {
+        alert(`도메인 결제 처리 중 오류: ${err.message}`);
+      }
     } finally {
       setBuyingDomain(null);
     }
@@ -207,7 +230,7 @@ export default function DomainSearchPage() {
               100% 독창적인 독립 브랜드 도메인 <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent">조회 & 1초 자동 구매·이관 센터</span>
             </h1>
             <p className="text-xs md:text-sm text-slate-300 font-medium max-w-3xl leading-relaxed">
-              원하시는 브랜드 도메인 실시간 검색, 국내 타사(G사/W사 등) 1초 이관 신청 및 비즈니스 회원 0원 혜택까지 한눈에 관리하세요. (기존 타사 홈페이지 1초 AI 이관은 <code className="text-cyan-300">커스텀 웹사이트</code> 메뉴에서 가능합니다)
+              원하시는 브랜드 도메인 실시간 검색, 최저가 도매 구매 및 국내 타사(G사/W사 등) 1초 이관 신청부터 Edge IP 연결까지 한눈에 관리하세요. (기존 타사 홈페이지 1초 AI 이관은 <code className="text-cyan-300">커스텀 웹사이트</code> 메뉴에서 가능합니다)
             </p>
           </div>
 
@@ -282,7 +305,7 @@ export default function DomainSearchPage() {
           }`}
         >
           <Crown size={16} />
-          <span>5️⃣ 👑 비즈니스 회원 0원 혜택 안내</span>
+          <span>5️⃣ 👑 도메인 혜택 & 관리 가이드</span>
         </button>
 
         <button
@@ -395,15 +418,15 @@ export default function DomainSearchPage() {
                         <span className="text-sm font-black text-emerald-400">
                           연 {item.wholesalePrice?.toLocaleString()}원
                         </span>
-                        <span className="text-[10px] font-black text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">
-                          비즈니스 0원
+                        <span className="text-[10px] font-black text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">
+                          도매 할인가
                         </span>
                       </div>
                     </div>
 
                     {item.available ? (
                       <button
-                        onClick={() => handleBuyDomain(item.domain)}
+                        onClick={() => handleBuyDomain(item.domain, item.wholesalePrice)}
                         disabled={buyingDomain === item.domain}
                         className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2.5 text-xs font-black text-slate-950 hover:bg-emerald-400 transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0"
                       >
@@ -525,7 +548,7 @@ export default function DomainSearchPage() {
                 <tr>
                   <td className="p-4 font-bold text-white">CreAibox 비즈니스 회원 혜택</td>
                   <td className="p-4 text-slate-400">해당 없음</td>
-                  <td className="p-4 text-purple-300 font-black">비즈니스 플랜 사용 시 도메인 연장비 평생 0원 무상지원 ⭕</td>
+                  <td className="p-4 text-cyan-300 font-black">해외 레지스트라 원가 연동 (추가 마진 0원 원가 공급) ⭕</td>
                 </tr>
               </tbody>
             </table>
@@ -533,15 +556,15 @@ export default function DomainSearchPage() {
         </div>
       </div>
 
-      {/* --- SECTION 4: 👑 비즈니스 회원 0원 혜택 안내 --- */}
+      {/* --- SECTION 4: 👑 도메인 혜택 & 투명 결제 안내 --- */}
       <div id="section-perks" className="space-y-8 scroll-mt-24">
-        <div className="rounded-3xl border border-purple-500/30 bg-gradient-to-r from-purple-950/40 via-slate-900 to-indigo-950/40 p-6 lg:p-8 space-y-4 shadow-xl">
+        <div className="rounded-3xl border border-cyan-500/30 bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 p-6 lg:p-8 space-y-4 shadow-xl">
           <div className="flex items-center gap-3">
-            <Crown size={24} className="text-purple-400 shrink-0" />
+            <Crown size={24} className="text-cyan-400 shrink-0" />
             <div>
-              <h2 className="text-xl font-black text-white">CreAibox 비즈니스 회원 전용: 도메인 갱신비 평생 0원 혜택</h2>
+              <h2 className="text-xl font-black text-white">CreAibox 도메인 무마진 결제 시스템</h2>
               <p className="text-xs font-medium text-slate-300">
-                월 49,000원 Business 플랜 이용자분들께는 매년 발생하는 도메인 연장비를 CreAibox가 100% 전액 지원합니다.
+                모든 회원은 거품 없는 도매 도메인 원가로 투명하게 1초 만에 구매하고 전자결제(PG)로 손쉽게 등록 및 연장하실 수 있습니다.
               </p>
             </div>
           </div>
@@ -681,7 +704,7 @@ export default function DomainSearchPage() {
               <div className="flex items-center justify-between pb-2.5 border-b border-slate-800/80">
                 <span className="text-xs font-bold text-slate-400">결제 상태</span>
                 <span className="text-xs font-black text-emerald-400">
-                  연 18,186원 (모의 가상 테스트 승인)
+                  연 {(buySuccessData.amount || 15750).toLocaleString()}원 (모의 가상 테스트 승인)
                 </span>
               </div>
               <div className="flex items-center justify-between pb-2.5 border-b border-slate-800/80">
@@ -719,6 +742,9 @@ export default function DomainSearchPage() {
           </div>
         </div>
       )}
+
+      {/* PortOne V2 Browser SDK for Payment Gateway */}
+      <Script src="https://cdn.portone.io/v2/browser-sdk.js" strategy="lazyOnload" />
     </div>
   );
 }

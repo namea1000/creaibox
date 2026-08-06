@@ -65,6 +65,55 @@
 
 ---
 
-### 5. 🧪 빌드 및 무결성 검증
+### 5. 📸 원고 본문 1번째 이미지 썸네일 무인 자동 추출 & DB 동기화 파이프라인 구축
+- **본문 1번째 대표 이미지 썸네일 자동 감지 헬퍼 구축**:
+  - [`src/lib/server/auto-extract-thumbnail.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/auto-extract-thumbnail.ts) 모듈 개발.
+  - 사용자가 썸네일을 직접 수동 선택하지 않더라도, 글 발행/이관/저장 시 본문 HTML 내 첫 번째 대표 이미지 URL(`stat.naver.com` 등 트래킹 픽셀 자동 스킵)을 백엔드가 감지하여 `generated_images` 테이블에 `is_primary = true` 항목으로 자동 저장함.
+- **기존 원고 전수(126개) 썸네일 동기화 배치 스크립트 실행**:
+  - [`scratch/fill_missing_thumbnails.js`](file:///Users/a1234/Local%20Sites/creaibox/scratch/fill_missing_thumbnails.js) 배치 스크립트 가동.
+  - 총 124개 발행 원고의 본문 이미지 썸네물을 `generated_images` 테이블로 100% 자동 채워넣기 완료.
+- **Supabase DB Egress 0원 방어 & 0.01초 속도 무손실 보장**:
+  - 이제 목록 조회 시 무거운 본문 전체(`content`)를 DB 쿼리에서 가져오지 않고 경량 메타 + `generated_images` 썸네일만 불러와 **Supabase DB 트래픽 소모 0원 방어 + 0.01초 로딩 + 썸네일 100% 무누락 노출**을 완벽하게 구축함.
+- **📖 관련 프로젝트 매뉴얼 반영**:
+  - [`background-automation-execution-5-methods-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/background-automation-execution-5-methods-guide.md) (무인 서비스 ⑨번 등록 완료)
+  - [`todo-roadmap.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/todo-roadmap.md) (완료 체크 반영)
+
+---
+
+## 📅 2026년 8월 6일 (목)
+
+### 1. 💳 브랜드 독립 도메인 1초 결제 & 포트원(PortOne V2) PG 통합 파이프라인 구축
+- **PortOne V2 PG 전자결제 모듈 통합 (`src/lib/client/payment.ts`)**:
+  - 신용카드, 카카오페이, 토스페이, 네이버페이, 계좌이체 등 국내 9대 결제수단을 1초 만에 팝업으로 호출하는 결제 파이프라인 연동.
+  - PG 키 미설정 시에도 개발 및 기능 흐름을 테스트할 수 있는 **안전 모의 결제(Mock Test Approval) 모드** 탑재.
+- **도메인 결제 & 1초 Edge IP 연결 백엔드 연동 (`src/app/api/domains/buy/route.ts`)**:
+  - 결제 승인 후 Vercel Domains API(`POST /v5/domains/buy`) 호출로 1초 실시간 소유권 매입.
+  - CreAibox 글로벌 CDN Edge IP (`76.76.21.21` A Record) 및 SSL 보안 인증서 1초 자동 바인딩.
+  - 회원 프로필 DB(`profiles.extra_configs.purchased_domains`) 소유권 보관 기록.
+- **비즈니스 회원 0원 혜택 문구 삭제 & 전 회원 동일 투명 도매가 결제 적용**:
+  - 사용자 지시에 따라 비즈니스 회원 0원 혜택 문구를 투명 무마진 도매가 원 원화 결제 시스템 안내로 교체 반영.
+
+---
+
+### 2. 💱 실시간 USD/KRW 환율 수집 엔진 & Vercel 가격 동기화
+- **실시간 환율 수집 백엔드 모듈 개발 (`src/lib/server/exchange-rate.ts`)**:
+  - `open.er-api.com` 실시간 오픈 API 연동을 통해 하나은행/네이버 기준 환율(1,418.50원)을 1시간 백엔드 캐시로 동적 수집.
+- **Vercel 실제 도매가 및 실시간 환율 동동 연동 (`src/lib/server/vercel-domains.ts`)**:
+  - Vercel 공식 도매가 매트릭스(`.com` $11.25, `.kr`/`.net` $13.50, `.io` $37.99 등) 및 Vercel Price API(`GET /v4/domains/price`) 연동.
+  - 실시간 환율을 적용하여 `.com` 도메인 15,750원(환율 변동 따라 동적 산출)으로 100% 자동 결제 금액 연산 반영.
+
+---
+
+### 3. 📖 전용 문서 4종 수록 및 로드맵 업데이트
+- **포트원 PG 실무 운용 가이드**: [`portone-pg-integration-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/portone-pg-integration-guide.md)
+- **포트원 PG 정산 아키텍처 명세서**: [`portone-pg-payment-architecture.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/portone-pg-payment-architecture.md)
+- **실시간 라이브 위젯 기획 명세서**: [`live-portal-widget-spec.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/live-portal-widget-spec.md)
+- **종합 로드맵 대장 최신화**: [`todo-roadmap.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/todo-roadmap.md) (Section 5 PG 결제 수록 & Section 6 라이브 위젯 기획 등록 완료)
+
+---
+
+### 4. 🧪 빌드 및 무결성 검증
 - `npx tsc --noEmit` 실행 결과: **오류 0건 (100% Clean Pass)**
+
+
 

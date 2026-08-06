@@ -298,6 +298,24 @@ export default function Footer() {
           ))}
         </div>
 
+        {/* 사업자 정보 명시 (국세청 정식 사업자등록증 및 전자상거래법 제13조 기준) */}
+        <div className="border-t border-slate-200/60 dark:border-zinc-900/80 pt-8 pb-4 text-xs font-medium text-slate-500 dark:text-zinc-400 leading-relaxed">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-2 font-bold text-slate-700 dark:text-zinc-300">
+            <span>상호명: 크리에이박스(CreAibox)</span>
+            <span className="text-slate-300 dark:text-zinc-800">|</span>
+            <span>대표자: 남정언</span>
+            <span className="text-slate-300 dark:text-zinc-800">|</span>
+            <span>사업자등록번호: 535-69-00459</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+            <span>사업장 소재지: 충청남도 천안시 서북구 불당23로 70, 7층 702호 H24호(불당동, 정우프라자)</span>
+            <span className="text-slate-300 dark:text-zinc-800">|</span>
+            <span>이메일 문의: contact@creaibox.com</span>
+            <span className="text-slate-300 dark:text-zinc-800">|</span>
+            <span>고객상담: 카카오톡 1:1 채널 (CreAibox)</span>
+          </div>
+        </div>
+
         <div className="flex flex-col items-center justify-between gap-5 border-t border-slate-200 dark:border-zinc-900 pt-4 md:flex-row">
           <div className="text-xs font-bold text-slate-500 dark:text-zinc-500">
             © {currentYear} <span className="text-slate-800 dark:text-zinc-300">크리에이박스(CreAibox)</span>.

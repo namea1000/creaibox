@@ -5,6 +5,7 @@
 
 import dns from "dns/promises";
 import { domainToASCII } from "url";
+import { getUsdToKrwRate } from "./exchange-rate";
 
 const VERCEL_API_URL = "https://api.vercel.com";
 
@@ -45,22 +46,53 @@ export async function checkDomainStatus(domainName: string) {
     }
   }
 
-  // TLD Pricing Matrix
-  let priceUSD = 12.99;
+  // TLD Real Vercel Pricing Matrix (Synced with Vercel official registrar price)
+  let priceUSD = 11.25; // .com official Vercel price = $11.25
   let originalPriceKRW = 25850;
 
-  if (cleanDomain.endsWith(".io")) {
-    priceUSD = 32.99;
-    originalPriceKRW = 55000;
-  } else if (cleanDomain.endsWith(".kr") || cleanDomain.endsWith(".co.kr")) {
+  if (cleanDomain.endsWith(".com")) {
+    priceUSD = 11.25;
+    originalPriceKRW = 25850;
+  } else if (cleanDomain.endsWith(".dev") || cleanDomain.endsWith(".app")) {
+    priceUSD = 9.99;
+    originalPriceKRW = 22000;
+  } else if (cleanDomain.endsWith(".org")) {
+    priceUSD = 8.49;
+    originalPriceKRW = 21000;
+  } else if (cleanDomain.endsWith(".tech")) {
+    priceUSD = 7.99;
+    originalPriceKRW = 25000;
+  } else if (cleanDomain.endsWith(".xyz")) {
+    priceUSD = 1.99;
+    originalPriceKRW = 18000;
+  } else if (cleanDomain.endsWith(".kr") || cleanDomain.endsWith(".co.kr") || cleanDomain.endsWith(".net")) {
     priceUSD = 13.50;
-    originalPriceKRW = 23500;
-  } else if (cleanDomain.endsWith(".net")) {
-    priceUSD = 14.99;
     originalPriceKRW = 28600;
+  } else if (cleanDomain.endsWith(".io") || cleanDomain.endsWith(".co")) {
+    priceUSD = 37.99;
+    originalPriceKRW = 65000;
   }
 
-  const priceKRW = Math.round(priceUSD * 1400);
+  // 1. Try real Vercel Domain Price API lookup if token available
+  if (process.env.VERCEL_AUTH_TOKEN) {
+    try {
+      const priceRes = await fetch(`${VERCEL_API_URL}/v4/domains/price?name=${encodeURIComponent(asciiDomain)}${getTeamQuery()}`, {
+        headers: getHeaders(),
+      });
+      if (priceRes.ok) {
+        const priceData = await priceRes.json();
+        if (priceData.price && typeof priceData.price === "number") {
+          priceUSD = priceData.price;
+        }
+      }
+    } catch {
+      // Keep fallback Vercel matrix price
+    }
+  }
+
+  // 2. Fetch realtime USD to KRW exchange rate (e.g. 1,418.50 KRW/USD)
+  const exchangeRate = await getUsdToKrwRate();
+  const priceKRW = Math.round(priceUSD * exchangeRate);
 
   return {
     domain: cleanDomain,

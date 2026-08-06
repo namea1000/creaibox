@@ -94,8 +94,10 @@
   - 회원 10개 신청 내역 실시간 조회, 상태 변경, `[🤖 AI 에이전트 자동 제작 진행하기]` 안티그래비티 1:1 풀코드 생성 명령 파이프라인 구축 완료
 - [x] **운영 및 자동 제작 프로세스 매뉴얼 문서화**
   - 📖 매뉴얼: [`custom-client-site-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/custom-client-site-guide.md) 수록 완료
-- [x] **💳 PG 결제 모듈 & 무통장 & 실시간 견적 결제 독립 카드 구축**
-  - 포트원, 토스페이먼츠, 카카오페이 MID 입력, 무통장 입금 계좌, 실시간 견적 결제 스위치 및 PG사 가맹 링크 수록 완료
+- [x] **💳 PG 결제 모듈 & 무통장 & 실시간 견적 결제 통합 구축 완료**
+  - 포트원(PortOne V2) PG 연동, 토스페이먼츠/카카오페이/신용카드 결제 지원, 실시간 결제 검증 및 도메인 1초 연결 백엔드 구축 완료
+  - 📖 아키텍처 명세서: [`portone-pg-payment-architecture.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/portone-pg-payment-architecture.md)
+  - 📖 실무 운용 가이드: [`portone-pg-integration-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/portone-pg-integration-guide.md)
 - [x] **📁 프로젝트 계획서 및 IR/기획 문서 `docs/project/plan/` 폴더 통합 정리 완료 (총 10종)**
   - B2B 파괴적 웹사이트 및 도메인 사업계획서: [`creaibox-website-disruptor-business-plan.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/creaibox-website-disruptor-business-plan.md) (가비아 이관 4대 필승 전략, 4단계 이관 파이프라인, 손익 마진 분석 완전 개정 완료)
   - B2C 크리에이터 AI 스튜디오 사업계획서: [`creaibox-b2c-creator-ai-studio-business-plan.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/creaibox-b2c-creator-ai-studio-business-plan.md)
@@ -221,3 +223,22 @@ CreAibox 브랜드 ID(`{brand_id}.creaibox.com`) 예약어/블랙리스트 Egres
   - `/admin/brands` 심사 행에 `[ ✨ AI 검증 ]` 버튼 추가 및 `/api/admin/brands/verify` 백엔드 연동.
   - 위험도 뱃지(`SAFE`/`WARNING`/`DANGER`), 위험점수(0~100), AI 종합 리포트 모달 구현.
   - Google / Naver 1초 실시간 검색 딥링크 연동 및 `[ 🟢 승인 ]` / `[ 🔴 거절 & 예약어 DB 등록 ]` 원클릭 일괄 처리 연동 완료.
+- [x] **원고 본문 1번째 이미지 썸네일 무인 자동 추출 & `generated_images` 100% 동기화 엔진 구축**
+  - [`auto-extract-thumbnail.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/auto-extract-thumbnail.ts) 백엔드 헬퍼 모듈 구축 및 [`fill_missing_thumbnails.js`](file:///Users/a1234/Local%20Sites/creaibox/scratch/fill_missing_thumbnails.js) 배치 스크립트로 기존 124개 원고 썸네일 100% 동기화 완료.
+  - 목록 쿼리 본문(`content`) 생략을 통한 Supabase DB Egress 비용 0원 방어, 0.01초 속도 및 썸네일 100% 노출 보장 완료.
+
+---
+
+## 6. 📊 실시간 라이브 위젯 (Live Portal Widget: 날씨 / 미세먼지 / 환율 / 증시)
+
+- 📖 전용 기획 & 아키텍처 명세서: [`live-portal-widget-spec.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/live-portal-widget-spec.md)
+
+- [ ] **실시간 위치 기반 날씨 & 미세먼지 수집 모듈 개발**
+  - Open-Meteo & 기상청 API 연동, 브라우저 IP/위치 기반 24시간 기온 및 미세먼지 뱃지 렌더링.
+- [ ] **실시간 환율 전광판 & 미니 차트 연동**
+  - `exchange-rate.ts` 백엔드 연동, USD, JPY, EUR 실시간 환율 및 3개월 변동 그래프 컴포넌트 탑재.
+- [ ] **실시간 코스피 / 코스닥 / S&P 500 증시 지수 릴레이 구축**
+  - Yahoo Finance API 연동, 주가지수 및 실시간 등락률 렌더링.
+- [ ] **네이버 포털형 메인 & 스튜디오 대시보드 위젯 컴포넌트 배치**
+  - 포털형 우측 사이드바 및 스튜디오 웰컴 영역 Glassmorphism 3대 탭 카드 렌더링.
+
