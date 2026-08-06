@@ -312,7 +312,15 @@ export default function Footer() {
             <span className="text-slate-300 dark:text-zinc-800">|</span>
             <span>이메일 문의: contact@creaibox.com</span>
             <span className="text-slate-300 dark:text-zinc-800">|</span>
-            <span>고객상담: 카카오톡 1:1 채널 (CreAibox)</span>
+            <a
+              href="https://pf.kakao.com/_RxdxmsX"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 font-bold text-yellow-600 dark:text-yellow-400 hover:underline transition-colors"
+              title="카카오톡 1:1 채널 상담으로 바로 이동합니다"
+            >
+              고객상담: 카카오톡 1:1 채널 (CreAibox)
+            </a>
           </div>
         </div>
 

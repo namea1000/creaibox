@@ -19,6 +19,13 @@ sequenceDiagram
     participant PG as 포트원 PG Gateway (PortOne V2)
     participant Server as CreAibox 백엔드 API (/api/domains/buy)
     participant Exchange as 실시간 환율 엔진 (exchange-rate.ts)
+    
+    ```typescript
+    // PG 결제 수수료 (카드/카카오페이 3.3%~3.5%) 차감 후 정산 손실 방지 3.5% 포함 산출
+    const PG_FEE_RATE = 1.035;
+    const finalPriceKRW = Math.round(priceUSD * exchangeRate * PG_FEE_RATE);
+    ```
+    
     participant Vercel as Vercel / ICANN 레지스트라 API
     participant DB as Supabase DB (profiles.extra_configs)
 

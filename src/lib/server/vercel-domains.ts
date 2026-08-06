@@ -92,7 +92,9 @@ export async function checkDomainStatus(domainName: string) {
 
   // 2. Fetch realtime USD to KRW exchange rate (e.g. 1,418.50 KRW/USD)
   const exchangeRate = await getUsdToKrwRate();
-  const priceKRW = Math.round(priceUSD * exchangeRate);
+  // PG 결제 수수료(신용카드/카카오페이 3.3%~3.5%) 손실 방지를 위한 3.5% PG 수수료 포함 산출
+  const PG_FEE_RATE = 1.035; 
+  const priceKRW = Math.round(priceUSD * exchangeRate * PG_FEE_RATE);
 
   return {
     domain: cleanDomain,
