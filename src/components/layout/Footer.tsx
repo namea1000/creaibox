@@ -312,6 +312,8 @@ export default function Footer() {
             <span className="text-slate-300 dark:text-zinc-800">|</span>
             <span>이메일 문의: contact@creaibox.com</span>
             <span className="text-slate-300 dark:text-zinc-800">|</span>
+            <span>대표전화: 070-8064-8204</span>
+            <span className="text-slate-300 dark:text-zinc-800">|</span>
             <a
               href="https://pf.kakao.com/_RxdxmsX"
               target="_blank"
