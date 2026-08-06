@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 
 export default function PricingPage() {
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
 
   // 1. 요금제 카드 기본 정보
   const plans = [
@@ -450,44 +449,13 @@ export default function PricingPage() {
               </p>
             </div>
           </div>
-
-          {/* 월간/연간 결제 토글 */}
-          <div className="mt-12 flex items-center justify-center gap-4">
-            <button
-              onClick={() => setBillingCycle("monthly")}
-              className={`px-6 py-2.5 rounded-full text-sm font-black transition-all cursor-pointer border ${
-                billingCycle === "monthly"
-                  ? "bg-violet-600 border-violet-600 text-white shadow-lg"
-                  : "bg-white border-slate-200 text-slate-500 dark:bg-slate-900/50 dark:border-slate-800 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-              }`}
-            >
-              월간 결제
-            </button>
-            <button
-              onClick={() => setBillingCycle("yearly")}
-              className={`px-6 py-2.5 rounded-full text-sm font-black transition-all cursor-pointer border flex items-center gap-2 ${
-                billingCycle === "yearly"
-                  ? "bg-violet-600 border-violet-600 text-white shadow-lg"
-                  : "bg-white border-slate-200 text-slate-500 dark:bg-slate-900/50 dark:border-slate-800 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-              }`}
-            >
-              연간 결제
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${
-                billingCycle === "yearly"
-                  ? "bg-white text-violet-700 dark:bg-[#1f1747] dark:text-violet-300"
-                  : "bg-red-100 text-red-600 dark:bg-red-950/60 dark:text-red-400"
-              }`}>
-                20% 할인
-              </span>
-            </button>
-          </div>
         </div>
 
         {/* 1. 요금 카드 그리드 */}
         <div className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {plans.map((plan) => {
             const isPro = plan.highlight;
-            const price = billingCycle === "monthly" ? plan.priceMonthly : plan.priceYearly;
+            const price = plan.priceMonthly;
 
             return (
               <div
@@ -520,12 +488,6 @@ export default function PricingPage() {
                     <span className="text-4xl font-extrabold tracking-tight">{price}</span>
                     <span className="ml-1 text-sm text-slate-500 dark:text-slate-400">/월</span>
                   </div>
-
-                   {billingCycle === "yearly" && (
-                    <p className="mt-1 text-[11px] font-semibold text-violet-600 dark:text-violet-400">
-                      {plan.yearlyTotal}
-                    </p>
-                  )}
                 </div>
 
                 <div className="mt-8 flex flex-col gap-3">

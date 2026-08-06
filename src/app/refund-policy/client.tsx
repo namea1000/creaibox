@@ -52,14 +52,14 @@ export default function RefundPolicyClient() {
   ];
 
   return (
-    <div className="w-full min-h-screen bg-slate-50 text-slate-800 dark:bg-[#06080d] dark:text-slate-100 pt-20 overflow-hidden relative transition-colors duration-300">
+    <div className="w-full min-h-screen bg-slate-50 text-slate-800 dark:bg-[#06080d] dark:text-slate-100 overflow-hidden relative transition-colors duration-300">
       <Header />
 
       {/* 🌌 기품 있는 오로라 그라데이션 광원 */}
       <div className="absolute top-[-5%] left-[-5%] w-[600px] h-[600px] bg-rose-650/5 dark:bg-rose-500/5 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute top-[30%] right-[-10%] w-[500px] h-[500px] bg-orange-500/5 dark:bg-orange-500/5 rounded-full blur-[140px] pointer-events-none" />
 
-      <div className="max-w-4xl mx-auto px-6 py-20 relative z-10">
+      <div className="max-w-4xl mx-auto px-6 pt-10 pb-20 relative z-10">
         
         {/* 📋 SECTION 1: HERO HEADER */}
         <div className="border-b border-slate-200 dark:border-slate-800/80 pb-10 mb-16 space-y-4 text-center md:text-left">

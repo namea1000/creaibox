@@ -9,17 +9,18 @@
 사용자가 블로그 글이나 사이트 콘텐츠를 발행할 때 검색엔진(구글, 네이버 등)에 실시간으로 수집 요청 핑(Ping)을 전송하여 검색 노출 속도를 극대화하는 연동 체크리스트입니다.
 
 ### 1.1 구글 (Google Indexing API)
-* 📖 매뉴얼: [`google-indexing-api-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/google-indexing-api-guide.md)
 
-- [x] **GCP 콘솔에서 Web Search Indexing API 활성화 완료**
+* 📖 매뉴얼: [`google-indexing-api-guide.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/google-indexing-api-guide.md>)
+
+- [X] **GCP 콘솔에서 Web Search Indexing API 활성화 완료**
   - GCP 콘솔에서 Google Web Search Indexing API (`indexing.googleapis.com`) 사용 설정 활성화
-- [x] **GCP 서비스 계정(Service Account) 생성 및 JSON 키 발급**
+- [X] **GCP 서비스 계정(Service Account) 생성 및 JSON 키 발급**
   - 서비스 계정 생성 완료 (`creaibox-indexing-bot@project-51796415-94e5-4403-ad7.iam.gserviceaccount.com`) 및 JSON 키 발급 완료
-- [x] **구글 서치콘솔 소유자 권한 연동**
+- [X] **구글 서치콘솔 소유자 권한 연동**
   - Google Search Console (`creaibox.com` 도메인 속성) 소유자(Owner) 권한에 서비스 계정 추가 완료
-- [x] **Google Indexing API 일일 쿼터 확장(Quota Increase Request) 신청 제출 완료**
+- [X] **Google Indexing API 일일 쿼터 확장(Quota Increase Request) 신청 제출 완료**
   - 기본 제공 200건/일 쿼터를 2,000건/일 이상으로 증액하기 위한 구글 폼 신청서 제출 완료 (`google-indexing-api-guide.md` 4.2절 연동, 구글 심사 후 자동 승인 예정)
-- [x] **백엔드 실시간 핑 전송 모듈 구축 완료**
+- [X] **백엔드 실시간 핑 전송 모듈 구축 완료**
   - Google Indexing API 백엔드 모듈 (`src/lib/server/google-indexing.ts`) 및 API 엔드포인트 (`src/app/api/seo/google-indexing-ping/route.ts`) 구축
   - 1시간 쿨다운 스레틀링 & Trailing Edge Ping (최종 핑 보장) 알고리즘 탑재 및 에디터 발행 시 비동기 핑 트리거 연동 완료
 - [ ] **독립 커스텀 도메인 유저 안내 연동**
@@ -64,11 +65,11 @@
 
 ## 3. ⚙️ 백그라운드 무인 자동화 (Background Automation & Cron)
 
-- [x] **유튜브 급상승 트렌드 60개국 및 실시간 검색어 무인 자동 수집 구축**
+- [X] **유튜브 급상승 트렌드 60개국 및 실시간 검색어 무인 자동 수집 구축**
   - Vercel Cron (`sync-trending`, `sync-keywords`) 및 5종 자동 수집 매뉴얼(`background-automation-execution-5-methods-guide.md`) 완성
-- [x] **유튜브 인기 영상 조회수 랭킹 (Most Viewed) 신규 메뉴 및 DB 구축 완료**
+- [X] **유튜브 인기 영상 조회수 랭킹 (Most Viewed) 신규 메뉴 및 DB 구축 완료**
   - 전 세계 60개국 & 15개 카테고리별 기간별(7일/30일/역대전체) 조회수 최상위 랭킹 메뉴(`/youtube-trend/popular`), 백엔드 API(`/api/youtube/popular`), DB 보관함(`youtube_popular_archive`), 및 운영 매뉴얼(`youtube-popular-videos-ranking-guide.md`) 구축 완료
-- [x] **Vercel Cron 레지스트리 대장(`docs/project/vercel-cron-scheduler-registry.md`) 동기화**
+- [X] **Vercel Cron 레지스트리 대장(`docs/project/vercel-cron-scheduler-registry.md`) 동기화**
   - 신규 매시간 키워드 크론 등록 및 보안 가드(`CRON_SECRET`) 준수 완료
 - [ ] **Supabase `pg_cron` 데이터 만료 및 스냅샷 자동화**
   - 회원 혜택 만료 안내 및 데이터베이스 주간 스냅샷 백업 스케줄링 점검
@@ -88,49 +89,48 @@
 
 ## 5. 🎨 AI 커스텀 웹사이트 허브 & 관리자 자동 관제 (Custom Client Site)
 
-- [x] **커스텀 웹사이트 5대 탭 통합 센터 구축 (`/studio/custom-client-site`)**
+- [X] **커스텀 웹사이트 5대 탭 통합 센터 구축 (`/studio/custom-client-site`)**
   - 템플릿 쇼핑(100+종), 내 커스텀 관리, 1:1 신규 제작 신청, 리셀링 파트너십, 관리자 신청 현황 관제탑 5대 탭 탑재 완료
-- [x] **관리자 커스텀 신청 현황 (10건) 및 AI 에이전트 자동 제작 구동 연동**
+- [X] **관리자 커스텀 신청 현황 (10건) 및 AI 에이전트 자동 제작 구동 연동**
   - 회원 10개 신청 내역 실시간 조회, 상태 변경, `[🤖 AI 에이전트 자동 제작 진행하기]` 안티그래비티 1:1 풀코드 생성 명령 파이프라인 구축 완료
-- [x] **운영 및 자동 제작 프로세스 매뉴얼 문서화**
-  - 📖 매뉴얼: [`custom-client-site-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/custom-client-site-guide.md) 수록 완료
-- [x] **💳 PG 결제 모듈 & 무통장 & 실시간 견적 결제 통합 구축 완료**
+- [X] **운영 및 자동 제작 프로세스 매뉴얼 문서화**
+  - 📖 매뉴얼: [`custom-client-site-guide.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/custom-client-site-guide.md>) 수록 완료
+- [X] **💳 PG 결제 모듈 & 무통장 & 실시간 견적 결제 통합 구축 완료**
   - 포트원(PortOne V2) PG 연동, 토스페이먼츠/카카오페이/신용카드 결제 지원, 실시간 결제 검증 및 도메인 1초 연결 백엔드 구축 완료
-  - 📖 아키텍처 명세서: [`portone-pg-payment-architecture.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/portone-pg-payment-architecture.md)
-  - 📖 실무 운용 가이드: [`portone-pg-integration-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/portone-pg-integration-guide.md)
-- [x] **📁 프로젝트 계획서 및 IR/기획 문서 `docs/project/plan/` 폴더 통합 정리 완료 (총 10종)**
-  - B2B 파괴적 웹사이트 및 도메인 사업계획서: [`creaibox-website-disruptor-business-plan.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/creaibox-website-disruptor-business-plan.md) (가비아 이관 4대 필승 전략, 4단계 이관 파이프라인, 손익 마진 분석 완전 개정 완료)
-  - B2C 크리에이터 AI 스튜디오 사업계획서: [`creaibox-b2c-creator-ai-studio-business-plan.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/creaibox-b2c-creator-ai-studio-business-plan.md)
-  - IR 투자자 브리핑 기술 아키텍처: [`creaibox-investor-technical-architecture.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/creaibox-investor-technical-architecture.md)
-  - 클라이언트 웹사이트 빌더 기획안: [`client_site_builder_proposal.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/client_site_builder_proposal.md)
-  - 추천 프로그램 기획서: [`referral-program-proposal.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/referral-program-proposal.md)
-- [x] **🌐 CreAibox Domain Reseller 및 Vercel Domains API 원클릭 도메인 자동화 사업계획서 수록 (#4)**
-  - 📖 사업계획서 & 기술 구현안: [`vercel-domains-api-implementation-plan.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/vercel-domains-api-implementation-plan.md) (.kr, .co.kr 국내 ccTLD, 한글 퓨니코드 IDN, Vercel 본사 대비 초격차 하이브리드 멀티 라우팅 아키텍처 및 법적 명시 조항 전면 추가 완료)
-- [x] **📦 타 블로그 통째 이관 센터 구축 (네이버/티스토리/워드프레스 1초 가져오기 & 구글 드라이브 DB 및 블로그 원고 관리함 자동 동기화)**
-  - 📖 운용 매뉴얼 수록: [`external-blog-migration-manual.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/external-blog-migration-manual.md) 수록 완료
-- [x] **🚀 기존 홈페이지 1초 AI 자동 이관 매뉴얼 수록 (이중 저장소 파이프라인 & 1초 서브도메인 통째 개설)**
-  - 📖 운용 매뉴얼 수록: [`website-ai-migration-manual.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/website-ai-migration-manual.md) 수록 완료
-- [x] **🟢 네이버 아이디로 로그인 ("네아로") 연동 & 운용 매뉴얼 수록 (OAuth 2.0 & Supabase Auth 자동 회원가입)**
-  - 📖 운용 매뉴얼 수록: [`naver-login-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/naver-login-guide.md) 수록 완료
-- [x] **🟢 네이버 검색·쇼핑·트렌드 AI HUB 센터 구축 완료 (`/naver-trend`)**
+  - 📖 아키텍처 명세서: [`portone-pg-payment-architecture.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/arch/portone-pg-payment-architecture.md>)
+  - 📖 실무 운용 가이드: [`portone-pg-integration-guide.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/portone-pg-integration-guide.md>)
+- [X] **📁 프로젝트 계획서 및 IR/기획 문서 `docs/project/plan/` 폴더 통합 정리 완료 (총 10종)**
+  - B2B 파괴적 웹사이트 및 도메인 사업계획서: [`creaibox-website-disruptor-business-plan.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/creaibox-website-disruptor-business-plan.md>) (가비아 이관 4대 필승 전략, 4단계 이관 파이프라인, 손익 마진 분석 완전 개정 완료)
+  - B2C 크리에이터 AI 스튜디오 사업계획서: [`creaibox-b2c-creator-ai-studio-business-plan.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/creaibox-b2c-creator-ai-studio-business-plan.md>)
+  - IR 투자자 브리핑 기술 아키텍처: [`creaibox-investor-technical-architecture.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/creaibox-investor-technical-architecture.md>)
+  - 클라이언트 웹사이트 빌더 기획안: [`client_site_builder_proposal.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/client_site_builder_proposal.md>)
+  - 추천 프로그램 기획서: [`referral-program-proposal.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/referral-program-proposal.md>)
+- [X] **🌐 CreAibox Domain Reseller 및 Vercel Domains API 원클릭 도메인 자동화 사업계획서 수록 (#4)**
+  - 📖 사업계획서 & 기술 구현안: [`vercel-domains-api-implementation-plan.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/vercel-domains-api-implementation-plan.md>) (.kr, .co.kr 국내 ccTLD, 한글 퓨니코드 IDN, Vercel 본사 대비 초격차 하이브리드 멀티 라우팅 아키텍처 및 법적 명시 조항 전면 추가 완료)
+- [X] **📦 타 블로그 통째 이관 센터 구축 (네이버/티스토리/워드프레스 1초 가져오기 & 구글 드라이브 DB 및 블로그 원고 관리함 자동 동기화)**
+  - 📖 운용 매뉴얼 수록: [`external-blog-migration-manual.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/external-blog-migration-manual.md>) 수록 완료
+- [X] **🚀 기존 홈페이지 1초 AI 자동 이관 매뉴얼 수록 (이중 저장소 파이프라인 & 1초 서브도메인 통째 개설)**
+  - 📖 운용 매뉴얼 수록: [`website-ai-migration-manual.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/website-ai-migration-manual.md>) 수록 완료
+- [X] **🟢 네이버 아이디로 로그인 ("네아로") 연동 & 운용 매뉴얼 수록 (OAuth 2.0 & Supabase Auth 자동 회원가입)**
+  - 📖 운용 매뉴얼 수록: [`naver-login-guide.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/naver-login-guide.md>) 수록 완료
+- [X] **🟢 네이버 검색·쇼핑·트렌드 AI HUB 센터 구축 완료 (`/naver-trend`)**
   - NAVER API HUB 9대 API 연동, 검색어 트렌드 랩, 쇼핑 인사이트, 실시간 라이브 검색 탐색 및 AI 글쓰기 원클릭 파이프라인 탑재 완료
-- [x] **🌐 구글 트렌드 (Google Trends) 실시간 분석 센터 구축 완료 (`/studio/keyword/google-trends`)**
+- [X] **🌐 구글 트렌드 (Google Trends) 실시간 분석 센터 구축 완료 (`/studio/keyword/google-trends`)**
   - Google Trends 공식 Daily RSS 연동, 대한민국/미국/일본/영국 실시간 급상승 키워드 TOP 20, 100,000+ 트래픽 지수 및 연관 뉴스 이슈 파이프라인 수록 완료
-- [x] **🔍 통합 키워드 트렌드 파워 허브 구축 완료 (loword.co.kr 3대 센터 100% 탑재)**
+- [X] **🔍 통합 키워드 트렌드 파워 허브 구축 완료 (loword.co.kr 3대 센터 100% 탑재)**
   - `🔥 실시간 급상승 키워드` (네이버 20개 vs 구글 20개 2열 비교, 날짜/시간별 Supabase DB 저장)
-- [x] **🔍 키워드 정밀 도구 듀얼 병렬 분석 & 옵션 C 시계열 히스토리 영구 저장소 구축 완료 (`/studio/keyword/tool`)**
+- [X] **🔍 키워드 정밀 도구 듀얼 병렬 분석 & 옵션 C 시계열 히스토리 영구 저장소 구축 완료 (`/studio/keyword/tool`)**
   - 네이버 & 구글 동시 병렬 분석(`Promise.all`) 및 클릭 0.01초 instant 포털 스위칭 탑재
   - DB 1개 Row(`onConflict: keyword`) 내 날짜별 분석 스냅샷 배열(`history_json`) 100% 영구 자산 보존
   - 한 페이지 10개씩 페이징 및 상/하단 넘김 조작 탑재
-  - 📖 운용 매뉴얼: [`keyword-precision-tool-architecture-manual.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/keyword-precision-tool-architecture-manual.md)
-
+  - 📖 운용 매뉴얼: [`keyword-precision-tool-architecture-manual.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/keyword-precision-tool-architecture-manual.md>)
   - `📈 네이버 블로그 지수 진단` (블로그 아이디 진단, 최적 3+/준최 레벨 측정, 전체 블로거 리더보드 랭킹)
-- [x] **🛒 쇼핑 키워드 & 아이템 소싱 파워 허브 구축 완료 (itemscout.io & datalab.naver.com 100% 탑재)**
+- [X] **🛒 쇼핑 키워드 & 아이템 소싱 파워 허브 구축 완료 (itemscout.io & datalab.naver.com 100% 탑재)**
   - `🛍️ 쇼핑 키워드 정밀 분석` (쇼핑 검색량, 총 등록 상품수, 0.72 꿀키워드 경쟁강도, 일간/주간 랭킹)
   - `📊 네이버 쇼핑 인사이트` (datalab.naver.com 분야별 1달/3달 인기검색어 TOP 500 & 성별/연령 도넛 차트)
-- [x] **🏢 프리미엄 커스텀 기업 홈페이지 개발 지침서 & 카카오톡 링크 공유 OG 메타데이터 고도화 완료**
-  - 📖 전용 운영 지침서: [`custom-client-site-development-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/custom-client-site-development-guide.md)
-  - 📖 전체 운영 매뉴얼: [`custom-client-site-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/custom-client-site-guide.md)
+- [X] **🏢 프리미엄 커스텀 기업 홈페이지 개발 지침서 & 카카오톡 링크 공유 OG 메타데이터 고도화 완료**
+  - 📖 전용 운영 지침서: [`custom-client-site-development-guide.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/custom-client-site-development-guide.md>)
+  - 📖 전체 운영 매뉴얼: [`custom-client-site-guide.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/custom-client-site-guide.md>)
   - Studio 카테고리 인라인 직접 편집(`✏️`) 및 순서 이동 기능 구축 완료
   - 메인 랜딩페이지 PORTFOLIO 실적 섹션과 블로그 최신 발행글 6개 실시간 동기화 완료
   - 서브도메인/커스텀도메인 SNS 카카오톡 링크 공유 시 커스텀 대표 비주얼(`sotongcheum_hero_bg.png`) 및 전용 타이틀 OpenGraph 자동 노출 완성
@@ -141,28 +141,28 @@
 
 자사 대표 메일(`ceo@creaibox.com`) 무료 구축, 가입 유저 커스텀 이메일(`user@downhubs.com`), 및 B2B 고객사 도메인 이메일(`contact@clientdomain.com`) 1초 연동 인프라 구축 대장입니다.
 
-- 📖 아키텍처 기술 설계서: [`custom-domain-email-system-spec.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/custom-domain-email-system-spec.md)
-- 📖 운용 가이드 매뉴얼: [`custom-domain-email-system-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/custom-domain-email-system-guide.md)
+- 📖 아키텍처 기술 설계서: [`custom-domain-email-system-spec.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/arch/custom-domain-email-system-spec.md>)
+- 📖 운용 가이드 매뉴얼: [`custom-domain-email-system-guide.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/custom-domain-email-system-guide.md>)
 
-- [x] **자사 이메일 무보수 무료 연동 기획 및 Vercel DNS 파이프라인 정리**
+- [X] **자사 이메일 무보수 무료 연동 기획 및 Vercel DNS 파이프라인 정리**
   - Vercel 네임서버 유지 상태에서 Resend 5대 DNS 레코드 Vercel Domains API 백그라운드 1초 자동 주입 완료
-- [x] **Gmail 앱 연동 수발신 설정 가이드 작성**
+- [X] **Gmail 앱 연동 수발신 설정 가이드 작성**
   - 개인 Gmail(`@gmail.com`)에서 `ceo@creaibox.com` 이름으로 전세계에 발신/답장하는 Resend SMTP 가이드 정리 완료
-- [x] **Resend Domains API & Vercel Domains API 원클릭 무인 1초 이메일 주입 엔진 구현**
+- [X] **Resend Domains API & Vercel Domains API 원클릭 무인 1초 이메일 주입 엔진 구현**
   - B2B 고객사 도메인 등록 시 Vercel DNS API (`addDnsRecordToVercel`) 백그라운드 1초 자동 주입 파이프라인 구축 완료
-- [x] **CreAibox 대시보드 내 커스텀 이메일 포워딩 연동 UI 및 API 구축 (/studio/domain-search)**
+- [X] **CreAibox 대시보드 내 커스텀 이메일 포워딩 연동 UI 및 API 구축 (/studio/domain-search)**
   - `EmailForwardingManager.tsx` UI, `/api/email-forwarding` CRUD API 및 `docs/database/email_forwarding_rules.sql` DDL 구축 완료
-- [x] **Resend Inbound Webhook 실시간 무상태(Stateless Zero-DB) 포워딩 엔진 구축**
+- [X] **Resend Inbound Webhook 실시간 무상태(Stateless Zero-DB) 포워딩 엔진 구축**
   - `/api/webhooks/resend-inbound` 무상태 실시간 포워딩 백엔드 모듈 개발 완료
-- [x] **관리자 센터 Resend 이메일 & 도메인 통합 모니터링 대시보드 구축 완료 (/admin/resend)**
+- [X] **관리자 센터 Resend 이메일 & 도메인 통합 모니터링 대시보드 구축 완료 (/admin/resend)**
   - 등록 도메인 수, 생성된 이메일 별칭 계정 수, 실시간 Inbound/Outbound 이력 KPI 및 3대 탭(도메인계정/수신이력/발송이력) 구축 완료
   - Resend `emails.receiving.get` API 및 `Array.isArray` 2단계 언팩 방어 파이프라인 적용 완료
-  - 📖 아키텍처 기술 명세서: [`resend-email-monitoring-architecture.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/resend-email-monitoring-architecture.md)
-  - 📖 운용 가이드 매뉴얼: [`resend-email-domain-monitoring-manual.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/resend-email-domain-monitoring-manual.md)
-- [x] **creaibox.com 서비스 필수 공식 이메일 계정 7대 마스터 가이드 구축 완료**
+  - 📖 아키텍처 기술 명세서: [`resend-email-monitoring-architecture.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/arch/resend-email-monitoring-architecture.md>)
+  - 📖 운용 가이드 매뉴얼: [`resend-email-domain-monitoring-manual.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/resend-email-domain-monitoring-manual.md>)
+- [X] **creaibox.com 서비스 필수 공식 이메일 계정 7대 마스터 가이드 구축 완료**
   - `noreply@`, `auth@`, `support@`, `ceo@`, `contact@`, `billing@`, `admin@` 등 7대 전용 계정 정의 및 Supabase/Resend 연동 가이드 수록 완료
-  - 📖 전용 운용 매뉴얼: [`creaibox-official-email-accounts-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/creaibox-official-email-accounts-guide.md)
-- [x] **모든 회원가입 수단(Google, Naver, Kakao, Email) 신규 가입 축하 웰컴 이메일 파이프라인 구축 완료**
+  - 📖 전용 운용 매뉴얼: [`creaibox-official-email-accounts-guide.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/creaibox-official-email-accounts-guide.md>)
+- [X] **모든 회원가입 수단(Google, Naver, Kakao, Email) 신규 가입 축하 웰컴 이메일 파이프라인 구축 완료**
   - OAuth 및 이메일 인증 완료 콜백 라우트에서 `sendWelcomeEmail` 비동기 발송 및 `welcome_email_sent` 중복 방지 플래그 연동 완료
   - `noreply@creaibox.com` (Reply-To: `support@creaibox.com`) 프리미엄 다크 테마 HTML 웰컴 메일 및 실시간 발송 테스트 검증 완료
 - [ ] **글로벌 영문 사이트 오픈 시 유저 Locale 기반 자동 언어 분기 인증 이메일 발송 파이프라인 연동**
@@ -180,19 +180,17 @@ Google Maps Platform (Places, Maps JS, Routes, Distance Matrix API) 기반 위�
 
 > 💡 **비용 절감 및 가성비 최우선 방침에 따라 구글 맵 유료 구독은 추후 보류하며, 서비스 필요 시 100% 무료 카카오/네이버 지도 API(월 900만~1,000만 건 무료)로 대체 개발 예정입니다.**
 
-- 📖 전용 운용 가이드 매뉴얼: [`google-maps-platform-api-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/google-maps-platform-api-guide.md)
-- 📖 전용 장소 API 매뉴얼: [`google-places-api-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/google-places-api-guide.md)
+- 📖 전용 운용 가이드 매뉴얼: [`google-maps-platform-api-guide.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/google-maps-platform-api-guide.md>)
+- 📖 전용 장소 API 매뉴얼: [`google-places-api-guide.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/google-places-api-guide.md>)
 
-- [x] **Google Maps Platform API 서비스 구축 매뉴얼 수립 완료**
+- [X] **Google Maps Platform API 서비스 구축 매뉴얼 수립 완료**
   - Places API, Maps JS, Routes & Distance Matrix API 기획 및 5대 실전 서비스 구축 과제 정의 완료
-- [x] **Google Places API (New/v1) 전용 구축 및 연동 가이드 작성 완료**
+- [X] **Google Places API (New/v1) 전용 구축 및 연동 가이드 작성 완료**
   - Text Search, Place Details, Autocomplete, Field Masking (`X-Goog-FieldMask`) 90% 비용 절감 기획 및 TypeScript 스니펫 수립 완료
 - [ ] **[추후 보류] AI 커스텀 웹사이트 빌더 (`/client-site-builder`) 3D 커스텀 지도 및 주소 자동완성 연동**
   - 필요 시 100% 무료 카카오/네이버 주소 자동완성 및 지도 모듈 대체 연동 예정
 - [ ] **[추후 보류] AI 맛집/여행 블로그 자동 글쓰기 (장소/별점/리뷰 실시간 수집 연동)**
   - Zero Fake Data 원칙 준수 100% 진짜 장소 데이터 무료 파이프라인 대체 연동 예정
-
-
 
 ---
 
@@ -200,38 +198,38 @@ Google Maps Platform (Places, Maps JS, Routes, Distance Matrix API) 기반 위�
 
 CreAibox 브랜드 ID(`{brand_id}.creaibox.com`) 예약어/블랙리스트 Egress 99% 절감 최적화, Groq LLaMA 3.3 70B AI 기반 트렌드 자동 탐지 및 2차 안전 심사 모듈 완료 대장입니다.
 
-- 📖 전용 아키텍처 및 운용 가이드: [`reserved-brand-ids.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/database/reserved-brand-ids.md)
+- 📖 전용 아키텍처 및 운용 가이드: [`reserved-brand-ids.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/database/reserved-brand-ids.md>)
 
-- [x] **하이브리드 브랜드 검증 및 Supabase DB Egress 99% 절감 구조 전환**
+- [X] **하이브리드 브랜드 검증 및 Supabase DB Egress 99% 절감 구조 전환**
   - 고정 정적 6개 카테고리(13,396개)를 `reservedBrandsStatic.ts` 메모리 Set으로 전환 및 DB rows 삭제 (~59,000개 축소).
   - 관리자 API `select("*")` 전체 로드 제거 및 페이지네이션(`range()`) 적용 완료.
-- [x] **Groq LLaMA 3.3 70B AI 신규 트렌드 브랜드 100개 대량 탐지 모듈 연동**
+- [X] **Groq LLaMA 3.3 70B AI 신규 트렌드 브랜드 100개 대량 탐지 모듈 연동**
   - `/api/admin/brands/scan` API 구축 및 `/admin/reserved-words` 상단 `[ AI Trend Scan ]` 팝업 연동.
   - 16개 동적 카테고리 전체 지원, 삼중 필터링 및 `upsert(ignoreDuplicates: true)` 중복 에러 완전 방어 완료.
-- [x] **예약어 관리 목록 `Target Entity (대상 기관/브랜드)` 스마트 뱃지 컬럼 추가**
+- [X] **예약어 관리 목록 `Target Entity (대상 기관/브랜드)` 스마트 뱃지 컬럼 추가**
   - `/admin/reserved-words` 테이블에 에메랄드 뱃지 배치 및 `parseReasonEntity` 헬퍼를 통한 기관명/상표명 자동 추출 연동 완료.
-- [x] **구글 드라이브 이미지 스마트 2원화 WebP 압축 및 중앙 프록시 API 구축**
+- [X] **구글 드라이브 이미지 스마트 2원화 WebP 압축 및 중앙 프록시 API 구축**
   - `/api/free-assets/proxy` 중앙 프록시 라우트 고도화 및 `formatImageUrl` 유틸리티 연동.
   - 카드 썸네일 `type=thumb` (800px 30~40KB WebP) vs 블로그 본문 상세 `type=detail` (1400px 고화질 WebP) 스마트 2원화 서빙 반영 완료.
   - 블로그 목록 리소스 크기 2.7MB ➡️ 350KB (85% 이상 대폭 절감) 및 LCP 1.8초 이내 가속 달성.
-  - 📖 아키텍처 & 운용 매뉴얼: [`media-proxy-architecture.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/media-proxy-architecture.md) / [`google-drive-image-proxy-web-optimization-manual.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/google-drive-image-proxy-web-optimization-manual.md) 수록 완료.
-- [x] **네이버 뉴스급 0.01초 Instant 오픈 & Vercel 비용 0원 방어 파이프라인 구축**
+  - 📖 아키텍처 & 운용 매뉴얼: [`media-proxy-architecture.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/arch/media-proxy-architecture.md>) / [`google-drive-image-proxy-web-optimization-manual.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/google-drive-image-proxy-web-optimization-manual.md>) 수록 완료.
+- [X] **네이버 뉴스급 0.01초 Instant 오픈 & Vercel 비용 0원 방어 파이프라인 구축**
   - `SmartIntentLink` 0.15초 체류 의도 감지 프리패치 엔진 및 본문 `revalidate = 300` CDN 무상 캐싱 연동.
   - 모든 사용자 블로그, 비즈니스 홈페이지, 커스텀 사이트의 카드 링커 전면 전환 반영 완료.
-  - 📖 아키텍처 & 운용 매뉴얼: [`instant-navigation-prefetch-architecture.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/instant-navigation-prefetch-architecture.md) / [`instant-navigation-0.01s-prefetch-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/instant-navigation-0.01s-prefetch-guide.md) 수록 완료.
-- [x] **서브도메인 신청 심사 2차 AI & Web 안전 검증 모듈 구축**
+  - 📖 아키텍처 & 운용 매뉴얼: [`instant-navigation-prefetch-architecture.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/arch/instant-navigation-prefetch-architecture.md>) / [`instant-navigation-0.01s-prefetch-guide.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/instant-navigation-0.01s-prefetch-guide.md>) 수록 완료.
+- [X] **서브도메인 신청 심사 2차 AI & Web 안전 검증 모듈 구축**
   - `/admin/brands` 심사 행에 `[ ✨ AI 검증 ]` 버튼 추가 및 `/api/admin/brands/verify` 백엔드 연동.
   - 위험도 뱃지(`SAFE`/`WARNING`/`DANGER`), 위험점수(0~100), AI 종합 리포트 모달 구현.
   - Google / Naver 1초 실시간 검색 딥링크 연동 및 `[ 🟢 승인 ]` / `[ 🔴 거절 & 예약어 DB 등록 ]` 원클릭 일괄 처리 연동 완료.
-- [x] **원고 본문 1번째 이미지 썸네일 무인 자동 추출 & `generated_images` 100% 동기화 엔진 구축**
-  - [`auto-extract-thumbnail.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/auto-extract-thumbnail.ts) 백엔드 헬퍼 모듈 구축 및 [`fill_missing_thumbnails.js`](file:///Users/a1234/Local%20Sites/creaibox/scratch/fill_missing_thumbnails.js) 배치 스크립트로 기존 124개 원고 썸네일 100% 동기화 완료.
+- [X] **원고 본문 1번째 이미지 썸네일 무인 자동 추출 & `generated_images` 100% 동기화 엔진 구축**
+  - [`auto-extract-thumbnail.ts`](<file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/auto-extract-thumbnail.ts>) 백엔드 헬퍼 모듈 구축 및 [`fill_missing_thumbnails.js`](<file:///Users/a1234/Local%20Sites/creaibox/scratch/fill_missing_thumbnails.js>) 배치 스크립트로 기존 124개 원고 썸네일 100% 동기화 완료.
   - 목록 쿼리 본문(`content`) 생략을 통한 Supabase DB Egress 비용 0원 방어, 0.01초 속도 및 썸네일 100% 노출 보장 완료.
 
 ---
 
 ## 6. 📊 실시간 라이브 위젯 (Live Portal Widget: 날씨 / 미세먼지 / 환율 / 증시)
 
-- 📖 전용 기획 & 아키텍처 명세서: [`live-portal-widget-spec.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/live-portal-widget-spec.md)
+- 📖 전용 기획 & 아키텍처 명세서: [`live-portal-widget-spec.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/arch/live-portal-widget-spec.md>)
 
 - [ ] **실시간 위치 기반 날씨 & 미세먼지 수집 모듈 개발**
   - Open-Meteo & 기상청 API 연동, 브라우저 IP/위치 기반 24시간 기온 및 미세먼지 뱃지 렌더링.
@@ -241,4 +239,3 @@ CreAibox 브랜드 ID(`{brand_id}.creaibox.com`) 예약어/블랙리스트 Egres
   - Yahoo Finance API 연동, 주가지수 및 실시간 등락률 렌더링.
 - [ ] **네이버 포털형 메인 & 스튜디오 대시보드 위젯 컴포넌트 배치**
   - 포털형 우측 사이드바 및 스튜디오 웰컴 영역 Glassmorphism 3대 탭 카드 렌더링.
-
