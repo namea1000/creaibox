@@ -147,7 +147,17 @@
 
 ---
 
-### 9. 🧪 빌드 및 무결성 검증
+### 9. 💳 요금제 페이지 (`/pricing`) 로그인 유저 포트원 PG 전자결제 모달 연동
+- **사용자 지시에 따른 스마트 결제 분기 적용 (`src/app/pricing/page.tsx`)**:
+  - 기존 회원가입 페이지(`/signup`) 하드코딩 이동 링크를 스마트 핸들러(`handlePlanSelect`)로 완전 개정.
+  - **비로그인 상태일 때**: 회원가입/로그인 페이지(`/signup`)로 이동.
+  - **로그인 상태일 때**:
+    - Free Plan ➔ 무료 요금제 즉시 적용 안내 및 `/studio` 이동.
+    - Creator / Pro / Premier 유료 요금제 ➔ **포트원 PG 전자결제 팝업 모달(`requestDomainPayment`)** 가동 및 승인 후 구독 처리 반영 완료.
+
+---
+
+### 10. 🧪 빌드 및 무결성 검증
 - `npx tsc --noEmit` 실행 결과: **오류 0건 (100% Clean Pass)**
 
 

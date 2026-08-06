@@ -1,18 +1,34 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
+import { requestDomainPayment } from "@/lib/client/payment";
 import {
   Check,
   Lock,
   Sparkles,
   Building2,
   ArrowRight,
-  Users
+  Users,
+  Loader2
 } from "lucide-react";
 
 export default function PricingPage() {
+  const router = useRouter();
+  const supabase = createClient();
+  const [user, setUser] = useState<any>(null);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }: { data: any }) => {
+      if (data?.user) {
+        setUser(data.user);
+      }
+    });
+  }, [supabase]);
 
   // 1. 요금제 카드 기본 정보
   const plans = [
@@ -20,47 +36,76 @@ export default function PricingPage() {
       name: "Free Plan",
       desc: "스타터 크리에이터를 위한 기본 창작 체험 플랜",
       priceMonthly: "0원",
-      priceYearly: "0원",
-      yearlyTotal: "무료 이용",
+      priceNum: 0,
       badge: "무료 이용",
       buttonText: "시작하기",
-      buttonHref: "/signup",
       highlight: false,
     },
     {
       name: "Creator Plan",
       desc: "블로그, 이미지, 음악 작업을 활발하게 하는 창작자용 플랜",
       priceMonthly: "9,900원",
-      priceYearly: "7,900원",
-      yearlyTotal: "연 94,800원 (24,000원 절약)",
+      priceNum: 9900,
       badge: "1달 무료",
       buttonText: "시작하기",
-      buttonHref: "/signup",
       highlight: false,
     },
     {
       name: "Pro Plan",
       desc: "도메인 연결 및 독립 홈페이지를 활용하는 고급 창작자 플랜",
       priceMonthly: "19,900원",
-      priceYearly: "15,900원",
-      yearlyTotal: "연 190,800원 (48,000원 절약)",
+      priceNum: 19900,
       badge: "1달 무료 (Best)",
       buttonText: "시작하기",
-      buttonHref: "/signup",
       highlight: true,
     },
     {
       name: "Premier Plan",
       desc: "협업 기능 및 무제한 DB 저장을 원하는 전문 에이전시 플랜",
       priceMonthly: "29,900원",
-      priceYearly: "23,900원",
-      yearlyTotal: "연 286,800원 (72,000원 절약)",
+      priceNum: 29900,
       badge: "1달 무료",
       buttonText: "시작하기",
-      buttonHref: "/signup",
       highlight: false,
     }
   ];
+
+  const handlePlanSelect = async (plan: typeof plans[0]) => {
+    // 비로그인 상태 ➔ 회원가입/로그인 페이지 이동
+    if (!user) {
+      router.push("/signup");
+      return;
+    }
+
+    // Free Plan인 경우 ➔ 스튜디오 홈 이동
+    if (plan.priceNum === 0) {
+      alert("🎉 Free Plan이 이미 적용되어 있습니다! CreAibox AI 스튜디오를 이용해보세요.");
+      router.push("/studio");
+      return;
+    }
+
+    // 유료 요금제 ➔ 포트원 PG 전자결제 모달 팝업 가동
+    try {
+      setLoadingPlan(plan.name);
+      const res = await requestDomainPayment({
+        orderName: `CreAibox ${plan.name} 월간 구독 요금제`,
+        totalAmount: plan.priceNum,
+        customerEmail: user.email || "customer@creaibox.com",
+        customerName: user.user_metadata?.full_name || "CreAibox 회원",
+      });
+
+      if (res.success) {
+        alert(`✅ [결제 성공] CreAibox ${plan.name} 구독 신청이 완벽하게 완료되었습니다!`);
+        router.push("/studio");
+      }
+    } catch (err: any) {
+      if (err.message && !err.message.includes("취소")) {
+        alert(`결제 처리 중 안내: ${err.message}`);
+      }
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
 
   // 2. 상세 요금 비교 데이터셋 (Suno Style)
   const comparisonSections = [
@@ -497,16 +542,24 @@ export default function PricingPage() {
                       <span>1달 무료 사용 후 결제 시작(취소 가능)</span>
                     </div>
                   )}
-                  <Link
-                    href={plan.buttonHref}
-                    className={`w-full py-3 px-4 rounded-xl text-sm font-bold text-center inline-block transition-all ${
+                  <button
+                    onClick={() => handlePlanSelect(plan)}
+                    disabled={loadingPlan === plan.name}
+                    className={`w-full py-3 px-4 rounded-xl text-sm font-bold text-center inline-flex items-center justify-center gap-2 transition-all cursor-pointer ${
                       isPro
                         ? "bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-800/20"
                         : "bg-slate-150 hover:bg-slate-200 text-slate-800 border border-slate-300 dark:bg-slate-900 dark:hover:bg-slate-850 dark:text-white dark:border-slate-800"
                     }`}
                   >
-                    {plan.buttonText}
-                  </Link>
+                    {loadingPlan === plan.name ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        <span>결제창 가동 중...</span>
+                      </>
+                    ) : (
+                      plan.buttonText
+                    )}
+                  </button>
                 </div>
               </div>
             );
