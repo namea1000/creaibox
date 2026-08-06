@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 
     console.log(`Searching forwarding rule for ${aliasPrefix}@${domainName}...`);
 
-    // Supabase에서 포워딩 규칙 조회
+    // Supabase에서 포워딩 규칙 조회 (등록된 주소만 수신 허용)
     const { data: rule } = await supabaseAdmin
       .from("email_forwarding_rules")
       .select("*")
@@ -72,14 +72,16 @@ export async function POST(req: NextRequest) {
       .eq("is_active", true)
       .single();
 
-    let forwardTarget = "creaiboxofficial@gmail.com"; // 기본 폴백 목적지
-
-    if (rule && rule.forward_to) {
-      forwardTarget = rule.forward_to;
-      console.log(`Found matching rule: ${cleanRecipient} -> ${forwardTarget}`);
-    } else {
-      console.log(`No specific rule found. Using default fallback: ${forwardTarget}`);
+    if (!rule || !rule.forward_to) {
+      console.warn(`[Anti-Spam Block] Unregistered recipient email: ${cleanRecipient}. Forwarding rejected.`);
+      return NextResponse.json(
+        { message: `Unregistered recipient email (${cleanRecipient}). Forwarding blocked for anti-spam security.` },
+        { status: 200 }
+      );
     }
+
+    const forwardTarget = rule.forward_to;
+    console.log(`[Forwarding Approved] Matching rule found: ${cleanRecipient} -> ${forwardTarget}`);
 
     // =========================================================
     // 이메일 본문 추출

@@ -139,7 +139,15 @@
 
 ---
 
-### 8. 🧪 빌드 및 무결성 검증
+### 8. 🛡️ 이메일 포워딩 미등록 유령/스팸 메일 자동 차단 엔진 강화 (`src/app/api/webhooks/resend-inbound/route.ts`)
+- **사용자 지시에 따른 strict 검증 포워딩 규칙 적용**:
+  - `creaibox.com`을 포함한 모든 도메인에서 무차별 폴백(Catch-All) 전달을 전면 중지.
+  - 대시보드에 명시적으로 등록된 이메일 주소(`contact@`, `support@`, `billing@`, `admin@` 등)에 대해서만 정식 포워딩 승인.
+  - 미등록 유령/스팸 수신 이메일은 즉시 차단 및 거부(`[Anti-Spam Block] Unregistered recipient email`) 로직 개정 완료.
+
+---
+
+### 9. 🧪 빌드 및 무결성 검증
 - `npx tsc --noEmit` 실행 결과: **오류 0건 (100% Clean Pass)**
 
 
