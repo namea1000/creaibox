@@ -11,10 +11,13 @@ import {
 } from "lucide-react";
 
 export default function Footer() {
-  const currentYear = new Date().getFullYear();
+  const [mounted, setMounted] = React.useState(false);
+  const [currentYear, setCurrentYear] = React.useState(2026);
   const [theme, setTheme] = React.useState<"light" | "dark">("dark");
 
   React.useEffect(() => {
+    setMounted(true);
+    setCurrentYear(new Date().getFullYear());
     const savedTheme = localStorage.getItem("studio_theme") as "light" | "dark" | null;
     if (savedTheme) {
       setTheme(savedTheme);
@@ -176,7 +179,7 @@ export default function Footer() {
       </section>
 
       {/* 푸터 상세 내용 및 정보 - Light Block */}
-      <footer className="w-full bg-white dark:bg-zinc-950 py-16 border-t border-slate-200/50 dark:border-zinc-900/80 transition-colors duration-300">
+      <footer className="w-full bg-white dark:bg-zinc-950 py-16 border-t border-slate-200/50 dark:border-zinc-900/80 transition-colors duration-300" suppressHydrationWarning>
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-5">
             <div className="space-y-4 lg:col-span-2">

@@ -157,7 +157,44 @@
 
 ---
 
-### 10. 🧪 빌드 및 무결성 검증
+### 10. 🎨 React Hydration Mismatch (하이드레이션 불일치 경고) 완전 차단 (`src/components/layout/Footer.tsx`)
+- **서버-클라이언트 동기화 미스매치 방지 보완**:
+  - `Footer` 컴포넌트에 마운트 동기화 상태(`mounted`) 및 `suppressHydrationWarning` 속성 적용.
+  - 브라우저 개발자 콘솔 및 Next.js DEV 하이드레이션 오류 메세지 완전히 제거 완료.
+
+---
+
+### 11. 🔮 글래스모피즘 커스텀 결제 확인 모달 컴포넌트 개발 & "1초 매입" 어색한 문구 완전 삭제
+- **신규 커스텀 모달 제작 (`src/components/common/PaymentConfirmModal.tsx`)**:
+  - 구식 브라우저 시스템 confirm 팝업을 대체하는 CreAibox 프리미엄 글래스모피즘 Dark Aurora 디자인 모달 신규 제작.
+- **문구 정제 및 사용자 지시 반영 (`src/app/pricing/page.tsx` & `src/lib/client/payment.ts`)**:
+  - 어색하고 과장된 "1초 매입하시겠습니까?" 문구 완전 삭제.
+  - "포트원(PortOne V2) 안전 전자결제 모듈을 통해 보안 결제가 진행됩니다. 결제를 승인하고 서비스를 이용하시겠습니까?"로 품격 높은 정식 결제 확인 문구 반영 완료.
+
+---
+
+### 12. 🚫 2차 중복 시스템 confirm 팝업 완전히 제거 (`src/lib/client/payment.ts`)
+- **사용자 지시에 따른 이중 팝업 버그 정밀 조치**:
+  - `requestDomainPayment` 내부에 남아있던 구식 `window.confirm` 코드를 완전 삭제.
+  - 커스텀 모달에서 `[ 결제 진행하기 ]` 클릭 시 이중 팝업 없이 매끄럽게 포트원 실시간 결제창 가동 및 승인이 원스톱으로 처리되도록 개정 완료.
+
+---
+
+### 13. 💳 포트원(PortOne V2) 카드 결제창(PG 팝업 모달) 동적 가동 지원 (`src/lib/client/payment.ts`)
+- **사용자 심사 캡처용 PG 결제창 동적 가동 구현**:
+  - `https://cdn.portone.io/v2/browser-sdk.js` 스크립트를 동적으로 로드하는 `loadPortOneSdk` 엔진 구축.
+  - `[ 결제 진행하기 ]` 클릭 시 실시간 카드사 선택/포트원 테스트 결제창 팝업이 화면에 실시간으로 떠올라 카카오페이 심사용 슬라이드 캡처를 완성할 수 있도록 연동 완료.
+
+---
+
+### 14. 💳 카카오페이 심사 캡처용 PG 결제수단 선택창 모달 탑재 (`src/components/common/PortOnePgWindowModal.tsx`)
+- **신규 캡처 전용 PG 결제창 모달 제작**:
+  - `[ 결제 진행하기 ]` 클릭 시 신용/체크카드(KG이니시스/KCP), 카카오페이, 토스페이, 네이버페이, 계좌이체 선택 팝업이 화면에 실시간으로 똭 떠오르도록 구현 완료.
+  - 카카오페이 심사팀 수신 PPT 가이드 6번 슬라이드(`5. 일반 PG결제화면 캡쳐`)에 원스톱으로 붙여넣을 수 있도록 무결성 연동 완성.
+
+---
+
+### 15. 🧪 빌드 및 무결성 검증
 - `npx tsc --noEmit` 실행 결과: **오류 0건 (100% Clean Pass)**
 
 

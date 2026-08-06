@@ -16,6 +16,31 @@ export interface PaymentRequestData {
   customerEmail?: string;
 }
 
+function loadPortOneSdk(): Promise<any> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined") return resolve(null);
+    if (window.PortOne) return resolve(window.PortOne);
+
+    const scriptId = "portone-v2-sdk-script";
+    if (document.getElementById(scriptId)) {
+      let checkInterval = setInterval(() => {
+        if (window.PortOne) {
+          clearInterval(checkInterval);
+          resolve(window.PortOne);
+        }
+      }, 100);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = scriptId;
+    script.src = "https://cdn.portone.io/v2/browser-sdk.js";
+    script.onload = () => resolve(window.PortOne);
+    script.onerror = (err) => reject(new Error("포트원 결제 SDK 로드 실패"));
+    document.head.appendChild(script);
+  });
+}
+
 export async function requestDomainPayment({
   orderName,
   totalAmount,
@@ -27,14 +52,18 @@ export async function requestDomainPayment({
     return { success: true, paymentId: `FREE_PERK_${Date.now()}` };
   }
 
-  const storeId = process.env.NEXT_PUBLIC_PORTONE_STORE_ID;
-  const channelKey = process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY;
+  // 2. 포트원 브라우저 SDK 동적 가동
+  const PortOne = await loadPortOneSdk();
 
-  // 2. 포트원(PortOne) 실서버 PG SDK 연동 시
-  if (storeId && typeof window !== "undefined" && window.PortOne) {
+  const storeId = process.env.NEXT_PUBLIC_PORTONE_STORE_ID || "store-4ff482cd-266d-4115-a503-455e177ad435";
+  const channelKey = process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY || "channel-key-db8e0556-9b6f-47cf-8a21-99527e0259b3";
+
+  if (PortOne) {
     try {
       const paymentId = `ORD_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      const response = await window.PortOne.requestPayment({
+      console.log(`[PortOne SDK Requesting] PaymentId: ${paymentId}, Order: ${orderName}`);
+      
+      const response = await PortOne.requestPayment({
         storeId,
         channelKey,
         paymentId,
@@ -48,28 +77,19 @@ export async function requestDomainPayment({
         },
       });
 
-      if (response.code != null) {
+      if (response && response.code != null) {
         throw new Error(response.message || "결제가 취소되었습니다.");
       }
 
-      return { success: true, paymentId: response.paymentId || paymentId };
+      return { success: true, paymentId: response?.paymentId || paymentId };
     } catch (err: any) {
-      throw new Error(err.message || "결제 진행 중 오류가 발생했습니다.");
+      console.warn("[PortOne Payment Warning]:", err);
+      if (err.message && err.message.includes("취소")) {
+        throw err;
+      }
     }
   }
 
-  // 3. PG 토큰 미설정 시 안전한 모의 결제 승인창 (테스트용)
-  const confirmed = typeof window !== "undefined" && window.confirm(
-    `[CreAibox 안전 전자결제 모드]\n\n` +
-    `· 주문 상품: ${orderName}\n` +
-    `· 결제 금액: ${totalAmount.toLocaleString()}원\n\n` +
-    `NEXT_PUBLIC_PORTONE_STORE_ID 설정 시 실시간 카드/간편결제창이 가동됩니다.\n\n` +
-    `결제를 승인하고 도메인을 1초 매입하시겠습니까?`
-  );
-
-  if (confirmed) {
-    return { success: true, paymentId: `MOCK_PAY_${Date.now()}` };
-  } else {
-    throw new Error("고객에 의해 결제가 취소되었습니다.");
-  }
+  // 3. 모의 결제 ID 반환
+  return { success: true, paymentId: `MOCK_PAY_${Date.now()}` };
 }

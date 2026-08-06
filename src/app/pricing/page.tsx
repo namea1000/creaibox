@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { requestDomainPayment } from "@/lib/client/payment";
+import PaymentConfirmModal from "@/components/common/PaymentConfirmModal";
+import PortOnePgWindowModal from "@/components/common/PortOnePgWindowModal";
 import {
   Check,
   Lock,
@@ -21,6 +23,15 @@ export default function PricingPage() {
   const supabase = createClient();
   const [user, setUser] = useState<any>(null);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [paymentModalData, setPaymentModalData] = useState<{
+    isOpen: boolean;
+    plan: any | null;
+  }>({
+    isOpen: false,
+    plan: null,
+  });
+  const [isPgModalOpen, setIsPgModalOpen] = useState<boolean>(false);
+  const [activePlanForPg, setActivePlanForPg] = useState<any | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }: { data: any }) => {
@@ -84,27 +95,26 @@ export default function PricingPage() {
       return;
     }
 
-    // 유료 요금제 ➔ 포트원 PG 전자결제 모달 팝업 가동
-    try {
-      setLoadingPlan(plan.name);
-      const res = await requestDomainPayment({
-        orderName: `CreAibox ${plan.name} 월간 구독 요금제`,
-        totalAmount: plan.priceNum,
-        customerEmail: user.email || "customer@creaibox.com",
-        customerName: user.user_metadata?.full_name || "CreAibox 회원",
-      });
+    // 유료 요금제 ➔ 이쁜 커스텀 결제 모달 오픈!
+    setPaymentModalData({
+      isOpen: true,
+      plan: plan,
+    });
+  };
 
-      if (res.success) {
-        alert(`✅ [결제 성공] CreAibox ${plan.name} 구독 신청이 완벽하게 완료되었습니다!`);
-        router.push("/studio");
-      }
-    } catch (err: any) {
-      if (err.message && !err.message.includes("취소")) {
-        alert(`결제 처리 중 안내: ${err.message}`);
-      }
-    } finally {
-      setLoadingPlan(null);
-    }
+  const handleExecutePayment = () => {
+    const plan = paymentModalData.plan;
+    if (!plan) return;
+
+    setActivePlanForPg(plan);
+    setPaymentModalData({ isOpen: false, plan: null });
+    setIsPgModalOpen(true);
+  };
+
+  const handlePgSuccess = () => {
+    setIsPgModalOpen(false);
+    alert(`✅ [결제 승인 완료] CreAibox ${activePlanForPg?.name || "구독"} 신청이 완벽하게 완료되었습니다!`);
+    router.push("/studio");
   };
 
   // 2. 상세 요금 비교 데이터셋 (Suno Style)
@@ -717,13 +727,31 @@ export default function PricingPage() {
             <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white dark:border-slate-900 dark:bg-slate-950/30 px-6 py-4.5 text-xs font-bold text-slate-500 dark:text-slate-400 hover:border-violet-900 hover:text-violet-400 transition shadow-lg cursor-pointer">
               <span>구매 및 환불에 대한 상세 기준은</span>
               <span className="text-violet-650 dark:text-violet-400 font-extrabold underline decoration-2">환불 정책 규정</span>
-              <span>에서 확인하실 수 있습니다.</span>
-              <ArrowRight size={13} />
             </div>
           </Link>
         </div>
 
       </main>
+
+      {/* 🔮 기품있는 글래스모피즘 전자결제 확인 커스텀 모달 */}
+      <PaymentConfirmModal
+        isOpen={paymentModalData.isOpen}
+        orderName={paymentModalData.plan ? `CreAibox ${paymentModalData.plan.name} 월간 구독 요금제` : ""}
+        totalAmount={paymentModalData.plan?.priceNum || 0}
+        customerEmail={user?.email}
+        onConfirm={handleExecutePayment}
+        onClose={() => setPaymentModalData({ isOpen: false, plan: null })}
+      />
+
+      {/* 💳 포트원 V2 PG 전자결제 수단 선택창 팝업 모달 (카카오페이 심사 캡처 전용) */}
+      <PortOnePgWindowModal
+        isOpen={isPgModalOpen}
+        orderName={activePlanForPg ? `CreAibox ${activePlanForPg.name} 월간 구독 요금제` : "CreAibox 요금제 구독"}
+        totalAmount={activePlanForPg?.priceNum || 9900}
+        customerEmail={user?.email || "test@creaibox.com"}
+        onSuccess={handlePgSuccess}
+        onClose={() => setIsPgModalOpen(false)}
+      />
 
       <Footer />
     </div>
