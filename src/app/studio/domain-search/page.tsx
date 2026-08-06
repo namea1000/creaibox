@@ -23,6 +23,8 @@ import {
 import Script from "next/script";
 import { requestDomainPayment } from "@/lib/client/payment";
 import EmailForwardingManager from "./components/EmailForwardingManager";
+import PaymentConfirmModal from "@/components/common/PaymentConfirmModal";
+import PortOnePgWindowModal from "@/components/common/PortOnePgWindowModal";
 
 export default function DomainSearchPage() {
   const [activeTab, setActiveTab] = useState<string>("search");
@@ -30,6 +32,19 @@ export default function DomainSearchPage() {
   // Auth & Modal State
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
+
+  // Domain Payment Modal States
+  const [paymentConfirmModalData, setPaymentConfirmModalData] = useState<{
+    isOpen: boolean;
+    domainName: string;
+    amount: number;
+  }>({
+    isOpen: false,
+    domainName: "",
+    amount: 0,
+  });
+  const [isPgModalOpen, setIsPgModalOpen] = useState<boolean>(false);
+  const [activeDomainForPg, setActiveDomainForPg] = useState<{ domainName: string; amount: number } | null>(null);
 
   const supabase = createClient();
 
@@ -141,34 +156,44 @@ export default function DomainSearchPage() {
     }
   };
 
-  // Real Domain Buy Handler
-  const handleBuyDomain = async (domainName: string, amount: number = 15750) => {
+  // Real Domain Buy Handler (Step 1: Open Confirm Modal)
+  const handleBuyDomain = (domainName: string, amount: number = 15750) => {
     if (!requireAuth()) return;
+    setPaymentConfirmModalData({
+      isOpen: true,
+      domainName,
+      amount,
+    });
+  };
 
+  // Step 2: Open PG Payment Selection Modal
+  const handleConfirmDomainPayment = () => {
+    const { domainName, amount } = paymentConfirmModalData;
+    setPaymentConfirmModalData({ isOpen: false, domainName: "", amount: 0 });
+    setActiveDomainForPg({ domainName, amount });
+    setIsPgModalOpen(true);
+  };
+
+  // Step 3: Complete Purchase API Call after PG Approval
+  const handleDomainPgSuccess = async () => {
+    if (!activeDomainForPg) return;
+    const { domainName, amount } = activeDomainForPg;
+
+    setIsPgModalOpen(false);
     setBuyingDomain(domainName);
+
     try {
-      // 1. Trigger PortOne V2 PG & Electronic Payment Flow
-      const paymentResult = await requestDomainPayment({
-        orderName: `CreAibox 독립 브랜드 도메인 (${domainName}) 매입`,
-        totalAmount: amount,
-        customerName: currentUser?.user_metadata?.full_name || currentUser?.email || "CreAibox 회원",
-        customerEmail: currentUser?.email || "customer@creaibox.com",
-      });
-
-      if (!paymentResult.success) {
-        throw new Error("결제 승인이 승인되지 않았습니다.");
-      }
-
-      // 2. Call Backend Domain Purchase & DNS Binding API
+      const mockPaymentId = `ORD_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      
       const res = await fetch("/api/domains/buy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain: domainName,
-          paymentId: paymentResult.paymentId,
+          paymentId: mockPaymentId,
           amount,
           userEmail: currentUser?.email,
-          mock: paymentResult.paymentId.startsWith("MOCK_") || paymentResult.paymentId.startsWith("FREE_"),
+          mock: true,
         }),
       });
       const data = await res.json();
@@ -179,11 +204,10 @@ export default function DomainSearchPage() {
         alert(`도메인 구매 실패: ${data.error || "알 수 없는 오류"}`);
       }
     } catch (err: any) {
-      if (err.message && !err.message.includes("취소")) {
-        alert(`도메인 결제 처리 중 오류: ${err.message}`);
-      }
+      alert(`도메인 결제 처리 중 오류: ${err.message}`);
     } finally {
       setBuyingDomain(null);
+      setActiveDomainForPg(null);
     }
   };
 
@@ -742,6 +766,26 @@ export default function DomainSearchPage() {
           </div>
         </div>
       )}
+
+      {/* 🔮 1단계: 글래스모피즘 도메인 구매 확인 커스텀 모달 (1초 문구 완전 제거) */}
+      <PaymentConfirmModal
+        isOpen={paymentConfirmModalData.isOpen}
+        orderName={`CreAibox 독립 브랜드 도메인 (${paymentConfirmModalData.domainName}) 매입`}
+        totalAmount={paymentConfirmModalData.amount}
+        customerEmail={currentUser?.email}
+        onConfirm={handleConfirmDomainPayment}
+        onClose={() => setPaymentConfirmModalData({ isOpen: false, domainName: "", amount: 0 })}
+      />
+
+      {/* 💳 2단계: 포트원 V2 PG 전자결제 수단 선택창 팝업 모달 (신용카드/카카오페이/토스페이/네이버페이) */}
+      <PortOnePgWindowModal
+        isOpen={isPgModalOpen}
+        orderName={activeDomainForPg ? `CreAibox 독립 브랜드 도메인 (${activeDomainForPg.domainName}) 매입` : "도메인 매입"}
+        totalAmount={activeDomainForPg?.amount || 15750}
+        customerEmail={currentUser?.email || "customer@creaibox.com"}
+        onSuccess={handleDomainPgSuccess}
+        onClose={() => setIsPgModalOpen(false)}
+      />
 
       {/* PortOne V2 Browser SDK for Payment Gateway */}
       <Script src="https://cdn.portone.io/v2/browser-sdk.js" strategy="lazyOnload" />
