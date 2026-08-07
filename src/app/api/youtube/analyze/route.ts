@@ -1,35 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  decryptVaultKey,
-  getActiveVaultKeys,
-  recordVaultFailure,
-  recordVaultSuccess,
-  supabaseAdmin,
-} from "@/lib/server/get-free-gemini-key";
+import { supabaseAdmin } from "@/lib/server/get-free-gemini-key";
 import { decryptApiKey } from "@/lib/server/api-vault-crypto";
 import { createClient } from "@/utils/supabase/server";
+import { generateContentWithVertexAI } from "@/lib/server/vertex-ai-gemini";
 
 const DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite";
 
 // 2중 In-Memory 캐시 레이어 (서버 메모리 상에 24시간 보관)
 const memoryCache = new Map<string, { content: string; timestamp: number }>();
 const CACHE_TTL = 24 * 60 * 60 * 1000;
-
-/**
- * Extract text from Gemini generateContent API response.
- */
-function extractGeminiText(data: any): string {
-  const text = data.candidates?.[0]?.content?.parts
-    ?.map((part: any) => part.text || "")
-    .join("")
-    .trim();
-
-  if (!text) {
-    throw new Error(data.error?.message || "Gemini API 응답 본문이 비어 있습니다.");
-  }
-
-  return text;
-}
 
 export async function POST(req: NextRequest) {
   // 1. Verify authenticated session to prevent public abuse
@@ -74,28 +53,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ cached: true, content: cachedRow.analysis_content, source: "db" });
     }
 
-    // 3. Cache Miss - Fetch Available API key from Vault or Env fallback
-    let apiKey = "";
-    let vaultId: number | null = null;
-
-    try {
-      const vaultKeys = await getActiveVaultKeys("gemini");
-      if (vaultKeys && vaultKeys.length > 0) {
-        const selectedVault = vaultKeys[0];
-        apiKey = decryptVaultKey(selectedVault);
-        vaultId = selectedVault.id;
-      }
-    } catch (vaultErr) {
-      console.warn("Failed to retrieve Gemini key from vault, trying env fallback:", vaultErr);
-    }
-
-    if (!apiKey) {
-      apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
-    }
-
-    if (!apiKey) {
-      throw new Error("가용한 Gemini API 키가 존재하지 않습니다. (관리자 금고 또는 로컬 환경변수 확인 필요)");
-    }
+    // 3. Cache Miss - Use Vertex AI Primary Engine (Rule 1)
 
     // 4. Retrieve YouTube Key from Vault to fetch Channel Info and Comments
     let youtubeApiKey = "";
@@ -196,43 +154,15 @@ ${description ? description.substring(0, 800) : "본문 설명 없음"}
 3. **내 채널을 위한 크리에이박스 변형 기획안 (Remix Blueprint)**
    - 이 영상의 흥행 공식을 벤치마킹하여 일반 크리에이터가 자신의 채널 성격에 맞게 2차 변형/Remix하여 안전하게 제작할 수 있는 기획 청사진 및 구체적 오프닝/후킹 스크립트 시나리오 예시 제시.`;
 
-    const promptParts: any[] = [{ text: prompt }];
-    if (base64Image) {
-      promptParts.push({
-        inlineData: {
-          mimeType: "image/jpeg",
-          data: base64Image,
-        },
-      });
-    }
+    const imageParts = base64Image
+      ? [{ inlineData: { mimeType: "image/jpeg", data: base64Image } }]
+      : undefined;
 
-    const modelPath = `models/${DEFAULT_GEMINI_MODEL}`;
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/${modelPath}:generateContent?key=${apiKey}`;
-
-    const geminiRes = await fetch(geminiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: promptParts,
-          },
-        ],
-      }),
+    const generatedText = await generateContentWithVertexAI({
+      prompt,
+      modelName: DEFAULT_GEMINI_MODEL,
+      imageParts,
     });
-
-    if (!geminiRes.ok) {
-      if (vaultId) await recordVaultFailure(vaultId, `HTTP ${geminiRes.status}`);
-      throw new Error(`Gemini API returned HTTP ${geminiRes.status}`);
-    }
-
-    const resData = await geminiRes.json();
-    const generatedText = extractGeminiText(resData);
-
-    if (vaultId) {
-      await recordVaultSuccess(vaultId);
-    }
 
     // 10. Store Cache to Memory first (100% reliable fallback)
     memoryCache.set(cleanVideoId, { content: generatedText, timestamp: Date.now() });

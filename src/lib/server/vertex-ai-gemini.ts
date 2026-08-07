@@ -8,6 +8,7 @@ interface VertexGeminiOptions {
   temperature?: number;
   useSearch?: boolean;
   responseMimeType?: string;
+  imageParts?: Array<{ inlineData: { mimeType: string; data: string } }>;
 }
 
 function getServiceAccountCredentials() {
@@ -69,6 +70,7 @@ export async function generateContentWithVertexAI({
   temperature = 0.7,
   useSearch,
   responseMimeType,
+  imageParts,
 }: VertexGeminiOptions): Promise<string> {
   const creds = getServiceAccountCredentials();
   if (!creds) {
@@ -100,10 +102,15 @@ export async function generateContentWithVertexAI({
     finalPrompt = `[실시간 정보 반영 지침 - 현재 시점: ${dateStr} (KST)]\n구글 실시간 검색 로봇을 구동하여 반드시 오늘(${dateStr}) 최신 뉴스, 주가 시황 및 동향 정보를 직접 수집하고 이를 기반으로 사실만을 정확히 작성해 주세요.\n\n${prompt}`;
   }
 
+  const parts: any[] = [{ text: finalPrompt }];
+  if (imageParts && imageParts.length > 0) {
+    parts.push(...imageParts);
+  }
+
   const contents: any[] = [
     {
       role: "user",
-      parts: [{ text: finalPrompt }],
+      parts,
     },
   ];
 
