@@ -326,42 +326,9 @@ export async function GET(req: NextRequest) {
             }
           }
 
-          // Fallback to recent DB cache if combinedVideos is empty
-          if (combinedVideos.length === 0) {
-            try {
-              const { data: fallbackRows } = await supabaseAdmin
-                .from("youtube_trending_archive")
-                .select("videos_data")
-                .order("target_date", { ascending: false })
-                .limit(10);
-
-              if (fallbackRows && fallbackRows.length > 0) {
-                for (const row of fallbackRows) {
-                  const vData = row.videos_data;
-                  if (Array.isArray(vData)) {
-                    for (const video of vData) {
-                      if (video && video.id && !seenIds.has(video.id)) {
-                        seenIds.add(video.id);
-                        combinedVideos.push(video);
-                      }
-                    }
-                  } else if (vData && typeof vData === "object") {
-                    Object.values(vData).forEach((list: any) => {
-                      if (Array.isArray(list)) {
-                        for (const video of list) {
-                          if (video && video.id && !seenIds.has(video.id)) {
-                            seenIds.add(video.id);
-                            combinedVideos.push(video);
-                          }
-                        }
-                      }
-                    });
-                  }
-                }
-              }
-            } catch (fallbackErr) {
-              console.error("Failed to query fallback archive rows:", fallbackErr);
-            }
+          // Strict Zero Fake Data Rule: If no live videos or date bundle exists, return empty array without serving stale fallback data
+          if (combinedVideos.length === 0 && cacheOnly) {
+            return NextResponse.json({ cacheMiss: true, data: [] });
           }
 
           if (cacheOnly && combinedVideos.length === 0) {

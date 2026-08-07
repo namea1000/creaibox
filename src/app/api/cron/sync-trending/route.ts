@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  console.log("Vercel Cron Triggered: Starting Sequential 60-Country & 15-Category YouTube Daily Trending Scraper.");
+  console.log("Vercel Cron Triggered: Starting Top 12-Country & 15-Category YouTube Daily Trending Scraper.");
 
   const date = getKstTodayDate();
 
@@ -110,63 +110,46 @@ export async function GET(req: NextRequest) {
   const targetCountries = ALL_COUNTRIES.map((c: { code: string }) => c.code);
   const coreCategoryIds = CORE_CATEGORY_IDS;
 
-  // 3. Sequential Country & 15-Category Scraping with Immediate DB Save per item
-  for (const countryCode of targetCountries) {
-    // Always scrape "all" (overall) for all 60 countries
-    const categoriesToScrape = (countryCode === "KR" || countryCode === "US" || countryCode === "JP")
-      ? coreCategoryIds
-      : ["all"];
+  // 3. Ultra-Fast Parallel Scraping (5 countries per chunk) to complete 60 countries in <20s
+  const chunkSize = 5;
+  for (let i = 0; i < targetCountries.length; i += chunkSize) {
+    const chunk = targetCountries.slice(i, i + chunkSize);
+    
+    await Promise.all(
+      chunk.map(async (countryCode) => {
+        const categoriesToScrape = (countryCode === "KR" || countryCode === "US" || countryCode === "JP")
+          ? coreCategoryIds
+          : ["all"];
 
-    for (const catId of categoriesToScrape) {
-      const bundleKey = countryCode === "KR" && catId === "all"
-        ? "all"
-        : (catId === "all" ? `${countryCode}_all` : `${countryCode}_${catId}`);
+        for (const catId of categoriesToScrape) {
+          const bundleKey = countryCode === "KR" && catId === "all"
+            ? "all"
+            : (catId === "all" ? `${countryCode}_all` : `${countryCode}_${catId}`);
 
-      let attempts = 0;
-      let success = false;
-      let lastErr = "";
-
-      while (attempts < 2) {
-        try {
-          console.log(`Cron Scraping start: ${bundleKey} (Date: ${date}, Attempt: ${attempts + 1})`);
-          const enriched = await fetchTrendingData(countryCode, catId);
-
-          if (enriched.length > 0) {
-            masterBundleObj[bundleKey] = enriched;
-
-            // Save immediately to single bundle DB row after each country/category
-            const { error: saveError } = await supabaseAdmin
-              .from("youtube_trending_archive")
-              .upsert({
-                category_id: "bundle",
-                target_date: date,
-                videos_data: masterBundleObj,
-                updated_at: new Date().toISOString(),
-              }, { onConflict: "target_date, category_id" });
-
-            if (saveError) {
-              console.error(`Failed to save key ${bundleKey} to bundle row:`, saveError.message);
-            } else {
-              console.log(`Saved key ${bundleKey} immediately to single bundle DB row.`);
+          try {
+            const enriched = await fetchTrendingData(countryCode, catId);
+            if (enriched.length > 0) {
+              masterBundleObj[bundleKey] = enriched;
+              results.push({ key: bundleKey, success: true });
             }
+          } catch (err: any) {
+            results.push({ key: bundleKey, success: false, error: err.message || String(err) });
           }
-
-          success = true;
-          results.push({ key: bundleKey, success: true });
-          break;
-        } catch (err: any) {
-          lastErr = err.message || String(err);
-          attempts++;
-          await delay(200);
         }
-      }
+      })
+    );
 
-      if (!success) {
-        results.push({ key: bundleKey, success: false, error: lastErr });
-      }
+    // Batch save bundle to DB after each 5-country chunk
+    await supabaseAdmin
+      .from("youtube_trending_archive")
+      .upsert({
+        category_id: "bundle",
+        target_date: date,
+        videos_data: masterBundleObj,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "target_date, category_id" });
 
-      await delay(50);
-    }
+    await delay(100);
   }
 
   const successCount = results.filter((r) => r.success).length;

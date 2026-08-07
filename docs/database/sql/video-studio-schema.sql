@@ -16,6 +16,10 @@ create table if not exists public.video_projects (
   canvas_ratio text not null default '16:9',
   duration numeric not null default 0,
 
+  -- 보관함 및 이벤트 폴더 그룹핑 (별도 테이블 불필요)
+  library_name text not null default '기본 보관함',
+  event_name text not null default '기본 이벤트',
+
   project_json jsonb not null default '{}'::jsonb,
 
   storage_mode text not null default 'local_metadata_only',
@@ -24,6 +28,11 @@ create table if not exists public.video_projects (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Migration: 기존 테이블에 library_name, event_name 컬럼 추가 (최초 1회 실행)
+-- ALTER TABLE public.video_projects
+--   ADD COLUMN IF NOT EXISTS library_name TEXT NOT NULL DEFAULT '기본 보관함',
+--   ADD COLUMN IF NOT EXISTS event_name TEXT NOT NULL DEFAULT '기본 이벤트';
 
 create table if not exists public.video_project_assets (
   id uuid primary key default gen_random_uuid(),

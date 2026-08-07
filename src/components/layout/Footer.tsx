@@ -18,13 +18,8 @@ export default function Footer() {
   React.useEffect(() => {
     setMounted(true);
     setCurrentYear(new Date().getFullYear());
-    const savedTheme = localStorage.getItem("studio_theme") as "light" | "dark" | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-    } else {
-      const isDark = document.documentElement.classList.contains("dark");
-      setTheme(isDark ? "dark" : "light");
-    }
+    const isDark = document.documentElement.classList.contains("dark");
+    setTheme(isDark ? "dark" : "light");
 
     const observer = new MutationObserver(() => {
       const isDark = document.documentElement.classList.contains("dark");
@@ -329,8 +324,8 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-between gap-5 border-t border-slate-200 dark:border-zinc-900 pt-4 md:flex-row">
-          <div className="text-xs font-bold text-slate-500 dark:text-zinc-500">
+        <div className="flex flex-col items-center justify-between gap-5 border-t border-slate-200 dark:border-zinc-900 pt-4 md:flex-row" suppressHydrationWarning>
+          <div className="text-xs font-bold text-slate-500 dark:text-zinc-500" suppressHydrationWarning>
             © {currentYear} <span className="text-slate-800 dark:text-zinc-300">크리에이박스(CreAibox)</span>.
             All rights reserved.
           </div>

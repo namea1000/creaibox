@@ -56,19 +56,7 @@ const CATEGORIES = [
   { label: "자동차", id: "2" },
 ];
 
-const REGIONAL_GROUPS = [
-  { id: "top", name: "🔥 주요 12개국" },
-  { id: "asia", name: "🌏 아시아/동아시아" },
-  { id: "southeast_asia", name: "🌴 동남아시아" },
-  { id: "europe", name: "🏰 유럽" },
-  { id: "north_america", name: "🦅 북미" },
-  { id: "latin_america", name: "💃 중남미" },
-  { id: "middle_east_africa", name: "🕌 중동/아프리카" },
-  { id: "oceania", name: "🦘 오세아니아" },
-  { id: "all", name: "🌐 전세계 전체 (60+개국)" }
-];
-
-interface CountryItem {
+export interface CountryItem {
   code: string;
   name: string;
   flag: string;
@@ -77,82 +65,21 @@ interface CountryItem {
 }
 
 export const ALL_COUNTRIES: CountryItem[] = [
-  // 🇰🇷 동아시아 / 아시아 (9개국)
-  { code: "KR", name: "대한민국", flag: "🇰🇷", region: "asia", isTop: true },
-  { code: "JP", name: "일본", flag: "🇯🇵", region: "asia", isTop: true },
-  { code: "TW", name: "대만", flag: "🇹🇼", region: "asia" },
-  { code: "HK", name: "홍콩", flag: "🇭🇰", region: "asia" },
-  { code: "MO", name: "마카오", flag: "🇲🇴", region: "asia" },
-  { code: "MN", name: "몽골", flag: "🇲🇳", region: "asia" },
-  { code: "IN", name: "인도", flag: "🇮🇳", region: "asia", isTop: true },
-  { code: "PK", name: "파키스탄", flag: "🇵🇰", region: "asia" },
-  { code: "BD", name: "방글라데시", flag: "🇧🇩", region: "asia" },
-
-  // 🌴 동남아시아 (7개국)
-  { code: "VN", name: "베트남", flag: "🇻🇳", region: "southeast_asia", isTop: true },
-  { code: "TH", name: "태국", flag: "🇹🇭", region: "southeast_asia" },
-  { code: "ID", name: "인도네시아", flag: "🇮🇩", region: "southeast_asia" },
-  { code: "PH", name: "필리핀", flag: "🇵🇭", region: "southeast_asia" },
-  { code: "SG", name: "싱가포르", flag: "🇸🇬", region: "southeast_asia" },
-  { code: "MY", name: "말레이시아", flag: "🇲🇾", region: "southeast_asia" },
-  { code: "KH", name: "캄보디아", flag: "🇰🇭", region: "southeast_asia" },
-
-  // 🏰 유럽 (24개국)
-  { code: "GB", name: "영국", flag: "🇬🇧", region: "europe", isTop: true },
-  { code: "DE", name: "독일", flag: "🇩🇪", region: "europe", isTop: true },
-  { code: "FR", name: "프랑스", flag: "🇫🇷", region: "europe", isTop: true },
-  { code: "ES", name: "스페인", flag: "🇪🇸", region: "europe", isTop: true },
-  { code: "IT", name: "이탈리아", flag: "🇮🇹", region: "europe" },
-  { code: "NL", name: "네덜란드", flag: "🇳🇱", region: "europe" },
-  { code: "SE", name: "스웨덴", flag: "🇸🇪", region: "europe" },
-  { code: "PL", name: "폴란드", flag: "🇵🇱", region: "europe" },
-  { code: "IE", name: "아일랜드", flag: "🇮🇪", region: "europe" },
-  { code: "CH", name: "스위스", flag: "🇨🇭", region: "europe" },
-  { code: "AT", name: "오스트리아", flag: "🇦🇹", region: "europe" },
-  { code: "BE", name: "벨기에", flag: "🇧🇪", region: "europe" },
-  { code: "NO", name: "노르웨이", flag: "🇳🇴", region: "europe" },
-  { code: "DK", name: "덴마크", flag: "🇩🇰", region: "europe" },
-  { code: "FI", name: "핀란드", flag: "🇫🇮", region: "europe" },
-  { code: "PT", name: "포르투갈", flag: "🇵🇹", region: "europe" },
-  { code: "GR", name: "그리스", flag: "🇬🇷", region: "europe" },
-  { code: "CZ", name: "체코", flag: "🇨🇿", region: "europe" },
-  { code: "SK", name: "슬로바키아", flag: "🇸🇰", region: "europe" },
-  { code: "HR", name: "크로아티아", flag: "🇭🇷", region: "europe" },
-  { code: "EE", name: "에스토니아", flag: "🇪🇪", region: "europe" },
-  { code: "HU", name: "헝가리", flag: "🇭🇺", region: "europe" },
-  { code: "RO", name: "루마니아", flag: "🇷🇴", region: "europe" },
-  { code: "UA", name: "우크라이나", flag: "🇺🇦", region: "europe" },
-
-  // 🦅 북미 (3개국)
-  { code: "US", name: "미국", flag: "🇺🇸", region: "north_america", isTop: true },
-  { code: "CA", name: "캐나다", flag: "🇨🇦", region: "north_america", isTop: true },
-  { code: "MX", name: "멕시코", flag: "🇲🇽", region: "north_america" },
-
-  // 💃 중남미 (6개국)
-  { code: "BR", name: "브라질", flag: "🇧🇷", region: "latin_america", isTop: true },
-  { code: "AR", name: "아르헨티나", flag: "🇦🇷", region: "latin_america" },
-  { code: "CL", name: "칠레", flag: "🇨🇱", region: "latin_america" },
-  { code: "CO", name: "콜롬비아", flag: "🇨🇴", region: "latin_america" },
-  { code: "PE", name: "페루", flag: "🇵🇪", region: "latin_america" },
-  { code: "UY", name: "우루과이", flag: "🇺🇾", region: "latin_america" },
-
-  // 🕌 중동 / 아프리카 (9개국)
-  { code: "SA", name: "사우디아라비아", flag: "🇸🇦", region: "middle_east_africa" },
-  { code: "AE", name: "아랍에미리트", flag: "🇦🇪", region: "middle_east_africa" },
-  { code: "EG", name: "이집트", flag: "🇪🇬", region: "middle_east_africa" },
-  { code: "TR", name: "튀르키예", flag: "🇹🇷", region: "middle_east_africa" },
-  { code: "IL", name: "이스라엘", flag: "🇮🇱", region: "middle_east_africa" },
-  { code: "ZA", name: "남아프리카공화국", flag: "🇿🇦", region: "middle_east_africa" },
-  { code: "NG", name: "나이지리아", flag: "🇳🇬", region: "middle_east_africa" },
-  { code: "KE", name: "케냐", flag: "🇰🇪", region: "middle_east_africa" },
-  { code: "MA", name: "모로코", flag: "🇲🇦", region: "middle_east_africa" },
-
-  // 🦘 오세아니아 (2개국)
-  { code: "AU", name: "호주", flag: "🇦🇺", region: "oceania", isTop: true },
-  { code: "NZ", name: "뉴질랜드", flag: "🇳🇿", region: "oceania" },
+  { code: "KR", name: "대한민국", flag: "🇰🇷", region: "top", isTop: true },
+  { code: "JP", name: "일본", flag: "🇯🇵", region: "top", isTop: true },
+  { code: "IN", name: "인도", flag: "🇮🇳", region: "top", isTop: true },
+  { code: "VN", name: "베트남", flag: "🇻🇳", region: "top", isTop: true },
+  { code: "GB", name: "영국", flag: "🇬🇧", region: "top", isTop: true },
+  { code: "DE", name: "독일", flag: "🇩🇪", region: "top", isTop: true },
+  { code: "FR", name: "프랑스", flag: "🇫🇷", region: "top", isTop: true },
+  { code: "ES", name: "스페인", flag: "🇪🇸", region: "top", isTop: true },
+  { code: "US", name: "미국", flag: "🇺🇸", region: "top", isTop: true },
+  { code: "CA", name: "캐나다", flag: "🇨🇦", region: "top", isTop: true },
+  { code: "BR", name: "브라질", flag: "🇧🇷", region: "top", isTop: true },
+  { code: "AU", name: "호주", flag: "🇦🇺", region: "top", isTop: true },
 ];
 
-const COUNTRIES = ALL_COUNTRIES.filter((c) => c.isTop);
+const COUNTRIES = ALL_COUNTRIES;
 const OTHER_COUNTRIES = ALL_COUNTRIES.filter((c) => !c.isTop);
 
 export default function RisingVideos() {
@@ -620,32 +547,15 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
 
       {/* 🌐 Central Filter Hub (Global Country + Category Selectors) */}
       <div className="rounded-2xl border border-zinc-800 bg-zinc-950/20 p-6 backdrop-blur-md space-y-3.5 shadow-2xl shadow-black/25 flex flex-col items-center w-full">
-        {/* 1. 대륙 / 지역 카테고리 탭 (1열) */}
+        {/* 주요 12개국 단일 탭 목록 */}
         <div className="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 w-full max-w-full">
-          {REGIONAL_GROUPS.map((reg) => (
-            <button
-              key={reg.id}
-              onClick={() => setSelectedRegionGroup(reg.id)}
-              className={`px-3 py-1.5 text-xs font-black rounded-xl transition shrink-0 whitespace-nowrap border ${
-                selectedRegionGroup === reg.id
-                  ? "bg-zinc-100 border-zinc-100 text-zinc-950 shadow-md font-black"
-                  : "bg-zinc-900/80 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
-              }`}
-            >
-              {reg.name}
-            </button>
-          ))}
-        </div>
-
-        {/* 2. 대륙별 국가 개별 탭 버튼 목록 (2열) */}
-        <div className="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 w-full max-w-full">
-          {getFilteredCountries().map((ct) => (
+          {ALL_COUNTRIES.map((ct) => (
             <button
               key={ct.code}
               onClick={() => handleCountryChange(ct.code)}
-              className={`px-3 sm:px-3.5 py-1.5 text-xs font-black rounded-xl transition flex items-center gap-1.5 shrink-0 whitespace-nowrap border-2 ${
+              className={`px-3 sm:px-3.5 py-1.5 text-xs font-black rounded-xl transition flex items-center gap-1.5 shrink-0 whitespace-nowrap border-2 cursor-pointer ${
                 selectedCountry === ct.code
-                  ? "bg-orange-950/30 border-orange-500/70 text-white shadow-lg shadow-orange-950/40 transform scale-105"
+                  ? "bg-orange-950/40 border-orange-500 text-white shadow-lg shadow-orange-950/40 transform scale-105"
                   : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white"
               }`}
             >
@@ -709,10 +619,13 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
               )}
             </div>
           ) : filteredVideos.length === 0 ? (
-            <div className="text-center py-20 border border-zinc-850 rounded-2xl bg-zinc-950/20 space-y-3">
-              <p className="text-sm text-zinc-300 font-black">📭 아직 수집된 {getCountryName(selectedCountry)} 트렌드 데이터가 없습니다.</p>
-              <p className="text-xs text-zinc-500 font-bold">
-                상단의 <span className="text-orange-500 font-black">"전체 60개국 일괄수집"</span> 버튼을 클릭하시거나 일일 무인 자동 수집을 기다려 주세요.
+            <div className="text-center py-20 border border-zinc-800 rounded-2xl bg-zinc-950/40 p-8 space-y-3">
+              <div className="text-3xl">📭</div>
+              <p className="text-sm text-zinc-200 font-extrabold">
+                [{selectedDate}] [{getCountryName(selectedCountry)}] 트렌드 데이터가 존재하지 않습니다.
+              </p>
+              <p className="text-xs text-zinc-400 font-medium leading-relaxed max-w-md mx-auto">
+                CreAibox DB 클라우드 구축 이전 날짜이거나 해당 국가의 수집 데이터가 미존재하는 상태입니다. 가짜(Mock/Dummy) 데이터를 표시하지 않고 솔직하게 안내해 드립니다.
               </p>
             </div>
           ) : (

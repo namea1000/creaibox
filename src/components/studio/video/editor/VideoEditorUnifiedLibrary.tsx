@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   FolderOpen,
   FolderPlus,
@@ -34,6 +34,19 @@ import VideoEditorMediaLibrary from "./VideoEditorMediaLibrary";
 import VideoEditorStockPanel from "./VideoEditorStockPanel";
 import VideoEditorVisualizerPanel from "./VideoEditorVisualizerPanel";
 import VideoEditorAddTextPanel from "./VideoEditorAddTextPanel";
+import {
+  listUserProjects,
+  loadProject,
+  createProject,
+  updateProjectJson,
+  updateProjectMeta,
+  deleteProject,
+  renameLibrary,
+  renameEvent,
+  deleteLibrary,
+  deleteEvent,
+  buildEditorStateFromRows,
+} from "@/lib/video/videoProjectStore";
 
 // Top tabs configuration (FCP Style: Project tab added first)
 const TOP_TABS = [
@@ -86,46 +99,6 @@ type ProjectItem = {
   tracks?: TimelineTrack[];
 };
 
-const initialLibraries: string[] = ["YouTube Shorts", "제품 홍보", "기타 프로젝트"];
-
-const initialEvents: EventItem[] = [
-  { id: "event-1", name: "YouTube Shorts 테스트 이벤트", libraryName: "YouTube Shorts" },
-  { id: "event-2", name: "제품 소개 영상 이벤트", libraryName: "제품 홍보" },
-  { id: "event-3", name: "기타 테스트 이벤트", libraryName: "기타 프로젝트" },
-];
-
-const initialProjects: ProjectItem[] = [
-  {
-    id: "project-1",
-    title: "YouTube Shorts 테스트",
-    ratio: "9:16",
-    duration: 15,
-    updatedAt: "방금 전",
-    assetCount: 2,
-    eventId: "event-1",
-  },
-  {
-    id: "project-2",
-    title: "제품 소개 영상",
-    ratio: "16:9",
-    duration: 25,
-    updatedAt: "오늘",
-    assetCount: 2,
-    eventId: "event-2",
-  },
-];
-
-function readStoredValue<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-
-  try {
-    const saved = window.localStorage.getItem(key);
-    return saved ? (JSON.parse(saved) as T) : fallback;
-  } catch (error) {
-    console.error(`Failed to load ${key} from localStorage:`, error);
-    return fallback;
-  }
-}
 
 function getDefaultCategory(tab: VideoEditorTab) {
   if (tab === "project") return "details";
@@ -167,69 +140,39 @@ export default function VideoEditorUnifiedLibrary({
     setCanvasRatio,
   } = useVideoEditor();
 
-  const [libraries, setLibraries] = useState<string[]>(initialLibraries);
-  const [events, setEvents] = useState<EventItem[]>(initialEvents);
-  const [projects, setProjects] = useState<ProjectItem[]>(initialProjects);
+  const [libraries, setLibraries] = useState<string[]>([]);
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [projects, setProjects] = useState<ProjectItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Load from localStorage after mount to prevent hydration mismatch
+  // Track the DB id of the currently open project for save-on-demand
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const [isSavingProject, setIsSavingProject] = useState(false);
+
+  // Load projects from Supabase on mount
   useEffect(() => {
-    setLibraries(readStoredValue("creaibox-video-editor-libraries", initialLibraries));
-    setEvents(readStoredValue("creaibox-video-editor-events", initialEvents));
-    setProjects(readStoredValue("creaibox-video-editor-projects", initialProjects));
-    setIsLoaded(true);
+    async function loadFromDB() {
+      const rows = await listUserProjects();
+      if (rows.length === 0 && typeof window !== "undefined") {
+        // Not logged in or no projects yet — clear legacy localStorage
+        localStorage.removeItem("creaibox-video-editor-libraries");
+        localStorage.removeItem("creaibox-video-editor-events");
+        localStorage.removeItem("creaibox-video-editor-projects");
+        setIsLoaded(true);
+        setIsLoggedIn(false);
+        return;
+      }
+      setIsLoggedIn(true);
+      const { libraries: libs, events: evts, projects: projs } = buildEditorStateFromRows(rows);
+      setLibraries(libs);
+      setEvents(evts);
+      setProjects(projs);
+      setIsLoaded(true);
+    }
+    void loadFromDB();
   }, []);
 
-  // Save libraries to localStorage when they change, only after loading is complete
-  useEffect(() => {
-    if (!isLoaded) return;
-    localStorage.setItem("creaibox-video-editor-libraries", JSON.stringify(libraries));
-  }, [libraries, isLoaded]);
-
-  // Save events to localStorage when they change, only after loading is complete
-  useEffect(() => {
-    if (!isLoaded) return;
-    localStorage.setItem("creaibox-video-editor-events", JSON.stringify(events));
-  }, [events, isLoaded]);
-
-  // Save projects to localStorage when they change, only after loading is complete
-  useEffect(() => {
-    if (!isLoaded) return;
-    localStorage.setItem("creaibox-video-editor-projects", JSON.stringify(projects));
-  }, [projects, isLoaded]);
-
-  // Sync active project's timeline state (clips, tracks, and ratio) from context to projects list
-  useEffect(() => {
-    if (!projectTitle) return;
-    const timeout = window.setTimeout(() => {
-      setProjects((prev) => {
-        const activeProj = prev.find((p) => p.title === projectTitle);
-        if (!activeProj) return prev;
-
-        // Prevent redundant renders if clips, tracks, and ratio match
-        if (
-          activeProj.clips === clips &&
-          activeProj.tracks === tracks &&
-          activeProj.ratio === canvasRatio
-        ) {
-          return prev;
-        }
-        return prev.map((p) => {
-          if (p.title === projectTitle) {
-            return {
-              ...p,
-              clips,
-              tracks,
-              ratio: canvasRatio,
-            };
-          }
-          return p;
-        });
-      });
-    }, 0);
-
-    return () => window.clearTimeout(timeout);
-  }, [projectTitle, clips, tracks, canvasRatio]);
 
   const [selectedEventId, setSelectedEventId] = useState<string | null>("event-1");
   const [activeCategory, setActiveCategory] = useState<string>(() =>
@@ -266,6 +209,7 @@ export default function VideoEditorUnifiedLibrary({
       newName = `새 보관함 ${index}`;
       index++;
     }
+    // Library is just a grouping label — only persisted in DB when a project is created inside it
     setLibraries((prev) => [...prev, newName]);
     setOpenLibraries((prev) => ({ ...prev, [newName]: true }));
     setEditingLibrary(newName);
@@ -290,7 +234,16 @@ export default function VideoEditorUnifiedLibrary({
     }
     setLibraries((prev) => prev.map((l) => (l === oldName ? trimmed : l)));
     setEvents((prev) =>
-      prev.map((e) => (e.libraryName === oldName ? { ...e, libraryName: trimmed } : e))
+      prev.map((e) => (e.libraryName === oldName ? { ...e, libraryName: trimmed, id: `${trimmed}:::${e.name}` } : e))
+    );
+    setProjects((prev) =>
+      prev.map((p) => {
+        if (p.eventId.startsWith(`${oldName}:::`)) {
+          const eventName = p.eventId.split(":::")[1];
+          return { ...p, eventId: `${trimmed}:::${eventName}` };
+        }
+        return p;
+      })
     );
     setOpenLibraries((prev) => {
       const next = { ...prev };
@@ -301,6 +254,8 @@ export default function VideoEditorUnifiedLibrary({
       return next;
     });
     setEditingLibrary(null);
+    // Persist to DB
+    if (isLoggedIn) void renameLibrary(oldName, trimmed);
   };
 
   const handleDeleteLibrary = (name: string) => {
@@ -312,6 +267,7 @@ export default function VideoEditorUnifiedLibrary({
       if (selectedEventId && eventsToDelete.includes(selectedEventId)) {
         setSelectedEventId(null);
       }
+      if (isLoggedIn) void deleteLibrary(name);
     }
   };
 
@@ -342,25 +298,37 @@ export default function VideoEditorUnifiedLibrary({
       setEditingEventId(null);
       return;
     }
+    const event = events.find((e) => e.id === id);
+    if (!event) { setEditingEventId(null); return; }
+    const newId = `${event.libraryName}:::${trimmed}`;
     setEvents((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, name: trimmed } : e))
+      prev.map((e) => (e.id === id ? { ...e, name: trimmed, id: newId } : e))
+    );
+    setProjects((prev) =>
+      prev.map((p) => (p.eventId === id ? { ...p, eventId: newId } : p))
     );
     setEditingEventId(null);
+    // Persist to DB
+    if (isLoggedIn) void renameEvent(event.libraryName, event.name, trimmed);
   };
 
   const handleDeleteEvent = (eventId: string) => {
-    const eventName = events.find((e) => e.id === eventId)?.name || "이벤트";
+    const event = events.find((e) => e.id === eventId);
+    const eventName = event?.name || "이벤트";
     if (window.confirm(`"${eventName}" 이벤트와 해당 이벤트 내의 모든 프로젝트를 삭제하시겠습니까?`)) {
       setEvents((prev) => prev.filter((e) => e.id !== eventId));
       setProjects((prev) => prev.filter((p) => p.eventId !== eventId));
       if (selectedEventId === eventId) {
         setSelectedEventId(null);
       }
+      if (isLoggedIn && event) void deleteEvent(event.libraryName, event.name);
     }
   };
 
-  const handleAddProject = (eventId: string) => {
-    const id = `project-${Date.now()}`;
+  const handleAddProject = useCallback(async (eventId: string) => {
+    const event = events.find((e) => e.id === eventId);
+    if (!event) return;
+
     let newTitle = "새 프로젝트";
     let index = 1;
     while (projects.some((p) => p.title === newTitle)) {
@@ -368,35 +336,59 @@ export default function VideoEditorUnifiedLibrary({
       index++;
     }
 
-    const newProject: ProjectItem = {
-      id,
-      title: newTitle,
-      ratio: "16:9",
-      duration: 15,
-      updatedAt: "방금 전",
-      assetCount: 0,
-      eventId,
-      clips: [],
-      tracks: DEFAULT_TIMELINE_TRACKS,
-    };
-
-    setProjects((prev) => {
-      const savedPrev = prev.map((p) => {
-        if (p.title === projectTitle) {
-          return { ...p, clips: clips, tracks: tracks, ratio: canvasRatio };
-        }
-        return p;
+    if (isLoggedIn) {
+      // DB 저장
+      const row = await createProject({
+        title: newTitle,
+        canvasRatio: "16:9",
+        libraryName: event.libraryName,
+        eventName: event.name,
       });
-      return [...savedPrev, newProject];
-    });
-
-    setProjectTitle(newTitle);
-    setClips([]);
-    setTracks(DEFAULT_TIMELINE_TRACKS);
-    setCanvasRatio("16:9");
-    setEditingProjectId(id);
-    setEditTitle(newTitle);
-  };
+      if (!row) {
+        alert("프로젝트 생성에 실패했습니다. 다시 시도해 주세요.");
+        return;
+      }
+      const newProject: ProjectItem = {
+        id: row.id,
+        title: row.title,
+        ratio: "16:9",
+        duration: 0,
+        updatedAt: row.updated_at,
+        assetCount: 0,
+        eventId,
+      };
+      setProjects((prev) => [...prev, newProject]);
+      setActiveProjectId(row.id);
+      setProjectTitle(newTitle);
+      setClips([]);
+      setTracks(DEFAULT_TIMELINE_TRACKS);
+      setCanvasRatio("16:9");
+      setEditingProjectId(row.id);
+      setEditTitle(newTitle);
+    } else {
+      // Fallback: local only (non-logged-in user)
+      const id = `project-${Date.now()}`;
+      const newProject: ProjectItem = {
+        id,
+        title: newTitle,
+        ratio: "16:9",
+        duration: 0,
+        updatedAt: "방금 전",
+        assetCount: 0,
+        eventId,
+        clips: [],
+        tracks: DEFAULT_TIMELINE_TRACKS,
+      };
+      setProjects((prev) => [...prev, newProject]);
+      setProjectTitle(newTitle);
+      setClips([]);
+      setTracks(DEFAULT_TIMELINE_TRACKS);
+      setCanvasRatio("16:9");
+      setEditingProjectId(id);
+      setEditTitle(newTitle);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events, projects, isLoggedIn, projectTitle, clips, tracks, canvasRatio]);
 
   // Sync category when activeTab changes
   useEffect(() => {
@@ -437,45 +429,52 @@ export default function VideoEditorUnifiedLibrary({
       setProjectTitle(trimmedTitle);
     }
     setEditingProjectId(null);
+    // Persist to DB
+    if (isLoggedIn) void updateProjectMeta(id, { title: trimmedTitle });
   };
 
-  const handleSelectProject = (project: ProjectItem) => {
-    if (project.title === projectTitle) {
-      return;
-    }
+  const handleSelectProject = useCallback(async (project: ProjectItem) => {
+    if (project.id === activeProjectId) return;
 
-    // 1. Save current context edits into the active project title matching current state title
-    setProjects((prev) =>
-      prev.map((p) => {
-        if (p.title === projectTitle) {
-          return {
-            ...p,
-            clips: clips,
-            tracks: tracks,
-            ratio: canvasRatio,
-          };
-        }
-        return p;
-      })
-    );
-
-    // 2. Set new active project title
     setProjectTitle(project.title);
+    setActiveProjectId(project.id);
 
-    // 3. Load selected project's clips, tracks, and ratio
-    if (project.clips && project.tracks) {
-      setClips(project.clips);
-      setTracks(project.tracks);
-      setCanvasRatio(project.ratio || "16:9");
+    if (isLoggedIn) {
+      // Load project_json from DB
+      const fullRow = await loadProject(project.id);
+      if (fullRow?.project_json) {
+        const json = fullRow.project_json;
+        setTracks(Array.isArray(json.tracks) && json.tracks.length > 0 ? json.tracks : DEFAULT_TIMELINE_TRACKS);
+        setClips(Array.isArray(json.clips) ? json.clips : []);
+        setCanvasRatio(json.canvasRatio || project.ratio || "16:9");
+      } else {
+        setClips([]);
+        setTracks(DEFAULT_TIMELINE_TRACKS);
+        setCanvasRatio(project.ratio || "16:9");
+      }
     } else {
-      setClips([]);
-      setTracks(DEFAULT_TIMELINE_TRACKS);
+      // Fallback for non-logged-in: use in-memory clips/tracks
+      if (project.clips && project.tracks) {
+        setClips(project.clips);
+        setTracks(project.tracks);
+      } else {
+        setClips([]);
+        setTracks(DEFAULT_TIMELINE_TRACKS);
+      }
       setCanvasRatio(project.ratio || "16:9");
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProjectId, isLoggedIn]);
 
   const handleDeleteProject = (id: string) => {
     setProjects((prev) => prev.filter((p) => p.id !== id));
+    if (id === activeProjectId) {
+      setActiveProjectId(null);
+      setProjectTitle("Untitled Project");
+      setClips([]);
+      setTracks(DEFAULT_TIMELINE_TRACKS);
+    }
+    if (isLoggedIn) void deleteProject(id);
   };
 
   // Resize logic for inner separator
@@ -676,6 +675,8 @@ export default function VideoEditorUnifiedLibrary({
               selectedEvent={events.find((e) => e.id === selectedEventId) || null}
               projects={projects}
               activeProjectTitle={projectTitle}
+              activeProjectId={activeProjectId}
+              isLoggedIn={isLoggedIn}
               editingProjectId={editingProjectId}
               editTitle={editTitle}
               onStartRenameProject={handleStartRename}
@@ -938,6 +939,8 @@ interface ProjectDetailContentProps {
   selectedEvent: EventItem | null;
   projects: ProjectItem[];
   activeProjectTitle: string;
+  activeProjectId: string | null;
+  isLoggedIn: boolean;
   editingProjectId: string | null;
   editTitle: string;
   onStartRenameProject: (id: string, title: string) => void;
@@ -953,6 +956,8 @@ function ProjectDetailContent({
   selectedEvent,
   projects,
   activeProjectTitle,
+  activeProjectId,
+  isLoggedIn,
   editingProjectId,
   editTitle,
   onStartRenameProject,
@@ -966,6 +971,7 @@ function ProjectDetailContent({
   const {
     projectTitle,
     clips,
+    tracks,
     mediaItems,
     canvasRatio,
     totalDuration,
@@ -989,8 +995,13 @@ function ProjectDetailContent({
   const imageClips = clips.filter((c) => c.type === "image");
   const textClips = clips.filter((c) => c.type === "text" || c.type === "subtitle");
 
-  const handleMockSaveMetadata = () => {
-    setSaveStatus("saved");
+  const handleMockSaveMetadata = async () => {
+    if (activeProjectId && isLoggedIn) {
+      setSaveStatus("saved");
+      await updateProjectJson(activeProjectId, clips, tracks, canvasRatio, mediaItems);
+    } else {
+      setSaveStatus("saved");
+    }
     setTimeout(() => setSaveStatus("idle"), 2000);
   };
 
