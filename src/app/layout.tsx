@@ -45,9 +45,9 @@ export const metadata = {
     canonical: "/",
   },
   icons: {
-    icon: "/icon.png?v=2",
-    shortcut: "/icon.png?v=2",
-    apple: "/icon.png?v=2",
+    icon: "/icon.webp?v=2",
+    shortcut: "/icon.webp?v=2",
+    apple: "/icon.webp?v=2",
   },
 
   openGraph: {
@@ -120,7 +120,7 @@ export default function RootLayout({
                 "@type": "Organization",
                 name: "크리에이박스 (CreAibox)",
                 url: "https://creaibox.com",
-                logo: "https://creaibox.com/icon.png",
+                logo: "https://creaibox.com/icon.webp",
               },
             }),
           }}

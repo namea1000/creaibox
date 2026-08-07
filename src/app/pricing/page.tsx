@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { requestDomainPayment } from "@/lib/client/payment";
 import PaymentConfirmModal from "@/components/common/PaymentConfirmModal";
-import PortOnePgWindowModal from "@/components/common/PortOnePgWindowModal";
+
 import {
   Check,
   Lock,
@@ -30,8 +30,7 @@ export default function PricingPage() {
     isOpen: false,
     plan: null,
   });
-  const [isPgModalOpen, setIsPgModalOpen] = useState<boolean>(false);
-  const [activePlanForPg, setActivePlanForPg] = useState<any | null>(null);
+
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }: { data: any }) => {
@@ -102,19 +101,25 @@ export default function PricingPage() {
     });
   };
 
-  const handleExecutePayment = () => {
+  const handleExecutePayment = async () => {
     const plan = paymentModalData.plan;
     if (!plan) return;
 
-    setActivePlanForPg(plan);
     setPaymentModalData({ isOpen: false, plan: null });
-    setIsPgModalOpen(true);
-  };
 
-  const handlePgSuccess = () => {
-    setIsPgModalOpen(false);
-    alert(`✅ [결제 승인 완료] CreAibox ${activePlanForPg?.name || "구독"} 신청이 완벽하게 완료되었습니다!`);
-    router.push("/studio");
+    try {
+      const response = await requestDomainPayment({
+        orderName: `CreAibox ${plan.name} 월간 구독 요금제`,
+        totalAmount: plan.priceNum,
+      });
+
+      if (response.success) {
+        alert(`✅ [결제 승인 완료] CreAibox ${plan.name} 신청이 완벽하게 완료되었습니다!`);
+        router.push("/studio");
+      }
+    } catch (error: any) {
+      alert(error.message || "결제 중 오류가 발생했습니다.");
+    }
   };
 
   // 2. 상세 요금 비교 데이터셋 (Suno Style)
@@ -743,15 +748,7 @@ export default function PricingPage() {
         onClose={() => setPaymentModalData({ isOpen: false, plan: null })}
       />
 
-      {/* 💳 포트원 V2 PG 전자결제 수단 선택창 팝업 모달 (카카오페이 심사 캡처 전용) */}
-      <PortOnePgWindowModal
-        isOpen={isPgModalOpen}
-        orderName={activePlanForPg ? `CreAibox ${activePlanForPg.name} 월간 구독 요금제` : "CreAibox 요금제 구독"}
-        totalAmount={activePlanForPg?.priceNum || 9900}
-        customerEmail={user?.email || "test@creaibox.com"}
-        onSuccess={handlePgSuccess}
-        onClose={() => setIsPgModalOpen(false)}
-      />
+
 
       <Footer />
     </div>

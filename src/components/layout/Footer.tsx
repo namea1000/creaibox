@@ -40,9 +40,7 @@ export default function Footer() {
     }
   };
 
-  if (!mounted) {
-    return null;
-  }
+
 
   const footerSections = [
     {

@@ -368,22 +368,16 @@ export default function Header() {
     <header className="sticky top-0 z-[100] h-16 shrink-0 w-full border-b border-slate-300/85 bg-white dark:bg-zinc-950 dark:border-zinc-800/80 transition-colors duration-300">
       <div className="w-full flex h-16 items-center justify-between px-5 lg:px-10">
         <div className="flex w-[160px] shrink-0 items-center">
-          <Link href="/" className="flex h-10 items-center overflow-hidden transition hover:scale-[1.02] active:scale-[0.98]">
-            <Image
+          <Link href="/" className="flex h-10 items-center transition hover:scale-[1.02] active:scale-[0.98]">
+            <img
               src="/logobg.webp"
               alt="CreAibox"
-              width={140}
-              height={24}
-              className="object-contain dark:hidden"
-              priority
+              className="h-7 w-auto object-contain dark:hidden"
             />
-            <Image
+            <img
               src="/logobg_dark.webp"
               alt="CreAibox"
-              width={140}
-              height={24}
-              className="object-contain hidden dark:block"
-              priority
+              className="h-7 w-auto object-contain hidden dark:block"
             />
           </Link>
         </div>
