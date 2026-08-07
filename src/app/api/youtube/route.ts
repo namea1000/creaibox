@@ -63,32 +63,46 @@ export async function fetchAndCacheTrending(categoryId: string, date: string = g
     throw new Error("YouTube API keys not found.");
   }
 
-  // 2. Fetch Live YouTube API (maxResults=50 for single unified 1-call fetch)
+  // 2. Fetch Live YouTube API (Up to 100 items using 2 pages of 50 for max coverage)
   const safeReferer = (referer && referer.trim() !== "") ? referer : "https://creaibox.com/";
-  let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular&regionCode=${country}&maxResults=50&key=${apiKey}`;
+  let baseUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular&regionCode=${country}&maxResults=50&key=${apiKey}`;
   if (categoryId && categoryId !== "all") {
-    url += `&videoCategoryId=${categoryId}`;
+    baseUrl += `&videoCategoryId=${categoryId}`;
   }
-  let response = await fetch(url, { headers: { Referer: safeReferer } });
-  if (!response.ok) {
-    response = await fetch(url);
+
+  let items: any[] = [];
+  try {
+    let res1 = await fetch(baseUrl, { headers: { Referer: safeReferer } });
+    if (!res1.ok) res1 = await fetch(baseUrl);
+    if (res1.ok) {
+      const data1 = await res1.json();
+      items = data1.items || [];
+      const nextPageToken = data1.nextPageToken;
+
+      if (nextPageToken && items.length >= 50) {
+        const page2Url = `${baseUrl}&pageToken=${nextPageToken}`;
+        let res2 = await fetch(page2Url, { headers: { Referer: safeReferer } });
+        if (!res2.ok) res2 = await fetch(page2Url);
+        if (res2.ok) {
+          const data2 = await res2.json();
+          if (data2.items && data2.items.length > 0) {
+            items = [...items, ...data2.items];
+          }
+        }
+      }
+    }
+  } catch (fetchErr) {
+    console.warn(`YouTube Live API fetch error for ${country}:`, fetchErr);
   }
-  if (!response.ok) {
-    console.warn(`Google YouTube API returned status ${response.status}`);
-    return [];
-  }
-  const data = await response.json();
-  
-  if (vaultId !== null) {
+
+  if (vaultId !== null && items.length > 0) {
     await recordVaultSuccess(vaultId);
   }
 
-  let items = data.items || [];
-
-  // 🚀 Fallback: If YouTube mostPopular chart returns 0 items for a specific category in small countries (e.g. Denmark category 19), fetch Denmark's top popular videos specifically in that category via Search API!
+  // 🚀 Fallback: If YouTube mostPopular chart returns 0 items for a specific category, fetch top popular category videos via search API!
   if (items.length === 0 && categoryId && categoryId !== "all") {
     console.warn(`Category ${categoryId} for country ${country} returned 0 items in chart. Fetching top popular category videos via search API...`);
-    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&order=viewCount&regionCode=${country}&videoCategoryId=${categoryId}&maxResults=20&key=${apiKey}`;
+    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&order=viewCount&regionCode=${country}&videoCategoryId=${categoryId}&maxResults=25&key=${apiKey}`;
     try {
       let sRes = await fetch(searchUrl, { headers: { Referer: safeReferer } });
       if (!sRes.ok) sRes = await fetch(searchUrl);
@@ -275,7 +289,9 @@ export async function GET(req: NextRequest) {
               const seenIds = new Set<string>();
 
               Object.keys(bundleObj).forEach((k) => {
-                const isMatch = country === "KR" ? (!k.includes("_") || k.startsWith("KR_")) : k.startsWith(prefix);
+                const isMatch = country === "KR"
+                  ? (k === "all" || k.startsWith("KR_") || (!k.includes("_") && !/^[A-Z]{2}_/.test(k)))
+                  : k.startsWith(`${country}_`);
                 if (isMatch && Array.isArray(bundleObj[k])) {
                   bundleObj[k].forEach((v) => {
                     if (v && v.id && !seenIds.has(v.id)) {
@@ -287,7 +303,13 @@ export async function GET(req: NextRequest) {
               });
 
               if (combined.length > 0) {
-                console.log(`Daily Bundle Cache Hit: Serving ${country} all categories for date ${date} from DB.`);
+                // Sort combined videos by viewCount descending for premium all-category ranking
+                combined.sort((a, b) => {
+                  const vA = Number(a.statistics?.viewCount || a.viewCount || 0);
+                  const vB = Number(b.statistics?.viewCount || b.viewCount || 0);
+                  return vB - vA;
+                });
+                console.log(`Daily Bundle Cache Hit: Serving ${country} all categories (${combined.length} videos) for date ${date} from DB.`);
                 const videoIds = combined.map((v) => v.id).filter(Boolean);
                 let analyzedVideoIds: string[] = [];
                 if (videoIds.length > 0) {
@@ -388,12 +410,11 @@ export async function GET(req: NextRequest) {
                 }
               });
             } else {
-              const possibleKeys = country === "KR" ? [dbCategoryId, `KR_${dbCategoryId}`] : [dbCategoryId, dbCategoryId.replace(`${country}_`, "")];
-              for (const k of possibleKeys) {
-                if (Array.isArray(bundleObj[k]) && bundleObj[k].length > 0) {
-                  targetVideos = bundleObj[k];
-                  break;
-                }
+              const exactKey = country === "KR" ? categoryId : `${country}_${categoryId}`;
+              if (Array.isArray(bundleObj[exactKey]) && bundleObj[exactKey].length > 0) {
+                targetVideos = bundleObj[exactKey];
+              } else if (country === "KR" && Array.isArray(bundleObj[`KR_${categoryId}`])) {
+                targetVideos = bundleObj[`KR_${categoryId}`];
               }
             }
 

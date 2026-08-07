@@ -66,24 +66,29 @@ export interface CountryItem {
 
 export const ALL_COUNTRIES: CountryItem[] = [
   { code: "KR", name: "대한민국", flag: "🇰🇷", region: "top", isTop: true },
+  { code: "US", name: "미국", flag: "🇺🇸", region: "top", isTop: true },
   { code: "JP", name: "일본", flag: "🇯🇵", region: "top", isTop: true },
-  { code: "IN", name: "인도", flag: "🇮🇳", region: "top", isTop: true },
-  { code: "VN", name: "베트남", flag: "🇻🇳", region: "top", isTop: true },
   { code: "GB", name: "영국", flag: "🇬🇧", region: "top", isTop: true },
   { code: "DE", name: "독일", flag: "🇩🇪", region: "top", isTop: true },
   { code: "FR", name: "프랑스", flag: "🇫🇷", region: "top", isTop: true },
-  { code: "ES", name: "스페인", flag: "🇪🇸", region: "top", isTop: true },
-  { code: "US", name: "미국", flag: "🇺🇸", region: "top", isTop: true },
   { code: "CA", name: "캐나다", flag: "🇨🇦", region: "top", isTop: true },
-  { code: "BR", name: "브라질", flag: "🇧🇷", region: "top", isTop: true },
+  { code: "ES", name: "스페인", flag: "🇪🇸", region: "top", isTop: true },
   { code: "AU", name: "호주", flag: "🇦🇺", region: "top", isTop: true },
+  { code: "BR", name: "브라질", flag: "🇧🇷", region: "top", isTop: true },
+  { code: "IN", name: "인도", flag: "🇮🇳", region: "top", isTop: true },
+  { code: "TH", name: "태국", flag: "🇹🇭", region: "top", isTop: true },
 ];
 
 const COUNTRIES = ALL_COUNTRIES;
 const OTHER_COUNTRIES = ALL_COUNTRIES.filter((c) => !c.isTop);
 
 export default function RisingVideos() {
+  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [loadingStatus, setLoadingStatus] = useState<"db" | "youtube" | null>(null);
   const [videos, setVideos] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -114,30 +119,9 @@ export default function RisingVideos() {
   // 🚀 Instant RAM Cache for 0ms fluid category/country tab switching
   const videoCacheRef = React.useRef<Map<string, any>>(new Map());
 
-  // Recover cooldown from localStorage on mount and run a second counter
-  useEffect(() => {
-    const checkCooldown = () => {
-      const lastTime = localStorage.getItem("creaibox_last_refresh_timestamp");
-      if (lastTime) {
-        const elapsed = Math.floor((Date.now() - parseInt(lastTime, 10)) / 1000);
-        const remaining = 10800 - elapsed; // 3 Hours limit
-        if (remaining > 0) {
-          setRefreshCooldown(remaining);
-        } else {
-          setRefreshCooldown(0);
-        }
-      }
-    };
-
-    checkCooldown();
-    const timer = setInterval(checkCooldown, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
+  // Refresh cooldown removed upon request
   const formatCooldown = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}분 ${s}초 남음`;
+    return "";
   };
 
   // 1. Fetch recent analyzed reports directly from DB (allowing incognito mode & non-logged in users to see all reports)
@@ -182,6 +166,8 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
 
           setTimeout(() => {
             if (isCancelled) return;
+
+            // 1. Populate raw keys into RAM cache first
             Object.keys(bundleObj).forEach((dbCatKey) => {
               if (Array.isArray(bundleObj[dbCatKey]) && bundleObj[dbCatKey].length > 0) {
                 let countryCode = "KR";
@@ -192,6 +178,8 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
                     countryCode = parts[0];
                     catCode = dbCatKey.slice(parts[0].length + 1);
                   }
+                } else {
+                  countryCode = "KR";
                 }
                 const key = `${countryCode}_${catCode}_${selectedDate}`;
                 videoCacheRef.current.set(key, {
@@ -201,7 +189,42 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
               }
             });
 
-            // If current selected country key is in RAM cache, set videos immediately
+            // 2. Aggregate all subcategories for each country's 'all' key to guarantee 100+ videos
+            ALL_COUNTRIES.forEach((c) => {
+              const countryCode = c.code;
+              const combined: any[] = [];
+              const seenIds = new Set<string>();
+              const prefix = countryCode === "KR" ? "" : `${countryCode}_`;
+
+              Object.keys(bundleObj).forEach((k) => {
+                const isMatch = countryCode === "KR"
+                  ? (k === "all" || k.startsWith("KR_") || (!k.includes("_") && !/^[A-Z]{2}_/.test(k)))
+                  : k.startsWith(prefix);
+                if (isMatch && Array.isArray(bundleObj[k])) {
+                  bundleObj[k].forEach((v) => {
+                    if (v && v.id && !seenIds.has(v.id)) {
+                      seenIds.add(v.id);
+                      combined.push(v);
+                    }
+                  });
+                }
+              });
+
+              if (combined.length > 0) {
+                combined.sort((a, b) => {
+                  const vA = Number(a.statistics?.viewCount || a.viewCount || 0);
+                  const vB = Number(b.statistics?.viewCount || b.viewCount || 0);
+                  return vB - vA;
+                });
+                const allCacheKey = `${countryCode}_all_${selectedDate}`;
+                videoCacheRef.current.set(allCacheKey, {
+                  source: "supabase-db-daily-bundle",
+                  data: combined,
+                });
+              }
+            });
+
+            // 3. If current selected country key is in RAM cache, set videos immediately
             const currentKey = `${selectedCountry}_${activeCategory}_${selectedDate}`;
             if (videoCacheRef.current.has(currentKey)) {
               const cached = videoCacheRef.current.get(currentKey);
@@ -381,62 +404,31 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
     setIsBulkLoading(true);
     setBulkProgress(0);
     setBulkTotal(ALL_COUNTRIES.length);
-    setBulkCurrentInfo("전세계 60개국 전체 트렌드 일괄 수집을 시작합니다...");
+    setBulkCurrentInfo("🚀 12개 주요국 2-Phase 스마트 트렌드 일괄 수집 시작 (100개 수집 + 20개 핀포인트 보충)...");
     videoCacheRef.current.clear();
 
-    const todayStr = getKstTodayDateStr();
-    let completed = 0;
-
     try {
-      for (const country of ALL_COUNTRIES) {
-        const info = `${country.flag} ${country.name} (${country.code}) - 전체 카테고리 트렌드 수집 중...`;
-        setBulkCurrentInfo(info);
-
-        try {
-          const res = await fetch(`/api/youtube?type=trending&categoryId=all&date=${todayStr}&country=${country.code}`);
-          if (res.ok) {
-            const result = await res.json();
-            const cacheKey = `${country.code}_all_${todayStr}`;
-            videoCacheRef.current.set(cacheKey, result);
-
-            // Pre-populate category sub-caches for this country ONLY if category videos exist in feed
-            if (Array.isArray(result.data)) {
-              CATEGORIES.forEach((cat) => {
-                if (cat.id === "all") return;
-                const catVideos = result.data.filter(
-                  (v: any) => v.categoryId === cat.id || v.snippet?.categoryId === cat.id
-                );
-                if (catVideos.length > 0) {
-                  const subCacheKey = `${country.code}_${cat.id}_${todayStr}`;
-                  videoCacheRef.current.set(subCacheKey, {
-                    source: result.source,
-                    data: catVideos,
-                    analyzedVideoIds: result.analyzedVideoIds,
-                  });
-                }
-              });
-            }
-          }
-        } catch (e) {
-          console.error(`Error syncing ${country.code}:`, e);
-        }
-
-        completed++;
-        setBulkProgress(completed);
-
-        await new Promise(resolve => setTimeout(resolve, 150));
+      const cronRes = await fetch("/api/cron/sync-trending");
+      if (!cronRes.ok) {
+        throw new Error(`Cron sync returned HTTP ${cronRes.status}`);
       }
-      setBulkCurrentInfo(`🎉 전세계 ${ALL_COUNTRIES.length}개국 전체 트렌드 일괄 수집 완료!`);
+      const cronData = await cronRes.json();
+      console.log("Cron 2-Phase sync completed:", cronData);
+
+      setBulkProgress(ALL_COUNTRIES.length);
+      setBulkCurrentInfo(`🎉 12개 주요국 트렌드 수집 완료! (${cronData.summary?.storedKeysCount || 0}개 트렌드 키 최신화)`);
       localStorage.setItem("creaibox_last_refresh_timestamp", Date.now().toString());
       setRefreshCooldown(10800);
-      fetchTrending(activeCategory, selectedDate, selectedCountry);
+      
+      // Reload current view with freshly built DB bundle
+      await fetchTrending(activeCategory, selectedDate, selectedCountry, true);
     } catch (err: any) {
       console.error("Bulk sync failed:", err);
-      setBulkCurrentInfo("⚠️ 일괄 수집 중 일부 오류가 발생했습니다.");
+      setBulkCurrentInfo("⚠️ 일괄 수집 중 오류가 발생했습니다: " + (err.message || String(err)));
     } finally {
       setTimeout(() => {
         setIsBulkLoading(false);
-      }, 3000);
+      }, 2000);
     }
   };
 
@@ -498,8 +490,8 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
             <p className="text-sm text-zinc-200 leading-relaxed font-black">
               🔥 <span className="text-orange-400 font-bold">급상승 영상 트렌드</span>: 유튜브 실시간 알고리즘이 선정한 <span className="text-white font-bold">지금 이 시각 유행/시청 유입 반응이 가장 폭발적인 급상승 이슈 랭킹</span>을 제공합니다. (💡 <span className="text-zinc-400 font-medium">누적 총 조회수 1위~50위 매머드급 랭킹은 '👑 인기 영상 조회수 랭킹' 메뉴에서 확인하세요.</span>)
             </p>
-            <p className="text-xs text-zinc-400 leading-relaxed font-bold">
-              각 영상 하단의 <span className="text-orange-500 font-black">"AI 데이터 분석 리포트"</span> 버튼을 클릭하면 고성능 <span className="text-orange-500 font-black">"AI Gemini Pro"</span>가 시청자 반응 지표와 핵심 바이럴 요인, 내 채널용 변형 기획안을 포함한 정밀 보고서를 작성해 팝업합니다.
+            <p className="text-xs text-zinc-400 leading-relaxed font-bold" suppressHydrationWarning>
+              각 영상 하단의 <span className="text-orange-500 font-black">&quot;AI 데이터 분석 리포트&quot;</span> 버튼을 클릭하면 최신 <span className="text-orange-500 font-black">&quot;Google Gemini AI&quot;</span>가 시청자 반응 지표와 핵심 바이럴 요인, 내 채널용 변형 기획안을 포함한 정밀 보고서를 작성해 팝업합니다.
             </p>
           </div>
         </div>
@@ -507,20 +499,20 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
     <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
       <button
         onClick={handleBulkSync}
-        disabled={loading || isBulkLoading || !isTodaySelected || refreshCooldown > 0}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 disabled:opacity-30 disabled:hover:from-orange-600 px-5 text-xs font-black text-white transition"
+        disabled={loading || isBulkLoading || !isTodaySelected}
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 disabled:opacity-30 disabled:hover:from-orange-600 px-5 text-xs font-black text-white transition shadow-lg shadow-orange-950/20"
       >
         {isBulkLoading ? <Loader2 size={14} className="animate-spin" /> : <Flame size={14} />}
-        {refreshCooldown > 0 ? `수집 완료 (${formatCooldown(refreshCooldown)})` : (isTodaySelected ? "전체 60개국 일괄수집" : "일괄수집 불가")}
+        {isTodaySelected ? "전체 12개국 일괄수집" : "일괄수집 불가"}
       </button>
 
       <button
         onClick={() => fetchTrending(activeCategory, selectedDate, selectedCountry, true)}
-        disabled={loading || isBulkLoading || !isTodaySelected || refreshCooldown > 0}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 disabled:opacity-30 disabled:hover:bg-zinc-800 px-5 text-xs font-black text-white transition"
+        disabled={loading || isBulkLoading || !isTodaySelected}
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 disabled:opacity-30 disabled:hover:bg-zinc-800 px-5 text-xs font-black text-white transition shadow-md"
       >
         {loading ? <Loader2 size={14} className="animate-spin" /> : <Flame size={14} />}
-        {refreshCooldown > 0 ? `새로고침 불가 (${formatCooldown(refreshCooldown)})` : (isTodaySelected ? "새로고침" : "새로고침 불가")}
+        {isTodaySelected ? "새로고침" : "새로고침 불가"}
       </button>
     </div>
   </div>
@@ -619,13 +611,13 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
               )}
             </div>
           ) : filteredVideos.length === 0 ? (
-            <div className="text-center py-20 border border-zinc-800 rounded-2xl bg-zinc-950/40 p-8 space-y-3">
-              <div className="text-3xl">📭</div>
-              <p className="text-sm text-zinc-200 font-extrabold">
-                [{selectedDate}] [{getCountryName(selectedCountry)}] 트렌드 데이터가 존재하지 않습니다.
+            <div className="text-center py-20 border border-zinc-800/80 rounded-2xl bg-zinc-950/60 p-8 space-y-3 shadow-inner">
+              <div className="text-4xl">🌐</div>
+              <p className="text-sm text-zinc-100 font-extrabold">
+                [{getCountryName(selectedCountry)}] 해당 국가의 급상승 트렌드 수집 데이터가 없습니다.
               </p>
               <p className="text-xs text-zinc-400 font-medium leading-relaxed max-w-md mx-auto">
-                CreAibox DB 클라우드 구축 이전 날짜이거나 해당 국가의 수집 데이터가 미존재하는 상태입니다. 가짜(Mock/Dummy) 데이터를 표시하지 않고 솔직하게 안내해 드립니다.
+                선택하신 날짜({selectedDate})는 CreAibox DB 구축 이전 기간이거나 포털/유튜브 API 제공 범위 외 데이터입니다.
               </p>
             </div>
           ) : (

@@ -325,8 +325,8 @@ export default function Footer() {
         </div>
 
         <div className="flex flex-col items-center justify-between gap-5 border-t border-slate-200 dark:border-zinc-900 pt-4 md:flex-row" suppressHydrationWarning>
-          <div className="text-xs font-bold text-slate-500 dark:text-zinc-500" suppressHydrationWarning>
-            © {currentYear} <span className="text-slate-800 dark:text-zinc-300">크리에이박스(CreAibox)</span>.
+          <div className="text-xs font-bold text-slate-500 dark:text-zinc-500">
+            © 2026 <span className="text-slate-800 dark:text-zinc-300">크리에이박스(CreAibox)</span>.
             All rights reserved.
           </div>
 

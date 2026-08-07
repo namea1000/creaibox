@@ -218,7 +218,10 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
           videoMetadata: video
         }),
       });
-      if (!res.ok) throw new Error("분석 리포트를 불러오는데 실패했습니다.");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `분석 리포트를 불러오는데 실패했습니다. (상태 코드 ${res.status})`);
+      }
       const result = await res.json();
       setAnalysis(result.content || "분석 리포트를 불러올 수 없습니다.");
     } catch (err: any) {
@@ -412,7 +415,7 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
             <div className="flex items-center justify-between gap-4 border-b border-zinc-900 pb-2.5">
               <h3 className="text-xs font-black text-zinc-300 flex items-center gap-2">
                 <Sparkles size={13} className="text-orange-500 animate-pulse" />
-                Gemini Pro 데이터 정밀 기획 분석 리포트
+                Google Gemini AI 데이터 정밀 기획 분석 리포트
               </h3>
               
               {analysis && !loading && (
@@ -442,9 +445,19 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
                 <p className="text-[10px] font-bold text-zinc-555">Gemini AI가 알고리즘 바이럴 지표를 작성하는 중...</p>
               </div>
             ) : error ? (
-              <div className="flex items-center gap-2 text-xs font-bold text-red-400 py-6 justify-center">
-                <AlertCircle size={14} />
-                <span>리포트 연동 실패: {error}</span>
+              <div className="flex flex-col items-center gap-3 text-xs font-bold text-red-400 py-8 justify-center bg-red-950/10 rounded-xl border border-red-500/20 my-2">
+                <div className="flex items-center gap-2">
+                  <AlertCircle size={16} />
+                  <span>{error}</span>
+                </div>
+                {error.includes("로그인") && (
+                  <a
+                    href="/login"
+                    className="mt-1 flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-xs font-black text-black hover:bg-orange-400 transition shadow-lg"
+                  >
+                    🔑 로그인 하러 가기
+                  </a>
+                )}
               </div>
             ) : analysis ? (
               <div className="prose prose-invert prose-xs leading-relaxed max-w-none text-zinc-300">
