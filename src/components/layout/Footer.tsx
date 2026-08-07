@@ -32,6 +32,18 @@ export default function Footer() {
     return () => observer.disconnect();
   }, []);
 
+  const handleClientSocialClick = (url: string, msg: string) => {
+    if (url) {
+      window.open(url, "_blank", "noopener,noreferrer");
+    } else if (msg) {
+      alert(msg);
+    }
+  };
+
+  if (!mounted) {
+    return null;
+  }
+
   const footerSections = [
     {
       title: "Product",
@@ -173,18 +185,166 @@ export default function Footer() {
         </div>
       </section>
 
+      {/* 🔮 CreAibox 메인 커뮤니티 & 공식 1:1 고객지원 4대 채널 허브 럭셔리 섹션 */}
+      <section className="relative overflow-hidden bg-slate-900 py-16 text-white dark:bg-black">
+        {/* Subtle Background Glow */}
+        <div className="pointer-events-none absolute -left-20 -top-20 h-96 w-96 rounded-full bg-violet-600/20 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 -bottom-20 h-96 w-96 rounded-full bg-blue-600/20 blur-3xl" />
+
+        <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="mb-10 text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-1.5 text-xs font-black text-violet-300 backdrop-blur-md mb-3">
+              <Sparkles size={14} className="text-violet-400 animate-pulse" />
+              OFFICIAL SUPPORT & COMMUNITY
+            </div>
+            <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              CreAibox 공식 실시간 지원 및 소통 채널
+            </h3>
+            <p className="mt-2 text-xs sm:text-sm text-slate-400 font-medium max-w-2xl mx-auto">
+              궁금하신 점이나 문의사항이 있으신가요? 1:1 상담부터 커뮤니티 소식까지 다양한 채널을 이용해 보세요.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {/* 카카오톡 1:1 채널 */}
+            <a
+              href="https://pf.kakao.com/_RxdxmsX"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative overflow-hidden rounded-2xl border border-amber-500/20 bg-slate-800/80 dark:bg-zinc-900/80 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-amber-400 hover:shadow-xl hover:shadow-amber-500/10"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-400/20 text-amber-400 group-hover:scale-110 transition-transform">
+                  <MessageSquare size={24} />
+                </div>
+                <span className="rounded-full bg-amber-400/10 px-2.5 py-0.5 text-[10px] font-black text-amber-300 border border-amber-400/30">
+                  FAST 1:1
+                </span>
+              </div>
+              <div className="mt-4">
+                <h4 className="text-base font-black text-white group-hover:text-amber-300 transition-colors">
+                  카카오톡 1:1 상담
+                </h4>
+                <p className="mt-1 text-xs text-slate-400 leading-relaxed font-medium">
+                  실시간 빠른 1:1 고객상담 및 가입/결제/도메인 문의
+                </p>
+              </div>
+              <div className="mt-5 inline-flex items-center gap-1.5 text-xs font-black text-amber-400">
+                상담하기
+                <ArrowUpRight size={14} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </div>
+            </a>
+
+            {/* 이메일 고객센터 */}
+            <a
+              href="mailto:contact@creaibox.com"
+              className="group relative overflow-hidden rounded-2xl border border-blue-500/20 bg-slate-800/80 dark:bg-zinc-900/80 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/10"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/20 text-blue-400 group-hover:scale-110 transition-transform">
+                  <Mail size={24} />
+                </div>
+                <span className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-black text-blue-300 border border-blue-500/30">
+                  EMAIL
+                </span>
+              </div>
+              <div className="mt-4">
+                <h4 className="text-base font-black text-white group-hover:text-blue-300 transition-colors">
+                  이메일 공식 문의
+                </h4>
+                <p className="mt-1 text-xs text-slate-400 leading-relaxed font-medium">
+                  contact@creaibox.com<br />비즈니스 제휴 및 공식 기술 서포트
+                </p>
+              </div>
+              <div className="mt-5 inline-flex items-center gap-1.5 text-xs font-black text-blue-400">
+                메일 보내기
+                <ArrowUpRight size={14} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </div>
+            </a>
+
+            {/* 네이버 공식 블로그 */}
+            <a
+              href="https://blog.naver.com/a12347720"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-slate-800/80 dark:bg-zinc-900/80 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-emerald-400 hover:shadow-xl hover:shadow-emerald-500/10"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 font-black text-lg group-hover:scale-110 transition-transform">
+                  N
+                </div>
+                <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-black text-emerald-300 border border-emerald-500/30">
+                  BLOG
+                </span>
+              </div>
+              <div className="mt-4">
+                <h4 className="text-base font-black text-white group-hover:text-emerald-300 transition-colors">
+                  네이버 공식 블로그
+                </h4>
+                <p className="mt-1 text-xs text-slate-400 leading-relaxed font-medium">
+                  스튜디오 신기능 업데이트 소식과 AI 활용 꿀팁 노하우
+                </p>
+              </div>
+              <div className="mt-5 inline-flex items-center gap-1.5 text-xs font-black text-emerald-400">
+                블로그 방문
+                <ArrowUpRight size={14} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </div>
+            </a>
+
+            {/* 인스타그램 공식 채널 */}
+            <button
+              onClick={() => handleClientSocialClick("https://www.instagram.com/creaibox_official/", "인스타그램 공식 채널 준비 중입니다! 빠르게 오픈하도록 하겠습니다.")}
+              className="group relative overflow-hidden rounded-2xl border border-pink-500/20 bg-slate-800/80 dark:bg-zinc-900/80 p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-pink-400 hover:shadow-xl hover:shadow-pink-500/10"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-pink-500/20 text-pink-400 group-hover:scale-110 transition-transform">
+                  <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                  </svg>
+                </div>
+                <span className="rounded-full bg-pink-500/10 px-2.5 py-0.5 text-[10px] font-black text-pink-300 border border-pink-500/30">
+                  INSTAGRAM
+                </span>
+              </div>
+              <div className="mt-4">
+                <h4 className="text-base font-black text-white group-hover:text-pink-300 transition-colors">
+                  인스타그램 공식 채널
+                </h4>
+                <p className="mt-1 text-xs text-slate-400 leading-relaxed font-medium">
+                  AI 아티스트 갤러리 카드뉴스 및 이벤트 소식
+                </p>
+              </div>
+              <div className="mt-5 inline-flex items-center gap-1.5 text-xs font-black text-pink-600 dark:text-pink-400">
+                인스타 팔로우
+                <ArrowUpRight size={14} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </div>
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* 푸터 상세 내용 및 정보 - Light Block */}
       <footer className="w-full bg-white dark:bg-zinc-950 py-16 border-t border-slate-200/50 dark:border-zinc-900/80 transition-colors duration-300" suppressHydrationWarning>
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-5">
             <div className="space-y-4 lg:col-span-2">
               <Link href="/" className="flex h-10 items-center overflow-hidden">
+                {/* Light Mode Logo */}
                 <Image
-                  src={theme === "dark" ? "/logobg_dark.webp" : "/logobg.webp"}
+                  src="/logobg.webp"
                   alt="Creaibox Logo"
                   width={173}
                   height={28}
-                  className="object-contain"
+                  className="h-10 w-auto object-contain dark:hidden"
+                  priority
+                />
+                {/* Dark Mode Logo */}
+                <Image
+                  src="/logobg_dark.webp"
+                  alt="Creaibox Logo"
+                  width={173}
+                  height={28}
+                  className="h-10 w-auto object-contain hidden dark:block"
                   priority
                 />
               </Link>
@@ -297,7 +457,7 @@ export default function Footer() {
         </div>
 
         {/* 사업자 정보 명시 (국세청 정식 사업자등록증 및 전자상거래법 제13조 기준) */}
-        <div className="border-t border-slate-200/60 dark:border-zinc-900/80 pt-8 pb-4 text-xs font-medium text-slate-500 dark:text-zinc-400 leading-relaxed">
+        <div className="border-t border-slate-200/60 dark:border-zinc-900/80 pt-8 pb-4 text-xs font-medium text-slate-500 dark:text-zinc-400 leading-relaxed" suppressHydrationWarning>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-2 font-bold text-slate-700 dark:text-zinc-300">
             <span>상호명: 크리에이박스(CreAibox)</span>
             <span className="text-slate-300 dark:text-zinc-800">|</span>
@@ -340,7 +500,7 @@ export default function Footer() {
 
             <Link
               href="/terms"
-              className="text-xs font-bold text-slate-500 dark:text-zinc-505 transition hover:text-violet-600 dark:hover:text-violet-400"
+              className="text-xs font-bold text-slate-500 dark:text-zinc-500 transition hover:text-violet-600 dark:hover:text-violet-400"
             >
               Terms of Service
             </Link>
@@ -348,6 +508,6 @@ export default function Footer() {
         </div>
       </div>
     </footer>
-    </div>
+  </div>
   );
 }
