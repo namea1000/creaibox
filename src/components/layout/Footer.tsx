@@ -463,12 +463,15 @@ export default function Footer() {
             <span className="text-slate-300 dark:text-zinc-800">|</span>
             <span>사업자등록번호: 535-69-00459</span>
           </div>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-2">
             <span>사업장 소재지: 충청남도 천안시 서북구 불당23로 70, 7층 702호 H24호(불당동, 정우프라자)</span>
             <span className="text-slate-300 dark:text-zinc-800">|</span>
             <span>이메일 문의: contact@creaibox.com</span>
             <span className="text-slate-300 dark:text-zinc-800">|</span>
             <span>대표전화: 070-8064-8204</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+            <span>호스팅 서비스 사업자: Vercel Inc.</span>
             <span className="text-slate-300 dark:text-zinc-800">|</span>
             <a
               href="https://pf.kakao.com/_RxdxmsX"

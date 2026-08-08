@@ -40,9 +40,9 @@
 # =================================================================
 # 💳 포트원(PortOne V2) PG 전자결제 통합 연동 키
 # =================================================================
-NEXT_PUBLIC_PORTONE_STORE_ID="store-a1b2c3d4-xxxx"
-NEXT_PUBLIC_PORTONE_CHANNEL_KEY="channel-key-xxxx"
-PORTONE_API_SECRET="sec_xxxx"
+NEXT_PUBLIC_PORTONE_STORE_ID="store-e6eac1b1-9dcf-47c8-a2be-2a19a35c11aa"
+NEXT_PUBLIC_PORTONE_CHANNEL_KEY="channel-key-f53bb8b4-4b15-4865-8209-bebea0ff47a1"
+PORTONE_API_SECRET="your_portone_api_secret_here"
 ```
 
 ### 3.3 Vercel 실서버 프로덕션 배포 설정

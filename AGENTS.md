@@ -45,3 +45,8 @@ When creating how-to guides or operation manuals (e.g., "~ 하는 방법", "매�
 - 아키텍처 기술 명세서 (`docs/arch/`)와 서비스 실무 매뉴얼 (`docs/project/manual/`)을 절대 동일한 내용으로 중복 작성하지 않고 역할과 목적을 100% 명확히 분리하여 작성한다.
 - 아키텍처 문서 (`docs/arch/`)는 시스템 설계자/개발자 관점의 Mermaid 다이어그램, 시퀀스/데이터 파이프라인, 내부 알고리즘, 응답 헤더 스펙 등 **심도 깊은 기술 명세서**로 작성한다.
 - 실무 매뉴얼 (`docs/project/manual/`)은 기획자/실무 개발자 관점의 HOW-TO 실전 가이드, 바로 복사 가능한 추천 코드 예시, 금지 패턴(Anti-Patterns), FAQ 등 **실전 운용 가이드**로 차별화 작성한다.
+
+### Mandatory Secret Key Masking Rule in Documentation (문서 내 실제 보안키 및 시크릿 노출 100% 절대 금지 규칙)
+- 공용 문서(`.md`), 아키텍처 명세서, 가이드 및 매뉴얼 파일 작성 시 실제 운영/테스트용 보안키(API Secret, Service Account Private Key, OAuth Secret 등)를 절대로 원문 그대로 노출해 작성하지 않는다.
+- 모든 문서 내 환경변수 예시 코드에는 반드시 마스킹 문자열(예: `your_api_secret_here`, `sec_xxxx`, `your_private_key_here`)만 사용해야 한다.
+- 실제 시크릿 키는 Git에 포함되지 않는 `.env.local` 파일 및 Vercel/서버 환경변수 설정(Environment Variables)에서만 관리한다.

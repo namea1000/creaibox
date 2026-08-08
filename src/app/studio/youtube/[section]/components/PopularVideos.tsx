@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Trophy, Loader2, Play, Eye, ThumbsUp, Calendar, ArrowRight, Copy, Check, ChevronLeft, ChevronRight, BarChart2, ExternalLink, Sparkles, Filter, Search, X, RotateCw } from "lucide-react";
+import { Trophy, Loader2, Play, Eye, ThumbsUp, Calendar, ArrowRight, Copy, Check, ChevronLeft, ChevronRight, BarChart2, ExternalLink, Sparkles, Filter, Search, X, RotateCw, PlaySquare } from "lucide-react";
 import VideoAnalysisModal from "./VideoAnalysisModal";
 import Link from "next/link";
 
@@ -723,6 +723,18 @@ export default function PopularVideos() {
                           </>
                         )}
                       </button>
+                    )}
+
+                    {videoId && (
+                      <a
+                        href={`https://www.youtube.com/watch?v=${videoId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-red-400 hover:text-red-300 transition font-medium"
+                      >
+                        <PlaySquare size={11} />
+                        <span>YouTube에서 직접 보기</span>
+                      </a>
                     )}
 
                     {channelId ? (

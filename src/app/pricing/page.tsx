@@ -108,17 +108,21 @@ export default function PricingPage() {
     setPaymentModalData({ isOpen: false, plan: null });
 
     try {
+      console.log(`[DEBUG] Requesting payment for ${plan.name}, price: ${plan.priceNum}`);
       const response = await requestDomainPayment({
         orderName: `CreAibox ${plan.name} 월간 구독 요금제`,
         totalAmount: plan.priceNum,
       });
 
+      console.log("[DEBUG] Payment response:", response);
+
       if (response.success) {
-        alert(`✅ [결제 승인 완료] CreAibox ${plan.name} 신청이 완벽하게 완료되었습니다!`);
+        alert(`✅ [결제 테스트 성공] CreAibox ${plan.name} 신청이 승인되었습니다!\n(Payment ID: ${response.paymentId})`);
         router.push("/studio");
       }
     } catch (error: any) {
-      alert(error.message || "결제 중 오류가 발생했습니다.");
+      console.error("[DEBUG] Payment error:", error);
+      alert("❌ [결제 에러]: " + (error.message || "결제 중 오류가 발생했습니다."));
     }
   };
 

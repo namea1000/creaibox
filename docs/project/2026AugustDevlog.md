@@ -225,14 +225,40 @@
 
 ---
 
-### 19. 🎬 비디오 스튜디오 에디터 - 고정 샘플 프로젝트 전면 삭제 & 100% 비어있는 깨끗한 작업실 환경 구축 (`VideoEditorUnifiedLibrary.tsx`)
+### 20. 🎬 비디오 스튜디오 에디터 - 고정 샘플 프로젝트 전면 삭제 & 100% 비어있는 깨끗한 작업실 환경 구축 (`VideoEditorUnifiedLibrary.tsx`)
 - **사용자 명시적 지시에 따른 초기화 정제**:
   - 기존에 하드코딩되어 신규 사용자 로그인 시에도 덤프로 노출되던 고정 샘플 데이터("바다 해변", "YouTube Shorts 테스트", "제품 소개 영상")를 전면 완전 삭제.
   - 신규 가입자/로그인 사용자가 에디터 접속 시 타인의 프로젝트나 전역 샘플이 섞이지 않고, 100% 완전히 비어있는 깨끗한 나만의 작업실로 시작되도록 개정 완결.
 
 ---
 
-### 20. 🧪 빌드 및 무결성 검증
+## 📅 2026년 8월 7일 (금)
+
+### 1. 🎬 유튜브 트렌드 AI 분석 리포트 Vertex AI 1순위 엔진 통합 (`src/app/api/youtube/analyze/route.ts`)
+- **Vertex AI (gemini-3.1-flash-lite) 1순위 전환**:
+  - 기존 Vault/Env `GEMINI_API_KEY` 수동 쿼리 단절 오류를 제거하고 `generateContentWithVertexAI` 통합 AI 엔진으로 100% 전환.
+  - `src/lib/server/vertex-ai-gemini.ts` 모듈에 멀티모달(`imageParts`) 썸네일 전달 파이프라인 추가 연동 완료.
+
+### 2. 📜 전자상거래법 푸터 고지 규정 수립 & 호스팅 서비스 사업자 적용 (`Footer.tsx`)
+- **전자상거래법 제10조 고지 규정 적용**:
+  - `Footer.tsx` 하단에 `호스팅 서비스 사업자: Vercel Inc.` 법적 의무 고지 항목 추가.
+  - `docs/project/manual/ecommerce-footer-compliance-guide.md` 실무 운용 매뉴얼 작성.
+
+### 3. 💳 포트원(PortOne V2) 실전 결제 시스템 & 백엔드 Webhook 연동 완료
+- **PortOne V2 결제 식별 키 세팅**:
+  - `.env.local` 및 `src/lib/client/payment.ts`에 Store ID (`store-e6eac1b1-9dcf-47c8-a2be-2a19a35c11aa`), Channel Key, API Secret 동기화.
+- **PortOne V2 백엔드 Webhook 수신 API 구축 (`src/app/api/webhooks/portone/route.ts`)**:
+  - 결제 승인/취소 백그라운드 이벤트 수신 및 `payment_logs` DB 동기화 파이프라인 구축.
+- **포트원 연동 매뉴얼 업데이트**:
+  - `docs/project/manual/portone-pg-integration-guide.md` 최신화.
+
+### 4. 🛡️ 에이전트 룰 #14 신설 - 문서 내 보안키 마스킹 의무 규칙 (`ai-agent-rules.md` & `AGENTS.md`)
+- **Mandatory Secret Key Masking Rule in Documentation 신설**:
+  - 공용 Markdown 문서 내에 실제 시크릿 키(API Secret 등) 원문 표기를 100% 전면 금지하고 마스킹(`your_api_secret_here`) 처리하는 영구 룰 주입.
+
+---
+
+### 5. 🧪 빌드 및 무결성 검증
 - `npx tsc --noEmit` 실행 결과: **오류 0건 (100% Clean Pass)**
 
 

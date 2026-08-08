@@ -68,6 +68,11 @@ AI Agents MUST NOT declare success or finish a user request turn without verifyi
 - **개발자가 단순 질의나 문의를 할 때 AI 에이전트는 오직 분석, 설명 및 명쾌한 답변만 제공하며, 사용자의 명시적 실행 지시 없이 소스 코드를 임의로 수정/삭제/추가하는 자의적 선조치 행동을 100% 절대 금지한다.**
 - **모든 소스 코드 수정, 파일 생성/삭제 등 실제 코드 변경 작업은 오직 개발자의 명시적 실행 지시("적용해", "수정해", "코드 반영해")가 확정되었을 때만 수행한다.**
 
+### 14. Mandatory Secret Key Masking Rule in Documentation (문서 내 실제 보안키 및 시크릿 노출 100% 절대 금지 규칙)
+- **공용 문서(`.md`), 아키텍처 명세서, 가이드 및 매뉴얼 파일 작성 시 실제 운영/테스트용 보안키(API Secret, Service Account Private Key, OAuth Secret 등)를 절대로 원문 그대로 노출해 작성하지 않는다.**
+- **모든 문서 내 환경변수 예시 코드에는 반드시 마스킹 문자열(예: `your_api_secret_here`, `sec_xxxx`, `your_private_key_here`)만 사용해야 한다.**
+- 실제 시크릿 키는 Git에 포함되지 않는 `.env.local` 파일 및 Vercel/서버 환경변수 설정(Environment Variables)에서만 관리하여 Git 유출 및 Vercel 보안 스캐너 감지를 철저히 방지한다.
+
 # ==================================================
 
 # Documentation Rules
@@ -742,3 +747,15 @@ General UI icons must use lucide-react.
 
 ### 3. 기존 및 신규 서비스 100% 규격 일원화
 - 플랫폼 내의 모든 사이드바 메뉴 및 서브 스튜디오 화면에서 위 UX 규칙을 100% 동일하게 유지해야 하며, 어떠한 메뉴에서도 예외를 두지 않습니다.
+
+---
+
+## Mandatory Vercel Environment Variables Sync Rule (Vercel 환경변수 동기화 및 재배포 안내 규칙)
+
+* **필독 규격**: 로컬(`.env.local`)에 새로운 필수 환경변수(API Key, DB Key, Encryption Key 등)를 추가하거나 변경하는 작업을 수행했을 경우, 에이전트는 반드시 사용자에게 Vercel 프로덕션 대시보드에도 동일한 환경변수를 추가하고 **재배포(Redeploy)**해야 함을 강력하게 안내해야 합니다.
+
+### 1. 로컬 환경변수 자동 적용 불가 원칙
+- Vercel 프로덕션 실서버는 보안상 로컬의 `.env.local` 파일을 절대 읽지 않으므로, 에이전트는 환경변수 추가 작업이 로컬에서 성공했다고 해서 실서버에서도 작동할 것이라고 가정하거나 침묵해서는 안 됩니다.
+
+### 2. 명시적 재배포 알림 의무
+- 환경변수가 추가/변경된 기능(예: 크론, 신규 외부 API 연동 등)을 개발/테스트 완료한 직후, 에이전트는 채팅창을 통해 사용자에게 **"해당 기능이 실서버(Vercel)에서도 정상 작동하려면 반드시 Vercel 대시보드 [Settings > Environment Variables] 메뉴에 방금 추가한 키를 똑같이 등록하고 [Redeploy] 해야 한다"**는 사실을 명확하게 브리핑해야 합니다.

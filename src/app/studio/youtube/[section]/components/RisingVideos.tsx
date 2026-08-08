@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Flame, Loader2, Play, Eye, ThumbsUp, Calendar, ArrowRight, Copy, Check, ChevronLeft, ChevronRight, BarChart2, ExternalLink, Globe, ChevronDown } from "lucide-react";
+import { Flame, Loader2, Play, Eye, ThumbsUp, Calendar, ArrowRight, Copy, Check, ChevronLeft, ChevronRight, BarChart2, ExternalLink, Globe, ChevronDown, PlaySquare } from "lucide-react";
 import VideoAnalysisModal from "./VideoAnalysisModal";
 
 // ISO 8601 duration parser e.g., PT1M15S -> {formatted: "1:15", seconds: 75, isShorts: false}
@@ -750,6 +750,17 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
                             </>
                           )}
                         </button>
+                      )}
+                      {videoId && typeof videoId === "string" && (
+                        <a
+                          href={`https://www.youtube.com/watch?v=${videoId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-red-400 hover:text-red-300 transition font-medium"
+                        >
+                          <PlaySquare size={11} />
+                          <span>YouTube에서 직접 보기</span>
+                        </a>
                       )}
                       {video.snippet?.channelId && (
                         <a
