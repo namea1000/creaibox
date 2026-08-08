@@ -5,6 +5,16 @@ import { decryptApiKey } from "@/lib/server/api-vault-crypto";
 import { createClient } from "@/utils/supabase/server";
 import { appendTrendingToSheet } from "@/lib/google-sheets";
 
+
+function getSecondsUntilKstMidnight(): number {
+  const now = new Date();
+  const kstOffset = 9 * 60 * 60 * 1000;
+  const kstNow = new Date(now.getTime() + kstOffset);
+  const kstMidnight = new Date(kstNow);
+  kstMidnight.setUTCHours(24, 0, 0, 0);
+  return Math.floor((kstMidnight.getTime() - kstNow.getTime()) / 1000);
+}
+
 export function getKstTodayDate(): string {
   const now = new Date();
   const kstOffset = 9 * 60 * 60 * 1000; // 9 hours
@@ -199,6 +209,14 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type");
+
+  const maxAge = getSecondsUntilKstMidnight();
+  const cachedJson = (data: any) => NextResponse.json(data, {
+    headers: {
+      "Cache-Control": `public, s-maxage=${maxAge}, stale-while-revalidate=60`
+    }
+  });
+
   const referer = req.headers.get("referer") || "http://localhost:3000/";
   let vaultId: number | null = null;
   let apiKey = "";
@@ -258,12 +276,12 @@ export async function GET(req: NextRequest) {
                 bundleObj[r.category_id] = r.videos_data;
               }
             }
-            return NextResponse.json({ source: "supabase-db-daily-bundle-all", bundle: bundleObj });
+            return cachedJson({ source: "supabase-db-daily-bundle-all", bundle: bundleObj });
           }
         } catch (err) {
           console.error("trending-bundle fetch error:", err);
         }
-        return NextResponse.json({ bundle: {} });
+        return cachedJson({ bundle: {} });
       }
 
       case "trending": {
@@ -323,7 +341,7 @@ export async function GET(req: NextRequest) {
                     }
                   } catch (analysisErr) {}
                 }
-                return NextResponse.json({ source: "supabase-db-daily-bundle", data: combined, analyzedVideoIds });
+                return cachedJson({ source: "supabase-db-daily-bundle", data: combined, analyzedVideoIds });
               }
             }
           } catch (bundleReadErr) {
@@ -332,7 +350,7 @@ export async function GET(req: NextRequest) {
 
           // 2. If DB Cache Miss, check cacheOnly flag
           if (cacheOnly) {
-            return NextResponse.json({ cacheMiss: true });
+            return cachedJson({ cacheMiss: true });
           }
 
           // 3. 🚀 Single Unified 1-Call Live Fetch (~300ms speed, 15x quota reduction)
@@ -350,15 +368,15 @@ export async function GET(req: NextRequest) {
 
           // Strict Zero Fake Data Rule: If no live videos or date bundle exists, return empty array without serving stale fallback data
           if (combinedVideos.length === 0 && cacheOnly) {
-            return NextResponse.json({ cacheMiss: true, data: [] });
+            return cachedJson({ cacheMiss: true, data: [] });
           }
 
           if (cacheOnly && combinedVideos.length === 0) {
-            return NextResponse.json({ cacheMiss: true });
+            return cachedJson({ cacheMiss: true });
           }
 
           if (combinedVideos.length === 0) {
-            return NextResponse.json(getMockData("trending", searchParams));
+            return cachedJson(getMockData("trending", searchParams));
           }
 
           const videoIds = combinedVideos.map((v) => v.id).filter(Boolean);
@@ -377,7 +395,7 @@ export async function GET(req: NextRequest) {
             }
           }
 
-          return NextResponse.json({ source: "supabase-db-combined", data: combinedVideos, analyzedVideoIds });
+          return cachedJson({ source: "supabase-db-combined", data: combinedVideos, analyzedVideoIds });
         }
 
         const dbCategoryId = country === "KR" ? categoryId : `${country}_${categoryId}`;
@@ -436,7 +454,7 @@ export async function GET(req: NextRequest) {
                 }
               }
 
-              return NextResponse.json({ source: "supabase-db-daily-bundle", data: targetVideos, analyzedVideoIds });
+              return cachedJson({ source: "supabase-db-daily-bundle", data: targetVideos, analyzedVideoIds });
             }
           }
         } catch (bundleReadErr) {
@@ -471,7 +489,7 @@ export async function GET(req: NextRequest) {
               }
             }
 
-            return NextResponse.json({ source: "supabase-db", data: cachedRow.videos_data, analyzedVideoIds });
+            return cachedJson({ source: "supabase-db", data: cachedRow.videos_data, analyzedVideoIds });
           }
         } catch (dbErr) {
           console.error("Supabase Cache read failed, trying live fallback:", dbErr);
@@ -506,7 +524,7 @@ export async function GET(req: NextRequest) {
                 console.error("Failed to query analyzed rows in live hit path:", analysisErr);
               }
             }
-            return NextResponse.json({ source: "youtube-api", data: enrichedItems, analyzedVideoIds });
+            return cachedJson({ source: "youtube-api", data: enrichedItems, analyzedVideoIds });
           }
         } catch (err: any) {
           console.error("Cache Miss Scraper failed:", err);

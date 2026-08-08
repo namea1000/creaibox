@@ -135,6 +135,8 @@ function getKstTodayDateStr(): string {
   return kstDate.toISOString().split("T")[0];
 }
 
+const globalPopularCache = new Map<string, any>();
+
 export default function PopularVideos() {
   const [loading, setLoading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState<"db" | "youtube" | null>(null);
@@ -194,7 +196,6 @@ export default function PopularVideos() {
   const [copiedVideoId, setCopiedVideoId] = useState<string | null>(null);
 
   // RAM cache
-  const popularCacheRef = useRef<Map<string, any>>(new Map());
 
   // ⚡ 0ms Instant RAM Cache Warm-up for ALL Keys in Single Daily Bundle Row on mount
   useEffect(() => {
@@ -207,7 +208,7 @@ export default function PopularVideos() {
           Object.keys(bundleObj).forEach((bundleKey) => {
             if (Array.isArray(bundleObj[bundleKey]) && bundleObj[bundleKey].length > 0) {
               const fullCacheKey = `${bundleKey}_${selectedDate}`;
-              popularCacheRef.current.set(fullCacheKey, {
+              globalPopularCache.set(fullCacheKey, {
                 source: "supabase-db-daily-bundle",
                 data: bundleObj[bundleKey],
               });
@@ -244,9 +245,9 @@ export default function PopularVideos() {
       const cacheKey = `${country}_${catId}_${period}_${targetDate}`;
 
       if (force) {
-        popularCacheRef.current.delete(cacheKey);
-      } else if (popularCacheRef.current.has(cacheKey)) {
-        const cached = popularCacheRef.current.get(cacheKey);
+        globalPopularCache.delete(cacheKey);
+      } else if (globalPopularCache.has(cacheKey)) {
+        const cached = globalPopularCache.get(cacheKey);
         setVideos(cached.data || []);
         return;
       }
@@ -285,13 +286,13 @@ export default function PopularVideos() {
           result = await res.json();
         }
 
-        popularCacheRef.current.set(cacheKey, result);
+        globalPopularCache.set(cacheKey, result);
 
         if (result && result.categoriesBundle && typeof result.categoriesBundle === "object") {
           Object.entries(result.categoriesBundle).forEach(([cId, list]) => {
             if (Array.isArray(list) && list.length > 0) {
               const subKey = `${country}_${cId}_${period}_${targetDate}`;
-              popularCacheRef.current.set(subKey, { data: list });
+              globalPopularCache.set(subKey, { data: list });
             }
           });
         }

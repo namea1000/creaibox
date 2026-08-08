@@ -82,6 +82,8 @@ export const ALL_COUNTRIES: CountryItem[] = [
 const COUNTRIES = ALL_COUNTRIES;
 const OTHER_COUNTRIES = ALL_COUNTRIES.filter((c) => !c.isTop);
 
+const globalVideoCache = new Map<string, any>();
+
 export default function RisingVideos() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -117,7 +119,6 @@ export default function RisingVideos() {
   const [refreshCooldown, setRefreshCooldown] = useState<number>(0);
 
   // 🚀 Instant RAM Cache for 0ms fluid category/country tab switching
-  const videoCacheRef = React.useRef<Map<string, any>>(new Map());
 
   // Refresh cooldown removed upon request
   const formatCooldown = (seconds: number) => {
@@ -182,7 +183,7 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
                   countryCode = "KR";
                 }
                 const key = `${countryCode}_${catCode}_${selectedDate}`;
-                videoCacheRef.current.set(key, {
+                globalVideoCache.set(key, {
                   source: "supabase-db-daily-bundle",
                   data: bundleObj[dbCatKey],
                 });
@@ -217,7 +218,7 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
                   return vB - vA;
                 });
                 const allCacheKey = `${countryCode}_all_${selectedDate}`;
-                videoCacheRef.current.set(allCacheKey, {
+                globalVideoCache.set(allCacheKey, {
                   source: "supabase-db-daily-bundle",
                   data: combined,
                 });
@@ -226,8 +227,8 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
 
             // 3. If current selected country key is in RAM cache, set videos immediately
             const currentKey = `${selectedCountry}_${activeCategory}_${selectedDate}`;
-            if (videoCacheRef.current.has(currentKey)) {
-              const cached = videoCacheRef.current.get(currentKey);
+            if (globalVideoCache.has(currentKey)) {
+              const cached = globalVideoCache.get(currentKey);
               setVideos(cached.data || []);
               setSource(cached.source || "supabase-db-daily-bundle");
               setLoading(false);
@@ -305,10 +306,10 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
     const cacheKey = `${country}_${catId}_${targetDate}`;
 
     if (force) {
-      videoCacheRef.current.delete(cacheKey);
-    } else if (videoCacheRef.current.has(cacheKey)) {
+      globalVideoCache.delete(cacheKey);
+    } else if (globalVideoCache.has(cacheKey)) {
       // 🚀 0ms Instant RAM cache hit: no loading screen flash!
-      const cached = videoCacheRef.current.get(cacheKey);
+      const cached = globalVideoCache.get(cacheKey);
       setVideos(cached.data || []);
       setSource(cached.source || "cache");
       return;
@@ -346,7 +347,7 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
 
 
 
-      videoCacheRef.current.set(cacheKey, result);
+      globalVideoCache.set(cacheKey, result);
 
       // 🚀 Pre-populate category sub-caches from "all" feed ONLY if category videos exist in the feed
       if (catId === "all" && Array.isArray(result.data)) {
@@ -357,7 +358,7 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
           );
           if (catVideos.length > 0) {
             const subCacheKey = `${country}_${cat.id}_${targetDate}`;
-            videoCacheRef.current.set(subCacheKey, {
+            globalVideoCache.set(subCacheKey, {
               source: result.source,
               data: catVideos,
               analyzedVideoIds: result.analyzedVideoIds,
@@ -405,7 +406,7 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
     setBulkProgress(0);
     setBulkTotal(ALL_COUNTRIES.length);
     setBulkCurrentInfo("🚀 12개 주요국 2-Phase 스마트 트렌드 일괄 수집 시작 (100개 수집 + 20개 핀포인트 보충)...");
-    videoCacheRef.current.clear();
+    globalVideoCache.clear();
 
     try {
       const cronRes = await fetch("/api/cron/sync-trending");
