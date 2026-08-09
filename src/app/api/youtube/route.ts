@@ -199,6 +199,51 @@ export async function fetchAndCacheTrending(categoryId: string, date: string = g
   return enrichedItems;
 }
 
+const GLOBAL_BUNDLE_CACHE = new Map<string, { data: Record<string, any[]>; timestamp: number }>();
+const GLOBAL_BUNDLE_PROMISES = new Map<string, Promise<Record<string, any[]>>>();
+
+async function getGlobalBundle(date: string): Promise<Record<string, any[]> | null> {
+  const cacheKey = `bundle_${date}`;
+  const cached = GLOBAL_BUNDLE_CACHE.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < 1000 * 60 * 60) {
+    return cached.data;
+  }
+
+  if (GLOBAL_BUNDLE_PROMISES.has(cacheKey)) {
+    return GLOBAL_BUNDLE_PROMISES.get(cacheKey) || null;
+  }
+
+  const promise = (async () => {
+    try {
+      const { data: rows } = await supabaseAdmin
+        .from("youtube_trending_archive")
+        .select("category_id, videos_data")
+        .eq("target_date", date);
+
+      const bundleObj: Record<string, any[]> = {};
+      if (rows && rows.length > 0) {
+        for (const r of rows) {
+          if (r.category_id === "bundle" && r.videos_data && typeof r.videos_data === "object" && !Array.isArray(r.videos_data)) {
+            Object.assign(bundleObj, r.videos_data);
+          } else if (Array.isArray(r.videos_data)) {
+            bundleObj[r.category_id] = r.videos_data;
+          }
+        }
+        GLOBAL_BUNDLE_CACHE.set(cacheKey, { data: bundleObj, timestamp: Date.now() });
+      }
+      return bundleObj;
+    } catch (err) {
+      console.error("Failed to fetch global bundle:", err);
+      return {};
+    } finally {
+      GLOBAL_BUNDLE_PROMISES.delete(cacheKey);
+    }
+  })();
+
+  GLOBAL_BUNDLE_PROMISES.set(cacheKey, promise);
+  return promise;
+}
+
 // Unified proxy endpoint for YouTube Data API v3
 export async function GET(req: NextRequest) {
   // 0. Optional user session check
@@ -261,25 +306,10 @@ export async function GET(req: NextRequest) {
     switch (type) {
       case "trending-bundle": {
         const date = searchParams.get("date") || getKstTodayDate();
-        try {
-          const { data: rows } = await supabaseAdmin
-            .from("youtube_trending_archive")
-            .select("category_id, videos_data")
-            .eq("target_date", date);
-
-          if (rows && rows.length > 0) {
-            const bundleObj: Record<string, any[]> = {};
-            for (const r of rows) {
-              if (r.category_id === "bundle" && r.videos_data && typeof r.videos_data === "object" && !Array.isArray(r.videos_data)) {
-                Object.assign(bundleObj, r.videos_data);
-              } else if (Array.isArray(r.videos_data)) {
-                bundleObj[r.category_id] = r.videos_data;
-              }
-            }
-            return cachedJson({ source: "supabase-db-daily-bundle-all", bundle: bundleObj });
-          }
-        } catch (err) {
-          console.error("trending-bundle fetch error:", err);
+        const bundleObj = await getGlobalBundle(date);
+        
+        if (bundleObj && Object.keys(bundleObj).length > 0) {
+          return cachedJson({ source: "supabase-db-daily-bundle-all", bundle: bundleObj });
         }
         return cachedJson({ bundle: {} });
       }
@@ -292,17 +322,10 @@ export async function GET(req: NextRequest) {
 
         if (categoryId === "all") {
           // 1. Try reading from Daily Unified Bundle single row for target date
-          try {
-            const { data: bundleRow } = await supabaseAdmin
-              .from("youtube_trending_archive")
-              .select("videos_data")
-              .eq("target_date", date)
-              .eq("category_id", "bundle")
-              .maybeSingle();
+          const bundleObj = await getGlobalBundle(date);
 
-            if (bundleRow && bundleRow.videos_data && typeof bundleRow.videos_data === "object" && !Array.isArray(bundleRow.videos_data)) {
-              const bundleObj = bundleRow.videos_data as Record<string, any[]>;
-              const prefix = country === "KR" ? "" : `${country}_`;
+          if (bundleObj && Object.keys(bundleObj).length > 0) {
+            const prefix = country === "KR" ? "" : `${country}_`;
               const combined: any[] = [];
               const seenIds = new Set<string>();
 
@@ -342,10 +365,7 @@ export async function GET(req: NextRequest) {
                   } catch (analysisErr) {}
                 }
                 return cachedJson({ source: "supabase-db-daily-bundle", data: combined, analyzedVideoIds });
-              }
             }
-          } catch (bundleReadErr) {
-            console.error("Daily Bundle Cache read failed for category all:", bundleReadErr);
           }
 
           // 2. If DB Cache Miss, check cacheOnly flag

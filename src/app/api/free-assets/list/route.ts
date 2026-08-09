@@ -77,7 +77,48 @@ function sanitizeAssetTitle(
   return clean.replace(/\s{2,}/g, " ");
 }
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const GLOBAL_ASSETS_CACHE = new Map<string, { data: any; timestamp: number }>();
+const GLOBAL_ASSETS_PROMISES = new Map<string, Promise<any>>();
+
 export async function GET() {
+  const cacheKey = "global_free_assets";
+  const cached = GLOBAL_ASSETS_CACHE.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < 1000 * 60 * 60 * 24) {
+    return NextResponse.json({ files: cached.data });
+  }
+
+  if (GLOBAL_ASSETS_PROMISES.has(cacheKey)) {
+    const data = await GLOBAL_ASSETS_PROMISES.get(cacheKey);
+    return NextResponse.json({ files: data });
+  }
+
+  const promise = (async () => {
+    try {
+      const data = await generateAssetsList();
+      GLOBAL_ASSETS_CACHE.set(cacheKey, { data, timestamp: Date.now() });
+      return data;
+    } catch (e) {
+      console.error(e);
+      throw e;
+    } finally {
+      GLOBAL_ASSETS_PROMISES.delete(cacheKey);
+    }
+  })();
+
+  GLOBAL_ASSETS_PROMISES.set(cacheKey, promise);
+  
+  try {
+    const data = await promise;
+    return NextResponse.json({ files: data });
+  } catch (err: any) {
+    return NextResponse.json({ error: "Failed to fetch assets", details: err.message }, { status: 500 });
+  }
+}
+
+async function generateAssetsList() {
   try {
     const supabase = await createClient();
 
@@ -1119,12 +1160,9 @@ export async function GET() {
       }
     ];
 
-    return NextResponse.json({ files: [...formattedFiles, ...staticCategoryAssets, ...musicAssets] });
+    return [...formattedFiles, ...staticCategoryAssets, ...musicAssets];
   } catch (error: any) {
     console.error("Failed to list free assets from database:", error);
-    return NextResponse.json(
-      { error: "Database query error", details: error.message },
-      { status: 500 }
-    );
+    throw error;
   }
 }

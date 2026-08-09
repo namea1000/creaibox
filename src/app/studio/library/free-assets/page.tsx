@@ -2115,7 +2115,7 @@ function sanitizeTitle(
               ) : isVideo ? (
                 <div className="relative h-full w-full">
                   <AutoplayVideo
-                    src={(assetUrl.includes("googleusercontent.com") || assetUrl.includes("drive.google.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(assetUrl)}` : assetUrl}
+                    src={assetUrl}
                     className="h-full w-full object-cover pointer-events-none"
                   />
                   <div className="absolute right-3 top-3 rounded-lg bg-black/60 px-1.5 py-0.5 text-[9px] font-bold text-white tracking-widest uppercase">
@@ -2999,10 +2999,11 @@ function sanitizeTitle(
               </>
             )}
 
-            {/* 무료 에셋 나눔하기 버튼 */}
+            {/* 무료 에셋 나눔하기 버튼 (임시 비활성화) */}
             <button
-              onClick={handleOpenUpload}
-              className="flex items-center gap-1.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 text-xs font-bold transition shadow-md shadow-blue-500/20 cursor-pointer ml-2"
+              disabled
+              className="flex items-center gap-1.5 rounded-full bg-zinc-800 text-zinc-500 px-4 py-1.5 text-xs font-bold cursor-not-allowed ml-2 opacity-70"
+              title="관리자 전용 대량 업로드 기간입니다. 일반 업로드는 일시 중단되었습니다."
             >
               <UploadCloud size={12} />
               <span>무료 에셋 나눔하기</span>
@@ -3116,7 +3117,7 @@ function sanitizeTitle(
                       ) : isVideo ? (
                         <div className="relative h-full w-full">
                           <AutoplayVideo
-                            src={(assetUrl.includes("googleusercontent.com") || assetUrl.includes("drive.google.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(assetUrl)}` : assetUrl}
+                            src={assetUrl}
                             className="h-full w-full object-cover pointer-events-none"
                           />
                           <div className="absolute right-3 top-3 rounded-lg bg-black/60 px-1.5 py-0.5 text-[9px] font-bold text-white tracking-widest uppercase">
@@ -3369,7 +3370,7 @@ function sanitizeTitle(
                   </div>
                 ) : selectedAsset.mediaType === "video" ? (
                   <video
-                    src={(selectedAsset.url.includes("googleusercontent.com") || selectedAsset.url.includes("drive.google.com")) ? `/api/free-assets/proxy?url=${encodeURIComponent(selectedAsset.url)}` : selectedAsset.url}
+                    src={selectedAsset.url}
                     controls
                     autoPlay
                     loop

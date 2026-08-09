@@ -99,13 +99,13 @@ NEXT_PUBLIC_R2_PUBLIC_URL="https://pub-4d5e9d40c2ef4eeb93a533aee9f1862d.r2.dev"
 
 ## 7. 구글 드라이브 ➡️ R2 미디어 동기화 스크립트 실행 가이드
 
-프로젝트에는 관리자용 동기화 엔진인 [scripts/test_r2_sync.ts](file:///Users/a1234/Local%20Sites/creaibox/scripts/test_r2_sync.ts) 파일이 내장되어 있습니다. 이 스크립트는 구글 드라이브 폴더의 모든 영상을 조회하여 R2에 없는 파일만 다운로드/업로드하고 Supabase DB 테이블 `free_assets`에 R2 CDN 주소를 다이렉트로 매핑하여 동기화해 줍니다.
+프로젝트에는 관리자용 동기화 엔진인 [scripts/sync-r2-assets.ts](file:///Users/a1234/Local%20Sites/creaibox/scripts/sync-r2-assets.ts) 파일이 내장되어 있습니다. 이 스크립트는 구글 드라이브 폴더의 모든 영상을 조회하여 R2에 없는 파일만 다운로드/업로드하고 Supabase DB 테이블 `free_assets`에 R2 CDN 주소를 다이렉트로 매핑하여 동기화해 줍니다.
 
 ### 실행 방법
 터미널을 열고 프로젝트 루트 디렉토리에서 다음 명령을 실행합니다:
 
 ```bash
-npx ts-node --compiler-options '{"module":"commonjs","noImplicitAny":false}' scripts/test_r2_sync.ts
+npx ts-node --compiler-options '{"module":"commonjs","noImplicitAny":false}' scripts/sync-r2-assets.ts
 ```
 
 ### 작동 프로세스

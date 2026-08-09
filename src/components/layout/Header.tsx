@@ -109,7 +109,7 @@ export default function Header() {
       try {
         const { data } = await supabase
           .from("profiles")
-          .select("nickname, membership_level, role, extra_configs, is_manual_grant")
+          .select("nickname, membership_level, role, extra_configs")
           .eq("id", userId)
           .maybeSingle();
 

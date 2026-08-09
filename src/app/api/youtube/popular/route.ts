@@ -2,6 +2,58 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, recordVaultSuccess, recordVaultFailure } from "@/lib/server/get-free-gemini-key";
 import { decryptApiKey } from "@/lib/server/api-vault-crypto";
 
+const GLOBAL_POPULAR_CACHE = new Map<string, { data: any; timestamp: number }>();
+const GLOBAL_POPULAR_PROMISES = new Map<string, Promise<any>>();
+
+async function getCachedPopularBundle(date: string, force: boolean): Promise<any> {
+  if (!force) {
+    const cached = GLOBAL_POPULAR_CACHE.get(date);
+    if (cached && Date.now() - cached.timestamp < 1000 * 60 * 60 * 24) {
+      return cached.data;
+    }
+    if (GLOBAL_POPULAR_PROMISES.has(date)) {
+      return GLOBAL_POPULAR_PROMISES.get(date);
+    }
+  }
+
+  const promise = (async () => {
+    try {
+      let { data: cachedRow } = await supabaseAdmin
+        .from("youtube_popular_archive")
+        .select("videos_data, target_date")
+        .eq("target_date", date)
+        .maybeSingle();
+
+      if (!cachedRow || !cachedRow.videos_data) {
+        const { data: latestRow } = await supabaseAdmin
+          .from("youtube_popular_archive")
+          .select("videos_data, target_date")
+          .order("target_date", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (latestRow && latestRow.videos_data) {
+          cachedRow = latestRow;
+        }
+      }
+
+      if (cachedRow) {
+        GLOBAL_POPULAR_CACHE.set(date, { data: cachedRow, timestamp: Date.now() });
+        return cachedRow;
+      }
+      return null;
+    } catch (e) {
+      console.error("popular bundle cache error:", e);
+      return null;
+    } finally {
+      GLOBAL_POPULAR_PROMISES.delete(date);
+    }
+  })();
+
+  GLOBAL_POPULAR_PROMISES.set(date, promise);
+  return promise;
+}
+
 export function getKstTodayDate(): string {
   const now = new Date();
   const kstOffset = 9 * 60 * 60 * 1000;
@@ -51,12 +103,7 @@ export async function GET(req: NextRequest) {
   // 🚀 Fast Track 1: Return entire Daily Bundle for date pre-warming (0ms RAM Cache)
   if (type === "popular-bundle") {
     try {
-      const { data: row } = await supabaseAdmin
-        .from("youtube_popular_archive")
-        .select("videos_data")
-        .eq("target_date", date)
-        .maybeSingle();
-
+      const row = await getCachedPopularBundle(date, force);
       return NextResponse.json({
         date,
         bundle: (row && row.videos_data && typeof row.videos_data === "object") ? row.videos_data : {}
@@ -71,24 +118,7 @@ export async function GET(req: NextRequest) {
   // 1. Try reading from Supabase DB `youtube_popular_archive` Single Daily Bundle Row
   if (!force) {
     try {
-      let { data: cachedRow } = await supabaseAdmin
-        .from("youtube_popular_archive")
-        .select("videos_data, target_date")
-        .eq("target_date", date)
-        .maybeSingle();
-
-      if (!cachedRow || !cachedRow.videos_data) {
-        const { data: latestRow } = await supabaseAdmin
-          .from("youtube_popular_archive")
-          .select("videos_data, target_date")
-          .order("target_date", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (latestRow && latestRow.videos_data) {
-          cachedRow = latestRow;
-        }
-      }
+      const cachedRow = await getCachedPopularBundle(date, force);
 
       if (cachedRow && cachedRow.videos_data && typeof cachedRow.videos_data === "object") {
         const bundleObj = cachedRow.videos_data as Record<string, any>;
@@ -277,8 +307,8 @@ export async function GET(req: NextRequest) {
       return enriched;
     }
 
-    // 🚀 Execute parallel live-fetch for ALL 16 categories for this country & period
-    const ALL_CAT_IDS = ["all", "10", "20", "24", "23", "1", "26", "25", "22", "19", "28", "27", "15", "17", "2", "29"];
+    // 🚀 Execute live-fetch ONLY for the requested category to save API Quota!
+    const ALL_CAT_IDS = [categoryId];
     const categoriesBundle: Record<string, any[]> = {};
 
     // 1. Fetch requested category and all core categories in parallel

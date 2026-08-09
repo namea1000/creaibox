@@ -779,7 +779,7 @@ AI 생성 단계를 거치지 않고, 사용자가 직접 수동으로 처음부
   * 기존에 R2 버킷에 임시 업로드되었던 14장의 이미지는 전량 R2와 DB에서 롤백 삭제 처리하였습니다.
   * 이로 인해 대용량 이미지 다운로드 및 R2 업로드 병목이 사라져 동기화 속도가 파일당 2초 수준으로 기존 대비 약 10배 이상 향상되었습니다.
 * **음악 파일(오디오) 동기화 지원 및 공용 프록시 연동**:
-  * 메인 동기화 스크립트([test_r2_sync.ts](file:///Users/a1234/Local%20Sites/creaibox/scripts/test_r2_sync.ts))가 구글 드라이브 루트의 `music/` 폴더도 자동으로 감지하여 오디오 파일들을 스캔하도록 통합하였습니다.
+  * 메인 동기화 스크립트([sync-r2-assets.ts](file:///Users/a1234/Local%20Sites/creaibox/scripts/sync-r2-assets.ts))가 구글 드라이브 루트의 `music/` 폴더도 자동으로 감지하여 오디오 파일들을 스캔하도록 통합하였습니다.
   * 음악 에셋 또한 이미지처럼 R2 업로드를 스킵하고 구글 드라이브 직링크를 데이터베이스에 수록합니다.
   * 오디오 파일 재생 시 브라우저 쿠키 제한 및 CORS/CORP(Cross-Origin Resource Policy) 문제를 우회하기 위해, 무료 에셋 상세 페이지의 오디오 재생 기능이 공용 스트리밍 프록시 API(`/api/free-assets/proxy?url=...`)를 타도록 `page.tsx` 내 `toggleAudio` 함수를 래핑하였습니다. 이로 인해 iOS 및 Safari 등 모든 모바일 기기에서도 오디오 탐색(Seeking)과 버퍼링 없는 플레이가 안정적으로 작동합니다.
 * **무료 공유 에셋 라이브러리 내 비디오 호버 스크러빙 및 오토플레이 연동**:
@@ -801,7 +801,7 @@ AI 생성 단계를 거치지 않고, 사용자가 직접 수동으로 처음부
   * 오디오 파일의 경우 확장명 앞에 비율 필드가 들어가지 않도록 파일명 생성 규칙을 정돈했습니다.
 
 ### 30-2. 변경 및 추가 파일 목록
-* **[MODIFY] [test_r2_sync.ts](file:///Users/a1234/Local%20Sites/creaibox/scripts/test_r2_sync.ts)**:
+* **[MODIFY] [sync-r2-assets.ts](file:///Users/a1234/Local%20Sites/creaibox/scripts/sync-r2-assets.ts)**:
   * 루트 내 `music/` 폴더 감지 추가.
   * 이미지/오디오 파일 R2 업로드 바이패스 및 `lh3` Direct URL 매핑 적용.
   * 미드저니 `--ar_` 비율 파싱 정교화 및 `Namu_` 접두사 제거 로직 반영.
@@ -837,7 +837,7 @@ AI 생성 단계를 거치지 않고, 사용자가 직접 수동으로 처음부
   * `fetchProfile` 함수를 도입하여 Supabase `profiles` 테이블의 실제 `membership_level`을 비동기 조회 및 매핑(`Admin`, `Creator`, `Pro`, `Business`, `Free` 등)하고, 화면 깜빡임 차단을 위해 `localStorage`에 세션 정보와 캐싱 연동 처리.
 * **[NEW] [fix_post_types.ts](file:///Users/a1234/Local%20Sites/creaibox/scripts/fix_post_types.ts)**:
   * 구글 드라이브 내 전체 카테고리 폴더 경로 및 파일 이름 키워드 분석을 통해 기존 DB의 모든 에셋(921개)을 포스트 타입(용도)별로 자동 분류 및 `tags` 배열 컬럼에 일괄 매핑하는 데이터 마이그레이션 스크립트 작성 및 성공적인 일괄 가동 완료.
-* **[MODIFY] [test_r2_sync.ts](file:///Users/a1234/Local%20Sites/creaibox/scripts/test_r2_sync.ts)**:
+* **[MODIFY] [sync-r2-assets.ts](file:///Users/a1234/Local%20Sites/creaibox/scripts/sync-r2-assets.ts)**:
   * 향후 추가되는 에셋들도 스캔 및 업로드/동기화 시점에 구글 드라이브 디렉토리 위치를 감지하여 적절한 포스트 타입 용도 태그가 데이터베이스에 자동으로 누적 주입되도록 로직 개선.
 * **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/library/free-assets/page.tsx)**:
   * 에셋 라이브러리 메인 필터 대시보드 영역에 '포스트 타입(용도)' 트리거 버튼 및 옵션 선택 패널을 아코디언 형태로 추가하고 클라이언트 필터링 검색 연동을 완료.

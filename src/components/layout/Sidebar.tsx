@@ -124,7 +124,13 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
 
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("sidebar_is_admin") === "true";
+    }
+    return false;
+  });
+  
   const [isMounted, setIsMounted] = useState(false);
   const supabase = useMemo(() => createClient(), []);
 
@@ -139,6 +145,7 @@ export default function Sidebar({
       if (!mounted) return;
       if (!user) {
         setIsAdmin(false);
+        if (typeof window !== "undefined") sessionStorage.setItem("sidebar_is_admin", "false");
         return;
       }
       try {
@@ -151,13 +158,16 @@ export default function Sidebar({
         if (mounted) {
           if (!error && data && data.role === "ADMIN") {
             setIsAdmin(true);
+            if (typeof window !== "undefined") sessionStorage.setItem("sidebar_is_admin", "true");
           } else {
             setIsAdmin(false);
+            if (typeof window !== "undefined") sessionStorage.setItem("sidebar_is_admin", "false");
           }
         }
       } catch (err) {
         if (mounted) {
           setIsAdmin(false);
+          if (typeof window !== "undefined") sessionStorage.setItem("sidebar_is_admin", "false");
         }
       }
     };
@@ -626,18 +636,31 @@ export default function Sidebar({
   const [optimisticActiveKey, setOptimisticActiveKey] = useState<string | null>(null);
 
   const [expandedGroups, setExpandedGroups] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      const stored = sessionStorage.getItem("sidebar_expanded");
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          // ignore parse errors
+        }
+      }
+    }
+    // Only on very first load (no session storage), expand the currently active one
     const activeKeys = menuGroups.filter((g) => isGroupActive(g)).map((g) => g.key);
     return activeKeys;
   });
 
-  // Automatically update expandedGroups and clear optimistic active key when pathname changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("sidebar_expanded", JSON.stringify(expandedGroups));
+    }
+  }, [expandedGroups]);
+
+  // Automatically clear optimistic active key when pathname changes
   useEffect(() => {
     setOptimisticActiveKey(null);
-    const activeKeys = menuGroups.filter((g) => isGroupActive(g)).map((g) => g.key);
-    if (activeKeys.length > 0) {
-      setExpandedGroups(activeKeys);
-    }
-  }, [pathname, isGroupActive, menuGroups]);
+  }, [pathname]);
 
   const toggleGroup = (key: string) => {
     setExpandedGroups((prev) =>
@@ -751,10 +774,15 @@ export default function Sidebar({
           {/* Main Parent Menu Header Link */}
           <Link
             href={group.href}
-            onClick={() => {
-              setOptimisticActiveKey(group.key);
-              toggleGroup(group.key);
-              setIsMobileOpen(false);
+            onClick={(e) => {
+              if (isGroupActiveState) {
+                e.preventDefault(); // Prevent navigating if we're already active, just toggle
+                toggleGroup(group.key);
+              } else {
+                setOptimisticActiveKey(group.key);
+                setIsMobileOpen(false);
+                // First click: navigate but do NOT toggle expansion
+              }
             }}
             className="flex min-w-0 flex-1 items-center cursor-pointer"
           >

@@ -239,3 +239,4 @@ CreAibox 브랜드 ID(`{brand_id}.creaibox.com`) 예약어/블랙리스트 Egres
   - Yahoo Finance API 연동, 주가지수 및 실시간 등락률 렌더링.
 - [ ] **네이버 포털형 메인 & 스튜디오 대시보드 위젯 컴포넌트 배치**
   - 포털형 우측 사이드바 및 스튜디오 웰컴 영역 Glassmorphism 3대 탭 카드 렌더링.
+- [x] 인기 영상 조회수 랭킹 YouTube Search API 쿼터 고갈 분석 완료 및 현행 유지 (100쿼터 제한 방치 정책 확정)

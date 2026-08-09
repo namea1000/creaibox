@@ -37,3 +37,7 @@ When creating how-to guides or operation manuals (e.g., "~ 하는 방법", "매�
 - **모든 소스 코드 수정, 파일 생성/삭제 등 실제 코드 변경 작업은 오직 개발자의 명시적 실행 지시("적용해", "수정해", "코드 반영해")가 확정되었을 때만 수행한다.**
 
 
+
+### Mandatory Daily Devlog & Architecture Update Rule (매일 개발 일지 및 관련 문서 업데이트 의무 규칙)
+- 앞으로 코드 수정보완이나 새로운 메뉴를 개발하면 매일 작업 완료 즉시 두 문서(`docs/project/<YYYY><MonthName>Devlog.md` 와 `Walkthrough.md`)를 반드시 기록(업데이트)해야 한다.
+- 또한, 해당 수정보완 했던 기능과 관련된 아키텍처 문서(`docs/arch/`)나 매뉴얼 문서(`docs/project/manual/`)를 적극적으로 찾아내어 그 문서도 함께 최신화하여 업데이트해야 한다.

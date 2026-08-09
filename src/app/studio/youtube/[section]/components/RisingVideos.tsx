@@ -86,13 +86,23 @@ const globalVideoCache = new Map<string, any>();
 
 export default function RisingVideos() {
   const [mounted, setMounted] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(() => {
+    const today = getKstTodayDateStr();
+    return !globalVideoCache.has(`KR_all_${today}`);
+  });
 
   useEffect(() => {
     setMounted(true);
   }, []);
   const [loadingStatus, setLoadingStatus] = useState<"db" | "youtube" | null>(null);
-  const [videos, setVideos] = useState<any[]>([]);
+  const [videos, setVideos] = useState<any[]>(() => {
+    const today = getKstTodayDateStr();
+    const cacheKey = `KR_all_${today}`;
+    if (globalVideoCache.has(cacheKey)) {
+      return globalVideoCache.get(cacheKey).data || [];
+    }
+    return [];
+  });
   const [error, setError] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState("all");
   const [selectedDate, setSelectedDate] = useState(() => getKstTodayDateStr());
@@ -109,7 +119,15 @@ export default function RisingVideos() {
   const [selectedVideoForAnalysis, setSelectedVideoForAnalysis] = useState<any>(null);
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
-  const [analyzedVideos, setAnalyzedVideos] = useState<any[]>([]);
+  const [analyzedVideos, setAnalyzedVideos] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("creaibox_recent_analyzed_videos");
+      if (cached) {
+        try { return JSON.parse(cached); } catch (e) {}
+      }
+    }
+    return [];
+  });
   const [visibleCount, setVisibleCount] = useState(20);
 
   const [isBulkLoading, setIsBulkLoading] = useState(false);
@@ -134,16 +152,9 @@ export default function RisingVideos() {
         if (json.data && Array.isArray(json.data) && json.data.length > 0) {
           setAnalyzedVideos(json.data);
           localStorage.setItem("creaibox_recent_analyzed_videos", JSON.stringify(json.data.slice(0, 30)));
-          return;
         }
       } catch (e) {
         console.error("Failed to load recent reports from DB:", e);
-      }
-      const cached = localStorage.getItem("creaibox_recent_analyzed_videos");
-      if (cached) {
-        try {
-          setAnalyzedVideos(JSON.parse(cached));
-        } catch (e) {}
       }
     }
     loadRecentReportsFromDb();
@@ -395,6 +406,8 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
       setLoadingStatus(null);
     }
   }, [activeCategory, selectedDate, selectedCountry]);
+
+
 
   useEffect(() => {
     fetchTrending("all", getKstTodayDateStr(), "KR");

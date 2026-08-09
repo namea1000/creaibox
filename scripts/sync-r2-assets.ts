@@ -33,6 +33,65 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+let sheetsClient: any = null;
+try {
+  const serviceAccountStr = process.env.GOOGLE_INDEXING_CREDENTIALS || '{}';
+  const serviceAccount = JSON.parse(serviceAccountStr);
+  if (serviceAccount.client_email) {
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: serviceAccount.client_email,
+        private_key: serviceAccount.private_key,
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+    });
+    sheetsClient = google.sheets({ version: 'v4', auth });
+  }
+} catch (e: any) {
+  console.log("Could not init Google Sheets API:", e.message);
+}
+
+let spreadsheetRows: any[] = [];
+async function loadSpreadsheet() {
+  if (!sheetsClient) return;
+  try {
+    const spreadsheetIds = [
+      '1-01HEzdUN-w305uJKA4f5zkm-5_7nYuk7z-ugQYXIek',
+      '1cI6-XYJKAYtaTSL97X8ryOaast7vIGoGR892dx7S59I',
+      '18Krz6hFRA2vf44qcwqhNL8ydHN-25LHg0CFWmhcKcoM'
+    ];
+    
+    spreadsheetRows = [];
+    
+    for (const spreadsheetId of spreadsheetIds) {
+      console.log(`Fetching metadata for spreadsheet: ${spreadsheetId}...`);
+      // 1. Get all sheet names
+      const metaData = await sheetsClient.spreadsheets.get({ spreadsheetId });
+      const sheets = metaData.data.sheets || [];
+      
+      // 2. Fetch data from each sheet
+      for (const sheet of sheets) {
+        const sheetTitle = sheet.properties?.title;
+        if (!sheetTitle) continue;
+        
+        const response = await sheetsClient.spreadsheets.values.get({
+          spreadsheetId,
+          range: `'${sheetTitle}'!A2:E500`,
+        });
+        
+        const rows = response.data.values || [];
+        // Optionally attach sheet title to each row for better context
+        const rowsWithSheetContext = rows.map((r: any) => [...r, `[Sheet: ${sheetTitle}]`]);
+        spreadsheetRows.push(...rowsWithSheetContext);
+      }
+    }
+    
+    console.log(`Loaded a total of ${spreadsheetRows.length} rows from all Google Sheets.`);
+  } catch(e: any) {
+    console.error("Failed to load Google Sheets:", e.message);
+  }
+}
+
 const s3Client = new S3Client({
   region: 'auto',
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -100,22 +159,63 @@ function cleanMidjourneyPrompt(fileName: string): { cleanPrompt: string; ratio: 
   return { cleanPrompt, ratio, genType };
 }
 
-async function analyzeWithGemini(promptText: string, imageBuffer?: Buffer, mimeType?: string): Promise<{ title: string; tags: string[]; english_title: string }> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("Missing GEMINI_API_KEY in environment");
+let currentApiKeyIndex = 0;
+
+async function analyzeWithGemini(fileName: string, mediaType: string, imageBuffer?: Buffer, mimeType?: string): Promise<{ title: string; tags: string[]; english_title: string; original_prompt: string; topic: string }> {
+  const apiKeys = [
+    process.env.GEMINI_API_KEY_1,
+    process.env.GEMINI_API_KEY_2,
+    process.env.GEMINI_API_KEY_3
+  ].filter(Boolean) as string[];
+
+  if (apiKeys.length === 0) {
+    throw new Error("Missing GEMINI_API_KEY_1, 2, or 3 in environment");
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const apiKey = apiKeys[currentApiKeyIndex];
+  currentApiKeyIndex = (currentApiKeyIndex + 1) % apiKeys.length;
+  console.log(`[Gemini API] Using API Key #${currentApiKeyIndex === 0 ? apiKeys.length : currentApiKeyIndex} of ${apiKeys.length}`);
+
+  // Use gemini-2.5-flash for images, gemini-3.1-flash-lite for text only
+  const modelName = (imageBuffer && mimeType) ? 'gemini-2.5-flash' : 'gemini-3.1-flash-lite';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
+  const promptContext = spreadsheetRows.map((row, index) => {
+    return `Row ${index + 2}: Topic: [${row[0] || ''}], Desc: [${row[2] || ''}], Image Prompt: [${row[3] || ''}], Motion Prompt: [${row[4] || ''}]`;
+  }).join("\n");
+
+  const systemInstruction = `
+You are an expert AI asset curator. We have a Google Spreadsheet of prompts used to generate AI assets.
+Spreadsheet Rows:
+${promptContext}
+
+The user uploaded an asset.
+Filename: "${fileName}"
+Media Type: "${mediaType}"
+
+Your task:
+1. Identify which Row from the spreadsheet was most likely used to generate this asset. The filename might contain truncated words from the prompt, description, or topic.
+2. If it's a completely random name (like a UUID 'abocado_ai_1774...') and you have NO visual image, try to guess or return Row 2 as fallback. If an image is provided, use the visual content to match it perfectly with the Image Prompt or Desc.
+3. Extract the 'Topic' and 'Image Prompt' (or 'Motion Prompt' if video) from the matched row.
+4. Generate a highly descriptive, premium Korean title (max 3-4 words, tell a story, don't use single words like '공부방', '산').
+5. Generate a clean English title for the filename (max 3-4 words, alphanumeric only, using underscores).
+6. Generate 6-9 Korean tags for search filtering based on the 'Topic' and 'Desc'. Include tags that match UI filters like 카테고리 (e.g., '건강 정보', '동기부여', '지식 정보', 'ASMR/백색소음', '플레이리스트', '디자인/배경', 'SNS 카드뉴스', '뉴스 리포트', '힐링/다큐', '자연', '풍경', '바다', '하늘', '감성').
+
+Return ONLY a JSON object (no markdown, no backticks) with the following exact keys:
+{
+  "title": string,
+  "english_title": string,
+  "tags": string[],
+  "original_prompt": string,
+  "topic": string
+}`;
 
   let contents: any[] = [];
   if (imageBuffer && mimeType) {
     contents = [
       {
         parts: [
-          {
-            text: "Look at this image. Output a JSON object containing: 1. 'title' (a highly descriptive, premium, and natural Korean title fitting a high-quality free stock media library, maximum 3-4 words. Do NOT use single word titles like '공부방', '산', '바다'. Tell a beautiful story. Also do NOT use tech terms like '원시', '날것', '로우', 'raw', '스타일'), 2. 'english_title' (a clean, concise English title, max 3-4 words, alphanumeric only, using spaces), 3. 'tags' (array of 6-9 Korean keywords for search classification)."
-          },
+          { text: systemInstruction },
           {
             inlineData: {
               mimeType: mimeType,
@@ -129,9 +229,7 @@ async function analyzeWithGemini(promptText: string, imageBuffer?: Buffer, mimeT
     contents = [
       {
         parts: [
-          {
-            text: `Translate this image/video generation prompt into a highly descriptive, premium, and natural Korean title fitting a free stock media library (3-4 words. Tell a beautiful story rather than single word titles like '공부방', '산', '바다'. Do NOT use raw/style/photo/stylize literal translations like '날것', '원시', '스타일') and generate 6-9 relevant tags in Korean. Also output a clean, concise English title (max 3-4 words, alphanumeric only, using spaces) for the filename. Return a JSON object with 'title' (string), 'english_title' (string), and 'tags' (array of strings). Prompt: "${promptText}"`
-          }
+          { text: systemInstruction }
         ]
       }
     ];
@@ -159,11 +257,23 @@ async function analyzeWithGemini(promptText: string, imageBuffer?: Buffer, mimeT
     throw new Error("Empty response from Gemini");
   }
 
-  const parsed = JSON.parse(textContent);
+  let parsed: any = {};
+  try {
+    parsed = JSON.parse(textContent);
+  } catch(e) {
+    console.warn("Failed to parse Gemini output as JSON, attempting to extract JSON from text...");
+    const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      parsed = JSON.parse(jsonMatch[0]);
+    }
+  }
+
   return {
     title: parsed.title || '무제 에셋',
     english_title: parsed.english_title || 'untitled_asset',
-    tags: parsed.tags || []
+    tags: parsed.tags || [],
+    original_prompt: parsed.original_prompt || '',
+    topic: parsed.topic || ''
   };
 }
 
@@ -345,28 +455,7 @@ async function main() {
     }
   }
 
-  if (musicFolder) {
-    console.log(`\nDetected 'music' folder. Fetching files inside (ID: ${musicFolder.id})...`);
-    const subListRes = await drive.files.list({
-      q: `'${musicFolder.id}' in parents and trashed = false`,
-      fields: "files(id, name, mimeType, size, createdTime, description)",
-    });
-    const subFiles = subListRes.data.files || [];
-    subFiles.forEach((f: any) => {
-      if (f.id && f.name && f.mimeType?.startsWith('audio/')) {
-        filesToSync.push({
-          id: f.id,
-          name: f.name,
-          mimeType: f.mimeType,
-          size: f.size || '0',
-          createdTime: f.createdTime || new Date().toISOString(),
-          description: f.description || '',
-          mediaType: 'music',
-          category: 'music_root'
-        });
-      }
-    });
-  }
+  // Music folder processing is handled separately by sync-music-r2.ts
 
   if (imageFolder && imageFolder.id) {
     console.log(`\nDetected 'image' folder (ID: ${imageFolder.id}). Starting scan...`);
@@ -465,25 +554,34 @@ async function main() {
   console.log("Fetching existing synced file IDs from Supabase...");
   const { data: existingAssets, error: selectError } = await supabase
     .from("free_assets")
-    .select("gdrive_file_id");
+    .select("gdrive_file_id, prompt");
 
   if (selectError) {
     console.error("Failed to fetch existing assets from Supabase:", selectError.message);
   }
 
   const syncedIds = new Set(existingAssets?.map(a => a.gdrive_file_id) || []);
-  console.log(`Found ${syncedIds.size} already synced files in Database.`);
+  const syncedWithPrompts = new Set(
+    existingAssets?.filter(a => a.prompt && a.prompt.trim() !== '').map(a => a.gdrive_file_id) || []
+  );
+  
+  console.log(`Found ${syncedIds.size} files in DB. (${syncedWithPrompts.size} files have prompts from Gemini)`);
 
   console.log(`\nStarting sync of ${filesToSync.length} files to Cloudflare R2 (Videos) / Google Drive (Images) and Supabase Database...`);
+  
+  await loadSpreadsheet();
+
   const bucketName = process.env.R2_BUCKET_NAME || 'creaibox-assets';
   const r2PublicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || '';
 
   for (const file of filesToSync) {
     if (!file.id || !file.name) continue;
 
-    if (syncedIds.has(file.id)) {
-      console.log(`[Skip] File "${file.name}" (ID: ${file.id}) is already synced. Skipping.`);
+    if (syncedWithPrompts.has(file.id)) {
+      console.log(`[Skip] File "${file.name}" is already synced and contains a Gemini prompt. Skipping.`);
       continue;
+    } else if (syncedIds.has(file.id)) {
+      console.log(`[Re-sync] File "${file.name}" is in DB but missing prompt. Re-processing to clean up!`);
     }
 
     console.log(`\n[Syncing] Processing: ${file.name} (${(Number(file.size || 0) / 1024 / 1024).toFixed(2)} MB) [Type: ${file.mediaType}]...`);
@@ -575,27 +673,28 @@ async function main() {
       }
     }
 
+    let originalPrompt = '';
+    let topicCategory = '';
+
     try {
-      if (parsedMidjourney.cleanPrompt) {
-        console.log(`[AI Translation] Translating prompt: "${parsedMidjourney.cleanPrompt}"...`);
-        const geminiRes = await analyzeWithGemini(parsedMidjourney.cleanPrompt);
+      if (file.mediaType === 'image' && buffer) {
+        console.log(`[Gemini Vision] Analyzing image buffer & matching with Google Sheets...`);
+        const geminiRes = await analyzeWithGemini(file.name, file.mediaType, buffer, file.mimeType);
         title = geminiRes.title;
         englishTitle = geminiRes.english_title;
         tags = [...tags, ...geminiRes.tags];
-        // Delay to prevent Gemini API RPM rate limits
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } else if (file.mediaType === 'image' && buffer) {
-        console.log(`[Gemini Vision] Analyzing unnamed image buffer...`);
-        const geminiRes = await analyzeWithGemini('', buffer, file.mimeType);
-        title = geminiRes.title;
-        englishTitle = geminiRes.english_title;
-        tags = [...tags, ...geminiRes.tags];
-        // Delay to prevent Gemini API RPM rate limits
+        originalPrompt = geminiRes.original_prompt;
+        topicCategory = geminiRes.topic;
         await new Promise(resolve => setTimeout(resolve, 1000));
       } else {
-        title = file.mediaType === 'video' ? 'AI 비디오 템플릿' : (file.mediaType === 'music' ? 'AI 오디오 트랙' : 'AI 이미지');
-        englishTitle = file.mediaType === 'video' ? 'ai_video_template' : (file.mediaType === 'music' ? 'ai_audio_track' : 'ai_image');
-        tags.push('AI');
+        console.log(`[AI Matcher] Translating & matching prompt from filename: "${file.name}"...`);
+        const geminiRes = await analyzeWithGemini(file.name, file.mediaType);
+        title = geminiRes.title;
+        englishTitle = geminiRes.english_title;
+        tags = [...tags, ...geminiRes.tags];
+        originalPrompt = geminiRes.original_prompt;
+        topicCategory = geminiRes.topic;
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     } catch (e: any) {
       console.warn(`[AI Parsing Error] Failed to parse with Gemini: ${e.message}. Falling back to filename.`);
@@ -617,13 +716,19 @@ async function main() {
       .replace(/__+/g, '_')
       .replace(/^_+|_+$/g, '');
     
-    const isAlreadyClean = /^[a-z0-9_]+$/.test(file.name.replace(/\.[^/.]+$/, "")) && (file.name.includes('_ai') || file.name.includes('_real')) && file.name.includes('_creaibox');
+    const isAlreadyClean = false; // Force rename to ensure standard AI clean names are always applied based on the sheet data
+
+    // Append a unique 4-character hash from the Google Drive file ID to prevent collisions in R2/DB
+    // when multiple files share the exact same prompt and english title.
+    const shortHash = file.id.substring(0, 4).toLowerCase();
+
     const isMusic = file.mediaType === 'music';
     const newFileName = isAlreadyClean 
       ? file.name 
-      : (isMusic 
-          ? `${cleanEnglishTitleForFile}_${generationType}_creaibox${extension}` 
-          : `${cleanEnglishTitleForFile}_${ratioStr}_${generationType}_creaibox${extension}`);
+      : `${cleanEnglishTitleForFile}_${aspectRatio.replace(':', '-')}_${generationType}_${shortHash}_creaibox${extension}`
+          .replace(/__+/g, '_')
+          .replace(/^_+|_+$/g, '');
+
     console.log(`Target Clean Filename: "${newFileName}"`);
 
     // --- File Storage URL Assignment ---
@@ -708,7 +813,7 @@ async function main() {
         aspect_ratio: file.mediaType === 'music' ? '' : aspectRatio,
         generation_type: generationType,
         camera: file.mediaType === 'music' ? 'AI Audio' : (generationType === 'ai' ? 'AI Generator' : 'Professional Camera'),
-        prompt: '', // save original prompt (disabled for now, to be fetched directly later)
+        prompt: originalPrompt || '', // saved original prompt from Google Sheets
         created_at: file.createdTime || new Date().toISOString(),
       }, {
         onConflict: "gdrive_file_id"

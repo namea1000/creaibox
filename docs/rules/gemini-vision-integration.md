@@ -17,7 +17,7 @@
 
 ## 2. 크리에이박스에서의 실제 활용 (현재 구현 완료)
 
-현재 크리에이박스의 대용량 동기화 스크립트(`test_r2_sync.ts`) 및 대청소 보정 스크립트(`refine-all-titles.ts`)에는 Gemini Vision 기술이 긴밀하게 인프라로 결합되어 있습니다.
+현재 크리에이박스의 대용량 동기화 스크립트(`sync-r2-assets.ts`) 및 대청소 보정 스크립트(`refine-all-titles.ts`)에는 Gemini Vision 기술이 긴밀하게 인프라로 결합되어 있습니다.
 
 ```mermaid
 graph TD

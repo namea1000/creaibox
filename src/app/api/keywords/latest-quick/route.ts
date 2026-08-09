@@ -6,7 +6,46 @@ import { fetchOfficialGoogleTrends } from "@/app/api/google/trends/route";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+const GLOBAL_KEYWORDS_CACHE = new Map<string, { data: any; timestamp: number }>();
+const GLOBAL_KEYWORDS_PROMISES = new Map<string, Promise<any>>();
+
 export async function GET() {
+  const cacheKey = "latest_quick_keywords";
+  const cached = GLOBAL_KEYWORDS_CACHE.get(cacheKey);
+  // TTL: 1 hour (1000 * 60 * 60)
+  if (cached && Date.now() - cached.timestamp < 1000 * 60 * 60) {
+    return NextResponse.json(cached.data);
+  }
+
+  if (GLOBAL_KEYWORDS_PROMISES.has(cacheKey)) {
+    const data = await GLOBAL_KEYWORDS_PROMISES.get(cacheKey);
+    return NextResponse.json(data);
+  }
+
+  const promise = (async () => {
+    try {
+      const data = await generateKeywords();
+      GLOBAL_KEYWORDS_CACHE.set(cacheKey, { data, timestamp: Date.now() });
+      return data;
+    } catch (e) {
+      console.error(e);
+      throw e;
+    } finally {
+      GLOBAL_KEYWORDS_PROMISES.delete(cacheKey);
+    }
+  })();
+
+  GLOBAL_KEYWORDS_PROMISES.set(cacheKey, promise);
+  
+  try {
+    const data = await promise;
+    return NextResponse.json(data);
+  } catch (err) {
+    return NextResponse.json({ items: [] }, { status: 500 });
+  }
+}
+
+async function generateKeywords() {
   const todayStr = new Date().toISOString().split("T")[0];
   const currentHour = new Date().getHours();
 
@@ -67,7 +106,7 @@ export async function GET() {
     } catch (e) {}
   }
 
-  return NextResponse.json({
+  return {
     items: [...naverList, ...googleList],
-  });
+  };
 }

@@ -111,6 +111,8 @@ function formatDisplayDate(value?: string | null) {
   ).padStart(2, "0")}`;
 }
 
+const globalChannelReportsCache = new Map<string, ReportRow[]>();
+
 export default function YoutubeChannelReportsPage() {
   const { data: reports = [], isLoading, error } = useQuery<ReportRow[]>({
     queryKey: ["youtubeReports", "channel"],
@@ -118,11 +120,14 @@ export default function YoutubeChannelReportsPage() {
       const res = await fetch("/api/youtube/reports?type=channel");
       if (!res.ok) throw new Error("분석 리포트를 불러오는데 실패했습니다.");
       const result = await res.json();
-      return result.data || [];
+      const fetchedData = result.data || [];
+      globalChannelReportsCache.set("channel", fetchedData);
+      return fetchedData;
     },
-    staleTime: 60 * 1000,
+    initialData: () => globalChannelReportsCache.get("channel"),
+    staleTime: 15 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
-    refetchOnMount: true,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 

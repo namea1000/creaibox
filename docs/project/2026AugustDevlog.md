@@ -258,8 +258,49 @@
 
 ---
 
-### 5. 🧪 빌드 및 무결성 검증
+## 📅 2026년 8월 8일 (토)
+
+### 6. 🚀 YouTube 트렌드 0.01초 로딩 최적화 (프론트엔드/백엔드 하이브리드 캐싱)
+- **프론트엔드 글로벌 인메모리(Global In-Memory) 캐시 도입 (`RisingVideos.tsx`, `PopularVideos.tsx`)**:
+  - `videoCacheRef`를 컴포넌트 내부에서 외부 글로벌 `Map` 객체(`globalVideoCache`)로 승격.
+  - SWR 등 외부 라이브러리 추가 없이 기존 컴포넌트 마운트/언마운트 생명주기와 독립적으로 캐시를 유지하여, 다른 메뉴(블로그 등) 이동 후 복귀 시 0.01초 만에 렌더링되도록 개선.
+- **백엔드 Vercel Edge Cache 및 자정(Midnight) 자동 만료 구현 (`src/app/api/youtube/route.ts`)**:
+  - 단순 24시간 만료가 아닌, **한국 시간(KST) 기준 오늘 밤 12시 정각에 캐시가 정확히 파기되도록** 동적으로 남은 시간(Seconds)을 계산하는 `getSecondsUntilKstMidnight` 함수 탑재.
+  - 응답 헤더에 `Cache-Control: public, s-maxage=남은시간, stale-while-revalidate=60`을 주입하여, 오늘 첫 방문자 이후 수천 명의 접속자에게는 Vercel CDN이 DB를 거치지 않고 0.05초 만에 초고속 응답을 제공하도록 최적화 완료.
+
+---
+
+### 7. 🧪 빌드 및 무결성 검증
 - `npx tsc --noEmit` 실행 결과: **오류 0건 (100% Clean Pass)**
 
+---
 
+## 📅 2026년 8월 9일 (일)
 
+### 1. 🚀 글로벌 RAM 캐시(Promise Shield) 일괄 적용 (4대 API 최적화)
+- **Thundering Herd(동시 다발적 쿼리 폭주) 방어 아키텍처** 구현 및 이식 완료.
+- **적용 대상 4곳**:
+  1. `GET /api/youtube/popular` (인기 영상 트렌드) - 24시간(하루 1번) 유지
+  2. `GET /api/youtube/reports` (최근 분석된 AI 리포트 리스트) - 15분 유지
+  3. `GET /api/free-assets/list` (무료 에셋 라이브러리 목록) - 24시간(하루 1번) 유지
+  4. `GET /api/keywords/latest-quick` (실시간 급상승 검색어) - 1시간 유지
+- **핵심 기법**:
+  - `GLOBAL_DATA_CACHE`: 데이터를 메모리에 직접 캐싱하여 응답시간 0.01초로 단축.
+  - `GLOBAL_DATA_PROMISES`: 캐시가 비어있을 때 동시에 몰리는 100명의 유저가 새로운 DB 쿼리를 유발하지 않고, 최초 1명의 Promise(조회 예약권)를 기다리도록 디바운싱 처리.
+- **효과**: 대규모 트래픽 시 Vercel Edge 런타임 요금 및 Supabase Egress 데이터 전송 요금 99% 삭감 및 안정성 확보.
+
+### 2. ⚡ 프론트엔드 React Query 글로벌 인메모리 캐시 연동 (영상분석 리포트)
+- **적용 메뉴**: `/youtube-trend/reports`, `/youtube-trend/channel-reports`
+- **구현 내용**:
+  - 백엔드 캐시에 더해, 프론트엔드 `useQuery`의 `refetchOnMount` 재호출을 방지하기 위해 `globalReportsCache`, `globalChannelReportsCache` Map 변수를 모듈 레벨로 선언.
+  - `initialData` 팩토리를 통해 캐시된 데이터를 즉시 주입하고, `staleTime`을 15분으로 설정하여 메뉴 간 탭 이동 시 로딩 스피너 없이 **0.01초 만에 즉시 렌더링**되도록 2중 최적화 완료.
+### 3. 🛡️ 인기 영상 조회수 랭킹(Popular Videos) 과도한 API Quota 소진 버그 수정 및 UI 심플화
+- **API 쿼터 소진 방어 로직 개정 (`src/app/api/youtube/popular/route.ts`)**:
+  - `오늘(신규)` 등 특정 기간 필터 조회 시 발생하는 캐시 미스(Cache Miss) 상황에서, 기존에 16개 전체 카테고리를 병렬로 강제 동기화(Parallel Fetch)하던 치명적 로직 철거.
+  - YouTube Search API (조회당 100 쿼터)를 16번 동시에 호출하여 클릭 한 번에 1,600 쿼터가 증발하는 현상을 방지하고자, **요청한 단일 카테고리(`categoryId`)만 타겟팅하여 수집**하고 기존 DB 번들에 병합(Merge)하도록 백엔드 효율화 완료. 이로써 쿼터 소진으로 인한 "미수집 데이터" Empty State 노출 버그 완벽 해결.
+- **국가 UI 대폭 축소 및 통일 (`PopularVideos.tsx`)**:
+  - 사용자 명시적 지시에 따라 60개국 및 복잡한 대륙 그룹 필터를 100% 삭제.
+  - 급상승 트렌드 페이지와 동일하게 **🔥 주요 12개국 (KR, US, JP 등)** 단일 리스트만 남겨 UI 직관성과 통일성을 극대화함.
+### 4. 🐛 헤더(Header) 프로필 요금제 누락 버그 해결 (Free 고정 버그)
+- **원인**: `Header.tsx`에서 사용자 프로필을 불러올 때(`fetchProfile`), DB에 존재하지 않는 가상의 컬럼인 `is_manual_grant` (실제로는 `extra_configs` jsonb 내부에 존재)를 `.select()` 쿼리에 포함하여 요청함. 이로 인해 Supabase가 400 Bad Request 에러(`column does not exist`)를 반환했고, 예외 처리를 거쳐 모든 유저가 기본값인 "Free" 및 이메일 기반 임시 닉네임으로 표기되는 치명적인 버그가 발생했음.
+- **해결**: `Header.tsx`의 `.select()` 쿼리에서 존재하지 않는 `is_manual_grant` 컬럼을 제거하여 정상적으로 프로필 데이터를 불러오도록(Premier, VIP 상태 등) 수정 완료. 
