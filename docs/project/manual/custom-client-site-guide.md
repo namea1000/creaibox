@@ -43,7 +43,7 @@ graph TD
 1. **Step 1. [회원] 1:1 제작 신청서 제출**
    * 회원(사용자)이 `3️⃣ AI 커스텀 신규 제작 신청` 탭에서 업종, 컨셉 색상, 특수 기능 뱃지, 레퍼런스 URL, 요구사항을 입력하고 제출합니다.
 2. **Step 2. [시스템] 데이터베이스 저장 & 접수**
-   * 제출된 데이터는 DB 테이블(`custom_site_requests`)에 `[🟡 AI 제작 대기]` 상태로 즉시 등록됩니다.
+   * 제출된 데이터는 DB 테이블(`client_site_requests`)에 `[pending]` 상태로 즉시 등록됩니다.
 3. **Step 3. [관리자] 관제탑 확인 및 AI 자동 제작 구동**
    * 관리자가 `5️⃣ 👑 관리자: 커스텀 신청 현황` 탭으로 진입하여 신청 내역 카드를 확인합니다.
    * 각 카드 하단의 **`[🤖 AI 에이전트 자동 제작 진행하기]`** 버튼을 클릭합니다.
@@ -68,10 +68,11 @@ graph TD
 ## 🛠️ 5. 개발자 소스코드 파일 및 라우팅 참조 정보
 
 * **메인 프론트엔드 관제 UI**: [`src/app/studio/custom-client-site/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/custom-client-site/page.tsx)
+  * (최근 고도화로 거대 단일 파일에서 `src/components/studio/custom-client-site/tabs/*` 및 `modals/*`로 기능별 모듈화 완료)
 * **AI 기획 및 생성 백엔드 API**: 
   * [`src/app/api/client-site-builder/plan/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/client-site-builder/plan/route.ts)
   * [`src/app/api/client-site-builder/build/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/client-site-builder/build/route.ts)
-* **개발일지 기록**: [`docs/project/2026JulyDevlog.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/2026JulyDevlog.md)
+* **개발일지 기록**: [`docs/project/2026AugustDevlog.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/2026AugustDevlog.md)
 
 ---
 *최종 작성일: 2026년 7월 25일 | CreAibox AI Studio System Manual*

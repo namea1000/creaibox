@@ -53,6 +53,12 @@ export default function ArticleScrapClient() {
 
       setUrlInput("");
       await fetchScrapedPosts();
+      
+      // 원본 수집 직후 '블로그 원고 관리' 리스트에서 보이도록 로컬 캐시 초기화
+      if (typeof window !== "undefined") {
+        window.sessionStorage.removeItem("creaibox:manuscripts:list:v1");
+      }
+
       alert("✅ 원본 수집이 완료되었습니다!");
     } catch (err: any) {
       alert("수집 실패: " + err.message);

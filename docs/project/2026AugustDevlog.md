@@ -358,3 +358,17 @@
 - **수정 내역**:
   - `src/components/layout/Sidebar.tsx`: 사이드바 '관리자 센터' 하단에 `관리자 특별메뉴` 카테고리를 신규 추가하고 `아티클 스크랩 & 재발행 🔄` 메뉴를 이동 배치함. (왕관 이모지 삭제 완료)
   - **보안 설정**: 본 메뉴 카테고리는 `isAdmin` (`profiles.role === "ADMIN"`) 조건식 블록 내부에 배치하여 일반 회원에게는 전혀 노출되지 않고, **오직 관리자 권한을 가진 사용자에게만 선택적으로 표시**되도록 100% 철통 보안을 적용함.
+
+---
+
+### 8. 🏗️ 커스텀 웹사이트(`custom-client-site`) 탭/모달 컴포넌트 전면 분리 및 관리자 DB 연동
+- **`page.tsx` 거대 단일 파일 모듈화 리팩토링**:
+  - `src/app/studio/custom-client-site/page.tsx`에 집중되어 있던 800줄 이상의 거대 단일 코드를 5개의 탭(`AdminDashboardTab`, `ManageTab`, `MarketplaceTab`, `MigrationTab`, `RequestTab`)과 2개의 모달(`DeployModal`, `PreviewModal`) 컴포넌트로 전면 분리 완료.
+  - 전역 스코프 오염 및 State 중복 선언(TS2451, TS2304 등)으로 발생하던 TypeScript 컴파일 에러를 100% 깔끔하게 해결 및 Build Pass.
+- **관리자 전용 관제탑(Admin Dashboard) Supabase DB 실시간 연동**:
+  - 기존 하드코딩된 Mock 데이터(`INITIAL_ADMIN_REQUESTS`)를 철거하고, 실제 회원들이 1:1 제작 신청을 하면 적재되는 `client_site_requests` 테이블을 생성하여 연동.
+  - 관리자 대시보드에서 `supabase.from('client_site_requests').select('*')` 쿼리로 실시간으로 신청 현황을 파악하고 AI 에이전트 구축 버튼을 구동할 수 있도록 데이터베이스 통합 완료.
+- **관련 기술서 및 매뉴얼 100% 최신화 완료**:
+  - `docs/arch/client-site-builder-design-spec.md` (기술 명세서)
+  - `docs/project/manual/custom-client-site-guide.md` (실무 매뉴얼)
+  - `implementation_plan.md` (리팩토링 계획서 산출물 기록)

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateContentWithVertexAI } from "@/lib/server/vertex-ai-gemini";
 
 // 1순위 의무화 규칙: gemini-3.1-flash-lite 사용
 const MODEL_NAME = "gemini-3.1-flash-lite";
@@ -39,14 +39,6 @@ export async function POST(req: Request) {
        return NextResponse.json({ error: "No content to recreate" }, { status: 400 });
     }
 
-    // Gemini 초기화
-    const geminiKey = process.env.GEMINI_API_KEY_1 || "";
-    if (!geminiKey) {
-      return NextResponse.json({ error: "Gemini API key is missing" }, { status: 500 });
-    }
-    const genAI = new GoogleGenerativeAI(geminiKey);
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-
     // 2. Unsplash 이미지 매칭을 위한 영문 키워드 추출
     let unsplashImageUrl = "";
     try {
@@ -54,19 +46,21 @@ export async function POST(req: Request) {
       You are an expert photo editor. 
       Read the following article title and content. 
       Extract 1 to 3 highly descriptive English keywords that best represent the core subject to search for a highly relevant, high-quality stock photo on Unsplash. 
-      Return ONLY the keywords separated by spaces (e.g., "business modern desk"). Do not output any other text or explanation.
+      Return ONLY the keywords separated by spaces (e.g., "business modern desk"). Do not output any text or explanation.
       
       Title: ${rawTitle}
       Content: ${rawContent.substring(0, 1000)}...
       `;
       
-      const keywordResult = await model.generateContent(keywordPrompt);
-      const searchKeywords = keywordResult.response.text().trim();
+      const searchKeywords = await generateContentWithVertexAI({
+        prompt: keywordPrompt,
+        modelName: MODEL_NAME
+      });
       
-      if (searchKeywords) {
+      if (searchKeywords && searchKeywords.trim()) {
         const unsplashKey = process.env.UNSPLASH_ACCESS_KEY;
         if (unsplashKey) {
-          const unsplashRes = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchKeywords)}&orientation=landscape&per_page=1&client_id=${unsplashKey}`);
+          const unsplashRes = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchKeywords.trim())}&orientation=landscape&per_page=1&client_id=${unsplashKey}`);
           const unsplashData = await unsplashRes.json();
           if (unsplashData && unsplashData.results && unsplashData.results.length > 0) {
             unsplashImageUrl = unsplashData.results[0].urls.regular;
@@ -75,7 +69,6 @@ export async function POST(req: Request) {
       }
     } catch (imageError) {
       console.error("Image Matching Error:", imageError);
-      // 이미지가 없어도 재창조는 진행해야 하므로 에러 무시
     }
 
     // 3. AI 리라이팅 (재창조)
@@ -95,8 +88,12 @@ export async function POST(req: Request) {
       Original Content: ${rawContent}
       `;
 
-      const recreateResult = await model.generateContent(recreatePrompt);
-      let aiText = recreateResult.response.text().trim();
+      let aiText = await generateContentWithVertexAI({
+        prompt: recreatePrompt,
+        modelName: MODEL_NAME,
+        temperature: 0.7
+      });
+      aiText = aiText.trim();
       
       // JSON 파싱 (안전을 위해 백틱 제거)
       if (aiText.startsWith('\`\`\`json')) {

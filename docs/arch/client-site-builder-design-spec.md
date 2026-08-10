@@ -63,6 +63,12 @@
   - `useSearchParams` 훅은 빌드 타임에 정적 분석 단계에서 서버 렌더링 에러나 경고를 유발할 수 있으므로, 해당 훅을 사용하는 하위 컴포넌트는 반드시 `<Suspense>` 바운더리로 래핑하여 클라이언트 단에서 안전하게 하이드레이션(Hydration)되도록 조치했습니다.
 - **React State Reset Pattern**:
   - 사용자가 멀티 사이트 스위처 드롭다운을 조작하여 활성 홈페이지를 변경할 때, 복잡한 useEffect 동기화 코드 작성 대신 중첩 컴포넌트에 `key={selectedSite.id}`를 주입하는 선언적 패턴을 채택함으로써, 사이트 변경 시 React가 기존 상태 정보를 깨끗이 unmount 시키고 새 데이터로 컴포넌트를 즉시 완전 초기 재마운트하도록 설계했습니다.
+- **Component Modularization (컴포넌트 모듈화)**:
+  - 거대한 단일 파일로 존재하던 `page.tsx`를 탭별(`AdminDashboardTab`, `RequestTab`, `ManageTab` 등) 및 모달별(`PreviewModal`, `DeployModal`) 파일로 완전히 분리하여 코드 가독성과 유지보수성을 극대화했습니다. 
+  - 이를 통해 각 컴포넌트 내에서의 상태 관리(State Management) 충돌 및 전역 Scope 오염(TS2451 등)을 원천 차단하고 타입 안정성을 확보했습니다.
+- **Admin Request Database Integration**:
+  - 관리자 대시보드의 커스텀 사이트 신청 현황을 Mock 데이터에서 분리하여 `client_site_requests` DB 테이블로 연동했습니다.
+  - 사용자가 1:1 제작 신청을 하면 해당 테이블에 접수되며, 관리자는 Supabase 실시간 조회를 통해 신청 내역을 파악하고 즉각적인 AI 생성을 트리거할 수 있습니다.
 
 ---
 

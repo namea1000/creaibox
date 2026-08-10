@@ -170,3 +170,19 @@
   - 사이드바 내 '관리자 센터' 바로 하단에 `관리자 특별메뉴` 카테고리를 새로 생성하고, 그 하위에 `아티클 스크랩 & 재발행 🔄` 메뉴를 이동하여 배치했습니다. (왕관 이모지 삭제 반영)
 - **관리자(ADMIN) 권한 제한**:
   - `isAdmin` (`profiles.role === "ADMIN"`) 검증을 거치는 삼항 연산자 내부 배열에만 포함시켰으므로, 일반 사용자나 비로그인 방문자에게는 메뉴가 완전히 숨겨지고 **오직 관리자 계정으로 로그인한 경우에만 노출**되도록 설정 완료했습니다.
+
+---
+
+## 18. 🏗️ 커스텀 웹사이트(`custom-client-site`) 탭/모달 전면 컴포넌트 모듈화 및 관리자 DB 연동
+
+### 주요 구현 결과
+- **초거대 단일 컴포넌트(`page.tsx`) 분리 및 모듈화**:
+  - 기존에 800줄이 넘어 유지보수가 불가능했던 `src/app/studio/custom-client-site/page.tsx` 파일을 5개의 독립 탭(`AdminDashboardTab`, `ManageTab`, `MarketplaceTab`, `MigrationTab`, `RequestTab`)과 2개의 모달(`DeployModal`, `PreviewModal`) 컴포넌트로 전면 분리했습니다.
+  - 이 과정에서 전역 스코프(Global Scope)가 오염되어 발생하던 `TS2451`(Block-scoped variable 재선언) 및 상태 충돌 에러들을 100% 해소하고 깔끔하게 빌드가 통과되도록 구조를 개선했습니다.
+- **관리자 대시보드 Supabase DB 실시간 조회 연동**:
+  - Mock 데이터(`INITIAL_ADMIN_REQUESTS`)로 동작하던 껍데기 UI를 걷어내고, 실제 사용자가 1:1 맞춤 커스텀 사이트를 신청하면 `client_site_requests` 테이블에 데이터가 적재되도록 DB 스키마 및 RLS(Row Level Security) 정책을 구성했습니다.
+  - 이제 관리자는 `AdminDashboardTab`에서 Supabase DB에 적재된 실시간 신청 현황을 파악하고 바로 안티그래비티 AI 에이전트 생성 버튼을 구동할 수 있습니다.
+- **관련 기술 문서 동기화**:
+  - `docs/arch/client-site-builder-design-spec.md` (기술 명세서)
+  - `docs/project/manual/custom-client-site-guide.md` (운용 매뉴얼)
+  - 리팩토링 계획서(`implementation_plan.md`)에 완료 및 DB 연동 사항 산출 기록 완료.

@@ -1,0 +1,225 @@
+          const [bizNumber, setBizNumber] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+  const [kakaoLink, setKakaoLink] = useState<string>("");
+  const [themeColor, setThemeColor] = useState<string>("cyan");
+  const [headerBlogTitle, setHeaderBlogTitle] = useState<string>("");
+  const [headerContactTitle, setHeaderContactTitle] = useState<string>("");
+  const [heroSlogan, setHeroSlogan] = useState<string>("");
+  const [logoUrl, setLogoUrl] = useState<string>("");
+
+  // Dynamic Custom GNB Menus State (Sample structure for visual preview)
+  const [customMenus, setCustomMenus] = useState<CustomMenuItem[]>([
+    { id: "1", label: "홈 (Home)", url: "/" },
+    { id: "2", label: "회사소개", url: "/about" },
+    { id: "3", label: "주요 서비스", url: "/#services" },
+    { id: "4", label: "실적/포트폴리오", url: "/#portfolio" },
+    { id: "5", label: "공지/블로그", url: "/blog" },
+    { id: "6", label: "온라인 견적 신청", url: "/contact", isRightAligned: true },
+  ]);
+
+  // PG Payment Gateway State
+  const [pgProvider, setPgProvider] = useState<string>("portone");
+  const [pgMid, setPgMid] = useState<string>("");
+  const [pgApiKey, setPgApiKey] = useState<string>("");
+  const [enableBankTransfer, setEnableBankTransfer] = useState<boolean>(true);
+  const [bankAccountInfo, setBankAccountInfo] = useState<string>("");
+  const [enableInquiryPayment, setEnableInquiryPayment] = useState<boolean>(true);
+
+  const [isSavingConfig, setIsSavingConfig] = useState<boolean>(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState<string>("");
+
+  const handleAddMenu = () => {
+    if (!requireAuth()) return;
+    const newId = String(Date.now());
+    setCustomMenus((prev) => [
+      ...prev,
+      { id: newId, label: `새 메뉴 ${prev.length + 1}`, url: "#custom", isRightAligned: false },
+    ]);
+  };
+
+  const handleUpdateMenu = (index: number, key: keyof CustomMenuItem, value: any) => {
+    if (!requireAuth()) return;
+    setCustomMenus((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [key]: value };
+      return next;
+    });
+  };
+
+  const handleDeleteMenu = (index: number) => {
+    if (!requireAuth()) return;
+    setCustomMenus((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  // Blog Category Customization State
+  const [blogCategories, setBlogCategories] = useState<string[]>([
+    "전체",
+    "행사대행",
+    "교육서비스",
+    "가족캠프",
+    "소통소식",
+  ]);
+  const [newBlogCategory, setNewBlogCategory] = useState<string>("");
+
+  const handleAddBlogCategory = () => {
+    if (!requireAuth()) return;
+    if (!newBlogCategory.trim()) return;
+    if (blogCategories.includes(newBlogCategory.trim())) {
+      alert("이미 존재하는 카테고리입니다.");
+      return;
+    }
+    setBlogCategories((prev) => [...prev, newBlogCategory.trim()]);
+    setNewBlogCategory("");
+  };
+
+  const handleDeleteBlogCategory = (catToDelete: string) => {
+    if (!requireAuth()) return;
+    if (catToDelete === "전체") {
+      alert("'전체' 카테고리는 기본 선택값이므로 삭제할 수 없습니다.");
+      return;
+    }
+    setBlogCategories((prev) => prev.filter((c) => c !== catToDelete));
+  };
+
+  const handleMoveBlogCategory = (index: number, direction: "left" | "right") => {
+    if (direction === "left" && index <= 1) return;
+    if (direction === "right" && index >= blogCategories.length - 1) return;
+
+    const targetIndex = direction === "left" ? index - 1 : index + 1;
+    if (targetIndex <= 0) return;
+
+    setBlogCategories((prev) => {
+      const next = [...prev];
+      const temp = next[index];
+      next[index] = next[targetIndex];
+      next[targetIndex] = temp;
+      return next;
+    });
+  };
+
+  // Blog Category Edit State & Handlers
+  const [editingCategoryIndex, setEditingCategoryIndex] = useState<number | null>(null);
+  const [editingCategoryText, setEditingCategoryText] = useState<string>("");
+
+  const handleStartEditCategory = (index: number, currentName: string) => {
+    setEditingCategoryIndex(index);
+    setEditingCategoryText(currentName);
+  };
+
+  const handleSaveEditCategory = (index: number) => {
+    if (!editingCategoryText.trim()) {
+      alert("카테고리 이름을 입력해 주세요.");
+      return;
+    }
+    const trimmed = editingCategoryText.trim();
+    if (blogCategories.some((c, i) => i !== index && c === trimmed)) {
+      alert("이미 존재하는 카테고리 이름입니다.");
+      return;
+    }
+
+    setBlogCategories((prev) => {
+      const next = [...prev];
+      next[index] = trimmed;
+      return next;
+    });
+    setEditingCategoryIndex(null);
+    setEditingCategoryText("");
+  };
+
+  const handleCancelEditCategory = () => {
+    setEditingCategoryIndex(null);
+    setEditingCategoryText("");
+  };
+
+  // Request Form State
+    const [reqConcept, setReqConcept] = useState<string>("딥 블루 & 세련되고 신뢰감 있는 브랜드 다크 톤");
+  const [reqHeaderMenus, setReqHeaderMenus] = useState<string[]>([
+    "홈 (Home)",
+    "회사소개 / 브랜드 스토리",
+    "주요 서비스 / 포트폴리오",
+    "실적 갤러리 & 성공 사례",
+    "온라인 견적 / 예약 신청",
+    "Blog (공식 블로그)",
+    "Contact & 1:1 상담",
+  ]);
+  const [reqFeatures, setReqFeatures] = useState<string[]>([
+    "실적/포트폴리오 갤러리 탭",
+    "실시간 온라인 견적신청 폼",
+    "전용 블로그 & 조회수 카운터",
+    "DoFollow SEO 백링크 가산점 엔진",
+  ]);
+
+  // Auth & DB Extra Option State
+  const [enableAuthDb, setEnableAuthDb] = useState<boolean>(false);
+  const [reqAuthMethods, setReqAuthMethods] = useState<string[]>([
+    "카카오 1초 소셜 로그인 (Kakao OAuth)",
+    "일반 이메일 & 비밀번호 회원가입",
+  ]);
+  const [reqAuthFeatures, setReqAuthFeatures] = useState<string[]>([
+    "회원 전용 마이페이지 (내 견적/예약/결제 내역 조회)",
+  ]);
+  const [reqRefUrl, setReqRefUrl] = useState<string>("");
+    const [isSubmittingReq, setIsSubmittingReq] = useState<boolean>(false);
+  
+  const supabase = createClient();
+
+  // Load Config on Mount
+  useEffect(() => {
+    async function loadConfig() {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("extra_configs, brand_id")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profile?.extra_configs) {
+        const cfg = profile.extra_configs as Record<string, any>;
+        if (cfg.companyName) setCompanyName(cfg.companyName);
+        if (cfg.phone) setPhone(cfg.phone);
+        if (cfg.address) setAddress(cfg.address);
+        if (cfg.email) setEmail(cfg.email);
+        if (cfg.bizNumber) setBizNumber(cfg.bizNumber);
+        if (cfg.description) setDescription(cfg.description);
+        if (cfg.kakaoLink) setKakaoLink(cfg.kakaoLink);
+        if (cfg.themeColor) setThemeColor(cfg.themeColor);
+        if (cfg.headerBlogTitle) setHeaderBlogTitle(cfg.headerBlogTitle);
+        if (cfg.headerContactTitle) setHeaderContactTitle(cfg.headerContactTitle);
+        if (cfg.heroSlogan) setHeroSlogan(cfg.heroSlogan);
+        if (cfg.logoUrl) setLogoUrl(cfg.logoUrl);
+        if (cfg.customMenus && Array.isArray(cfg.customMenus)) setCustomMenus(cfg.customMenus);
+        if (cfg.blog_categories && Array.isArray(cfg.blog_categories)) setBlogCategories(cfg.blog_categories);
+        if (cfg.pgProvider) setPgProvider(cfg.pgProvider);
+        if (cfg.pgMid) setPgMid(cfg.pgMid);
+        if (cfg.pgApiKey) setPgApiKey(cfg.pgApiKey);
+        if (typeof cfg.enableBankTransfer === "boolean") setEnableBankTransfer(cfg.enableBankTransfer);
+        if (cfg.bankAccountInfo) setBankAccountInfo(cfg.bankAccountInfo);
+        if (typeof cfg.enableInquiryPayment === "boolean") setEnableInquiryPayment(cfg.enableInquiryPayment);
+      }
+    }
+    void loadConfig();
+  }, [supabase]);
+
+  // Handle Save Client Config
+  const handleSaveConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingConfig(true);
+    setSaveSuccessMsg("");
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setSaveSuccessMsg("로그인이 필요한 서비스입니다.");
+        setIsSavingConfig(false);
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("extra_configs")
+        .eq("id", user.id)
+        .maybeSingle();
+

@@ -1,0 +1,654 @@
+      {activeTab === "admin_dashboard" && (
+        <div className="space-y-8 animate-fade-in-up">
+          {/* Header Summary Banner */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-rose-950/60 via-purple-950/60 to-slate-900 border border-rose-500/30 p-6 md:p-8 shadow-2xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 rounded-full bg-rose-500/20 border border-rose-500/40 px-3 py-1 text-xs font-black text-rose-300">
+                  <Bot size={14} className="animate-pulse text-rose-400" />
+                  <span>관리자 전용 AI 에이전트 커스텀 관제탑</span>
+                </div>
+                <h2 className="text-xl md:text-2xl font-black text-white">
+                  👑 회원 커스텀 웹사이트 신청 현황 ({adminRequests.length}건)
+                </h2>
+                <p className="text-xs md:text-sm text-slate-300 font-medium max-w-2xl leading-relaxed">
+                  회원분들이 신청한 커스텀 제작 명세서를 한눈에 파악하세요. 각 신청 카드의{" "}
+                  <strong className="text-rose-400 font-bold">[🤖 AI 에이전트 자동 제작 진행하기]</strong> 버튼을 누르면 안티그래비티 1:1 풀코드 생성 프로세스가 실행됩니다.
+                </p>
+              </div>
+
+              {/* Status Counters */}
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="rounded-2xl bg-slate-950/80 border border-slate-800 p-4 text-center min-w-[100px]">
+                  <p className="text-[10px] font-bold text-slate-400">총 신청 건수</p>
+                  <p className="text-2xl font-black text-white">{adminRequests.length}건</p>
+                </div>
+                <div className="rounded-2xl bg-amber-950/30 border border-amber-500/30 p-4 text-center min-w-[100px]">
+                  <p className="text-[10px] font-bold text-amber-400">AI 제작 대기</p>
+                  <p className="text-2xl font-black text-amber-300">
+                    {adminRequests.filter((r) => r.status === "pending").length}건
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-emerald-950/30 border border-emerald-500/30 p-4 text-center min-w-[100px]">
+                  <p className="text-[10px] font-bold text-emerald-400">구축 완료</p>
+                  <p className="text-2xl font-black text-emerald-300">
+                    {adminRequests.filter((r) => r.status === "completed").length}건
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Filter Toolbar */}
+          <div className="flex items-center justify-between gap-4 bg-slate-900/60 p-4 rounded-3xl border border-slate-800">
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+              <button
+                onClick={() => setAdminFilter("all")}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                  adminFilter === "all"
+                    ? "bg-rose-600 text-white shadow-md shadow-rose-600/20"
+                    : "bg-slate-800 text-slate-400 hover:text-white"
+                }`}
+              >
+                전체 보기 ({adminRequests.length})
+              </button>
+              <button
+                onClick={() => setAdminFilter("pending")}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                  adminFilter === "pending"
+                    ? "bg-amber-600 text-white shadow-md shadow-amber-600/20"
+                    : "bg-slate-800 text-slate-400 hover:text-white"
+                }`}
+              >
+                🟡 AI 제작 대기 ({adminRequests.filter((r) => r.status === "pending").length})
+              </button>
+              <button
+                onClick={() => setAdminFilter("completed")}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                  adminFilter === "completed"
+                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
+                    : "bg-slate-800 text-slate-400 hover:text-white"
+                }`}
+              >
+                🟢 구축 완료 ({adminRequests.filter((r) => r.status === "completed").length})
+              </button>
+            </div>
+          </div>
+
+          {/* 10 Request Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {adminRequests
+              .filter((req) => (adminFilter === "all" ? true : req.status === adminFilter))
+              .map((req) => (
+                <div
+                  key={req.id}
+                  className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 space-y-5 hover:border-slate-700 transition-all shadow-xl relative overflow-hidden group"
+                >
+                  <div className="flex items-start justify-between gap-3 border-b border-slate-800/80 pb-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                          {req.category}
+                        </span>
+                        <span className="text-xs text-slate-400 font-bold">{req.createdAt}</span>
+                      </div>
+                      <h3 className="text-base font-black text-white flex items-center gap-2">
+                        <span>{req.companyName}</span>
+                        <span className="text-xs text-slate-400 font-normal">({req.userNickname})</span>
+                      </h3>
+                    </div>
+
+                    {/* Status Badge */}
+                    <div>
+                      {req.status === "pending" && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500/10 text-amber-300 border border-amber-500/30 animate-pulse">
+                          <Clock size={12} />
+                          🟡 AI 제작 대기
+                        </span>
+                      )}
+                      {req.status === "building" && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                          <RefreshCw size={12} className="animate-spin" />
+                          ⚡ AI 에이전트 코딩중
+                        </span>
+                      )}
+                      {req.status === "completed" && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+                          <CheckCircle2 size={12} />
+                          🟢 구축 완료 (라이브)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Request Specs */}
+                  <div className="space-y-3">
+                    <div className="text-xs text-slate-300 space-y-1">
+                      <p className="font-bold text-slate-400">🎨 희망 테마 & 컨셉:</p>
+                      <p className="text-cyan-300 font-medium bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
+                        {req.themeColor}
+                      </p>
+                    </div>
+
+                    <div className="text-xs text-slate-300 space-y-1">
+                      <p className="font-bold text-slate-400">⚙️ 선택 특수기능:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {req.features.map((f, i) => (
+                          <span
+                            key={i}
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-950 text-slate-300 border border-slate-800"
+                          >
+                            ✓ {f}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="text-xs text-slate-300 space-y-1">
+                      <p className="font-bold text-slate-400">📝 상세 요구사항 (프롬프트 명세):</p>
+                      <p className="text-slate-200 bg-slate-950 p-3 rounded-xl border border-slate-800/80 leading-relaxed">
+                        {req.detail}
+                      </p>
+                    </div>
+
+                    {req.refUrl && (
+                      <div className="text-xs text-slate-400 flex items-center gap-1.5">
+                        <span>🔗 레퍼런스:</span>
+                        <a
+                          href={req.refUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-cyan-400 hover:underline flex items-center gap-1"
+                        >
+                          {req.refUrl} <ExternalLink size={11} />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Button: Trigger AI Build Command */}
+                  <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-3">
+                    <button
+                      onClick={() => {
+                        requireAuth(() => {
+                          setAdminRequests((prev) =>
+                            prev.map((item) => (item.id === req.id ? { ...item, status: "completed" } : item))
+                          );
+                          setSelectedPromptModal(req);
+                        });
+                      }}
+                      className={`flex-1 flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-xs font-black transition-all cursor-pointer ${
+                        req.status === "completed"
+                          ? "bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700"
+                          : "bg-gradient-to-r from-rose-600 via-purple-600 to-indigo-600 text-white hover:brightness-110 shadow-lg shadow-purple-600/20"
+                      }`}
+                    >
+                      <Bot size={15} className="text-rose-300" />
+                      <span>
+                        {req.status === "completed"
+                          ? "🤖 AI 에이전트 풀코드 생성 완료 (재실행)"
+                          : "🤖 AI 에이전트 자동 제작 진행하기"}
+                      </span>
+                    </button>
+
+                    {req.status === "completed" && (
+                      <a
+                        href={req.refUrl || "https://sotongcheum.creaibox.com"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 rounded-2xl bg-cyan-500/10 border border-cyan-400/30 px-4 py-3 text-xs font-black text-cyan-300 hover:bg-cyan-500/20 transition-all shrink-0"
+                      >
+                        <Eye size={13} />
+                        <span>시안 미리보기</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* --- ADMIN AI EXECUTION PROMPT MODAL --- */}
+      {selectedPromptModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 animate-fade-in">
+          <div className="w-full max-w-2xl rounded-3xl border border-purple-500/40 bg-slate-900 p-6 md:p-8 space-y-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-2 text-rose-400">
+                <Bot size={22} className="animate-bounce" />
+                <h3 className="text-lg font-black text-white">
+                  안티그래비티 AI 에이전트 자동 제작 수행 완료
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedPromptModal(null)}
+                className="text-slate-400 hover:text-white text-sm font-bold cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black">
+                <CheckCircle2 size={16} />
+                <span>
+                  신청 건 [{selectedPromptModal.companyName}]의 안티그래비티 1:1 풀코드 생성 명령이 성공적으로 인식되었습니다!
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-300 flex items-center justify-between">
+                  <span>💻 안티그래비티 AI 에이전트 실행 명령 프롬프트 (자동 생성됨)</span>
+                  <button
+                    onClick={() => {
+                      const text = `안티그래비티 AI 파트너 생성 명령:\n유저 [${selectedPromptModal.companyName}]의 커스텀 웹사이트 100% 풀코드를 생성하라.\n- 업종: ${selectedPromptModal.category}\n- 테마: ${selectedPromptModal.themeColor}\n- 필수 기능: ${selectedPromptModal.features.join(", ")}\n- 상세: ${selectedPromptModal.detail}`;
+                      navigator.clipboard.writeText(text);
+                      setCopiedPrompt(true);
+                      setTimeout(() => setCopiedPrompt(false), 2000);
+                    }}
+                    className="flex items-center gap-1 text-[11px] font-extrabold text-cyan-400 hover:underline cursor-pointer"
+                  >
+                    {copiedPrompt ? <Check size={12} /> : <Copy size={12} />}
+                    <span>{copiedPrompt ? "복사 완료!" : "명령어 복사하기"}</span>
+                  </button>
+                </label>
+
+                <textarea
+                  readOnly
+                  rows={6}
+                  value={`안티그래비티 AI 파트너 생성 명령:\n유저 [${selectedPromptModal.companyName}]의 커스텀 웹사이트 100% 풀코드를 생성하라.\n- 업종: ${selectedPromptModal.category}\n- 테마: ${selectedPromptModal.themeColor}\n- 필수 기능: ${selectedPromptModal.features.join(", ")}\n- 상세: ${selectedPromptModal.detail}`}
+                  className="w-full rounded-2xl bg-slate-950 border border-slate-800 p-4 text-xs font-mono font-bold text-cyan-300 leading-relaxed outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-800 flex items-center justify-end gap-3">
+              <a
+                href={selectedPromptModal.refUrl || "https://sotongcheum.creaibox.com"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-2xl bg-cyan-500 px-6 py-3.5 text-xs font-black text-slate-950 hover:bg-cyan-400 transition-all"
+              >
+                <Eye size={15} /> <span>생성된 라이브 사이트 확인하기</span>
+              </a>
+              <button
+                onClick={() => {
+                  setSelectedPromptModal(null);
+                  setActiveTab("manage");
+                }}
+                className="rounded-2xl border border-slate-700 bg-slate-800 px-6 py-3.5 text-xs font-black text-white hover:bg-slate-700 transition-all cursor-pointer"
+              >
+                완료 & 내 커스텀 관리로 이동
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- TAB 6 (REMOVED: Use /studio/domain-search instead) --- */}
+      {false && (
+        <div className="space-y-8 animate-fade-in-up">
+          {/* Hero Banner */}
+          <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-950 to-cyan-950/40 p-8 lg:p-10 shadow-2xl">
+            <div className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
+            <div className="absolute -left-20 -bottom-20 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 max-w-4xl space-y-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3.5 py-1 text-xs font-extrabold text-cyan-300">
+                <Globe size={14} className="animate-pulse" />
+                <span>CreAibox Domain Reseller Portal & Vercel API 100% 연동</span>
+              </div>
+
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+                독자 브랜드 도메인 <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent">1초 검색 & 원클릭 구매·이관 센터</span>
+              </h2>
+
+              <p className="text-sm sm:text-base font-medium text-slate-300 leading-relaxed max-w-3xl">
+                국내 타사(G사/W사 등)의 높은 갱신 비용에서 탈피하세요! Vercel Domains API 연동으로 
+                <strong className="text-cyan-300 font-extrabold"> 해외 도매가(18,000원)</strong>에 도메인을 구매하거나 
+                타사 도메인을 1초 만에 이관할 수 있으며, <strong className="text-emerald-300 font-extrabold">비즈니스 회원은 도메인비 평생 100% 무료(0원)</strong> 혜택이 제공됩니다.
+              </p>
+
+              {/* Quick Perks */}
+              <div className="pt-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: "시중 대비 35% 이상 절감", sub: "G사 25,850원 vs 18,000원" },
+                  { label: "비즈니스 회원 무료 지원", sub: "도메인 연장비 평생 0원" },
+                  { label: "WHOIS 개인정보 보호", sub: "100% 평생 무상 제공" },
+                  { label: "SSL 보안인증서 1초 자동 발급", sub: "https:// 1초 무장애 결합" },
+                ].map((item, idx) => (
+                  <div key={idx} className="bg-slate-900/90 border border-slate-800 p-3 rounded-2xl space-y-0.5">
+                    <div className="text-xs font-black text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 size={12} /> {item.label}
+                    </div>
+                    <div className="text-[10px] font-bold text-slate-400">{item.sub}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Domain Search Engine Section */}
+          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 lg:p-8 space-y-6 shadow-xl">
+            <div className="space-y-1">
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <Search className="text-cyan-400" /> 원하는 브랜드 도메인 실시간 가용성 & 가격 검색
+              </h3>
+              <p className="text-xs font-medium text-slate-400">
+                원하시는 브랜드명(예: mybrand, auramerino)을 입력하시면 구매 가능 여부와 시중가 대비 할인 가격을 1초 만에 확인합니다.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                <input
+                  type="text"
+                  placeholder="예: auramerino, sotongcheum, mycompany"
+                  className="w-full rounded-2xl bg-slate-950 border border-slate-800 pl-12 pr-4 py-4 text-sm font-bold text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none transition-all shadow-inner"
+                />
+              </div>
+
+              <select
+                className="rounded-2xl bg-slate-950 border border-slate-800 px-4 py-4 text-xs font-bold text-slate-200 focus:border-cyan-500 focus:outline-none cursor-pointer"
+              >
+                <option value=".com">.com (추천)</option>
+                <option value=".kr">.kr (국내전용)</option>
+                <option value=".co.kr">.co.kr (기업전용)</option>
+                <option value=".io">.io (테크/스타트업)</option>
+                <option value=".net">.net (네트워크)</option>
+              </select>
+
+              <button
+                type="button"
+                onClick={() => alert("auramerino.com ➔ 구매 가능! 연 18,000원 (비즈니스 회원 연장비 0원 무상 지원)")}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-4 text-xs font-black text-slate-950 hover:brightness-110 transition-all shadow-lg shadow-cyan-500/20 cursor-pointer whitespace-nowrap"
+              >
+                <Sparkles size={16} />
+                <span>실시간 도메인 검색</span>
+              </button>
+            </div>
+
+            {/* Default Mock Results */}
+            <div className="space-y-3 pt-4 border-t border-slate-800">
+              <h4 className="text-xs font-extrabold text-slate-300">인기 추천 도메인 실시간 가용 현황</h4>
+              <div className="grid grid-cols-1 gap-2.5">
+                {[
+                  { domain: "auramerino.com", available: true, price: 18000, orig: 25850, best: true },
+                  { domain: "auramerino.kr", available: true, price: 19000, orig: 23500, best: false },
+                  { domain: "sotongcheum.com", available: true, price: 18000, orig: 25850, best: true },
+                  { domain: "creaibox.io", available: false, price: 45000, orig: 55000, best: false },
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
+                      item.available
+                        ? "border-emerald-500/30 bg-emerald-950/10 hover:border-emerald-500/60"
+                        : "border-slate-800 bg-slate-950/60 opacity-60"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {item.available ? (
+                        <CheckCircle2 size={20} className="text-emerald-400 flex-shrink-0" />
+                      ) : (
+                        <Lock size={20} className="text-rose-400 flex-shrink-0" />
+                      )}
+                      <div>
+                        <div className="text-sm font-black text-white font-mono flex items-center gap-2">
+                          <span>{item.domain}</span>
+                          {item.best && (
+                            <span className="text-[10px] font-black bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                              BEST
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] font-medium text-slate-400">
+                          {item.available ? "구매 가능 (1초 무장애 커스텀 사이트 결합)" : "이미 타인이 등록한 도메인"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      {item.available ? (
+                        <>
+                          <div className="text-right">
+                            <div className="text-xs text-slate-400 line-through">
+                              시중가 {item.orig.toLocaleString()}원
+                            </div>
+                            <div className="text-sm font-black text-emerald-400 flex items-center gap-1">
+                              <span>연 {item.price.toLocaleString()}원</span>
+                              <span className="text-[10px] font-black text-amber-300 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">
+                                비즈니스 0원
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => alert(`${item.domain} 1초 구매 및 자동 연결 요청이 완료되었습니다!`)}
+                            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2.5 text-xs font-black text-slate-950 hover:brightness-110 transition-all shadow-md cursor-pointer"
+                          >
+                            <Zap size={13} />
+                            <span>1초 구매하기</span>
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-xs font-bold text-slate-500">이관 가능</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Domain Transfer-In Section */}
+          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 lg:p-8 space-y-6 shadow-xl">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
+                <RefreshCw size={12} />
+                <span>국내 타사(G사 / W사 등) 도메인 CreAibox로 1초 옮겨오기</span>
+              </div>
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <ShieldCheck className="text-emerald-400" /> 타사 도메인 기관 이관 (Domain Transfer-In)
+              </h3>
+              <p className="text-xs font-medium text-slate-400">
+                G사나 W사 등 타사에 매년 25,850원~35,000원씩 내지 마시고 CreAibox로 이관하세요! 만료일 1년 무조건 추가 연장 혜택이 적용됩니다.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950 p-6 rounded-2xl border border-slate-800">
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold text-slate-300">이관할 도메인 주소</label>
+                <input
+                  type="text"
+                  placeholder="예: mybrand.com"
+                  className="w-full rounded-xl bg-slate-900 border border-slate-800 px-4 py-3 text-xs font-mono font-bold text-cyan-300 focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold text-slate-300">이전 인증키 (Auth Code / EPP Code)</label>
+                <input
+                  type="text"
+                  placeholder="기존 등록업체(G사/W사 등)에서 발급된 인증키 입력"
+                  className="w-full rounded-xl bg-slate-900 border border-slate-800 px-4 py-3 text-xs font-mono font-bold text-slate-300 focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="sm:col-span-2 flex items-center justify-between pt-2">
+                <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1">
+                  <Lock size={12} className="text-emerald-400" /> 기존 등록업체(G사/W사 등)에서 '도메인 잠금(Domain Lock)' 해제 후 신청하세요.
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => alert("✅ 국내 타사 도메인 1초 이관 요청이 정상 전송되었습니다! (1년 연장 혜택 완료)")}
+                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 px-6 py-3 text-xs font-black text-slate-950 hover:brightness-110 transition-all shadow-md cursor-pointer"
+                >
+                  <Zap size={14} />
+                  <span>CreAibox로 1초 이관 신청하기</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Domestic vs International Real Pricing Fact Check Table */}
+          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 lg:p-8 space-y-6 shadow-xl">
+            <div className="space-y-1">
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <Award className="text-amber-400" /> 팩트 체크: 국내외 주요 도메인 등록업체 실제 결제 금액 비교
+              </h3>
+              <p className="text-xs font-medium text-slate-400">
+                국내 타사의 높은 갱신 수수료 및 첫해 할인가 대비 구조와 CreAibox 해외 도매 원가 기반 파격 혜택 대조표
+              </p>
+            </div>
+
+            <div className="overflow-x-auto rounded-2xl border border-slate-800">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-950 text-slate-400 uppercase font-extrabold border-b border-slate-800">
+                  <tr>
+                    <th className="p-3.5">등록업체 / 서비스</th>
+                    <th className="p-3.5">1년 실제 결제 금액 (VAT 포함)</th>
+                    <th className="p-3.5">WHOIS 개인정보 보호</th>
+                    <th className="p-3.5">특이사항 및 가격 구조</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/80 text-slate-300 font-medium">
+                  <tr className="bg-slate-900/50">
+                    <td className="p-3.5 font-bold text-white">W사 (국내 대표 등록업체)</td>
+                    <td className="p-3.5 font-bold text-rose-400">28,600원 ~ 35,000원</td>
+                    <td className="p-3.5 text-rose-400">유료 (추가비용)</td>
+                    <td className="p-3.5 text-slate-400">국내 등록업체 중 가장 비쌈 ❌</td>
+                  </tr>
+                  <tr className="bg-slate-900/30">
+                    <td className="p-3.5 font-bold text-white">G사 (국내 1위 등록업체)</td>
+                    <td className="p-3.5 font-bold text-rose-400">25,850원</td>
+                    <td className="p-3.5 text-rose-400">유료 (연 3,300원 추가)</td>
+                    <td className="p-3.5 text-slate-400">첫해 할인 후 2년 차부터 25,850원 갱신 ❌</td>
+                  </tr>
+                  <tr className="bg-slate-900/50">
+                    <td className="p-3.5 font-bold text-white">C사 (국내 대표 호스팅업체)</td>
+                    <td className="p-3.5 font-bold text-slate-300">23,500원</td>
+                    <td className="p-3.5 text-slate-400">신청 절차 번거로움</td>
+                    <td className="p-3.5 text-slate-400">일반 시중가 ❌</td>
+                  </tr>
+                  <tr className="bg-cyan-950/30 border-l-4 border-l-cyan-500">
+                    <td className="p-3.5 font-bold text-cyan-300">👑 CreAibox 일반 판매가</td>
+                    <td className="p-3.5 font-bold text-cyan-300">18,000원</td>
+                    <td className="p-3.5 font-bold text-emerald-400">100% 무료 자동 탑재</td>
+                    <td className="p-3.5 text-cyan-300 font-bold">G사 대비 매년 1만 원 이상 지속 절약 ⭕</td>
+                  </tr>
+                  <tr className="bg-emerald-950/40 border-l-4 border-l-emerald-500">
+                    <td className="p-3.5 font-black text-emerald-300">👑 CreAibox 비즈니스 회원</td>
+                    <td className="p-3.5 font-black text-emerald-300 text-sm">0원 (평생 무상 지원!)</td>
+                    <td className="p-3.5 font-bold text-emerald-400">100% 무료 자동 탑재</td>
+                    <td className="p-3.5 text-emerald-300 font-bold">비즈니스 플랜 사용 시 도메인 연장비 평생 0원 ⭕</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- DEPLOY MODAL WIZARD --- */}
+      {deployModalTemplate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-900 p-8 space-y-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-2">
+                <Zap className="text-cyan-400" size={20} />
+                <h3 className="text-lg font-black text-white">1초 템플릿 즉시 구축</h3>
+              </div>
+              <button
+                onClick={() => setDeployModalTemplate(null)}
+                className="text-slate-400 hover:text-white text-sm font-bold"
+              >
+                닫기
+              </button>
+            </div>
+
+            {deploySuccess ? (
+              <div className="text-center py-6 space-y-4">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <CheckCircle2 size={36} />
+                </div>
+                <h4 className="text-xl font-black text-white">
+                  축하합니다! 홈페이지 구축이 완료되었습니다! 🎉
+                </h4>
+                <p className="text-xs font-medium text-slate-300">
+                  선택하신 <strong className="text-cyan-400">{deployModalTemplate.name}</strong> 기반으로 내 신규 사이트가 정상 개설되었습니다.
+                </p>
+
+                <div className="pt-4 flex items-center justify-center gap-3">
+                  <a
+                    href="http://sotongcheum.localhost:3000"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 rounded-2xl bg-cyan-500 px-6 py-3 text-xs font-black text-slate-950 hover:bg-cyan-400 transition-all"
+                  >
+                    <Globe size={14} /> 신규 사이트 열기
+                  </a>
+                  <button
+                    onClick={() => {
+                      setDeployModalTemplate(null);
+                      setActiveTab("manage");
+                    }}
+                    className="rounded-2xl border border-slate-700 bg-slate-800 px-6 py-3 text-xs font-extrabold text-white hover:bg-slate-700 transition-all"
+                  >
+                    사이트 관리로 이동
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                  <p className="text-xs font-bold text-slate-400">선택 템플릿</p>
+                  <p className="text-sm font-black text-cyan-300">{deployModalTemplate.name}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-extrabold text-slate-300">내 사이트 이름</label>
+                  <input
+                    type="text"
+                    value={deploySiteName}
+                    onChange={(e) => setDeploySiteName(e.target.value)}
+                    className="w-full rounded-2xl bg-slate-950 border border-slate-800 px-4 py-3 text-xs font-bold text-white focus:border-cyan-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-extrabold text-slate-300">희망 서브도메인 (영문)</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={deploySubdomain}
+                      onChange={(e) => setDeploySubdomain(e.target.value)}
+                      className="flex-1 rounded-2xl bg-slate-950 border border-slate-800 px-4 py-3 text-xs font-bold text-white focus:border-cyan-500 focus:outline-none font-mono"
+                    />
+                    <span className="text-xs font-mono text-slate-400">.creaibox.com</span>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-800 flex items-center justify-end gap-3">
+                  <button
+                    onClick={() => setDeployModalTemplate(null)}
+                    className="rounded-2xl border border-slate-800 px-5 py-2.5 text-xs font-bold text-slate-400 hover:text-white"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={handleConfirmDeploy}
+                    disabled={isDeploying}
+                    className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-2.5 text-xs font-black text-slate-950 hover:brightness-110 transition-all shadow-md disabled:opacity-50"
+                  >
+                    {isDeploying ? <RefreshCw size={14} className="animate-spin" /> : <Zap size={14} />}
+                    <span>{isDeploying ? "구축 중..." : "즉시 구축 완료"}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {/* --- KIMI-STYLE INTERACTIVE FULL-SCROLL PREVIEW MODAL (3-DEVICE VIEWPORT SWITCHER) --- */}
