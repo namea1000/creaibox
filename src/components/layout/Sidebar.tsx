@@ -253,7 +253,6 @@ export default function Sidebar({
           { name: "네이버/SNS 재발행", href: "/writing/creaibox/recreate", icon: RefreshCw },
           { name: "블로그 설정 및 관리", href: "/writing/creaibox/blog-management", icon: Settings },
           { name: "기존 블로그 통째 이관 📦", href: "/studio/blog-migration", icon: DownloadCloud },
-          { name: "아티클 스크랩 & 재발행 🔄", href: "/studio/article-scrap", icon: Layers },
           { name: "AI 콘텐츠 기획", href: "/content-planner/planning", icon: Sparkles },
           { name: "기획 라이브러리", href: "/content-planner/library", icon: Library },
           { name: "콘텐츠 캘린더", href: "/content-planner/calendar", icon: CalendarDays },
@@ -440,6 +439,16 @@ export default function Sidebar({
               { name: "결제 관리", href: "/admin/billing", icon: Settings },
               { name: "콘텐츠 관리", href: "/admin/content", icon: FileText },
               { name: "시스템 관리", href: "/admin/system", icon: Server },
+            ],
+          },
+          {
+            key: "admin-special",
+            name: "관리자 특별메뉴",
+            href: "/studio/article-scrap",
+            icon: Sparkles,
+            color: "text-amber-400",
+            children: [
+              { name: "아티클 스크랩 & 재발행 🔄", href: "/studio/article-scrap", icon: Layers },
             ],
           },
           {

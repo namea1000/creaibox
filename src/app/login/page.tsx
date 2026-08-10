@@ -124,7 +124,7 @@ export default function LoginPage() {
               </h2>
             ) : (
               <Image
-                src="/logobg_dark.webp"
+                src="/logo_dark.png"
                 alt="CreAibox Logo"
                 width={210}
                 height={40}

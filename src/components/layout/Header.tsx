@@ -370,14 +370,14 @@ export default function Header() {
         <div className="flex w-[160px] shrink-0 items-center">
           <Link href="/" className="flex h-10 items-center transition hover:scale-[1.02] active:scale-[0.98]">
             <img
-              src="/logobg.webp"
+              src="/logo.png"
               alt="CreAibox"
-              className="h-7 w-auto object-contain dark:hidden"
+              className="h-8 w-auto object-contain dark:hidden"
             />
             <img
-              src="/logobg_dark.webp"
+              src="/logo_dark.png"
               alt="CreAibox"
-              className="h-7 w-auto object-contain hidden dark:block"
+              className="h-8 w-auto object-contain hidden dark:block"
             />
           </Link>
         </div>

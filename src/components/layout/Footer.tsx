@@ -327,18 +327,16 @@ export default function Footer() {
           <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-5">
             <div className="space-y-4 lg:col-span-2">
               <Link href="/" className="flex h-10 items-center overflow-hidden">
-                {/* Light Mode Logo */}
                 <Image
-                  src="/logobg.webp"
+                  src="/logo.png"
                   alt="Creaibox Logo"
                   width={173}
                   height={28}
                   className="h-10 w-auto object-contain dark:hidden"
                   priority
                 />
-                {/* Dark Mode Logo */}
                 <Image
-                  src="/logobg_dark.webp"
+                  src="/logo_dark.png"
                   alt="Creaibox Logo"
                   width={173}
                   height={28}

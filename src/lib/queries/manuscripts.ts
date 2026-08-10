@@ -29,6 +29,8 @@ export interface StudioManuscriptRecord {
   displayId?: number;
   title: string;
   content: string;
+  originalTitle?: string;
+  originalContent?: string;
   keyword: string;
   targetKeyword: string;
   type: ManuscriptType;
@@ -67,6 +69,8 @@ interface WritingCreaiboxPostRecord {
   updated_at?: string | null;
   title?: string | null;
   content?: string | null;
+  original_title?: string | null;
+  original_content?: string | null;
   post_type?: string | null;
   status?: string | null;
   target_keyword?: string | null;
@@ -233,6 +237,8 @@ function mapCreaiboxRecord(record: WritingCreaiboxPostRecord): StudioManuscriptR
     displayId: Number.isNaN(displayId) ? undefined : displayId,
     title: record.title || "제목 없음",
     content,
+    originalTitle: record.original_title || undefined,
+    originalContent: record.original_content || undefined,
     keyword: targetKeyword,
     targetKeyword,
     type: postType,
@@ -314,7 +320,7 @@ async function fetchCreaiboxManuscripts(): Promise<StudioManuscriptRecord[]> {
 
   const { data, error } = await supabase
     .from("writing_creaibox_posts")
-    .select("id, display_id, created_at, updated_at, title, content, post_type, status, target_keyword, selected_tone, slug, meta_description, focus_keyword, canonical_url, seo_tags, word_count_goal, source_mode, category_id, category_ids, toc_enabled, parent_id")
+    .select("id, display_id, created_at, updated_at, title, content, original_title, original_content, post_type, status, target_keyword, selected_tone, slug, meta_description, focus_keyword, canonical_url, seo_tags, word_count_goal, source_mode, category_id, category_ids, toc_enabled, parent_id")
     .eq("user_id", userId)
     .neq("status", "trash")
     .order("created_at", { ascending: false });

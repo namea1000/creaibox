@@ -48,14 +48,16 @@ CreAibox 자체 블로그 원고를 저장한다.
 
 ### 기본 콘텐츠
 
-| Column         | Description |
-| -------------- | ----------- |
-| title          | 제목          |
-| content        | 본문          |
-| target_keyword | 목표 키워드      |
-| selected_tone  | 선택 말투       |
-| post_type      | 콘텐츠 유형      |
-| status         | 게시 상태       |
+| Column           | Description |
+| ---------------- | ----------- |
+| title            | 제목          |
+| content          | 본문          |
+| original_title   | 원본 제목 (아티클 스크랩용) |
+| original_content | 원본 본문 (아티클 스크랩용) |
+| target_keyword   | 목표 키워드      |
+| selected_tone    | 선택 말투       |
+| post_type        | 콘텐츠 유형      |
+| status           | 게시 상태       |
 
 ---
 

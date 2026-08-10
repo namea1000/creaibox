@@ -20,6 +20,10 @@ user_nicename text,
 title text,
 content text,
 
+-- Original Scrap Data (For Recreate & Compare)
+original_title text,
+original_content text,
+
 target_keyword text,
 selected_tone text,
 

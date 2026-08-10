@@ -1,3 +1,5 @@
+사이드
+
 # 키워드 트렌드 분석 스튜디오 (Keyword Trend Studio)
 
 이 문서는 키워드 트렌드 분석 스튜디오 모듈의 현재 아키텍처 및 연동 흐름에 대해 설명하는 상시 운영용 문서입니다.
@@ -5,11 +7,13 @@
 ---
 
 ## 1. 목적 (Purpose)
+
 * 콘텐츠(텍스트 블로그, 유튜브 영상, AI 음원 앨범) 제작에 앞서 타겟 검색어의 검색량, 클릭률(CTR), 난이도, 형태소 분석 및 최근 트렌드를 종합 분석하여 높은 노출 성과를 기대할 수 있는 전략 기획을 돕습니다.
 
 ---
 
 ## 2. 주요 기능 (Main Features)
+
 1. **키워드 대량 조회 (`bulk`)**: 최대 50개의 키워드 검색량, CPC, 클릭률, 의도, 난이도를 한 번에 일괄 조회.
 2. **연관 키워드 발굴 (`related`)**: 시드 키워드 조합을 통한 연관 롱테일 키워드 목록 발굴 및 다운로드.
 3. **형태소 분석기 (`morphology`)**: 한글 텍스트 본문 내 핵심 명사 빈도 밀도 분석 및 형태소 구조 시각화.
@@ -24,6 +28,7 @@
 ---
 
 ## 3. UI 구조 (UI Structure)
+
 * **홈 화면**: `/studio/keyword/page.tsx`
   - 전반적인 통계 상태, 10개 핵심 도구 네비게이션 카드 및 빠른 추천 키워드로 구성.
 * **상세 분석 화면**: `/studio/keyword/[section]/page.tsx`
@@ -33,20 +38,22 @@
 ---
 
 ## 4. 데이터베이스 연동 구조 (Database Structure)
+
 * **현재 상태**: 로컬 클라이언트 단의 고효율 시뮬레이터(Seed 계산기 및 난수 변동) 방식으로 동작하여 네트워크 오버헤드가 없으며, 반응 속도가 빠릅니다.
 * **확장 계획**: 추후 사용자별 순위 추적 로그 및 관심 키워드 폴더 저장을 위한 `keyword_tracking`, `keyword_favorites` 테이블 연동이 계획되어 있습니다.
 
 ---
 
 ## 5. 컴포넌트 구조 (Component Structure)
+
 * **경로**: `src/app/studio/keyword/[section]/components/`
-  - [BulkSearch.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/BulkSearch.tsx)
-  - [RelatedKeywords.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/RelatedKeywords.tsx)
-  - [MorphologyAnalyzer.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/MorphologyAnalyzer.tsx)
-  - [RankTracker.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/RankTracker.tsx)
-  - [RisingTrends.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/RisingTrends.tsx)
-  - [YoutubeKeywords.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/YoutubeKeywords.tsx)
-  - [SeoCompetitor.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/SeoCompetitor.tsx)
-  - [AiStrategy.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/AiStrategy.tsx)
-  - [AutoWorkflow.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/AutoWorkflow.tsx)
-  - [TrendDashboard.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/TrendDashboard.tsx)
+  - [BulkSearch.tsx](<file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/BulkSearch.tsx>)
+  - [RelatedKeywords.tsx](<file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/RelatedKeywords.tsx>)
+  - [MorphologyAnalyzer.tsx](<file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/MorphologyAnalyzer.tsx>)
+  - [RankTracker.tsx](<file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/RankTracker.tsx>)
+  - [RisingTrends.tsx](<file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/RisingTrends.tsx>)
+  - [YoutubeKeywords.tsx](<file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/YoutubeKeywords.tsx>)
+  - [SeoCompetitor.tsx](<file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/SeoCompetitor.tsx>)
+  - [AiStrategy.tsx](<file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/AiStrategy.tsx>)
+  - [AutoWorkflow.tsx](<file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/AutoWorkflow.tsx>)
+  - [TrendDashboard.tsx](<file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/TrendDashboard.tsx>)

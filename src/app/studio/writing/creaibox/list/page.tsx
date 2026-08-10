@@ -623,6 +623,7 @@ export default function CreaiboxManuscriptListPage() {
   const tableColumnCount = isTrashView ? 11 : 10;
 
   const [recreateModalRecord, setRecreateModalRecord] = useState<{ originalTitle: string; title: string; content: string; id: string; sourceUrl?: string } | null>(null);
+  const [originalManuscriptRecord, setOriginalManuscriptRecord] = useState<{ originalTitle: string; originalContent: string; title: string; id: string } | null>(null);
   const [recreateCopyFeedback, setRecreateCopyFeedback] = useState<boolean>(false);
 
   const recreatedMapByParentId = useMemo(() => {
@@ -1365,6 +1366,25 @@ export default function CreaiboxManuscriptListPage() {
                         >
                           휴지통
                         </button>
+                        {manuscript.originalContent && (
+                          <>
+                            <span className="text-slate-400">|</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOriginalManuscriptRecord({
+                                  id: manuscript.id,
+                                  title: manuscript.title,
+                                  originalTitle: manuscript.originalTitle || "제목 없음",
+                                  originalContent: manuscript.originalContent || ""
+                                });
+                              }}
+                              className="text-emerald-600 hover:text-emerald-700 hover:underline font-medium"
+                            >
+                              👀 원본 보기
+                            </button>
+                          </>
+                        )}
                       </>
                     )}
                   </div>
@@ -1514,6 +1534,65 @@ export default function CreaiboxManuscriptListPage() {
         <div className="mt-6 flex items-center gap-3 border border-red-300 bg-red-50 px-5 py-4 text-[14px] text-red-700">
           <AlertCircle className="h-5 w-5" />
           원고 목록을 불러오지 못했습니다: {fallbackError}
+        </div>
+      )}
+
+      {/* 🌟 원본 원고 미리보기 팝업 모달 */}
+      {originalManuscriptRecord && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto"
+          onClick={() => setOriginalManuscriptRecord(null)}
+        >
+          <div
+            className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-6 py-4 bg-zinc-50 dark:bg-zinc-950">
+              <div>
+                <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                  <Globe className="text-emerald-500" size={24} />
+                  수집된 원본 아티클
+                </h3>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                  재창조된 글: {originalManuscriptRecord.title}
+                </p>
+              </div>
+              <button
+                onClick={() => setOriginalManuscriptRecord(null)}
+                className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6 lg:p-8 custom-scrollbar">
+              <div className="mx-auto max-w-3xl">
+                <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-zinc-100 mb-8 leading-snug">
+                  {originalManuscriptRecord.originalTitle}
+                </h1>
+                
+                <div 
+                  className="prose prose-lg dark:prose-invert prose-zinc max-w-none 
+                    prose-headings:font-bold prose-headings:text-zinc-900 dark:prose-headings:text-zinc-100
+                    prose-a:text-blue-600 dark:prose-a:text-blue-400
+                    prose-img:rounded-xl prose-img:shadow-md"
+                  dangerouslySetInnerHTML={{ __html: originalManuscriptRecord.originalContent }}
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="border-t border-zinc-200 dark:border-zinc-800 px-6 py-4 bg-zinc-50 dark:bg-zinc-950 flex justify-end">
+              <button
+                onClick={() => setOriginalManuscriptRecord(null)}
+                className="px-6 py-2.5 bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-lg font-medium transition-colors"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
