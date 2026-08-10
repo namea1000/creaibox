@@ -113,7 +113,7 @@ export default function ExternalBlogMigrationPage() {
               <span>CreAibox 블로그 이관 센터</span>
             </div>
             <h1 className="text-xl md:text-2xl font-black text-white">
-              타 블로그 원고 <span className="bg-gradient-to-r from-purple-400 via-pink-300 to-amber-300 bg-clip-text text-transparent">통째 가져오기 & creaibox.com 실시간 이관 센터</span>
+              기존 블로그 원고 <span className="bg-gradient-to-r from-purple-400 via-pink-300 to-amber-300 bg-clip-text text-transparent">통째 가져오기 & creaibox.com 실시간 이관 센터</span>
             </h1>
             <p className="text-xs md:text-sm text-slate-300 font-medium max-w-3xl leading-relaxed">
               기존에 사용하시던 네이버 블로그, 티스토리, 워드프레스 등의 글과 이미지를 1초 만에 스크랩하여<br />
@@ -136,7 +136,7 @@ export default function ExternalBlogMigrationPage() {
       {/* --- PLATFORM SELECTION CARDS --- */}
       <div className="space-y-4">
         <h2 className="text-sm font-black text-slate-300 flex items-center gap-2">
-          <Layers size={16} className="text-purple-400" /> 1. 이관할 타 블로그 플랫폼 선택
+          <Layers size={16} className="text-purple-400" /> 1. 이관할 기존 블로그 플랫폼 선택
         </h2>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -334,7 +334,7 @@ export default function ExternalBlogMigrationPage() {
       {/* --- INSTRUCTION CARD --- */}
       <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 space-y-3">
         <h4 className="text-xs font-black text-slate-300 flex items-center gap-2">
-          <Sparkles size={14} className="text-purple-400" /> 타 블로그 통째 이관 가이드
+          <Sparkles size={14} className="text-purple-400" /> 기존 블로그 통째 이관 가이드
         </h4>
         <ul className="text-xs text-slate-400 space-y-1.5 list-disc pl-4 font-medium leading-relaxed">
           <li>네이버 블로그, 티스토리, 워드프레스의 전체 원고 텍스트, 본문 이미지 및 SEO 메타데이터가 CreAibox 클라우드 DB 및 원고 보관함으로 자동 이관됩니다.</li>

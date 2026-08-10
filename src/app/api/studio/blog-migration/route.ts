@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/server/get-free-gemini-key";
 
 /**
- * 📦 타 블로그 통째 이관 (External Blog Bulk Import API Engine)
+ * 📦 기존 블로그 통째 이관 (External Blog Bulk Import API Engine)
  * - 네이버 블로그 URL 입력 시 PostTitleListAsync 파싱 + PostView SE2/SE3 본문/고화질 이미지 100% 수집하여
  * - CreAibox 클라우드 DB 및 '블로그 원고 관리'(writing_creaibox_posts)로 통째 자동 이관
  */

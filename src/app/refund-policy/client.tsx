@@ -14,16 +14,16 @@ export default function RefundPolicyClient() {
       title: "청약철회 및 전액 환불 기준",
       subtitle: "7일 이내 사용 이력이 없는 경우",
       badge: "전액 환불 보장",
-      badgeColor: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-605 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20",
-      description: "멤버십 결제일 또는 단독 크레딧 구매일로부터 7일 이내에 AI 글쓰기 등 어떠한 서비스 이용 내역(크레딧 차감 내역)도 존재하지 않는 결제 건에 대해서는 100% 전액 결제 취소 및 환불이 보장됩니다."
+      badgeColor: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20",
+      description: "멤버십 결제일로부터 7일 이내에 AI 글쓰기 등 어떠한 서비스 이용 내역도 존재하지 않는 결제 건에 대해서는 100% 전액 결제 취소 및 환불이 보장됩니다."
     },
     {
       icon: Coins,
       title: "일부 사용에 따른 부분 환불 기준",
-      subtitle: "일부 크레딧 또는 기간 이용 시",
+      subtitle: "일부 기간 또는 서비스 이용 시",
       badge: "공제 후 환불",
       badgeColor: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20",
-      description: "결제 후 7일을 경과하였거나 일부 크레딧을 사용한 상태에서 중도 해지할 경우, 사용한 일수에 준하는 멤버십 기본 이용료와 기사용 크레딧 차감액(원가 환산) 및 PG사 금융 수수료(정가의 10%)를 정산 공제한 후 잔여 금액을 환불해 드립니다."
+      description: "결제 후 7일을 경과하였거나 서비스를 이용한 상태에서 중도 해지할 경우, 사용한 일수에 준하는 멤버십 기본 이용료 및 PG사 금융 수수료(정가의 10%)를 정산 공제한 후 잔여 금액을 환불해 드립니다."
     },
     {
       icon: ShieldAlert,
@@ -31,7 +31,7 @@ export default function RefundPolicyClient() {
       subtitle: "환불 신청이 불가능한 경우",
       badge: "환불 제한 대상",
       badgeColor: "bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-450 border border-rose-100 dark:border-rose-500/20",
-      description: "이벤트 참여 또는 프로모션 제휴 등으로 지급된 무상 웰컴 크레딧 및 비매품 포인트는 환불 대상에 포함되지 않습니다. 또한, 악의적인 대량 계정 생성 및 API 오남용으로 인해 이용약관 위반 처분을 받은 영구 정지 계정의 잔여 잔액 역시 환불이 거부될 수 있습니다."
+      description: "이벤트 참여 또는 프로모션 제휴 등으로 지급된 무상 웰컴 포인트 및 비매품 혜택은 환불 대상에 포함되지 않습니다. 또한, 악의적인 대량 계정 생성 및 API 오남용으로 인해 이용약관 위반 처분을 받은 영구 정지 계정의 잔여 이용 기간 역시 환불이 거부될 수 있습니다."
     },
     {
       icon: Globe,
@@ -119,7 +119,7 @@ export default function RefundPolicyClient() {
               환불 신청은 어떻게 진행하나요?
             </h3>
             <p className="text-xs md:text-sm text-slate-400 leading-relaxed max-w-2xl">
-              정당한 환불 요건에 부합하는 경우, 크리에이박스 로그인 후 **[고객지원]** 1:1 게시판 문의 또는 하단 **[카카오톡 채널 추가]** 버튼을 통해 결제한 아이디(이메일), 결제일자, 구매 멤버십/크레딧 종류 및 환불 사유를 적어 보내주시면 담당 부서에서 즉각 확인 및 승인 통보를 이행해 드립니다.
+              정당한 환불 요건에 부합하는 경우, 크리에이박스 로그인 후 **[고객지원]** 1:1 게시판 문의 또는 하단 **[카카오톡 채널 추가]** 버튼을 통해 결제한 아이디(이메일), 결제일자, 구매 멤버십 종류 및 환불 사유를 적어 보내주시면 담당 부서에서 즉각 확인 및 승인 통보를 이행해 드립니다.
             </p>
             <div className="flex flex-wrap gap-3 pt-2">
               <a

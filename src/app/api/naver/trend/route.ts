@@ -40,6 +40,17 @@ async function fetchNaverNewsHeadline(keyword: string): Promise<{ title: string;
     });
     if (res.ok) {
       const html = await res.text();
+      
+      // Try new DOM structure first (data-heatmap-target=".tit")
+      const newMatch = html.match(/<a[^>]*href="([^"]+)"[^>]*data-heatmap-target="\.tit"[^>]*>[\s\S]*?<span[^>]*class="[^"]*sds-comps-text[^"]*"[^>]*>([\s\S]*?)<\/span>/);
+      if (newMatch && newMatch[2]) {
+        return {
+          title: newMatch[2].replace(/<[^>]+>/g, "").trim(),
+          url: newMatch[1],
+        };
+      }
+
+      // Fallback to old DOM structure
       const titleMatch = html.match(/class="news_tit"[^>]*title="([^"]+)"/);
       const hrefMatch = html.match(/class="news_tit"[^>]*href="([^"]+)"/);
       if (titleMatch && titleMatch[1]) {

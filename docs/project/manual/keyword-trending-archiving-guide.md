@@ -60,3 +60,12 @@ Vercel Serverless CPU 및 빌드/실행 비용을 제로화(0%)하기 위해 다
 ## 5. 🧹 데이터 자동 다이어트 (Retention Clean-up) Policy
 
 - [`keyword-history.ts`](<file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/keyword-history.ts>) 내 `cleanupOldKeywordRecords(daysToKeep = 90)` 함수가 탑재되어 있어, 90일 또는 180일이 지난 오래된 미세 시간별 관련 뉴스는 자동으로 정리 삭제하여 DB 용량을 항시 최적 상태로 유지합니다.
+
+---
+
+## 6. 🛠️ 트러블슈팅 및 파싱 엔진 복구 (Troubleshooting)
+
+### 네이버/구글 등 포털 DOM 구조 개편에 따른 대응 전략
+- **현상**: 네이버 통합 검색결과 등 포털 사이트의 HTML(DOM) 구조가 개편될 경우, 백엔드 정규식(Regex)이 원본 뉴스 기사 제목을 긁어오지 못하고 임시 텍스트(예: "OOO 관련 주요 뉴스 이슈")를 반환할 수 있습니다. (예: 기존 `class="news_tit"` 구조에서 최근 `data-heatmap-target=".tit"`와 같이 동적 클래스 구조로 개편됨)
+- **대응 1 (파서 개정)**: `src/app/api/naver/trend/route.ts` 내의 파싱 엔진(Regex)을 포털의 신규 태그 구조에 맞추어 전면 업데이트합니다.
+- **대응 2 (DB 캐시 및 인메모리 Flush)**: 파싱 엔진을 고치더라도 **이미 `keyword_trending_history` DB와 Next.js 서버 인메모리에 저장된 "과거의 잘못 수집된 데이터"**가 남아있으면 사용자 화면에는 계속 오류 데이터가 노출됩니다. 따라서 엔진 수정 직후에는 반드시 DB 내 해당 시간대/날짜의 배열 데이터를 강제 삭제(Flush)하고, 서버를 재구동(또는 모듈 리로드)하여 **신규 캐싱**을 유도해야 합니다.

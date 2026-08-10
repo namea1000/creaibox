@@ -90,7 +90,7 @@ export async function getHistoricalHourlyKeywords(targetDate: string, targetHour
   const targetHourStr = String(targetHour);
   const cacheKey = `${targetDate}_${targetHourStr}_${provider}`;
 
-  // 1. 메모리 캐시 확인
+  // 1. 메모리 캐시 확인 (캐시 초기화를 위해 주석 추가)
   if (memoryKeywordCache.has(cacheKey)) {
     return memoryKeywordCache.get(cacheKey) || null;
   }

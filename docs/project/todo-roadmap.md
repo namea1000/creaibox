@@ -107,7 +107,7 @@
   - 추천 프로그램 기획서: [`referral-program-proposal.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/referral-program-proposal.md>)
 - [X] **🌐 CreAibox Domain Reseller 및 Vercel Domains API 원클릭 도메인 자동화 사업계획서 수록 (#4)**
   - 📖 사업계획서 & 기술 구현안: [`vercel-domains-api-implementation-plan.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/vercel-domains-api-implementation-plan.md>) (.kr, .co.kr 국내 ccTLD, 한글 퓨니코드 IDN, Vercel 본사 대비 초격차 하이브리드 멀티 라우팅 아키텍처 및 법적 명시 조항 전면 추가 완료)
-- [X] **📦 타 블로그 통째 이관 센터 구축 (네이버/티스토리/워드프레스 1초 가져오기 & 구글 드라이브 DB 및 블로그 원고 관리함 자동 동기화)**
+- [X] **📦 기존 블로그 통째 이관 센터 구축 (네이버/티스토리/워드프레스 1초 가져오기 & 구글 드라이브 DB 및 블로그 원고 관리함 자동 동기화)**
   - 📖 운용 매뉴얼 수록: [`external-blog-migration-manual.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/external-blog-migration-manual.md>) 수록 완료
 - [X] **🚀 기존 홈페이지 1초 AI 자동 이관 매뉴얼 수록 (이중 저장소 파이프라인 & 1초 서브도메인 통째 개설)**
   - 📖 운용 매뉴얼 수록: [`website-ai-migration-manual.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/website-ai-migration-manual.md>) 수록 완료
@@ -167,6 +167,8 @@
   - `noreply@creaibox.com` (Reply-To: `support@creaibox.com`) 프리미엄 다크 테마 HTML 웰컴 메일 및 실시간 발송 테스트 검증 완료
 - [ ] **글로벌 영문 사이트 오픈 시 유저 Locale 기반 자동 언어 분기 인증 이메일 발송 파이프라인 연동**
   - 글로벌 사용자 접속 시 Supabase Auth Hook / Send Email API를 통해 브라우저 Locale(ko/en)에 따라 100% 영문 단독 메일 템플릿 자동 분기 발송 구축 예정
+- [ ] **글로벌 영문 홈페이지(`creaibox.com/en`) 오픈 시 미니멀/심플 푸터(Footer) 디자인 탑재**
+  - 해외 법률(미국/유럽 전자상거래법상 푸터 사업자 정보 강제 표시 의무 없음) 및 MoR(Paddle, Lemon Squeezy) 결제 구조 특성에 맞춰 해외 스타트업(Repaint, Aipress 등) 스타일의 극단적으로 깔끔하고 미니멀한 푸터 UI 적용 (Terms of Service, Privacy Policy, Copyright, Social Links만 깔끔하게 배치).
 - [ ] **고객사 플랜별 일일/월간 발송 쿼터(Quota Throttling) 및 스팸 차단 안전 모듈 탑재**
   - 고객사별 일일 50~300건 쿼터 초과 시 자동 발송 차단 및 추가 쿼터 팩 결제 상품 연동 예정
 - [ ] **헤비 고객사 전용 API 키 입력 (BYOK: Bring Your Own Key) 옵션 제공**
