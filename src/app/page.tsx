@@ -443,7 +443,7 @@ export default function MainLandingPage() {
 
             <p className="mt-6 max-w-2xl break-keep text-lg font-medium leading-relaxed text-zinc-400">
               글쓰기, 이미지 제작, 무료 미디어 에셋 라이브러리, 유튜브 트렌드 분석, AI 홈페이지 제작까지 
-              크리에이터에게 꼭 필요한 도구들을 로그인 장벽 없이 즉시 만나보세요.
+              크리에이터에게 꼭 필요한 도구들을 즉시 만나보세요.
             </p>
 
             {/* Smart Search / Prompt Bar */}
