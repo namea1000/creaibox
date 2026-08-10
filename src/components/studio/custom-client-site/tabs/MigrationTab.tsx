@@ -37,6 +37,18 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
     }
   };
 
+  const getSubdomainUrl = (subdomain: string) => {
+    if (typeof window === "undefined") return `http://${subdomain}.localhost:3000`;
+    const hostname = window.location.hostname;
+    const port = window.location.port ? `:${window.location.port}` : "";
+    const protocol = window.location.protocol || "http:";
+    
+    if (hostname.includes("localhost") || hostname === "127.0.0.1") {
+      return `${protocol}//${subdomain}.localhost${port}`;
+    }
+    return `https://${subdomain}.creaibox.com`;
+  };
+
   return (
         <div className="space-y-8 animate-fade-in-up">
           <div className="rounded-3xl border border-indigo-500/30 bg-slate-900/90 p-6 lg:p-8 space-y-6 shadow-2xl relative overflow-hidden">
@@ -114,12 +126,12 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                   <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800">
                     <span className="text-[10px] text-slate-400 font-bold block">이관된 서브도메인 주소</span>
                     <a
-                      href={`http://${migrationResult.migratedSubdomain}.localhost:3000`}
+                      href={getSubdomainUrl(migrationResult.migratedSubdomain)}
                       target="_blank"
                       rel="noreferrer"
                       className="text-indigo-400 font-black text-sm underline flex items-center gap-1 mt-1 hover:text-indigo-300"
                     >
-                      http://{migrationResult.migratedSubdomain}.creaibox.com <ExternalLink size={12} />
+                      https://{migrationResult.migratedSubdomain}.creaibox.com <ExternalLink size={12} />
                     </a>
                   </div>
 
