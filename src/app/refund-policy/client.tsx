@@ -15,7 +15,7 @@ export default function RefundPolicyClient() {
       subtitle: "7일 이내 사용 이력이 없는 경우",
       badge: "전액 환불 보장",
       badgeColor: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-605 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20",
-      description: "멤버십 결제일 또는 단독 크레딧 구매일로부터 7일 이내에 AI 글쓰기, 이미지/비디오 생성, 음악 생성 등 어떠한 서비스 이용 내역(크레딧 차감 내역)도 존재하지 않는 결제 건에 대해서는 100% 전액 결제 취소 및 환불이 보장됩니다."
+      description: "멤버십 결제일 또는 단독 크레딧 구매일로부터 7일 이내에 AI 글쓰기 등 어떠한 서비스 이용 내역(크레딧 차감 내역)도 존재하지 않는 결제 건에 대해서는 100% 전액 결제 취소 및 환불이 보장됩니다."
     },
     {
       icon: Coins,

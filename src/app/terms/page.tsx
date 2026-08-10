@@ -82,10 +82,11 @@ export default function TermsPage() {
               <span className="text-blue-600 font-mono">05.</span> 서비스 이용 요금 및 환불 규정
             </h3>
             <div className="text-slate-600 text-xs md:text-sm pl-6 space-y-2">
-              <p>회사는 유료 서비스 및 크레딧 충전 서비스를 제공할 수 있으며, 환불 및 청약철회 조건은 전자상거래법 및 콘텐츠산업 진흥법을 준수합니다.</p>
+              <p>회사는 월 구독형 멤버십(유료 서비스) 및 단독 크레딧 충전 상품을 제공할 수 있으며, 환불 및 청약철회 조건은 전자상거래법 및 콘텐츠산업 진흥법을 준수합니다.</p>
               <ul className="list-disc pl-5 space-y-1 text-slate-600">
-                <li>회원이 충전한 크레딧을 <span className="text-slate-900 font-bold">전혀 사용하지 않은 상태</span>에서 결제일로부터 7일 이내에 환불을 요청하는 경우, 전액 환불이 가능합니다.</li>
-                <li>인공지능 서비스 특성상, 결제 이후 <span className="text-slate-900 font-bold">1회 이상의 콘텐츠 생성 또는 크레딧 차감</span>이 발생한 경우, 해당 구매 건에 대한 청약철회 및 환불은 제한됩니다.</li>
+                <li><span className="text-slate-900 font-bold">월 구독(멤버십) 결제 또는 단독 크레딧 구매일</span>로부터 7일 이내에 AI 글쓰기 등 어떠한 서비스 이용 내역(크레딧 차감 내역)도 존재하지 않는 결제 건에 대해서는 100% 전액 결제 취소 및 환불이 보장됩니다.</li>
+                <li>결제 후 7일을 경과하였거나 일부 크레딧을 사용한 상태에서 구독을 중도 해지할 경우, 사용한 일수에 준하는 멤버십 기본 이용료와 기사용 크레딧 차감액(원가 환산) 및 PG사 금융 수수료(정가의 10%)를 정산 공제한 후 잔여 금액을 환불해 드립니다.</li>
+                <li>상세한 환불 및 정산 공제 기준은 별도로 고지하는 <a href="/refund-policy" className="text-blue-500 underline underline-offset-2 hover:text-blue-700">환불 정책 안내</a> 페이지를 따릅니다.</li>
               </ul>
             </div>
           </div>
