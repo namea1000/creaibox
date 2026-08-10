@@ -98,6 +98,15 @@ export default function CustomClientSiteStudioPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+    };
+    fetchUser();
+  }, []);
+
   const requireAuth = (action?: () => void): boolean => {
     if (!currentUser) {
       setShowLoginModal(true);
