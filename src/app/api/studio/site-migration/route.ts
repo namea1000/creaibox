@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import sharp from "sharp";
 import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { TEMPLATE_REGISTRY } from "@/lib/templates/registry";
+
+export const maxDuration = 300;
 
 /**
  * 🚀 AI 기존 홈페이지 1초 자동 이관 (Site Migration & Scraper Engine)
@@ -16,30 +19,53 @@ export async function POST(request: Request) {
     },
   });
 
-  async function processHtmlImagesWithR2(html: string, siteId: string): Promise<string> {
+  async function processHtmlImagesWithR2(html: string, siteId: string, origin: string): Promise<string> {
     if (!html) return html;
+    
+    let newHtml = html;
+    
+    // Convert relative image URLs and CSS urls to absolute using origin
+    newHtml = newHtml.replace(/src=["'](\/[^"']+)["']/gi, `src="${origin}$1"`);
+    newHtml = newHtml.replace(/url\(["']?(\/[^"')]*)["']?\)/gi, `url('${origin}$1')`);
+    newHtml = newHtml.replace(/src=["'](?!(?:http|data:)|\/)([^"']+\.(?:png|jpe?g|gif|svg|webp))["']/gi, `src="${origin}/$1"`);
+
     const urlRegex = /https?:\/\/[^\s"'()]+/g;
-    const urls = html.match(urlRegex) || [];
+    const urls = newHtml.match(urlRegex) || [];
     // Only target image-like URLs to avoid fetching unrelated links
     const uniqueUrls = Array.from(new Set(urls)).filter(u => u.match(/\.(jpeg|jpg|gif|png|svg|webp)/i) || u.includes("images.unsplash.com") || u.includes("drive.google.com"));
 
-    let newHtml = html;
     const uploadPromises = uniqueUrls.map(async (url) => {
       try {
         const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
         if (!res.ok) return;
         const arrayBuffer = await res.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
+        
         const fileName = url.split('/').pop()?.split('?')[0] || `img_${Date.now()}.jpg`;
-        const s3Key = `migrated-sites/${siteId}/${Date.now()}_${fileName}`;
-        
         const contentType = res.headers.get("content-type") || "image/jpeg";
+
+        let finalBuffer: any = buffer;
+        let finalContentType = contentType;
+        let finalFileName = fileName;
         
+        // Convert to WebP using sharp if it's an image (and not SVG)
+        if (contentType.includes("image") && !contentType.includes("svg")) {
+          try {
+            finalBuffer = await sharp(buffer).webp({ quality: 80 }).toBuffer();
+            finalContentType = "image/webp";
+            finalFileName = fileName.replace(/\.[^/.]+$/, "") + ".webp";
+          } catch (err) {
+            console.warn(`Sharp WebP conversion failed for ${url}, falling back to original:`, err);
+          }
+        }
+        
+        const s3Key = `migrated-sites/${siteId}/${Date.now()}_${finalFileName}`;
+
         await s3Client.send(new PutObjectCommand({
           Bucket: process.env.R2_BUCKET_NAME || 'creaibox-assets',
           Key: s3Key,
-          Body: buffer,
-          ContentType: contentType,
+          Body: finalBuffer as any,
+          ContentType: finalContentType,
         }));
 
         const newUrl = `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/${s3Key}`;
@@ -93,6 +119,47 @@ export async function POST(request: Request) {
       .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
       .replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, "")
       .replace(/<!--[\s\S]*?-->/g, "");
+      
+    // --- NEW: Deep Crawling of Subpages ---
+    let subpagesContext = "";
+    let pendingSubpages: string[] = [];
+    if (depth === "full" || depth === "massive") {
+      const hrefRegex = /<a[^>]+href=["'](\/[^"']+)["']/g;
+      let match;
+      const subLinks = new Set<string>();
+      while ((match = hrefRegex.exec(cleanHtml)) !== null) {
+         if (match[1].length > 1 && !match[1].startsWith('//')) {
+            subLinks.add(match[1]);
+         }
+      }
+      
+      if (depth === "full") {
+        const topLinks = Array.from(subLinks).slice(0, 15); // limit to 15 subpages max
+        
+        const subpagePromises = topLinks.map(async (link) => {
+           try {
+              const subRes = await fetch(`${urlObj.origin}${link}`, {
+                 headers: { "User-Agent": "Mozilla/5.0" }
+              });
+              if (subRes.ok) {
+                 const subHtml = await subRes.text();
+                 const subCleanHtml = subHtml
+                    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+                    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
+                    .replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, "")
+                    .replace(/<!--[\s\S]*?-->/g, "");
+                 return `\n\n--- SUBPAGE: ${link} ---\n${subCleanHtml.substring(0, 10000)}`;
+              }
+           } catch(e) { console.error("Subpage fetch error", e); }
+           return "";
+        });
+        const subHtmls = await Promise.all(subpagePromises);
+        subpagesContext = subHtmls.join("");
+      } else if (depth === "massive") {
+        pendingSubpages = Array.from(subLinks).slice(0, 100); // return up to 100 links to frontend
+      }
+    }
+    // --------------------------------------
 
     // Extract basic meta tags as fallback
     const titleMatch = htmlText.match(/<title[^>]*>([^<]+)<\/title>/i);
@@ -113,54 +180,48 @@ export async function POST(request: Request) {
     // 4. DB Insert - Real Data saving (Strict Zero Fake Data Rule)
     const adminSupabase = await createAdminClient();
 
-    // Check if brand_id already exists
-    const { data: existingSite } = await adminSupabase
-      .from("client_sites")
-      .select("id")
-      .eq("brand_id", cleanSubdomain)
-      .maybeSingle();
-
-    let siteId = existingSite?.id;
-
-    let hasMain = false;
-    if (!siteId) {
-      const { data: newSite, error: insertError } = await adminSupabase
+    // Find unique brand_id to avoid overwriting (e.g. ikonakamura2)
+    let finalSubdomain = cleanSubdomain;
+    let isUnique = false;
+    let suffix = 1;
+    
+    while (!isUnique) {
+      const checkDomain = suffix === 1 ? cleanSubdomain : `${cleanSubdomain}${suffix}`;
+      const { data: existingSite } = await adminSupabase
         .from("client_sites")
-        .insert({
-          profile_id: user.id,
-          brand_id: cleanSubdomain,
-          company_name: pageTitle,
-          phone: phoneNumber,
-          address: address,
-          status: 'ACTIVE',
-          template_id: 'service_1'
-        })
         .select("id")
-        .single();
-
-      if (insertError) {
-        console.error("Failed to insert client_site:", insertError);
-        return NextResponse.json({ error: "사이트 생성 중 DB 오류가 발생했습니다." }, { status: 500 });
-      }
-      siteId = newSite.id;
-    } else {
-      await adminSupabase.from("client_sites").update({ status: "ACTIVE" }).eq("id", siteId);
-      
-      const { data: existingMain } = await adminSupabase
-        .from("site_sections")
-        .select("id")
-        .eq("site_id", siteId)
-        .not("section_type", "like", "subpage_%");
+        .eq("brand_id", checkDomain)
+        .maybeSingle();
         
-      hasMain = (existingMain?.length ?? 0) > 0;
-      
-      if (depth === "main") {
-        await adminSupabase.from("site_sections").delete().eq("site_id", siteId);
-        hasMain = false;
+      if (!existingSite) {
+        finalSubdomain = checkDomain;
+        isUnique = true;
       } else {
-        await adminSupabase.from("site_sections").delete().eq("site_id", siteId).like("section_type", "subpage_%");
+        suffix++;
       }
     }
+
+    const { data: newSite, error: insertError } = await adminSupabase
+      .from("client_sites")
+      .insert({
+        profile_id: user.id,
+        brand_id: finalSubdomain,
+        company_name: pageTitle,
+        phone: phoneNumber,
+        address: address,
+        status: 'ACTIVE',
+        template_id: 'service_1'
+      })
+      .select("id")
+      .single();
+
+    if (insertError) {
+      console.error("Failed to insert client_site:", insertError);
+      return NextResponse.json({ error: "사이트 생성 중 DB 오류가 발생했습니다." }, { status: 500 });
+    }
+    
+    const siteId = newSite.id;
+    const hasMain = false; // Always false since it's a new site
 
     // 5. Deep Migration with Gemini 3.5 Flash Lite
     let generatedSections: any[] = [];
@@ -189,11 +250,7 @@ export async function POST(request: Request) {
             ],` : ""}
             ${depth === 'full' ? `"subpages": [
               {
-                "page_slug": "about",
-                "html": "<main class='...'>...</main>"
-              },
-              {
-                "page_slug": "services",
+                "page_slug": "exact string of the link (e.g. dojos from /dojos)",
                 "html": "<main class='...'>...</main>"
               }
             ]` : ""}
@@ -201,18 +258,22 @@ export async function POST(request: Request) {
 
           Guidelines:
           - Extract real text, links, and image URLs from the HTML (Check \`data-src\` if \`src\` is empty/lazy-loaded).
-          - CRITICAL RULE: All image URLs (\`src\` attributes or \`style="background-image: ..."\`) MUST be ABSOLUTE URLs. If the original HTML uses a relative URL (e.g., \`src="/images/logo.png"\`), you MUST prepend the original domain \`${urlObj.origin}\` to make it absolute (e.g., \`src="${urlObj.origin}/images/logo.png"\`). If you fail to do this, all images will be broken (엑박)!
+          - CRITICAL RULE: All image URLs (\`src\` attributes or \`style="background-image: ..."\`) MUST be ABSOLUTE URLs. 
+          - CRITICAL RULE 2: All internal links (\`<a href="...">\`) MUST be RELATIVE paths (e.g. \`href="/dojos"\`). Do not use absolute domains for internal navigation.
           - Use modern Tailwind CSS classes (e.g. flex, grid, px-8, py-16, text-gray-900, bg-white) for styling.
           - Make the HTML fully responsive (use md:, lg: prefixes).
           - Do NOT use Markdown formatting in the strings.
           - From the following list of templates, choose the MOST appropriate 'template_id' based on the website's industry, content, and vibe: [${availableTemplateIds}].
           ${!hasMain ? `- Replicate the header menu links and footer structure exactly.
+          - If the original site uses anchor links (e.g., href="#section") for a one-page layout, you MUST preserve these exact anchor links in the header and ensure the corresponding <section> blocks in main_sections have the matching id attributes.
           - Split the main body into 3 to 6 logical \`<section>\` blocks, each as a separate item in the \`main_sections\` array.` : ""}
-          ${depth === 'full' ? `- Based on the header links, infer 2-3 logical subpages (e.g., about, services) and generate rich HTML content for them.` : ""}
+          ${depth === 'full' ? `- You are provided with the HTML of actual subpages below. You MUST generate a "subpages" array mapping EACH provided subpage to its corresponding "page_slug" (e.g., if the link is "/dojos", the page_slug is "dojos"). Recreate the HTML for each subpage accurately.` : ""}
           - Output ONLY valid JSON. No other text.
 
           HTML content to analyze:
+          --- MAIN PAGE ---
           ${cleanHtml.substring(0, 40000)} // Limit size
+          ${subpagesContext}
         `;
 
         const result = await model.generateContent(prompt);
@@ -233,20 +294,20 @@ export async function POST(request: Request) {
         let headerHtml = parsedAi.header_html || "";
         let footerHtml = parsedAi.footer_html || "";
         
-        headerHtml = await processHtmlImagesWithR2(headerHtml, siteId);
-        footerHtml = await processHtmlImagesWithR2(footerHtml, siteId);
+        headerHtml = await processHtmlImagesWithR2(headerHtml, siteId, urlObj.origin);
+        footerHtml = await processHtmlImagesWithR2(footerHtml, siteId, urlObj.origin);
         
         const aiSections = parsedAi.main_sections || [];
         for (let i = 0; i < aiSections.length; i++) {
           if (aiSections[i].html) {
-            aiSections[i].html = await processHtmlImagesWithR2(aiSections[i].html, siteId);
+            aiSections[i].html = await processHtmlImagesWithR2(aiSections[i].html, siteId, urlObj.origin);
           }
         }
         
         const aiSubpages = parsedAi.subpages || [];
         for (let i = 0; i < aiSubpages.length; i++) {
           if (aiSubpages[i].html) {
-            aiSubpages[i].html = await processHtmlImagesWithR2(aiSubpages[i].html, siteId);
+            aiSubpages[i].html = await processHtmlImagesWithR2(aiSubpages[i].html, siteId, urlObj.origin);
           }
         }
         // ------------------------------------------------------------------
@@ -326,8 +387,11 @@ export async function POST(request: Request) {
     // 5. Construct CreAibox Migration Result Payload
     const migratedData = {
       targetUrl: urlObj.href,
-      migratedSubdomain: cleanSubdomain,
-      subdomain: `${cleanSubdomain}.creaibox.com`,
+      targetOrigin: urlObj.origin,
+      siteId,
+      pendingSubpages,
+      migratedSubdomain: finalSubdomain,
+      subdomain: `${finalSubdomain}.creaibox.com`,
       siteTitle: pageTitle,
       description: metaDesc,
       heroImage,

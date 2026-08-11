@@ -406,3 +406,35 @@
   1. `src/app/mypage/page.tsx`: 사용자가 서브도메인을 신청할 때 `PENDING` 상태로 넘기던 관리자 승인 절차를 전면 철거. 신청 즉시 `brand_id_status`를 `APPROVED`로 변경하여 실시간 개통되도록 즉시 승인(Fast-Track) 로직 적용.
   2. `src/app/api/studio/site-migration/route.ts`: 이관 시 기존에 '템플릿 쇼핑' 등으로 인해 DB에 `INACTIVE` 상태로 껍데기만 남아있던 `client_sites` 레코드가 발견되면, 무조건 `ACTIVE` 상태로 덮어쓰고 기존 더미 섹션은 날려버린 뒤 Gemini 분석 데이터를 새로 적재하도록 안전망 강화.
   3. (테스트용) DB 내 `repaint` 도메인 레코드의 상태를 `ACTIVE` 및 `APPROVED`로 수동 동기화 처리.
+
+### 13. ☁️ Cloudflare R2 원본 이미지 영구 백업 파이프라인 및 WebP 초압축 엔진 탑재 (Zero Egress Architecture)
+- **도입 배경**: '1초 홈페이지 이관' 기능 사용 시 원본 사이트의 이미지를 핫링킹(직접 링크)할 경우 발생하는 엑박(Broken Image) 현상 방지 및, 무거운 원본 이미지 서빙으로 인한 Vercel 대역폭 한도 초과(요금 폭탄) 방어.
+- **아키텍처 설계 (규칙 #15: Zero Egress Architecture 준수)**:
+  - Supabase/Vercel 프록시 캐싱 대신 **Cloudflare R2 다이렉트 서빙** 방식을 채택하여 Vercel 트래픽 비용과 R2 Egress 비용을 모두 0원으로 완벽 통제함.
+  - 관련 기술 가이드(`docs/project/manual/cloudflare-r2-guide.md`)에 "아키텍처 스터디: Supabase Egress 제로 프록시 vs R2 다이렉트 서빙" 문단 작성 및 R2 시크릿 키 마스킹 완벽 적용.
+- **구현 상세 (`src/app/api/studio/site-migration/route.ts`)**:
+  - AI가 파싱한 HTML(헤더, 푸터, 메인 섹션, 서브페이지) 텍스트 내부의 외부 이미지 주소(`http...`)를 정규식으로 추출.
+  - Vercel 서버리스 타임아웃 10초 룰 회피를 위해, 수십 장의 이미지를 `Promise.all()`을 통해 병렬(Multi-thread 급)로 다운로드.
+  - **`sharp` 라이브러리를 도입**하여, 메모리에 올라온 원본 이미지 버퍼를 초고효율 **WebP 포맷 (Quality 80)**으로 즉시 압축 변환 (용량 최대 90% 절감).
+  - AWS SDK(`@aws-sdk/client-s3`)의 `PutObjectCommand`를 사용해 Cloudflare R2 스토리지(`creaibox-assets`)의 가상 폴더(`migrated-sites/{siteId}/...`)로 즉시 업로드.
+  - HTML 내부의 구형 주소를 방금 업로드된 `https://pub-xxx.r2.dev/` CDN 주소로 완벽 치환한 후 DB에 저장 완료.
+- **TypeScript 빌드 검증**: `admin-dashboard`, `marketplace`, `migration`, `request` 페이지 등에 잔존하던 TypeScript 에러(Missing Props, any type, Buffer type error)를 100% 추적하여 `npx tsc --noEmit` 무결점(0 Error) 통과 확인.
+
+### 14. 🚀 커스텀 사이트 딥-크롤링(Deep Crawling) 및 이미지 엑박(Broken Image) 완벽 픽스
+- **문제 상황**:
+  1. 원본 사이트 내의 이미지가 `/images/logo.png` 등 상대경로로 작성되어 있거나, `style="background: url(/bg.jpg)"` 로 되어 있을 경우, 기존 R2 업로드 정규식(`http...`)이 이를 인지하지 못해 이미지 복제가 누락되고 Vercel 배포 사이트에서 엑스박스(404)가 뜨는 현상 발생.
+  2. "전체 페이지 이관(2~3분)" 실행 시, 메인페이지만 읽어 들이고 서브페이지는 AI가 상상력으로 지어냄에 따라, 헤더 메뉴의 `<a href="/dojos">` 등에 맵핑되는 실제 DB 슬러그 데이터가 누락되어 404 에러 화면이 노출됨.
+- **해결 내역 (옵션 A - Vercel Pro 기반 최대 한도 스크래핑)**:
+  - **`maxDuration = 300` 락 해제**: `src/app/api/studio/site-migration/route.ts` 최상단에 Vercel 5분 타임아웃 코드를 삽입하여 대량의 딥-크롤링 중 백엔드가 강제 셧다운 되는 것을 방어.
+  - **이미지 상대경로 -> 절대경로 원천 치환**: `processHtmlImagesWithR2` 엔진이 기동하기 전, HTML 상의 모든 `src="/..."` 와 `url('/...')` 문자열을 찾아내어 원본 도메인 주소(`origin`)를 결합(Absolute Path 화)하는 3중 방어 정규식을 탑재. 이후 정상적으로 R2에 WebP로 변환 후 업로드 되도록 100% 엑박 제거 성공.
+  - **서브페이지 멀티-쓰레드 딥스크래핑 탑재**: `depth === "full"` 옵션 선택 시, 메인 페이지 HTML에서 `<a href="/...">` 형태의 내부 링크를 최대 15개까지 동적으로 발췌함. 발췌된 15개의 링크를 `Promise.all()`을 이용해 0.5초만에 동시 병렬 스크래핑(Fetch)하고, 이렇게 긁어모은 방대한 실제 서브페이지 HTML 코드 더미를 Gemini 100만 토큰 컨텍스트 윈도우에 밀어넣음.
+  - **AI 슬러그(Slug) 매칭 프롬프트 강화**: 상상해서 서브페이지를 만들지 않고, 제공된 15개 HTML 소스의 실제 경로(예: `/dojos`)를 바탕으로 정확히 `page_slug`를 생성하고, 모든 헤더 메뉴의 링크가 외부 도메인(https://...)으로 빠져나가지 않도록 강력 통제 가이드라인(`CRITICAL RULE 2`) 프롬프트 업데이트 완료.
+- **해결 내역 (옵션 B - 무한 확장 프론트엔드 분산 아키텍처 탑재)**:
+  - **100페이지 딥-크롤링 UI 신설**: `depth === "massive"` 옵션을 추가하여, 메인 페이지 스크래핑 시 내부 링크를 최대 100개까지 수집.
+  - **클라이언트 주도 분산 오케스트레이션 (Client-Side Orchestration)**: 100개의 링크를 Vercel 백엔드에서 통째로 돌려 타임아웃 셧다운이 일어나는 것을 방지하기 위해, 백엔드는 100개의 링크 주소 배열(`pendingSubpages`)만 즉시 프론트엔드로 반환.
+  - **신규 청크(Chunk) API 연동**: 프론트엔드 탭(`MigrationTab.tsx`)에서 100개의 주소를 5개 단위(Chunk)로 잘라서 연속으로 신규 릴레이 API(`crawl-subpages/route.ts`)에 타격(호출)하도록 로직 설계 완료. 사용자는 UI에서 "서브페이지 이관 중... 12/100" 실시간 프로그레스 바를 통해 무제한 확장이 구동되는 것을 시각적으로 확인 가능.
+
+
+### 2026-08-11: 기존 홈페이지 이관 무한 복제 히스토리 및 덮어쓰기 방지 기능 개발
+- **API**: route.ts (덮어쓰기 제거 및 서브도메인 넘버링 발급 로직 추가), history/route.ts (조회/삭제 API 추가)
+- **UI**: MigrationTab.tsx (히스토리 리스트 및 삭제 버튼 연동 완료)

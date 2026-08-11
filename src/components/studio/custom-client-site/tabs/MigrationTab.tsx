@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Globe, RefreshCw, Zap, Sparkles, CheckCircle2, ExternalLink, Bot, Check, ArrowRight, Layers, FileText, Cpu, ChevronDown, ChevronUp, Video, ShieldCheck, Award, HelpCircle } from "lucide-react";
+import { Globe, RefreshCw, Zap, Sparkles, CheckCircle2, ExternalLink, Bot, Check, ArrowRight, Layers, FileText, Cpu, ChevronDown, ChevronUp, Video, ShieldCheck, Award, HelpCircle, Trash2 } from "lucide-react";
 
 interface MigrationTabProps {
   requireAuth: (action?: () => void) => boolean;
@@ -7,11 +7,51 @@ interface MigrationTabProps {
 
 export default function MigrationTab({ requireAuth }: MigrationTabProps) {
   const [migrationUrl, setMigrationUrl] = useState("");
-  const [migrationDepth, setMigrationDepth] = useState<"main" | "full">("main");
+  const [migrationDepth, setMigrationDepth] = useState<"main" | "full" | "massive">("main");
   const [isMigrating, setIsMigrating] = useState(false);
+  const [massiveProgress, setMassiveProgress] = useState<{ total: number; current: number } | null>(null);
   const [progressText, setProgressText] = useState("");
   const [migrationResult, setMigrationResult] = useState<any | null>(null);
+  const [migratedHistory, setMigratedHistory] = useState<any[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [expandedMigrationFaq, setExpandedMigrationFaq] = useState<number | null>(0);
+
+  const fetchHistory = async () => {
+    try {
+      setIsLoadingHistory(true);
+      const res = await fetch("/api/studio/site-migration/history");
+      const data = await res.json();
+      if (data.success) {
+        setMigratedHistory(data.data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch history", e);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const deleteHistory = async (siteId: string) => {
+    if (!confirm("정말로 이 이관된 사이트를 삭제하시겠습니까? (이 작업은 되돌릴 수 없습니다)")) return;
+    try {
+      const res = await fetch("/api/studio/site-migration/history", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ siteId }),
+      });
+      if (res.ok) {
+        fetchHistory();
+      } else {
+        alert("삭제 중 오류가 발생했습니다.");
+      }
+    } catch (e) {
+      alert("삭제 중 서버 오류가 발생했습니다.");
+    }
+  };
 
   React.useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -39,6 +79,7 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
     if (!migrationUrl.trim()) return;
 
     setIsMigrating(true);
+    setMassiveProgress(null);
     try {
       const res = await fetch("/api/studio/site-migration", {
         method: "POST",
@@ -48,7 +89,33 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
       const data = await res.json();
 
       if (res.ok) {
+        if (data.data?.pendingSubpages && data.data.pendingSubpages.length > 0) {
+           const subpages = data.data.pendingSubpages as string[];
+           const siteId = data.data.siteId;
+           const targetOrigin = data.data.targetOrigin;
+           
+           setMassiveProgress({ total: subpages.length, current: 0 });
+           
+           // Process in chunks of 5
+           const CHUNK_SIZE = 5;
+           for (let i = 0; i < subpages.length; i += CHUNK_SIZE) {
+              const chunk = subpages.slice(i, i + CHUNK_SIZE);
+              
+              try {
+                await fetch("/api/studio/site-migration/crawl-subpages", {
+                   method: "POST",
+                   headers: { "Content-Type": "application/json" },
+                   body: JSON.stringify({ siteId, targetOrigin, links: chunk })
+                });
+              } catch(e) {
+                 console.error("Chunk failed", e);
+              }
+              
+              setMassiveProgress(prev => prev ? { ...prev, current: Math.min(prev.total, prev.current + chunk.length) } : null);
+           }
+        }
         setMigrationResult(data.data);
+        fetchHistory(); // Refresh history list
       } else {
         alert(data.error || "홈페이지 이관 실패");
       }
@@ -56,6 +123,7 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
       alert("홈페이지 AI 이관 중 오류가 발생했습니다.");
     } finally {
       setIsMigrating(false);
+      setMassiveProgress(null);
     }
   };
 
@@ -104,11 +172,12 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                 <div className="relative flex items-center bg-slate-950 border border-slate-800 rounded-2xl px-2 h-[54px]">
                   <select
                     value={migrationDepth}
-                    onChange={(e) => setMigrationDepth(e.target.value as "main" | "full")}
+                    onChange={(e) => setMigrationDepth(e.target.value as "main" | "full" | "massive")}
                     className="bg-transparent text-sm font-bold text-white pl-2 pr-8 py-2 focus:outline-none appearance-none cursor-pointer"
                   >
-                    <option value="main">메인 페이지만 이관 (약 20초)</option>
-                    <option value="full">전체 페이지 이관 (서브 포함, 약 2~3분)</option>
+                    <option value="main">1. 메인 페이지 이관(원페이지(1-Page) 스크롤링 웹사이트)</option>
+                    <option value="full">2. 전체 페이지 이관 (메인+서브페이지 총 15페이지 미만)</option>
+                    <option value="massive">3. 전체 페이지 이관 (메인+서브페이지 총 100개 미만)</option>
                   </select>
                   <ChevronDown size={14} className="absolute right-3 text-slate-400 pointer-events-none" />
                 </div>
@@ -119,7 +188,7 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                   className="rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4 text-sm font-black text-white hover:brightness-110 transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 whitespace-nowrap min-w-[200px]"
                 >
                   {isMigrating ? <RefreshCw size={18} className="animate-spin" /> : <Zap size={18} />}
-                  <span>{isMigrating ? progressText : "AI 에이전트 정밀 이관 시작"}</span>
+                  <span>{massiveProgress ? `서브페이지 이관 중... ${massiveProgress.current} / ${massiveProgress.total}` : (isMigrating ? progressText : "AI 에이전트 정밀 이관 시작")}</span>
                 </button>
               </div>
 
@@ -147,42 +216,61 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
               </div>
             </form>
 
-            {/* Migration Results Display */}
-            {migrationResult && (
-              <div className="rounded-2xl border border-indigo-500/30 bg-slate-950 p-6 space-y-4 text-xs font-medium text-slate-300 animate-fade-in-up">
+            {/* Migration History List Display */}
+            {(migratedHistory.length > 0 || isLoadingHistory) && (
+              <div className="rounded-2xl border border-indigo-500/30 bg-slate-950 p-6 space-y-4 text-xs font-medium animate-fade-in-up">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                   <div className="flex items-center gap-2 text-indigo-400 font-black text-sm">
-                    <CheckCircle2 size={16} /> 기존 홈페이지 AI 자동 이관 성공!
+                    <CheckCircle2 size={16} /> 나의 홈페이지 AI 이관 히스토리
                   </div>
-                  <span className="text-[11px] text-slate-400">{migrationResult.migratedAt}</span>
+                  <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                    {isLoadingHistory && <RefreshCw size={12} className="animate-spin text-indigo-400" />}
+                    총 {migratedHistory.length}개 사이트 보관 중
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800">
-                    <span className="text-[10px] text-slate-400 font-bold block">이관된 서브도메인 주소</span>
-                    <a
-                      href={getSubdomainUrl(migrationResult.migratedSubdomain)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-indigo-400 font-black text-sm underline flex items-center gap-1 mt-1 hover:text-indigo-300"
-                    >
-                      https://{migrationResult.migratedSubdomain}.creaibox.com <ExternalLink size={12} />
-                    </a>
-                  </div>
+                <div className="space-y-3">
+                  {migratedHistory.map((site: any) => (
+                    <div key={site.id} className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-indigo-500/30 transition-colors">
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                            {site.status === "ACTIVE" ? "라이브 ⭕" : "대기 중 ⏳"}
+                          </span>
+                          <h4 className="text-sm font-black text-white">{site.company_name}</h4>
+                        </div>
+                        <a
+                          href={getSubdomainUrl(site.brand_id)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-indigo-400 font-bold text-sm underline flex items-center gap-1 mt-1 hover:text-indigo-300 w-fit"
+                        >
+                          https://{site.brand_id}.creaibox.com <ExternalLink size={12} />
+                        </a>
+                      </div>
 
-                  <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800">
-                    <span className="text-[10px] text-slate-400 font-bold block">⚡ 메인/헤더 자산 저장소 (속도 최적화)</span>
-                    <span className="text-xs text-cyan-300 font-bold mt-1 block">
-                      {migrationResult.mainPageCdnStorage || "CreAibox 초고속 클라우드 CDN (Supabase Storage / Vercel Blob)"}
-                    </span>
-                  </div>
-
-                  <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800">
-                    <span className="text-[10px] text-slate-400 font-bold block">✍️ 블로그 글/이미지 저장소 (원고 동기화)</span>
-                    <span className="text-xs text-purple-300 font-bold mt-1 block">
-                      {migrationResult.blogArticlesStorage || "크리에이박스 블로그 > 블로그 원고 관리 & CreAibox 클라우드 DB"}
-                    </span>
-                  </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right space-y-1">
+                          <span className="text-[10px] text-slate-500 block">이관 생성 일시</span>
+                          <span className="text-xs text-slate-300 font-mono block">
+                            {new Date(site.created_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => deleteHistory(site.id)}
+                          className="h-9 px-3 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-colors flex items-center gap-1 font-bold text-xs"
+                        >
+                          <Trash2 size={14} /> 삭제
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {migratedHistory.length === 0 && !isLoadingHistory && (
+                    <div className="text-center py-6 text-slate-500 text-xs">
+                      아직 이관된 홈페이지 히스토리가 없습니다.
+                    </div>
+                  )}
                 </div>
               </div>
             )}
