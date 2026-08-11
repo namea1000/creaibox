@@ -75,7 +75,7 @@ const PROVIDER_OPTIONS: Record<string, { value: string; label: string }[]> = {
 };
 
 const MODEL_OPTIONS: Record<string, string[]> = {
-  gemini: ["gemini-3.1-flash-lite", "gemini-3-flash-preview", "gemini-2.5-flash"],
+  gemini: ["gemini-3.5-flash-lite", "gemini-3-flash-preview", "gemini-2.5-flash"],
   openai: ["gpt-4.1", "gpt-4.1-mini", "gpt-4o-mini"],
   claude: ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"],
   groq: [

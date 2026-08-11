@@ -52,9 +52,9 @@ function getGeminiEnvKeys(): string[] {
   return keys;
 }
 
-// 1순위 지정 모델: gemini-3.1-flash-lite (실패 시 백업 모델)
+// 1순위 지정 모델: gemini-3.5-flash-lite (실패 시 백업 모델)
 const GEMINI_MODELS = [
-  "gemini-3.1-flash-lite",
+  "gemini-3.5-flash-lite",
   "gemini-2.5-flash",
   "gemini-1.5-flash",
   "gemini-2.0-flash-lite",

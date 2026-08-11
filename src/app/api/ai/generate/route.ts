@@ -25,7 +25,7 @@ type GenerateBody = {
 };
 
 const FREE_DAILY_LIMIT = 3;
-const DEFAULT_GEMINI_MODEL = "gemini-3.1-flash-lite";
+const DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite";
 
 type GeminiGenerateResponse = {
   candidates?: Array<{

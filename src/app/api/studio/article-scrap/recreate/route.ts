@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { generateContentWithVertexAI } from "@/lib/server/vertex-ai-gemini";
 
-// 1순위 의무화 규칙: gemini-3.1-flash-lite 사용
-const MODEL_NAME = "gemini-3.1-flash-lite";
+// 1순위 의무화 규칙: gemini-3.5-flash-lite 사용
+const MODEL_NAME = "gemini-3.5-flash-lite";
 
 export async function POST(req: Request) {
   try {

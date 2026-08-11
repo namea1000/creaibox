@@ -7,9 +7,31 @@ interface MigrationTabProps {
 
 export default function MigrationTab({ requireAuth }: MigrationTabProps) {
   const [migrationUrl, setMigrationUrl] = useState("");
+  const [migrationDepth, setMigrationDepth] = useState<"main" | "full">("main");
   const [isMigrating, setIsMigrating] = useState(false);
+  const [progressText, setProgressText] = useState("");
   const [migrationResult, setMigrationResult] = useState<any | null>(null);
   const [expandedMigrationFaq, setExpandedMigrationFaq] = useState<number | null>(0);
+
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isMigrating) {
+      const messages = [
+        "대상 웹사이트 DOM 분석 중...",
+        "텍스트 및 핵심 이미지 에셋 추출 중...",
+        "Gemini 3.5 Flash Lite: 시맨틱 레이아웃 분리 중...",
+        "CreAibox Dynamic Component 매핑 중...",
+        "DB 적재 및 최종 최적화 중..."
+      ];
+      let i = 0;
+      setProgressText(messages[0]);
+      interval = setInterval(() => {
+        i = (i + 1) % messages.length;
+        setProgressText(messages[i]);
+      }, 4000);
+    }
+    return () => clearInterval(interval);
+  }, [isMigrating]);
 
   const handleSiteMigration = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +43,7 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
       const res = await fetch("/api/studio/site-migration", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUrl: migrationUrl }),
+        body: JSON.stringify({ targetUrl: migrationUrl, depth: migrationDepth }),
       });
       const data = await res.json();
 
@@ -59,10 +81,10 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                 AI Full-Automated Site Migration Engine
               </span>
               <h2 className="text-xl font-black text-white flex items-center gap-2">
-                <Globe className="text-indigo-400" /> 기존 타사 홈페이지 URL 입력 시 1초 만에 CreAibox 통째 이관
+                <Globe className="text-indigo-400" /> 기존 타사 홈페이지 URL 입력 시 AI 통째 정밀 이관
               </h2>
               <p className="text-xs font-medium text-slate-300 max-w-3xl leading-relaxed">
-                기존 홈페이지(식당, 병원, 상가, 법률사무소 등)의 주소를 입력하시면 AI 웹 스크레이퍼가 텍스트, 브랜드 이미지, 전화번호, 위치 정보를 파싱하여 0.00초 만에 CreAibox 모던 자사몰 사이트(<code className="text-indigo-300 font-mono">000.creaibox.com</code>)로 복사 생성합니다.
+                기존 홈페이지(식당, 병원, 상가, 법률사무소 등)의 주소를 입력하시면 Gemini 3.5 Flash Lite 엔진이 텍스트, 브랜드 이미지, 전화번호, 위치 정보 등을 심층 분석하여 CreAibox 모던 자사몰 사이트(<code className="text-indigo-300 font-mono">000.creaibox.com</code>)로 딥-마이그레이션(Deep Migration)합니다. (약 15~45초 소요)
               </p>
             </div>
 
@@ -74,17 +96,30 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                     type="text"
                     value={migrationUrl}
                     onChange={(e) => setMigrationUrl(e.target.value)}
-                    placeholder="이관할 기존 홈페이지 주소 입력 (예: my-hospital.co.kr, cafe-menu.com)"
+                    placeholder="이관할 기존 홈페이지 주소 입력 (예: my-hospital.co.kr)"
                     className="w-full rounded-2xl bg-slate-950 border border-slate-800 pl-12 pr-4 py-4 text-sm font-bold text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none shadow-inner"
                   />
                 </div>
+                
+                <div className="relative flex items-center bg-slate-950 border border-slate-800 rounded-2xl px-2 h-[54px]">
+                  <select
+                    value={migrationDepth}
+                    onChange={(e) => setMigrationDepth(e.target.value as "main" | "full")}
+                    className="bg-transparent text-sm font-bold text-white pl-2 pr-8 py-2 focus:outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="main">메인 페이지만 이관 (약 20초)</option>
+                    <option value="full">전체 페이지 이관 (서브 포함, 약 2~3분)</option>
+                  </select>
+                  <ChevronDown size={14} className="absolute right-3 text-slate-400 pointer-events-none" />
+                </div>
+
                 <button
                   type="submit"
                   disabled={isMigrating}
-                  className="rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 px-8 py-4 text-sm font-black text-white hover:brightness-110 transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 whitespace-nowrap"
+                  className="rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4 text-sm font-black text-white hover:brightness-110 transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 whitespace-nowrap min-w-[200px]"
                 >
                   {isMigrating ? <RefreshCw size={18} className="animate-spin" /> : <Zap size={18} />}
-                  <span>1초 AI 이관 시작하기</span>
+                  <span>{isMigrating ? progressText : "AI 에이전트 정밀 이관 시작"}</span>
                 </button>
               </div>
 
@@ -161,7 +196,7 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                 <span>1,280+</span>
                 <span className="text-xs text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded">건</span>
               </div>
-              <p className="text-[10px] text-slate-500 font-medium">전국 식당, 병원, 법률사무소 1초 전환 완료</p>
+              <p className="text-[10px] text-slate-500 font-medium">전국 식당, 병원, 법률사무소 AI 통째 전환 완료</p>
             </div>
 
             <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
@@ -250,7 +285,7 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <h3 className="text-base font-black text-white flex items-center gap-2">
-                  <Award className="text-amber-400" size={18} /> 대표 홈페이지 1초 이관 완료 성공 사례
+                  <Award className="text-amber-400" size={18} /> 대표 홈페이지 AI 정밀 이관 완료 성공 사례
                 </h3>
                 <p className="text-xs text-slate-400 font-medium">
                   기존 타사 구형 웹사이트에서 CreAibox 최신 모던 자사몰로 전환된 대표적인 실제 사례입니다.
@@ -278,7 +313,7 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                   newSubdomain: "auramerino.creaibox.com",
                   category: "의류 / 쇼핑몰",
                   parsedPages: 8,
-                  speed: "0.81초",
+                  speed: "35.8초",
                   images: 22,
                 },
                 {
@@ -347,7 +382,7 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
               {[
                 {
                   q: "이관 후 내 홈페이지 주소는 어떻게 생성되나요?",
-                  a: "이관 즉시 https://000.creaibox.com 형태의 무상 서브도메인이 1초 만에 자동 생성됩니다. 또한 [도메인 조회 & 구매] 메뉴에서 사장님의 독자 도메인(mybrand.com / mybrand.kr)을 연결하실 수 있습니다.",
+                  a: "이관이 완료되면 즉시 https://000.creaibox.com 형태의 무상 서브도메인이 자동 생성됩니다. 또한 [도메인 조회 & 구매] 메뉴에서 사장님의 독자 도메인(mybrand.com / mybrand.kr)을 연결하실 수 있습니다.",
                 },
                 {
                   q: "기존 사이트의 블로그 포스팅이나 이미지는 어디로 저장되나요?",

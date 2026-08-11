@@ -270,8 +270,11 @@ export default async function DynamicRendererPage({ params, searchParams }: Page
       contact: "contact"
     };
 
-    const targetType = slugToSectionType[subPagePath];
-    const targetSection = sections.find(s => s.section_type === targetType);
+    const targetType = slugToSectionType[subPagePath] || subPagePath;
+    let targetSection = sections.find(s => s.section_type === `subpage_${subPagePath}`);
+    if (!targetSection) {
+      targetSection = sections.find(s => s.section_type === targetType);
+    }
 
     if (!targetSection) {
       return (

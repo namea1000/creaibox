@@ -21,8 +21,8 @@ export type ApiVaultServiceItem = {
 
 export const GEMINI_MODELS: ModelOption[] = [
   {
-    value: "gemini-3.1-flash-lite",
-    label: "gemini-3.1-flash-lite 🟢 구글 최신 3.1 Lite · 초고속 · 에이전트 & 대량 생성",
+    value: "gemini-3.5-flash-lite",
+    label: "gemini-3.5-flash-lite 🟢 구글 최신 3.5 Lite · 초고속 · 에이전트 & 대량 생성",
   },
   {
     value: "gemini-3.1-pro-preview",
@@ -101,8 +101,8 @@ export const AI_PROVIDER_MODEL_OPTIONS: Record<AiProviderId, ModelOption[]> = {
 };
 
 export const AI_PROVIDER_DEFAULT_MODEL: Record<AiProviderId, string> = {
-  gemini_postpay: "gemini-3.1-flash-lite",
-  gemini_free: "gemini-3.1-flash-lite",
+  gemini_postpay: "gemini-3.5-flash-lite",
+  gemini_free: "gemini-3.5-flash-lite",
   groq: "llama-3.1-8b-instant",
   openai: "gpt-4o-mini",
   claude: "claude-3-5-haiku-latest",

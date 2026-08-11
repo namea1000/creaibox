@@ -69,6 +69,7 @@ import {
   PlayCircle,
   Tags,
   Save,
+  Store,
   type LucideIcon,
 } from "lucide-react";
 
@@ -197,28 +198,20 @@ export default function Sidebar({
         icon: LayoutDashboard,
         color: "text-blue-400",
       },
-      {
-        key: "client-site-builder",
-        name: "비즈니스 웹사이트",
-        href: "/studio/client-site-builder",
-        icon: Globe,
-        color: "text-emerald-400",
-        children: [
-          { name: "대시보드", href: "/studio/client-site-builder", icon: LayoutDashboard },
-          { name: "AI 홈페이지 빌더", href: "/studio/client-site-builder/builder", icon: Plus },
-          { name: "섹션 레이아웃 변경", href: "/studio/client-site-builder/sections", icon: Wand2 },
-          { name: "디자인 테마 라이브러리", href: "/studio/client-site-builder/themes", icon: Palette },
-          { name: "고객 문의 관리", href: "/studio/client-site-builder/inquiries", icon: MessageSquare },
-          { name: "페이지 & 글 관리", href: "/studio/client-site-builder/posts", icon: FileText },
-          { name: "홈페이지 설정", href: "/studio/client-site-builder/settings", icon: Settings },
-        ],
-      },
+
       {
         key: "custom-client-site",
         name: "커스텀 웹사이트 🌟",
         href: "/studio/custom-client-site",
         icon: Sparkles,
         color: "text-cyan-400",
+        children: [
+          { name: "템플릿 쇼핑 & 1초 구축", href: "/studio/custom-client-site/marketplace", icon: Store },
+          { name: "기존 홈페이지 통째 이관", href: "/studio/custom-client-site/migration", icon: Globe },
+          { name: "내 커스텀 사이트 관리", href: "/studio/client-site-builder", icon: Settings },
+          { name: "AI 커스텀 신규 제작 신청", href: "/studio/custom-client-site/request", icon: Plus },
+          { name: "관리자: 커스텀 신청 현황", href: "/studio/custom-client-site/admin-dashboard", icon: ShieldCheck },
+        ]
       },
       {
         key: "domain-search",

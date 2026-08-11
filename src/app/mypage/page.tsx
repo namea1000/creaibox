@@ -425,8 +425,9 @@ export default function MyPage() {
       const { error } = await supabase
         .from("profiles")
         .update({
-          requested_brand_id: brand,
-          brand_id_status: "PENDING",
+          brand_id: brand,
+          requested_brand_id: null,
+          brand_id_status: "APPROVED",
           brand_id_rejection_reason: null,
           updated_at: new Date().toISOString(),
         })
@@ -436,12 +437,13 @@ export default function MyPage() {
 
       setProfile((prev) => ({
         ...prev,
-        requested_brand_id: brand,
-        brand_id_status: "PENDING",
+        brand_id: brand,
+        requested_brand_id: "",
+        brand_id_status: "APPROVED",
         brand_id_rejection_reason: "",
       }));
 
-      alert("🎉 브랜드 ID 신청이 정상적으로 접수되었습니다. 관리자 승인을 기다려주세요!");
+      alert("🎉 브랜드 ID(서브도메인) 생성이 완료되었습니다!");
 
       setBrandAvailable(null);
       setBrandInput("");

@@ -1,330 +1,237 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { createClient } from "@/utils/supabase/client";
-import MarketplaceTab from "@/components/studio/custom-client-site/tabs/MarketplaceTab";
-import MigrationTab from "@/components/studio/custom-client-site/tabs/MigrationTab";
-import ManageTab from "@/components/studio/custom-client-site/tabs/ManageTab";
-import RequestTab from "@/components/studio/custom-client-site/tabs/RequestTab";
-import AdminDashboardTab from "@/components/studio/custom-client-site/tabs/AdminDashboardTab";
-import PreviewModal from "@/components/studio/custom-client-site/modals/PreviewModal";
-import DeployModal from "@/components/studio/custom-client-site/modals/DeployModal";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowRight, Globe, Store, Settings, Plus, ShieldCheck, Zap, Sparkles, LayoutTemplate } from "lucide-react";
 
-import {
-  Sparkles,
-  Globe,
-  LayoutGrid,
-  Settings2,
-  Cpu,
-  Store,
-  Check,
-  ExternalLink,
-  Eye,
-  Save,
-  Building2,
-  Phone,
-  Mail,
-  MapPin,
-  FileText,
-  Send,
-  Zap,
-  TrendingUp,
-  ShieldCheck,
-  Award,
-  Search,
-  Filter,
-  ArrowRight,
-  RefreshCw,
-  Layers,
-  CheckCircle2,
-  HelpCircle,
-  Lock,
-  Maximize2,
-  ChevronDown,
-  ChevronUp,
-  ChevronLeft,
-  ChevronRight,
-  Video,
-  Activity,
-  Tag,
-  Flame,
-  Plus,
-  Pencil,
-  Trash2,
-  ListPlus,
-  X,
-  Monitor,
-  Tablet,
-  Smartphone,
-  Bot,
-  Terminal,
-  Copy,
-  Clock,
-  User,
-  MessageSquareCode,
-  CheckCircle,
-  CreditCard,
-} from "lucide-react";
+export default function CustomClientSiteHomePage() {
+  const router = useRouter();
+  const [migrationUrl, setMigrationUrl] = useState("");
 
-import {
-  CustomMenuItem,
-  AdminRequestItem,
-  DesignPreset,
-  CustomTemplate,
-  INDUSTRY_DESIGN_PRESETS,
-  CUSTOM_TEMPLATES
-} from "@/constants/custom-client-site";
-import { INITIAL_ADMIN_REQUESTS } from "@/constants/custom-client-site";
-
-export default function CustomClientSiteStudioPage() {
-  const [activeTab, setActiveTab] = useState<"marketplace" | "migration" | "manage" | "request" | "admin_dashboard">("marketplace");
-    
-  // Site AI Migration State
-        
-  
-  // Admin Dashboard State
-        
-  // Preview Modal State (KIMI Style with 3-Device Viewport Mode)
-  const [previewModalTemplate, setPreviewModalTemplate] = useState<CustomTemplate | null>(null);
-  const [previewDeviceMode, setPreviewDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
-
-  // Deploy Modal State
-  const [deployModalTemplate, setDeployModalTemplate] = useState<CustomTemplate | null>(null);
-  const [deploySiteName, setDeploySiteName] = useState<string>("");
-  const [deploySubdomain, setDeploySubdomain] = useState<string>("");
-    const [deploySuccess, setDeploySuccess] = useState<boolean>(false);
-  // Auth & Modal State
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUser(user);
-    };
-    fetchUser();
-  }, []);
-
-  const requireAuth = (action?: () => void): boolean => {
-    if (!currentUser) {
-      setShowLoginModal(true);
-      return false;
+  const handleMigrationSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (migrationUrl.trim()) {
+      // TODO: URL을 이관 페이지로 전달하는 로직 추가 가능
+      router.push(`/studio/custom-client-site/migration`);
+    } else {
+      router.push(`/studio/custom-client-site/migration`);
     }
-    if (action) action();
-    return true;
   };
 
-  // Management State (Cleared for unauthenticated or fresh users)
+  const subMenus = [
+    {
+      title: "템플릿 쇼핑 & 1초 구축",
+      desc: "다양한 프리미엄 템플릿을 구경하고 내 서브도메인에 즉시 배포하세요.",
+      icon: <Store className="text-pink-400" size={24} />,
+      link: "/studio/custom-client-site/marketplace",
+      color: "from-pink-500/20 to-rose-500/5",
+      border: "border-pink-500/20"
+    },
+    {
+      title: "기존 홈페이지 통째 이관",
+      desc: "타사 솔루션으로 만든 사이트의 URL을 입력해 AI 엔진으로 구조와 텍스트를 자동 이관하세요.",
+      icon: <Globe className="text-blue-400" size={24} />,
+      link: "/studio/custom-client-site/migration",
+      color: "from-blue-500/20 to-cyan-500/5",
+      border: "border-blue-500/20"
+    },
+    {
+      title: "내 커스텀 사이트 관리",
+      desc: "내가 구축한 서브도메인의 기본 정보를 실시간으로 수정하고 배포하세요.",
+      icon: <Settings className="text-emerald-400" size={24} />,
+      link: "/studio/client-site-builder",
+      color: "from-emerald-500/20 to-teal-500/5",
+      border: "border-emerald-500/20"
+    },
+    {
+      title: "AI 커스텀 신규 제작 신청",
+      desc: "원하시는 디자인 템플릿이 없으신가요? 맞춤형 커스텀 디자인을 신청해 보세요.",
+      icon: <Plus className="text-purple-400" size={24} />,
+      link: "/studio/custom-client-site/request",
+      color: "from-purple-500/20 to-fuchsia-500/5",
+      border: "border-purple-500/20"
+    },
+    {
+      title: "관리자: 커스텀 신청 현황",
+      desc: "고객들이 신청한 커스텀 디자인 요청 내역을 확인하고 상태를 변경합니다.",
+      icon: <ShieldCheck className="text-amber-400" size={24} />,
+      link: "/studio/custom-client-site/admin-dashboard",
+      color: "from-amber-500/20 to-orange-500/5",
+      border: "border-amber-500/20"
+    }
+  ];
 
-  // Handle Deploy Modal Submit
-  
-  // Handle Request Submit
-  
-      return (
-    <div className="min-h-screen bg-[#0d0f14] text-slate-100 font-sans p-6 lg:p-10 space-y-8">
-      {/* Header Banner (Compact Slim Layout) */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-950 via-slate-900 to-cyan-950 p-5 sm:p-6 border border-blue-800/40 shadow-xl">
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-60 h-60 rounded-full bg-cyan-500/10 blur-2xl" />
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="space-y-1.5 flex-1 min-w-0">
-            <div className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-400/30 px-3 py-1 text-[11px] font-black text-cyan-300 backdrop-blur-md">
-              <Sparkles size={13} className="animate-pulse text-cyan-400" />
-              <span>CreAibox 커스텀 홈페이지 허브</span>
+  return (
+    <div className="min-h-screen bg-[#0d0f14] text-slate-100 font-sans p-6 lg:p-10 space-y-12">
+      
+      {/* Hero Section */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-[#0d0f14] to-blue-950/30 border border-slate-800 p-10 lg:p-16 shadow-2xl">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-blue-600/10 blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-cyan-600/10 blur-[80px] pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12 max-w-6xl mx-auto">
+          <div className="flex-1 space-y-8">
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 border border-blue-400/20 px-4 py-1.5 text-sm font-bold text-blue-400 backdrop-blur-md">
+              <Sparkles size={16} className="animate-pulse" />
+              <span>CreAibox AI 웹사이트 빌더</span>
             </div>
-
-            <h1 className="text-sm sm:text-base md:text-lg lg:text-xl font-black tracking-tight text-white whitespace-nowrap">
-              100% 독창적인 프리미엄 커스텀 홈페이지{" "}
-              <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-300 bg-clip-text text-transparent">
-                템플릿 쇼핑 & 1초 자동 구축 센터
+            
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.2] tracking-tight">
+              웹사이트 리디자인,<br />
+              <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                처음부터 다시 만들<br className="hidden md:block"/> 필요 없습니다.
               </span>
             </h1>
-
-            <p className="text-xs text-slate-300 font-medium leading-normal">
-              템플릿 쇼핑, 고객 사이트 실시간 기본정보 편집, AI 신규 제작 신청까지 한눈에 관리하세요.
+            
+            <p className="text-lg text-slate-400 font-medium leading-relaxed max-w-xl">
+              CreAibox는 기존 사이트 주소, 소셜 프로필, 텍스트 문서 등을 원천 자료로 활용하여 <strong className="text-slate-200">단 즉시 최신 트렌드의 커스텀 웹사이트를 완벽하게 복제 및 구축</strong>해 주는 AI 엔진입니다.
             </p>
-          </div>
-
-          {/* Quick Metrics Bar (Slim Chips) */}
-          <div className="flex flex-wrap items-center gap-2 self-start md:self-center shrink-0">
-            <div className="rounded-xl bg-slate-950/80 border border-slate-800 px-3 py-2 text-center">
-              <p className="text-[10px] font-bold text-slate-400">템플릿</p>
-              <p className="text-sm font-black text-cyan-400">100+ 종</p>
-            </div>
-            <div className="rounded-xl bg-slate-950/80 border border-slate-800 px-3 py-2 text-center">
-              <p className="text-[10px] font-bold text-slate-400">구축 시간</p>
-              <p className="text-sm font-black text-emerald-400">단 1초</p>
-            </div>
-            <div className="rounded-xl bg-slate-950/80 border border-slate-800 px-3 py-2 text-center">
-              <p className="text-[10px] font-bold text-slate-400">SEO 엔진</p>
-              <p className="text-sm font-black text-amber-400">DoFollow</p>
-            </div>
-            <div className="rounded-xl bg-slate-950/80 border border-slate-800 px-3 py-2 text-center">
-              <p className="text-[10px] font-bold text-slate-400">AI 전담케어</p>
-              <p className="text-sm font-black text-purple-400">24시간</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Tab Navigation */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-4">
-        <button
-          onClick={() => setActiveTab("marketplace")}
-          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 cursor-pointer ${
-            activeTab === "marketplace"
-              ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-600/20 scale-102"
-              : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800"
-          }`}
-        >
-          <LayoutGrid size={16} />
-          <span>1️⃣ 템플릿 쇼핑 & 1초 구축</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("migration")}
-          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 cursor-pointer ${
-            activeTab === "migration"
-              ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/20 scale-102"
-              : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-indigo-500/30"
-          }`}
-        >
-          <Globe size={16} className="text-indigo-400 animate-pulse" />
-          <span>2️⃣ 🚀 기존 홈페이지 1초 AI 이관</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("manage")}
-          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 cursor-pointer ${
-            activeTab === "manage"
-              ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/20 scale-102"
-              : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800"
-          }`}
-        >
-          <Settings2 size={16} />
-          <span>3️⃣ 내 커스텀 사이트 관리</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("request")}
-          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 cursor-pointer ${
-            activeTab === "request"
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-600/20 scale-102"
-              : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800"
-          }`}
-        >
-          <Cpu size={16} />
-          <span>4️⃣ AI 커스텀 신규 제작 신청</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("admin_dashboard")}
-          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all duration-300 cursor-pointer ${
-            activeTab === "admin_dashboard"
-              ? "bg-gradient-to-r from-rose-600 via-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/20 scale-102"
-              : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-rose-500/30"
-          }`}
-        >
-          <Bot size={16} className="text-rose-400 animate-pulse" />
-          <span>5️⃣ 👑 관리자: 커스텀 신청 현황 (여러 건)</span>
-        </button>
-
-      </div>
-
-      {/* --- TAB 1: 템플릿 쇼핑 & 1초 구축 (Custom Template Marketplace) --- */}
-            {activeTab === "marketplace" && (
-        <MarketplaceTab
-          setPreviewModalTemplate={setPreviewModalTemplate}
-          setDeployModalTemplate={setDeployModalTemplate}
-          setDeploySiteName={setDeploySiteName}
-          setDeploySubdomain={setDeploySubdomain}
-          setDeploySuccess={setDeploySuccess}
-          requireAuth={requireAuth}
-        />
-      )}
-            {activeTab === "migration" && (
-        <MigrationTab requireAuth={requireAuth} />
-      )}
-            {activeTab === "manage" && (
-        <ManageTab currentUser={currentUser} requireAuth={requireAuth} />
-      )}
-            {activeTab === "request" && (
-        <RequestTab requireAuth={requireAuth} />
-      )}
-            {activeTab === "admin_dashboard" && (
-        <AdminDashboardTab requireAuth={requireAuth} setActiveTab={setActiveTab} />
-      )}
-            <DeployModal
-        deployModalTemplate={deployModalTemplate}
-        setDeployModalTemplate={setDeployModalTemplate}
-        deploySiteName={deploySiteName}
-        setDeploySiteName={setDeploySiteName}
-        deploySubdomain={deploySubdomain}
-        setDeploySubdomain={setDeploySubdomain}
-        deploySuccess={deploySuccess}
-        setDeploySuccess={setDeploySuccess}
-        setActiveTab={setActiveTab}
-      />
-            <PreviewModal
-        requireAuth={requireAuth}
-        setDeployModalTemplate={setDeployModalTemplate}
-        setDeploySiteName={setDeploySiteName}
-        setDeploySubdomain={setDeploySubdomain}
-        setDeploySuccess={setDeploySuccess}
-        previewModalTemplate={previewModalTemplate}
-        setPreviewModalTemplate={setPreviewModalTemplate}
-        previewDeviceMode={previewDeviceMode}
-        setPreviewDeviceMode={setPreviewDeviceMode}
-        onDeploy={(tpl) => {
-          setDeployModalTemplate(tpl);
-          setDeploySiteName(`${tpl.name.split(" ")[0]} 내 브랜드`);
-          setDeploySubdomain(`${tpl.id}-mybrand`);
-          setDeploySuccess(false);
-          setPreviewModalTemplate(null);
-        }}
-      />
-      {showLoginModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-[#0b0f19] border border-slate-800 rounded-3xl p-8 max-w-md w-full text-center space-y-6 shadow-2xl relative overflow-hidden animate-fade-in-up">
-            <button
-              onClick={() => setShowLoginModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="mx-auto w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400">
-              <Globe size={28} />
-            </div>
-
-            <div className="space-y-2">
-              <h2 className="text-xl font-extrabold text-white">
-                로그인이 필요한 서비스입니다
-              </h2>
-              <p className="text-xs text-slate-400 font-semibold leading-relaxed">
-                1초 원클릭 커스텀 웹사이트 구축 및 AI 에이전트 제작 신청을 위해 로그인이 필요합니다. <br />
-                로그인 후 1초 만에 나만의 맞춤형 커스텀 홈페이지를 만들어 보세요!
-              </p>
-            </div>
-
-            <div className="pt-2 flex flex-col gap-2.5">
-              <Link
-                href="/login?redirect=/studio/custom-client-site"
-                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-extrabold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-lg shadow-blue-500/25 transition-all active:scale-95 cursor-pointer"
-              >
-                <span>🔑 로그인 하러 가기</span>
-              </Link>
+            
+            <form onSubmit={handleMigrationSubmit} className="max-w-md relative mt-4">
+              <input
+                type="text"
+                value={migrationUrl}
+                onChange={(e) => setMigrationUrl(e.target.value)}
+                placeholder="이관할 웹사이트 URL을 입력하세요"
+                className="w-full rounded-2xl border border-slate-700 bg-slate-900/80 py-4 pl-5 pr-14 text-sm font-semibold text-slate-100 placeholder:text-slate-500 shadow-inner focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
+              />
               <button
-                onClick={() => setShowLoginModal(false)}
-                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold text-slate-400 bg-slate-800/80 hover:bg-slate-700 rounded-xl transition-all cursor-pointer"
+                type="submit"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 p-2.5 text-white shadow-md hover:brightness-110 transition-all"
               >
-                <span>둘러보기 계속하기</span>
+                <ArrowRight size={20} />
               </button>
-            </div>
+              <div className="mt-4">
+                <a href="/studio/custom-client-site/marketplace" className="text-sm font-medium text-slate-400 hover:text-cyan-400 flex items-center gap-1.5 transition-colors">
+                  아직 웹사이트가 없으신가요? 템플릿으로 시작하기 <ArrowRight size={14} />
+                </a>
+              </div>
+            </form>
+          </div>
+          
+          <div className="flex-1 w-full max-w-lg">
+             <div className="w-full aspect-[4/3] rounded-2xl bg-slate-900 border border-slate-800 p-4 shadow-2xl flex flex-col relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5" />
+                <div className="h-8 border-b border-slate-800 flex items-center gap-2 px-2 relative z-10">
+                   <div className="w-3 h-3 rounded-full bg-slate-700" />
+                   <div className="w-3 h-3 rounded-full bg-slate-700" />
+                   <div className="w-3 h-3 rounded-full bg-slate-700" />
+                   <div className="ml-4 h-4 w-32 bg-slate-800 rounded-md" />
+                </div>
+                <div className="flex-1 flex flex-col items-center justify-center relative z-10 space-y-4">
+                   <div className="flex items-center gap-4">
+                     <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center border border-slate-700 shadow-lg">
+                        <Globe className="text-slate-500" size={28} />
+                     </div>
+                     <ArrowRight className="text-blue-500 animate-pulse" size={24} />
+                     <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.3)]">
+                        <LayoutTemplate className="text-white" size={28} />
+                     </div>
+                   </div>
+                   <div className="text-center space-y-1">
+                     <p className="text-sm font-bold text-slate-200">AI 딥 마이그레이션</p>
+                     <p className="text-xs text-slate-500">구식 웹사이트를 최신 Tailwind 레이아웃으로 변환</p>
+                   </div>
+                </div>
+             </div>
           </div>
         </div>
-      )}
+      </section>
+
+      {/* 5 Sub-Menus Section */}
+      <section className="max-w-6xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-black text-white">커스텀 웹사이트 스튜디오 메뉴</h2>
+          <span className="text-sm text-slate-400 font-medium">원하시는 작업을 선택해 주세요</span>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {subMenus.map((menu, idx) => (
+            <a 
+              key={idx} 
+              href={menu.link}
+              className={`group relative overflow-hidden rounded-2xl bg-slate-900 border ${menu.border} p-6 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/50 flex flex-col h-full`}
+            >
+              <div className={`absolute inset-0 bg-gradient-to-br ${menu.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+              
+              <div className="relative z-10 flex-1 space-y-4">
+                <div className="w-12 h-12 rounded-xl bg-slate-950 flex items-center justify-center border border-slate-800 shadow-inner group-hover:scale-110 transition-transform duration-300">
+                  {menu.icon}
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-lg font-bold text-slate-100 group-hover:text-white transition-colors">{menu.title}</h3>
+                  <p className="text-sm text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors">
+                    {menu.desc}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="relative z-10 mt-6 flex items-center text-sm font-bold text-slate-500 group-hover:text-white transition-colors">
+                바로가기 <ArrowRight size={16} className="ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      {/* Feature Showcase: Any Platform */}
+      <section className="max-w-6xl mx-auto py-12">
+         <div className="rounded-3xl bg-slate-900 border border-slate-800 p-8 md:p-12 flex flex-col md:flex-row items-center gap-10">
+            <div className="flex-1 space-y-4">
+              <div className="inline-flex items-center gap-2 rounded-full bg-purple-500/10 border border-purple-500/20 px-3 py-1 text-xs font-bold text-purple-400">
+                <Zap size={14} />
+                <span>플랫폼 독립적 이관</span>
+              </div>
+              <h2 className="text-3xl font-black text-white leading-tight">
+                어디서 만들었든 상관없습니다.<br/>
+                <span className="text-slate-400">CreAibox가 다 가져옵니다.</span>
+              </h2>
+              <p className="text-slate-400 font-medium">
+                Wix, WordPress, 아임웹, 카페24 등 기존에 사용하시던 플랫폼이 무엇이든 공개된 웹사이트 URL만 있다면 CreAibox AI가 콘텐츠와 구조를 분석하여 즉시 새롭게 구축해 드립니다.
+              </p>
+              <div className="pt-4">
+                <a href="/studio/custom-client-site/migration" className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-800 hover:bg-slate-700 px-6 py-3 text-sm font-bold text-white transition-colors border border-slate-700">
+                  지금 바로 이관해 보기
+                </a>
+              </div>
+            </div>
+            
+            <div className="flex-1 w-full flex justify-center">
+              <div className="relative w-full max-w-sm aspect-square">
+                 <div className="absolute inset-0 bg-purple-500/10 rounded-full blur-3xl" />
+                 <div className="relative h-full flex items-center justify-center">
+                    <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl shadow-2xl flex items-center justify-center z-20 border border-purple-400/30">
+                       <Sparkles className="text-white" size={40} />
+                    </div>
+                    
+                    {/* Floating icons representing other platforms */}
+                    <div className="absolute top-10 left-10 w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center font-black text-xl text-slate-300 border border-slate-700 shadow-lg animate-bounce" style={{animationDuration: '3s'}}>
+                      W
+                    </div>
+                    <div className="absolute bottom-20 left-4 w-14 h-14 bg-slate-800 rounded-xl flex items-center justify-center font-black text-sm text-slate-300 border border-slate-700 shadow-lg animate-bounce" style={{animationDuration: '4s', animationDelay: '1s'}}>
+                      Wix
+                    </div>
+                    <div className="absolute top-20 right-8 w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center font-black text-lg text-slate-300 border border-slate-700 shadow-lg animate-bounce" style={{animationDuration: '3.5s', animationDelay: '0.5s'}}>
+                      IM
+                    </div>
+                    <div className="absolute bottom-10 right-16 w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center font-black text-sm text-slate-300 border border-slate-700 shadow-lg animate-bounce" style={{animationDuration: '2.5s', animationDelay: '1.5s'}}>
+                      C24
+                    </div>
+                    
+                    {/* Connecting lines */}
+                    <svg className="absolute inset-0 w-full h-full z-10 opacity-20 pointer-events-none">
+                       <path d="M 80 80 Q 150 100 180 180" stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="4 4" className="text-purple-400" />
+                       <path d="M 60 260 Q 120 250 180 210" stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="4 4" className="text-purple-400" />
+                       <path d="M 320 100 Q 250 150 210 180" stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="4 4" className="text-purple-400" />
+                       <path d="M 280 300 Q 230 250 200 210" stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="4 4" className="text-purple-400" />
+                    </svg>
+                 </div>
+              </div>
+            </div>
+         </div>
+      </section>
+
     </div>
   );
 }

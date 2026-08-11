@@ -15,11 +15,11 @@ export default function CreaiboxSchemaPanel({ data, updateLocalData }: CreaiboxS
   const [isGenerating, setIsGenerating] = useState(false);
   const [schemaCode, setSchemaCode] = useState("");
   const [hasExistingSchema, setHasExistingSchema] = useState(false);
-  const [selectedModel, setSelectedModel] = useState("models/gemini-3.1-flash-lite");
+  const [selectedModel, setSelectedModel] = useState("models/gemini-3.5-flash-lite");
   const [apiKey, setApiKey] = useState<string | null>(null);
 
   const modelOptions = [
-    { id: "models/gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite (빠름, 효율적)" },
+    { id: "models/gemini-3.5-flash-lite", label: "Gemini 3.1 Flash Lite (빠름, 효율적)" },
     { id: "models/gemini-2.5-flash", label: "Gemini 2.5 Flash (안정적)" },
     { id: "models/gemini-3-flash-preview", label: "Gemini 3 Flash Preview (최신)" },
   ];

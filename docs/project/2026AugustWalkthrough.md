@@ -186,3 +186,77 @@
   - `docs/arch/client-site-builder-design-spec.md` (기술 명세서)
   - `docs/project/manual/custom-client-site-guide.md` (운용 매뉴얼)
   - 리팩토링 계획서(`implementation_plan.md`)에 완료 및 DB 연동 사항 산출 기록 완료.
+
+## 19. 🚀 홈페이지 1초 AI 이관 엔진 '진짜 데이터' 적재(Zero Fake Data) 및 미들웨어 통합 복구
+
+### 주요 구현 결과
+- **Mock 데이터 제거 및 실제 DB Insert 아키텍처 연동 (`route.ts`)**:
+  - 사용자 화면에서 시연용 껍데기만 생성하던 기존 이관 API를 전면 개편하여, "가짜 데이터 생성 전면 금지" 대원칙에 따라 100% 진짜 데이터만 DB에 적재되도록 강제화했습니다.
+  - 이관 파싱 직후 Supabase `client_sites`와 `site_sections` (Hero/About 영역) 테이블에 실제 파싱한 제목, 설명, 대표 이미지, 전화번호 등의 속성을 무조건 INSERT 하도록 변경 완료했습니다.
+- **서브도메인 동적 라우팅 환경 분기 (`MigrationTab.tsx`)**:
+  - 링크를 누르면 로컬과 프로덕션 환경을 브라우저 `window.location.hostname`으로 자동 감지하여 `.localhost:3000` 또는 `.creaibox.com` 으로 스마트하게 매핑해주는 `getSubdomainUrl` 모듈을 도입하여 링크 오류를 원천 차단했습니다.
+
+---
+
+## 20. 🐛 커스텀 웹사이트 스튜디오 로그인 세션 끊김 현상(모달 팝업) 해결
+
+### 주요 해결 내역
+- **로그인 상태 비동기 동기화 엔진 탑재 (`page.tsx`)**:
+  - 로그인된 사용자임에도 "로그인이 필요한 서비스입니다"라며 이관/제작 신청을 차단하던 치명적인 상태관리(State) 버그를 고쳤습니다.
+  - Client Component 환경의 특성을 고려하여, 페이지 로드 시점(`useEffect`)에 `supabase.auth.getSession()`을 즉시 Fetching하고, `onAuthStateChange()` 리스너를 달아 로그인 세션 객체를 `currentUser`에 실시간으로 무결하게 동기화하도록 조치했습니다.
+
+## 21. 🚀 시스템 헌법 개정 및 홈페이지 딥-마이그레이션(Deep-Migration) 탑재
+
+### 주요 구현 결과
+- **Gemini 3.5 Flash Lite 1순위 모델 전면 상향 (`AGENTS.md`)**:
+  - 기존 3.1 버전을 강제하던 시스템 헌법 및 백엔드 라우트 13개 파일 전체를 대상으로, 비용 효율은 유지하면서 지능이 대폭 향상된 **`gemini-3.5-flash-lite`**로 성공적으로 교체했습니다. 
+- **1초 마케팅 배제 및 AI 딥-파싱 이관 UI 적용 (`MigrationTab.tsx`)**:
+  - 사용자에게 허위 기대감을 주던 "1초" 문구를 전면 삭제하고, "AI 정밀 통째 이관"으로 브랜딩을 수정했습니다.
+  - 사용자가 **[옵션 A: 메인 페이지만]**과 **[옵션 B: 서브 포함 전체 페이지]**를 선택할 수 있도록 이관 심도 UI를 추가하고, AI가 작업하는 15~45초 동안 로딩 텍스트가 순환하는 프로그레스 UI를 장착했습니다.
+- **백엔드 AI 엔진 실제 내용 복제 파이프라인 (`route.ts`)**:
+  - 타사 URL의 HTML Body를 긁어온 후 Gemini 3.5 Flash Lite 엔진에 전송하여 레이아웃 단위(Hero, About, Features, Services)로 본문 내용과 이미지를 똑똑하게 쪼개고 발췌해 내는 '딥-마이그레이션' 모듈을 완성했습니다.
+
+---
+
+## 22. 🚀 서브도메인(브랜드 ID) 신청 시 100% 즉시 승인(생성) 처리 및 이관 시 기존 껍데기 충돌 방어
+
+### 주요 구현 결과
+- **서브도메인 즉시 승인 (Fast-Track) (`mypage/page.tsx`)**:
+  - 기존에 마이페이지에서 서브도메인을 신청하면 관리자가 승인하기 전까지 `PENDING` 상태로 대기해야 했던 절차를 전면 제거했습니다.
+  - 사용자가 신청 즉시 `brand_id_status`가 `APPROVED`로 변경되며, 곧바로 커스텀 블로그 및 기업 홈페이지에 접속할 수 있도록 실시간 개통 로직을 반영했습니다.
+- **홈페이지 이관 시 껍데기 충돌 방어 (`site-migration/route.ts`)**:
+  - 사용자가 과거에 템플릿 쇼핑 등으로 인해 DB에 `INACTIVE` 상태로 껍데기만 남아있던 도메인에 다시 "이관" 버튼을 누를 경우, 상태가 업데이트되지 않아 "Blog Under Construction" 에러 화면이 뜨는 치명적 충돌을 방어했습니다.
+  - 기존 사이트 레코드가 발견되면 무조건 `status: "ACTIVE"` 상태로 강제 덮어쓰기하여, 미들웨어가 즉시 `dynamic-renderer` 렌더링을 허용하도록 안전망을 강화했습니다.
+
+---
+
+## 23. 🎨 100% 원본 복제 수준의 커스텀 HTML 딥-마이그레이션 모듈 (Tailwind CSS)
+
+### 핵심 아키텍처 개편
+- 기존에는 타겟 사이트에서 텍스트와 이미지만 추출해 정해진 단일 템플릿(`service_1` 스타일) 구조의 빈칸을 채우는 방식(JSON 구조화 방식)이었습니다.
+- **[NEW] Custom HTML 렌더링 도입**: Gemini 3.5 Flash Lite 엔진에 프롬프트를 전면 수정하여, 원본 사이트의 DOM 구조, 메뉴, 이미지를 분석해 **반응형 Tailwind CSS 클래스가 적용된 HTML 자체를 직접 생성**하도록 업그레이드했습니다.
+
+### 주요 구현 영역
+- **백엔드 프롬프트 개편 (`site-migration/route.ts`)**:
+  - `header_html`, `footer_html`, `main_sections` 로 구성된 JSON을 반환하도록 Gemini에게 지시.
+  - 추출된 `header_html`과 `footer_html`은 공통 레이아웃 덮어쓰기를 위해 DB의 `client_sites.extra_configs`에 저장합니다.
+- **레이아웃 종속성 탈피 (`dynamic-renderer/.../layout.tsx`)**:
+  - 기존에 강제 적용되던 공통 `Header`, `Footer` 컴포넌트를 조건부로 숨기고, 이관 엔진이 만들어낸 커스텀 헤더와 푸터 HTML을 렌더링하도록 분기 처리(`is_custom_layout`)를 추가했습니다.
+- **커스텀 본문 렌더러 (`DynamicSection.tsx`)**:
+  - `section_type: "custom_html"` 지원을 추가하여, AI가 디자인한 HTML 구조를 `dangerouslySetInnerHTML`을 통해 100% 원본 형태로 화면에 직접 주입합니다.
+- **스마트 서브페이지 이관 연동 (Option A / Option B 분리)**:
+  - 기존에는 "메인 페이지만 이관"과 "전체 페이지 이관"이 동일하게 작동하여 기존 이관 내역을 덮어쓰는 문제가 있었습니다.
+  - 이제 프론트엔드에서 전달되는 `depth: "main" | "full"` 파라미터를 읽어, "전체 페이지 이관" 시 **기존 메인 페이지를 보존하고 서브 페이지만 추가(Append)**하도록 로직을 개편했습니다.
+  - 서브 페이지는 `section_type: "subpage_{slug}"` 형태로 DB에 저장되며, 동적 라우터(`page.tsx`)와 렌더러가 이를 식별하여 `custom_html` 방식으로 완벽하게 렌더링합니다.
+
+---
+
+## 24. 📂 커스텀 웹사이트 스튜디오 레이아웃 전면 개편 및 랜딩페이지 신규 기획
+
+### 주요 구현 영역
+- **사이드바 메뉴 뎁스 분리 (`Sidebar.tsx`)**:
+  - 기존에는 "커스텀 웹사이트"라는 단일 메뉴 하나만 존재했으며, 클릭 시 탭 기반 UI로 5가지 기능을 전환했습니다.
+  - 이를 사이드바 하위 메뉴(Accordion)로 구조화하여 5가지 기능을 독립된 라우팅 경로(`/marketplace`, `/migration` 등)로 완전 분리했습니다.
+- **`repaint.com` 벤치마킹 모던 랜딩페이지 개발 (`page.tsx`)**:
+  - 기존 탭 인터페이스를 제거하고, `repaint.com`의 디자인 언어(대형 타이포그래피, 생동감 있는 그라데이션, Before/After 시각화)를 완벽히 모방한 랜딩페이지를 신규 구축했습니다.
+  - 타겟 URL을 입력하면 즉시 `migration` 서브페이지로 라우팅되도록 직관적인 UX를 제공합니다.

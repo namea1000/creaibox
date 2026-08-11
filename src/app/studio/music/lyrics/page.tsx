@@ -34,7 +34,7 @@ const AI_RETRY_ATTEMPTS = 3;
 const AI_RETRY_DELAY_MS = 1200;
 
 const GEMINI_MODEL_FALLBACKS = [
-  "gemini-3.1-flash-lite",
+  "gemini-3.5-flash-lite",
   "gemini-3-flash-preview",
   "gemini-2.5-flash",
 ];

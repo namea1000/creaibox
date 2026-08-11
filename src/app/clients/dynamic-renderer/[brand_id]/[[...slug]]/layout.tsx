@@ -101,21 +101,29 @@ export default async function DynamicRendererLayout({ children, params }: Layout
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       <link rel="stylesheet" href={fontUrl} />
 
-      <Header
-        companyName={site.company_name}
-        phone={site.phone || ""}
-        hasPortfolio={hasPortfolio}
-        hasRental={hasRental}
-      />
+      {site.extra_configs?.is_custom_layout && site.extra_configs?.header_html ? (
+        <div dangerouslySetInnerHTML={{ __html: site.extra_configs.header_html }} />
+      ) : (
+        <Header
+          companyName={site.company_name}
+          phone={site.phone || ""}
+          hasPortfolio={hasPortfolio}
+          hasRental={hasRental}
+        />
+      )}
       <main className="flex-grow">
         {children}
       </main>
-      <Footer
-        companyName={site.company_name}
-        phone={site.phone || ""}
-        address={site.address || ""}
-        extraConfigs={site.extra_configs}
-      />
+      {site.extra_configs?.is_custom_layout && site.extra_configs?.footer_html ? (
+        <div dangerouslySetInnerHTML={{ __html: site.extra_configs.footer_html }} />
+      ) : (
+        <Footer
+          companyName={site.company_name}
+          phone={site.phone || ""}
+          address={site.address || ""}
+          extraConfigs={site.extra_configs}
+        />
+      )}
     </div>
   );
 }

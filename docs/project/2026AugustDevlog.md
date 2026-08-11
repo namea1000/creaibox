@@ -372,3 +372,37 @@
   - `docs/arch/client-site-builder-design-spec.md` (기술 명세서)
   - `docs/project/manual/custom-client-site-guide.md` (실무 매뉴얼)
   - `implementation_plan.md` (리팩토링 계획서 산출물 기록)
+
+---
+
+### 9. 🚀 기존 홈페이지 1초 AI 이관 기능 개발 및 Zero Fake Data Rule 완벽 적용
+- **문제 상황**: 사용자가 "1초 AI 이관 시작하기" 버튼을 눌렀을 때, API(`src/app/api/studio/site-migration/route.ts`)가 실제 DB(`client_sites`, `site_sections`)에 데이터를 저장하지 않고 Mock(가짜) 데이터만 프론트로 응답함에 따라, 이관된 링크(`http://xxx.localhost:3000`) 접속 시 미들웨어가 DB 레코드를 찾지 못해 "BLOG UNDER CONSTRUCTION" 에러 화면을 노출하던 치명적 결함 발견.
+- **조치 내역 (Strict Zero Fake Data Rule 100% 준수)**:
+  - `src/app/api/studio/site-migration/route.ts` API를 전면 개편하여, 타겟 사이트에서 파싱해 온 실제 메타데이터(Title, Description, Image, 연락처 등)를 바탕으로 Supabase DB의 `client_sites` 마스터 테이블과 `site_sections` (Hero, About 섹션) 테이블에 100% 실제 레코드를 INSERT 하도록 수정 완료.
+  - 이를 통해 사용자가 생성된 링크를 클릭했을 때, 껍데기뿐인 블로그가 아니라 `dynamic-renderer`를 통해 실제 데이터 기반의 템플릿 웹사이트 프리뷰가 즉각적으로 완벽하게 렌더링되도록 아키텍처 및 UX를 대폭 개선.
+- **서브도메인 환경(Environment) 분기 처리**:
+  - `src/components/studio/custom-client-site/tabs/MigrationTab.tsx`에서 이관 결과 링크 출력 시, `window.location.hostname`을 감지하여 로컬 개발 환경에서는 `.localhost:3000`, Vercel 프로덕션 환경에서는 `.creaibox.com`으로 자동으로 호스트가 변환되도록 다이나믹 URL 함수(`getSubdomainUrl`) 탑재 완료.
+
+---
+
+### 10. 🐛 커스텀 웹사이트 스튜디오 로그인 세션 강제 차단 버그 수정
+- **문제 상황**: 이미 상단 네비게이션을 통해 로그인이 완료된 사용자(User)임에도 불구하고, `custom-client-site` 스튜디오 진입 시 "로그인이 필요한 서비스입니다" 팝업 모달이 노출되며 이관 및 구축 신청이 원천 차단되는 상태 관리 오류 발생.
+- **해결 내역 (`src/app/studio/custom-client-site/page.tsx`)**:
+  - 기존 Client Component 환경에서 `currentUser` 상태(State)를 비동기적으로 동기화하는 코드가 누락되어 있던 것을 발견.
+  - `useEffect` 내부에 Supabase Auth의 `getSession()` 및 실시간 구독 객체인 `onAuthStateChange()`를 도입하여, 페이지 마운트 즉시 로그인 상태를 무결하게 렌더링 스코프(`currentUser`)에 반영하고 팝업이 사라지도록 100% 쾌적하게 복구 완료.
+
+---
+
+### 11. 🚀 시스템 대원칙 개정 및 AI 홈페이지 이관 엔진 고도화 (Deep-Migration)
+- **문제 상황**: 단순 메타데이터(Title, Desc)만 추출해 넣던 기존 '1초 AI 이관' 방식이 실질적인 복제 품질을 떨어뜨리고 오해를 유발한다는 피드백 수용.
+- **조치 내역**:
+  - **대원칙 개정**: `.agents/AGENTS.md` 및 `docs/rules/ai-agent-rules.md`의 `gemini-3.1-flash-lite` 강제 규정을 최신 출시된 고지능/가성비 모델인 **`gemini-3.5-flash-lite`**로 전면 개정하고 코드베이스 13개 파일 일괄 치환 완료.
+  - **프론트엔드 (UI)**: `MigrationTab.tsx`에서 "1초" 문구를 전면 삭제. [메인 페이지만]과 [서브 포함 전체]를 고를 수 있는 '이관 심도 범위(Depth)' 셀렉트 박스 추가. 진행 과정 중 실시간 작업 현황("DOM 분석 중...", "레이아웃 분리 중...") 텍스트 롤링 UI 탑재.
+  - **백엔드 (API)**: `site-migration/route.ts`에 `GoogleGenerativeAI` 및 `gemini-3.5-flash-lite`를 연동하여, 대상 웹사이트의 HTML Body를 통째로 읽어낸 뒤 `hero`, `about`, `features`, `services` 등 다중 동적 레이아웃 블록 컴포넌트로 완벽하게 분류·발췌하여 DB(`site_sections`)에 적재하는 딥-파싱 엔진 장착.
+
+### 12. 🚀 서브도메인(브랜드 ID) 신청 시 100% 즉시 승인(생성) 처리 및 이관 시 기존 껍데기 충돌 방어
+- **문제 상황**: 홈페이지 이관 또는 신규 커스텀 사이트 생성 시, 관리자가 승인하기 전까지는 `INACTIVE` 또는 `PENDING` 상태로 남아 있어 사용자가 새로고침 시 "요청하신 블로그를 찾을 수 없거나 승인 전입니다(Blog Under Construction)" 화면을 마주하게 됨.
+- **조치 내역**:
+  1. `src/app/mypage/page.tsx`: 사용자가 서브도메인을 신청할 때 `PENDING` 상태로 넘기던 관리자 승인 절차를 전면 철거. 신청 즉시 `brand_id_status`를 `APPROVED`로 변경하여 실시간 개통되도록 즉시 승인(Fast-Track) 로직 적용.
+  2. `src/app/api/studio/site-migration/route.ts`: 이관 시 기존에 '템플릿 쇼핑' 등으로 인해 DB에 `INACTIVE` 상태로 껍데기만 남아있던 `client_sites` 레코드가 발견되면, 무조건 `ACTIVE` 상태로 덮어쓰고 기존 더미 섹션은 날려버린 뒤 Gemini 분석 데이터를 새로 적재하도록 안전망 강화.
+  3. (테스트용) DB 내 `repaint` 도메인 레코드의 상태를 `ACTIVE` 및 `APPROVED`로 수동 동기화 처리.

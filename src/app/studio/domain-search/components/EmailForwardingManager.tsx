@@ -163,14 +163,16 @@ export default function EmailForwardingManager({ currentUser, onRequireAuth }: P
               <span>무제한 커스텀 도메인 이메일 서버 (Resend Engine)</span>
             </div>
             <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
-              ✉️ 이메일 주소별 담당자 포워딩 관리
+              ✉️ 커스텀 이메일 간편 연결 <span className="text-lg text-purple-300 font-medium ml-2">(수신 전용 / 포워딩)</span>
             </h2>
-            <p className="text-sm text-gray-300 max-w-2xl leading-relaxed">
-              도메인별로 <code className="text-purple-300 bg-purple-950/60 px-1.5 py-0.5 rounded font-mono">ceo@</code>,{" "}
-              <code className="text-purple-300 bg-purple-950/60 px-1.5 py-0.5 rounded font-mono">contact@</code>,{" "}
-              <code className="text-purple-300 bg-purple-950/60 px-1.5 py-0.5 rounded font-mono">cs@</code> 등 무제한 이메일을 생성하고,
-              들어오는 메일을 원하는 담당자의 개인 메일(Gmail/Naver)로 1초 만에 100% 포워딩합니다.
-            </p>
+            <div className="text-sm text-gray-300 max-w-2xl leading-relaxed space-y-2">
+              <p>
+                본 서비스는 <code className="text-purple-300 bg-purple-950/60 px-1.5 py-0.5 rounded font-mono">contact@</code>, <code className="text-purple-300 bg-purple-950/60 px-1.5 py-0.5 rounded font-mono">ceo@</code> 등 도메인으로 들어오는 메일을 평소 사용하시는 개인 메일(Gmail, Naver 등)로 전달(포워딩)해 드리는 <strong>무료 수신 전용 서비스</strong>입니다.
+              </p>
+              <p className="text-xs text-purple-300/80 bg-purple-900/20 p-2 rounded-lg border border-purple-500/20">
+                💡 <strong>Tip:</strong> 비즈니스 명함이나 웹사이트 연락처에 프로페셔널하게 기재하는 용도로 추천합니다. (※ 해당 주소로 직접 발신을 원하실 경우, Google Workspace 등 별도 호스팅 가입이 필요합니다.)
+              </p>
+            </div>
           </div>
 
           <button

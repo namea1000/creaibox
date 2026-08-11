@@ -1212,7 +1212,7 @@ function CreaiboxManuscriptDetailContent() {
     try {
       let vaultConfig = getUserAiVaultConfig();
       if (vaultConfig && (vaultConfig.model === "gemini-1.5-flash" || !vaultConfig.model)) {
-        vaultConfig = { ...vaultConfig, model: "gemini-3.1-flash-lite" };
+        vaultConfig = { ...vaultConfig, model: "gemini-3.5-flash-lite" };
       }
       const finalWordCountGoal = wordCountGoal || "1500";
       const lengthPrompt = getLengthPrompt(finalWordCountGoal);
@@ -1302,7 +1302,7 @@ function CreaiboxManuscriptDetailContent() {
         ...new Set(
           vaultConfig?.provider === "groq"
             ? [vaultConfig.model]
-            : [vaultConfig?.model || "gemini-3.1-flash-lite", "gemini-3.1-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash"]
+            : [vaultConfig?.model || "gemini-3.5-flash-lite", "gemini-3.5-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash"]
         ),
       ];
       const searchModes = useSearch ? [true, false] : [false];

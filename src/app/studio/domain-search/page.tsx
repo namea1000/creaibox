@@ -100,7 +100,7 @@ export default function DomainSearchPage() {
       wholesalePrice: 15750, // $11.25 * 1400 = 15,750 KRW
       marketPrice: 25850,
       recommended: true,
-      tag: "1초 무제한 커스텀 사이트 연결",
+      tag: "즉시 무제한 커스텀 사이트 연결",
     },
     {
       domain: "auramerino.kr",
@@ -108,7 +108,7 @@ export default function DomainSearchPage() {
       wholesalePrice: 18900, // $13.50 * 1400 = 18,900 KRW
       marketPrice: 23500,
       recommended: false,
-      tag: "1초 무제한 커스텀 사이트 연결",
+      tag: "즉시 무제한 커스텀 사이트 연결",
     },
     {
       domain: "mybrand.com",
@@ -116,7 +116,7 @@ export default function DomainSearchPage() {
       wholesalePrice: 15750, // $11.25 * 1400 = 15,750 KRW
       marketPrice: 25850,
       recommended: true,
-      tag: "1초 무제한 커스텀 사이트 연결",
+      tag: "즉시 무제한 커스텀 사이트 연결",
     },
     {
       domain: "creaibox.io",
@@ -251,10 +251,10 @@ export default function DomainSearchPage() {
               <span>CreAibox 도메인 센터</span>
             </div>
             <h1 className="text-xl md:text-2xl font-black text-white">
-              100% 독창적인 독립 브랜드 도메인 <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent">조회 & 1초 자동 구매·이관 센터</span>
+              100% 독창적인 독립 브랜드 도메인 <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent">조회 & 즉시 자동 구매·이관 센터</span>
             </h1>
             <p className="text-xs md:text-sm text-slate-300 font-medium max-w-3xl leading-relaxed">
-              원하시는 브랜드 도메인 실시간 검색, 최저가 도매 구매 및 국내 타사(G사/W사 등) 1초 이관 신청부터 Edge IP 연결까지 한눈에 관리하세요. (기존 타사 홈페이지 1초 AI 이관은 <code className="text-cyan-300">커스텀 웹사이트</code> 메뉴에서 가능합니다)
+              원하시는 브랜드 도메인 실시간 검색, 최저가 도매 구매 및 국내 타사(G사/W사 등) 간편 이관 신청부터 Edge IP 연결까지 한눈에 관리하세요. (기존 타사 홈페이지 AI 간편 이관은 <code className="text-cyan-300">커스텀 웹사이트</code> 메뉴에서 가능합니다)
             </p>
           </div>
 
@@ -281,7 +281,7 @@ export default function DomainSearchPage() {
           }`}
         >
           <Search size={16} />
-          <span>1️⃣ 🌐 도메인 실시간 검색 & 1초 구매</span>
+          <span>1️⃣ 🌐 도메인 실시간 검색 & 간편 구매</span>
         </button>
 
         <button
@@ -293,7 +293,7 @@ export default function DomainSearchPage() {
           }`}
         >
           <RefreshCw size={16} />
-          <span>2️⃣ 🔄 국내 타사 도메인 1초 이관</span>
+          <span>2️⃣ 🔄 국내 타사 도메인 간편 이관</span>
         </button>
 
         <button
@@ -305,7 +305,7 @@ export default function DomainSearchPage() {
           }`}
         >
           <Mail size={16} />
-          <span>3️⃣ ✉️ 커스텀 이메일 1초 연동</span>
+          <span>3️⃣ ✉️ 커스텀 이메일 간편 연동</span>
         </button>
 
         <button
@@ -345,7 +345,7 @@ export default function DomainSearchPage() {
         </button>
       </div>
 
-      {/* --- SECTION 1: 🌐 도메인 실시간 검색 & 1초 구매 --- */}
+      {/* --- SECTION 1: 🌐 도메인 실시간 검색 & 간편 구매 --- */}
       <div id="section-search" className="space-y-8 scroll-mt-24">
         <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 lg:p-8 space-y-6 shadow-xl">
           <div className="space-y-1">
@@ -353,7 +353,7 @@ export default function DomainSearchPage() {
               <Search className="text-cyan-400" /> 원하는 브랜드 도메인 실시간 가용성 & 가격 검색
             </h2>
             <p className="text-xs font-medium text-slate-400">
-              원하시는 브랜드명(예: mybrand, auramerino)을 입력하시면 구매 가능 여부와 시중가 대비 할인 가격을 1초 만에 확인합니다.
+              원하시는 브랜드명(예: mybrand, auramerino)을 입력하시면 구매 가능 여부와 시중가 대비 할인 가격을 즉시 확인합니다.
             </p>
           </div>
 
@@ -399,7 +399,7 @@ export default function DomainSearchPage() {
                 <Sparkles size={14} className="text-amber-400" /> 추천 브랜드 도메인 실시간 가용 현황
               </span>
               <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
-                1초 구매 지원 (Vercel IP 76.76.21.21 자동 바인딩)
+                간편 구매 지원 (Vercel IP 76.76.21.21 자동 바인딩)
               </span>
             </div>
 
@@ -459,7 +459,7 @@ export default function DomainSearchPage() {
                         ) : (
                           <Zap size={14} />
                         )}
-                        <span>1초 구매하기</span>
+                        <span>간편 구매하기</span>
                       </button>
                     ) : (
                       <button
@@ -477,12 +477,12 @@ export default function DomainSearchPage() {
         </div>
       </div>
 
-      {/* --- SECTION 2: 🔄 국내 타사 도메인 1초 이관 --- */}
+      {/* --- SECTION 2: 🔄 국내 타사 도메인 간편 이관 --- */}
       <div id="section-transfer" className="space-y-8 scroll-mt-24">
         <div className="rounded-3xl border border-emerald-500/30 bg-slate-900/90 p-6 lg:p-8 space-y-6 shadow-xl">
           <div className="space-y-1">
             <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <RefreshCw className="text-emerald-400" /> 타사(G사/W사 등) 보유 도메인을 CreAibox로 1초 이관 신청
+              <RefreshCw className="text-emerald-400" /> 타사(G사/W사 등) 보유 도메인을 CreAibox로 간편 이관 신청
             </h2>
             <p className="text-xs font-medium text-slate-300 leading-relaxed">
               기존에 다른 곳에서 사용 중이던 도메인의 인증코드(EPP Code)만 입력하시면, 연간 높은 갱신 비용 없이 해외 도매가(18,000원) 및 비즈니스 0원 무상 연장 혜택으로 즉시 이관됩니다.
@@ -524,7 +524,7 @@ export default function DomainSearchPage() {
         </div>
       </div>
 
-      {/* --- SECTION 3: ✉️ 커스텀 이메일 1초 연동 --- */}
+      {/* --- SECTION 3: ✉️ 커스텀 이메일 간편 연동 --- */}
       <div id="section-email" className="space-y-8 scroll-mt-24">
         <EmailForwardingManager
           currentUser={currentUser}
@@ -567,7 +567,7 @@ export default function DomainSearchPage() {
                 <tr>
                   <td className="p-4 font-bold text-white">SSL 보안 인증서 자동 발급</td>
                   <td className="p-4 text-slate-400">별도 보안 인증서 설치비 (연간 3~5만원)</td>
-                  <td className="p-4 text-cyan-300 font-bold">Vercel Global Edge SSL 1초 자동 연동 (0원)</td>
+                  <td className="p-4 text-cyan-300 font-bold">Vercel Global Edge SSL 즉시 자동 연동 (0원)</td>
                 </tr>
                 <tr>
                   <td className="p-4 font-bold text-white">CreAibox 비즈니스 회원 혜택</td>
@@ -588,7 +588,7 @@ export default function DomainSearchPage() {
             <div>
               <h2 className="text-xl font-black text-white">CreAibox 도메인 무마진 결제 시스템</h2>
               <p className="text-xs font-medium text-slate-300">
-                모든 회원은 거품 없는 도매 도메인 원가로 투명하게 1초 만에 구매하고 전자결제(PG)로 손쉽게 등록 및 연장하실 수 있습니다.
+                모든 회원은 거품 없는 도매 도메인 원가로 투명하게 즉시 구매하고 전자결제(PG)로 손쉽게 등록 및 연장하실 수 있습니다.
               </p>
             </div>
           </div>
@@ -611,15 +611,15 @@ export default function DomainSearchPage() {
             {[
               {
                 q: "구매한 도메인은 CreAibox 홈페이지에 몇 초 만에 연동되나요?",
-                a: "결제 완료 즉시 Vercel Global Edge IP (76.76.21.21)에 1초 자동 바인딩되어 별도의 complex DNS 설정 없이 즉시 연결됩니다.",
+                a: "결제 완료 즉시 Vercel Global Edge IP (76.76.21.21)에 즉시 자동 바인딩되어 별도의 complex DNS 설정 없이 즉시 연결됩니다.",
               },
               {
                 q: "타사(G사, W사 등)에서 쓰던 도메인도 CreAibox로 옮겨올 수 있나요?",
-                a: "네! 타사 도메인 관리 페이지에서 '기관이전 인증키(EPP Code)'를 발급받으신 후 2번 이관 메뉴에 입력하시면 1초 만에 이관 신청이 완료됩니다.",
+                a: "네! 타사 도메인 관리 페이지에서 '기관이전 인증키(EPP Code)'를 발급받으신 후 2번 이관 메뉴에 입력하시면 즉시 이관 신청이 완료됩니다.",
               },
               {
-                q: "기존 타사 홈페이지 1초 AI 이관은 어느 메뉴에서 이용하나요?",
-                a: "기존 홈페이지의 텍스트, 이미지, 전화번호, 주소를 CreAibox 자사몰 사이트(000.creaibox.com)로 옮기는 기능은 [커스텀 웹사이트] -> [2️⃣ 기존 홈페이지 1초 AI 이관] 탭에서 이용하실 수 있습니다.",
+                q: "기존 타사 홈페이지 AI 간편 이관은 어느 메뉴에서 이용하나요?",
+                a: "기존 홈페이지의 텍스트, 이미지, 전화번호, 주소를 CreAibox 자사몰 사이트(000.creaibox.com)로 옮기는 기능은 [커스텀 웹사이트] -> [2️⃣ 기존 홈페이지 AI 간편 이관] 탭에서 이용하실 수 있습니다.",
               },
               {
                 q: "WHOIS 개인정보 보호 서비스는 정말 0원인가요?",
@@ -670,8 +670,8 @@ export default function DomainSearchPage() {
                 로그인이 필요한 서비스입니다
               </h2>
               <p className="text-xs text-slate-400 font-semibold leading-relaxed">
-                실시간 도메인 검색·원클릭 구매 및 타사 도메인 1초 이관 서비스를 이용하기 위해 로그인이 필요합니다. <br />
-                로그인 후 1초 만에 나만의 맞춤형 도메인을 연결해 보세요!
+                실시간 도메인 검색·원클릭 구매 및 타사 도메인 간편 이관 서비스를 이용하기 위해 로그인이 필요합니다. <br />
+                로그인 후 즉시 나만의 맞춤형 도메인을 연결해 보세요!
               </p>
             </div>
 
@@ -740,7 +740,7 @@ export default function DomainSearchPage() {
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-400">SSL 보안 인증서</span>
                 <span className="text-[11px] font-black text-cyan-400">
-                  🔒 ISSUED (1초 자동 발급)
+                  🔒 ISSUED (즉시 자동 발급)
                 </span>
               </div>
             </div>
@@ -767,7 +767,7 @@ export default function DomainSearchPage() {
         </div>
       )}
 
-      {/* 🔮 1단계: 글래스모피즘 도메인 구매 확인 커스텀 모달 (1초 문구 완전 제거) */}
+      {/* 🔮 1단계: 글래스모피즘 도메인 구매 확인 커스텀 모달 (원클릭 문구 완전 제거) */}
       <PaymentConfirmModal
         isOpen={paymentConfirmModalData.isOpen}
         orderName={`CreAibox 독립 브랜드 도메인 (${paymentConfirmModalData.domainName}) 매입`}

@@ -725,7 +725,7 @@ function MusicPlanningPageContent() {
       `;
 
       const generationResult = await generateGeminiContentWithFallback({
-        modelName: vaultConfig?.model || "gemini-3.1-flash-lite",
+        modelName: vaultConfig?.model || "gemini-3.5-flash-lite",
         prompt,
         responseMimeType: "application/json",
         type: "music_album_planning",

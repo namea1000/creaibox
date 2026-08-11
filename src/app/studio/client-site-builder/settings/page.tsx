@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useSiteBuilder } from "../context";
 import { createClient } from "@/utils/supabase/client";
-import { Settings, CheckCircle, Loader2, ArrowRight } from "lucide-react";
+import { Settings, CheckCircle, Loader2, ArrowRight, CreditCard, HelpCircle, ExternalLink } from "lucide-react";
 import Link from "next/link";
 
 export default function SettingsPage() {
@@ -24,6 +24,14 @@ export default function SettingsPage() {
 
   const [saving, setSaving] = useState(false);
 
+  // PG Payment Gateway State
+  const [pgProvider, setPgProvider] = useState<string>("none");
+  const [pgMid, setPgMid] = useState<string>("");
+  const [pgApiKey, setPgApiKey] = useState<string>("");
+  const [enableBankTransfer, setEnableBankTransfer] = useState<boolean>(true);
+  const [bankAccountInfo, setBankAccountInfo] = useState<string>("");
+  const [enableInquiryPayment, setEnableInquiryPayment] = useState<boolean>(true);
+
   // Sync state with selected site when loaded
   useEffect(() => {
     if (selectedSite) {
@@ -37,6 +45,13 @@ export default function SettingsPage() {
       setNaverBlog(selectedSite.extra_configs?.sns_links?.naver_blog || "");
       setInstagram(selectedSite.extra_configs?.sns_links?.instagram || "");
       setYoutube(selectedSite.extra_configs?.sns_links?.youtube || "");
+      
+      setPgProvider(selectedSite.extra_configs?.pgProvider || "none");
+      setPgMid(selectedSite.extra_configs?.pgMid || "");
+      setPgApiKey(selectedSite.extra_configs?.pgApiKey || "");
+      setEnableBankTransfer(selectedSite.extra_configs?.enableBankTransfer ?? true);
+      setBankAccountInfo(selectedSite.extra_configs?.bankAccountInfo || "");
+      setEnableInquiryPayment(selectedSite.extra_configs?.enableInquiryPayment ?? true);
     }
   }, [selectedSite]);
 
@@ -78,6 +93,12 @@ export default function SettingsPage() {
         instagram: instagram.trim(),
         youtube: youtube.trim(),
       },
+      pgProvider,
+      pgMid: pgMid.trim(),
+      pgApiKey: pgApiKey.trim(),
+      enableBankTransfer,
+      bankAccountInfo: bankAccountInfo.trim(),
+      enableInquiryPayment,
     };
 
     try {
@@ -218,6 +239,150 @@ export default function SettingsPage() {
             onChange={(e) => setGaId(e.target.value)}
             className="text-sm text-slate-955 dark:text-white border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 rounded-xl px-4 py-3 focus:outline-none"
           />
+        </div>
+
+        {/* 💳 PG Payment Gateway & Payment Methods */}
+        <div className="pt-8 border-t border-slate-100 dark:border-slate-800/80 space-y-5">
+          <div className="space-y-1 pb-4 border-b border-slate-100 dark:border-slate-800/80">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30">
+              <CreditCard size={12} />
+              <span>결제 수금 직접 입금 지원</span>
+            </div>
+            <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <span>💳 PG 결제 게이트웨이 & 결제 세팅</span>
+            </h3>
+            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
+              자사몰/커스텀 사이트에서 소비자의 결제금액을 직접 수금할 PG 상점 키 및 결제 수단을 설정하세요.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">주요 PG 결제 게이트웨이 선택</label>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { id: "portone", name: "포트원 (PortOne)" },
+                { id: "toss", name: "토스페이먼츠 (Toss)" },
+                { id: "kakaopay", name: "카카오페이 전용" },
+                { id: "none", name: "PG 결제 미사용" },
+              ].map((pg) => (
+                <button
+                  key={pg.id}
+                  type="button"
+                  onClick={() => setPgProvider(pg.id)}
+                  className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-center ${
+                    pgProvider === pg.id
+                      ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 shadow-md"
+                      : "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  {pg.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {pgProvider !== "none" && (
+            <div className="space-y-3 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">PG 상점 ID (MID)</label>
+                <input
+                  type="text"
+                  value={pgMid}
+                  onChange={(e) => setPgMid(e.target.value)}
+                  placeholder="예: imp_884920412491 또는 toss_mid_xxxx"
+                  className="w-full rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 text-xs font-mono font-bold text-cyan-600 dark:text-cyan-300 focus:border-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">API Client Key (공개키)</label>
+                <input
+                  type="text"
+                  value={pgApiKey}
+                  onChange={(e) => setPgApiKey(e.target.value)}
+                  placeholder="예: pk_live_creaibox_sample_key"
+                  className="w-full rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 text-xs font-mono font-bold text-slate-700 dark:text-slate-300 focus:border-emerald-500 focus:outline-none"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <div className="space-y-2 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-extrabold text-slate-700 dark:text-slate-200">🏦 무통장 입금 활성화</label>
+                <input
+                  type="checkbox"
+                  checked={enableBankTransfer}
+                  onChange={(e) => setEnableBankTransfer(e.target.checked)}
+                  className="w-4 h-4 rounded accent-emerald-500 cursor-pointer"
+                />
+              </div>
+              {enableBankTransfer && (
+                <input
+                  type="text"
+                  value={bankAccountInfo}
+                  onChange={(e) => setBankAccountInfo(e.target.value)}
+                  placeholder="예: 국민은행 123456-04-123456 (예금주: 홍길동)"
+                  className="w-full rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 text-xs font-bold text-amber-600 dark:text-amber-300 focus:border-emerald-500 focus:outline-none"
+                />
+              )}
+            </div>
+
+            <div className="space-y-2 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-extrabold text-slate-700 dark:text-slate-200">📄 실시간 견적서 결제 폼 활성화</label>
+                <input
+                  type="checkbox"
+                  checked={enableInquiryPayment}
+                  onChange={(e) => setEnableInquiryPayment(e.target.checked)}
+                  className="w-4 h-4 rounded accent-cyan-500 cursor-pointer"
+                />
+              </div>
+              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
+                소비자가 온라인 견적서(PDF) 발행 후 바로 견적 금액 결제 및 예약을 진행할 수 있도록 견적 결제 폼을 활성화합니다.
+              </p>
+            </div>
+          </div>
+
+          {/* PG Merchant Signup Guide Links & Notice */}
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5">
+            <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+              <HelpCircle size={13} className="text-cyan-500 dark:text-cyan-400" />
+              <span>PG 가맹점 미신청 상태이신가요? (1초 가입 센터)</span>
+            </p>
+            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
+              아래 공식 PG사 포털에서 가맹 신청 후 발급된 상점 MID 및 API Key를 입력하시면 결제가 자동 가동됩니다.
+            </p>
+
+            <div className="flex flex-col gap-1.5 pt-1">
+              <a
+                href="https://portone.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-300 transition-all"
+              >
+                <span className="flex items-center gap-1.5">
+                  <ExternalLink size={12} className="text-emerald-500 dark:text-emerald-400" />
+                  <span>포트원 (PortOne) 무료 가맹 신청 포털</span>
+                </span>
+                <span className="text-[10px] text-emerald-500 dark:text-emerald-400 font-mono">portone.io ↗</span>
+              </a>
+
+              <a
+                href="https://www.tosspayments.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
+              >
+                <span className="flex items-center gap-1.5">
+                  <ExternalLink size={12} className="text-blue-500 dark:text-blue-400" />
+                  <span>토스페이먼츠 (Toss) 전자결제 도입</span>
+                </span>
+                <span className="text-[10px] text-blue-500 dark:text-blue-400 font-mono">tosspayments.com ↗</span>
+              </a>
+            </div>
+          </div>
         </div>
 
         {/* Commit save button */}

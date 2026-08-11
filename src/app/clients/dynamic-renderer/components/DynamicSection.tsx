@@ -25,9 +25,19 @@ export default function DynamicSection({
     return <IconComponent className="h-6 w-6 text-white" />;
   };
 
-  switch (sectionType) {
+  const actualSectionType = sectionType.startsWith("subpage_") ? "custom_html" : sectionType;
+
+  switch (actualSectionType) {
+    case "custom_html": {
+      return (
+        <div 
+          dangerouslySetInnerHTML={{ __html: contentData.html || "" }} 
+          className="w-full"
+        />
+      );
+    }
     case "hero": {
-      const bgImage = contentData.backgroundImage;
+      const bgImage = contentData.image || contentData.backgroundImage || contentData.imageUrl;
       const ctaText = contentData.ctaText || "시작하기";
       const ctaLink = contentData.ctaLink || "#contact";
       const features = contentData.features || [];
@@ -91,16 +101,18 @@ export default function DynamicSection({
                     style={{ borderRadius: "var(--border-radius)" }}
                   />
                 )}
-                {/* Visual Glass Box */}
-                <div className="relative z-10 border border-white/50 backdrop-blur-xl bg-white/40 p-8 shadow-2xl border-b border-r border-white/20" style={{ borderRadius: "var(--border-radius)" }}>
-                  <div className="flex h-12 w-12 items-center justify-center bg-[var(--primary)] text-white shadow-md mb-4" style={{ borderRadius: "var(--border-radius)" }}>
-                    <LucideIcons.Sparkles size={22} />
+                {/* Visual Glass Box (Fallback) */}
+                {!bgImage && (
+                  <div className="relative z-10 border border-white/50 backdrop-blur-xl bg-white/40 p-8 shadow-2xl border-b border-r border-white/20" style={{ borderRadius: "var(--border-radius)" }}>
+                    <div className="flex h-12 w-12 items-center justify-center bg-[var(--primary)] text-white shadow-md mb-4" style={{ borderRadius: "var(--border-radius)" }}>
+                      <LucideIcons.Sparkles size={22} />
+                    </div>
+                    <h4 className="text-lg font-bold text-slate-900 mb-2">AI 맞춤형 페이지 가동 중</h4>
+                    <p className="text-xs text-slate-600 font-semibold leading-relaxed">
+                      실시간 동적 렌더링을 활용해 비즈니스 정체성에 최적화된 테마와 구조를 출력하고 있습니다.
+                    </p>
                   </div>
-                  <h4 className="text-lg font-bold text-slate-900 mb-2">AI 맞춤형 페이지 가동 중</h4>
-                  <p className="text-xs text-slate-600 font-semibold leading-relaxed">
-                    실시간 동적 렌더링을 활용해 비즈니스 정체성에 최적화된 테마와 구조를 출력하고 있습니다.
-                  </p>
-                </div>
+                )}
               </div>
             </div>
           </div>
