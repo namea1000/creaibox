@@ -74,6 +74,11 @@ AI Agents MUST NOT declare success or finish a user request turn without verifyi
 - **모든 문서 내 환경변수 예시 코드에는 반드시 마스킹 문자열(예: `your_api_secret_here`, `sec_xxxx`, `your_private_key_here`)만 사용해야 한다.**
 - 실제 시크릿 키는 Git에 포함되지 않는 `.env.local` 파일 및 Vercel/서버 환경변수 설정(Environment Variables)에서만 관리하여 Git 유출 및 Vercel 보안 스캐너 감지를 철저히 방지한다.
 
+### 15. Mandatory Zero Egress Architecture Design Rule (트래픽 비용 0원 아키텍처 설계 의무 규칙)
+- **향후 에이전트가 새로운 메뉴, 미디어 서빙 기능, 혹은 커스텀 웹사이트 빌더 등을 설계/개발할 때는 반드시 "트래픽 0원(Zero Egress) 아키텍처"를 기본 전제로 깔고 설계해야 한다.**
+- **Supabase Storage Egress 방어**: Vercel 프록시(`src/app/api/free-assets/proxy/route.ts`)와 `Cache-Control: immutable` 헤더를 활용하여 Supabase 망의 직접 Egress를 100% 차단한다.
+- **Cloudflare R2 Direct 서빙**: 대규모 트래픽이 예상되는 고화질 에셋(커스텀 웹사이트 배경 이미지 등) 서빙 시에는 Vercel 대역폭 한도 초과(요금 폭탄)를 방지하기 위해 Vercel을 거치지 않고 Cloudflare R2 퍼블릭 도메인을 통해 **다이렉트 서빙(Direct Serving)** 하도록 아키텍처를 설계한다.
+
 # ==================================================
 
 # Documentation Rules

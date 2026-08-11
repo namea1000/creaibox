@@ -10,10 +10,10 @@ export default function MigrationPage() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setCurrentUser(session?.user ?? null);
+    supabase.auth.getSession().then((res: any) => {
+      setCurrentUser(res?.data?.session?.user ?? null);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       setCurrentUser(session?.user ?? null);
     });
     return () => subscription.unsubscribe();

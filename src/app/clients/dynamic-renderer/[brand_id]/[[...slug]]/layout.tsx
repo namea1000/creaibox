@@ -101,6 +101,11 @@ export default async function DynamicRendererLayout({ children, params }: Layout
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       <link rel="stylesheet" href={fontUrl} />
 
+      {/* Tailwind CDN for dynamically generated custom layouts (AI Migration) */}
+      {site.extra_configs?.is_custom_layout && (
+        <script src="https://cdn.tailwindcss.com"></script>
+      )}
+
       {site.extra_configs?.is_custom_layout && site.extra_configs?.header_html ? (
         <div dangerouslySetInnerHTML={{ __html: site.extra_configs.header_html }} />
       ) : (

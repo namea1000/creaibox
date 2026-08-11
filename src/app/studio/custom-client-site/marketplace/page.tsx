@@ -10,10 +10,10 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setCurrentUser(session?.user ?? null);
+    supabase.auth.getSession().then((res: any) => {
+      setCurrentUser(res?.data?.session?.user ?? null);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       setCurrentUser(session?.user ?? null);
     });
     return () => subscription.unsubscribe();
@@ -35,7 +35,14 @@ export default function MarketplacePage() {
         <p className="text-sm text-slate-400 mt-1">다양한 프리미엄 템플릿을 구경하고 내 서브도메인에 즉시 배포하세요.</p>
       </div>
 
-      <MarketplaceTab requireAuth={requireAuth} />
+      <MarketplaceTab 
+        requireAuth={requireAuth} 
+        setPreviewModalTemplate={() => {}}
+        setDeployModalTemplate={() => {}}
+        setDeploySiteName={() => {}}
+        setDeploySubdomain={() => {}}
+        setDeploySuccess={() => {}}
+      />
 
       {/* Unified Simple Login Modal */}
       {showLoginModal && (

@@ -7,11 +7,25 @@
 ## 1. 개요 및 도입 배경
 
 ### ⚠️ 기존 아키텍처의 한계
+
 1. **구글 드라이브 트래픽 제한**: 구글 드라이브에 저장된 에셋 원본 주소로 다수의 사용자가 동시에 동영상을 로딩하거나 편집에 사용하면 구글 API 단에서 `403 Quota Exceeded` 에러를 뱉으며 다운로드를 강제 차단합니다.
-2. **Supabase Egress 요금 폭탄**: Supabase Storage를 다이렉트 스트리밍으로 사용하는 경우, 데이터 다운로드 전송 요금(Egress)이 1GB당 약 125원($0.09)씩 무제한 과금되어 사용자가 많아질수록 높은 인프라 유지 비용이 청구됩니다.
+2. **Supabase Egress 요금 폭탄**: Supabase Storage를 다이렉트 스트리밍으로 사용하는 경우, 데이터 다운로드 전송 요금(Egress)이 1GB당 약 125원($0.09)씩 무제한 과금되어 사용자가 많아질수록 높은 인프라 유지 비용이 청구됩니다.ㅏ ㄹㅇ
 
 ### 💡 Cloudflare R2의 핵심 해결책
+
 * **Zero Egress Fees (전송 요금 0원)**: 클라우드플레어 R2는 전 세계에서 유일하게 **데이터 다운로드 전송료가 완전히 무료(0원)**인 오브젝트 스토리지입니다. 수만 명의 사용자가 고화질 비디오 에셋을 계속해서 스트리밍하고 인코딩(내보내기)에 활용해도 트래픽 전송 요금이 단 1원도 청구되지 않는 최적의 비디오 서빙 스토리지입니다. (10GB 보관 용량까지 완전 무료 제공)
+
+> [!NOTE]
+> **아키텍처 스터디: Supabase Egress 제로 프록시 vs R2 다이렉트 서빙**
+>
+> 1. **Supabase + Vercel Proxy (기존 방식)**
+>
+>    - `Cache-Control: immutable` 헤더와 Vercel 프록시(`/api/free-assets/proxy`)를 사용하면, CDN 엣지에 이미지가 캐시되어 **Supabase 데이터베이스의 Egress 요금은 0원**으로 완벽히 방어됩니다.
+>    - **단점**: 하지만 트래픽이 최종적으로 Vercel 프론트엔드 네트워크를 타고 나가기 때문에, 10만 명 단위의 대규모 트래픽 발생 시 Vercel의 Bandwidth(대역폭) 한도를 초과하여 **Vercel 요금 폭탄**을 맞게 됩니다.
+> 2. **Cloudflare R2 Direct (권장 방식)**
+>
+>    - 프록시를 거치지 않고 R2 퍼블릭 주소(`https://pub-xxx.r2.dev`)를 통해 다이렉트로 이미지를 서빙합니다.
+>    - **압도적 장점**: Vercel을 전혀 거치지 않으므로 Vercel 트래픽 부하가 **0%**이며, R2 자체도 다운로드 Egress 요금이 **0원**이므로 인프라 전송 비용이 **완벽한 제로(0원)**로 수렴합니다. (고객 홈페이지 AI 이관 시 이미지 스토리지로 R2를 채택한 결정적 이유)
 
 ---
 
@@ -27,12 +41,15 @@
 ## 3. R2 버킷(Bucket) 생성 및 Public Domain 허용
 
 ### 단계 1: 버킷 생성
+
 1. R2 메인 대시보드에서 **[Create bucket]** 파란색 버튼을 클릭합니다.
 2. **Bucket name**에 `creaibox-assets`를 입력합니다. (영문 소문자, 숫자, 하이픈만 사용 가능)
 3. 생성 설정을 완료하여 저장합니다.
 
 ### 단계 2: Public Development URL (공개 주소) 활성화
+
 유저들의 웹 브라우저가 R2 창고에 들어있는 동영상을 직접 로딩하여 플레이할 수 있도록 공개 도메인 주소를 활성화해야 합니다.
+
 1. 생성된 `creaibox-assets` 버킷 대시보드에서 **[Settings (설정)]** 탭 메뉴를 클릭합니다.
 2. 아래로 스크롤하여 **`Public Development URL`** 섹션을 찾습니다.
 3. 우측의 파란색 **`[Enable]`** 링크를 클릭합니다.
@@ -81,15 +98,15 @@
 
 ## 6. 환경 변수 등록 및 연동 (.env.local)
 
-프로젝트 루트 폴더의 [.env.local](file:///Users/a1234/Local%20Sites/creaibox/.env.local) 파일의 가장 아래에 위에서 획득한 R2 정보 5개를 아래 형식에 맞추어 기재해 줍니다. 
+프로젝트 루트 폴더의 [.env.local](<file:///Users/a1234/Local%20Sites/creaibox/.env.local>) 파일의 가장 아래에 위에서 획득한 R2 정보 5개를 아래 형식에 맞추어 기재해 줍니다.
 
 ```env
 # Cloudflare R2 Configuration
-R2_ACCOUNT_ID="9b9b1f3c19bb1f238909a806c9679bd8"
-R2_ACCESS_KEY_ID="4f17e0531ee261a5792d02ed3db17247"
-R2_SECRET_ACCESS_KEY="11da83331560863d994170eca386d0640d2b6a467b1c9d030d6cb67a6efd9738"
+R2_ACCOUNT_ID="your_account_id_here"
+R2_ACCESS_KEY_ID="your_access_key_id_here"
+R2_SECRET_ACCESS_KEY="your_secret_access_key_here"
 R2_BUCKET_NAME="creaibox-assets"
-NEXT_PUBLIC_R2_PUBLIC_URL="https://pub-4d5e9d40c2ef4eeb93a533aee9f1862d.r2.dev"
+NEXT_PUBLIC_R2_PUBLIC_URL="https://pub-xxxxxxxxxxxxxxxx.r2.dev"
 ```
 
 > [!CAUTION]
@@ -99,9 +116,10 @@ NEXT_PUBLIC_R2_PUBLIC_URL="https://pub-4d5e9d40c2ef4eeb93a533aee9f1862d.r2.dev"
 
 ## 7. 구글 드라이브 ➡️ R2 미디어 동기화 스크립트 실행 가이드
 
-프로젝트에는 관리자용 동기화 엔진인 [scripts/sync-r2-assets.ts](file:///Users/a1234/Local%20Sites/creaibox/scripts/sync-r2-assets.ts) 파일이 내장되어 있습니다. 이 스크립트는 구글 드라이브 폴더의 모든 영상을 조회하여 R2에 없는 파일만 다운로드/업로드하고 Supabase DB 테이블 `free_assets`에 R2 CDN 주소를 다이렉트로 매핑하여 동기화해 줍니다.
+프로젝트에는 관리자용 동기화 엔진인 [scripts/sync-r2-assets.ts](<file:///Users/a1234/Local%20Sites/creaibox/scripts/sync-r2-assets.ts>) 파일이 내장되어 있습니다. 이 스크립트는 구글 드라이브 폴더의 모든 영상을 조회하여 R2에 없는 파일만 다운로드/업로드하고 Supabase DB 테이블 `free_assets`에 R2 CDN 주소를 다이렉트로 매핑하여 동기화해 줍니다.
 
 ### 실행 방법
+
 터미널을 열고 프로젝트 루트 디렉토리에서 다음 명령을 실행합니다:
 
 ```bash
@@ -109,6 +127,7 @@ npx ts-node --compiler-options '{"module":"commonjs","noImplicitAny":false}' scr
 ```
 
 ### 작동 프로세스
+
 1. `.env.local` 파일에서 구글 및 R2 설정 값을 로드합니다.
 2. `creaibox-free-assets` 구글 드라이브 공유 폴더 하위의 `video/` 디렉토리를 검색합니다.
 3. 발견된 신규 비디오 파일(예: `abocado_ai_...mp4`)을 백엔드로 가져옵니다.

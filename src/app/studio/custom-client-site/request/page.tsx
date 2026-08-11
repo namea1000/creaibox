@@ -36,10 +36,10 @@ export default function RequestPage() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setCurrentUser(session?.user ?? null);
+    supabase.auth.getSession().then((res: any) => {
+      setCurrentUser(res?.data?.session?.user ?? null);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       setCurrentUser(session?.user ?? null);
     });
     return () => subscription.unsubscribe();
@@ -57,11 +57,13 @@ export default function RequestPage() {
   return (
     <div className="min-h-screen bg-[#0d0f14] text-slate-100 font-sans p-6 lg:p-10">
       <div className="mb-6">
-        <h1 className="text-2xl font-black text-white">AI 커스텀 신규 제작 신청</h1>
-        <p className="text-sm text-slate-400 mt-1">원하시는 디자인 템플릿이 없으신가요? 맞춤형 커스텀 디자인을 신청해 보세요.</p>
+        <h1 className="text-2xl font-black text-white">커스텀 디자인 신청</h1>
+        <p className="text-sm text-slate-400 mt-1">전문 디자이너에게 완벽한 맞춤형 웹사이트 제작을 의뢰하세요.</p>
       </div>
 
-      <RequestTab requireAuth={requireAuth} onSubmitRequest={handleRequestSubmit} />
+      <RequestTab 
+        requireAuth={requireAuth} 
+      />
 
       {/* Unified Simple Login Modal */}
       {showLoginModal && (

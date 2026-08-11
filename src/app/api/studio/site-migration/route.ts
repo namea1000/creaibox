@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { TEMPLATE_REGISTRY } from "@/lib/templates/registry";
 
@@ -6,6 +7,52 @@ import { TEMPLATE_REGISTRY } from "@/lib/templates/registry";
  * 🚀 AI 기존 홈페이지 1초 자동 이관 (Site Migration & Scraper Engine)
  */
 export async function POST(request: Request) {
+  const s3Client = new S3Client({
+    region: 'auto',
+    endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
+    },
+  });
+
+  async function processHtmlImagesWithR2(html: string, siteId: string): Promise<string> {
+    if (!html) return html;
+    const urlRegex = /https?:\/\/[^\s"'()]+/g;
+    const urls = html.match(urlRegex) || [];
+    // Only target image-like URLs to avoid fetching unrelated links
+    const uniqueUrls = Array.from(new Set(urls)).filter(u => u.match(/\.(jpeg|jpg|gif|png|svg|webp)/i) || u.includes("images.unsplash.com") || u.includes("drive.google.com"));
+
+    let newHtml = html;
+    const uploadPromises = uniqueUrls.map(async (url) => {
+      try {
+        const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
+        if (!res.ok) return;
+        const arrayBuffer = await res.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const fileName = url.split('/').pop()?.split('?')[0] || `img_${Date.now()}.jpg`;
+        const s3Key = `migrated-sites/${siteId}/${Date.now()}_${fileName}`;
+        
+        const contentType = res.headers.get("content-type") || "image/jpeg";
+        
+        await s3Client.send(new PutObjectCommand({
+          Bucket: process.env.R2_BUCKET_NAME || 'creaibox-assets',
+          Key: s3Key,
+          Body: buffer,
+          ContentType: contentType,
+        }));
+
+        const newUrl = `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/${s3Key}`;
+        newHtml = newHtml.split(url).join(newUrl);
+      } catch (e) {
+        console.error(`Failed to upload ${url} to R2:`, e);
+      }
+    });
+
+    await Promise.all(uploadPromises);
+    return newHtml;
+  }
+
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -105,7 +152,7 @@ export async function POST(request: Request) {
         .eq("site_id", siteId)
         .not("section_type", "like", "subpage_%");
         
-      hasMain = existingMain && existingMain.length > 0;
+      hasMain = (existingMain?.length ?? 0) > 0;
       
       if (depth === "main") {
         await adminSupabase.from("site_sections").delete().eq("site_id", siteId);
@@ -153,7 +200,8 @@ export async function POST(request: Request) {
           }
 
           Guidelines:
-          - Extract real text, links, and image URLs from the HTML.
+          - Extract real text, links, and image URLs from the HTML (Check \`data-src\` if \`src\` is empty/lazy-loaded).
+          - CRITICAL RULE: All image URLs (\`src\` attributes or \`style="background-image: ..."\`) MUST be ABSOLUTE URLs. If the original HTML uses a relative URL (e.g., \`src="/images/logo.png"\`), you MUST prepend the original domain \`${urlObj.origin}\` to make it absolute (e.g., \`src="${urlObj.origin}/images/logo.png"\`). If you fail to do this, all images will be broken (엑박)!
           - Use modern Tailwind CSS classes (e.g. flex, grid, px-8, py-16, text-gray-900, bg-white) for styling.
           - Make the HTML fully responsive (use md:, lg: prefixes).
           - Do NOT use Markdown formatting in the strings.
@@ -181,10 +229,29 @@ export async function POST(request: Request) {
           await adminSupabase.from("client_sites").update({ template_id: aiTemplateId }).eq("id", siteId);
         }
         
-        // 1. Update site extra_configs with custom header and footer
-        const headerHtml = parsedAi.header_html;
-        const footerHtml = parsedAi.footer_html;
+        // --- NEW: Download and replace external images with R2 CDN URLs ---
+        let headerHtml = parsedAi.header_html || "";
+        let footerHtml = parsedAi.footer_html || "";
         
+        headerHtml = await processHtmlImagesWithR2(headerHtml, siteId);
+        footerHtml = await processHtmlImagesWithR2(footerHtml, siteId);
+        
+        const aiSections = parsedAi.main_sections || [];
+        for (let i = 0; i < aiSections.length; i++) {
+          if (aiSections[i].html) {
+            aiSections[i].html = await processHtmlImagesWithR2(aiSections[i].html, siteId);
+          }
+        }
+        
+        const aiSubpages = parsedAi.subpages || [];
+        for (let i = 0; i < aiSubpages.length; i++) {
+          if (aiSubpages[i].html) {
+            aiSubpages[i].html = await processHtmlImagesWithR2(aiSubpages[i].html, siteId);
+          }
+        }
+        // ------------------------------------------------------------------
+
+        // 1. Update site extra_configs with custom header and footer
         if (headerHtml || footerHtml) {
           const { data: currentSite } = await adminSupabase
             .from("client_sites")
@@ -204,7 +271,6 @@ export async function POST(request: Request) {
         }
 
         // 2. Map main sections
-        const aiSections = parsedAi.main_sections || [];
         const mainGen = aiSections.map((sec: any, index: number) => ({
           site_id: siteId,
           section_type: "custom_html",
@@ -215,7 +281,6 @@ export async function POST(request: Request) {
         }));
         
         // 3. Map subpages
-        const aiSubpages = parsedAi.subpages || [];
         const subGen = aiSubpages.map((sec: any, index: number) => ({
           site_id: siteId,
           section_type: `subpage_${sec.page_slug || "page"}`,
