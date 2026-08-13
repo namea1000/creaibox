@@ -31,7 +31,7 @@ export default function MigrationPage() {
   return (
     <div className="min-h-screen bg-[#0d0f14] text-slate-100 font-sans p-6 lg:p-10">
       <div className="mb-6">
-        <h1 className="text-2xl font-black text-white">기존 홈페이지 통째 이관</h1>
+        <h1 className="text-2xl font-black text-white">기존 홈페이지 이관</h1>
         <p className="text-sm text-slate-400 mt-1">타사 솔루션으로 만든 사이트의 URL을 입력해 AI 엔진으로 구조와 텍스트를 자동 이관하세요.</p>
       </div>
 

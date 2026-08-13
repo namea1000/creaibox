@@ -36,7 +36,7 @@ function buildVaultPayload(body: any, shouldEncryptKey: boolean) {
   const payload: Record<string, any> = {
     provider_type: body.provider_type || "ai",
     provider: body.provider || "gemini",
-    model: body.model || "gemini-3-flash-preview",
+    model: body.model || "gemini-3.5-flash-lite",
 
     label: body.label,
     display_name: body.display_name,

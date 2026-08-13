@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useSiteBuilder } from "../context";
 import { createClient } from "@/utils/supabase/client";
-import { FileText, Newspaper, Calendar, User, Eye, ArrowRight, Plus, Trash2, Pin, CheckCircle, Loader2, Link as LinkIcon, X, AlertCircle } from "lucide-react";
+import { FileText, Newspaper, Calendar, User, Eye, ArrowRight, Plus, Trash2, Pin, CheckCircle, Loader2, Link as LinkIcon, X, AlertCircle, Edit3, Layout } from "lucide-react";
 import Link from "next/link";
 
 interface BlogPost {
@@ -17,6 +17,15 @@ interface BlogPost {
   created_at: string;
 }
 
+interface DynamicPage {
+  id: string;
+  section_type: string;
+  title: string;
+  slug: string; // "home" for main, actual slug for subpages
+  isMain: boolean;
+  sort_order: number;
+}
+
 export default function PagesAndPostsPage() {
   const { sites, selectedSite } = useSiteBuilder();
   const supabase = createClient();
@@ -24,6 +33,8 @@ export default function PagesAndPostsPage() {
   const [activeTab, setActiveTab] = useState<"pages" | "posts">("pages");
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(false);
+  const [pagesLoading, setPagesLoading] = useState(false);
+  const [dynamicPages, setDynamicPages] = useState<DynamicPage[]>([]);
 
   // Write/Edit Post Modal State
   const [showWriteModal, setShowWriteModal] = useState(false);
@@ -33,6 +44,55 @@ export default function PagesAndPostsPage() {
   const [authorName, setAuthorName] = useState("");
   const [isPinned, setIsPinned] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Fetch dynamic pages from DB
+  const fetchPages = async () => {
+    if (!selectedSite) return;
+    setPagesLoading(true);
+    try {
+      const { data: sections } = await supabase
+        .from("site_sections")
+        .select("id, section_type, title, sort_order")
+        .eq("site_id", selectedSite.id)
+        .order("sort_order", { ascending: true });
+
+      const pages: DynamicPage[] = [];
+
+      // Always add main page first
+      pages.push({
+        id: "main",
+        section_type: "main",
+        title: "메인 홈페이지",
+        slug: "home",
+        isMain: true,
+        sort_order: 0,
+      });
+
+      // Add subpages from DB
+      const subpages = (sections || [])
+        .filter((s: any) => s.section_type.startsWith("subpage_"))
+        .map((s: any) => ({
+          id: s.id,
+          section_type: s.section_type,
+          title: s.title || s.section_type.replace("subpage_", ""),
+          slug: s.section_type.replace("subpage_", ""),
+          isMain: false,
+          sort_order: s.sort_order,
+        }));
+
+      setDynamicPages([...pages, ...subpages]);
+    } catch (err) {
+      console.error("Failed to fetch pages:", err);
+    } finally {
+      setPagesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedSite && activeTab === "pages") {
+      fetchPages();
+    }
+  }, [selectedSite, activeTab]);
 
   // Fetch blog posts and notices
   const fetchPosts = async () => {
@@ -193,13 +253,7 @@ export default function PagesAndPostsPage() {
     }
   };
 
-  // Static site pages info
-  const sitePages = [
-    { name: "메인 홈페이지", slug: "/", desc: "방문자가 진입하는 대표 랜딩 화면입니다. 동적 섹션들이 연동됩니다.", status: "발행됨" },
-    { name: "회사/기관 소개", slug: "/about", desc: "대표자 인사말, 조직 목표 및 주요 성과 지표(Stats)를 노출합니다.", status: "발행됨" },
-    { name: "서비스 안내", slug: "/services", desc: "제공하는 비즈니스 핵심 강점 및 대표 품목 카드 리스트를 소개합니다.", status: "발행됨" },
-    { name: "무료 상담/예약", slug: "/contact", desc: "방문자들의 상담 예약 및 성함, 연락처 등의 DB 접수 신청을 받습니다.", status: "발행됨" },
-  ];
+  // Dynamic pages from DB (no more hardcoded!)
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -231,54 +285,72 @@ export default function PagesAndPostsPage() {
 
       {/* 1. Pages Management Tab */}
       {activeTab === "pages" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {sitePages.map((page) => {
-            const livePageUrl = `http://${selectedSite.brand_id}.localhost:3000${page.slug === "/" ? "" : page.slug}`;
-            return (
-              <div
-                key={page.slug}
-                className="bg-white dark:bg-[#0b0f19] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4"
-              >
-                <div className="space-y-2">
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-1">
-                      <h3 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
-                        <FileText size={16} className="text-emerald-500" />
-                        <span>{page.name}</span>
-                      </h3>
-                      <code className="text-[10px] bg-slate-100 dark:bg-slate-850 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded font-mono">
-                        {page.slug}
-                      </code>
-                    </div>
-                    <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      {page.status}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-semibold">
-                    {page.desc}
-                  </p>
-                </div>
+        <div className="space-y-4">
+          {/* Info Banner */}
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex items-start gap-3">
+            <Layout size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+            <p className="text-xs text-emerald-700 dark:text-emerald-300 font-semibold leading-relaxed">
+              홈페이지 페이지 목록입니다. <strong>✏️ 페이지 편집하기</strong>를 클릭하면 텍스트·이미지를 직접 수정하고 새 블록을 추가할 수 있는 <strong>비주얼 페이지 에디터</strong>가 열립니다.
+            </p>
+          </div>
 
-                <div className="flex gap-2 pt-2 border-t border-slate-50 dark:border-slate-850">
-                  <Link
-                    href="/studio/client-site-builder/builder"
-                    className="flex-1 py-2 text-center text-[11px] font-extrabold text-slate-600 bg-slate-50 dark:text-slate-300 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"
+          {pagesLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="animate-spin text-emerald-500" size={24} />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {dynamicPages.map((page) => {
+                const livePageUrl = `http://${selectedSite.brand_id}.localhost:3000${page.isMain ? "" : `/${page.slug}`}`;
+                const editorUrl = `/studio/client-site-builder/page-editor/${page.slug}`;
+                return (
+                  <div
+                    key={page.id}
+                    className="bg-white dark:bg-[#0b0f19] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4"
                   >
-                    레이아웃 편집하기
-                  </Link>
-                  <a
-                    href={livePageUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 py-2 text-center text-[11px] font-extrabold text-white bg-slate-950 hover:bg-slate-800 dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-450 rounded-lg transition-all flex items-center justify-center gap-1"
-                  >
-                    <span>바로가기</span>
-                    <LinkIcon size={12} />
-                  </a>
-                </div>
-              </div>
-            );
-          })}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-1">
+                          <h3 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            <FileText size={14} className={page.isMain ? "text-emerald-500" : "text-violet-500"} />
+                            <span>{page.title}</span>
+                            {page.isMain && (
+                              <span className="text-[10px] font-black bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded-lg border border-emerald-500/20">메인</span>
+                            )}
+                          </h3>
+                          <code className="text-[10px] bg-slate-100 dark:bg-slate-850 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded font-mono">
+                            /{page.isMain ? "" : page.slug}
+                          </code>
+                        </div>
+                        <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          발행됨
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-2 border-t border-slate-50 dark:border-slate-800">
+                      <Link
+                        href={editorUrl}
+                        className="flex-1 py-2.5 text-center text-[11px] font-extrabold text-violet-600 dark:text-violet-400 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 rounded-xl transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <Edit3 size={12} />
+                        ✏️ 페이지 편집하기
+                      </Link>
+                      <a
+                        href={livePageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 py-2.5 text-center text-[11px] font-extrabold text-white bg-slate-950 hover:bg-slate-800 dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-450 rounded-xl transition-all flex items-center justify-center gap-1"
+                      >
+                        <span>사이트 보기</span>
+                        <LinkIcon size={11} />
+                      </a>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

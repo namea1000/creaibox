@@ -53,7 +53,8 @@ AI Agents MUST NOT declare success or finish a user request turn without verifyi
 - **규칙 2 (Egress 트래픽 방어 - 목록 조회 시 본문 컬럼 제외)**: 블로그 목록, 카테고리 목록, 포트폴리오 목록 쿼리 작성 시 무거운 원고 본문 전체 HTML(`content`)이나 JSON 덤프(`published_snapshot`) 컬럼을 절대 `select()`에 포함하지 않고 경량 메타 필드만 수집한다.
 ### 10. Mandatory Vertex AI & Gemini Primary Engine Standard Rule (gemini-3.5-flash-lite 1순위 의무화 규칙)
 - **모든 GCP Vertex AI 및 Gemini AI 연동 백엔드 모듈, API 라우트, AI 스캐너 및 배치 스크립트에서 최우선 1순위 기본 구동 엔진은 무조건 `gemini-3.5-flash-lite` 모델로 1순위 배치해야 한다.**
-- `gemini-3.5-flash-lite`는 극상의 초고속 응답 속도와 최저 토큰 비용(Ultra-low cost)을 자랑하므로 대용량 배치 처리, 트렌드 스캔, 키워드 사유 생성, 자동 검증 엔진의 1순위 표준 모델로 사용한다. (fallback 시에만 `gemini-2.5-flash` 활용)
+- 단, "커스텀 웹사이트 🌟" (Site Migration) 메뉴는 고도의 정밀한 HTML 분석이 필요하므로 예외적으로 `gemini-3.6-flash`를 단독 사용한다.
+- `gemini-3.5-flash-lite`는 극상의 초고속 응답 속도와 최저 토큰 비용(Ultra-low cost)을 자랑하므로 그 외 대용량 배치 처리, 트렌드 스캔, 키워드 사유 생성, 자동 검증 엔진의 1순위 표준 모델로 사용한다. (fallback 시에만 `gemini-2.5-flash` 활용)
 
 ### 11. Mandatory SmartIntentLink 0.01s Instant Navigation Rule (스마트 링커 0.01초 가속 개발 의무 규칙)
 - **향후 신규로 제작되는 모든 사용자 블로그, 비즈니스 홈페이지, 커스텀 웹사이트 템플릿, 카드 목록 및 아티클 링커에는 맹목적 `Link` 또는 `<a href>` 대신 무조건 `SmartIntentLink` (`@/components/common/SmartIntentLink`) 컴포넌트를 사용해야 한다.**
@@ -87,28 +88,26 @@ AI Agents MUST NOT declare success or finish a user request turn without verifyi
 
 Documentation is mandatory for all major features.
 
-The following documentation structure must be maintained.
+### Mandatory Architecture Directory Categorization Rule (아키텍처 문서 생성 시 메뉴별 서브폴더 분류 의무 규칙)
+The `docs/arch/` directory is categorized into 7 main folders. You MUST place any new architecture or design spec files into the most appropriate category folder, rather than the root `docs/arch/`.
+If a new major menu is developed that does not fit into these categories, you MUST create a new category folder (e.g. `08_new-menu-name/`) and place the files there.
 
-For every major module:
+Categories:
+- `01_core-and-infra/`
+- `02_auth-and-domain/`
+- `03_client-site-builder/`
+- `04_writing-and-blog/`
+- `05_image-and-video/`
+- `06_trend-and-marketing/`
+- `07_music-and-community/`
 
-Required files:
-
-docs/arch/<module>.md
-docs/arch/<module>-design-spec.md
+Required files per module:
+docs/arch/<category_folder>/<module>.md
+docs/arch/<category_folder>/<module>-design-spec.md
 
 Example:
-
-docs/arch/writing-studio.md
-docs/arch/writing-studio-design-spec.md
-
-docs/arch/research-studio.md
-docs/arch/research-studio-design-spec.md
-
-docs/arch/music-studio.md
-docs/arch/music-studio-design-spec.md
-
-docs/arch/ai-assistant.md
-docs/arch/ai-assistant-design-spec.md
+docs/arch/04_writing-and-blog/writing-studio.md
+docs/arch/04_writing-and-blog/writing-studio-design-spec.md
 
 # --------------------------------------------------
 
@@ -126,8 +125,10 @@ Custom Client Site Template Rules:
 # --------------------------------------------------
 
 모든 서비스 구축, 외부 연동, 도메인/OAuth/API 설정 등 "~ 하는 방법" 관련 가이드 및 매뉴얼 문서는:
-- `@docs/project/manual/` 디렉토리에 매뉴얼 파일명(`.md`)으로 작성하고 보관해야 합니다.
-- 향후 신규 서비스 및 인프라 구축 작업 진행 시, 설정/연동 프로세스를 Step-by-Step 매뉴얼 규격으로 해당 폴더에 반드시 기록해야 합니다.
+- `@docs/project/manual/` 디렉토리 아래의 **적절한 7개 대분류 폴더 중 하나**에 매뉴얼 파일명(`.md`)으로 작성하고 보관해야 합니다.
+- (예: `01_core-and-infra/`, `02_auth-and-domain/`, `03_client-site-builder/` 등)
+- 만약 완전히 새로운 신규 메뉴가 개발되어 기존 7개 분류에 속하지 않는다면, 새로운 넘버링 폴더(예: `08_new-menu-category/`)를 직접 생성하고 그 안에 문서를 저장해야 합니다.
+- 향후 신규 서비스 및 인프라 구축 작업 진행 시, 설정/연동 프로세스를 Step-by-Step 매뉴얼 규격으로 해당 분류 폴더에 반드시 기록해야 합니다.
 
 # --------------------------------------------------
 

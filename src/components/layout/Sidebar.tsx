@@ -70,6 +70,7 @@ import {
   Tags,
   Save,
   Store,
+  MonitorSmartphone,
   type LucideIcon,
 } from "lucide-react";
 
@@ -125,12 +126,13 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
 
-  const [isAdmin, setIsAdmin] = useState(() => {
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  useEffect(() => {
     if (typeof window !== "undefined") {
-      return sessionStorage.getItem("sidebar_is_admin") === "true";
+      setIsAdmin(sessionStorage.getItem("sidebar_is_admin") === "true");
     }
-    return false;
-  });
+  }, []);
   
   const [isMounted, setIsMounted] = useState(false);
   const supabase = useMemo(() => createClient(), []);
@@ -207,7 +209,9 @@ export default function Sidebar({
         color: "text-cyan-400",
         children: [
           { name: "템플릿 쇼핑 & 1초 구축", href: "/studio/custom-client-site/marketplace", icon: Store },
-          { name: "기존 홈페이지 통째 이관", href: "/studio/custom-client-site/migration", icon: Globe },
+          { name: "기존 홈페이지 이관", href: "/studio/custom-client-site/migration", icon: Globe },
+          { name: "AI 홈페이지 매직 빌더 🪄", href: "/studio/custom-client-site/ai-magic-builder", icon: MonitorSmartphone },
+          { name: "서브 페이지 AI 추가 제작", href: "/studio/custom-client-site/subpage-builder", icon: Layers },
           { name: "내 커스텀 사이트 관리", href: "/studio/client-site-builder", icon: Settings },
           { name: "AI 커스텀 신규 제작 신청", href: "/studio/custom-client-site/request", icon: Plus },
           { name: "관리자: 커스텀 신청 현황", href: "/studio/custom-client-site/admin-dashboard", icon: ShieldCheck },
@@ -638,27 +642,29 @@ export default function Sidebar({
 
   const [optimisticActiveKey, setOptimisticActiveKey] = useState<string | null>(null);
 
-  const [expandedGroups, setExpandedGroups] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      const stored = sessionStorage.getItem("sidebar_expanded");
-      if (stored) {
-        try {
-          return JSON.parse(stored);
-        } catch (e) {
-          // ignore parse errors
-        }
-      }
-    }
-    // Only on very first load (no session storage), expand the currently active one
-    const activeKeys = menuGroups.filter((g) => isGroupActive(g)).map((g) => g.key);
-    return activeKeys;
-  });
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
+  const [isSidebarMounted, setIsSidebarMounted] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    setIsSidebarMounted(true);
+    const stored = sessionStorage.getItem("sidebar_expanded");
+    if (stored) {
+      try {
+        setExpandedGroups(JSON.parse(stored));
+      } catch (e) {
+        // ignore
+      }
+    } else {
+      const activeKeys = menuGroups.filter((g) => isGroupActive(g)).map((g) => g.key);
+      setExpandedGroups(activeKeys);
+    }
+  }, [menuGroups, isGroupActive]);
+
+  useEffect(() => {
+    if (isSidebarMounted) {
       sessionStorage.setItem("sidebar_expanded", JSON.stringify(expandedGroups));
     }
-  }, [expandedGroups]);
+  }, [expandedGroups, isSidebarMounted]);
 
   // Automatically clear optimistic active key when pathname changes
   useEffect(() => {

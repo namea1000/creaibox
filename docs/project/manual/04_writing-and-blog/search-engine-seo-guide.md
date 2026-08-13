@@ -1,0 +1,144 @@
+# 구글 및 네이버 검색 노출 최적화 가이드
+
+본 문서는 구글(Google)과 네이버(Naver) 검색창에 **"크리에이박스"**, **"creaibox"** 검색 시 공식 도메인(`creaibox.com`)이 최상단 웹사이트 영역 및 공식 업체로 연동되어 노출되도록 조치하는 상세 로드맵입니다.
+
+---
+
+## 1. 네이버 서치어드바이저 사이트 연동 및 인증
+
+네이버 검색 로봇이 `creaibox.com`을 공식 인정하고 크롤링하도록 등록하는 핵심 절차입니다.
+
+### 1.1 사이트 등록
+1. [네이버 서치어드바이저 웹마스터 도구](https://searchadvisor.naver.com/)에 로그인합니다.
+2. 사이트 등록 창에 `https://creaibox.com` 주소를 입력하고 추가 버튼을 누릅니다.
+
+### 1.2 HTML 파일을 이용한 소유권 인증
+1. 사이트 등록 과정 중 소유권 확인 화면에서 **[HTML 확인 파일]** 방식을 선택하고 제공되는 파일(파일명 형식: `naverxxxxxxxxxxxxxxxx.html`)을 다운로드합니다.
+2. 다운로드받은 물리 파일을 프로젝트 루트 하위의 [public/](file:///Users/a1234/Local%20Sites/creaibox/public) 폴더 바로 밑에 복사하여 배포합니다.
+3. 배포 완료 후 서치어드바이저 웹마스터 도구 페이지로 돌아와 `[소유권 확인]` 단추를 클릭합니다.
+
+> [!IMPORTANT]
+> Next.js의 `public/` 폴더에 위치한 정적 파일은 빌드 후 루트 도메인(`https://creaibox.com/naverxxxxxxxx.html`)으로 즉시 접근이 가능하여 네이버 로봇이 확인 파일을 정상적으로 읽어갈 수 있습니다.
+
+---
+
+## 2. 구글 서치 콘솔 사이트 연동 및 인증
+
+구글 검색 로봇(Googlebot)에게 웹사이트의 전체 인덱싱을 강제하고 크롤링 상태를 모니터링하기 위한 필수 수단입니다.
+
+### 2.1 속성 등록
+1. [구글 서치 콘솔](https://search.google.com/search-console)에 로그인합니다.
+2. 좌측 상단 속성 추가창에서 **[URL 접두사]** 유형을 선택한 뒤, `https://creaibox.com` 주소를 입력하고 계속을 클릭합니다.
+
+### 2.2 HTML 파일을 이용한 소유권 인증
+1. 소유권 확인 방법 목록에서 **[HTML 파일 업로드]** 옵션을 선택하고 제공되는 인증용 HTML 파일(파일명 형식: `google-site-verification.html` 또는 `googlexxxxxxxxxxx.html`)을 다운로드합니다.
+2. 다운로드받은 파일을 프로젝트 내 [public/](file:///Users/a1234/Local%20Sites/creaibox/public) 폴더 바로 아래에 저장하고 배포합니다.
+3. 배포 성공 확인 후 서치 콘솔 페이지의 `[확인]` 단추를 누르면 즉시 연동 완료됩니다.
+
+---
+
+## 3. 수집 엔진 최적화 (Sitemap & Robots)
+
+네이버와 구글 웹마스터 도구에 사이트맵과 로봇 통제 규칙을 전달하여 수집 효율을 극대화합니다.
+
+### 3.1 사이트맵 제출
+1. **네이버**: 서치어드바이저 관리 화면 -> **[요청] -> [사이트맵 제출]**에 접속하여 `sitemap.xml`을 제출합니다.
+2. **구글**: 서치 콘솔 관리 화면 -> 좌측 메뉴 **[Sitemaps]**에 접속하여 **[새 사이트맵 추가]** 입력창에 `sitemap.xml`을 입력하고 제출을 클릭합니다.
+   * 현재 [sitemap.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/sitemap.ts) 동적 생성 모듈이 구축되어 있어 즉시 연동 가능합니다.
+
+### 3.2 Robots.txt 수집 허용 확인
+1. 프로젝트 루트의 [robots.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/robots.ts) 설정을 통해 검색 로봇(`User-Agent: *`)의 전체 탐색 및 수집이 활성화되어 있는지 주기적으로 검증합니다.
+
+---
+
+## 4. 구조화 데이터 (JSON-LD) 이식 가이드
+
+네이버와 구글 검색 엔진이 이 사이트의 성격과 공식 명칭을 완벽히 매핑할 수 있도록 Next.js 메인 레이아웃에 메타 데이터를 심는 방법입니다.
+
+### 4.1 적용 방법
+프로젝트 메인 레이아웃 파일 [layout.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/layout.tsx)의 `<body>` 태그 최하단이나 헤더 부분에 아래의 구조화 데이터 스크립트를 삽입합니다.
+
+```tsx
+// src/app/layout.tsx
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="ko">
+      <body>
+        <QueryProvider>{children}</QueryProvider>
+        
+        {/* 공식 사이트 정보 구조화 데이터 */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "크리에이박스",
+              "alternateName": "CreAibox",
+              "url": "https://creaibox.com",
+              "description": "올인원 AI 콘텐츠 스튜디오 및 프리미엄 홈페이지 빌더",
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://creaibox.com/search?q={search_term_string}",
+                "query-input": "required name=search_term_string"
+              }
+            })
+          }}
+        />
+        
+        <GoogleAnalytics gaId="G-SRBFXMN9XQ" />
+      </body>
+    </html>
+  );
+}
+```
+
+---
+
+## 5. 포털별 로컬 검색 및 공식 업체 연동
+
+검색 결과 화면 상단에 로컬 지도 카드 형태로 공식 홈페이지를 대문짝만하게 띄우는 실전 홍보 팁입니다.
+
+### 5.1 네이버 스마트플레이스 등록
+1. **[네이버 스마트플레이스](https://smartplace.naver.com/)**에 로그인 후 **[신규 업체 등록]**을 수행합니다.
+2. 업체명을 `크리에이박스(CreAibox)`로, 웹사이트 URL을 `https://creaibox.com`으로 지정하여 승인을 획득합니다.
+
+### 5.2 구글 비즈니스 프로필 등록
+1. **[구글 비즈니스 프로필](https://www.google.com/business/)**에 로그인하여 크리에이박스 상호로 신규 비즈니스를 등록합니다.
+2. 주소 정보 및 공식 홈페이지(`https://creaibox.com`) 링크를 기재하고 전화 또는 우편 인증 단계를 거칩니다.
+3. 승인 즉시 구글 맵 및 구글 검색 화면 우측 지식 패널(Knowledge Panel) 영역에 크리에이박스 공식 정보가 노출됩니다.
+
+### 5.3 온라인 플랫폼/SaaS 서비스의 로컬 스마트플레이스 등록 필요성
+온라인 기반 서비스나 무형의 소프트웨어 솔루션이라 하더라도, 로컬 스마트플레이스 및 비즈니스 프로필 등록은 국내 검색 노출 및 비즈니스 랭킹에 엄청난 이점을 제공합니다.
+
+* **최상단 영역 강제 독점**: 네이버와 구글 검색 엔진 모두 일반 웹페이지 수집 링크보다 지도 기반의 검증된 플레이스 업체를 상단에 노출시키는 편향성이 존재합니다. 스마트플레이스 등록 시 검색 첫 화면에서 가장 큰 비주얼 카드 영역을 단독 점유할 수 있습니다.
+* **실체성 입증에 따른 신뢰감**: 스마트플레이스 연동을 위해서는 사업자등록증 제출이 요구되므로, 방문 고객들에게 "가짜 사이트나 유령 서비스가 아니라 법적 검증 절차를 마친 실체성 있는 기업"이라는 신뢰를 심어줄 수 있어 전환율 상승에 직간접적으로 기여합니다.
+* **로컬 B2B 유입 통로 확보**: 지도 서비스를 활용해 해당 권역이나 국내의 IT 솔루션, 콘텐츠 제작사, AI 빌더 공급 업체를 검색하는 바이어들에게 자연스럽게 노출되는 추가적인 채널 획득 효과가 발생합니다.
+
+---
+
+## 6. 향후 추가 개선 과제: RSS 피드 API 구축 및 연동
+
+웹사이트에 지속적인 신규 블로그 콘텐츠나 뉴스 기사가 다량 축적되는 시점에 검색엔진 색인 노출 속도를 극대화하기 위해 수행할 백엔드 과제입니다.
+
+### 6.1 RSS 피드 자동 생성 라우트 구현
+* **경로 및 포맷**: `/feed.xml` 또는 `/api/rss` 경로에 호출 시 최신 발행 블로그/뉴스 기사 리스트 50개를 XML 규격에 맞게 파싱하여 동적으로 응답해 주는 API 핸들러를 구축합니다.
+* **동기화**: Supabase의 `posts` 또는 `news` 테이블에 새 레코드가 삽입될 때마다 실시간 갱신되어 제공되도록 연동합니다.
+
+### 6.2 검색 엔진 수집 등록
+* **네이버**: 서치어드바이저 -> **[요청] -> [RSS 제출]** 탭에 접근하여 `https://creaibox.com/feed.xml`을 영구 제출합니다.
+
+---
+
+## 7. 블로그 포스팅 100개 키워드 기획 시트
+
+크리에이박스 블로그 유입 극대화 및 본격적인 콘텐츠 SEO 마케팅 가동을 위해 기획된 100가지 핵심 주제 리스트입니다.
+
+* **기획 시트 링크**: [Creaibox blog post plan (구글 스프레드시트)](https://docs.google.com/spreadsheets/d/1IK_hsVS9YiMgTrqKABypFD11nPmEwitCEALXDwE_gTI/edit)
+* **주요 카테고리 구성**:
+  1. **크리에이박스 가이드 (1~10번)**: 크리에이박스 소개, 스튜디오별(이미지, BGM, 홈페이지, 글쓰기 에디터) 사용 가이드 및 API 활용서.
+  2. **AI 이미지 & 저작권 (11~30번)**: 미드저니/DALL-E 등 글로벌 이미지 AI 비교, 프롬프트 엔지니어링, 상업용 저작권 이슈 대처법.
+  3. **AI 음악 & 오디오 (31~50번)**: Suno/Udio 비교, 저작권 프리 BGM 자작, 매장 음악 및 유튜브 쇼츠 수익 창출 필수 요건.
+  4. **노코드 웹 & 트렌드 (51~70번)**: Framer/Webflow 비교, 코딩 없는 1시간 반응형 홈페이지 제작 가이드, 도메인/SSL/GA4 설정 실무.
+  5. **AI 마케팅 & 글쓰기 (71~90번)**: 챗GPT/클로드 글쓰기 저품질 회피 팁, 구글 서치콘솔 검색 최적화, 롱테일 키워드 랭킹 공략법.
+  6. **AI 최신 동향 (91~100번)**: LLM/멀티모달 트렌드, 온디바이스 NPU 전망, AI 스타트업 창업 실패 패턴 극복 비전.

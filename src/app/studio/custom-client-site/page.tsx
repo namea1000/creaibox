@@ -28,7 +28,7 @@ export default function CustomClientSiteHomePage() {
       border: "border-pink-500/20"
     },
     {
-      title: "기존 홈페이지 통째 이관",
+      title: "기존 홈페이지 이관",
       desc: "타사 솔루션으로 만든 사이트의 URL을 입력해 AI 엔진으로 구조와 텍스트를 자동 이관하세요.",
       icon: <Globe className="text-blue-400" size={24} />,
       link: "/studio/custom-client-site/migration",

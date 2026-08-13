@@ -8,27 +8,35 @@ interface HeaderProps {
   phone?: string;
   hasPortfolio: boolean;
   hasRental: boolean;
+  menus?: { label: string; path: string }[];
 }
 
-export default function Header({ companyName, phone, hasPortfolio, hasRental }: HeaderProps) {
+export default function Header({ companyName, phone, hasPortfolio, hasRental, menus }: HeaderProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const navLinks = [
-    { name: "홈", href: "/" },
-    { name: "서비스 안내", href: "/#services" },
-    { name: "소개", href: "/#about" },
-    ...(hasPortfolio ? [{ name: "주요 실적", href: "/#portfolio" }] : []),
-    ...(hasRental ? [{ name: "공간/대관", href: "/#rental" }] : []),
-    { name: "블로그", href: "/blog" },
-    { name: "상담 신청", href: "/#contact" }
-  ];
+  // If dynamic menus are provided (AI generated or User edited), map them.
+  // Otherwise, use the legacy hardcoded fallback links.
+  const navLinks = menus && menus.length > 0 
+    ? menus.map(m => ({
+        name: m.label,
+        href: m.path.startsWith("/") || m.path.startsWith("#") ? m.path : `/${m.path}`
+      }))
+    : [
+        { name: "홈", href: "/" },
+        { name: "서비스 안내", href: "/#services" },
+        { name: "소개", href: "/#about" },
+        ...(hasPortfolio ? [{ name: "주요 실적", href: "/#portfolio" }] : []),
+        ...(hasRental ? [{ name: "공간/대관", href: "/#rental" }] : []),
+        { name: "블로그", href: "/blog" },
+        { name: "상담 신청", href: "/#contact" }
+      ];
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b-2 border-slate-200/90 shadow-sm transition-colors duration-300">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo / Company Name */}
-          <a href="#" className="flex items-center gap-2">
+          <a href="/" className="flex items-center gap-2">
             <span className="text-xl font-extrabold tracking-tight text-slate-900 select-none">
               {companyName}
             </span>

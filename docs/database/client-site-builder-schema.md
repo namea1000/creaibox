@@ -28,7 +28,10 @@
 | `phone` | text | | 대표 연락처 |
 | `address` | text | | 주소 |
 | `status` | text | Default 'ACTIVE' | 사이트 운영 상태 (`ACTIVE`, `INACTIVE`) |
-| `extra_configs` | jsonb | Default '{}' | SNS 링크, 사업자번호, GA4 측정 ID 등 유연한 설정값 |
+| `creation_source` | text | CHECK (creation_source IN ('migration', 'sns_builder', 'template')) | 사이트 생성 출처 (이관, SNS, 템플릿) |
+| `is_onepage_scroll` | boolean | Default false | 메인 랜딩페이지에 서브페이지 전체 전개 여부 (One-page scroll 모드) |
+| `extra_configs` | jsonb | Default '{}' | SNS 링크, 사업자번호, GA4 측정 ID 등 유연한 설정값. **(백그라운드 무인 이관 큐 용도 추가: `migration_queue`: 서브페이지 URL 배열, `migration_status`: "pending" \| "migrating" \| "completed")** |
+| `scan_report` | jsonb | Default '{}' | **[신규]** 타겟 사이트 정밀 스캔 결과 (페이지 수, 글자 수, 이미지 수, 예상 시간, 톤앤매너 등 보존) |
 | `created_at` | timestamp | Default now() | 생성 일시 |
 
 ### 2-2. `site_sections` (메인 페이지 동적 섹션 콘텐츠)

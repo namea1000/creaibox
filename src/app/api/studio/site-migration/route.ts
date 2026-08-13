@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
     const urlRegex = /https?:\/\/[^\s"'()]+/g;
     const urls = newHtml.match(urlRegex) || [];
-    // Only target image-like URLs to avoid fetching unrelated links
+    // Only target image URLs to avoid fetching large video files or unrelated links (videos will retain their original URL)
     const uniqueUrls = Array.from(new Set(urls)).filter(u => u.match(/\.(jpeg|jpg|gif|png|svg|webp)/i) || u.includes("images.unsplash.com") || u.includes("drive.google.com"));
 
     const uploadPromises = uniqueUrls.map(async (url) => {
@@ -87,7 +87,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "로그인이 필요한 서비스입니다." }, { status: 401 });
     }
 
-    const { targetUrl, depth } = await request.json();
+
+
+    const { targetUrl, depth, scanReport } = await request.json();
 
     if (!targetUrl || typeof targetUrl !== "string") {
       return NextResponse.json({ error: "올바른 홈페이지 URL을 입력해 주세요." }, { status: 400 });
@@ -120,8 +122,7 @@ export async function POST(request: Request) {
       .replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, "")
       .replace(/<!--[\s\S]*?-->/g, "");
       
-    // --- NEW: Deep Crawling of Subpages ---
-    let subpagesContext = "";
+    // --- NEW: Deep Crawling of Subpages (Queueing for Background Worker) ---
     let pendingSubpages: string[] = [];
     if (depth === "full" || depth === "massive") {
       const hrefRegex = /<a[^>]+href=["'](\/[^"']+)["']/g;
@@ -134,32 +135,12 @@ export async function POST(request: Request) {
       }
       
       if (depth === "full") {
-        const topLinks = Array.from(subLinks).slice(0, 15); // limit to 15 subpages max
-        
-        const subpagePromises = topLinks.map(async (link) => {
-           try {
-              const subRes = await fetch(`${urlObj.origin}${link}`, {
-                 headers: { "User-Agent": "Mozilla/5.0" }
-              });
-              if (subRes.ok) {
-                 const subHtml = await subRes.text();
-                 const subCleanHtml = subHtml
-                    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-                    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
-                    .replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, "")
-                    .replace(/<!--[\s\S]*?-->/g, "");
-                 return `\n\n--- SUBPAGE: ${link} ---\n${subCleanHtml.substring(0, 10000)}`;
-              }
-           } catch(e) { console.error("Subpage fetch error", e); }
-           return "";
-        });
-        const subHtmls = await Promise.all(subpagePromises);
-        subpagesContext = subHtmls.join("");
+        pendingSubpages = Array.from(subLinks).slice(0, 15); // limit to 15 subpages max for the queue
       } else if (depth === "massive") {
-        pendingSubpages = Array.from(subLinks).slice(0, 100); // return up to 100 links to frontend
+        pendingSubpages = Array.from(subLinks).slice(0, 100); // limit to 100 links
       }
     }
-    // --------------------------------------
+    // ----------------------------------------------------------------------
 
     // Extract basic meta tags as fallback
     const titleMatch = htmlText.match(/<title[^>]*>([^<]+)<\/title>/i);
@@ -210,7 +191,15 @@ export async function POST(request: Request) {
         phone: phoneNumber,
         address: address,
         status: 'ACTIVE',
-        template_id: 'service_1'
+        template_id: 'service_1',
+        creation_source: 'migration',
+        extra_configs: {
+          original_url: urlObj.origin,
+          migration_queue: pendingSubpages,
+          migration_total_count: pendingSubpages.length,
+          migration_status: pendingSubpages.length > 0 ? "migrating" : "completed"
+        },
+        scan_report: scanReport || {}
       })
       .select("id")
       .single();
@@ -226,12 +215,8 @@ export async function POST(request: Request) {
     // 5. Deep Migration with Gemini 3.5 Flash Lite
     let generatedSections: any[] = [];
     try {
-      const { GoogleGenerativeAI } = await import("@google/generative-ai");
-      const apiKey = process.env.GEMINI_API_KEY_1 || process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-      if (apiKey) {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash-lite" });
-        const availableTemplateIds = Object.keys(TEMPLATE_REGISTRY).join(", ");
+      const { generateContentWithVertexAI } = await import("@/lib/server/vertex-ai-gemini");
+      const availableTemplateIds = Object.keys(TEMPLATE_REGISTRY).join(", ");
         
         const prompt = `
           You are an expert Frontend Developer and Designer. Your task is to perfectly clone the layout, design, header, footer, and sections of the provided target website using beautifully crafted, modern Tailwind CSS HTML.
@@ -244,45 +229,74 @@ export async function POST(request: Request) {
             "footer_html": "<footer class='...'>...</footer>",
             "main_sections": [
               {
-                "section_type": "custom_html",
-                "html": "<section class='...'>...</section>"
-              }
-            ],` : ""}
-            ${depth === 'full' ? `"subpages": [
-              {
-                "page_slug": "exact string of the link (e.g. dojos from /dojos)",
-                "html": "<main class='...'>...</main>"
+                "section_type": "custom_html | advanced_content_carousel | advanced_media_carousel",
+                "html": "<section class='...'>...</section>",
+                "media_urls": ["url1", "url2", "..."],
+                "slides": ["<div class='...'>slide 1 HTML</div>", "<div class='...'>slide 2 HTML</div>"],
+                "desktop_aspect_ratio": "21/9 (or 16/9, 4/3, 100vh etc)"
               }
             ]` : ""}
           }
 
           Guidelines:
-          - Extract real text, links, and image URLs from the HTML (Check \`data-src\` if \`src\` is empty/lazy-loaded).
+          - PRO-CLONING RULE 1 (Colors & Identity): Extract the EXACT HEX color codes, background colors (e.g., brand blue), and font colors from the original HTML structure and apply them as inline Tailwind arbitrary values (e.g., \`bg-[#005aab]\`, \`text-[#333333]\`). DO NOT use generic colors if a specific brand color is present.
+          - PRO-CLONING RULE 2 (Data Preservation & NO OMISSION): DO NOT summarize, omit, or hallucinate text. You MUST extract EVERY SINGLE section from the body. Copy ALL specific statistics, detailed numbers, and exact copywriting VERBATIM. CRITICAL: DO NOT omit any images! If a slide or section contains multiple images (e.g., a background image AND a product image below the text), you MUST preserve all <img> tags.
+          - PRO-CLONING RULE 3 (Images, Logos, VIDEOS & CAROUSEL): Preserve all \`<img>\`, \`<video>\`, and \`<source>\` tags. Do not replace videos with solid colors. If the original hero section contains a slider/carousel with MULTIPLE videos or images, DO NOT use horizontal scroll or pick just one. Instead, you MUST set \`section_type\` to exactly \`"advanced_media_carousel"\`, leave \`html\` empty, and provide ALL media URLs in a \`"media_urls"\` array. Never add comments to the JSON output.
+          - PRO-CLONING RULE 3.5 (CONTENT CAROUSEL — EXACT RULES):
+            RULE A — "FEATURED PRODUCTS" type sections (multiple product thumbnails visible simultaneously with labels below): Even if the row has "slick-slider" class, this is displayed as a GRID on desktop. Use "custom_html" and render all products in a single responsive grid (grid grid-cols-3 gap-8). DO NOT make this a carousel.
+            RULE B — Full-width product SHOWCASE carousel (section containing large 2-column slides where each slide takes the FULL width with a scene image on left half and product info + detail image on right half): This IS a real carousel. Use "advanced_content_carousel". Each individual product slide (e.g., Sound Blaster GS5 slide, Sound Blaster G8 slide, Aurvana Ace 2 slide) MUST be a separate entry in the "slides" array.
+            IMPORTANT: The showcase carousel slides come AFTER the featured products grid. They are LARGE, take full viewport width, and show ONE product at a time with left/right navigation dots below.
+            IMPORTANT 2: For each showcase slide, use "grid grid-cols-1 md:grid-cols-2 min-h-[450px]". LEFT half: full-bleed scene photo ("<img class='w-full h-full object-cover'>"). RIGHT half (flex col, bg-gray-100 or matching original bg): product category label, large bold product name, description, LEARN MORE button, AND a LARGE product detail image below button ("<img class='mx-auto max-h-72 mt-8 object-contain'>").
+            IMPORTANT 3: NEVER apply "advanced_content_carousel" to a section where multiple items are simultaneously visible in columns.
+          - PRO-CLONING RULE 4 (Lazy-Loaded Media): Always prioritize \`data-src\`, \`data-lazy\`, or \`srcset\` attributes over a simple \`src\` if they exist. Use the highest resolution media URL available in the raw HTML.
+          - PRO-CLONING RULE 5 (Navigation & Language Exact Match): Preserve the EXACT language and casing of header navigation menus (e.g., if it says 'ABOUT', do not translate it to '회사소개'). DO NOT hallucinate or extract hidden mobile menus if a clear desktop navigation exists.
+          - PRO-CLONING RULE 5.5 (HEADER LAYOUT & EDGE-TO-EDGE): You MUST structure the \`header_html\` to perfectly replicate the standard 3-section layout: 1. Logo on the far left. 2. Navigation Menus centered or aligned as original. 3. Search/Icons/Buttons on the far right. Use Tailwind classes like \`flex justify-between items-center w-full px-4 md:px-8 xl:px-12\` to make the header edge-to-edge. DO NOT wrap the inner content in \`max-w-7xl\` or \`container\` if the original site has an edge-to-edge full-bleed header. Use \`flex-1\` on the left and right containers, and \`flex-none\` on the center menu container to ensure the menu stays perfectly in the horizontal center if needed.
+          - PRO-CLONING RULE 5.6 (MEGA MENUS & DROPDOWNS): If the original site has 2nd-level sub-menus, dropdowns, or complex "Mega Menus" (e.g. hovering over 'Products' shows a large panel with icons, links, or images), you MUST completely extract and recreate their HTML structure inside the \`header_html\`. Use Tailwind's \`group\`, \`group-hover:block\`, \`absolute\`, \`top-full\` utilities to recreate the hover/dropdown interaction exactly. DO NOT flatten them into simple links. Preserve the mega menu's exact design, columns, and icons!
+          - PRO-CLONING RULE 6 (EXCLUDE COOKIE POPUPS): You MUST entirely ignore and omit any cookie consent popups, privacy policy floating banners, or annoying alert texts (e.g., "We use cookies, which are small text files..."). Do not include them in the generated HTML.
+          - PRO-CLONING RULE 7 (BENTO BOX / ASYMMETRIC GRIDS): If the original site features an asymmetric image gallery or Bento box layout (e.g., 2 items in a row, then 1 full-width item, or varying spans), you MUST recreate this EXACT grid structure using Tailwind's grid spanning utilities (e.g., \`grid-cols-2 md:grid-cols-4\`, \`md:col-span-2\`, \`md:col-span-4\`, \`row-span-2\`). DO NOT force them into a simple uniform grid (like just \`grid-cols-4\` with no spans) if they have different sizes in the original. Use \`w-full h-full object-cover\` for images to perfectly fill their unique grid cells.
+          - PRO-CLONING RULE 8 (HERO ASPECT RATIO): For \`advanced_media_carousel\` or \`hero\` sections, analyze the original media dimensions (e.g. \`<img width="x" height="y">\`, \`<video>\`, or CSS \`height: 100vh\`). Determine the original desktop aspect ratio (e.g. \`"21/9"\` for ultra-wide, \`"16/9"\` for standard, \`"4/3"\` for taller, or \`"100vh"\` for full screen). Provide this value in a \`"desktop_aspect_ratio"\` field inside the section object. If unsure, default to \`"21/9"\`.
           - CRITICAL RULE: All image URLs (\`src\` attributes or \`style="background-image: ..."\`) MUST be ABSOLUTE URLs. 
           - CRITICAL RULE 2: All internal links (\`<a href="...">\`) MUST be RELATIVE paths (e.g. \`href="/dojos"\`). Do not use absolute domains for internal navigation.
-          - Use modern Tailwind CSS classes (e.g. flex, grid, px-8, py-16, text-gray-900, bg-white) for styling.
+          - Use modern Tailwind CSS classes (e.g. flex, grid, px-8, py-16) for styling, but combine them with extracted brand colors.
           - Make the HTML fully responsive (use md:, lg: prefixes).
           - Do NOT use Markdown formatting in the strings.
           - From the following list of templates, choose the MOST appropriate 'template_id' based on the website's industry, content, and vibe: [${availableTemplateIds}].
           ${!hasMain ? `- Replicate the header menu links and footer structure exactly.
           - If the original site uses anchor links (e.g., href="#section") for a one-page layout, you MUST preserve these exact anchor links in the header and ensure the corresponding <section> blocks in main_sections have the matching id attributes.
-          - Split the main body into 3 to 6 logical \`<section>\` blocks, each as a separate item in the \`main_sections\` array.` : ""}
-          ${depth === 'full' ? `- You are provided with the HTML of actual subpages below. You MUST generate a "subpages" array mapping EACH provided subpage to its corresponding "page_slug" (e.g., if the link is "/dojos", the page_slug is "dojos"). Recreate the HTML for each subpage accurately.` : ""}
+          - Split the main body into as many logical \`<section>\` blocks as needed (typically 5 to 15) to capture EVERY SINGLE PART of the original site (including lower sections like 'OUR BRANDS', 'AWARDS', 'Subscribe', etc.) without omitting anything. Each block must be a separate item in the \`main_sections\` array.` : ""}
           - Output ONLY valid JSON. No other text.
+          - CRITICAL: To prevent hitting the output token limit, MINIFY all HTML strings! Remove unnecessary whitespaces, tabs, and newlines inside the HTML strings. Keep the code extremely compact.
 
           HTML content to analyze:
           --- MAIN PAGE ---
-          ${cleanHtml.substring(0, 40000)} // Limit size
-          ${subpagesContext}
+          ${cleanHtml.substring(0, 200000)} // Increased limit to capture full page
         `;
 
-        const result = await model.generateContent(prompt);
-        let aiText = result.response.text().trim();
-        if (aiText.startsWith("```json")) {
-          aiText = aiText.replace(/```json/g, "").replace(/```/g, "").trim();
+        let aiText = "";
+        try {
+          aiText = await generateContentWithVertexAI({
+            prompt: prompt,
+            modelName: "gemini-3.6-flash",
+            responseMimeType: "application/json"
+          });
+          aiText = aiText.trim();
+        } catch (e) {
+          console.error("Vertex AI API failed:", e);
+          return NextResponse.json({ error: "AI 서버(Vertex AI) 통신에 실패했습니다. 잠시 후 다시 시도해주세요." }, { status: 500 });
+        }
+
+        const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          aiText = jsonMatch[0];
         }
         
-        const parsedAi = JSON.parse(aiText);
+        let parsedAi;
+        try {
+          parsedAi = JSON.parse(aiText);
+        } catch (parseError) {
+          console.error("AI JSON Parse Error:", parseError, "Raw output:", aiText);
+          return NextResponse.json({ error: "AI가 유효하지 않은 형식(JSON 오류)으로 응답했습니다. 잠시 후 다시 시도해주세요." }, { status: 500 });
+        }
         
         // 0. Update template_id based on AI's choice
         const aiTemplateId = parsedAi.template_id;
@@ -302,14 +316,13 @@ export async function POST(request: Request) {
           if (aiSections[i].html) {
             aiSections[i].html = await processHtmlImagesWithR2(aiSections[i].html, siteId, urlObj.origin);
           }
-        }
-        
-        const aiSubpages = parsedAi.subpages || [];
-        for (let i = 0; i < aiSubpages.length; i++) {
-          if (aiSubpages[i].html) {
-            aiSubpages[i].html = await processHtmlImagesWithR2(aiSubpages[i].html, siteId, urlObj.origin);
+          if (aiSections[i].slides && Array.isArray(aiSections[i].slides)) {
+            for (let j = 0; j < aiSections[i].slides.length; j++) {
+              aiSections[i].slides[j] = await processHtmlImagesWithR2(aiSections[i].slides[j], siteId, urlObj.origin);
+            }
           }
         }
+        
         // ------------------------------------------------------------------
 
         // 1. Update site extra_configs with custom header and footer
@@ -334,25 +347,19 @@ export async function POST(request: Request) {
         // 2. Map main sections
         const mainGen = aiSections.map((sec: any, index: number) => ({
           site_id: siteId,
-          section_type: "custom_html",
+          section_type: sec.section_type || "custom_html",
           sort_order: index + 1,
           title: pageTitle,
           subtitle: "",
-          content_data: { html: sec.html || "" }
+          content_data: { 
+            html: sec.html || "",
+            ...(sec.media_urls ? { media_urls: sec.media_urls } : {}),
+            ...(sec.slides ? { slides: sec.slides } : {}),
+            ...(sec.desktop_aspect_ratio ? { desktop_aspect_ratio: sec.desktop_aspect_ratio } : {})
+          }
         }));
         
-        // 3. Map subpages
-        const subGen = aiSubpages.map((sec: any, index: number) => ({
-          site_id: siteId,
-          section_type: `subpage_${sec.page_slug || "page"}`,
-          sort_order: index + 1,
-          title: sec.page_slug || "Page",
-          subtitle: "",
-          content_data: { html: sec.html || "", page_slug: sec.page_slug || "page" }
-        }));
-        
-        generatedSections = [...mainGen, ...subGen];
-      }
+        generatedSections = [...mainGen];
     } catch (e) {
       console.error("Gemini Parsing Error:", e);
     }

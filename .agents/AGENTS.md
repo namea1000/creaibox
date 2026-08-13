@@ -41,3 +41,11 @@ When creating how-to guides or operation manuals (e.g., "~ 하는 방법", "매�
 ### Mandatory Daily Devlog & Architecture Update Rule (매일 개발 일지 및 관련 문서 업데이트 의무 규칙)
 - 앞으로 코드 수정보완이나 새로운 메뉴를 개발하면 매일 작업 완료 즉시 두 문서(`docs/project/<YYYY><MonthName>Devlog.md` 와 `Walkthrough.md`)를 반드시 기록(업데이트)해야 한다.
 - 또한, 해당 수정보완 했던 기능과 관련된 아키텍처 문서(`docs/arch/`)나 매뉴얼 문서(`docs/project/manual/`)를 적극적으로 찾아내어 그 문서도 함께 최신화하여 업데이트해야 한다.
+
+### Mandatory Formal Database Schema Expansion Rule (DB 정석 설계 및 전용 컬럼 추가 의무 규칙)
+- 기존 메뉴를 업그레이드하거나 신규 기능을 개발할 때, DB 설계 시 **항상 장기적인 서비스 확장과 데이터 통계(조회 성능)를 최우선으로 고려**한다.
+- 임시방편으로 기존 JSONB( 등) 컬럼에 꼼수 데이터(플래그)를 구겨 넣는 것을 지양하고, **필요하다면 기존 DB 테이블에 명확한 역할을 하는 전용 컬럼(Column)을 정석대로 추가(ALTER TABLE)하여 해결**한다.
+
+### Mandatory Formal Database Schema Expansion Rule (DB 정석 설계 및 전용 컬럼 추가 의무 규칙)
+- 기존 메뉴를 업그레이드하거나 신규 기능을 개발할 때, DB 설계 시 **항상 장기적인 서비스 확장과 데이터 통계(조회 성능)를 최우선으로 고려**한다.
+- 임시방편으로 기존 JSONB(`extra_configs` 등) 컬럼에 꼼수 데이터(플래그)를 구겨 넣는 것을 지양하고, **필요하다면 기존 DB 테이블에 명확한 역할을 하는 전용 컬럼(Column)을 정석대로 추가(ALTER TABLE)하여 해결**한다.

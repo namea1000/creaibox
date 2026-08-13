@@ -116,7 +116,7 @@ export async function POST(request: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash-lite" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
     
     const prompt = `
       You are an expert Frontend Developer and Designer. Your task is to extract content and HTML from the provided subpages and generate their UI clones.

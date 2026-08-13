@@ -228,7 +228,7 @@ export default function APIVaultPage() {
       ? savedProvider
       : "gemini_free";
     const normalizedSavedModel =
-      savedModel === "gemini-3-flash-preview"
+      savedModel === "gemini-3.5-flash-lite"
         ? getDefaultModelForProvider("gemini_free")
         : savedModel;
     const nextModel =

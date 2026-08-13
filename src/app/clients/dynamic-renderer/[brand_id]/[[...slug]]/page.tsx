@@ -22,7 +22,7 @@ export default async function DynamicRendererPage({ params, searchParams }: Page
   // 1. Fetch site settings
   const { data: site } = await supabase
     .from("client_sites")
-    .select("id, company_name")
+    .select("id, company_name, is_onepage_scroll")
     .eq("brand_id", brand_id.toLowerCase())
     .maybeSingle();
 
@@ -314,16 +314,18 @@ export default async function DynamicRendererPage({ params, searchParams }: Page
   // 4. Render All Sections (Landing Page)
   return (
     <div className="flex flex-col">
-      {sections.map((sect) => (
-        <DynamicSection
-          key={sect.id}
-          siteId={site.id}
-          sectionType={sect.section_type}
-          title={sect.title || ""}
-          subtitle={sect.subtitle || ""}
-          contentData={sect.content_data}
-        />
-      ))}
+      {sections
+        .filter((sect) => site.is_onepage_scroll || !sect.section_type.startsWith("subpage_"))
+        .map((sect) => (
+          <DynamicSection
+            key={sect.id}
+            siteId={site.id}
+            sectionType={sect.section_type}
+            title={sect.title || ""}
+            subtitle={sect.subtitle || ""}
+            contentData={sect.content_data}
+          />
+        ))}
     </div>
   );
 }

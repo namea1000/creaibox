@@ -4,6 +4,8 @@ import { createAdminClient } from "@/utils/supabase/server";
 import { TEMPLATE_REGISTRY } from "@/lib/templates/registry";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
+import CustomHeaderWrapper from "../../components/CustomHeaderWrapper";
+import { injectMenusIntoHtml } from "@/utils/htmlInjector";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -47,14 +49,26 @@ export default async function DynamicRendererLayout({ children, params }: Layout
     );
   }
 
-  // 2. Fetch sections to see if portfolio/rental sections exist (for GNB headers link visibility)
+  // 2. Fetch sections to derive header menus and feature flags
   const { data: sections = [] } = await supabase
     .from("site_sections")
-    .select("section_type")
-    .eq("site_id", site.id);
+    .select("section_type, title, sort_order")
+    .eq("site_id", site.id)
+    .order("sort_order", { ascending: true });
 
   const hasPortfolio = (sections || []).some(s => s.section_type === "portfolio");
   const hasRental = (sections || []).some(s => s.section_type === "rental");
+
+  // Derive dynamic menus from subpage sections
+  const dynamicMenus = (sections || [])
+    .filter(s => s.section_type.startsWith("subpage_"))
+    .map(s => ({
+      label: s.title || "새 메뉴",
+      path: s.section_type.replace("subpage_", "")
+    }));
+
+  // Do not inject subpages into header for migrated sites to perfectly preserve original Mega Menus.
+  const menusToInject = site.creation_source === "migration" ? [] : dynamicMenus;
 
   // 3. Resolve template details
   const templateConfig = TEMPLATE_REGISTRY[site.template_id] || TEMPLATE_REGISTRY.business_standard;
@@ -106,14 +120,22 @@ export default async function DynamicRendererLayout({ children, params }: Layout
         <script src="https://cdn.tailwindcss.com"></script>
       )}
 
+      {/* Header Rendering Strategy:
+          1. If site has a custom 'header_html', we use it to preserve the beautiful AI design.
+             We dynamically parse the HTML and inject the derived 'dynamicMenus' into it.
+          2. Otherwise, we fallback to the standard <Header> component. */}
       {site.extra_configs?.is_custom_layout && site.extra_configs?.header_html ? (
-        <div dangerouslySetInnerHTML={{ __html: site.extra_configs.header_html }} />
+        <CustomHeaderWrapper 
+          html={injectMenusIntoHtml(site.extra_configs.header_html, menusToInject)}
+          menus={menusToInject}
+        />
       ) : (
         <Header
           companyName={site.company_name}
           phone={site.phone || ""}
           hasPortfolio={hasPortfolio}
           hasRental={hasRental}
+          menus={menusToInject.length > 0 ? menusToInject : undefined}
         />
       )}
       <main className="flex-grow">

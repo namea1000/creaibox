@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient, createClient } from "@/utils/supabase/server";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -10,14 +10,22 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const source = searchParams.get('source');
+
     const adminSupabase = await createAdminClient();
 
     // Fetch client_sites for this user
-    const { data: sites, error: dbError } = await adminSupabase
+    let query = adminSupabase
       .from("client_sites")
-      .select("id, brand_id, company_name, created_at, status")
-      .eq("profile_id", user.id)
-      .order("created_at", { ascending: false });
+      .select("id, brand_id, company_name, created_at, status, extra_configs")
+      .eq("profile_id", user.id);
+
+    if (source) {
+      query = query.eq("creation_source", source);
+    }
+
+    const { data: sites, error: dbError } = await query.order("created_at", { ascending: false });
 
     if (dbError) {
       console.error("Failed to fetch migration history:", dbError);

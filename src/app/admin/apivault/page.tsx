@@ -157,7 +157,7 @@ const emptyKey = {
   display_name: "",
   provider_type: "ai",
   provider: "gemini",
-  model: "gemini-3-flash-preview",
+  model: "gemini-3.5-flash-lite",
   status: "active",
   daily_limit: 1000,
   monthly_limit: 30000,

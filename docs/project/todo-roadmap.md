@@ -73,8 +73,10 @@
   - 신규 매시간 키워드 크론 등록 및 보안 가드(`CRON_SECRET`) 준수 완료
 - [ ] **Supabase `pg_cron` 데이터 만료 및 스냅샷 자동화**
   - 회원 혜택 만료 안내 및 데이터베이스 주간 스냅샷 백업 스케줄링 점검
-
----
+- [ ] **(필수 과제) Upstash QStash 이벤트 기반 서버리스 큐 전면 도입 (사이트 자동 이관 확장성 확보)**
+  - 기존 Vercel Cron + DB Queue (Polling) 아키텍처 한계를 극복하기 위해, 사이트 전체 이관(서브페이지) 시 1만 명이 몰려도 병목(Timeout) 없이 즉시 병렬 렌더링이 가능한 QStash 이벤트 큐 메시지 기반으로 전면 개편 예정.
+- [ ] **(필수 과제) 타겟 사이트 미디어(MP4/JPG) Cloudflare R2 무손실 스트리밍 자동 이관 파이프라인 구축**
+  - 기존 핫링킹(Hotlinking) 방식의 문제(원본 서버 폐쇄 시 엑스박스, CORS 에러 방어)를 해결하기 위해, 이관 시 원본 미디어 URL 감지 시 Node.js Stream Piping 기법을 통해 Cloudflare R2 (또는 Vercel Blob)로 메모리 터짐(OOM) 없이 실시간 다이렉트 복제 업로드 및 URL DB 영구 치환 로직 전면 구축 예정.
 
 ## 4. 📝 AI 에이전트 개발일지 & 가이드라인 준수 (Devlog & Policy)
 

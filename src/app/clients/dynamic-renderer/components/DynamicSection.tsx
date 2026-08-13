@@ -3,6 +3,8 @@
 import React from "react";
 import * as LucideIcons from "lucide-react";
 import DynamicConsultationForm from "./DynamicConsultationForm";
+import AdvancedMediaCarousel from "./AdvancedMediaCarousel";
+import AdvancedContentCarousel from "./AdvancedContentCarousel";
 
 interface SectionProps {
   siteId: string;
@@ -26,13 +28,37 @@ export default function DynamicSection({
   };
 
   const actualSectionType = sectionType.startsWith("subpage_") ? "custom_html" : sectionType;
+  const customBgStyle = contentData.bg_color ? { backgroundColor: contentData.bg_color } : {};
 
   switch (actualSectionType) {
+    case "advanced_media_carousel": {
+      const mediaUrls = contentData.media_urls || contentData.videos || contentData.images || [];
+      if (mediaUrls.length > 0) {
+        return <AdvancedMediaCarousel mediaUrls={mediaUrls} desktopAspectRatio={contentData.desktop_aspect_ratio} />;
+      }
+      // Fallback to custom_html if AI provided no URLs
+    }
+    case "advanced_content_carousel": {
+      const slides = contentData.slides || [];
+      if (slides.length > 0) {
+        return <AdvancedContentCarousel slides={slides} />;
+      }
+      // Fallback to custom_html if AI provided no slides
+    }
+    // eslint-disable-next-line no-fallthrough
     case "custom_html": {
+      let htmlToRender = contentData.html || "";
+      // If user sets a custom background color, strip the AI's default background classes
+      if (contentData.bg_color) {
+        htmlToRender = htmlToRender.replace(/\bbg-(white|black|transparent|gray-\d+|slate-\d+|zinc-\d+|neutral-\d+|stone-\d+|red-\d+|orange-\d+|amber-\d+|yellow-\d+|lime-\d+|green-\d+|emerald-\d+|teal-\d+|cyan-\d+|sky-\d+|blue-\d+|indigo-\d+|violet-\d+|purple-\d+|fuchsia-\d+|pink-\d+|rose-\d+)\b/g, "");
+      }
+
       return (
         <div 
-          dangerouslySetInnerHTML={{ __html: contentData.html || "" }} 
+          dangerouslySetInnerHTML={{ __html: htmlToRender }} 
           className="w-full"
+          style={customBgStyle}
+          suppressHydrationWarning={true}
         />
       );
     }
@@ -43,7 +69,7 @@ export default function DynamicSection({
       const features = contentData.features || [];
 
       return (
-        <section className="relative overflow-hidden pt-32 pb-24 md:pt-40 md:pb-36 bg-[var(--surface)] border-b border-slate-100/50">
+        <section className="relative overflow-hidden pt-32 pb-24 md:pt-40 md:pb-36 bg-[var(--surface)] border-b border-slate-100/50" style={customBgStyle} suppressHydrationWarning={true}>
           {/* Subtle light background gradients */}
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(45rem_50rem_at_top,theme(colors.blue.50),theme(colors.white))]" />
           
@@ -123,7 +149,7 @@ export default function DynamicSection({
     case "services": {
       const items = contentData.items || [];
       return (
-        <section id="services" className="py-24 bg-white scroll-mt-20 border-b border-slate-100/50">
+        <section id="services" className="py-24 bg-white scroll-mt-20 border-b border-slate-100/50" style={customBgStyle} suppressHydrationWarning={true}>
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center mb-16">
               <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
@@ -161,7 +187,7 @@ export default function DynamicSection({
     case "about": {
       const stats = contentData.stats || [];
       return (
-        <section id="about" className="py-24 bg-[var(--surface)] scroll-mt-20 border-b border-slate-100/50">
+        <section id="about" className="py-24 bg-[var(--surface)] scroll-mt-20 border-b border-slate-100/50" style={customBgStyle} suppressHydrationWarning={true}>
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div>
@@ -192,7 +218,7 @@ export default function DynamicSection({
     case "portfolio": {
       const items = contentData.items || [];
       return (
-        <section id="portfolio" className="py-24 bg-white scroll-mt-20 border-b border-slate-100/50">
+        <section id="portfolio" className="py-24 bg-white scroll-mt-20 border-b border-slate-100/50" style={customBgStyle} suppressHydrationWarning={true}>
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center mb-16">
               <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
@@ -238,7 +264,7 @@ export default function DynamicSection({
     case "rental": {
       const stats = contentData.stats || [];
       return (
-        <section id="rental" className="py-24 bg-[var(--surface)] scroll-mt-20 border-b border-slate-100/50">
+        <section id="rental" className="py-24 bg-[var(--surface)] scroll-mt-20 border-b border-slate-100/50" style={customBgStyle} suppressHydrationWarning={true}>
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center mb-16">
               <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
@@ -277,7 +303,7 @@ export default function DynamicSection({
       const buttonText = contentData.buttonText || "상담 접수하기";
 
       return (
-        <section id="contact" className="py-24 bg-slate-50 scroll-mt-20">
+        <section id="contact" className="py-24 bg-slate-50 scroll-mt-20" style={customBgStyle} suppressHydrationWarning={true}>
           <div className="mx-auto max-w-4xl px-6">
             <DynamicConsultationForm
               siteId={siteId}

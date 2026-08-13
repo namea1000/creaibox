@@ -235,7 +235,7 @@ async function generateAssistantResponse({
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.5-flash-lite",
     });
 
     const result = await model.generateContent(`
@@ -417,7 +417,7 @@ export async function POST(request: Request) {
       output_summary: assistantContent.slice(0, 500),
       model_provider: process.env.GEMINI_API_KEY ? "gemini" : "fallback",
       model_name: process.env.GEMINI_API_KEY
-        ? "gemini-3-flash-preview"
+        ? "gemini-3.5-flash-lite"
         : "fallback",
       status: "success",
     }))

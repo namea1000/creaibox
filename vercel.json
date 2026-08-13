@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/sync-keywords",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/site-migration-worker",
+      "schedule": "* * * * *"
     }
   ]
 }

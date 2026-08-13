@@ -11,6 +11,8 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
   const [isMigrating, setIsMigrating] = useState(false);
   const [massiveProgress, setMassiveProgress] = useState<{ total: number; current: number } | null>(null);
   const [progressText, setProgressText] = useState("");
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanReport, setScanReport] = useState<any | null>(null);
   const [migrationResult, setMigrationResult] = useState<any | null>(null);
   const [migratedHistory, setMigratedHistory] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
@@ -19,7 +21,7 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
   const fetchHistory = async () => {
     try {
       setIsLoadingHistory(true);
-      const res = await fetch("/api/studio/site-migration/history");
+      const res = await fetch("/api/studio/site-migration/history?source=migration");
       const data = await res.json();
       if (data.success) {
         setMigratedHistory(data.data);
@@ -34,6 +36,27 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
   React.useEffect(() => {
     fetchHistory();
   }, []);
+
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout;
+    const isAnyMigrating = migratedHistory.some((site: any) => site.extra_configs?.migration_status === "migrating");
+    
+    if (isAnyMigrating) {
+      interval = setInterval(() => {
+        fetchHistory();
+        
+        // [로컬 개발 환경 전용] Vercel Cron이 로컬에서는 자동으로 돌지 않으므로, 
+        // 큐(Queue)가 비어있지 않다면 프론트엔드에서 수동으로 백그라운드 Worker API를 찔러줍니다.
+        if (process.env.NODE_ENV === "development") {
+          fetch("/api/cron/site-migration-worker").catch(e => console.error("Local Cron Ping Failed:", e));
+        }
+      }, 5000);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [migratedHistory]);
 
   const deleteHistory = async (siteId: string) => {
     if (!confirm("정말로 이 이관된 사이트를 삭제하시겠습니까? (이 작업은 되돌릴 수 없습니다)")) return;
@@ -59,7 +82,7 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
       const messages = [
         "대상 웹사이트 DOM 분석 중...",
         "텍스트 및 핵심 이미지 에셋 추출 중...",
-        "Gemini 3.5 Flash Lite: 시맨틱 레이아웃 분리 중...",
+        "Gemini 3.6 Flash: 시맨틱 레이아웃 분리 중...",
         "CreAibox Dynamic Component 매핑 중...",
         "DB 적재 및 최종 최적화 중..."
       ];
@@ -73,6 +96,31 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
     return () => clearInterval(interval);
   }, [isMigrating]);
 
+  const handleSiteScan = async () => {
+    if (!requireAuth()) return;
+    if (!migrationUrl.trim()) return;
+
+    setIsScanning(true);
+    setScanReport(null);
+    try {
+      const res = await fetch("/api/studio/site-scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUrl: migrationUrl }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setScanReport(data.data);
+      } else {
+        alert(data.error || "스캔에 실패했습니다.");
+      }
+    } catch (e) {
+      alert("스캔 중 서버 오류가 발생했습니다.");
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
   const handleSiteMigration = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!requireAuth()) return;
@@ -84,7 +132,7 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
       const res = await fetch("/api/studio/site-migration", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUrl: migrationUrl, depth: migrationDepth }),
+        body: JSON.stringify({ targetUrl: migrationUrl, depth: migrationDepth, scanReport: scanReport }),
       });
       const data = await res.json();
 
@@ -152,7 +200,7 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                 <Globe className="text-indigo-400" /> 기존 타사 홈페이지 URL 입력 시 AI 통째 정밀 이관
               </h2>
               <p className="text-xs font-medium text-slate-300 max-w-3xl leading-relaxed">
-                기존 홈페이지(식당, 병원, 상가, 법률사무소 등)의 주소를 입력하시면 Gemini 3.5 Flash Lite 엔진이 텍스트, 브랜드 이미지, 전화번호, 위치 정보 등을 심층 분석하여 CreAibox 모던 자사몰 사이트(<code className="text-indigo-300 font-mono">000.creaibox.com</code>)로 딥-마이그레이션(Deep Migration)합니다. (약 15~45초 소요)
+                기존 홈페이지 주소를 입력하시면 Gemini 3.6 Flash 엔진이 사이트 구조, 텍스트, 브랜드 이미지 등을 심층 분석하여 새로운 웹사이트로 완벽하게 자동 이관(복제)합니다. (약 15~45초 소요)
               </p>
             </div>
 
@@ -182,17 +230,72 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                   <ChevronDown size={14} className="absolute right-3 text-slate-400 pointer-events-none" />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isMigrating}
-                  className="rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4 text-sm font-black text-white hover:brightness-110 transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 whitespace-nowrap min-w-[200px]"
-                >
-                  {isMigrating ? <RefreshCw size={18} className="animate-spin" /> : <Zap size={18} />}
-                  <span>{massiveProgress ? `서브페이지 이관 중... ${massiveProgress.current} / ${massiveProgress.total}` : (isMigrating ? progressText : "AI 에이전트 정밀 이관 시작")}</span>
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSiteScan}
+                    disabled={isScanning || isMigrating}
+                    className="rounded-2xl border border-slate-700 bg-slate-900 px-6 py-4 text-sm font-black text-slate-300 hover:bg-slate-800 hover:text-white transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 whitespace-nowrap min-w-[160px]"
+                  >
+                    {isScanning ? <RefreshCw size={18} className="animate-spin text-slate-400" /> : <Layers size={18} className="text-slate-400" />}
+                    <span>{isScanning ? "스캔 중..." : "🔍 정밀 스캔"}</span>
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isMigrating}
+                    className="rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4 text-sm font-black text-white hover:brightness-110 transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 whitespace-nowrap min-w-[200px]"
+                  >
+                    {isMigrating ? <RefreshCw size={18} className="animate-spin" /> : <Zap size={18} />}
+                    <span>{massiveProgress ? `서브페이지 이관 중... ${massiveProgress.current} / ${massiveProgress.total}` : (isMigrating ? progressText : "AI 에이전트 정밀 이관 시작")}</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="space-y-2 pt-2 border-t border-slate-800/60">
+              {/* Scan Report Dashboard */}
+              {scanReport && (
+                <div className="p-5 rounded-2xl bg-slate-900/80 border border-indigo-500/30 backdrop-blur-md shadow-xl mt-4 animate-fade-in-up">
+                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+                    <h3 className="text-sm font-black text-indigo-400 flex items-center gap-2">
+                      <Sparkles size={16} /> 타겟 사이트 정밀 스캔 결과
+                    </h3>
+                    <span className="text-[10px] text-slate-500 bg-slate-950 px-2 py-1 rounded-full font-bold">{new Date(scanReport.scanned_at).toLocaleTimeString()} 스캔됨</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <div className="flex flex-col gap-1 p-3 bg-slate-950 rounded-xl border border-slate-800/50">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase">총 페이지 수</span>
+                      <span className="text-lg font-black text-white">{scanReport.total_pages}장</span>
+                    </div>
+                    <div className="flex flex-col gap-1 p-3 bg-slate-950 rounded-xl border border-slate-800/50">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase">총 텍스트 볼륨</span>
+                      <span className="text-lg font-black text-white">{scanReport.char_count.toLocaleString()}자</span>
+                    </div>
+                    <div className="flex flex-col gap-1 p-3 bg-slate-950 rounded-xl border border-slate-800/50">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase">미디어 에셋</span>
+                      <span className="text-lg font-black text-white">{scanReport.image_count + scanReport.video_count}개</span>
+                    </div>
+                    <div className="flex flex-col gap-1 p-3 bg-slate-950 rounded-xl border border-slate-800/50">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase">사용 언어</span>
+                      <span className="text-sm font-black text-emerald-400 mt-1">{scanReport.language}</span>
+                    </div>
+                    <div className="flex flex-col gap-1 p-3 bg-slate-950 rounded-xl border border-slate-800/50 col-span-2 md:col-span-1 lg:col-span-2">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase">웹사이트 톤앤매너</span>
+                      <span className="text-sm font-black text-amber-400 mt-1 truncate">{scanReport.tone_and_manner}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs font-medium text-indigo-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Cpu size={14} className="text-indigo-400" /> 
+                      <span>이 사이트를 지금 이관할 경우 예상되는 AI 렌더링 소요 시간은 <strong>{scanReport.estimated_time_string}</strong> 입니다.</span>
+                    </div>
+                    <ArrowRight size={14} className="text-indigo-400 animate-pulse" />
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2 pt-2 border-t border-slate-800/60 mt-4">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
                   <input
                     type="checkbox"
@@ -230,12 +333,25 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                 </div>
 
                 <div className="space-y-3">
-                  {migratedHistory.map((site: any) => (
-                    <div key={site.id} className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-indigo-500/30 transition-colors">
-                      <div className="space-y-1 flex-1">
+                  {migratedHistory.map((site: any) => {
+                    const isSiteMigrating = site.extra_configs?.migration_status === "migrating";
+                    const queueLength = site.extra_configs?.migration_queue?.length || 0;
+                    const totalCount = site.extra_configs?.migration_total_count || (queueLength > 0 ? queueLength : 1);
+                    const completedCount = totalCount - queueLength;
+                    const percentage = Math.round((completedCount / totalCount) * 100);
+                    const estimatedSeconds = queueLength * 35; // 35 sec per subpage avg
+                    const estimatedTime = estimatedSeconds > 60 ? `${Math.floor(estimatedSeconds/60)}분 ${estimatedSeconds%60}초` : `${estimatedSeconds}초`;
+                    
+                    return (
+                    <div key={site.id} className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex flex-col md:flex-row justify-between gap-4 hover:border-indigo-500/30 transition-colors relative overflow-hidden">
+                      {isSiteMigrating && (
+                        <div className="absolute top-0 left-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-1000 ease-in-out" style={{ width: `${percentage}%` }} />
+                      )}
+                      
+                      <div className="space-y-2 flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                            {site.status === "ACTIVE" ? "라이브 ⭕" : "대기 중 ⏳"}
+                          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border ${isSiteMigrating ? 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'}`}>
+                            {isSiteMigrating ? "무인 이관 중 ⏳" : (site.status === "ACTIVE" ? "라이브 ⭕" : "대기 중")}
                           </span>
                           <h4 className="text-sm font-black text-white">{site.company_name}</h4>
                         </div>
@@ -243,10 +359,23 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                           href={getSubdomainUrl(site.brand_id)}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-indigo-400 font-bold text-sm underline flex items-center gap-1 mt-1 hover:text-indigo-300 w-fit"
+                          className="text-indigo-400 font-bold text-sm underline flex items-center gap-1 hover:text-indigo-300 w-fit"
                         >
                           https://{site.brand_id}.creaibox.com <ExternalLink size={12} />
                         </a>
+                        
+                        {isSiteMigrating && (
+                          <div className="mt-3 pt-3 border-t border-slate-800/60">
+                            <div className="flex items-center justify-between text-[11px] mb-1">
+                              <span className="text-indigo-300 font-bold">서브페이지 정밀 병합 중... ({completedCount}/{totalCount})</span>
+                              <span className="text-indigo-400 font-black">{percentage}%</span>
+                            </div>
+                            <div className="w-full bg-slate-800 rounded-full h-1.5 mb-1 overflow-hidden">
+                              <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${percentage}%` }}></div>
+                            </div>
+                            <span className="text-[10px] text-slate-500">예상 남은 시간: {estimatedTime}</span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-4">
@@ -258,13 +387,13 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                         </div>
                         <button
                           onClick={() => deleteHistory(site.id)}
-                          className="h-9 px-3 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-colors flex items-center gap-1 font-bold text-xs"
+                          className="h-9 px-3 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-colors flex items-center gap-1 font-bold text-xs shrink-0"
                         >
                           <Trash2 size={14} /> 삭제
                         </button>
                       </div>
                     </div>
-                  ))}
+                  )})}
                   
                   {migratedHistory.length === 0 && !isLoadingHistory && (
                     <div className="text-center py-6 text-slate-500 text-xs">

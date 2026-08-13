@@ -22,6 +22,7 @@ export default function SettingsPage() {
   const [instagram, setInstagram] = useState("");
   const [youtube, setYoutube] = useState("");
 
+  const [isOnePageScroll, setIsOnePageScroll] = useState<boolean>(false);
   const [saving, setSaving] = useState(false);
 
   // PG Payment Gateway State
@@ -45,6 +46,8 @@ export default function SettingsPage() {
       setNaverBlog(selectedSite.extra_configs?.sns_links?.naver_blog || "");
       setInstagram(selectedSite.extra_configs?.sns_links?.instagram || "");
       setYoutube(selectedSite.extra_configs?.sns_links?.youtube || "");
+      
+      setIsOnePageScroll(selectedSite.is_onepage_scroll || false);
       
       setPgProvider(selectedSite.extra_configs?.pgProvider || "none");
       setPgMid(selectedSite.extra_configs?.pgMid || "");
@@ -108,6 +111,7 @@ export default function SettingsPage() {
           company_name: companyName.trim(),
           phone: phone.trim() || null,
           address: address.trim() || null,
+          is_onepage_scroll: isOnePageScroll,
           extra_configs: updatedExtraConfigs,
         })
         .eq("id", selectedSite.id);
@@ -239,6 +243,24 @@ export default function SettingsPage() {
             onChange={(e) => setGaId(e.target.value)}
             className="text-sm text-slate-955 dark:text-white border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 rounded-xl px-4 py-3 focus:outline-none"
           />
+        </div>
+
+        {/* One-Page Scroll Specs */}
+        <div className="flex flex-col gap-2 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">원페이지 스크롤 모드 (메인 화면 확장)</label>
+          <p className="text-[10px] text-slate-500 mb-2">활성화 시, 서브페이지 콘텐츠들이 메인 랜딩페이지 하단에 모두 전개되어 풍성한 원페이지 사이트처럼 보이게 됩니다.</p>
+          <label className="relative inline-flex items-center cursor-pointer max-w-fit">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={isOnePageScroll}
+              onChange={(e) => setIsOnePageScroll(e.target.checked)}
+            />
+            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
+            <span className="ml-3 text-sm font-medium text-slate-700 dark:text-slate-300">
+              {isOnePageScroll ? "활성화 됨" : "비활성화"}
+            </span>
+          </label>
         </div>
 
         {/* 💳 PG Payment Gateway & Payment Methods */}
