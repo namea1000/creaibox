@@ -44,12 +44,6 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
     if (isAnyMigrating) {
       interval = setInterval(() => {
         fetchHistory();
-        
-        // [로컬 개발 환경 전용] Vercel Cron이 로컬에서는 자동으로 돌지 않으므로, 
-        // 큐(Queue)가 비어있지 않다면 프론트엔드에서 수동으로 백그라운드 Worker API를 찔러줍니다.
-        if (process.env.NODE_ENV === "development") {
-          fetch("/api/cron/site-migration-worker").catch(e => console.error("Local Cron Ping Failed:", e));
-        }
       }, 5000);
     }
     

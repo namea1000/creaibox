@@ -4,6 +4,7 @@ import sharp from "sharp";
 import { createAdminClient } from "@/utils/supabase/server";
 
 export const maxDuration = 300;
+export const dynamic = "force-dynamic";
 
 const s3Client = new S3Client({
   region: 'auto',
@@ -71,9 +72,9 @@ async function processHtmlImagesWithR2(html: string, siteId: string, origin: str
 }
 
 export async function GET(request: Request) {
-  // CRON 보안 설정 (로컬 환경에서는 우회 허용)
+  // CRON 보안 설정
   const authHeader = request.headers.get('authorization');
-  if (process.env.NODE_ENV !== "development" && process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     console.log("CRON_SECRET mismatch in site-migration-worker");
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
