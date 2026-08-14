@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-Music Albums 데이터베이스는 CreAibox Music Studio의 앨범 관리 시스템이다.
+Music Albums 데이터베이스는 CreaiBox Music Studio의 앨범 관리 시스템이다.
 
 Music Studio는 단순히 곡 1개를 생성하는 구조가 아니라, 여러 곡을 하나의 앨범으로 묶어 관리하는 구조를 목표로 한다.
 

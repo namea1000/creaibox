@@ -1126,9 +1126,9 @@ export default function UniversalBlogEditor({
   const [editorialBorderColor, setEditorialBorderColor] = useState("#e4e4e7");
   const [editorialTextColor, setEditorialTextColor] = useState("#52525b");
   const [editorialSubColor, setEditorialSubColor] = useState("#2563eb");
-  const [editorialSubtitle, setEditorialSubtitle] = useState("CreAibox Insight Editorial");
+  const [editorialSubtitle, setEditorialSubtitle] = useState("CreaiBox Insight Editorial");
   const [editorialText, setEditorialText] = useState(
-    "본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오 크리에이박스(CreAibox)의 오리지널 인사이트 리포트입니다. 인공지능 기반의 고품질 콘텐츠 생성 가이드와 비즈니스 성장 전략에 대한 더 많은 전문 자료는 크리에이박스(CreAibox) 공식 홈페이지 <a href=\"https://creaibox.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"font-bold text-blue-500 hover:text-blue-400 underline\">https://creaibox.com</a> 에서 확인하실 수 있습니다."
+    "본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오 크리에이박스(CreaiBox)의 오리지널 인사이트 리포트입니다. 인공지능 기반의 고품질 콘텐츠 생성 가이드와 비즈니스 성장 전략에 대한 더 많은 전문 자료는 크리에이박스(CreaiBox) 공식 홈페이지 <a href=\"https://creaibox.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"font-bold text-blue-500 hover:text-blue-400 underline\">https://creaibox.com</a> 에서 확인하실 수 있습니다."
   );
 
   const editorialSettingsRef = useRef({
@@ -1137,8 +1137,8 @@ export default function UniversalBlogEditor({
     borderColor: "#e4e4e7",
     textColor: "#52525b",
     subColor: "#2563eb",
-    subtitle: "CreAibox Insight Editorial",
-    text: "본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오 크리에이박스(CreAibox)의 오리지널 인사이트 리포트입니다. 인공지능 기반의 고품질 콘텐츠 생성 가이드와 비즈니스 성장 전략에 대한 더 많은 전문 자료는 크리에이박스(CreAibox) 공식 홈페이지 <a href=\"https://creaibox.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"font-bold text-blue-500 hover:text-blue-400 underline\">https://creaibox.com</a> 에서 확인하실 수 있습니다."
+    subtitle: "CreaiBox Insight Editorial",
+    text: "본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오 크리에이박스(CreaiBox)의 오리지널 인사이트 리포트입니다. 인공지능 기반의 고품질 콘텐츠 생성 가이드와 비즈니스 성장 전략에 대한 더 많은 전문 자료는 크리에이박스(CreaiBox) 공식 홈페이지 <a href=\"https://creaibox.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"font-bold text-blue-500 hover:text-blue-400 underline\">https://creaibox.com</a> 에서 확인하실 수 있습니다."
   });
 
   // Load and parse editorial settings comment on mount
@@ -1155,8 +1155,8 @@ export default function UniversalBlogEditor({
           borderColor: parsed.borderColor || "#e4e4e7",
           textColor: parsed.textColor || "#52525b",
           subColor: parsed.subColor || "#2563eb",
-          subtitle: parsed.subtitle || "CreAibox Insight Editorial",
-          text: parsed.text || "본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오 크리에이박스(CreAibox)의 오리지널 인사이트 리포트입니다..."
+          subtitle: parsed.subtitle || "CreaiBox Insight Editorial",
+          text: parsed.text || "본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오 크리에이박스(CreaiBox)의 오리지널 인사이트 리포트입니다..."
         };
         editorialSettingsRef.current = nextSettings;
         setEditorialEnabled(nextSettings.enabled);
@@ -2028,16 +2028,16 @@ export default function UniversalBlogEditor({
 
         console.log("삭제 감지 URL:", removedUrls);
 
-        // CreAibox 클라우드 DB (Google Drive) 및 Storage / DB 영구 삭제 API 호출
+        // CreaiBox 클라우드 DB (Google Drive) 및 Storage / DB 영구 삭제 API 호출
         try {
           await fetch("/api/file-upload/delete", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ fileUrls: removedUrls }),
           });
-          console.log("CreAibox 클라우드 DB (Google Drive) 파일 영구 삭제 성공");
+          console.log("CreaiBox 클라우드 DB (Google Drive) 파일 영구 삭제 성공");
         } catch (apiErr) {
-          console.error("CreAibox 클라우드 DB 삭제 API 호출 실패:", apiErr);
+          console.error("CreaiBox 클라우드 DB 삭제 API 호출 실패:", apiErr);
         }
 
         const removedPaths = removedUrls
@@ -3286,7 +3286,7 @@ export default function UniversalBlogEditor({
             <ImageIcon size={14} /> URL이미지
           </ToolbarButton>
 
-          {/* 파일 첨부 버튼 (CreAibox 클라우드 DB 연동) */}
+          {/* 파일 첨부 버튼 (CreaiBox 클라우드 DB 연동) */}
           <input
             type="file"
             ref={attachmentInputRef}
@@ -3299,7 +3299,7 @@ export default function UniversalBlogEditor({
           <ToolbarButton
             onClick={() => attachmentInputRef.current?.click()}
             disabled={isAttachmentUploading}
-            title="CreAibox 클라우드 DB 원고 보관함에 첨부 파일 업로드 및 본문 삽입"
+            title="CreaiBox 클라우드 DB 원고 보관함에 첨부 파일 업로드 및 본문 삽입"
           >
             {isAttachmentUploading ? (
               <RefreshCw size={14} className="animate-spin text-violet-400" />
@@ -5212,7 +5212,7 @@ export default function UniversalBlogEditor({
                     value={editorialSubtitle}
                     onChange={(e) => setEditorialSubtitle(e.target.value)}
                     className="w-full rounded-xl border border-zinc-800 bg-zinc-950/60 px-4 py-2.5 text-xs text-zinc-100 focus:border-blue-500 focus:outline-none"
-                    placeholder="예: CreAibox Insight Editorial"
+                    placeholder="예: CreaiBox Insight Editorial"
                   />
                 </div>
 

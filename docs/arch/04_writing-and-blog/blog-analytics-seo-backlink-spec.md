@@ -1,7 +1,7 @@
-# CreAibox 블로그 통계 대시보드, 권한 시스템 및 SEO 백링크 구축 아키텍처
+# CreaiBox 블로그 통계 대시보드, 권한 시스템 및 SEO 백링크 구축 아키텍처
 
 ## 1. 개요 (Overview)
-본 문서는 CreAibox 스튜디오 내 **블로그 통계 대시보드의 실측 데이터 처리 원칙**, **포스트 실시간 조회수 카운팅 엔진**, **공식 블로그와 브랜드 블로그의 권한 격리 및 운영 체계**, **맞춤형 커스텀 기업 사이트 라우팅**, 그리고 외부 브랜드 사이트로부터 `creaibox.com` 메인 사이트로의 **SEO 백링크(PageRank Link Equity) 가산점 전달 아키텍처**를 종합 정리한 공식 기술 명세서입니다.
+본 문서는 CreaiBox 스튜디오 내 **블로그 통계 대시보드의 실측 데이터 처리 원칙**, **포스트 실시간 조회수 카운팅 엔진**, **공식 블로그와 브랜드 블로그의 권한 격리 및 운영 체계**, **맞춤형 커스텀 기업 사이트 라우팅**, 그리고 외부 브랜드 사이트로부터 `creaibox.com` 메인 사이트로의 **SEO 백링크(PageRank Link Equity) 가산점 전달 아키텍처**를 종합 정리한 공식 기술 명세서입니다.
 
 ---
 
@@ -55,9 +55,9 @@
 
 ---
 
-## 6. 클라이언트 사이트 푸터 'Powered by CreAibox' SEO 백링크 가산점 아키텍처
+## 6. 클라이언트 사이트 푸터 'Powered by CreaiBox' SEO 백링크 가산점 아키텍처
 - **SEO 문제점 분석**:
-  - 푸터 하단 문구가 단순 텍스트(`<p>Powered by CreAibox</p>`)일 경우, 검색엔진 봇(Googlebot/Naverbot)은 텍스트로 인식하여 `creaibox.com`으로의 백링크 점수(Link Equity)를 인정하지 않음.
+  - 푸터 하단 문구가 단순 텍스트(`<p>Powered by CreaiBox</p>`)일 경우, 검색엔진 봇(Googlebot/Naverbot)은 텍스트로 인식하여 `creaibox.com`으로의 백링크 점수(Link Equity)를 인정하지 않음.
 - **DoFollow 앵커 태그 전면 개편**:
   - 독립 클라이언트 도메인(`sotongcheum.com`, `downhubs.com`, `guidenara.com` 등) 푸터 하단 문구를 클릭 가능한 DoFollow 앵커 태그로 구성:
     ```html
@@ -65,9 +65,9 @@
       href="https://creaibox.com" 
       target="_blank" 
       rel="noopener" 
-      title="CreAibox - AI 블로그 포스팅 및 웹사이트 자동화 플랫폼"
+      title="CreaiBox - AI 블로그 포스팅 및 웹사이트 자동화 플랫폼"
     >
-      Powered by CreAibox Custom Site
+      Powered by CreaiBox Custom Site
     </a>
     ```
 - **검색엔진 지수 상승 효과**:

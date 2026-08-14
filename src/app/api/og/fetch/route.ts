@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     const host = parsedUrl.hostname.toLowerCase();
     const pathname = parsedUrl.pathname;
 
-    // 1. Internal CreAibox Blog Post check (creaibox.com/blog/slug or localhost:3000/blog/slug)
+    // 1. Internal CreaiBox Blog Post check (creaibox.com/blog/slug or localhost:3000/blog/slug)
     const isInternalBlog =
       (host.endsWith("creaibox.com") || host === "localhost") &&
       pathname.startsWith("/blog/") &&
@@ -53,11 +53,11 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({
           url: targetUrl,
           domain: "creaibox.com",
-          title: postData.title || "CreAibox 블로그 인사이트",
+          title: postData.title || "CreaiBox 블로그 인사이트",
           description:
             postData.meta_description ||
             postData.focus_keyword ||
-            "CreAibox AI 콘텐츠 에이전트 포스팅 원문입니다.",
+            "CreaiBox AI 콘텐츠 에이전트 포스팅 원문입니다.",
           image: primaryImg?.image_url || null,
         });
       }

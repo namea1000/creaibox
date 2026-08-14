@@ -26,7 +26,7 @@ export default function CookiePolicyPage() {
             쿠키 정책 (Cookie Policy)
           </h1>
           <p className="text-xs md:text-sm text-slate-500 font-medium">
-            본 정책은 <span className="text-slate-900 font-bold">2026년 07월 07일</span>부터 시행됩니다. 크리에이박스(CreAibox)는 이용자 여러분에게 투명하고 신뢰성 높은 서비스를 제공하고자 쿠키 수집 기준 및 이용 목적을 상세히 안내해 드립니다.
+            본 정책은 <span className="text-slate-900 font-bold">2026년 07월 07일</span>부터 시행됩니다. 크리에이박스(CreaiBox)는 이용자 여러분에게 투명하고 신뢰성 높은 서비스를 제공하고자 쿠키 수집 기준 및 이용 목적을 상세히 안내해 드립니다.
           </p>
         </div>
 
@@ -135,7 +135,7 @@ export default function CookiePolicyPage() {
 
         {/* 🏁 SECTION 3: FOOTER (하단 카피라이트 고정) */}
         <div className="mt-16 pt-8 border-t border-slate-200 text-center text-xs text-slate-400 font-medium">
-          © {currentYear} 크리에이박스(CreAibox). All rights reserved. 본 쿠키 정책의 모든 저작권은 크리에이박스(CreAibox)에 있으며, 무단 복제 및 전재를 금합니다.
+          © {currentYear} 크리에이박스(CreaiBox). All rights reserved. 본 쿠키 정책의 모든 저작권은 크리에이박스(CreaiBox)에 있으며, 무단 복제 및 전재를 금합니다.
         </div>
 
       </div>

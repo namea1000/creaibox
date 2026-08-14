@@ -82,7 +82,7 @@ export async function POST(request: Request) {
       sslStatus: "ISSUED (1초 자동 발급 완료)",
       message: realPurchased
         ? `🎉 ${cleanDomain} 도메인이 실서버 결제 승인 후 성공적으로 구매 및 1초 글로벌 Edge 서버로 바인딩되었습니다!`
-        : `🎉 ${cleanDomain} 도메인이 결제 승인 후 CreAibox Edge IP (76.76.21.21) 1초 연결이 성공적으로 완료되었습니다!`,
+        : `🎉 ${cleanDomain} 도메인이 결제 승인 후 CreaiBox Edge IP (76.76.21.21) 1초 연결이 성공적으로 완료되었습니다!`,
       realPurchased,
       buyResult,
       bindResult,

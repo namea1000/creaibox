@@ -1,8 +1,8 @@
-# CreAibox 100% 맞춤형 커스텀 기업 홈페이지 개발 및 운영 지침서 (Custom Client Site Development Guide)
+# CreaiBox 100% 맞춤형 커스텀 기업 홈페이지 개발 및 운영 지침서 (Custom Client Site Development Guide)
 
 ## 1. 개요 (Overview & Architecture Philosophy)
 
-CreAibox는 브랜드의 특성 및 고객 요구사항에 따라 2가지 아키텍처 방식의 웹사이트 제작 서비스를 제공합니다:
+CreaiBox는 브랜드의 특성 및 고객 요구사항에 따라 2가지 아키텍처 방식의 웹사이트 제작 서비스를 제공합니다:
 
 1. **DB 기반 동적 웹사이트 빌더 (Dynamic Site Builder)**:
    - 라우트: `/clients/dynamic-renderer/[brand_id]`
@@ -25,7 +25,7 @@ src/app/clients/[client_id]/
 │   └── constants.ts          # 기업 정보, 메뉴 구조, 대표 서비스, 실적 데이터
 ├── components/
 │   ├── Header.tsx            # 브랜드 네비게이션 헤더
-│   ├── Footer.tsx            # 브랜드 푸터 (Powered by CreAibox DoFollow 백링크 포함)
+│   ├── Footer.tsx            # 브랜드 푸터 (Powered by CreaiBox DoFollow 백링크 포함)
 │   ├── HeroSection.tsx       # 히어로 메인 비주얼
 │   ├── BusinessSection.tsx   # 사업영역 소개
 │   ├── PortfolioSection.tsx  # 실적 갤러리 탭 및 onError 폴백 이미지 처리
@@ -90,7 +90,7 @@ export const CUSTOM_CLIENT_SITES = ["sotongcheum", "commufill"];
 
 ---
 
-## 5. SEO 백링크 가산점 아키텍처 (Powered by CreAibox DoFollow Link)
+## 5. SEO 백링크 가산점 아키텍처 (Powered by CreaiBox DoFollow Link)
 
 독립 클라이언트 웹사이트의 푸터 하단 문구를 단순 텍스트가 아닌 **`creaibox.com` 공식 사이트로 직접 연결되는 클릭 가능한 DoFollow 앵커 태그**로 구현합니다.
 
@@ -102,9 +102,9 @@ export const CUSTOM_CLIENT_SITES = ["sotongcheum", "commufill"];
     target="_blank"
     rel="noopener"
     className="text-slate-500 hover:text-blue-600 underline transition-colors"
-    title="CreAibox - AI 블로그 포스팅 및 웹사이트 자동화 플랫폼"
+    title="CreaiBox - AI 블로그 포스팅 및 웹사이트 자동화 플랫폼"
   >
-    CreAibox Custom Site
+    CreaiBox Custom Site
   </a>
 </p>
 ```
@@ -138,7 +138,7 @@ export const CUSTOM_CLIENT_SITES = ["sotongcheum", "commufill"];
 
 ### 7.1 `layout.tsx` 전용 OG 메타데이터 필수 정의
 
-서브도메인(`*.creaibox.com`) 및 커스텀 도메인(`brand.com`) 공유 시 CreAibox 본사 썸네일이 아닌 커스텀 브랜드 전용 카드 이미지가 노출되도록 `openGraph` / `twitter` 객체를 `layout.tsx`에 반드시 작성합니다.
+서브도메인(`*.creaibox.com`) 및 커스텀 도메인(`brand.com`) 공유 시 CreaiBox 본사 썸네일이 아닌 커스텀 브랜드 전용 카드 이미지가 노출되도록 `openGraph` / `twitter` 객체를 `layout.tsx`에 반드시 작성합니다.
 
 ```typescript
 export const metadata: Metadata = {

@@ -327,7 +327,7 @@ export default function CreMusicPlayerPage() {
             <div className="flex items-center gap-3">
               <h2 className="text-sm font-black text-white flex items-center gap-2">
                 <Sparkles size={14} className="text-cyan-400" />
-                CreAibox Music Player
+                CreaiBox Music Player
               </h2>
             </div>
 
@@ -371,7 +371,7 @@ export default function CreMusicPlayerPage() {
                 Awakening
               </h1>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-zinc-400 font-bold">
-                <span className="text-white">CreAibox Studio</span>
+                <span className="text-white">CreaiBox Studio</span>
                 <span>•</span>
                 <span>2026</span>
                 <span>•</span>

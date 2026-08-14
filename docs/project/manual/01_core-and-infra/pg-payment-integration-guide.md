@@ -1,6 +1,6 @@
-# CreAibox 전자결제(PG) 연동 가이드 (PortOne / 토스페이먼츠 / Stripe)
+# CreaiBox 전자결제(PG) 연동 가이드 (PortOne / 토스페이먼츠 / Stripe)
 
-이 매뉴얼은 CreAibox 서비스에서 **도메인 구매, 요금제 구독(Creator/Pro/Business/Premier), 유료 서비스 결제**를 처리하기 위한 PG 연동 3단계 절차와 코드 연동 방식을 설명합니다.
+이 매뉴얼은 CreaiBox 서비스에서 **도메인 구매, 요금제 구독(Creator/Pro/Business/Premier), 유료 서비스 결제**를 처리하기 위한 PG 연동 3단계 절차와 코드 연동 방식을 설명합니다.
 
 ---
 
@@ -38,7 +38,7 @@ export async function requestDomainPayment({ domain, amount }: { domain: string;
     storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID!,
     channelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY!,
     paymentId,
-    orderName: `[CreAibox] ${domain} 도메인 1년 등록`,
+    orderName: `[CreaiBox] ${domain} 도메인 1년 등록`,
     totalAmount: amount,
     currency: "CURRENCY_KRW",
     payMethod: "CARD", // 또는 KAKAO_PAY, EASY_PAY
@@ -72,7 +72,7 @@ export async function requestDomainPayment({ domain, amount }: { domain: string;
 flowchart TD
     A[유저: 도메인 1초 구매 클릭] --> B[포트원/카카오페이 결제 팝업]
     B --> C{결제 성공 여부}
-    C -- 성공 --> D[CreAibox 백엔드 결제 금액 검증]
+    C -- 성공 --> D[CreaiBox 백엔드 결제 금액 검증]
     D --> E[1초 도메인 자동 바인딩 API 실행]
     E --> F[유저 블로그/웹사이트에 도메인 즉시 연결 완료!]
     C -- 실패/취소 --> G[취소 안내 팝업]
@@ -80,4 +80,4 @@ flowchart TD
 
 ---
 
-*최종 수정일: 2026-07-28 | 작성: CreAibox 개발팀*
+*최종 수정일: 2026-07-28 | 작성: CreaiBox 개발팀*

@@ -1,6 +1,6 @@
 # Supabase Storage CDN Caching Proxy Architecture
 
-이 문서는 CreAibox 서비스에서 Supabase Storage를 타겟 스토리지로 사용할 때 발생하는 Egress 대역폭 요금 폭탄을 방지하고, 글로벌 에지 캐싱 및 스트리밍을 구현하기 위해 설계된 **"Supabase Storage + Next.js 캐싱 프록시"** 아키텍처 명세서입니다.
+이 문서는 CreaiBox 서비스에서 Supabase Storage를 타겟 스토리지로 사용할 때 발생하는 Egress 대역폭 요금 폭탄을 방지하고, 글로벌 에지 캐싱 및 스트리밍을 구현하기 위해 설계된 **"Supabase Storage + Next.js 캐싱 프록시"** 아키텍처 명세서입니다.
 
 ---
 
@@ -69,7 +69,7 @@ return <img src={imageSrc} alt="Premium Theme" />;
 
 ## 5. 하이브리드 저장소 분할 전략 및 아키텍처 결정 사항 (중요)
 
-CreAibox의 확장 가능한 자산 서빙을 위해 관리자와 가입 사용자의 유즈케이스에 맞춰 저장소 역할을 다음과 같이 이중 분담(하이브리드)합니다.
+CreaiBox의 확장 가능한 자산 서빙을 위해 관리자와 가입 사용자의 유즈케이스에 맞춰 저장소 역할을 다음과 같이 이중 분담(하이브리드)합니다.
 
 ### 5.1 역할 분담 구조
 * **마스터 테마 디자인 이미지 (관리자용)**: 

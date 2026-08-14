@@ -1,4 +1,4 @@
--- CreAibox 키워드 정밀 분석 리포트 (Option C: 1 키워드 = 1 Row 내 날짜별 시계열 히스토리 누적 보관)
+-- CreaiBox 키워드 정밀 분석 리포트 (Option C: 1 키워드 = 1 Row 내 날짜별 시계열 히스토리 누적 보관)
 CREATE TABLE IF NOT EXISTS public.keyword_tool_reports (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     keyword TEXT NOT NULL UNIQUE,

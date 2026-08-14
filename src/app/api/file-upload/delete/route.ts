@@ -35,16 +35,16 @@ export async function POST(req: Request) {
     for (const url of fileUrls) {
       if (typeof url !== "string" || !url) continue;
 
-      // 1. CreAibox 클라우드 DB (Google Drive) 삭제 시도
+      // 1. CreaiBox 클라우드 DB (Google Drive) 삭제 시도
       if (isGoogleDriveConfigured()) {
         try {
           const isDriveDeleted = await deleteFileFromGoogleDrive(url);
           if (isDriveDeleted) {
             deletedGoogleDriveCount++;
-            console.log("CreAibox Cloud DB (Google Drive) file deleted successfully:", url);
+            console.log("CreaiBox Cloud DB (Google Drive) file deleted successfully:", url);
           }
         } catch (gdriveErr) {
-          console.error("CreAibox Cloud DB file deletion failed:", gdriveErr);
+          console.error("CreaiBox Cloud DB file deletion failed:", gdriveErr);
         }
       }
 

@@ -124,7 +124,7 @@ export async function generateMetadata({ params }: BrandPageProps): Promise<Meta
 
   if (!profile) {
     return {
-      title: "블로그를 찾을 수 없습니다 | CreAibox",
+      title: "블로그를 찾을 수 없습니다 | CreaiBox",
     };
   }
 
@@ -200,7 +200,7 @@ export default async function BrandBlogHome({ params }: BrandPageProps) {
               href="https://creaibox.com"
               className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-4 text-sm font-black text-zinc-300 transition hover:bg-zinc-900"
             >
-              <ArrowLeft size={16} /> CreAibox 홈으로 가기
+              <ArrowLeft size={16} /> CreaiBox 홈으로 가기
             </Link>
           </div>
         </div>

@@ -1,6 +1,6 @@
 # Implementation Plan - Multiple Category Selection for Blog Posts
 
-We will enhance the CreAibox blog post category configuration to support selecting multiple categories per post instead of just one. Posts will appear under all of their selected categories on the brand blog.
+We will enhance the CreaiBox blog post category configuration to support selecting multiple categories per post instead of just one. Posts will appear under all of their selected categories on the brand blog.
 
 ---
 

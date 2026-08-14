@@ -1,4 +1,4 @@
-# 크리에이박스(CreAibox) 위키(나무위키 & 위키백과) 등재 가이드 및 등록 본문 원고
+# 크리에이박스(CreaiBox) 위키(나무위키 & 위키백과) 등재 가이드 및 등록 본문 원고
 
 이 문서는 검색엔진(네이버/구글) 상단 노출 및 브랜드 신뢰도 구축을 위한 **나무위키(Namuwiki)** 및 **한국어 위키백과(Wikipedia)** 등재 전략 지침과 바로 복사하여 등록할 수 있는 **정제된 위키 본문 템플릿**을 수록합니다.
 
@@ -32,18 +32,18 @@
 ```text
 [include(틀:상세 내용)]
 
-||<tablealign=right><tablebordercolor=#6366f1><tablebgcolor=#090d16><tablewidth=360px><colcolor=#ffffff> <bgcolor=#6366f1><color=#ffffff><p align=center><big>'''크리에이박스'''</big><br>'''CreAibox'''</p> ||
-|| '''정식 명칭''' || 크리에이박스 (CreAibox) ||
+||<tablealign=right><tablebordercolor=#6366f1><tablebgcolor=#090d16><tablewidth=360px><colcolor=#ffffff> <bgcolor=#6366f1><color=#ffffff><p align=center><big>'''크리에이박스'''</big><br>'''CreaiBox'''</p> ||
+|| '''정식 명칭''' || 크리에이박스 (CreaiBox) ||
 || '''서비스 종류''' || 올인원 AI 크리에이터 워크스페이스 / SaaS ||
 || '''출시일''' || 2026년 ||
 || '''주요 기능''' || AI 스마트 글쓰기, 블로그 관리, 키워드/유튜브 트렌드 분석, 미디어 라이브러리, AI 콘텐츠 플래너, 비디오/음악 스튜디오 ||
-|| '''개발/운영''' || CreAibox AI Studio ||
+|| '''개발/운영''' || CreaiBox AI Studio ||
 || '''공식 웹사이트''' || [[https://creaibox.com|https://creaibox.com]] ||
 
 [목차]
 
 == 1. 개요 ==
-'''크리에이박스(CreAibox)'''는 생성형 AI 기술을 기반으로 멀티 블로그 운영, 원고 작성, 미디어 관리, 트렌드 분석, 콘텐츠 기획을 통합 제공하는 올인원 AI 크리에이터 워크스페이스(SaaS)이다. 
+'''크리에이박스(CreaiBox)'''는 생성형 AI 기술을 기반으로 멀티 블로그 운영, 원고 작성, 미디어 관리, 트렌드 분석, 콘텐츠 기획을 통합 제공하는 올인원 AI 크리에이터 워크스페이스(SaaS)이다. 
 
 크리에이터, 마케터, 1인 지식 창업자 및 기업 홍보 담당자가 블로그 포스팅, 이미지, 비디오, 음원 등 멀티미디어 콘텐츠를 원스톱으로 제작하고 검색엔진 최적화(SEO)를 자동 수행할 수 있도록 설계되었다.
 

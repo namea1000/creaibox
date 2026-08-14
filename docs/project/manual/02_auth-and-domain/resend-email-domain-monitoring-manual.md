@@ -1,6 +1,6 @@
 # Resend 이메일 & 도메인 통합 모니터링 실전 운용 매뉴얼 (`docs/project/manual/resend-email-domain-monitoring-manual.md`)
 
-CreAibox 관리자 센터 내 구축된 **Resend 커스텀 도메인 이메일 연동 및 메일 발/수신 모니터링 시스템(` /admin/resend `)**의 실무 운용 및 개발 가이드 문서입니다.
+CreaiBox 관리자 센터 내 구축된 **Resend 커스텀 도메인 이메일 연동 및 메일 발/수신 모니터링 시스템(` /admin/resend `)**의 실무 운용 및 개발 가이드 문서입니다.
 
 ---
 

@@ -142,7 +142,7 @@ export default function RealtimeKeywordPage() {
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 Live Portals Sync
               </span>
-              <span className="text-xs text-zinc-400 font-mono">CreAibox Realtime Intelligence</span>
+              <span className="text-xs text-zinc-400 font-mono">CreaiBox Realtime Intelligence</span>
             </div>
 
             <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center gap-3">
@@ -151,7 +151,7 @@ export default function RealtimeKeywordPage() {
             </h1>
 
             <p className="text-zinc-400 text-sm whitespace-nowrap font-medium">
-              네이버 실시간 검색어 20개와 구글 실시간 급상승 검색어 20개를 1:1 비교 분석하고 CreAibox 클라우드 DB에 자동으로 아카이빙합니다.
+              네이버 실시간 검색어 20개와 구글 실시간 급상승 검색어 20개를 1:1 비교 분석하고 CreaiBox 클라우드 DB에 자동으로 아카이빙합니다.
             </p>
           </div>
         </div>
@@ -275,7 +275,7 @@ export default function RealtimeKeywordPage() {
               <AlertCircle className="mx-auto text-amber-400/80" size={36} />
               <h4 className="text-base font-bold text-zinc-200">조회할 수 있는 아카이빙 데이터가 없습니다</h4>
               <p className="text-sm font-medium text-zinc-300 w-full mx-auto leading-relaxed whitespace-pre-line [word-break:keep-all]">
-                선택하신 일시의 데이터는 CreAibox DB 수집 기간 이전이거나 아카이빙 기록이 존재하지 않습니다.{"\n"}
+                선택하신 일시의 데이터는 CreaiBox DB 수집 기간 이전이거나 아카이빙 기록이 존재하지 않습니다.{"\n"}
                 (2026년 7월 29일부터 개발을 완료하여 네이버 실시간 검색어 수집을 시작하였습니다.)
               </p>
             </div>
@@ -381,7 +381,7 @@ export default function RealtimeKeywordPage() {
               <AlertCircle className="mx-auto text-amber-400/80" size={36} />
               <h4 className="text-base font-bold text-zinc-200">조회할 수 있는 아카이빙 데이터가 없습니다</h4>
               <p className="text-sm font-medium text-zinc-300 w-full mx-auto leading-relaxed whitespace-pre-line [word-break:keep-all]">
-                선택하신 일시의 데이터는 CreAibox DB 수집 기간 이전이거나 아카이빙 기록이 존재하지 않습니다.{"\n"}
+                선택하신 일시의 데이터는 CreaiBox DB 수집 기간 이전이거나 아카이빙 기록이 존재하지 않습니다.{"\n"}
                 (2026년 7월 29일부터 개발을 완료하여 구글 실시간 검색어 수집을 시작하였습니다.)
               </p>
             </div>

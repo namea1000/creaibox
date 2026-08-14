@@ -73,7 +73,7 @@ export default function CustomClientSiteHomePage() {
           <div className="flex-1 space-y-8">
             <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 border border-blue-400/20 px-4 py-1.5 text-sm font-bold text-blue-400 backdrop-blur-md">
               <Sparkles size={16} className="animate-pulse" />
-              <span>CreAibox AI 웹사이트 빌더</span>
+              <span>CreaiBox AI 웹사이트 빌더</span>
             </div>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.2] tracking-tight">
@@ -84,7 +84,7 @@ export default function CustomClientSiteHomePage() {
             </h1>
             
             <p className="text-lg text-slate-400 font-medium leading-relaxed max-w-xl">
-              CreAibox는 기존 사이트 주소, 소셜 프로필, 텍스트 문서 등을 원천 자료로 활용하여 <strong className="text-slate-200">단 즉시 최신 트렌드의 커스텀 웹사이트를 완벽하게 복제 및 구축</strong>해 주는 AI 엔진입니다.
+              CreaiBox는 기존 사이트 주소, 소셜 프로필, 텍스트 문서 등을 원천 자료로 활용하여 <strong className="text-slate-200">단 즉시 최신 트렌드의 커스텀 웹사이트를 완벽하게 복제 및 구축</strong>해 주는 AI 엔진입니다.
             </p>
             
             <form onSubmit={handleMigrationSubmit} className="max-w-md relative mt-4">
@@ -185,10 +185,10 @@ export default function CustomClientSiteHomePage() {
               </div>
               <h2 className="text-3xl font-black text-white leading-tight">
                 어디서 만들었든 상관없습니다.<br/>
-                <span className="text-slate-400">CreAibox가 다 가져옵니다.</span>
+                <span className="text-slate-400">CreaiBox가 다 가져옵니다.</span>
               </h2>
               <p className="text-slate-400 font-medium">
-                Wix, WordPress, 아임웹, 카페24 등 기존에 사용하시던 플랫폼이 무엇이든 공개된 웹사이트 URL만 있다면 CreAibox AI가 콘텐츠와 구조를 분석하여 즉시 새롭게 구축해 드립니다.
+                Wix, WordPress, 아임웹, 카페24 등 기존에 사용하시던 플랫폼이 무엇이든 공개된 웹사이트 URL만 있다면 CreaiBox AI가 콘텐츠와 구조를 분석하여 즉시 새롭게 구축해 드립니다.
               </p>
               <div className="pt-4">
                 <a href="/studio/custom-client-site/migration" className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-800 hover:bg-slate-700 px-6 py-3 text-sm font-bold text-white transition-colors border border-slate-700">

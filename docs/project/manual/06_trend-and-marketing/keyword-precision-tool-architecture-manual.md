@@ -1,5 +1,5 @@
 
-# CreAibox 키워드 정밀 도구 (검색량 & SERP 배치) 시스템 아키텍처 및 운용 매뉴얼
+# CreaiBox 키워드 정밀 도구 (검색량 & SERP 배치) 시스템 아키텍처 및 운용 매뉴얼
 
 ## 📌 1. 개요 (Overview)
 
@@ -9,13 +9,13 @@
   - [`src/lib/server/keyword-tool-engine.ts`](<file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/keyword-tool-engine.ts>)
   - [`src/lib/server/ncp-api-hub.ts`](<file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/ncp-api-hub.ts>)
 - **프론트엔드 페이지**: [`src/app/studio/keyword/tool/page.tsx`](<file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/tool/page.tsx>)
-- **핵심 목적**: 입력된 키워드 또는 실시간 이슈 키워드에 대해 네이버 및 구글의 100% 포털 실측 데이터(상위 노출 블로그 10선, 이슈 뉴스 10선, 포털 연관어 10선, DataLab 트렌드 지수)를 실시간 수집 및 비교 분석하고, CreAibox DB에 영구 보관합니다.
+- **핵심 목적**: 입력된 키워드 또는 실시간 이슈 키워드에 대해 네이버 및 구글의 100% 포털 실측 데이터(상위 노출 블로그 10선, 이슈 뉴스 10선, 포털 연관어 10선, DataLab 트렌드 지수)를 실시간 수집 및 비교 분석하고, CreaiBox DB에 영구 보관합니다.
 
 ---
 
 ## 🛡️ 2. Strict Zero Fake Data Rule (가짜 데이터 전면 금지 규칙) 구현
 
-CreAibox의 신뢰성 최우선 1대 규칙에 따라, 가짜 데이터(Mock/Dummy/Fake/kwHash)를 100% 절대 금지하고 **100% 포털 실측 API 데이터만 수집**합니다.
+CreaiBox의 신뢰성 최우선 1대 규칙에 따라, 가짜 데이터(Mock/Dummy/Fake/kwHash)를 100% 절대 금지하고 **100% 포털 실측 API 데이터만 수집**합니다.
 
 1. **상위 노출 블로그 10선 실측**:
    - `fetchNaverSearchApi(kw, "blog", 10)`를 통해 네이버 포털 실시간 상위 노출 10개 블로그 글의 실제 제목, 블로거 이름, 작성일자, 인플루언서 여부를 실시간 수집합니다.
@@ -34,7 +34,7 @@ CreAibox의 신뢰성 최우선 1대 규칙에 따라, 가짜 데이터(Mock/Dum
 
 ### ① 실시간 급상승 키워드 상단 태그 (🔥 현재 실시간 급상승 키워드)
 
-- 메뉴 진입 시 [`/api/keywords/latest-quick`](<file:///Users/a1234/Local%20Sites/creaibox/src/app/api/keywords/latest-quick/route.ts>)를 호출하여 CreAibox DB(`keyword_trending_history`)에서 최근 1시간 이내 아카이빙된 **🟢 네이버 TOP 5 + 🔵 구글 TOP 5 (총 10개)** 키워드를 자동으로 가져옵니다.
+- 메뉴 진입 시 [`/api/keywords/latest-quick`](<file:///Users/a1234/Local%20Sites/creaibox/src/app/api/keywords/latest-quick/route.ts>)를 호출하여 CreaiBox DB(`keyword_trending_history`)에서 최근 1시간 이내 아카이빙된 **🟢 네이버 TOP 5 + 🔵 구글 TOP 5 (총 10개)** 키워드를 자동으로 가져옵니다.
 - 클릭 시 해당 키워드와 포털 탭이 즉시 세팅되며 1초 만에 정밀 분석이 실행됩니다.
 
 ### ② 스크롤 없는 1줄 깔끔 관련 뉴스 7선 (이 검색어는 왜?)
@@ -47,7 +47,7 @@ CreAibox의 신뢰성 최우선 1대 규칙에 따라, 가짜 데이터(Mock/Dum
 
 ### ④ 아카이빙 리포트 자산 100% 영구 보관 정책 (`keyword_tool_reports`)
 
-- 검색 분석된 모든 데이터는 CreAibox의 핵심 자산이므로 100% 영구 보관되며 일체 자동으로 삭제되지 않습니다.
+- 검색 분석된 모든 데이터는 CreaiBox의 핵심 자산이므로 100% 영구 보관되며 일체 자동으로 삭제되지 않습니다.
 - 동일 키워드 재검색 시 최신 리포트로 갱신(`UPSERT`)되며, 수십만~수백만 건의 데이터가 축적되더라도 PostgreSQL B-Tree 인덱스(`idx_keyword_tool_reports_created_at`) 및 10개 단위 서버 페이징을 통해 0.01초 만에 초고속 조회 및 열람이 가능합니다.
 
 ### ⑤ 네이버 & 구글 동시 병렬 분석 파이프라인 (Dual Parallel Engine)

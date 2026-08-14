@@ -1,4 +1,4 @@
-# CreAibox Agent Rules
+# CreaiBox Agent Rules
 
 Read first:
 

@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-Writing Naver Posts 데이터베이스는 CreAibox의 네이버 블로그 전용 원고 저장소이다.
+Writing Naver Posts 데이터베이스는 CreaiBox의 네이버 블로그 전용 원고 저장소이다.
 
 이 스키마는 다음 기능을 지원한다.
 
@@ -44,7 +44,7 @@ Writing Naver Posts 데이터베이스는 CreAibox의 네이버 블로그 전용
 
 ## 4. Smart Writing & Recreate Policy
 
-CreAibox는 네이버 글쓰기를 하나의 테이블로 통합 관리한다.
+CreaiBox는 네이버 글쓰기를 하나의 테이블로 통합 관리한다.
 
 구분 컬럼
 

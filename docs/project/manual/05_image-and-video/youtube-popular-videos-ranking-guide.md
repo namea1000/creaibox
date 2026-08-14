@@ -1,6 +1,6 @@
 # 👑 인기 영상 조회수 랭킹 (Most Viewed Videos Ranking) 운영 및 개발 매뉴얼
 
-이 문서는 **CreAibox 유튜브 연구소**의 신규 핵심 분석 기능인 **`인기 영상 조회수 랭킹 (/youtube-trend/popular)`** 기능의 아키텍처, 데이터베이스 스키마, 백엔드 API, 프론트엔드 UI 컴포넌트 및 운용 지침을 정립한 통합 매뉴얼입니다.
+이 문서는 **CreaiBox 유튜브 연구소**의 신규 핵심 분석 기능인 **`인기 영상 조회수 랭킹 (/youtube-trend/popular)`** 기능의 아키텍처, 데이터베이스 스키마, 백엔드 API, 프론트엔드 UI 컴포넌트 및 운용 지침을 정립한 통합 매뉴얼입니다.
 
 ---
 
@@ -26,17 +26,17 @@
 | **선정 기준** | 조회수가 10만 뷰라도 **방금 출시되어 시청 유입 속도가 폭발적인 영상** | 조회수가 **수백만 ~ 수억 뷰에 달하는 압도적 조회수 1위~50위 영상** |
 | **분석 용도** | 지금 당장 유행하는 밈, 뉴스, 핫이슈 파악 | 통산 대박 영상, 장르별 스테디셀러 벤치마킹 |
 
-### 1.2 과거 날짜 조회 원리 (유튜브 API 공식 제한사항 & CreAibox DB)
+### 1.2 과거 날짜 조회 원리 (유튜브 API 공식 제한사항 & CreaiBox DB)
 
 - **유튜브 API 제한사항**: YouTube Data API v3 공식 스펙상 과거 특정 일자 시점의 누적 조회수를 소급 조회하는 파라미터는 제공되지 않습니다.
-- **CreAibox DB 스냅샷**: 따라서 과거 날짜 조회를 실행할 경우, **CreAibox 클라우드 DB(`youtube_popular_archive`)가 해당 당일에 실제로 수집 보존해 온 100% 실전 랭킹 스냅샷만 조회**할 수 있습니다.
+- **CreaiBox DB 스냅샷**: 따라서 과거 날짜 조회를 실행할 경우, **CreaiBox 클라우드 DB(`youtube_popular_archive`)가 해당 당일에 실제로 수집 보존해 온 100% 실전 랭킹 스냅샷만 조회**할 수 있습니다.
 - **가짜 데이터 전면 금지 (Strict Zero Fake Data Rule)**: 과거 날짜에 DB 스냅샷이 존재하지 않는 경우, 오늘자 실시간 데이터를 과거 날짜에 조작하여 넣지 않고 `"📭 DB 구축 이전 기간이거나 기록이 미수집된 일자입니다"` 메시지를 솔직하게 표시합니다.
 
 ---
 
 ## 2. 데이터베이스 스키마 (`youtube_popular_archive`)
 
-- **테이블 DDL 파일**: [`docs/database/youtube_popular_archive.sql`](file:///Users/a1234/Local%20Sites/creaibox/docs/database/youtube_popular_archive.sql)
+- **테이블 DDL 파일**: [`docs/database/sql/youtube_popular_archive.sql`](file:///Users/a1234/Local%20Sites/creaibox/docs/database/sql/youtube_popular_archive.sql)
 
 ```sql
 create table if not exists public.youtube_popular_archive (

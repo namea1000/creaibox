@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-Music Album Plans 데이터베이스는 CreAibox Music Studio의 앨범 기획 시스템이다.
+Music Album Plans 데이터베이스는 CreaiBox Music Studio의 앨범 기획 시스템이다.
 
 Music Studio는 단순히 곡을 생성하는 도구가 아니라, 실제 음반 제작 프로세스처럼 **앨범 기획 → 곡 제작 → 앨범 제작 → 배포** 흐름을 지원하도록 설계되었다.
 

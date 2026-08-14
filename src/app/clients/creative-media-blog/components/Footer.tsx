@@ -23,7 +23,7 @@ export default function Footer() {
             <div className="flex items-center gap-3 text-[11px] text-slate-400 font-bold">
               <span className="flex items-center gap-1 text-emerald-400"><ShieldCheck size={13} /> DoFollow SEO Ready</span>
               <span>•</span>
-              <span className="flex items-center gap-1 text-cyan-400"><Globe size={13} /> CreAibox Engine Powered</span>
+              <span className="flex items-center gap-1 text-cyan-400"><Globe size={13} /> CreaiBox Engine Powered</span>
             </div>
           </div>
 

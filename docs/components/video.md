@@ -1,6 +1,6 @@
 # 비디오 스튜디오 컴포넌트 (Video Studio Components)
 
-`CreAibox` 비디오 에디터 모듈은 브라우저 내에서 복수의 비디오 클립, 텍스트 효과, 음향 트랙을 시간축 기반으로 배치 및 조작할 수 있는 **SPA(Single Page Application) 비디오 편집 모듈**입니다.
+`CreaiBox` 비디오 에디터 모듈은 브라우저 내에서 복수의 비디오 클립, 텍스트 효과, 음향 트랙을 시간축 기반으로 배치 및 조작할 수 있는 **SPA(Single Page Application) 비디오 편집 모듈**입니다.
 
 ---
 

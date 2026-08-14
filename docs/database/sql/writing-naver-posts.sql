@@ -1,5 +1,5 @@
 -- =====================================================
--- CreAibox Writing Naver Posts DB Final
+-- CreaiBox Writing Naver Posts DB Final
 -- =====================================================
 
 create table if not exists public.writing_naver_posts (

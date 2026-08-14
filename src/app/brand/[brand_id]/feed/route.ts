@@ -146,7 +146,7 @@ export async function GET(
       id: "welcome-dummy",
       title: `${profile.nickname || brand_id} 블로그 개설을 축하합니다!`,
       slug: "welcome-to-creaibox",
-      meta_description: "크리에이박스(CreAibox) 올인원 AI 스튜디오를 이용한 첫 블로그 도메인 개설을 축하드립니다. 이 포스팅은 검색 엔진의 RSS 연동을 돕기 위해 임시로 노출되는 안내 메시지입니다. 글이 발행되면 자동으로 대체됩니다.",
+      meta_description: "크리에이박스(CreaiBox) 올인원 AI 스튜디오를 이용한 첫 블로그 도메인 개설을 축하드립니다. 이 포스팅은 검색 엔진의 RSS 연동을 돕기 위해 임시로 노출되는 안내 메시지입니다. 글이 발행되면 자동으로 대체됩니다.",
       focus_keyword: "크리에이박스",
       seo_tags: ["크리에이박스", "AI블로그", "첫발행"],
       created_at: new Date().toISOString(),
@@ -167,7 +167,7 @@ export async function GET(
     <item>
       <title><![CDATA[${post.title || ""}]]></title>
       <link>${postUrl}</link>
-      <dc:creator><![CDATA[${profile.nickname || "CreAibox Editor"}]]></dc:creator>
+      <dc:creator><![CDATA[${profile.nickname || "CreaiBox Editor"}]]></dc:creator>
       <pubDate>${pubDate}</pubDate>
       <guid isPermaLink="true">${postUrl}</guid>
       <description><![CDATA[${description}]]></description>

@@ -99,7 +99,7 @@ export async function GET(request: Request) {
   const isPastDate = targetDate < todayStr;
   const isPastHourToday = targetDate === todayStr && targetHour < currentHour;
 
-  // 1. CreAibox 클라우드 DB 및 메모리 캐시에 실제 보관된 기록 우선 조회
+  // 1. CreaiBox 클라우드 DB 및 메모리 캐시에 실제 보관된 기록 우선 조회
   const dbRecords = await getHistoricalHourlyKeywords(targetDate, targetHour, "google");
   if (dbRecords && dbRecords.length > 0) {
     return NextResponse.json({
@@ -122,7 +122,7 @@ export async function GET(request: Request) {
       geo,
       total: 0,
       items: [],
-      message: `선택하신 일시(${targetDate} ${targetHour}시)는 구글 포털 API의 과거 시간대 실시간 미제공 범위이거나 CreAibox DB 자동 수집 구축 이전 시점의 데이터입니다.`,
+      message: `선택하신 일시(${targetDate} ${targetHour}시)는 구글 포털 API의 과거 시간대 실시간 미제공 범위이거나 CreaiBox DB 자동 수집 구축 이전 시점의 데이터입니다.`,
     });
   }
 

@@ -68,7 +68,7 @@ export async function POST(req: Request) {
 
     let fileUrl = "";
 
-    // 3. Upload to Google Drive (CreAibox Cloud DB) under exact same sourceType folder as images
+    // 3. Upload to Google Drive (CreaiBox Cloud DB) under exact same sourceType folder as images
     if (isGoogleDriveConfigured()) {
       try {
         fileUrl = await uploadToGoogleDrive(
@@ -78,9 +78,9 @@ export async function POST(req: Request) {
           user.id,
           sourceType || "writing_creaibox_posts"
         );
-        console.log("Attached file uploaded successfully to CreAibox Cloud DB (Google Drive):", fileUrl);
+        console.log("Attached file uploaded successfully to CreaiBox Cloud DB (Google Drive):", fileUrl);
       } catch (gdriveError: any) {
-        console.error("CreAibox Cloud DB file upload failed, falling back to Supabase storage:", gdriveError);
+        console.error("CreaiBox Cloud DB file upload failed, falling back to Supabase storage:", gdriveError);
       }
     }
 

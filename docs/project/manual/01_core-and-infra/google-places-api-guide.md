@@ -1,6 +1,6 @@
 # 📖 Google Places API 서비스 구축 및 연동 가이드 (Google Places Guide)
 
-본 매뉴얼은 CreAibox의 **Strict Zero Fake Data Rule(가짜 데이터 생성 100% 절대 금지)** 원칙을 완벽히 수호하면서, AI 로컬 맛집/여행 블로그 포스팅 자동 생성, 커스텀 웹사이트 주소 자동완성(Autocomplete) 및 상권 분석 서비스를 구축하기 위한 **Google Places API** 전용 기술 매뉴얼입니다.
+본 매뉴얼은 CreaiBox의 **Strict Zero Fake Data Rule(가짜 데이터 생성 100% 절대 금지)** 원칙을 완벽히 수호하면서, AI 로컬 맛집/여행 블로그 포스팅 자동 생성, 커스텀 웹사이트 주소 자동완성(Autocomplete) 및 상권 분석 서비스를 구축하기 위한 **Google Places API** 전용 기술 매뉴얼입니다.
 
 ---
 
@@ -8,7 +8,7 @@
 
 Google Places API는 전 세계 2억 개 이상의 매장, 건물, 관광지, 명소에 대한 실시간 정밀 데이터베이스를 제공합니다.
 
-| 제공 데이터 종류 | 세부 내용 및 파싱 정보 | CreAibox 활용 분야 |
+| 제공 데이터 종류 | 세부 내용 및 파싱 정보 | CreaiBox 활용 분야 |
 | :--- | :--- | :--- |
 | **장소 기본 정보** | 정식 장소명, 도로명 주소, 지번 주소, 위도·경도 좌표, 전화번호, 웹사이트 URL | 커스텀 웹사이트 매장 정보, 블로그 위치 지점 |
 | **별점 및 사용자 평점** | 구글 실시간 별점 (예: ⭐ 4.8 / 5.0), 총 사용자 평점 개수 | 진짜 맛집/명소 검증 지표 |
@@ -19,7 +19,7 @@ Google Places API는 전 세계 2억 개 이상의 매장, 건물, 관광지, �
 
 ---
 
-## 2. 🚀 CreAibox 3대 실전 구축 서비스 모델
+## 2. 🚀 CreaiBox 3대 실전 구축 서비스 모델
 
 ### 모델 1: AI 맛집/여행 블로그 포스팅 엔진 (Zero-Fake Writer)
 - **개념**: 사용자가 `"성수동 카페"` 또는 `"제주도 가성비 흑돼지"` 키워드를 입력하면, Places API를 통해 **100% 진짜 매장의 실시간 별점, 주소, 사진, 실제 손님 후기**를 수집.
@@ -117,4 +117,4 @@ export function useGooglePlacesAutocomplete(onSelect: (place: any) => void) {
 
 ## 5. 📅 업데이트 및 유지보수 이력
 
-- **2026-07-30**: CreAibox Google Places API 전용 구축 및 연동 매뉴얼 작성 완료.
+- **2026-07-30**: CreaiBox Google Places API 전용 구축 및 연동 매뉴얼 작성 완료.

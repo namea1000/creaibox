@@ -319,7 +319,7 @@ export default function BlogClientWrapper({
               {searchQuery ? "검색 결과에 맞는 글이 없습니다." : "아직 발행된 글이 없습니다."}
             </p>
             <p className="text-sm font-bold text-zinc-500">
-              {searchQuery ? "다른 키워드로 검색을 시도해 보세요." : "CreAibox 글쓰기 에디터에서 글을 작성하고 승인된 브랜드 블로그에 발행해 보세요."}
+              {searchQuery ? "다른 키워드로 검색을 시도해 보세요." : "CreaiBox 글쓰기 에디터에서 글을 작성하고 승인된 브랜드 블로그에 발행해 보세요."}
             </p>
           </div>
         ) : (
@@ -543,9 +543,9 @@ export default function BlogClientWrapper({
               target="_blank"
               rel="noopener"
               className="text-zinc-500 hover:text-blue-500 underline transition-colors"
-              title="CreAibox - AI 블로그 포스팅 및 웹사이트 자동화 플랫폼"
+              title="CreaiBox - AI 블로그 포스팅 및 웹사이트 자동화 플랫폼"
             >
-              Powered by CreAibox
+              Powered by CreaiBox
             </a>
           </div>
         </div>

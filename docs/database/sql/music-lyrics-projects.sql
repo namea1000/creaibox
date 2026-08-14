@@ -1,5 +1,5 @@
 -- =====================================================
--- CreAibox Music Studio DB Final
+-- CreaiBox Music Studio DB Final
 -- =====================================================
 
 -- 1. Generation Batch

@@ -296,7 +296,7 @@ export default function AdminDashboardPage() {
           Admin <span className="text-blue-500">Command</span>
         </h1>
         <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-zinc-500">
-          CreAibox 통합 관리자 센터 · 전체 서비스 운영 현황 관리
+          CreaiBox 통합 관리자 센터 · 전체 서비스 운영 현황 관리
         </p>
       </header>
 

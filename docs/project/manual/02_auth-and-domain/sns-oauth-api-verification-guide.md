@@ -1,6 +1,6 @@
 # SNS OAuth API 연동 및 정식 검수 가이드 (Verification Guide)
 
-본 문서는 크리에이박스(CreAibox) 채널 배포 스튜디오의 정식 상용화 배포 시 필요한 **구글(YouTube), 메타(Instagram), 틱톡(TikTok) 개발자 계정 승인 및 앱 검수(App Review) 절차**를 안내합니다.
+본 문서는 크리에이박스(CreaiBox) 채널 배포 스튜디오의 정식 상용화 배포 시 필요한 **구글(YouTube), 메타(Instagram), 틱톡(TikTok) 개발자 계정 승인 및 앱 검수(App Review) 절차**를 안내합니다.
 
 ---
 

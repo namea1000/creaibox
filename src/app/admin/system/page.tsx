@@ -421,7 +421,7 @@ export default function SystemAdminPage() {
                   <span className="text-cyan-400 font-black">매일 KST 06:00</span>
                 </div>
                 <p className="text-[10px] text-zinc-500 font-bold leading-normal">
-                  전세계 60개국 전체 카테고리 무인 수집, 숏폼 자동 판별, CreAibox 클라우드 DB 날짜별 1줄 통합 적재.
+                  전세계 60개국 전체 카테고리 무인 수집, 숏폼 자동 판별, CreaiBox 클라우드 DB 날짜별 1줄 통합 적재.
                 </p>
                 <div className="text-[9px] text-zinc-500 font-mono">
                   Path: /api/cron/sync-trending
@@ -434,7 +434,7 @@ export default function SystemAdminPage() {
                   <span className="text-emerald-400 font-black">매시간 정각 (매시간 1회)</span>
                 </div>
                 <p className="text-[10px] text-zinc-500 font-bold leading-normal">
-                  네이버 TOP 20 & 구글 TOP 20 실시간 검색어 및 관련 뉴스 무인 스냅샷, CreAibox 클라우드 DB 날짜별 1줄(`hourly_data`) 통합 적재.
+                  네이버 TOP 20 & 구글 TOP 20 실시간 검색어 및 관련 뉴스 무인 스냅샷, CreaiBox 클라우드 DB 날짜별 1줄(`hourly_data`) 통합 적재.
                 </p>
                 <div className="text-[9px] text-zinc-500 font-mono">
                   Path: /api/cron/sync-keywords

@@ -32,6 +32,60 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "히스토리 조회 중 오류가 발생했습니다." }, { status: 500 });
     }
 
+    // 🛡️ 1. Auto-migrate any legacy 'ACTIVE' sites to 'DRAFT' status (Zero SEO Risk)
+    const legacySiteIds = (sites || [])
+      .filter((s: any) => s.status !== "PUBLISHED" && s.status !== "DRAFT")
+      .map((s: any) => s.id);
+
+    if (legacySiteIds.length > 0) {
+      await adminSupabase
+        .from("client_sites")
+        .update({
+          status: "DRAFT",
+          extra_configs: { is_draft: true }
+        })
+        .in("id", legacySiteIds);
+
+      sites?.forEach((s: any) => {
+        if (s.status !== "PUBLISHED") {
+          s.status = "DRAFT";
+        }
+      });
+    }
+
+    // 🛡️ 2. Auto-migrate legacy brand_id format (e.g. burgerking10 -> burgerking-7f3b)
+    const legacySlugSites = (sites || []).filter((s: any) => {
+      // If brand_id is not already [brand]-[4chars] (e.g. ends with -[a-z0-9]{4})
+      return !/-[a-z0-9]{4}$/i.test(s.brand_id) && s.status !== "PUBLISHED";
+    });
+
+    if (legacySlugSites.length > 0) {
+      await Promise.all(
+        legacySlugSites.map(async (s: any) => {
+          const rawSlug = s.brand_id || "mysite";
+          const baseBrand = rawSlug.replace(/\d+$/, "") || rawSlug;
+          const randomSuffix = Math.random().toString(36).substring(2, 6);
+          const newBrandId = `${baseBrand}-${randomSuffix}`;
+
+          await adminSupabase
+            .from("client_sites")
+            .update({
+              brand_id: newBrandId,
+              extra_configs: {
+                ...(s.extra_configs || {}),
+                target_slug: baseBrand,
+                is_draft: true,
+              }
+            })
+            .eq("id", s.id);
+
+          // Update in-memory site object
+          s.brand_id = newBrandId;
+          if (s.extra_configs) s.extra_configs.target_slug = baseBrand;
+        })
+      );
+    }
+
     return NextResponse.json({ success: true, data: sites || [] });
   } catch (err: any) {
     console.error("History GET error:", err);

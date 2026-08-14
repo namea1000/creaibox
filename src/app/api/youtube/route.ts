@@ -992,7 +992,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// Fallback generator returning NO fake/mock data per CreAibox Zero Fake Data Rule
+// Fallback generator returning NO fake/mock data per CreaiBox Zero Fake Data Rule
 function getMockData(type: string | null, searchParams: URLSearchParams) {
   switch (type) {
     case "trending": {

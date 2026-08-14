@@ -105,7 +105,7 @@ export default function CustomHeaderWrapper({ html, menus }: CustomHeaderWrapper
         onClick={handleClick}
         dangerouslySetInnerHTML={{ __html: html }} 
         suppressHydrationWarning
-        className="relative z-[10000]"
+        className="sticky top-0 z-[10000] w-full"
       />
 
       {/* Standardized Mobile Drawer Overlay (Starts strictly below the header) */}

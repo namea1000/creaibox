@@ -358,13 +358,13 @@ export async function POST(req: Request) {
         try {
           imageUrl = await uploadToGoogleDrive(compressedImageBuffer, fileName, "image/webp");
         } catch (gdriveError: any) {
-          console.error("CreAibox Cloud DB upload failed:", gdriveError);
-          throw new Error("CreAibox 클라우드 DB 원고 보관함 저장 실패: 원고 보관함 연결 상태 및 저장 공간을 확인해 주세요.");
+          console.error("CreaiBox Cloud DB upload failed:", gdriveError);
+          throw new Error("CreaiBox 클라우드 DB 원고 보관함 저장 실패: 원고 보관함 연결 상태 및 저장 공간을 확인해 주세요.");
         }
       }
 
       if (!imageUrl) {
-        throw new Error("CreAibox 클라우드 DB 인프라가 설정되지 않았거나 이미지 저장에 실패했습니다.");
+        throw new Error("CreaiBox 클라우드 DB 인프라가 설정되지 않았거나 이미지 저장에 실패했습니다.");
       }
 
       const { data: inserted, error: insertError } = await supabase

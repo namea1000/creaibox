@@ -1,4 +1,4 @@
-# CreAibox Video Studio Database
+# CreaiBox Video Studio Database
 
 ## 목적
 

@@ -59,7 +59,7 @@ export default function HelpCenterPage() {
         {/* 🏢 SECTION 1: HERO HEADER */}
         <div className="border-b border-slate-200 dark:border-slate-800/80 pb-10 mb-16 space-y-4 text-center md:text-left">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs font-black tracking-widest uppercase shadow-sm">
-            <HelpCircle size={12} className="text-blue-600" /> CreAibox Support Center
+            <HelpCircle size={12} className="text-blue-600" /> CreaiBox Support Center
           </div>
           <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-slate-950 dark:text-white leading-tight">
             무엇을 도와드릴까요?

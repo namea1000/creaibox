@@ -5,6 +5,7 @@ import { TEMPLATE_REGISTRY } from "@/lib/templates/registry";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import CustomHeaderWrapper from "../../components/CustomHeaderWrapper";
+import UniversalVideoModal from "../../components/UniversalVideoModal";
 import { injectMenusIntoHtml } from "@/utils/htmlInjector";
 
 interface LayoutProps {
@@ -151,6 +152,9 @@ export default async function DynamicRendererLayout({ children, params }: Layout
           extraConfigs={site.extra_configs}
         />
       )}
+
+      {/* Global Interactive Video Modal for YouTube Ads & Promos */}
+      <UniversalVideoModal />
     </div>
   );
 }

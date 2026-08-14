@@ -21,7 +21,7 @@
 
 ### 2.2 Vercel DNS 레코드 백그라운드 자동 주입 모듈
 
-CreAibox에는 Vercel Domains API(`addDnsRecordToVercel`)가 탑재되어 있어, 수동 복사 없이 백엔드가 5대 DNS 레코드를 Vercel DNS에 100% 자동 입력합니다.
+CreaiBox에는 Vercel Domains API(`addDnsRecordToVercel`)가 탑재되어 있어, 수동 복사 없이 백엔드가 5대 DNS 레코드를 Vercel DNS에 100% 자동 입력합니다.
 
 - `DKIM (TXT)`: `resend._domainkey`
 - `SPF (MX)`: `send` (우선순위 10)
@@ -33,7 +33,7 @@ CreAibox에는 Vercel Domains API(`addDnsRecordToVercel`)가 탑재되어 있어
 
 ## 3. 🔗 Resend Inbound Webhook 연동 매뉴얼
 
-수신된 메일을 CreAibox 포워딩 백엔드 모듈로 전달하기 위한 1회성 Webhook 설정입니다.
+수신된 메일을 CreaiBox 포워딩 백엔드 모듈로 전달하기 위한 1회성 Webhook 설정입니다.
 
 1. **Resend 접속 (`https://resend.com/webhooks`)**:
 2. **`[ Add Webhook ]`** 클릭:
@@ -46,7 +46,7 @@ CreAibox에는 Vercel Domains API(`addDnsRecordToVercel`)가 탑재되어 있어
 
 ---
 
-## 4. ✉️ CreAibox 대시보드 내 포워딩 주소 관리 UI (/studio/domain-search)
+## 4. ✉️ CreaiBox 대시보드 내 포워딩 주소 관리 UI (/studio/domain-search)
 
 어드민 및 일반/B2B 고객사가 자신의 도메인 이메일 포워딩 주소를 직접 등록하는 UI 페이지입니다.
 
@@ -63,7 +63,7 @@ CreAibox에는 Vercel Domains API(`addDnsRecordToVercel`)가 탑재되어 있어
 
 1. **Gmail 웹 접속 (`mail.google.com`) ➔ 설정(⚙️) ➔ [모든 설정 보기]**:
 2. **[계정 및 가져오기] 탭 ➔ `다른 이메일 주소 추가` 클릭**:
-   - **이름**: `CreAibox CEO` (또는 대표님 성함)
+   - **이름**: `CreaiBox CEO` (또는 대표님 성함)
    - **이메일 주소**: `ceo@creaibox.com`
    - **'별칭으로 사용' 체크** ➔ [다음 단계]
 3. **Resend SMTP 정보 입력**:

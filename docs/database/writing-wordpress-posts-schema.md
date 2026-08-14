@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-Writing WordPress Posts 데이터베이스는 CreAibox의 WordPress 발행 기능을 위한 저장소이다.
+Writing WordPress Posts 데이터베이스는 CreaiBox의 WordPress 발행 기능을 위한 저장소이다.
 
 이 스키마는 다음 기능을 지원한다.
 

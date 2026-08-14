@@ -1,5 +1,5 @@
 -- =====================================================
--- CreAibox Music Album Plans DB Final
+-- CreaiBox Music Album Plans DB Final
 -- =====================================================
 
 create table if not exists public.music_album_plans (

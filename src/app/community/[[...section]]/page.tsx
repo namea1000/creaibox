@@ -25,8 +25,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const path = segments.join("/");
   const sectionTitle = sectionNames[path] || "크리에이터 커뮤니티 광장";
   return {
-    title: `${sectionTitle} | 크리에이박스 CreAibox`,
-    description: `크리에이박스 CreAibox의 대외 공개용 ${sectionTitle} 소통 공간입니다. 다양한 크리에이터들과 함께 인공지능 활용 경험 및 수익화 인사이트를 실시간으로 공유해 보세요.`,
+    title: `${sectionTitle} | 크리에이박스 CreaiBox`,
+    description: `크리에이박스 CreaiBox의 대외 공개용 ${sectionTitle} 소통 공간입니다. 다양한 크리에이터들과 함께 인공지능 활용 경험 및 수익화 인사이트를 실시간으로 공유해 보세요.`,
     keywords: ["크리에이박스", "creaibox", sectionTitle, "크리에이터 커뮤니티", "AI 정보 공유"]
   };
 }

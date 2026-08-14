@@ -38,7 +38,7 @@ export default function TermsPage() {
               <span className="text-blue-600 font-mono">01.</span> 목적 및 정의
             </h3>
             <p className="text-slate-600 text-xs md:text-sm pl-6">
-              본 약관은 <span className="text-slate-900 font-bold">크리에이박스(CreAibox)</span>(이하 '회사')가 제공하는 올인원 AI 콘텐츠 생성 플랫폼 <span className="text-slate-900 font-bold">'크리에이박스'</span> 서비스(이하 '서비스')의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
+              본 약관은 <span className="text-slate-900 font-bold">크리에이박스(CreaiBox)</span>(이하 '회사')가 제공하는 올인원 AI 콘텐츠 생성 플랫폼 <span className="text-slate-900 font-bold">'크리에이박스'</span> 서비스(이하 '서비스')의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
             </p>
           </div>
 
@@ -131,7 +131,7 @@ export default function TermsPage() {
 
         {/* 🏁 SECTION 3: FOOTER */}
         <div className="mt-16 pt-8 border-t border-slate-200 text-center text-xs text-slate-400 font-medium">
-          © {currentYear} 크리에이박스(CreAibox). All rights reserved. 본 이용약관의 저작권은 크리에이박스(CreAibox)에 있으며 무단 복제를 금합니다.
+          © {currentYear} 크리에이박스(CreaiBox). All rights reserved. 본 이용약관의 저작권은 크리에이박스(CreaiBox)에 있으며 무단 복제를 금합니다.
         </div>
 
       </div>

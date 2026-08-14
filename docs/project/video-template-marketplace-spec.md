@@ -1,6 +1,6 @@
 # 영상 템플릿 마켓플레이스 & 레이어 교체 시스템 기획 설계서
 
-본 문서는 크리에이박스(CreAibox)의 **영상 템플릿 마켓플레이스(Video Template Marketplace)**, **다중 비디오 합성 엔진(Multi-Video Merger)** 및 **사진 슬라이드쇼 전환 효과(Photo Slideshow Transitions) 컴파일러**의 상세 기획과 아키텍처 명세를 기술합니다.
+본 문서는 크리에이박스(CreaiBox)의 **영상 템플릿 마켓플레이스(Video Template Marketplace)**, **다중 비디오 합성 엔진(Multi-Video Merger)** 및 **사진 슬라이드쇼 전환 효과(Photo Slideshow Transitions) 컴파일러**의 상세 기획과 아키텍처 명세를 기술합니다.
 
 ---
 

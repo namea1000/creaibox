@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import * as cheerio from "cheerio";
 import { generateContentWithVertexAI } from "@/lib/server/vertex-ai-gemini";
+import { isSpaWebsite, fetchRenderedHtmlWithHeadless } from "@/lib/server/headlessScraper";
 
 export const maxDuration = 60; // 60 seconds should be enough for a quick scan
 
@@ -20,17 +21,32 @@ export async function POST(request: Request) {
     }
 
     // 1. Fetch Target URL
-    const res = await fetch(urlObj.href, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      },
-    });
+    let htmlText = "";
+    try {
+      const res = await fetch(urlObj.href, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        },
+      });
 
-    if (!res.ok) {
+      if (res.ok) {
+        htmlText = await res.text();
+      }
+    } catch {}
+
+    // Check SPA
+    if (!htmlText || isSpaWebsite(htmlText)) {
+      console.log(`[Site Scan] 🔍 SPA detected on ${urlObj.href}. Invoking Headless Chrome...`);
+      const renderedDom = await fetchRenderedHtmlWithHeadless(urlObj.href);
+      if (renderedDom) {
+        htmlText = renderedDom;
+      }
+    }
+
+    if (!htmlText) {
       return NextResponse.json({ error: "웹사이트 접근에 실패했습니다. (HTTP Error)" }, { status: 400 });
     }
 
-    const htmlText = await res.text();
     const $ = cheerio.load(htmlText);
 
     // 2. Extract Basic Stats
@@ -82,7 +98,7 @@ export async function POST(request: Request) {
     try {
       const aiResponseText = await generateContentWithVertexAI({
         prompt,
-        modelName: "gemini-3.6-flash",
+        modelName: "gemini-3.7-flash",
         responseMimeType: "application/json"
       });
       const jsonMatch = aiResponseText.match(/\{[\s\S]*\}/);

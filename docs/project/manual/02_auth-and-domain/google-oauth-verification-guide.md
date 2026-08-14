@@ -35,7 +35,7 @@ The logo shown on the Google OAuth consent screen has unique rendering constrain
 | Rule | Best Practice | Rationale |
 | :--- | :--- | :--- |
 | **Aspect Ratio** | **1:1 (Square)** | Google crops and displays the logo inside a **small circular frame** (usually 120x120 pixels). |
-| **Format** | **Symbol-Only / Favicon / App Icon** (e.g., the `CAI` mark) | Wide, text-based logos (spelling out "CreAibox") will become squished, unreadable, or cut off at the edges. |
+| **Format** | **Symbol-Only / Favicon / App Icon** (e.g., the `CAI` mark) | Wide, text-based logos (spelling out "CreaiBox") will become squished, unreadable, or cut off at the edges. |
 | **File Size & Format** | **Under 100KB, PNG or WebP** | Ensures fast loading times on mobile devices. |
 
 ### Industry Examples
@@ -68,7 +68,7 @@ When you are ready to submit your app for review in a new project:
 
 1. **Complete your Branding Profile**:
    * Go to **APIs & Services** -> **OAuth consent screen** -> **Branding**.
-   * Fill in the **App name** (use your clean brand name like `CreAibox`, not the domain).
+   * Fill in the **App name** (use your clean brand name like `CreaiBox`, not the domain).
    * Upload your **1:1 Symbol Logo**.
    * Provide links to your **Homepage**, **Privacy Policy** (e.g., `/privacy`), and **Terms of Service** (e.g., `/terms`). These pages must be live and accessible.
 2. **Submit for Verification**:
@@ -89,7 +89,7 @@ When you are ready to submit your app for review in a new project:
 현재 올려주신 스크린샷에 예쁜 파란색 CAI 로고를 업로드해 두셨습니다.
 
 구글은 보안 정책상 검토 및 인증이 완료되지 않은 앱의 로고는 실제 로그인 화면에 노출해주지 않습니다.
-인증 완료 시: 사용자가 로그인할 때 브랜드명(CreAibox) 옆에 업로드하신 공식 로고가 예쁘게 표시되어 대외적인 신뢰도와 전문성이 극대화됩니다.
+인증 완료 시: 사용자가 로그인할 때 브랜드명(CreaiBox) 옆에 업로드하신 공식 로고가 예쁘게 표시되어 대외적인 신뢰도와 전문성이 극대화됩니다.
 3. 로그인 사용자 수 제한 해제 (100명 제한)
 인증받지 않은 앱은 구글 보안 정책상 '테스트/미인증 상태'로 분류되어 **최대 100명까지만 로그인(가입)**할 수 있습니다. 100명이 넘어가면 새로운 사용자는 로그인을 할 수 없도록 구글이 차단합니다.
 
@@ -106,7 +106,7 @@ When you are ready to submit your app for review in a new project:
 1. 구글 로그인 창의 로고 노출 형태 (원형 1:1 비율)
 구글 로그인 창에서 앱 로고는 가로로 긴 직사각형이 아니라, 아주 작은 1:1 비율의 원형(동그라미) 프레임 안에 들어가 노출됩니다.
 
-만약 가로로 긴 텍스트 로고(예: CreAibox 글자가 다 들어간 로고)를 넣으면, 글씨가 너무 작아져서 알아보지 못하거나 원형 프레임 바깥으로 글자가 잘려 보기 싫게 나옵니다.
+만약 가로로 긴 텍스트 로고(예: CreaiBox 글자가 다 들어간 로고)를 넣으면, 글씨가 너무 작아져서 알아보지 못하거나 원형 프레임 바깥으로 글자가 잘려 보기 싫게 나옵니다.
 따라서 지금 등록하신 **정사각형 비율의 심볼형 아이콘(파란색 CAI 로고)**이 원형 프레임 안에 꽉 차고 깔끔하게 들어가므로 시각적으로 가장 완벽하게 어울립니다.
 2. 글로벌 표준 사례
 Notion: 글자가 들어간 로고 대신, 검은색 N 모양의 심볼 아이콘을 사용합니다.

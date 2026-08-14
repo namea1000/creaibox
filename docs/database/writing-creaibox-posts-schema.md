@@ -1,8 +1,8 @@
-# Writing CreAibox Posts Database Schema
+# Writing CreaiBox Posts Database Schema
 
 ## 1. Purpose
 
-Writing CreAibox Posts 데이터베이스는 CreAibox의 자체 블로그 콘텐츠 저장소이다.
+Writing CreaiBox Posts 데이터베이스는 CreaiBox의 자체 블로그 콘텐츠 저장소이다.
 
 이 스키마는 다음 기능을 지원한다.
 
@@ -19,7 +19,7 @@ Writing CreAibox Posts 데이터베이스는 CreAibox의 자체 블로그 콘텐
 
 ## 2. Core Storage Policy
 
-CreAibox 자체 블로그 원고를 저장한다.
+CreaiBox 자체 블로그 원고를 저장한다.
 
 채택한 저장 방식
 
@@ -40,7 +40,7 @@ CreAibox 자체 블로그 원고를 저장한다.
 
 | Table                  | Purpose            |
 | ---------------------- | ------------------ |
-| writing_creaibox_posts | CreAibox 블로그 원고 저장 |
+| writing_creaibox_posts | CreaiBox 블로그 원고 저장 |
 
 ---
 
@@ -339,7 +339,7 @@ set_updated_at()
 
 ## 14. Sitemap Integration
 
-CreAibox Blog는 이 테이블을 기반으로 사이트맵을 생성한다.
+CreaiBox Blog는 이 테이블을 기반으로 사이트맵을 생성한다.
 
 현재 구조
 
@@ -386,7 +386,7 @@ docs/database/sql/writing-creaibox-posts.sql
 
 ```txt
 Writing Studio
-CreAibox Blog
+CreaiBox Blog
 SEO Analyzer
 Blog Publisher
 Sitemap Generator

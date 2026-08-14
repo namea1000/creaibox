@@ -38,7 +38,7 @@ export default function ChatbotHelperPage() {
     {
       id: "welcome",
       role: "assistant",
-      content: "안녕하세요! 크리에이박스(CreAibox) 사용자를 위한 공식 도우미 챗봇입니다. \n\n왼쪽 가이드 맵에서 질문을 고르시거나, 궁금한 메뉴의 이름이나 기능(예: '네이버 블로그 API', '도메인 신청', '누끼 배경 제거' 등)을 직접 아래에 입력해 주시면 공식 가이드를 친절히 안내해 드릴게요!"
+      content: "안녕하세요! 크리에이박스(CreaiBox) 사용자를 위한 공식 도우미 챗봇입니다. \n\n왼쪽 가이드 맵에서 질문을 고르시거나, 궁금한 메뉴의 이름이나 기능(예: '네이버 블로그 API', '도메인 신청', '누끼 배경 제거' 등)을 직접 아래에 입력해 주시면 공식 가이드를 친절히 안내해 드릴게요!"
     }
   ]);
   const [inputValue, setInputValue] = useState("");
@@ -407,7 +407,7 @@ export default function ChatbotHelperPage() {
                   {currentCategory.title} ➔ 공식 AI 도우미
                 </h2>
               </div>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold">CreAibox Helper v1.0</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold">CreaiBox Helper v1.0</span>
             </div>
 
             {/* Chat message flow container */}

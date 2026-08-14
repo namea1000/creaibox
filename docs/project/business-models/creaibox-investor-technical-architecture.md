@@ -1,4 +1,4 @@
-# 🏛️ 3. CreAibox.com 차세대 AI 기술 아키텍처 & IR 브리핑 리포트
+# 🏛️ 3. CreaiBox.com 차세대 AI 기술 아키텍처 & IR 브리핑 리포트
 
 ### (Investor Technical Architecture Briefing: Enterprise Scalability & AI Engine Architecture)
 
@@ -105,8 +105,8 @@ gantt
 
 ## 🏆 5. IR 투자자 브리핑 결론 (Investor Conclusion)
 
-CreAibox는 서버 비용과 인건비가 유저 수 증가에 비례하여 늘어나는 전통적인 IT 플랫폼의 한계를 뛰어넘어, **"유저와 트래픽이 1,000배로 폭증해도 인프라 비용은 0.1% 미만으로 유지되는 압도적 수익성의 에지 클라우드 & AI 무인 플랫폼"**입니다.
+CreaiBox는 서버 비용과 인건비가 유저 수 증가에 비례하여 늘어나는 전통적인 IT 플랫폼의 한계를 뛰어넘어, **"유저와 트래픽이 1,000배로 폭증해도 인프라 비용은 0.1% 미만으로 유지되는 압도적 수익성의 에지 클라우드 & AI 무인 플랫폼"**입니다.
 
 ---
 
-*최종 리포트 작성일: 2026년 7월 25일 | CreAibox Technical Architecture & IR Report*
+*최종 리포트 작성일: 2026년 7월 25일 | CreaiBox Technical Architecture & IR Report*

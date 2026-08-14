@@ -21,22 +21,22 @@ interface Props {
   };
 }
 
-// 🌟 네이버/구글 검색 노출 최적화용 "크리에이박스 CreAibox" 브랜드 키워드 동적 메타데이터 주입!
+// 🌟 네이버/구글 검색 노출 최적화용 "크리에이박스 CreaiBox" 브랜드 키워드 동적 메타데이터 주입!
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
   const sectionKey = resolvedParams?.section || "realtime";
   const name = sectionNames[sectionKey] || "실시간 급상승 키워드";
   const title = `${name} - 키워드 트렌드 | 크리에이박스 CreAiBox`;
-  const description = `크리에이박스 CreAibox에서 제공하는 ${name} 솔루션입니다. 네이버 및 구글 실시간 키워드 통계, 연관 검색어 발굴 및 최신 트렌드를 확인해 보세요.`;
+  const description = `크리에이박스 CreaiBox에서 제공하는 ${name} 솔루션입니다. 네이버 및 구글 실시간 키워드 통계, 연관 검색어 발굴 및 최신 트렌드를 확인해 보세요.`;
   return {
     title,
     description,
     keywords: ["크리에이박스", "creaibox", name, "키워드 분석", "실시간 검색어", "급상승 키워드"],
     openGraph: {
-      title: `${title} | 크리에이박스 CreAibox`,
+      title: `${title} | 크리에이박스 CreaiBox`,
       description,
       url: `https://creaibox.com/keyword-trend/${sectionKey}`,
-      siteName: "CreAibox",
+      siteName: "CreaiBox",
       images: [
         {
           url: "/images/seo/keyword-trend.webp",
@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: `${title} | 크리에이박스 CreAibox`,
+      title: `${title} | 크리에이박스 CreaiBox`,
       description,
       images: ["/images/seo/keyword-trend.webp"],
     },

@@ -94,7 +94,7 @@ print(response)
 
 ---
 
-## 4. 크리에이박스(CreAibox) 프로젝트 적용 가이드
+## 4. 크리에이박스(CreaiBox) 프로젝트 적용 가이드
 
 * **개발 규칙 상시 참고:** 새로운 기능 구현 시 [ai-agent-rules.md](file:///Users/a1234/Local%20Sites/creaibox/docs/rules/ai-agent-rules.md)를 서브 에이전트에 기본 지침으로 전달합니다.
 * **문서 동기화 의무:** 멀티 에이전트를 활용해 기능 구현을 마친 경우, 주 에이전트는 완료 전 operational doc 및 design spec 문서 수정을 반드시 마무리해야 합니다.

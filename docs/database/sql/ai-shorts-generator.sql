@@ -1,5 +1,5 @@
 -- =====================================================
--- CreAibox AI Shorts Generator DB Schema
+-- CreaiBox AI Shorts Generator DB Schema
 -- =====================================================
 
 create table if not exists public.ai_shorts_projects (

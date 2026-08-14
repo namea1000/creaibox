@@ -89,7 +89,7 @@ export default function PricingPage() {
 
     // Free Plan인 경우 ➔ 스튜디오 홈 이동
     if (plan.priceNum === 0) {
-      alert("🎉 Free Plan이 이미 적용되어 있습니다! CreAibox AI 스튜디오를 이용해보세요.");
+      alert("🎉 Free Plan이 이미 적용되어 있습니다! CreaiBox AI 스튜디오를 이용해보세요.");
       router.push("/studio");
       return;
     }
@@ -110,14 +110,14 @@ export default function PricingPage() {
     try {
       console.log(`[DEBUG] Requesting payment for ${plan.name}, price: ${plan.priceNum}`);
       const response = await requestDomainPayment({
-        orderName: `CreAibox ${plan.name} 월간 구독 요금제`,
+        orderName: `CreaiBox ${plan.name} 월간 구독 요금제`,
         totalAmount: plan.priceNum,
       });
 
       console.log("[DEBUG] Payment response:", response);
 
       if (response.success) {
-        alert(`✅ [결제 테스트 성공] CreAibox ${plan.name} 신청이 승인되었습니다!\n(Payment ID: ${response.paymentId})`);
+        alert(`✅ [결제 테스트 성공] CreaiBox ${plan.name} 신청이 승인되었습니다!\n(Payment ID: ${response.paymentId})`);
         router.push("/studio");
       }
     } catch (error: any) {
@@ -402,7 +402,7 @@ export default function PricingPage() {
           premier: "최대 100,000개"
         },
         {
-          feature: "CreAibox Music Play",
+          feature: "CreaiBox Music Play",
           free: "V",
           creator: "V",
           pro: "V",
@@ -483,7 +483,7 @@ export default function PricingPage() {
         <div className="text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 dark:border-violet-900 bg-white dark:bg-violet-950/30 px-4 py-2 text-sm font-black text-violet-600 dark:text-violet-400 shadow-sm">
             <Sparkles size={16} className="animate-pulse" />
-            CreAibox Pricing Plans
+            CreaiBox Pricing Plans
           </div>
 
           <h1 className="mt-6 break-keep text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-6xl">
@@ -589,7 +589,7 @@ export default function PricingPage() {
         <div className="mt-28">
           <div className="text-center mb-10">
             <h2 className="text-2xl font-black text-slate-900 dark:text-white md:text-3xl tracking-tight">
-              Compare CreAibox Plans
+              Compare CreaiBox Plans
             </h2>
             <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
               세부적인 기능별 지원 범위와 용량을 한눈에 비교해 보세요.
@@ -712,7 +712,7 @@ export default function PricingPage() {
               </div>
               <div>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white">광고 및 협업 / 제휴 제안</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">CreAibox 크리에이터 생태계 참여</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">CreaiBox 크리에이터 생태계 참여</p>
               </div>
             </div>
             <p className="break-keep text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -745,7 +745,7 @@ export default function PricingPage() {
       {/* 🔮 기품있는 글래스모피즘 전자결제 확인 커스텀 모달 */}
       <PaymentConfirmModal
         isOpen={paymentModalData.isOpen}
-        orderName={paymentModalData.plan ? `CreAibox ${paymentModalData.plan.name} 월간 구독 요금제` : ""}
+        orderName={paymentModalData.plan ? `CreaiBox ${paymentModalData.plan.name} 월간 구독 요금제` : ""}
         totalAmount={paymentModalData.plan?.priceNum || 0}
         customerEmail={user?.email}
         onConfirm={handleExecutePayment}

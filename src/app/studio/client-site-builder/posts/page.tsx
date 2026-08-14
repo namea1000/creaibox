@@ -117,7 +117,7 @@ export default function PagesAndPostsPage() {
       const sitePosts = sitePostsRes.data || [];
       const creaiboxPostsRaw = creaiboxPostsRes.data || [];
 
-      // Filter CreAibox AI posts matching this brand_id
+      // Filter CreaiBox AI posts matching this brand_id
       const bId = selectedSite.brand_id.toLowerCase();
       const creaiboxPosts = creaiboxPostsRaw
         .filter((p: any) => {
@@ -132,7 +132,7 @@ export default function PagesAndPostsPage() {
             title: snap.title || p.title || "제목 없음",
             content: snap.content || p.content || "",
             post_type: "board" as const,
-            author_name: selectedSite.company_name + " (CreAibox AI)",
+            author_name: selectedSite.company_name + " (CreaiBox AI)",
             is_pinned: false,
             views: 0,
             created_at: p.created_at

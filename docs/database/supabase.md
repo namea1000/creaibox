@@ -1,6 +1,6 @@
 # Supabase 연동 및 인증 흐름 (Supabase Integration)
 
-`CreAibox`는 데이터 저장, 사용자 인증 및 관리, 영속화 스토리지를 제어하기 위해 Supabase BaaS를 전면 채용하고 있습니다.
+`CreaiBox`는 데이터 저장, 사용자 인증 및 관리, 영속화 스토리지를 제어하기 위해 Supabase BaaS를 전면 채용하고 있습니다.
 
 ---
 

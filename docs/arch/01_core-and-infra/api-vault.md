@@ -4,7 +4,7 @@
 
 API Vault는 사용자가 자신의 AI 및 외부 서비스 API Key를 저장하고 기본 AI Provider 및 Model을 설정하는 개인 연결 허브이다.
 
-CreAibox는 사용자 API Key를 우선적으로 사용하며, 사용자가 직접 발급받은 API Key를 브라우저에 저장하여 다양한 AI 및 외부 서비스를 연결할 수 있다.
+CreaiBox는 사용자 API Key를 우선적으로 사용하며, 사용자가 직접 발급받은 API Key를 브라우저에 저장하여 다양한 AI 및 외부 서비스를 연결할 수 있다.
 
 ---
 
@@ -165,7 +165,7 @@ src/app/apivault/page.tsx
 src/lib/ai/provider-registry.ts
 ```
 
-API Vault는 CreAibox 사용자의 개인 AI 연결 허브 역할을 수행한다.
+API Vault는 CreaiBox 사용자의 개인 AI 연결 허브 역할을 수행한다.
 
 
 

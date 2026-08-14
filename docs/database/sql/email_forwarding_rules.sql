@@ -1,5 +1,5 @@
 -- ==============================================================================
--- CreAibox Custom Domain Email Forwarding Rules Table Schema
+-- CreaiBox Custom Domain Email Forwarding Rules Table Schema
 -- Table Name: public.email_forwarding_rules
 -- Description: 사용자 및 고객사 도메인별 메일 별칭(alias_prefix)과 전달받을 담당자 메일(forward_to) 매핑 테이블
 -- ==============================================================================

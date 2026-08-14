@@ -1,18 +1,18 @@
 ㅏ
 
-# 🌐 4. CreAibox Domain Reseller 및 Vercel Domains API 원클릭 도메인 조회·구매·이관 자동화 사업계획서
+# 🌐 4. CreaiBox Domain Reseller 및 Vercel Domains API 원클릭 도메인 조회·구매·이관 자동화 사업계획서
 
 ### (Executive Business Plan & Tech Spec: Independent Domain Registrar & Auto-Binding Engine)
 
-> **"가비아/후이즈를 뛰어넘는 독자적 CreAibox Domain Reseller 사업자 등극 & Vercel Domains API 연동을 통한 1초 도메인 검색·구매·이관·SSL 자동화 파이프라인"**
+> **"가비아/후이즈를 뛰어넘는 독자적 CreaiBox Domain Reseller 사업자 등극 & Vercel Domains API 연동을 통한 1초 도메인 검색·구매·이관·SSL 자동화 파이프라인"**
 
 ---
 
 ## 📌 1. 사업 개요 및 Domain Reseller 비전 (Executive Summary)
 
-* **사업명**: CreAibox Domain Reseller & 무인 도메인 풀스택 자동화 생태계
+* **사업명**: CreaiBox Domain Reseller & 무인 도메인 풀스택 자동화 생태계
 * **핵심 비전**:
-  단순한 웹사이트 생성기를 넘어서, **CreAibox 자체가 독립적인 도메인 등록 사업자(Domain Registrar / Reseller)가 되어**, 고객에게 도메인 검색부터 원클릭 구매, 가비아/후이즈 이관(Transfer-In), SSL(`https://`) 자동 결합까지 1초 만에 제공하는 파괴적 도메인 포털 아키텍처.
+  단순한 웹사이트 생성기를 넘어서, **CreaiBox 자체가 독립적인 도메인 등록 사업자(Domain Registrar / Reseller)가 되어**, 고객에게 도메인 검색부터 원클릭 구매, 가비아/후이즈 이관(Transfer-In), SSL(`https://`) 자동 결합까지 1초 만에 제공하는 파괴적 도메인 포털 아키텍처.
 * **수익성 포지셔닝**:
   * 도메인 해외 도매 원가($9.77 / 약 14,000원) 대비 일반 유저 판매가(18,000원) 설정으로 **건당 4,000원~10,000원 도메인 마진 수수료 즉시 수납**.
   * 비즈니스/프리미어 플랜 사용자는 **"도메인 연장비 평생 0원 무상 지원"** 혜택으로 고객 이탈률(Churn Rate)을 0%로 동결하고 장기 SaaS 정기 결제 유치.
@@ -23,7 +23,7 @@
 
 ```mermaid
 graph TD
-    A["👑 CreAibox Domain Reseller 플랫폼 포털"] --> B1["1. 가비아/후이즈 탈피: 독자적 IT 대기업 브랜드 위상 확보"]
+    A["👑 CreaiBox Domain Reseller 플랫폼 포털"] --> B1["1. 가비아/후이즈 탈피: 독자적 IT 대기업 브랜드 위상 확보"]
     A --> B2["2. 매년 자동으로 들어오는 무인 도메인 연장 마진 수입"]
     A --> B3["3. 웹사이트 + 데이터 + 결제 + 도메인 소유권 100% 락인 (Lock-in)"]
 ```
@@ -33,7 +33,7 @@ graph TD
 2. **매년 자동으로 들어오는 무인 도메인 갱신 수입 (Recurring Margin)**:
    * 유저 10,000명 달성 시 ➔ **아무것도 안 해도 매년 10,000명 × 1만 원 마진 = 연 1억 원의 무인 정기 수입 자동 획득**.
 3. **고객 100% 락인 (Lock-in)**:
-   * 웹사이트 + 데이터 + 결제 계좌 + 도메인 소유권까지 모두 CreAibox에 묶이므로, 경쟁사(아임웹/윅스)로 이탈할 가능성 0%.
+   * 웹사이트 + 데이터 + 결제 계좌 + 도메인 소유권까지 모두 CreaiBox에 묶이므로, 경쟁사(아임웹/윅스)로 이탈할 가능성 0%.
 
 ---
 
@@ -53,7 +53,7 @@ graph TD
 #### [MODIFY] [`.env.local`](<file:///Users/a1234/Local%20Sites/creaibox/.env.local>)
 
 - `VERCEL_AUTH_TOKEN`: Vercel REST API 인증용 에이전트 전용 Bearer 토큰 수록
-- `VERCEL_PROJECT_ID`: CreAibox 메인 배포 프로젝트 ID
+- `VERCEL_PROJECT_ID`: CreaiBox 메인 배포 프로젝트 ID
 - `VERCEL_TEAM_ID`: (옵션) Vercel 팀 어카운트 ID
 
 #### [NEW] [`src/lib/server/vercel-domains.ts`](<file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/vercel-domains.ts>)
@@ -82,15 +82,15 @@ graph TD
 
 ```mermaid
 graph TD
-    User["고객 (creaibox.com에서 도메인 검색)"] --> Router{"CreAibox 백엔드 하이브리드 라우터"}
+    User["고객 (creaibox.com에서 도메인 검색)"] --> Router{"CreaiBox 백엔드 하이브리드 라우터"}
     Router -- ".com / .net / .io (글로벌 TLD)" --> VercelAPI["1. Vercel Domains API (해외 도매가 $12.99 1초 구매)"]
     Router -- ".kr / .co.kr (국내 ccTLD)" --> KISAEngine["2. KISA 파트너 Registrar 엔진 (Punycode 'xn--...' + 1초 매입)"]
     VercelAPI & KISAEngine --> EdgeBind["3. Vercel Global Edge IP (76.76.21.21) 1초 자동 결합 & https:// SSL 가동"]
 ```
 
-1. **Vercel 공식 사이트 한계 극복 (CreAibox 독보적 초격차 우위)**:
+1. **Vercel 공식 사이트 한계 극복 (CreaiBox 독보적 초격차 우위)**:
    * **Vercel 본사의 한계**: Vercel 공식 대시보드(`vercel.com/domains`)는 미국 본사 기반으로 한국 전용 도메인(`.kr`, `.co.kr`) 조회 및 구매 기능 자체가 전무함.
-   * **CreAibox 하이브리드 솔루션**: `.com`은 Vercel API로, `.kr` / `.co.kr`은 KISA 실시간 파트너 라우팅으로 이중 처리하여 **한국 유저가 필요로 하는 모든 도메인을 100% 원스톱 조회·구매·1초 SSL 연결**하는 독보적 초격차 기술 완성.
+   * **CreaiBox 하이브리드 솔루션**: `.com`은 Vercel API로, `.kr` / `.co.kr`은 KISA 실시간 파트너 라우팅으로 이중 처리하여 **한국 유저가 필요로 하는 모든 도메인을 100% 원스톱 조회·구매·1초 SSL 연결**하는 독보적 초격차 기술 완성.
 2. **한글 도메인 (IDN) 퓨니코드 (Punycode: `xn--...`) 자동 변환 파이프라인**:
    * `크리에이박스.kr`, `소통채움.com` 등 한글 브랜드 검색 시 Node.js `domainToASCII` 표준을 통해 퓨니코드(`xn--2o2b21g76g7yd37c.kr`)로 자동 변환하여 실시간 DNS 조회 및 등록 처리.
 3. **법적 상표권 예방 및 환불 정책 규정 명시**:
@@ -102,7 +102,7 @@ graph TD
 ## 💰 4. 도메인 사업자 마진 & 정산 모델 (Domain Revenue Model)
 
 1. **일반 플랜 유저 도메인 판매 마진**:
-   * 해외 도매 원가 $9.77 (약 14,000원) ➔ CreAibox 판매가 18,000원~19,000원 설정 ➔ **건당 약 4,000원~5,000원 순마진 발생**
+   * 해외 도매 원가 $9.77 (약 14,000원) ➔ CreaiBox 판매가 18,000원~19,000원 설정 ➔ **건당 약 4,000원~5,000원 순마진 발생**
 2. **가비아/후이즈 도메인 이관 마진**:
    * 이관 시 필수 포함되는 1년 기간 연장비 ➔ **이관 건당 약 4,000원~10,000원 순마진 정산**
 3. **비즈니스 회원 무상 지원을 통한 SaaS LTV 극대화**:
@@ -125,12 +125,12 @@ graph TD
 
 ## 📌 6. 참고 사항 (Appendix: Pricing Formula & Fact-Checked Market Data)
 
-### 6.1 CreAibox 판매가 책정 공식 (Pricing Formula)
+### 6.1 CreaiBox 판매가 책정 공식 (Pricing Formula)
 
-CreAibox의 판매가는 **Vercel API & KISA 도매 원가(USD) × 원/달러 기준 환율(1,400원)**을 바탕으로 해외 도매 원가 그대로 파격 제공하는 공식에 의해 실시간 산정됩니다.
+CreaiBox의 판매가는 **Vercel API & KISA 도매 원가(USD) × 원/달러 기준 환율(1,400원)**을 바탕으로 해외 도매 원가 그대로 파격 제공하는 공식에 의해 실시간 산정됩니다.
 
 $$
-\text{CreAibox 판매가} = \text{해외/KISA 도매 원가 (USD)} \times \text{원/달러 환율 (1,400원)}
+\text{CreaiBox 판매가} = \text{해외/KISA 도매 원가 (USD)} \times \text{원/달러 환율 (1,400원)}
 $$
 
 * **`.com`**: 도매가 `$12.99` × 1,400원 = **`18,186원`** (시중가 대비 7,664원 절감)
@@ -166,4 +166,4 @@ $$
 
 ---
 
-*최종 사업계획서 개정일: 2026년 7월 26일 | CreAibox Executive Strategy Document #4 (Domain Reseller Plan)*
+*최종 사업계획서 개정일: 2026년 7월 26일 | CreaiBox Executive Strategy Document #4 (Domain Reseller Plan)*

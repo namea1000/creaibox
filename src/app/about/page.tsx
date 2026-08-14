@@ -116,14 +116,14 @@ export default function AboutPage() {
         {/* 🚀 SECTION 1: HERO VIEW (상단 타이틀 & 브랜드 아이덴티티) */}
         <div className="text-center max-w-4xl mx-auto space-y-6 mb-28">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-blue-200 dark:border-blue-900 bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 text-xs font-bold tracking-widest uppercase mb-2 shadow-sm">
-            <Sparkles size={12} /> Introducing CreAibox
+            <Sparkles size={12} /> Introducing CreaiBox
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter leading-tight text-slate-955 dark:text-white">
             상상력을 현실로 만드는 <br />
             가장 똑똑한 <span className="text-violet-600 dark:text-violet-400">AI 콘텐츠 상자</span>
           </h1>
           <p className="text-base md:text-xl text-slate-600 dark:text-slate-400 font-medium leading-relaxed pt-2 max-w-3xl mx-auto break-keep">
-            <span className="text-slate-900 dark:text-slate-200 font-black">크리에이박스(CreAibox)</span>는 파편화된 창작 프로세스를 하나로 묶어낸 대한민국 대표 **올인원 멀티미디어 생성 및 분석 플랫폼**입니다. 번거롭던 크리에이티브 파이프라인을 단 하나의 Box 안에서 완벽하게 연결해 줍니다.
+            <span className="text-slate-900 dark:text-slate-200 font-black">크리에이박스(CreaiBox)</span>는 파편화된 창작 프로세스를 하나로 묶어낸 대한민국 대표 **올인원 멀티미디어 생성 및 분석 플랫폼**입니다. 번거롭던 크리에이티브 파이프라인을 단 하나의 Box 안에서 완벽하게 연결해 줍니다.
           </p>
         </div>
 
@@ -146,7 +146,7 @@ export default function AboutPage() {
                 아이디어 발굴부터 원클릭 배포까지, 하나의 흐름으로 완성합니다
               </h3>
               <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 leading-relaxed font-medium break-keep">
-                기존에는 글을 쓰려면 ChatGPT를, 이미지를 찾으려면 Midjourney를, 음악을 만들려면 또 다른 오디오 AI 툴을 전전해야 했습니다. <span className="font-black text-slate-900 dark:text-slate-200">CreAibox</span>는 이러한 번거로운 전환 과정을 제거하고, 한 대시보드 안에서 텍스트·이미지·오디오 제작 및 채널 배포까지 물 흐르듯 가동되는 일체형 경험을 제공합니다.
+                기존에는 글을 쓰려면 ChatGPT를, 이미지를 찾으려면 Midjourney를, 음악을 만들려면 또 다른 오디오 AI 툴을 전전해야 했습니다. <span className="font-black text-slate-900 dark:text-slate-200">CreaiBox</span>는 이러한 번거로운 전환 과정을 제거하고, 한 대시보드 안에서 텍스트·이미지·오디오 제작 및 채널 배포까지 물 흐르듯 가동되는 일체형 경험을 제공합니다.
               </p>
             </div>
             <div className="bg-slate-950 rounded-2xl p-6 border border-slate-900 font-mono text-xs md:text-sm text-blue-400/90 space-y-3 shadow-inner leading-relaxed">
@@ -159,7 +159,7 @@ export default function AboutPage() {
               <p><span className="text-slate-600">7</span> &#125;;</p>
               <p><span className="text-slate-600">8</span> </p>
               <p><span className="text-slate-600">9</span> <span className="text-purple-400">if</span> (user.wantsAllInOne) &#123;</p>
-              <p><span className="text-slate-600">10</span> &nbsp;&nbsp;console.<span className="text-blue-300">log</span>(<span className="text-emerald-400">"Welcome to CreAibox!"</span>);</p>
+              <p><span className="text-slate-600">10</span> &nbsp;&nbsp;console.<span className="text-blue-300">log</span>(<span className="text-emerald-400">"Welcome to CreaiBox!"</span>);</p>
               <p><span className="text-slate-600">11</span> &#125;</p>
             </div>
           </div>
@@ -228,7 +228,7 @@ export default function AboutPage() {
               <Clock size={14} /> Workflow
             </div>
             <h2 className="text-2xl md:text-3xl font-black tracking-tight text-slate-955 dark:text-white">
-              CreAibox가 제안하는 단 하나의 워크플로우
+              CreaiBox가 제안하는 단 하나의 워크플로우
             </h2>
             <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 font-medium break-keep">
               발굴부터 배포까지, 단 몇 번의 조작으로 물 흐르듯 가동되는 통합 크리에이티브 파이프라인을 경험해 보세요.
@@ -256,7 +256,7 @@ export default function AboutPage() {
         <div className="space-y-12 mb-28">
           <div className="text-center space-y-3">
             <h2 className="text-2xl md:text-3xl font-black tracking-tight text-slate-955 dark:text-white flex items-center justify-center gap-2">
-              <Award className="text-violet-650" size={24} /> Why CreAibox?
+              <Award className="text-violet-650" size={24} /> Why CreaiBox?
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">우리가 제공하는 독보적인 실용적 강점들입니다.</p>
           </div>

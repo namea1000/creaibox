@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-Cre Workspace Notes System은 CreAibox 전체 Studio에서 사용하는 통합 작업 공간(Workspace) 시스템이다.
+Cre Workspace Notes System은 CreaiBox 전체 Studio에서 사용하는 통합 작업 공간(Workspace) 시스템이다.
 
 처음에는 Cre Note 위젯으로 시작하지만, 장기적으로는 다음 기능을 모두 수용하도록 설계되었다.
 
@@ -19,7 +19,7 @@ Cre Workspace Notes System은 CreAibox 전체 Studio에서 사용하는 통합 �
 
 ## 2. Core Architecture
 
-CreAibox는 위젯 자체와 실제 데이터를 분리한다.
+CreaiBox는 위젯 자체와 실제 데이터를 분리한다.
 
 구조
 
@@ -311,7 +311,7 @@ supabase.from("cre_notes").select("content").eq("id", note.id).single()
 
 ## 11. Global Workspace Strategy
 
-이 시스템은 CreAibox 전체 Studio가 공유한다.
+이 시스템은 CreaiBox 전체 Studio가 공유한다.
 
 ### Writing Studio
 

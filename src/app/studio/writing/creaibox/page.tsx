@@ -87,7 +87,7 @@ export default function CreaiboxBlogHubPage() {
     loadBlogStats();
   }, [supabase]);
 
-  // Selling points for CreAibox Blog
+  // Selling points for CreaiBox Blog
   const sellingPoints = [
     {
       icon: Zap,
@@ -215,7 +215,7 @@ export default function CreaiboxBlogHubPage() {
             <div>
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-500/20 dark:border-violet-500/30 bg-violet-50 dark:bg-violet-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-violet-600 dark:text-violet-400">
                 <PenTool size={14} />
-                CreAibox Blog Hub
+                CreaiBox Blog Hub
               </div>
 
               <h1 className="text-3xl font-black text-slate-900 dark:text-white md:text-5xl tracking-tight">

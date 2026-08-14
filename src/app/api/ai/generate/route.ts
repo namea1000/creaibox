@@ -296,7 +296,7 @@ export async function POST(req: NextRequest) {
     if (todayUsage >= userDailyLimit) {
       return NextResponse.json(
         {
-          error: `공용 API 일일 사용량 ${userDailyLimit}회를 초과했습니다. 마이페이지(APIVault)에서 개인 API Key를 등록하시면 CreAibox 의 서비스를 무제한으로 이용하실 수 있습니다.`,
+          error: `공용 API 일일 사용량 ${userDailyLimit}회를 초과했습니다. 마이페이지(APIVault)에서 개인 API Key를 등록하시면 CreaiBox 의 서비스를 무제한으로 이용하실 수 있습니다.`,
           code: "USER_DAILY_LIMIT_EXCEEDED",
         },
         { status: 429 }

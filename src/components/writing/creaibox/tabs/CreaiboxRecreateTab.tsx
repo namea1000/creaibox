@@ -661,7 +661,7 @@ function isDomainMatch(domainA: string, domainB: string): boolean {
 
       {/* 🌟 3. 좌우 2분할 듀얼 에디터 (Left: Original, Right: Recreated Editable) */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* LEFT COLUMN: Original CreAibox Post */}
+        {/* LEFT COLUMN: Original CreaiBox Post */}
         <div className="flex flex-col rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden min-h-[550px]">
           <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 px-5 py-3.5">
             <div className="flex items-center gap-2">

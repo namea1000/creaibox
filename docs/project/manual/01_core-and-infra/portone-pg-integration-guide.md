@@ -1,4 +1,4 @@
-# CreAibox 포트원(PortOne V2) PG 전자결제 통합 운용 가이드 & 매뉴얼
+# CreaiBox 포트원(PortOne V2) PG 전자결제 통합 운용 가이드 & 매뉴얼
 
 > **문서 상태**: 🟢 실전 구동 중 (Production Operational Manual)  
 > **최종 수정일**: 2026-08-06  
@@ -8,7 +8,7 @@
 
 ## 1. 개요 (Overview)
 
-본 매뉴얼은 CreAibox 플랫폼의 **독립 도메인 1초 매입, 멤버십 월/년 요금제 결제, AI 커스텀 웹사이트 제작 및 AI 크레딧 충전** 등 전 서비스 유료 결제를 담당하는 대한민국 업계 표준 **포트원(PortOne V2 Gateway)** 전자결제 시스템의 실무 운용 및 환경변수 설정 가이드입니다.
+본 매뉴얼은 CreaiBox 플랫폼의 **독립 도메인 1초 매입, 멤버십 월/년 요금제 결제, AI 커스텀 웹사이트 제작 및 AI 크레딧 충전** 등 전 서비스 유료 결제를 담당하는 대한민국 업계 표준 **포트원(PortOne V2 Gateway)** 전자결제 시스템의 실무 운용 및 환경변수 설정 가이드입니다.
 
 ---
 
@@ -46,7 +46,7 @@ PORTONE_API_SECRET="your_portone_api_secret_here"
 ```
 
 ### 3.3 Vercel 실서버 프로덕션 배포 설정
-1. [Vercel Dashboard](https://vercel.com) ➔ CreAibox 프로젝트 선택
+1. [Vercel Dashboard](https://vercel.com) ➔ CreaiBox 프로젝트 선택
 2. **`Settings` ➔ `Environment Variables`** 이동
 3. 위 3개 환경변수(`NEXT_PUBLIC_PORTONE_STORE_ID`, `NEXT_PUBLIC_PORTONE_CHANNEL_KEY`, `PORTONE_API_SECRET`)를 등록 후 **Redeploy**를 진행합니다.
 4. 배포 완료 즉시 가상 알림창 모드에서 **실제 신용카드/카카오페이 결제 팝업 모드**로 1초 만에 전환됩니다.
@@ -55,7 +55,7 @@ PORTONE_API_SECRET="your_portone_api_secret_here"
 
 ## 4. 바로 복사해서 사용하는 프론트엔드 연동 추천 코드 (Code Example)
 
-CreAibox 결제 헬퍼 유틸리티([`src/lib/client/payment.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/lib/client/payment.ts))를 활용한 추천 결제 트리거 예시입니다:
+CreaiBox 결제 헬퍼 유틸리티([`src/lib/client/payment.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/lib/client/payment.ts))를 활용한 추천 결제 트리거 예시입니다:
 
 ```typescript
 import { requestDomainPayment } from "@/lib/client/payment";
@@ -64,7 +64,7 @@ async function handleCheckout() {
   try {
     // 1. 프론트엔드 PG 결제 모달 팝업 트리거
     const paymentResult = await requestDomainPayment({
-      orderName: "CreAibox 독립 브랜드 도메인 (mybrand.com) 매입",
+      orderName: "CreaiBox 독립 브랜드 도메인 (mybrand.com) 매입",
       totalAmount: 15750, // 실시간 환율 연동 원화 금액
       customerName: "홍길동",
       customerEmail: "user@creaibox.com",
@@ -109,4 +109,4 @@ async function handleCheckout() {
 - **아닙니다. 포트원 솔루션 이용료는 0원(100% 무료)입니다.** 실제 카드 결제 시 발생하는 PG사(토스페이먼츠/이니시스 등) 결제 수수료(약 1.6%~3.2%)만 PG사로 정산됩니다.
 
 ### Q2. 해외 카드가 없는 국내 사용자도 도메인을 결제할 수 있나요?
-- **네, 100% 가능합니다.** Vercel 도메인은 원칙적으로 해외 결제 카드가 필요하지만, CreAibox가 중간에서 국내 PG(카카오페이/신용카드/계좌이체)로 정산받아 Vercel API로 실시간 구매하므로, 유저는 일반 국내 카드로 편하게 결제할 수 있습니다.
+- **네, 100% 가능합니다.** Vercel 도메인은 원칙적으로 해외 결제 카드가 필요하지만, CreaiBox가 중간에서 국내 PG(카카오페이/신용카드/계좌이체)로 정산받아 Vercel API로 실시간 구매하므로, 유저는 일반 국내 카드로 편하게 결제할 수 있습니다.

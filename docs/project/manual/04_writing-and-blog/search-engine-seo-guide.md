@@ -74,7 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               "@context": "https://schema.org",
               "@type": "WebSite",
               "name": "크리에이박스",
-              "alternateName": "CreAibox",
+              "alternateName": "CreaiBox",
               "url": "https://creaibox.com",
               "description": "올인원 AI 콘텐츠 스튜디오 및 프리미엄 홈페이지 빌더",
               "potentialAction": {
@@ -101,7 +101,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 ### 5.1 네이버 스마트플레이스 등록
 1. **[네이버 스마트플레이스](https://smartplace.naver.com/)**에 로그인 후 **[신규 업체 등록]**을 수행합니다.
-2. 업체명을 `크리에이박스(CreAibox)`로, 웹사이트 URL을 `https://creaibox.com`으로 지정하여 승인을 획득합니다.
+2. 업체명을 `크리에이박스(CreaiBox)`로, 웹사이트 URL을 `https://creaibox.com`으로 지정하여 승인을 획득합니다.
 
 ### 5.2 구글 비즈니스 프로필 등록
 1. **[구글 비즈니스 프로필](https://www.google.com/business/)**에 로그인하여 크리에이박스 상호로 신규 비즈니스를 등록합니다.

@@ -1,6 +1,6 @@
 # 데이터베이스 이용 규칙 (Database Rules)
 
-`CreAibox` Supabase 데이터베이스를 쿼리할 때 반드시 준수해야 하는 연동 규칙입니다.
+`CreaiBox` Supabase 데이터베이스를 쿼리할 때 반드시 준수해야 하는 연동 규칙입니다.
 
 ---
 

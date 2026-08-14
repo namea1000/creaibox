@@ -1,6 +1,6 @@
 # 🟢 네이버 아이디로 로그인 ("네아로") 연동 & 운용 매뉴얼
 
-본 문서는 CreAibox 메인 서비스 및 클라이언트 커스텀 홈페이지에 **네이버 아이디로 로그인(Naver OAuth 2.0)**을 5분 만에 연동하고 운용하기 위한 표준 가이드라인입니다.
+본 문서는 CreaiBox 메인 서비스 및 클라이언트 커스텀 홈페이지에 **네이버 아이디로 로그인(Naver OAuth 2.0)**을 5분 만에 연동하고 운용하기 위한 표준 가이드라인입니다.
 
 ---
 
@@ -19,7 +19,7 @@ NAVER_CLIENT_SECRET="qB0yyUD0Oa"
 ## 2. ⚙️ 네이버 개발자 센터 설정 (Naver Developers Console)
 
 - **URL**: [https://developers.naver.com](https://developers.naver.com)
-- **앱 이름**: `CreAibox`
+- **앱 이름**: `CreaiBox`
 - **사용 API**: `네이버 아이디로 로그인`
 - **필수 수집 항목**: `이름`, `이메일 주소`, `별명` (사전 검수 대기 없이 1초 만에 즉시 발급)
 

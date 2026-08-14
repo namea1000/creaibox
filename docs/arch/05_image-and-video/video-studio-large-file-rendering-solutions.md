@@ -74,7 +74,7 @@
 
 ---
 
-## 3. 구현 추천 가이드 (CreAibox Architecture Proposal)
+## 3. 구현 추천 가이드 (CreaiBox Architecture Proposal)
 
 크리에이박스는 업무용(비즈니스) AI 콘텐츠 제작 스튜디오이며 주로 크롬/에지 환경에서 프로 크리에이터들이 사용하므로, **안정성이 가장 높고 구조가 직관적인 [대안 A (FileSystem Access API)] 방식을 강력 추천**합니다.
 

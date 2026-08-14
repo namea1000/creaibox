@@ -23,16 +23,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { section } = await params;
   const sectionTitle = sectionNames[section] || "AI 블로그 글쓰기 스튜디오";
   const title = `${sectionTitle} - AI 글쓰기`;
-  const description = `크리에이박스 CreAibox의 ${sectionTitle} 도구입니다. 최첨단 AI 인공지능으로 네이버 및 티스토리 고품질 원고를 순식간에 기획하고 스마트하게 발행해 보세요.`;
+  const description = `크리에이박스 CreaiBox의 ${sectionTitle} 도구입니다. 최첨단 AI 인공지능으로 네이버 및 티스토리 고품질 원고를 순식간에 기획하고 스마트하게 발행해 보세요.`;
   return {
     title,
     description,
     keywords: ["크리에이박스", "creaibox", sectionTitle, "블로그 자동 글쓰기", "AI 글쓰기 프로그램"],
     openGraph: {
-      title: `${title} | 크리에이박스 CreAibox`,
+      title: `${title} | 크리에이박스 CreaiBox`,
       description,
       url: `https://creaibox.com/writing/creaibox/${section}`,
-      siteName: "CreAibox",
+      siteName: "CreaiBox",
       images: [
         {
           url: "/images/seo/business.webp",
@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: `${title} | 크리에이박스 CreAibox`,
+      title: `${title} | 크리에이박스 CreaiBox`,
       description,
       images: ["/images/seo/business.webp"],
     },

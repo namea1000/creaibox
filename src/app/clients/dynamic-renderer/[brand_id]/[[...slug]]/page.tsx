@@ -1,4 +1,5 @@
 import React from "react";
+import type { Metadata } from "next";
 import { createAdminClient } from "@/utils/supabase/server";
 import DynamicSection from "../../components/DynamicSection";
 import BlogListPaginatedView, { BlogItem } from "@/components/blog/BlogListPaginatedView";
@@ -9,6 +10,25 @@ interface PageProps {
     slug?: string[];
   }>;
   searchParams?: Promise<{ page?: string }> | { page?: string };
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { brand_id } = await params;
+  const supabase = await createAdminClient();
+  const { data: site } = await supabase
+    .from("client_sites")
+    .select("company_name, status, extra_configs")
+    .eq("brand_id", brand_id.toLowerCase())
+    .maybeSingle();
+
+  const isPublished = site?.status === "PUBLISHED";
+
+  return {
+    title: site?.company_name ? `${site.company_name}` : "웹사이트",
+    robots: isPublished
+      ? { index: true, follow: true }
+      : { index: false, follow: false, nocache: true }, // 🛡️ Zero SEO Risk for Draft Sites (100% noindex)
+  };
 }
 
 export default async function DynamicRendererPage({ params, searchParams }: PageProps) {
@@ -22,7 +42,7 @@ export default async function DynamicRendererPage({ params, searchParams }: Page
   // 1. Fetch site settings
   const { data: site } = await supabase
     .from("client_sites")
-    .select("id, company_name, is_onepage_scroll")
+    .select("id, company_name, is_onepage_scroll, status, extra_configs")
     .eq("brand_id", brand_id.toLowerCase())
     .maybeSingle();
 
@@ -33,6 +53,8 @@ export default async function DynamicRendererPage({ params, searchParams }: Page
       </div>
     );
   }
+
+  const isDraft = site.status !== "PUBLISHED";
 
   // 2. Fetch site sections ordered by sort_order
   const { data: sections = [] } = await supabase
@@ -314,6 +336,24 @@ export default async function DynamicRendererPage({ params, searchParams }: Page
   // 4. Render All Sections (Landing Page)
   return (
     <div className="flex flex-col">
+      {/* Draft Mode Notice Banner (Zero Legal/SEO Risk) */}
+      {isDraft && (
+        <div className="sticky top-0 z-50 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 px-4 py-2 text-xs font-black flex flex-wrap items-center justify-between gap-2 shadow-md">
+          <div className="flex items-center gap-2">
+            <span className="bg-slate-950 text-amber-400 px-2 py-0.5 rounded text-[10px] uppercase font-black tracking-wider">
+              DRAFT / PREVIEW
+            </span>
+            <span>⚠️ 본 사이트는 AI 이관 테스트 및 미리보기 모드입니다. (비공개 초안 • 검색엔진 노출 100% 차단 중)</span>
+          </div>
+          <a
+            href="/studio/custom-client-site/migration"
+            className="bg-slate-950 text-white hover:bg-slate-900 px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shrink-0"
+          >
+            🚀 정식 라이브 배포 및 도메인 지정
+          </a>
+        </div>
+      )}
+
       {sections
         .filter((sect) => site.is_onepage_scroll || !sect.section_type.startsWith("subpage_"))
         .map((sect) => (

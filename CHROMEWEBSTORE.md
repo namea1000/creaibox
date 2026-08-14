@@ -1,19 +1,19 @@
-# Chrome Web Store Listing - CreAibox Suno Connector
+# Chrome Web Store Listing - CreaiBox Suno Connector
 
-This document holds the store metadata, permission justifications, and developer setups for publishing the **CreAibox Suno Connector** to the Chrome Web Store.
+This document holds the store metadata, permission justifications, and developer setups for publishing the **CreaiBox Suno Connector** to the Chrome Web Store.
 
 ---
 
 ## 1. Store Listing Details
 
-* **Product Name**: CreAibox Suno Connector
-* **Short Description**: Seamlessly bridges your AI album planners in CreAibox with Suno.com's creation engine in real-time.
+* **Product Name**: CreaiBox Suno Connector
+* **Short Description**: Seamlessly bridges your AI album planners in CreaiBox with Suno.com's creation engine in real-time.
 * **Detailed Description**:
-  The CreAibox Suno Connector acts as an automated bridge between your CreAibox AI Music Studio and Suno.com. 
+  The CreaiBox Suno Connector acts as an automated bridge between your CreaiBox AI Music Studio and Suno.com. 
 
   **Key Features**:
-  1. **One-Click Prefill**: Automatically transfers style tags, lyrics prompts, and vocal gender preferences generated from CreAibox AI Planners directly into Suno's composition inputs.
-  2. **Active Metadata Syncing**: Silently tracks generated song links, artwork thumbnails, and audio streams in Suno, sync-pushing them back to your CreAibox workspace.
+  1. **One-Click Prefill**: Automatically transfers style tags, lyrics prompts, and vocal gender preferences generated from CreaiBox AI Planners directly into Suno's composition inputs.
+  2. **Active Metadata Syncing**: Silently tracks generated song links, artwork thumbnails, and audio streams in Suno, sync-pushing them back to your CreaiBox workspace.
   3. **Folder Automation**: Syncs folder paths and metadata layouts across browser tabs.
 
 ---
@@ -25,7 +25,7 @@ Every permission requested in `manifest.json` is justified in plain English belo
 | Permission | Purpose & Justification |
 | :--- | :--- |
 | **`storage`** | Required to cache pending prefill objects (prompt tags, custom lyrics) temporarily in service worker space before applying them on Suno.com. |
-| **`tabs`** | Required to identify open Suno.com or CreAibox.com tabs, enabling real-time background dispatching of synced audio metadata. |
+| **`tabs`** | Required to identify open Suno.com or CreaiBox.com tabs, enabling real-time background dispatching of synced audio metadata. |
 | **`activeTab`** | Grants the extension scripting runtime context on the active creation tab upon user navigation triggers. |
 
 ---
@@ -46,4 +46,4 @@ Every permission requested in `manifest.json` is justified in plain English belo
 2. Toggle **Developer mode** (top-right corner).
 3. Click **Load unpacked** (top-left corner).
 4. Select the directory: `[project_root]/suno-chrome-extension/`.
-5. Open your CreAibox Music Studio page and click **"Suno에서 노래 만들기"** to test the automatic redirect and prefill flow!
+5. Open your CreaiBox Music Studio page and click **"Suno에서 노래 만들기"** to test the automatic redirect and prefill flow!

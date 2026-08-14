@@ -25,7 +25,7 @@ export default function PrivacyPage() {
             개인정보처리방침
           </h1>
           <p className="text-xs md:text-sm text-slate-500 font-medium">
-            본 방침은 <span className="text-slate-900 font-bold">2026년 06월 26일</span>부터 시행됩니다. 크리에이박스(CreAibox)는 정보주체의 개인정보를 보호하고 이와 관련된 고충을 신속하고 원활하게 처리할 수 있도록 최선을 다하고 있습니다.
+            본 방침은 <span className="text-slate-900 font-bold">2026년 06월 26일</span>부터 시행됩니다. 크리에이박스(CreaiBox)는 정보주체의 개인정보를 보호하고 이와 관련된 고충을 신속하고 원활하게 처리할 수 있도록 최선을 다하고 있습니다.
           </p>
         </div>
 
@@ -38,7 +38,7 @@ export default function PrivacyPage() {
               <span className="text-blue-600 font-mono">01.</span> 개인정보의 처리 목적
             </h3>
             <p className="text-slate-600 text-xs md:text-sm pl-6">
-              <span className="text-slate-900 font-bold">크리에이박스(CreAibox)</span>(이하 '회사')는 회사가 운영하는 인공지능 콘텐츠 생성 플랫폼 <span className="text-slate-900 font-bold">'크리에이박스'</span>의 회원가입 의사 확인, 이용자 식별, 서비스 제공에 따른 본인 인증, 서비스 원활한 운영 및 주요 공지사항 전달, 인공지능 기반 분석 리포트 발행 등의 목적으로 개인정보를 처리합니다. 처리하고 있는 개인정보는 목적 이외의 용도로는 이용되지 않으며, 이용 목적이 변경되는 경우에는 별도의 동의를 받는 등 필요한 조치를 이행할 예정입니다.
+              <span className="text-slate-900 font-bold">크리에이박스(CreaiBox)</span>(이하 '회사')는 회사가 운영하는 인공지능 콘텐츠 생성 플랫폼 <span className="text-slate-900 font-bold">'크리에이박스'</span>의 회원가입 의사 확인, 이용자 식별, 서비스 제공에 따른 본인 인증, 서비스 원활한 운영 및 주요 공지사항 전달, 인공지능 기반 분석 리포트 발행 등의 목적으로 개인정보를 처리합니다. 처리하고 있는 개인정보는 목적 이외의 용도로는 이용되지 않으며, 이용 목적이 변경되는 경우에는 별도의 동의를 받는 등 필요한 조치를 이행할 예정입니다.
             </p>
           </div>
 
@@ -104,7 +104,7 @@ export default function PrivacyPage() {
             <div className="text-slate-600 text-xs md:text-sm pl-6 space-y-2">
               <p>회사는 개인정보 처리에 관한 업무를 총괄해서 책임지고, 개인정보 처리와 관련한 정보주체의 고충처리 등을 위하여 아래와 같이 개인정보 보호책임자를 지정하고 있습니다.</p>
               <div className="p-4 rounded-xl border border-slate-200 bg-white font-medium text-slate-600 space-y-1 max-w-md shadow-sm">
-                <p>• <span className="text-slate-900 font-bold">개인정보 보호책임자:</span> 크리에이박스(CreAibox) 대표</p>
+                <p>• <span className="text-slate-900 font-bold">개인정보 보호책임자:</span> 크리에이박스(CreaiBox) 대표</p>
                 <p>• <span className="text-slate-900 font-bold">연락처 / 대표 메일:</span> <a href="mailto:creaiboxofficial@gmail.com" className="text-blue-600 hover:underline">creaiboxofficial@gmail.com</a></p>
                 <p>• <span className="text-slate-900 font-bold">고객지원 창구:</span> 카카오톡 채널 '크리에이박스'</p>
               </div>
@@ -115,7 +115,7 @@ export default function PrivacyPage() {
 
         {/* 🏁 SECTION 3: FOOTER (하단 카피라이트 고정) */}
         <div className="mt-16 pt-8 border-t border-slate-200 text-center text-xs text-slate-400 font-medium">
-          © {currentYear} 크리에이박스(CreAibox). All rights reserved. 본 개인정보처리방침의 저작권은 크리에이박스(CreAibox)에 있으며, 무단 복제를 금합니다.
+          © {currentYear} 크리에이박스(CreaiBox). All rights reserved. 본 개인정보처리방침의 저작권은 크리에이박스(CreaiBox)에 있으며, 무단 복제를 금합니다.
         </div>
 
       </div>

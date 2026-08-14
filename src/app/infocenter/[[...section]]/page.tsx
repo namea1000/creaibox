@@ -18,8 +18,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const path = segments.join("/");
   const sectionTitle = sectionNames[path] || "고객 서비스 인포센터";
   return {
-    title: `${sectionTitle} | 크리에이박스 CreAibox`,
-    description: `크리에이박스 CreAibox의 공식 ${sectionTitle} 공간입니다. 플랫폼 서비스 공지사항 및 자주 묻는 질문(FAQ)의 핵심 내용을 투명하게 안내해 드립니다.`,
+    title: `${sectionTitle} | 크리에이박스 CreaiBox`,
+    description: `크리에이박스 CreaiBox의 공식 ${sectionTitle} 공간입니다. 플랫폼 서비스 공지사항 및 자주 묻는 질문(FAQ)의 핵심 내용을 투명하게 안내해 드립니다.`,
     keywords: ["크리에이박스", "creaibox", sectionTitle, "고객센터 공지사항", "자주 묻는 질문"]
   };
 }

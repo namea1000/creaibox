@@ -36,8 +36,8 @@ const notoSansKR = Noto_Sans_KR({
 export const metadata = {
   metadataBase: new URL("https://creaibox.com"),
   title: {
-    default: "크리에이박스(CreAibox) | 올인원 AI 콘텐츠 스튜디오",
-    template: "%s | 크리에이박스 CreAibox",
+    default: "크리에이박스(CreaiBox) | 올인원 AI 콘텐츠 스튜디오",
+    template: "%s | 크리에이박스 CreaiBox",
   },
   description:
     "AI 글쓰기부터 이미지 생성, 음악, 홈페이지 제작까지. 크리에이박스는 크리에이터를 위한 올인원 AI 콘텐츠 스튜디오입니다.",
@@ -51,23 +51,23 @@ export const metadata = {
   },
 
   openGraph: {
-    title: "크리에이박스(CreAibox) | 올인원 AI 콘텐츠 스튜디오",
+    title: "크리에이박스(CreaiBox) | 올인원 AI 콘텐츠 스튜디오",
     description:
       "AI 글쓰기부터 이미지 생성, 음악, 홈페이지 제작까지. 크리에이박스는 크리에이터를 위한 올인원 AI 콘텐츠 스튜디오입니다.",
     url: "https://creaibox.com",
-    siteName: "CreAibox",
+    siteName: "CreaiBox",
     images: [
       {
         url: "/images/seo/main.webp",
         width: 1200,
         height: 630,
-        alt: "CreAibox Logo (Landscape)",
+        alt: "CreaiBox Logo (Landscape)",
       },
       {
         url: "/images/seo/main-sq.webp",
         width: 1200,
         height: 1200,
-        alt: "CreAibox Logo (Square)",
+        alt: "CreaiBox Logo (Square)",
       },
     ],
     locale: "ko_KR",
@@ -75,7 +75,7 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "크리에이박스(CreAibox) | 올인원 AI 콘텐츠 스튜디오",
+    title: "크리에이박스(CreaiBox) | 올인원 AI 콘텐츠 스튜디오",
     description:
       "AI 글쓰기부터 이미지 생성, 음악, 홈페이지 제작까지. 크리에이박스는 크리에이터를 위한 올인원 AI 콘텐츠 스튜디오입니다.",
     images: ["/images/seo/main.webp", "/images/seo/main-sq.webp"],
@@ -112,13 +112,13 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebSite",
-              name: "CreAibox",
+              name: "CreaiBox",
               url: "https://creaibox.com",
               description:
                 "올인원 AI 콘텐츠 스튜디오 - 원고 작성, 비주얼 에셋, 브랜드 홈페이지 통합 솔루션",
               publisher: {
                 "@type": "Organization",
-                name: "크리에이박스 (CreAibox)",
+                name: "크리에이박스 (CreaiBox)",
                 url: "https://creaibox.com",
                 logo: "https://creaibox.com/icon.webp",
               },

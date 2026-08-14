@@ -248,7 +248,7 @@ export default function DomainSearchPage() {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-3 py-1 text-xs font-black text-cyan-300">
               <Globe size={14} className="text-cyan-400 animate-pulse" />
-              <span>CreAibox 도메인 센터</span>
+              <span>CreaiBox 도메인 센터</span>
             </div>
             <h1 className="text-xl md:text-2xl font-black text-white">
               100% 독창적인 독립 브랜드 도메인 <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent">조회 & 즉시 자동 구매·이관 센터</span>
@@ -482,7 +482,7 @@ export default function DomainSearchPage() {
         <div className="rounded-3xl border border-emerald-500/30 bg-slate-900/90 p-6 lg:p-8 space-y-6 shadow-xl">
           <div className="space-y-1">
             <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <RefreshCw className="text-emerald-400" /> 타사(G사/W사 등) 보유 도메인을 CreAibox로 간편 이관 신청
+              <RefreshCw className="text-emerald-400" /> 타사(G사/W사 등) 보유 도메인을 CreaiBox로 간편 이관 신청
             </h2>
             <p className="text-xs font-medium text-slate-300 leading-relaxed">
               기존에 다른 곳에서 사용 중이던 도메인의 인증코드(EPP Code)만 입력하시면, 연간 높은 갱신 비용 없이 해외 도매가(18,000원) 및 비즈니스 0원 무상 연장 혜택으로 즉시 이관됩니다.
@@ -537,7 +537,7 @@ export default function DomainSearchPage() {
         <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 lg:p-8 space-y-4">
           <div className="space-y-1">
             <h2 className="text-xl font-black text-white flex items-center gap-2">
-              <Award className="text-amber-400" /> 국내 타사 vs CreAibox 도메인 리셀러 요금 팩트 비교표
+              <Award className="text-amber-400" /> 국내 타사 vs CreaiBox 도메인 리셀러 요금 팩트 비교표
             </h2>
             <p className="text-xs font-medium text-slate-400">
               타사의 부가서비스(WHOIS 비밀보호, SSL 발급비) 꼼수 비용 없이, 순수 도매가 18,000원에 제공합니다.
@@ -550,7 +550,7 @@ export default function DomainSearchPage() {
                 <tr className="border-b border-slate-800 bg-slate-950 text-slate-400 font-bold">
                   <th className="p-4">구분 / 항목</th>
                   <th className="p-4">국내 타사 (G사 / W사 / C사 등)</th>
-                  <th className="p-4 text-cyan-300 font-extrabold">CreAibox 도메인 리셀러</th>
+                  <th className="p-4 text-cyan-300 font-extrabold">CreaiBox 도메인 리셀러</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
@@ -570,7 +570,7 @@ export default function DomainSearchPage() {
                   <td className="p-4 text-cyan-300 font-bold">Vercel Global Edge SSL 즉시 자동 연동 (0원)</td>
                 </tr>
                 <tr>
-                  <td className="p-4 font-bold text-white">CreAibox 비즈니스 회원 혜택</td>
+                  <td className="p-4 font-bold text-white">CreaiBox 비즈니스 회원 혜택</td>
                   <td className="p-4 text-slate-400">해당 없음</td>
                   <td className="p-4 text-cyan-300 font-black">해외 레지스트라 원가 연동 (추가 마진 0원 원가 공급) ⭕</td>
                 </tr>
@@ -586,7 +586,7 @@ export default function DomainSearchPage() {
           <div className="flex items-center gap-3">
             <Crown size={24} className="text-cyan-400 shrink-0" />
             <div>
-              <h2 className="text-xl font-black text-white">CreAibox 도메인 무마진 결제 시스템</h2>
+              <h2 className="text-xl font-black text-white">CreaiBox 도메인 무마진 결제 시스템</h2>
               <p className="text-xs font-medium text-slate-300">
                 모든 회원은 거품 없는 도매 도메인 원가로 투명하게 즉시 구매하고 전자결제(PG)로 손쉽게 등록 및 연장하실 수 있습니다.
               </p>
@@ -610,20 +610,20 @@ export default function DomainSearchPage() {
           <div className="space-y-3 pt-2">
             {[
               {
-                q: "구매한 도메인은 CreAibox 홈페이지에 몇 초 만에 연동되나요?",
+                q: "구매한 도메인은 CreaiBox 홈페이지에 몇 초 만에 연동되나요?",
                 a: "결제 완료 즉시 Vercel Global Edge IP (76.76.21.21)에 즉시 자동 바인딩되어 별도의 complex DNS 설정 없이 즉시 연결됩니다.",
               },
               {
-                q: "타사(G사, W사 등)에서 쓰던 도메인도 CreAibox로 옮겨올 수 있나요?",
+                q: "타사(G사, W사 등)에서 쓰던 도메인도 CreaiBox로 옮겨올 수 있나요?",
                 a: "네! 타사 도메인 관리 페이지에서 '기관이전 인증키(EPP Code)'를 발급받으신 후 2번 이관 메뉴에 입력하시면 즉시 이관 신청이 완료됩니다.",
               },
               {
                 q: "기존 타사 홈페이지 AI 간편 이관은 어느 메뉴에서 이용하나요?",
-                a: "기존 홈페이지의 텍스트, 이미지, 전화번호, 주소를 CreAibox 자사몰 사이트(000.creaibox.com)로 옮기는 기능은 [커스텀 웹사이트] -> [2️⃣ 기존 홈페이지 AI 간편 이관] 탭에서 이용하실 수 있습니다.",
+                a: "기존 홈페이지의 텍스트, 이미지, 전화번호, 주소를 CreaiBox 자사몰 사이트(000.creaibox.com)로 옮기는 기능은 [커스텀 웹사이트] -> [2️⃣ 기존 홈페이지 AI 간편 이관] 탭에서 이용하실 수 있습니다.",
               },
               {
                 q: "WHOIS 개인정보 보호 서비스는 정말 0원인가요?",
-                a: "네! 타사의 경우 연간 1,500원~3,000원의 부가 요금을 받지만, CreAibox는 도메인 소유자의 이름, 이메일, 전화번호 노출을 막아주는 개인정보 보호를 평생 100% 무료로 제공합니다.",
+                a: "네! 타사의 경우 연간 1,500원~3,000원의 부가 요금을 받지만, CreaiBox는 도메인 소유자의 이름, 이메일, 전화번호 노출을 막아주는 개인정보 보호를 평생 100% 무료로 제공합니다.",
               },
             ].map((faq, idx) => (
               <div key={idx} className="rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden">
@@ -746,7 +746,7 @@ export default function DomainSearchPage() {
             </div>
 
             <p className="text-xs text-slate-400 font-semibold leading-relaxed">
-              🎉 <strong>{buySuccessData.domain}</strong> 이(가) CreAibox 글로벌 Edge 서버와 성공적으로 바인딩되었습니다. 커스텀 웹사이트 템플릿에서 즉시 사용할 수 있습니다.
+              🎉 <strong>{buySuccessData.domain}</strong> 이(가) CreaiBox 글로벌 Edge 서버와 성공적으로 바인딩되었습니다. 커스텀 웹사이트 템플릿에서 즉시 사용할 수 있습니다.
             </p>
 
             <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
@@ -770,7 +770,7 @@ export default function DomainSearchPage() {
       {/* 🔮 1단계: 글래스모피즘 도메인 구매 확인 커스텀 모달 (원클릭 문구 완전 제거) */}
       <PaymentConfirmModal
         isOpen={paymentConfirmModalData.isOpen}
-        orderName={`CreAibox 독립 브랜드 도메인 (${paymentConfirmModalData.domainName}) 매입`}
+        orderName={`CreaiBox 독립 브랜드 도메인 (${paymentConfirmModalData.domainName}) 매입`}
         totalAmount={paymentConfirmModalData.amount}
         customerEmail={currentUser?.email}
         onConfirm={handleConfirmDomainPayment}
@@ -780,7 +780,7 @@ export default function DomainSearchPage() {
       {/* 💳 2단계: 포트원 V2 PG 전자결제 수단 선택창 팝업 모달 (신용카드/카카오페이/토스페이/네이버페이) */}
       <PortOnePgWindowModal
         isOpen={isPgModalOpen}
-        orderName={activeDomainForPg ? `CreAibox 독립 브랜드 도메인 (${activeDomainForPg.domainName}) 매입` : "도메인 매입"}
+        orderName={activeDomainForPg ? `CreaiBox 독립 브랜드 도메인 (${activeDomainForPg.domainName}) 매입` : "도메인 매입"}
         totalAmount={activeDomainForPg?.amount || 15750}
         customerEmail={currentUser?.email || "customer@creaibox.com"}
         onSuccess={handleDomainPgSuccess}

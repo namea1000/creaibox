@@ -1,8 +1,8 @@
 mier 
 
-# CreAibox 개발일지 - 2026년 7월 (July 2026 Development Log)
+# CreaiBox 개발일지 - 2026년 7월 (July 2026 Development Log)
 
-이 문서는 2026년 7월 동안 CreAibox 프로젝트에서 진행된 일자별 개발 세부 작업 내역과 핵심 아키텍처 결정 사항을 기록합니다.
+이 문서는 2026년 7월 동안 CreaiBox 프로젝트에서 진행된 일자별 개발 세부 작업 내역과 핵심 아키텍처 결정 사항을 기록합니다.
 
 ### 🗓️ 2026-07-31 (금) - 오늘
 
@@ -67,7 +67,7 @@ mier
   - **중앙 이미지 프록시 유틸리티 신설 ([`src/utils/image-url.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/utils/image-url.ts))**: `formatImageUrl(url)` 함수를 생성하여 모든 구글 드라이브 URL을 크리에이박스 서버 프록시([`/api/free-assets/proxy`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/proxy/route.ts))로 자동 라우팅 (200 OK + CDN 캐싱 보장).
   - **서버 프록시 안전성 강화 ([`proxy/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/free-assets/proxy/route.ts))**: 구글 드라이브 API 호출 실패/404 시 500 에러 대신 고화질 기본 엠프티 이미지로 302 리다이렉트되어 브라우저 엑박이 발생하지 않도록 방어.
   - **프론트엔드 예외 처리 탑재**: [`blog/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/page.tsx), [`blog/[slug]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/%5Bslug%5D/page.tsx), [`BlogClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/BlogClientWrapper.tsx), [`CategoryClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/CategoryClientWrapper.tsx), [`PostClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/PostClientWrapper.tsx) 내 모든 `<img>` 태그에 `formatImageUrl` 및 `onError={handleImageError}` 적용.
-  - **Supabase Storage 우회 업로드 폴백 로직 전면 제거 ([`image-upload/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/image-upload/route.ts), [`image-upload/external/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/image-upload/external/route.ts), [`image-studio/generate/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/image-studio/generate/route.ts))**: Supabase Storage 100GB 쿼터 보호 및 초과 비용 방지를 위해 Supabase Storage 우회 업로드 코드를 100% 삭제하고, 사용자 안내 메시지 브랜딩 명칭(`CreAibox 클라우드 DB 원고 보관함`) 단일화.
+  - **Supabase Storage 우회 업로드 폴백 로직 전면 제거 ([`image-upload/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/image-upload/route.ts), [`image-upload/external/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/image-upload/external/route.ts), [`image-studio/generate/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/image-studio/generate/route.ts))**: Supabase Storage 100GB 쿼터 보호 및 초과 비용 방지를 위해 Supabase Storage 우회 업로드 코드를 100% 삭제하고, 사용자 안내 메시지 브랜딩 명칭(`CreaiBox 클라우드 DB 원고 보관함`) 단일화.
 
 #### 3. Server Component 내 이벤트 핸들러(`onError`) 전달로 인한 `/blog` 500 서버 에러 해결
 * **원인 분석**: React Server Component(RSC)인 [`blog/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/page.tsx) 및 [`blog/[slug]/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/%5Bslug%5D/page.tsx)에 클라이언트 이벤트 핸들러 `onError={handleImageError}`를 직접 전달함에 따라 Next.js 서버 렌더링 시 `This page couldn't load (500 Server Error)` 예외가 발생함.
@@ -123,7 +123,7 @@ mier
   - **매일 아침 6시 60개국 무인 수집 3중 방어막(3x Retry & Self-Healing) 보장 ([`vercel.json`](file:///Users/a1234/Local%20Sites/creaibox/vercel.json), [`sync-trending/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/cron/sync-trending/route.ts), [`route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/youtube/route.ts))**:
     - 과거 자동 수집 누락 원인을 정밀 진단하고, **국가별 최대 3회 자동 재시도(3x Retry)** 및 **당일 첫 접속 시 수집 누락 시 자동 자가치유 수집(Self-Healing Background Fetch)** 2중 방어막을 구축하여 100% 완전 무결 수집을 보장.
     - 60개국 수집 시 Vercel 서버리스 무료 타임아웃(10초)을 완벽 방어하기 위해 **10개국 단위 병렬 배치(`Promise.all`) 수집**을 적용하여 전체 수집 시간을 **2~3초로 초고속화**.
-    - 시스템 관리자 대시보드([`/admin/system`](file:///Users/a1234/Local%20Sites/creaibox/src/app/admin/system/page.tsx)) 내 안내 문구를 **"전세계 60개국 전체 카테고리 무인 수집, CreAibox 클라우드 DB 날짜별 1줄 통합 적재"**로 문구 100% 최신화 완료.
+    - 시스템 관리자 대시보드([`/admin/system`](file:///Users/a1234/Local%20Sites/creaibox/src/app/admin/system/page.tsx)) 내 안내 문구를 **"전세계 60개국 전체 카테고리 무인 수집, CreaiBox 클라우드 DB 날짜별 1줄 통합 적재"**로 문구 100% 최신화 완료.
   - **분석 리포트 페이지 콘솔 TypeError & 비로그인 자유 둘러보기 예외 처리 ([`reports/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/youtube/reports/route.ts))**:
     - 리포트 조회 시 `youtube_trending_archive` 테이블의 `videos_data`가 기존 배열(Array)에서 통합 객체(Bundle Object)로 구조가 변경됨에 따라 발생하던 `TypeError: Failed to fetch` 및 순회 파싱 오류를 완전 수정.
     - 비로그인 사용자가 분석 리포트 페이지 진입 시 401 오류 토스트가 발생하지 않고 페이지 레이아웃과 빈 상태가 100% 안전하게 노출되도록 세션 예외 핸들링을 적용.
@@ -247,12 +247,12 @@ mier
     - 회원 목록 카드 및 행에 `⭐ 무상 부여 (부여 사유)` 전용 뱃지 및 **`[ ⭐ VIP 설정 ]`** 수동 모달 구축.
   - **마이페이지 사용자 뷰 연동 ([`mypage/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/mypage/page.tsx))**: `Plan Level` 하단에 `⭐ VIP SPECIAL MEMBERSHIP` 골드 뱃지 카드 렌더링. 부여 사유(예: `지인 (이동은 대표님 추천)`) 및 유효 기간(`2026. 12. 31 까지` / `무제한 (평생 무상 혜택)`) 실시간 노출.
 #### 5. 크리에이박스 출처 뱃지 파스텔 1줄 경량화, 블로그 관리 On/Off & 작가/브랜드 프로필 카드 편집 기능 구축
-* **구현 요약**: 거추장스러운 기사 박스를 파스텔 1줄 뱃지(`✨ Published with CreAibox`)로 경량화하고, 사용자가 직접 **작가/브랜드명, 한 줄 소개글, 아바타 이미지 URL, 공식 홈페이지/SNS 링크**를 편집/저장할 수 있는 맞춤 프로필 카드 UI를 구축했습니다. 유료 회원의 뱃지 OFF 시에도 블로그 푸터 영역에 `Powered by CreAibox.com` 백링크를 주입하여 100% SEO 백링크 파워 상승 효과를 유지하도록 완성했습니다.
+* **구현 요약**: 거추장스러운 기사 박스를 파스텔 1줄 뱃지(`✨ Published with CreaiBox`)로 경량화하고, 사용자가 직접 **작가/브랜드명, 한 줄 소개글, 아바타 이미지 URL, 공식 홈페이지/SNS 링크**를 편집/저장할 수 있는 맞춤 프로필 카드 UI를 구축했습니다. 유료 회원의 뱃지 OFF 시에도 블로그 푸터 영역에 `Powered by CreaiBox.com` 백링크를 주입하여 100% SEO 백링크 파워 상승 효과를 유지하도록 완성했습니다.
 * **작업 상세**:
-  - **기존 배포글 포함 출처 박스 동적 개편 연동 ([`PostClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/PostClientWrapper.tsx))**: 과거에 이미 발행되었던 포스트 본문에 삽입되어 있던 기존 `CREAIBOX INSIGHT EDITORIAL` 박스 형태를 동적으로 파싱/대체하여, 유저의 최신 설정에 따라 **[맞춤 작가/브랜드 프로필 카드]**, **[파스텔 1줄 뱃지 (`✨ Published with CreAibox`)]**, 또는 **[뱃지 OFF]**가 기존 배포글에도 실시간으로 100% 동등하게 적용되도록 렌더러 파이프라인 전면 개편.
+  - **기존 배포글 포함 출처 박스 동적 개편 연동 ([`PostClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/PostClientWrapper.tsx))**: 과거에 이미 발행되었던 포스트 본문에 삽입되어 있던 기존 `CREAIBOX INSIGHT EDITORIAL` 박스 형태를 동적으로 파싱/대체하여, 유저의 최신 설정에 따라 **[맞춤 작가/브랜드 프로필 카드]**, **[파스텔 1줄 뱃지 (`✨ Published with CreaiBox`)]**, 또는 **[뱃지 OFF]**가 기존 배포글에도 실시간으로 100% 동등하게 적용되도록 렌더러 파이프라인 전면 개편.
   - **작가/브랜드 프로필 링크 기본값 블로그 주소 연동 ([`blog-management/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx))**: **`공식 링크 / SNS (선택)`** 필드의 기본값을 사용자의 현재 블로그 주소(`https://golfgosu.net` 또는 `https://{brand_id}.creaibox.com`)로 자동 채움 및 예시 플라시보 동적 연동 완료.
-  - **블로그 메인 헤더 설명글 노출 연동 및 빈 값 처리 버그 수정 ([`BlogClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/BlogClientWrapper.tsx), [`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/page.tsx), [`blog-management/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx))**: `getConf` 파서에서 빈 문자열(`""`)을 섭취했을 때 기본 폴백 문구("CreAibox에서 생성한 고품질 콘텐츠 블로그입니다.")로 자간 복원되던 로직 버그를 수정하여, 사용자가 설명을 비워두면 블로그 상단 배너에 아무 설명도 노출되지 않도록 완벽히 동기화.
-  - **푸터 SEO 백링크 보장**: 블로그 최하단 푸터 영역에 `Powered by CreAibox.com` 텍스트 앵커 링크(`href="https://creaibox.com"`)를 결합하여 수천 개 포스트에서 구글/네이버 백링크 수집이 100% 유지되도록 처리.
+  - **블로그 메인 헤더 설명글 노출 연동 및 빈 값 처리 버그 수정 ([`BlogClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/BlogClientWrapper.tsx), [`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/page.tsx), [`blog-management/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx))**: `getConf` 파서에서 빈 문자열(`""`)을 섭취했을 때 기본 폴백 문구("CreaiBox에서 생성한 고품질 콘텐츠 블로그입니다.")로 자간 복원되던 로직 버그를 수정하여, 사용자가 설명을 비워두면 블로그 상단 배너에 아무 설명도 노출되지 않도록 완벽히 동기화.
+  - **푸터 SEO 백링크 보장**: 블로그 최하단 푸터 영역에 `Powered by CreaiBox.com` 텍스트 앵커 링크(`href="https://creaibox.com"`)를 결합하여 수천 개 포스트에서 구글/네이버 백링크 수집이 100% 유지되도록 처리.
   - **플랜 가이드 문서 업데이트**: [`pricing-plan-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/pricing-plan-guide.md) Section 4 백링크 마케팅 통합 규정 수록.
   - **정적 무결성 빌드 검증**: `npx tsc --noEmit` 완벽 컴파일 통과.
 
@@ -263,7 +263,7 @@ mier
     - 중복되던 파편화 카테고리를 `엔터테인먼트/방송`, `음식/요리/뷰티`, `뉴스/정치/경제`, `취미/여행/일상` 등 12개 표준 통합 카테고리로 통폐합.
     - 각 카테고리별로 고유한 API ID(`10`, `20`, `24`, `1`, `26`, `25`, `22`, `28`, `27`, `15`, `17`, `2`)를 1:1로만 할당하여 다중 버튼 오작동 원천 차단.
   - **국가 1줄 반응형 레이아웃**: 와이드 데스크톱 1줄 배치 및 화면 축소 시 2줄 자연 반응형 래핑 유지.
-  - **유튜브 API CategoryID 공식 명세 문서화 ([`youtube-category-ids.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/api/youtube-category-ids.md))**: 유튜브 Data API v3 전체 비디오 카테고리 ID 목록과 CreAibox 12개 통합 표준 카테고리 간의 1:1 매핑표 수록.
+  - **유튜브 API CategoryID 공식 명세 문서화 ([`youtube-category-ids.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/api/youtube-category-ids.md))**: 유튜브 Data API v3 전체 비디오 카테고리 ID 목록과 CreaiBox 12개 통합 표준 카테고리 간의 1:1 매핑표 수록.
 #### 11. 좌측 사이드바 유튜브 트렌드 메뉴 순서 재배치
 * **구현 요약**: 사용자의 접근성 및 트렌드 분석 동선 최적화를 위해 **`급상승 영상 트렌드`와 `급상승 영상분석 리포트`를 유튜브 메뉴 그룹의 최상단(1, 2번째)으로 올리고**, `유튜브 영상 검색` 메뉴는 `인기채널 영상분석 리포트` 하단(6번째)으로 위치를 재배치했습니다.
 * **작업 상세**:

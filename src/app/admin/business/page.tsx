@@ -774,7 +774,7 @@ export default function BusinessAdminDashboard() {
 
       {/* 🏁 SECTION 4: FOOTER COPYRIGHT */}
       <div className="mt-20 pt-8 border-t border-slate-800 text-center text-xs text-slate-500 font-semibold">
-        © {currentYear} 크리에이박스(CreAibox). All rights reserved. 본 맞춤 제작 제안서의 판권은 크리에이박스에 소속되어 있습니다.
+        © {currentYear} 크리에이박스(CreaiBox). All rights reserved. 본 맞춤 제작 제안서의 판권은 크리에이박스에 소속되어 있습니다.
       </div>
 
     </div>

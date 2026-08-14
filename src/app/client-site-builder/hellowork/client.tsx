@@ -539,7 +539,7 @@ export default function HelloWorkClientPage() {
             <span>|</span>
             <span>충남 천안시 서북구 불당23로 70 (정우프라자 7층)</span>
           </div>
-          <p>© 2026 Hello Work Buldang. All Rights Reserved. Powered by CreAibox Client Builder.</p>
+          <p>© 2026 Hello Work Buldang. All Rights Reserved. Powered by CreaiBox Client Builder.</p>
         </div>
       </footer>
 

@@ -1,6 +1,6 @@
 # 🌐 글로벌 영문 사이트(creaibox.com/en) 푸터(Footer) 디자인 및 법적 규격 가이드
 
-본 문서는 향후 CreAibox 글로벌 영문 버전 홈페이지(`creaibox.com/en`) 오픈 시, 해외 스타트업(Repaint, Aipress 등) 수준의 세련되고 미니멀한 글로벌 표준 푸터 UI를 구축하기 위한 디자인 및 법률 가이드라인입니다.
+본 문서는 향후 CreaiBox 글로벌 영문 버전 홈페이지(`creaibox.com/en`) 오픈 시, 해외 스타트업(Repaint, Aipress 등) 수준의 세련되고 미니멀한 글로벌 표준 푸터 UI를 구축하기 위한 디자인 및 법률 가이드라인입니다.
 
 ---
 
@@ -20,7 +20,7 @@
 
 영문 버전에 포함될 필수/권장 요소:
 
-1. **Copyright**: `© 2026 CreAibox Inc. All rights reserved.`
+1. **Copyright**: `© 2026 CreaiBox Inc. All rights reserved.`
 2. **Legal**:
    - `Terms of Service`
    - `Privacy Policy`

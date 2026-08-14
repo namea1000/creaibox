@@ -168,7 +168,7 @@ function LowordKeywordToolContent() {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-1">
             <span className="px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-black tracking-widest uppercase">
-              CreAibox Keyword Intelligence
+              CreaiBox Keyword Intelligence
             </span>
             <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center gap-3">
               <Search className="text-cyan-400" size={32} />
@@ -313,7 +313,7 @@ function LowordKeywordToolContent() {
             </div>
 
             <div className="bg-zinc-900/60 border border-zinc-800 p-5 rounded-2xl space-y-2">
-              <span className="text-xs font-bold text-zinc-400">CreAibox 평가 등급</span>
+              <span className="text-xs font-bold text-zinc-400">CreaiBox 평가 등급</span>
               <div className="text-2xl font-black text-amber-400 flex items-center gap-2">
                 {data.ratingGrade}
                 <span className="text-xs font-bold px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-300">
@@ -466,7 +466,7 @@ function LowordKeywordToolContent() {
           <div className="space-y-1">
             <h3 className="text-lg font-black text-white flex items-center gap-2">
               <FileText size={22} className="text-purple-400" />
-              최근 분석된 키워드 정밀 분석 리포트 (CreAibox DB 보관함)
+              최근 분석된 키워드 정밀 분석 리포트 (CreaiBox DB 보관함)
             </h3>
             <p className="text-xs text-zinc-400">
               분석하기 버튼을 눌러 분석된 모든 키워드 리포트가 영구 보관되어 모든 사용자가 함께 조회할 수 있습니다.
@@ -532,7 +532,7 @@ function LowordKeywordToolContent() {
                     <th className="py-3 px-4">포털</th>
                     <th className="py-3 px-4">분석 키워드</th>
                     <th className="py-3 px-4">월간 총 검색량</th>
-                    <th className="py-3 px-4">CreAibox 등급</th>
+                    <th className="py-3 px-4">CreaiBox 등급</th>
                     <th className="py-3 px-4">상태</th>
                     <th className="py-3 px-4">분석일시</th>
                     <th className="py-3 px-4 text-right">리포트 보기</th>

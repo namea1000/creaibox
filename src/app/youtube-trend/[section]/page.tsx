@@ -25,22 +25,22 @@ interface Props {
   };
 }
 
-// 🌟 네이버/구글 검색 노출 최적화용 "크리에이박스 CreAibox" 브랜드 키워드 동적 메타데이터 주입!
+// 🌟 네이버/구글 검색 노출 최적화용 "크리에이박스 CreaiBox" 브랜드 키워드 동적 메타데이터 주입!
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
   const sectionKey = resolvedParams?.section || "top300";
   const name = sectionNames[sectionKey] || "급상승 유튜브 트랜드";
   const title = `${name} - 유튜브 트렌드`;
-  const description = `크리에이박스 CreAibox에서 제공하는 ${name} 솔루션입니다. 국내외 인기 유튜브 채널 랭킹, 실시간 급상승 영상 분석 및 AI 아웃라이어 조회를 경험해 보세요.`;
+  const description = `크리에이박스 CreaiBox에서 제공하는 ${name} 솔루션입니다. 국내외 인기 유튜브 채널 랭킹, 실시간 급상승 영상 분석 및 AI 아웃라이어 조회를 경험해 보세요.`;
   return {
     title,
     description,
     keywords: ["크리에이박스", "creaibox", name, "유튜브 분석", "인플루언서 랭킹", "인기 동영상"],
     openGraph: {
-      title: `${title} | 크리에이박스 CreAibox`,
+      title: `${title} | 크리에이박스 CreaiBox`,
       description,
       url: `https://creaibox.com/youtube-trend/${sectionKey}`,
-      siteName: "CreAibox",
+      siteName: "CreaiBox",
       images: [
         {
           url: "/images/seo/youtube-trend.webp",
@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: `${title} | 크리에이박스 CreAibox`,
+      title: `${title} | 크리에이박스 CreaiBox`,
       description,
       images: ["/images/seo/youtube-trend.webp"],
     },

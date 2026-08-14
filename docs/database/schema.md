@@ -1,6 +1,6 @@
 # 데이터베이스 스키마 정의 (Database Schema)
 
-`CreAibox`는 Supabase PostgreSQL 데이터베이스를 연동하여 동작합니다. 코드베이스의 쿼리 분석을 통해 도출해 낸 스키마 명세입니다.
+`CreaiBox`는 Supabase PostgreSQL 데이터베이스를 연동하여 동작합니다. 코드베이스의 쿼리 분석을 통해 도출해 낸 스키마 명세입니다.
 
 ---
 
@@ -90,7 +90,7 @@ AI 및 서드파티 서비스 연동을 위한 토큰 암호화 저장소입니�
 
 ## 4. 포스팅/블로그 원고 테이블 (Writing Studio)
 
-### `writing_creaibox_posts` (CreAibox 원고)
+### `writing_creaibox_posts` (CreaiBox 원고)
 * **`id`**: `uuid` / `bigint` (Primary Key)
 * **`display_id`**: `bigint` (사용자 노출용 순번)
 * **`user_id`**: `uuid`

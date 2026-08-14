@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This is the fast handoff document for agents continuing CreAibox Video Studio export/render work. Read this after `docs/rules/ai-agent-rules.md` and before editing Video Studio export code.
+This is the fast handoff document for agents continuing CreaiBox Video Studio export/render work. Read this after `docs/rules/ai-agent-rules.md` and before editing Video Studio export code.
 
 The detailed source documents remain:
 

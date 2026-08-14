@@ -161,7 +161,7 @@ export default function EnterprisePage() {
           </h1>
           <p className="text-sm md:text-lg text-slate-600 dark:text-slate-400 font-bold max-w-3xl leading-relaxed">
             안전한 사내 전용 AI 인프라 구축부터 마케팅 자동화 API 연동까지, <br className="hidden md:inline" />
-            <span className="text-blue-600 dark:text-blue-400 font-extrabold">크리에이박스(CreAibox)</span>가 기업의 규모와 목표에 맞추어 완전 무결한 비즈니스 스튜디오를 직접 빌딩해 드립니다.
+            <span className="text-blue-600 dark:text-blue-400 font-extrabold">크리에이박스(CreaiBox)</span>가 기업의 규모와 목표에 맞추어 완전 무결한 비즈니스 스튜디오를 직접 빌딩해 드립니다.
           </p>
         </div>
 
@@ -426,7 +426,7 @@ export default function EnterprisePage() {
 
         {/* 🏁 SECTION 4: FOOTER COPYRIGHT */}
         <div className="mt-20 pt-8 border-t border-slate-200 text-center text-xs text-slate-400 font-medium">
-          © {currentYear} 크리에이박스(CreAibox). All rights reserved. 본 맞춤 제작 제안서의 판권은 크리에이박스에 소속되어 있습니다.
+          © {currentYear} 크리에이박스(CreaiBox). All rights reserved. 본 맞춤 제작 제안서의 판권은 크리에이박스에 소속되어 있습니다.
         </div>
 
       </div>

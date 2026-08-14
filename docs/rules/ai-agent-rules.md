@@ -27,15 +27,15 @@ AI Agents MUST NOT declare success or finish a user request turn without verifyi
 
 ### 4. Mandatory Infrastructure Branding Rule (인프라 브랜딩 명칭 의무 규칙)
 - NEVER use third-party internal infrastructure names like "Google Drive" or "구글 드라이브" in any user-facing UI, documentation, marketing materials, or API response messages.
-- ALWAYS use **"CreAibox 클라우드 DB"** (or **"creaibox.com 클라우드 DB / 원고 보관함"**).
-- All future documentation, user manuals, marketing materials, and code prompts MUST adhere strictly to "CreAibox 클라우드 DB".
+- ALWAYS use **"CreaiBox 클라우드 DB"** (or **"creaibox.com 클라우드 DB / 원고 보관함"**).
+- All future documentation, user manuals, marketing materials, and code prompts MUST adhere strictly to "CreaiBox 클라우드 DB".
 
 ### 5. Strict Zero Fake Data Rule (가짜 데이터 생성 전면 금지 및 사유 명시 의무)
-- **진짜 데이터가 아니면서 진짜인 척 사용자에게 조작/표현하는 행위를 100% 절대 금지한다.** (CreAibox 신뢰성 최우선 1대 규칙)
+- **진짜 데이터가 아니면서 진짜인 척 사용자에게 조작/표현하는 행위를 100% 절대 금지한다.** (CreaiBox 신뢰성 최우선 1대 규칙)
 - 모든 개발, API 구축, 대시보드 및 서비스 기능 개발 시 **가짜(Mock/Dummy/Fake/Seed) 데이터를 임의로 합성하거나 진짜 데이터처럼 꾸며 사용자에게 노출하지 않는다.**
 - 데이터가 존재하지 않거나 외부 API/DB 수집 가능 범위를 벗어난 경우:
   1. 가짜 데이터를 임의로 생성하거나 진짜처럼 포장하지 말고, **데이터가 없음**을 명확하고 솔직하게 UI에 표시한다.
-  2. 왜 데이터가 없는지 **명확한 사유(예: "CreAibox DB 구축 이전 기간이거나 포털 API 제공 범위 외 데이터입니다")**를 사용자에게 투명하게 설명한다.
+  2. 왜 데이터가 없는지 **명확한 사유(예: "CreaiBox DB 구축 이전 기간이거나 포털 API 제공 범위 외 데이터입니다")**를 사용자에게 투명하게 설명한다.
 
 ### 6. Mandatory Git Push Rule (개발자 직접 명령 전 깃 푸시 절대 금지)
 - **개발자(사용자)가 명시적으로 "깃 푸시해", "git push 수행해"라고 직접 명령하기 전에는 AI 에이전트가 자율적으로 `git push`를 절대 수행하지 않는다.**
@@ -79,6 +79,10 @@ AI Agents MUST NOT declare success or finish a user request turn without verifyi
 - **향후 에이전트가 새로운 메뉴, 미디어 서빙 기능, 혹은 커스텀 웹사이트 빌더 등을 설계/개발할 때는 반드시 "트래픽 0원(Zero Egress) 아키텍처"를 기본 전제로 깔고 설계해야 한다.**
 - **Supabase Storage Egress 방어**: Vercel 프록시(`src/app/api/free-assets/proxy/route.ts`)와 `Cache-Control: immutable` 헤더를 활용하여 Supabase 망의 직접 Egress를 100% 차단한다.
 - **Cloudflare R2 Direct 서빙**: 대규모 트래픽이 예상되는 고화질 에셋(커스텀 웹사이트 배경 이미지 등) 서빙 시에는 Vercel 대역폭 한도 초과(요금 폭탄)를 방지하기 위해 Vercel을 거치지 않고 Cloudflare R2 퍼블릭 도메인을 통해 **다이렉트 서빙(Direct Serving)** 하도록 아키텍처를 설계한다.
+
+### 16. Mandatory Data Moat Architecture Design Rule (데이터 해자 구축을 위한 DB 설계 의무 규칙)
+- **향후 에이전트가 새로운 메뉴나 기능을 위해 DB 스키마를 설계할 때는 반드시 "데이터 해자(Data Moat)"를 염두에 두고 설계해야 한다.**
+- 단순히 현재 기능 구현에만 급급하지 말고, **"유저들이 생성하는 행동 데이터(AI 프롬프트, 선택한 템플릿, 수정/삭제/거절 이력)를 어떻게 수집하여 추후 AI 역학습(Fine-tuning)의 오답 노트로 활용할 것인가?"**를 고민하여 DB 테이블과 컬럼(예: `status = 'DELETED'` 소프트 딜리트, AI 로그 테이블 등)을 사전에 설계에 반영해야 한다.
 
 # ==================================================
 
@@ -247,7 +251,7 @@ Never silently ignore documentation drift.
 
 # --------------------------------------------------
 
-# CreAibox Project Rule
+# CreaiBox Project Rule
 
 # --------------------------------------------------
 
@@ -267,7 +271,7 @@ Examples:
 * Tools
 * Future Studios
 
-This rule applies to all future CreAibox development.
+This rule applies to all future CreaiBox development.
 
 # ==================================================
 
@@ -418,7 +422,7 @@ Database changes are not complete until documentation and SQL files are updated.
 
 ---
 
-## CreAibox Standard
+## CreaiBox Standard
 
 Every major module must maintain:
 
@@ -712,7 +716,7 @@ General UI icons must use lucide-react.
 * **필독 규격**: 앞으로 신설되거나 리팩토링하는 모든 대외 공개용 페이지 및 서브메뉴는 검색엔진(구글, 네이버 등)에 효과적으로 색인 및 노출될 수 있도록 **브랜드 키워드가 포함된 메타데이터를 의무적으로 탑재**해야 합니다.
 
 ### 1. 브랜드 타이틀 포맷 준수
-* 브라우저 타이틀(`title`) 속성에 반드시 **`[도구/게시판/섹션명] | 크리에이박스 CreAibox`** 형식의 브랜딩 키워드가 들어가도록 정의해야 합니다. (예: `AI 스마트 글쓰기 | 크리에이박스 CreAibox`)
+* 브라우저 타이틀(`title`) 속성에 반드시 **`[도구/게시판/섹션명] | 크리에이박스 CreaiBox`** 형식의 브랜딩 키워드가 들어가도록 정의해야 합니다. (예: `AI 스마트 글쓰기 | 크리에이박스 CreaiBox`)
 * 설명글(`description`) 및 관련 핵심 검색어(`keywords`)에도 "크리에이박스", "creaibox" 가 자연스럽게 녹아들도록 기재하십시오.
 
 ### 2. 클라이언트 컴포넌트 이중화 분리 설계 원칙
@@ -741,7 +745,7 @@ General UI icons must use lucide-react.
 
 ## 🔐 비로그인 자유 둘러보기 & 로그인 필수 서비스 팝업 통일 규칙 (Unauthenticated Access & Unified Login Prompt Rule)
 
-앞으로 크리에이박스(CreAibox) 플랫폼 내에 신규 개발하거나 수정하는 모든 서비스, 스튜디오, 대시보드, 도구 화면에 대하여 다음 3대 접근성 및 UX 규칙을 철저히 적용해야 합니다.
+앞으로 크리에이박스(CreaiBox) 플랫폼 내에 신규 개발하거나 수정하는 모든 서비스, 스튜디오, 대시보드, 도구 화면에 대하여 다음 3대 접근성 및 UX 규칙을 철저히 적용해야 합니다.
 
 ### 1. 비로그인 사용자 전면 뷰포트 노출 원칙 (No Full Page Blocking for Guests)
 - 로그인하지 않은 비회원/방문자 사용자라도 플랫폼의 모든 스튜디오 탭, 템플릿 쇼핑, CMS 관리 폼, 도메인 검색, 카테고리 설정, AI 제작 신청서 화면을 자유롭게 구경하고 구조를 탐색할 수 있어야 합니다. ("아, 사이트를 이렇게 관리하고 만드는 거구나"를 직관적으로 파악)

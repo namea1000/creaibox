@@ -1,5 +1,5 @@
 -- =====================================================
--- CreAibox AI Generation Usage Logs Final
+-- CreaiBox AI Generation Usage Logs Final
 -- =====================================================
 
 create table if not exists public.ai_generation_usage_logs (

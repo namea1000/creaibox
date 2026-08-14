@@ -1,6 +1,6 @@
 # 기술 스택 정의 (Tech Stack & Architecture)
 
-`CreAibox` 웹 워크스페이스에서 채택한 프레임워크, 라이브러리 및 주요 디자인 시스템 명세입니다.
+`CreaiBox` 웹 워크스페이스에서 채택한 프레임워크, 라이브러리 및 주요 디자인 시스템 명세입니다.
 
 ---
 
@@ -17,7 +17,7 @@
   - 컴포넌트 마운트 시 불필요한 재호출 방지 (`refetchOnMount: false`).
   - 캐싱 만료 주기 제어 (`staleTime: 10분`, `gcTime: 30분`).
 * **클라이언트 상태 관리 (Client State)**: Zustand v5 (`zustand`)
-  - 네이버 포스트 저장소 (`naverManuscriptStore`) 및 CreAibox 포스트 저장소 (`creaiboxManuscriptStore`)에서 세션 저장소(`sessionStorage`) 영속화 기법 연동.
+  - 네이버 포스트 저장소 (`naverManuscriptStore`) 및 CreaiBox 포스트 저장소 (`creaiboxManuscriptStore`)에서 세션 저장소(`sessionStorage`) 영속화 기법 연동.
   - 마스킹 및 UI 레이아웃 상태 등을 동기화.
 
 ---

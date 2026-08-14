@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-The Brand Subdomain & Custom Domain Blog system enables CreAibox users to launch their personal branding blogs under customized subdomains (e.g., `brand-id.creaibox.com`) or completely independent custom domains (e.g., `mybrand.com`). It bridges AI content generation and direct publication, allowing creators to manage their categories, SEO keys, templates, and analytics under a unified console.
+The Brand Subdomain & Custom Domain Blog system enables CreaiBox users to launch their personal branding blogs under customized subdomains (e.g., `brand-id.creaibox.com`) or completely independent custom domains (e.g., `mybrand.com`). It bridges AI content generation and direct publication, allowing creators to manage their categories, SEO keys, templates, and analytics under a unified console.
 
 ---
 

@@ -1,6 +1,6 @@
  ,,  썸네일 링크 카드(OG Card),
 
-CreAibox의 글쓰기 스튜디오, 뮤직 스튜디오, AI Assistant 에 연결하면 돼.
+CreaiBox의 글쓰기 스튜디오, 뮤직 스튜디오, AI Assistant 에 연결하면 돼.
 참고로 Groq는 이미지 생성은 못하고, 텍스트 생성(글쓰기, 가사, SEO, 채팅) 전용이라고 생각하면 된다.
 
 SDK
@@ -22,8 +22,8 @@ Groq = 빠른 글 생성, 제목 생성, 가사 생성, 요약
 OpenAI = 고품질 보정, 구조화
 Claude = 긴 문서 분석
 
-Groq를 CreAibox의 “빠른 텍스트 생성용 모델 공급자”로 추가하는 구조로 보면 됩니다.
-CreAibox에서는 Groq = 초고속 텍스트 생성 엔진으로 붙이면 좋아요. AI 글쓰기, 뮤직 가사/Suno 프롬프트, 제목 생성, 요약, SEO 분석 등에 바로 사용 가능합니다. Groq는 공식 TypeScript SDK도 제공합니다.
+Groq를 CreaiBox의 “빠른 텍스트 생성용 모델 공급자”로 추가하는 구조로 보면 됩니다.
+CreaiBox에서는 Groq = 초고속 텍스트 생성 엔진으로 붙이면 좋아요. AI 글쓰기, 뮤직 가사/Suno 프롬프트, 제목 생성, 요약, SEO 분석 등에 바로 사용 가능합니다. Groq는 공식 TypeScript SDK도 제공합니다.
 
 * Groq API 생성오류 해결
   Groq 요청 출력 토큰을 동적으로 낮추도록 변경해서 8192를 무조건 예약하지 않게 했어.

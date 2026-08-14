@@ -31,16 +31,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const sectionKey = resolvedParams?.section || "templates";
   const name = sectionNames[sectionKey] || "디자인 스튜디오";
   const title = `${name} - 차세대 디자인 | 크리에이박스 CreAiBox`;
-  const description = `크리에이박스 CreAibox에서 제공하는 차세대 AI 기반 ${name} 솔루션입니다. 브라우저에서 템플릿과 캔버스를 활용하여 웹 배너, 포스터, 유튜브 썸네일을 즉시 무료로 제작해 보세요.`;
+  const description = `크리에이박스 CreaiBox에서 제공하는 차세대 AI 기반 ${name} 솔루션입니다. 브라우저에서 템플릿과 캔버스를 활용하여 웹 배너, 포스터, 유튜브 썸네일을 즉시 무료로 제작해 보세요.`;
   return {
     title,
     description,
     keywords: ["크리에이박스", "creaibox", name, "무료 디자인 툴", "AI 이미지 편집"],
     openGraph: {
-      title: `${title} | 크리에이박스 CreAibox`,
+      title: `${title} | 크리에이박스 CreaiBox`,
       description,
       url: `https://creaibox.com/design/${sectionKey}`,
-      siteName: "CreAibox",
+      siteName: "CreaiBox",
       images: [
         {
           url: "/images/seo/themes.webp",
@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: `${title} | 크리에이박스 CreAibox`,
+      title: `${title} | 크리에이박스 CreaiBox`,
       description,
       images: ["/images/seo/themes.webp"],
     },

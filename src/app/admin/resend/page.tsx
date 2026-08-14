@@ -142,7 +142,7 @@ export default function ResendAdminMonitoringPage() {
             <Mail className="text-blue-500" /> Resend 이메일 & 도메인 모니터링
           </h1>
           <p className="mt-1 text-sm text-zinc-400">
-            CreAibox 커스텀 도메인별 이메일 계정 생성 현황 및 실시간 메일 발/수신 통계를 통합 관리합니다.
+            CreaiBox 커스텀 도메인별 이메일 계정 생성 현황 및 실시간 메일 발/수신 통계를 통합 관리합니다.
           </p>
         </div>
 

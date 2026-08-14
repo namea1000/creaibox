@@ -1,6 +1,15 @@
-# 📅 CreAibox 개발일지 (2026년 8월)
+# 📅 CreaiBox 개발일지 (2026년 8월)
 
-본 문서는 CreAibox 플랫폼의 시스템 구축, 버그 수정, 성능 최적화 및 신규 기능 개발 내역을 일자별로 상세히 기록하는 공식 일지 대장입니다.
+본 문서는 CreaiBox 플랫폼의 시스템 구축, 버그 수정, 성능 최적화 및 신규 기능 개발 내역을 일자별로 상세히 기록하는 공식 일지 대장입니다.
+
+---
+
+## 📅 2026년 8월 14일 (금)
+
+### 1. 🛡️ AI 데이터 해자(Data Moat) 구축을 위한 로깅 및 Soft Delete 체계 도입
+- **`ai_generation_logs` 테이블 신설**: 사용자가 입력한 기획안/프롬프트 원본과 Gemini가 생성한 JSON 결과물을 영구 보존하여 추후 AI 역학습(Fine-tuning) 및 사용자 행동 패턴 분석의 핵심 자산으로 활용할 수 있는 기반을 구축함.
+- **Soft Delete 로직 도입 (`site_sections.status`)**: 기존에 사용자가 화면 섹션을 지울 때 DB에서 영구 삭제(Hard Delete)하던 방식을 개선. `site_sections` 테이블에 `status` 컬럼을 추가하고 기본값을 `ACTIVE`로 설정. 사용자가 삭제 시 `DELETED` 상태로만 변경하여, 'AI가 실패한(사용자에게 거절당한) 생성 결과'를 오답 노트로 활용할 수 있도록 보존함.
+- **관련 파일**: `docs/database/client-site-builder-schema.md`, `docs/database/sql/migrations/add_ai_logs_and_soft_delete.sql`
 
 ---
 
@@ -61,11 +70,11 @@
   - `src/app/admin/resend/page.tsx` 및 `src/app/api/admin/resend/route.ts` 구현.
   - Resend REST API 연동으로 등록 도메인 목록(DKIM/SPF/MX 검증 상태), 실시간 이메일 수발신 성공/실패 통계 및 인바운드 메일 모니터링 탭 탑재.
   - Sidebar 관리자 메뉴에 Resend 메일 관제 탭 탑재 및 `/admin` 대시보드 연동 완료.
-- **CreAibox 공식 이메일 4대 계정 헬퍼 모듈 구축 (`src/lib/server/resend-email.ts`)**:
+- **CreaiBox 공식 이메일 4대 계정 헬퍼 모듈 구축 (`src/lib/server/resend-email.ts`)**:
   - `support@creaibox.com`, `no-reply@creaibox.com`, `billing@creaibox.com`, `security@creaibox.com` 계정 파이프라인 정립.
   - 회원가입/소셜 로그인(네이버, 카카오 등) 및 비밀번호 변경 등 보안/환영 메일 자동 발송 트리거 연동 (`src/app/api/auth/callback/naver/route.ts`, `src/app/auth/callback/route.ts`).
 - **Resend Inbound Webhook 수신 파이프라인 개발 (`src/app/api/webhooks/resend-inbound/route.ts`)**:
-  - 외부에서 CreAibox 공식 이메일 주소로 수신되는 수신 메일을 실시간 감지하여 DB 및 관리자 뷰에 연동하는 웹훅 구축.
+  - 외부에서 CreaiBox 공식 이메일 주소로 수신되는 수신 메일을 실시간 감지하여 DB 및 관리자 뷰에 연동하는 웹훅 구축.
 - **📖 관련 기술 아키텍처 & 운용 매뉴얼 수록**:
   - `docs/arch/resend-email-monitoring-architecture.md` (아키텍처 명세서)
   - `docs/project/manual/resend-email-domain-monitoring-manual.md` (실무 운용 매뉴얼)
@@ -97,7 +106,7 @@
   - PG 키 미설정 시에도 개발 및 기능 흐름을 테스트할 수 있는 **안전 모의 결제(Mock Test Approval) 모드** 탑재.
 - **도메인 결제 & 1초 Edge IP 연결 백엔드 연동 (`src/app/api/domains/buy/route.ts`)**:
   - 결제 승인 후 Vercel Domains API(`POST /v5/domains/buy`) 호출로 1초 실시간 소유권 매입.
-  - CreAibox 글로벌 CDN Edge IP (`76.76.21.21` A Record) 및 SSL 보안 인증서 1초 자동 바인딩.
+  - CreaiBox 글로벌 CDN Edge IP (`76.76.21.21` A Record) 및 SSL 보안 인증서 1초 자동 바인딩.
   - 회원 프로필 DB(`profiles.extra_configs.purchased_domains`) 소유권 보관 기록.
 - **비즈니스 회원 0원 혜택 문구 삭제 & 전 회원 동일 투명 도매가 결제 적용**:
   - 사용자 지시에 따라 비즈니스 회원 0원 혜택 문구를 투명 무마진 도매가 원 원화 결제 시스템 안내로 교체 반영.
@@ -175,7 +184,7 @@
 
 ### 11. 🔮 글래스모피즘 커스텀 결제 확인 모달 컴포넌트 개발 & "1초 매입" 어색한 문구 완전 삭제
 - **신규 커스텀 모달 제작 (`src/components/common/PaymentConfirmModal.tsx`)**:
-  - 구식 브라우저 시스템 confirm 팝업을 대체하는 CreAibox 프리미엄 글래스모피즘 Dark Aurora 디자인 모달 신규 제작.
+  - 구식 브라우저 시스템 confirm 팝업을 대체하는 CreaiBox 프리미엄 글래스모피즘 Dark Aurora 디자인 모달 신규 제작.
 - **문구 정제 및 사용자 지시 반영 (`src/app/pricing/page.tsx` & `src/lib/client/payment.ts`)**:
   - 어색하고 과장된 "1초 매입하시겠습니까?" 문구 완전 삭제.
   - "포트원(PortOne V2) 안전 전자결제 모듈을 통해 보안 결제가 진행됩니다. 결제를 승인하고 서비스를 이용하시겠습니까?"로 품격 높은 정식 결제 확인 문구 반영 완료.
@@ -688,3 +697,111 @@
 - **히스토리 폴링(Polling) 아키텍처**: 2번/3번 "전체 페이지 이관" 메뉴 실행 시, 백그라운드 Worker(Cron)가 서브페이지를 처리하는 동안 프론트엔드에서 5초마다 API를 폴링하여 `migration_queue` 상태를 실시간 체크하도록 설계.
 - **UI/UX 고도화**: 대시보드의 '나의 홈페이지 AI 이관 히스토리' 카드 내부에 **실시간 퍼센테이지(%), 완료된 페이지 수, 예상 남은 시간(분/초)**을 애니메이션 그라데이션 프로그레스 바로 화려하게 렌더링. 
 - 이관이 완전히 끝날 때까지 유저가 기다림의 지루함 없이 직관적으로 현황을 파악할 수 있도록 100% 실시간 연동 완료.
+
+### 2026-08-13: AI 사이트 이관 아키텍처 크리티컬 버그 2종 핫픽스 (Hotfix)
+- **1. 2차 메가 메뉴 유실 및 레이아웃 파괴 버그 수정 (Skip Injection)**:
+  - 기존에는 이관된 사이트에도 `htmlInjector.ts`가 서브페이지 목록을 헤더 `nav` 컨테이너에 강제로 밀어 넣어서(Append) 100개의 링크가 세로로 뭉치는 레이아웃 파괴 현상이 발생.
+  - 이관 원본 사이트(`creation_source === "migration"`)일 경우, 원본 헤더에 이미 완벽한 메가 메뉴 링크가 내장되어 있으므로 **인위적인 동적 메뉴 주입을 완전히 스킵(Skip)**하도록 아키텍처를 변경하여, 원본 2차/3차 다이내믹 메가 메뉴 디자인을 단 1%의 훼손도 없이 100% 보존 완료.
+- **2. 헤더 메뉴 좌/우 쏠림(Un-nesting) 초정밀 강제 교정 패치 (심화)**:
+  - 아임웹/클릭엔처럼 **로고와 메뉴를 한 그룹(좌측)**으로 묶어버리거나, 아보카도(Abocado)처럼 **메뉴와 로그인 버튼을 한 그룹(우측)**으로 묶어버리는 등 AI의 제멋대로인 그룹핑을 완벽 방어.
+  - 추가로, 쇼피파이(Shopify)처럼 `<nav>` 태그 자체가 헤더 통짜 컨테이너로 쓰이고 실제 메뉴는 `div`에 숨어있는 **페이크(Fake) 구조까지 감별(CSS 클래스 탐지)**하는 초정밀 로직 적용.
+  - `htmlInjector.ts` 런타임 엔진이 중첩된 진짜 메뉴 컨테이너를 정확히 찾아낸 뒤, **좌측 로고 그룹 뒤(After) 또는 우측 버튼 그룹 앞(Before)**으로 강제 적출(Un-nesting)하여 삽입하고 `mx-auto`를 부여함으로써, 100% 무조건 화면 정중앙에 메뉴가 안착되도록 글로벌 레이아웃 알고리즘을 한 단계 더 고도화했습니다.
+- **3. 글로벌 스크롤 상단 고정(Sticky Header) 강제 적용**:
+  - 화면 스크롤 시 헤더가 위로 말려 올라가 사라지는 현상을 수정하기 위해, AI가 생성한 원시 HTML을 감싸는 최상단 React 래퍼(`CustomHeaderWrapper`) 자체에 `sticky top-0 z-[10000]` 속성을 글로벌하게 강제 주입하여, 과거/미래의 모든 사이트 헤더가 무조건 화면 최상단에 영구 고정되도록 조치했습니다.
+- **4. Next.js 브라우저 캐싱 및 Worker 컴파일 에러 수정**:
+  - 프론트엔드의 폴링 Ping 요청이 Next.js 라우트 캐시에 걸려 백엔드 Worker가 깨어나지 않는 현상을 방어하기 위해 프론트엔드 Fetch에 `cache: "no-store"` 속성을 부여하고, Worker 라우트에는 `export const dynamic = "force-dynamic"` 속성을 적용.
+  - Vercel Cron 워커에서 AI 모델명 오타를 수정하고 로컬 테스트용 우회 로직을 제거하여 실서버 100% 최적화 상태로 복원 완료.
+
+### 2026-08-14: 데이터베이스 및 SQL 디렉토리 체계적 폴더 정리 및 인덱스 허브 구축
+- **디렉토리 역할 분리**:
+  - `docs/database/`: 테이블별 상세 스키마 명세서, RLS 보안 정책, 아키텍처 문서(`.md`) 보관
+  - `docs/database/sql/`: Supabase SQL Editor에서 즉시 실행 가능한 순수 DDL 및 RLS 쿼리 파일(`.sql`) 전용 보관
+- **미분류 SQL 파일 이관**:
+  - `docs/database/` 루트에 분산되어 있던 `email_forwarding_rules.sql`, `keyword_tool_reports.sql`, `keyword_trending_history.sql`, `youtube_popular_archive.sql`을 `docs/database/sql/`로 전면 이관 및 정리 완료.
+- **문서 및 SQL 인덱스 가이드 구축**:
+  - `docs/database/README.md`: 27개 이상의 테이블 스키마 문서(`.md`)와 실행 SQL(`.sql`) 간의 1:1 매핑 색인 테이블 작성
+  - `docs/database/sql/README.md`: 계정/관리자, AI/로그, 원고/플래너, 사이트빌더/서브도메인, 리서치/유튜브/트렌드, 뮤직/비디오/에셋 등 7대 기능별 SQL 목록 및 실행 순서 가이드 작성
+- **참조 링크 동기화**:
+  - `docs/project/manual/05_image-and-video/youtube-popular-videos-ranking-guide.md`, `docs/project/todo-roadmap.md` 등 관련 문서의 DDL 파일 경로 최신화 완료.
+
+### 2026-08-14: 커스텀 웹사이트 & 이관 엔진 최신 플래그십 'Gemini 3.7 Flash' 전면 업그레이드
+- **배경**: 구글의 최신 하이브리드 추론 모델 `Gemini 3.7 Flash` 출시에 따라, 기존 임시 모델명(`gemini-3.6-flash`)으로 인해 발생하던 404 모델 통신 오류를 완벽히 해결하고 최신 AI 추론 엔진으로 일괄 업그레이드 진행.
+- **백엔드 API 라우트 모델 교체 (`gemini-3.7-flash`)**:
+  - `src/app/api/studio/site-migration/route.ts` (홈페이지 이관 엔진)
+  - `src/app/api/cron/site-migration-worker/route.ts` (백그라운드 무인 서브페이지 이관 워커)
+  - `src/app/api/studio/site-scan/route.ts` (타겟 사이트 사전 정밀 스캔)
+  - `src/app/api/client-site-builder/plan/route.ts` (클라이언트 사이트 기획자)
+  - `src/app/api/studio/ai-magic-builder/route.ts` (AI 매직 빌더)
+  - `src/app/api/studio/subpage-builder/route.ts` & `plan/route.ts` (서브페이지 AI 빌더 & 자동 기획)
+  - `src/app/api/studio/site-migration/crawl-subpages/route.ts` (서브페이지 크롤링 및 클론)
+  - `src/lib/server/vertex-ai-gemini.ts` (GCP OAuth $300 크레딧 Vertex AI 엔진 후보군 최우선 배치)
+- **프론트엔드 UI 안내 및 프로그레스 텍스트 최신화**:
+  - `MigrationTab.tsx`, `AiMagicBuilderTab.tsx` 내 안내 문구 및 실시간 로딩 메시지를 `Gemini 3.7 Flash`로 업데이트.
+- **AI 호출 안정성 2중 방어 파이프라인(Dual-Pipeline) 구축 & Fallback 깡통 버그 원천 차단**:
+  - `site-migration/route.ts`에 `GoogleGenerativeAI` SDK 직통 호출을 1순위로 배치하여, Vertex AI의 권한/토큰 지연 시에도 즉시 100% 정상 작동하도록 복구.
+  - `ai-magic-builder/route.ts`에 정규식 기반 JSON 매칭 및 방어 로직을 추가하여 마크다운 태그 래핑 시 발생하던 파싱 오류를 원천 차단.
+- **GCP Vertex AI $300 크레딧 엔진 'Gemini 2.5 Pro' 전면 지정**:
+  - `src/lib/server/vertex-ai-gemini.ts`의 기본 모델 및 1순위 후보를 고성능 코딩 모델인 `gemini-2.5-pro`로 전환 완료.
+  - 엔터프라이즈 Vertex AI Model Garden에서 `gemini-2.5-pro` 정상 동작(HTTP 200) 및 $300 크레딧 실시간 소진 검증 완료.
+- **특수 SPA 사이트 무손실 복제 및 이미지 수집 3대 해법 아키텍처 & 실무 매뉴얼 구축**:
+  - 아키텍처 기술 명세서 신설: `docs/arch/03_client-site-builder/spa-and-dynamic-site-migration-architecture.md` (헤드리스 브라우저 렌더링, API 스니핑, AI 스마트 합성 등 3대 파이프라인 및 Dead Image Waterfall 명세)
+  - 실무 운용 가이드 최신화: `docs/project/manual/03_client-site-builder/website-ai-migration-manual.md` (SPA 이관 실무 HOW-TO 및 엑박 방지 원칙 정리)
+- **특수 SPA(Vue/React CSR) 자동 감지 및 헤드리스 브라우저(Headless Chrome) 실전 연동 완료**:
+  - `src/lib/server/headlessScraper.ts` 신규 개발: `@sparticuz/chromium` + `puppeteer-core` 기반 백그라운드 렌더링 및 완성형 DOM 캡처 엔진 탑재.
+  - 버거킹, 스타벅스 등 `<div id="app"></div>`로 본문이 비어있는 사이트 감지 시, 1초간 실제 크롬 브라우저를 띄워 자바스크립트를 실행한 뒤 **실제 신메뉴 사진(42개 이상)과 가격표가 포함된 완성형 DOM을 100% 무손실 캡처**하도록 자동화 완료.
+  - `site-migration/route.ts`, `site-scan/route.ts`, `ai-magic-builder/route.ts`에 전면 연동 완료.
+  - 엑박 방지 Dead Image Waterfall: 외부 링크 404/DNS 에러 발생 시 Unsplash 고화질 사진으로 자동 대체 다운로드 처리.
+- **사진 전용 3초 슬라이더 컴포넌트(`HeroImageSlider`) 및 복합 2단 히어로 복제 엔진 탑재**:
+  - `src/app/clients/dynamic-renderer/components/HeroImageSlider.tsx` 신규 개발: 3초 자동 롤링, 원형 도트(Pagination Dots) 인디케이터, 재생/일시정지 토글, 부모 컨테이너 크기 맞춤형 반응형 렌더링 탑재.
+  - `DynamicSection.tsx`에 비디오(AdvancedMediaCarousel) vs 순수 사진(HeroImageSlider) 스마트 자동 분기 렌더러 연결.
+  - `PRO-CLONING RULE 8.5` 신설: 버거킹처럼 [좌측 70% 슬라이더 + 우측 30% 배너/매장찾기 카드] 2단 분할 레이아웃을 화면 전체로 펴지 않고 원본의 그리드와 가로세로 비율 그대로 100% 복제하도록 프롬프트 지침 고도화 완료.
+- **인터랙티브 광고영상 유튜브 모달/인라인 듀얼 플레이어 엔진(`UniversalVideoModal`) 탑재**:
+  - `src/app/clients/dynamic-renderer/components/UniversalVideoModal.tsx` 신규 개발 및 클라이언트 레이아웃 전역 마운트.
+  - 버거킹 등 3단 광고영상 카드 클릭 시 화면 중앙에 고화질 유튜브 영상이 팝업(모달)으로 시원하게 재생되며, 단독 비디오 섹션은 인라인(제자리)으로 즉시 재생되는 하이브리드 플레이어 탑재.
+  - `PRO-CLONING RULE 9` 신설: 원본 사이트의 광고/홍보 영상 URL 및 YouTube ID를 추출하여 `data-video-mode="modal | inline"`과 함께 인터랙티브 재생 카드로 1:1 완벽 이관하도록 지침 연동.
+- **초광폭 컨테이너 가로폭 완벽 동기화 엔진 탑재 (`PRO-CLONING RULE 10`)**:
+  - 기존 `max-w-7xl` (1280px) 및 `max-w-5xl`에 갇혀 양옆 여백이 과도하게 남아 카드가 좁아 보이던 현상을 타파.
+  - 버거킹, 나이키 등 최신 와이드 웹사이트 표준인 `max-w-screen-2xl` (1536px) / `max-w-[1440px]`, `px-4 md:px-8 xl:px-12`를 전면 채택하여, 본문 카드들이 화면을 큼직하고 시원하게 꽉 채우도록 원본과 100% 동일한 대화면 가로폭 동기화 완료.
+- **아이폰/스마트폰 목업 프레임 컴포넌트(`SmartphoneMockup`) 및 앱 프로모션 복제 엔진(`PRO-CLONING RULE 11`) 탑재**:
+  - `src/app/clients/dynamic-renderer/components/SmartphoneMockup.tsx` 신규 개발: 다이나믹 아일랜드 노치, 스피커 슬릿, 베젤 반사광, 홈 인디케이터 바 및 입체 드롭 섀도우를 갖춘 아이폰 디바이스 프레임 구현.
+  - `DynamicSection.tsx`에 `app_download` 섹션 렌더러 지원 추가.
+  - `PRO-CLONING RULE 11` 신설: 모바일 앱 프로모션 섹션 복제 시 날것 캡처 이미지 대신 스마트폰 목업 프레임에 담아 렌더링하고, 우측에 둥근 해시태그 배지 + QR코드 + 스토어 다운로드 버튼 2개를 1:1 완벽 배치하도록 프롬프트 지침 고도화 완료.
+- **3열 비대칭 벤토 그리드 레이아웃 보존 엔진 탑재 (`PRO-CLONING RULE 7.5`)**:
+  - 4개 아이템(텍스트 2개 + 사진 2개)으로 구성된 스토리 섹션이 2열 그리드로 쪼개져 4번째 카드가 바닥으로 거대하게 떨어지던 왜곡 현상을 원천 해결.
+  - 1열(좌측 텍스트 2개 세로 스택) + 2열(중앙 SMART QSR 사진 카드) + 3열(우측 수상실적 사진 카드)이 1:1:1로 나란히 3열 정렬되는 `grid grid-cols-1 md:grid-cols-3 items-stretch` 비대칭 벤토 그리드 표준화 완료.
+- **자사몰 내부 서브페이지 상대경로 100% 보존 엔진 탑재 (`CRITICAL RULE 2 강화`)**:
+  - 모든 배너 카드, 메뉴 링크 및 버튼 클릭 시 `href="#"` 더미 링크를 100% 금지하고 원본의 실제 내부 상대경로(`/story/esgbusiness`, `/story/whyburgerking`, `/menu/main` 등)를 정확하게 추출하여 매핑.
+  - 외부 타사 도메인 이탈을 방지하고, CreaiBox 내 자사몰(`burgerking4.localhost:3000/...`) 안에서 0.01초 만에 서브페이지를 원활하게 탐색하도록 내부 라우팅 보존 완비.
+- **15대 소셜 미디어 풀컬러 브랜드 배지 컴포넌트(`SocialMediaIcons`) 및 푸터 연동 엔진(`PRO-CLONING RULE 12`) 탑재**:
+  - `src/app/clients/dynamic-renderer/components/SocialMediaIcons.tsx` 신규 개발: 인스타그램(그라디언트), 유튜브(레드), 페이스북(블루), X(블랙), 카카오톡(옐로우), 네이버 블로그/카페(그린), 당근마켓, 브런치, 틱톡, 링크드인, 디스코드, 텔레그램, 깃허브, 왓츠앱 등 15대 플랫폼의 공식 브랜드 컬러 및 벡터 SVG 탑재.
+  - `Footer.tsx`에 `SocialMediaIconList`를 연동하여 기본 흑백 회색 아이콘을 생생한 컬러 원형 배지로 전면 교체.
+  - `PRO-CLONING RULE 12` 신설: 푸터 복제 시 흑백 단색 대신 원본과 동일한 생생한 공식 브랜드 컬러 배지 아이콘으로 1:1 완벽 생성하도록 지침 연동.
+- **헤더 좌측 브랜드 로고 100% 무손실 추출 및 타이포그래피 안전망 탑재 (`PRO-CLONING RULE 5.4`)**:
+  - 원본의 인라인 `<svg>` 벡터 로고 또는 `<img src="...">`를 누락 없이 1:1 복제.
+  - SVG나 이미지가 CSS 스프라이트 형태여서 추출이 어려운 경우에도 빈칸으로 남기지 않고 브랜드 고유 컬러와 폰트를 적용한 볼드 타이포그래피 로고(`BURGER KING`)를 즉시 렌더링하도록 3단계 로고 방어막 완비.
+- **웹사이트 이관 완벽 복제 「총 15종 인터랙티브 풀스펙 컴포넌트 팩」 그랜드 릴리즈 및 대고객 홍보/실무 매뉴얼 완비**:
+  - 8대 신규 표준 컴포넌트(`InteractiveAccordion`, `InfiniteLogoMarquee`, `InteractiveTabs`, `AnimatedCounter`, `TestimonialCarousel`, `BeforeAfterSlider`, `PricingTable`, `LocationMapCard`) + 7대 미디어/특화 컴포넌트(`UniversalVideoModal`, `SmartphoneMockup`, `SocialMediaIcons`, `HeroImageSlider`, `AdvancedMediaCarousel`, `AdvancedContentCarousel`, `DynamicConsultationForm`) 총 15종 완전체 구축.
+  - `DynamicSection.tsx`에 15종 컴포넌트 전면 마운트 및 `site-migration/route.ts`의 `PRO-CLONING RULE 13` 연동 완료.
+  - 실무 운용 매뉴얼(`website-ai-migration-manual.md` 섹션 14) 및 아키텍처 기술서(`hero-slider-and-interactive-video-architecture.md` 섹션 9)에 세일즈 피치, 활용 분야별 총람, 대고객 마케팅 포인트 100% 최신화 완료.
+- **0초 실시간 인터넷 라이브 배포 및 네이버/구글 3단계 검색엔진 색인(Ping) 홍보 가이드 수록 (v1.13)**:
+  - 와일드카드 서브도메인(`*.creaibox.com`) 0초 배포 체계, SEO 메타데이터/OG 태그 100% 주입, 동적 사이트맵 제공, Google Indexing API 및 IndexNow 오픈 프로토콜 실시간 핑 발송 파이프라인 매뉴얼(섹션 15) 완비.
+- **스마트폰 목업 내부 멀티 이미지 자동 롤링, QR 엑박 방어 & 럭셔리 블랙 스토어 다운로드 버튼 업그레이드 (v1.14)**:
+  1. `SmartphoneMockup.tsx`: 스마트폰 화면 내 여러 장의 모바일 앱 캡처 이미지를 3.5초마다 부드럽게 페이드 전환하는 자동 롤링 슬라이더 및 도트 인디케이터 탑재.
+  2. QR 코드 엑박 방어: 깨지거나 유실된 QR 이미지 URL 대신 선명한 모던 벡터 SVG QR 코드를 자동 렌더링하도록 Fallback 안전망 구축 (엑박 발생률 0%).
+  3. 럭셔리 블랙 스토어 버튼: 작고 밋밋하던 버튼을 공식 Google Play & Apple App Store 공식 로고 SVG 및 볼드 타이포그래피를 적용한 세련된 블랙 라운드 버튼(`bg-black hover:scale-102`)으로 전면 고도화.
+- **헤드리스 크롬 Swiper 19+ 슬라이드 전수 캡처 및 히어로 분할 슬라이더(`hero_split_slider`) 2단 그리드 엔진 완비 (v1.15)**:
+  1. `headlessScraper.ts`: Swiper/Slick 캐러셀의 다음 버튼 및 인스턴스를 최대 20회 자동 순회 클릭하여 가상 DOM에 숨겨진 19장 전체 이미지를 100% 렌더링 및 캡처하도록 스크래퍼 업그레이드.
+  2. `HeroImageSlider.tsx`: 마우스 호버 시 부드럽게 나타나는 좌우 반투명 화살표 네비게이션 버튼(`ChevronLeft`, `ChevronRight`)과 3.5초 자동 페이드 롤링 완벽 보장.
+  3. `DynamicSection.tsx` & `PRO-CLONING RULE 8.5`: 버거킹 스타일 히어로 섹션을 정적 HTML 대신 `section_type: "hero_split_slider"` 리액트 컴포넌트로 묶어 [좌 70% 슬라이더 + 우 30% 배너 2개]를 완벽하게 조합 렌더링.
+- **광고영상 카드 그리드 & 16:9 유튜브 자동재생 모달 전용 컴포넌트(`VideoCardGrid`) 구축 (v1.16)**:
+  1. `VideoCardGrid.tsx`: 3열 비디오 썸네일 카드, 중앙 반투명 재생 버튼(`Play`), 호버 리액션 및 카드 클릭 시 화면 중앙에 16:9 고화질 유튜브 CF 팝업이 즉시 뜨며 0초 만에 자동 재생되는 인터랙티브 모달 컴포넌트 신규 개발.
+  2. `DynamicSection.tsx` & `PRO-CLONING RULE 9`: '광고영상', 'TV-CF' 섹션을 단순 정적 이미지가 아닌 `section_type: "video_grid"` 리액트 컴포넌트로 100% 자동 바인딩.
+- **「초안(Draft/Preview) 안전 검토 ➔ 정식 라이브 배포(Publish)」 2단계 파이프라인 및 임의 난수 프리뷰 서브도메인 엔진 완비 (v1.17)**:
+  1. `route.ts` & `ai-magic-builder/route.ts`: 이관 및 매직 빌더 생성 시 무조건 `[브랜드명]-[랜덤4자리].creaibox.com` (예: `burgerking-7f3b`)의 비공개 초안(`status: 'DRAFT'`)으로 생성하여 상표권/피싱/중복 콘텐츠 리스크를 0%로 원천 차단.
+  2. `page.tsx` & 메타태그: 초안 사이트 접속 시 `<meta name="robots" content="noindex, nofollow" />`를 기본 주입하여 검색엔진 색인을 방어하고, 상단에 `[ ⚠️ AI 이관 테스트 및 미리보기 모드 (비공개 초안) ]` 안전 띠 배너 노출.
+  3. `promote-domain/route.ts`: 시스템 예약어(`admin`, `api`, `login` 등) 및 타인 점유 도메인 원천 차단, 내 이전 테스트 사이트와의 충돌 시 원클릭 스왑/덮어쓰기 지원하는 3단계 도메인 승격 API 구축.
+  4. `MigrationTab.tsx` & `AiMagicBuilderTab.tsx`: 이관 및 매직 빌더 히스토리 카드에 `🟡 초안 / 미리보기(비공개)` vs `🟢 라이브` 배지, `[ 🚀 정식 배포 / 도메인 지정 ]` 팝업 모달, `[ 🗑️ 삭제 ]` 버튼 전면 탑재 및 플랫폼 표준 통합 완료.
+  5. `history/route.ts`: 기존에 생성되어 있던 모든 레거시 사이트들을 DB에서 실시간 일괄 `status: 'DRAFT'`(초안/미리보기)로 자동 마이그레이션하고, 서브도메인(`brand_id`)도 `[브랜드명]-[랜덤4자리]`(예: `burgerking-7f3b`)로 일괄 자동 전환하여 100% noindex 및 완벽 격리 완료.
+  6. `proxy.ts`: 미들웨어에서 `client_sites` 조회 시 `status: 'ACTIVE'` 하드코딩 필터를 제거하여, `DRAFT`, `PUBLISHED`, `INACTIVE` 등 모든 상태의 커스텀 사이트가 `dynamic-renderer`로 정확하게 라우팅되도록 완전 해결.
+- **글로벌 웹 스크래핑 1위 기업 Apify (apify.com, YC W15) 경쟁사 분석 및 벤치마킹 전략 수록**:
+  1. `global-and-domestic-competitor-analysis.md`: Apify의 비즈니스 모델(헤드리스 브라우저 클라우드, Actor 마켓플레이스), 한계점(Raw Data 추출 툴의 한계), 그리고 완성형 웹사이트를 10초 만에 조립·배포하는 CreaiBox의 압도적 초격차 우위 분석 및 향후 백엔드 파트너십 전략 심층 수록 완료.

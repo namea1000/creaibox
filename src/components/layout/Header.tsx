@@ -371,12 +371,12 @@ export default function Header() {
           <Link href="/" className="flex h-10 items-center transition hover:scale-[1.02] active:scale-[0.98]">
             <img
               src="/logo.png"
-              alt="CreAibox"
+              alt="CreaiBox"
               className="h-8 w-auto object-contain dark:hidden"
             />
             <img
               src="/logo_dark.png"
-              alt="CreAibox"
+              alt="CreaiBox"
               className="h-8 w-auto object-contain hidden dark:block"
             />
           </Link>

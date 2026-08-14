@@ -1,7 +1,7 @@
 # Resend 이메일 & 도메인 통합 모니터링 시스템 아키텍처 (`docs/arch/resend-email-monitoring-architecture.md`)
 
 ## 1. 개요 (Overview)
-본 문서는 CreAibox 관리자 센터(`/admin/resend`) 내 구축된 **Resend 이메일 계정, 등록 도메인 검증 상태, 실시간 메일 수신(Inbound) 및 발송(Outbound) 이력 통합 모니터링 시스템**의 기술 아키텍처 명세서입니다.
+본 문서는 CreaiBox 관리자 센터(`/admin/resend`) 내 구축된 **Resend 이메일 계정, 등록 도메인 검증 상태, 실시간 메일 수신(Inbound) 및 발송(Outbound) 이력 통합 모니터링 시스템**의 기술 아키텍처 명세서입니다.
 
 ---
 
@@ -74,7 +74,7 @@ sequenceDiagram
           "isActive": true,
           "createdAt": "2026-08-05T00:00:00Z",
           "ownerEmail": "owner@creaibox.com",
-          "ownerNickname": "CreAibox개발자"
+          "ownerNickname": "CreaiBox개발자"
         }
       ]
     }

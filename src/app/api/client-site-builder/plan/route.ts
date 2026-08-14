@@ -131,7 +131,7 @@ export async function POST(req: Request) {
       } else {
         activeProvider = "gemini";
         activeApiKey = apiKey;
-        activeModel = model || "gemini-3.6-flash";
+        activeModel = model || "gemini-3.7-flash";
       }
     } else {
       // Fallback to server env variables
@@ -141,7 +141,7 @@ export async function POST(req: Request) {
       if (serverGeminiKey) {
         activeProvider = "gemini";
         activeApiKey = serverGeminiKey;
-        activeModel = "gemini-3.6-flash";
+        activeModel = "gemini-3.7-flash";
       } else if (serverGroqKey) {
         activeProvider = "groq";
         activeApiKey = serverGroqKey;

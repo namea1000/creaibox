@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-Music Studio 데이터베이스는 CreAibox의 AI 음악 제작 시스템 저장소이다.
+Music Studio 데이터베이스는 CreaiBox의 AI 음악 제작 시스템 저장소이다.
 
 이 스키마는 다음 기능을 지원한다.
 

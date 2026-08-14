@@ -1,6 +1,6 @@
 # 📖 [매뉴얼] 구글 인덱싱 API (Google Indexing API) 연동 및 운용 가이드
 
-본 문서는 크리에이박스(CreAibox) 플랫폼에 구축된 **구글 실시간 색인 핑 전송 시스템(Google Web Search Indexing API)**의 도입 필요성, 핵심 장점, 단계별 연동 방법 및 백엔드 운영 가이드라인을 정의한 정식 기술 매뉴얼입니다.
+본 문서는 크리에이박스(CreaiBox) 플랫폼에 구축된 **구글 실시간 색인 핑 전송 시스템(Google Web Search Indexing API)**의 도입 필요성, 핵심 장점, 단계별 연동 방법 및 백엔드 운영 가이드라인을 정의한 정식 기술 매뉴얼입니다.
 
 ---
 
@@ -37,7 +37,7 @@
 ```mermaid
 sequenceDiagram
     actor User as 크리에이터 / 작성자
-    participant CB as CreAibox 백엔드 API
+    participant CB as CreaiBox 백엔드 API
     participant GSC as Google Search Console
     participant GAPI as Google Indexing API
 
@@ -49,7 +49,7 @@ sequenceDiagram
 ```
 
 ### 📌 Step 1. GCP 콘솔 API 활성화
-1. [Google Cloud Console](https://console.cloud.google.com/) 접속 및 프로젝트 선택 (`CreAibox`).
+1. [Google Cloud Console](https://console.cloud.google.com/) 접속 및 프로젝트 선택 (`CreaiBox`).
 2. **`API 및 서비스` > `라이브러리`** 이동.
 3. **`Web Search Indexing API`** (또는 `Indexing API`) 검색 후 **`사용 (Enable)`** 클릭.
 
@@ -109,7 +109,7 @@ GOOGLE_INDEXING_CREDENTIALS='{"type":"service_account","project_id":"project-517
   5. **Example URL**: `https://creaibox.com/blog`
   6. **Use Case**: 드롭다운에서 `Content Publishing` 또는 `Other` (또는 `JobPosting` / `BroadcastEvent`) 선택.
   7. **Request Description / Justification (신청 사유)**:
-     > *"We operate CreAibox (creaibox.com), an all-in-one digital blogging and website builder platform that enables content creators, businesses, and bloggers to build custom websites and publish active blogs. As we scale up our platform service, we expect thousands of creators and users to build websites and publish multiple blog posts and pages daily. To ensure prompt indexing and seamless search visibility for all our users' growing content from day one, we kindly request a daily Indexing API quota of 10,000 requests to notify Googlebot in real time."*
+     > *"We operate CreaiBox (creaibox.com), an all-in-one digital blogging and website builder platform that enables content creators, businesses, and bloggers to build custom websites and publish active blogs. As we scale up our platform service, we expect thousands of creators and users to build websites and publish multiple blog posts and pages daily. To ensure prompt indexing and seamless search visibility for all our users' growing content from day one, we kindly request a daily Indexing API quota of 10,000 requests to notify Googlebot in real time."*
 
 ### 4.3 스마트 핑 낭비 방지 & 최종 핑 보장 알고리즘 (Smart Throttling & Trailing Edge Ping)
 유저가 글을 발행한 후 short-term으로 수정 및 재발행을 연속해서 누를 경우 핑 쿼터 낭비를 방지하고 최신 완성본의 수집을 보장하기 위한 3중 방어 메커니즘입니다.

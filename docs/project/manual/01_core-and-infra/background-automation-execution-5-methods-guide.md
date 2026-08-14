@@ -1,6 +1,6 @@
-# 🤖 CreAibox 백그라운드 무인 자동 실행 5종 방식 및 SEO 핑 / 서비스 로드맵 매뉴얼
+# 🤖 CreaiBox 백그라운드 무인 자동 실행 5종 방식 및 SEO 핑 / 서비스 로드맵 매뉴얼
 
-이 문서는 CreAibox 플랫폼의 **백그라운드 무인 자동 실행(Background Scheduler) 5가지 아키텍처**, **4개 도메인 유형별 SEO 자동 색인 핑(Ping) 동작 원리**, **현재 즉시 구동 중인 무인 서비스**, 그리고 **향후 장기적으로 확장할 5대 핵심 무인 자동화 로드맵**을 총망라한 운용 매뉴얼입니다.
+이 문서는 CreaiBox 플랫폼의 **백그라운드 무인 자동 실행(Background Scheduler) 5가지 아키텍처**, **4개 도메인 유형별 SEO 자동 색인 핑(Ping) 동작 원리**, **현재 즉시 구동 중인 무인 서비스**, 그리고 **향후 장기적으로 확장할 5대 핵심 무인 자동화 로드맵**을 총망라한 운용 매뉴얼입니다.
 
 ---
 
@@ -14,7 +14,7 @@
 - **특징**: 설정이 가장 간편하며 Next.js 및 Vercel 인프라와 100% 밀접 연동됩니다.
 
 ### ② 🟢 Supabase DB 내장 스케줄러 (`pg_cron` + `pg_net`)
-- **개념**: CreAibox 클라우드 DB(PostgreSQL) 내부에 설치된 `pg_cron`(데이터베이스 스케줄러)과 `pg_net`(비동기 HTTP 요청) 확장을 활용하여, DB 엔진이 지정된 시간에 직접 웹서버 API URL을 호출하는 방식입니다.
+- **개념**: CreaiBox 클라우드 DB(PostgreSQL) 내부에 설치된 `pg_cron`(데이터베이스 스케줄러)과 `pg_net`(비동기 HTTP 요청) 확장을 활용하여, DB 엔진이 지정된 시간에 직접 웹서버 API URL을 호출하는 방식입니다.
 - **특징**: 웹서버나 프론트엔드 환경과 무관하게 DB 자체에서 100% 무인 독립 구동됩니다.
 
 ### ③ ☁️ NCP (Naver Cloud Platform) Cloud Functions / Trigger
@@ -26,14 +26,14 @@
 - **특징**: 완전 무료이며, GitHub 탭에서 실행 이력과 실패 로그를 투명하게 추적 및 관리할 수 있습니다.
 
 ### ⑤ 🔗 외부 무인 Webhook 서비스 (cron-job.org / EasyCron 등)
-- **개념**: 외부 전문 웹훅 모니터링/스케줄링 서비스에 CreAibox의 보안 API 엔드포인트를 등록하여 24시간 원하는 주기로 백그라운드 호출시키는 방식입니다.
+- **개념**: 외부 전문 웹훅 모니터링/스케줄링 서비스에 CreaiBox의 보안 API 엔드포인트를 등록하여 24시간 원하는 주기로 백그라운드 호출시키는 방식입니다.
 - **특징**: 가입 및 설정이 간단하고, 서비스 장애 시 이메일/슬랙 알림을 받아볼 수 있습니다.
 
 ---
 
 ## 2. 🌐 4가지 도메인 케이스별 SEO 자동 색인 핑(Ping) 동작 방식
 
-CreAibox의 SEO 자동 색인 엔진은 어떤 형태의 도메인이든 **전체 풀 URL(Full URL Address)**을 기준으로 검색엔진봇에 즉시 핑을 전송하므로 4가지 케이스 모두 100% 완벽하게 구동됩니다.
+CreaiBox의 SEO 자동 색인 엔진은 어떤 형태의 도메인이든 **전체 풀 URL(Full URL Address)**을 기준으로 검색엔진봇에 즉시 핑을 전송하므로 4가지 케이스 모두 100% 완벽하게 구동됩니다.
 
 | 구분 | 도메인 유형 예시 | 핑 전송 URL 예시 | 검색엔진 수집 방식 |
 | :--- | :--- | :--- | :--- |
@@ -122,10 +122,10 @@ CreAibox의 SEO 자동 색인 엔진은 어떤 형태의 도메인이든 **전�
 ### ④ 회원 유료/VIP 멤버십 만료 및 혜택 자동 정돈
 - **서비스 내용**: 유료 플랜 만료 3일 전 회원에게 만료 예정 알림톡/메일을 발송하고, 만료일 자정에 회원 등급 및 AI 생성 권한을 무인으로 자동 조정.
 
-### ⑤ CreAibox 클라우드 DB 주간 자동 백업 & 유휴 스토리지 다이어트
+### ⑤ CreaiBox 클라우드 DB 주간 자동 백업 & 유휴 스토리지 다이어트
 - **서비스 내용**: 매주 일요일 새벽 주요 유저 데이터 및 원고를 안전 백업 파일로 자동 압축 보관하고, 오래된 유휴 캐시 데이터를 자동 청소하여 서버 스토리지를 항시 최적 상태로 유지.
 
 ---
 
 ## 💡 요약 및 운용 정책
-CreAibox의 자동 수집 라우트([`/api/cron/sync-trending`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/cron/sync-trending/route.ts) 및 [`/api/cron/sync-keywords`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/cron/sync-keywords/route.ts))는 표준 HTTP REST 규격을 준수하므로, 위의 **5가지 방식 중 어떤 방식을 적용하거나 2중 병행하더라도 100% 완벽하게 무인 작동**합니다.
+CreaiBox의 자동 수집 라우트([`/api/cron/sync-trending`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/cron/sync-trending/route.ts) 및 [`/api/cron/sync-keywords`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/cron/sync-keywords/route.ts))는 표준 HTTP REST 규격을 준수하므로, 위의 **5가지 방식 중 어떤 방식을 적용하거나 2중 병행하더라도 100% 완벽하게 무인 작동**합니다.

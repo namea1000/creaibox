@@ -1,6 +1,6 @@
 # API 키 금고 및 보안 설계 (API Vault & Crypto Security)
 
-`CreAibox`는 공용 API 키(Gemini, Groq, Naver/Google Search 등)를 탈취당하지 않으면서 데이터베이스에 보존하고 가동률을 최대화할 수 있도록 암호화 및 자동 복구 메커니즘을 적용하고 있습니다.
+`CreaiBox`는 공용 API 키(Gemini, Groq, Naver/Google Search 등)를 탈취당하지 않으면서 데이터베이스에 보존하고 가동률을 최대화할 수 있도록 암호화 및 자동 복구 메커니즘을 적용하고 있습니다.
 
 ---
 

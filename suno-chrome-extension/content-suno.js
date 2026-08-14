@@ -1,6 +1,6 @@
 // content-suno.js - Injected into Suno.com
 
-console.log("[CreAibox Suno Connector] content-suno.js script injected.");
+console.log("[CreaiBox Suno Connector] content-suno.js script injected.");
 
 // Scraper scheduler reference
 let scraperIntervalId = null;
@@ -14,7 +14,7 @@ function isExtensionContextValid() {
 // Global error listener to immediately self-destruct if Chrome invalidates our context mid-execution
 window.addEventListener("error", (event) => {
   if (event.message && event.message.includes("Extension context invalidated")) {
-    console.warn("[CreAibox Connector] Extension context invalidated detected globally. Halting execution threads.");
+    console.warn("[CreaiBox Connector] Extension context invalidated detected globally. Halting execution threads.");
     if (scraperIntervalId) {
       clearInterval(scraperIntervalId);
       scraperIntervalId = null;
@@ -45,13 +45,13 @@ function applyPrefillData() {
     chrome.runtime.sendMessage({ type: "GET_PREFILL_DATA" }, (response) => {
       const err = chrome.runtime.lastError;
       if (err) {
-        console.log("[CreAibox Connector] Prefill check skipped or background asleep.");
+        console.log("[CreaiBox Connector] Prefill check skipped or background asleep.");
         return;
       }
 
       if (response && response.prefillData) {
         const data = response.prefillData;
-        console.log("[CreAibox Connector] Found active prefill payload, initializing injection...", data);
+        console.log("[CreaiBox Connector] Found active prefill payload, initializing injection...", data);
 
         let retryCount = 0;
         const maxRetries = 20;
@@ -76,7 +76,7 @@ function applyPrefillData() {
             clearInterval(timer);
             
             if (styleTextarea && data.prompt) {
-              console.log("[CreAibox Connector] Injecting style tags:", data.prompt);
+              console.log("[CreaiBox Connector] Injecting style tags:", data.prompt);
               injectValueIntoReactTextarea(styleTextarea, data.prompt);
             }
 
@@ -91,7 +91,7 @@ function applyPrefillData() {
                   'textarea[placeholder*="lyrics"], textarea[placeholder*="Lyrics"], textarea[placeholder*="가사"]'
                 );
                 if (lyricsInput) {
-                  console.log("[CreAibox Connector] Injecting custom lyrics:", data.lyricsText);
+                  console.log("[CreaiBox Connector] Injecting custom lyrics:", data.lyricsText);
                   injectValueIntoReactTextarea(lyricsInput, data.lyricsText);
                 }
               }, 500);
@@ -100,7 +100,7 @@ function applyPrefillData() {
             chrome.storage.local.remove("prefillData", () => {
               const tempErr = chrome.runtime.lastError;
             });
-            console.log("[CreAibox Connector] Prefill injection procedure completed.");
+            console.log("[CreaiBox Connector] Prefill injection procedure completed.");
           }
         }, 500);
       }
@@ -156,7 +156,7 @@ function scrapeSongsInCurrentFolder(workspaceId) {
   
   // CRITICAL BYPASS: Never scrape recommended songs from general discover or landing home views
   if (isDiscoverOrHome || !isValidScrapeRoute) {
-    console.log("[CreAibox Scraper] Bypassing song scraping on non-personal home/discover screens.");
+    console.log("[CreaiBox Scraper] Bypassing song scraping on non-personal home/discover screens.");
     return [];
   }
 
@@ -349,11 +349,11 @@ function runScrapeAndSend() {
     }
 
     if (globalAccumulatedSongs.length === 0) {
-      console.log("[CreAibox Scraper] Throttled or found 0 songs. Retaining previous storage cache to prevent blanks.");
+      console.log("[CreaiBox Scraper] Throttled or found 0 songs. Retaining previous storage cache to prevent blanks.");
       return;
     }
 
-    console.log("[CreAibox Connector] Dispatching synced data payload size:", globalAccumulatedSongs.length);
+    console.log("[CreaiBox Connector] Dispatching synced data payload size:", globalAccumulatedSongs.length);
     
     if (!isExtensionContextValid()) return;
 
@@ -384,7 +384,7 @@ function runScrapeAndSend() {
 function startScrapingGeneratedTracks() {
   scraperIntervalId = setInterval(() => {
     if (!isExtensionContextValid()) {
-      console.log("[CreAibox Connector] Scraper detected invalidated context. Cleaning scraper interval.");
+      console.log("[CreaiBox Connector] Scraper detected invalidated context. Cleaning scraper interval.");
       if (scraperIntervalId) {
         clearInterval(scraperIntervalId);
         scraperIntervalId = null;
@@ -426,12 +426,12 @@ function startBatchFolderSyncRotation() {
   });
 
   if (folderElements.length === 0) {
-    console.log("[CreAibox Rotation] Workspace list screen not detected or folders empty. Running single folder scan.");
+    console.log("[CreaiBox Rotation] Workspace list screen not detected or folders empty. Running single folder scan.");
     runScrapeAndSend();
     return;
   }
 
-  console.log(`[CreAibox Rotation] Found ${folderElements.length} folders. Starting batch navigation sync loop...`);
+  console.log(`[CreaiBox Rotation] Found ${folderElements.length} folders. Starting batch navigation sync loop...`);
   
   let folderIndex = 0;
   
@@ -439,14 +439,14 @@ function startBatchFolderSyncRotation() {
     if (!isExtensionContextValid()) return;
 
     if (folderIndex >= folderElements.length) {
-      console.log(`[CreAibox Rotation] All folders scanned successfully! Total songs: ${globalAccumulatedSongs.length}`);
+      console.log(`[CreaiBox Rotation] All folders scanned successfully! Total songs: ${globalAccumulatedSongs.length}`);
       runScrapeAndSend();
       return;
     }
 
     const folderEl = folderElements[folderIndex];
     const folderName = folderEl.innerText.split('\n')[0];
-    console.log(`[CreAibox Rotation] Processing folder [${folderIndex + 1}/${folderElements.length}]: ${folderName}`);
+    console.log(`[CreaiBox Rotation] Processing folder [${folderIndex + 1}/${folderElements.length}]: ${folderName}`);
     
     folderEl.click();
     
@@ -487,7 +487,7 @@ function startBatchFolderSyncRotation() {
           const workspaceId = activeWid || folderName.replace(/\s+/g, '_');
           
           const folderSongs = scrapeSongsInCurrentFolder(workspaceId);
-          console.log(`[CreAibox Rotation] Successfully scraped ${folderSongs.length} songs from ${folderName}`);
+          console.log(`[CreaiBox Rotation] Successfully scraped ${folderSongs.length} songs from ${folderName}`);
           
           folderSongs.forEach(song => {
             if (!globalAccumulatedSongs.some(existing => existing.id === song.id)) {
@@ -578,7 +578,7 @@ function runScrapeWorkspacesOnly() {
     });
 
     const syncedWorkspaces = Array.from(folderMap.values());
-    console.log("[CreAibox Connector] Folder-only sync complete. Folders count:", syncedWorkspaces.length);
+    console.log("[CreaiBox Connector] Folder-only sync complete. Folders count:", syncedWorkspaces.length);
 
     chrome.runtime.sendMessage({
       type: "SYNC_SONG_METADATA",
@@ -607,7 +607,7 @@ if (isExtensionContextValid()) {
         cleanWid = "default";
       }
 
-      console.log(`[CreAibox Connector] Force sync requested. Mode: ${mode}. Target WID: ${cleanWid}. Current URL: ${currentUrl}`);
+      console.log(`[CreaiBox Connector] Force sync requested. Mode: ${mode}. Target WID: ${cleanWid}. Current URL: ${currentUrl}`);
       
       // Check if we are on a valid workspaces list route and specifically matching the target workspace ID
       const hasCorrectWid = currentUrl.includes("wid=" + cleanWid) || 
@@ -615,7 +615,7 @@ if (isExtensionContextValid()) {
       const isOnValidSyncRoute = currentUrl.includes("/create") || currentUrl.includes("/library");
 
       if (!isOnValidSyncRoute || !hasCorrectWid) {
-        console.log(`[CreAibox Connector] Not on target workspace route (WID: ${cleanWid}). Redirecting to create folder view...`);
+        console.log(`[CreaiBox Connector] Not on target workspace route (WID: ${cleanWid}). Redirecting to create folder view...`);
         
         // 1. Save target sync command payload to temp chrome storage so we can auto-trigger it immediately upon page reload!
         chrome.storage.local.set({ 
@@ -631,13 +631,13 @@ if (isExtensionContextValid()) {
 
       // We are on a valid route - execute commands immediately!
       if (mode === "all") {
-        console.log("[CreAibox Connector] Triggering batch workspaces scan...");
+        console.log("[CreaiBox Connector] Triggering batch workspaces scan...");
         startBatchFolderSyncRotation();
       } else if (mode === "folders") {
-        console.log("[CreAibox Connector] Triggering folders-only fast scan...");
+        console.log("[CreaiBox Connector] Triggering folders-only fast scan...");
         runScrapeWorkspacesOnly();
       } else {
-        console.log("[CreAibox Connector] Triggering fast single-folder scan on current active page...");
+        console.log("[CreaiBox Connector] Triggering fast single-folder scan on current active page...");
         let lastScrollHeight = 0;
         let sameHeightCount = 0;
         let scrollsCount = 0;
@@ -673,7 +673,7 @@ if (isExtensionContextValid()) {
 
           if (sameHeightCount >= 3 || scrollsCount >= maxScrollAttempts) {
             clearInterval(scrollInterval);
-            console.log(`[CreAibox Scraper] Single folder scroll finish. Scraped in ${scrollsCount} attempts.`);
+            console.log(`[CreaiBox Scraper] Single folder scroll finish. Scraped in ${scrollsCount} attempts.`);
             setTimeout(() => {
               runScrapeAndSend();
             }, 500);
@@ -703,7 +703,7 @@ window.addEventListener("load", () => {
           const trigger = result.pendingSyncTrigger;
           // Check timestamp freshness (must be under 15 seconds old to prevent loops)
           if (Date.now() - trigger.timestamp < 15000) {
-            console.log("[CreAibox Connector] Resuming pending sync request from redirect:", trigger.mode);
+            console.log("[CreaiBox Connector] Resuming pending sync request from redirect:", trigger.mode);
             
             // Safe cleanup first
             chrome.storage.local.remove("pendingSyncTrigger");

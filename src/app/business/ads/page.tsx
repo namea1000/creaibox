@@ -416,7 +416,7 @@ export default function CollaborationAdsPage() {
 
         {/* 🏁 SECTION 5: FOOTER */}
         <div className="mt-20 pt-8 border-t border-slate-200 dark:border-slate-800/80 text-center text-xs text-slate-450 dark:text-slate-500 font-medium">
-          © {currentYear} 크리에이박스(CreAibox). All rights reserved. 본 제안서 양식의 판권은 크리에이박스에 소속되어 있습니다.
+          © {currentYear} 크리에이박스(CreaiBox). All rights reserved. 본 제안서 양식의 판권은 크리에이박스에 소속되어 있습니다.
         </div>
 
       </div>

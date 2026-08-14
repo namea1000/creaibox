@@ -1,6 +1,6 @@
 /**
  * PortOne V2 & Toss Payments Client Gateway Trigger
- * (CreAibox Domain & Custom Site Payment Engine)
+ * (CreaiBox Domain & Custom Site Payment Engine)
  */
 
 declare global {
@@ -44,7 +44,7 @@ function loadPortOneSdk(): Promise<any> {
 export async function requestDomainPayment({
   orderName,
   totalAmount,
-  customerName = "CreAibox 회원",
+  customerName = "CreaiBox 회원",
   customerEmail = "customer@creaibox.com",
 }: PaymentRequestData): Promise<{ success: boolean; paymentId: string }> {
   // 1. 0원 이하 무료 쿠폰/특약 결제 처리

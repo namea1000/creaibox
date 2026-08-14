@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-AI Generation Usage Logs는 CreAibox 전체 AI 사용량 추적 시스템이다.
+AI Generation Usage Logs는 CreaiBox 전체 AI 사용량 추적 시스템이다.
 
 이 데이터베이스는 플랫폼에서 발생하는 모든 AI 호출을 기록하며, 향후 사용량 제한, 통계, 과금, 비용 분석의 핵심 데이터 소스로 사용된다.
 
@@ -186,7 +186,7 @@ user
 
 ```txt
 system
-= CreAibox 공용 API
+= CreaiBox 공용 API
 
 user
 = 사용자가 API Vault에 등록한 API
@@ -288,4 +288,4 @@ docs/database/sql/ai-generation-usage-logs.sql
 * Billing System
 * Analytics Dashboard
 
-이 테이블은 CreAibox 전체 운영 데이터의 핵심 통합 로그 저장소이다.
+이 테이블은 CreaiBox 전체 운영 데이터의 핵심 통합 로그 저장소이다.

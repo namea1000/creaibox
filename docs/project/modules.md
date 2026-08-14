@@ -1,6 +1,6 @@
 # 모듈 상세 설명 (Modules Documentation)
 
-`CreAibox` 프로젝트는 역할과 기능에 따라 크게 **Studio Module (제작자용)**, **Admin Module (관리자용)**, **Public Pages (일반 사용자용)**, 그리고 **Data/API Layer**의 4가지 주요 모듈로 나뉩니다.
+`CreaiBox` 프로젝트는 역할과 기능에 따라 크게 **Studio Module (제작자용)**, **Admin Module (관리자용)**, **Public Pages (일반 사용자용)**, 그리고 **Data/API Layer**의 4가지 주요 모듈로 나뉩니다.
 
 ---
 
@@ -31,7 +31,7 @@ src/app/studio/
 ### 1-3. AI 포스팅 글쓰기 (Writing Studio)
 - **네이버 글쓰기 (`naver`)**: 네이버 검색 키워드 분석 매트릭스를 연동하여 스마트 블로그 원고 작성.
 - **워드프레스 글쓰기 (`wp`)**: 워드프레스 REST API 설정을 기반으로 임베디드 이미지 삽입, 썸네일 생성 및 다이렉트 퍼블리싱 지원.
-- **크리에이박스 글쓰기 (`CreAibox`)**: SEO 최적화 패널, 스키마 정의 마크업, 포스트 슬러그 빌더를 내장한 블로그 에디터.
+- **크리에이박스 글쓰기 (`CreaiBox`)**: SEO 최적화 패널, 스키마 정의 마크업, 포스트 슬러그 빌더를 내장한 블로그 에디터.
 
 ### 1-4. AI 콘텐츠 플래너 (Content Planner & Idea Hub)
 - **아이디어 허브 (`idea-hub`)**: 카테고리/상세분야 분류 및 추천 시리즈를 필터링하여 기획 소재용 메인 키워드 주제를 탐색하는 대화형 대시보드. SEO 최적화와 글로벌 확장을 위한 한/영 병기 표기, 연도 자동 제거(Evergreen) 및 다국어 검색 치환 레이어를 제공.

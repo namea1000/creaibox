@@ -94,7 +94,7 @@ export default function PortOnePgWindowModal({
             <div className="rounded-2xl bg-slate-950/80 border border-slate-800 p-4 space-y-2">
               <div className="flex justify-between items-center text-xs text-slate-400">
                 <span>가맹점명</span>
-                <span className="font-bold text-slate-200">크리에이박스(CreAibox)</span>
+                <span className="font-bold text-slate-200">크리에이박스(CreaiBox)</span>
               </div>
               <div className="flex justify-between items-center text-xs text-slate-400">
                 <span>결제 상품</span>

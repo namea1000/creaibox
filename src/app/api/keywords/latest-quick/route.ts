@@ -53,7 +53,7 @@ async function generateKeywords() {
   let googleList: Array<{ keyword: string; provider: "google" }> = [];
 
   try {
-    // 1. CreAibox 클라우드 DB에서 가장 최근 수집된 실시간 키워드 번들 조회
+    // 1. CreaiBox 클라우드 DB에서 가장 최근 수집된 실시간 키워드 번들 조회
     const { data: bundleRow } = await supabaseAdmin
       .from("keyword_trending_history")
       .select("hourly_data")

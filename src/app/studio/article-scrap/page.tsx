@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import ArticleScrapClient from "./client";
 
 export const metadata: Metadata = {
-  title: "아티클 스크랩 & 재발행 | CreAibox Studio",
+  title: "아티클 스크랩 & 재발행 | CreaiBox Studio",
   description: "타겟 블로그나 아티클을 수집하고 AI를 통해 새롭게 재창조합니다.",
 };
 

@@ -75,9 +75,9 @@ export default function Footer() {
               target="_blank"
               rel="noopener"
               className="text-slate-500 hover:text-blue-600 underline transition-colors"
-              title="CreAibox - AI 블로그 포스팅 및 웹사이트 자동화 플랫폼"
+              title="CreaiBox - AI 블로그 포스팅 및 웹사이트 자동화 플랫폼"
             >
-              CreAibox Custom Site
+              CreaiBox Custom Site
             </a>
           </p>
         </div>

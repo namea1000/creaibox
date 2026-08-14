@@ -4,7 +4,7 @@
 
 ## 1. 개요 및 구축 목적
 
-- **목적**: Google Cloud Platform(GCP) 신규 가입 시 지급되는 **$300 (₩448,756원) 무료 체험 크레딧**을 활용하여, CreAibox 서비스를 이용하는 일반 사용자들에게 개인 API 키 없이도 최신 **`gemini-2.5-flash`** 최고 성능 AI 모델과 **구글 실시간 검색 그라운딩(Google Search Grounding)** 기능을 100% 무상으로 안정 제공하기 위함입니다.
+- **목적**: Google Cloud Platform(GCP) 신규 가입 시 지급되는 **$300 (₩448,756원) 무료 체험 크레딧**을 활용하여, CreaiBox 서비스를 이용하는 일반 사용자들에게 개인 API 키 없이도 최신 **`gemini-2.5-flash`** 최고 성능 AI 모델과 **구글 실시간 검색 그라운딩(Google Search Grounding)** 기능을 100% 무상으로 안정 제공하기 위함입니다.
 - **구글 AI 스튜디오 vs GCP Vertex AI 차이점**:
   - **Google AI Studio (`generativelanguage.googleapis.com`)**: 독립 선불/후불 결제 체계로, GCP 신규 $300 무료 크레딧이 연동되지 않음.
   - **GCP Vertex AI / Agent Platform API (`aiplatform.googleapis.com`)**: GCP 통합 빌링 계정을 사용하므로 $300 무료 크레딧에서 차감되어 무상 사용 가능.
@@ -42,7 +42,7 @@
 
 ---
 
-## 3. ⚙️ CreAibox 백엔드 및 프론트엔드 연동 개발 (AI 에이전트 수행)
+## 3. ⚙️ CreaiBox 백엔드 및 프론트엔드 연동 개발 (AI 에이전트 수행)
 
 ### 1단계: 환경변수(`.env.local`) 설정
 `.env.local` 파일에 다운받은 GCP 서비스 계정 JSON 정보를 설정합니다.

@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS public.client_sites (
     company_name TEXT NOT NULL,
     phone TEXT,
     address TEXT,
-    status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE')),
+    status TEXT NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED', 'ACTIVE', 'INACTIVE')),
     extra_configs JSONB NOT NULL DEFAULT '{}'::jsonb,
     creation_source TEXT NOT NULL DEFAULT 'migration' CHECK (creation_source IN ('migration', 'sns_builder', 'template')),
 

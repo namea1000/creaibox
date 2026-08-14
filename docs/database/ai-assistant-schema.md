@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-AI Assistant 데이터베이스는 CreAibox의 전역 AI 작업 비서와 Multi Agent Hub 기능을 저장하기 위한 구조이다.
+AI Assistant 데이터베이스는 CreaiBox의 전역 AI 작업 비서와 Multi Agent Hub 기능을 저장하기 위한 구조이다.
 
 이 스키마는 다음 기능을 지원한다.
 

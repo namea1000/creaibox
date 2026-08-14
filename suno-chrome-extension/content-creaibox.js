@@ -1,6 +1,6 @@
 // content-creaibox.js - Injected into localhost:3000 and creaibox.com
 
-console.log("[CreAibox Suno Connector] Content script loaded on CreAibox page.");
+console.log("[CreaiBox Suno Connector] Content script loaded on CreaiBox page.");
 
 // Safe helper to check if chrome extension runtime is valid
 function isExtensionContextValid() {
@@ -10,7 +10,7 @@ function isExtensionContextValid() {
 // Global error listener to mute context invalidation events
 window.addEventListener("error", (event) => {
   if (event.message && event.message.includes("Extension context invalidated")) {
-    console.warn("[CreAibox Connector] Extension context invalidated on CreAibox dashboard tab. Silent catch.");
+    console.warn("[CreaiBox Connector] Extension context invalidated on CreaiBox dashboard tab. Silent catch.");
   }
 }, true);
 
@@ -22,10 +22,10 @@ function registerTabWithBackground() {
     chrome.runtime.sendMessage({ type: "REGISTER_CREAIBOX_TAB" }, (response) => {
       const err = chrome.runtime.lastError;
       if (err) {
-        console.log("[CreAibox Connector] Background worker not ready yet, retrying in 2s...");
+        console.log("[CreaiBox Connector] Background worker not ready yet, retrying in 2s...");
         setTimeout(registerTabWithBackground, 2000);
       } else {
-        console.log("[CreAibox Connector] Tab successfully registered with service worker.");
+        console.log("[CreaiBox Connector] Tab successfully registered with service worker.");
       }
     });
   } catch (e) {}
@@ -41,7 +41,7 @@ function loadCachedSyncData() {
       if (err) return;
       
       if (result && result.sunoSyncedData) {
-        console.log("[CreAibox Connector] Local storage cache found, restoring tracks/folders...", result.sunoSyncedData);
+        console.log("[CreaiBox Connector] Local storage cache found, restoring tracks/folders...", result.sunoSyncedData);
         window.postMessage({
           type: "SUNO_SYNCED_METADATA",
           payload: result.sunoSyncedData
@@ -63,7 +63,7 @@ window.addEventListener("message", (event) => {
   if (event.data && event.data.type === "TRIGGER_SUNO_GENERATION") {
     if (!isExtensionContextValid()) return;
 
-    console.log("[CreAibox Connector] Trigger song generation message detected:", event.data.payload);
+    console.log("[CreaiBox Connector] Trigger song generation message detected:", event.data.payload);
     
     try {
       chrome.runtime.sendMessage({
@@ -72,11 +72,11 @@ window.addEventListener("message", (event) => {
       }, (response) => {
         const err = chrome.runtime.lastError;
         if (err) {
-          console.error("[CreAibox Connector] Failed to save prefill data:", err.message);
+          console.error("[CreaiBox Connector] Failed to save prefill data:", err.message);
           return;
         }
         
-        console.log("[CreAibox Connector] Prefill metadata synced. Navigating to Suno.com/create...");
+        console.log("[CreaiBox Connector] Prefill metadata synced. Navigating to Suno.com/create...");
         window.location.href = "https://suno.com/create";
       });
     } catch (e) {}
@@ -84,7 +84,7 @@ window.addEventListener("message", (event) => {
 
   // Force trigger sync request from dashboard button click
   if (event.data && event.data.type === "FORCE_SUNO_SYNC_REQUEST") {
-    console.log("[CreAibox Connector] Force sync request clicked. Mode:", event.data.payload?.mode);
+    console.log("[CreaiBox Connector] Force sync request clicked. Mode:", event.data.payload?.mode);
     loadCachedSyncData(); // Instant load from cache
     registerTabWithBackground(); // Refresh tab registration
     if (isExtensionContextValid()) {
@@ -105,7 +105,7 @@ if (isExtensionContextValid()) {
       if (!isExtensionContextValid()) return;
 
       if (message.type === "SUNO_METADATA_UPDATED") {
-        console.log("[CreAibox Connector] Received background song updates, forwarding to React app:", message.payload);
+        console.log("[CreaiBox Connector] Received background song updates, forwarding to React app:", message.payload);
         
         window.postMessage({
           type: "SUNO_SYNCED_METADATA",

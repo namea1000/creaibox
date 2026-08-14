@@ -55,7 +55,7 @@ export default function CreaiboxContentImagePanel({ data }: CreaiboxContentImage
   // 2. Selected Images Shelf Queue State
   const [queue, setQueue] = useState<ImageItem[]>([]);
 
-  // 3. Shared Library States (CreAibox 공유 라이브러리)
+  // 3. Shared Library States (CreaiBox 공유 라이브러리)
   const [sharedAssets, setSharedAssets] = useState<ImageItem[]>([]);
   const [isSharedLoading, setIsSharedLoading] = useState(false);
   const [sharedSearchQuery, setSharedSearchQuery] = useState("");
@@ -120,7 +120,7 @@ export default function CreaiboxContentImagePanel({ data }: CreaiboxContentImage
     return user?.id || null;
   }, [supabase]);
 
-  // Load CreAibox Shared Library Assets
+  // Load CreaiBox Shared Library Assets
   const fetchSharedAssets = useCallback(async () => {
     setIsSharedLoading(true);
     try {
@@ -416,7 +416,7 @@ export default function CreaiboxContentImagePanel({ data }: CreaiboxContentImage
       {/* 1. Main Accordion Contents */}
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4 pb-48">
         
-        {/* SECTION 1: CreAibox 공유 라이브러리 */}
+        {/* SECTION 1: CreaiBox 공유 라이브러리 */}
         <div className="border border-zinc-800 rounded-xl overflow-hidden bg-[#111622]/40">
           <button
             type="button"
@@ -425,7 +425,7 @@ export default function CreaiboxContentImagePanel({ data }: CreaiboxContentImage
           >
             <span className="text-[13px] font-black flex items-center gap-2 text-sky-400">
               <ImageIcon size={14} />
-              1. CreAibox 공유 라이브러리
+              1. CreaiBox 공유 라이브러리
             </span>
             {openSections.shared ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>

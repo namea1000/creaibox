@@ -1,5 +1,5 @@
 -- =====================================================
--- CreAibox Music Albums DB Final
+-- CreaiBox Music Albums DB Final
 -- =====================================================
 
 -- 1. Albums

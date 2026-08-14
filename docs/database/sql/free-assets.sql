@@ -1,5 +1,5 @@
 -- =====================================================
--- CreAibox Free Assets DB Final
+-- CreaiBox Free Assets DB Final
 -- =====================================================
 
 create table if not exists public.free_assets (

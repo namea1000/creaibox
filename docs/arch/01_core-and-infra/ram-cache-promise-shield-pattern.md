@@ -1,6 +1,6 @@
 # 🚀 초고속 RAM 캐시 & Promise 방어막 아키텍처 (Thundering Herd 방어)
 
-본 문서는 CreAibox의 대용량 API 서버 최적화 및 클라우드 데이터베이스(Supabase) 부하/Egress 요금을 방어하기 위해 도입된 **전역 메모리 캐시 및 Promise 디바운싱 패턴**에 대한 심도 깊은 기술 명세서입니다.
+본 문서는 CreaiBox의 대용량 API 서버 최적화 및 클라우드 데이터베이스(Supabase) 부하/Egress 요금을 방어하기 위해 도입된 **전역 메모리 캐시 및 Promise 디바운싱 패턴**에 대한 심도 깊은 기술 명세서입니다.
 
 ## 1. 아키텍처 도입 배경 (The Problem)
 

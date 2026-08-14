@@ -314,21 +314,21 @@ export async function generateMetadata({ params }: BlogDetailPageProps): Promise
 
   if (!post) {
     return {
-      title: "게시글을 찾을 수 없습니다 | CreAibox Blog",
+      title: "게시글을 찾을 수 없습니다 | CreaiBox Blog",
     };
   }
 
   const canonical = post.canonical_url || `https://creaibox.com/blog/${slug}`;
 
   return {
-    title: `${post.title} | CreAibox Blog`,
-    description: post.meta_description || post.focus_keyword || "CreAibox 공개 블로그 상세 페이지",
+    title: `${post.title} | CreaiBox Blog`,
+    description: post.meta_description || post.focus_keyword || "CreaiBox 공개 블로그 상세 페이지",
     alternates: {
       canonical,
     },
     openGraph: {
-      title: post.title || "CreAibox Blog",
-      description: post.meta_description || post.focus_keyword || "CreAibox 공개 블로그 상세 페이지",
+      title: post.title || "CreaiBox Blog",
+      description: post.meta_description || post.focus_keyword || "CreaiBox 공개 블로그 상세 페이지",
       type: "article",
       url: canonical,
       images: post.thumbnailUrl ? [post.thumbnailUrl] : undefined,
@@ -400,8 +400,8 @@ async function transformContentWithOgCards(content: string, supabase: any): Prom
           .maybeSingle();
 
         if (postData) {
-          cardTitle = postData.title || "CreAibox 블로그 포스팅";
-          cardDesc = postData.meta_description || postData.focus_keyword || "CreAibox 오리지널 인사이트 리포트입니다.";
+          cardTitle = postData.title || "CreaiBox 블로그 포스팅";
+          cardDesc = postData.meta_description || postData.focus_keyword || "CreaiBox 오리지널 인사이트 리포트입니다.";
 
           const { data: imgData } = await supabase
             .from("generated_images")
@@ -489,8 +489,8 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
     borderColor: "#e4e4e7",
     textColor: "#52525b",
     subColor: "#2563eb",
-    subtitle: "CreAibox Insight Editorial",
-    text: "본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오 크리에이박스(CreAibox)의 오리지널 인사이트 리포트입니다. 인공지능 기반의 고품질 콘텐츠 생성 가이드와 비즈니스 성장 전략에 대한 더 많은 전문 자료는 크리에이박스(CreAibox) 공식 홈페이지 <a href=\"https://creaibox.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"font-bold text-blue-500 hover:text-blue-400 underline\">https://creaibox.com</a> 에서 확인하실 수 있습니다."
+    subtitle: "CreaiBox Insight Editorial",
+    text: "본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오 크리에이박스(CreaiBox)의 오리지널 인사이트 리포트입니다. 인공지능 기반의 고품질 콘텐츠 생성 가이드와 비즈니스 성장 전략에 대한 더 많은 전문 자료는 크리에이박스(CreaiBox) 공식 홈페이지 <a href=\"https://creaibox.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"font-bold text-blue-500 hover:text-blue-400 underline\">https://creaibox.com</a> 에서 확인하실 수 있습니다."
   };
 
   if (editorialMatch && editorialMatch[1]) {
@@ -515,9 +515,9 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   const blogPostingJsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
-    headline: post.title || "CreAibox Blog",
+    headline: post.title || "CreaiBox Blog",
     description:
-      post.meta_description || post.focus_keyword || "CreAibox 공개 블로그 상세 페이지",
+      post.meta_description || post.focus_keyword || "CreaiBox 공개 블로그 상세 페이지",
     url: canonical,
     image: post.thumbnailUrl || undefined,
     mainEntityOfPage: {
@@ -528,12 +528,12 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
     dateModified: post.updated_at || post.created_at || undefined,
     author: {
       "@type": "Organization",
-      name: "CreAibox",
+      name: "CreaiBox",
       url: "https://creaibox.com",
     },
     publisher: {
       "@type": "Organization",
-      name: "CreAibox",
+      name: "CreaiBox",
       url: "https://creaibox.com",
     },
     keywords: tags,
@@ -614,7 +614,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
               <header className="border-b border-zinc-200 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.12),transparent_42%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-6 py-4 md:px-7 md:py-5">
                 <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-blue-700">
                   <Sparkles size={12} />
-                  CreAibox Insight
+                  CreaiBox Insight
                 </div>
 
                 <h1 className="mt-2.5 text-lg font-black leading-[1.35] tracking-[-0.02em] text-zinc-950 md:text-[1.4rem]">
@@ -638,7 +638,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
                   )}
                 </div>
 
-                {/* CreAibox Official SEO Outro Card */}
+                {/* CreaiBox Official SEO Outro Card */}
                 {editorial.enabled && (
                   <div 
                     className="mt-12 p-6 rounded-2xl border transition-all"

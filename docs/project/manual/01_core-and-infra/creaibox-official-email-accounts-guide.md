@@ -1,4 +1,4 @@
-# 📧 CreAibox 공식 이메일 계정 마스터 가이드 (`docs/project/manual/creaibox-official-email-accounts-guide.md`)
+# 📧 CreaiBox 공식 이메일 계정 마스터 가이드 (`docs/project/manual/creaibox-official-email-accounts-guide.md`)
 
 본 문서는 **creaibox.com 글로벌 플랫폼 서비스 운용**에 필요한 필수 커스텀 도메인 이메일 계정(`***@creaibox.com`) 리스트, 용도별 분류, 수/발신 포워딩 정책, Supabase/Resend 연동 설정 및 보안 운용 가이드 대장입니다.
 
@@ -49,7 +49,7 @@
 
 ## 3. ⚙️ 서비스 연동 셋팅 방법 (Supabase & Resend)
 
-### 3.1 CreAibox 이메일 포워딩 등록 (`/studio/domain-search`)
+### 3.1 CreaiBox 이메일 포워딩 등록 (`/studio/domain-search`)
 1. `/studio/domain-search` 또는 관리자 센터 이동
 2. `creaibox.com` 도메인 아래에 다음 7개 별칭 계정을 등록:
    - `noreply` → 대표 목적지 메일
@@ -72,7 +72,7 @@
 - **`Enable custom SMTP`**: **`ON`**으로 활성화
 - **상세 입력 항목**:
   - **Sender email address**: `noreply@creaibox.com`
-  - **Sender name**: `CreAibox` (또는 `크리에이박스`)
+  - **Sender name**: `CreaiBox` (또는 `크리에이박스`)
   - **Host**: `smtp.resend.com`
   - **Port number**: `465` (또는 `587`)
   - **Minimum interval per user**: `60` seconds
@@ -83,7 +83,7 @@
 - **메뉴 경로**: Supabase Dashboard → `Authentication` → `Emails` → `Templates` → **`Confirm sign up`**
 - **Subject (메일 제목)**:
   ```text
-  [CreAibox] 회원가입 이메일 인증 / Verify your email address
+  [CreaiBox] 회원가입 이메일 인증 / Verify your email address
   ```
 - **Message Body (한-영 병기 + 약관 링크 포함 프리미엄 HTML 코드)**:
   ```html
@@ -92,7 +92,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CreAibox Email Verification</title>
+    <title>CreaiBox Email Verification</title>
   </head>
   <body style="margin:0; padding:0; background-color:#09090b; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#f4f4f5;">
     <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#09090b; padding:40px 10px;">
@@ -116,10 +116,10 @@
             <tr>
               <td align="left" style="padding-top:24px; padding-bottom:12px;">
                 <h1 style="margin:0 0 10px 0; font-size:20px; font-weight:800; color:#ffffff; line-height:1.3;">
-                  CreAibox 회원가입을 환영합니다! 🎉
+                  CreaiBox 회원가입을 환영합니다! 🎉
                 </h1>
                 <p style="margin:0 0 18px 0; font-size:14px; line-height:1.6; color:#a1a1aa;">
-                  CreAibox AI 스튜디오 서비스를 이용해 주셔서 감사합니다.<br>
+                  CreaiBox AI 스튜디오 서비스를 이용해 주셔서 감사합니다.<br>
                   아래 버튼을 클릭하시면 이메일 인증이 완료되며 즉시 모든 기능을 이용하실 수 있습니다.
                 </p>
               </td>
@@ -138,10 +138,10 @@
             <tr>
               <td align="left" style="padding-top:20px; padding-bottom:16px; border-top:1px dashed #27272a;">
                 <h2 style="margin:0 0 8px 0; font-size:18px; font-weight:800; color:#ffffff; line-height:1.3;">
-                  Welcome to CreAibox AI Studio! 🚀
+                  Welcome to CreaiBox AI Studio! 🚀
                 </h2>
                 <p style="margin:0; font-size:13px; line-height:1.6; color:#a1a1aa;">
-                  Thank you for signing up for CreAibox AI Studio.<br>
+                  Thank you for signing up for CreaiBox AI Studio.<br>
                   Please click the button above or the link below to verify your email address.
                 </p>
               </td>
@@ -164,7 +164,7 @@
             <tr>
               <td align="left" style="padding-top:24px; border-top:1px solid #27272a;">
                 <p style="margin:0 0 10px 0; font-size:11px; color:#71717a; line-height:1.5;">
-                  본 이메일 인증을 완료하면 CreAibox의 <a href="https://creaibox.com/terms" target="_blank" style="color:#a1a1aa; text-decoration:underline;">이용약관(Terms of Service)</a> 및 <a href="https://creaibox.com/privacy" target="_blank" style="color:#a1a1aa; text-decoration:underline;">개인정보처리방침(Privacy Policy)</a>에 동의하는 것으로 간주됩니다.
+                  본 이메일 인증을 완료하면 CreaiBox의 <a href="https://creaibox.com/terms" target="_blank" style="color:#a1a1aa; text-decoration:underline;">이용약관(Terms of Service)</a> 및 <a href="https://creaibox.com/privacy" target="_blank" style="color:#a1a1aa; text-decoration:underline;">개인정보처리방침(Privacy Policy)</a>에 동의하는 것으로 간주됩니다.
                 </p>
               </td>
             </tr>
@@ -179,7 +179,7 @@
                   Support & Inquiries: <a href="mailto:support@creaibox.com" style="color:#71717a; text-decoration:underline;">support@creaibox.com</a>
                 </p>
                 <p style="margin:12px 0 0 0; font-weight:700; color:#3f3f46;">
-                  © CreAibox AI Studio. All rights reserved.
+                  © CreaiBox AI Studio. All rights reserved.
                 </p>
               </td>
             </tr>
@@ -194,7 +194,7 @@
 
 ### 3.3 모든 회원가입 수단(Google, Naver, Kakao, Email) 신규 가입 축하 웰컴 이메일(Welcome Email) 자동 발송 파이프라인
 
-CreAibox 플랫폼은 사용자가 어떤 가입 수단(Google OAuth, Naver OAuth, Kakao OAuth, 일반 Email/Password)을 사용하든 회원가입이 완료되는 시점에 `noreply@creaibox.com` 명의로 **`🎉 회원가입 축하 웰컴 이메일`**을 0.1초 만에 백그라운드 무인 자동 발송합니다.
+CreaiBox 플랫폼은 사용자가 어떤 가입 수단(Google OAuth, Naver OAuth, Kakao OAuth, 일반 Email/Password)을 사용하든 회원가입이 완료되는 시점에 `noreply@creaibox.com` 명의로 **`🎉 회원가입 축하 웰컴 이메일`**을 0.1초 만에 백그라운드 무인 자동 발송합니다.
 
 #### 1) 수단별 콜백 처리 및 중복 발송 방지 (Deduplication)
 - **Google / Kakao / Email 가입**: `src/app/auth/callback/route.ts`
@@ -204,9 +204,9 @@ CreAibox 플랫폼은 사용자가 어떤 가입 수단(Google OAuth, Naver OAut
   - `createUser`로 최초 네이버 신규 사용자가 데이터베이스에 생성되는 순간 `sendWelcomeEmail()`을 트리거합니다.
 
 #### 2) 웰컴 메일 백엔드 모듈 (`src/lib/server/resend-email.ts`)
-- **발신자**: `CreAibox <noreply@creaibox.com>`
+- **발신자**: `CreaiBox <noreply@creaibox.com>`
 - **수신 거부/답장 수신 (Reply-To)**: `support@creaibox.com`
-- **제목**: `🎉 [CreAibox] {formattedName}, 회원가입을 진심으로 축하합니다!` *(호칭 중복 '님님' 자동 방지 보정)*
+- **제목**: `🎉 [CreaiBox] {formattedName}, 회원가입을 진심으로 축하합니다!` *(호칭 중복 '님님' 자동 방지 보정)*
 - **본문 디자인 주요 구성**:
   - `formattedName` 호칭 자동 보정 (예: '대표님' ➔ '대표님', '홍길동' ➔ '홍길동님')
   - **오픈 베타 혜택**: 플랫폼 내 모든 주요 AI 원고 및 제작 도구 무료 이용 안내 카드
@@ -232,7 +232,7 @@ void sendWelcomeEmail({
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to CreAibox AI Studio</title>
+  <title>Welcome to CreaiBox AI Studio</title>
 </head>
 <body style="margin:0; padding:0; background-color:#f8fafc; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#0f172a;">
   <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#f8fafc; padding:40px 10px;">
@@ -256,10 +256,10 @@ void sendWelcomeEmail({
           <tr>
             <td align="left" style="padding-top:28px; padding-bottom:16px;">
               <h1 style="margin:0 0 12px 0; font-size:22px; font-weight:800; color:#0f172a; line-height:1.3;">
-                🎉 ${formattedName}, CreAibox AI 스튜디오 가입을 환영합니다!
+                🎉 ${formattedName}, CreaiBox AI 스튜디오 가입을 환영합니다!
               </h1>
               <p style="margin:0 0 20px 0; font-size:14px; line-height:1.6; color:#334155;">
-                CreAibox 가족이 되신 것을 진심으로 축하드립니다.<br>
+                CreaiBox 가족이 되신 것을 진심으로 축하드립니다.<br>
                 이제 최신 AI 원고 자동 작성, 블로그 및 웹사이트 제작, 비디오 편집기, 키워드 트렌드 분석 등 AI Studio 의 모든 기능을 자유롭게 이용하실 수 있습니다.
               </p>
             </td>
@@ -288,10 +288,10 @@ void sendWelcomeEmail({
           <tr>
             <td align="left" style="padding-top:20px; padding-bottom:16px; border-top:1px dashed #e2e8f0;">
               <h2 style="margin:0 0 8px 0; font-size:17px; font-weight:800; color:#0f172a; line-height:1.3;">
-                Welcome to CreAibox AI Studio! 🚀
+                Welcome to CreaiBox AI Studio! 🚀
               </h2>
               <p style="margin:0; font-size:13px; line-height:1.6; color:#475569;">
-                Hi ${rawName}, thank you for joining CreAibox.<br>
+                Hi ${rawName}, thank you for joining CreaiBox.<br>
                 Start creating high-quality content, building websites, and leveraging video tools & trend analysis with ease.
               </p>
             </td>
@@ -307,7 +307,7 @@ void sendWelcomeEmail({
                 Support & Inquiries: <a href="mailto:support@creaibox.com" style="color:#2563eb; text-decoration:underline;">support@creaibox.com</a>
               </p>
               <p style="margin:12px 0 0 0; font-weight:700; color:#94a3b8;">
-                © CreAibox AI Studio. All rights reserved.
+                © CreaiBox AI Studio. All rights reserved.
               </p>
             </td>
           </tr>
@@ -332,7 +332,7 @@ void sendWelcomeEmail({
 - [ ] **🌐 글로벌 영문 서비스 오픈 시 유저 Locale 기반 자동 언어 분기 인증 메일 시스템 탑재**
   - **내용**: 해외 유저 접속 증가 및 글로벌 서비스 정식 오픈 시, 브라우저/계정 언어 설정(Locale `en` vs `ko`)을 감지하여 100% 영문 단독 메일 템플릿으로 자동 분기 발송하는 Supabase Auth Send Email Hook 파이프라인 개발 예정.
 - [ ] **📥 Resend Inbound 기반 사용자 1:1 수신함(Inbox) 대시보드 뷰어 구축**
-  - **내용**: 유저별 커스텀 도메인 이메일로 전달받은 이메일 목록을 CreAibox AI Studio 대시보드 내에서 간편하게 실시간으로 조회하고 검색하는 웹 뷰어 개발 예정.
+  - **내용**: 유저별 커스텀 도메인 이메일로 전달받은 이메일 목록을 CreaiBox AI Studio 대시보드 내에서 간편하게 실시간으로 조회하고 검색하는 웹 뷰어 개발 예정.
 - [ ] **📊 고객사 플랜별 일일/월간 이메일 발송 쿼터(Quota Throttling) 및 스팸 제어**
   - **내용**: 회원 등급별(Free, Pro, Business) 일일 이메일 발송 한도를 제한하고 쿼터 초과 시 자동 차단 및 추가 쿼터 팩 결제 연동.
 - [ ] **🔑 대량 발송 헤비 고객사 전용 API 키 직접 입력(BYOK: Bring Your Own Key) 지원**

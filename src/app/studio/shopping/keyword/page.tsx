@@ -61,7 +61,7 @@ export default function ShoppingKeywordPage() {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-black tracking-widest uppercase">
-              CreAibox E-Commerce Intelligence
+              CreaiBox E-Commerce Intelligence
             </span>
             <span className="text-xs text-zinc-400 font-mono">creaibox.com/shopping/keyword</span>
           </div>

@@ -1,6 +1,6 @@
 # AI 쇼츠 자동 생성기 & 채널 배포 스튜디오 통합 기획 설계서
 
-본 문서는 크리에이박스(CreAibox)의 **채널 배포 스튜디오(Channel Distribution Studio)** 및 **AI 쇼츠 자동 생성기(AI Shorts Auto-Generator)**의 기획 배경, 상세 아키텍처, 데이터베이스 모델 및 최종 구현 명세를 기록합니다.
+본 문서는 크리에이박스(CreaiBox)의 **채널 배포 스튜디오(Channel Distribution Studio)** 및 **AI 쇼츠 자동 생성기(AI Shorts Auto-Generator)**의 기획 배경, 상세 아키텍처, 데이터베이스 모델 및 최종 구현 명세를 기록합니다.
 
 ---
 

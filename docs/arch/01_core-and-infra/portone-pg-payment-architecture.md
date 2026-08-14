@@ -1,4 +1,4 @@
-# CreAibox 포트원(PortOne V2) PG 결제 및 리셀러 정산 아키텍처 기술 명세서
+# CreaiBox 포트원(PortOne V2) PG 결제 및 리셀러 정산 아키텍처 기술 명세서
 (PortOne PG Payment & Reseller Settlement Architecture Spec)
 
 > **문서 상태**: 🟢 시스템 반영 완료 (Production Spec)  
@@ -9,15 +9,15 @@
 
 ## 1. 아키텍처 개요 (Architecture Overview)
 
-CreAibox 전자결제 시스템은 **국내 PG 결제(PortOne V2 Gateway)**와 **글로벌 레지스트라 도메인 1초 매입(Vercel Domains API)** 및 **실시간 환율 엔진(`exchange-rate.ts`)**이 유기적으로 결합된 무인 자동 리셀링 정산 아키텍처입니다.
+CreaiBox 전자결제 시스템은 **국내 PG 결제(PortOne V2 Gateway)**와 **글로벌 레지스트라 도메인 1초 매입(Vercel Domains API)** 및 **실시간 환율 엔진(`exchange-rate.ts`)**이 유기적으로 결합된 무인 자동 리셀링 정산 아키텍처입니다.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User as 사용자 (CreAibox 회원)
+    actor User as 사용자 (CreaiBox 회원)
     participant Client as 브라우저 (React/Next.js)
     participant PG as 포트원 PG Gateway (PortOne V2)
-    participant Server as CreAibox 백엔드 API (/api/domains/buy)
+    participant Server as CreaiBox 백엔드 API (/api/domains/buy)
     participant Exchange as 실시간 환율 엔진 (exchange-rate.ts)
     
     ```typescript
@@ -63,7 +63,7 @@ sequenceDiagram
 - **위치**: [`src/app/api/domains/buy/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/domains/buy/route.ts)
 - **주요 역량**:
   - Vercel Domains API(`POST /v5/domains/buy`) 및 DNS 바인딩 API(`POST /v9/projects/{id}/domains`) 릴레이 호출
-  - CreAibox Edge IP `76.76.21.21` 및 SSL 보안 인증서 1초 자동 바인딩
+  - CreaiBox Edge IP `76.76.21.21` 및 SSL 보안 인증서 1초 자동 바인딩
   - Supabase `profiles.extra_configs.purchased_domains` 배열 및 결제 영수증 JSON 기록
 
 ---
@@ -74,10 +74,10 @@ sequenceDiagram
 [유저 원화 결제] (15,750원)
         │
         ▼ (국내 PG사 정산)
-[CreAibox 대표자 통장] (+15,750원 수령)
+[CreaiBox 대표자 통장] (+15,750원 수령)
         │
         ▼ (Vercel 도메인 자동 매입)
-[CreAibox Vercel 결제 카드] (-$11.25 청구, 약 15,950원)
+[CreaiBox Vercel 결제 카드] (-$11.25 청구, 약 15,950원)
 ```
 
 - **유저 경험**: 해외 결제 전용 카드가 없는 유저도 국내 카드로 원화 도메인 즉시 구매 가능.

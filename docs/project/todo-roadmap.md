@@ -1,6 +1,6 @@
-# 📌 CreAibox 종합 할 일 & 로드맵 (TODO & Roadmap)
+# 📌 CreaiBox 종합 할 일 & 로드맵 (TODO & Roadmap)
 
-본 문서는 크리에이박스(CreAibox) 플랫폼의 시스템 구축, 검색엔진 노출 최적화(SEO), 백그라운드 자동화 및 주요 기능 개발 관련 할 일(TODO)과 완료 여부 체크리스트를 통합 관리하는 프로젝트 로드맵 대장입니다.
+본 문서는 크리에이박스(CreaiBox) 플랫폼의 시스템 구축, 검색엔진 노출 최적화(SEO), 백그라운드 자동화 및 주요 기능 개발 관련 할 일(TODO)과 완료 여부 체크리스트를 통합 관리하는 프로젝트 로드맵 대장입니다.
 
 ---
 
@@ -107,7 +107,7 @@
   - IR 투자자 브리핑 기술 아키텍처: [`creaibox-investor-technical-architecture.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/creaibox-investor-technical-architecture.md>)
   - 클라이언트 웹사이트 빌더 기획안: [`client_site_builder_proposal.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/client_site_builder_proposal.md>)
   - 추천 프로그램 기획서: [`referral-program-proposal.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/referral-program-proposal.md>)
-- [X] **🌐 CreAibox Domain Reseller 및 Vercel Domains API 원클릭 도메인 자동화 사업계획서 수록 (#4)**
+- [X] **🌐 CreaiBox Domain Reseller 및 Vercel Domains API 원클릭 도메인 자동화 사업계획서 수록 (#4)**
   - 📖 사업계획서 & 기술 구현안: [`vercel-domains-api-implementation-plan.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/vercel-domains-api-implementation-plan.md>) (.kr, .co.kr 국내 ccTLD, 한글 퓨니코드 IDN, Vercel 본사 대비 초격차 하이브리드 멀티 라우팅 아키텍처 및 법적 명시 조항 전면 추가 완료)
 - [X] **📦 기존 블로그 통째 이관 센터 구축 (네이버/티스토리/워드프레스 1초 가져오기 & 구글 드라이브 DB 및 블로그 원고 관리함 자동 동기화)**
   - 📖 운용 매뉴얼 수록: [`external-blog-migration-manual.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/external-blog-migration-manual.md>) 수록 완료
@@ -139,6 +139,22 @@
 
 ---
 
+## 6. 🌍 CreaiBox 글로벌 템플릿 커뮤니티 생태계 (Template Ecosystem)
+
+사용자(또는 관리자)가 AI로 생성하거나 직접 꾸민 아름다운 커스텀 사이트를 시스템 템플릿으로 발행하여, 다른 유저들이 원클릭으로 복제하여 사용할 수 있도록 하는 궁극의 B2B/B2C 마켓플레이스 생태계 구축 과제입니다.
+
+- [ ] **관리자 공식 템플릿 마스터 발행 기능 (`site_templates`)**
+  - 대시보드의 특정 `client_sites` 데이터를 `site_templates` 테이블로 100% 무손실 복제 발행하는 `[🌟 템플릿 마스터로 발행]` 기능 구축.
+  - 마켓플레이스(템플릿 쇼핑 탭)에 신규 템플릿이 전시되고, 일반 유저가 "이 테마로 시작하기" 클릭 시 해당 JSON 데이터를 유저의 DB로 즉시 복제(Clone)하는 원클릭 아키텍처.
+- [ ] **유저 자발적 커뮤니티 공유 (UGC 생태계 모델)**
+  - 유저 설정 창에 `[🌍 커뮤니티에 내 사이트 공유하기]` 스위치 추가 (DB `is_public = true` 플래그 연동).
+  - Webflow/Figma처럼 다른 유저가 해당 템플릿을 구경하고 복제할 수 있는 "CreaiBox 쇼케이스 갤러리" 페이지 개설. (자발적 바이럴 마케팅 및 유입 파이프라인)
+- [ ] **크리에이터 유료 판매 마켓플레이스 (향후 비전)**
+  - 금손 유저가 자신이 만든 명작 사이트를 유료(예: 10,000원)로 마켓플레이스에 등록.
+  - 결제 시 유저 70%, CreaiBox 30% 수수료 분배 구조를 통한 앱스토어형 크리에이터 이코노미(Creator Economy) 수익 모델 연동.
+
+---
+
 ## 8. 📧 커스텀 도메인 이메일 시스템 (Custom Domain Email System)
 
 자사 대표 메일(`ceo@creaibox.com`) 무료 구축, 가입 유저 커스텀 이메일(`user@downhubs.com`), 및 B2B 고객사 도메인 이메일(`contact@clientdomain.com`) 1초 연동 인프라 구축 대장입니다.
@@ -152,8 +168,8 @@
   - 개인 Gmail(`@gmail.com`)에서 `ceo@creaibox.com` 이름으로 전세계에 발신/답장하는 Resend SMTP 가이드 정리 완료
 - [X] **Resend Domains API & Vercel Domains API 원클릭 무인 1초 이메일 주입 엔진 구현**
   - B2B 고객사 도메인 등록 시 Vercel DNS API (`addDnsRecordToVercel`) 백그라운드 1초 자동 주입 파이프라인 구축 완료
-- [X] **CreAibox 대시보드 내 커스텀 이메일 포워딩 연동 UI 및 API 구축 (/studio/domain-search)**
-  - `EmailForwardingManager.tsx` UI, `/api/email-forwarding` CRUD API 및 `docs/database/email_forwarding_rules.sql` DDL 구축 완료
+- [X] **CreaiBox 대시보드 내 커스텀 이메일 포워딩 연동 UI 및 API 구축 (/studio/domain-search)**
+  - `EmailForwardingManager.tsx` UI, `/api/email-forwarding` CRUD API 및 `docs/database/sql/email_forwarding_rules.sql` DDL 구축 완료
 - [X] **Resend Inbound Webhook 실시간 무상태(Stateless Zero-DB) 포워딩 엔진 구축**
   - `/api/webhooks/resend-inbound` 무상태 실시간 포워딩 백엔드 모듈 개발 완료
 - [X] **관리자 센터 Resend 이메일 & 도메인 통합 모니터링 대시보드 구축 완료 (/admin/resend)**
@@ -200,7 +216,7 @@ Google Maps Platform (Places, Maps JS, Routes, Distance Matrix API) 기반 위�
 
 ## 10. 🛡️ Reserved Brand IDs & 브랜드 ID 2차 안전 검증 시스템 (Brand Security & Scalability)
 
-CreAibox 브랜드 ID(`{brand_id}.creaibox.com`) 예약어/블랙리스트 Egress 99% 절감 최적화, Groq LLaMA 3.3 70B AI 기반 트렌드 자동 탐지 및 2차 안전 심사 모듈 완료 대장입니다.
+CreaiBox 브랜드 ID(`{brand_id}.creaibox.com`) 예약어/블랙리스트 Egress 99% 절감 최적화, Groq LLaMA 3.3 70B AI 기반 트렌드 자동 탐지 및 2차 안전 심사 모듈 완료 대장입니다.
 
 - 📖 전용 아키텍처 및 운용 가이드: [`reserved-brand-ids.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/database/reserved-brand-ids.md>)
 
@@ -244,3 +260,12 @@ CreAibox 브랜드 ID(`{brand_id}.creaibox.com`) 예약어/블랙리스트 Egres
 - [ ] **네이버 포털형 메인 & 스튜디오 대시보드 위젯 컴포넌트 배치**
   - 포털형 우측 사이드바 및 스튜디오 웰컴 영역 Glassmorphism 3대 탭 카드 렌더링.
 - [x] 인기 영상 조회수 랭킹 YouTube Search API 쿼터 고갈 분석 완료 및 현행 유지 (100쿼터 제한 방치 정책 확정)
+
+---
+
+## 11. 🛡️ 전 메뉴 데이터 해자(Data Moat) 인프라 고도화
+
+- [ ] **블로그 자동 포스팅 (Writing Studio) 데이터 해자 적용**
+  - `writing_creaibox_posts`, `writing_naver_posts`, `writing_wordpress_posts` 테이블 업데이트
+  - 생성 시 AI에게 전송한 '원본 텍스트 프롬프트' JSONB 로깅 보존 파이프라인 연동 (`ai_generation_logs` 활용)
+  - 삭제 시 완전 삭제(Hard Delete)를 금지하고 `status = 'DELETED'` 속성을 통한 Soft Delete로 전환 (유저의 오답 노트/피드백 루프 데이터 확보)

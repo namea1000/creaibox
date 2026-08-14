@@ -113,7 +113,7 @@ export async function POST(request: Request) {
     if (!apiKey) throw new Error("Gemini API key is not configured.");
     
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3.7-flash" });
 
     const prompt = `
       당신은 세계 최고 수준의 프론트엔드 웹 퍼블리셔이자 UX 디자이너입니다.

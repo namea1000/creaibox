@@ -1,5 +1,5 @@
 /**
- * Utility function to format and normalize image URLs across CreAibox.
+ * Utility function to format and normalize image URLs across CreaiBox.
  * Routes Google Drive & googleusercontent URLs through the server proxy endpoint (/api/free-assets/proxy)
  * with smart WebP compression (thumb: 800px 30~40KB, detail: 1400px high quality).
  */

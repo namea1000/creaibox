@@ -1,6 +1,6 @@
 # 오픈 그래프(Open Graph) 가이드 및 SEO 썸네일 매칭 리스트
 
-이 문서는 크리에이박스(CreAibox) 서비스의 검색엔진 최적화(SEO) 및 네이버/구글 검색 결과창 옆에 대표 이미지(썸네일)를 띄우기 위한 오픈 그래프(OG) 이미지 설정 가이드입니다.
+이 문서는 크리에이박스(CreaiBox) 서비스의 검색엔진 최적화(SEO) 및 네이버/구글 검색 결과창 옆에 대표 이미지(썸네일)를 띄우기 위한 오픈 그래프(OG) 이미지 설정 가이드입니다.
 
 ---
 
@@ -24,10 +24,10 @@ Next.js App Router 구조에서는 각 라우트 폴더 내의 `page.tsx` 또는
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "유튜브 트렌드 분석 | 크리에이박스 CreAibox",
+  title: "유튜브 트렌드 분석 | 크리에이박스 CreaiBox",
   description: "크리에이박스에서 제공하는 고도화된 유튜브 분석 도구입니다.",
   openGraph: {
-    title: "유튜브 트렌드 분석 | 크리에이박스 CreAibox",
+    title: "유튜브 트렌드 분석 | 크리에이박스 CreaiBox",
     description: "크리에이박스에서 제공하는 고도화된 유튜브 분석 도구입니다.",
     url: "https://creaibox.com/youtube-trend",
     images: [

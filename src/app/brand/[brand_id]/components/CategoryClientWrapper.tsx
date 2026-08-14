@@ -469,9 +469,9 @@ export default function CategoryClientWrapper({
               target="_blank"
               rel="noopener"
               className="text-zinc-500 hover:text-blue-500 underline transition-colors"
-              title="CreAibox - AI 블로그 포스팅 및 웹사이트 자동화 플랫폼"
+              title="CreaiBox - AI 블로그 포스팅 및 웹사이트 자동화 플랫폼"
             >
-              Powered by CreAibox
+              Powered by CreaiBox
             </a>
           </div>
         </div>

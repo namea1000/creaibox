@@ -1,5 +1,5 @@
 -- =====================================================
--- CreAibox Profiles DB Final
+-- CreaiBox Profiles DB Final
 -- =====================================================
 
 create table if not exists public.profiles (

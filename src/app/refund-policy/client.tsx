@@ -39,7 +39,7 @@ export default function RefundPolicyClient() {
       subtitle: "국제 도메인 등록기관(ICANN/Vercel) 표준 규정",
       badge: "즉시 등록 후 환불 불가",
       badgeColor: "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20",
-      description: "CreAibox 도메인 센터를 통한 도메인 실시간 신규 구매 및 타사 기관 이관 서비스는 결제 동기 시점에 국제 도메인 등록기관(Vercel Registrar)의 장부에 소유권이 1초 만에 즉시 실시간 등록됩니다. 이에 따라 전자상거래법 및 국제 WHOIS 규정에 의거하여 결제 완료 후에는 청약철회, 명의 취소 및 환불이 불가능하오니, 구매 전 도메인 철자 및 명의를 반드시 재확인하여 주시기 바랍니다."
+      description: "CreaiBox 도메인 센터를 통한 도메인 실시간 신규 구매 및 타사 기관 이관 서비스는 결제 동기 시점에 국제 도메인 등록기관(Vercel Registrar)의 장부에 소유권이 1초 만에 즉시 실시간 등록됩니다. 이에 따라 전자상거래법 및 국제 WHOIS 규정에 의거하여 결제 완료 후에는 청약철회, 명의 취소 및 환불이 불가능하오니, 구매 전 도메인 철자 및 명의를 반드시 재확인하여 주시기 바랍니다."
     },
     {
       icon: Clock,
@@ -70,7 +70,7 @@ export default function RefundPolicyClient() {
             환불 정책 안내
           </h1>
           <p className="text-sm md:text-lg text-slate-600 dark:text-slate-400 font-bold leading-relaxed">
-            크리에이박스(CreAibox)는 투명하고 합리적인 디지털 자산 및 구독 환불 정책을 운영하고 있습니다. <br />
+            크리에이박스(CreaiBox)는 투명하고 합리적인 디지털 자산 및 구독 환불 정책을 운영하고 있습니다. <br />
             아래의 상세 환불 규정 및 정산 절차를 확인하여 주시기 바랍니다.
           </p>
         </div>
@@ -142,7 +142,7 @@ export default function RefundPolicyClient() {
 
         {/* 🏁 SECTION 4: COPYRIGHT */}
         <div className="pt-8 border-t border-slate-200 dark:border-slate-800/80 text-center text-xs text-slate-450 dark:text-slate-500 font-medium">
-          © {currentYear} 크리에이박스(CreAibox). All rights reserved. 본 정책은 약관 개정 주기에 따라 예고 없이 변동될 수 있습니다.
+          © {currentYear} 크리에이박스(CreaiBox). All rights reserved. 본 정책은 약관 개정 주기에 따라 예고 없이 변동될 수 있습니다.
         </div>
 
       </div>

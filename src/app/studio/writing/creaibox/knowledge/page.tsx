@@ -61,7 +61,7 @@ const DEFAULT_KNOWLEDGE: KnowledgeItem[] = [
     id: "kl-1",
     title: "크리에이박스 서비스 소개 및 핵심 가치",
     description: "올인원 AI 콘텐츠 스튜디오 크리에이박스의 론칭 목적과 주요 핵심 가치 제안입니다.",
-    content: "크리에이박스(CreAibox)는 현대 크리에이터, 1인 기업가, 마케팅 부서를 위한 지능형 올인원 AI 콘텐츠 제작 스튜디오입니다. 본 서비스는 기획서 작성(Content Planner)부터 정교한 포스팅 글쓰기(AI Writing), 자동화 발행 워크플로우(Automation Pipeline), 무료 에셋 창고(CreAssetBox)를 단일 웹 플랫폼 안에 집약하여 콘텐츠 딜리버리 공수를 기존 대비 90% 이상 절감시키는 가치를 제공합니다.",
+    content: "크리에이박스(CreaiBox)는 현대 크리에이터, 1인 기업가, 마케팅 부서를 위한 지능형 올인원 AI 콘텐츠 제작 스튜디오입니다. 본 서비스는 기획서 작성(Content Planner)부터 정교한 포스팅 글쓰기(AI Writing), 자동화 발행 워크플로우(Automation Pipeline), 무료 에셋 창고(CreAssetBox)를 단일 웹 플랫폼 안에 집약하여 콘텐츠 딜리버리 공수를 기존 대비 90% 이상 절감시키는 가치를 제공합니다.",
     tags: ["서비스소개", "핵심가치", "가이드"],
     createdAt: "2026-06-28 10:00:00",
     charCount: 260,

@@ -153,7 +153,7 @@ export async function GET(request: Request) {
 
       const aiText = await generateContentWithVertexAI({ 
         prompt, 
-        modelName: "gemini-3.6-flash",
+        modelName: "gemini-3.7-flash",
         responseMimeType: "application/json"
       });
       let parsedAi = { html: "" };

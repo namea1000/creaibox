@@ -1,5 +1,5 @@
 # ==================================================
-# CreAibox AI Agent Rules
+# CreaiBox AI Agent Rules
 # ==================================================
 
 Before writing code, modifying code, or creating new files,
@@ -64,19 +64,19 @@ When modifying existing functionality:
 Documentation is part of the task.
 A task is not complete until related docs are updated.
 
-The docs directory is the source of truth for the CreAibox project.
+The docs directory is the source of truth for the CreaiBox project.
 
 # Branding
 
 Official brand name is:
 
-CreAibox
+CreaiBox
 
 Always use:
-✅ CreAibox
+✅ CreaiBox
 
 Never use:
-❌ CreAibox
+❌ CreaiBox
 ❌ Creaibox
 ❌ CreaIbox
 ❌ CREAIBOX
@@ -92,7 +92,7 @@ This applies to:
 - Source code comments
 
 If a file contains old branding,
-normalize it to "CreAibox"
+normalize it to "CreaiBox"
 when modifying that file.
 
 When documentation and implementation differ:

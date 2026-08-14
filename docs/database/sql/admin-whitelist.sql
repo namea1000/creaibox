@@ -1,5 +1,5 @@
 -- =====================================================
--- CreAibox Admin Whitelist DB Final
+-- CreaiBox Admin Whitelist DB Final
 -- =====================================================
 
 create table if not exists public.admin_whitelist (

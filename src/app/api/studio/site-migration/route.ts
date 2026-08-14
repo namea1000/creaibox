@@ -4,6 +4,8 @@ import sharp from "sharp";
 import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { TEMPLATE_REGISTRY } from "@/lib/templates/registry";
 
+import { isSpaWebsite, fetchRenderedHtmlWithHeadless } from "@/lib/server/headlessScraper";
+
 export const maxDuration = 300;
 
 /**
@@ -31,13 +33,22 @@ export async function POST(request: Request) {
 
     const urlRegex = /https?:\/\/[^\s"'()]+/g;
     const urls = newHtml.match(urlRegex) || [];
-    // Only target image URLs to avoid fetching large video files or unrelated links (videos will retain their original URL)
-    const uniqueUrls = Array.from(new Set(urls)).filter(u => u.match(/\.(jpeg|jpg|gif|png|svg|webp)/i) || u.includes("images.unsplash.com") || u.includes("drive.google.com"));
+    // Target image URLs
+    const uniqueUrls = Array.from(new Set(urls)).filter(u => u.match(/\.(jpeg|jpg|gif|png|svg|webp)/i) || u.includes("images.unsplash.com") || u.includes("drive.google.com") || u.includes("burgerking") || u.includes("cloudfront.net"));
 
     const uploadPromises = uniqueUrls.map(async (url) => {
       try {
-        const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
-        if (!res.ok) return;
+        let res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" } }).catch(() => null);
+        
+        // Dead image fallback to Unsplash if original is broken or fake
+        if (!res || !res.ok) {
+          const fallbackKeywords = ["restaurant", "food", "burger", "product", "coffee", "store"];
+          const randomKw = fallbackKeywords[Math.floor(Math.random() * fallbackKeywords.length)];
+          res = await fetch(`https://images.unsplash.com/photo-1550547660-d9450f859349?w=800&auto=format&fit=crop&q=80`).catch(() => null);
+        }
+
+        if (!res || !res.ok) return;
+
         const arrayBuffer = await res.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
         
@@ -87,8 +98,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "로그인이 필요한 서비스입니다." }, { status: 401 });
     }
 
-
-
     const { targetUrl, depth, scanReport } = await request.json();
 
     if (!targetUrl || typeof targetUrl !== "string") {
@@ -103,17 +112,32 @@ export async function POST(request: Request) {
     }
 
     // 1. Fetch Target Website Content
-    const res = await fetch(urlObj.href, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      },
-    });
+    let htmlText = "";
+    try {
+      const res = await fetch(urlObj.href, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        },
+      });
 
-    if (!res.ok) {
-      return NextResponse.json({ error: "기존 홈페이지에 접속할 수 없습니다. URL을 확인해 주세요." }, { status: 400 });
+      if (res.ok) {
+        htmlText = await res.text();
+      }
+    } catch {}
+
+    // 🌟 Check if target is a JavaScript SPA (e.g. Burger King, Starbucks, Vue/React CSR)
+    if (!htmlText || isSpaWebsite(htmlText)) {
+      console.log(`[Site Migration] 🔍 SPA detected on ${urlObj.href}. Invoking Headless Chrome DOM rendering...`);
+      const renderedDom = await fetchRenderedHtmlWithHeadless(urlObj.href);
+      if (renderedDom && renderedDom.length > 500) {
+        htmlText = renderedDom;
+        console.log(`[Site Migration] 🟢 Headless Chrome successfully rendered SPA DOM (${htmlText.length} bytes).`);
+      }
     }
 
-    const htmlText = await res.text();
+    if (!htmlText) {
+      return NextResponse.json({ error: "기존 홈페이지에 접속할 수 없습니다. URL을 확인해 주세요." }, { status: 400 });
+    }
 
     // 2. Clean HTML for Gemini (Remove scripts, styles, svgs to save tokens)
     const cleanHtml = htmlText
@@ -154,20 +178,19 @@ export async function POST(request: Request) {
     const addressMatch = htmlText.match(/([가-힣]+[시|도]\s+[가-힣]+[구|군|시]\s+[가-힣0-9\s-]+[로|길|동])/g);
     const address = addressMatch ? addressMatch[0] : "서울특별시 강남구 테헤란로 123";
 
-    // 3. Generate Subdomain Name
+    // 3. Generate Temporary Preview Subdomain Name (e.g. burgerking-7f3b)
     const rawHostname = urlObj.hostname.replace(/^www\./, "").split(".")[0];
     const cleanSubdomain = rawHostname.toLowerCase().replace(/[^a-z0-9-]/g, "") || "mysite";
 
-    // 4. DB Insert - Real Data saving (Strict Zero Fake Data Rule)
+    // 4. DB Insert - Real Data saving with DRAFT status & Random 4-character Preview Subdomain
     const adminSupabase = await createAdminClient();
 
-    // Find unique brand_id to avoid overwriting (e.g. ikonakamura2)
-    let finalSubdomain = cleanSubdomain;
+    let finalSubdomain = "";
     let isUnique = false;
-    let suffix = 1;
     
     while (!isUnique) {
-      const checkDomain = suffix === 1 ? cleanSubdomain : `${cleanSubdomain}${suffix}`;
+      const randomSuffix = Math.random().toString(36).substring(2, 6);
+      const checkDomain = `${cleanSubdomain}-${randomSuffix}`;
       const { data: existingSite } = await adminSupabase
         .from("client_sites")
         .select("id")
@@ -177,36 +200,54 @@ export async function POST(request: Request) {
       if (!existingSite) {
         finalSubdomain = checkDomain;
         isUnique = true;
-      } else {
-        suffix++;
       }
     }
 
-    const { data: newSite, error: insertError } = await adminSupabase
+    const sitePayload = {
+      profile_id: user.id,
+      brand_id: finalSubdomain,
+      company_name: pageTitle,
+      phone: phoneNumber,
+      address: address,
+      status: 'DRAFT', // 🟡 Default: Draft/Preview Mode (Zero SEO/Legal Risk)
+      template_id: 'service_1',
+      creation_source: 'migration',
+      extra_configs: {
+        original_url: urlObj.origin,
+        target_slug: cleanSubdomain, // Preferred brand slug for later 1-click promotion
+        is_draft: true,
+        migration_queue: pendingSubpages,
+        migration_total_count: pendingSubpages.length,
+        migration_status: pendingSubpages.length > 0 ? "migrating" : "completed"
+      },
+      scan_report: scanReport || {}
+    };
+
+    let { data: newSite, error: insertError } = await adminSupabase
       .from("client_sites")
-      .insert({
-        profile_id: user.id,
-        brand_id: finalSubdomain,
-        company_name: pageTitle,
-        phone: phoneNumber,
-        address: address,
-        status: 'ACTIVE',
-        template_id: 'service_1',
-        creation_source: 'migration',
-        extra_configs: {
-          original_url: urlObj.origin,
-          migration_queue: pendingSubpages,
-          migration_total_count: pendingSubpages.length,
-          migration_status: pendingSubpages.length > 0 ? "migrating" : "completed"
-        },
-        scan_report: scanReport || {}
-      })
+      .insert(sitePayload)
       .select("id")
       .single();
 
-    if (insertError) {
+    // Fallback if legacy DB check constraint restricts status to ACTIVE/INACTIVE
+    if (insertError && insertError.message?.includes("client_sites_status_check")) {
+      console.warn("Retrying with legacy status fallback...");
+      const fallbackPayload = {
+        ...sitePayload,
+        status: 'INACTIVE', // Safe legacy status with is_draft: true
+      };
+      const retryRes = await adminSupabase
+        .from("client_sites")
+        .insert(fallbackPayload)
+        .select("id")
+        .single();
+      newSite = retryRes.data;
+      insertError = retryRes.error;
+    }
+
+    if (insertError || !newSite) {
       console.error("Failed to insert client_site:", insertError);
-      return NextResponse.json({ error: "사이트 생성 중 DB 오류가 발생했습니다." }, { status: 500 });
+      return NextResponse.json({ error: "사이트 생성 중 DB 오류가 발생했습니다: " + (insertError?.message || "") }, { status: 500 });
     }
     
     const siteId = newSite.id;
@@ -229,7 +270,7 @@ export async function POST(request: Request) {
             "footer_html": "<footer class='...'>...</footer>",
             "main_sections": [
               {
-                "section_type": "custom_html | advanced_content_carousel | advanced_media_carousel",
+                "section_type": "custom_html | advanced_content_carousel | advanced_media_carousel | hero_image_slider",
                 "html": "<section class='...'>...</section>",
                 "media_urls": ["url1", "url2", "..."],
                 "slides": ["<div class='...'>slide 1 HTML</div>", "<div class='...'>slide 2 HTML</div>"],
@@ -241,7 +282,7 @@ export async function POST(request: Request) {
           Guidelines:
           - PRO-CLONING RULE 1 (Colors & Identity): Extract the EXACT HEX color codes, background colors (e.g., brand blue), and font colors from the original HTML structure and apply them as inline Tailwind arbitrary values (e.g., \`bg-[#005aab]\`, \`text-[#333333]\`). DO NOT use generic colors if a specific brand color is present.
           - PRO-CLONING RULE 2 (Data Preservation & NO OMISSION): DO NOT summarize, omit, or hallucinate text. You MUST extract EVERY SINGLE section from the body. Copy ALL specific statistics, detailed numbers, and exact copywriting VERBATIM. CRITICAL: DO NOT omit any images! If a slide or section contains multiple images (e.g., a background image AND a product image below the text), you MUST preserve all <img> tags.
-          - PRO-CLONING RULE 3 (Images, Logos, VIDEOS & CAROUSEL): Preserve all \`<img>\`, \`<video>\`, and \`<source>\` tags. Do not replace videos with solid colors. If the original hero section contains a slider/carousel with MULTIPLE videos or images, DO NOT use horizontal scroll or pick just one. Instead, you MUST set \`section_type\` to exactly \`"advanced_media_carousel"\`, leave \`html\` empty, and provide ALL media URLs in a \`"media_urls"\` array. Never add comments to the JSON output.
+          - PRO-CLONING RULE 3 (Images, Logos, VIDEOS & CAROUSEL): Preserve all \`<img>\`, \`<video>\`, and \`<source>\` tags. Do not replace videos with solid colors. If the original hero section is a FULL-WIDTH slider with multiple images/videos, use \`section_type: "hero_image_slider"\` (for images) or \`"advanced_media_carousel"\` (for videos), leave \`html\` empty, and provide ALL media URLs in \`"media_urls"\`.
           - PRO-CLONING RULE 3.5 (CONTENT CAROUSEL — EXACT RULES):
             RULE A — "FEATURED PRODUCTS" type sections (multiple product thumbnails visible simultaneously with labels below): Even if the row has "slick-slider" class, this is displayed as a GRID on desktop. Use "custom_html" and render all products in a single responsive grid (grid grid-cols-3 gap-8). DO NOT make this a carousel.
             RULE B — Full-width product SHOWCASE carousel (section containing large 2-column slides where each slide takes the FULL width with a scene image on left half and product info + detail image on right half): This IS a real carousel. Use "advanced_content_carousel". Each individual product slide (e.g., Sound Blaster GS5 slide, Sound Blaster G8 slide, Aurvana Ace 2 slide) MUST be a separate entry in the "slides" array.
@@ -250,13 +291,51 @@ export async function POST(request: Request) {
             IMPORTANT 3: NEVER apply "advanced_content_carousel" to a section where multiple items are simultaneously visible in columns.
           - PRO-CLONING RULE 4 (Lazy-Loaded Media): Always prioritize \`data-src\`, \`data-lazy\`, or \`srcset\` attributes over a simple \`src\` if they exist. Use the highest resolution media URL available in the raw HTML.
           - PRO-CLONING RULE 5 (Navigation & Language Exact Match): Preserve the EXACT language and casing of header navigation menus (e.g., if it says 'ABOUT', do not translate it to '회사소개'). DO NOT hallucinate or extract hidden mobile menus if a clear desktop navigation exists.
+          - PRO-CLONING RULE 5.4 (MANDATORY HEADER LOGO EXTRACTION & TYPOGRAPHY FALLBACK): NEVER leave the header logo area blank or empty!
+            1. Priority 1: Extract the exact \`<img src="...">\` or inline \`<svg>\` logo markup from the original header and place it in the left logo container.
+            2. Priority 2 (Fallback): If the original logo is a background-image/CSS sprite and cannot be cleanly extracted, you MUST render a bold, beautiful brand typography logo using the brand's primary color: \`<a href='/' class='text-2xl md:text-3xl font-black tracking-tighter uppercase text-[#D4200C]'>BURGER KING</a>\`. NEVER leave the top-left area blank!
           - PRO-CLONING RULE 5.5 (HEADER LAYOUT & EDGE-TO-EDGE): You MUST structure the \`header_html\` to perfectly replicate the standard 3-section layout: 1. Logo on the far left. 2. Navigation Menus centered or aligned as original. 3. Search/Icons/Buttons on the far right. Use Tailwind classes like \`flex justify-between items-center w-full px-4 md:px-8 xl:px-12\` to make the header edge-to-edge. DO NOT wrap the inner content in \`max-w-7xl\` or \`container\` if the original site has an edge-to-edge full-bleed header. Use \`flex-1\` on the left and right containers, and \`flex-none\` on the center menu container to ensure the menu stays perfectly in the horizontal center if needed.
           - PRO-CLONING RULE 5.6 (MEGA MENUS & DROPDOWNS): If the original site has 2nd-level sub-menus, dropdowns, or complex "Mega Menus" (e.g. hovering over 'Products' shows a large panel with icons, links, or images), you MUST completely extract and recreate their HTML structure inside the \`header_html\`. Use Tailwind's \`group\`, \`group-hover:block\`, \`absolute\`, \`top-full\` utilities to recreate the hover/dropdown interaction exactly. DO NOT flatten them into simple links. Preserve the mega menu's exact design, columns, and icons!
-          - PRO-CLONING RULE 6 (EXCLUDE COOKIE POPUPS): You MUST entirely ignore and omit any cookie consent popups, privacy policy floating banners, or annoying alert texts (e.g., "We use cookies, which are small text files..."). Do not include them in the generated HTML.
           - PRO-CLONING RULE 7 (BENTO BOX / ASYMMETRIC GRIDS): If the original site features an asymmetric image gallery or Bento box layout (e.g., 2 items in a row, then 1 full-width item, or varying spans), you MUST recreate this EXACT grid structure using Tailwind's grid spanning utilities (e.g., \`grid-cols-2 md:grid-cols-4\`, \`md:col-span-2\`, \`md:col-span-4\`, \`row-span-2\`). DO NOT force them into a simple uniform grid (like just \`grid-cols-4\` with no spans) if they have different sizes in the original. Use \`w-full h-full object-cover\` for images to perfectly fill their unique grid cells.
+          - PRO-CLONING RULE 7.5 (3-COLUMN ASYMMETRIC STORY GRID — e.g. Burger King '고객과 함께 성장하는 버거킹'): If a section contains 4 items consisting of [2 short text cards] + [2 large image cards]:
+            1. DO NOT split into a 2-column grid (\`grid-cols-2\`) because the 4th image card will drop to the bottom and blow up full-width!
+            2. You MUST construct a balanced 3-column Bento Grid: \`<div class='grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch'>\`.
+            3. Column 1 (Left): \`<div class='flex flex-col gap-6 justify-between'>[Text Card 1 (Brand)] [Text Card 2 (ESG)]</div>\` (stack the 2 text cards vertically in 1 column).
+            4. Column 2 (Center): \`<div class='bg-white rounded-3xl overflow-hidden shadow-sm flex flex-col justify-between'><div class='p-6'>[SMART QSR Badge + Headline]</div><img src='[bag photo]' class='w-full h-56 object-cover'/></div>\`.
+            5. Column 3 (Right): \`<div class='bg-white rounded-3xl overflow-hidden shadow-sm flex flex-col justify-between'><div class='p-6'>[Awards Badge + Headline]</div><img src='[crowns photo]' class='w-full h-56 object-cover'/></div>\`.
+            6. All 3 columns MUST align side-by-side on desktop in a clean 1:1:1 ratio!
           - PRO-CLONING RULE 8 (HERO ASPECT RATIO): For \`advanced_media_carousel\` or \`hero\` sections, analyze the original media dimensions (e.g. \`<img width="x" height="y">\`, \`<video>\`, or CSS \`height: 100vh\`). Determine the original desktop aspect ratio (e.g. \`"21/9"\` for ultra-wide, \`"16/9"\` for standard, \`"4/3"\` for taller, or \`"100vh"\` for full screen). Provide this value in a \`"desktop_aspect_ratio"\` field inside the section object. If unsure, default to \`"21/9"\`.
+          - PRO-CLONING RULE 8.5 (SPLIT HERO WITH SIDE CARDS — e.g. Burger King Layout): If the original hero section is a multi-column composite layout (e.g., Left 65~70%: rotating promotional image banner/slider with rounded corners, and Right 30~35%: 2 stacked banner cards like '가맹점 안내' + '매장 찾기 검색창'):
+            1. DO NOT render the left hero slider as a static non-rotating image or static HTML!
+            2. You MUST output \`section_type: "hero_split_slider"\` with \`content_data: { images: ["url1", "url2", "url3", ...], side_html: "<div class='flex flex-col gap-6 h-full justify-between'>[Top Card HTML]<div class='bg-[#502314] text-white p-6 rounded-3xl'>[Bottom Store Finder Card HTML]</div></div>" }\`.
+            3. Extract ALL promotional banner slide image URLs (e.g., all 19+ slides) into the \`images: [...] \` array without skipping so that our \`HeroImageSlider\` component automatically runs 3.5s fade rotations, renders pagination dots, and reveals hover navigation arrows.
+          - PRO-CLONING RULE 9 (VIDEO ADS & YOUTUBE MODAL INTERACTION): If the original site features promotional video cards (e.g. '광고영상', '홍보 영상', 'TV-CF'):
+            1. DO NOT render them as inert non-interactive image cards!
+            2. You MUST output \`section_type: "video_grid"\` with \`content_data: { title: "광고영상", videos: [{ title: "보일링 씨푸드 버거", thumbnail: "[photo url]", youtubeId: "[11-char youtube id or leave empty]", videoUrl: "[video url]" }, ...], moreLink: "/news/video", moreText: "더보기" }\`.
+            3. Clicking on any card opens our high-definition 16:9 YouTube/Video Modal popup with automatic autoplay and close button, exactly matching original brand behavior without changing page URL!
+          - PRO-CLONING RULE 10 (ULTRA-WIDE CONTAINER & EXACT MAX-WIDTH MATCH): DO NOT trap content sections inside narrow \`max-w-5xl\` or \`max-w-6xl\` containers! Modern websites like Burger King use ultra-wide layouts. You MUST use \`max-w-screen-2xl mx-auto px-4 md:px-8 xl:px-12\` (or \`max-w-[1440px]\` / \`max-w-[1536px]\`) so cards remain large, spacious, and fill the screen horizontally just like the original website! For edge-to-edge full bleed sections, use \`w-full px-4 md:px-12\`.
+          - PRO-CLONING RULE 11 (APP PROMOTION & SMARTPHONE MOCKUP FRAME): If the original site features a mobile app download/promotion section (e.g. '버거킹 앱 혜택', 'APP 다운로드'):
+            1. Extract ALL rotating mobile app screenshots into the \`images: [...] \` array in content_data (or provide at least 2~4 app screenshots if available) so the smartphone mockup automatically rotates through them every 3.5 seconds.
+            2. For component-based section rendering, you can output \`section_type: "app_download"\` with \`content_data: { images: ["url1", "url2", "url3"], tags: ["#픽업오더", "#딜리버리오더", "#멤버십적립", "#할인쿠폰"], qrCode: "[qr url or leave blank]", appStoreLink: "https://apps.apple.com/...", googlePlayLink: "https://play.google.com/..." }\`.
+            3. If rendering custom HTML, wrap the app screenshot inside the realistic iPhone/Smartphone device frame and render official black rounded store download badges.
+          - PRO-CLONING RULE 12 (VIBRANT OFFICIAL SOCIAL MEDIA BRAND ICONS): In footer_html or footer sections, DO NOT render social media links as dull monochrome gray icons! Render them as vibrant rounded badge icons with their OFFICIAL BRAND COLORS:
+            - Instagram: \`<a href='...' target='_blank' class='w-9 h-9 rounded-full bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white flex items-center justify-center shadow hover:scale-110 transition-transform'>[Instagram SVG]</a>\`
+            - Facebook: \`<a href='...' target='_blank' class='w-9 h-9 rounded-full bg-[#1877F2] text-white flex items-center justify-center shadow hover:scale-110 transition-transform'>[Facebook SVG]</a>\`
+            - X (Twitter): \`<a href='...' target='_blank' class='w-9 h-9 rounded-full bg-black text-white flex items-center justify-center shadow hover:scale-110 transition-transform'>[X SVG]</a>\`
+            - YouTube: \`<a href='...' target='_blank' class='w-9 h-9 rounded-full bg-[#FF0000] text-white flex items-center justify-center shadow hover:scale-110 transition-transform'>[YouTube SVG]</a>\`
+            - KakaoTalk: \`<a href='...' target='_blank' class='w-9 h-9 rounded-full bg-[#FEE500] text-[#191919] flex items-center justify-center shadow hover:scale-110 transition-transform'>[Kakao SVG]</a>\`
+            - Naver Blog: \`<a href='...' target='_blank' class='w-9 h-9 rounded-full bg-[#03C75A] text-white font-black flex items-center justify-center shadow hover:scale-110 transition-transform'>N</a>\`
+          - PRO-CLONING RULE 13 (8 STANDARD CLONING COMPONENTS UTILIZATION): When you identify common website interaction patterns in the source HTML, prioritize using these 8 dedicated component section types:
+            1. "faq_accordion": For FAQ/Q&A sections. content_data: \`{ items: [{ question: "...", answer: "..." }] }\`
+            2. "logo_marquee": For continuous partner/client/media logo streams. content_data: \`{ logos: [{ name: "...", logoUrl: "...", linkUrl: "..." }] }\`
+            3. "category_tabs": For menu/product/service tab categories. content_data: \`{ tabs: [{ id: "tab1", label: "버거", items: [...] }] }\`
+            4. "animated_counter": For company statistics/numbers. content_data: \`{ stats: [{ value: 50000, suffix: "+", label: "누적 고객수" }] }\`
+            5. "testimonial_carousel": For client reviews/testimonials. content_data: \`{ testimonials: [{ name: "홍길동", role: "CEO", review: "...", rating: 5 }] }\`
+            6. "before_after_slider": For dual-layer before/after photo comparisons. content_data: \`{ beforeImage: "...", afterImage: "..." }\`
+            7. "pricing_table": For SaaS/rental/service pricing tiers. content_data: \`{ plans: [{ name: "Standard", monthlyPrice: 29000, yearlyPrice: 24000, features: [...] }] }\`
+            8. "location_map": For office/store address & directions. content_data: \`{ companyName: "...", address: "...", phone: "..." }\`
           - CRITICAL RULE: All image URLs (\`src\` attributes or \`style="background-image: ..."\`) MUST be ABSOLUTE URLs. 
-          - CRITICAL RULE 2: All internal links (\`<a href="...">\`) MUST be RELATIVE paths (e.g. \`href="/dojos"\`). Do not use absolute domains for internal navigation.
+          - CRITICAL RULE 2 (NO DUMMY '#' LINKS & EXACT RELATIVE PATHS): You MUST NEVER generate dummy \`href="#"\` or \`href="javascript:void(0)"\` for clickable cards, banners, menus, and buttons! Extract the exact target URLs from the original HTML (e.g. \`/story/esgbusiness\`, \`/story/whyburgerking\`, \`/menu/main\`, \`/store/near\`, \`/notice/list\`). If the original HTML contains absolute URLs pointing to its own domain (e.g., \`https://www.burgerking.co.kr/story/esgbusiness\`), strip out the domain and use the relative path (e.g., \`href="/story/esgbusiness"\`). This ensures the visitor navigates seamlessly inside the newly cloned client site without leaving the domain!
           - Use modern Tailwind CSS classes (e.g. flex, grid, px-8, py-16) for styling, but combine them with extracted brand colors.
           - Make the HTML fully responsive (use md:, lg: prefixes).
           - Do NOT use Markdown formatting in the strings.
@@ -274,15 +353,37 @@ export async function POST(request: Request) {
 
         let aiText = "";
         try {
-          aiText = await generateContentWithVertexAI({
-            prompt: prompt,
-            modelName: "gemini-3.6-flash",
-            responseMimeType: "application/json"
-          });
-          aiText = aiText.trim();
+          const apiKey = process.env.GEMINI_API_KEY_1 || process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+          if (apiKey) {
+            const { GoogleGenerativeAI } = await import("@google/generative-ai");
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({ 
+              model: "gemini-3.7-flash",
+              generationConfig: { responseMimeType: "application/json" }
+            });
+            const res = await model.generateContent([{ text: prompt }]);
+            aiText = res.response.text().trim();
+          } else {
+            aiText = await generateContentWithVertexAI({
+              prompt: prompt,
+              modelName: "gemini-3.7-flash",
+              responseMimeType: "application/json"
+            });
+            aiText = aiText.trim();
+          }
         } catch (e) {
-          console.error("Vertex AI API failed:", e);
-          return NextResponse.json({ error: "AI 서버(Vertex AI) 통신에 실패했습니다. 잠시 후 다시 시도해주세요." }, { status: 500 });
+          console.warn("Primary AI API failed, trying Vertex AI fallback:", e);
+          try {
+            aiText = await generateContentWithVertexAI({
+              prompt: prompt,
+              modelName: "gemini-3.7-flash",
+              responseMimeType: "application/json"
+            });
+            aiText = aiText.trim();
+          } catch (vErr) {
+            console.error("All AI engines failed:", vErr);
+            return NextResponse.json({ error: "AI 서버 통신에 실패했습니다. 잠시 후 다시 시도해주세요." }, { status: 500 });
+          }
         }
 
         const jsonMatch = aiText.match(/\{[\s\S]*\}/);
@@ -388,10 +489,10 @@ export async function POST(request: Request) {
 
     await adminSupabase.from("site_sections").insert(generatedSections);
 
-    const mainPageCdnStorage = "CreAibox 초고속 클라우드 CDN (Supabase Storage / Vercel Blob)";
-    const blogArticlesStorage = "크리에이박스 블로그 > 블로그 원고 관리 & CreAibox 클라우드 DB";
+    const mainPageCdnStorage = "CreaiBox 초고속 클라우드 CDN (Supabase Storage / Vercel Blob)";
+    const blogArticlesStorage = "크리에이박스 블로그 > 블로그 원고 관리 & CreaiBox 클라우드 DB";
 
-    // 5. Construct CreAibox Migration Result Payload
+    // 5. Construct CreaiBox Migration Result Payload
     const migratedData = {
       targetUrl: urlObj.href,
       targetOrigin: urlObj.origin,

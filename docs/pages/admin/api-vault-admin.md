@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-API Vault Admin은 CreAibox의 모든 외부 API 공급자(Provider)를 통합 관리하는 관리자 전용 운영센터이다.
+API Vault Admin은 CreaiBox의 모든 외부 API 공급자(Provider)를 통합 관리하는 관리자 전용 운영센터이다.
 
 기존의 단순 API Key 저장소 역할을 넘어,
 
@@ -462,7 +462,7 @@ docs/database/sql/ai-generation-usage-logs.sql
 /studio/image
 ```
 
-API Vault Admin은 CreAibox 전체 AI 인프라 운영의 중앙 통제 센터 역할을 수행한다.
+API Vault Admin은 CreaiBox 전체 AI 인프라 운영의 중앙 통제 센터 역할을 수행한다.
 
 
 다음 2차 업그레이드에서는

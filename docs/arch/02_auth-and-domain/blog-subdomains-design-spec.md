@@ -143,7 +143,7 @@ Three visual layout styles are predefined in the components library:
 ## 5. Independent Custom Domain Mapping & Routing
 
 ### Technical Design Rationale
-Independent custom domain mapping is supported for premium tiers. It maps custom domains directly to user subdomains (Brand IDs) on the Vercel-hosted CreAibox app instance.
+Independent custom domain mapping is supported for premium tiers. It maps custom domains directly to user subdomains (Brand IDs) on the Vercel-hosted CreaiBox app instance.
 
 ### DNS & Vercel CNAME Routing Model
 1. **User Setup**: The user configures a `CNAME` record in their domain name service provider (GoDaddy, Cloudflare, etc.) pointing to their allocated brand subdomain:

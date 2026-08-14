@@ -125,7 +125,7 @@ export default function LoginPage() {
             ) : (
               <Image
                 src="/logo_dark.png"
-                alt="CreAibox Logo"
+                alt="CreaiBox Logo"
                 width={210}
                 height={40}
                 className="object-contain mx-auto h-10 w-auto"

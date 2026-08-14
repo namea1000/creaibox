@@ -35,25 +35,53 @@ export function injectMenusIntoHtml(html: string, menus: { label: string; path: 
       mainContainer.attr('class', cls);
     }
 
-    if (!menus || menus.length === 0) {
-      return $.html();
+    // 1. Find the actual menu container (not the layout wrapper)
+    let navContainer = $('nav').not('.justify-between').first();
+    if (navContainer.length === 0) {
+      navContainer = $('[class*="hidden lg:flex"], [class*="hidden md:flex"]').not('.justify-between').first();
+    }
+    if (navContainer.length === 0) {
+      navContainer = $('div:has(> a:nth-child(2))').not('.justify-between').first();
     }
 
-    // 1. Look for explicit <nav> tags first
-    let navContainer = $('nav').first();
     let templateA: any = null;
-
     if (navContainer.length > 0) {
       templateA = navContainer.find('a').first();
+
+      // 2. Un-nest the nav container if AI grouped it with the logo or right-side buttons
+      let headerRow = navContainer.closest('.justify-between');
+      if (headerRow.length === 0) {
+         headerRow = navContainer.parents().filter((i, el) => $(el).hasClass('flex')).last();
+         if (headerRow.length === 0) headerRow = $('header');
+      }
+      
+      if (headerRow.length > 0) {
+         const parent = navContainer.parent();
+         if (parent.length > 0 && parent.get(0) !== headerRow.get(0)) {
+           let ancestor = navContainer;
+           while (ancestor.parent().length > 0 && ancestor.parent().get(0) !== headerRow.get(0) && (ancestor.parent().get(0) as any)?.tagName !== 'body') {
+             ancestor = ancestor.parent();
+           }
+           if (ancestor.parent().length > 0 && ancestor.parent().get(0) === headerRow.get(0)) {
+              const index = ancestor.index();
+              const siblingsCount = headerRow.children().length;
+              
+              if (index === 0) {
+                  navContainer.insertAfter(ancestor); // After left logo group
+              } else if (index === siblingsCount - 1) {
+                  navContainer.insertBefore(ancestor); // Before right button group
+              } else {
+                  navContainer.insertAfter(ancestor);
+              }
+           }
+         }
+      }
       // Force center alignment for the navigation container within a flex header
       navContainer.addClass('mx-auto');
-    } else {
-      // 2. Fallback: Find a div that acts like a nav (contains multiple <a> tags as direct children)
-      navContainer = $('div:has(> a:nth-child(2))').first();
-      if (navContainer.length > 0) {
-        templateA = navContainer.children('a').first();
-        navContainer.addClass('mx-auto');
-      }
+    }
+
+    if (!menus || menus.length === 0) {
+      return $.html();
     }
 
     if (navContainer.length > 0 && templateA && templateA.length > 0) {

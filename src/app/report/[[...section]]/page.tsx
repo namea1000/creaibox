@@ -25,8 +25,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const path = segments.join("/");
   const sectionTitle = sectionNames[path] || "AI 리포트 스튜디오";
   return {
-    title: `${sectionTitle} | 크리에이박스 CreAibox`,
-    description: `크리에이박스 CreAibox의 대외 공개용 ${sectionTitle} 공간입니다. 다양한 산업 영역에서 활용 중인 AI 기술의 트렌드 예측 분석 보고서를 열람해 보세요.`,
+    title: `${sectionTitle} | 크리에이박스 CreaiBox`,
+    description: `크리에이박스 CreaiBox의 대외 공개용 ${sectionTitle} 공간입니다. 다양한 산업 영역에서 활용 중인 AI 기술의 트렌드 예측 분석 보고서를 열람해 보세요.`,
     keywords: ["크리에이박스", "creaibox", sectionTitle, "AI 시장 분석 리포트", "글로벌 트렌드 예측"]
   };
 }

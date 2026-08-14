@@ -21,7 +21,7 @@ export default function VideoEditorHeader({
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 bg-[#0b0b10] px-6">
       <div className="flex items-center gap-4">
-        <h1 className="text-lg font-black">🎬 CreAibox Video Studio</h1>
+        <h1 className="text-lg font-black">🎬 CreaiBox Video Studio</h1>
 
         <input
           value={projectTitle}

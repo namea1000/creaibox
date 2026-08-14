@@ -47,7 +47,7 @@ export default function PaymentConfirmModal({
           <div>
             <div className="flex items-center gap-1.5 text-[11px] font-black text-violet-400 uppercase tracking-wider">
               <Sparkles size={12} className="animate-pulse" />
-              CreAibox Secure Payment
+              CreaiBox Secure Payment
             </div>
             <h3 className="text-xl font-extrabold tracking-tight text-white">
               전자결제 확인

@@ -189,8 +189,8 @@ export default function PostClientWrapper({
     borderColor: "#e4e4e7",
     textColor: "#52525b",
     subColor: "#2563eb",
-    subtitle: "CreAibox Insight Editorial",
-    text: "본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오 크리에이박스(CreAibox)의 오리지널 인사이트 리포트입니다. 인공지능 기반의 고품질 콘텐츠 생성 가이드와 비즈니스 성장 전략에 대한 더 많은 전문 자료는 크리에이박스(CreAibox) 공식 홈페이지 <a href=\"https://creaibox.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"font-bold text-blue-500 hover:text-blue-400 underline\">https://creaibox.com</a> 에서 확인하실 수 있습니다."
+    subtitle: "CreaiBox Insight Editorial",
+    text: "본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오 크리에이박스(CreaiBox)의 오리지널 인사이트 리포트입니다. 인공지능 기반의 고품질 콘텐츠 생성 가이드와 비즈니스 성장 전략에 대한 더 많은 전문 자료는 크리에이박스(CreaiBox) 공식 홈페이지 <a href=\"https://creaibox.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"font-bold text-blue-500 hover:text-blue-400 underline\">https://creaibox.com</a> 에서 확인하실 수 있습니다."
   };
 
   let hasCustomEditorial = false;
@@ -513,7 +513,7 @@ export default function PostClientWrapper({
                     </div>
                   </div>
                 ) : showBadge ? (
-                  /* Ultra-Premium Squared Published with CreAibox Badge */
+                  /* Ultra-Premium Squared Published with CreaiBox Badge */
                   <div className="mt-10 flex items-center justify-center">
                     <a
                       href="https://creaibox.com"
@@ -523,7 +523,7 @@ export default function PostClientWrapper({
                     >
                       <Sparkles size={14} className="text-purple-600 dark:text-purple-400 shrink-0 group-hover:scale-110 transition-transform" />
                       <span className="text-zinc-700 dark:text-zinc-300 font-semibold tracking-tight">
-                        Published with <strong className="font-black text-black dark:text-white tracking-wide uppercase ml-0.5">CreAibox</strong>
+                        Published with <strong className="font-black text-black dark:text-white tracking-wide uppercase ml-0.5">CreaiBox</strong>
                       </span>
                     </a>
                   </div>
@@ -721,7 +721,7 @@ export default function PostClientWrapper({
           <div className="flex items-center gap-4">
             <Link href="/" className={`hover:text-zinc-400 ${theme === "dark" ? "text-zinc-500" : "text-zinc-650"}`}>Home</Link>
             <span className={footerDivider}>|</span>
-            <a href="https://creaibox.com" target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 text-zinc-500 underline decoration-zinc-500/40">Powered by CreAibox.com</a>
+            <a href="https://creaibox.com" target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 text-zinc-500 underline decoration-zinc-500/40">Powered by CreaiBox.com</a>
           </div>
         </div>
       </footer>

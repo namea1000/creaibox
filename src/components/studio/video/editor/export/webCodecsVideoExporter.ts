@@ -151,8 +151,8 @@ function createWebmBlob({
     "1549A966",
     concatBytes([
       uintElement("2AD7B1", 1_000_000),
-      stringElement("4D80", "CreAibox Video Studio"),
-      stringElement("5741", "CreAibox WebCodecs Exporter"),
+      stringElement("4D80", "CreaiBox Video Studio"),
+      stringElement("5741", "CreaiBox WebCodecs Exporter"),
       floatElement("4489", duration),
     ])
   );

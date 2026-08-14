@@ -92,9 +92,9 @@ export default function CommufillLayout({
                 target="_blank"
                 rel="noopener font-bold"
                 className="hover:text-emerald-400 underline transition-colors"
-                title="CreAibox - AI 블로그 포스팅 및 웹사이트 자동화 플랫폼"
+                title="CreaiBox - AI 블로그 포스팅 및 웹사이트 자동화 플랫폼"
               >
-                CreAibox Custom Site
+                CreaiBox Custom Site
               </a>
             </p>
           </div>

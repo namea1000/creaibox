@@ -64,7 +64,7 @@ async function getVertexAccessToken(clientEmail: string, privateKey: string) {
  */
 export async function generateContentWithVertexAI({
   prompt,
-  modelName = "gemini-3.5-flash-lite",
+  modelName = "gemini-2.5-pro",
   location = "us-central1",
   systemInstruction,
   temperature = 0.7,
@@ -79,16 +79,14 @@ export async function generateContentWithVertexAI({
 
   const accessToken = await getVertexAccessToken(creds.clientEmail, creds.privateKey);
 
-  const requestedModel = modelName || "gemini-3.5-flash-lite";
+  const requestedModel = modelName || "gemini-2.5-pro";
 
-  // Build model candidates: requested model first (e.g. gemini-3.5-flash-lite), then active Vertex AI fallbacks
+  // Build model candidates: requested model first (e.g. gemini-2.5-pro), then active Vertex AI fallbacks
   const modelCandidates = Array.from(
     new Set([
       requestedModel,
-      "gemini-3.5-flash-lite",
-      "gemini-2.0-flash",
-      "gemini-1.5-flash",
-      "gemini-1.5-pro",
+      "gemini-2.5-pro",
+      "gemini-2.5-flash",
     ])
   );
 
@@ -135,8 +133,8 @@ export async function generateContentWithVertexAI({
     process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
   for (const targetModel of modelCandidates) {
-    // Map targetModel to valid publisher model ID for Vertex AI if needed
-    const vertexModel = targetModel.startsWith("gemini-3") ? "gemini-2.0-flash" : targetModel;
+    // Map targetModel to valid publisher model ID for Vertex AI (default to gemini-2.5-pro)
+    const vertexModel = targetModel.startsWith("gemini-3") ? "gemini-2.5-pro" : targetModel;
 
     const endpoints: Array<{ url: string; headers: Record<string, string>; isVertex: boolean }> = [
       // 1순위: GCP $300불 크레딧 전용 Vertex AI Service Account OAuth 엔드포인트

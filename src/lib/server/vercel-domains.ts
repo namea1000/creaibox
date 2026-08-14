@@ -1,6 +1,6 @@
 /**
  * Vercel Domains, Real DNS Lookup & KISA .KR Registrar Server Helper Module
- * (CreAibox Domain Reseller Engine)
+ * (CreaiBox Domain Reseller Engine)
  */
 
 import dns from "dns/promises";
@@ -121,7 +121,7 @@ export async function purchaseDomain(domainName: string, expectedPriceUSD?: numb
       success: true,
       domain: cleanDomain,
       punycode: asciiDomain,
-      registrar: "CreAibox-KISA-Partner-Registrar",
+      registrar: "CreaiBox-KISA-Partner-Registrar",
       status: "ACTIVE",
       dnsRecords: [
         { type: "A", name: "@", value: "76.76.21.21" },
@@ -130,7 +130,7 @@ export async function purchaseDomain(domainName: string, expectedPriceUSD?: numb
       registeredAt: new Date().toISOString(),
     };
 
-    // 2. CreAibox Vercel 프로젝트에 1초 자동 바인딩
+    // 2. CreaiBox Vercel 프로젝트에 1초 자동 바인딩
     if (process.env.VERCEL_PROJECT_ID && process.env.VERCEL_AUTH_TOKEN) {
       try {
         await assignDomainToProject(cleanDomain);
@@ -195,7 +195,7 @@ export async function transferInDomain(domainName: string, authCode: string) {
 }
 
 /**
- * 4. 도메인을 CreAibox Vercel 프로젝트에 자동 결합 (SSL 1초 생성)
+ * 4. 도메인을 CreaiBox Vercel 프로젝트에 자동 결합 (SSL 1초 생성)
  */
 export async function assignDomainToProject(domainName: string) {
   const headers = getHeaders();

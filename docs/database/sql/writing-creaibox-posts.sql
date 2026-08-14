@@ -1,5 +1,5 @@
 -- =====================================================
--- CreAibox Writing Posts DB Final
+-- CreaiBox Writing Posts DB Final
 -- =====================================================
 
 create table if not exists public.writing_creaibox_posts (

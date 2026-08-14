@@ -1,6 +1,6 @@
 # 환경변수 및 API 보안 금고(Vault) 완벽 가이드
 
-이 문서는 CreAibox 프로젝트의 로컬 환경변수(`.env.local`), 실서버 Vercel 환경변수, 그리고 최고 보안 수준의 `API_VAULT_ENCRYPTION_KEY`가 각각 어떤 역할을 하며 어떻게 상호작용하는지 명확하게 이해하기 위해 작성되었습니다.
+이 문서는 CreaiBox 프로젝트의 로컬 환경변수(`.env.local`), 실서버 Vercel 환경변수, 그리고 최고 보안 수준의 `API_VAULT_ENCRYPTION_KEY`가 각각 어떤 역할을 하며 어떻게 상호작용하는지 명확하게 이해하기 위해 작성되었습니다.
 
 ---
 
@@ -25,7 +25,7 @@
 
 ## 3. `API_VAULT_ENCRYPTION_KEY` 란 무엇인가?
 
-CreAibox는 강력한 보안을 위해 외부 API 키(유튜브, AI 엔진 등)를 소스 코드에 하드코딩하지 않고, **Supabase 데이터베이스(`admin_api_vault` 테이블)에 암호화하여 보관**합니다.
+CreaiBox는 강력한 보안을 위해 외부 API 키(유튜브, AI 엔진 등)를 소스 코드에 하드코딩하지 않고, **Supabase 데이터베이스(`admin_api_vault` 테이블)에 암호화하여 보관**합니다.
 
 - **마스터 해독 열쇠**: DB에 암호화되어 저장된 외계어 같은 API 키를 원본으로 풀 때 사용하는 **'마스터 암호 해독 열쇠'**가 바로 `API_VAULT_ENCRYPTION_KEY` 입니다.
 - **생성 원리**: 암호학적으로 절대 뚫릴 수 없는 32바이트 길이의 강력한 무작위 난수(Base64 인코딩)로 생성되어 발급되었습니다.

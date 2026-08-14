@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "CreAibox Suno Connector",
+  "name": "CreaiBox Suno Connector",
   "version": "1.0.0",
-  "description": "CreAibox AI 앨범 기획 플랫폼과 Suno.com의 세션/데이터를 실시간으로 가교 동기화해 줍니다.",
+  "description": "CreaiBox AI 앨범 기획 플랫폼과 Suno.com의 세션/데이터를 실시간으로 가교 동기화해 줍니다.",
   "permissions": [
     "storage",
     "tabs",

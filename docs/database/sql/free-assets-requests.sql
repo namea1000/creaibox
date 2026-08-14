@@ -1,5 +1,5 @@
 -- =====================================================
--- CreAibox Free Asset Requests DB
+-- CreaiBox Free Asset Requests DB
 -- =====================================================
 
 create table if not exists public.free_asset_requests (

@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/server/get-free-gemini-key";
 /**
  * 📦 기존 블로그 통째 이관 (External Blog Bulk Import API Engine)
  * - 네이버 블로그 URL 입력 시 PostTitleListAsync 파싱 + PostView SE2/SE3 본문/고화질 이미지 100% 수집하여
- * - CreAibox 클라우드 DB 및 '블로그 원고 관리'(writing_creaibox_posts)로 통째 자동 이관
+ * - CreaiBox 클라우드 DB 및 '블로그 원고 관리'(writing_creaibox_posts)로 통째 자동 이관
  */
 
 function sanitizeNaverJson(rawText: string): any {
@@ -276,7 +276,7 @@ export async function POST(request: Request) {
                       creaiboxDbSynced: true,
                       storagePath: `creaibox.com/Cloud_DB/Migrated_NAVER_${blogId}_post_${postLogNo}.json`,
                       thumbnail: `https://blogpfthumb.phinf.naver.net/MjAyNjA1MTNfMjA5/MDAxNzc4NjUxNjY2Njkz.FmamofbQv-0yAGfuzo8McRMdfiQYLkmtlPhtzOoVMcUg.av8QfEOGlA8KflicC3eiPS88PWMUfebX3pkkaBDoQqsg.PNG/%EC%86%8C%ED%86%B5%EA%B3%BC%EC%B1%84%EC%9B%80_%ED%94%84%EB%A1%9C%ED%95%84260513.png?type=s3`,
-                      contentSnippet: `본 포스트([${postTitle}])는 네이버 블로그(${blogId})에서 CreAibox 클라우드 DB로 100% 이관된 실제 원고입니다.`,
+                      contentSnippet: `본 포스트([${postTitle}])는 네이버 블로그(${blogId})에서 CreaiBox 클라우드 DB로 100% 이관된 실제 원고입니다.`,
                     });
                   }
                 }
@@ -399,7 +399,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `성공! 네이버 블로그(${blogId}) '현장 스케치' 전체 원고 ${finalPosts.length}개(SE2/SE3 본문 및 고화질 사진 100% 포함)가 CreAibox 클라우드 DB 및 '블로그 원고 관리'함으로 100% 실시간 이관되었습니다!`,
+      message: `성공! 네이버 블로그(${blogId}) '현장 스케치' 전체 원고 ${finalPosts.length}개(SE2/SE3 본문 및 고화질 사진 100% 포함)가 CreaiBox 클라우드 DB 및 '블로그 원고 관리'함으로 100% 실시간 이관되었습니다!`,
       data: {
         platform: cleanPlatform,
         blogUrl: cleanUrl,

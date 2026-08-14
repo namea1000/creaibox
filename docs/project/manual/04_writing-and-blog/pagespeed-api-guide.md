@@ -1,6 +1,6 @@
 # Google PageSpeed Insights API 무료 연동 및 설정 가이드
 
-본 문서는 CreAibox 블로그 스튜디오 관리자 화면의 **PageSpeed Insights 성능 측정** 탭이 안정적으로 작동하기 위해 필요한 Google PageSpeed Insights API 연동 및 고유 API Key 발급 절차를 정리한 공식 가이드라인입니다.
+본 문서는 CreaiBox 블로그 스튜디오 관리자 화면의 **PageSpeed Insights 성능 측정** 탭이 안정적으로 작동하기 위해 필요한 Google PageSpeed Insights API 연동 및 고유 API Key 발급 절차를 정리한 공식 가이드라인입니다.
 
 ---
 
@@ -9,7 +9,7 @@
 구글 애널리틱스, 구글 드라이브와 같은 외부 API 호출 환경과 달리 PageSpeed Insights API는 최초 익명(공용) 프로젝트 키(`project_number:583797351490`)를 공유하여 사용합니다. 
 그러나 이 공용 프로젝트는 전 세계 개발자들이 트래픽을 나눠 쓰기 때문에 **일일 할당량(Quota) 초과 오류**가 빈번하게 발생하여 작동이 불가능해집니다.
 
-이를 해결하기 위해 CreAibox는 각 플랫폼 운영자(Admin)의 **독립된 Google Cloud Console 프로젝트 전용 API Key**를 연동하여 사용할 수 있도록 환경 변수(`NEXT_PUBLIC_PAGESPEED_API_KEY`)를 설계하였습니다. 이 경우 하루 최대 **25,000회까지 완전 무료**로 측정이 가능합니다.
+이를 해결하기 위해 CreaiBox는 각 플랫폼 운영자(Admin)의 **독립된 Google Cloud Console 프로젝트 전용 API Key**를 연동하여 사용할 수 있도록 환경 변수(`NEXT_PUBLIC_PAGESPEED_API_KEY`)를 설계하였습니다. 이 경우 하루 최대 **25,000회까지 완전 무료**로 측정이 가능합니다.
 
 ---
 

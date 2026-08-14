@@ -1,6 +1,6 @@
 # 2026년 7월 개발 작업 완료 보고서 (July 2026 Walkthrough)
 
-이 문서는 2026년 7월 동안 `CreAibox` 플랫폼에서 진행된 기능 개발, 디자인 개편 및 버그 픽스 등의 세부 작업 완료 내역을 기록하는 공식 작업 일지입니다.
+이 문서는 2026년 7월 동안 `CreaiBox` 플랫폼에서 진행된 기능 개발, 디자인 개편 및 버그 픽스 등의 세부 작업 완료 내역을 기록하는 공식 작업 일지입니다.
 
 ---
 
@@ -18,7 +18,7 @@
 
 ### 1-0. 비로그인 자유 둘러보기 & 로그인 필수 서비스 팝업 통일 개편
 
-크리에이박스(CreAibox) 플랫폼 내 모든 스튜디오 및 서비스 화면에 대하여 비로그인 사용자도 UI/레이아웃/템플릿/관리자 폼을 자유롭게 탐색할 수 있도록 100% 전면 노출하고, DB/AI 연동 버튼 클릭 시 구식 alert 대신 프리미엄 **"로그인이 필요한 서비스입니다" 팝업 모달**로 연결되도록 통합 개편하였습니다.
+크리에이박스(CreaiBox) 플랫폼 내 모든 스튜디오 및 서비스 화면에 대하여 비로그인 사용자도 UI/레이아웃/템플릿/관리자 폼을 자유롭게 탐색할 수 있도록 100% 전면 노출하고, DB/AI 연동 버튼 클릭 시 구식 alert 대신 프리미엄 **"로그인이 필요한 서비스입니다" 팝업 모달**로 연결되도록 통합 개편하였습니다.
 
 * **[MODIFY] [custom-client-site/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/custom-client-site/page.tsx)**:
   * `[내 커스텀 사이트 관리]` 탭의 차단 가림막을 제거하여 기본 정보, PG 결제 설정, GNB 메뉴 구성기, 블로그 카테고리 관리자를 전면 공개.
@@ -43,7 +43,7 @@
   * 기존 포스트와의 백워드 호환성을 위해 설정 주석이 없는 글은 기존 공식 에디토리얼 인사이트 카드를 Fallback 기본값으로 노출.
 * **[MODIFY] [PostClientWrapper.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/PostClientWrapper.tsx)**:
   * 개인 브랜드 도메인 블로그 글 하단에서도 주석 설정 데이터를 파싱하여 사용자 맞춤 에디토리얼 카드로 자동 치환 출력.
-  * 따로 설정이 없는 디폴트 글은 기존 백링크 효과를 거두는 공식 `CreAibox Publisher` 안내 카드를 표시하여 플랫폼 도메인 파워 상승 동시 보장.
+  * 따로 설정이 없는 디폴트 글은 기존 백링크 효과를 거두는 공식 `CreaiBox Publisher` 안내 카드를 표시하여 플랫폼 도메인 파워 상승 동시 보장.
   * 에디토리얼 본문 내용 글자 크기를 기존 `text-sm` (14px)에서 본문 글자 크기인 **`text-[1.05rem]` (약 17px)** 및 줄바꿈 `leading-[1.8]`로 완벽하게 통일하여 시각적 일관성을 확보.
 * **[MODIFY] [UniversalBlogEditor.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/editor/UniversalBlogEditor.tsx)**:
   * 에디터 중앙 툴바의 `[ T 맞춤법 ]` 오른쪽에 **`[ 에디토리얼 설정 ]`** 버튼을 추가하고 클릭 시 팝업되는 전용 제어 모달 창 구현.
@@ -217,7 +217,7 @@ Cre Note 위젯을 열 때 사용자가 최근 드래그하여 조정해둔 가�
 
 ---
 
-### 1-13. Published with CreAibox 뱃지 개편 (각진 사각 박스 & 딥 블랙 폰트 체계)
+### 1-13. Published with CreaiBox 뱃지 개편 (각진 사각 박스 & 딥 블랙 폰트 체계)
 
 포스팅 하단 출처 뱃지를 기존 타원형 연보라 스타일에서 각진 미세 라운딩 박스(`rounded-lg`)와 선명한 딥 블랙 서체(`font-black text-black`) 기반의 고급스러운 브랜드 카드 뱃지로 개편했습니다.
 
@@ -235,7 +235,7 @@ Cre Note 위젯을 열 때 사용자가 최근 드래그하여 조정해둔 가�
 * **[NEW] [namuwiki-wikipedia-registration-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/namuwiki-wikipedia-registration-guide.md)**:
   * 나무위키 vs 한국어 위키백과 등재 자격, 삭제 위험 방지 수칙, 네이버 상단 노출 메커니즘 정리.
   * 나무위키 전용 프로필 상자, 목차, 서비스 개요, AI 스마트 글쓰기, **키워드 트렌드 분석 & 유튜브 트렌드 분석**, 콘텐츠 플래너, 요금 구조, **공식 유튜브 채널(`@creaibox`) 및 카카오톡 채널(`_RxdxmsX`)** 마크업 원고 포함.
-  * 계정 생성부터 영문 리다이렉트(`CreAibox`) 설정까지 4단계 실전 등록 매뉴얼 작성.
+  * 계정 생성부터 영문 리다이렉트(`CreaiBox`) 설정까지 4단계 실전 등록 매뉴얼 작성.
 
 ---
 
@@ -760,7 +760,7 @@ AI 콘텐츠 기획 결과화면 및 라이브러리에서 "네이버 글 생성
 
 ---
 
-### 1-66. 클라이언트 사이트 푸터 'Powered by CreAibox' DoFollow 백링크 전환 (creaibox.com SEO 가산점 증대)
+### 1-66. 클라이언트 사이트 푸터 'Powered by CreaiBox' DoFollow 백링크 전환 (creaibox.com SEO 가산점 증대)
 
 * **[MODIFY] [Footer.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/sotongcheum/components/Footer.tsx)**, **[MODIFY] [BlogClientWrapper.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/[brand_id]/components/BlogClientWrapper.tsx)**, **[MODIFY] [CategoryClientWrapper.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/[brand_id]/components/CategoryClientWrapper.tsx)**:
   - 단순 글자 텍스트였던 푸터 하단 문구를 `creaibox.com`으로 연결되는 클릭 가능한 DoFollow 앵커 태그(`<a href="https://creaibox.com" target="_blank" rel="noopener">`)로 전면 개편.
@@ -784,7 +784,7 @@ AI 콘텐츠 기획 결과화면 및 라이브러리에서 "네이버 글 생성
 
 ---
 
-### 1-69. CreAibox 100% 맞춤형 커스텀 기업 홈페이지 개발 및 운영 종합 지침서 작성
+### 1-69. CreaiBox 100% 맞춤형 커스텀 기업 홈페이지 개발 및 운영 종합 지침서 작성
 
 * **[NEW] [custom-client-site-development-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/custom-client-site-development-guide.md)**:
   - 커스텀 기업 홈페이지 아키텍처, 디렉토리 구조, 미들웨어 라우팅 규칙, Vercel 퍼포먼스 및 대역폭 최적화, SEO DoFollow 백링크 설계, 신규 사이트 제작 워크플로우 6단계를 집대성한 문서 완성.

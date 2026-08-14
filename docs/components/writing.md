@@ -40,7 +40,7 @@
 
 ---
 
-## 4. CreAibox 독자 포스팅 컴포넌트 (`src/components/writing/creaibox/tabs/`)
+## 4. CreaiBox 독자 포스팅 컴포넌트 (`src/components/writing/creaibox/tabs/`)
 
 독자 블로그에 올리기 전 구글 검색 크롤러 노출 최적화를 위한 보조 도구들입니다.
 * **`CreaiboxSchemaPanel`**: 구글 구조화 데이터 리치 스니펫(FAQPage, Article schema 등)을 에디터 출력용 JSON-LD 스키마 마크업으로 출력해 주는 입력 폼.

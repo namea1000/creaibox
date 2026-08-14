@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-Profiles 데이터베이스는 CreAibox의 통합 사용자 식별 시스템(Identity System)이다.
+Profiles 데이터베이스는 CreaiBox의 통합 사용자 식별 시스템(Identity System)이다.
 
 모든 회원의 프로필, 브랜드 ID, 권한, API Vault, 블로그 설정, 외부 플랫폼 연동 정보 및 향후 확장 기능의 중심 저장소 역할을 수행한다.
 
@@ -25,7 +25,7 @@ Profiles 데이터베이스는 CreAibox의 통합 사용자 식별 시스템(Ide
 
 ## 2. Identity Policy
 
-CreAibox는 단순 이메일 기반 회원 시스템이 아니라 브랜드 중심 사용자 시스템을 채택한다.
+CreaiBox는 단순 이메일 기반 회원 시스템이 아니라 브랜드 중심 사용자 시스템을 채택한다.
 
 모든 사용자는 다음 3개의 식별 체계를 가진다.
 
@@ -33,7 +33,7 @@ CreAibox는 단순 이메일 기반 회원 시스템이 아니라 브랜드 중�
 | -------- | --------------------- |
 | id       | Supabase Auth User ID |
 | email    | 로그인 식별                |
-| brand_id | CreAibox 내부 브랜드 식별자   |
+| brand_id | CreaiBox 내부 브랜드 식별자   |
 
 ---
 

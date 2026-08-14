@@ -1,7 +1,7 @@
 
 # Reserved Brand IDs 운영 인계 문서
 
-이 문서는 CreAibox 브랜드 ID(`{brand_id}.creaibox.com`) 예약어/블랙리스트 시스템의
+이 문서는 CreaiBox 브랜드 ID(`{brand_id}.creaibox.com`) 예약어/블랙리스트 시스템의
 현재 아키텍처, 성능 최적화 내역, AI 스캔 및 자동 검증 모듈, 운영 지침을 종합 정리한다.
 
 ---

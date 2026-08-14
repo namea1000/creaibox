@@ -1,12 +1,16 @@
-# CreAibox Agent Rules & Branding Guidelines
+# CreaiBox Agent Rules & Branding Guidelines
 
 Before writing code, modifying code, or creating new files, always review:
 
 @/Users/a1234/Local Sites/creaibox/docs/rules/ai-agent-rules.md
 
-### Mandatory CreAibox Infrastructure Branding Rule (클라우드 DB 명칭 의무)
+### Mandatory Official Brand Name Rule (공식 브랜드 명칭 표기 의무)
+- **공식 브랜드 명칭은 반드시 `CreaiBox` (대문자 C, 소문자 r, e, a, i, 대문자 B, 소문자 o, x)로 통일하여 표기한다.** (구형 `CreAibox` 표기 전면 금지)
+- 도메인 표기 시에는 `creaibox.com` 소문자를 사용한다.
+
+### Mandatory CreaiBox Infrastructure Branding Rule (클라우드 DB 명칭 의무)
 - 사용자 화면(UI), API 응답 메시지, 홍보 자료, 운용 매뉴얼 및 향후 작성할 모든 문서에서 타사 명칭("구글 드라이브", "Google Drive")을 절대 사용하지 않는다.
-- 반드시 **"CreAibox 클라우드 DB"** (또는 **"creaibox.com 클라우드 DB / 원고 보관함"**) 명칭으로 단일화하여 사용한다.
+- 반드시 **"CreaiBox 클라우드 DB"** (또는 **"creaibox.com 클라우드 DB / 원고 보관함"**) 명칭으로 단일화하여 사용한다.
 
 ### TODO Roadmap Rule
 When the user asks to record or manage future tasks (e.g., "앞으로 할 일에 추가해놔", "할 일 추가"):

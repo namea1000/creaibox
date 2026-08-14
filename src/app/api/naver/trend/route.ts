@@ -215,7 +215,7 @@ export async function GET(request: Request) {
   const isPastDate = targetDate < todayStr;
   const isPastHourToday = targetDate === todayStr && targetHour < currentHour;
 
-  // 1. CreAibox 클라우드 DB 및 메모리 캐시에 실제 저장된 과거 기록 조회
+  // 1. CreaiBox 클라우드 DB 및 메모리 캐시에 실제 저장된 과거 기록 조회
   const dbRecords = await getHistoricalHourlyKeywords(targetDate, targetHour, "naver");
   if (dbRecords && dbRecords.length > 0) {
     return NextResponse.json({
@@ -273,7 +273,7 @@ export async function GET(request: Request) {
       startDate: targetDate,
       endDate: targetDate,
       results: [],
-      message: `선택하신 시간대(${targetDate} ${targetHour}시)는 해당 시각에 수집된 CreAibox DB 기록이 존재하지 않는 시간대입니다.`,
+      message: `선택하신 시간대(${targetDate} ${targetHour}시)는 해당 시각에 수집된 CreaiBox DB 기록이 존재하지 않는 시간대입니다.`,
     });
   }
 
@@ -294,7 +294,7 @@ export async function GET(request: Request) {
       await fetchNaverDataLabTrend(dataLabBody);
     } catch (e) {}
 
-    // 현재 시각 수집 결과를 CreAibox 클라우드 DB 및 메모리 캐시에 적재
+    // 현재 시각 수집 결과를 CreaiBox 클라우드 DB 및 메모리 캐시에 적재
     const archiveRecords = liveResults.slice(0, 20).map((item: any, idx: number) => ({
       target_date: targetDate,
       target_hour: targetHour,

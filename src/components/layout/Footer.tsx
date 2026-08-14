@@ -183,7 +183,7 @@ export default function Footer() {
         </div>
       </section>
 
-      {/* 🔮 CreAibox 메인 커뮤니티 & 공식 1:1 고객지원 4대 채널 허브 럭셔리 섹션 */}
+      {/* 🔮 CreaiBox 메인 커뮤니티 & 공식 1:1 고객지원 4대 채널 허브 럭셔리 섹션 */}
       <section className="relative overflow-hidden bg-slate-900 py-16 text-white dark:bg-black">
         {/* Subtle Background Glow */}
         <div className="pointer-events-none absolute -left-20 -top-20 h-96 w-96 rounded-full bg-violet-600/20 blur-3xl" />
@@ -196,7 +196,7 @@ export default function Footer() {
               OFFICIAL SUPPORT & COMMUNITY
             </div>
             <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              CreAibox 공식 실시간 지원 및 소통 채널
+              CreaiBox 공식 실시간 지원 및 소통 채널
             </h3>
             <p className="mt-2 text-xs sm:text-sm text-slate-400 font-medium max-w-2xl mx-auto">
               궁금하신 점이나 문의사항이 있으신가요? 1:1 상담부터 커뮤니티 소식까지 다양한 채널을 이용해 보세요.
@@ -347,7 +347,7 @@ export default function Footer() {
 
               <p className="max-w-sm break-keep text-sm font-medium leading-relaxed text-slate-600 dark:text-zinc-400">
                 글쓰기, 이미지, 음악, 영상, 뉴스, 트렌드 분석까지 한 번에.
-                CreAibox는 크리에이터를 위한 올인원 AI 콘텐츠 스튜디오입니다.
+                CreaiBox는 크리에이터를 위한 올인원 AI 콘텐츠 스튜디오입니다.
               </p>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -455,7 +455,7 @@ export default function Footer() {
         {/* 사업자 정보 명시 (국세청 정식 사업자등록증 및 전자상거래법 제13조 기준) */}
         <div className="border-t border-slate-200/60 dark:border-zinc-900/80 pt-8 pb-4 text-xs font-medium text-slate-500 dark:text-zinc-400 leading-relaxed" suppressHydrationWarning>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-2 font-bold text-slate-700 dark:text-zinc-300">
-            <span>상호명: 크리에이박스(CreAibox)</span>
+            <span>상호명: 크리에이박스(CreaiBox)</span>
             <span className="text-slate-300 dark:text-zinc-800">|</span>
             <span>대표자: 남정언</span>
             <span className="text-slate-300 dark:text-zinc-800">|</span>
@@ -478,14 +478,14 @@ export default function Footer() {
               className="inline-flex items-center gap-1 font-bold text-yellow-600 dark:text-yellow-400 hover:underline transition-colors"
               title="카카오톡 1:1 채널 상담으로 바로 이동합니다"
             >
-              고객상담: 카카오톡 1:1 채널 (CreAibox)
+              고객상담: 카카오톡 1:1 채널 (CreaiBox)
             </a>
           </div>
         </div>
 
         <div className="flex flex-col items-center justify-between gap-5 border-t border-slate-200 dark:border-zinc-900 pt-4 md:flex-row" suppressHydrationWarning>
           <div className="text-xs font-bold text-slate-500 dark:text-zinc-500">
-            © 2026 <span className="text-slate-800 dark:text-zinc-300">크리에이박스(CreAibox)</span>.
+            © 2026 <span className="text-slate-800 dark:text-zinc-300">크리에이박스(CreaiBox)</span>.
             All rights reserved.
           </div>
 

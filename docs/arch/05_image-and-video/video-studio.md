@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-Video Studio is the browser-based video editing module for CreAibox. It lets users arrange local video, image, audio, text, subtitle, and visualizer clips on a multi-track timeline and export the result to local files.
+Video Studio is the browser-based video editing module for CreaiBox. It lets users arrange local video, image, audio, text, subtitle, and visualizer clips on a multi-track timeline and export the result to local files.
 
 ## 2. Main Features
 

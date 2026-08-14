@@ -25,16 +25,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const path = segments.join("/");
   const sectionTitle = sectionNames[path] || "AI 뉴스 콘텐츠 스튜디오";
   const title = `${sectionTitle} | 크리에이박스 CreAiBox`;
-  const description = `크리에이박스 CreAibox의 ${sectionTitle} 공간입니다. 실시간 수집 및 요약 분석 가공 모듈을 활용하여 핵심 속보 중심의 뉴스를 자동 정제하고 퍼블리싱해 보세요.`;
+  const description = `크리에이박스 CreaiBox의 ${sectionTitle} 공간입니다. 실시간 수집 및 요약 분석 가공 모듈을 활용하여 핵심 속보 중심의 뉴스를 자동 정제하고 퍼블리싱해 보세요.`;
   return {
     title,
     description,
     keywords: ["크리에이박스", "creaibox", sectionTitle, "실시간 뉴스 수집", "AI 뉴스 요약기"],
     openGraph: {
-      title: `${title} | 크리에이박스 CreAibox`,
+      title: `${title} | 크리에이박스 CreaiBox`,
       description,
       url: "https://creaibox.com/news/" + path,
-      siteName: "CreAibox",
+      siteName: "CreaiBox",
       images: [
         {
           url: "/images/seo/main.webp",
@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: `${title} | 크리에이박스 CreAibox`,
+      title: `${title} | 크리에이박스 CreaiBox`,
       description,
       images: ["/images/seo/main.webp"],
     },

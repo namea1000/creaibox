@@ -110,14 +110,14 @@ export default function ExternalBlogMigrationPage() {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-full bg-purple-500/20 border border-purple-500/40 px-3 py-1 text-xs font-black text-purple-300">
               <Sparkles size={14} className="text-purple-400 animate-pulse" />
-              <span>CreAibox 블로그 이관 센터</span>
+              <span>CreaiBox 블로그 이관 센터</span>
             </div>
             <h1 className="text-xl md:text-2xl font-black text-white">
               기존 블로그 원고 <span className="bg-gradient-to-r from-purple-400 via-pink-300 to-amber-300 bg-clip-text text-transparent">통째 가져오기 & creaibox.com 실시간 이관 센터</span>
             </h1>
             <p className="text-xs md:text-sm text-slate-300 font-medium max-w-3xl leading-relaxed">
               기존에 사용하시던 네이버 블로그, 티스토리, 워드프레스 등의 글과 이미지를 1초 만에 스크랩하여<br />
-              <span className="text-purple-400 font-bold">CreAibox 클라우드 DB 및 '블로그 원고 관리'</span>함으로 통째 수집·저장합니다.
+              <span className="text-purple-400 font-bold">CreaiBox 클라우드 DB 및 '블로그 원고 관리'</span>함으로 통째 수집·저장합니다.
             </p>
           </div>
 
@@ -187,7 +187,7 @@ export default function ExternalBlogMigrationPage() {
 
           <div className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-2 text-xs font-bold text-emerald-300">
             <HardDrive size={14} className="text-emerald-400" />
-            <span>CreAibox 클라우드 DB 실시간 연동됨</span>
+            <span>CreaiBox 클라우드 DB 실시간 연동됨</span>
           </div>
         </div>
 
@@ -280,7 +280,7 @@ export default function ExternalBlogMigrationPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between text-xs font-black text-slate-300">
                 <span className="flex items-center gap-1.5">
-                  <Database size={14} className="text-purple-400" /> 수집되어 CreAibox 클라우드 DB에 저장된 원고 목록 ({resultData.importedCount}개)
+                  <Database size={14} className="text-purple-400" /> 수집되어 CreaiBox 클라우드 DB에 저장된 원고 목록 ({resultData.importedCount}개)
                 </span>
                 <span className="text-slate-400 font-normal">이관 완료 시간: {new Date().toLocaleTimeString()}</span>
               </div>
@@ -303,7 +303,7 @@ export default function ExternalBlogMigrationPage() {
                           {post.category}
                         </span>
                         <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
-                          <HardDrive size={10} /> CreAibox DB 저장됨
+                          <HardDrive size={10} /> CreaiBox DB 저장됨
                         </span>
                       </div>
 
@@ -337,8 +337,8 @@ export default function ExternalBlogMigrationPage() {
           <Sparkles size={14} className="text-purple-400" /> 기존 블로그 통째 이관 가이드
         </h4>
         <ul className="text-xs text-slate-400 space-y-1.5 list-disc pl-4 font-medium leading-relaxed">
-          <li>네이버 블로그, 티스토리, 워드프레스의 전체 원고 텍스트, 본문 이미지 및 SEO 메타데이터가 CreAibox 클라우드 DB 및 원고 보관함으로 자동 이관됩니다.</li>
-          <li><span className="text-emerald-400 font-bold">🎬 동영상 임베드 재생 지원:</span> 네이버/티스토리/유튜브 등 포스트 내 동영상은 임베드 링크(iframe)가 자동 추출되어 CreAibox 본문에서 바로 재생됩니다!</li>
+          <li>네이버 블로그, 티스토리, 워드프레스의 전체 원고 텍스트, 본문 이미지 및 SEO 메타데이터가 CreaiBox 클라우드 DB 및 원고 보관함으로 자동 이관됩니다.</li>
+          <li><span className="text-emerald-400 font-bold">🎬 동영상 임베드 재생 지원:</span> 네이버/티스토리/유튜브 등 포스트 내 동영상은 임베드 링크(iframe)가 자동 추출되어 CreaiBox 본문에서 바로 재생됩니다!</li>
           <li>가져온 원고는 <span className="text-purple-300 font-bold">'블로그 원고 관리'</span> 화면에서 자유롭게 수정, SEO 재가공, AI 재발행을 실행하실 수 있습니다.</li>
           <li>원문 작성자의 저작권 규정을 준수하여 본인 소유의 블로그 콘텐츠 이관 용도로 활용해 주세요.</li>
         </ul>

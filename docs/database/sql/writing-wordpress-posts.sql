@@ -1,5 +1,5 @@
 -- =====================================================
--- CreAibox Writing WordPress Posts DB Final
+-- CreaiBox Writing WordPress Posts DB Final
 -- =====================================================
 
 create table if not exists writing_wordpress_posts (

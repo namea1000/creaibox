@@ -24,22 +24,22 @@ interface Props {
   };
 }
 
-// 🌟 네이버/구글 검색 노출 최적화용 "크리에이박스 CreAibox" 브랜드 키워드 동적 메타데이터 주입!
+// 🌟 네이버/구글 검색 노출 최적화용 "크리에이박스 CreaiBox" 브랜드 키워드 동적 메타데이터 주입!
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
   const sectionKey = resolvedParams?.section || "all";
   const name = sectionNames[sectionKey] || "유틸리티 Tools";
   const title = `${name} - 크리에이박스 툴`;
-  const description = `크리에이박스 CreAibox에서 무료로 제공하는 고성능 ${name} 유틸리티 도구입니다. 복잡한 가입 없이 누구나 간편하게 작업 생산성을 높여보세요.`;
+  const description = `크리에이박스 CreaiBox에서 무료로 제공하는 고성능 ${name} 유틸리티 도구입니다. 복잡한 가입 없이 누구나 간편하게 작업 생산성을 높여보세요.`;
   return {
     title,
     description,
     keywords: ["크리에이박스", "creaibox", name, "무료 웹 도구", "작업 자동화"],
     openGraph: {
-      title: `${title} | 크리에이박스 CreAibox`,
+      title: `${title} | 크리에이박스 CreaiBox`,
       description,
       url: `https://creaibox.com/utility-tools/${sectionKey}`,
-      siteName: "CreAibox",
+      siteName: "CreaiBox",
       images: [
         {
           url: "/images/seo/utility-tools.webp",
@@ -53,7 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: `${title} | 크리에이박스 CreAibox`,
+      title: `${title} | 크리에이박스 CreaiBox`,
       description,
       images: ["/images/seo/utility-tools.webp"],
     },

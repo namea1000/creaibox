@@ -1,6 +1,6 @@
 # 📖 Google Maps Platform API 서비스 구축 및 연동 가이드 (Google Maps Guide)
 
-본 매뉴얼은 CreAibox 서비스(AI 커스텀 웹사이트 빌더, 로컬 맛집/여행 AI 블로그 글쓰기, 위치 기반 서비스 등)에 **Google Maps Platform API**를 도입하여 차세대 위치 기반 AI 서비스를 구축하기 위한 기술 기획 및 연동 가이드입니다.
+본 매뉴얼은 CreaiBox 서비스(AI 커스텀 웹사이트 빌더, 로컬 맛집/여행 AI 블로그 글쓰기, 위치 기반 서비스 등)에 **Google Maps Platform API**를 도입하여 차세대 위치 기반 AI 서비스를 구축하기 위한 기술 기획 및 연동 가이드입니다.
 
 ---
 
@@ -8,7 +8,7 @@
 
 Google Maps Platform은 세계 최고 정확도의 위치 및 장소 지능형 데이터를 제공하며, 크게 3가지 핵심 API 그룹으로 구성됩니다.
 
-| API 그룹 | 주요 제공 기능 | CreAibox 적용 분야 |
+| API 그룹 | 주요 제공 기능 | CreaiBox 적용 분야 |
 | :--- | :--- | :--- |
 | **Places API** | 전 세계 장소 검색, 매장 정보, 별점 평점, 실제 이용자 리뷰, 사진, 주소 자동완성(Autocomplete) | AI 로컬 맛집/여행 블로그 포스팅, 주소 자동 입력 서식 |
 | **Maps JavaScript / Embed API** | 커스텀 핀/마커, 다크모드/네온 3D 커스텀 지도 시각화, 스트리트 뷰(Street View) | AI 커스텀 웹사이트 매장 위치 지도, 부동산/상권 3D 지도 |
@@ -16,7 +16,7 @@ Google Maps Platform은 세계 최고 정확도의 위치 및 장소 지능형 �
 
 ---
 
-## 2. 🚀 CreAibox 실전 서비스 연동 5대 비즈니스 과제
+## 2. 🚀 CreaiBox 실전 서비스 연동 5대 비즈니스 과제
 
 ### 과제 1: AI 커스텀 웹사이트 빌더 (`/client-site-builder`) 지도 & 주소 자동완성
 - **기능**: 소상공인/기업 고객의 랜딩페이지 생성 시 업체의 위치를 다크모드/네온 스타일의 3D 지도로 1초 만에 자동 생성.
@@ -74,7 +74,7 @@ export async function initGoogleMap(element: HTMLElement, lat: number, lng: numb
   new AdvancedMarkerElement({
     map,
     position: { lat, lng },
-    title: "CreAibox 파트너 매장",
+    title: "CreaiBox 파트너 매장",
   });
 
   return map;
@@ -109,4 +109,4 @@ export async function fetchPlaceDetails(placeQuery: string) {
 
 ## 5. 📅 업데이트 및 유지보수 이력
 
-- **2026-07-30**: CreAibox Google Maps Platform API 통합 구축 가이드 초안 최초 작성 등록 완료.
+- **2026-07-30**: CreaiBox Google Maps Platform API 통합 구축 가이드 초안 최초 작성 등록 완료.

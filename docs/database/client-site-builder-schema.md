@@ -1,6 +1,6 @@
 # AI 홈페이지 빌더 & CMS 데이터베이스 설계서
 
-본 문서는 CreAibox AI 홈페이지 빌더 및 기업 전용 CMS 서비스를 위한 데이터베이스 테이블 구조와 RLS(Row Level Security) 정책을 상세히 설명합니다.
+본 문서는 CreaiBox AI 홈페이지 빌더 및 기업 전용 CMS 서비스를 위한 데이터베이스 테이블 구조와 RLS(Row Level Security) 정책을 상세히 설명합니다.
 
 ---
 
@@ -27,8 +27,9 @@
 | `company_name` | text | NOT NULL | 회사/기관 공식 한글명 |
 | `phone` | text | | 대표 연락처 |
 | `address` | text | | 주소 |
-| `status` | text | Default 'ACTIVE' | 사이트 운영 상태 (`ACTIVE`, `INACTIVE`) |
+| `status` | text | Default 'DRAFT' | 사이트 운영 상태 (`DRAFT` 초안/비공개, `PUBLISHED` 정식라이브, `ACTIVE`, `INACTIVE`) |
 | `creation_source` | text | CHECK (creation_source IN ('migration', 'sns_builder', 'template')) | 사이트 생성 출처 (이관, SNS, 템플릿) |
+| `theme_vibe` | text | | **[신규]** 사용자가 선택한 디자인 무드/분위기 (예: `modern_clean`, `warm_auto`) |
 | `is_onepage_scroll` | boolean | Default false | 메인 랜딩페이지에 서브페이지 전체 전개 여부 (One-page scroll 모드) |
 | `extra_configs` | jsonb | Default '{}' | SNS 링크, 사업자번호, GA4 측정 ID 등 유연한 설정값. **(백그라운드 무인 이관 큐 용도 추가: `migration_queue`: 서브페이지 URL 배열, `migration_status`: "pending" \| "migrating" \| "completed")** |
 | `scan_report` | jsonb | Default '{}' | **[신규]** 타겟 사이트 정밀 스캔 결과 (페이지 수, 글자 수, 이미지 수, 예상 시간, 톤앤매너 등 보존) |
@@ -46,6 +47,7 @@
 | `title` | text | | 섹션 큰 제목 |
 | `subtitle` | text | | 섹션 작은 제목/설명 |
 | `content_data` | jsonb | Default '{}' | 섹션 하위 요소(카드 썸네일 URL, 불릿 리스트, 뱃지 등) 정보 |
+| `status` | text | Default 'ACTIVE' | **[신규]** 섹션 상태 (`ACTIVE`, `DELETED` 등 Soft Delete 용도) |
 
 ### 2-3. `site_posts` (홈페이지 게시판 및 문의 내역)
 공지사항, 자료실 게시글, 그리고 고객들이 작성한 온라인 상담/견적문의 내역을 통합 저장합니다.
@@ -64,6 +66,18 @@
 | `created_at` | timestamp | Default now() | 작성 일시 |
 | `updated_at` | timestamp | Default now() | 수정 일시 |
 
+### 2-4. `ai_generation_logs` (데이터 해자 구축용 AI 생성 원본 로그)
+사용자가 AI에게 요청한 프롬프트 원본과 AI가 생성한 결과물을 영구 보존하여 추후 AI 재학습(Fine-tuning) 및 사용자 패턴 분석에 사용합니다.
+
+| 필드명 | 타입 | 제약 조건 | 설명 |
+| :--- | :--- | :--- | :--- |
+| `id` | uuid | PRIMARY KEY, Default gen_random_uuid() | 로그 고유 키 |
+| `site_id` | uuid | REFERENCES client_sites(id) ON DELETE CASCADE | 어떤 사이트에 대한 생성 기록인지 |
+| `profile_id` | uuid | REFERENCES profiles(id) ON DELETE SET NULL | 생성을 요청한 유저 |
+| `user_prompt` | text | NOT NULL | 사용자가 입력한 검색어/기획안/키워드 원본 |
+| `ai_response` | jsonb | NOT NULL | AI가 응답한 JSON 결과물 전체 데이터 |
+| `created_at` | timestamp | Default now() | 생성 일시 |
+
 ---
 
 ## 3. RLS (Row Level Security) 정책 정의
@@ -71,12 +85,12 @@
 보안 위협과 무단 수정을 원천 차단하기 위해 모든 테이블에 RLS를 활성화하고 다음 규칙을 정의합니다.
 
 ### 3-1. `client_sites` RLS 정책
-*   **공개 조회(SELECT)**: `status = 'ACTIVE'` 인 사이트는 비인증 대중(anon)도 자유롭게 조회할 수 있습니다.
-*   **소유자 제어(ALL)**: `profile_id`가 현재 로그인한 유저의 UUID와 일치하는 경우에만 INSERT, UPDATE, DELETE가 허용됩니다.
+*   **공개 조회(SELECT)**: `status = 'ACTIVE'` 인 사이트는 비인증 대중(anon)도 자유롭게 조회할 수 있습니다. (`DELETED` 또는 `INACTIVE`는 불가)
+*   **소유자 제어(ALL)**: `profile_id`가 현재 로그인한 유저의 UUID와 일치하는 경우에만 INSERT, UPDATE, DELETE가 허용됩니다. (실제 운영 시에는 프론트엔드에서 DELETE 대신 `UPDATE status = 'DELETED'` 처리)
 
 ### 3-2. `site_sections` RLS 정책
-*   **공개 조회(SELECT)**: 비인증 대중(anon)도 조회가 가능합니다.
-*   **소유자 제어(ALL)**: 상위 `client_sites` 테이블의 소유자(`profile_id`)가 현재 로그인한 유저인 경우에만 추가/수정/삭제가 허용됩니다.
+*   **공개 조회(SELECT)**: 비인증 대중(anon)도 조회가 가능하지만, `status = 'ACTIVE'`인 데이터만 불러와야 합니다.
+*   **소유자 제어(ALL)**: 상위 `client_sites` 테이블의 소유자(`profile_id`)가 현재 로그인한 유저인 경우에만 추가/수정/삭제가 허용됩니다. (실제 운영 시에는 Soft Delete 권장)
 
 ### 3-3. `site_posts` RLS 정책
 *   **공개 조회(SELECT)**: `post_type`이 `notice`(공지) 또는 `board`(일반)인 글은 대중 조회가 가능하지만, `inquiry`(상담 문의) 글은 대중 조회가 차단됩니다.

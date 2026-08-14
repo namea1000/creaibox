@@ -161,10 +161,25 @@ export async function POST(request: Request) {
           ? "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
           : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
-        const res = await fetch(urlObj.href, { headers: { "User-Agent": ua } });
-        if (!res.ok) return;
+        let htmlText = "";
+        try {
+          const res = await fetch(urlObj.href, { headers: { "User-Agent": ua } });
+          if (res.ok) {
+            htmlText = await res.text();
+          }
+        } catch {}
 
-        const htmlText = await res.text();
+        // Check if SPA
+        const { isSpaWebsite, fetchRenderedHtmlWithHeadless } = await import("@/lib/server/headlessScraper");
+        if (!htmlText || isSpaWebsite(htmlText)) {
+          console.log(`[AI Magic Builder] 🔍 SPA detected on ${urlObj.href}. Invoking Headless Chrome...`);
+          const renderedDom = await fetchRenderedHtmlWithHeadless(urlObj.href);
+          if (renderedDom && renderedDom.length > 500) {
+            htmlText = renderedDom;
+          }
+        }
+
+        if (!htmlText) return;
         
         // 2. Clean HTML for Gemini
         const cleanHtml = htmlText
@@ -293,15 +308,15 @@ export async function POST(request: Request) {
 
     const cleanSubdomain = rawHostname.toLowerCase().replace(/[^a-z0-9-]/g, "") || "mysite";
 
-    // 4. DB Insert - Real Data saving (Strict Zero Fake Data Rule)
+    // 4. DB Insert - Real Data saving with DRAFT status & Random 4-character Preview Subdomain
     const adminSupabase = await createAdminClient();
 
-    let finalSubdomain = cleanSubdomain;
+    let finalSubdomain = "";
     let isUnique = false;
-    let suffix = 1;
     
     while (!isUnique) {
-      const checkDomain = suffix === 1 ? cleanSubdomain : `${cleanSubdomain}${suffix}`;
+      const randomSuffix = Math.random().toString(36).substring(2, 6);
+      const checkDomain = `${cleanSubdomain}-${randomSuffix}`;
       let isReserved = checkStaticReservedBrand(checkDomain).blocked;
       
       if (!isReserved) {
@@ -313,10 +328,7 @@ export async function POST(request: Request) {
         if (dbRes) isReserved = true;
       }
 
-      if (isReserved) {
-        suffix++;
-        continue;
-      }
+      if (isReserved) continue;
 
       const { data: existingSite } = await adminSupabase
         .from("client_sites")
@@ -327,29 +339,50 @@ export async function POST(request: Request) {
       if (!existingSite) {
         finalSubdomain = checkDomain;
         isUnique = true;
-      } else {
-        suffix++;
       }
     }
 
-    const { data: newSite, error: insertError } = await adminSupabase
+    const sitePayload = {
+      profile_id: user.id,
+      brand_id: finalSubdomain,
+      company_name: pageTitle,
+      phone: phoneNumber,
+      address: address,
+      status: 'DRAFT', // 🟡 Default: Draft/Preview Mode (Zero SEO/Legal Risk)
+      template_id: themeId !== 'ai-auto' ? themeId : 'service_1',
+      theme_vibe: vibe,
+      creation_source: 'sns_builder',
+      extra_configs: {
+        target_slug: cleanSubdomain,
+        is_draft: true,
+      }
+    };
+
+    let { data: newSite, error: insertError } = await adminSupabase
       .from("client_sites")
-      .insert({
-        profile_id: user.id,
-        brand_id: finalSubdomain,
-        company_name: pageTitle,
-        phone: phoneNumber,
-        address: address,
-        status: 'ACTIVE',
-        template_id: themeId !== 'ai-auto' ? themeId : 'service_1',
-        creation_source: 'sns_builder'
-      })
+      .insert(sitePayload)
       .select("id")
       .single();
 
-    if (insertError) {
+    // Fallback if legacy DB check constraint restricts status to ACTIVE/INACTIVE
+    if (insertError && insertError.message?.includes("client_sites_status_check")) {
+      console.warn("Retrying with legacy status fallback...");
+      const fallbackPayload = {
+        ...sitePayload,
+        status: 'INACTIVE',
+      };
+      const retryRes = await adminSupabase
+        .from("client_sites")
+        .insert(fallbackPayload)
+        .select("id")
+        .single();
+      newSite = retryRes.data;
+      insertError = retryRes.error;
+    }
+
+    if (insertError || !newSite) {
       console.error("Failed to insert client_site:", insertError);
-      return NextResponse.json({ error: "사이트 생성 중 DB 오류가 발생했습니다." }, { status: 500 });
+      return NextResponse.json({ error: "사이트 생성 중 DB 오류가 발생했습니다: " + (insertError?.message || "") }, { status: 500 });
     }
     
     const siteId = newSite.id;
@@ -361,26 +394,52 @@ export async function POST(request: Request) {
       const apiKey = process.env.GEMINI_API_KEY_1 || process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
       if (apiKey) {
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3.7-flash" });
         const availableTemplateIds = Object.keys(TEMPLATE_REGISTRY).join(", ");
         
         // 분위기(Vibe)에 따른 구체적인 디자인/레이아웃 지시사항 생성
         let vibeDesignInstructions = "";
-        if (vibe === "commerce") {
-          vibeDesignInstructions = "쇼핑몰/커머스 스타일: 제품/서비스를 강조하는 큰 이미지 갤러리 뷰, 카드 형태의 상품/서비스 나열, 깔끔한 흰색 배경과 포인트 컬러 활용, 가격표나 장바구니/구매 유도(CTA) 버튼을 적극적으로 배치하라.";
-        } else if (vibe === "dynamic") {
-          vibeDesignInstructions = "트렌디한 스타트업/다이나믹 스타일: 비대칭 레이아웃, 화려한 그라디언트 배경 또는 어두운 다크모드 테마, 벤토(Bento) 그리드 박스 형태의 레이아웃, 크고 굵은 타이포그래피, 생동감 있는 디자인을 적용하라.";
-        } else if (vibe === "portfolio") {
-          vibeDesignInstructions = "포트폴리오/개인 브랜딩 스타일: 작업물(사진)이 돋보이는 모자이크 갤러리 그리드, 큰 헤드라인과 자기소개 텍스트, 미니멀리즘 여백, 세련된 무채색 톤을 활용하라.";
-        } else if (vibe === "professional") {
-          vibeDesignInstructions = "전문적인 기업/비즈니스 스타일: 신뢰감을 주는 블루/네이비 톤, 2단 분할(좌 텍스트/우 이미지) 레이아웃, 체계적인 서비스 요약 표, 숫자로 보여주는 통계 카운터, 고객 후기(Testimonial) 섹션을 활용해 단정하게 디자인하라.";
-        } else if (vibe === "warm") {
-          vibeDesignInstructions = "감성적이고 따뜻한 스타일: 카페나 공방처럼 따뜻한 웜톤(베이지/브라운/소프트파스텔) 컬러, 부드러운 라운딩 처리(rounded-3xl), 여백이 넉넉한 미니멀리즘, 감성적인 폰트와 이미지 배치를 활용하라.";
-        } else if (vibe === "modern") {
-          vibeDesignInstructions = "모던하고 세련된 스타일: 인테리어나 뷰티샵처럼 세련된 무채색(블랙/화이트/그레이) 중심, 세련된 카드형 갤러리 그리드, 부드러운 그림자(shadow-lg), 시선을 사로잡는 강력한 헤드라인 텍스트를 사용하라.";
-        } else {
-          vibeDesignInstructions = "세련된 모던 비즈니스 스타일: 여백을 충분히 살린 미니멀리즘 레이아웃, 깔끔한 카드형 그리드, 시선을 끄는 2단 분할 레이아웃 등 다양한 UI 패턴을 섞어서 사용하라.";
-        }
+        
+        const VIBE_INSTRUCTIONS: Record<string, string> = {
+          // 1. 미니멀/모던
+          modern_auto: "[미니멀 & 모던 계열] 카테고리를 선택했습니다. 참조 사이트의 특성을 분석하여 무채색, 화이트톤, 또는 격자형 그리드 등 미니멀리즘과 관련된 세부 레이아웃을 AI가 스스로 판단하여 가장 아름답게 구성하라.",
+          modern_clean: "모던하고 세련된 스타일: 인테리어나 뷰티샵처럼 세련된 무채색(블랙/화이트/그레이) 중심, 세련된 카드형 갤러리 그리드, 부드러운 그림자(shadow-lg), 시선을 사로잡는 강력한 헤드라인 텍스트를 사용하라.",
+          modern_white: "클린 & 화이트 스타일: 배경을 완전한 화이트톤으로 유지하고 선과 폰트만으로 승부하는 미니멀리즘의 끝판왕을 보여주어라. 불필요한 장식을 배제하고 여백을 극대화하라.",
+          modern_grid: "구조적/아키텍처 스타일: 스위스 디자인처럼 꽉 찬 격자형(Grid) 레이아웃을 사용하라. 텍스트와 이미지가 기하학적으로 완벽한 정렬을 이루도록 섹션을 구성하라.",
+
+          // 2. 기업/전문성
+          corp_auto: "[기업 & 전문성 계열] 카테고리를 선택했습니다. 참조 사이트의 특성을 분석하여 신뢰감 있는 블루/네이비톤, 세리프 폰트, 또는 대기업형 풀스크린 등 기업형에 맞는 세부 레이아웃을 AI가 스스로 판단하여 구성하라.",
+          corp_trust: "전문적인 기업/비즈니스 스타일: 신뢰감을 주는 블루/네이비 톤, 2단 분할(좌 텍스트/우 이미지) 레이아웃, 체계적인 서비스 요약 표, 숫자로 보여주는 통계 카운터, 고객 후기(Testimonial) 섹션을 활용해 단정하게 디자인하라.",
+          corp_heavy: "권위적이고 무게감 있는 스타일: 로펌이나 금융권처럼 묵직하고 진중한 느낌을 주어라. 세리프(명조) 폰트를 적절히 섞어 쓰고, 여백을 고급스럽게 주며 다크 계열의 중후한 컬러를 배치하라.",
+          corp_global: "글로벌 엔터프라이즈 스타일: 삼성이나 애플의 B2B 페이지처럼 정석적이고 시원시원한 대기업 룩을 구성하라. 풀스크린 히어로 이미지와 3단 아이콘 텍스트 요약을 적극 활용하라.",
+
+          // 3. IT/스타트업
+          tech_auto: "[IT & 스타트업 계열] 카테고리를 선택했습니다. 참조 사이트의 특성을 분석하여 벤토 그리드, 퓨처리스틱 다크모드, 또는 글래스모피즘 등 테크 스타트업에 맞는 역동적인 세부 레이아웃을 AI가 스스로 판단하여 구성하라.",
+          tech_startup: "트렌디한 스타트업/다이나믹 스타일: 비대칭 레이아웃, 화려한 그라디언트 배경 또는 어두운 다크모드 테마, 벤토(Bento) 그리드 박스 형태의 레이아웃, 크고 굵은 타이포그래피, 생동감 있는 디자인을 적용하라.",
+          tech_future: "테크 & 퓨처리스틱 스타일: IT 솔루션에 어울리는 어두운 배경(다크모드)과 네온/형광색 포인트 컬러를 사용하라. SaaS 대시보드 화면이나 3D 느낌이 나는 UI 요소를 활용하라.",
+          tech_web3: "웹 3.0 & 글래스모피즘 스타일: 반투명한 유리 질감(backdrop-blur)을 적극 활용하고 네온 텍스트와 역동적인 애니메이션 레이아웃을 배치하여 화려함의 극치를 보여주어라.",
+
+          // 4. 감성/내추럴
+          warm_auto: "[감성 & 내추럴 계열] 카테고리를 선택했습니다. 참조 사이트의 특성을 분석하여 카페 같은 웜톤 베이지, 오가닉 어스톤, 또는 매거진 감성 등 따뜻한 느낌의 세부 레이아웃을 AI가 스스로 판단하여 구성하라.",
+          warm_cafe: "감성적이고 따뜻한 스타일: 카페나 공방처럼 따뜻한 웜톤(베이지/브라운/소프트파스텔) 컬러, 부드러운 라운딩 처리(rounded-3xl), 여백이 넉넉한 미니멀리즘, 감성적인 폰트와 이미지 배치를 활용하라.",
+          warm_nature: "친환경/오가닉 스타일: 자연의 색(그린, 어스톤)을 사용하고 채도를 낮추어 눈이 편안한 디자인을 하라. 인물과 자연 풍경 위주의 갤러리 섹션을 많이 배치하라.",
+          warm_magazine: "매거진/에세이 스타일: 시집이나 잡지처럼 텍스트와 타이포그래피 중심으로 레이아웃을 구성하라. 세리프 폰트를 포인트로 사용하고 넓고 감성적인 여백을 주어라.",
+
+          // 5. 크리에이티브/포트폴리오
+          creative_auto: "[크리에이티브 & 개인 브랜딩] 카테고리를 선택했습니다. 참조 사이트의 특성을 분석하여 모자이크 갤러리, 다크 럭셔리, 브루탈리즘 등 개성을 극대화할 수 있는 세부 레이아웃을 AI가 스스로 판단하여 구성하라.",
+          creative_portfolio: "포트폴리오/개인 브랜딩 스타일: 작업물(사진)이 돋보이는 모자이크 갤러리 그리드, 큰 헤드라인과 자기소개 텍스트, 미니멀리즘 여백, 세련된 무채색 톤을 활용하라.",
+          creative_luxury: "다크 & 럭셔리 스타일: 깊은 블랙 배경에 골드 또는 실버 포인트를 주어 명품 브랜드 쇼룸 같은 최고급 분위기를 연출하라. 폰트는 얇고 우아하게 배치하라.",
+          creative_studio: "아트 스튜디오 스타일: 비대칭 레이아웃과 강렬한 색상 대비를 사용하여 틀에 얽매이지 않는 아티스트적인 느낌을 주어라. 크고 화려한 이미지를 배치하라.",
+          creative_bold: "브루탈리즘 스타일: 파괴적이고 힙한 디자인을 위해 거대한 원색 블록과 초대형 타이포그래피를 사용하여 사용자에게 강렬한 인상을 남겨라.",
+
+          // 6. 커머스/세일즈
+          commerce_auto: "[커머스 & 세일즈 계열] 카테고리를 선택했습니다. 참조 사이트의 특성을 분석하여 상품 나열 위주의 깔끔한 커머스, 풀스크린 하이엔드 쇼룸, 또는 퍼포먼스 랜딩 등 판매 유도에 가장 적합한 세부 레이아웃을 AI가 스스로 판단하여 구성하라.",
+          commerce_clean: "쇼핑몰/커머스 스타일: 제품/서비스를 강조하는 큰 이미지 갤러리 뷰, 카드 형태의 상품/서비스 나열, 깔끔한 흰색 배경과 포인트 컬러 활용, 가격표나 장바구니/구매 유도(CTA) 버튼을 적극적으로 배치하라.",
+          commerce_high_end: "하이엔드 쇼룸 스타일: 이미지나 영상이 화면에 꽉 차는 풀스크린 섹션을 위주로 구성하고 UI 요소는 극도로 미니멀하게 숨겨서 상품 하나에만 온전히 집중하게 하라.",
+          commerce_landing: "퍼포먼스 세일즈 스타일: 전환율(구매/신청)을 극대화하기 위해 행동유도(CTA) 버튼을 아주 크고 눈에 띄게 배치하라. 텍스트 가독성을 최우선으로 하고 장점을 직관적으로 나열하라."
+        };
+
+        vibeDesignInstructions = VIBE_INSTRUCTIONS[vibe] || "세련된 모던 비즈니스 스타일: 여백을 충분히 살린 미니멀리즘 레이아웃, 깔끔한 카드형 그리드, 시선을 끄는 2단 분할 레이아웃 등 다양한 UI 패턴을 섞어서 사용하라.";
 
         const prompt = `
 당신은 세계 최고 수준의 AI 카피라이터 겸 한국어 웹 퍼블리셔입니다.
@@ -457,11 +516,20 @@ ${vibeDesignInstructions}
           { text: prompt }
         ]);
         let aiText = response.response.text().trim();
-        if (aiText.startsWith("```json")) {
+        const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          aiText = jsonMatch[0];
+        } else if (aiText.startsWith("```json")) {
           aiText = aiText.replace(/```json/g, "").replace(/```/g, "").trim();
         }
         
-        const parsedAi = JSON.parse(aiText);
+        let parsedAi: any = {};
+        try {
+          parsedAi = JSON.parse(aiText);
+        } catch (pe) {
+          console.error("AI Magic Builder JSON Parse Error:", pe, "Raw:", aiText);
+          throw pe;
+        }
         
         // 0. Update template_id based on AI's choice
         const aiTemplateId = parsedAi.template_id;
@@ -567,10 +635,10 @@ ${vibeDesignInstructions}
 
     await adminSupabase.from("site_sections").insert(generatedSections);
 
-    const mainPageCdnStorage = "CreAibox 초고속 클라우드 CDN (Supabase Storage / Vercel Blob)";
-    const blogArticlesStorage = "크리에이박스 블로그 > 블로그 원고 관리 & CreAibox 클라우드 DB";
+    const mainPageCdnStorage = "CreaiBox 초고속 클라우드 CDN (Supabase Storage / Vercel Blob)";
+    const blogArticlesStorage = "크리에이박스 블로그 > 블로그 원고 관리 & CreaiBox 클라우드 DB";
 
-    // 5. Construct CreAibox SNS Result Payload
+    // 5. Construct CreaiBox SNS Result Payload
     return NextResponse.json({ 
       success: true, 
       message: "AI SNS 사이트 창작 완료!",

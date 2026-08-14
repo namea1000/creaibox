@@ -12,7 +12,7 @@ export default function ShoppingSourcingPage() {
       <div className="bg-gradient-to-r from-emerald-950/40 via-zinc-900/80 to-teal-950/40 border border-emerald-500/20 p-6 md:p-8 rounded-3xl backdrop-blur-xl shadow-2xl space-y-6">
         <div className="space-y-2">
           <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black tracking-widest uppercase">
-            CreAibox Sourcing Intelligence
+            CreaiBox Sourcing Intelligence
           </span>
           <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center gap-3">
             <Layers className="text-emerald-400" size={32} />

@@ -334,7 +334,7 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
 
   if (!result) {
     return {
-      title: "게시글을 찾을 수 없습니다 | CreAibox",
+      title: "게시글을 찾을 수 없습니다 | CreaiBox",
     };
   }
 
@@ -370,7 +370,7 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
     seoTitle = `${seoTitle} - ${blogTitle}`;
   }
 
-  let seoDesc = post.meta_description || post.focus_keyword || "CreAibox 블로그 글";
+  let seoDesc = post.meta_description || post.focus_keyword || "CreaiBox 블로그 글";
   const seoTemplateDesc = getConf("seo_template_desc");
   if (seoTemplateDesc) {
     seoDesc = seoTemplateDesc
@@ -446,8 +446,8 @@ async function transformContentWithOgCards(content: string, supabase: any): Prom
           .maybeSingle();
 
         if (postData) {
-          cardTitle = postData.title || "CreAibox 블로그 포스팅";
-          cardDesc = postData.meta_description || postData.focus_keyword || "CreAibox 오리지널 인사이트 리포트입니다.";
+          cardTitle = postData.title || "CreaiBox 블로그 포스팅";
+          cardDesc = postData.meta_description || postData.focus_keyword || "CreaiBox 오리지널 인사이트 리포트입니다.";
 
           const { data: imgData } = await supabase
             .from("generated_images")
@@ -628,8 +628,8 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
   const blogPostingJsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
-    headline: post.title || "CreAibox Blog",
-    description: post.meta_description || post.focus_keyword || "CreAibox 블로그 포스팅",
+    headline: post.title || "CreaiBox Blog",
+    description: post.meta_description || post.focus_keyword || "CreaiBox 블로그 포스팅",
     url: canonical,
     image: post.thumbnailUrl || undefined,
     mainEntityOfPage: {

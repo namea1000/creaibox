@@ -1,4 +1,4 @@
-# CreAibox AI 커스텀 웹사이트 전체 운영 및 자동 제작 프로세스 매뉴얼
+# CreaiBox AI 커스텀 웹사이트 전체 운영 및 자동 제작 프로세스 매뉴얼
 
 ---
 
@@ -6,7 +6,7 @@
 
 * **메뉴 위치**: `스튜디오 > 커스텀 웹사이트` (`/studio/custom-client-site`)
 * **개요**: 
-  CreAibox 회원 및 에이전시 파트너가 **100% 독창적인 프리미엄 커스텀 웹사이트**를 1초 만에 자동 구축하거나, 원하는 업종과 디자인/특수기능을 지정하여 AI 에이전트에게 1:1 맞춤 제작을 신청하고 관제하는 전용 중앙 통합 센터입니다.
+  CreaiBox 회원 및 에이전시 파트너가 **100% 독창적인 프리미엄 커스텀 웹사이트**를 1초 만에 자동 구축하거나, 원하는 업종과 디자인/특수기능을 지정하여 AI 에이전트에게 1:1 맞춤 제작을 신청하고 관제하는 전용 중앙 통합 센터입니다.
 * **주요 개발 목표**:
   1. 표준 템플릿 쇼핑 및 1초 원클릭 즉시 개설
   2. 고객사 기본 정보(상호, 연락처, 주소, GNB 메뉴, 로고) 실시간 편집 및 반영
@@ -75,11 +75,11 @@ graph TD
 * **개발일지 기록**: [`docs/project/2026AugustDevlog.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/2026AugustDevlog.md)
 
 ---
-*최종 작성일: 2026년 7월 25일 | CreAibox AI Studio System Manual*
+*최종 작성일: 2026년 7월 25일 | CreaiBox AI Studio System Manual*
 
 ## 🚀 8. 대규모 서브페이지 통째 이관 (100페이지 딥-크롤링 아키텍처)
 
-CreAibox의 1초 홈페이지 통째 이관 기능은 Vercel Serverless Function의 5분(300초) 타임아웃 한계를 극복하고 수백 장의 페이지를 무제한으로 복제하기 위해 **프론트엔드 주도 분산 처리(Client-Side Orchestration)** 아키텍처를 채택하고 있습니다.
+CreaiBox의 1초 홈페이지 통째 이관 기능은 Vercel Serverless Function의 5분(300초) 타임아웃 한계를 극복하고 수백 장의 페이지를 무제한으로 복제하기 위해 **프론트엔드 주도 분산 처리(Client-Side Orchestration)** 아키텍처를 채택하고 있습니다.
 
 ### 8.1 3단계 이관 뎁스(Depth) 옵션
 1. **메인 페이지만 이관 (`depth: main`)**: 원페이지 쇼핑몰/랜딩페이지 용도 (약 10초 소요).

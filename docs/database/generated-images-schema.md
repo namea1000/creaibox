@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-Generated Images 데이터베이스는 CreAibox의 통합 이미지 라이브러리 시스템이다.
+Generated Images 데이터베이스는 CreaiBox의 통합 이미지 라이브러리 시스템이다.
 
 모든 Studio에서 생성된 이미지를 하나의 저장소에서 관리하기 위해 설계되었다.
 
@@ -21,7 +21,7 @@ Generated Images 데이터베이스는 CreAibox의 통합 이미지 라이브러
 
 ## 2. Core Storage Policy
 
-CreAibox는 이미지를 개별 Studio마다 저장하지 않는다.
+CreaiBox는 이미지를 개별 Studio마다 저장하지 않는다.
 
 모든 이미지는 중앙 저장소를 사용한다.
 
@@ -304,7 +304,7 @@ create policy "Anyone can view generated images" on storage.objects for select u
 
 ## 11. Cross Studio Strategy
 
-이 테이블은 CreAibox 전체 Studio가 공유한다.
+이 테이블은 CreaiBox 전체 Studio가 공유한다.
 
 사용 예정
 

@@ -40,7 +40,7 @@ export default function Header({ cartCount = 0, onOpenCart }: HeaderProps) {
           <div className="hidden md:flex items-center gap-4 shrink-0 text-[11px] text-[#A8B5A0]">
             <span className="flex items-center gap-1"><ShieldCheck size={12} /> DoFollow SEO Ready</span>
             <span>|</span>
-            <span className="flex items-center gap-1"><Globe size={12} /> CreAibox Shopping Template</span>
+            <span className="flex items-center gap-1"><Globe size={12} /> CreaiBox Shopping Template</span>
           </div>
         </div>
       </div>

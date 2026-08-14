@@ -192,7 +192,7 @@ export async function POST(req: NextRequest) {
     const forwardSubject = `[전달: ${cleanRecipient}] ${subject || "(제목 없음)"}`;
     const forwardHtml = `
       <div style="font-family: sans-serif; padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 20px; background-color: #f8fafc; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-        <p style="margin: 0 0 10px 0; font-weight: 900; color: #0f172a; font-size: 15px;">📫 CreAibox 이메일 포워딩 수신 통지</p>
+        <p style="margin: 0 0 10px 0; font-weight: 900; color: #0f172a; font-size: 15px;">📫 CreaiBox 이메일 포워딩 수신 통지</p>
         <p style="margin: 0; font-size: 13px; color: #475569; line-height: 1.6;">
           <strong>원발신자:</strong> ${from}<br/>
           <strong>수신주소:</strong> ${cleanRecipient}<br/>

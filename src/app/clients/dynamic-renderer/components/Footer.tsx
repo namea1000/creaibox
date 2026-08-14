@@ -1,5 +1,6 @@
 import React from "react";
 import { MapPin, Phone, Clock, Globe } from "lucide-react";
+import SocialMediaIconList from "./SocialMediaIcons";
 
 interface FooterProps {
   companyName: string;
@@ -33,37 +34,8 @@ export default function Footer({ companyName, phone, address, extraConfigs = {} 
               문의사항이 있으시면 언제든지 편하게 연락해 주세요.
             </p>
             {/* SNS Links */}
-            <div className="flex gap-4">
-              {blogLink && (
-                <a
-                  href={blogLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs font-bold text-slate-400 hover:text-white transition-colors"
-                >
-                  네이버 블로그
-                </a>
-              )}
-              {instagramLink && (
-                <a
-                  href={instagramLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs font-bold text-slate-400 hover:text-white transition-colors"
-                >
-                  인스타그램
-                </a>
-              )}
-              {youtubeLink && (
-                <a
-                  href={youtubeLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs font-bold text-slate-400 hover:text-white transition-colors"
-                >
-                  유튜브
-                </a>
-              )}
+            <div className="pt-2">
+              <SocialMediaIconList links={sns} size="sm" />
             </div>
           </div>
 
@@ -109,7 +81,7 @@ export default function Footer({ companyName, phone, address, extraConfigs = {} 
                 </li>
               )}
               <li>
-                <span className="text-slate-500 mr-2">호스팅제공</span> CreAibox
+                <span className="text-slate-500 mr-2">호스팅제공</span> CreaiBox
               </li>
             </ul>
           </div>
@@ -117,7 +89,7 @@ export default function Footer({ companyName, phone, address, extraConfigs = {} 
 
         {/* Copy Line */}
         <div className="mt-12 pt-8 border-t border-slate-800 text-center text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} {companyName}. All Rights Reserved. Built with CreAibox.</p>
+          <p>© {new Date().getFullYear()} {companyName}. All Rights Reserved. Built with CreaiBox.</p>
         </div>
       </div>
     </footer>

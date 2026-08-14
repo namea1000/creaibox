@@ -713,7 +713,7 @@ export default function SunoGeneratorPage() {
     const handleExtensionSyncMessage = (event: MessageEvent) => {
       if (event.data && event.data.type === "SUNO_SYNCED_METADATA") {
         const payload = event.data.payload;
-        console.log("[CreAibox React] Received synced workspace payload:", payload);
+        console.log("[CreaiBox React] Received synced workspace payload:", payload);
         
         if (payload.workspaces && payload.workspaces.length > 0) {
           setWorkspaces(prev => {
@@ -801,7 +801,7 @@ export default function SunoGeneratorPage() {
                 href="/studio" 
                 className="flex items-center gap-3 px-3 py-3 text-xs font-bold text-slate-400 hover:text-slate-200 hover:bg-slate-900/50 rounded-xl transition text-[13px]"
               >
-                <Home className="w-4.5 h-4.5" /> CreAibox 홈으로
+                <Home className="w-4.5 h-4.5" /> CreaiBox 홈으로
               </a>
               <div className="flex items-center gap-3 px-3 py-3 text-xs font-bold text-emerald-400 bg-emerald-500/5 border border-emerald-500/10 rounded-xl text-[13px]">
                 <Sparkles className="w-4.5 h-4.5 text-emerald-400" /> Suno 곡 생성

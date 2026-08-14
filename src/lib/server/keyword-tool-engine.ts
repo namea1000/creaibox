@@ -58,7 +58,7 @@ export interface KeywordToolResult {
   ageDistribution: Array<{ age: string; ratio: number }>;
   genderDistribution: { male: number; female: number };
 
-  // CreAibox Rating Metrics
+  // CreaiBox Rating Metrics
   ratingGrade: "A+" | "A" | "B+" | "B" | "C+" | "C-";
   ratingStatus: "쾌적" | "보통" | "경쟁 심화";
   ratingDescription: string;

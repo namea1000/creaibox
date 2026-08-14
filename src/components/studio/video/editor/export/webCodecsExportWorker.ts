@@ -454,8 +454,8 @@ export function createWebCodecsExportWorker() {
         "1549A966",
         concatBytes([
           uintElement("2AD7B1", 1000000),
-          stringElement("4D80", "CreAibox Video Studio Worker"),
-          stringElement("5741", "CreAibox Worker WebCodecs Exporter"),
+          stringElement("4D80", "CreaiBox Video Studio Worker"),
+          stringElement("5741", "CreaiBox Worker WebCodecs Exporter"),
           floatElement("4489", duration)
         ])
       );

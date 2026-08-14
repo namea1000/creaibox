@@ -1,6 +1,6 @@
 /**
  * Resend Email Infrastructure Helper Module
- * (CreAibox Custom Domain Email Engine)
+ * (CreaiBox Custom Domain Email Engine)
  */
 
 import { Resend } from "resend";
@@ -101,7 +101,7 @@ export async function sendWelcomeEmail(params: {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to CreAibox AI Studio</title>
+  <title>Welcome to CreaiBox AI Studio</title>
 </head>
 <body style="margin:0; padding:0; background-color:#f8fafc; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#0f172a;">
   <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#f8fafc; padding:40px 10px;">
@@ -125,10 +125,10 @@ export async function sendWelcomeEmail(params: {
           <tr>
             <td align="left" style="padding-top:28px; padding-bottom:16px;">
               <h1 style="margin:0 0 12px 0; font-size:22px; font-weight:800; color:#0f172a; line-height:1.3;">
-                🎉 ${formattedName}, CreAibox AI 스튜디오 가입을 환영합니다!
+                🎉 ${formattedName}, CreaiBox AI 스튜디오 가입을 환영합니다!
               </h1>
               <p style="margin:0 0 20px 0; font-size:14px; line-height:1.6; color:#334155;">
-                CreAibox 가족이 되신 것을 진심으로 축하드립니다.<br>
+                CreaiBox 가족이 되신 것을 진심으로 축하드립니다.<br>
                 이제 최신 AI 원고 자동 작성, 블로그 및 웹사이트 제작, 비디오 편집기, 키워드 트렌드 분석 등 AI Studio 의 모든 기능을 자유롭게 이용하실 수 있습니다.
               </p>
             </td>
@@ -157,10 +157,10 @@ export async function sendWelcomeEmail(params: {
           <tr>
             <td align="left" style="padding-top:20px; padding-bottom:16px; border-top:1px dashed #e2e8f0;">
               <h2 style="margin:0 0 8px 0; font-size:17px; font-weight:800; color:#0f172a; line-height:1.3;">
-                Welcome to CreAibox AI Studio! 🚀
+                Welcome to CreaiBox AI Studio! 🚀
               </h2>
               <p style="margin:0; font-size:13px; line-height:1.6; color:#475569;">
-                Hi ${rawName}, thank you for joining CreAibox.<br>
+                Hi ${rawName}, thank you for joining CreaiBox.<br>
                 Start creating high-quality content, building websites, and leveraging video tools & trend analysis with ease.
               </p>
             </td>
@@ -176,7 +176,7 @@ export async function sendWelcomeEmail(params: {
                 Support & Inquiries: <a href="mailto:support@creaibox.com" style="color:#2563eb; text-decoration:underline;">support@creaibox.com</a>
               </p>
               <p style="margin:12px 0 0 0; font-weight:700; color:#94a3b8;">
-                © CreAibox AI Studio. All rights reserved.
+                © CreaiBox AI Studio. All rights reserved.
               </p>
             </td>
           </tr>
@@ -191,9 +191,9 @@ export async function sendWelcomeEmail(params: {
 
   try {
     await sendEmailViaResend({
-      from: "CreAibox <noreply@creaibox.com>",
+      from: "CreaiBox <noreply@creaibox.com>",
       to: cleanEmail,
-      subject: `🎉 [CreAibox] ${formattedName}, 회원가입을 진심으로 축하합니다!`,
+      subject: `🎉 [CreaiBox] ${formattedName}, 회원가입을 진심으로 축하합니다!`,
       html: htmlContent,
       replyTo: "support@creaibox.com",
     });

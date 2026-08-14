@@ -114,7 +114,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 
   if (!profile) {
     return {
-      title: "블로그를 찾을 수 없습니다 | CreAibox",
+      title: "블로그를 찾을 수 없습니다 | CreaiBox",
     };
   }
 

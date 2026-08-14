@@ -631,7 +631,7 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
                 [{getCountryName(selectedCountry)}] 해당 국가의 급상승 트렌드 수집 데이터가 없습니다.
               </p>
               <p className="text-xs text-zinc-400 font-medium leading-relaxed max-w-md mx-auto">
-                선택하신 날짜({selectedDate})는 CreAibox DB 구축 이전 기간이거나 포털/유튜브 API 제공 범위 외 데이터입니다.
+                선택하신 날짜({selectedDate})는 CreaiBox DB 구축 이전 기간이거나 포털/유튜브 API 제공 범위 외 데이터입니다.
               </p>
             </div>
           ) : (

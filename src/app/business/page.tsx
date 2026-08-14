@@ -27,7 +27,7 @@ export default function BusinessGatewayLanding() {
       {/* 🏁 SECTION 1: HERO SCENE */}
       <div className="max-w-7xl mx-auto px-6 pt-32 pb-16 relative z-10 text-center space-y-6">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase tracking-widest animate-pulse mx-auto">
-          <Sparkles size={12} /> CreAibox B2B Portal
+          <Sparkles size={12} /> CreaiBox B2B Portal
         </div>
         
         <h1 className="text-3.5xl sm:text-5xl md:text-6xl font-black tracking-tight text-slate-950 dark:text-white leading-tight max-w-4xl mx-auto">
@@ -38,7 +38,7 @@ export default function BusinessGatewayLanding() {
         </h1>
         
         <p className="text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed font-semibold">
-          크리에이박스(CreAibox)는 대기업, 공공기관, 프랜차이즈, 크리에이터를 위한 맞춤형 AI 인프라와 트래픽 자동화 솔루션을 제공하는 B2B 혁신 파트너입니다.
+          크리에이박스(CreaiBox)는 대기업, 공공기관, 프랜차이즈, 크리에이터를 위한 맞춤형 AI 인프라와 트래픽 자동화 솔루션을 제공하는 B2B 혁신 파트너입니다.
         </p>
       </div>
 
@@ -191,13 +191,13 @@ export default function BusinessGatewayLanding() {
       <div className="border-t border-slate-200 dark:border-slate-800/60 mt-12 bg-white/40 dark:bg-slate-950/40 relative z-10">
         <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
-            <span className="text-lg font-black text-slate-950 dark:text-white tracking-tight">CreAibox</span>
+            <span className="text-lg font-black text-slate-950 dark:text-white tracking-tight">CreaiBox</span>
             <p className="text-[10px] text-slate-500 font-bold">
               인공지능 기반 올인원 콘텐츠 제작 & 비즈니스 자동화 플랫폼
             </p>
           </div>
           <div className="text-[10px] text-slate-500 dark:text-slate-600 font-bold">
-            © {currentYear} 크리에이박스(CreAibox). All rights reserved. 
+            © {currentYear} 크리에이박스(CreaiBox). All rights reserved. 
           </div>
         </div>
       </div>

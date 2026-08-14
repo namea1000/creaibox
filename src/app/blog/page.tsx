@@ -45,7 +45,7 @@ function isMainSitePost(canonicalUrl: string | null) {
 }
 
 function buildExcerpt(post: PublishedPost) {
-  const source = (post.meta_description || post.focus_keyword || "CreAibox 인사이트 포스팅").trim();
+  const source = (post.meta_description || post.focus_keyword || "CreaiBox 인사이트 포스팅").trim();
   return source.length > 150 ? `${source.slice(0, 150)}...` : source;
 }
 
@@ -145,7 +145,7 @@ export default async function BlogPage(props: {
           <div className="mb-6 flex items-end justify-between gap-6">
             <div>
               <h1 className="text-2xl md:text-3xl font-black tracking-tight text-zinc-955 dark:text-white">
-                CreAibox 인사이트 블로그
+                CreaiBox 인사이트 블로그
               </h1>
             </div>
           </div>

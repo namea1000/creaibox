@@ -1,6 +1,6 @@
 # API 엔드포인트 명세 (API Endpoints)
 
-`CreAibox` 백엔드 서버리스 라우터(`src/app/api/`)의 엔드포인트 세부 명세입니다.
+`CreaiBox` 백엔드 서버리스 라우터(`src/app/api/`)의 엔드포인트 세부 명세입니다.
 
 ---
 

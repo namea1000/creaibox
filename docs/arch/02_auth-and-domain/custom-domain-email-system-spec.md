@@ -1,6 +1,6 @@
-# 📧 CreAibox 커스텀 도메인 이메일 시스템 설계서 (Custom Domain Email System Spec)
+# 📧 CreaiBox 커스텀 도메인 이메일 시스템 설계서 (Custom Domain Email System Spec)
 
-본 문서는 크리에이박스(CreAibox) 및 멀티 브랜드(Downhubs 등), 그리고 B2B 고객사(커스텀 도메인 보유 기업)에게 커스텀 도메인 기반 이메일 수발신 서비스(`ceo@creaibox.com`, `contact@clientdomain.com`)를 제공하기 위한 전체 시스템 아키텍처 및 기술 명세서입니다.
+본 문서는 크리에이박스(CreaiBox) 및 멀티 브랜드(Downhubs 등), 그리고 B2B 고객사(커스텀 도메인 보유 기업)에게 커스텀 도메인 기반 이메일 수발신 서비스(`ceo@creaibox.com`, `contact@clientdomain.com`)를 제공하기 위한 전체 시스템 아키텍처 및 기술 명세서입니다.
 
 ---
 
@@ -21,7 +21,7 @@
 flowchart TD
     subgraph Client["사용자 / 고객사 (Client Layer)"]
         Sender["외부 이메일 발신자"]
-        UserWebUI["CreAibox 웹 대시보드 UI (/studio/email)"]
+        UserWebUI["CreaiBox 웹 대시보드 UI (/studio/email)"]
         UserGmail["고객사 개인 Gmail (client@gmail.com)"]
     end
 
@@ -31,7 +31,7 @@ flowchart TD
         ResendDomainAPI["Resend Domains API"]
     end
 
-    subgraph CreAiboxBackend["CreAibox Next.js Backend & Vercel"]
+    subgraph CreaiBoxBackend["CreaiBox Next.js Backend & Vercel"]
         VercelDNS["Vercel DNS API (Auto Record Injection)"]
         WebhookHandler["Inbound Mail Webhook (/api/webhooks/email)"]
         SendAPI["Outbound Mail API (/api/email/send)"]
@@ -67,14 +67,14 @@ flowchart TD
   - 현재 `creaibox.com`은 Vercel 네임서버(`ns1.vercel-dns.com` 등)를 이용 중.
   - 네임서버 이전 없이 Vercel DNS 대시보드에 **Resend MX/TXT(DKIM/SPF) 레코드만 추가**하여 연동.
 - **Vercel Domains API 자동 연동 (`Zero-Touch Injection`)**:
-  - 고객사가 도메인을 저희 Vercel로 이관했거나 CreAibox에서 등록한 경우, 백엔드가 `Vercel Domains API` (`createDomainRecord`)를 직접 호출하여 **Resend 인증 레코드를 백그라운드 1초 만에 자동 주입**.
+  - 고객사가 도메인을 저희 Vercel로 이관했거나 CreaiBox에서 등록한 경우, 백엔드가 `Vercel Domains API` (`createDomainRecord`)를 직접 호출하여 **Resend 인증 레코드를 백그라운드 1초 만에 자동 주입**.
 
 ### 3.2 이메일 수발신 인프라 (Resend API)
 - **발신 (Outbound)**:
   - 도메인 1개만 Resend에 인증해 두면, 앞의 아이디(`ceo@`, `contact@`, `user123@`)를 동적으로 무제한 지정하여 전송 가능.
   - `resend.emails.send({ from: 'user@downhubs.com', to: 'receiver@gmail.com', subject, html })`
 - **수신 (Inbound & Webhook)**:
-  - Resend Inbound Catch-all (`*@downhubs.com`) 수신기를 통해 들어오는 이메일을 CreAibox `/api/webhooks/email` 로 전송.
+  - Resend Inbound Catch-all (`*@downhubs.com`) 수신기를 통해 들어오는 이메일을 CreaiBox `/api/webhooks/email` 로 전송.
   - 백엔드가 수신자 이메일 주소를 분석하여 해당 유저의 Supabase `user_emails` 테이블에 `INSERT`.
 
 ---
@@ -85,7 +85,7 @@ flowchart TD
 sequenceDiagram
     autonumber
     actor Customer as 고객사 관리자
-    participant Web as CreAibox 대시보드 UI
+    participant Web as CreaiBox 대시보드 UI
     participant Backend as Next.js API Server
     participant Resend as Resend Domains API
     participant Vercel as Vercel Domains API
@@ -142,7 +142,7 @@ sequenceDiagram
 ## 6. 🗄️ 데이터베이스 스키마 설계 (`Supabase`)
 
 > **📌 백엔드 최적화 정책**: 메일 본문, 첨부파일, HTML 텍스트는 Supabase DB에 일체 저장하지 않습니다 (`Zero Mail Storage`).
-> CreAibox DB에는 메일 텍스트를 저장하지 않음으로써 DB 용량 낭비를 100% 방지하고 개인정보 유출 위험을 원천 차단합니다. DB에는 오직 도메인별 일일 발송 쿼터 제한 카운터만 최소 단위(숫자)로 관리합니다.
+> CreaiBox DB에는 메일 텍스트를 저장하지 않음으로써 DB 용량 낭비를 100% 방지하고 개인정보 유출 위험을 원천 차단합니다. DB에는 오직 도메인별 일일 발송 쿼터 제한 카운터만 최소 단위(숫자)로 관리합니다.
 
 ```sql
 -- public.domain_send_quotas (일일 발송 쿼터 카운터 - 텍스트/메일 저장 0%)

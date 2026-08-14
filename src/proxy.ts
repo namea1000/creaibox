@@ -289,9 +289,8 @@ export async function proxy(request: NextRequest) {
           
           const { data: siteData } = await adminSupabase
             .from("client_sites")
-            .select("id")
+            .select("id, status")
             .eq("brand_id", targetBrandId.toLowerCase())
-            .eq("status", "ACTIVE")
             .maybeSingle();
             
           if (siteData?.id) {

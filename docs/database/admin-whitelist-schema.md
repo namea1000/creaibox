@@ -1,7 +1,7 @@
 # Admin Whitelist Database Schema
 
 ## 1. Purpose
-`admin_whitelist` 테이블은 CreAibox의 2차 관리자 인증 시스템을 지원하기 위한 이중 잠금 화이트리스트 테이블이다.
+`admin_whitelist` 테이블은 CreaiBox의 2차 관리자 인증 시스템을 지원하기 위한 이중 잠금 화이트리스트 테이블이다.
 데이터베이스 내 `profiles.role` 권한이 해킹이나 RLS 누락 등의 이슈로 강제 변조되더라도, 소스코드 수정 없이 관리자 UI를 통해 최종 승인된 이메일 목록만을 검증하여 불법적인 관리자 페이지 접근 및 백엔드 관리자 API 탈취를 원천 방어한다.
 
 ---

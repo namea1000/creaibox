@@ -1,6 +1,6 @@
-# CreAibox 개발일지 (Development Log Index)
+# CreaiBox 개발일지 (Development Log Index)
 
-이 문서는 `CreAibox` 프로젝트의 일자별 개발 내역 및 핵심 아키텍처 결정 사항(Devlog)을 월별로 관리하는 통합 인덱스 문서입니다.
+이 문서는 `CreaiBox` 프로젝트의 일자별 개발 내역 및 핵심 아키텍처 결정 사항(Devlog)을 월별로 관리하는 통합 인덱스 문서입니다.
 
 ---
 

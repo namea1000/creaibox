@@ -1,6 +1,6 @@
 # YouTube Data API v3 비디오 카테고리 ID (Video Category IDs) 명세서
 
-이 문서는 **유튜브 공식 Data API v3 (`videoCategories` 리소스)**의 전체 비디오 카테고리 ID(Category ID) 매핑과, **크리에이박스(CreAibox) 시스템 내부 12개 통합 표준 카테고리**와의 연동 매핑 명세를 정의합니다.
+이 문서는 **유튜브 공식 Data API v3 (`videoCategories` 리소스)**의 전체 비디오 카테고리 ID(Category ID) 매핑과, **크리에이박스(CreaiBox) 시스템 내부 12개 통합 표준 카테고리**와의 연동 매핑 명세를 정의합니다.
 
 ---
 
@@ -9,13 +9,13 @@
 * **API Endpoints**: `https://www.googleapis.com/youtube/v3/videoCategories`
 * **요청 매개변수**: `part=snippet&regionCode=KR`
 * **중복 할당 해소**: 유튜브 API 원본 카테고리 ID 중 일부(`24`, `26`, `25`, `28` 등)는 세부 서브 장르(예: 엔터테인먼트 vs 키즈 vs TV/방송)가 동일한 API ID를 고유값으로 사용합니다.
-* **CreAibox 통폐합 규격**: UI/UX 상에서 카테고리 선택 시 2~3개 버튼이 다중 동시 활성화되는 버그를 방지하기 위해 **12개 고유 1:1 매핑 통합 카테고리 시스템**을 구축했습니다.
+* **CreaiBox 통폐합 규격**: UI/UX 상에서 카테고리 선택 시 2~3개 버튼이 다중 동시 활성화되는 버그를 방지하기 위해 **12개 고유 1:1 매핑 통합 카테고리 시스템**을 구축했습니다.
 
 ---
 
-## 2. 크리에이박스(CreAibox) 15개 통합 카테고리 1:1 매핑표
+## 2. 크리에이박스(CreaiBox) 15개 통합 카테고리 1:1 매핑표
 
-| CreAibox 통합 카테고리      | YouTube API ID | 영문 명칭 (API Standard) | 포함 세부 분야 & 키워드                       |
+| CreaiBox 통합 카테고리      | YouTube API ID | 영문 명칭 (API Standard) | 포함 세부 분야 & 키워드                       |
 | --------------------------- | -------------- | ------------------------ | --------------------------------------------- |
 | **전체**              | `all`        | All Categories           | 전체 카테고리 트렌드 수집                     |
 | **음악/댄스/가수**    | `10`         | Music                    | 공식 MV, K-POP, 댄스, 커버, 가요              |
@@ -38,7 +38,7 @@
 
 ## 3. 유튜브 Data API v3 전체 Video Category ID 명세
 
-| Category ID | Category Name (English) | 한국어 공식 명칭   | CreAibox 매핑 규격          | 비고 (Status / Usage) |
+| Category ID | Category Name (English) | 한국어 공식 명칭   | CreaiBox 매핑 규격          | 비고 (Status / Usage) |
 | ----------- | ----------------------- | ------------------ | --------------------------- | --------------------- |
 | `1`       | Film & Animation        | 영화 및 애니메이션 | **영화/만화/애니**    | 활성 (Active)         |
 | `2`       | Autos & Vehicles        | 자동차 및 차량     | **자동차**            | 활성 (Active)         |
@@ -89,5 +89,5 @@
 ## 5. 관리 및 업데이트 이력
 
 * **작성일**: 2026년 7월 23일
-* **작성 목적**: 유튜브 카테고리 ID 다중 동시 선택 버그 방지 및 CreAibox 시스템 표준화 규격 확립
+* **작성 목적**: 유튜브 카테고리 ID 다중 동시 선택 버그 방지 및 CreaiBox 시스템 표준화 규격 확립
 * **검증 방법**: `npx tsc --noEmit` 컴파일 무결성 검증 완료

@@ -1,12 +1,12 @@
 # Suno Music Studio (Suno 곡 생성 연동 서비스 개발 명세서)
 
-본 문서는 **CreAibox AI Studio** 내의 **"Suno 곡 생성"** 메뉴에 대한 UI/UX 구조, 연동 플로우 및 기술 명세를 상세하게 기록합니다.
+본 문서는 **CreaiBox AI Studio** 내의 **"Suno 곡 생성"** 메뉴에 대한 UI/UX 구조, 연동 플로우 및 기술 명세를 상세하게 기록합니다.
 
 ---
 
 ## 1. 개요 및 설계 목표
-* **목표**: CreAibox의 "AI 앨범 기획" 기능에서 설계된 음악 기획 데이터(스타일, 가사 등)를 글로벌 AI 작곡 서비스인 **Suno.com**의 실시간 세션과 매끄럽게 연결하여, 사용자가 한 번의 흐름으로 고품질의 AI 음악을 생성, 감상, 관리할 수 있도록 지원합니다.
-* **디자인 테마**: Suno.com의 다크 프리미엄 테마를 계승하되, CreAibox 디자인 시스템과 일관된 에메랄드/그린 포인트 컬러 및 슬릭한 Glassmorphism 효과를 융합했습니다.
+* **목표**: CreaiBox의 "AI 앨범 기획" 기능에서 설계된 음악 기획 데이터(스타일, 가사 등)를 글로벌 AI 작곡 서비스인 **Suno.com**의 실시간 세션과 매끄럽게 연결하여, 사용자가 한 번의 흐름으로 고품질의 AI 음악을 생성, 감상, 관리할 수 있도록 지원합니다.
+* **디자인 테마**: Suno.com의 다크 프리미엄 테마를 계승하되, CreaiBox 디자인 시스템과 일관된 에메랄드/그린 포인트 컬러 및 슬릭한 Glassmorphism 효과를 융합했습니다.
 
 ---
 
@@ -62,7 +62,7 @@ Suno.com의 UX 동선과 일치하도록 세로 스크롤 레이아웃을 전면
 
 ## 3. 크롬 익스텐션 연동 명세 & 배포 가이드
 
-CreAibox와 Suno.com 간의 완벽한 탭 연동을 위해 **Manifest V3** 규격의 전용 크롬 익스텐션을 구축했습니다.
+CreaiBox와 Suno.com 간의 완벽한 탭 연동을 위해 **Manifest V3** 규격의 전용 크롬 익스텐션을 구축했습니다.
 
 ### 💻 A. 개발자 버전 로컬 설치 방법 (Load Unpacked)
 웹 스토어 출시 전에 로컬 개발 환경에서 즉시 설치하여 테스트하는 방법입니다.
@@ -72,7 +72,7 @@ CreAibox와 Suno.com 간의 완벽한 탭 연동을 위해 **Manifest V3** 규�
 3. 좌측 상단에 노출되는 **[압축해제된 확장 프로그램을 로드합니다 (Load unpacked)]** 버튼을 클릭합니다.
 4. 폴더 선택 창에서 아래의 로컬 익스텐션 소스 경로 폴더를 지정합니다:
    * `/Users/a1234/Local Sites/creaibox/suno-chrome-extension`
-5. 로드가 완료되면 크롬 툴바에 퍼즐 모양 아이콘을 눌러 `CreAibox Suno Connector`를 고정하고 실시간 프리필 동작을 확인할 수 있습니다.
+5. 로드가 완료되면 크롬 툴바에 퍼즐 모양 아이콘을 눌러 `CreaiBox Suno Connector`를 고정하고 실시간 프리필 동작을 확인할 수 있습니다.
 
 ---
 
@@ -85,7 +85,7 @@ CreAibox와 Suno.com 간의 완벽한 탭 연동을 위해 **Manifest V3** 규�
 | **일반인 설치 난이도** | **최하 (매우 쉬움)**<br>스토어에서 [Chrome에 추가] 원클릭 | **최하 (매우 쉬움)**<br>링크 클릭 후 [Chrome에 추가] 원클릭 | **최상 (어려움)**<br>설정 활성화 및 수동 폴더 연결 필요 |
 | **배포 보안 경고창** | **없음** (완벽히 안전) | **없음** (완벽히 안전) | **매일 발생**<br>브라우저 실행 시 해제 권고 알림 발생 |
 | **구글 스토어 검색 노출** | **노출됨** (전 세계 공개) | **비노출** (주소를 가진 회원만 유입) | **비노출** |
-| **적합한 사용 시나리오** | 불특정 다수의 신규 회원을 확보하고 스토어 마케팅을 노출할 때 | **CreAibox 기존 유료/무료 회원에게만 특화 툴로 연결하여 배포할 때 (권장 💡)** | 개발 단계에서 로컬 연동 기능을 즉석 디버깅할 때 |
+| **적합한 사용 시나리오** | 불특정 다수의 신규 회원을 확보하고 스토어 마케팅을 노출할 때 | **CreaiBox 기존 유료/무료 회원에게만 특화 툴로 연결하여 배포할 때 (권장 💡)** | 개발 단계에서 로컬 연동 기능을 즉석 디버깅할 때 |
 
 ---
 
@@ -102,7 +102,7 @@ CreAibox와 Suno.com 간의 완벽한 탭 연동을 위해 **Manifest V3** 규�
 * **심사 소명서 (Permission Justification) 작성**:
   * 구글 심사단은 익스텐션이 요구하는 백그라운드 권한을 민감하게 확인합니다.
   * 제출란의 권한 소명 사유란에 아래의 명확한 문구를 복사하여 제출하십시오:
-    * `storage`: "Used to temporarily cache pending prefill style tags and prompt texts when navigating users from the CreAibox platform to Suno.com."
+    * `storage`: "Used to temporarily cache pending prefill style tags and prompt texts when navigating users from the CreaiBox platform to Suno.com."
     * `tabs`: "Required to detect open client dashboard tabs and securely relay background track metadata updates between tabs."
 
 #### 3단계: 배포 옵션 선택 및 심사 제출
