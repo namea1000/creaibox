@@ -507,7 +507,8 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
   - `page.tsx` & 메타태그: 초안 사이트 접속 시 `<meta name="robots" content="noindex, nofollow" />`를 기본 주입하여 검색엔진 색인을 방어하고, 상단에 `[ ⚠️ AI 이관 테스트 및 미리보기 모드 (비공개 초안) ]` 안전 띠 배너 노출.
   - `promote-domain/route.ts`: 시스템 예약어(`admin`, `api`, `login` 등) 및 타인 점유 도메인 원천 차단, 내 이전 테스트 사이트와의 충돌 시 원클릭 스왑/덮어쓰기 지원하는 3단계 도메인 승격 API 구축.
   - `MigrationTab.tsx` & `AiMagicBuilderTab.tsx`: 이관 및 매직 빌더 히스토리 카드에 `🟡 초안 / 미리보기(비공개)` vs `🟢 라이브` 배지, `[ 🚀 정식 배포 / 도메인 지정 ]` 팝업 모달, `[ 🗑️ 삭제 ]` 버튼 전면 탑재 및 플랫폼 표준 통합 완료.
-  - `history/route.ts`: 기존에 생성된 38개의 모든 레거시 사이트들을 DB에서 실시간 일괄 `status: 'DRAFT'`(초안/미리보기)로 자동 마이그레이션하고, 서브도메인(`brand_id`)도 `[브랜드명]-[랜덤4자리]`(예: `burgerking-7f3b`)로 일괄 자동 전환하여 100% noindex 및 완벽 격리 완료.
   - `proxy.ts`: 미들웨어 서브도메인 라우팅 시 `status: 'ACTIVE'` 하드코딩 필터를 제거하여, `DRAFT`(초안/미리보기) 사이트도 `dynamic-renderer`로 정확하게 렌더링되도록 100% 수정 완료.
+* **Vercel 서버리스 함수 250MB 번들 크기 초과 방어 최적화 완비 (v1.17.2)**:
+  - `next.config.ts`에 `@sparticuz/chromium`, `puppeteer-core`, `pdf-parse`, `sharp` 등을 `serverExternalPackages`로 등록하고, 동적 dynamic import를 적용하여 서버리스 번들 크기(321.63MB)를 극단적으로 다이어트하여 Vercel 배포 빌드 에러를 완벽하게 영구 차단.
 * **글로벌 웹 스크래핑 1위 기업 Apify (apify.com, YC W15) 경쟁사 분석 및 벤치마킹 전략 수록**:
   - `docs/project/business-models/global-and-domestic-competitor-analysis.md`에 Apify의 핵심 비즈니스 모델(헤드리스 브라우저 클라우드, Actor 마켓플레이스), 한계점(Raw Data 추출 도구의 한계), 그리고 완성형 웹사이트를 10초 만에 조립·배포하는 CreaiBox의 초격차 우위 분석 수록 완료.

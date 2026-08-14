@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import sharp from "sharp";
 import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { TEMPLATE_REGISTRY } from "@/lib/templates/registry";
 
@@ -62,6 +61,7 @@ export async function POST(request: Request) {
         // Convert to WebP using sharp if it's an image (and not SVG)
         if (contentType.includes("image") && !contentType.includes("svg")) {
           try {
+            const sharp = (await import("sharp")).default;
             finalBuffer = await sharp(buffer).webp({ quality: 80 }).toBuffer();
             finalContentType = "image/webp";
             finalFileName = fileName.replace(/\.[^/.]+$/, "") + ".webp";

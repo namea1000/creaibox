@@ -2,6 +2,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  serverExternalPackages: [
+    "@sparticuz/chromium",
+    "puppeteer-core",
+    "pdf-parse",
+    "pdfjs-dist",
+    "sharp",
+    "@ffmpeg/ffmpeg",
+    "@ffmpeg/util",
+  ],
   compiler: {
     removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,
   },

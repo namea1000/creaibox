@@ -803,5 +803,8 @@
   4. `MigrationTab.tsx` & `AiMagicBuilderTab.tsx`: 이관 및 매직 빌더 히스토리 카드에 `🟡 초안 / 미리보기(비공개)` vs `🟢 라이브` 배지, `[ 🚀 정식 배포 / 도메인 지정 ]` 팝업 모달, `[ 🗑️ 삭제 ]` 버튼 전면 탑재 및 플랫폼 표준 통합 완료.
   5. `history/route.ts`: 기존에 생성되어 있던 모든 레거시 사이트들을 DB에서 실시간 일괄 `status: 'DRAFT'`(초안/미리보기)로 자동 마이그레이션하고, 서브도메인(`brand_id`)도 `[브랜드명]-[랜덤4자리]`(예: `burgerking-7f3b`)로 일괄 자동 전환하여 100% noindex 및 완벽 격리 완료.
   6. `proxy.ts`: 미들웨어에서 `client_sites` 조회 시 `status: 'ACTIVE'` 하드코딩 필터를 제거하여, `DRAFT`, `PUBLISHED`, `INACTIVE` 등 모든 상태의 커스텀 사이트가 `dynamic-renderer`로 정확하게 라우팅되도록 완전 해결.
+- **Vercel 서버리스 함수 250MB 번들 크기 초과 방어 최적화 완비 (v1.17.2)**:
+  1. `next.config.ts`: `@sparticuz/chromium`, `puppeteer-core`, `pdf-parse`, `pdfjs-dist`, `sharp`, `@ffmpeg/ffmpeg` 등 대형 바이너리 패키지들을 `serverExternalPackages`에 등록하여 서버리스 함수 번들에 인라인 압축되는 것을 원천 방지 (321MB ➔ 초경량 다이어트 완료).
+  2. `ai-magic-builder/route.ts` & `site-migration/route.ts`: 정적 `sharp` import를 동적 dynamic import로 변경하여 초기 함수 번들 크기를 극단적으로 최적화 완료.
 - **글로벌 웹 스크래핑 1위 기업 Apify (apify.com, YC W15) 경쟁사 분석 및 벤치마킹 전략 수록**:
   1. `global-and-domestic-competitor-analysis.md`: Apify의 비즈니스 모델(헤드리스 브라우저 클라우드, Actor 마켓플레이스), 한계점(Raw Data 추출 툴의 한계), 그리고 완성형 웹사이트를 10초 만에 조립·배포하는 CreaiBox의 압도적 초격차 우위 분석 및 향후 백엔드 파트너십 전략 심층 수록 완료.

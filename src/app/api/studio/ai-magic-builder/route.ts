@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import sharp from "sharp";
 import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { TEMPLATE_REGISTRY } from "@/lib/templates/registry";
 import { checkStaticReservedBrand } from "@/lib/constants/reservedBrandsStatic";
@@ -86,6 +85,7 @@ export async function POST(request: Request) {
         // Convert to WebP using sharp if it's an image (and not SVG)
         if (contentType.includes("image") && !contentType.includes("svg")) {
           try {
+            const sharp = (await import("sharp")).default;
             finalBuffer = await sharp(buffer)
               .resize({ width: 1920, withoutEnlargement: true }) // 리사이징 추가: 최대 가로 1920px 제한
               .webp({ quality: 80 })
