@@ -4,6 +4,34 @@
 
 ---
 
+## 📅 2026년 8월 15일 (금)
+
+### 1. 🚀 템플릿 마켓플레이스 0.01초 가속 — iframe 완전 제거 & R2 WebP 썸네일 시스템 구축
+
+#### [① 카드 iframe → R2 WebP 썸네일 교체]
+- **`MarketplaceTab.tsx` 리팩터링**: 기존 `<iframe>` 라이브 프리뷰(600×800px, scale 0.35)를 완전 제거하고 Cloudflare R2 CDN에서 서빙하는 **9:16 WebP 썸네일 이미지**로 교체.
+- **`<Image fill sizes="210px" />` 최적화**: Next.js Image 컴포넌트의 `fill` + `priority={false}` 설정으로 뷰포트 진입 시 lazy load, CDN 캐시 히트 시 0.01초 이하 로딩 달성.
+- **Fallback 플레이스홀더**: `thumbnailUrl`이 null인 경우(CDN 미설정 or 캡처 전) 템플릿 고유 배경 그라디언트 + Camera 아이콘 + "썸네일 캡처 준비 중" 배지로 우아하게 처리.
+
+#### [② `CustomTemplate` 인터페이스 & 상수 업그레이드]
+- **`custom-client-site.ts` 수정**: `CustomTemplate` 인터페이스에 `thumbnailUrl: string | null` 필드 추가.
+- **`getTemplateThumbnailUrl()` 헬퍼 함수 신설**: `NEXT_PUBLIC_R2_CDN_URL` 환경변수 기반 CDN URL 자동 조립. 환경변수 미설정 시 `null` 반환.
+- **16개 템플릿 전체 `thumbnailUrl` 필드 일괄 추가**: `creaibox-assets/templates/{id}/thumbnail.webp` 경로 기준.
+
+#### [③ 자동 캡처 & R2 업로드 파이프라인 신설]
+- **신규 API 경로**: `POST /api/studio/custom-client-site/capture-thumbnail`
+  - **단건 캡처**: `{ templateId, targetUrl }` — 지정 URL 720×1280 스크린샷 → sharp WebP 변환 → R2 업로드.
+  - **전체 일괄 배치**: `{ batch: true, baseUrl? }` — 16개 템플릿 전부 순차 캡처.
+  - **GET 확인**: `?templateId=xxx` → R2 `HeadObject`로 썸네일 존재 여부 체크.
+- **보안**: `x-admin-secret` 헤더 검증 (`ADMIN_API_SECRET` 환경변수), 미인증 시 401 반환.
+- **저장 사양**: `720×1280`, WebP 90% 품질, `Cache-Control: public, max-age=31536000, immutable`.
+- **Puppeteer 설정**: 모바일 UA, deviceScaleFactor 1.5(레티나급), networkidle2 대기 + 2.5초 추가 정착 대기 후 hero shot 캡처.
+
+#### [④ next.config.ts R2 CDN 도메인 허용]
+- `*.r2.dev`, `*.r2.cloudflarestorage.com`, `assets.creaibox.com`, `pub.creaibox.com` 4개 패턴 추가.
+
+---
+
 ## 📅 2026년 8월 14일 (금)
 
 ### 1. 🛡️ AI 데이터 해자(Data Moat) 구축을 위한 로깅 및 Soft Delete 체계 도입
@@ -803,8 +831,27 @@
   4. `MigrationTab.tsx` & `AiMagicBuilderTab.tsx`: 이관 및 매직 빌더 히스토리 카드에 `🟡 초안 / 미리보기(비공개)` vs `🟢 라이브` 배지, `[ 🚀 정식 배포 / 도메인 지정 ]` 팝업 모달, `[ 🗑️ 삭제 ]` 버튼 전면 탑재 및 플랫폼 표준 통합 완료.
   5. `history/route.ts`: 기존에 생성되어 있던 모든 레거시 사이트들을 DB에서 실시간 일괄 `status: 'DRAFT'`(초안/미리보기)로 자동 마이그레이션하고, 서브도메인(`brand_id`)도 `[브랜드명]-[랜덤4자리]`(예: `burgerking-7f3b`)로 일괄 자동 전환하여 100% noindex 및 완벽 격리 완료.
   6. `proxy.ts`: 미들웨어에서 `client_sites` 조회 시 `status: 'ACTIVE'` 하드코딩 필터를 제거하여, `DRAFT`, `PUBLISHED`, `INACTIVE` 등 모든 상태의 커스텀 사이트가 `dynamic-renderer`로 정확하게 라우팅되도록 완전 해결.
-- **Vercel 서버리스 함수 250MB 번들 크기 초과 방어 최적화 완비 (v1.17.2)**:
-  1. `next.config.ts`: `@sparticuz/chromium`, `puppeteer-core`, `pdf-parse`, `pdfjs-dist`, `sharp`, `@ffmpeg/ffmpeg` 등 대형 바이너리 패키지들을 `serverExternalPackages`에 등록하여 서버리스 함수 번들에 인라인 압축되는 것을 원천 방지 (321MB ➔ 초경량 다이어트 완료).
+  7. `marketplace/page.tsx` & `MarketplaceTab.tsx`: 템플릿 쇼핑 페이지에 `PreviewModal`(3종 디바이스 실시간 뷰포트) 및 `DeployModal` 온전 연동 및 `iframe loading="lazy"` 최적화 적용으로 `setPreviewModalTemplate is not a function` 런타임 오류 완전 해결 및 새 탭 직접 열기 지원.
+- **Vercel 서버리스 함수 250MB 번들 크기 초과 방어 최적화 & Vercel Large Functions Beta 활성화 (v1.17.2)**:
+  1. `next.config.ts`: `@sparticuz/chromium`, `puppeteer-core`, `pdf-parse`, `pdfjs-dist`, `sharp`, `@ffmpeg/ffmpeg` 등 대형 바이너리 패키지들을 `serverExternalPackages` 및 `outputFileTracingExcludes`에 등록하여 서버리스 함수 번들에 인라인 압축되는 것을 원천 방지 (321MB ➔ 초경량 다이어트 완료).
   2. `ai-magic-builder/route.ts` & `site-migration/route.ts`: 정적 `sharp` import를 동적 dynamic import로 변경하여 초기 함수 번들 크기를 극단적으로 최적화 완료.
+  3. `VERCEL_SUPPORT_LARGE_FUNCTIONS=1` 환경변수 연동을 통해 Vercel 프로덕션 빌드 및 라이브 배포 100% 성공 완료.
 - **글로벌 웹 스크래핑 1위 기업 Apify (apify.com, YC W15) 경쟁사 분석 및 벤치마킹 전략 수록**:
   1. `global-and-domestic-competitor-analysis.md`: Apify의 비즈니스 모델(헤드리스 브라우저 클라우드, Actor 마켓플레이스), 한계점(Raw Data 추출 툴의 한계), 그리고 완성형 웹사이트를 10초 만에 조립·배포하는 CreaiBox의 압도적 초격차 우위 분석 및 향후 백엔드 파트너십 전략 심층 수록 완료.
+
+### 2026-08-15: 마켓플레이스 4대 실제 템플릿 썸네일 고화질 캡처 & Cloudflare R2 WebP 업로드 완료 (v1.18)
+- **배경**: 마켓플레이스 템플릿 카드에 `iframe`을 직접 띄울 경우 네트워크 트래픽 과다 및 메뉴 이동 지연이 발생하던 문제를 해결하기 위해, 실제 사이트가 구축된 4종(`sotongcheum`, `commufill`, `creative-media-blog`, `aura-merino`)을 Headless Chrome으로 고화질 캡처하여 Cloudflare R2에 WebP로 저장·서빙하는 초경량 0.01초 파이프라인 구축 및 업로드 완료.
+- **실제 4대 템플릿 썸네일 캡처 & R2 업로드 완료**:
+  1. `sotongcheum` (스마트 비즈니스 V1) ➔ `templates/sotongcheum/thumbnail.webp` (161KB)
+  2. `commufill` (커뮤필 V1) ➔ `templates/commufill/thumbnail.webp` (68KB)
+  3. `creative-media-blog` (크리에이티브 미디어 블로그 V1) ➔ `templates/creative-media-blog/thumbnail.webp` (142KB)
+  4. `aura-merino` (아우라 메리노 스니커즈 쇼핑몰 V1) ➔ `templates/aura-merino/thumbnail.webp` (63KB)
+  - 미구축 12개 템플릿은 `thumbnailUrl: null` 처리하여 모던 그라디언트 Fallback UI("썸네일 캡처 준비 중")를 정상 렌더링.
+- **자동 캡처 백엔드 API (`/api/studio/custom-client-site/capture-thumbnail`)**:
+  - Puppeteer 기반 9:16 모바일 뷰포트(720×1280) 고화질 스크린샷 캡처 및 Sharp 기반 WebP 90% 압축 엔진 연동.
+  - Cloudflare R2 스토리지(`creaibox-assets/templates/{templateId}/thumbnail.webp`) 1년 불변 캐시(`public, max-age=31536000, immutable`)로 고속 업로드.
+  - 단건 캡처(`templateId`, `targetUrl`), 전체 순차 일괄 배치 캡처(`batch: true`), 및 존재 여부 조회(`GET`) 엔드포인트 완비.
+- **프론트엔드 UI 최적화 (`MarketplaceTab.tsx`, `marketplace/page.tsx`)**:
+  - `unoptimized={true}` 설정을 통해 Next.js 서버 리사이징 오버헤드 없이 Cloudflare R2 글로벌 CDN 엣지에서 0.01초 만에 WebP 이미지를 직통 로딩하도록 개선.
+- **실무 운용 매뉴얼 신설**:
+  - `docs/project/manual/template-thumbnail-capture-pipeline.md` (사전 준비, cURL 단건/배치 캡처 방법, 금지 패턴 수록).

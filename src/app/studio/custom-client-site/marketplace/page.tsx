@@ -3,10 +3,21 @@
 import React, { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import MarketplaceTab from "@/components/studio/custom-client-site/tabs/MarketplaceTab";
+import PreviewModal from "@/components/studio/custom-client-site/modals/PreviewModal";
+import DeployModal from "@/components/studio/custom-client-site/modals/DeployModal";
+import { CustomTemplate } from "@/constants/custom-client-site";
 
 export default function MarketplacePage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
+
+  // Modal States for 1-Click Preview & Instant Deployment
+  const [previewModalTemplate, setPreviewModalTemplate] = useState<CustomTemplate | null>(null);
+  const [previewDeviceMode, setPreviewDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [deployModalTemplate, setDeployModalTemplate] = useState<CustomTemplate | null>(null);
+  const [deploySiteName, setDeploySiteName] = useState<string>("");
+  const [deploySubdomain, setDeploySubdomain] = useState<string>("");
+  const [deploySuccess, setDeploySuccess] = useState<boolean>(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -37,11 +48,46 @@ export default function MarketplacePage() {
 
       <MarketplaceTab 
         requireAuth={requireAuth} 
-        setPreviewModalTemplate={() => {}}
-        setDeployModalTemplate={() => {}}
-        setDeploySiteName={() => {}}
-        setDeploySubdomain={() => {}}
-        setDeploySuccess={() => {}}
+        setPreviewModalTemplate={setPreviewModalTemplate}
+        setDeployModalTemplate={setDeployModalTemplate}
+        setDeploySiteName={setDeploySiteName}
+        setDeploySubdomain={setDeploySubdomain}
+        setDeploySuccess={setDeploySuccess}
+      />
+
+      {/* 🖥️ High-Definition 3-Device Viewport Live Preview Modal */}
+      <PreviewModal
+        previewModalTemplate={previewModalTemplate}
+        setPreviewModalTemplate={setPreviewModalTemplate}
+        previewDeviceMode={previewDeviceMode}
+        setPreviewDeviceMode={setPreviewDeviceMode}
+        onDeploy={(tpl) => {
+          requireAuth(() => {
+            setPreviewModalTemplate(null);
+            setDeployModalTemplate(tpl);
+            setDeploySiteName(`${tpl.name.split(" ")[0]} 내 브랜드`);
+            setDeploySubdomain(`${tpl.id}-mybrand`);
+            setDeploySuccess(false);
+          });
+        }}
+        requireAuth={requireAuth}
+        setDeployModalTemplate={setDeployModalTemplate}
+        setDeploySiteName={setDeploySiteName}
+        setDeploySubdomain={setDeploySubdomain}
+        setDeploySuccess={setDeploySuccess}
+      />
+
+      {/* 🚀 1-Second Instant Deployment Modal */}
+      <DeployModal
+        deployModalTemplate={deployModalTemplate}
+        setDeployModalTemplate={setDeployModalTemplate}
+        deploySiteName={deploySiteName}
+        setDeploySiteName={setDeploySiteName}
+        deploySubdomain={deploySubdomain}
+        setDeploySubdomain={setDeploySubdomain}
+        deploySuccess={deploySuccess}
+        setDeploySuccess={setDeploySuccess}
+        setActiveTab={() => {}}
       />
 
       {/* Unified Simple Login Modal */}

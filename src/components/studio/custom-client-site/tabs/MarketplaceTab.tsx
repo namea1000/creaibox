@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Search, CheckCircle2, ShieldCheck, Eye, Zap, Lock, ExternalLink, Maximize2 } from "lucide-react";
+import Image from "next/image";
+import { Search, CheckCircle2, ShieldCheck, Eye, Zap, Lock, ExternalLink, Maximize2, Camera } from "lucide-react";
 import { CustomTemplate, CUSTOM_TEMPLATES } from "@/constants/custom-client-site";
 
 interface MarketplaceTabProps {
@@ -169,22 +170,43 @@ export default function MarketplaceTab({
                         </span>
                       </div>
 
-                      <button
-                        onClick={() => setPreviewModalTemplate(tpl)}
-                        title="팝업 미리보기"
+                      <a
+                        href={`/clients/${tpl.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        title="새 탭에서 사이트 직접 열기"
                         className="text-slate-400 hover:text-white p-0.5 rounded hover:bg-slate-800 transition-all"
                       >
                         <ExternalLink size={10} />
-                      </button>
+                      </a>
                     </div>
 
-                    {/* Scaled Live Web Page Frame */}
-                    <div className="relative flex-1 w-full bg-white overflow-hidden cursor-pointer" onClick={() => setPreviewModalTemplate(tpl)}>
-                      <iframe
-                        src={`/clients/${tpl.id}`}
-                        title={`${tpl.name} Live Preview`}
-                        className="w-[600px] h-[800px] origin-top-left scale-[0.35] border-0 pointer-events-none"
-                      />
+                    {/* 9:16 Thumbnail — WebP from R2 CDN (zero iframe cost) */}
+                    <div
+                      className="relative flex-1 w-full overflow-hidden cursor-pointer bg-slate-950"
+                      onClick={() => setPreviewModalTemplate(tpl)}
+                    >
+                      {tpl.thumbnailUrl ? (
+                        /* R2 CDN 썸네일 이미지 (9:16 WebP) */
+                        <Image
+                          src={tpl.thumbnailUrl}
+                          alt={`${tpl.name} 썸네일`}
+                          fill
+                          sizes="210px"
+                          className="object-cover object-top"
+                          priority={false}
+                          unoptimized={true}
+                        />
+                      ) : (
+                        /* Fallback: CDN 미설정 or 캡처 전 */
+                        <div className={`absolute inset-0 bg-gradient-to-b ${tpl.bgGradient} flex flex-col items-center justify-center gap-2 p-3`}>
+                          <Camera size={20} className="text-slate-500" />
+                          <span className="text-[9px] font-bold text-slate-500 text-center leading-tight">썸네일 캡처 준비 중</span>
+                          <span className="text-[8px] text-slate-600 text-center leading-tight">{tpl.id}</span>
+                        </div>
+                      )}
+
                       {/* Hover Overlay */}
                       <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover/preview:opacity-100 transition-all duration-200 flex items-center justify-center p-1 backdrop-blur-[1px]">
                         <button
@@ -192,7 +214,7 @@ export default function MarketplaceTab({
                             e.stopPropagation();
                             setPreviewModalTemplate(tpl);
                           }}
-                          className="inline-flex items-center gap-1 rounded-lg bg-cyan-500 px-2 py-1 text-[10px] font-black text-slate-950 shadow-md hover:bg-cyan-400 transition-all cursor-pointer"
+                          className="inline-flex items-center gap-1 rounded-lg bg-cyan-500 px-2.5 py-1.5 text-[10px] font-black text-slate-950 shadow-md hover:bg-cyan-400 transition-all cursor-pointer"
                         >
                           <Maximize2 size={11} /> 실시간 뷰
                         </button>

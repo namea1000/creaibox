@@ -265,10 +265,22 @@ export interface CustomTemplate {
   description: string;
   features: string[];
   previewUrl: string;
+  thumbnailUrl: string | null;       // R2 CDN: creaibox-assets/templates/{id}/thumbnail.webp (9:16, WebP)
   badge: string;
   accentColor: string;
   bgGradient: string;
   deployCount: number;
+}
+
+// R2 CDN Base URL for template thumbnails
+export const TEMPLATE_THUMBNAIL_CDN = process.env.NEXT_PUBLIC_R2_CDN_URL
+  ? `${process.env.NEXT_PUBLIC_R2_CDN_URL}/templates`
+  : null;
+
+/** Helper: build full thumbnail URL for a template ID */
+export function getTemplateThumbnailUrl(templateId: string): string | null {
+  if (!TEMPLATE_THUMBNAIL_CDN) return null;
+  return `${TEMPLATE_THUMBNAIL_CDN}/${templateId}/thumbnail.webp`;
 }
 
 export const CUSTOM_TEMPLATES: CustomTemplate[] = [
@@ -279,6 +291,7 @@ export const CUSTOM_TEMPLATES: CustomTemplate[] = [
     description: "공공기관 및 기업 행사 대행, 조직 교육, 소통/힐링 프로그램 및 렌탈 운영 전문 프리미엄 커스텀 홈페이지",
     features: ["실적 갤러리 탭", "온라인 견적신청 폼", "전용 블로그 엔진", "DoFollow SEO 백링크", "3종 디바이스 뷰포트", "1초 자동 구축 지원"],
     previewUrl: "http://sotongcheum.localhost:3000",
+    thumbnailUrl: getTemplateThumbnailUrl("sotongcheum"),
     badge: "BEST 템플릿",
     accentColor: "from-blue-600 to-indigo-600",
     bgGradient: "from-blue-950/40 via-slate-900 to-indigo-950/40",
@@ -291,6 +304,7 @@ export const CUSTOM_TEMPLATES: CustomTemplate[] = [
     description: "지역 모임, 비영리 단체, 동호회 및 협동조합 소통 활성화를 위한 맞춤 커스텀 홈페이지",
     features: ["모임 라이브러리", "멤버십 안내", "실시간 소통 폼", "전용 블로그 탭", "DoFollow SEO 엔진", "반응형 멀티 디바이스"],
     previewUrl: "http://commufill.localhost:3000",
+    thumbnailUrl: getTemplateThumbnailUrl("commufill"),
     badge: "인기 템플릿",
     accentColor: "from-indigo-600 to-purple-600",
     bgGradient: "from-indigo-950/40 via-slate-900 to-purple-950/40",
@@ -303,6 +317,7 @@ export const CUSTOM_TEMPLATES: CustomTemplate[] = [
     description: "IT, 테크, 마케팅 전문 미디어 브랜드 및 트렌드 뉴스레터 중심의 포털 커스텀 블로그",
     features: ["카테고리 아카이브", "뉴스레터 구독 폼", "인기글 랭킹", "전용 블로그 엔진", "DoFollow SEO 백링크", "실시간 읽기 모달 팝업"],
     previewUrl: "http://creative-media-blog.localhost:3000",
+    thumbnailUrl: getTemplateThumbnailUrl("creative-media-blog"),
     badge: "추천 템플릿",
     accentColor: "from-cyan-600 to-blue-600",
     bgGradient: "from-cyan-950/40 via-slate-900 to-blue-950/40",
@@ -315,6 +330,7 @@ export const CUSTOM_TEMPLATES: CustomTemplate[] = [
     description: "디자이너, 포토그래퍼, 크리에이터 전용 풀스크린 포트폴리오 및 프로젝트 쇼케이스",
     features: ["작품 풀스크린 갤러리", "프로젝트 모달", "외주 문의 폼", "전용 블로그 탭", "DoFollow SEO 백링크", "3종 디바이스 지원"],
     previewUrl: "http://sotongcheum.localhost:3000",
+    thumbnailUrl: null, // 실제 사이트 미구축 — 향후 템플릿 완성 시 getTemplateThumbnailUrl("aura-portfolio")로 변경
     badge: "크리에이티브",
     accentColor: "from-violet-600 to-purple-600",
     bgGradient: "from-violet-950/40 via-slate-900 to-purple-950/40",
@@ -327,6 +343,7 @@ export const CUSTOM_TEMPLATES: CustomTemplate[] = [
     description: "프리미엄 굿즈, 브랜드 셀렉트숍 및 라이프스타일 브랜드 전용 커스텀 쇼룸",
     features: ["상품 쇼케이스", "카테고리 필터", "구매 문의 폼", "브랜드 스토리", "전용 블로그 엔진", "DoFollow SEO"],
     previewUrl: "http://sotongcheum.localhost:3000",
+    thumbnailUrl: null, // 실제 사이트 미구축 — 향후 템플릿 완성 시 변경
     badge: "프리미엄",
     accentColor: "from-amber-600 to-yellow-600",
     bgGradient: "from-amber-950/40 via-slate-900 to-yellow-950/40",
@@ -339,6 +356,7 @@ export const CUSTOM_TEMPLATES: CustomTemplate[] = [
     description: "전시회, 미술관, 갤러리 및 디자인 에이전시 전용 전시 가이드 & 비주얼 포털",
     features: ["전시 일정 캘린더", "작가 프로필", "작품 도록", "티켓 예약 폼", "전용 블로그 탭", "DoFollow SEO"],
     previewUrl: "http://sotongcheum.localhost:3000",
+    thumbnailUrl: null, // 실제 사이트 미구축 — 향후 변경
     badge: "감성 아트",
     accentColor: "from-rose-600 to-pink-600",
     bgGradient: "from-rose-950/40 via-slate-900 to-pink-950/40",
@@ -351,6 +369,7 @@ export const CUSTOM_TEMPLATES: CustomTemplate[] = [
     description: "상가, 분양, 신축 빌라 및 프라이빗 매물 정보 전용 커스텀 부동산 사이트",
     features: ["매물 검색 필터", "상세 지도 매핑", "매물 상담 폼", "시세 인사이트", "전용 블로그 탭", "DoFollow SEO 백링크"],
     previewUrl: "http://sotongcheum.localhost:3000",
+    thumbnailUrl: null, // 실제 사이트 미구축 — 향후 변경
     badge: "신뢰 100%",
     accentColor: "from-slate-600 to-zinc-700",
     bgGradient: "from-slate-900 via-zinc-900 to-stone-900",
@@ -363,6 +382,7 @@ export const CUSTOM_TEMPLATES: CustomTemplate[] = [
     description: "피부과, 한의원, 피트니스 및 힐링 센터 전용 맞춤 커스텀 케어 사이트",
     features: ["의료진/강사 프로필", "진료/운동 카테고리", "1:1 상담 예약", "전용 블로그 엔진", "DoFollow SEO", "반응형 뷰포트"],
     previewUrl: "http://sotongcheum.localhost:3000",
+    thumbnailUrl: null, // 실제 사이트 미구축 — 향후 변경
     badge: "웰니스 추천",
     accentColor: "from-emerald-600 to-teal-600",
     bgGradient: "from-emerald-950/40 via-slate-900 to-teal-950/40",
@@ -375,6 +395,7 @@ export const CUSTOM_TEMPLATES: CustomTemplate[] = [
     description: "입시 학원, 어학원, AI/SW 코딩 아카데미 및 수강생 관리 커스텀 교육 사이트",
     features: ["커리큘럼 안내", "강사진 프로필", "입학 상담 신청", "수강 후기", "전용 블로그 탭", "DoFollow SEO"],
     previewUrl: "http://sotongcheum.localhost:3000",
+    thumbnailUrl: null, // 실제 사이트 미구축 — 향후 변경
     badge: "교육 전문",
     accentColor: "from-blue-600 to-cyan-600",
     bgGradient: "from-blue-950/40 via-slate-900 to-cyan-950/40",
@@ -387,6 +408,7 @@ export const CUSTOM_TEMPLATES: CustomTemplate[] = [
     description: "패션, 라이프스타일, 컬처 종합 매거진 및 웹진 형태의 고품격 미디어 사이트",
     features: ["헤드라인 그리드", "트렌드 이슈", "동영상 커버", "전용 매거진 블로그", "DoFollow SEO 백링크", "3종 디바이스 스위처"],
     previewUrl: "http://sotongcheum.localhost:3000",
+    thumbnailUrl: null, // 실제 사이트 미구축 — 향후 변경
     badge: "트렌디",
     accentColor: "from-purple-600 to-pink-600",
     bgGradient: "from-purple-950/40 via-slate-900 to-pink-950/40",
@@ -399,6 +421,7 @@ export const CUSTOM_TEMPLATES: CustomTemplate[] = [
     description: "음반 기획사, 아티스트, SUNO/AI 뮤직 플레이어 연동 음악 전용 커스텀 포털",
     features: ["음원 스트리밍 플레이어", "앨범 디스코그래피", "공연 일정", "팬 방명록", "전용 블로그 탭", "DoFollow SEO"],
     previewUrl: "http://sotongcheum.localhost:3000",
+    thumbnailUrl: null, // 실제 사이트 미구축 — 향후 변경
     badge: "AI 뮤직",
     accentColor: "from-rose-600 to-orange-600",
     bgGradient: "from-rose-950/40 via-slate-900 to-orange-950/40",
@@ -411,6 +434,7 @@ export const CUSTOM_TEMPLATES: CustomTemplate[] = [
     description: "파인다이닝, 프라이빗 레스토랑, 베이커리 카페 전용 시그니처 커스텀 웹사이트",
     features: ["시그니처 코스 메뉴판", "테이블 예약 폼", "매장 오시는길", "인스타그램 피드", "전용 블로그 탭", "DoFollow SEO"],
     previewUrl: "http://sotongcheum.localhost:3000",
+    thumbnailUrl: null, // 실제 사이트 미구축 — 향후 변경
     badge: "핫플레이스",
     accentColor: "from-yellow-600 to-amber-600",
     bgGradient: "from-yellow-950/40 via-slate-900 to-amber-950/40",
@@ -423,6 +447,7 @@ export const CUSTOM_TEMPLATES: CustomTemplate[] = [
     description: "감성 펜션, 리조트, 공간 대여 및 해외 투어 전문 여행 라이프스타일 사이트",
     features: ["객실/투어 상품", "실시간 예약 문의", "주변 관광 가이드", "방문 후기", "전용 블로그 탭", "DoFollow SEO"],
     previewUrl: "http://sotongcheum.localhost:3000",
+    thumbnailUrl: null, // 실제 사이트 미구축 — 향후 변경
     badge: "힐링 여행",
     accentColor: "from-teal-600 to-emerald-600",
     bgGradient: "from-teal-950/40 via-slate-900 to-emerald-950/40",
@@ -435,6 +460,7 @@ export const CUSTOM_TEMPLATES: CustomTemplate[] = [
     description: "패션 브랜드 룩북, 뷰티 에스테틱 및 헤어샵 전용 감성 뷰티 포털",
     features: ["시술/스타일 룩북", "1:1 예약 상담", "리뷰 카러셀", "전용 블로그 탭", "DoFollow SEO 엔진", "3종 디바이스 최적화"],
     previewUrl: "http://sotongcheum.localhost:3000",
+    thumbnailUrl: null, // 실제 사이트 미구축 — 향후 변경
     badge: "스타일리시",
     accentColor: "from-fuchsia-600 to-pink-600",
     bgGradient: "from-fuchsia-950/40 via-slate-900 to-pink-950/40",
@@ -447,6 +473,7 @@ export const CUSTOM_TEMPLATES: CustomTemplate[] = [
     description: "연예 기획사, 캐스팅 에이전시, 버스킹 및 공연 대행 전문 엔터테인먼트 포털",
     features: ["아티스트 라인업", "오디션/캐스팅 신청", "공연 영상 갤러리", "언론 보도", "전용 블로그 탭", "DoFollow SEO 백링크"],
     previewUrl: "http://sotongcheum.localhost:3000",
+    thumbnailUrl: null, // 실제 사이트 미구축 — 향후 변경
     badge: "엔터 전문",
     accentColor: "from-indigo-600 to-blue-600",
     bgGradient: "from-indigo-950/40 via-slate-900 to-blue-950/40",
@@ -459,6 +486,7 @@ export const CUSTOM_TEMPLATES: CustomTemplate[] = [
     description: "100% 천연 메리노 울 & 캐시미어 수제 스니커즈 전문 이커머스 스토어 (Aura Merino 시그니처 템플릿)",
     features: ["메리노 울 상품 6종 그리드", "Quick View 팝업 모달", "신발 사이즈 선택기", "장바구니 드로어 & 결제", "DoFollow SEO 전용 블로그", "1초 원클릭 마이크로 배포"],
     previewUrl: "https://auramerino.creaibox.com",
+    thumbnailUrl: getTemplateThumbnailUrl("aura-merino"),
     badge: "🔥 1위 쇼핑몰",
     accentColor: "from-emerald-600 to-teal-600",
     bgGradient: "from-emerald-950/40 via-slate-900 to-teal-950/40",
