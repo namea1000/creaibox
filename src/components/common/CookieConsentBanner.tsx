@@ -10,6 +10,27 @@ export default function CookieConsentBanner() {
   const supabase = createClient();
 
   useEffect(() => {
+    // 0. 서브도메인 (*.creaibox.com, *.localhost) 및 클라이언트 커스텀 사이트(/clients/...)에서는 쿠키 배너 100% 숨김
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname.toLowerCase();
+      const pathname = window.location.pathname.toLowerCase();
+
+      // 메인 플랫폼 도메인 여부 체크
+      const isMainDomain =
+        hostname === "creaibox.com" ||
+        hostname === "www.creaibox.com" ||
+        hostname === "localhost" ||
+        hostname === "127.0.0.1";
+
+      const isClientSubpage = pathname.startsWith("/clients/");
+
+      // 서브도메인이거나 클라이언트 커스텀 사이트인 경우 즉시 숨김 처리
+      if (!isMainDomain || isClientSubpage) {
+        setIsVisible(false);
+        return;
+      }
+    }
+
     // 1. Check user login status and sync cookie preferences
     const initConsent = async () => {
       try {
@@ -110,7 +131,7 @@ export default function CookieConsentBanner() {
           </div>
           
           <p className="mt-2 text-xs text-slate-300 leading-relaxed">
-            크리아이박스는 서비스 최적화, 기능 로딩, 개인화 경험 및 사이트 분석을 위해 쿠키를 사용합니다. 
+            CreaiBox는 서비스 최적화, 기능 로딩, 개인화 경험 및 사이트 분석을 위해 쿠키를 사용합니다. 
             동의 여부에 따라 유해하지 않은 필수 분석 쿠키의 수집 상태가 제어됩니다. 
             회원님의 선택은 계정 프로필에 동기화되어 안전하게 유지됩니다.
           </p>

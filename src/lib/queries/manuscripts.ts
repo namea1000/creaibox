@@ -462,10 +462,10 @@ export function useCreaiboxManuscriptsQuery() {
     initialData: () => safeReadList(CREAIBOX_LIST_CACHE_KEY) ?? [],
     placeholderData: (previousData) =>
       previousData ?? safeReadList(CREAIBOX_LIST_CACHE_KEY) ?? [],
-    staleTime: QUERY_STALE_TIME,
+    staleTime: 1000 * 30, // 30초 후 stale 처리
     gcTime: QUERY_GC_TIME,
     retry: 1,
-    refetchOnMount: false,
+    refetchOnMount: "always",
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
   });

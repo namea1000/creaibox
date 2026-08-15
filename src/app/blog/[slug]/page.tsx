@@ -138,18 +138,43 @@ const blogMarkdownComponents: Components = {
       {children}
     </td>
   ),
+  pre: ({ children }) => (
+    <div className="cb-code-wrapper my-6 overflow-hidden rounded-2xl border border-zinc-800 bg-[#0f1117] shadow-xl text-left">
+      <div className="flex items-center justify-between border-b border-zinc-800/80 bg-[#141721] px-4 py-2 text-[11px] font-bold text-zinc-400">
+        <span className="flex items-center gap-1.5 text-zinc-400 font-mono">
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-500/80" />
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+          <span className="ml-1 text-[10px] uppercase tracking-wider text-zinc-400 font-black">CODE BLOCK</span>
+        </span>
+      </div>
+      <pre className="m-0 overflow-x-auto p-4 text-[0.85rem] font-mono leading-relaxed text-[#f4f4f5] bg-[#0f1117] border-0">
+        {children}
+      </pre>
+    </div>
+  ),
+  code: ({ children, className }) => {
+    const isInline = !className && typeof children === "string" && !children.includes("\n");
+    if (isInline) {
+      return (
+        <code className="rounded border border-zinc-200 bg-zinc-100 px-1.5 py-0.5 font-mono text-[0.85em] text-pink-600">
+          {children}
+        </code>
+      );
+    }
+    return <code className={className}>{children}</code>;
+  },
 };
 
 function normalizePublishedContent(content: string) {
   return content
     .replace(/^\s*---+\s*$/gm, "")
-    .replace(/^\s*\*\*\*+\s*$/gm, "")
-    .replace(/\n{3,}/g, "\n\n")
+    .replace(/\n\s*---\s*\n/g, "\n\n<hr />\n\n")
     .trim();
 }
 
 function looksLikeHtml(content: string) {
-  return /<\/?(p|h[1-6]|div|table|blockquote|ul|ol|li|img|iframe|hr|br|strong|em|a)\b/i.test(content);
+  return /<\/?(p|h[1-6]|div|table|blockquote|ul|ol|li|img|iframe|hr|br|strong|em|a|pre|code)\b/i.test(content);
 }
 
 function sanitizePublishedHtml(content: string) {
@@ -597,6 +622,54 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
       })}
 
       <Header />
+
+      <style>{`
+        .blog-content pre {
+          margin: 1.5rem 0 !important;
+          padding: 1.25rem 1.5rem !important;
+          overflow-x: auto !important;
+          border-radius: 1rem !important;
+          background-color: #0f1117 !important;
+          color: #f4f4f5 !important;
+          border: 1px solid #27272a !important;
+          box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+          font-family: var(--font-geist-mono), 'Fira Code', 'Consolas', 'Courier New', monospace !important;
+          font-size: 0.85rem !important;
+          line-height: 1.75 !important;
+          position: relative !important;
+          text-align: left !important;
+        }
+        .blog-content pre::before {
+          content: "● ● ●  CODE BLOCK" !important;
+          display: block !important;
+          font-family: inherit !important;
+          font-size: 11px !important;
+          font-weight: 800 !important;
+          color: #71717a !important;
+          letter-spacing: 0.08em !important;
+          margin-bottom: 0.85rem !important;
+          padding-bottom: 0.6rem !important;
+          border-bottom: 1px solid #1f2330 !important;
+          text-transform: uppercase !important;
+        }
+        .blog-content pre code {
+          background: transparent !important;
+          color: inherit !important;
+          padding: 0 !important;
+          font-size: inherit !important;
+          font-family: inherit !important;
+          border: none !important;
+        }
+        .blog-content code:not(pre code) {
+          background-color: #18181b !important;
+          color: #38bdf8 !important;
+          padding: 2px 6px !important;
+          border-radius: 4px !important;
+          font-size: 0.85em !important;
+          font-family: var(--font-geist-mono), monospace !important;
+          border: 1px solid #27272a !important;
+        }
+      `}</style>
 
       <main className="pt-6 flex-1">
         <div className="mx-auto max-w-[1536px] px-6 py-4">

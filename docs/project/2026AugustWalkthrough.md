@@ -523,3 +523,34 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
   - 미구축 12종 템플릿은 `thumbnailUrl: null` 처리하여 모던 그라디언트 Fallback UI("썸네일 캡처 준비 중") 노출.
   - `MarketplaceTab.tsx` & `marketplace/page.tsx`: 무거운 `iframe`을 전면 걷어내고 `unoptimized={true}` 설정을 통해 Cloudflare R2 글로벌 CDN 엣지에서 0.01초 만에 WebP 이미지를 직통 로딩하도록 고도화 완료.
   - 실무 운용 매뉴얼 신설: `docs/project/manual/template-thumbnail-capture-pipeline.md`.
+* **쿠키 동의 팝업(CookieConsentBanner) 서브도메인 & 사용자 커스텀 사이트 100% 격리 숨김 패치**:
+  - `src/components/common/CookieConsentBanner.tsx`: `window.location.hostname` 및 `pathname`을 스마트 감지하여, 순수 메인 플랫폼(`creaibox.com`, `www.creaibox.com`, `localhost:3000`)에서만 배너가 노출되고, 모든 사용자 서브도메인(`{brand_id}.creaibox.com`, `subdomain.localhost:3000`) 및 클라이언트 사이트(`/clients/...`)에서는 100% 자동 숨김(`isVisible: false`) 처리 완료.
+  - 배너 텍스트 내 공식 브랜드명 표기 규칙 적용 (`크리아이박스` ➔ `CreaiBox`).
+* **외부 CSS 배경 이미지 딥 하베스터(CSS Deep Harvester) & 투명 오버레이 통합 메가 헤더 엔진(PRO-CLONING RULE 5.7) 탑재 (v1.19)**:
+  - `src/app/api/studio/site-migration/route.ts`:
+    1. 외부 CSS 파일(`layout.css` 등)을 병렬 파싱하여 `background-image: url(...)`로 숨겨진 대형 조감도/히어로 배경 사진들을 100% 자동 수집하고 프롬프트 `[REAL DETECTED CSS BACKGROUND MEDIA ASSETS]`에 주입.
+    2. `PRO-CLONING RULE 5.7` 신설: 건설/분양/기업형 사이트의 [투명 오버레이 헤더 + 마우스 호버 시 화이트 배경으로 부드럽게 확장되며 2차 서브메뉴 전체가 7단 그리드로 한꺼번에 스르륵 내려오는 통합 메가 메뉴] 1:1 완벽 복제 지침 연동.
+    3. 데드 이미지 Fallback 시 무차별 햄버거 사진 대체 버그를 원천 차단.
+  - `src/app/clients/dynamic-renderer/components/CustomHeaderWrapper.tsx`:
+    - `bg-transparent`, `fixed`, `absolute` 헤더 감지 시 `sticky` 충돌을 방지하고 `relative z-[10000] w-full`로 처리하여 히어로 배경이 상단 투명 헤더 뒤로 시원하게 통과되도록 렌더러 고도화 완료.
+* **16번째 인터랙티브 컴포넌트 「입지 돋보기 확대경 & 360° 무한 회전 배지(InteractiveLocationMagnifier)」 개발 (v1.20)**:
+  - `src/app/clients/dynamic-renderer/components/InteractiveLocationMagnifier.tsx`:
+    1. 스크롤 진입 감지(IntersectionObserver) 기반 원형 줌 이미지 0.5초 딜레이 퐁~ 확대 팝업 애니메이션.
+    2. 마우스 커서를 실시간 추적하는 240px 원형 돋보기(2배율 `zoomFactor: 2`, 센터 레티클).
+    3. SVG 원형 텍스트 패스(`textPath`)를 활용한 10초 주기 360도 무한 회전 배지 애니메이션(`animate-[spin_10s_linear_infinite]`).
+  - `src/app/clients/dynamic-renderer/components/DynamicSection.tsx`:
+    - `location_magnifier` 섹션 타입 매핑 및 데이터 연동.
+  - `src/app/api/studio/site-migration/route.ts`:
+    - `PRO-CLONING RULE 13 (9 STANDARD CLONING COMPONENTS)`에 `location_magnifier` 표준 규격 탑재.
+* **KIMI 스타일 프리미엄 다크 코드 박스(Dark Code Block) 에디터 & 렌더러 & 네이버 클립보드 탑재 (v1.21)**:
+  - `src/components/writing/editor/UniversalBlogEditor.tsx`:
+    1. 에디터 툴바의 `[<> 코드]` 버튼을 7대 주요 프로그래밍 언어(TypeScript, JavaScript, Python, HTML/CSS, SQL, Shell/Bash, JSON) 선택 드롭다운으로 전면 고도화.
+    2. 텍스트 드래그 시 즉시 코드 블록 변환 및 미선택 시 고품질 예시 템플릿과 함께 원클릭 삽입.
+    3. ProseMirror `pre` 및 `code` CSS를 KIMI / GitHub 스타일의 딥 다크 모드(`bg-[#0f1117]`, 16px 라운딩, Mac 3색 도트 헤더 장식)로 전면 리디자인.
+  - `src/app/globals.css`:
+    - 전역 `pre`, `code` 다크 테마 스타일 동기화.
+  - `src/lib/naver-smarteditor-clipboard.ts`:
+    - 네이버 스마트에디터 ONE 복사 시 소스코드가 깨짐 없이 모던 다크 박스로 100% 깔끔하게 붙여넣어지도록 변환 엔진 업그레이드 완료.
+* **AI 글로벌 번역 드롭다운에 「한국어 (Korean)」 최상단 1순위 추가 (v1.22)**:
+  - `src/components/writing/editor/UniversalBlogEditor.tsx`:
+    - 에디터 상단 3열 AI 커스텀 툴바의 `[🌐 번역 ▾]` 드롭다운에 `한국어 (한국어 - Korean) 🇰🇷`를 최상단 1번에 추가하여 총 21개국 다국어 자동 번역 지원 완성. 해외 언어 원고나 번역된 글을 한국어로 원클릭 복원/재번역 가능하도록 사용성 극대화.

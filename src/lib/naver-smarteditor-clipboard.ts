@@ -177,6 +177,27 @@ export async function copyToNaverSmartEditorClipboard({
   // Convert Blockquotes
   html = html.replace(/^> (.*$)/gim, '<blockquote style="border-left: 4px solid #0284c7; padding: 14px 18px; margin: 20px 0; background-color: #f0f9ff; color: #0369a1; font-size: 15px; border-radius: 0 8px 8px 0;">$1</blockquote>');
 
+  // Convert Code Blocks (```lang ... ``` & <pre><code>...</code></pre>) -> Naver SmartEditor ONE Dark Mode Box
+  html = html.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_match, lang, code) => {
+    const languageLabel = lang ? lang.toUpperCase() : "CODE";
+    const escapedCode = code.replace(/</g, "&lt;").replace(/>/g, "&gt;").trim();
+    return `<div style="margin: 20px 0; background-color: #0f1117; border: 1px solid #27272a; border-radius: 12px; overflow: hidden; font-family: 'Consolas', 'Monaco', 'Courier New', monospace;">
+      <div style="background-color: #18181b; padding: 8px 16px; font-size: 11px; font-weight: 700; color: #a1a1aa; border-bottom: 1px solid #27272a; display: flex; justify-content: space-between;">
+        <span>${languageLabel}</span>
+      </div>
+      <pre style="margin: 0; padding: 16px; color: #f4f4f5; font-size: 13px; line-height: 1.6; overflow-x: auto; background-color: #0f1117; border: none; font-family: inherit;"><code>${escapedCode}</code></pre>
+    </div>`;
+  });
+
+  html = html.replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, (_match, code) => {
+    return `<div style="margin: 20px 0; background-color: #0f1117; border: 1px solid #27272a; border-radius: 12px; overflow: hidden; font-family: 'Consolas', 'Monaco', 'Courier New', monospace;">
+      <div style="background-color: #18181b; padding: 8px 16px; font-size: 11px; font-weight: 700; color: #a1a1aa; border-bottom: 1px solid #27272a;">
+        <span>CODE BLOCK</span>
+      </div>
+      <pre style="margin: 0; padding: 16px; color: #f4f4f5; font-size: 13px; line-height: 1.6; overflow-x: auto; background-color: #0f1117; border: none; font-family: inherit;"><code>${code}</code></pre>
+    </div>`;
+  });
+
   // Convert Markdown Tables
   html = html.replace(/((?:(?:^|\n)\|[^\n]+\|\s*)+)/g, (match) => {
     const rawLines = match.trim().split("\n").map((l) => l.trim()).filter(Boolean);

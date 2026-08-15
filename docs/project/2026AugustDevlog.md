@@ -6,7 +6,22 @@
 
 ## 📅 2026년 8월 15일 (금)
 
-### 1. 🚀 템플릿 마켓플레이스 0.01초 가속 — iframe 완전 제거 & R2 WebP 썸네일 시스템 구축
+### 1. 🌐 AI 다국어 번역 드롭다운에 「한국어 (Korean)」 최상단 1순위 추가 (v1.22)
+- **21개국 다국어 번역 파이프라인 완성 (`UniversalBlogEditor.tsx`)**:
+  - 에디터 상단 3열 AI 커스텀 툴바의 `[🌐 번역 ▾]` 드롭다운 최상단 1번에 `한국어 (한국어 - Korean) 🇰🇷`를 신규 추가.
+  - 해외 언어(영어, 일어, 중국어 등) 원고나 타 언어로 번역된 원고를 원클릭으로 자연스럽고 품격 있는 한국어로 즉시 번역/복원할 수 있도록 지원 완성.
+
+### 2. 💻 KIMI 스타일 프리미엄 다크 코드 박스(Dark Code Block) 에디터 & 네이버 클립보드 탑재 (v1.21)
+- **에디터 툴바 7대 언어 다크 코드 드롭다운 (`UniversalBlogEditor.tsx`)**:
+  - `[<> 코드 ▾]` 버튼 클릭 시 TypeScript, JavaScript, Python, HTML/CSS, SQL, Shell/Bash, JSON 7대 언어 선택 팝업 제공.
+  - 드래그 텍스트 즉시 코드 블록 변환 및 미선택 시 고품질 실전 코드 템플릿과 함께 원클릭 생성.
+  - ProseMirror `pre`, `code` 스타일을 KIMI / GitHub 스타일의 딥 다크 모드(`bg-[#0f1117]`, 16px 라운딩, `● ● ● CODE BLOCK` 맥 스타일 헤더 장식)로 전면 리디자인.
+- **전역 CSS 동기화 (`globals.css`)**:
+  - 공개 블로그 및 렌더러의 `pre`, `code` 다크 테마 스타일 일괄 동기화.
+- **네이버 스마트에디터 ONE 복사 지원 (`naver-smarteditor-clipboard.ts`)**:
+  - 본문 내 `<pre><code>...</code></pre>` 및 Markdown ` ```lang ` 소스코드가 네이버 블로그로 복사될 때 깨짐 없이 정돈된 모던 다크 박스로 100% 깔끔하게 붙여넣어지도록 변환 엔진 업그레이드 완료.
+
+### 2. 🚀 템플릿 마켓플레이스 0.01초 가속 — iframe 완전 제거 & R2 WebP 썸네일 시스템 구축
 
 #### [① 카드 iframe → R2 WebP 썸네일 교체]
 - **`MarketplaceTab.tsx` 리팩터링**: 기존 `<iframe>` 라이브 프리뷰(600×800px, scale 0.35)를 완전 제거하고 Cloudflare R2 CDN에서 서빙하는 **9:16 WebP 썸네일 이미지**로 교체.
@@ -855,3 +870,28 @@
   - `unoptimized={true}` 설정을 통해 Next.js 서버 리사이징 오버헤드 없이 Cloudflare R2 글로벌 CDN 엣지에서 0.01초 만에 WebP 이미지를 직통 로딩하도록 개선.
 - **실무 운용 매뉴얼 신설**:
   - `docs/project/manual/template-thumbnail-capture-pipeline.md` (사전 준비, cURL 단건/배치 캡처 방법, 금지 패턴 수록).
+
+### 2026-08-15: 쿠키 동의 팝업(CookieConsentBanner) 서브도메인 & 사용자 커스텀 사이트 100% 격리 숨김 패치
+- **문제점**: Next.js의 최상단 RootLayout(`src/app/layout.tsx`)에 쿠키 배너가 포함되어 있어, 사용자가 만든 브랜드 홈페이지나 서브도메인(`{brand_id}.creaibox.com`, `subdomain.localhost:3000`, `/clients/...`)에 접속할 때도 CreaiBox 쿠키 동의 팝업이 강제로 노출되어 브랜드 독립성을 해치던 문제 해결.
+- **해결 방안 (`CookieConsentBanner.tsx`)**:
+  - `window.location.hostname` 및 `pathname` 스마트 감지 로직 추가.
+  - 순수 메인 플랫폼(`creaibox.com`, `www.creaibox.com`, `localhost:3000`) 접속 시에만 배너가 노출되고, 모든 사용자 서브도메인 및 클라이언트 커스텀 사이트 접속 시에는 `isVisible: false`로 100% 자동 숨김(차단) 처리 완료.
+  - 브랜드 공식 명칭 표기 규칙 준수 (`크리아이박스` ➔ `CreaiBox` 100% 통일).
+
+### 2026-08-15: 외부 CSS 배경 이미지 딥 하베스터(CSS Deep Harvester) & 투명 오버레이 통합 메가 헤더 엔진(PRO-CLONING RULE 5.7) 탑재 (v1.19)
+- **1. 외부 CSS 배경 이미지 전수 자동 추출 (`site-migration/route.ts`)**:
+  - HTML 태그에 `<img>`가 없고 외부 CSS 파일(`layout.css`, `default.css` 등)의 `.sd1 .bg { background-image: url(...) }` 클래스로 숨겨진 대형 조감도/히어로 배경 이미지를 전수 fetch하여 상대경로를 절대경로로 자동 치환/추출하는 `CSS Background Image Deep Harvester` 파이프라인 탑재.
+  - 추출된 실제 배경 이미지 URL 목록을 Gemini 프롬프트의 `[REAL DETECTED CSS BACKGROUND MEDIA ASSETS]` 섹션에 직접 주입하여, 원본 아파트 조감도/배경 사진이 100% 무손실 매핑되도록 보장 (엉뚱한 음식/햄버거 Fallback 대체 문제 원천 차단).
+- **2. 투명 오버레이 & 전체 가로 확장 통합 메가 메뉴 엔진 (`PRO-CLONING RULE 5.7`)**:
+  - 건설, 분양, 부동산 및 대기업 웹사이트 표준인 [투명 오버레이 헤더 + 마우스 호버 시 화이트 배경으로 부드럽게 확장(`h-[90px]` ➔ `h-[320px]`)되며 모든 2차 메뉴가 7단 그리드로 한꺼번에 스르륵 내려오는 통합 메가 드롭다운] 1:1 완벽 복제 지침 연동.
+- **3. 동적 렌더러 오버레이 지원 (`CustomHeaderWrapper.tsx`)**:
+  - AI 생성 헤더가 `bg-transparent`, `fixed`, `absolute`를 사용할 경우 래퍼의 `sticky` 클래스 충돌을 방지하고 `relative z-[10000] w-full`로 유연하게 처리하여 히어로 배경이 상단 헤더 뒤로 시원하게 통과되도록 렌더러 고도화 완료.
+
+### 2026-08-15: 16번째 인터랙티브 컴포넌트 「입지 돋보기 확대경 & 360° 무한 회전 배지(InteractiveLocationMagnifier)」 개발 완료 (v1.20)
+- **1. 인터랙티브 돋보기 지도 컴포넌트 개발 (`InteractiveLocationMagnifier.tsx`)**:
+  - 스크롤 진입 감지(IntersectionObserver)를 통해 기본 지도(`mapImage`) 등장 후 0.5초 딜레이로 특정 랜드마크/아파트 위치의 원형 줌 이미지(`zoomImage`)가 `scale(0.3)`에서 `scale(1.0)`으로 퐁~하고 부드럽게 확대 등장하는 순차 트랜지션 탑재.
+  - 마우스 호버 시 240px 원형 렌즈(화이트 링 + 센터 레티클 조준선 + 입체 그림자)가 마우스 커서 위치를 실시간 추적하며 2배(`zoomFactor: 2`) 초고화질 확대 투영.
+  - SVG 원형 텍스트 패스(`textPath`)를 활용하여 `"CENTRAL LOCATION PREMIUM • "` 문구가 10초 주기로 360도 부드럽게 무한 회전(`animate-[spin_10s_linear_infinite]`)하며 중앙 화살표 버튼과 연동되는 프리미엄 애니메이션 배지 완비.
+- **2. 동적 렌더러 및 이관 엔진 연동 (`DynamicSection.tsx`, `site-migration/route.ts`)**:
+  - `section_type: "location_magnifier"` 매핑 추가 및 AI 프롬프트 `PRO-CLONING RULE 13 (9 STANDARD CLONING COMPONENTS)`에 9번째 표준 규격으로 등록.
+  - 건설/분양/기업 입지 안내도 섹션 이관 시 100% 원본 1:1 인터랙티브 모드로 자동 승격.

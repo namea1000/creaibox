@@ -260,15 +260,15 @@ graph TD
 
 ---
 
-## 🏆 14. CreaiBox 차세대 AI 자동 복제 엔진: 「총 15종 인터랙티브 풀스펙 컴포넌트 팩」 실무 및 홍보 총람 (Grand Suite)
+## 🏆 14. CreaiBox 차세대 AI 자동 복제 엔진: 「총 16종 인터랙티브 풀스펙 컴포넌트 팩」 실무 및 홍보 총람 (Grand Suite)
 
 > **"구글, 워드프레스, 아임웹, 그누보드 등 10년 된 구식 웹사이트도 URL 1개만 넣으면 최신 애플/토스급 인터랙션을 갖춘 하이엔드 자사몰로 1초 만에 자동 탈바꿈!"**
 
-CreaiBox의 AI 마이그레이션 백엔드는 웹상에 존재하는 99.9%의 인터랙션 패턴을 감지하여, 날것의 조잡한 HTML 대신 **자체 개발된 15대 프리미엄 리액트 컴포넌트**로 1:1 완벽 치환 복제합니다.
+CreaiBox의 AI 마이그레이션 백엔드는 웹상에 존재하는 99.9%의 인터랙션 패턴을 감지하여, 날것의 조잡한 HTML 대신 **자체 개발된 16대 프리미엄 리액트 컴포넌트**로 1:1 완벽 치환 복제합니다.
 
 ---
 
-### 📊 15종 인터랙티브 컴포넌트 풀스펙 총람표
+### 📊 16종 인터랙티브 컴포넌트 풀스펙 총람표
 
 | 번호 | 컴포넌트 명칭 | 소스 파일 | 주요 기능 & 모던 인터랙션 | 최적 활용 분야 & 타겟 사이트 |
 | :---: | :--- | :--- | :--- | :--- |
@@ -287,6 +287,7 @@ CreaiBox의 AI 마이그레이션 백엔드는 웹상에 존재하는 99.9%의 �
 | **13** | 🎞️ **고급 미디어 캐러셀** | [`AdvancedMediaCarousel.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/dynamic-renderer/components/AdvancedMediaCarousel.tsx) | 비디오 재생 시간에 동기화되는 프로그레스 바 슬라이더 | 시네마틱 영상 중심 브랜드, 자동차, 패션 브랜드 |
 | **14** | 🎴 **복합 카드 캐러셀** | [`AdvancedContentCarousel.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/dynamic-renderer/components/AdvancedContentCarousel.tsx) | 텍스트+이미지 복합 카드가 부드럽게 롤링되는 멀티 슬라이더 | 뉴스/소식, 베스트 상품 추천, 이벤트 배너 |
 | **15** | 📝 **동적 상담 및 문의 폼** | [`DynamicConsultationForm.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/dynamic-renderer/components/DynamicConsultationForm.tsx) | 맞춤형 입력 필드, 유효성 검사, 실시간 접수 알림 연동 | 가맹점 창업문의, 견적 요청, 고객 상담 접수 |
+| **16** | 🔍 **입지 돋보기 & 360° 회전 배지** | [`InteractiveLocationMagnifier.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/clients/dynamic-renderer/components/InteractiveLocationMagnifier.tsx) | 스크롤 줌 팝업 + 마우스 추적 2배율 돋보기 렌즈 + 360도 무한 회전 텍스트 배지 | 아파트 분양, 건설사, 산업단지, 리조트, 오프라인 복합몰 |
 
 ---
 
@@ -402,6 +403,31 @@ graph LR
 - **검색엔진 차단 및 미리보기 띠 배너 (`page.tsx`)**: `noindex, nofollow` 로봇 메타태그 주입 및 상단 알림 배너 탑재.
 - **3단계 도메인 승격 & 스왑 API (`promote-domain/route.ts`)**: 시스템 예약어 차단, 타인 도메인 보호, 내 테스트 사이트 간 원클릭 스왑 지원.
 - **이관 히스토리 카드 관리 UI (`MigrationTab.tsx`)**: `초안/미리보기 🟡` vs `라이브 🟢` 배지, 정식 배포 팝업 모달 및 원클릭 삭제 기능 전면 구축 완료.
+
+---
+
+## 🏢 17. 외부 CSS 배경 이미지 딥 하베스터 & 투명 오버레이 통합 메가 메뉴 운용 가이드 (HOW-TO)
+
+### 17.1 외부 CSS 배경 이미지 딥 하베스터 (CSS Deep Harvester)
+* **배경 및 원인**: 아파트 분양, 건설사, 대기업 포털 사이트는 대형 조감도/히어로 사진을 HTML `<img>` 태그가 아닌 외부 CSS 파일(`.sd1 .bg { background-image: url(...) }`)로 숨겨 로드하는 경우가 많습니다.
+* **해결 기술**:
+  1. 이관 엔진이 HTML 내부의 `<link rel="stylesheet" href="...">` 파일들을 백그라운드 병렬 fetch합니다.
+  2. CSS 내부의 `background-image: url(...)` 패턴을 정규식으로 전수 파싱하여 상대경로를 절대경로로 자동 변환하고, 조감도/풍경 등 고화질 실제 이미지를 100% 추출합니다.
+  3. AI 프롬프트에 `[REAL DETECTED CSS BACKGROUND MEDIA ASSETS]`로 실제 배경 이미지 목록을 직접 주입하여, 메인 히어로 섹션에 원본 사진이 1:1로 매핑되도록 보장합니다.
+
+### 17.2 투명 오버레이 헤더 & 전체 가로 확장형 통합 메가 메뉴 (`PRO-CLONING RULE 5.7`)
+* **투명 오버레이 (Overlay Header)**:
+  - `header`가 `bg-transparent` 상태로 화면 최상단에 고정되어, 히어로 섹션의 푸른 하늘과 아파트 조감도가 헤더 뒤로 시원하게 통과되어 보입니다.
+* **통합 메가 메뉴 (Synchronized Full-width Mega Menu)**:
+  - `header:hover` 시 헤더의 높이가 `h-[90px]`에서 `h-[320px]`로 부드럽게 늘어나며 배경이 순백색(`bg-white`)으로 트랜지션됩니다.
+  - 1차 대메뉴 아래에 7개(또는 N개) 대메뉴의 2차 서브메뉴 리스트가 일체형 화이트 패널 위에 가로 1열로 나란히 정렬되어 한꺼번에 스르륵 내려오는 하이엔드 건설/분양사 인터랙션을 100% 완벽 복제합니다.
+
+---
+
+### 2026-08-15 외부 CSS 배경 이미지 딥 하베스터 & 투명 오버레이 메가 헤더 엔진 탑재 (v1.19) 🟢
+- **외부 CSS 배경 이미지 딥 하베스터 (`site-migration/route.ts`)**: 외부 CSS 파일 내의 숨겨진 히어로 배경 이미지(`vis2-bg2_new.jpg` 등)를 자동 수집하여 프롬프트에 주입하고 R2 CDN WebP로 백업.
+- **투명 오버레이 통합 메가 메뉴 엔진 (`PRO-CLONING RULE 5.7`)**: 투명 헤더 + 호버 시 전체 확장(`h-[320px] bg-white`) 메가 드롭다운 완벽 복제 지침 연동.
+- **동적 렌더러 오버레이 지원 (`CustomHeaderWrapper.tsx`)**: 투명/고정 헤더 시 `relative z-[10000] w-full`로 래퍼 충돌을 해결하여 히어로 배경 통과 효과 100% 구현.
 
 
 

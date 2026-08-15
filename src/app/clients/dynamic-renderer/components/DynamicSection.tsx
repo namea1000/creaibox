@@ -16,6 +16,7 @@ import BeforeAfterSlider from "./BeforeAfterSlider";
 import PricingTable from "./PricingTable";
 import LocationMapCard from "./LocationMapCard";
 import VideoCardGrid from "./VideoCardGrid";
+import InteractiveLocationMagnifier from "./InteractiveLocationMagnifier";
 
 interface SectionProps {
   siteId: string;
@@ -152,6 +153,24 @@ export default function DynamicSection({
             embedMapHtml={contentData.embedMapHtml}
             title={title}
             subtitle={subtitle}
+          />
+        </section>
+      );
+    }
+    case "location_magnifier":
+    case "interactive_map_zoom": {
+      return (
+        <section className="w-full" style={customBgStyle}>
+          <InteractiveLocationMagnifier
+            mapImage={contentData.mapImage || contentData.image || "https://cheonan-dmapt.co.kr/images/location-bg.jpg"}
+            zoomImage={contentData.zoomImage || contentData.highlightImage}
+            badgeText={contentData.badgeText || "CENTRAL LOCATION PREMIUM • "}
+            title={title || contentData.title}
+            subtitle={subtitle || contentData.subtitle}
+            description={contentData.description}
+            linkUrl={contentData.linkUrl || contentData.link || "#"}
+            linkText={contentData.linkText || "입지 프리미엄 자세히보기"}
+            zoomFactor={contentData.zoomFactor || 2}
           />
         </section>
       );

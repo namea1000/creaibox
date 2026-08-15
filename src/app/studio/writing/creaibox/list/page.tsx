@@ -445,13 +445,12 @@ export default function CreaiboxManuscriptListPage() {
     const hasQueryData = visibleQueryManuscripts.length > 0;
     const hasCache = cachedManuscripts.length > 0;
 
-    if (!visibleIsLoading && !visibleIsFetching && !hasQueryData && !hasCache) {
+    if (!visibleIsLoading && !visibleIsFetching && !hasQueryData) {
       queueMicrotask(() => {
         void fetchDirectlyFromSupabase();
       });
     }
   }, [
-    cachedManuscripts.length,
     fetchDirectlyFromSupabase,
     isMounted,
     visibleIsFetching,

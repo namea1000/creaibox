@@ -97,6 +97,8 @@ export default function CustomHeaderWrapper({ html, menus }: CustomHeaderWrapper
     return () => { document.body.style.overflow = 'unset'; };
   }, [isMobileMenuOpen]);
 
+  const isOverlayHeader = html.includes("bg-transparent") || html.includes("fixed") || html.includes("absolute");
+
   return (
     <>
       {/* Raw AI Header HTML with Click Interceptor */}
@@ -105,7 +107,7 @@ export default function CustomHeaderWrapper({ html, menus }: CustomHeaderWrapper
         onClick={handleClick}
         dangerouslySetInnerHTML={{ __html: html }} 
         suppressHydrationWarning
-        className="sticky top-0 z-[10000] w-full"
+        className={isOverlayHeader ? "relative z-[10000] w-full" : "sticky top-0 z-[10000] w-full"}
       />
 
       {/* Standardized Mobile Drawer Overlay (Starts strictly below the header) */}

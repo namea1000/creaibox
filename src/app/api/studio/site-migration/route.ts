@@ -39,14 +39,11 @@ export async function POST(request: Request) {
       try {
         let res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" } }).catch(() => null);
         
-        // Dead image fallback to Unsplash if original is broken or fake
+        // Dead image fallback only if original URL is genuinely broken/unreachable
         if (!res || !res.ok) {
-          const fallbackKeywords = ["restaurant", "food", "burger", "product", "coffee", "store"];
-          const randomKw = fallbackKeywords[Math.floor(Math.random() * fallbackKeywords.length)];
-          res = await fetch(`https://images.unsplash.com/photo-1550547660-d9450f859349?w=800&auto=format&fit=crop&q=80`).catch(() => null);
+          // If URL is not reachable, do not overwrite unless absolutely necessary
+          return;
         }
-
-        if (!res || !res.ok) return;
 
         const arrayBuffer = await res.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
@@ -164,6 +161,71 @@ export async function POST(request: Request) {
         pendingSubpages = Array.from(subLinks).slice(0, 100); // limit to 100 links
       }
     }
+    // ----------------------------------------------------------------------
+
+    // --- NEW: CSS Background Image Deep Harvester ---
+    // Extract hidden background images from external linked stylesheets (e.g. layout.css, default.css)
+    const detectedCssImages = new Set<string>();
+    try {
+      const cssLinkRegex = /<link[^>]+rel=["']stylesheet["'][^>]+href=["']([^"']+)["']/gi;
+      let cssMatch;
+      const cssUrls: string[] = [];
+      while ((cssMatch = cssLinkRegex.exec(htmlText)) !== null) {
+        let cssHref = cssMatch[1].trim();
+        if (cssHref.startsWith("//")) {
+          cssHref = `${urlObj.protocol}${cssHref}`;
+        } else if (cssHref.startsWith("/")) {
+          cssHref = `${urlObj.origin}${cssHref}`;
+        } else if (!cssHref.startsWith("http")) {
+          cssHref = `${urlObj.origin}/${cssHref}`;
+        }
+        cssUrls.push(cssHref);
+      }
+
+      // Fetch top 5 stylesheets in parallel
+      const cssPromises = cssUrls.slice(0, 5).map(async (cUrl) => {
+        try {
+          const cRes = await fetch(cUrl, {
+            headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
+            signal: AbortSignal.timeout(4000)
+          });
+          if (!cRes.ok) return;
+          const cssCode = await cRes.text();
+          const bgUrlRegex = /url\(["']?([^"')]+)["']?\)/gi;
+          let bgMatch;
+          const cssBase = cUrl.substring(0, cUrl.lastIndexOf("/") + 1);
+          while ((bgMatch = bgUrlRegex.exec(cssCode)) !== null) {
+            let imgPath = bgMatch[1].trim();
+            if (imgPath.startsWith("data:") || imgPath.includes("#")) continue;
+            if (!imgPath.match(/\.(jpeg|jpg|png|webp|gif|svg)/i)) continue;
+
+            let absImgUrl = "";
+            if (imgPath.startsWith("http")) {
+              absImgUrl = imgPath;
+            } else if (imgPath.startsWith("//")) {
+              absImgUrl = `${urlObj.protocol}${imgPath}`;
+            } else if (imgPath.startsWith("/")) {
+              absImgUrl = `${urlObj.origin}${imgPath}`;
+            } else {
+              // Resolve relative to css file path (handles ../images/...)
+              try {
+                absImgUrl = new URL(imgPath, cssBase).href;
+              } catch {
+                absImgUrl = `${urlObj.origin}/${imgPath.replace(/^\.\.\//, "")}`;
+              }
+            }
+            if (absImgUrl) detectedCssImages.add(absImgUrl);
+          }
+        } catch {}
+      });
+
+      await Promise.all(cssPromises);
+      console.log(`[Site Migration 🎨] Extracted ${detectedCssImages.size} hidden CSS background images.`);
+    } catch (cssErr) {
+      console.warn("[Site Migration] Failed to parse external CSS:", cssErr);
+    }
+
+    const cssImageListStr = Array.from(detectedCssImages).slice(0, 15).join("\n- ");
     // ----------------------------------------------------------------------
 
     // Extract basic meta tags as fallback
@@ -296,6 +358,17 @@ export async function POST(request: Request) {
             2. Priority 2 (Fallback): If the original logo is a background-image/CSS sprite and cannot be cleanly extracted, you MUST render a bold, beautiful brand typography logo using the brand's primary color: \`<a href='/' class='text-2xl md:text-3xl font-black tracking-tighter uppercase text-[#D4200C]'>BURGER KING</a>\`. NEVER leave the top-left area blank!
           - PRO-CLONING RULE 5.5 (HEADER LAYOUT & EDGE-TO-EDGE): You MUST structure the \`header_html\` to perfectly replicate the standard 3-section layout: 1. Logo on the far left. 2. Navigation Menus centered or aligned as original. 3. Search/Icons/Buttons on the far right. Use Tailwind classes like \`flex justify-between items-center w-full px-4 md:px-8 xl:px-12\` to make the header edge-to-edge. DO NOT wrap the inner content in \`max-w-7xl\` or \`container\` if the original site has an edge-to-edge full-bleed header. Use \`flex-1\` on the left and right containers, and \`flex-none\` on the center menu container to ensure the menu stays perfectly in the horizontal center if needed.
           - PRO-CLONING RULE 5.6 (MEGA MENUS & DROPDOWNS): If the original site has 2nd-level sub-menus, dropdowns, or complex "Mega Menus" (e.g. hovering over 'Products' shows a large panel with icons, links, or images), you MUST completely extract and recreate their HTML structure inside the \`header_html\`. Use Tailwind's \`group\`, \`group-hover:block\`, \`absolute\`, \`top-full\` utilities to recreate the hover/dropdown interaction exactly. DO NOT flatten them into simple links. Preserve the mega menu's exact design, columns, and icons!
+          - PRO-CLONING RULE 5.7 (TRANSPARENT OVERLAY HEADER & SYNCHRONIZED FULL-WIDTH MEGA DROPDOWN — e.g. Apartment, Real Estate, Construction, Corporate Sites):
+            If the original site has an overlay transparent header where the hero image background starts behind the header and/or hovering over the header smoothly expands all 2nd-level submenus across the entire width simultaneously on a white background:
+            1. Set the \`header_html\` container: \`<header class='fixed top-0 left-0 w-full z-50 bg-transparent hover:bg-white text-slate-800 hover:text-slate-900 transition-all duration-400 group/header overflow-hidden h-[90px] hover:h-[320px] hover:shadow-2xl border-b border-white/20 hover:border-slate-200'>\`.
+            2. Top Row (\`h-[90px] max-w-[1760px] mx-auto px-8 flex items-center justify-between\`):
+               - Far Left: Logo (\`<a href='/' class='font-black text-2xl tracking-tighter uppercase'>...</a>\`).
+               - Center: 1st-level Navigation List (\`<nav class='flex items-center gap-8 h-full'><a href='...' class='text-[17px] font-bold tracking-tight h-full flex items-center hover:text-blue-900 border-b-4 border-transparent hover:border-blue-900 transition-all'>사업안내</a>...</nav>\`).
+               - Far Right: Phone/Inquiry/Buttons (e.g., \`<div class='flex items-center gap-2 font-bold text-xl text-blue-950'>📞 1522.1183</div>\`).
+            3. Synchronized Mega Dropdown Area below the Top Row (\`<div class='w-full border-t border-slate-100/60 pt-6 pb-8 bg-white'><div class='max-w-[1760px] mx-auto px-8 grid grid-cols-7 gap-6 text-center'>[Column 1 2nd-level links] [Column 2 links] ...</div></div>\`):
+               - Render ALL 2nd-level submenus under each corresponding 1st-level menu aligned side-by-side in columns so they drop down in 1 unified white panel on hover!
+            4. Hero Section: Ensure the main Hero section uses \`min-h-screen\` with the real high-res background image so the top transparent header seamlessly floats above the hero photo!
+          - PRO-CLONING RULE 6 (CSS BACKGROUND IMAGES FOR HERO/SECTIONS): The target site may use CSS background images instead of <img> tags for its hero and key visual sections. You MUST use the REAL high-resolution image URLs provided in the [DETECTED CSS ASSETS] list below for the hero section background, slides, and cards! DO NOT replace them with generic or food/burger images!
           - PRO-CLONING RULE 7 (BENTO BOX / ASYMMETRIC GRIDS): If the original site features an asymmetric image gallery or Bento box layout (e.g., 2 items in a row, then 1 full-width item, or varying spans), you MUST recreate this EXACT grid structure using Tailwind's grid spanning utilities (e.g., \`grid-cols-2 md:grid-cols-4\`, \`md:col-span-2\`, \`md:col-span-4\`, \`row-span-2\`). DO NOT force them into a simple uniform grid (like just \`grid-cols-4\` with no spans) if they have different sizes in the original. Use \`w-full h-full object-cover\` for images to perfectly fill their unique grid cells.
           - PRO-CLONING RULE 7.5 (3-COLUMN ASYMMETRIC STORY GRID — e.g. Burger King '고객과 함께 성장하는 버거킹'): If a section contains 4 items consisting of [2 short text cards] + [2 large image cards]:
             1. DO NOT split into a 2-column grid (\`grid-cols-2\`) because the 4th image card will drop to the bottom and blow up full-width!
@@ -325,7 +398,7 @@ export async function POST(request: Request) {
             - YouTube: \`<a href='...' target='_blank' class='w-9 h-9 rounded-full bg-[#FF0000] text-white flex items-center justify-center shadow hover:scale-110 transition-transform'>[YouTube SVG]</a>\`
             - KakaoTalk: \`<a href='...' target='_blank' class='w-9 h-9 rounded-full bg-[#FEE500] text-[#191919] flex items-center justify-center shadow hover:scale-110 transition-transform'>[Kakao SVG]</a>\`
             - Naver Blog: \`<a href='...' target='_blank' class='w-9 h-9 rounded-full bg-[#03C75A] text-white font-black flex items-center justify-center shadow hover:scale-110 transition-transform'>N</a>\`
-          - PRO-CLONING RULE 13 (8 STANDARD CLONING COMPONENTS UTILIZATION): When you identify common website interaction patterns in the source HTML, prioritize using these 8 dedicated component section types:
+          - PRO-CLONING RULE 13 (9 STANDARD CLONING COMPONENTS UTILIZATION): When you identify common website interaction patterns in the source HTML, prioritize using these 9 dedicated component section types:
             1. "faq_accordion": For FAQ/Q&A sections. content_data: \`{ items: [{ question: "...", answer: "..." }] }\`
             2. "logo_marquee": For continuous partner/client/media logo streams. content_data: \`{ logos: [{ name: "...", logoUrl: "...", linkUrl: "..." }] }\`
             3. "category_tabs": For menu/product/service tab categories. content_data: \`{ tabs: [{ id: "tab1", label: "버거", items: [...] }] }\`
@@ -334,6 +407,7 @@ export async function POST(request: Request) {
             6. "before_after_slider": For dual-layer before/after photo comparisons. content_data: \`{ beforeImage: "...", afterImage: "..." }\`
             7. "pricing_table": For SaaS/rental/service pricing tiers. content_data: \`{ plans: [{ name: "Standard", monthlyPrice: 29000, yearlyPrice: 24000, features: [...] }] }\`
             8. "location_map": For office/store address & directions. content_data: \`{ companyName: "...", address: "...", phone: "..." }\`
+            9. "location_magnifier": For interactive real-estate/apartment location maps with interactive magnifying glass zoom lens and 360° spinning text badge. content_data: \`{ mapImage: "[url of location-bg.jpg]", zoomImage: "[url of location-zoom.png]", badgeText: "CENTRAL LOCATION PREMIUM • ", title: "...", subtitle: "Central Location", description: "...", linkUrl: "/...", linkText: "입지 프리미엄 자세히보기" }\`
           - CRITICAL RULE: All image URLs (\`src\` attributes or \`style="background-image: ..."\`) MUST be ABSOLUTE URLs. 
           - CRITICAL RULE 2 (NO DUMMY '#' LINKS & EXACT RELATIVE PATHS): You MUST NEVER generate dummy \`href="#"\` or \`href="javascript:void(0)"\` for clickable cards, banners, menus, and buttons! Extract the exact target URLs from the original HTML (e.g. \`/story/esgbusiness\`, \`/story/whyburgerking\`, \`/menu/main\`, \`/store/near\`, \`/notice/list\`). If the original HTML contains absolute URLs pointing to its own domain (e.g., \`https://www.burgerking.co.kr/story/esgbusiness\`), strip out the domain and use the relative path (e.g., \`href="/story/esgbusiness"\`). This ensures the visitor navigates seamlessly inside the newly cloned client site without leaving the domain!
           - Use modern Tailwind CSS classes (e.g. flex, grid, px-8, py-16) for styling, but combine them with extracted brand colors.
@@ -345,6 +419,12 @@ export async function POST(request: Request) {
           - Split the main body into as many logical \`<section>\` blocks as needed (typically 5 to 15) to capture EVERY SINGLE PART of the original site (including lower sections like 'OUR BRANDS', 'AWARDS', 'Subscribe', etc.) without omitting anything. Each block must be a separate item in the \`main_sections\` array.` : ""}
           - Output ONLY valid JSON. No other text.
           - CRITICAL: To prevent hitting the output token limit, MINIFY all HTML strings! Remove unnecessary whitespaces, tabs, and newlines inside the HTML strings. Keep the code extremely compact.
+
+          ${cssImageListStr ? `
+          [REAL DETECTED CSS BACKGROUND MEDIA ASSETS (MUST USE THESE FOR HERO / SLIDER / BACKGROUNDS)]:
+          - ${cssImageListStr}
+          CRITICAL: The original website uses the above CSS background images for its hero visual/banner. You MUST incorporate these real image URLs into the hero section HTML or media_urls! NEVER replace them with random or burger/food images!
+          ` : ""}
 
           HTML content to analyze:
           --- MAIN PAGE ---
@@ -454,6 +534,7 @@ export async function POST(request: Request) {
           subtitle: "",
           content_data: { 
             html: sec.html || "",
+            ...(sec.content_data || {}),
             ...(sec.media_urls ? { media_urls: sec.media_urls } : {}),
             ...(sec.slides ? { slides: sec.slides } : {}),
             ...(sec.desktop_aspect_ratio ? { desktop_aspect_ratio: sec.desktop_aspect_ratio } : {})

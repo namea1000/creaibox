@@ -1011,6 +1011,32 @@ export default function UniversalBlogEditor({
     setIsDividerDropdownOpen(false);
   };
 
+  // KIMI 스타일 다크 모드 코드 블록 삽입 헬퍼
+  const handleInsertCodeBlock = (language: string = "typescript", defaultCode?: string) => {
+    if (!editor) return;
+
+    const selection = editor.state.selection;
+    if (!selection.empty) {
+      editor.chain().focus().toggleCodeBlock().run();
+      setIsCodeDropdownOpen(false);
+      return;
+    }
+
+    const sampleCodes: Record<string, string> = {
+      typescript: `// [TypeScript] 코드 예시\nimport { createClient } from "@/utils/supabase/client";\n\nexport async function runEngine() {\n  console.log("🚀 CreaiBox Engine Started!");\n}`,
+      javascript: `// [JavaScript] 코드 예시\nfunction fetchMarketData(keyword) {\n  return fetch(\`/api/keyword?q=\${encodeURIComponent(keyword)}\`)\n    .then(res => res.json());\n}`,
+      python: `# [Python] AI 분석 스크립트\nimport os\nfrom openai import OpenAI\n\nclient = OpenAI(api_key=os.environ.get("CREAIBOX_AI_KEY"))\nprint("🤖 Model loaded successfully.")`,
+      html: `<!-- [HTML / UI 템플릿] -->\n<div class="creaibox-badge">\n  <span class="pulse"></span>\n  <p>실시간 AI 자동화 가동 중</p>\n</div>`,
+      sql: `-- [SQL] 고속 데이터베이스 쿼리\nSELECT id, title, created_at, status\nFROM writing_creaibox_posts\nWHERE status = 'published'\nORDER BY created_at DESC;`,
+      shell: `# [Shell / Bash] 클라우드 배포 명령어\ncurl -X POST https://api.creaibox.com/v1/site-migration \\\n  -H "Authorization: Bearer YOUR_API_KEY" \\\n  -d '{"targetUrl": "https://example.com"}'`,
+      json: `{\n  "platform": "CreaiBox",\n  "engine": "PRO_CLONING_v1.20",\n  "status": "LIVE",\n  "features": ["css_deep_harvester", "16_components"]\n}`,
+    };
+
+    const codeToInsert = defaultCode || sampleCodes[language] || `// [${language.toUpperCase()}] 코드를 입력하세요\n`;
+    editor.chain().focus().insertContent(`<pre><code class="language-${language}">${codeToInsert}</code></pre><p></p>`).run();
+    setIsCodeDropdownOpen(false);
+  };
+
   // 최근 사용 기호 추가 헬퍼
   const addRecentSymbol = (sym: string) => {
     setRecentSymbols((prev) => {
@@ -1182,6 +1208,9 @@ export default function UniversalBlogEditor({
   const [isDividerDropdownOpen, setIsDividerDropdownOpen] = useState(false);
   const dividerDropdownRef = useRef<HTMLDivElement>(null);
 
+  const [isCodeDropdownOpen, setIsCodeDropdownOpen] = useState(false);
+  const codeDropdownRef = useRef<HTMLDivElement>(null);
+
   const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
   const downloadMenuRef = useRef<HTMLDivElement>(null);
 
@@ -1211,6 +1240,9 @@ export default function UniversalBlogEditor({
       }
       if (dividerDropdownRef.current && !dividerDropdownRef.current.contains(event.target as Node)) {
         setIsDividerDropdownOpen(false);
+      }
+      if (codeDropdownRef.current && !codeDropdownRef.current.contains(event.target as Node)) {
+        setIsCodeDropdownOpen(false);
       }
       if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target as Node)) {
         setIsDownloadMenuOpen(false);
@@ -3739,9 +3771,115 @@ export default function UniversalBlogEditor({
             )}
           </div>
 
-          <ToolbarButton onClick={() => editor?.chain().focus().toggleCodeBlock().run()} active={editor?.isActive("codeBlock")} title="코드 블록">
-            <Code2 size={14} /> 코드
-          </ToolbarButton>
+          {/* KIMI 스타일 다크 모드 코드 블록 삽입 드롭다운 */}
+          <div className="relative" ref={codeDropdownRef}>
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setIsCodeDropdownOpen((prev) => !prev)}
+              className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-bold transition border cursor-pointer ${
+                isCodeDropdownOpen || editor?.isActive("codeBlock")
+                  ? "bg-zinc-800 text-white border-zinc-700 shadow-sm"
+                  : "text-zinc-400 hover:text-white hover:bg-zinc-800/60 border-transparent"
+              }`}
+              title="KIMI 스타일 다크 모드 코드 블록 삽입"
+            >
+              <Code2 size={13} className="text-emerald-400" />
+              <span>코드</span>
+              <ChevronDown size={11} className={`transition-transform duration-200 ${isCodeDropdownOpen ? "rotate-180 text-emerald-400" : "text-zinc-500"}`} />
+            </button>
+
+            {isCodeDropdownOpen && (
+              <div className="absolute top-full left-0 mt-1.5 w-60 rounded-2xl border border-zinc-800 bg-[#0d0f17] p-2.5 shadow-2xl backdrop-blur-xl z-[120] text-xs">
+                <div className="flex items-center justify-between px-2 py-1 mb-1 border-b border-zinc-800/80">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span className="text-[11px] font-black text-zinc-300">다크 모드 코드 박스</span>
+                  </div>
+                  <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">KIMI Style</span>
+                </div>
+
+                <div className="flex flex-col gap-0.5 max-h-64 overflow-y-auto pr-0.5">
+                  <button
+                    type="button"
+                    onClick={() => handleInsertCodeBlock("typescript")}
+                    className="flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg text-left hover:bg-zinc-800/70 transition group cursor-pointer"
+                  >
+                    <span className="font-bold text-zinc-200 group-hover:text-emerald-300 flex items-center gap-2">
+                      <span className="text-blue-400 font-mono text-[10px]">TS</span> TypeScript
+                    </span>
+                    <span className="text-[10px] text-zinc-500 font-mono">.ts/.tsx</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleInsertCodeBlock("javascript")}
+                    className="flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg text-left hover:bg-zinc-800/70 transition group cursor-pointer"
+                  >
+                    <span className="font-bold text-zinc-200 group-hover:text-emerald-300 flex items-center gap-2">
+                      <span className="text-amber-400 font-mono text-[10px]">JS</span> JavaScript
+                    </span>
+                    <span className="text-[10px] text-zinc-500 font-mono">.js/.jsx</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleInsertCodeBlock("python")}
+                    className="flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg text-left hover:bg-zinc-800/70 transition group cursor-pointer"
+                  >
+                    <span className="font-bold text-zinc-200 group-hover:text-emerald-300 flex items-center gap-2">
+                      <span className="text-sky-400 font-mono text-[10px]">PY</span> Python
+                    </span>
+                    <span className="text-[10px] text-zinc-500 font-mono">.py</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleInsertCodeBlock("html")}
+                    className="flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg text-left hover:bg-zinc-800/70 transition group cursor-pointer"
+                  >
+                    <span className="font-bold text-zinc-200 group-hover:text-emerald-300 flex items-center gap-2">
+                      <span className="text-orange-400 font-mono text-[10px]">&lt;&gt;</span> HTML / CSS
+                    </span>
+                    <span className="text-[10px] text-zinc-500 font-mono">.html</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleInsertCodeBlock("sql")}
+                    className="flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg text-left hover:bg-zinc-800/70 transition group cursor-pointer"
+                  >
+                    <span className="font-bold text-zinc-200 group-hover:text-emerald-300 flex items-center gap-2">
+                      <span className="text-purple-400 font-mono text-[10px]">DB</span> SQL Query
+                    </span>
+                    <span className="text-[10px] text-zinc-500 font-mono">.sql</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleInsertCodeBlock("shell")}
+                    className="flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg text-left hover:bg-zinc-800/70 transition group cursor-pointer"
+                  >
+                    <span className="font-bold text-zinc-200 group-hover:text-emerald-300 flex items-center gap-2">
+                      <span className="text-emerald-400 font-mono text-[10px]">$</span> Bash / Shell
+                    </span>
+                    <span className="text-[10px] text-zinc-500 font-mono">.sh</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleInsertCodeBlock("json")}
+                    className="flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg text-left hover:bg-zinc-800/70 transition group cursor-pointer"
+                  >
+                    <span className="font-bold text-zinc-200 group-hover:text-emerald-300 flex items-center gap-2">
+                      <span className="text-teal-400 font-mono text-[10px]">{}</span> JSON Data
+                    </span>
+                    <span className="text-[10px] text-zinc-500 font-mono">.json</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           <ToolbarButton onClick={handleInsertCta} title="CTA 링크 버튼 삽입">CTA</ToolbarButton>
 
@@ -4017,10 +4155,11 @@ export default function UniversalBlogEditor({
               {isTranslateDropdownOpen && (
                 <div className="absolute right-0 top-full mt-1.5 w-60 rounded-2xl border border-violet-500/40 bg-[#0d0f19] p-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.95)] z-[99999] flex flex-col gap-1 select-none max-h-[75vh] overflow-y-auto custom-scrollbar">
                   <div className="px-2 py-1 text-[10px] font-black text-violet-400 uppercase tracking-wider flex items-center justify-between border-b border-zinc-800/80 pb-1.5 mb-1 shrink-0">
-                    <span>AI 글로벌 20개국 번역</span>
+                    <span>AI 글로벌 21개국 번역</span>
                     <span className="text-[9px] text-zinc-500">제목+본문 자동번역</span>
                   </div>
                   {[
+                    { name: "한국어 (한국어 - Korean)", flag: "🇰🇷" },
                     { name: "영어 (English)", flag: "🇺🇸" },
                     { name: "일본어 (日本語)", flag: "🇯🇵" },
                     { name: "중국어 (간체 - 简体)", flag: "🇨🇳" },
@@ -4998,13 +5137,49 @@ export default function UniversalBlogEditor({
 
         .ProseMirror pre {
           margin: 1.5rem 0;
-          padding: 1rem;
+          padding: 1.25rem 1.5rem;
           overflow-x: auto;
           border-radius: 1rem;
-          background: #09090b;
-          color: #f4f4f5;
-          font-size: 0.8rem;
-          line-height: 1.7;
+          background: #0f1117 !important;
+          color: #f4f4f5 !important;
+          border: 1px solid #27272a;
+          box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+          font-family: "Fira Code", "JetBrains Mono", "Consolas", "Monaco", "Courier New", monospace;
+          font-size: 0.85rem;
+          line-height: 1.75;
+          position: relative;
+        }
+
+        .ProseMirror pre::before {
+          content: "● ● ●  CODE BLOCK";
+          display: block;
+          font-family: inherit;
+          font-size: 11px;
+          font-weight: 800;
+          color: #71717a;
+          letter-spacing: 0.08em;
+          margin-bottom: 0.85rem;
+          padding-bottom: 0.6rem;
+          border-bottom: 1px solid #1f2330;
+          text-transform: uppercase;
+        }
+
+        .ProseMirror pre code {
+          background: transparent !important;
+          color: inherit !important;
+          padding: 0 !important;
+          font-size: inherit !important;
+          font-family: inherit !important;
+        }
+
+        .ProseMirror code:not(pre code) {
+          background: #18181b;
+          color: #38bdf8;
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 0.85em;
+          font-family: "Fira Code", "JetBrains Mono", monospace;
+          border: 1px solid #27272a;
         }
 
         .ProseMirror hr {

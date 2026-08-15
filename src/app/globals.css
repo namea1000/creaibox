@@ -142,3 +142,36 @@ body.editor-focus-mode #global-studio-sidebar,
 body.editor-focus-mode #global-studio-aside {
   display: none !important;
 }
+
+/* KIMI 스타일 프리미엄 다크 코드 박스 전역 스타일 */
+pre {
+  background-color: #0f1117 !important;
+  color: #f4f4f5 !important;
+  border: 1px solid #27272a !important;
+  border-radius: 1rem !important;
+  padding: 1.25rem 1.5rem !important;
+  margin: 1.5rem 0 !important;
+  overflow-x: auto !important;
+  font-family: var(--font-geist-mono), 'Fira Code', 'Consolas', monospace !important;
+  font-size: 0.85rem !important;
+  line-height: 1.75 !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+}
+
+pre code {
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+  font-size: inherit !important;
+  border: none !important;
+}
+
+code:not(pre code) {
+  background-color: #18181b;
+  color: #38bdf8;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-family: var(--font-geist-mono), monospace;
+  border: 1px solid #27272a;
+}

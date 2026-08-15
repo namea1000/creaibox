@@ -339,6 +339,51 @@ export default function PostClientWrapper({
               table-layout: auto !important;
               word-break: break-word !important;
             }
+            .blog-content pre {
+              margin: 1.5rem 0 !important;
+              padding: 1.25rem 1.5rem !important;
+              overflow-x: auto !important;
+              border-radius: 1rem !important;
+              background-color: #0f1117 !important;
+              color: #f4f4f5 !important;
+              border: 1px solid #27272a !important;
+              box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+              font-family: var(--font-geist-mono), 'Fira Code', 'Consolas', monospace !important;
+              font-size: 0.85rem !important;
+              line-height: 1.75 !important;
+              position: relative !important;
+              text-align: left !important;
+            }
+            .blog-content pre::before {
+              content: "● ● ●  CODE BLOCK" !important;
+              display: block !important;
+              font-family: inherit !important;
+              font-size: 11px !important;
+              font-weight: 800 !important;
+              color: #71717a !important;
+              letter-spacing: 0.08em !important;
+              margin-bottom: 0.85rem !important;
+              padding-bottom: 0.6rem !important;
+              border-bottom: 1px solid #1f2330 !important;
+              text-transform: uppercase !important;
+            }
+            .blog-content pre code {
+              background: transparent !important;
+              color: inherit !important;
+              padding: 0 !important;
+              font-size: inherit !important;
+              font-family: inherit !important;
+              border: none !important;
+            }
+            .blog-content code:not(pre code) {
+              background-color: #18181b !important;
+              color: #38bdf8 !important;
+              padding: 2px 6px !important;
+              border-radius: 4px !important;
+              font-size: 0.85em !important;
+              font-family: var(--font-geist-mono), monospace !important;
+              border: 1px solid #27272a !important;
+            }
             @media (max-width: 640px) {
               .toc-container {
                 padding: 1rem !important;
