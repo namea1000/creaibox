@@ -1,7 +1,7 @@
 # [Architecture Specification] Instant Navigation & Smart Prefetch Pipeline
 
 > **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)  
-> **관련 모듈**: `src/components/common/SmartIntentLink.tsx`, `src/app/brand/[brand_id]/components/BlogClientWrapper.tsx`, `src/app/brand/[brand_id]/[slug]/page.tsx`  
+> **관련 모듈**: `src/components/common/SmartIntentLink.tsx`, `src/components/layout/Header.tsx`, `src/components/layout/Sidebar.tsx`, `src/app/page.tsx`, `src/components/layout/Footer.tsx`, `src/app/blog/page.tsx`, `src/components/blog/BlogListPaginatedView.tsx`, `src/app/brand/[brand_id]/components/BlogClientWrapper.tsx`  
 > **시스템 레이어**: Frontend Component ↔ Next.js App Router ↔ Vercel Edge CDN Static Asset Layer
 
 ---
@@ -41,14 +41,25 @@ sequenceDiagram
 - **메모리 이탈 가비지 컬렉션**: `onMouseLeave` 발동 시 즉시 `clearTimeout`을 실행하여 이벤트 메모리 누수 방지.
 - **모바일 터치 이벤트 (`onTouchStart`)**: 모바일 뷰포트의 경우 마우스 호버 개념이 없으므로 `onTouchStart` 시점에 0.05초 즉시 백그라운드 프리패치 트리거.
 - **Next.js 기본 옵션 제어**: `prefetch={false}` 속성을 명시적으로 전달하여 App Router의 기본 맹목적 뷰포트 프리패치(Egress 비용 원인)를 100% 차단.
+- **HTMLAnchorElement 완전 호환**: `title`, `target`, `rel`, `aria-*` 등 모든 표준 앵커 속성을 100% 수용.
 
 ```typescript
-export interface SmartIntentLinkProps extends LinkProps {
+export interface SmartIntentLinkProps
+  extends Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps>,
+    LinkProps {
   children: React.ReactNode;
   className?: string;
   hoverDelay?: number; // Default: 150ms
 }
 ```
+
+### 2.2 플랫폼 전역 탑재 범위 (Global Application Matrix)
+1. **GNB & 헤더**: `Header.tsx` (전체 GNB 대메뉴 및 50+ 세부 드롭다운 링커)
+2. **스튜디오 사이드바**: `Sidebar.tsx` (1~3단계 전체 메뉴/서브메뉴)
+3. **메인 랜딩페이지**: `src/app/page.tsx` (상단 5대 퀵메뉴 및 실시간 급상승 키워드 바)
+4. **블로그 센터**: `src/app/blog/page.tsx`, `src/app/blog/[slug]/page.tsx`, `BlogClientWrapper.tsx`, `PostClientWrapper.tsx`
+5. **16대 커스텀 사이트 템플릿**: `BlogListPaginatedView.tsx` 공통 컴포넌트를 통해 모든 사용자 자사몰/브랜드 사이트에 자동 장착
+6. **메인 푸터**: `Footer.tsx` (회사 소개, 서비스/요금제 링크 등)
 
 ### 2.2 Vercel Edge CDN Caching Layer & Static Bundle Header (`revalidate = 300`)
 - **캐싱 매커니즘**: Next.js Incremental Static Regeneration (ISR) 및 permanent CDN Static Header

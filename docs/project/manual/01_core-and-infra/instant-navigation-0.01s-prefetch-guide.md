@@ -6,11 +6,12 @@
 
 ## 1. 💡 개발자가 지켜야 할 필수 원칙 (Core Rules)
 
-1. **원칙 1: 모든 카드 및 아티클 링커는 `SmartIntentLink` 컴포넌트 필수 사용**
-   - 맹목적 `<Link href="...">`나 `<a href="...">`를 절대 직접 사용하지 않고 무조건 `@/components/common/SmartIntentLink`를 사용합니다.
+1. **원칙 1: 모든 네비게이션, 카드 및 아티클 링커는 `SmartIntentLink` 컴포넌트 표준 사용**
+   - 맹목적 `<Link href="...">`나 `<a href="...">` 대신 무조건 `@/components/common/SmartIntentLink`를 표준으로 사용합니다.
+   - 플랫폼 전체(헤더 GNB, 사이드바, 랜딩페이지 퀵박스, 블로그 카드, 푸터, 16개 커스텀 웹사이트 템플릿)에 100% 동일 표준이 적용되어 있습니다.
 
 2. **원칙 2: 본문 상세 페이지 ISR 필수 보장 (`revalidate = 300`)**
-   - `src/app/brand/[brand_id]/[slug]/page.tsx` 등 본문 페이지 상단에 `export const revalidate = 300;`을 필수 지정해야 Vercel 요금이 0원으로 안전하게 유지됩니다.
+   - `src/app/brand/[brand_id]/[slug]/page.tsx`, `src/app/blog/[slug]/page.tsx` 등 본문 페이지 상단에 `export const revalidate = 300;`을 필수 지정해야 Vercel 요금이 0원으로 안전하게 유지됩니다.
 
 3. **원칙 3: CSS/JS 정적 번들 1년 무상 CDN 영구 캐싱 헤더 고증**
    - `next.config.ts`의 `headers()`에 `/_next/static/:path*` 1년 영구 캐스케이드 헤더(`max-age=31536000, immutable`)가 항상 켜져 있어 렌더링 차단 지연시간이 0ms로 방어되는지 점검합니다.

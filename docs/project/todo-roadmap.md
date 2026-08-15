@@ -235,8 +235,8 @@ CreaiBox 브랜드 ID(`{brand_id}.creaibox.com`) 예약어/블랙리스트 Egres
   - 📖 아키텍처 & 운용 매뉴얼: [`media-proxy-architecture.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/arch/media-proxy-architecture.md>) / [`google-drive-image-proxy-web-optimization-manual.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/google-drive-image-proxy-web-optimization-manual.md>) 수록 완료.
 - [X] **네이버 뉴스급 0.01초 Instant 오픈 & Vercel 비용 0원 방어 파이프라인 구축**
   - `SmartIntentLink` 0.15초 체류 의도 감지 프리패치 엔진 및 본문 `revalidate = 300` CDN 무상 캐싱 연동.
-  - 모든 사용자 블로그, 비즈니스 홈페이지, 커스텀 사이트의 카드 링커 전면 전환 반영 완료.
-  - 📖 아키텍처 & 운용 매뉴얼: [`instant-navigation-prefetch-architecture.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/arch/instant-navigation-prefetch-architecture.md>) / [`instant-navigation-0.01s-prefetch-guide.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/instant-navigation-0.01s-prefetch-guide.md>) 수록 완료.
+  - 플랫폼 5대 핵심 영역(헤더 GNB 전체 메뉴, 사이드바 전체 메뉴, 메인 랜딩 퀵버튼/키워드 바, 공식/개별 블로그 카드, 푸터) 및 16대 커스텀 웹사이트 템플릿 전면 표준 전환 완료.
+  - 📖 아키텍처 & 운용 매뉴얼: [`instant-navigation-prefetch-architecture.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/arch/01_core-and-infra/instant-navigation-prefetch-architecture.md>) / [`instant-navigation-0.01s-prefetch-guide.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/01_core-and-infra/instant-navigation-0.01s-prefetch-guide.md>) 최신화 완료.
 - [X] **서브도메인 신청 심사 2차 AI & Web 안전 검증 모듈 구축**
   - `/admin/brands` 심사 행에 `[ ✨ AI 검증 ]` 버튼 추가 및 `/api/admin/brands/verify` 백엔드 연동.
   - 위험도 뱃지(`SAFE`/`WARNING`/`DANGER`), 위험점수(0~100), AI 종합 리포트 모달 구현.

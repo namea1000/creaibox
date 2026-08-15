@@ -568,3 +568,7 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
   - `Header.tsx`, `Sidebar.tsx`, `src/app/page.tsx`, `Footer.tsx`, `BlogClientWrapper.tsx`, `PostClientWrapper.tsx`, `src/app/blog/[slug]/page.tsx`:
     - 헤더 GNB 전체 메뉴, 사이드바 전체 메뉴, 메인 랜딩페이지 퀵버튼 및 키워드 바, 블로그 카드 전체 링커를 `SmartIntentLink`로 전면 교체 완료.
     - 마우스 150ms 체류 의도 감지 시 백그라운드에서 0.05초 만에 즉시 사전 렌더링/프리패치를 완료하여, 클릭 즉시 0.01초 만에 다음 화면이 열리도록 플랫폼 전체 가속 완성.
+* **사용자 브랜드 블로그 & 커스텀 사이트 카드 모서리 각진 모던 직사각형 개편 (v1.26)**:
+  - `BlogClientWrapper.tsx`, `CategoryClientWrapper.tsx`, `BlogListPaginatedView.tsx`:
+    - 기존의 둥글둥글한 `rounded-xl`/`rounded-2xl` 모서리를 세련되고 엣지 있는 미세 라운딩 직사각형(`rounded-[6px]`)으로 전면 교체.
+    - 썸네일 프레임도 `rounded-[4px]`로 비례 동기화하여 깔끔하고 모던한 전문가 미디어 룩 완성.

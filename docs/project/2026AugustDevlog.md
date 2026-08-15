@@ -6,7 +6,13 @@
 
 ## 📅 2026년 8월 15일 (금)
 
-### 1. ⚡ 플랫폼 전역 네이버 뉴스급 0.01초 Instant Navigation (SmartIntentLink) 전면 적용 (v1.25)
+### 1. 📐 사용자 브랜드 블로그 및 커스텀 사이트 카드 모서리 각진 모던 직사각형 개편 (v1.26)
+- **카드 프레임 라운딩 미세 조율 (`rounded-xl` ➔ `rounded-[6px]`)**:
+  - `BlogClientWrapper.tsx`, `CategoryClientWrapper.tsx`, `BlogListPaginatedView.tsx`
+  - 둥글둥글하던 기존 모서리를 매우 미세하게만 라운딩 처리된 세련되고 엣지 있는 모던 직사각형(`rounded-[6px]`) 스타일로 전면 개편.
+  - 내부 썸네일 컨테이너도 `rounded-[4px]`로 비례 맞춤 조정 완료.
+
+### 2. ⚡ 플랫폼 전역 네이버 뉴스급 0.01초 Instant Navigation (SmartIntentLink) 전면 적용 (v1.25)
 - **플랫폼 5대 핵심 네비게이션 & 링커 전면 고속화**:
   1. **헤더 상단 GNB 및 모든 드롭다운 메뉴** (`src/components/layout/Header.tsx`): 미디어, 키워드, 유튜브, Tools, 디자인, 가격, 블로그 등 전체 GNB 링커에 0.15초 스마트 인텐트 프리패치 적용.
   2. **스튜디오 좌측 사이드바 메뉴 전체** (`src/components/layout/Sidebar.tsx`): 1~3단계 전체 메뉴/서브메뉴 클릭 즉시 0.01초 전환.

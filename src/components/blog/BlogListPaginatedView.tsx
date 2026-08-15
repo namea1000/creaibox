@@ -185,7 +185,7 @@ export default function BlogListPaginatedView({
             <SmartIntentLink
               key={post.id}
               href={`/blog/${post.slug}`}
-              className="group bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
+              className="group bg-white border border-slate-200/80 rounded-[6px] overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
             >
               <div>
                 {/* Thumbnail Panel */}
