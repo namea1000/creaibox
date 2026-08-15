@@ -6,7 +6,14 @@
 
 ## 📅 2026년 8월 15일 (금)
 
-### 1. 📋 KIMI 스타일 다크 코드 박스 우측 상단 「Copy」 클립보드 복사 엔진 구축 (v1.23)
+### 1. 📜 공식 블로그 에디토리얼 아웃트로 문구 정석형 개정 (v1.24)
+- **어색한 중복 AI 번역투 전면 철거 및 신규 정석 문구 반영**:
+  - `UniversalBlogEditor.tsx`, `src/app/blog/[slug]/page.tsx`, `PostClientWrapper.tsx`
+  - 기존: *"본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오..."*
+  - 신규: *"본 콘텐츠는 AI 올인원 콘텐츠 스튜디오 크리에이박스(CreaiBox)의 공식 인사이트 리포트입니다. 인공지능 기반의 고품질 콘텐츠 제작 가이드와 비즈니스 성장 전략에 대한 더 많은 전문 자료는 크리에이박스(CreaiBox) 공식 홈페이지 https://creaibox.com 에서 확인하실 수 있습니다."*
+  - 구형 문구가 DB나 본문에 남아있더라도 렌더링 시 신규 문구로 100% 자동 마이그레이션 적용.
+
+### 2. 📋 KIMI 스타일 다크 코드 박스 우측 상단 「Copy」 클립보드 복사 엔진 구축 (v1.23)
 - **`CodeBlockCopyEnhancer` 컴포넌트 개발 (`src/components/blog/CodeBlockCopyEnhancer.tsx`)**:
   - 모든 `<pre>` 및 `.cb-code-wrapper` 코드 블록 우측 상단에 반투명 글래스모피즘 `[📄 Copy]` 버튼을 무인 자동 마운트.
   - 마우스 호버 시 자연스러운 `Copy` 텍스트 라벨 확장 및 엘리베이션 효과.

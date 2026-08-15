@@ -516,7 +516,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
     textColor: "#52525b",
     subColor: "#2563eb",
     subtitle: "CreaiBox Insight Editorial",
-    text: "본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오 크리에이박스(CreaiBox)의 오리지널 인사이트 리포트입니다. 인공지능 기반의 고품질 콘텐츠 생성 가이드와 비즈니스 성장 전략에 대한 더 많은 전문 자료는 크리에이박스(CreaiBox) 공식 홈페이지 <a href=\"https://creaibox.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"font-bold text-blue-500 hover:text-blue-400 underline\">https://creaibox.com</a> 에서 확인하실 수 있습니다."
+    text: "본 콘텐츠는 AI 올인원 콘텐츠 스튜디오 크리에이박스(CreaiBox)의 공식 인사이트 리포트입니다. 인공지능 기반의 고품질 콘텐츠 제작 가이드와 비즈니스 성장 전략에 대한 더 많은 전문 자료는 크리에이박스(CreaiBox) 공식 홈페이지 <a href=\"https://creaibox.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"font-bold text-blue-500 hover:text-blue-400 underline\">https://creaibox.com</a> 에서 확인하실 수 있습니다."
   };
 
   if (editorialMatch && editorialMatch[1]) {
@@ -526,6 +526,11 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
     } catch (e) {
       console.error("Failed to parse editorial settings:", e);
     }
+  }
+
+  // 구형 번역투 문구가 남아있을 경우 신규 문구로 자동 마이그레이션
+  if (editorial.text && editorial.text.includes("올인원 콘텐츠 제작형 생성형 AI 스튜디오")) {
+    editorial.text = "본 콘텐츠는 AI 올인원 콘텐츠 스튜디오 크리에이박스(CreaiBox)의 공식 인사이트 리포트입니다. 인공지능 기반의 고품질 콘텐츠 제작 가이드와 비즈니스 성장 전략에 대한 더 많은 전문 자료는 크리에이박스(CreaiBox) 공식 홈페이지 <a href=\"https://creaibox.com\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"font-bold text-blue-500 hover:text-blue-400 underline\">https://creaibox.com</a> 에서 확인하실 수 있습니다.";
   }
 
   // 🌟 에디토리얼 설정 댓글 및 스키마 제거
