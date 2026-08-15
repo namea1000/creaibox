@@ -6,7 +6,15 @@
 
 ## 📅 2026년 8월 15일 (금)
 
-### 1. 🛡️ 원고 편집 페이지 무한 재귀 쿼리 루프 및 브라우저 프리징 완전 차단 (v1.28)
+### 1. ⚡ 에디터 원고 데이터 바인딩 멈춤 버그 해결 및 관리자 전역 상세 조회 지원 (v1.29)
+- **원인 분석**:
+  1. `UniversalBlogEditor.tsx`에 포함되었던 `CodeBlockCopyEnhancer`의 `MutationObserver`가 Tiptap 에디터 내부 DOM과 충돌하여 렌더링 스레드를 방해함.
+  2. `fetchCreaiboxManuscriptDetail` 쿼리가 기본적으로 본인 `user_id`로만 제한되어 있어, 관리자(`role === "ADMIN"`)가 다른 유저의 글(예: 358번 등)을 열 때 데이터 바인딩이 멈추거나 오래된 캐시가 표시됨.
+- **해결 조치**:
+  1. `CodeBlockCopyEnhancer`에서 Tiptap 에디터 영역(`.ProseMirror`)을 엄격히 제외하고 디바운스 적용 및 에디터 내부 불필요한 import 제거.
+  2. `fetchCreaiboxManuscriptDetail`에 관리자(`ADMIN`) Fallback 쿼리를 장착하여 어떤 원고 번호로 접근하더라도 즉시 본문과 메타데이터가 100% 온전하게 로드되도록 완성.
+
+### 2. 🛡️ 원고 편집 페이지 무한 재귀 쿼리 루프 및 브라우저 프리징 완전 차단 (v1.28)
 - **원인 분석**:
   - `src/app/studio/writing/creaibox/list/[id]/page.tsx`에서 타인 글 또는 존재하지 않는 글 ID(예: 301번)로 진입 시, `data`가 `null`인 상태에서 `fetchDirectDetail`을 `useEffect`가 무한 재귀 호출하여 브라우저 CPU 100% 점유 및 "응답 없는 페이지" 크래시가 발생함.
 - **해결 조치**:

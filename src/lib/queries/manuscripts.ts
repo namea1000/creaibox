@@ -389,7 +389,40 @@ async function fetchCreaiboxManuscriptDetail(
     row = (byId.data ?? null) as WritingCreaiboxPostRecord | null;
   }
 
-  const record = row ? mapCreaiboxRecord(row) : cached ?? null;
+  // 🌟 관리자(ADMIN) 권한인 경우 다른 계정의 원고라도 조회 가능하도록 Fallback
+  if (!row) {
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (prof?.role === "ADMIN") {
+      if (!Number.isNaN(numericDisplayId)) {
+        const adminByDisplayId = await supabase
+          .from("writing_creaibox_posts")
+          .select("*")
+          .eq("display_id", numericDisplayId)
+          .maybeSingle();
+        if (adminByDisplayId.data) {
+          row = adminByDisplayId.data as WritingCreaiboxPostRecord;
+        }
+      }
+
+      if (!row) {
+        const adminById = await supabase
+          .from("writing_creaibox_posts")
+          .select("*")
+          .eq("id", displayId)
+          .maybeSingle();
+        if (adminById.data) {
+          row = adminById.data as WritingCreaiboxPostRecord;
+        }
+      }
+    }
+  }
+
+  const record = row ? mapCreaiboxRecord(row) : (cached && (String(cached.displayId) === String(displayId) || String(cached.id) === String(displayId))) ? cached : null;
 
   if (record) {
     const detailKey = record.displayId ?? displayId;

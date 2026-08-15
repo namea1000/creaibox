@@ -4,12 +4,19 @@ import { useEffect } from "react";
 
 export default function CodeBlockCopyEnhancer() {
   useEffect(() => {
+    let debounceTimer: NodeJS.Timeout | null = null;
+
     function setupCodeBlockCopyButtons() {
-      const codeBlocks = document.querySelectorAll<HTMLElement>("pre, .cb-code-wrapper");
+      // 🌟 Tiptap 에디터 내부(.ProseMirror)는 복사 버튼을 삽입하지 않음 (Tiptap DOM 충돌 방지)
+      const codeBlocks = document.querySelectorAll<HTMLElement>("pre:not(.ProseMirror pre), .cb-code-wrapper");
 
       codeBlocks.forEach((block) => {
-        // 이미 복사 버튼이 장착되어 있으면 패스
-        if (block.querySelector(".cb-copy-code-btn") || block.classList.contains("cb-copy-enhanced")) {
+        // 이미 복사 버튼이 장착되어 있거나 에디터 내부이면 패스
+        if (
+          block.closest(".ProseMirror") ||
+          block.querySelector(".cb-copy-code-btn") ||
+          block.classList.contains("cb-copy-enhanced")
+        ) {
           return;
         }
 
@@ -74,14 +81,20 @@ export default function CodeBlockCopyEnhancer() {
 
     setupCodeBlockCopyButtons();
 
-    // 동적 렌더링에 대응하기 위해 MutationObserver 설정
+    // 동적 렌더링에 대응하기 위해 디바운스된 MutationObserver 설정
     const observer = new MutationObserver(() => {
-      setupCodeBlockCopyButtons();
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        setupCodeBlockCopyButtons();
+      }, 100);
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
 
-    return () => observer.disconnect();
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      observer.disconnect();
+    };
   }, []);
 
   return (

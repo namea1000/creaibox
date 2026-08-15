@@ -581,3 +581,8 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
     - `data`가 `null`일 때 `fetchDirectDetail`이 무한 재귀 호출되어 브라우저 탭이 멈추던 버그를 `directFetchAttempted` 락을 통해 100% 원천 차단.
     - 관리자(`ADMIN`) 계정일 경우 다른 계정의 원고라도 안전하게 조회/편집할 수 있도록 쿼리 지원 확장.
     - 존재하지 않는 원고 접근 시 무한 로딩 대신 친절한 안내 메시지와 `[ ← 원고 목록으로 돌아가기 ]` 버튼 제공.
+* **에디터 원고 데이터 바인딩 멈춤 버그 해결 및 관리자 전역 상세 조회 지원 (v1.29)**:
+  - `src/components/writing/editor/UniversalBlogEditor.tsx` & `src/components/blog/CodeBlockCopyEnhancer.tsx`:
+    - `CodeBlockCopyEnhancer`의 `MutationObserver`가 Tiptap 에디터 DOM과 충돌하던 문제를 해결 (에디터 영역 제외 및 디바운스 적용).
+  - `src/lib/queries/manuscripts.ts`:
+    - `fetchCreaiboxManuscriptDetail`에 관리자(`ADMIN`) Fallback 조회를 장착하여, 358번 등 타 유저 원고라도 관리자 권한으로 본문과 제목이 100% 정상 바인딩되도록 완성.
