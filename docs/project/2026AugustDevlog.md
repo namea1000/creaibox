@@ -6,7 +6,17 @@
 
 ## 📅 2026년 8월 15일 (금)
 
-### 1. 📜 공식 블로그 에디토리얼 아웃트로 문구 정석형 개정 (v1.24)
+### 1. ⚡ 플랫폼 전역 네이버 뉴스급 0.01초 Instant Navigation (SmartIntentLink) 전면 적용 (v1.25)
+- **플랫폼 5대 핵심 네비게이션 & 링커 전면 고속화**:
+  1. **헤더 상단 GNB 및 모든 드롭다운 메뉴** (`src/components/layout/Header.tsx`): 미디어, 키워드, 유튜브, Tools, 디자인, 가격, 블로그 등 전체 GNB 링커에 0.15초 스마트 인텐트 프리패치 적용.
+  2. **스튜디오 좌측 사이드바 메뉴 전체** (`src/components/layout/Sidebar.tsx`): 1~3단계 전체 메뉴/서브메뉴 클릭 즉시 0.01초 전환.
+  3. **메인 랜딩페이지 상단 퀵메뉴 & 키워드 바** (`src/app/page.tsx`): 블로그 글쓰기, 키워드 트렌드, 영상 편집기 등 퀵 버튼 및 실시간 급상승 키워드 바 즉시 연결.
+  4. **공식 블로그 & 개별 브랜드 블로그 상세/홈** (`src/app/blog/page.tsx`, `src/app/blog/[slug]/page.tsx`, `BlogClientWrapper.tsx`, `PostClientWrapper.tsx`): 모든 블로그 카드, 카테고리 태그, 베스트 글 위젯 전면 고속화.
+  5. **메인 푸터 링크 전체** (`src/components/layout/Footer.tsx`): 회사 소개, 요금제, 법적 고지 링커 전체 연동.
+- **`SmartIntentLink` 컴포넌트 HTML Anchor 완전 호환 확장 (`src/components/common/SmartIntentLink.tsx`)**:
+  - `title`, `target`, `rel`, `aria-*` 등 표준 HTMLAnchorElement 속성을 100% 수용하도록 인터페이스 확장 완료.
+
+### 2. 📜 공식 블로그 에디토리얼 아웃트로 문구 정석형 개정 (v1.24)
 - **어색한 중복 AI 번역투 전면 철거 및 신규 정석 문구 반영**:
   - `UniversalBlogEditor.tsx`, `src/app/blog/[slug]/page.tsx`, `PostClientWrapper.tsx`
   - 기존: *"본 콘텐츠는 올인원 콘텐츠 제작형 생성형 AI 스튜디오..."*

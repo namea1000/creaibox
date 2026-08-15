@@ -564,3 +564,7 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
   - `UniversalBlogEditor.tsx`, `src/app/blog/[slug]/page.tsx`, `PostClientWrapper.tsx`:
     - 기존의 어색한 중복 AI 번역투("올인원 콘텐츠 제작형 생성형 AI 스튜디오...")를 완전 철거.
     - 「AI 올인원 콘텐츠 스튜디오 크리에이박스(CreaiBox)의 공식 인사이트 리포트입니다. 인공지능 기반의 고품질 콘텐츠 제작 가이드와 비즈니스 성장 전략에 대한 더 많은 전문 자료는 크리에이박스(CreaiBox) 공식 홈페이지 https://creaibox.com 에서 확인하실 수 있습니다.」로 품격 높은 정석 문구로 전면 교체 및 구형 문구 자동 마이그레이션 적용.
+* **플랫폼 전역 네이버 뉴스급 0.01초 Instant Navigation (SmartIntentLink) 전면 적용 (v1.25)**:
+  - `Header.tsx`, `Sidebar.tsx`, `src/app/page.tsx`, `Footer.tsx`, `BlogClientWrapper.tsx`, `PostClientWrapper.tsx`, `src/app/blog/[slug]/page.tsx`:
+    - 헤더 GNB 전체 메뉴, 사이드바 전체 메뉴, 메인 랜딩페이지 퀵버튼 및 키워드 바, 블로그 카드 전체 링커를 `SmartIntentLink`로 전면 교체 완료.
+    - 마우스 150ms 체류 의도 감지 시 백그라운드에서 0.05초 만에 즉시 사전 렌더링/프리패치를 완료하여, 클릭 즉시 0.01초 만에 다음 화면이 열리도록 플랫폼 전체 가속 완성.

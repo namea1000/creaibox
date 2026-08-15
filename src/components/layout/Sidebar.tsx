@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import Link from "next/link";
+import Link from "@/components/common/SmartIntentLink";
 import { usePathname } from "next/navigation";
 import {
   PanelLeftClose,

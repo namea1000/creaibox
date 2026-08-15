@@ -6,7 +6,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import MoonshotCursor from "@/components/common/MoonshotCursor";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import Link from "@/components/common/SmartIntentLink";
 import {
   ArrowRight,
   ArrowUpRight,

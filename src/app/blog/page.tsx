@@ -6,6 +6,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { formatImageUrl } from "@/utils/image-url";
 import SafeImage from "@/components/common/SafeImage";
+import SmartIntentLink from "@/components/common/SmartIntentLink";
 
 interface PublishedPost {
   id: string;
@@ -168,7 +169,7 @@ export default async function BlogPage(props: {
                   const excerpt = buildExcerpt(post);
 
                   return (
-                    <Link
+                    <SmartIntentLink
                       key={post.id}
                       href={`/blog/${post.slug}`}
                       className="group flex flex-col md:flex-row gap-5 rounded-2xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-slate-900/40 p-5 shadow-sm transition hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-md"
@@ -194,7 +195,7 @@ export default async function BlogPage(props: {
                           {excerpt}
                         </p>
                       </div>
-                    </Link>
+                    </SmartIntentLink>
                   );
                 })}
 
@@ -253,7 +254,7 @@ export default async function BlogPage(props: {
                 <div className="bg-white dark:bg-zinc-950 divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
                   {bestPosts.map((post) => {
                     return (
-                      <Link
+                      <SmartIntentLink
                         key={post.id}
                         href={`/blog/${post.slug}`}
                         className="group flex items-center gap-3.5 px-6 py-3 transition hover:bg-zinc-50 dark:hover:bg-zinc-900/60"
@@ -275,7 +276,7 @@ export default async function BlogPage(props: {
                             {post.title}
                           </h3>
                         </div>
-                      </Link>
+                      </SmartIntentLink>
                     );
                   })}
                 </div>

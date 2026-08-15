@@ -51,8 +51,7 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { SiYoutube } from "react-icons/si";
-import Link from "next/link";
-import Image from "next/image";
+import Link from "@/components/common/SmartIntentLink";
 import { useRouter } from "next/navigation";
 
 export default function Header() {

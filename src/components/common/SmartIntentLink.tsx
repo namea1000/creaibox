@@ -4,7 +4,9 @@ import React, { useRef } from "react";
 import Link, { LinkProps } from "next/link";
 import { useRouter } from "next/navigation";
 
-interface SmartIntentLinkProps extends LinkProps {
+interface SmartIntentLinkProps
+  extends Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps>,
+    LinkProps {
   children: React.ReactNode;
   className?: string;
   hoverDelay?: number; // 마우스 체류 의도 감지 시간 (기본값: 150ms)
