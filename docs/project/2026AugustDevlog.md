@@ -6,7 +6,17 @@
 
 ## 📅 2026년 8월 15일 (금)
 
-### 1. 🌐 AI 다국어 번역 드롭다운에 「한국어 (Korean)」 최상단 1순위 추가 (v1.22)
+### 1. 📋 KIMI 스타일 다크 코드 박스 우측 상단 「Copy」 클립보드 복사 엔진 구축 (v1.23)
+- **`CodeBlockCopyEnhancer` 컴포넌트 개발 (`src/components/blog/CodeBlockCopyEnhancer.tsx`)**:
+  - 모든 `<pre>` 및 `.cb-code-wrapper` 코드 블록 우측 상단에 반투명 글래스모피즘 `[📄 Copy]` 버튼을 무인 자동 마운트.
+  - 마우스 호버 시 자연스러운 `Copy` 텍스트 라벨 확장 및 엘리베이션 효과.
+  - 클릭 시 `[✓ Copied!]` 에메랄드 성공 배지로 2초간 시각적 피드백 제공 및 코드 텍스트만 클립보드에 무결점 복사.
+- **3대 에디터 & 뷰어 전면 연동**:
+  - `src/app/blog/[slug]/page.tsx` (공식 블로그 상세)
+  - `src/app/brand/[brand_id]/components/PostClientWrapper.tsx` (멀티테넌트 브랜드 블로그)
+  - `src/components/writing/editor/UniversalBlogEditor.tsx` (블로그 에디터)
+
+### 2. 🌐 AI 다국어 번역 드롭다운에 「한국어 (Korean)」 최상단 1순위 추가 (v1.22)
 - **21개국 다국어 번역 파이프라인 완성 (`UniversalBlogEditor.tsx`)**:
   - 에디터 상단 3열 AI 커스텀 툴바의 `[🌐 번역 ▾]` 드롭다운 최상단 1번에 `한국어 (한국어 - Korean) 🇰🇷`를 신규 추가.
   - 해외 언어(영어, 일어, 중국어 등) 원고나 타 언어로 번역된 원고를 원클릭으로 자연스럽고 품격 있는 한국어로 즉시 번역/복원할 수 있도록 지원 완성.

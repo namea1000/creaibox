@@ -12,6 +12,7 @@ import Footer from "@/components/layout/Footer";
 import { formatImageUrl } from "@/utils/image-url";
 import SafeImage from "@/components/common/SafeImage";
 import OGLinkCard from "@/components/common/OGLinkCard";
+import CodeBlockCopyEnhancer from "@/components/blog/CodeBlockCopyEnhancer";
 
 interface BlogDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -621,6 +622,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
         }
       })}
 
+      <CodeBlockCopyEnhancer />
       <Header />
 
       <style>{`

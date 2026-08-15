@@ -15,6 +15,7 @@ import TableRow from "@tiptap/extension-table-row";
 import TableHeader from "@tiptap/extension-table-header";
 import TableCell from "@tiptap/extension-table-cell";
 import TextAlign from "@tiptap/extension-text-align";
+import CodeBlockCopyEnhancer from "@/components/blog/CodeBlockCopyEnhancer";
 
 const CustomTableCell = TableCell.extend({
   addAttributes() {
@@ -2792,6 +2793,7 @@ export default function UniversalBlogEditor({
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#0a0c10]">
+      <CodeBlockCopyEnhancer />
       <div className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-3 border-b border-zinc-800 bg-gradient-to-r from-[#131722] via-[#141926] to-[#10141f] px-4">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex shrink-0 items-center gap-1.5">

@@ -554,3 +554,9 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
 * **AI 글로벌 번역 드롭다운에 「한국어 (Korean)」 최상단 1순위 추가 (v1.22)**:
   - `src/components/writing/editor/UniversalBlogEditor.tsx`:
     - 에디터 상단 3열 AI 커스텀 툴바의 `[🌐 번역 ▾]` 드롭다운에 `한국어 (한국어 - Korean) 🇰🇷`를 최상단 1번에 추가하여 총 21개국 다국어 자동 번역 지원 완성. 해외 언어 원고나 번역된 글을 한국어로 원클릭 복원/재번역 가능하도록 사용성 극대화.
+* **KIMI 스타일 다크 코드 박스 우측 상단 「Copy」 인터랙티브 클립보드 복사 버튼 탑재 (v1.23)**:
+  - `src/components/blog/CodeBlockCopyEnhancer.tsx`:
+    1. 모든 다크 코드 박스 우측 상단에 KIMI 스타일의 반투명 글래스모피즘 `[📄 Copy]` 복사 버튼을 자동 장착.
+    2. 마우스 호버 시 자연스러운 `Copy` 툴팁 라벨 확장 및 엘리베이션 효과.
+    3. 클릭 시 `[✓ Copied!]` 에메랄드 성공 배지 2초간 피드백 및 코드 텍스트만 클립보드에 무결점 복사.
+  - `src/app/blog/[slug]/page.tsx`, `PostClientWrapper.tsx`, `UniversalBlogEditor.tsx` 3대 뷰어/에디터에 전면 장착 완료.

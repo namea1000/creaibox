@@ -6,6 +6,7 @@ import { formatImageUrl, handleImageError } from "@/utils/image-url";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ArrowLeft, CalendarDays, Sparkles, Tag, Sun, Moon, Star } from "lucide-react";
+import CodeBlockCopyEnhancer from "@/components/blog/CodeBlockCopyEnhancer";
 
 interface PublishedPostDetail {
   id: string;
@@ -313,6 +314,7 @@ export default function PostClientWrapper({
 
   return (
     <div className={`flex flex-col min-h-screen transition-colors duration-150 font-sans selection:bg-blue-500/30 selection:text-blue-200 theme-${theme} ${bgStyle} ${visibleClass}`}>
+      <CodeBlockCopyEnhancer />
       {/* Google AdSense Integration */}
       {adsenseClient && (
         <script
