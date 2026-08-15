@@ -558,8 +558,8 @@ export default function BlogManagementPage() {
         [`author_link_${activeBrandId}`]: authorLink.trim(),
       };
 
-      // Set top-level configs as well if the selected brand ID is the primary brand ID for compatibility
-      if (activeBrandId === currentProfile?.brand_id) {
+      // Set top-level configs as well if the selected brand ID is the primary brand ID or "creaibox" (official blog)
+      if (activeBrandId === currentProfile?.brand_id || activeBrandId === "creaibox") {
         mergedConfigs.blog_title = blogTitle.trim();
         mergedConfigs.blog_description = blogDesc.trim();
         mergedConfigs.blog_template = blogTemplate;

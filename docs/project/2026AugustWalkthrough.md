@@ -586,3 +586,8 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
     - `CodeBlockCopyEnhancer`의 `MutationObserver`가 Tiptap 에디터 DOM과 충돌하던 문제를 해결 (에디터 영역 제외 및 디바운스 적용).
   - `src/lib/queries/manuscripts.ts`:
     - `fetchCreaiboxManuscriptDetail`에 관리자(`ADMIN`) Fallback 조회를 장착하여, 358번 등 타 유저 원고라도 관리자 권한으로 본문과 제목이 100% 정상 바인딩되도록 완성.
+* **공식 블로그 메인 레이아웃 템플릿(Card Grid / List / News) 동적 연동 완성 (v1.30)**:
+  - `src/app/blog/page.tsx`:
+    - 관리자의 `blog_template` 설정을 실시간으로 반영하여 `Card Grid` (2열 격자 카드), `List Feed` (가로형 리스트), `News Flow` (속보형 텍스트) 레이아웃이 즉시 전환되도록 구현 완료.
+  - `src/app/studio/writing/creaibox/blog-management/page.tsx`:
+    - 공식 블로그(`creaibox`) 설정 저장 시 최상위 키도 함께 동기화 처리.

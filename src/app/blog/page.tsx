@@ -68,10 +68,22 @@ export default async function BlogPage(props: {
 
   const { data: admins } = await supabase
     .from("profiles")
-    .select("id")
+    .select("id, extra_configs, brand_id")
     .eq("role", "ADMIN");
 
   const adminIds = (admins || []).map((a) => a.id);
+  const primaryAdmin = admins?.[0];
+  const adminConfigs = primaryAdmin?.extra_configs || {};
+
+  // 공식 블로그 템플릿 설정 읽기 (기본값: card)
+  const officialTemplate = (
+    adminConfigs.blog_template_creaibox ||
+    adminConfigs.blog_template ||
+    "card"
+  ) as "card" | "list" | "news";
+
+  const officialBlogTitle = adminConfigs.blog_title_creaibox || adminConfigs.blog_title || "CreaiBox 인사이트 블로그";
+  const officialBlogDesc = adminConfigs.blog_description_creaibox || adminConfigs.blog_description || "";
 
   let posts: any[] = [];
   let error: any = null;
@@ -146,8 +158,13 @@ export default async function BlogPage(props: {
           <div className="mb-6 flex items-end justify-between gap-6">
             <div>
               <h1 className="text-2xl md:text-3xl font-black tracking-tight text-zinc-955 dark:text-white">
-                CreaiBox 인사이트 블로그
+                {officialBlogTitle}
               </h1>
+              {officialBlogDesc && (
+                <p className="mt-1.5 text-xs md:text-sm text-zinc-500 dark:text-zinc-400 font-medium">
+                  {officialBlogDesc}
+                </p>
+              )}
             </div>
           </div>
 
@@ -162,42 +179,134 @@ export default async function BlogPage(props: {
               </p>
             </div>
           ) : (
-            <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,2fr)_460px]">
-              {/* 왼쪽 2/3 포스팅 카드 리스트 */}
-              <section className="space-y-4">
-                {currentPosts.map((post) => {
-                  const excerpt = buildExcerpt(post);
+            <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,2fr)_420px]">
+              {/* 왼쪽 2/3 포스팅 영역 (템플릿에 따라 Card Grid / List Feed / News Flow 동적 렌더링) */}
+              <section>
+                {/* 1. Card Grid 템플릿 (이미지 중심 격자 배치) */}
+                {officialTemplate === "card" && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {currentPosts.map((post) => {
+                      const excerpt = buildExcerpt(post);
 
-                  return (
-                    <SmartIntentLink
-                      key={post.id}
-                      href={`/blog/${post.slug}`}
-                      className="group flex flex-col md:flex-row gap-5 rounded-2xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-slate-900/40 p-5 shadow-sm transition hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-md"
-                    >
-                      <div className="relative aspect-[16/9] w-full md:w-72 shrink-0 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-950 flex items-center justify-center">
-                        {post.thumbnailUrl ? (
-                          <SafeImage
-                            src={post.thumbnailUrl}
-                            alt={post.title || "thumbnail"}
-                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 via-blue-50 to-cyan-100 dark:from-slate-900 dark:via-blue-950 dark:to-cyan-950" />
-                        )}
-                      </div>
+                      return (
+                        <SmartIntentLink
+                          key={post.id}
+                          href={`/blog/${post.slug}`}
+                          className="group flex flex-col overflow-hidden rounded-[6px] border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-slate-900/40 p-5 shadow-sm transition hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-md hover:-translate-y-0.5"
+                        >
+                          <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden rounded-[4px] border border-zinc-200 dark:border-zinc-800 bg-zinc-950 flex items-center justify-center">
+                            {post.thumbnailUrl ? (
+                              <SafeImage
+                                src={post.thumbnailUrl}
+                                alt={post.title || "thumbnail"}
+                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              />
+                            ) : (
+                              <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 via-blue-50 to-cyan-100 dark:from-slate-900 dark:via-blue-950 dark:to-cyan-950" />
+                            )}
+                          </div>
 
-                      <div className="flex min-w-0 flex-1 flex-col justify-center">
-                        <h2 className="line-clamp-2 text-base md:text-[1.125rem] font-bold leading-snug tracking-[-0.01em] text-zinc-955 dark:text-white transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                          {post.title}
-                        </h2>
+                          <div className="mt-4 flex flex-1 flex-col justify-between">
+                            <div>
+                              <div className="flex items-center gap-2 text-[11px] font-bold text-zinc-400 mb-2">
+                                <span>{formatDate(post.created_at)}</span>
+                              </div>
+                              <h2 className="line-clamp-2 text-base font-black leading-snug tracking-[-0.01em] text-zinc-955 dark:text-white transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                                {post.title}
+                              </h2>
+                              <p className="mt-2.5 line-clamp-2 text-xs md:text-[13px] leading-relaxed text-zinc-500 dark:text-slate-400 font-medium">
+                                {excerpt}
+                              </p>
+                            </div>
+                          </div>
+                        </SmartIntentLink>
+                      );
+                    })}
+                  </div>
+                )}
 
-                        <p className="mt-3 line-clamp-3 text-[13px] md:text-sm leading-relaxed text-zinc-500 dark:text-slate-400 font-medium">
-                          {excerpt}
-                        </p>
-                      </div>
-                    </SmartIntentLink>
-                  );
-                })}
+                {/* 2. List Feed 템플릿 (가로 피드 연속 배치) */}
+                {officialTemplate === "list" && (
+                  <div className="space-y-4">
+                    {currentPosts.map((post) => {
+                      const excerpt = buildExcerpt(post);
+
+                      return (
+                        <SmartIntentLink
+                          key={post.id}
+                          href={`/blog/${post.slug}`}
+                          className="group flex flex-col md:flex-row gap-5 rounded-[6px] border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-slate-900/40 p-5 shadow-sm transition hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-md hover:-translate-y-0.5"
+                        >
+                          <div className="relative aspect-[16/9] w-full md:w-72 shrink-0 overflow-hidden rounded-[4px] border border-zinc-200 dark:border-zinc-800 bg-zinc-950 flex items-center justify-center">
+                            {post.thumbnailUrl ? (
+                              <SafeImage
+                                src={post.thumbnailUrl}
+                                alt={post.title || "thumbnail"}
+                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              />
+                            ) : (
+                              <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 via-blue-50 to-cyan-100 dark:from-slate-900 dark:via-blue-950 dark:to-cyan-950" />
+                            )}
+                          </div>
+
+                          <div className="flex min-w-0 flex-1 flex-col justify-center">
+                            <div className="flex items-center gap-2 text-[11px] font-bold text-zinc-400 mb-1.5">
+                              <span>{formatDate(post.created_at)}</span>
+                            </div>
+                            <h2 className="line-clamp-2 text-base md:text-[1.125rem] font-bold leading-snug tracking-[-0.01em] text-zinc-955 dark:text-white transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                              {post.title}
+                            </h2>
+
+                            <p className="mt-2.5 line-clamp-2 text-[13px] md:text-sm leading-relaxed text-zinc-500 dark:text-slate-400 font-medium">
+                              {excerpt}
+                            </p>
+                          </div>
+                        </SmartIntentLink>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* 3. News Flow 템플릿 (텍스트 중심 속보형 배치) */}
+                {officialTemplate === "news" && (
+                  <div className="divide-y divide-zinc-200 dark:divide-zinc-800 rounded-[6px] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-slate-900/40 overflow-hidden">
+                    {currentPosts.map((post) => {
+                      const excerpt = buildExcerpt(post);
+
+                      return (
+                        <SmartIntentLink
+                          key={post.id}
+                          href={`/blog/${post.slug}`}
+                          className="group flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-5 transition hover:bg-zinc-50 dark:hover:bg-slate-800/40"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 text-[11px] font-bold text-blue-500 mb-1">
+                              <span>NEWS</span>
+                              <span>•</span>
+                              <span className="text-zinc-400">{formatDate(post.created_at)}</span>
+                            </div>
+                            <h2 className="line-clamp-2 text-base font-bold text-zinc-955 dark:text-white transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                              {post.title}
+                            </h2>
+                            <p className="mt-1.5 line-clamp-1 text-xs text-zinc-500 dark:text-slate-400">
+                              {excerpt}
+                            </p>
+                          </div>
+
+                          {post.thumbnailUrl && (
+                            <div className="relative aspect-[16/9] w-28 shrink-0 overflow-hidden rounded-[4px] border border-zinc-200 dark:border-zinc-800 bg-zinc-950">
+                              <SafeImage
+                                src={post.thumbnailUrl}
+                                alt={post.title || "thumbnail"}
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                          )}
+                        </SmartIntentLink>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {/* 🌟 20개 기준 좌우 페이지 이동 버튼 */}
                 {totalPages > 1 && (

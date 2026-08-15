@@ -6,7 +6,16 @@
 
 ## 📅 2026년 8월 15일 (금)
 
-### 1. ⚡ 에디터 원고 데이터 바인딩 멈춤 버그 해결 및 관리자 전역 상세 조회 지원 (v1.29)
+### 1. 🎨 공식 블로그 메인 레이아웃 템플릿(Card Grid / List / News) 동적 연동 완성 (v1.30)
+- **원인 분석**:
+  - `src/app/blog/page.tsx` (공식 메인 블로그)가 관리자 프로필의 `extra_configs.blog_template` 설정을 조회하지 않고 가로형 리스트 피드(`List Feed`) 형태로만 고정 하드코딩되어 있었음.
+  - 이로 인해 블로그 설정 및 관리 페이지에서 `Card Grid`나 `News Flow`를 선택하고 저장하더라도 메인 블로그 화면에 반영되지 않았음.
+- **해결 조치**:
+  1. `src/app/blog/page.tsx`에서 관리자의 `extra_configs`를 조회하여 `blog_template` (`card`, `list`, `news`), `blog_title`, `blog_description` 설정을 실시간 바인딩.
+  2. `Card Grid` 템플릿 선택 시 모던 2열 카드 그리드(`grid grid-cols-1 md:grid-cols-2 gap-6`) 및 16:9 세로형 카드 레이아웃으로 완벽 렌더링되도록 구현 완료.
+  3. `src/app/studio/writing/creaibox/blog-management/page.tsx`에서 공식 블로그(`creaibox`) 설정 저장 시 최상위 키도 함께 동기화되도록 보강.
+
+### 2. ⚡ 에디터 원고 데이터 바인딩 멈춤 버그 해결 및 관리자 전역 상세 조회 지원 (v1.29)
 - **원인 분석**:
   1. `UniversalBlogEditor.tsx`에 포함되었던 `CodeBlockCopyEnhancer`의 `MutationObserver`가 Tiptap 에디터 내부 DOM과 충돌하여 렌더링 스레드를 방해함.
   2. `fetchCreaiboxManuscriptDetail` 쿼리가 기본적으로 본인 `user_id`로만 제한되어 있어, 관리자(`role === "ADMIN"`)가 다른 유저의 글(예: 358번 등)을 열 때 데이터 바인딩이 멈추거나 오래된 캐시가 표시됨.
