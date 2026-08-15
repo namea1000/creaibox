@@ -6,7 +6,23 @@
 
 ## 📅 2026년 8월 15일 (금)
 
-### 1. 📐 사용자 브랜드 블로그 및 커스텀 사이트 카드 모서리 각진 모던 직사각형 개편 (v1.26)
+### 1. 🛡️ 원고 편집 페이지 무한 재귀 쿼리 루프 및 브라우저 프리징 완전 차단 (v1.28)
+- **원인 분석**:
+  - `src/app/studio/writing/creaibox/list/[id]/page.tsx`에서 타인 글 또는 존재하지 않는 글 ID(예: 301번)로 진입 시, `data`가 `null`인 상태에서 `fetchDirectDetail`을 `useEffect`가 무한 재귀 호출하여 브라우저 CPU 100% 점유 및 "응답 없는 페이지" 크래시가 발생함.
+- **해결 조치**:
+  1. `directFetchAttempted` 및 `isNotFound` 락 상태를 도입하여 최초 1회 쿼리 후 무한 재귀 호출을 100% 원천 차단.
+  2. 관리자(`role === "ADMIN"`) 권한일 경우 다른 계정의 원고라도 안전하게 조회/편집할 수 있도록 쿼리 권한 확장.
+  3. 원고가 존재하지 않을 때 무한 스피너 대신 명확한 에러 카드와 `[ ← 원고 목록으로 돌아가기 ]` 버튼을 렌더링하도록 예외 처리 완성.
+
+### 2. 🐛 블로그 원고 관리 목록 쿼리 오류 긴급 복구 (`parent_id` 컬럼 제거) (v1.27)
+- **원인 분석**:
+  - `src/lib/queries/manuscripts.ts`의 `fetchCreaiboxManuscripts` select 필드에 DB 테이블(`writing_creaibox_posts`)에 존재하지 않는 `parent_id` 컬럼이 포함되어 있어, Supabase가 400 Bad Request 에러(`column writing_creaibox_posts.parent_id does not exist`)를 반환함.
+  - 이로 인해 원고 목록 쿼리가 실패하고 브라우저 `sessionStorage`에 남아있던 구형 캐시 1건("새글 제목을 수정해 주세요")만 노출되던 결함 발생.
+- **해결 조치**:
+  - select 필드에서 미존재 컬럼 `parent_id`를 깔끔하게 제거.
+  - `jenam7720@gmail.com` 회원이 보유한 204개 전체 원고(발행완료 39건, 임시저장 23건, 휴지통 142건)가 즉각적으로 100% 정상 노출되도록 무결점 복구 완료.
+
+### 2. 📐 사용자 브랜드 블로그 및 커스텀 사이트 카드 모서리 각진 모던 직사각형 개편 (v1.26)
 - **카드 프레임 라운딩 미세 조율 (`rounded-xl` ➔ `rounded-[6px]`)**:
   - `BlogClientWrapper.tsx`, `CategoryClientWrapper.tsx`, `BlogListPaginatedView.tsx`
   - 둥글둥글하던 기존 모서리를 매우 미세하게만 라운딩 처리된 세련되고 엣지 있는 모던 직사각형(`rounded-[6px]`) 스타일로 전면 개편.

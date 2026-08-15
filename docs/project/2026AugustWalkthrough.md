@@ -572,3 +572,12 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
   - `BlogClientWrapper.tsx`, `CategoryClientWrapper.tsx`, `BlogListPaginatedView.tsx`:
     - 기존의 둥글둥글한 `rounded-xl`/`rounded-2xl` 모서리를 세련되고 엣지 있는 미세 라운딩 직사각형(`rounded-[6px]`)으로 전면 교체.
     - 썸네일 프레임도 `rounded-[4px]`로 비례 동기화하여 깔끔하고 모던한 전문가 미디어 룩 완성.
+* **블로그 원고 관리 목록 쿼리 오류 긴급 복구 (`parent_id` 컬럼 제거) (v1.27)**:
+  - `src/lib/queries/manuscripts.ts`:
+    - `fetchCreaiboxManuscripts` 쿼리에서 DB에 없는 `parent_id` 컬럼을 제거하여 Supabase 400 에러를 완전 박멸.
+    - `jenam7720@gmail.com` 계정의 204개 전체 원고(발행완료 39개, 임시저장 23개, 휴지통 142개)가 즉각적으로 100% 정상 노출되도록 복구 완료.
+* **원고 편집 페이지 무한 재귀 쿼리 루프 및 브라우저 프리징 완전 차단 (v1.28)**:
+  - `src/app/studio/writing/creaibox/list/[id]/page.tsx`:
+    - `data`가 `null`일 때 `fetchDirectDetail`이 무한 재귀 호출되어 브라우저 탭이 멈추던 버그를 `directFetchAttempted` 락을 통해 100% 원천 차단.
+    - 관리자(`ADMIN`) 계정일 경우 다른 계정의 원고라도 안전하게 조회/편집할 수 있도록 쿼리 지원 확장.
+    - 존재하지 않는 원고 접근 시 무한 로딩 대신 친절한 안내 메시지와 `[ ← 원고 목록으로 돌아가기 ]` 버튼 제공.

@@ -550,6 +550,8 @@ function CreaiboxManuscriptDetailContent() {
   const [hasLocalEdits, setHasLocalEdits] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDirectLoading, setIsDirectLoading] = useState(false);
+  const [directFetchAttempted, setDirectFetchAttempted] = useState(false);
+  const [isNotFound, setIsNotFound] = useState(false);
   const [isGeneratingSeo, setIsGeneratingSeo] = useState(false);
   const [isEnhancingContent, setIsEnhancingContent] = useState(false);
   const [isEnhancingToc, setIsEnhancingToc] = useState(false);
@@ -907,9 +909,10 @@ function CreaiboxManuscriptDetailContent() {
   }, [data?.id]);
 
   const fetchDirectDetail = useCallback(async () => {
-    if (!activeRouteId || data || isDirectLoading) return;
+    if (!activeRouteId || data || isDirectLoading || directFetchAttempted) return;
 
     setIsDirectLoading(true);
+    setDirectFetchAttempted(true);
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -926,12 +929,33 @@ function CreaiboxManuscriptDetailContent() {
       queryBuilder = queryBuilder.eq("id", activeRouteId);
     }
 
-    const { data: row, error } = await queryBuilder.maybeSingle();
+    let { data: row, error } = await queryBuilder.maybeSingle();
+
+    // 관리자(ADMIN) 권한인 경우 타인 글이라도 열람/수정 가능하도록 지원
+    if (!row) {
+      const { data: prof } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+      if (prof?.role === "ADMIN") {
+        let adminQuery = supabase.from("writing_creaibox_posts").select("*");
+        if (isNumeric) {
+          adminQuery = adminQuery.eq("display_id", parseInt(activeRouteId, 10));
+        } else {
+          adminQuery = adminQuery.eq("id", activeRouteId);
+        }
+        const adminRes = await adminQuery.maybeSingle();
+        if (adminRes.data) {
+          row = adminRes.data;
+        }
+      }
+    }
 
     setIsDirectLoading(false);
 
-    if (error || !row) return;
+    if (error || !row) {
+      setIsNotFound(true);
+      return;
+    }
 
+    setIsNotFound(false);
     const normalized = normalizeCreaiboxRecord(row);
 
     setData(normalized);
@@ -950,15 +974,15 @@ function CreaiboxManuscriptDetailContent() {
     setCachedList(nextList);
     writeCachedList(nextList);
     queryClient.setQueryData(creaiboxManuscriptKeys.list, nextList);
-  }, [activeRouteId, data, isDirectLoading, queryClient, sidebarList, supabase]);
+  }, [activeRouteId, data, directFetchAttempted, isDirectLoading, queryClient, sidebarList, supabase]);
 
   useEffect(() => {
-    if (!data && !isDetailLoading) {
+    if (!data && !isDetailLoading && !directFetchAttempted) {
       queueMicrotask(() => {
         void fetchDirectDetail();
       });
     }
-  }, [data, fetchDirectDetail, isDetailLoading]);
+  }, [data, directFetchAttempted, fetchDirectDetail, isDetailLoading]);
 
   useEffect(() => {
     void refetchList();
@@ -2399,14 +2423,15 @@ function CreaiboxManuscriptDetailContent() {
     }
   }, [data, handleSave, showPublishFeedback, triggerRevalidation]);
 
-  if (!isMounted || (!data && (isDetailLoading || isDirectLoading))) {
+  if (!isMounted || (!data && !isNotFound && (isDetailLoading || isDirectLoading || !directFetchAttempted))) {
     return (
       <div className="min-h-screen bg-[#0a0d12] text-white">
         <div className="mx-auto grid max-w-[1880px] grid-cols-[360px_minmax(0,1.2fr)_420px] gap-0 px-0">
           <aside className="min-h-screen border-r border-white/10 bg-[#0b0f15] p-4" />
           <div className="relative min-h-screen bg-white">
-            <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-              원고 데이터를 불러오는 중입니다...
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gray-500">
+              <div className="h-7 w-7 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+              <p className="text-sm font-bold">원고 데이터를 불러오는 중입니다...</p>
             </div>
           </div>
           <aside className="min-h-screen border-l border-white/10 bg-[#0b0f15] p-6" />
@@ -2415,17 +2440,20 @@ function CreaiboxManuscriptDetailContent() {
     );
   }
 
-  if (!data) {
+  if (!data || isNotFound) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0d12] text-white">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
-          <p className="text-xl font-bold">원고를 찾지 못했습니다.</p>
-          <Link
-            href="/studio/writing/creaibox/list"
-            className="mt-5 rounded-2xl bg-white px-5 py-3 font-bold text-black"
-          >
-            목록으로 돌아가기
-          </Link>
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0d12] text-white p-6">
+        <div className="rounded-3xl border border-white/10 bg-[#0f141c] p-10 text-center max-w-md w-full shadow-2xl space-y-4">
+          <p className="text-2xl font-black text-white">원고를 찾지 못했습니다</p>
+          <p className="text-sm text-zinc-400">요청하신 원고 번호({manuscriptId})가 존재하지 않거나, 다른 계정의 원고입니다.</p>
+          <div className="pt-3">
+            <Link
+              href="/studio/writing/creaibox/list"
+              className="inline-flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-500 px-6 py-3 text-sm font-bold text-white transition shadow-lg"
+            >
+              ← 원고 목록으로 돌아가기
+            </Link>
+          </div>
         </div>
       </div>
     );
