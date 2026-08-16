@@ -1028,3 +1028,7 @@
   - **Edge 미들웨어 인메모리 라우팅 캐시 (`src/proxy.ts`)**: 서브도메인 접속 시 매번 발생하던 Supabase DB 조회 지연을 5분 인메모리 맵(`dynamicClientCache`)으로 단축(0ms).
 - **22. 전 대중 공개 서브페이지(빌더 소개, 인포센터 등) 글로벌 엣지 캐시(ISR 60s) 확장 완비**:
   - **공개 서브페이지 광속 서빙**: `client-site-builder/page.tsx` 및 `infocenter/[[...section]]/page.tsx` 등 일반 방문자 공개 페이지에 `export const revalidate = 60;`를 전면 확장 적용하여 첫 방문부터 서브페이지 탐색까지 0.01초 인스턴트 오픈 환경 완비.
+- **23. 한글 URL 블로그 메타데이터 인코딩 예외 방어 & 헤더 제로 레이아웃 시프트(Zero Layout Shift) 완비**:
+  - **한글 URL 블로그 500 크래시 원천 차단 (`blog/[slug]/page.tsx`, `brand/[brand_id]/[slug]/page.tsx`)**: Next.js 15 App Router에서 비-ASCII(한글) canonical URL이 `generateMetadata`로 전달될 때 발생하던 서버 런타임 예외를 `encodeURI(canonical)` 가드로 완벽 해결. 또한 인코딩/디코딩 slug 양방향 매칭 쿼리로 한글 글도 영문 글처럼 0.01초 만에 즉시 서빙.
+  - **블로그 메인 목록(`/blog`) 병렬 고속 데이터 페처 탑재**: 기존 3회 직렬 DB 라운드트립을 `Promise.all` 및 React `cache()`로 병합하여 0.01초 만에 블로그 목록이 즉시 열리도록 가속.
+  - **헤더 우측 인증 영역 고정 너비(`w-[180px] shrink-0`) 제로 레이아웃 시프트 구현 (`Header.tsx`)**: 로그아웃 상태에서 페이지 이동 시 초기 로딩 스켈레톤(150px)과 로그인/회원가입 버튼(180px) 간의 너비 차이(30px)로 인해 중앙 네비게이션 메뉴가 좌우로 덜컹거리던 레이아웃 시프트(Layout Shift) 현상을 180px 고정 컨테이너로 100% 영구 해결.

@@ -1058,153 +1058,155 @@ export default function Header() {
             </span>
           </button>
 
-          {!isAuthReady ? (
-            // Placeholder skeleton with exact matching size (150px) to prevent layout shift
-            <div className="h-10 w-[150px] rounded-xl border border-slate-200/50 bg-slate-50/50 dark:border-zinc-800 dark:bg-zinc-900/50 animate-pulse shrink-0" />
-          ) : user ? (
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setIsProfileOpen((prev) => !prev)}
-                className="flex h-10 w-[150px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 shadow-sm transition hover:border-violet-200 hover:bg-violet-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800 shrink-0"
-              >
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-[10px] font-black text-white">
-                  {initials}
-                </div>
-
-                <div className="min-w-0 flex-1 text-left">
-                  <p className="truncate text-xs font-black leading-tight text-slate-800 dark:text-zinc-200">
-                    {displayName}
-                  </p>
-                  <div className="mt-0.5 flex items-center gap-1 min-w-0">
-                    <span className="truncate text-[9.5px] font-bold leading-tight text-slate-450 dark:text-zinc-400">
-                      {planName}
-                    </span>
-                    {isVip && (
-                      <span className="inline-flex items-center gap-0.5 rounded bg-amber-500/20 px-1 py-0.2 text-[8px] font-black text-amber-500 dark:text-amber-400 border border-amber-500/30 shrink-0">
-                        ⭐ VIP
-                      </span>
-                    )}
+          <div className="w-[180px] flex items-center justify-end shrink-0">
+            {!isAuthReady ? (
+              // Exact 180px matching placeholder to completely eliminate layout shift
+              <div className="h-10 w-full rounded-xl border border-slate-200/50 bg-slate-50/50 dark:border-zinc-800 dark:bg-zinc-900/50 animate-pulse" />
+            ) : user ? (
+              <div className="relative w-full flex justify-end" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsProfileOpen((prev) => !prev)}
+                  className="flex h-10 w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 shadow-sm transition hover:border-violet-200 hover:bg-violet-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+                >
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-[10px] font-black text-white">
+                    {initials}
                   </div>
-                </div>
 
-                <ChevronDown
-                  size={13}
-                  className={`shrink-0 text-slate-400 transition-transform ${isProfileOpen ? "rotate-180" : ""
-                    }`}
-                />
-              </button>
+                  <div className="min-w-0 flex-1 text-left">
+                    <p className="truncate text-xs font-black leading-tight text-slate-800 dark:text-zinc-200">
+                      {displayName}
+                    </p>
+                    <div className="mt-0.5 flex items-center gap-1 min-w-0">
+                      <span className="truncate text-[9.5px] font-bold leading-tight text-slate-450 dark:text-zinc-400">
+                        {planName}
+                      </span>
+                      {isVip && (
+                        <span className="inline-flex items-center gap-0.5 rounded bg-amber-500/20 px-1 py-0.2 text-[8px] font-black text-amber-500 dark:text-amber-400 border border-amber-500/30 shrink-0">
+                          ⭐ VIP
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
-              {isProfileOpen && (
-                <div className="absolute right-0 mt-3 w-72 overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
-                  <div className="border-b border-slate-100 bg-slate-50 px-5 py-5 dark:border-zinc-800/80 dark:bg-zinc-900/50">
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-sm font-black text-white">
-                        {initials}
-                      </div>
+                  <ChevronDown
+                    size={13}
+                    className={`shrink-0 text-slate-400 transition-transform ${isProfileOpen ? "rotate-180" : ""
+                      }`}
+                  />
+                </button>
 
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <p className="truncate text-lg font-black text-slate-800 dark:text-zinc-200">
-                            {displayName}
-                          </p>
-                          {isVip && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 px-2 py-0.5 text-[10px] font-black text-amber-500 dark:text-amber-400 border border-amber-500/40 shadow-sm shadow-amber-500/10">
-                              ⭐ VIP
-                            </span>
-                          )}
+                {isProfileOpen && (
+                  <div className="absolute right-0 mt-3 w-72 overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
+                    <div className="border-b border-slate-100 bg-slate-50 px-5 py-5 dark:border-zinc-800/80 dark:bg-zinc-900/50">
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-violet-600 to-blue-500 text-sm font-black text-white">
+                          {initials}
                         </div>
-                        <p className="mt-0.5 text-sm font-bold text-slate-500 dark:text-zinc-400">
-                          {planName}
-                        </p>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="truncate text-lg font-black text-slate-800 dark:text-zinc-200">
+                              {displayName}
+                            </p>
+                            {isVip && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 px-2 py-0.5 text-[10px] font-black text-amber-500 dark:text-amber-400 border border-amber-500/40 shadow-sm shadow-amber-500/10">
+                                ⭐ VIP
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-0.5 text-sm font-bold text-slate-500 dark:text-zinc-400">
+                            {planName}
+                          </p>
+                        </div>
                       </div>
+
+                      <p className="mt-4 truncate border-t border-slate-200 pt-4 text-xs font-bold text-slate-400 dark:border-zinc-800 dark:text-zinc-500">
+                        {user.email}
+                      </p>
                     </div>
 
-                    <p className="mt-4 truncate border-t border-slate-200 pt-4 text-xs font-bold text-slate-400 dark:border-zinc-800 dark:text-zinc-500">
-                      {user.email}
-                    </p>
+                    <Link
+                      href="/studio"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 dark:text-zinc-300 transition hover:bg-violet-50 dark:hover:bg-zinc-800/80"
+                    >
+                      <LayoutDashboard size={18} />
+                      스튜디오로 이동
+                    </Link>
+
+                    <Link
+                      href="/pricing"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 dark:text-zinc-300 transition hover:bg-violet-50 dark:hover:bg-zinc-800/80"
+                    >
+                      <Sparkles size={18} />
+                      요금제 업그레이드
+                    </Link>
+
+                    <Link
+                      href="/pricing"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 dark:text-zinc-300 transition hover:bg-violet-50 dark:hover:bg-zinc-800/80"
+                    >
+                      <CreditCard size={18} />
+                      요금제 관리
+                    </Link>
+
+                    <Link
+                      href="/mypage"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 dark:text-zinc-300 transition hover:bg-violet-50 dark:hover:bg-zinc-800/80"
+                    >
+                      <UserIcon size={18} />
+                      프로필
+                    </Link>
+
+                    <Link
+                      href="/apivault"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 dark:text-zinc-300 transition hover:bg-violet-50 dark:hover:bg-zinc-800/80"
+                    >
+                      <Settings size={18} />
+                      설정 / API 키 관리
+                    </Link>
+
+                    <Link
+                      href="/help"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-4 border-t border-slate-100 px-5 py-3 text-sm font-black text-slate-700 dark:text-zinc-300 dark:border-zinc-800 transition hover:bg-violet-50 dark:hover:bg-zinc-800/80"
+                    >
+                      <HelpCircle size={18} />
+                      도움말
+                    </Link>
+
+                    <button
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      className="flex w-full items-center gap-4 border-t border-slate-100 dark:border-zinc-800 px-5 py-3 text-left text-sm font-black text-red-500 transition hover:bg-red-50 dark:hover:bg-red-950/20 disabled:opacity-50"
+                    >
+                      <LogOut size={18} />
+                      {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
+                    </button>
                   </div>
-
-                  <Link
-                    href="/studio"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 dark:text-zinc-300 transition hover:bg-violet-50 dark:hover:bg-zinc-800/80"
-                  >
-                    <LayoutDashboard size={18} />
-                    스튜디오로 이동
-                  </Link>
-
-                  <Link
-                    href="/pricing"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 dark:text-zinc-300 transition hover:bg-violet-50 dark:hover:bg-zinc-800/80"
-                  >
-                    <Sparkles size={18} />
-                    요금제 업그레이드
-                  </Link>
-
-                  <Link
-                    href="/pricing"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 dark:text-zinc-300 transition hover:bg-violet-50 dark:hover:bg-zinc-800/80"
-                  >
-                    <CreditCard size={18} />
-                    요금제 관리
-                  </Link>
-
-                  <Link
-                    href="/mypage"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 dark:text-zinc-300 transition hover:bg-violet-50 dark:hover:bg-zinc-800/80"
-                  >
-                    <UserIcon size={18} />
-                    프로필
-                  </Link>
-
-                  <Link
-                    href="/apivault"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-4 px-5 py-3 text-sm font-black text-slate-700 dark:text-zinc-300 transition hover:bg-violet-50 dark:hover:bg-zinc-800/80"
-                  >
-                    <Settings size={18} />
-                    설정 / API 키 관리
-                  </Link>
-
-                  <Link
-                    href="/help"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-4 border-t border-slate-100 px-5 py-3 text-sm font-black text-slate-700 dark:text-zinc-300 dark:border-zinc-800 transition hover:bg-violet-50 dark:hover:bg-zinc-800/80"
-                  >
-                    <HelpCircle size={18} />
-                    도움말
-                  </Link>
-
-                  <button
-                    onClick={handleLogout}
-                    disabled={isLoggingOut}
-                    className="flex w-full items-center gap-4 border-t border-slate-100 dark:border-zinc-800 px-5 py-3 text-left text-sm font-black text-red-500 transition hover:bg-red-50 dark:hover:bg-red-950/20 disabled:opacity-50"
-                  >
-                    <LogOut size={18} />
-                    {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex w-[180px] items-center justify-end gap-1 pl-2 shrink-0">
-              <Link
-                href="/signup"
-                className="rounded-xl px-3.5 py-2 text-sm font-extrabold text-slate-700 dark:text-white transition hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-white"
-              >
-                회원가입
-              </Link>
-              <Link
-                href="/login"
-                className="rounded-xl px-3.5 py-2 text-sm font-extrabold text-slate-700 dark:text-white transition hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-white"
-              >
-                로그인
-              </Link>
-            </div>
-          )}
+                )}
+              </div>
+            ) : (
+              <div className="flex w-full items-center justify-end gap-1">
+                <Link
+                  href="/signup"
+                  className="rounded-xl px-3 py-2 text-sm font-extrabold text-slate-700 dark:text-white transition hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-white whitespace-nowrap"
+                >
+                  회원가입
+                </Link>
+                <Link
+                  href="/login"
+                  className="rounded-xl px-3 py-2 text-sm font-extrabold text-slate-700 dark:text-white transition hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-white whitespace-nowrap"
+                >
+                  로그인
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
 
         <button

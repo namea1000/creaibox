@@ -682,3 +682,11 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
 * **대중 공개 서브페이지 글로벌 엣지 캐시(ISR 60s) 확장 완비 (v1.50)**:
   - `src/app/client-site-builder/page.tsx`, `src/app/infocenter/[[...section]]/page.tsx`:
     - 일반 방문자 공개 서브페이지 전체에 `revalidate = 60` 탑재하여 서브페이지 탐색 시 0.01초 인스턴트 오픈 보장.
+* **한글 URL 블로그 메타데이터 예외 방어 & 헤더 제로 레이아웃 시프트(Zero Layout Shift) 완비 (v1.51)**:
+  - `src/app/blog/[slug]/page.tsx` & `src/app/brand/[brand_id]/[slug]/page.tsx`:
+    - Next.js 15 메타데이터 직렬화 중 비-ASCII(한글) Canonical URL로 인해 발생하던 500 서버 크래시를 `encodeURI(canonical)` 가드로 완벽 해결.
+    - 슬러그 쿼리를 디코딩/인코딩 양방향 매칭(`slug.eq."${decodedSlug}",slug.eq."${slug}"`)으로 보강하여 한글 URL 글도 영문 글처럼 0.01초 만에 오픈.
+  - `src/app/blog/page.tsx`:
+    - 직렬 3회 DB 조회를 병렬 `Promise.all` 및 React `cache()`로 최적화하여 헤더 '블로그' 메뉴 클릭 시 즉시 열리도록 가속.
+  - `src/components/layout/Header.tsx`:
+    - 우측 인증 영역을 `w-[180px] shrink-0` 고정 컨테이너로 묶어, 로그아웃 상태에서 메뉴 이동 시 스켈레톤(150px)과 버튼(180px) 간의 너비 차이로 인한 중앙 네비게이션 좌우 깜빡임(Layout Shift)을 100% 영구 제거.

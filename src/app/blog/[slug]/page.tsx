@@ -227,14 +227,21 @@ const fetchPublishedPost = cache(async (slug: string) => {
   const supabase = await createAdminClient();
   const decodedSlug = decodeURIComponent(slug);
 
-  // 1. 단일 다이렉트 쿼리로 본문 조회 (관리자 중복 쿼리 제거 및 초고속 인덱스 스캔)
-  const { data: posts, error } = await supabase
+  // 1. 단일 다이렉트 쿼리로 본문 조회 (한글/영문/인코딩 slug 전체 대응)
+  let query = supabase
     .from("writing_creaibox_posts")
     .select("id, title, content, slug, meta_description, focus_keyword, canonical_url, seo_tags, created_at, updated_at")
-    .eq("slug", decodedSlug)
     .eq("status", "published")
     .order("created_at", { ascending: false })
     .limit(1);
+
+  if (decodedSlug === slug) {
+    query = query.eq("slug", decodedSlug);
+  } else {
+    query = query.or(`slug.eq."${decodedSlug}",slug.eq."${slug}"`);
+  }
+
+  const { data: posts, error } = await query;
 
   if (error || !posts || posts.length === 0) {
     return null;
@@ -342,7 +349,8 @@ export async function generateMetadata({ params }: BlogDetailPageProps): Promise
     };
   }
 
-  const canonical = post.canonical_url || `https://creaibox.com/blog/${slug}`;
+  const rawCanonical = post.canonical_url || `https://creaibox.com/blog/${post.slug || slug}`;
+  const canonical = encodeURI(rawCanonical);
 
   return {
     title: `${post.title} | CreaiBox Blog`,
@@ -539,7 +547,8 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   const supabaseAdmin = await createAdminClient();
   normalizedContent = await transformContentWithOgCards(normalizedContent, supabaseAdmin);
 
-  const canonical = post.canonical_url || `https://creaibox.com/blog/${post.slug || slug}`;
+  const rawCanonical = post.canonical_url || `https://creaibox.com/blog/${post.slug || slug}`;
+  const canonical = encodeURI(rawCanonical);
 
   const blogPostingJsonLd = {
     "@context": "https://schema.org",

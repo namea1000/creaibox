@@ -1,3 +1,4 @@
+import React, { cache } from "react";
 import Link from "next/link";
 import { Sparkles, Star } from "lucide-react";
 import { createClient, createAdminClient } from "@/utils/supabase/server";
@@ -60,25 +61,27 @@ function formatDate(value: string | null) {
   return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}.`;
 }
 
-export default async function BlogPage(props: {
-  searchParams: Promise<{ page?: string }>;
-}) {
-  const searchParams = await props.searchParams;
-  const currentPage = searchParams.page ? Math.max(1, parseInt(searchParams.page, 10)) : 1;
-  const postsPerPage = 20;
-
+// 🌟 고속 병렬 데이터 페처
+const fetchBlogData = cache(async () => {
   const supabase = await createAdminClient();
 
-  const { data: admins } = await supabase
-    .from("profiles")
-    .select("id, extra_configs, brand_id")
-    .eq("role", "ADMIN");
+  const [adminsRes, postsRes] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, extra_configs, brand_id")
+      .eq("role", "ADMIN"),
+    supabase
+      .from("writing_creaibox_posts")
+      .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at")
+      .eq("status", "published")
+      .not("slug", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(50),
+  ]);
 
-  const adminIds = (admins || []).map((a) => a.id);
-  const primaryAdmin = admins?.[0];
+  const primaryAdmin = adminsRes.data?.[0];
   const adminConfigs = primaryAdmin?.extra_configs || {};
 
-  // 공식 블로그 템플릿 설정 읽기 (기본값: card)
   const officialTemplate = (
     adminConfigs.blog_template_creaibox ||
     adminConfigs.blog_template ||
@@ -88,41 +91,18 @@ export default async function BlogPage(props: {
   const officialBlogTitle = adminConfigs.blog_title_creaibox || adminConfigs.blog_title || "CreaiBox 인사이트 블로그";
   const officialBlogDesc = adminConfigs.blog_description_creaibox || adminConfigs.blog_description || "";
 
-  let posts: any[] = [];
-  let error: any = null;
-
-  if (adminIds.length > 0) {
-    const query = await supabase
-      .from("writing_creaibox_posts")
-      .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at")
-      .eq("status", "published")
-      .in("user_id", adminIds)
-      .not("slug", "is", null)
-      .order("created_at", { ascending: false });
-    posts = query.data || [];
-    error = query.error;
-  }
-
-  if (error) {
-    console.error("공개 블로그 목록 조회 실패:", error.message);
-  }
-
-  const publishedPostsRaw = (((posts as any) as PublishedPost[] | null) || []).filter((post) => post.slug && isMainSitePost(post.canonical_url));
+  const publishedPostsRaw = (postsRes.data || []).filter((post) => post.slug && isMainSitePost(post.canonical_url));
   let publishedPosts: PublishedPost[] = [];
 
   if (publishedPostsRaw.length > 0) {
     const postIds = publishedPostsRaw.map((p) => p.id);
-    const { data: images, error: imagesError } = await supabase
+    const { data: images } = await supabase
       .from("generated_images")
       .select("source_id, image_url, is_primary, created_at")
       .eq("source_type", "writing_creaibox_posts")
       .in("source_id", postIds)
       .order("is_primary", { ascending: false })
       .order("created_at", { ascending: false });
-
-    if (imagesError) {
-      console.error("썸네일 이미지 조회 실패:", imagesError.message);
-    }
 
     const imageMap: Record<string, { url: string; is_primary: boolean }[]> = {};
     (images || []).forEach((img) => {
@@ -145,6 +125,29 @@ export default async function BlogPage(props: {
       };
     });
   }
+
+  return {
+    officialTemplate,
+    officialBlogTitle,
+    officialBlogDesc,
+    publishedPosts,
+  };
+});
+
+export default async function BlogPage(props: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const searchParams = await props.searchParams;
+  const currentPage = searchParams.page ? Math.max(1, parseInt(searchParams.page, 10)) : 1;
+  const postsPerPage = 20;
+
+  const {
+    officialTemplate,
+    officialBlogTitle,
+    officialBlogDesc,
+    publishedPosts,
+  } = await fetchBlogData();
+
   const bestPosts = publishedPosts.slice(0, 5);
 
   const totalPages = Math.ceil(publishedPosts.length / postsPerPage);

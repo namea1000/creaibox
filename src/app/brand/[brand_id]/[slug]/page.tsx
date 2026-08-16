@@ -263,13 +263,22 @@ const fetchPost = cache(async (brandId: string, slug: string) => {
   if (!profile) return null;
 
   // 2. Fetch Post
-  const { data: postData } = await supabase
+  let query = supabase
     .from("writing_creaibox_posts")
     .select("id, title, content, slug, meta_description, focus_keyword, canonical_url, seo_tags, created_at, updated_at, category_id, toc_enabled, published_snapshot")
     .eq("user_id", profile.id)
-    .eq("slug", decodedSlug)
     .eq("status", "published")
-    .maybeSingle();
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (decodedSlug === slug) {
+    query = query.eq("slug", decodedSlug);
+  } else {
+    query = query.or(`slug.eq."${decodedSlug}",slug.eq."${slug}"`);
+  }
+
+  const { data: postDataList } = await query;
+  const postData = postDataList?.[0];
 
   if (!postData) return null;
 
@@ -379,7 +388,8 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
       .replace(/%description%/g, post.meta_description || "");
   }
 
-  const canonical = post.canonical_url || `https://${brand_id}.creaibox.com/${slug}`;
+  const rawCanonical = post.canonical_url || `https://${brand_id}.creaibox.com/${slug}`;
+  const canonical = encodeURI(rawCanonical);
 
   const meta: Metadata = {
     title: seoTitle,
@@ -621,7 +631,8 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
 
   normalizedContent = await transformContentWithOgCards(normalizedContent, supabase);
 
-  const canonical = post.canonical_url || `https://${brand_id}.creaibox.com/${slug}`;
+  const rawCanonical = post.canonical_url || `https://${brand_id}.creaibox.com/${slug}`;
+  const canonical = encodeURI(rawCanonical);
 
   // 🌟 Auto-inject Structured JSON-LD Data
   const blogPostingJsonLd = {
