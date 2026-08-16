@@ -140,13 +140,10 @@ export default function SignupPage() {
                 {brandConfig.name}
               </h2>
             ) : (
-              <Image
+              <img
                 src="/logo_dark.png"
                 alt="CreaiBox Logo"
-                width={210}
-                height={40}
                 className="object-contain mx-auto h-10 w-auto"
-                priority
               />
             )}
           </Link>
