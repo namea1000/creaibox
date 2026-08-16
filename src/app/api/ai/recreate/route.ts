@@ -7,7 +7,7 @@ import {
   checkAndResetDailyCounts,
 } from "@/lib/server/get-free-gemini-key";
 
-const DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite";
+const DEFAULT_GEMINI_MODEL = "gemini-flash-lite-latest";
 
 type GeminiGenerateResponse = {
   candidates?: Array<{

@@ -394,7 +394,7 @@ export async function POST(request: Request) {
       const apiKey = process.env.GEMINI_API_KEY_1 || process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
       if (apiKey) {
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-3.7-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
         const availableTemplateIds = Object.keys(TEMPLATE_REGISTRY).join(", ");
         
         // 분위기(Vibe)에 따른 구체적인 디자인/레이아웃 지시사항 생성

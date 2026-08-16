@@ -4,7 +4,7 @@ import { decryptApiKey } from "@/lib/server/api-vault-crypto";
 import { createClient } from "@/utils/supabase/server";
 import { generateContentWithVertexAI } from "@/lib/server/vertex-ai-gemini";
 
-const DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite";
+const DEFAULT_GEMINI_MODEL = "gemini-flash-lite-latest";
 
 // 2중 In-Memory 캐시 레이어 (서버 메모리 상에 24시간 보관)
 const memoryCache = new Map<string, { content: string; timestamp: number }>();

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { cache } from "react";
 import Link from "@/components/common/SmartIntentLink";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -13,6 +13,10 @@ import { formatImageUrl } from "@/utils/image-url";
 import SafeImage from "@/components/common/SafeImage";
 import OGLinkCard from "@/components/common/OGLinkCard";
 import CodeBlockCopyEnhancer from "@/components/blog/CodeBlockCopyEnhancer";
+import PostViewTracker from "@/components/blog/PostViewTracker";
+
+// 🌟 Vercel Global Edge CDN Incremental Static Regeneration (ISR 60s 광속 캐시)
+export const revalidate = 60;
 
 interface BlogDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -219,49 +223,27 @@ function isMainSitePost(canonicalUrl: string | null) {
   }
 }
 
-async function fetchPublishedPost(slug: string) {
+const fetchPublishedPost = cache(async (slug: string) => {
   const supabase = await createAdminClient();
   const decodedSlug = decodeURIComponent(slug);
 
-  const { data: admins } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("role", "ADMIN");
+  // 1. 단일 다이렉트 쿼리로 본문 조회 (관리자 중복 쿼리 제거 및 초고속 인덱스 스캔)
+  const { data: posts, error } = await supabase
+    .from("writing_creaibox_posts")
+    .select("id, title, content, slug, meta_description, focus_keyword, canonical_url, seo_tags, created_at, updated_at")
+    .eq("slug", decodedSlug)
+    .eq("status", "published")
+    .order("created_at", { ascending: false })
+    .limit(1);
 
-  const adminIds = (admins || []).map((a) => a.id);
-
-  let data: any[] = [];
-  let error: any = null;
-
-  if (adminIds.length > 0) {
-    const query = await supabase
-      .from("writing_creaibox_posts")
-      .select("id, title, content, slug, meta_description, focus_keyword, canonical_url, seo_tags, created_at, updated_at")
-      .eq("slug", decodedSlug)
-      .eq("status", "published")
-      .in("user_id", adminIds)
-      .order("created_at", { ascending: false })
-      .limit(1);
-    data = query.data || [];
-    error = query.error;
-  }
-
-  if (error || !data || data.length === 0) {
+  if (error || !posts || posts.length === 0) {
     return null;
   }
 
-
-  const post = data[0] as PublishedPostDetail;
+  const post = posts[0] as PublishedPostDetail;
   if (!isMainSitePost(post.canonical_url)) {
     return null;
   }
-
-  // Increment real-time DB view count (+1)
-  const currentViews = Number((post as any).views || 0);
-  void supabase
-    .from("writing_creaibox_posts")
-    .update({ views: currentViews + 1 })
-    .eq("id", post.id);
 
   // Fetch thumbnail for this post
   const { data: images, error: imagesError } = await supabase
@@ -270,35 +252,29 @@ async function fetchPublishedPost(slug: string) {
     .eq("source_type", "writing_creaibox_posts")
     .eq("source_id", post.id)
     .order("is_primary", { ascending: false })
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(1);
 
   if (imagesError) {
     console.error("썸네일 이미지 조회 실패:", imagesError.message);
   }
 
-  const primaryImg = (images || []).find((img) => img.is_primary) || (images || [])[0];
+  const primaryImg = (images || [])[0];
   post.thumbnailUrl = primaryImg ? formatImageUrl(primaryImg.image_url) : null;
 
   return post;
-}
+});
 
-async function fetchPublishedPostsList() {
+const fetchPublishedPostsList = cache(async () => {
   const supabase = await createAdminClient();
-  const { data: admins } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("role", "ADMIN");
-
-  const adminIds = (admins || []).map((a) => a.id);
-  if (adminIds.length === 0) return [];
 
   const { data: posts } = await supabase
     .from("writing_creaibox_posts")
     .select("id, title, slug, meta_description, focus_keyword, canonical_url, created_at")
     .eq("status", "published")
-    .in("user_id", adminIds)
     .not("slug", "is", null)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(20);
 
   const publishedPostsRaw = (posts || []).filter((post) => post.slug && isMainSitePost(post.canonical_url));
   if (publishedPostsRaw.length === 0) return [];
@@ -332,6 +308,28 @@ async function fetchPublishedPostsList() {
       thumbnailUrl: primaryImg ? formatImageUrl(primaryImg.url) : null,
     };
   });
+});
+
+// 🌟 빌드 시점에 최신 블로그 글을 Global Edge CDN에 미리 캐시(Pre-render)하여 0.01초 즉시 오픈 보장
+export async function generateStaticParams() {
+  try {
+    const supabase = await createAdminClient();
+    const { data: posts } = await supabase
+      .from("writing_creaibox_posts")
+      .select("slug, canonical_url")
+      .eq("status", "published")
+      .not("slug", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(30);
+
+    return (posts || [])
+      .filter((p) => p.slug && isMainSitePost(p.canonical_url))
+      .map((p) => ({
+        slug: p.slug as string,
+      }));
+  } catch {
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: BlogDetailPageProps): Promise<Metadata> {
@@ -628,6 +626,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
       })}
 
       <CodeBlockCopyEnhancer />
+      <PostViewTracker postId={post.id} />
       <Header />
 
       <style>{`

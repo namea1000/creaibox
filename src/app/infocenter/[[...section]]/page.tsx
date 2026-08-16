@@ -2,6 +2,9 @@ import React from "react";
 import { Metadata } from "next";
 import PublicInfocenterClient from "./client";
 
+// 🌟 Vercel Global Edge CDN Incremental Static Regeneration (ISR 60s 광속 캐시)
+export const revalidate = 60;
+
 const sectionNames: Record<string, string> = {
   list: "고객 지원 공지사항 목록",
   view: "게시글 상세 열람실",

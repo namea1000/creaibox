@@ -4,6 +4,9 @@ import { createAdminClient } from "@/utils/supabase/server";
 import CreativeMediaBlogPage from "../creative-media-blog/page";
 import SotongcheumPage from "../sotongcheum/page";
 
+// 🌟 Vercel Global Edge CDN Incremental Static Regeneration (ISR 60s 광속 캐시)
+export const revalidate = 60;
+
 const clientNames: Record<string, string> = {
   "prime-realestate": "프라임 부동산 빌더 템플릿",
   "fashion-beauty-lookbook": "패션 & 뷰티 룩북 시그니처 템플릿",

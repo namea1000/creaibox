@@ -4,6 +4,9 @@ import { createAdminClient } from "@/utils/supabase/server";
 import DynamicSection from "../../components/DynamicSection";
 import BlogListPaginatedView, { BlogItem } from "@/components/blog/BlogListPaginatedView";
 
+// 🌟 Vercel Global Edge CDN Incremental Static Regeneration (ISR 60s 광속 캐시)
+export const revalidate = 60;
+
 interface PageProps {
   params: Promise<{
     brand_id: string;

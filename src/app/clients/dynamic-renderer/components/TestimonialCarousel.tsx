@@ -101,15 +101,15 @@ export default function TestimonialCarousel({
         {/* User Info & Controls Footer */}
         <div className="relative z-10 pt-8 mt-6 border-t border-slate-100 flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-4">
-            {current.avatarUrl ? (
+            {current.avatarUrl && typeof current.avatarUrl === "string" && current.avatarUrl.trim() !== "" ? (
               <img
                 src={current.avatarUrl}
-                alt={current.name}
+                alt={current.name || "User"}
                 className="w-14 h-14 rounded-full object-cover border-2 border-primary/20 shadow-sm"
               />
             ) : (
               <div className="w-14 h-14 rounded-full bg-slate-900 text-white font-bold flex items-center justify-center text-lg shadow-sm">
-                {current.name.slice(0, 1)}
+                {(current.name || "U").slice(0, 1)}
               </div>
             )}
             <div>

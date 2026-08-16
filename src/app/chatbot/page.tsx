@@ -151,6 +151,7 @@ export default function ChatbotHelperPage() {
           { words: ["비디오", "유튜브", "자막", "쇼츠"], weight: 5 },
           { words: ["음악", "노래", "가사", "suno"], weight: 5 },
           { words: ["요금", "플랜", "구독", "결제", "환불", "stripe"], weight: 5 },
+          { words: ["권한", "액세스", "다른앱", "다른 앱", "팝업", "크롬", "허용", "차단", "자격증명", "보안"], weight: 6 },
           { words: ["키워드", "분석", "조회수", "트렌드"], weight: 4 },
           { words: ["홈페이지", "제작", "빌더", "개설", "섹션", "그리드"], weight: 4 },
           { words: ["마케팅", "홍보", "seo", "검색"], weight: 3 },

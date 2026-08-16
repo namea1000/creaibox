@@ -98,7 +98,7 @@ export async function POST(request: Request) {
     try {
       const aiResponseText = await generateContentWithVertexAI({
         prompt,
-        modelName: "gemini-3.7-flash",
+        modelName: "gemini-flash-latest",
         responseMimeType: "application/json"
       });
       const jsonMatch = aiResponseText.match(/\{[\s\S]*\}/);

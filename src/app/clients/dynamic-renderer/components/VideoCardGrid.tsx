@@ -101,11 +101,15 @@ export default function VideoCardGrid({
           >
             {/* Thumbnail Frame */}
             <div className="relative aspect-[16/9] w-full rounded-2xl md:rounded-3xl overflow-hidden bg-neutral-900 shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:-translate-y-1">
-              <img
-                src={item.thumbnail}
-                alt={item.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
+              {item.thumbnail && typeof item.thumbnail === "string" && item.thumbnail.trim() !== "" ? (
+                <img
+                  src={item.thumbnail}
+                  alt={item.title || "Video"}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              ) : (
+                <div className="w-full h-full bg-slate-800 flex items-center justify-center" />
+              )}
 
               {/* Centered Translucent Play Button Overlay */}
               <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors duration-300">

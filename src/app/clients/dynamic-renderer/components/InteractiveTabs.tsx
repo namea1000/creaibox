@@ -91,11 +91,11 @@ export default function InteractiveTabs({
                 key={iIdx}
                 className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
               >
-                {item.image && (
+                {item.image && typeof item.image === "string" && item.image.trim() !== "" && (
                   <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-slate-50 mb-4">
                     <img
                       src={item.image}
-                      alt={item.title || item.name}
+                      alt={item.title || item.name || "Item"}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>

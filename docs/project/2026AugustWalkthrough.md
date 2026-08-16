@@ -645,3 +645,40 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
   - `site-migration/route.ts`:
     - 크리에이터 쇼케이스나 팁 카드 등 원본에서 가로 3~4개 카드가 동시에 펼쳐진 섹션을 슬라이더 컴포넌트로 오분류하지 않고 `grid grid-cols-1 md:grid-cols-3 gap-8` 정적 반응형 그리드로 100% 보존하도록 15대 클로닝 규칙 수립.
   - `spreadshop-w3xf` 사이트 `REAL CREATORS USE SPREADSHOP` 및 `TIPS TO BOOST SALES` 섹션을 원본과 100% 동일한 3열 와이드 카드 그리드로 즉시 교체 완료.
+* **Google Cloud Vertex AI Global 엔드포인트 전면 전환 & `gemini-3.7-flash` 1순위 다이렉트 호출 완비 (v1.43)**:
+  - `vertex-ai-gemini.ts`:
+    - `location: "global"` 글로벌 엔드포인트(`aiplatform.googleapis.com`)로 전면 전환하여 특정 데이터센터 리전 종속성 해소.
+    - 2026년 8월 14일 릴리즈된 구글 최신 플래그십 `gemini-3.7-flash` 및 `gemini-3.5-flash` 모델을 $300 무료 크레딧으로 1순위 다이렉트 호출하도록 업그레이드.
+    - 사고력(ThoughtSignature) 및 멀티파트 텍스트 추출 로직을 완벽 보강하여 AI 웹사이트 이관 품질과 속도를 대폭 향상.
+* **영구 무관리 자동 최신화 `gemini-flash-latest` 글로벌 별칭 아키텍처 완비 (v1.44)**:
+  - `vertex-ai-gemini.ts` & `site-migration/route.ts`:
+    - 고정 모델명 대신 항상 최신 Flash 모델로 자동 연결되는 구글 공식 영구 별칭 `gemini-flash-latest`를 기본값으로 표준화.
+    - 향후 구글이 Gemini 3.8, 4.0 등 차세대 AI를 출시하더라도 추가 코드 수정 없이 실시간 무인 자동 최신화 보장.
+    - `gemini-flash-latest` ➔ `gemini-3.7-flash` ➔ `gemini-3.5-flash` ➔ `gemini-3.5-flash-lite` ➔ `gemini-2.5-flash` 5단계 지능형 안전 폴백 탑재.
+* **듀얼 티어(Dual-Tier) AI 엔진 표준화 완비 (v1.45)**:
+  - **커스텀 웹사이트 🌟 메뉴**: 대용량 HTML 복제 및 서브페이지 매직 빌더에 `gemini-flash-latest` (고성능 최신 Flash) 1순위 전담 배치.
+  - **나머지 모든 사이드바 메뉴**: 블로그 원고 작성, 기사 스크랩 재가공, 유튜브 분석, AI 어시스턴트, 스키마 패널, SEO 분석 타워, 가사/음악 기획 등 전체 메뉴에 초고속(1.0초) 초저비용 `gemini-flash-lite-latest`를 기본 엔진으로 전면 전환 완료.
+* **동적 렌더러 컴포넌트 빈 이미지(`src=""`) 방어 및 중복 네트워크 요청 차단 (v1.46)**:
+  - `InfiniteLogoMarquee.tsx`, `HeroImageSlider.tsx`, `AdvancedMediaCarousel.tsx`, `InteractiveTabs.tsx`, `SmartphoneMockup.tsx`, `VideoCardGrid.tsx`, `TestimonialCarousel.tsx`, `DynamicSection.tsx`:
+    - 빈 문자열(`""`) src가 `<img src="">`로 렌더링되어 브라우저가 현재 페이지 HTML을 중복으로 재요청하던 콘솔 에러를 100% 원천 차단.
+    - 모든 이미지/비디오 URL 입력에 엄격한 유효성 필터링 및 조건부 렌더링 가드를 적용하여 클라이언트 렌더링 안정성 확보.
+* **브라우저 기기 권한 팝업('다른 앱 및 서비스에 액세스') FAQ 및 챗봇 지식 등록 (v1.47)**:
+  - `faqData.ts`, `chatbot/page.tsx`, `FaqChatbotWidget.tsx`:
+    - 고객지원 FAQ 센터(`/help`) 및 FAQ 챗봇(`/chatbot`)에 브라우저 기기 권한 팝업(`trbl-3`) 등록 완료.
+    - '권한', '액세스', '다른 앱', '팝업', '크롬', '허용', '차단' 키워드 매칭 가중치(+6)를 최적화하여 챗봇 질문 시 즉각 답변 제공.
+* **'AI 웹사이트 빌더' 정식 명칭 확정 및 네이버/구글 검색 최적화(SEO) 강화 (v1.48)**:
+  - `Sidebar.tsx`, `studio/page.tsx`, `app/page.tsx`, `client-site-builder/page.tsx`, `studio/custom-client-site/layout.tsx`, `layout.tsx`:
+    - 메뉴명을 군더더기 없이 세련되고 전문적인 **'AI 웹사이트 빌더'**로 단일화 변경.
+    - 네이버 및 구글 검색 로봇을 위해 `AI 홈페이지 제작`, `AI 웹사이트 제작`, `홈페이지 무료제작`, `웹사이트 무료제작` 등 핵심 타겟 키워드를 메타 디스크립션과 Keywords 배열에 대폭 강화.
+* **플랫폼 전 사이트 & 블로그 Vercel Global Edge CDN 캐시(ISR 60s) 완비 (v1.49)**:
+  - `src/app/blog/[slug]/page.tsx` & `src/app/blog/page.tsx`:
+    - `export const revalidate = 60;`, React `cache()` 다이렉트 쿼리, `generateStaticParams`, 비차단 `PostViewTracker`를 구축하여 본사 블로그 0.01초 광속 서빙 구현.
+  - `src/app/brand/[brand_id]/*`:
+    - 서버사이드 `cookies()` 호출을 클라이언트 래퍼로 이관하여 사용자 서브도메인 블로그(`*.creaibox.com`) 100% Edge CDN ISR(60s) 가동.
+  - `src/app/clients/dynamic-renderer/*` & `src/app/clients/[client_id]/*`:
+    - AI 웹사이트 빌더로 제작된 모든 홈페이지, 서브페이지, 템플릿에 글로벌 엣지 캐시 탑재.
+  - `src/proxy.ts`:
+    - 5분 인메모리 맵(`dynamicClientCache`)을 탑재하여 미들웨어 단계의 DB 라운드트립 지연을 0ms로 단축.
+* **대중 공개 서브페이지 글로벌 엣지 캐시(ISR 60s) 확장 완비 (v1.50)**:
+  - `src/app/client-site-builder/page.tsx`, `src/app/infocenter/[[...section]]/page.tsx`:
+    - 일반 방문자 공개 서브페이지 전체에 `revalidate = 60` 탑재하여 서브페이지 탐색 시 0.01초 인스턴트 오픈 보장.

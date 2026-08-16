@@ -331,7 +331,7 @@ function ContentPlannerPlanningPageContent() {
       `;
 
       const generationResult = await generateGeminiContentWithFallback({
-        modelName: vaultConfig?.model || "gemini-3.5-flash-lite",
+        modelName: vaultConfig?.model || "gemini-flash-lite-latest",
         prompt,
         responseMimeType: "application/json",
         type: "content_planning",
@@ -547,7 +547,7 @@ ${existingItemsText}
       `;
 
       const generationResult = await generateGeminiContentWithFallback({
-        modelName: vaultConfig?.model || "gemini-3.5-flash-lite",
+        modelName: vaultConfig?.model || "gemini-flash-lite-latest",
         prompt,
         responseMimeType: "application/json",
         type: "content_planning",

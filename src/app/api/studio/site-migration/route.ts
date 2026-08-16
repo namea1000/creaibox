@@ -387,7 +387,7 @@ export async function POST(request: Request) {
         try {
           aiText = await generateContentWithVertexAI({
             prompt: prompt,
-            modelName: "gemini-3.7-flash",
+            modelName: "gemini-flash-latest",
             responseMimeType: "application/json"
           });
           aiText = aiText.trim();
@@ -399,7 +399,7 @@ export async function POST(request: Request) {
               const { GoogleGenerativeAI } = await import("@google/generative-ai");
               const genAI = new GoogleGenerativeAI(apiKey);
               const model = genAI.getGenerativeModel({ 
-                model: "gemini-3.7-flash",
+                model: "gemini-flash-latest",
                 generationConfig: { responseMimeType: "application/json" }
               });
               const res = await model.generateContent([{ text: prompt }]);

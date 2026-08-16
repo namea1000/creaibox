@@ -27,12 +27,16 @@ export default function InfiniteLogoMarquee({
 }: InfiniteLogoMarqueeProps) {
   if (!logos || logos.length === 0) return null;
 
-  // Normalize logos to array of objects
-  const normalizedLogos: LogoItem[] = logos.map((item, idx) =>
-    typeof item === "string"
-      ? { name: `Partner ${idx + 1}`, logoUrl: item }
-      : item
-  );
+  // Normalize logos to array of objects and filter out empty URLs
+  const normalizedLogos: LogoItem[] = logos
+    .map((item, idx) =>
+      typeof item === "string"
+        ? { name: `Partner ${idx + 1}`, logoUrl: item }
+        : item
+    )
+    .filter((item): item is LogoItem => Boolean(item && typeof item.logoUrl === "string" && item.logoUrl.trim() !== ""));
+
+  if (normalizedLogos.length === 0) return null;
 
   // Duplicate list 3 times to ensure smooth infinite looping
   const displayLogos = [...normalizedLogos, ...normalizedLogos, ...normalizedLogos];
@@ -62,6 +66,8 @@ export default function InfiniteLogoMarquee({
           }}
         >
           {displayLogos.map((logo, idx) => {
+            if (!logo.logoUrl || logo.logoUrl.trim() === "") return null;
+
             const content = (
               <div
                 key={idx}
@@ -69,7 +75,7 @@ export default function InfiniteLogoMarquee({
               >
                 <img
                   src={logo.logoUrl}
-                  alt={logo.name}
+                  alt={logo.name || "Logo"}
                   className="max-h-full max-w-[140px] md:max-w-[180px] object-contain"
                   loading="lazy"
                 />

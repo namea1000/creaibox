@@ -203,7 +203,7 @@ export default function Sidebar({
 
       {
         key: "custom-client-site",
-        name: "커스텀 웹사이트 🌟",
+        name: "AI 웹사이트 빌더",
         href: "/studio/custom-client-site",
         icon: Sparkles,
         color: "text-cyan-400",
@@ -212,9 +212,9 @@ export default function Sidebar({
           { name: "기존 홈페이지 이관", href: "/studio/custom-client-site/migration", icon: Globe },
           { name: "AI 홈페이지 매직 빌더 🪄", href: "/studio/custom-client-site/ai-magic-builder", icon: MonitorSmartphone },
           { name: "서브 페이지 AI 추가 제작", href: "/studio/custom-client-site/subpage-builder", icon: Layers },
-          { name: "내 커스텀 사이트 관리", href: "/studio/client-site-builder", icon: Settings },
-          { name: "AI 커스텀 신규 제작 신청", href: "/studio/custom-client-site/request", icon: Plus },
-          { name: "관리자: 커스텀 신청 현황", href: "/studio/custom-client-site/admin-dashboard", icon: ShieldCheck },
+          { name: "내 웹사이트 관리", href: "/studio/client-site-builder", icon: Settings },
+          { name: "AI 웹사이트 신규 제작 신청", href: "/studio/custom-client-site/request", icon: Plus },
+          { name: "관리자: 제작 신청 현황", href: "/studio/custom-client-site/admin-dashboard", icon: ShieldCheck },
         ]
       },
       {

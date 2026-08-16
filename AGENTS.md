@@ -51,3 +51,8 @@ When creating how-to guides or operation manuals (e.g., "~ 하는 방법", "매�
 - 공용 문서(`.md`), 아키텍처 명세서, 가이드 및 매뉴얼 파일 작성 시 실제 운영/테스트용 보안키(API Secret, Service Account Private Key, OAuth Secret 등)를 절대로 원문 그대로 노출해 작성하지 않는다.
 - 모든 문서 내 환경변수 예시 코드에는 반드시 마스킹 문자열(예: `your_api_secret_here`, `sec_xxxx`, `your_private_key_here`)만 사용해야 한다.
 - 실제 시크릿 키는 Git에 포함되지 않는 `.env.local` 파일 및 Vercel/서버 환경변수 설정(Environment Variables)에서만 관리한다.
+
+### Mandatory Global Edge CDN ISR 60s Rule (전 대중 공개 페이지 및 블로그 글로벌 엣지 캐시 60초 의무 규칙)
+- 향후 신규로 제작되는 모든 대중 공개 페이지(메인 랜딩, 소개, 요금제, 인포센터, 고객지원, AI 웹사이트 빌더 홍보 페이지), 사용자 블로그(`brand/[brand_id]/*`), 및 AI 웹사이트 빌더로 제작되는 모든 고객사 홈페이지/서브페이지/내장 블로그에는 반드시 `export const revalidate = 60;` (ISR 60s)를 선언하여 Vercel Global Edge CDN에서 0.01초 만에 즉시 서빙되도록 구축해야 한다.
+- Server Component 내부에서 `cookies()`나 `headers()`를 직접 호출하여 정적 캐시가 해제되는 안티 패턴을 100% 금지하며, 테마/인증 상태는 Client Component Wrapper로 분리한다.
+- 블로그 상세 페이지 및 공개 데이터 쿼리 작성 시 React `cache()`를 사용하여 메타데이터와 본문 간의 중복 DB 조회를 방지하고, 조회수 증가는 비차단 `<PostViewTracker />`로 분리한다.

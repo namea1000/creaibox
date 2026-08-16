@@ -72,8 +72,8 @@ export default function WpCreatePage() {
       const apiKey = await getApiKey();
       const genAI = new GoogleGenerativeAI(apiKey);
       
-      // 2. 모델 설정 (Gemini-3-flash-preview 또는 1.5-flash)
-      const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash-lite" }); 
+      // 2. 모델 설정 (최신 gemini-flash-lite-latest)
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-lite-latest" }); 
 
       // 3. 프롬프트 구성 (말투, 길이 반영)
       const prompt = `

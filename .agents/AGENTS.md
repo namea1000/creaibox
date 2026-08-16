@@ -48,8 +48,9 @@ When creating how-to guides or operation manuals (e.g., "~ 하는 방법", "매�
 
 ### Mandatory Formal Database Schema Expansion Rule (DB 정석 설계 및 전용 컬럼 추가 의무 규칙)
 - 기존 메뉴를 업그레이드하거나 신규 기능을 개발할 때, DB 설계 시 **항상 장기적인 서비스 확장과 데이터 통계(조회 성능)를 최우선으로 고려**한다.
-- 임시방편으로 기존 JSONB( 등) 컬럼에 꼼수 데이터(플래그)를 구겨 넣는 것을 지양하고, **필요하다면 기존 DB 테이블에 명확한 역할을 하는 전용 컬럼(Column)을 정석대로 추가(ALTER TABLE)하여 해결**한다.
-
-### Mandatory Formal Database Schema Expansion Rule (DB 정석 설계 및 전용 컬럼 추가 의무 규칙)
-- 기존 메뉴를 업그레이드하거나 신규 기능을 개발할 때, DB 설계 시 **항상 장기적인 서비스 확장과 데이터 통계(조회 성능)를 최우선으로 고려**한다.
 - 임시방편으로 기존 JSONB(`extra_configs` 등) 컬럼에 꼼수 데이터(플래그)를 구겨 넣는 것을 지양하고, **필요하다면 기존 DB 테이블에 명확한 역할을 하는 전용 컬럼(Column)을 정석대로 추가(ALTER TABLE)하여 해결**한다.
+
+### Mandatory Global Edge CDN ISR 60s Rule (전 대중 공개 페이지 및 블로그 글로벌 엣지 캐시 60초 의무 규칙)
+- 향후 신규로 제작되는 모든 대중 공개 페이지(메인 랜딩, 소개, 요금제, 인포센터, 고객지원, AI 웹사이트 빌더 홍보 페이지), 사용자 블로그(`brand/[brand_id]/*`), 및 AI 웹사이트 빌더로 제작되는 모든 고객사 홈페이지/서브페이지/내장 블로그에는 반드시 `export const revalidate = 60;` (ISR 60s)를 선언하여 Vercel Global Edge CDN에서 0.01초 만에 즉시 서빙되도록 구축해야 한다.
+- Server Component 내부에서 `cookies()`나 `headers()`를 직접 호출하여 정적 캐시가 해제되는 안티 패턴을 100% 금지하며, 테마/인증 상태는 Client Component Wrapper로 분리한다.
+- 블로그 상세 페이지 및 공개 데이터 쿼리 작성 시 React `cache()`를 사용하여 메타데이터와 본문 간의 중복 DB 조회를 방지하고, 조회수 증가는 비차단 `<PostViewTracker />`로 분리한다.

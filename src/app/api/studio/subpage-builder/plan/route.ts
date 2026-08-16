@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     if (!apiKey) throw new Error("Gemini API key is not configured.");
     
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-3.7-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
     const prompt = `
       당신은 웹사이트 기획자입니다.

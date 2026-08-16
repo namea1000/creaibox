@@ -61,11 +61,12 @@ async function getVertexAccessToken(clientEmail: string, privateKey: string) {
 
 /**
  * Call Vertex AI / GCP Service Account OAuth Gemini API using GCP $300 Free Credit
+ * Defaults to the Global endpoint to support latest Gemini 3.7 Flash / 3.5 Flash / 3.1 Pro models.
  */
 export async function generateContentWithVertexAI({
   prompt,
-  modelName = "gemini-2.5-pro",
-  location = "us-central1",
+  modelName = "gemini-flash-lite-latest",
+  location = "global",
   systemInstruction,
   temperature = 0.7,
   useSearch,
@@ -79,18 +80,26 @@ export async function generateContentWithVertexAI({
 
   const accessToken = await getVertexAccessToken(creds.clientEmail, creds.privateKey);
 
-  const requestedModel = modelName || "gemini-2.5-pro";
+  const requestedModel = modelName || "gemini-flash-lite-latest";
+  const isProRequested = requestedModel.toLowerCase().includes("pro");
+  const isHeavyFlashRequested = requestedModel === "gemini-flash-latest" || requestedModel.includes("3.7");
 
-  const isFlashRequested = requestedModel.toLowerCase().includes("flash");
-  const defaultFallback = isFlashRequested ? "gemini-2.5-flash" : "gemini-2.5-pro";
-  const secondaryFallback = isFlashRequested ? "gemini-2.5-pro" : "gemini-2.5-flash";
+  // Build model candidates: requested model / alias first, then intelligent fallbacks
+  let fallbackList: string[] = [];
+  if (isProRequested) {
+    fallbackList = ["gemini-3.1-pro-preview", "gemini-2.5-pro", "gemini-flash-latest"];
+  } else if (isHeavyFlashRequested) {
+    // 커스텀 웹사이트 등 고성능 대형 HTML 작업
+    fallbackList = ["gemini-flash-latest", "gemini-3.7-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"];
+  } else {
+    // 일반 사이드바 모든 메뉴 (초고속/초저비용 Flash Lite)
+    fallbackList = ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-2.5-flash-lite", "gemini-flash-latest"];
+  }
 
-  // Build model candidates: requested model first, then active Vertex AI fallbacks
   const modelCandidates = Array.from(
     new Set([
       requestedModel,
-      defaultFallback,
-      secondaryFallback,
+      ...fallbackList,
     ])
   );
 
@@ -116,20 +125,6 @@ export async function generateContentWithVertexAI({
     },
   ];
 
-  const payload: Record<string, any> = {
-    contents,
-    generationConfig: {
-      temperature,
-      ...(responseMimeType && !useSearch ? { responseMimeType } : {}),
-    },
-  };
-
-  if (systemInstruction) {
-    payload.systemInstruction = {
-      parts: [{ text: systemInstruction }],
-    };
-  }
-
   let lastErr: Error | null = null;
   const systemApiKey =
     process.env.GEMINI_API_KEY ||
@@ -137,18 +132,14 @@ export async function generateContentWithVertexAI({
     process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
   for (const targetModel of modelCandidates) {
-    // Map targetModel to valid publisher model ID for Vertex AI (Flash -> gemini-2.5-flash, Pro -> gemini-2.5-pro)
-    let vertexModel = targetModel;
-    if (targetModel.toLowerCase().includes("flash")) {
-      vertexModel = "gemini-2.5-flash";
-    } else if (targetModel.startsWith("gemini-3") || targetModel.toLowerCase().includes("pro")) {
-      vertexModel = "gemini-2.5-pro";
-    }
+    const vertexEndpointUrl = location === "global"
+      ? `https://aiplatform.googleapis.com/v1/projects/${creds.projectId}/locations/global/publishers/google/models/${targetModel}:generateContent`
+      : `https://${location}-aiplatform.googleapis.com/v1/projects/${creds.projectId}/locations/${location}/publishers/google/models/${targetModel}:generateContent`;
 
     const endpoints: Array<{ url: string; headers: Record<string, string>; isVertex: boolean }> = [
       // 1순위: GCP $300불 크레딧 전용 Vertex AI Service Account OAuth 엔드포인트
       {
-        url: `https://${location}-aiplatform.googleapis.com/v1/projects/${creds.projectId}/locations/${location}/publishers/google/models/${vertexModel}:generateContent`,
+        url: vertexEndpointUrl,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
@@ -210,7 +201,13 @@ export async function generateContentWithVertexAI({
         }
 
         const data = await res.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        // Extract full text from candidate parts (handles thinking/thought signatures & multiple parts)
+        const candidateParts = data.candidates?.[0]?.content?.parts || [];
+        const text = candidateParts
+          .map((p: any) => p.text || "")
+          .join("")
+          .trim();
 
         if (!text) {
           throw new Error(`GCP AI (${targetModel})로부터 올바른 텍스트 응답을 받지 못했습니다.`);

@@ -40,12 +40,11 @@ const AUTH_RETRY_ATTEMPTS = 3;
 
 const AI_RETRY_ATTEMPTS = 3;
 const AI_RETRY_DELAY_MS = 1200;
-const PRIMARY_GEMINI_MODEL = "gemini-3.5-flash-lite";
+const PRIMARY_GEMINI_MODEL = "gemini-flash-lite-latest";
 
 const GEMINI_MODEL_FALLBACKS = [
   PRIMARY_GEMINI_MODEL,
   "gemini-3.5-flash-lite",
-  "gemini-3-flash-preview",
   "gemini-2.5-flash",
 ];
 

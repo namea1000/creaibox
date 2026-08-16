@@ -118,7 +118,7 @@ export default function StudioPage() {
     },
     {
       key: "custom-client-site",
-      name: "커스텀 웹사이트 🌟",
+      name: "AI 웹사이트 빌더",
       href: "/studio/custom-client-site",
       icon: Sparkles,
       color: "from-cyan-600 to-blue-500 text-cyan-400 bg-cyan-500/10",

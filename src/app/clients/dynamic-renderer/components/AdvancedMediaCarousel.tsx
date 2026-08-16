@@ -9,24 +9,25 @@ interface AdvancedMediaCarouselProps {
 }
 
 export default function AdvancedMediaCarousel({ mediaUrls, desktopAspectRatio }: AdvancedMediaCarouselProps) {
+  const validMediaUrls = (mediaUrls || []).filter((url) => typeof url === "string" && url.trim() !== "");
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [progresses, setProgresses] = useState<number[]>(new Array(mediaUrls.length).fill(0));
+  const [progresses, setProgresses] = useState<number[]>(new Array(validMediaUrls.length).fill(0));
   const [isHovering, setIsHovering] = useState(false);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const animationRef = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
 
   // If there's no media, just return null
-  if (!mediaUrls || mediaUrls.length === 0) return null;
+  if (validMediaUrls.length === 0) return null;
 
   const isVideo = (url: string) => /\.(mp4|webm|ogg)$/i.test(url);
 
   const goToNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % mediaUrls.length);
+    setCurrentIndex((prev) => (prev + 1) % validMediaUrls.length);
   };
 
   const goToPrev = () => {
-    setCurrentIndex((prev) => (prev === 0 ? mediaUrls.length - 1 : prev - 1));
+    setCurrentIndex((prev) => (prev === 0 ? validMediaUrls.length - 1 : prev - 1));
   };
 
   useEffect(() => {
@@ -91,7 +92,7 @@ export default function AdvancedMediaCarousel({ mediaUrls, desktopAspectRatio }:
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      {mediaUrls.map((url, index) => {
+      {validMediaUrls.map((url, index) => {
         const active = index === currentIndex;
         return (
           <div

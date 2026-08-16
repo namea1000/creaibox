@@ -54,10 +54,9 @@ function getGeminiEnvKeys(): string[] {
 
 // 1순위 지정 모델: gemini-3.5-flash-lite (실패 시 백업 모델)
 const GEMINI_MODELS = [
+  "gemini-flash-lite-latest",
   "gemini-3.5-flash-lite",
-  "gemini-2.5-flash",
-  "gemini-1.5-flash",
-  "gemini-2.0-flash-lite",
+  "gemini-2.5-flash-lite",
 ];
 
 export async function generateBrandAiJson(prompt: string): Promise<string> {
@@ -133,7 +132,7 @@ export async function generateBrandAiJson(prompt: string): Promise<string> {
   try {
     const vertexResult = await generateContentWithVertexAI({
       prompt,
-      modelName: "gemini-2.5-flash",
+      modelName: "gemini-flash-lite-latest",
       temperature: 0.2,
       responseMimeType: "application/json",
     });

@@ -487,11 +487,12 @@ CreaiBox AI 이관 엔진은 낡은 정적 HTML을 단순 복사하지 않고, �
 
 ---
 
-## ⚡ 19. Vertex AI 1순위 표준화 & 0.001초 인메모리 정규화 파이프라인
+## ⚡ 19. Vertex AI Global 엔드포인트 & `gemini-flash-latest` 영구 자동 최신화 파이프라인
 
-### 19.1 Vertex AI 100% 무조건 1순위(Primary) 엔진 표준화
-* **인프라**: Google Cloud Vertex AI Enterprise 인프라를 최우선 엔진으로 전면 가동.
-* **Flash 모델 초고속 매핑**: `gemini-3.7-flash` 요청 시 Vertex AI의 최신 `gemini-2.5-flash` 모델로 즉시 라우팅하여 대용량 HTML 복제 작업을 20~40초 만에 무손실 완료.
+### 19.1 `gemini-flash-latest` 글로벌 별칭(Alias) 1순위 표준화
+* **인프라**: Google Cloud Vertex AI Global 통합 엔드포인트(`https://aiplatform.googleapis.com/v1/.../locations/global/...`)를 전면 가동.
+* **무관리 자동 최신화(Auto-Upgrade)**: 고정 모델명 대신 항상 최신 Flash 모델(현재 3.7 Flash)을 자동 연결해 주는 구글 공식 영구 별칭 `gemini-flash-latest`를 $300 무료 크레딧으로 1순위 다이렉트 호출.
+* **5단계 지능형 안전 폴백**: `gemini-flash-latest` ➔ `gemini-3.7-flash` ➔ `gemini-3.5-flash` ➔ `gemini-3.5-flash-lite` ➔ `gemini-2.5-flash` 순으로 자동 안전망을 가동하여 15~30초 만에 대용량 HTML 복제 완벽 완료.
 
 ### 19.2 이미지 다운로드 병목 분리 및 0.001초 인메모리 정규화 (`normalizeHtmlImageUrls`)
 * **해결 기술**: 메인 이관 파이프라인에서 수십 개 이미지의 무거운 동기식 다운로드/Sharp 변환/R2 업로드를 분리하고, 원본 상대경로 이미지들을 0.001초 만에 유효 절대경로로 즉시 정규화.

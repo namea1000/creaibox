@@ -3,10 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
 import PostClientWrapper from "../components/PostClientWrapper";
 
-export const revalidate = 300;
+// 🌟 Vercel Global Edge CDN Incremental Static Regeneration (ISR 60s 광속 캐시)
+export const revalidate = 60;
 
 interface PublishedPostDetail {
   id: string;
@@ -499,8 +499,7 @@ async function transformContentWithOgCards(content: string, supabase: any): Prom
 export default async function BrandPostDetailPage({ params }: PostDetailPageProps) {
   try {
     const { brand_id, slug } = await params;
-    const cookieStore = await cookies();
-    const initialTheme = (cookieStore.get(`blog_theme_${brand_id}`)?.value || "light") as "light" | "dark";
+    const initialTheme: "light" | "dark" = "light";
 
     const result = await fetchPost(brand_id, slug);
 

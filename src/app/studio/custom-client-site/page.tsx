@@ -141,7 +141,7 @@ export default function CustomClientSiteHomePage() {
       {/* 5 Sub-Menus Section */}
       <section className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-black text-white">커스텀 웹사이트 스튜디오 메뉴</h2>
+          <h2 className="text-2xl font-black text-white">AI 웹사이트 빌더 스튜디오 메뉴</h2>
           <span className="text-sm text-slate-400 font-medium">원하시는 작업을 선택해 주세요</span>
         </div>
         

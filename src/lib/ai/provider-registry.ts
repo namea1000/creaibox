@@ -21,28 +21,28 @@ export type ApiVaultServiceItem = {
 
 export const GEMINI_MODELS: ModelOption[] = [
   {
+    value: "gemini-flash-lite-latest",
+    label: "gemini-flash-lite-latest 🟢 구글 최신 Flash Lite · 영구 최신 자동 연동 · 초고속",
+  },
+  {
+    value: "gemini-flash-latest",
+    label: "gemini-flash-latest ⚡ 구글 최신 Flash · 영구 최신 자동 연동 · 최고 성능",
+  },
+  {
     value: "gemini-3.5-flash-lite",
-    label: "gemini-3.5-flash-lite 🟢 구글 최신 3.5 Lite · 초고속 · 에이전트 & 대량 생성",
+    label: "gemini-3.5-flash-lite 🟢 구글 3.5 Lite · 초고속 · 에이전트 & 대량 생성",
+  },
+  {
+    value: "gemini-3.7-flash",
+    label: "gemini-3.7-flash ⚡ 구글 3.7 Flash · ThoughtSignature 사고력 탑재",
   },
   {
     value: "gemini-3.1-pro-preview",
     label: "gemini-3.1-pro-preview 🧠 구글 최신 3.1 Pro Preview · 최첨단 코딩 & 깊은 추론",
   },
   {
-    value: "gemini-3-flash-preview",
-    label: "gemini-3-flash-preview ⚡ 구글 3 Flash Preview · 구글 검색 그라운딩 최적화",
-  },
-  {
-    value: "gemini-2.0-flash",
-    label: "gemini-2.0-flash ⚡ 구글 2.0 Flash · 최신 차세대 · 실시간 검색 반영",
-  },
-  {
-    value: "gemini-1.5-flash",
-    label: "gemini-1.5-flash 🚀 구글 1.5 Flash · 초고속 · 원고 생성",
-  },
-  {
-    value: "gemini-1.5-pro",
-    label: "gemini-1.5-pro 📚 구글 1.5 Pro · 깊은 분석 작업",
+    value: "gemini-2.5-flash",
+    label: "gemini-2.5-flash ⚡ 구글 2.5 Flash · 안정적",
   },
 ];
 
@@ -101,8 +101,8 @@ export const AI_PROVIDER_MODEL_OPTIONS: Record<AiProviderId, ModelOption[]> = {
 };
 
 export const AI_PROVIDER_DEFAULT_MODEL: Record<AiProviderId, string> = {
-  gemini_postpay: "gemini-3.5-flash-lite",
-  gemini_free: "gemini-3.5-flash-lite",
+  gemini_postpay: "gemini-flash-lite-latest",
+  gemini_free: "gemini-flash-lite-latest",
   groq: "llama-3.1-8b-instant",
   openai: "gpt-4o-mini",
   claude: "claude-3-5-haiku-latest",

@@ -182,7 +182,7 @@ export default function CreaiboxAnalysisTower({
     try {
       const genAI = new GoogleGenerativeAI(currentKey);
       const model = genAI.getGenerativeModel({
-        model: "models/gemini-3.5-flash-lite",
+        model: "gemini-flash-lite-latest",
         systemInstruction: `당신은 노련한 웹 전문 SEO 테크니컬 카피라이터입니다.
 제시되는 HTML 포스트 본문을 정밀 분석하여, 전체 글의 뼈대, 세부 문맥, 본래의 어조, 기획 의도를 90% 이상 그대로 고스란히 보존(Keep)하면서 다음 4가지 핵심 SEO 지표에 대해서만 '자연스럽고 부드럽게 최소한의 본문 문구 교정'을 적용해 주십시오.
 억지로 100점을 맞추기 위해 글을 기계처럼 완전히 새로 쓰거나 틀을 뒤흔들어서 가독성을 해치지 않도록 각별히 유의하십시오.

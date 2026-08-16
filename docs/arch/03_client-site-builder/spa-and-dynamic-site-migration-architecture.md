@@ -83,8 +83,8 @@ graph TD
 1. **[1단계: 0.001초 인메모리 절대경로 정규화 (`normalizeHtmlImageUrls`)]**:
    - AI가 추출한 HTML 내 모든 상대경로 이미지(`src="/..."`, `url("/...")`)를 타겟 오리진(`origin`)과 즉시 결합하여 유효한 절대경로로 0.001초 만에 치환.
    - 메인 요청 파이프라인에서 수십 개 이미지를 동기식으로 다운로드/변환하던 병목을 분리하여 **사용자가 40초 내에 이관 완료 화면을 즉시 확인**할 수 있도록 보장.
-2. **[2단계: Google Cloud Vertex AI 100% 무조건 1순위(Primary) 표준화]**:
-   - `GOOGLE_INDEXING_CREDENTIALS` 기반 GCP $300 무료 크레딧을 최우선으로 차감하며, Flash 모델 요청 시 Vertex AI `gemini-2.5-flash`로 정확히 매핑하여 대규모 HTML 구조를 초고속으로 복제.
+2. **[2단계: Google Cloud Vertex AI Global 엔드포인트 & `gemini-flash-latest` 영구 자동 최신화 표준화]**:
+   - `GOOGLE_INDEXING_CREDENTIALS` 기반 GCP $300 무료 크레딧을 최우선으로 차감하며, Vertex AI Global 통합 엔드포인트(`aiplatform.googleapis.com`)를 통해 구글 공식 영구 별칭 `gemini-flash-latest` (현재 `gemini-3.7-flash` 자동 포인팅)를 1순위로 다이렉트 호출하여 대규모 HTML 구조를 초고속(15~30초) 복제. 향후 신규 모델 출시 시에도 무관리 자동 판올림 보장.
 3. **[3단계: DNS 오류/404 발생 시 Fallback]**:
    - 해당 섹션 키워드 기반 실제 고화질 에셋과 매칭하여 화면 깨짐 및 엑박을 100% 방어.
 

@@ -23,13 +23,13 @@ export default function AIChatTab() {
 
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState("models/gemini-3-flash-preview");
+  const [selectedModel, setSelectedModel] = useState("gemini-flash-lite-latest");
   const [vaultKey, setVaultKey] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const modelOptions = [
-    { id: 'models/gemini-3-flash-preview', label: '3 Flash Preview (최신, 실시간 정보 반영)' },
-    { id: 'models/gemini-1.5-pro', label: '1.5 Pro (고급 분석 및 추론)' },
+    { id: 'gemini-flash-lite-latest', label: 'Gemini Flash-Lite Latest (초고속, 실시간 최신)' },
+    { id: 'gemini-flash-latest', label: 'Gemini Flash Latest (고급 복합 분석)' },
   ];
 
   useEffect(() => {

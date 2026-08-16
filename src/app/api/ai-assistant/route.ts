@@ -235,7 +235,7 @@ async function generateAssistantResponse({
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-3.5-flash-lite",
+      model: "gemini-flash-lite-latest",
     });
 
     const result = await model.generateContent(`

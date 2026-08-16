@@ -405,8 +405,8 @@ export default function DynamicSection({
                             </a>
                           )}
                         </div>
-                        {card.image && (
-                          <img src={card.image} alt={card.title} className="w-28 md:w-36 object-contain z-10" />
+                        {card.image && typeof card.image === "string" && card.image.trim() !== "" && (
+                          <img src={card.image} alt={card.title || "Card"} className="w-28 md:w-36 object-contain z-10" />
                         )}
                       </div>
                     ))

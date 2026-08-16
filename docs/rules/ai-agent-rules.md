@@ -770,3 +770,20 @@ General UI icons must use lucide-react.
 
 ### 2. 명시적 재배포 알림 의무
 - 환경변수가 추가/변경된 기능(예: 크론, 신규 외부 API 연동 등)을 개발/테스트 완료한 직후, 에이전트는 채팅창을 통해 사용자에게 **"해당 기능이 실서버(Vercel)에서도 정상 작동하려면 반드시 Vercel 대시보드 [Settings > Environment Variables] 메뉴에 방금 추가한 키를 똑같이 등록하고 [Redeploy] 해야 한다"**는 사실을 명확하게 브리핑해야 합니다.
+
+---
+
+## ⚡ Mandatory Global Edge CDN ISR 60s Rule (전 대중 공개 페이지 및 블로그 글로벌 엣지 캐시 60초 의무 규칙)
+
+앞으로 크리에이박스(CreaiBox) 플랫폼 내에 신규 제작되는 모든 공개 웹문서, 홈페이지, 블로그는 **0.01초 광속 서빙(Instant Navigation)** 및 **Vercel/Supabase 비용 0원 방어**를 위해 다음 3대 아키텍처 규칙을 100% 필수 적용해야 합니다.
+
+### 1. `export const revalidate = 60;` (ISR 60s 선언 의무)
+- 본사 공식 블로그(`/blog/*`), 사용자 서브도메인 블로그(`brand/[brand_id]/*`), AI 웹사이트 빌더로 제작되는 모든 고객사 홈페이지/서브페이지/내장 블로그(`clients/dynamic-renderer/*`), 템플릿 마켓, 요금제, 인포센터, 고객지원 등 **모든 대중 공개 페이지는 파일 상단에 `export const revalidate = 60;`을 선언**하여 Vercel Global Edge CDN에 캐시되도록 해야 합니다.
+
+### 2. Server Component 내 동적 쿠키/헤더 호출 원천 금지 (Bail-out 방지)
+- Server Component 내부에서 `await cookies()`나 `headers()`를 직접 호출하면 Next.js가 ISR을 강제로 해제하고 매번 느린 SSR로 전락합니다.
+- 다크모드/라이트모드 테마나 브라우저 상태값은 Server Component에서 읽지 말고, Client Component Wrapper 내부의 `localStorage` 및 `useEffect`로 위임하여 100% 순수 정적 Edge CDN 캐싱을 유지해야 합니다.
+
+### 3. React `cache()` Data Layer & 비차단 비동기 쓰기 표준화
+- 블로그 상세 페이지 및 공개 데이터 쿼리 작성 시 React `cache()`를 사용하여 메타데이터(`generateMetadata`)와 본문(`Page`) 간의 중복 DB 조회를 1회로 통합합니다.
+- SSR 렌더링 중 DB에 `views + 1`을 동기식으로 업데이트하여 렌더링을 블로킹하는 안티 패턴을 금지하며, 반드시 화면이 뜬 후 비차단 클라이언트 컴포넌트(`<PostViewTracker postId={id} />`)로 비동기 1회 호출해야 합니다.

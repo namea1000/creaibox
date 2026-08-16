@@ -2,6 +2,9 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { CUSTOM_CLIENT_SITES } from './lib/constants/clientSites'
 
+// 🌟 Edge Middleware In-Memory Cache (5분 캐시로 서브도메인 DB 조회 왕복 지연 0ms 실현)
+const dynamicClientCache = new Map<string, { isDynamic: boolean; expiry: number }>();
+
 export async function proxy(request: NextRequest) {
 
 
@@ -272,32 +275,46 @@ export async function proxy(request: NextRequest) {
           ? `/clients/${clientFolder}${path}`
           : `/brand/${targetBrandId.toLowerCase()}${path}`;
       } else {
-        // DB-driven Dynamic Website Builder Check
+        // DB-driven Dynamic Website Builder Check (with 5-min In-Memory Edge Cache)
+        const brandKey = targetBrandId.toLowerCase();
+        const now = Date.now();
         let isDynamicClient = false;
-        try {
-          const adminSupabase = createServerClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            {
-              cookies: {
-                get(name: string) { return ""; },
-                set(name: string, value: string, options: any) {},
-                remove(name: string, options: any) {},
+
+        const cached = dynamicClientCache.get(brandKey);
+        if (cached && cached.expiry > now) {
+          isDynamicClient = cached.isDynamic;
+        } else {
+          try {
+            const adminSupabase = createServerClient(
+              process.env.NEXT_PUBLIC_SUPABASE_URL!,
+              process.env.SUPABASE_SERVICE_ROLE_KEY!,
+              {
+                cookies: {
+                  get(name: string) { return ""; },
+                  set(name: string, value: string, options: any) {},
+                  remove(name: string, options: any) {},
+                }
               }
-            }
-          );
-          
-          const { data: siteData } = await adminSupabase
-            .from("client_sites")
-            .select("id, status")
-            .eq("brand_id", targetBrandId.toLowerCase())
-            .maybeSingle();
+            );
             
-          if (siteData?.id) {
-            isDynamicClient = true;
+            const { data: siteData } = await adminSupabase
+              .from("client_sites")
+              .select("id, status")
+              .eq("brand_id", brandKey)
+              .maybeSingle();
+              
+            if (siteData?.id) {
+              isDynamicClient = true;
+            }
+
+            // Cache for 5 minutes (300,000ms)
+            dynamicClientCache.set(brandKey, {
+              isDynamic: isDynamicClient,
+              expiry: now + 300_000,
+            });
+          } catch (dbErr) {
+            console.error("Middleware dynamic client lookup failed:", dbErr);
           }
-        } catch (dbErr) {
-          console.error("Middleware dynamic client lookup failed:", dbErr);
         }
         
         const search = request.nextUrl.search || "";

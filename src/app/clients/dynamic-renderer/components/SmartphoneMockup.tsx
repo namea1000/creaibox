@@ -22,11 +22,12 @@ export default function SmartphoneMockup({
   maxHeight = "max-h-[520px]",
 }: SmartphoneMockupProps) {
   // Normalize to image array
-  const imageList: string[] = images && images.length > 0 
+  const rawList: string[] = images && images.length > 0 
     ? images 
     : imageSrc 
     ? [imageSrc] 
     : [];
+  const imageList = rawList.filter((src) => typeof src === "string" && src.trim() !== "");
 
   const [currentIndex, setCurrentIndex] = useState(0);
 

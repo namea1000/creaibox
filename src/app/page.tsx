@@ -371,7 +371,7 @@ export default function MainLandingPage() {
             <div className="flex items-center justify-start md:justify-center gap-2 overflow-x-auto py-2.5 scrollbar-none flex-nowrap">
               {[
                 { icon: <Sparkles size={16} />, label: "스튜디오 홈", href: "/studio", color: "text-violet-400 border-violet-500/50 bg-violet-500/15 hover:bg-violet-500/25 font-black shadow-lg shadow-violet-500/10" },
-                { icon: <Globe size={16} />, label: "커스텀 웹사이트", href: "/studio/custom-client-site", color: "text-indigo-400 border-zinc-800/90 bg-zinc-900/90 hover:bg-zinc-800 hover:border-indigo-500/50" },
+                { icon: <Globe size={16} />, label: "AI 웹사이트 빌더", href: "/studio/custom-client-site", color: "text-indigo-400 border-zinc-800/90 bg-zinc-900/90 hover:bg-zinc-800 hover:border-indigo-500/50" },
                 { icon: <PenLine size={16} />, label: "블로그 글쓰기", href: "/writing/creaibox/new-post", color: "text-blue-400 border-zinc-800/90 bg-zinc-900/90 hover:bg-zinc-800 hover:border-blue-500/50" },
                 { icon: <Search size={16} />, label: "급상승 키워드 트랜드", href: "/keyword-trend", color: "text-amber-400 border-zinc-800/90 bg-zinc-900/90 hover:bg-zinc-800 hover:border-amber-500/50" },
                 { icon: <TrendingUp size={16} />, label: "급상승 유튜브 트랜드", href: "/youtube-trend", color: "text-red-400 border-zinc-800/90 bg-zinc-900/90 hover:bg-zinc-800 hover:border-red-500/50" },

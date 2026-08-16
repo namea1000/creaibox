@@ -6,33 +6,36 @@ import { ChevronLeft, ChevronRight, Play, Pause } from "lucide-react";
 export interface HeroImageSliderProps {
   images: string[];
   desktopAspectRatio?: string;
-  autoPlayInterval?: number; // default 3000ms (3 seconds)
+  mobileAspectRatio?: string;
+  autoPlayInterval?: number; // default 5000ms (5 seconds)
   className?: string;
   rounded?: string; // e.g. "rounded-3xl"
 }
 
 export default function HeroImageSlider({
   images,
+  autoPlayInterval = 5000,
   desktopAspectRatio,
-  autoPlayInterval = 3000,
+  mobileAspectRatio = "4/5",
   className = "",
   rounded = "rounded-2xl md:rounded-3xl",
 }: HeroImageSliderProps) {
+  const validImages = (images || []).filter((src) => typeof src === "string" && src.trim() !== "");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isHovering, setIsHovering] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  if (!images || images.length === 0) return null;
-
-  const total = images.length;
+  const total = validImages.length;
 
   const goToNext = () => {
+    if (total <= 1) return;
     setCurrentIndex((prev) => (prev + 1) % total);
   };
 
   const goToPrev = () => {
-    setCurrentIndex((prev) => (prev === 0 ? total - 1 : prev - 1));
+    if (total <= 1) return;
+    setCurrentIndex((prev) => (prev - 1 + total) % total);
   };
 
   const togglePlay = () => {
@@ -53,23 +56,22 @@ export default function HeroImageSlider({
     };
   }, [currentIndex, isPlaying, total, autoPlayInterval]);
 
-  const customStyle = desktopAspectRatio
-    ? ({ "--desktop-aspect": desktopAspectRatio } as React.CSSProperties)
-    : {};
+  if (total === 0) return null;
+
+  const customStyle = {
+    "--desktop-aspect": desktopAspectRatio,
+    "--mobile-aspect": mobileAspectRatio,
+  } as React.CSSProperties;
 
   return (
     <div
+      className={`relative w-full overflow-hidden ${rounded} shadow-lg aspect-[var(--mobile-aspect,4/5)] md:aspect-[var(--desktop-aspect,16/9)] ${className}`}
       style={customStyle}
-      className={`relative w-full overflow-hidden select-none group ${rounded} ${
-        desktopAspectRatio
-          ? "aspect-[4/3] md:aspect-[16/9] lg:aspect-[var(--desktop-aspect)]"
-          : "aspect-[16/9] md:aspect-[21/10]"
-      } ${className}`}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
       {/* Slides */}
-      {images.map((src, idx) => {
+      {validImages.map((src, idx) => {
         const active = idx === currentIndex;
         return (
           <div

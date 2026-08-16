@@ -36,11 +36,25 @@ const notoSansKR = Noto_Sans_KR({
 export const metadata = {
   metadataBase: new URL("https://creaibox.com"),
   title: {
-    default: "크리에이박스(CreaiBox) | 올인원 AI 콘텐츠 스튜디오",
+    default: "크리에이박스(CreaiBox) | 올인원 AI 콘텐츠 스튜디오 & AI 웹사이트 빌더",
     template: "%s | 크리에이박스 CreaiBox",
   },
   description:
-    "AI 글쓰기부터 이미지 생성, 음악, 홈페이지 제작까지. 크리에이박스는 크리에이터를 위한 올인원 AI 콘텐츠 스튜디오입니다.",
+    "AI 웹사이트 빌더, AI 홈페이지 제작, AI 글쓰기부터 이미지 생성, 비디오, 음악 제작까지. 크리에이박스는 크리에이터와 비즈니스를 위한 올인원 AI 스튜디오입니다. 홈페이지 무료제작 및 웹사이트 무료제작을 시작해 보세요.",
+  keywords: [
+    "AI 웹사이트 빌더",
+    "AI 홈페이지 제작",
+    "AI 웹사이트 제작",
+    "홈페이지 무료제작",
+    "웹사이트 무료제작",
+    "크리에이박스",
+    "creaibox",
+    "AI 글쓰기",
+    "AI 블로그",
+    "AI 이미지 생성",
+    "AI 비디오 에디터",
+    "반응형 웹사이트 제작"
+  ],
   alternates: {
     canonical: "/",
   },
@@ -51,9 +65,9 @@ export const metadata = {
   },
 
   openGraph: {
-    title: "크리에이박스(CreaiBox) | 올인원 AI 콘텐츠 스튜디오",
+    title: "크리에이박스(CreaiBox) | 올인원 AI 콘텐츠 스튜디오 & AI 웹사이트 빌더",
     description:
-      "AI 글쓰기부터 이미지 생성, 음악, 홈페이지 제작까지. 크리에이박스는 크리에이터를 위한 올인원 AI 콘텐츠 스튜디오입니다.",
+      "AI 웹사이트 빌더, AI 홈페이지 제작, AI 글쓰기부터 이미지 생성, 비디오, 음악 제작까지. 크리에이박스는 크리에이터와 비즈니스를 위한 올인원 AI 스튜디오입니다. 홈페이지 무료제작 및 웹사이트 무료제작을 시작해 보세요.",
     url: "https://creaibox.com",
     siteName: "CreaiBox",
     images: [
