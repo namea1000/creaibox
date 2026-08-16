@@ -142,7 +142,6 @@ export async function GET(req: NextRequest) {
 
         const cachedVideos = categoriesBundle[categoryId] !== undefined ? categoriesBundle[categoryId] : (bundleObj[bundleKey] || []);
         if (Array.isArray(cachedVideos) && cachedVideos.length > 0) {
-          console.log(`Popular Daily Bundle Hit: Serving ${bundleKey} for date ${cachedRow.target_date || date} from Single DB Row.`);
           const videoIds = cachedVideos.map((v: any) => v.id).filter(Boolean);
           let analyzedVideoIds: string[] = [];
           if (videoIds.length > 0) {

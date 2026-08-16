@@ -88,3 +88,28 @@ graph TD
 3. **[3단계: DNS 오류/404 발생 시 Fallback]**:
    - 해당 섹션 키워드 기반 실제 고화질 에셋과 매칭하여 화면 깨짐 및 엑박을 100% 방어.
 
+---
+
+## 🧩 4. 17대 프리미엄 인터랙티브 컴포넌트 생태계 아키텍처
+
+AI 이관 엔진은 감지된 DOM 구조와 데이터 패턴을 분석하여 아래 **17종의 전용 리액트 컴포넌트**로 자동 매핑합니다:
+
+1. `InteractiveVideoBanner.tsx` (`interactive_video_banner`): 16:9 와이드 풀스크린 비디오 배너 (초기 정지, 중앙 플레이 버튼, 클릭 토글 재생/일시정지).
+2. `InteractiveLocationMagnifier.tsx` (`location_magnifier`): 2.5배 줌 렌즈 + 360° 회전 텍스트 배지.
+3. `AdvancedMediaCarousel.tsx` (`advanced_media_carousel`): 실시간 프로그레스 바 연동 미디어 캐러셀.
+4. `AdvancedContentCarousel.tsx` (`advanced_content_carousel`): 2컬럼 제품 쇼케이스 캐러셀.
+5. `HeroImageSlider.tsx` (`hero_image_slider` / `hero_split_slider`): 페이드 히어로 이미지 회전기.
+6. `UniversalVideoModal.tsx`: 16:9 고화질 비디오 팝업 모달.
+7. `VideoCardGrid.tsx` (`video_grid`): 동영상 카드 갤러리 그리드.
+8. `InteractiveAccordion.tsx` (`faq_accordion`): 부드러운 높이 애니메이션 FAQ 아코디언.
+9. `InfiniteLogoMarquee.tsx` (`logo_marquee`): 360° 무한 롤링 로고 마퀴.
+10. `InteractiveTabs.tsx` (`category_tabs`): 메뉴/카테고리 인터랙티브 탭.
+11. `AnimatedCounter.tsx` (`animated_counter`): 뷰포트 도달 시 자동 상승 숫자 카운터.
+12. `TestimonialCarousel.tsx` (`testimonial_carousel`): 별점 후기 캐러셀.
+13. `BeforeAfterSlider.tsx` (`before_after_slider`): 전후 비교 슬라이더.
+14. `PricingTable.tsx` (`pricing_table`): 요금제 비교표.
+15. `LocationMapCard.tsx` (`location_map`): 매장/오피스 지도 안내 카드.
+16. `SmartphoneMockup.tsx` (`app_download`): 3.5초 롤링 모바일 앱 프레임.
+17. `DynamicConsultationForm.tsx` (`consultation_form`): 원클릭 견적/상담 신청 폼.
+
+

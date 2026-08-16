@@ -350,7 +350,6 @@ export async function GET(req: NextRequest) {
                   const vB = Number(b.statistics?.viewCount || b.viewCount || 0);
                   return vB - vA;
                 });
-                console.log(`Daily Bundle Cache Hit: Serving ${country} all categories (${combined.length} videos) for date ${date} from DB.`);
                 const videoIds = combined.map((v) => v.id).filter(Boolean);
                 let analyzedVideoIds: string[] = [];
                 if (videoIds.length > 0) {
@@ -457,7 +456,6 @@ export async function GET(req: NextRequest) {
             }
 
             if (targetVideos.length > 0) {
-              console.log(`Daily Bundle Cache Hit: Serving ${country} / ${categoryId} for date ${date} from DB.`);
               const videoIds = targetVideos.map((v) => v.id).filter(Boolean);
               let analyzedVideoIds: string[] = [];
               if (videoIds.length > 0) {
@@ -491,8 +489,6 @@ export async function GET(req: NextRequest) {
             .maybeSingle();
 
           if (!cacheError && cachedRow && cachedRow.videos_data && Array.isArray(cachedRow.videos_data) && cachedRow.videos_data.length > 0) {
-            console.log(`Cache Hit: Serving trending category ${categoryId} for date ${date} from DB.`);
-            
             const videoIds = (cachedRow.videos_data as any[]).map((v) => v.id).filter(Boolean);
             let analyzedVideoIds: string[] = [];
             if (videoIds.length > 0) {

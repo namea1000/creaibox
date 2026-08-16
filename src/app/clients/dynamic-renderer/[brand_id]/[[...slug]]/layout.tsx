@@ -110,14 +110,14 @@ export default async function DynamicRendererLayout({ children, params }: Layout
   } as React.CSSProperties;
 
   return (
-    <div className="flex flex-col min-h-screen text-slate-900 bg-white" style={containerStyle}>
+    <div className="flex flex-col min-h-screen text-slate-900 bg-white" style={containerStyle} suppressHydrationWarning={true}>
       {/* Dynamic Font Loading */}
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       <link rel="stylesheet" href={fontUrl} />
 
       {/* Tailwind CDN for dynamically generated custom layouts (AI Migration) */}
-      {site.extra_configs?.is_custom_layout && (
+      {(site.extra_configs?.is_custom_layout || site.creation_source === "migration") && (
         <script src="https://cdn.tailwindcss.com"></script>
       )}
 
@@ -143,7 +143,7 @@ export default async function DynamicRendererLayout({ children, params }: Layout
         {children}
       </main>
       {site.extra_configs?.is_custom_layout && site.extra_configs?.footer_html ? (
-        <div dangerouslySetInnerHTML={{ __html: site.extra_configs.footer_html }} />
+        <div dangerouslySetInnerHTML={{ __html: site.extra_configs.footer_html }} suppressHydrationWarning={true} />
       ) : (
         <Footer
           companyName={site.company_name}

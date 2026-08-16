@@ -133,7 +133,6 @@ export async function GET(req: NextRequest) {
 
         while (attempts < 2) {
           try {
-            console.log(`Cron Popular Scraping: ${bundleKey} (Date: ${date})`);
             const enriched = await fetchPopularData(countryCode, categoryId, period);
 
             if (enriched.length > 0) {
@@ -150,8 +149,6 @@ export async function GET(req: NextRequest) {
 
               if (saveError) {
                 console.error(`Failed to save key ${bundleKey} to popular bundle row:`, saveError.message);
-              } else {
-                console.log(`Saved key ${bundleKey} immediately to single daily popular bundle DB row.`);
               }
             }
 

@@ -1,0 +1,24 @@
+# Vercel Deployment & Build Ignore List
+
+# Documentation & Guidelines (Vercel 배포 번들 제외)
+/docs/
+*.md
+Walkthrough.md
+AGENTS.md
+
+# Scratch & Local Development Scripts
+/scratch/
+/scripts/
+*.bak
+
+# Agent & AI IDE Configurations
+/.agents/
+/.gemini/
+/.vscode/
+
+# Local SQL DDL & Database Docs
+*.sql
+
+# Logs & Temporary Files
+*.log
+.DS_Store

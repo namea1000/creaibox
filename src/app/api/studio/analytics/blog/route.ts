@@ -93,12 +93,9 @@ export async function GET(req: NextRequest) {
       const timeDiff = Date.now() - new Date(cachedData.lastFetched).getTime();
       const isOldFakeCache = Array.isArray(cachedData.data?.channels) && cachedData.data.channels.some((c: any) => c.value === 45 || c.value === 42 || c.value === 35 || c.value === 58 || c.value === 50);
       if (timeDiff < CACHE_TTL_MS && !isOldFakeCache) {
-        console.log(`[GA4 Analytics Cache Hit] Returning cached statistics for ${brandId}`);
         return NextResponse.json(cachedData.data);
       }
     }
-
-    console.log(`[GA4 Analytics Cache Miss] Fetching live GA4 data from Google for ${brandId}`);
 
     // Determine target hostName for filtering
     const customDomainKey = `custom_domain_${brandId}`;

@@ -362,11 +362,20 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                   </label>
                 </div>
 
-                <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300 font-medium leading-relaxed flex items-start gap-2">
-                  <Sparkles size={16} className="text-amber-300 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold text-white">💡 이관 및 재발행 안내</span>: 기존 홈페이지를 닫고 완전히 옮겨오실 경우 원본 그대로 100% 정상 검색 노출됩니다.<br />
-                    기존 사이트/블로그를 병행 유지하시려면, 이관 완료 후 <span className="font-bold text-amber-300">'커스텀 사이트 관리 ➔ AI 모던 재구성'</span> 메뉴에서 원클릭으로 텍스트를 새로 다듬으실 수 있습니다.
+                <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300 font-medium leading-relaxed space-y-2.5">
+                  <div className="flex items-start gap-2.5">
+                    <Sparkles size={16} className="text-amber-300 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold text-white">🔒 100% 비공개 초안(Draft) & 검색엔진 노출 완전 차단</span>:<br />
+                      이관 직후 생성되는 모든 웹사이트는 <span className="font-bold text-amber-300">비공개 초안(Draft) 모드</span>로 안전하게 보관되며, 구글·네이버 등 <span className="font-bold text-amber-300">검색엔진 로봇 수집(noindex)이 100% 원천 차단</span>됩니다. 오직 고유 미리보기 주소(링크)를 직접 클릭해야만 접속할 수 있어 기존 운영 중인 원본 사이트에 아무런 영향을 주지 않습니다.
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2.5 pt-2 border-t border-indigo-500/15">
+                    <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold text-white">🚀 정식 라이브 배포 및 도메인 연결</span>:<br />
+                      미리보기로 디자인과 구조를 충분히 검토하신 후, 언제든 <span className="font-bold text-emerald-400">'정식 배포 / 도메인 지정'</span> 버튼을 통해 내 소유의 커스텀 도메인(예: mysite.com)을 연결하고 정식 라이브(검색 노출)로 전환하실 수 있습니다.
+                    </div>
                   </div>
                 </div>
               </div>

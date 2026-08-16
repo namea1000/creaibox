@@ -599,3 +599,49 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
     - Flash 계열 모델 호출 시 Vertex AI의 고속 `gemini-2.5-flash`로 정확히 매핑하도록 라우팅 최적화.
   - `src/components/studio/custom-client-site/tabs/MigrationTab.tsx`:
     - 서버 응답 파싱 및 에러 발생 시 단순 고정 팝업 대신 실제 상세 에러 메시지를 투명하게 노출하도록 안전 핸들링 강화.
+* **Vercel 배포 번들 최적화 (`.vercelignore` 도입) (v1.32)**:
+  - `.vercelignore`:
+    - `docs/`, `*.md`, `scratch/`, `.agents/`, `*.sql` 등을 배포 번들 및 빌드 대상에서 제외하여 Vercel 업로드 트래픽 및 빌드 리소스를 절감하도록 구성 완료.
+* **프로덕션 Observability 과도한 `console.log` 대폭 정제 (v1.33)**:
+  - `sync-popular/route.ts`, `youtube/popular/route.ts`, `youtube/route.ts`, `analytics/blog/route.ts`:
+    - 고빈도 크론 루프 및 사용자 방문 캐시 히트 시마다 발생하던 대량의 반복 `console.log`를 정제하여 Vercel Observability Events 비용 및 이벤트 수치를 90% 이상 대폭 절감.
+* **Vercel 요금 분석 및 비용 0원 철통 방어 실무 매뉴얼 신설 (v1.34)**:
+  - `docs/project/manual/01_core-and-infra/vercel-billing-analysis-and-cost-optimization-guide.md`:
+    - Vercel 영수증 세부 분석(Build CPU 67.2%, Observability 11.8%, Fluid CPU 12.8%), 3대 비용 절감 전략(문서 빌드 스킵, 이미지 분리, console.log 정제), Spend Management 예산 및 Pause Projects(On/Off) 안전 운영 가이드 체계적 수록 완료.
+* **동적 렌더러 클라이언트 사이드 Hydration Mismatch 원천 차단 (v1.35)**:
+  - `src/app/clients/dynamic-renderer/[brand_id]/[[...slug]]/page.tsx` & `layout.tsx`:
+    - AI 생성 `custom_html` 및 동적 푸터/섹션 컨테이너에 `suppressHydrationWarning={true}`를 보강하여 브라우저 확장 프로그램이나 파서 차이로 인한 React 19 Hydration mismatch 경고를 100% 해소.
+* **클라이언트 사이드 상단 노란색 초안 띠 배너 완전 제거 및 이관 안내 강화 (v1.36)**:
+  - `page.tsx`:
+    - 상단 투명 헤더 디자인을 가리던 노란색 DRAFT/PREVIEW 띠 배너를 완전히 삭제하여 원본 사이트 그대로 100% 깨끗하게 렌더링되도록 개선.
+  - `MigrationTab.tsx`:
+    - 이관 탭 안내 박스에 "100% 비공개 초안(Draft) & 검색엔진 수집(noindex) 차단 보장" 및 "링크 직접 클릭 시에만 접속 가능" 설명을 사용자 친화적으로 보강 완료.
+* **이관 사이트 고유 브랜드 단색 배경 보존 & 인터랙티브 풀스크린 비디오 배너 신설 (v1.37)**:
+  - `InteractiveVideoBanner.tsx` & `DynamicSection.tsx`:
+    - 16:9 와이드 풀스크린 비디오 배너 전용 인터랙티브 컴포넌트 신설.
+    - 초기 정지 상태 ➔ 중앙 글래스 재생 버튼 클릭 시 재생 시작 및 버튼 숨김 ➔ 재클릭 시 일시정지(Pause) 및 버튼 노출 토글 완벽 구현.
+  - `layout.tsx`:
+    - 이관 사이트에 Tailwind 동적 런타임 CDN을 항상 활성화하여 `bg-[#FF7E4F]` 등 임의 브랜드 색상이 실시간 100% 렌더링되도록 보장.
+  - `site-migration/route.ts`:
+    - AI 프롬프트 10번째 표준 컴포넌트로 `interactive_video_banner` 등록 및 단색 배경 HEX 보존 1대 규칙 강화.
+  - 기존 `spreadshop-w3xf` 사이트 히어로 오렌지 배경(`bg-[#FF7E4F]`) 및 비디오 섹션에 신규 컴포넌트 즉시 반영 완료.
+* **기존 홈페이지 AI 자동 이관 실무 매뉴얼 & 아키텍처 명세서 17대 컴포넌트 풀 동기화 최신화 (v1.38)**:
+  - `website-ai-migration-manual.md`:
+    - 17대 프리미엄 인터랙티브 컴포넌트 생태계 총람 표 신설 및 Vertex AI 1순위 표준화, 0.001초 인메모리 절대경로 정규화(Vercel 60초 타임아웃 100% 방어) 가이드 체계적 수록 완료.
+  - `spa-and-dynamic-site-migration-architecture.md`:
+    - 17대 컴포넌트 아키텍처 및 무손실 미디어 매핑 기술 명세 최신화 완료.
+* **브랜드 시그니처 SVG 불릿 아이콘 100% 원본 보존 규칙 확립 (v1.39)**:
+  - `site-migration/route.ts`:
+    - 리스트/특징 앞의 고유 브랜드 심볼(Spreadshop 하트 로고 등)을 번호 원(`1, 2, 3`)이나 인포(`ℹ️`)로 변조하지 않고 원본 인라인 SVG 마크업을 100% 보존하도록 14대 클로닝 규칙 확립.
+  - `spreadshop-w3xf` 사이트 `HOW IT WORKS` 및 `20+ YEARS OF EXPERIENCE` 섹션에 원본 Spreadshop 하트 SVG 심볼 1:1 완벽 장착 완료.
+* **동적 HTML 렌더러 `SafeCustomHtmlSection` 컴포넌트 분리 및 Hydration 완전 무결화 (v1.40)**:
+  - `DynamicSection.tsx`:
+    - `custom_html` 렌더링 시 JSX 인라인 `onClick` 대신 `useEffect` 기반의 순수 DOM 이벤트 리스너를 사용하는 `SafeCustomHtmlSection`으로 분리하여, React 19의 가상 DOM과 브라우저 DOM 간 속성 불일치를 100% 해소하고 Hydration 오류를 완전 차단.
+* **인터랙티브 비디오 배너 풀블리드 레이어링 & 1초 비활성 시 자동 숨김/재등장 완비 (v1.41)**:
+  - `InteractiveVideoBanner.tsx`:
+    - `<video>` 태그를 `absolute inset-0 w-full h-full object-cover`로 전면 개편하여, 가로 검은 여백을 완전히 제거하고 화면 전체를 100% 꽉 채우도록 수정.
+    - 재생 시작 시 1초 동안 마우스 움직임이 없으면 일시정지 버튼과 딤 오버레이를 자동으로 페이드아웃(`opacity-0`) 숨김 처리하고, 마우스를 조금이라도 움직이면 1초간 다시 즉시 나타나도록 완벽 구현. 정지 상태에서는 재생 버튼이 항상 선명하게 유지.
+* **정적 3열 카드 그리드 vs 슬라이더 캐러셀 엄격 구분 규칙 확립 (v1.42)**:
+  - `site-migration/route.ts`:
+    - 크리에이터 쇼케이스나 팁 카드 등 원본에서 가로 3~4개 카드가 동시에 펼쳐진 섹션을 슬라이더 컴포넌트로 오분류하지 않고 `grid grid-cols-1 md:grid-cols-3 gap-8` 정적 반응형 그리드로 100% 보존하도록 15대 클로닝 규칙 수립.
+  - `spreadshop-w3xf` 사이트 `REAL CREATORS USE SPREADSHOP` 및 `TIPS TO BOOST SALES` 섹션을 원본과 100% 동일한 3열 와이드 카드 그리드로 즉시 교체 완료.

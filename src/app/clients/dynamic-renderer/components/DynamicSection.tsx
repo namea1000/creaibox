@@ -17,6 +17,7 @@ import PricingTable from "./PricingTable";
 import LocationMapCard from "./LocationMapCard";
 import VideoCardGrid from "./VideoCardGrid";
 import InteractiveLocationMagnifier from "./InteractiveLocationMagnifier";
+import InteractiveVideoBanner from "./InteractiveVideoBanner";
 
 interface SectionProps {
   siteId: string;
@@ -24,6 +25,55 @@ interface SectionProps {
   title: string;
   subtitle: string;
   contentData: any;
+}
+
+function SafeCustomHtmlSection({
+  html,
+  style
+}: {
+  html: string;
+  style?: React.CSSProperties;
+}) {
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const containerEl = target.closest("section, div");
+      if (containerEl) {
+        const video = containerEl.querySelector("video");
+        const btn = containerEl.querySelector("button, [aria-label*='Play'], [aria-label*='play']");
+        if (video && (target.closest("video") || target.closest("button") || target.closest(".absolute") || target.closest("section"))) {
+          if (video.paused) {
+            video.play().then(() => {
+              if (btn) (btn as HTMLElement).style.opacity = "0";
+            }).catch(() => {});
+          } else {
+            video.pause();
+            if (btn) (btn as HTMLElement).style.opacity = "1";
+          }
+        }
+      }
+    };
+
+    container.addEventListener("click", handleClick);
+    return () => {
+      container.removeEventListener("click", handleClick);
+    };
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      className="w-full"
+      style={style}
+      suppressHydrationWarning={true}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
 }
 
 export default function DynamicSection({
@@ -387,6 +437,20 @@ export default function DynamicSection({
       }
       // Fallback to custom_html if AI provided no slides
     }
+    case "interactive_video_banner":
+    case "video_banner":
+    case "fullscreen_video": {
+      return (
+        <InteractiveVideoBanner
+          videoUrl={contentData.videoUrl || contentData.video_url}
+          videoSources={contentData.videoSources || contentData.sources || []}
+          poster={contentData.poster || contentData.posterUrl}
+          title={title}
+          subtitle={subtitle}
+          aspectRatio={contentData.aspectRatio || "16/9"}
+        />
+      );
+    }
     // eslint-disable-next-line no-fallthrough
     case "custom_html": {
       let htmlToRender = contentData.html || "";
@@ -396,11 +460,9 @@ export default function DynamicSection({
       }
 
       return (
-        <div 
-          dangerouslySetInnerHTML={{ __html: htmlToRender }} 
-          className="w-full"
+        <SafeCustomHtmlSection 
+          html={htmlToRender}
           style={customBgStyle}
-          suppressHydrationWarning={true}
         />
       );
     }

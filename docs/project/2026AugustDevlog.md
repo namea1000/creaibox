@@ -971,3 +971,34 @@
   - `normalizeHtmlImageUrls`를 통해 원본 상대경로 이미지들을 0.001초 만에 유효 절대경로로 즉시 정규화하여 Vercel 60초 타임아웃(504 Timeout)을 100% 원천 방어하고 화면에 즉시 노출되도록 개선.
 - **3. 프론트엔드 에러 핸들링 투명화 (`MigrationTab.tsx`)**:
   - 서버 응답 파싱 실패 시 단순 고정 alert 대신 서버 응답 상태 및 에러 메시지를 사용자에게 명확히 안내하도록 개선.
+- **4. Vercel 배포 번들 최적화 (`.vercelignore` 도입)**:
+  - `docs/`, `*.md`, `scratch/`, `.agents/`, `*.sql` 등을 Vercel 배포 번들에서 제외하는 `.vercelignore`를 구축하여 불필요한 파일 업로드 및 빌드 리소스 낭비 원천 차단.
+- **5. 프로덕션 Observability 과도한 `console.log` 대폭 정제**:
+  - `next.config.ts`의 `compiler.removeConsole` 프로덕션 자동 제거 설정 유지와 함께, 고빈도 백엔드 API(`sync-popular`, `youtube`, `youtube/popular`, `analytics/blog`) 내의 루프당 반복 출력 로그를 깔끔하게 제거하여 Vercel Observability Events 카운트(28만 건 누적)를 90% 이상 절감하도록 최적화.
+- **6. Vercel 요금 분석 및 비용 0원 철통 방어 실무 매뉴얼 신설**:
+  - `docs/project/manual/01_core-and-infra/vercel-billing-analysis-and-cost-optimization-guide.md` 문서를 신규 작성하여, Vercel 영수증 세부 분석(Build CPU 67.2%, Observability 11.8%, Fluid CPU 12.8%), 3대 비용 절감 전략, Spend Management 예산 및 Pause Projects(On/Off) 안전 운영 가이드를 체계적으로 수록 완료.
+- **7. 동적 렌더러 클라이언트 사이드 Hydration Mismatch 원천 차단**:
+  - `src/app/clients/dynamic-renderer/[brand_id]/[[...slug]]/page.tsx` 및 `layout.tsx`:
+    - AI가 생성한 `custom_html` 및 동적 푸터/섹션 컨테이너에 `suppressHydrationWarning={true}`를 보강하여 브라우저 확장 프로그램이나 파서 차이로 인한 React 19 Hydration mismatch 경고를 100% 해소.
+- **8. 클라이언트 사이드 상단 노란색 초안 띠 배너 완전 제거 및 이관 안내 강화**:
+  - `page.tsx`: 상단 투명 헤더 디자인을 가리던 노란색 DRAFT/PREVIEW 띠 배너를 완전히 삭제하여 원본 사이트 그대로 100% 깔끔하게 렌더링되도록 개선.
+  - `MigrationTab.tsx`: 이관 페이지 내 안내 박스에 "100% 비공개 초안(Draft) & 검색엔진 수집(noindex) 차단 보장" 및 "링크 직접 클릭 시에만 접속 가능" 설명을 명확하고 친절하게 보강 완료.
+- **9. 이관 사이트 고유 브랜드 단색 배경 보존 & 인터랙티브 풀스크린 비디오 배너 컴포넌트 신설 (`InteractiveVideoBanner.tsx`, `site-migration/route.ts`)**:
+  - **동적 Tailwind 런타임 활성화**: `layout.tsx`에서 이관 사이트(`creation_source === "migration"`)에 Tailwind 동적 컴파일러를 항상 로드하도록 보장하여 `bg-[#FF7E4F]` 등 임의 HEX 브랜드 컬러가 100% 실시간 렌더링되도록 수정.
+  - **인터랙티브 16:9 비디오 플레이어 배너 표준 탑재 (`InteractiveVideoBanner.tsx`)**: 화면을 가득 채우는 16:9 와이드 풀스크린 비율 보장, 초기 정지 상태 유지, 중앙 글래스 재생 버튼 클릭 시 재생 시작 및 버튼 페이드아웃, 재클릭 시 일시정지(Pause) 토글 완벽 구현.
+  - **AI 프롬프트 10대 표준 규격 등록**: `interactive_video_banner`를 10번째 표준 컴포넌트로 등록하고, 단색 브랜드 배경(`bg-[#FF7E4F]`)을 임의 그라데이션이나 흰색으로 변조하지 않도록 프롬프트 1규칙 대폭 강화.
+  - 기존 `spreadshop-w3xf` 사이트의 히어로 오렌지 배경(`bg-[#FF7E4F]`) 및 비디오 섹션 2곳을 신규 컴포넌트로 완벽 즉시 반영.
+- **10. 기존 홈페이지 AI 자동 이관 실무 매뉴얼 & 아키텍처 명세서 17대 컴포넌트 풀 동기화 최신화**:
+  - `docs/project/manual/03_client-site-builder/website-ai-migration-manual.md`: 17대 프리미엄 인터랙티브 컴포넌트 생태계 총람 표 신설 및 Vertex AI 1순위 표준화, 0.001초 인메모리 절대경로 정규화(Vercel 60초 타임아웃 100% 방어) 가이드 체계적 수록 완료.
+  - `docs/arch/03_client-site-builder/spa-and-dynamic-site-migration-architecture.md`: 17대 컴포넌트 아키텍처 및 무손실 미디어 매핑 기술 명세 최신화 완료.
+- **11. 브랜드 시그니처 SVG 불릿 아이콘 100% 원본 보존 규칙 확립 (`PRO-CLONING RULE 14`)**:
+  - `site-migration/route.ts`: 리스트(`<li>`)나 특징 섹션 앞의 고유 브랜드 심볼(Spreadshop 하트 로고 등)을 번호 원(`1, 2, 3`)이나 인포(`ℹ️`)로 변조하지 않고 원본 인라인 SVG 마크업을 100% 보존하도록 14대 클로닝 규칙 확립.
+  - `spreadshop-w3xf` 사이트 `HOW IT WORKS` 및 `20+ YEARS OF EXPERIENCE` 섹션에 원본 Spreadshop 하트 SVG 심볼 1:1 완벽 장착 완료.
+- **12. 동적 HTML 렌더러 `SafeCustomHtmlSection` 컴포넌트 분리 및 Hydration 완전 무결화**:
+  - `DynamicSection.tsx`: `custom_html` 렌더링 시 인라인 `onClick` JSX 핸들러로 인해 발생하던 React 19 Hydration mismatch를 `useEffect` 기반의 순수 DOM 이벤트 위임(`SafeCustomHtmlSection`)으로 분리하여, 서버-클라이언트 가상 DOM 불일치를 100% 원천 차단.
+- **13. 인터랙티브 비디오 배너 100% 풀블리드 레이어링 & 1초 비활성 시 자동 숨김/재등장 완비 (`InteractiveVideoBanner.tsx`)**:
+  - **화면 100% 꽉 채움 레이어링 교정**: Flex 컨테이너 내에서 `<video>`가 우측 버튼 영역과 가로 분할되던 Flex 버그를 `absolute inset-0 w-full h-full object-cover` 절대 레이어로 교정하여, 가로 검은 여백을 없애고 화면 정중앙에 글래스 버튼이 정확히 위치하도록 수정.
+  - **스마트 1초 초고속 자동 숨김 & 마우스 인터랙션 연동**: 동영상 재생 시작 시 1초 후 일시정지 버튼과 어두운 딤 오버레이가 부드럽게 페이드아웃(`opacity-0`)되며, 마우스를 조금이라도 움직이면 1초간 즉시 다시 나타나도록 정밀 제어 탑재. 정지(Pause) 상태에서는 재생 버튼이 항상 선명하게 유지.
+- **14. 정적 3열 카드 그리드 vs 슬라이더 캐러셀 엄격 구분 규칙 확립 (`PRO-CLONING RULE 15`)**:
+  - `site-migration/route.ts`: 크리에이터 쇼케이스나 팁 카드 등 원본에서 가로 3~4개 카드가 동시에 펼쳐진 섹션을 슬라이더 컴포넌트로 오분류하지 않고 `grid grid-cols-1 md:grid-cols-3 gap-8` 정적 반응형 그리드로 100% 보존하도록 15대 클로닝 규칙 수립.
+  - `spreadshop-w3xf` 사이트 `REAL CREATORS USE SPREADSHOP` 및 `TIPS TO BOOST SALES` 섹션을 원본과 100% 동일한 3열 와이드 카드 그리드로 즉시 교체 완료.

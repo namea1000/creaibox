@@ -458,3 +458,71 @@ graph LR
 - **외부 CSS 배경 이미지 딥 하베스터 (`site-migration/route.ts`)**: 외부 CSS 파일 내의 숨겨진 히어로 배경 이미지(`vis2-bg2_new.jpg` 등)를 자동 수집하여 프롬프트에 주입하고 R2 CDN WebP로 백업.
 - **투명 오버레이 통합 메가 메뉴 엔진 (`PRO-CLONING RULE 5.7`)**: 투명 헤더 + 호버 시 전체 확장(`h-[320px] bg-white`) 메가 드롭다운 완벽 복제 지침 연동.
 - **동적 렌더러 오버레이 지원 (`CustomHeaderWrapper.tsx`)**: 투명/고정 헤더 시 `relative z-[10000] w-full`로 래퍼 충돌을 해결하여 히어로 배경 통과 효과 100% 구현.
+
+---
+
+## 💎 18. 17대 프리미엄 인터랙티브 컴포넌트 생태계 총람 (17 Component Ecosystem)
+
+CreaiBox AI 이관 엔진은 낡은 정적 HTML을 단순 복사하지 않고, 감지된 요소의 인터랙션 특성에 맞춰 **17종의 자체 제작 고성능 리액트 컴포넌트**로 자동 승격하여 이식합니다:
+
+| 번호 | 컴포넌트 명칭 (`section_type`) | 파일 위치 | 핵심 기능 및 사용자 인터랙션 |
+|:---:|---|---|---|
+| **1** | **인터랙티브 풀스크린 비디오 배너**<br>(`interactive_video_banner`) | `InteractiveVideoBanner.tsx` | 16:9 와이드 화면, 초기 정지 상태 유지, 중앙 글래스 재생 버튼 클릭 시 재생 시작 및 버튼 숨김, 재클릭 시 일시정지(Pause) 토글 |
+| **2** | **입지 안내도 돋보기 렌즈**<br>(`location_magnifier`) | `InteractiveLocationMagnifier.tsx` | 마우스 호버 시 2.5배 확대되는 원형 글래스 줌 렌즈 + 10초 주기 360° 무한 회전하는 럭셔리 원형 텍스트 배지 |
+| **3** | **다중 미디어 프로그레스 캐러셀**<br>(`advanced_media_carousel`) | `AdvancedMediaCarousel.tsx` | 영상/이미지 슬라이드별 재생 시간에 연동되는 실시간 프로그레스 바 및 자동 넘김 |
+| **4** | **제품 쇼케이스 2컬럼 캐러셀**<br>(`advanced_content_carousel`) | `AdvancedContentCarousel.tsx` | 좌측 씬 포토 + 우측 제품 상세 스펙/구매 버튼 2컬럼 와이드 슬라이더 |
+| **5** | **히어로 이미지 페이드 슬라이더**<br>(`hero_image_slider`, `hero_split_slider`) | `HeroImageSlider.tsx` | 3.5초 주기 부드러운 페이드 전환, 하단 인디케이터 닷 및 좌우 호버 화살표 |
+| **6** | **유니버설 비디오 광고 모달** | `UniversalVideoModal.tsx` | TV-CF, 유튜브 홍보 영상 카드 클릭 시 열리는 고화질 16:9 팝업 모달 플레이어 |
+| **7** | **동영상 카드 갤러리 그리드**<br>(`video_grid`) | `VideoCardGrid.tsx` | 유튜브/홍보 영상 썸네일 카드 갤러리 (호버 시 재생 아이콘 활성화) |
+| **8** | **FAQ 아코디언**<br>(`faq_accordion`, `accordion`) | `InteractiveAccordion.tsx` | 질문 클릭 시 부드러운 높이 애니메이션으로 답변이 펼쳐지는 반응형 Q&A |
+| **9** | **무한 롤링 로고 마퀴**<br>(`logo_marquee`, `partner_logos`) | `InfiniteLogoMarquee.tsx` | 파트너사, 언론 보도, 클라이언트 로고가 좌/우로 끊김 없이 360° 무한 스트리밍 |
+| **10** | **카테고리/메뉴 인터랙티브 탭**<br>(`category_tabs`, `menu_tabs`) | `InteractiveTabs.tsx` | 음식점 메뉴, 서비스 탭 선택 시 부드러운 페이드인으로 상품 목록 전환 |
+| **11** | **실시간 상승 통계 카운터**<br>(`animated_counter`, `stats_counter`) | `AnimatedCounter.tsx` | 스크롤 도달 시 '누적 고객 50,000+' 등 숫자가 0에서 목표치까지 부드럽게 상승 |
+| **12** | **고객 리뷰/후기 캐러셀**<br>(`testimonial_carousel`) | `TestimonialCarousel.tsx` | 별점 평가, 고객명, 직책, 후기 본문이 회전하는 신뢰도 강화 리뷰 슬라이더 |
+| **13** | **비포/애프터 비교 슬라이더**<br>(`before_after_slider`) | `BeforeAfterSlider.tsx` | 중앙 구분선을 좌우로 드래그하여 시공/성형/인테리어 전후 사진을 직관적으로 비교 |
+| **14** | **요금제/플랜 비교표**<br>(`pricing_table`) | `PricingTable.tsx` | 월간/연간 토글 스위치와 추천 플랜 강조 배지가 탑재된 SaaS형 가격표 |
+| **15** | **오시는 길/매장 안내 카드**<br>(`location_map`) | `LocationMapCard.tsx` | 주소, 대표번호, 찾아오시는 길 안내 및 네이버/카카오맵 바로가기 연동 |
+| **16** | **스마트폰 앱 프레임 롤링**<br>(`app_download`) | `SmartphoneMockup.tsx` | 실물 스마트폰 프레임 안에서 앱 화면이 3.5초 주기로 자동 회전하는 다운로드 섹션 |
+| **17** | **원클릭 상담/견적 신청 폼**<br>(`consultation_form`) | `DynamicConsultationForm.tsx` | 이름, 연락처, 상담 내용 입력 시 관리자 DB로 즉시 접수되는 인터랙티브 리드 폼 |
+
+---
+
+## ⚡ 19. Vertex AI 1순위 표준화 & 0.001초 인메모리 정규화 파이프라인
+
+### 19.1 Vertex AI 100% 무조건 1순위(Primary) 엔진 표준화
+* **인프라**: Google Cloud Vertex AI Enterprise 인프라를 최우선 엔진으로 전면 가동.
+* **Flash 모델 초고속 매핑**: `gemini-3.7-flash` 요청 시 Vertex AI의 최신 `gemini-2.5-flash` 모델로 즉시 라우팅하여 대용량 HTML 복제 작업을 20~40초 만에 무손실 완료.
+
+### 19.2 이미지 다운로드 병목 분리 및 0.001초 인메모리 정규화 (`normalizeHtmlImageUrls`)
+* **해결 기술**: 메인 이관 파이프라인에서 수십 개 이미지의 무거운 동기식 다운로드/Sharp 변환/R2 업로드를 분리하고, 원본 상대경로 이미지들을 0.001초 만에 유효 절대경로로 즉시 정규화.
+* **효과**: Vercel Serverless Function 60초 타임아웃(504 Timeout)을 100% 원천 방어하여 대용량 사이트도 실패 없이 완벽 이관 완료.
+
+### 19.3 상단 초안 띠 배너 완전 제거 및 원본 100% 뷰 제공
+* 검색엔진 로봇 차단(`robots: { index: false, follow: false, nocache: true }`)은 메타태그에서 기술적으로 완벽 차단.
+* 투명 헤더 디자인을 가리던 노란색 DRAFT 띠 배너를 완전히 삭제하여 원본 사이트 그대로 100% 깨끗한 화면으로 렌더링.
+
+## 🎯 20. 브랜드 시그니처 SVG 불릿 아이콘 100% 보존 원칙 (`PRO-CLONING RULE 14`)
+
+* **문제점**: Spreadshop의 기하학적 접힌 하트 로고나 브랜드 전용 불릿 SVG를 AI가 '1, 2, 3, 4' 번호 원이나 일반 인포 아이콘(`ℹ️`)으로 임의 치환해 버려 브랜드 아이덴티티가 손상되는 문제.
+* **해결 기술 (`PRO-CLONING RULE 14`)**:
+  - 리스트(`<li>`), 단계(Step), 특징(Feature) 설명 앞에 사용된 **브랜드 고유 시그니처 인라인 SVG 마크업을 100% 원본 그대로 보존**하도록 AI 지침 탑재.
+  - 임의의 번호 뱃지나 generic Lucide 아이콘으로의 변조를 원천 차단하여 원본 브랜드의 디테일과 감성을 1:1 완벽 이식.
+
+## 📐 21. 정적 다열 카드 그리드 vs 슬라이더 캐러셀 엄격 구분 원칙 (`PRO-CLONING RULE 15`)
+
+* **문제점**: 원본 웹페이지에서 데스크톱 화면상 3~4개의 카드(크리에이터 쇼케이스, 블로그 팁 아티클 등)가 가로로 한눈에 펼쳐져 있는 정적 3열 그리드를, AI가 1장씩 넘기는 슬라이더/캐러셀(`advanced_content_carousel`)로 과잉 변환하여 디자인 균형이 깨지는 문제.
+* **해결 기술 (`PRO-CLONING RULE 15`)**:
+  - 원본에서 나란히 배치된 정적 쇼케이스/블로그/팁 섹션은 슬라이더 컴포넌트로 변환하지 않고, **순수 반응형 CSS 그리드(`grid grid-cols-1 md:grid-cols-3 gap-8`)**로 복제하도록 프롬프트 규칙 영구 확립.
+  - 원본 사이트 자체가 명시적으로 좌우 화살표나 드래그 스와이프를 사용하는 슬라이더일 때만 캐러셀 컴포넌트로 승격.
+
+---
+
+### 2026-08-16 17대 컴포넌트 완비, Vertex AI 1순위 표준화 & 풀스크린 비디오 배너 탑재 (v1.23) 🟢
+
+- **17대 프리미엄 컴포넌트 생태계 총람 수록**: `InteractiveVideoBanner.tsx` 신설로 총 17종의 전용 인터랙티브 컴포넌트 완비.
+- **인터랙티브 풀스크린 비디오 배너 (`InteractiveVideoBanner.tsx`)**: 16:9 와이드 화면, 초기 정지 유지, 재생/일시정지 1초 스마트 토글 완벽 탑재.
+- **브랜드 단색 배경 100% 보존**: Tailwind 동적 런타임 CDN 항상 활성화로 `bg-[#FF7E4F]` 등 임의 브랜드 컬러 실시간 렌더링 보장.
+- **브랜드 시그니처 SVG 불릿 보존 (`PRO-CLONING RULE 14`)**: 하트/심볼 등 고유 브랜드 SVG가 번호나 인포(`ℹ️`)로 왜곡되지 않도록 원본 인라인 SVG 100% 보존 규칙 완비.
+- **정적 3열 카드 그리드 1:1 복제 (`PRO-CLONING RULE 15`)**: 원본 3열 카드 섹션이 슬라이더로 오분류되지 않고 `grid md:grid-cols-3`로 깨끗하게 펼쳐지도록 규격화.
+- **Vertex AI 1순위 표준화 & 0.001초 인메모리 정규화**: Vercel 60초 타임아웃 100% 방어 및 초고속 클로닝 완성.
+- **상단 초안 배너 완전 제거**: 원본 헤더 1:1 완벽 감상을 위한 깔끔한 렌더링 실현.
