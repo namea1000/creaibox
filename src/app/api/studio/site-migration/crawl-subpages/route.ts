@@ -14,63 +14,12 @@ const s3Client = new S3Client({
   },
 });
 
-async function processHtmlImagesWithR2(html: string, siteId: string, origin: string): Promise<string> {
+function normalizeHtmlImageUrls(html: string, origin: string): string {
   if (!html) return html;
-  
   let newHtml = html;
-  
-  // Convert relative image URLs and CSS urls to absolute using origin
   newHtml = newHtml.replace(/src=["'](\/[^"']+)["']/gi, `src="${origin}$1"`);
   newHtml = newHtml.replace(/url\(["']?(\/[^"')]*)["']?\)/gi, `url('${origin}$1')`);
-  newHtml = newHtml.replace(/src=["'](?!(?:http|data:)|\/)([^"']+\.(?:png|jpe?g|gif|svg|webp))["']/gi, `src="${origin}/$1"`);
-
-  const urlRegex = /https?:\/\/[^\s"'()]+/g;
-  const urls = newHtml.match(urlRegex) || [];
-  // Only target image-like URLs to avoid fetching unrelated links
-  const uniqueUrls = Array.from(new Set(urls)).filter(u => u.match(/\.(jpeg|jpg|gif|png|svg|webp)/i) || u.includes("images.unsplash.com") || u.includes("drive.google.com"));
-
-  const uploadPromises = uniqueUrls.map(async (url) => {
-    try {
-      const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
-      if (!res.ok) return;
-      const arrayBuffer = await res.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      
-      const fileName = url.split('/').pop()?.split('?')[0] || `img_${Date.now()}.jpg`;
-      const contentType = res.headers.get("content-type") || "image/jpeg";
-
-      let finalBuffer: any = buffer;
-      let finalContentType = contentType;
-      let finalFileName = fileName;
-      
-      // Convert to WebP using sharp if it's an image (and not SVG)
-      if (contentType.includes("image") && !contentType.includes("svg")) {
-        try {
-          finalBuffer = await sharp(buffer).webp({ quality: 80 }).toBuffer();
-          finalContentType = "image/webp";
-          finalFileName = fileName.replace(/\.[^/.]+$/, "") + ".webp";
-        } catch (err) {
-          console.warn(`Sharp WebP conversion failed for ${url}, falling back to original:`, err);
-        }
-      }
-      
-      const s3Key = `migrated-sites/${siteId}/${Date.now()}_${finalFileName}`;
-
-      await s3Client.send(new PutObjectCommand({
-        Bucket: process.env.R2_BUCKET_NAME || 'creaibox-assets',
-        Key: s3Key,
-        Body: finalBuffer as any,
-        ContentType: finalContentType,
-      }));
-
-      const newUrl = `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/${s3Key}`;
-      newHtml = newHtml.split(url).join(newUrl);
-    } catch (e) {
-      console.error(`Failed to upload ${url} to R2:`, e);
-    }
-  });
-
-  await Promise.all(uploadPromises);
+  newHtml = newHtml.replace(/src=["'](?!(?:https?:|data:)|\/)([^"']+\.(?:png|jpe?g|gif|svg|webp))["']/gi, `src="${origin}/$1"`);
   return newHtml;
 }
 
@@ -90,13 +39,12 @@ export async function POST(request: Request) {
              headers: { "User-Agent": "Mozilla/5.0" }
           });
           if (subRes.ok) {
-             const subHtml = await subRes.text();
-             const subCleanHtml = subHtml
-                .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-                .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
-                .replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, "")
-                .replace(/<!--[\s\S]*?-->/g, "");
-             return `\n\n--- SUBPAGE: ${link} ---\n${subCleanHtml.substring(0, 10000)}`;
+             const text = await subRes.text();
+             const clean = text
+               .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+               .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
+               .replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, "");
+             return `\n--- SUBPAGE: ${link} ---\n${clean.substring(0, 30000)}\n`;
           }
        } catch(e) { console.error("Subpage fetch error", e); }
        return "";
@@ -109,14 +57,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, message: "No HTML extracted" });
     }
 
-    const { GoogleGenerativeAI } = await import("@google/generative-ai");
-    const apiKey = process.env.GEMINI_API_KEY_1 || process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: "No API key" }, { status: 500 });
-    }
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-3.7-flash" });
+    const { generateContentWithVertexAI } = await import("@/lib/server/vertex-ai-gemini");
     
     const prompt = `
       You are an expert Frontend Developer and Designer. Your task is to extract content and HTML from the provided subpages and generate their UI clones.
@@ -145,8 +86,28 @@ export async function POST(request: Request) {
       ${subpagesContext}
     `;
 
-    const result = await model.generateContent(prompt);
-    let aiText = result.response.text().trim();
+    let aiText = "";
+    try {
+      aiText = await generateContentWithVertexAI({
+        prompt,
+        modelName: "gemini-3.7-flash",
+        responseMimeType: "application/json"
+      });
+      aiText = aiText.trim();
+    } catch (vertexErr: any) {
+      console.warn("[Crawl Subpages] Vertex AI fallback to SDK:", vertexErr);
+      const apiKey = process.env.GEMINI_API_KEY_1 || process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+      if (apiKey) {
+        const { GoogleGenerativeAI } = await import("@google/generative-ai");
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-3.7-flash" });
+        const result = await model.generateContent(prompt);
+        aiText = result.response.text().trim();
+      } else {
+        throw vertexErr;
+      }
+    }
+
     if (aiText.startsWith("```json")) {
       aiText = aiText.replace(/```json/g, "").replace(/```/g, "").trim();
     }
@@ -154,10 +115,10 @@ export async function POST(request: Request) {
     const parsedAi = JSON.parse(aiText);
     const aiSubpages = parsedAi.subpages || [];
     
-    // Download and replace external images with R2 CDN URLs
+    // Fast normalize image URLs
     for (let i = 0; i < aiSubpages.length; i++) {
       if (aiSubpages[i].html) {
-        aiSubpages[i].html = await processHtmlImagesWithR2(aiSubpages[i].html, siteId, targetOrigin);
+        aiSubpages[i].html = normalizeHtmlImageUrls(aiSubpages[i].html, targetOrigin);
       }
     }
 

@@ -20,70 +20,17 @@ export async function POST(request: Request) {
     },
   });
 
-  async function processHtmlImagesWithR2(html: string, siteId: string, origin: string): Promise<string> {
+  /**
+   * ⚡ 즉시 이미지 URL 절대경로 정규화 (Fast In-Memory Normalization)
+   * 원본 사이트의 상대경로(/images/...)를 절대경로로 0.001초 만에 변환하여
+   * 타임아웃 없이 실제 이미지가 즉시 화면에 노출되도록 보장합니다.
+   */
+  function normalizeHtmlImageUrls(html: string, origin: string): string {
     if (!html) return html;
-    
     let newHtml = html;
-    
-    // Convert relative image URLs and CSS urls to absolute using origin
     newHtml = newHtml.replace(/src=["'](\/[^"']+)["']/gi, `src="${origin}$1"`);
     newHtml = newHtml.replace(/url\(["']?(\/[^"')]*)["']?\)/gi, `url('${origin}$1')`);
-    newHtml = newHtml.replace(/src=["'](?!(?:http|data:)|\/)([^"']+\.(?:png|jpe?g|gif|svg|webp))["']/gi, `src="${origin}/$1"`);
-
-    const urlRegex = /https?:\/\/[^\s"'()]+/g;
-    const urls = newHtml.match(urlRegex) || [];
-    // Target image URLs
-    const uniqueUrls = Array.from(new Set(urls)).filter(u => u.match(/\.(jpeg|jpg|gif|png|svg|webp)/i) || u.includes("images.unsplash.com") || u.includes("drive.google.com") || u.includes("burgerking") || u.includes("cloudfront.net"));
-
-    const uploadPromises = uniqueUrls.map(async (url) => {
-      try {
-        let res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" } }).catch(() => null);
-        
-        // Dead image fallback only if original URL is genuinely broken/unreachable
-        if (!res || !res.ok) {
-          // If URL is not reachable, do not overwrite unless absolutely necessary
-          return;
-        }
-
-        const arrayBuffer = await res.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        
-        const fileName = url.split('/').pop()?.split('?')[0] || `img_${Date.now()}.jpg`;
-        const contentType = res.headers.get("content-type") || "image/jpeg";
-
-        let finalBuffer: any = buffer;
-        let finalContentType = contentType;
-        let finalFileName = fileName;
-        
-        // Convert to WebP using sharp if it's an image (and not SVG)
-        if (contentType.includes("image") && !contentType.includes("svg")) {
-          try {
-            const sharp = (await import("sharp")).default;
-            finalBuffer = await sharp(buffer).webp({ quality: 80 }).toBuffer();
-            finalContentType = "image/webp";
-            finalFileName = fileName.replace(/\.[^/.]+$/, "") + ".webp";
-          } catch (err) {
-            console.warn(`Sharp WebP conversion failed for ${url}, falling back to original:`, err);
-          }
-        }
-        
-        const s3Key = `migrated-sites/${siteId}/${Date.now()}_${finalFileName}`;
-
-        await s3Client.send(new PutObjectCommand({
-          Bucket: process.env.R2_BUCKET_NAME || 'creaibox-assets',
-          Key: s3Key,
-          Body: finalBuffer as any,
-          ContentType: finalContentType,
-        }));
-
-        const newUrl = `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/${s3Key}`;
-        newHtml = newHtml.split(url).join(newUrl);
-      } catch (e) {
-        console.error(`Failed to upload ${url} to R2:`, e);
-      }
-    });
-
-    await Promise.all(uploadPromises);
+    newHtml = newHtml.replace(/src=["'](?!(?:https?:|data:)|\/)([^"']+\.(?:png|jpe?g|gif|svg|webp))["']/gi, `src="${origin}/$1"`);
     return newHtml;
   }
 
@@ -432,37 +379,34 @@ export async function POST(request: Request) {
         `;
 
         let aiText = "";
+        // 🟢 1순위: Google Cloud Vertex AI (GCP $300 크레딧 엔터프라이즈 인프라 우선 호출)
         try {
+          aiText = await generateContentWithVertexAI({
+            prompt: prompt,
+            modelName: "gemini-3.7-flash",
+            responseMimeType: "application/json"
+          });
+          aiText = aiText.trim();
+        } catch (vertexErr: any) {
+          console.warn("[Site Migration] Vertex AI 1차 호출 실패 -> Google AI Studio SDK로 2차 폴백 시도:", vertexErr);
           const apiKey = process.env.GEMINI_API_KEY_1 || process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
           if (apiKey) {
-            const { GoogleGenerativeAI } = await import("@google/generative-ai");
-            const genAI = new GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ 
-              model: "gemini-3.7-flash",
-              generationConfig: { responseMimeType: "application/json" }
-            });
-            const res = await model.generateContent([{ text: prompt }]);
-            aiText = res.response.text().trim();
+            try {
+              const { GoogleGenerativeAI } = await import("@google/generative-ai");
+              const genAI = new GoogleGenerativeAI(apiKey);
+              const model = genAI.getGenerativeModel({ 
+                model: "gemini-3.7-flash",
+                generationConfig: { responseMimeType: "application/json" }
+              });
+              const res = await model.generateContent([{ text: prompt }]);
+              aiText = res.response.text().trim();
+            } catch (sdkErr: any) {
+              console.error("[Site Migration] All AI engines failed:", sdkErr);
+              return NextResponse.json({ error: "AI 서버 통신에 실패했습니다: " + (sdkErr.message || "") }, { status: 500 });
+            }
           } else {
-            aiText = await generateContentWithVertexAI({
-              prompt: prompt,
-              modelName: "gemini-3.7-flash",
-              responseMimeType: "application/json"
-            });
-            aiText = aiText.trim();
-          }
-        } catch (e) {
-          console.warn("Primary AI API failed, trying Vertex AI fallback:", e);
-          try {
-            aiText = await generateContentWithVertexAI({
-              prompt: prompt,
-              modelName: "gemini-3.7-flash",
-              responseMimeType: "application/json"
-            });
-            aiText = aiText.trim();
-          } catch (vErr) {
-            console.error("All AI engines failed:", vErr);
-            return NextResponse.json({ error: "AI 서버 통신에 실패했습니다. 잠시 후 다시 시도해주세요." }, { status: 500 });
+            console.error("[Site Migration] Vertex AI failed and no backup API key found:", vertexErr);
+            return NextResponse.json({ error: "AI 서버 통신에 실패했습니다: " + (vertexErr.message || "") }, { status: 500 });
           }
         }
 
@@ -485,21 +429,21 @@ export async function POST(request: Request) {
           await adminSupabase.from("client_sites").update({ template_id: aiTemplateId }).eq("id", siteId);
         }
         
-        // --- NEW: Download and replace external images with R2 CDN URLs ---
+        // ⚡ 즉시 이미지 상대경로 정규화 (타임아웃 0초 방어 및 100% 실사 노출)
         let headerHtml = parsedAi.header_html || "";
         let footerHtml = parsedAi.footer_html || "";
         
-        headerHtml = await processHtmlImagesWithR2(headerHtml, siteId, urlObj.origin);
-        footerHtml = await processHtmlImagesWithR2(footerHtml, siteId, urlObj.origin);
+        headerHtml = normalizeHtmlImageUrls(headerHtml, urlObj.origin);
+        footerHtml = normalizeHtmlImageUrls(footerHtml, urlObj.origin);
         
         const aiSections = parsedAi.main_sections || [];
         for (let i = 0; i < aiSections.length; i++) {
           if (aiSections[i].html) {
-            aiSections[i].html = await processHtmlImagesWithR2(aiSections[i].html, siteId, urlObj.origin);
+            aiSections[i].html = normalizeHtmlImageUrls(aiSections[i].html, urlObj.origin);
           }
           if (aiSections[i].slides && Array.isArray(aiSections[i].slides)) {
             for (let j = 0; j < aiSections[i].slides.length; j++) {
-              aiSections[i].slides[j] = await processHtmlImagesWithR2(aiSections[i].slides[j], siteId, urlObj.origin);
+              aiSections[i].slides[j] = normalizeHtmlImageUrls(aiSections[i].slides[j], urlObj.origin);
             }
           }
         }

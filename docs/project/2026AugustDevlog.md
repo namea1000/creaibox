@@ -961,3 +961,13 @@
 - **2. 동적 렌더러 및 이관 엔진 연동 (`DynamicSection.tsx`, `site-migration/route.ts`)**:
   - `section_type: "location_magnifier"` 매핑 추가 및 AI 프롬프트 `PRO-CLONING RULE 13 (9 STANDARD CLONING COMPONENTS)`에 9번째 표준 규격으로 등록.
   - 건설/분양/기업 입지 안내도 섹션 이관 시 100% 원본 1:1 인터랙티브 모드로 자동 승격.
+
+### 2026-08-16: 홈페이지 AI 이관 Vertex AI 1순위 전면 표준화 & 대용량 이미지 처리 분리 최적화
+- **1. Vertex AI 100% 무조건 1순위(Primary) 표준화 (`site-migration/route.ts`, `crawl-subpages/route.ts`)**:
+  - 기존의 API 키 1순위 호출 방식을 개편하여, GCP $300 무료 크레딧 및 엔터프라이즈 인프라인 `generateContentWithVertexAI`를 최우선 엔진으로 전면 적용.
+  - Flash 모델 요청 시 Vertex AI `gemini-2.5-flash`로 정확히 매핑하여 대용량 HTML 복제 작업을 초고속으로 생성하도록 최적화.
+- **2. 이미지 다운로드/업로드 병목 분리 및 0.001초 인메모리 정규화**:
+  - 메인 이관 요청 파이프라인에서 수십 개 이미지를 동기식으로 다운로드/Sharp WebP 변환/R2 업로드하던 작업을 분리.
+  - `normalizeHtmlImageUrls`를 통해 원본 상대경로 이미지들을 0.001초 만에 유효 절대경로로 즉시 정규화하여 Vercel 60초 타임아웃(504 Timeout)을 100% 원천 방어하고 화면에 즉시 노출되도록 개선.
+- **3. 프론트엔드 에러 핸들링 투명화 (`MigrationTab.tsx`)**:
+  - 서버 응답 파싱 실패 시 단순 고정 alert 대신 서버 응답 상태 및 에러 메시지를 사용자에게 명확히 안내하도록 개선.

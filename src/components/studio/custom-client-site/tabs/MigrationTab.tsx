@@ -187,9 +187,9 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ targetUrl: migrationUrl, depth: migrationDepth, scanReport: scanReport }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({ error: `서버 응답 오류 (HTTP ${res.status})` }));
 
-      if (res.ok) {
+      if (res.ok && data?.success) {
         if (data.data?.pendingSubpages && data.data.pendingSubpages.length > 0) {
            const subpages = data.data.pendingSubpages as string[];
            const siteId = data.data.siteId;
@@ -218,10 +218,10 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
         setMigrationResult(data.data);
         fetchHistory(); // Refresh history list
       } else {
-        alert(data.error || "홈페이지 이관 실패");
+        alert(data?.error || `홈페이지 이관에 실패했습니다. (코드: ${res.status})`);
       }
-    } catch {
-      alert("홈페이지 AI 이관 중 오류가 발생했습니다.");
+    } catch (err: any) {
+      alert(`홈페이지 AI 이관 중 오류가 발생했습니다: ${err?.message || "네트워크 상태 확인"}`);
     } finally {
       setIsMigrating(false);
       setMassiveProgress(null);

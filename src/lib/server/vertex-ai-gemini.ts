@@ -81,12 +81,16 @@ export async function generateContentWithVertexAI({
 
   const requestedModel = modelName || "gemini-2.5-pro";
 
-  // Build model candidates: requested model first (e.g. gemini-2.5-pro), then active Vertex AI fallbacks
+  const isFlashRequested = requestedModel.toLowerCase().includes("flash");
+  const defaultFallback = isFlashRequested ? "gemini-2.5-flash" : "gemini-2.5-pro";
+  const secondaryFallback = isFlashRequested ? "gemini-2.5-pro" : "gemini-2.5-flash";
+
+  // Build model candidates: requested model first, then active Vertex AI fallbacks
   const modelCandidates = Array.from(
     new Set([
       requestedModel,
-      "gemini-2.5-pro",
-      "gemini-2.5-flash",
+      defaultFallback,
+      secondaryFallback,
     ])
   );
 
@@ -133,8 +137,13 @@ export async function generateContentWithVertexAI({
     process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
   for (const targetModel of modelCandidates) {
-    // Map targetModel to valid publisher model ID for Vertex AI (default to gemini-2.5-pro)
-    const vertexModel = targetModel.startsWith("gemini-3") ? "gemini-2.5-pro" : targetModel;
+    // Map targetModel to valid publisher model ID for Vertex AI (Flash -> gemini-2.5-flash, Pro -> gemini-2.5-pro)
+    let vertexModel = targetModel;
+    if (targetModel.toLowerCase().includes("flash")) {
+      vertexModel = "gemini-2.5-flash";
+    } else if (targetModel.startsWith("gemini-3") || targetModel.toLowerCase().includes("pro")) {
+      vertexModel = "gemini-2.5-pro";
+    }
 
     const endpoints: Array<{ url: string; headers: Record<string, string>; isVertex: boolean }> = [
       // 1순위: GCP $300불 크레딧 전용 Vertex AI Service Account OAuth 엔드포인트

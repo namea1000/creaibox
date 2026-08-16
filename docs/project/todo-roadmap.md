@@ -244,6 +244,12 @@ CreaiBox 브랜드 ID(`{brand_id}.creaibox.com`) 예약어/블랙리스트 Egres
 - [X] **원고 본문 1번째 이미지 썸네일 무인 자동 추출 & `generated_images` 100% 동기화 엔진 구축**
   - [`auto-extract-thumbnail.ts`](<file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/auto-extract-thumbnail.ts>) 백엔드 헬퍼 모듈 구축 및 [`fill_missing_thumbnails.js`](<file:///Users/a1234/Local%20Sites/creaibox/scratch/fill_missing_thumbnails.js>) 배치 스크립트로 기존 124개 원고 썸네일 100% 동기화 완료.
   - 목록 쿼리 본문(`content`) 생략을 통한 Supabase DB Egress 비용 0원 방어, 0.01초 속도 및 썸네일 100% 노출 보장 완료.
+- [X] **블로그 원고 관리 목록 400 Bad Request 쿼리 에러 긴급 복구 (`parent_id` 제거)**
+  - `fetchCreaiboxManuscripts` select 목록에서 DB 미존재 컬럼 `parent_id` 제거하여 204개 전체 원고 조회 완벽 복구 완료.
+- [X] **원고 편집 페이지 무한 재귀 호출 루프 방어 & 최고 관리자(`ADMIN`) 전역 상세 조회 구축**
+  - `directFetchAttempted` 락으로 브라우저 프리징 100% 차단 및 관리자 권한 타 계정 원고 조회/수정 지원 완료.
+- [X] **공식 블로그 메인 레이아웃 템플릿(Card Grid / List / News) 동적 엔진 구축**
+  - `src/app/blog/page.tsx`에 `blog_template` 연동하여 `Card Grid` 2열 격자 카드, `List Feed`, `News Flow` 실시간 테마 변경 완벽 구현.
 
 ---
 

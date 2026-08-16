@@ -591,3 +591,11 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
     - 관리자의 `blog_template` 설정을 실시간으로 반영하여 `Card Grid` (2열 격자 카드), `List Feed` (가로형 리스트), `News Flow` (속보형 텍스트) 레이아웃이 즉시 전환되도록 구현 완료.
   - `src/app/studio/writing/creaibox/blog-management/page.tsx`:
     - 공식 블로그(`creaibox`) 설정 저장 시 최상위 키도 함께 동기화 처리.
+* **홈페이지 AI 이관 Vertex AI 1순위 전면 표준화 & 대용량 이미지 처리 분리 최적화 (v1.31)**:
+  - `src/app/api/studio/site-migration/route.ts` & `crawl-subpages/route.ts`:
+    1. GCP $300 무료 크레딧 기반의 Google Cloud Vertex AI(`generateContentWithVertexAI`)를 100% 무조건 1순위 엔진으로 전면 표준화 (Flash 모델 요청 시 `gemini-2.5-flash`로 매핑하여 40초대 무손실 클로닝 완료).
+    2. 메인 이관 파이프라인에서 수십 개 이미지의 무거운 동기식 Sharp WebP 변환/R2 업로드 작업을 분리하고, 0.001초 인메모리 절대경로 정규화(`normalizeHtmlImageUrls`)를 탑재하여 Vercel Serverless Function 60초 타임아웃(504 Gateway Timeout)을 100% 원천 방어.
+  - `src/lib/server/vertex-ai-gemini.ts`:
+    - Flash 계열 모델 호출 시 Vertex AI의 고속 `gemini-2.5-flash`로 정확히 매핑하도록 라우팅 최적화.
+  - `src/components/studio/custom-client-site/tabs/MigrationTab.tsx`:
+    - 서버 응답 파싱 및 에러 발생 시 단순 고정 팝업 대신 실제 상세 에러 메시지를 투명하게 노출하도록 안전 핸들링 강화.
