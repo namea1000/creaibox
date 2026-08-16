@@ -142,3 +142,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   4. **노코드 웹 & 트렌드 (51~70번)**: Framer/Webflow 비교, 코딩 없는 1시간 반응형 홈페이지 제작 가이드, 도메인/SSL/GA4 설정 실무.
   5. **AI 마케팅 & 글쓰기 (71~90번)**: 챗GPT/클로드 글쓰기 저품질 회피 팁, 구글 서치콘솔 검색 최적화, 롱테일 키워드 랭킹 공략법.
   6. **AI 최신 동향 (91~100번)**: LLM/멀티모달 트렌드, 온디바이스 NPU 전망, AI 스타트업 창업 실패 패턴 극복 비전.
+
+---
+
+## 8. 🏆 한국 검색 시장 '한글 URL(Canonical)' 최적화 표준 매뉴얼
+
+한국 검색엔진(네이버, 구글 코리아)에서의 클릭률(CTR) 극대화 및 한글 슬러그 표준화에 대한 상세 교육/홍보 자료는 아래 전용 매뉴얼을 참조합니다.
+
+* **상세 매뉴얼**: [한국 검색 시장 한글 URL SEO 최적화 가이드](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/04_writing-and-blog/korean-slug-url-canonical-seo-guide.md)
+* **주요 핵심**:
+  - 네이버/구글 검색창 한글 키워드 볼드(Bold) 강조로 **클릭률 15~25% 상승**.
+  - `한글키워드-english-keyword` 하이브리드 조합을 통한 국내 1순위 노출 및 글로벌 번역봇 지원.
+  - Next.js 15 App Router `encodeURI(canonical)` 정규화 가드를 통한 0.01초 무장애 서빙.
