@@ -280,8 +280,9 @@ const fetchPublishedPostsList = cache(async () => {
     .select("id, title, slug, meta_description, focus_keyword, canonical_url, created_at")
     .eq("status", "published")
     .not("slug", "is", null)
+    .or("canonical_url.ilike.https://creaibox.com/blog/%,canonical_url.ilike.https://www.creaibox.com/blog/%,canonical_url.ilike.http://localhost%/blog/%")
     .order("created_at", { ascending: false })
-    .limit(20);
+    .limit(50);
 
   const publishedPostsRaw = (posts || []).filter((post) => post.slug && isMainSitePost(post.canonical_url));
   if (publishedPostsRaw.length === 0) return [];
@@ -326,8 +327,9 @@ export async function generateStaticParams() {
       .select("slug, canonical_url")
       .eq("status", "published")
       .not("slug", "is", null)
+      .or("canonical_url.ilike.https://creaibox.com/blog/%,canonical_url.ilike.https://www.creaibox.com/blog/%,canonical_url.ilike.http://localhost%/blog/%")
       .order("created_at", { ascending: false })
-      .limit(30);
+      .limit(50);
 
     return (posts || [])
       .filter((p) => p.slug && isMainSitePost(p.canonical_url))

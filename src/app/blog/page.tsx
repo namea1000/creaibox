@@ -75,8 +75,9 @@ const fetchBlogData = cache(async () => {
       .select("id, title, slug, meta_description, focus_keyword, seo_tags, canonical_url, created_at")
       .eq("status", "published")
       .not("slug", "is", null)
+      .or("canonical_url.ilike.https://creaibox.com/blog/%,canonical_url.ilike.https://www.creaibox.com/blog/%,canonical_url.ilike.http://localhost%/blog/%")
       .order("created_at", { ascending: false })
-      .limit(50),
+      .limit(100),
   ]);
 
   const primaryAdmin = adminsRes.data?.[0];
