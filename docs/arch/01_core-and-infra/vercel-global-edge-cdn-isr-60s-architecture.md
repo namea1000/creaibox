@@ -106,24 +106,40 @@ const fetchPublishedPost = cache(async (slug: string) => {
 });
 ```
 
-### 3.4. 비차단(Non-blocking) 비동기 조회수 트래커
+### 3.5. 비-ASCII(한글) URL Canonical 메타데이터 `encodeURI()` 인코딩 가드
 
-* SSR 렌더링 중 `views + 1` 쓰기(Write) 작업을 동기적으로 실행하면 DB Write Lock으로 인해 렌더링이 500ms 이상 지연됨.
-* 전용 `<PostViewTracker postId={id} />` 컴포넌트 및 `/api/blog/view` 엔드포인트를 구축하여 페이지가 브라우저에 뜬 후 백그라운드에서 조회수를 증가시킴.
+* **문제점**: Next.js 15 App Router는 `generateMetadata()`의 `alternates.canonical` 및 `openGraph.url` 필드에 영문(ASCII)이 아닌 비-ASCII(한글) URL이 전달되면, 메타데이터 직렬화 과정에서 **`Invalid canonical URL` 500 서버 크래시**를 발생시킴.
+* **해결책**: 모든 메타데이터 URL에 `encodeURI(canonical)` 가드를 의무 적용하여, 한글/특수문자 슬러그도 RFC 규격에 맞는 안전한 URL로 변환하여 0.01초 만에 즉시 서빙.
+
+```ts
+const rawCanonical = post.canonical_url || `https://creaibox.com/blog/${post.slug || slug}`;
+const canonical = encodeURI(rawCanonical);
+
+return {
+  title: `${post.title} | CreaiBox Blog`,
+  alternates: { canonical },
+  openGraph: { url: canonical, ... }
+};
+```
+
+### 3.6. 헤더 우측 인증 슬롯 고정 너비(`w-[180px] shrink-0`) 제로 레이아웃 시프트(Zero Layout Shift)
+
+* **문제점**: 페이지 이동 시 초기 로딩 스켈레톤(150px)과 로그아웃 상태 버튼(180px) 간의 30px 너비 차이로 인해 중앙 네비게이션 메뉴 전체가 좌우로 덜컹거리며 깜빡이는 CLS(Cumulative Layout Shift) 발생.
+* **해결책**: 우측 인증 영역을 `w-[180px] shrink-0` 고정 컨테이너로 감싸, 초기 스켈레톤·로그인 상태·로그아웃 상태 간 전환 시 0픽셀의 위치 변동도 없도록 완벽 고정.
 
 ---
 
 ## 4. 적용 대상 및 시스템 라우팅 맵
 
-| 라우트 경로                                    | 대상 서비스                       | ISR 설정값          | 최적화 기법                                                |
-| :--------------------------------------------- | :-------------------------------- | :------------------ | :--------------------------------------------------------- |
-| `src/app/blog/page.tsx`                      | 본사 공식 블로그 메인             | `revalidate = 60` | Edge CDN 캐시                                              |
-| `src/app/blog/[slug]/page.tsx`               | 본사 블로그 상세 포스트           | `revalidate = 60` | `generateStaticParams`, `cache()`, `PostViewTracker` |
-| `src/app/brand/[brand_id]/*`                 | 유저 서브도메인 블로그            | `revalidate = 60` | 쿠키 호출 제거, 클라이언트 테마 분리                       |
-| `src/app/clients/dynamic-renderer/*`         | AI 웹사이트 빌더 (홈/서브/블로그) | `revalidate = 60` | 섹션 정적 번들링, Edge 캐싱                                |
-| `src/app/client-site-builder/page.tsx`       | AI 웹사이트 빌더 홍보 랜딩        | `revalidate = 60` | SEO 메타데이터 + 엣지 캐시                                 |
-| `src/app/infocenter/[[...section]]/page.tsx` | 고객지원 인포센터                 | `revalidate = 60` | FAQ/공지 엣지 캐시                                         |
-| `src/app/clients/[client_id]/page.tsx`       | 마켓 템플릿 쇼핑 사이트           | `revalidate = 60` | 템플릿 프리뷰 엣지 캐시                                    |
+| 라우트 경로                                    | 대상 서비스                       | ISR 설정값          | 최적화 기법                                                               |
+| :--------------------------------------------- | :-------------------------------- | :------------------ | :------------------------------------------------------------------------ |
+| `src/app/blog/page.tsx`                      | 본사 공식 블로그 메인             | `revalidate = 60` | Edge CDN 캐시,`Promise.all` 병렬 쿼리                                   |
+| `src/app/blog/[slug]/page.tsx`               | 본사 블로그 상세 포스트           | `revalidate = 60` | `generateStaticParams`, `cache()`, `PostViewTracker`, `encodeURI` |
+| `src/app/brand/[brand_id]/*`                 | 유저 서브도메인 블로그            | `revalidate = 60` | 쿠키 호출 제거, 클라이언트 테마 분리,`encodeURI`                        |
+| `src/app/clients/dynamic-renderer/*`         | AI 웹사이트 빌더 (홈/서브/블로그) | `revalidate = 60` | 섹션 정적 번들링, Edge 캐싱                                               |
+| `src/app/client-site-builder/page.tsx`       | AI 웹사이트 빌더 홍보 랜딩        | `revalidate = 60` | SEO 메타데이터 + 엣지 캐시                                                |
+| `src/app/infocenter/[[...section]]/page.tsx` | 고객지원 인포센터                 | `revalidate = 60` | FAQ/공지 엣지 캐시                                                        |
+| `src/app/clients/[client_id]/page.tsx`       | 마켓 템플릿 쇼핑 사이트           | `revalidate = 60` | 템플릿 프리뷰 엣지 캐시                                                   |
 
 ---
 

@@ -81,8 +81,18 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPostData(slug);
+  const rawCanonical = post?.canonical_url || `https://creaibox.com/blog/${post?.slug || slug}`;
+  const canonical = encodeURI(rawCanonical);
+
   return {
     title: post?.title || "블로그 포스트",
+    alternates: {
+      canonical,
+    },
+    openGraph: {
+      title: post?.title || "블로그 포스트",
+      url: canonical,
+    },
   };
 }
 
@@ -130,6 +140,25 @@ await supabase.from("posts").update({ views: views + 1 }).eq("id", id);
 
 // ⭕ 좋은 예: 클라이언트 컴포넌트(<PostViewTracker />)에서 브라우저 로딩 후 백그라운드 1회 전송
 <PostViewTracker postId={post.id} />
+```
+
+### ❌ 금지 3: 비-ASCII(한글) Canonical URL을 `encodeURI()` 없이 전달
+```tsx
+// ❌ 나쁜 예: Next.js 15에서 한글 Canonical URL 직렬화 시 500 서버 에러(크래시) 발생!
+const canonical = `https://creaibox.com/blog/${slug}`; // '홈트레이닝-...' (한글 미인코딩)
+
+// ⭕ 좋은 예: 반드시 encodeURI()로 감싸 RFC 표준 URL로 안전하게 전달
+const canonical = encodeURI(`https://creaibox.com/blog/${slug}`);
+```
+
+### ❌ 금지 4: 헤더 인증 영역을 가변 너비로 방치하여 Layout Shift 유발
+```tsx
+// ❌ 나쁜 예: 스켈레톤(150px)과 로그인/가입 버튼(180px)의 너비 차이로 메뉴가 좌우로 덜컹거림
+<div className="h-10 w-[150px]" /> // 스켈레톤
+<div className="flex w-[180px]" /> // 로그인 버튼
+
+// ⭕ 좋은 예: 우측 슬롯을 고정 너비(w-[180px] shrink-0)로 완벽 고정하여 제로 레이아웃 시프트 보장
+<div className="w-[180px] flex items-center justify-end shrink-0">...</div>
 ```
 
 ---
