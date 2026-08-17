@@ -28,21 +28,15 @@ export default function SmartIntentLink({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleMouseEnter = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      if (typeof href === "string") {
-        router.prefetch(href);
-      } else if (href && href.pathname) {
-        router.prefetch(href.pathname);
-      }
-    }, hoverDelay);
+    if (typeof href === "string") {
+      router.prefetch(href);
+    } else if (href && href.pathname) {
+      router.prefetch(href.pathname);
+    }
   };
 
   const handleMouseLeave = () => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
+    // No-op since we don't use timer anymore
   };
 
   const handleTouchStart = () => {

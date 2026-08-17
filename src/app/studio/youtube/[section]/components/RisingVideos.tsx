@@ -142,11 +142,13 @@ function getKstTodayDateStr(): string {
 const CATEGORIES = [
   { label: "전체", id: "all" },
   { label: "음악/댄스/가수", id: "10" },
+  { label: "교육/키즈/동요", id: "27" },
   { label: "게임", id: "20" },
   { label: "엔터테인먼트/방송", id: "24" },
   { label: "코미디/유머", id: "23" },
   { label: "영화/만화/애니", id: "1" },
   { label: "음식/요리/뷰티", id: "26" },
+  { label: "여행/이벤트/명소", id: "19" },
   { label: "뉴스/정치/경제", id: "25" },
   { label: "취미/일상", id: "22" },
   { label: "IT/기술/컴퓨터", id: "28" },

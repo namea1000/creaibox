@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/utils/supabase/server";
 import PostClientWrapper from "../components/PostClientWrapper";
+import PostViewTracker from "@/components/blog/PostViewTracker";
 
 // 🌟 Vercel Global Edge CDN Incremental Static Regeneration (ISR 60s 광속 캐시)
 export const revalidate = 60;
@@ -310,13 +311,6 @@ const fetchPost = cache(async (brandId: string, slug: string) => {
 
   const primaryImg = (images || []).find((img) => img.is_primary) || (images || [])[0];
   post.thumbnailUrl = primaryImg ? primaryImg.image_url : null;
-
-  // Increment real-time DB view count (+1)
-  const currentViews = Number((post as any).views || 0);
-  void supabase
-    .from("writing_creaibox_posts")
-    .update({ views: currentViews + 1 })
-    .eq("id", post.id);
 
   return {
     post,
@@ -736,6 +730,7 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
         </>
       )}
 
+      <PostViewTracker postId={post.id} />
       <PostClientWrapper
         brand_id={brand_id}
         profile={profile}

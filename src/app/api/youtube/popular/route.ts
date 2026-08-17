@@ -61,7 +61,7 @@ export function getKstTodayDate(): string {
   return kstDate.toISOString().split("T")[0];
 }
 
-export function isShortsDuration(durationStr?: string | null): boolean {
+export function isShortsDuration(durationStr?: string | null, item?: any): boolean {
   if (!durationStr) return false;
   const match = durationStr.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
   if (!match) return false;
@@ -69,19 +69,101 @@ export function isShortsDuration(durationStr?: string | null): boolean {
   const minutes = parseInt(match[2] || "0", 10);
   const seconds = parseInt(match[3] || "0", 10);
   const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-  return totalSeconds > 0 && totalSeconds <= 60;
+  
+  if (totalSeconds <= 0 || totalSeconds > 180) return false;
+
+  const title = (item?.snippet?.title || item?.title || "").toLowerCase();
+  const description = (item?.snippet?.description || item?.description || "").toLowerCase();
+  const channel = (item?.snippet?.channelTitle || item?.channelTitle || "").toLowerCase();
+
+  const hasShortsKeyword = 
+    title.includes("#shorts") || 
+    title.includes("#short") || 
+    title.includes("shorts") || 
+    title.includes("쇼츠") || 
+    title.includes("#숏") ||
+    title.includes("#shortvideo") ||
+    title.includes("#shortsfeed") ||
+    description.includes("#shorts") || 
+    description.includes("#short") || 
+    description.includes("쇼츠");
+
+  const isTopicChannel = channel.includes("- topic") || channel.includes("- 주제") || channel.endsWith("topic") || channel.endsWith("주제");
+  const isOfficialArtist = (channel.includes("official") || channel.includes("공식")) && (title.includes(" - ") || title.includes(" – "));
+  
+  const isMv = 
+    title.includes("music video") ||
+    title.includes("official video") ||
+    title.includes("video oficial") ||
+    title.includes("clip oficial") ||
+    title.includes("lyric video") ||
+    title.includes("official audio") ||
+    title.includes("official song") ||
+    title.includes("official track") ||
+    title.includes("song") ||
+    title.includes(" mv") || 
+    title.includes("mv ") || 
+    title.includes("[mv]") || 
+    title.includes("(mv)") || 
+    title.includes("'mv'") || 
+    title.includes('"mv"') || 
+    title.endsWith("mv") ||
+    title.includes("m/v") || 
+    title.includes("뮤직비디오") || 
+    title.includes("뮤비") || 
+    title.includes("visualizer") || 
+    title.includes("audio") || 
+    title.includes("음원");
+
+  const isAnimationOrCinematic = 
+    title.includes("animation") || 
+    title.includes("animated") || 
+    title.includes("cinematic") || 
+    title.includes("애니메이션") || 
+    title.includes("origin story") || 
+    title.includes("short film") || 
+    title.includes("단편영화");
+
+  const isNewsOrBroadcast = 
+    title.includes("news") || 
+    title.includes("뉴스") || 
+    title.includes("interview") || 
+    title.includes("인터뷰") || 
+    channel.includes("news") || 
+    channel.includes("뉴스") || 
+    title.includes("episode") || 
+    title.includes("ep.") || 
+    title.includes("에피소드");
+
+  const isLiveOrStage = 
+    title.includes("live clip") || 
+    title.includes("라이브") || 
+    title.includes("on the spot") || 
+    title.includes("온더스팟") || 
+    title.includes("stage") || 
+    title.includes("스페셜") || 
+    title.includes("special clip") || 
+    title.includes("performance video") || 
+    title.includes("퍼포먼스");
+
+  const isTeaserOrTrailer = 
+    title.includes("예고편") || 
+    title.includes("teaser") || 
+    title.includes("trailer") || 
+    title.includes("풀버전") || 
+    title.includes("full ver") || 
+    title.includes("풀영상") || 
+    title.includes("하이라이트") || 
+    title.includes("highlight");
+
+  const isExplicitLongform = (isTopicChannel || isOfficialArtist || isMv || isAnimationOrCinematic || isNewsOrBroadcast || isLiveOrStage || isTeaserOrTrailer) && !hasShortsKeyword;
+
+  if (isExplicitLongform) return false;
+  return true;
 }
 
 function getPublishedAfterISO(period: string): string | null {
   const nowMs = Date.now();
-  if (period === "1d") {
-    const d = new Date(nowMs - 24 * 60 * 60 * 1000);
-    return d.toISOString();
-  }
-  if (period === "7d") {
-    const d = new Date(nowMs - 7 * 24 * 60 * 60 * 1000);
-    return d.toISOString();
-  }
   if (period === "30d") {
     const d = new Date(nowMs - 30 * 24 * 60 * 60 * 1000);
     return d.toISOString();
@@ -94,13 +176,12 @@ export async function GET(req: NextRequest) {
   const type = searchParams.get("type");
   const country = searchParams.get("country") || "KR";
   const categoryId = searchParams.get("categoryId") || "all";
-  const period = searchParams.get("period") || "all_time"; // '7d', '30d', 'all_time'
+  const period = searchParams.get("period") || "all_time"; // 'all_time', '30d'
   const date = searchParams.get("date") || getKstTodayDate();
   const cacheOnly = searchParams.get("cacheOnly") === "true";
   const force = searchParams.get("force") === "true";
   const referer = req.headers.get("referer") || "https://creaibox.com/";
 
-  // 🚀 Fast Track 1: Return entire Daily Bundle for date pre-warming (0ms RAM Cache)
   if (type === "popular-bundle") {
     try {
       const row = await getCachedPopularBundle(date, force);
@@ -113,36 +194,53 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  const ALL_CORE_CAT_IDS = ["10", "27", "24", "20", "23", "1", "26", "19", "25", "22", "28", "15", "17", "2"];
   const bundleKey = `${country}_${categoryId}_${period}`;
 
-  // 1. Try reading from Supabase DB `youtube_popular_archive` Single Daily Bundle Row
   if (!force) {
     try {
       const cachedRow = await getCachedPopularBundle(date, force);
 
       if (cachedRow && cachedRow.videos_data && typeof cachedRow.videos_data === "object") {
         const bundleObj = cachedRow.videos_data as Record<string, any>;
-
-        // Extract all category lists for this country & period from DB bundle row
+        
         const categoriesBundle: Record<string, any[]> = {};
-        Object.entries(bundleObj).forEach(([k, list]) => {
-          if (Array.isArray(list)) {
-            if (k.startsWith(`${country}_`)) {
-              const parts = k.split("_");
-              const catId = parts[1]; // e.g. "all", "10", "20", "19"
-              const keyPeriod = parts[2] || "all_time";
-              if (keyPeriod === period || (!parts[2] && period === "all_time")) {
-                categoriesBundle[catId] = list;
-              }
-            } else if (k === "all" && country === "KR" && period === "all_time") {
-              categoriesBundle["all"] = list;
-            }
+        let hasCoreData = true;
+
+        ALL_CORE_CAT_IDS.forEach((cId) => {
+          const k = `${country}_${cId}_${period}`;
+          if (Array.isArray(bundleObj[k]) && bundleObj[k].length > 0) {
+            categoriesBundle[cId] = bundleObj[k];
+          } else {
+            hasCoreData = false;
           }
         });
 
-        const cachedVideos = categoriesBundle[categoryId] !== undefined ? categoriesBundle[categoryId] : (bundleObj[bundleKey] || []);
-        if (Array.isArray(cachedVideos) && cachedVideos.length > 0) {
-          const videoIds = cachedVideos.map((v: any) => v.id).filter(Boolean);
+        const allKey = `${country}_all_${period}`;
+        if (Array.isArray(bundleObj[allKey]) && bundleObj[allKey].length > 0) {
+          categoriesBundle["all"] = bundleObj[allKey];
+        } else if (hasCoreData) {
+          const allVideosMap = new Map<string, any>();
+          Object.values(categoriesBundle).forEach((list) => {
+            list.forEach((v) => {
+              if (v?.id && !allVideosMap.has(v.id)) {
+                allVideosMap.set(v.id, v);
+              }
+            });
+          });
+          const unified = Array.from(allVideosMap.values());
+          unified.sort((a, b) => {
+            const vA = parseInt(a.statistics?.viewCount || "0", 10);
+            const vB = parseInt(b.statistics?.viewCount || "0", 10);
+            return vB - vA;
+          });
+          categoriesBundle["all"] = unified.slice(0, 100);
+        }
+
+        const targetData = categoriesBundle[categoryId] || (categoryId === "all" ? categoriesBundle["all"] : null);
+
+        if (Array.isArray(targetData) && targetData.length > 0) {
+          const videoIds = targetData.map((v: any) => v.id).filter(Boolean);
           let analyzedVideoIds: string[] = [];
           if (videoIds.length > 0) {
             try {
@@ -157,7 +255,7 @@ export async function GET(req: NextRequest) {
           }
           return NextResponse.json({
             source: "supabase-db-popular-bundle",
-            data: cachedVideos,
+            data: targetData,
             categoriesBundle,
             analyzedVideoIds,
             servedDate: cachedRow.target_date || date
@@ -169,19 +267,11 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // 2. If DB Cache Miss and cacheOnly is true, return cacheMiss flag in ~50ms
-  if (cacheOnly && !force) {
-    return NextResponse.json({ cacheMiss: true });
-  }
-
-  // 2b. If requested date is in the past and key missed, do NOT fetch live API to overwrite past date!
   const todayStr = getKstTodayDate();
   if (date < todayStr && !force) {
-    console.log(`Past date ${date} requested for ${bundleKey} but no DB snapshot exists. Returning empty past date result.`);
     return NextResponse.json({ source: "past-date-miss", data: [], analyzedVideoIds: [] });
   }
 
-  // 3. Live Fetch via YouTube API Vault Key
   let apiKey = "";
   let vaultId: number | null = null;
 
@@ -225,76 +315,110 @@ export async function GET(req: NextRequest) {
   try {
     const safeReferer = (referer && referer.trim() !== "") ? referer : "https://creaibox.com/";
 
-    // 🚀 Helper to live-fetch 1 category for country
     async function liveFetchCategoryData(catId: string): Promise<any[]> {
-      const targetRegionParam = (country === "GLOBAL" || country === "GLOBAL_ALL") ? "" : `&regionCode=${country}`;
-      const catParam = catId === "all" ? "" : `&videoCategoryId=${catId}`;
+      const isGlobal = country === "GLOBAL" || country === "GLOBAL_ALL";
+      const targetRegionParam = isGlobal ? "" : `&regionCode=${country}`;
+      const catParam = `&videoCategoryId=${catId}`;
       const publishedAfter = getPublishedAfterISO(period);
-      let items: any[] = [];
+      const pubParam = publishedAfter ? `&publishedAfter=${encodeURIComponent(publishedAfter)}` : "";
 
-      if (!publishedAfter) {
-        let popUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular${targetRegionParam}${catParam}&maxResults=50&key=${apiKey}`;
+      let videoIdSet = new Set<string>();
+
+      let qLong = "";
+      let qShort = "";
+      if (period === "all_time") {
+        if (catId === "27") {
+          qLong = isGlobal ? "baby shark|cocomelon|kids song|nursery rhymes|education" : "아기상어|동요|코코멜론|키즈|어린이";
+          qShort = isGlobal ? "kids #shorts|nursery rhymes #shorts" : "키즈 쇼츠|동요 쇼츠";
+        } else if (catId === "10") {
+          qLong = isGlobal ? "official video|music video|mv|gangnam style|song" : "MV|뮤직비디오|싸이|강남스타일|BTS|블랙핑크|노래";
+          qShort = "#shorts|shorts";
+        } else if (catId === "19") {
+          qLong = isGlobal ? "travel guide|explore|tour|visit" : "여행|투어|관광|명소";
+          qShort = "#shorts|shorts";
+        } else if (isGlobal) {
+          qLong = "official video|music video|mv|song";
+          qShort = "#shorts|shorts";
+        } else if (country === "KR") {
+          qLong = "MV|뮤직비디오|공식|노래";
+          qShort = "#shorts|쇼츠";
+        } else {
+          qLong = "official|music|video|song";
+          qShort = "#shorts|shorts";
+        }
+      }
+
+      const qLongParam = qLong ? `&q=${encodeURIComponent(qLong)}` : "";
+      const qShortParam = qShort ? `&q=${encodeURIComponent(qShort)}` : "";
+
+      try {
+        const sLongUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&order=viewCount&videoDuration=medium${targetRegionParam}${catParam}${pubParam}${qLongParam}&maxResults=50&key=${apiKey}`;
+        let res = await fetch(sLongUrl, { headers: { Referer: safeReferer } });
+        if (!res.ok) res = await fetch(sLongUrl);
+        if (res.ok) {
+          const sData = await res.json();
+          (sData.items || []).forEach((item: any) => {
+            const vid = item.id?.videoId || item.id;
+            if (typeof vid === "string" && vid.length === 11) videoIdSet.add(vid);
+          });
+        }
+      } catch (e) {
+        console.error("Long-form search error:", e);
+      }
+
+      try {
+        const sShortUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&order=viewCount&videoDuration=short${targetRegionParam}${catParam}${pubParam}${qShortParam}&maxResults=50&key=${apiKey}`;
+        let res = await fetch(sShortUrl, { headers: { Referer: safeReferer } });
+        if (!res.ok) res = await fetch(sShortUrl);
+        if (res.ok) {
+          const sData = await res.json();
+          (sData.items || []).forEach((item: any) => {
+            const vid = item.id?.videoId || item.id;
+            if (typeof vid === "string" && vid.length === 11) videoIdSet.add(vid);
+          });
+        }
+      } catch (e) {
+        console.error("Shorts search error:", e);
+      }
+
+      if (videoIdSet.size === 0) {
         try {
+          const popUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&chart=mostPopular${targetRegionParam}${catParam}&maxResults=50&key=${apiKey}`;
           let pRes = await fetch(popUrl, { headers: { Referer: safeReferer } });
           if (!pRes.ok) pRes = await fetch(popUrl);
           if (pRes.ok) {
             const pData = await pRes.json();
-            items = pData.items || [];
-
-            // If "all" category, fetch Page 2 (items 51~100) for TOP 100
-            if (catId === "all" && pData.nextPageToken) {
-              const p2Url = `${popUrl}&pageToken=${pData.nextPageToken}`;
-              try {
-                let p2Res = await fetch(p2Url, { headers: { Referer: safeReferer } });
-                if (!p2Res.ok) p2Res = await fetch(p2Url);
-                if (p2Res.ok) {
-                  const p2Data = await p2Res.json();
-                  if (p2Data.items && Array.isArray(p2Data.items)) {
-                    items = [...items, ...p2Data.items];
-                  }
-                }
-              } catch (e) {}
-            }
+            (pData.items || []).forEach((item: any) => {
+              if (item?.id) videoIdSet.add(item.id);
+            });
           }
         } catch (e) {}
       }
 
-      if ((items.length === 0 && period !== "recent_all_time") || period === "all_time") {
-        let sUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&order=viewCount${targetRegionParam}${catParam}&maxResults=50&key=${apiKey}`;
-        if (publishedAfter) sUrl += `&publishedAfter=${encodeURIComponent(publishedAfter)}`;
-        if (period === "all_time" && (catId === "all" || catId === "10")) {
-          sUrl += `&q=${encodeURIComponent("official music video|gangnam|despacito|song|mv")}`;
-        }
+      const allIds = Array.from(videoIdSet);
+      if (allIds.length === 0) return [];
+
+      let items: any[] = [];
+      for (let i = 0; i < allIds.length; i += 50) {
+        const chunk = allIds.slice(i, i + 50).join(",");
+        const vUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&id=${chunk}&key=${apiKey}`;
         try {
-          let sRes = await fetch(sUrl, { headers: { Referer: safeReferer } });
-          if (!sRes.ok) sRes = await fetch(sUrl);
-          if (sRes.ok) {
-            const sData = await sRes.json();
-            const sItems = sData.items || [];
-            const vIds = sItems.map((si: any) => si.id?.videoId || si.id).filter((id: any) => typeof id === "string" && id.length === 11).join(",");
-            if (vIds) {
-              const vUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&id=${vIds}&key=${apiKey}`;
-              let vRes = await fetch(vUrl, { headers: { Referer: safeReferer } });
-              if (!vRes.ok) vRes = await fetch(vUrl);
-              if (vRes.ok) {
-                const vData = await vRes.json();
-                if (vData.items && Array.isArray(vData.items)) {
-                  const existingIds = new Set(items.map((it: any) => it.id));
-                  for (const hit of vData.items) {
-                    if (hit && hit.id && !existingIds.has(hit.id)) {
-                      items.push(hit);
-                    }
-                  }
-                }
-              }
+          let vRes = await fetch(vUrl, { headers: { Referer: safeReferer } });
+          if (!vRes.ok) vRes = await fetch(vUrl);
+          if (vRes.ok) {
+            const vData = await vRes.json();
+            if (vData.items && Array.isArray(vData.items)) {
+              items = [...items, ...vData.items];
             }
           }
-        } catch (e) {}
+        } catch (e) {
+          console.error("Videos.list batch fetch error:", e);
+        }
       }
 
       const enriched = items.map((item: any) => ({
         ...item,
-        isRealShorts: isShortsDuration(item.contentDetails?.duration),
+        isRealShorts: isShortsDuration(item.contentDetails?.duration, item),
       }));
 
       enriched.sort((a, b) => {
@@ -306,13 +430,9 @@ export async function GET(req: NextRequest) {
       return enriched;
     }
 
-    // 🚀 Execute live-fetch ONLY for the requested category to save API Quota!
-    const ALL_CAT_IDS = [categoryId];
     const categoriesBundle: Record<string, any[]> = {};
-
-    // 1. Fetch requested category and all core categories in parallel
     const fetchedResults = await Promise.all(
-      ALL_CAT_IDS.map(async (cId) => {
+      ALL_CORE_CAT_IDS.map(async (cId) => {
         const data = await liveFetchCategoryData(cId);
         return { cId, data };
       })
@@ -331,19 +451,36 @@ export async function GET(req: NextRequest) {
       }
     } catch (e) {}
 
+    const allVideosMap = new Map<string, any>();
+
     fetchedResults.forEach(({ cId, data }) => {
       if (data && data.length > 0) {
         categoriesBundle[cId] = data;
         const bKey = `${country}_${cId}_${period}`;
         currentBundle[bKey] = data;
+
+        data.forEach((v) => {
+          if (v?.id && !allVideosMap.has(v.id)) {
+            allVideosMap.set(v.id, v);
+          }
+        });
       }
     });
+
+    const unifiedAllList = Array.from(allVideosMap.values());
+    unifiedAllList.sort((a, b) => {
+      const vA = parseInt(a.statistics?.viewCount || "0", 10);
+      const vB = parseInt(b.statistics?.viewCount || "0", 10);
+      return vB - vA;
+    });
+
+    categoriesBundle["all"] = unifiedAllList.slice(0, 100);
+    currentBundle[`${country}_all_${period}`] = categoriesBundle["all"];
 
     if (vaultId !== null) {
       await recordVaultSuccess(vaultId);
     }
 
-    // 2. Save full country bundle immediately to single DB row
     if (Object.keys(categoriesBundle).length > 0) {
       try {
         await supabaseAdmin.from("youtube_popular_archive").upsert(
@@ -354,13 +491,13 @@ export async function GET(req: NextRequest) {
           },
           { onConflict: "target_date" }
         );
-        console.log(`Live On-Demand Bundle: Saved all categories for ${country}_${period} to DB row ${date}.`);
+        console.log(`Live On-Demand Batch Bundle: Saved all 12 categories for ${country}_${period} to DB row ${date}.`);
       } catch (upsertErr) {
         console.error("Failed to upsert Live On-Demand Bundle to DB:", upsertErr);
       }
     }
 
-    const targetList = categoriesBundle[categoryId] !== undefined ? categoriesBundle[categoryId] : (categoriesBundle["all"] || []);
+    const targetList = categoryId === "all" ? categoriesBundle["all"] : (categoriesBundle[categoryId] || categoriesBundle["all"] || []);
     const videoIds = targetList.map((v: any) => v.id).filter(Boolean);
     let analyzedVideoIds: string[] = [];
     if (videoIds.length > 0) {
@@ -379,13 +516,14 @@ export async function GET(req: NextRequest) {
       source: "youtube-api-popular-bundle",
       data: targetList,
       categoriesBundle,
-      analyzedVideoIds
+      analyzedVideoIds,
+      servedDate: date
     });
   } catch (err: any) {
-    console.error("Popular API error:", err);
     if (vaultId !== null) {
       await recordVaultFailure(vaultId, err.message || String(err));
     }
+    console.error("Popular API error:", err);
     return NextResponse.json({ error: err.message || "Failed to fetch popular videos" }, { status: 500 });
   }
 }

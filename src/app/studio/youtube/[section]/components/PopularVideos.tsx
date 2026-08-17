@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Trophy, Loader2, Play, Eye, ThumbsUp, Calendar, ArrowRight, Copy, Check, ChevronLeft, ChevronRight, BarChart2, ExternalLink, Sparkles, Filter, Search, X, RotateCw, PlaySquare } from "lucide-react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { Trophy, Loader2, Play, Calendar, ArrowRight, Copy, Check, ChevronLeft, ChevronRight, ExternalLink, Sparkles, Filter, Search, X, RotateCw, PlaySquare } from "lucide-react";
 import VideoAnalysisModal from "./VideoAnalysisModal";
 import Link from "next/link";
 
@@ -14,6 +14,7 @@ interface CountryItem {
 }
 
 export const ALL_COUNTRIES: CountryItem[] = [
+  { code: "GLOBAL", name: "전세계", flag: "🌍", region: "top", isTop: true },
   { code: "KR", name: "대한민국", flag: "🇰🇷", region: "top", isTop: true },
   { code: "US", name: "미국", flag: "🇺🇸", region: "top", isTop: true },
   { code: "JP", name: "일본", flag: "🇯🇵", region: "top", isTop: true },
@@ -28,16 +29,16 @@ export const ALL_COUNTRIES: CountryItem[] = [
   { code: "TH", name: "태국", flag: "🇹🇭", region: "top", isTop: true },
 ];
 
-const COUNTRIES = ALL_COUNTRIES;
-
 const CATEGORIES = [
   { label: "전체", id: "all" },
   { label: "음악/댄스/가수", id: "10" },
+  { label: "교육/키즈/동요", id: "27" },
   { label: "게임", id: "20" },
   { label: "엔터테인먼트/방송", id: "24" },
   { label: "코미디/유머", id: "23" },
   { label: "영화/만화/애니", id: "1" },
   { label: "음식/요리/뷰티", id: "26" },
+  { label: "여행/이벤트/명소", id: "19" },
   { label: "뉴스/정치/경제", id: "25" },
   { label: "취미/일상", id: "22" },
   { label: "IT/기술/컴퓨터", id: "28" },
@@ -47,11 +48,8 @@ const CATEGORIES = [
 ];
 
 const PERIODS = [
-  { id: "1d", label: "☀️ 오늘(신규)" },
-  { id: "7d", label: "🗓️ 최근 7일간(신규)" },
-  { id: "30d", label: "📅 최근 30일간(신규)" },
-  { id: "recent_all_time", label: "🎬 최근 역대 전체(몇달)" },
-  { id: "all_time", label: "👑 역대 전체 (All Time)" },
+  { id: "all_time", label: "👑 역대 전체 (All-Time)" },
+  { id: "30d", label: "📅 최근 30일" },
 ];
 
 function getKstTodayDateStr(): string {
@@ -69,33 +67,17 @@ export default function PopularVideos() {
   const [videos, setVideos] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState("all");
-  const [selectedPeriod, setSelectedPeriod] = useState("1d");
+  const [selectedPeriod, setSelectedPeriod] = useState("all_time");
   const [selectedCountry, setSelectedCountry] = useState("KR");
   const [selectedDate, setSelectedDate] = useState<string>(getKstTodayDateStr());
-  const [activeMode, setActiveMode] = useState<any>("1d");
+  const [activeFormat, setActiveFormat] = useState<"all" | "video" | "shorts">("all");
   const [searchQuery, setSearchQuery] = useState("");
-
-  const shiftDate = (days: number) => {
-    const current = new Date(selectedDate);
-    if (isNaN(current.getTime())) return;
-    current.setDate(current.getDate() + days);
-
-    const targetDateStr = current.toISOString().split("T")[0];
-    const todayStr = getKstTodayDateStr();
-
-    if (targetDateStr > todayStr) return;
-    setSelectedDate(targetDateStr);
-    if (targetDateStr === todayStr) {
-      setActiveMode("today");
-    } else {
-      setActiveMode("custom");
-    }
-  };
 
   // Modal analysis states
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
   const [selectedAnalysisVideo, setSelectedAnalysisVideo] = useState<any>(null);
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
+  const [copiedVideoId, setCopiedVideoId] = useState<string | null>(null);
 
   const parseDuration = (durationStr?: string, videoObj?: any) => {
     if (!durationStr) return { formatted: "", isShorts: false };
@@ -210,12 +192,6 @@ export default function PopularVideos() {
     return { formatted, isShorts };
   };
 
-  // Pagination states
-  const [visibleCount, setVisibleCount] = useState(20);
-  const [copiedVideoId, setCopiedVideoId] = useState<string | null>(null);
-
-  // RAM cache
-
   // ⚡ 0ms Instant RAM Cache Warm-up for ALL Keys in Single Daily Bundle Row on mount
   useEffect(() => {
     async function prewarmBundleCache() {
@@ -242,27 +218,16 @@ export default function PopularVideos() {
     prewarmBundleCache();
   }, [selectedDate]);
 
-  const getFilteredCountries = () => {
-    return [{ code: "GLOBAL", name: "전세계 전체", flag: "🌍", region: "global" as any, isTop: true }, ...ALL_COUNTRIES];
-  };
-
   const getCountryName = (code: string) => {
-    if (code === "GLOBAL") return "전세계 YouTube 전체(GLOBAL)";
-    const c = ALL_COUNTRIES.find((x) => x.code === code);
-    return c ? `${c.name}(${c.code})` : "대한민국(KR)";
+    const match = ALL_COUNTRIES.find((c) => c.code === code);
+    return match ? `${match.name}(${match.code})` : code;
   };
 
   const fetchPopular = useCallback(
-    async (catId = activeCategory, country = selectedCountry, period = selectedPeriod, date = selectedDate, force = false) => {
-      setError(null);
-      setVisibleCount(20);
-
-      const targetDate = date;
+    async (catId: string, country: string, period: string, targetDate: string, force: boolean = false) => {
       const cacheKey = `${country}_${catId}_${period}_${targetDate}`;
 
-      if (force) {
-        globalPopularCache.delete(cacheKey);
-      } else if (globalPopularCache.has(cacheKey)) {
+      if (!force && globalPopularCache.has(cacheKey)) {
         const cached = globalPopularCache.get(cacheKey);
         setVideos(cached.data || []);
         return;
@@ -321,7 +286,7 @@ export default function PopularVideos() {
         setLoadingStatus(null);
       }
     },
-    [activeCategory, selectedCountry, selectedPeriod, selectedDate]
+    []
   );
 
   useEffect(() => {
@@ -349,15 +314,38 @@ export default function PopularVideos() {
     return num.toLocaleString();
   };
 
-  const filteredVideos = videos.filter((video) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase().trim();
-    const title = (video.snippet?.title || video.title || "").toLowerCase();
-    const channel = (video.snippet?.channelTitle || video.channelTitle || "").toLowerCase();
-    return title.includes(q) || channel.includes(q);
-  });
+  // Real-time Format Stats
+  const videoStats = useMemo(() => {
+    let all = videos.length;
+    let video = 0;
+    let shorts = 0;
+    videos.forEach((v) => {
+      const info = parseDuration(v.contentDetails?.duration || v.duration, v);
+      if (info.isShorts) {
+        shorts++;
+      } else {
+        video++;
+      }
+    });
+    return { all, video, shorts };
+  }, [videos]);
 
-  const displayedVideos = filteredVideos;
+  // Client-side Instant Filter by Format + Search Query
+  const filteredVideos = useMemo(() => {
+    let list = videos;
+    if (activeFormat === "shorts") {
+      list = list.filter((v) => parseDuration(v.contentDetails?.duration || v.duration, v).isShorts);
+    } else if (activeFormat === "video") {
+      list = list.filter((v) => !parseDuration(v.contentDetails?.duration || v.duration, v).isShorts);
+    }
+    if (!searchQuery.trim()) return list;
+    const q = searchQuery.toLowerCase().trim();
+    return list.filter((v) => {
+      const title = (v.snippet?.title || v.title || "").toLowerCase();
+      const channel = (v.snippet?.channelTitle || v.channelTitle || "").toLowerCase();
+      return title.includes(q) || channel.includes(q);
+    });
+  }, [videos, activeFormat, searchQuery]);
 
   return (
     <div className="space-y-6">
@@ -365,94 +353,52 @@ export default function PopularVideos() {
       <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 backdrop-blur-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="flex items-center gap-2 text-xl sm:text-3xl font-black text-white mb-2">
-            <Trophy className="text-yellow-400 animate-bounce" size={28} />
+            <Trophy className="text-yellow-400" size={28} />
             인기 영상 조회수 랭킹 (Most-Viewed)
           </h2>
           <p className="text-sm text-zinc-300 font-medium leading-relaxed">
-            👑 <span className="font-bold text-yellow-300">인기 영상 조회수 랭킹</span>: 전 세계 60개국 & 15개 카테고리별 <span className="text-white font-bold">실제 총 누적 조회수(Total View Count) 최상위 1위~50위 매머드급 대박 영상</span>을 분석합니다. (💡 <span className="text-zinc-400">실시간 유행 핫이슈는 '🔥 급상승 영상 트렌드' 메뉴에서 확인하실 수 있습니다.</span>)
+            👑 <span className="font-bold text-yellow-300">인기 영상 조회수 랭킹</span>: 전 세계 12개국 & 13개 카테고리별 <span className="text-white font-bold">실제 총 누적 조회수(Total View Count) 최상위 1위~50위 매머드급 대박 영상</span>을 분석합니다. (💡 <span className="text-zinc-400">실시간 유행 핫이슈는 '🔥 급상승 영상 트렌드' 메뉴에서 확인하실 수 있습니다.</span>)
           </p>
         </div>
       </div>
 
-      {/* 🌟 Date Timeline & Period Selector Hub */}
-      <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 bg-zinc-950/40 border border-zinc-850 p-4 rounded-2xl w-full">
-        {/* 1. Date Navigation & Picker (Left) */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <button
-            onClick={() => shiftDate(-1)}
-            className="p-1.5 sm:p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
-            title="이전 날짜"
-          >
-            <ChevronLeft size={16} />
-          </button>
-
-          <div className="flex items-center gap-1.5 sm:gap-2 bg-zinc-900 border border-zinc-800 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black text-white">
-            <Calendar size={14} className="text-yellow-400 shrink-0" />
-            <input
-              type="date"
-              value={selectedDate}
-              max={getKstTodayDateStr()}
-              onChange={(e) => {
-                const newDate = e.target.value;
-                setSelectedDate(newDate);
-                if (newDate === getKstTodayDateStr()) {
-                  setActiveMode("today");
-                } else {
-                  setActiveMode("custom");
-                }
-              }}
-              className="bg-transparent text-white text-xs font-bold focus:outline-none cursor-pointer"
-            />
-          </div>
-
-          <button
-            onClick={() => shiftDate(1)}
-            disabled={selectedDate >= getKstTodayDateStr()}
-            className="p-1.5 sm:p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition"
-            title="다음 날짜"
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
-
-        {/* Divider */}
-        <div className="hidden sm:block h-5 w-[1px] bg-zinc-800" />
-
-        {/* 2. Period Filter Buttons & Video Search Bar */}
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+      {/* 🌟 Top Control Bar: Period Filter + Search + Refresh */}
+      <div className="flex flex-wrap justify-between items-center gap-3 bg-zinc-950/40 border border-zinc-850 p-3.5 rounded-2xl w-full">
+        {/* Left: Period Tabs */}
+        <div className="flex items-center gap-2">
           <span className="text-xs font-black text-zinc-400 mr-1 flex items-center gap-1">
             <Filter size={14} className="text-yellow-400" /> 조회 기간:
           </span>
           {PERIODS.map((p) => {
-            const isActive = activeMode === p.id;
+            const isActive = selectedPeriod === p.id;
             return (
               <button
                 key={p.id}
                 onClick={() => {
                   setSelectedPeriod(p.id);
-                  setSelectedDate(getKstTodayDateStr());
-                  setActiveMode(p.id as any);
                 }}
-                className={`px-3 sm:px-3.5 py-1.5 text-xs font-black rounded-xl transition flex items-center gap-1 border-2 ${
+                className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition flex items-center gap-1.5 border-2 ${
                   isActive
                     ? "bg-yellow-500/20 border-yellow-400 text-yellow-300 shadow-md shadow-yellow-500/20 scale-105"
-                    : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white opacity-80"
+                    : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white"
                 }`}
               >
                 {p.label}
               </button>
             );
           })}
+        </div>
 
-          {/* 🔍 Instant Video & Channel Search Bar right to the right of Period buttons */}
-          <div className="relative flex items-center ml-1 sm:ml-2">
+        {/* Right: Instant Search + Refresh */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex items-center">
             <Search size={14} className="absolute left-3 text-yellow-400 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="영상 제목 또는 채널명 검색..."
-              className="pl-8 pr-7 py-1.5 bg-zinc-900 border border-zinc-750 text-white placeholder-zinc-500 text-xs font-medium rounded-xl focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition w-44 sm:w-56"
+              className="pl-8 pr-7 py-1.5 bg-zinc-900 border border-zinc-750 text-white placeholder-zinc-500 text-xs font-medium rounded-xl focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition w-44 sm:w-60"
             />
             {searchQuery && (
               <button
@@ -465,12 +411,11 @@ export default function PopularVideos() {
             )}
           </div>
 
-          {/* 🔄 Instant Refresh Button */}
           <button
             onClick={handleForceRefresh}
             disabled={loading}
             title="실시간 인기 랭킹 즉시 갱신"
-            className="ml-auto sm:ml-2 px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 border-2 bg-yellow-500/10 border-yellow-500/50 text-yellow-300 hover:bg-yellow-500/20 hover:border-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            className="px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 border-2 bg-yellow-500/10 border-yellow-500/50 text-yellow-300 hover:bg-yellow-500/20 hover:border-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
           >
             <RotateCw size={13} className={loading ? "animate-spin text-yellow-400" : "text-yellow-400"} />
             <span>새로고침</span>
@@ -478,49 +423,89 @@ export default function PopularVideos() {
         </div>
       </div>
 
-      {/* 🌐 Global Country & Category Selector Hub */}
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-950/20 p-6 backdrop-blur-md space-y-3.5 shadow-2xl shadow-black/25 flex flex-col items-center w-full">
-        {/* 2. Countries list */}
-        <div className="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 w-full max-w-full">
-          {getFilteredCountries().map((ct) => (
-            <button
-              key={ct.code}
-              onClick={() => {
-                setSelectedCountry(ct.code);
-                setSelectedDate(getKstTodayDateStr());
-              }}
-              className={`px-3 sm:px-3.5 py-1.5 text-xs font-black rounded-xl transition flex items-center gap-1.5 shrink-0 whitespace-nowrap border-2 ${
-                selectedCountry === ct.code
-                  ? "bg-yellow-950/30 border-yellow-500/70 text-white shadow-lg shadow-yellow-950/40 transform scale-105"
-                  : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white"
-              }`}
-            >
-              <span className="text-base sm:text-lg leading-none">{ct.flag}</span>
-              <span>{ct.name}</span>
-            </button>
-          ))}
+      {/* 2-Column Ultra-Slim Filter Hub */}
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-950/20 p-4 backdrop-blur-md flex flex-col md:flex-row items-center gap-4 w-full shadow-2xl shadow-black/25">
+        {/* Left Column: Format Selector (150px) */}
+        <div className="w-full md:w-[150px] shrink-0 flex flex-row md:flex-col justify-center gap-1.5">
+          <button
+            onClick={() => setActiveFormat("all")}
+            className={`w-full py-1.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-between border-2 ${
+              activeFormat === "all"
+                ? "bg-amber-500/20 border-amber-400 text-amber-300 shadow-md shadow-amber-500/20 scale-[1.02]"
+                : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-850 hover:text-zinc-200"
+            }`}
+          >
+            <span>🌟 전체 보기</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-zinc-800/80 text-zinc-300 font-bold border border-zinc-700/50">
+              {videoStats.all}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveFormat("video")}
+            className={`w-full py-1.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-between border-2 ${
+              activeFormat === "video"
+                ? "bg-sky-500/20 border-sky-400 text-sky-300 shadow-md shadow-sky-500/20 scale-[1.02]"
+                : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-850 hover:text-zinc-200"
+            }`}
+          >
+            <span>🎬 일반 동영상</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-zinc-800/80 text-zinc-300 font-bold border border-zinc-700/50">
+              {videoStats.video}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveFormat("shorts")}
+            className={`w-full py-1.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-between border-2 ${
+              activeFormat === "shorts"
+                ? "bg-red-500/20 border-red-500 text-red-300 shadow-md shadow-red-500/20 scale-[1.02]"
+                : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-850 hover:text-zinc-200"
+            }`}
+          >
+            <span>⚡ 유튜브 쇼츠</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-zinc-800/80 text-zinc-300 font-bold border border-zinc-700/50">
+              {videoStats.shorts}
+            </span>
+          </button>
         </div>
 
-        <div className="h-[1px] w-full bg-zinc-850/60" />
+        {/* Right Column: Country + Category Tabs */}
+        <div className="flex-1 flex flex-col justify-center gap-2 w-full">
+          {/* Row 1: Countries */}
+          <div className="flex flex-wrap items-center gap-1.5 w-full">
+            {ALL_COUNTRIES.map((ct) => (
+              <button
+                key={ct.code}
+                onClick={() => setSelectedCountry(ct.code)}
+                className={`px-3 py-1 text-xs font-black rounded-xl transition flex items-center gap-1.5 shrink-0 whitespace-nowrap border-2 ${
+                  selectedCountry === ct.code
+                    ? "bg-yellow-950/30 border-yellow-500/70 text-white shadow-lg shadow-yellow-950/40 transform scale-105"
+                    : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                }`}
+              >
+                <span className="text-sm leading-none">{ct.flag}</span>
+                <span>{ct.name}</span>
+              </button>
+            ))}
+          </div>
 
-        {/* 3. Category selector */}
-        <div className="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 w-full max-w-full">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => {
-                setActiveCategory(cat.id);
-                setSelectedDate(getKstTodayDateStr());
-              }}
-              className={`px-3 sm:px-3.5 py-1.5 text-xs font-black rounded-lg transition shrink-0 whitespace-nowrap border-2 ${
-                activeCategory === cat.id
-                  ? "bg-yellow-600 border-yellow-500 text-zinc-950 font-black shadow-md shadow-yellow-600/20"
-                  : "bg-zinc-900 border-zinc-850 text-zinc-400 hover:bg-zinc-800 hover:text-white"
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
+          {/* Row 2: Categories */}
+          <div className="flex flex-wrap items-center gap-1.5 w-full">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`px-3 py-1 text-xs font-black rounded-lg transition shrink-0 whitespace-nowrap border-2 ${
+                  activeCategory === cat.id
+                    ? "bg-yellow-600 border-yellow-500 text-zinc-950 font-black shadow-md shadow-yellow-600/20"
+                    : "bg-zinc-900 border-zinc-850 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -539,22 +524,22 @@ export default function PopularVideos() {
               <div className="text-center space-y-1">
                 <p className="text-sm font-black text-yellow-400 flex items-center justify-center gap-2">
                   <span>🌐</span>
-                  <span>[{getCountryName(selectedCountry)}] YouTube API 인기 영상 조회수 랭킹 데이터 수집 중...</span>
+                  <span>[{getCountryName(selectedCountry)}] YouTube API 실시간 인기 영상 조회수 랭킹 수집 중...</span>
                 </p>
                 <p className="text-xs text-zinc-400 font-medium">
-                  DB 미수집 조건으로, 12개 카테고리 실시간 인기 통합 수집 후 DB에 자동 저장 중입니다.
+                  일반 롱폼 영상(4분 이상)과 쇼츠(3분 이하)를 독립 검색하여 최고 조회수 순으로 집계 중입니다.
                 </p>
               </div>
             ) : (
               <div className="text-center space-y-1">
                 <p className="text-xs font-bold text-zinc-300 flex items-center justify-center gap-2">
                   <span>💾</span>
-                  <span>[{getCountryName(selectedCountry)}] CreAiBox DB 클라우드 인기 보관함 읽는 중...</span>
+                  <span>[{getCountryName(selectedCountry)}] CreaiBox 클라우드 DB 인기 보관함 읽는 중...</span>
                 </p>
               </div>
             )}
           </div>
-        ) : displayedVideos.length === 0 ? (
+        ) : filteredVideos.length === 0 ? (
           <div className="text-center py-20 border border-zinc-850 rounded-2xl bg-zinc-950/20 space-y-3 p-6">
             {searchQuery ? (
               <>
@@ -568,17 +553,17 @@ export default function PopularVideos() {
             ) : (
               <>
                 <p className="text-sm text-zinc-300 font-black">
-                  📭 [{selectedDate}] 일자는 CreAiBox DB 구축 이전 기간이거나 미수집 데이터입니다.
+                  📭 선택하신 조건의 인기 영상 랭킹 데이터가 존재하지 않습니다.
                 </p>
                 <p className="text-xs text-zinc-500 font-bold">
-                  상단의 <span className="text-yellow-400 font-black">"☀️ 오늘"</span> 또는 <span className="text-yellow-400 font-black">"👑 역대 전체"</span> 버튼을 누르시면 인기 랭킹을 즉시 조회하실 수 있습니다.
+                  상단의 <span className="text-yellow-400 font-black">"새로고침"</span> 버튼을 누르시면 실시간 최다 조회수 랭킹을 즉시 수집합니다.
                 </p>
               </>
             )}
           </div>
         ) : (
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {displayedVideos.map((video, idx) => {
+            {filteredVideos.map((video, idx) => {
               const videoId = video.id;
               const title = video.snippet?.title || video.title || "제목 없음";
               const channel = video.snippet?.channelTitle || video.channelTitle || "채널 정보 없음";
@@ -606,12 +591,14 @@ export default function PopularVideos() {
                     </div>
 
                     {/* Format/Shorts Label */}
-                    {isShorts && (
-                      <div className="absolute top-6 right-6 z-10 flex items-center gap-1 rounded bg-red-600 px-1.5 py-0.5 text-[9px] font-black text-white shadow">
-                        <Play size={9} fill="currentColor" className="ml-0.5" />
-                        SHORTS
-                      </div>
-                    )}
+                    <div
+                      className={`absolute top-6 right-6 z-10 flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-black text-white shadow ${
+                        isShorts ? "bg-red-600" : "bg-sky-600"
+                      }`}
+                    >
+                      <Play size={9} fill="currentColor" className="ml-0.5" />
+                      {isShorts ? "SHORTS" : "VIDEO"}
+                    </div>
 
                     {/* Thumbnail or Inline YouTube Player */}
                     {videoId && videoId === playingVideoId ? (
@@ -683,7 +670,7 @@ export default function PopularVideos() {
                     </div>
                   </div>
 
-                  {/* Horizontal 4-Button Action Bar matching RisingVideos */}
+                  {/* Horizontal 5-Button Action Bar matching RisingVideos */}
                   <div className="mt-3.5 border-t border-zinc-800/80 pt-3 flex items-center justify-between gap-1.5 text-[11px] font-black text-zinc-400">
                     {videoId && (
                       <button
