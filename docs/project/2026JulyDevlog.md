@@ -81,7 +81,7 @@ mier
 * **작업 상세**:
   - **옵션 명칭 및 순서 재배치 ([`blogImageConstants.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/shared/image-studio/blogImageConstants.ts))**: `aspectRatioOptions` 배열에서 `16:9` 항목의 라벨을 `⭐ 16:9 블로그/유튜브 표준 썸네일`로 변경하고 1번 순서로 배치.
   - **기본 상태(Default State) 16:9 전환**: [`BlogImageStudioPanel.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/shared/image-studio/BlogImageStudioPanel.tsx) 및 [`CreaiboxContentImagePanel.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/writing/creaibox/tabs/CreaiboxContentImagePanel.tsx)의 `selectedAspectRatio` 기본 상태를 `"16:9"`로 통일.
-  - **프로젝트 매뉴얼 문서화 ([`thumbnail-aspect-ratio-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/thumbnail-aspect-ratio-guide.md))**: 16:9 vs 4:3 심층 비교 분석 및 전문가 관점에서의 최적 권장안 매뉴얼 작성 수록.
+  - **프로젝트 매뉴얼 문서화 ([`thumbnail-aspect-ratio-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/05_image-and-video/thumbnail-aspect-ratio-guide.md))**: 16:9 vs 4:3 심층 비교 분석 및 전문가 관점에서의 최적 권장안 매뉴얼 작성 수록.
   - **빌드 및 타입 검증**: `npx tsc --noEmit` 실행 결과 0 에러 정상 통과.
 
 #### 5. 표(Table) 렌더링 UI 정밀 개선: 2줄 굵은 라인 및 모서리 끊어짐 해결, 헤더 음영 & 컬러 채우기 강화
@@ -105,7 +105,7 @@ mier
     - 기존 Google Indexing API에 더해 **IndexNow 오픈 프로토콜(Bing, Yandex, Naver SearchAdvisor, Seznam)** 연동 엔진 구축.
     - 와일드카드 서브도메인 및 독자 커스텀 도메인 키 검증을 위한 동적 라우트(`/[key].txt/route.ts`) 구현 완료.
     - FAQ 도움말 페이지(`/help`) 및 AI FAQ 챗봇(`/chatbot`) 지식 데이터베이스(`faqData.ts`)에 **"4대 검색엔진 실시간 SEO 핑"** 및 **"24시간 무인 자동 수집(Cron) 작동 원리"** 항목 공식 등재 완료.
-  - **백그라운드 무인 기능 매뉴얼 최신화 의무 룰 명시 및 반영 ([`ai-agent-rules.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/rules/ai-agent-rules.md), [`AGENTS.md`](file:///Users/a1234/Local%20Sites/creaibox/.agents/AGENTS.md), [`background-automation-execution-5-methods-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/background-automation-execution-5-methods-guide.md))**:
+  - **백그라운드 무인 기능 매뉴얼 최신화 의무 룰 명시 및 반영 ([`ai-agent-rules.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/rules/ai-agent-rules.md), [`AGENTS.md`](file:///Users/a1234/Local%20Sites/creaibox/.agents/AGENTS.md), [`background-automation-execution-5-methods-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/01_core-and-infra/background-automation-execution-5-methods-guide.md))**:
     - 향후 신규 무인 자동 수집(Cron)이나 백그라운드 배치 기능이 개발 구동될 때마다 **백그라운드 매뉴얼 문서의 "4. 🟢 현재 즉시 구동 중" 섹션에 즉시 신규 기능을 업데이트하도록 1대 에이전트 룰로 정식 등록 완료**.
     - Vercel Cron, Supabase DB 내장 `pg_cron`, NCP Cloud Functions, GitHub Actions Cron, 외부 Webhook 등 5가지 백그라운드 무인 수집 아키텍처 방식 완벽 정리.
     - 4가지 도메인 유형별(본사, 서브도메인, 비즈니스, 독자 커스텀 도메인) SEO 자동 색인 핑 동작 원리 및 2대 핵심 프로토콜(Google Indexing API & IndexNow) 수록.
@@ -115,7 +115,7 @@ mier
   - **매시간 정각 네이버 & 구글 실시간 검색어 무인 자동 수집(Hourly Cron) 구축 ([`vercel.json`](file:///Users/a1234/Local%20Sites/creaibox/vercel.json), [`sync-keywords/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/cron/sync-keywords/route.ts), [`system/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/admin/system/page.tsx))**:
     - 사용자가 매시간 정각에 사이트를 열어두지 않아도 **매시간 정각(00~23시) 무인 백그라운드**로 Vercel Cron (`schedule: "0 * * * *"`)이 자동 실행되도록 스케줄러를 구축.
     - 네이버 TOP 20 & 구글 TOP 20 검색어를 매시간 자동으로 스냅샷 수집하여 `keyword_trending_history` DB의 당일 1줄(`hourly_data`)에 무인 자동 적재하도록 구현 완료.
-  - **`keyword_trending_history` DB 날짜별 1줄(Row) 통합 구조 개편 ([`keyword-history.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/keyword-history.ts), [`keyword_trending_history.sql`](file:///Users/a1234/Local%20Sites/creaibox/docs/database/keyword_trending_history.sql))**:
+  - **`keyword_trending_history` DB 날짜별 1줄(Row) 통합 구조 개편 ([`keyword-history.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/keyword-history.ts), [`keyword_trending_history.sql`](file:///Users/a1234/Local%20Sites/creaibox/docs/database/sql/keyword_trending_history.sql))**:
     - 매시간 수집 시 하루 960개씩 생성되던 레코드를 **날짜(`target_date`) 1개당 단 1개 Row만 생성되는 `hourly_data` JSONB 통합 구조로 개편**함 (Row 개수 99.9% 대폭 압축 성공).
     - 네이버 및 구글의 24시간 전체 랭킹 이력이 오늘 날짜 단 1줄에 덮어쓰기(UPSERT) 적재되며, 1년 내내 수집해도 DB 레코드가 단 365개만 축적되는 최고 효율의 자원 최적화 달성.
   - **DB 테이블 생성 채팅 알림 의무 규칙 명시 및 룰 파일 반영 ([`ai-agent-rules.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/rules/ai-agent-rules.md), [`AGENTS.md`](file:///Users/a1234/Local%20Sites/creaibox/.agents/AGENTS.md))**:
@@ -210,13 +210,13 @@ mier
   - **메인 메뉴 행 전체 토글 동일화 (`toggleGroup`)**: 메인 메뉴 행(제목 및 아이콘) 클릭 시에도 우측 셰브론(`ChevronDown`/`ChevronRight`) 버튼 클릭과 100% 동일하게 1회 클릭 시 서브메뉴 펼침, 재클릭 시 서브메뉴가 즉시 접히도록 토글 UX 개선.
   - **하드코딩 기본 펼침 폴백 제거 & 라우트별 단독 메뉴 펼침 단일화**: 기존 `useState` 내에 하드코딩되어 있던 `["creaibox-writing", "youtube"]` 기본 펼침 값을 제거하여, "자료 분석 스튜디오", "AI 리포트", "뉴스 콘텐츠" 등 다른 메뉴 페이지 접속 시 위쪽 블로그/유튜브 메뉴가 엉뚱하게 함께 열려버리던 버그를 완전 근절하고, 오직 현재 이동한 메뉴 그룹 1개만 단독으로 열리도록 정상화.
   - **클릭 즉시 0ms 낙관적 컬러 렌더링 (`optimisticActiveKey`)**: 기존 Next.js 클라이언트 지연 로딩(1~2초) 완료 후 `pathname` 변화 시점에 메뉴 컬러가 늦게 반응하던 딜레이 현상을 완전 차단하고, 메뉴 클릭 0ms 동기 시점에 즉시 하이라이트/그라데이션 스타일이 활성화되는 낙관적 피드백 시스템 탑재.
-  - **Google Indexing API 일일 쿼터 증액 신청 가이드 확립 ([`google-indexing-api-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/google-indexing-api-guide.md))**: 기본 200건/일 쿼터를 2,000~10,000건/일 이상으로 확대하기 위한 GCP 콘솔 직관 링크 및 영문 신청 사유 양식 가이드 정리 연동.
+  - **Google Indexing API 일일 쿼터 증액 신청 가이드 확립 ([`google-indexing-api-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/04_writing-and-blog/google-indexing-api-guide.md))**: 기본 200건/일 쿼터를 2,000~10,000건/일 이상으로 확대하기 위한 GCP 콘솔 직관 링크 및 영문 신청 사유 양식 가이드 정리 연동.
   - **스튜디오 탑바 위젯 메뉴 반응형 아이콘 전용 모드 및 텍스트 세로 찌그러짐 방지 ([`StudioTopbar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/StudioTopbar.tsx))**: 창 폭 축소 시 "내 콘텐츠 보관함", "관리 대시보드" 등 텍스트가 줄바꿈되어 세로로 깨지던 현상을 `whitespace-nowrap`과 `hidden 2xl:inline` 반응형 분기문으로 정비하여, 화면 축소 시 글자 없이 깔끔하게 이모티콘/아이콘 전용 뱃지 버튼으로 즉시 전환되도록 개선.
   - **브라우저 네이티브 지연 툴팁 완전 제거 & 0ms 실시간 직관 툴팁 탑재 ([`StudioTopbar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/studio/StudioTopbar.tsx))**: 마우스 호버 시 0.5~1초간 뜸들이던 브라우저 네이티브 `title` 속성을 전면 제거하고, 마우스 오버 0.00초(0ms) 동기 시점에 즉시 반응하여 뜨는 `duration-75` 초고속 커스텀 말풍선 툴팁 시스템으로 전면 개선.
   - **통합 키워드 & 쇼핑 2대 파워 허브 개편 완료 ([`Sidebar.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx))**:
     - **`🔍 키워드 트렌드 분석`**: loword.co.kr 스타일 2열 실시간 검색어 비교(네이버 20개 vs 구글 20개, 날짜/시간별 Supabase DB 아카이빙), 키워드 정밀 도구(검색량 추이 차트, SERP 배치, 연관어, CPC), 네이버 블로그 지수 진단(아이디 검진, 최적/준최 레벨 측정, 리더보드) 탑재.
     - **`🛒 쇼핑 키워드 & 아이템 소싱`**: itemscout.io 스타일 쇼핑 키워드 정밀 분석(쇼핑 검색량, 총 등록 상품수, 0.72 꿀키워드 경쟁강도), datalab.naver.com 분야별 1달/3달 인기검색어 TOP 500 및 클릭량/성별/연령 비중 차트 수록 완료.
-  - **실시간 급상승 키워드 1시간 아카이빙 & 자원 최적화 운용 매뉴얼 작성 ([`keyword-trending-archiving-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/keyword-trending-archiving-guide.md))**: 1시간 스냅샷 레코드 용량 계산(레코드당 0.35KB, 하루 0.33MB, 1년 120MB 미만의 극도로 가벼운 구조), Lazy Archiving(온디맨드 사용자 접속시 0.1초 자동 동기화), NCP Cloud Functions 및 DB Native Cron 병행 운용 가이드 문서화 완료.
+  - **실시간 급상승 키워드 1시간 아카이빙 & 자원 최적화 운용 매뉴얼 작성 ([`keyword-trending-archiving-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/06_trend-and-marketing/keyword-trending-archiving-guide.md))**: 1시간 스냅샷 레코드 용량 계산(레코드당 0.35KB, 하루 0.33MB, 1년 120MB 미만의 극도로 가벼운 구조), Lazy Archiving(온디맨드 사용자 접속시 0.1초 자동 동기화), NCP Cloud Functions 및 DB Native Cron 병행 운용 가이드 문서화 완료.
   - **전체 14개 메인 메뉴 그룹 전수 검증**: `npx tsc --noEmit` 검증 0 에러 무결성 확인.
 
 ---
@@ -253,7 +253,7 @@ mier
   - **작가/브랜드 프로필 링크 기본값 블로그 주소 연동 ([`blog-management/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx))**: **`공식 링크 / SNS (선택)`** 필드의 기본값을 사용자의 현재 블로그 주소(`https://golfgosu.net` 또는 `https://{brand_id}.creaibox.com`)로 자동 채움 및 예시 플라시보 동적 연동 완료.
   - **블로그 메인 헤더 설명글 노출 연동 및 빈 값 처리 버그 수정 ([`BlogClientWrapper.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/BlogClientWrapper.tsx), [`page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/page.tsx), [`blog-management/page.tsx`](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/writing/creaibox/blog-management/page.tsx))**: `getConf` 파서에서 빈 문자열(`""`)을 섭취했을 때 기본 폴백 문구("CreaiBox에서 생성한 고품질 콘텐츠 블로그입니다.")로 자간 복원되던 로직 버그를 수정하여, 사용자가 설명을 비워두면 블로그 상단 배너에 아무 설명도 노출되지 않도록 완벽히 동기화.
   - **푸터 SEO 백링크 보장**: 블로그 최하단 푸터 영역에 `Powered by CreaiBox.com` 텍스트 앵커 링크(`href="https://creaibox.com"`)를 결합하여 수천 개 포스트에서 구글/네이버 백링크 수집이 100% 유지되도록 처리.
-  - **플랜 가이드 문서 업데이트**: [`pricing-plan-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/pricing-plan-guide.md) Section 4 백링크 마케팅 통합 규정 수록.
+  - **플랜 가이드 문서 업데이트**: [`pricing-plan-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/07_music-and-community/pricing-plan-guide.md) Section 4 백링크 마케팅 통합 규정 수록.
   - **정적 무결성 빌드 검증**: `npx tsc --noEmit` 완벽 컴파일 통과.
 
 #### 10. 유튜브 영상 트렌드 & TOP 300 카테고리 통폐합 정리 및 다중 선택 버그 수정
@@ -612,7 +612,7 @@ mier
   - **루트 레이아웃 글로벌 마운트**:
     - [`layout.tsx`](<file:///Users/a1234/Local%20Sites/creaibox/src/app/layout.tsx>) 바디 최하단에 `<CookieConsentBanner />`를 탑재하여 사용자가 사이트 내 어느 경로로 접근하더라도 일관되게 정책 동의를 조절할 수 있도록 글로벌 통합 마운트를 완료했습니다.
   - **정적 무결성 빌드 검증**: `npx tsc --noEmit`을 완벽 컴파일 통과하여 타입 안정성을 입증했습니다.
-  - **가이드 및 백서 문서 등록**: 관련된 3가지 관점과 신규 구축한 데이터베이스 연동 구조를 집약한 개발 가이드 문서인 [`cookie-consent-guide.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/cookie-consent-guide.md>) 파일을 신설했습니다.
+  - **가이드 및 백서 문서 등록**: 관련된 3가지 관점과 신규 구축한 데이터베이스 연동 구조를 집약한 개발 가이드 문서인 [`cookie-consent-guide.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/01_core-and-infra/cookie-consent-guide.md>) 파일을 신설했습니다.
 
 #### 2. 부속 브랜드(Sub-brand) 도메인/서브도메인 설정 키 분리 오류 수정
 
@@ -639,7 +639,7 @@ mier
 * **구현 요약**: 블루호스트(Bluehost) 등 외부 대행업체에서 관리 중인 도메인을 Vercel로 이관(Transfer In)하여 유지 비용을 최대 50%까지 절감하고 관리를 통합하기 위한 매뉴얼을 구축했습니다.
 * **작업 상세**:
   - **이전 절차 백서 등록**:
-    - [`domain-transfer-guide.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/domain-transfer-guide.md>) 가이드 파일을 신설하여 블루호스트 기준 잠금 해제(Unlock), 인증코드(EPP Code) 발급 절차, Vercel 결제 내역 설명 및 **소유자 이메일 최종 승인 처리**의 중요성을 상세 정리했습니다.
+    - [`domain-transfer-guide.md`](<file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/02_auth-and-domain/domain-transfer-guide.md>) 가이드 파일을 신설하여 블루호스트 기준 잠금 해제(Unlock), 인증코드(EPP Code) 발급 절차, Vercel 결제 내역 설명 및 **소유자 이메일 최종 승인 처리**의 중요성을 상세 정리했습니다.
 
 ---
 

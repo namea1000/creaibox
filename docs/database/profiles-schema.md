@@ -1,5 +1,12 @@
 # Profiles Database Schema
 
+> **문서 분류**: 데이터베이스 스키마 명세서 (Database Schema Spec)
+> **연관 아키텍처 명세서**: `docs/arch/01_core-and-infra/tech-stack.md`
+> **연관 실무 매뉴얼**: `docs/project/manual/01_core-and-infra/environment-variables-and-api-vault-guide.md`
+> **연관 실행 SQL**: `docs/database/sql/profiles.sql`
+
+---
+
 ## 1. Purpose
 
 Profiles 데이터베이스는 CreaiBox의 통합 사용자 식별 시스템(Identity System)이다.
@@ -496,9 +503,9 @@ docs/database/sql/profiles.sql
 관련 문서
 
 ```txt
-docs/arch/user-system.md
-docs/arch/api-vault.md
-docs/arch/blog-system.md
+docs/arch/01_core-and-infra/tech-stack.md
+docs/arch/01_core-and-infra/api-vault.md
+docs/arch/02_auth-and-domain/blog-subdomains.md
 ```
 
 이 SQL 파일은 Supabase SQL Editor에서 수정 없이 바로 실행 가능한 상태를 유지해야 한다.

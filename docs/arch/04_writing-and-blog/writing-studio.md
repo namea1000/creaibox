@@ -1,5 +1,12 @@
 # Writing Studio Operational Architecture
 
+> **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)
+> **연관 실무 매뉴얼**: `docs/project/manual/04_writing-and-blog/search-engine-seo-guide.md`
+> **연관 DB 스키마**: `docs/database/writing-creaibox-posts-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/writing-creaibox-posts.sql`
+
+---
+
 This document describes the operational architecture of the Writing Studio within the CreaiBox platform.
 
 ## 1. Purpose

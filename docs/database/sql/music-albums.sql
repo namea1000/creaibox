@@ -1,3 +1,8 @@
+-- [CreaiBox Database DDL]
+-- 연관 아키텍처: docs/arch/07_music-and-community/cre-music.md
+-- 연관 실무 매뉴얼: docs/project/manual/07_music-and-community/pricing-plan-guide.md
+-- 연관 DB 스키마: docs/database/music-albums-schema.md
+--
 -- =====================================================
 -- CreaiBox Music Albums DB Final
 -- =====================================================

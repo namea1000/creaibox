@@ -1,6 +1,13 @@
 
 # CreaiBox 키워드 정밀 도구 (검색량 & SERP 배치) 시스템 아키텍처 및 운용 매뉴얼
 
+> **문서 분류**: 서비스 실무 매뉴얼 (How-To Manual)
+> **연관 아키텍처 명세서**: `docs/arch/06_trend-and-marketing/keyword-trend-studio.md`
+> **연관 DB 스키마**: `docs/database/keyword-trending-history-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/keyword_trending_history.sql`
+
+---
+
 ## 📌 1. 개요 (Overview)
 
 - **메뉴 경로**: `/studio/keyword/tool`
@@ -72,5 +79,5 @@ NAVER_AD_SECRET_KEY="your_secret_key"
 
 ## 📜 5. 관련 규칙 및 문서 연동
 
-- 본 문서 위치: `docs/project/manual/keyword-precision-tool-architecture-manual.md`
+- 본 문서 위치: `docs/project/manual/06_trend-and-marketing/keyword-precision-tool-architecture-manual.md`
 - 프로젝트 매뉴얼 규정에 따라 최신 상태로 저장 관리됩니다.

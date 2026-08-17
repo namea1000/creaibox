@@ -1,5 +1,12 @@
 # API Vault
 
+> **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)
+> **연관 실무 매뉴얼**: `docs/project/manual/01_core-and-infra/environment-variables-and-api-vault-guide.md`
+> **연관 DB 스키마**: `docs/database/admin-whitelist-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/admin-whitelist.sql`
+
+---
+
 ## Purpose
 
 API Vault는 사용자가 자신의 AI 및 외부 서비스 API Key를 저장하고 기본 AI Provider 및 Model을 설정하는 개인 연결 허브이다.

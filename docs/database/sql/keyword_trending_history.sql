@@ -1,3 +1,8 @@
+-- [CreaiBox Database DDL]
+-- 연관 아키텍처: docs/arch/06_trend-and-marketing/keyword-trend-studio.md
+-- 연관 실무 매뉴얼: docs/project/manual/06_trend-and-marketing/keyword-precision-tool-architecture-manual.md
+-- 연관 DB 스키마: docs/database/keyword-trending-history-schema.md
+--
 -- 🚀 CreaiBox 실시간 급상승 키워드 날짜별 1줄(Row) 통합 아카이빙 테이블 DDL
 -- Supabase SQL Editor에서 실행하시면 날짜별 1줄 구조로 테이블이 생성됩니다.
 

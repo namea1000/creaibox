@@ -1,5 +1,12 @@
 # Generated Images Database Schema
 
+> **문서 분류**: 데이터베이스 스키마 명세서 (Database Schema Spec)
+> **연관 아키텍처 명세서**: `docs/arch/05_image-and-video/image-studio.md`
+> **연관 실무 매뉴얼**: `docs/project/manual/05_image-and-video/image-background-remover-guide.md`
+> **연관 실행 SQL**: `docs/database/sql/generated-images.sql`
+
+---
+
 ## 1. Purpose
 
 Generated Images 데이터베이스는 CreaiBox의 통합 이미지 라이브러리 시스템이다.

@@ -1,5 +1,12 @@
 # AI 콘텐츠 플래너(Content Planner) 개발 현황 및 아키텍처
 
+> **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)
+> **연관 실무 매뉴얼**: `docs/project/manual/01_core-and-infra/content-calendar-guide.md`
+> **연관 DB 스키마**: `docs/database/content-planner-schema-v1.md`
+> **연관 실행 SQL**: `docs/database/sql/content-planner-schema-v1.sql`
+
+---
+
 ## 개요
 
 AI 콘텐츠 플래너(Content Planner)는 CreaiBox의 콘텐츠 생산 허브 역할을 담당한다.

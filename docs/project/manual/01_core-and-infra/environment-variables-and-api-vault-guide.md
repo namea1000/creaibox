@@ -1,5 +1,12 @@
 # 환경변수 및 API 보안 금고(Vault) 완벽 가이드
 
+> **문서 분류**: 서비스 실무 매뉴얼 (How-To Manual)
+> **연관 아키텍처 명세서**: `docs/arch/01_core-and-infra/api-vault.md`
+> **연관 DB 스키마**: `docs/database/admin-whitelist-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/admin-whitelist.sql`
+
+---
+
 이 문서는 CreaiBox 프로젝트의 로컬 환경변수(`.env.local`), 실서버 Vercel 환경변수, 그리고 최고 보안 수준의 `API_VAULT_ENCRYPTION_KEY`가 각각 어떤 역할을 하며 어떻게 상호작용하는지 명확하게 이해하기 위해 작성되었습니다.
 
 ---

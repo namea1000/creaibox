@@ -1,5 +1,12 @@
 # AI 홈페이지 제작 스튜디오 아키텍처 (Operational Documentation)
 
+> **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)
+> **연관 실무 매뉴얼**: `docs/project/manual/03_client-site-builder/custom-client-site-guide.md`
+> **연관 DB 스키마**: `docs/database/client-site-builder-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/client-site-builder.sql`
+
+---
+
 본 문서는 CreaiBox 플랫폼 내의 **"AI 홈페이지 제작 스튜디오"** 모듈의 시스템 구조, UI 분기, 데이터베이스 스키마 및 핵심 비즈니스 로직을 설명하는 운영 매뉴얼입니다.
 
 ---

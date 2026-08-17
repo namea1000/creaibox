@@ -1,3 +1,8 @@
+-- [CreaiBox Database DDL]
+-- 연관 아키텍처: docs/arch/05_image-and-video/image-studio.md
+-- 연관 실무 매뉴얼: docs/project/manual/05_image-and-video/image-background-remover-guide.md
+-- 연관 DB 스키마: docs/database/generated-images-schema.md
+--
 -- =====================================================
 -- CreaiBox Generated Images DB Final
 -- =====================================================

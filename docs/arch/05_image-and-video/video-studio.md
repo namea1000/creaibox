@@ -1,5 +1,12 @@
 # Video Studio Architecture
 
+> **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)
+> **연관 실무 매뉴얼**: `docs/project/manual/05_image-and-video/thumbnail-aspect-ratio-guide.md`
+> **연관 DB 스키마**: `docs/database/video-studio-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/video-studio-schema.sql`
+
+---
+
 ## 1. Purpose
 
 Video Studio is the browser-based video editing module for CreaiBox. It lets users arrange local video, image, audio, text, subtitle, and visualizer clips on a multi-track timeline and export the result to local files.

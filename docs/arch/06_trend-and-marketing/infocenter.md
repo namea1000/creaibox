@@ -1,5 +1,10 @@
 # 정보센터 (Info Center)
 
+> **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)
+> **연관 실무 매뉴얼**: `docs/project/manual/06_trend-and-marketing/infocenter-guide.md`
+
+---
+
 이 문서는 크리에이터들의 전략적 지식 베이스캠프인 정보센터 모듈의 현재 아키텍처 및 화면 구조를 설명하는 상시 운영용 문서입니다.
 
 ---

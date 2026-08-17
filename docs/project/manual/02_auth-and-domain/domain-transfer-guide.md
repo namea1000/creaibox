@@ -1,5 +1,12 @@
 # 타사 도메인을 Vercel로 기관 이전(Domain Transfer)하는 가이드
 
+> **문서 분류**: 서비스 실무 매뉴얼 (How-To Manual)
+> **연관 아키텍처 명세서**: `docs/arch/02_auth-and-domain/blog-subdomains.md`
+> **연관 DB 스키마**: `docs/database/blog-subdomains-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/blog-subdomains.sql`
+
+---
+
 본 문서는 블루호스트(Bluehost) 등 외부 도메인 등록 대행업체에서 관리 중인 도메인을 **Vercel**로 이전(Transfer In)하여 일괄 관리하고 비용을 절감하기 위한 상세 가이드입니다.
 
 ---

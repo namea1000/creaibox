@@ -51,6 +51,20 @@ When creating how-to guides or operation manuals (e.g., "~ 하는 방법", "매�
 - 임시방편으로 기존 JSONB(`extra_configs` 등) 컬럼에 꼼수 데이터(플래그)를 구겨 넣는 것을 지양하고, **필요하다면 기존 DB 테이블에 명확한 역할을 하는 전용 컬럼(Column)을 정석대로 추가(ALTER TABLE)하여 해결**한다.
 
 ### Mandatory Global Edge CDN ISR 60s Rule (전 대중 공개 페이지 및 블로그 글로벌 엣지 캐시 60초 의무 규칙)
-- 향후 신규로 제작되는 모든 대중 공개 페이지(메인 랜딩, 소개, 요금제, 인포센터, 고객지원, AI 웹사이트 빌더 홍보 페이지), 사용자 블로그(`brand/[brand_id]/*`), 및 AI 웹사이트 빌더로 제작되는 모든 고객사 홈페이지/서브페이지/내장 블로그에는 반드시 `export const revalidate = 60;` (ISR 60s)를 선언하여 Vercel Global Edge CDN에서 0.01초 만에 즉시 서빙되도록 구축해야 한다.
+- 향후 신규로 제작되는 모든 대중 공개 페이지(메인 랜딩, 소개, 요금제, 인포센터, 고객지원, AI 웹사이트 빌더 홍보 페이지), 사용자 블로그(`brand/[brand_id]/*`), 및 AI 웹사이트 빌더로 제작되는 모든 고객사 홈페이지/서브페이지/내장 블로그에는 반드시 `export const revalidate = false;` (무한 캐시 + Webhook) 또는 `export const revalidate = 60;`을 선언하여 Vercel Global Edge CDN에서 0.01초 만에 즉시 서빙되도록 구축해야 한다.
 - Server Component 내부에서 `cookies()`나 `headers()`를 직접 호출하여 정적 캐시가 해제되는 안티 패턴을 100% 금지하며, 테마/인증 상태는 Client Component Wrapper로 분리한다.
 - 블로그 상세 페이지 및 공개 데이터 쿼리 작성 시 React `cache()`를 사용하여 메타데이터와 본문 간의 중복 DB 조회를 방지하고, 조회수 증가는 비차단 `<PostViewTracker />`로 분리한다.
+
+### Mandatory 4-Pillar / 2-Pillar Feature Documentation & Maintenance Rule (신규 개발 및 기존 메뉴 수정보완 시 4대/2대 마스터 문서 동시 최신화 의무 규칙)
+- **신규 메뉴/기능 개발뿐만 아니라 기존 메뉴의 코드 수정, 기능 보완, 리팩토링 및 업데이트를 진행할 때도**, AI 에이전트는 무조건 `docs/rules/document-role-separation-diataxis-rules.md` 문서를 최우선 참조하여 해당 기능의 연관 4대/2대 마스터 문서를 찾아내어 **코드 변경 사항에 맞게 100% 동시 업데이트(최신화)**해야 한다.
+- **문서 패키지 관리 공식**:
+  1. **DB를 사용하는 기능 (4대 마스터 문서 1세트 동시 최신화)**:
+     - 🔴 `docs/arch/<feature>-architecture.md` (아키텍처 기술 명세서: 설계 변경점, 파이프라인 최신화)
+     - 🔵 `docs/project/manual/<feature>-manual.md` (서비스 실무 매뉴얼: 변경된 조작법, 신규 FAQ/금지패턴 반영)
+     - 🟡 `docs/database/<feature>-schema.md` (DB 스키마 명세서: 추가/변경된 컬럼, RLS 최신화)
+     - 🟢 `docs/database/sql/<feature>.sql` (순수 실행 SQL DDL: 변경/추가된 ALTER TABLE / CREATE DDL 반영)
+  2. **DB를 사용하지 않는 순수 프론트엔드/외부 API 기능 (2대 문서 1세트 동시 최신화)**:
+     - 🔴 `docs/arch/<feature>-architecture.md` (아키텍처 기술 명세서)
+     - 🔵 `docs/project/manual/<feature>-manual.md` (서비스 실무 매뉴얼)
+- **상호 교차 참조(Cross-Linking) 유지**: 기존 문서 수정 또는 신규 문서 생성 시 각 문서 최상단에 연관 문서 링크가 누락되지 않도록 유지한다.
+- **마스터 문서 색인 최신화**: 신규 메뉴/문서 세트가 추가되면 반드시 중앙 사이트맵인 [`docs/README.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/README.md)의 마스터 테이블에도 새 항목을 등록하여 100% 동기화한다.

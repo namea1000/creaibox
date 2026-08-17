@@ -1,3 +1,8 @@
+-- [CreaiBox Database DDL]
+-- 연관 아키텍처: docs/arch/04_writing-and-blog/writing-studio.md
+-- 연관 실무 매뉴얼: docs/project/manual/04_writing-and-blog/search-engine-seo-guide.md
+-- 연관 DB 스키마: docs/database/writing-creaibox-posts-schema.md
+--
 -- =====================================================
 -- CreaiBox Writing Posts DB Final
 -- =====================================================

@@ -1,5 +1,12 @@
 # AI 이미지 배경 제거(Remove Bg) 기능 정의서 및 작동 가이드
 
+> **문서 분류**: 서비스 실무 매뉴얼 (How-To Manual)
+> **연관 아키텍처 명세서**: `docs/arch/05_image-and-video/image-studio.md`
+> **연관 DB 스키마**: `docs/database/generated-images-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/generated-images.sql`
+
+---
+
 이 문서는 크리에이박스 AI 콘텐츠 스튜디오에 탑재된 **"AI 이미지 배경 제거(Remove Bg)"** 도구의 기능 구조, 브라우저 단의 픽셀 처리 작동 원리 및 마케팅 소구점을 나중에 홍보자료나 사용자 매뉴얼을 제작할 때 손쉽게 참조할 수 있도록 정리한 기술 및 브랜딩 명세서입니다.
 
 ---

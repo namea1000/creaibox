@@ -156,7 +156,7 @@
 ## 14. 🌐 글로벌 영문 사이트(`creaibox.com/en`) 푸터 UI 설계 지침 수록
 
 ### 주요 반영 사항
-- **글로벌 영문 사이트 푸터 가이드 신규 구축 (`docs/project/manual/global-english-footer-design-guide.md`)**:
+- **글로벌 영문 사이트 푸터 가이드 신규 구축 (`docs/project/manual/03_client-site-builder/global-english-footer-design-guide.md`)**:
   - 대표님께서 전달해 주신 해외 스타트업(Repaint, Aipress) 푸터 디자인 인사이트를 바탕으로, 글로벌 영문 버전 오픈 시 복잡한 사업자 정보 없이 `Terms of Service`, `Privacy Policy`, `Copyright`만 깔끔하게 노출하는 미니멀 UI 설계 지침 및 로드맵(`docs/project/todo-roadmap.md`) 반영을 완료했습니다.
 
 ---
@@ -189,8 +189,8 @@
   - Mock 데이터(`INITIAL_ADMIN_REQUESTS`)로 동작하던 껍데기 UI를 걷어내고, 실제 사용자가 1:1 맞춤 커스텀 사이트를 신청하면 `client_site_requests` 테이블에 데이터가 적재되도록 DB 스키마 및 RLS(Row Level Security) 정책을 구성했습니다.
   - 이제 관리자는 `AdminDashboardTab`에서 Supabase DB에 적재된 실시간 신청 현황을 파악하고 바로 안티그래비티 AI 에이전트 생성 버튼을 구동할 수 있습니다.
 - **관련 기술 문서 동기화**:
-  - `docs/arch/client-site-builder-design-spec.md` (기술 명세서)
-  - `docs/project/manual/custom-client-site-guide.md` (운용 매뉴얼)
+  - `docs/arch/03_client-site-builder/client-site-builder-design-spec.md` (기술 명세서)
+  - `docs/project/manual/03_client-site-builder/custom-client-site-guide.md` (운용 매뉴얼)
   - 리팩토링 계획서(`implementation_plan.md`)에 완료 및 DB 연동 사항 산출 기록 완료.
 
 ## 19. 🚀 홈페이지 1초 AI 이관 엔진 '진짜 데이터' 적재(Zero Fake Data) 및 미들웨어 통합 복구
@@ -733,3 +733,62 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
 - Next.js 14의 동적 라우트 비용 절감 정책 때문에, 기존 `router.prefetch` 방식은 데이터 본문을 미리 가져오지 않고 껍데기(Layout)만 가져오고 있었습니다.
 - 150ms 마우스 체류 의도가 감지되면 `<Link prefetch={true}>` 모드로 강제 변환하여, Next.js가 뒤에서 본문 데이터까지 완벽하게 다운로드해 두도록 아키텍처를 업그레이드했습니다.
 - 이제 마우스를 올린 후 클릭하면 0.01초 만에 창이 즉시 열립니다!
+
+## 엔터프라이즈 스케일업: 무한 캐시 + AI 웹사이트 빌더 100% 적용 완료 (2026-08-17)
+
+**작업 내용**
+- 기존 60초 폴링 방식(ISR) 아키텍처를 폐기하고, 초거대 플랫폼 기준인 **"Method B: 무한 캐시 + 온디맨드 DB 웹훅 무효화"** 방식으로 인프라를 전면 스케일업 하였습니다.
+- 이를 통해 수백만 트래픽이 발생하더라도 Vercel / Supabase 조회 요금이 "0원"으로 수렴하도록 서버리스 비용을 100% 완벽 방어합니다.
+- 추가로, 이 강력한 아키텍처를 다음 **5가지 글로벌 서비스 영역 전체에 100% 동일하게 영구 적용** 완료했습니다:
+  1. 크리에이박스 메인 블로그
+  2. 테넌트 서브도메인 블로그
+  3. 독립 도메인 블로그
+  4. **AI 웹사이트 빌더로 제작된 홈페이지 및 서브페이지 전체**
+  5. **향후 생성될 모든 신규 고객사 커스텀 사이트 및 템플릿**
+- 결과적으로, 현재 운영 중이거나 앞으로 생성될 모든 고객사 사이트들은 어떠한 설정 없이도 무조건 **클릭 즉시 0.01초 광속 서빙**을 제공받게 됩니다.
+
+## 2026-08-17 (추가): 4대/2대 마스터 문서 작성 의무 규칙 (Agent Rules) 확립
+
+**작업 내용**
+- 메뉴 및 기능 개발 시 문서 파편화와 기술 부채를 방지하기 위해 Diátaxis 프레임워크를 기반으로 한 **4대/2대 마스터 문서 패키지 작성 규칙**을 프로젝트 에이전트 룰에 공식 등록 완료.
+- **적용 규칙 파일**:
+  - `AGENTS.md`
+  - `.agents/AGENTS.md`
+  - `docs/rules/ai-agent-rules.md`
+  - `docs/rules/document-role-separation-diataxis-rules.md`
+- 앞으로 모든 AI 에이전트는 신규 메뉴 개발 시 DB 연동 여부에 따라 4대(DB 있음) 또는 2대(DB 없음) 문서 세트를 100% 필수 작성하고 상호 교차 링크를 연결함.
+
+## 2026-08-17 (추가): 기존 메뉴 수정보완 시 4대/2대 마스터 문서 동시 최신화 의무화 확장
+
+**작업 내용**
+- 신규 개발 시뿐만 아니라, **기존 메뉴/코드의 수정, 기능 보완, 리팩토링, 업데이트 작업 시에도 연관된 4대/2대 마스터 문서를 반드시 찾아내어 100% 동시 업데이트(최신화)**하도록 에이전트 룰을 확장 개정함.
+- **업데이트된 규칙 파일**:
+  - `AGENTS.md`
+  - `.agents/AGENTS.md`
+  - `docs/rules/ai-agent-rules.md`
+  - `docs/rules/document-role-separation-diataxis-rules.md`
+
+## 2026-08-17 (완료): CreaiBox 전역 4대/2대 마스터 문서 전수 감사 및 총정리 완료
+
+**작업 배경 및 목표**
+- 개정된 `Mandatory 4-Pillar / 2-Pillar Feature Documentation & Maintenance Rule`에 맞춰 `docs/` 내 260여 개 전체 문서를 전수 감사하고, 누락된 문서 생성 및 삼각/사각 상호 교차 참조(Cross-Linking)를 완벽하게 연결함.
+
+**작업 내용**
+1. **누락 마스터 문서 5종 신규 생성 및 파일명 정렬**:
+   - `docs/project/manual/01_core-and-infra/ai-assistant-user-guide.md` (AI 어시스턴트 실무 매뉴얼)
+   - `docs/arch/01_core-and-infra/research-studio-architecture.md` (자료 분석 스튜디오 아키텍처)
+   - `docs/project/manual/01_core-and-infra/research-studio-guide.md` (자료 분석 스튜디오 실무 매뉴얼)
+   - `docs/project/manual/06_trend-and-marketing/infocenter-guide.md` (인포센터 실무 매뉴얼)
+   - `docs/database/keyword-trending-history-schema.md` (키워드 트렌드 DB 스키마 명세서)
+   - `docs/database/video-studio.md` ➜ `docs/database/video-studio-schema.md` 파일명 표준화
+2. **사이드바 16개 대분류 1:1 매핑 및 상호 교차 참조(Cross-Linking) 전수 주입**:
+   - 아키텍처(53종), 실무 매뉴얼(59종), DB 스키마(25종), SQL DDL(37종) 전역 파일에 표준 Diátaxis 메타 헤더 및 상호 링크 주입 완료.
+3. **전역 마스터 인덱스 구축**:
+   - `docs/README.md` 신규 생성 (사이드바 16개 클러스터 4대/2대 마스터 매핑 테이블 제공)
+   - `docs/database/README.md` 최신 스키마 및 SQL 매핑 최신화
+4. **품질 및 링크 검증**:
+   - 전수 링크 스캔을 통해 깨진 링크(Dead Links) 100% 정상화
+   - `npx tsc --noEmit` 빌드 검증 0 에러 확인
+
+**결과**
+- CreaiBox 프로젝트의 모든 문서가 목적별로 완벽히 분리되면서도, 어느 문서를 열어도 0.1초 만에 전체 4대 세트를 상호 탐색할 수 있는 엔터프라이즈급 문서 시스템 확립 완료.

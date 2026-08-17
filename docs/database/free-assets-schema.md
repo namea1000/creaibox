@@ -1,5 +1,12 @@
 # Free Assets Database Schema
 
+> **문서 분류**: 데이터베이스 스키마 명세서 (Database Schema Spec)
+> **연관 아키텍처 명세서**: `docs/arch/07_music-and-community/free-assets-requests.md`
+> **연관 실무 매뉴얼**: `docs/project/manual/05_image-and-video/creassetbox-guide.md`
+> **연관 실행 SQL**: `docs/database/sql/free-assets.sql`
+
+---
+
 ## 1. Purpose
 
 Free Assets 데이터베이스는 CreaiBox에서 제공하는 무료 공유 에셋(이미지, 음악, 비디오 등)의 메타데이터와 파일 저장 위치를 관리하기 위한 시스템이다.

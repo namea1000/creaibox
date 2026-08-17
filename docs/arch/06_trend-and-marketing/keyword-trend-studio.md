@@ -2,6 +2,13 @@
 
 # 키워드 트렌드 분석 스튜디오 (Keyword Trend Studio)
 
+> **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)
+> **연관 실무 매뉴얼**: `docs/project/manual/06_trend-and-marketing/keyword-precision-tool-architecture-manual.md`
+> **연관 DB 스키마**: `docs/database/keyword-trending-history-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/keyword_trending_history.sql`
+
+---
+
 이 문서는 키워드 트렌드 분석 스튜디오 모듈의 현재 아키텍처 및 연동 흐름에 대해 설명하는 상시 운영용 문서입니다.
 
 ---

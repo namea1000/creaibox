@@ -1,5 +1,12 @@
 # Writing CreaiBox Posts Database Schema
 
+> **문서 분류**: 데이터베이스 스키마 명세서 (Database Schema Spec)
+> **연관 아키텍처 명세서**: `docs/arch/04_writing-and-blog/writing-studio.md`
+> **연관 실무 매뉴얼**: `docs/project/manual/04_writing-and-blog/search-engine-seo-guide.md`
+> **연관 실행 SQL**: `docs/database/sql/writing-creaibox-posts.sql`
+
+---
+
 ## 1. Purpose
 
 Writing CreaiBox Posts 데이터베이스는 CreaiBox의 자체 블로그 콘텐츠 저장소이다.

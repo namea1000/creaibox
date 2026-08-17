@@ -1,5 +1,12 @@
 # AI Assistant Multi-Agent Hub Architecture
 
+> **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)
+> **연관 실무 매뉴얼**: `docs/project/manual/01_core-and-infra/ai-assistant-user-guide.md`
+> **연관 DB 스키마**: `docs/database/ai-assistant-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/ai-assistant.sql`
+
+---
+
 ## 문서 정보
 
 | 항목      | 내용                           |

@@ -1,4 +1,4 @@
-# 📧 CreaiBox 공식 이메일 계정 마스터 가이드 (`docs/project/manual/creaibox-official-email-accounts-guide.md`)
+# 📧 CreaiBox 공식 이메일 계정 마스터 가이드 (`docs/project/manual/01_core-and-infra/creaibox-official-email-accounts-guide.md`)
 
 본 문서는 **creaibox.com 글로벌 플랫폼 서비스 운용**에 필요한 필수 커스텀 도메인 이메일 계정(`***@creaibox.com`) 리스트, 용도별 분류, 수/발신 포워딩 정책, Supabase/Resend 연동 설정 및 보안 운용 가이드 대장입니다.
 

@@ -1,5 +1,12 @@
 # YouTube Trending Archive Schema
 
+> **문서 분류**: 데이터베이스 스키마 명세서 (Database Schema Spec)
+> **연관 아키텍처 명세서**: `docs/arch/06_trend-and-marketing/youtube-trend-studio.md`
+> **연관 실무 매뉴얼**: `docs/project/manual/06_trend-and-marketing/youtube-ai-trending-analysis-guide.md`
+> **연관 실행 SQL**: `docs/database/sql/youtube-trending-archive.sql`
+
+---
+
 유튜브 대한민국 실시간 인기 차트(categoryId별)의 데이터를 날짜별로 수집하여 영구 아카이빙하고 캐싱하는 용도의 테이블 정의서입니다.
 
 ## 테이블 사양

@@ -1,5 +1,10 @@
 # [Architecture Specification] Instant Navigation & Smart Prefetch Pipeline
 
+> **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)
+> **연관 실무 매뉴얼**: `docs/project/manual/01_core-and-infra/instant-navigation-0.01s-prefetch-guide.md`
+
+---
+
 > **문서 상태**: [업데이트 됨] 연계된 Vercel CDN 캐시 정책이 기존 60초 ISR에서 **"무한 캐시 + 온디맨드 Webhook(Method B)"** 방식으로 전면 업그레이드 되었습니다. (`on-demand-revalidation-webhook-architecture.md` 참조)
 > **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)
 > **관련 모듈**: `src/components/common/SmartIntentLink.tsx`, `src/components/layout/Header.tsx`, `src/components/layout/Sidebar.tsx`, `src/app/page.tsx`, `src/components/layout/Footer.tsx`, `src/app/blog/page.tsx`, `src/components/blog/BlogListPaginatedView.tsx`, `src/app/brand/[brand_id]/components/BlogClientWrapper.tsx`

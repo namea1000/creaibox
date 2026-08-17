@@ -1,5 +1,12 @@
 # Free Asset Requests Architecture
 
+> **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)
+> **연관 실무 매뉴얼**: `docs/project/manual/05_image-and-video/creassetbox-guide.md`
+> **연관 DB 스키마**: `docs/database/free-assets-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/free-assets.sql`
+
+---
+
 ## 1. Purpose
 무료 공유 에셋 라이브러리(`free-assets`)에서 일반 사용자들이 공용으로 필요한 이미지를 관리자에게 요청하고, 관리자는 이를 접수 및 제작하여 완료 시 피드백을 전달할 수 있는 커뮤니티형 통로를 제공한다.
 이를 통해 사용자는 필요한 에셋을 수급하고, 플랫폼은 사용자들이 어떤 에셋군을 필요로 하는지 시장 수요를 실시간 파악하며, 활발하게 에셋이 재생산되는 생태계를 구축할 수 있다.

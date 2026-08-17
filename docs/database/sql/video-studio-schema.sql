@@ -1,3 +1,8 @@
+-- [CreaiBox Database DDL]
+-- 연관 아키텍처: docs/arch/05_image-and-video/video-studio.md
+-- 연관 실무 매뉴얼: docs/project/manual/05_image-and-video/thumbnail-aspect-ratio-guide.md
+-- 연관 DB 스키마: docs/database/video-studio-schema.md
+--
 -- ==================================================
 -- CreaiBox Video Studio Database Schema
 -- 원본 영상/음악/이미지는 저장하지 않고,

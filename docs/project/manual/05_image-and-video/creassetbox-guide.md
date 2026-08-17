@@ -1,5 +1,12 @@
 # 크리에셋박스(CreAssetBox) 기능 명세 및 홍보 가이드북
 
+> **문서 분류**: 서비스 실무 매뉴얼 (How-To Manual)
+> **연관 아키텍처 명세서**: `docs/arch/07_music-and-community/free-assets-requests.md`
+> **연관 DB 스키마**: `docs/database/free-assets-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/free-assets.sql`
+
+---
+
 이 문서는 크리에이박스 플랫폼의 핵심 공유 자산 저장소인 **"크리에셋박스(CreAssetBox)"**의 네이밍 스토리, 메뉴 독립 기획 배경 및 향후 홍보 자료 제작을 위한 마케팅 카피라이팅 소스를 정리한 공식 가이드북입니다.
 
 ---

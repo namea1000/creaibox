@@ -1,5 +1,12 @@
 # CreaiBox Video Studio Database
 
+> **문서 분류**: 데이터베이스 스키마 명세서 (Database Schema Spec)
+> **연관 아키텍처 명세서**: `docs/arch/05_image-and-video/video-studio.md`
+> **연관 실무 매뉴얼**: `docs/project/manual/05_image-and-video/thumbnail-aspect-ratio-guide.md`
+> **연관 실행 SQL**: `docs/database/sql/video-studio-schema.sql`
+
+---
+
 ## 목적
 
 Video Studio는 사용자의 영상, 이미지, 오디오 원본 파일을 Supabase에 저장하지 않는다.

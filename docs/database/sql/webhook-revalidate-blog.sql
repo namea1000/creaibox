@@ -1,5 +1,6 @@
 -- [CreaiBox 아키텍처 방법 B: 무한 캐시 + 온디맨드 Webhook 연동 셋업]
--- 이 쿼리를 Supabase 관리자 화면의 'SQL Editor'에 복사해서 실행(RUN)하세요.
+-- 연관 아키텍처 명세서: docs/arch/01_core-and-infra/on-demand-revalidation-webhook-architecture.md
+-- 연관 실무 매뉴얼: docs/project/manual/on-demand-revalidation-webhook-manual.md
 --
 -- 설명: writing_creaibox_posts 테이블에서 글이 작성/수정/삭제되어 
 -- 발행 상태(published)에 변화가 생길 때마다 자동으로 Vercel Next.js의 

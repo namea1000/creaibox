@@ -1,3 +1,8 @@
+-- [CreaiBox Database DDL]
+-- 연관 아키텍처: docs/arch/01_core-and-infra/tech-stack.md
+-- 연관 실무 매뉴얼: docs/project/manual/01_core-and-infra/environment-variables-and-api-vault-guide.md
+-- 연관 DB 스키마: docs/database/profiles-schema.md
+--
 -- =====================================================
 -- CreaiBox Profiles DB Final
 -- =====================================================

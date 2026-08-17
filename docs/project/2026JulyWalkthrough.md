@@ -36,7 +36,7 @@
 
 블로그 본문 최하단에 노출되는 에디토리얼 카드를 사용자의 성격 및 테마에 맞춰 자유롭게 조절하고 커스텀할 수 있도록 모달 환경 및 렌더링 체계를 통합 구축했습니다.
 
-* **[NEW] [editorial-box-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/editorial-box-guide.md)**:
+* **[NEW] [editorial-box-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/01_core-and-infra/editorial-box-guide.md)**:
   * 커스텀 에디토리얼 설정 기능의 동작 원리(HTML Comment 내 JSON 직렬화), 테마 프리셋, 코드 구현부 위치 및 백링크 SEO 활용 전략에 대한 공식 기획 가이드 문서 작성 완료.
 * **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/%5Bslug%5D/page.tsx)**:
   * 공식 블로그 상세 조회 페이지 하단에서 글 내용 뒤 주석(`<!-- CREAIBOX_EDITORIAL_START ... -->`)을 파싱하여, 사용자가 모달에서 직접 커스텀한 소제목, 상세 설명, 색상값(배경, 테두리, 글자색 등)으로 인라인 렌더링 처리.
@@ -136,7 +136,7 @@ AI 스마트 글쓰기, 네이버 글쓰기, 워드프레스 글쓰기로 생성
 * **[MODIFY] [brand/[brand_id]/components/BlogClientWrapper.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/brand/%5Bbrand_id%5D/components/BlogClientWrapper.tsx)**:
   * 블로그 상단 뱃지 텍스트를 `Professional AI Publisher` ➔ **`Professional Media Publisher`** (전문 미디어 퍼블리셔)로 수정 및 사용자가 입력한 **`블로그 설명(상세 설명)`** 텍스트가 메인 배너 제목 하단 서브 타이틀로 나타나도록 렌더링 연결 완료. 빈 값(`""`) 입력 시 기본 문구가 나오지 않고 깨끗이 비워지도록 파서 버그 수정 완료. 
   * 기존에 이미 발행되었던 포스트 본문의 `CREAIBOX INSIGHT EDITORIAL` 박스를 동적 대체 파이프라인으로 전환하여, 유저의 최신 설정에 따른 **[맞춤 프로필 카드]**, **[파스텔 1줄 뱃지]**, 또는 **[뱃지 OFF]**가 과거 배포글 및 신규 배포글 전면에 실시간 100% 적용되도록 개편 완료.
-* **[NEW] [referral-program-proposal.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/referral-program-proposal.md)**:
+* **[NEW] [referral-program-proposal.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/business-models/referral-program-proposal.md)**:
   * 인플루언서 및 파트너 추천 코드제 시스템 기안서 작성 완료. 3단계 윈-윈 수익 공유 구조, 회원가입 시 추천 코드 입력, 일반 회원(1달 무료) vs 인플루언서 제휴 회원(1달 무료 + 2달 차 첫 유료 결제 50% 반값 할인) 이중 혜택 차별화, 매월 결제액의 20% 자동 적립, Section 8 홍보 효과 분석 및 SaaS 성공 사례(Jasper AI, Shopify), DB 4종 스키마, 파트너 대시보드 및 어드민 정산 관리 시스템 규정 정의.
 
 ---
@@ -162,7 +162,7 @@ AI 스마트 글쓰기, 네이버 글쓰기, 워드프레스 글쓰기로 생성
 
 * **[NEW] [feed/route.ts](file:///Users/a1234/Local%20Sites/creaibox/src/app/feed/route.ts)**:
   * `writing_creaibox_posts` 테이블을 동적 수집하여 XML 포맷의 RSS 2.0 및 Atom Feed 문서를 실시간 생성하는 가벼운 Edge API 개발.
-* **[NEW] [sitemap-vs-feed-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/sitemap-vs-feed-guide.md)**:
+* **[NEW] [sitemap-vs-feed-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/04_writing-and-blog/sitemap-vs-feed-guide.md)**:
   * 검색엔진 수집 극대화를 위한 Sitemap 및 Feed 운용 가이드 문서 작성.
 * **[MODIFY] [blog/[slug]/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/blog/%5Bslug%5D/page.tsx)**:
   * 웹접근성(a11y) 점수 개선을 위해 ARIA 랜드마크 및 색상 대비 명암비 최적화.
@@ -232,7 +232,7 @@ Cre Note 위젯을 열 때 사용자가 최근 드래그하여 조정해둔 가�
 
 네이버 및 구글 브랜드 키워드 상단 검색 노출 및 브랜드 신뢰도 구축을 위한 나무위키/위키백과 등재 지침과 즉시 복사하여 등록 가능한 위키 마크업 본문 원고를 수록했습니다.
 
-* **[NEW] [namuwiki-wikipedia-registration-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/namuwiki-wikipedia-registration-guide.md)**:
+* **[NEW] [namuwiki-wikipedia-registration-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/01_core-and-infra/namuwiki-wikipedia-registration-guide.md)**:
   * 나무위키 vs 한국어 위키백과 등재 자격, 삭제 위험 방지 수칙, 네이버 상단 노출 메커니즘 정리.
   * 나무위키 전용 프로필 상자, 목차, 서비스 개요, AI 스마트 글쓰기, **키워드 트렌드 분석 & 유튜브 트렌드 분석**, 콘텐츠 플래너, 요금 구조, **공식 유튜브 채널(`@creaibox`) 및 카카오톡 채널(`_RxdxmsX`)** 마크업 원고 포함.
   * 계정 생성부터 영문 리다이렉트(`CreaiBox`) 설정까지 4단계 실전 등록 매뉴얼 작성.
@@ -629,7 +629,7 @@ AI 콘텐츠 기획 결과화면 및 라이브러리에서 "네이버 글 생성
 
 ### 1-49. 백그라운드 무인 자동화 아키텍처 명세 및 미래 확산 가이드 문서 작성
 
-* **[NEW] [background-automation-architecture.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/background-automation-architecture.md)**:
+* **[NEW] [background-automation-architecture.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/01_core-and-infra/background-automation-architecture.md)**:
   - GitHub Actions, Supabase `pg_cron` 기술 분석과 Vercel 자원 소모 0% 달성 방안 정리.
   - 자동 포스팅, 메일링 리포트, 검색엔진 자동 색인(Ping), DB 백업 스냅샷 등 미래 자동화 활용 6대 기능 명세 수록.
 
@@ -786,7 +786,7 @@ AI 콘텐츠 기획 결과화면 및 라이브러리에서 "네이버 글 생성
 
 ### 1-69. CreaiBox 100% 맞춤형 커스텀 기업 홈페이지 개발 및 운영 종합 지침서 작성
 
-* **[NEW] [custom-client-site-development-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/custom-client-site-development-guide.md)**:
+* **[NEW] [custom-client-site-development-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/03_client-site-builder/custom-client-site-development-guide.md)**:
   - 커스텀 기업 홈페이지 아키텍처, 디렉토리 구조, 미들웨어 라우팅 규칙, Vercel 퍼포먼스 및 대역폭 최적화, SEO DoFollow 백링크 설계, 신규 사이트 제작 워크플로우 6단계를 집대성한 문서 완성.
 
 ---

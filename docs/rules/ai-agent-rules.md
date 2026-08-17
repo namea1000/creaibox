@@ -46,7 +46,7 @@ AI Agents MUST NOT declare success or finish a user request turn without verifyi
 - 에이전트는 테이블 DDL 파일(`docs/database/<table_name>.sql`)을 항상 프로젝트에 저장 관리하며, 사용자가 SQL을 실행하여 DB 테이블을 생성하도록 명확하게 안내한다.
 
 ### 8. Mandatory Background Automation Manual Sync Rule (백그라운드 무인 기능 매뉴얼 최신화 규칙)
-- **향후 신규 무인 자동 수집(Cron), 백그라운드 배치 작업, 또는 자동화 기능이 개발/구동되면, AI 에이전트는 백그라운드 무인 자동화 매뉴얼(`docs/project/manual/background-automation-execution-5-methods-guide.md`)의 "4. 🟢 현재 즉시 구동 중 / 서비스 가능한 무인 기능 (Current Services)" 섹션에 신규 기능을 즉시 등록하고 최신화해야 한다.**
+- **향후 신규 무인 자동 수집(Cron), 백그라운드 배치 작업, 또는 자동화 기능이 개발/구동되면, AI 에이전트는 백그라운드 무인 자동화 매뉴얼(`docs/project/manual/01_core-and-infra/background-automation-execution-5-methods-guide.md`)의 "4. 🟢 현재 즉시 구동 중 / 서비스 가능한 무인 기능 (Current Services)" 섹션에 신규 기능을 즉시 등록하고 최신화해야 한다.**
 
 ### 9. Mandatory Client Site Egress & Aspect Ratio Standard Rule (클라이언트 사이트 트래픽 감축 및 16:9 비율 영구 표준 규칙)
 - **규칙 1 (카드 썸네일 16:9 비율 고정)**: 향후 신규 제작하는 모든 커스텀 클라이언트 사이트, 비즈니스 홈페이지, 브랜드 블로그의 카드 썸네일 프레임은 반드시 `aspect-[16/9]` (16:9 비율)만 사용하여 썸네일 텍스트 좌우 잘림을 100% 방지한다.
@@ -455,9 +455,9 @@ docs/arch/research-studio-design-spec.md
 docs/database/research-schema.md
 docs/database/sql/research.sql
 
-docs/pages/studio/research.md
+docs/components/research.md
 
-docs/api/research.md
+docs/components/research.md
 
 
 
@@ -787,3 +787,24 @@ General UI icons must use lucide-react.
 ### 3. React `cache()` Data Layer & 비차단 비동기 쓰기 표준화
 - 블로그 상세 페이지 및 공개 데이터 쿼리 작성 시 React `cache()`를 사용하여 메타데이터(`generateMetadata`)와 본문(`Page`) 간의 중복 DB 조회를 1회로 통합합니다.
 - SSR 렌더링 중 DB에 `views + 1`을 동기식으로 업데이트하여 렌더링을 블로킹하는 안티 패턴을 금지하며, 반드시 화면이 뜬 후 비차단 클라이언트 컴포넌트(`<PostViewTracker postId={id} />`)로 비동기 1회 호출해야 합니다.
+
+---
+
+## 📚 Mandatory 4-Pillar / 2-Pillar Feature Documentation & Maintenance Rule (신규 개발 및 기존 메뉴 수정보완 시 4대/2대 마스터 문서 동시 최신화 의무 규칙)
+
+모든 AI 에이전트는 앞으로 신규 메뉴나 서비스를 개발할 때뿐만 아니라, **기존 메뉴의 코드를 수정/보완/리팩토링/업데이트할 때도**, 문서의 파편화와 기술 부채를 방지하기 위해 반드시 **`docs/rules/document-role-separation-diataxis-rules.md`** 문서를 최우선 참조하여 해당 기능의 연관 4대/2대 마스터 문서를 찾아내어 코드 변경점과 100% 동일하게 동시 최신화해야 합니다.
+
+### 1. 기능 성격별 문서 패키지 관리 공식 (Standard Package Rule)
+* **Type 1. 전용 DB 테이블이 존재하는 메뉴/기능 ➔ [4대 마스터 문서 1세트 동시 최신화]**
+  1. 🔴 **아키텍처 기술 명세서** (`docs/arch/<feature>-architecture.md`): 시스템 설계도, 변경된 Mermaid 시퀀스 및 데이터 흐름도 최신화
+  2. 🔵 **서비스 실무 매뉴얼** (`docs/project/manual/<feature>-manual.md`): 실무자 조작 가이드, 변경된 UI 조작법, 신규 금지 패턴 및 FAQ 최신화
+  3. 🟡 **데이터베이스 스키마 명세서** (`docs/database/<feature>-schema.md`): 추가/수정된 컬럼 명세표, ERD, RLS 보안 정책 최신화
+  4. 🟢 **데이터베이스 SQL 실행 스크립트** (`docs/database/sql/<feature>.sql`): 수정/추가된 ALTER TABLE / CREATE DDL 쿼리 반영
+
+* **Type 2. 전용 DB 테이블이 없는 순수 프론트엔드/외부 API 기능 ➔ [2대 문서 1세트 동시 최신화]**
+  1. 🔴 **아키텍처 기술 명세서** (`docs/arch/<feature>-architecture.md`): 프론트엔드 렌더링 파이프라인 & API 연동 설계 최신화
+  2. 🔵 **서비스 실무 매뉴얼** (`docs/project/manual/<feature>-manual.md`): 변경된 화면 조작법 & 실무 FAQ 최신화
+
+### 2. 상호 교차 참조(Cross-Linking) 및 색인 동기화 의무화
+- 생성 또는 수정된 각 문서의 최상단 헤더에는 나머지 연관 문서들의 링크를 반드시 명시하여, 작업자가 어떤 문서를 열더라도 관련 전체 세트를 0.1초 만에 찾아갈 수 있도록 유지해야 합니다.
+- **마스터 문서 색인 최신화**: 신규 메뉴/문서 세트가 추가되거나 변경되면 반드시 프로젝트 전체 사이트맵인 [`docs/README.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/README.md)의 마스터 테이블에도 새 항목을 등록하여 100% 동기화해야 합니다.

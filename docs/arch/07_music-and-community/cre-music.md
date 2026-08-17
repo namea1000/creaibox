@@ -1,5 +1,12 @@
 # Cre Music (스포티파이 스타일 뮤직 플레이어) - Operational Documentation
 
+> **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)
+> **연관 실무 매뉴얼**: `docs/project/manual/07_music-and-community/pricing-plan-guide.md`
+> **연관 DB 스키마**: `docs/database/music-albums-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/music-albums.sql`
+
+---
+
 ## 1. Purpose
 **Cre Music**은 CreaiBox 플랫폼의 뮤직 스튜디오 서브 기능으로, 사용자의 구글 드라이브 지정 폴더(`vocal_trance` 앨범용)에서 음원 파일 목록을 실시간 동기화하여 스포티파이(Spotify) 스타일의 미려한 UI 상에서 직접 들어볼 수 있는 프리미엄 오디오 스트리밍 플레이어 서비스입니다.
 

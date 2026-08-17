@@ -1,5 +1,12 @@
 # Music Albums Database Schema
 
+> **문서 분류**: 데이터베이스 스키마 명세서 (Database Schema Spec)
+> **연관 아키텍처 명세서**: `docs/arch/07_music-and-community/cre-music.md`
+> **연관 실무 매뉴얼**: `docs/project/manual/07_music-and-community/pricing-plan-guide.md`
+> **연관 실행 SQL**: `docs/database/sql/music-albums.sql`
+
+---
+
 ## 1. Purpose
 
 Music Albums 데이터베이스는 CreaiBox Music Studio의 앨범 관리 시스템이다.

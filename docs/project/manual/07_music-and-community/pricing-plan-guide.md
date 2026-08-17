@@ -1,5 +1,12 @@
 # CreaiBox 요금제 정책 및 DB/코드 아키텍처 가이드 (Pricing Plan Guide)
 
+> **문서 분류**: 서비스 실무 매뉴얼 (How-To Manual)
+> **연관 아키텍처 명세서**: `docs/arch/07_music-and-community/cre-music.md`
+> **연관 DB 스키마**: `docs/database/music-albums-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/music-albums.sql`
+
+---
+
 이 문서는 CreaiBox 플랫폼의 **공식 4대 요금제 체계, 네이밍 전략, 백엔드/DB 스키마 매핑 아키텍처 및 White-Labeling(출처 표시 온/오프) 정책**을 정의하는 공식 개발 및 서비스 가이드 문서입니다.
 
 ---

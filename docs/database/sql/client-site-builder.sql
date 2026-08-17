@@ -1,3 +1,8 @@
+-- [CreaiBox Database DDL]
+-- 연관 아키텍처: docs/arch/03_client-site-builder/client-site-builder.md
+-- 연관 실무 매뉴얼: docs/project/manual/03_client-site-builder/custom-client-site-guide.md
+-- 연관 DB 스키마: docs/database/client-site-builder-schema.md
+--
 -- =========================================================================
 -- CreAIbox AI Homepage Builder & CMS Tables Setup
 -- =========================================================================

@@ -2,7 +2,7 @@
 
 > **문서 상태**: 🟢 실전 구동 중 (Production Operational Manual)  
 > **최종 수정일**: 2026-08-06  
-> **관련 아키텍처 문서**: [`portone-pg-payment-architecture.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/portone-pg-payment-architecture.md)  
+> **관련 아키텍처 문서**: [`portone-pg-payment-architecture.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/01_core-and-infra/portone-pg-payment-architecture.md)  
 
 ---
 

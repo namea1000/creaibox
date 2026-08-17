@@ -14,11 +14,11 @@
 * [walkthrough.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/walkthrough.md): (본 문서) 작업 일지 및 구성 내역 보고서.
 
 ### 1-2. 시스템 설계 및 인프라 (`docs/arch/`)
-* [tech-stack.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/tech-stack.md): Next.js 16 / React 19 코어 정보와 상태 관리, 스타일링 라이브러리 명세.
-* [ai-integration.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/ai-integration.md): 브라우저 내 개인 키 우선 통신 방식 및 백엔드 공용 풀 중계 가로채기 메커니즘 정리.
-* [google-drive-integration.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/google-drive-integration.md): 구글 드라이브 20TB 개인 요금제를 연동하기 위한 OAuth 2.0 리프레시 토큰 및 고속 CDN(lh3) 주소 체계 구축 가이드.
-* [cre-music.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/cre-music.md): Cre Music 스포티파이 스타일 오디오 플레이어 연동 운영 문서.
-* [cre-music-design-spec.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/cre-music-design-spec.md): Cre Music 오디오 CDN 우회 및 스트리밍 아키텍처 기술 사양서.
+* [tech-stack.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/01_core-and-infra/tech-stack.md): Next.js 16 / React 19 코어 정보와 상태 관리, 스타일링 라이브러리 명세.
+* [ai-integration.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/01_core-and-infra/ai-integration.md): 브라우저 내 개인 키 우선 통신 방식 및 백엔드 공용 풀 중계 가로채기 메커니즘 정리.
+* [google-drive-integration.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/01_core-and-infra/google-drive-integration.md): 구글 드라이브 20TB 개인 요금제를 연동하기 위한 OAuth 2.0 리프레시 토큰 및 고속 CDN(lh3) 주소 체계 구축 가이드.
+* [cre-music.md](file:///Users/a1234/Local%20Sites/creaibox/docs/pages/studio/cre-music.md): Cre Music 스포티파이 스타일 오디오 플레이어 연동 운영 문서.
+* [cre-music-design-spec.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/07_music-and-community/cre-music-design-spec.md): Cre Music 오디오 CDN 우회 및 스트리밍 아키텍처 기술 사양서.
 
 ### 1-3. 데이터베이스 및 저장소 (`docs/database/`)
 * [schema.md](file:///Users/a1234/Local%20Sites/creaibox/docs/database/schema.md): `profiles`, `admin_api_vault`, `writing_naver_posts` 등 총 10개 이상 테이블 컬럼 상세 정의.
@@ -222,8 +222,8 @@
 * **[MODIFY] [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/music/page.tsx)**: 뮤직 스튜디오 홈 화면에 Cre Music 플레이어 카드 및 퀵 메뉴 링크 신설.
 * **[MODIFY] [google-drive.ts](file:///Users/a1234/Local%20Sites/creaibox/src/lib/google-drive.ts)**: `getGoogleDriveStream(fileId, rangeHeader)` 오디오 스트림 획득 전용 헬퍼 유틸리티 함수 신설.
 * **[MODIFY] [.env.local](file:///Users/a1234/Local%20Sites/creaibox/.env.local)**: 연동 대상 보컬 트랜스 구글 드라이브 폴더 ID `GDRIVE_MUSIC_FOLDER_ID` 추가.
-* **[NEW] [cre-music.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/cre-music.md)**: 플레이어 모듈 운영/가이드 문서.
-* **[NEW] [cre-music-design-spec.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/cre-music-design-spec.md)**: 플레이어 설계 사양서.
+* **[NEW] [cre-music.md](file:///Users/a1234/Local%20Sites/creaibox/docs/pages/studio/cre-music.md)**: 플레이어 모듈 운영/가이드 문서.
+* **[NEW] [cre-music-design-spec.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/07_music-and-community/cre-music-design-spec.md)**: 플레이어 설계 사양서.
 * **[NEW] [cre-music.md (페이지 명세)](file:///Users/a1234/Local%20Sites/creaibox/docs/pages/studio/cre-music.md)**: 플레이어 화면 및 각 컴포넌트 스펙 정의서.
 * **[MODIFY] [endpoints.md](file:///Users/a1234/Local%20Sites/creaibox/docs/api/endpoints.md)**: API 엔드포인트에 `/api/music-studio/list` 및 `/api/music-studio/stream` 명세 추가 및 구체화.
 

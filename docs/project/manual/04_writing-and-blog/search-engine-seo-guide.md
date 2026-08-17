@@ -1,5 +1,12 @@
 # 구글 및 네이버 검색 노출 최적화 가이드
 
+> **문서 분류**: 서비스 실무 매뉴얼 (How-To Manual)
+> **연관 아키텍처 명세서**: `docs/arch/04_writing-and-blog/writing-studio.md`
+> **연관 DB 스키마**: `docs/database/writing-creaibox-posts-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/writing-creaibox-posts.sql`
+
+---
+
 본 문서는 구글(Google)과 네이버(Naver) 검색창에 **"크리에이박스"**, **"creaibox"** 검색 시 공식 도메인(`creaibox.com`)이 최상단 웹사이트 영역 및 공식 업체로 연동되어 노출되도록 조치하는 상세 로드맵입니다.
 
 ---

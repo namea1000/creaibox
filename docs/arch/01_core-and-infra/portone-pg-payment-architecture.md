@@ -3,7 +3,7 @@
 
 > **문서 상태**: 🟢 시스템 반영 완료 (Production Spec)  
 > **최종 수정일**: 2026-08-06  
-> **관련 실무 매뉴얼**: [`portone-pg-integration-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/portone-pg-integration-guide.md)  
+> **관련 실무 매뉴얼**: [`portone-pg-integration-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/01_core-and-infra/portone-pg-integration-guide.md)  
 
 ---
 

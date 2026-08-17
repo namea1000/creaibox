@@ -1,5 +1,12 @@
 # 유튜브 급상승 영상 AI 데이터 분석 리포트 가이드
 
+> **문서 분류**: 서비스 실무 매뉴얼 (How-To Manual)
+> **연관 아키텍처 명세서**: `docs/arch/06_trend-and-marketing/youtube-trend-studio.md`
+> **연관 DB 스키마**: `docs/database/youtube-trending-archive-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/youtube-trending-archive.sql`
+
+---
+
 본 문서는 크리에이박스(CreaiBox) 플랫폼의 유튜브 급상승 인기 비디오 메타데이터를 활용한 **시청자 반응률 분석 및 Gemini AI 트렌드 분석 보고서(AI 데이터 분석 리포트) 시스템**의 아키텍처, 2중 캐싱 기전, API 연동 세부 스펙을 상세히 다룹니다.
 
 ---

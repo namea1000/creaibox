@@ -1,5 +1,12 @@
 # Brand Subdomain & Custom Domain Blog Architecture
 
+> **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)
+> **연관 실무 매뉴얼**: `docs/project/manual/02_auth-and-domain/domain-transfer-guide.md`
+> **연관 DB 스키마**: `docs/database/blog-subdomains-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/blog-subdomains.sql`
+
+---
+
 ## 1. Purpose
 
 The Brand Subdomain & Custom Domain Blog system enables CreaiBox users to launch their personal branding blogs under customized subdomains (e.g., `brand-id.creaibox.com`) or completely independent custom domains (e.g., `mybrand.com`). It bridges AI content generation and direct publication, allowing creators to manage their categories, SEO keys, templates, and analytics under a unified console.

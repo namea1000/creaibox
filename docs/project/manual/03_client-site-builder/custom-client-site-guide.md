@@ -1,5 +1,12 @@
 # CreaiBox AI 커스텀 웹사이트 전체 운영 및 자동 제작 프로세스 매뉴얼
 
+> **문서 분류**: 서비스 실무 매뉴얼 (How-To Manual)
+> **연관 아키텍처 명세서**: `docs/arch/03_client-site-builder/client-site-builder.md`
+> **연관 DB 스키마**: `docs/database/client-site-builder-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/client-site-builder.sql`
+
+---
+
 ---
 
 ## 📌 1. 메뉴 개요 및 신설 배경

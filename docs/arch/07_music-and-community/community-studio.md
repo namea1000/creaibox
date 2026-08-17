@@ -1,5 +1,10 @@
 # 커뮤니티 스튜디오 (Community Studio)
 
+> **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)
+> **연관 실무 매뉴얼**: `docs/project/manual/06_trend-and-marketing/infocenter-guide.md`
+
+---
+
 이 문서는 크리에이터 전용 소통 공간인 커뮤니티 스튜디오 모듈의 아키텍처 및 기능을 설명하는 상시 운영용 문서입니다.
 
 ---

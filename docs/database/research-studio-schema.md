@@ -1,5 +1,12 @@
 # Research Studio DB 설계 문서
 
+> **문서 분류**: 데이터베이스 스키마 명세서 (Database Schema Spec)
+> **연관 아키텍처 명세서**: `docs/arch/01_core-and-infra/research-studio-architecture.md`
+> **연관 실무 매뉴얼**: `docs/project/manual/01_core-and-infra/research-studio-guide.md`
+> **연관 실행 SQL**: `docs/database/sql/research-studio-schema.sql`
+
+---
+
 ## 개요
 
 Research Studio는 PDF, DOCX, PPTX, Excel, 이미지, YouTube, 웹페이지 등의 자료를 업로드하고 텍스트를 추출한 뒤 AI 질의응답 및 콘텐츠 생성까지 연결하는 것을 목표로 한다.

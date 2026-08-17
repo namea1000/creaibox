@@ -155,8 +155,8 @@
   - RootLayout 폰트들에 `display: "swap"`, `preload: true` 명시 및 `lh3.googleusercontent.com` / `drive.google.com` `preconnect`, `dns-prefetch` 프리로드 헤더 탑재.
   - CSS 번들 렌더링 차단 지연시간 2.04초 획기적 단축 및 LCP 성능 1초대 진입.
 - **📖 관련 아키텍처 및 운용 매뉴얼 수록**:
-  - `docs/arch/media-proxy-architecture.md`
-  - `docs/project/manual/google-drive-image-proxy-web-optimization-manual.md`
+  - `docs/arch/01_core-and-infra/media-proxy-architecture.md`
+  - `docs/project/manual/05_image-and-video/google-drive-image-proxy-web-optimization-manual.md`
 
 ---
 
@@ -169,8 +169,8 @@
 - **`next.config.ts` static 번들 1년 무상 CDN 영구 캐싱 헤더 주입**:
   - `/_next/static/:path*` 1년 영구 캐시(`max-age=31536000, immutable`) 주입으로 1.01초 렌더링 차단 지연시간을 0ms로 완전 제거.
 - **📖 관련 기술 아키텍처 & 운용 매뉴얼 수록**:
-  - `docs/arch/instant-navigation-prefetch-architecture.md`
-  - `docs/project/manual/instant-navigation-0.01s-prefetch-guide.md`
+  - `docs/arch/01_core-and-infra/instant-navigation-prefetch-architecture.md`
+  - `docs/project/manual/01_core-and-infra/instant-navigation-0.01s-prefetch-guide.md`
 
 ---
 
@@ -185,10 +185,10 @@
 - **Resend Inbound Webhook 수신 파이프라인 개발 (`src/app/api/webhooks/resend-inbound/route.ts`)**:
   - 외부에서 CreaiBox 공식 이메일 주소로 수신되는 수신 메일을 실시간 감지하여 DB 및 관리자 뷰에 연동하는 웹훅 구축.
 - **📖 관련 기술 아키텍처 & 운용 매뉴얼 수록**:
-  - `docs/arch/resend-email-monitoring-architecture.md` (아키텍처 명세서)
-  - `docs/project/manual/resend-email-domain-monitoring-manual.md` (실무 운용 매뉴얼)
-  - `docs/project/manual/creaibox-official-email-accounts-guide.md` (공식 이메일 계정 가이드)
-  - `docs/project/manual/background-automation-execution-5-methods-guide.md` (백그라운드 무인 실행 목록 최신화)
+  - `docs/arch/01_core-and-infra/resend-email-monitoring-architecture.md` (아키텍처 명세서)
+  - `docs/project/manual/02_auth-and-domain/resend-email-domain-monitoring-manual.md` (실무 운용 매뉴얼)
+  - `docs/project/manual/01_core-and-infra/creaibox-official-email-accounts-guide.md` (공식 이메일 계정 가이드)
+  - `docs/project/manual/01_core-and-infra/background-automation-execution-5-methods-guide.md` (백그라운드 무인 실행 목록 최신화)
 
 ---
 
@@ -202,7 +202,7 @@
 - **Supabase DB Egress 0원 방어 & 0.01초 속도 무손실 보장**:
   - 이제 목록 조회 시 무거운 본문 전체(`content`)를 DB 쿼리에서 가져오지 않고 경량 메타 + `generated_images` 썸네일만 불러와 **Supabase DB 트래픽 소모 0원 방어 + 0.01초 로딩 + 썸네일 100% 무누락 노출**을 완벽하게 구축함.
 - **📖 관련 프로젝트 매뉴얼 반영**:
-  - [`background-automation-execution-5-methods-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/background-automation-execution-5-methods-guide.md) (무인 서비스 ⑨번 등록 완료)
+  - [`background-automation-execution-5-methods-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/01_core-and-infra/background-automation-execution-5-methods-guide.md) (무인 서비스 ⑨번 등록 완료)
   - [`todo-roadmap.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/todo-roadmap.md) (완료 체크 반영)
 
 ---
@@ -232,9 +232,9 @@
 ---
 
 ### 3. 📖 전용 문서 4종 수록 및 로드맵 업데이트
-- **포트원 PG 실무 운용 가이드**: [`portone-pg-integration-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/portone-pg-integration-guide.md)
-- **포트원 PG 정산 아키텍처 명세서**: [`portone-pg-payment-architecture.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/portone-pg-payment-architecture.md)
-- **실시간 라이브 위젯 기획 명세서**: [`live-portal-widget-spec.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/live-portal-widget-spec.md)
+- **포트원 PG 실무 운용 가이드**: [`portone-pg-integration-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/01_core-and-infra/portone-pg-integration-guide.md)
+- **포트원 PG 정산 아키텍처 명세서**: [`portone-pg-payment-architecture.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/01_core-and-infra/portone-pg-payment-architecture.md)
+- **실시간 라이브 위젯 기획 명세서**: [`live-portal-widget-spec.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/01_core-and-infra/live-portal-widget-spec.md)
 - **종합 로드맵 대장 최신화**: [`todo-roadmap.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/todo-roadmap.md) (Section 5 PG 결제 수록 & Section 6 라이브 위젯 기획 등록 완료)
 
 ---
@@ -369,7 +369,7 @@
 ### 2. 📜 전자상거래법 푸터 고지 규정 수립 & 호스팅 서비스 사업자 적용 (`Footer.tsx`)
 - **전자상거래법 제10조 고지 규정 적용**:
   - `Footer.tsx` 하단에 `호스팅 서비스 사업자: Vercel Inc.` 법적 의무 고지 항목 추가.
-  - `docs/project/manual/ecommerce-footer-compliance-guide.md` 실무 운용 매뉴얼 작성.
+  - `docs/project/manual/03_client-site-builder/ecommerce-footer-compliance-guide.md` 실무 운용 매뉴얼 작성.
 
 ### 3. 💳 포트원(PortOne V2) 실전 결제 시스템 & 백엔드 Webhook 연동 완료
 - **PortOne V2 결제 식별 키 세팅**:
@@ -377,7 +377,7 @@
 - **PortOne V2 백엔드 Webhook 수신 API 구축 (`src/app/api/webhooks/portone/route.ts`)**:
   - 결제 승인/취소 백그라운드 이벤트 수신 및 `payment_logs` DB 동기화 파이프라인 구축.
 - **포트원 연동 매뉴얼 업데이트**:
-  - `docs/project/manual/portone-pg-integration-guide.md` 최신화.
+  - `docs/project/manual/01_core-and-infra/portone-pg-integration-guide.md` 최신화.
 
 ### 4. 🛡️ 에이전트 룰 #14 신설 - 문서 내 보안키 마스킹 의무 규칙 (`ai-agent-rules.md` & `AGENTS.md`)
 - **Mandatory Secret Key Masking Rule in Documentation 신설**:
@@ -457,7 +457,7 @@
 - **해결 내역 (`src/app/api/naver/trend/route.ts`)**:
   - 네이버의 최신 DOM 구조인 `data-heatmap-target=".tit"` 속성과 내부 `<span>` 텍스트를 정교하게 타겟팅하는 신규 정규식(Regex) 파서를 탑재함.
   - 추가 조치 1: DB(`keyword_trending_history`)와 Next.js 서버 인메모리에 기 저장된 "불량 캐시 데이터"를 강제 삭제(Flush) 조치하여 파서가 다시 실시간 수집을 하도록 리셋함.
-  - 추가 조치 2: 실무 매뉴얼 문서(`docs/project/manual/keyword-trending-archiving-guide.md`)의 '트러블슈팅 및 복구 전략' 섹션에 본 DOM 구조 개편 이슈 대응법 및 캐시 플러시 절차를 상세히 업데이트하여 관련 문서 동기화 규칙을 준수함.
+  - 추가 조치 2: 실무 매뉴얼 문서(`docs/project/manual/06_trend-and-marketing/keyword-trending-archiving-guide.md`)의 '트러블슈팅 및 복구 전략' 섹션에 본 DOM 구조 개편 이슈 대응법 및 캐시 플러시 절차를 상세히 업데이트하여 관련 문서 동기화 규칙을 준수함.
   - 이제 실시간 검색어 1~10위에 대해서도 11~20위처럼 **"실제 언론사 원본 기사 제목"**이 정상적으로 100% 매핑되어 출력되도록 복구 완료.
 
 ---
@@ -466,7 +466,7 @@
 - **내용**: 해외 사이트(Repaint, Aipress 등)의 푸터 미니멀 디자인 특성(전자상거래법 상 사업자 정보 표시 의무 부재 및 MoR 결제 특성)을 정리하여 향후 글로벌 영문 사이트 개발 시 100% 반영할 수 있도록 프로젝트 자산화 완료.
 - **문서화 반영 내역**:
   - `docs/project/todo-roadmap.md`: 글로벌 영문 사이트 푸터 UI 구축 체크리스트 추가
-  - `docs/project/manual/global-english-footer-design-guide.md`: 글로벌 푸터 디자인 & 법적 규격 가이드 신규 수록 완료
+  - `docs/project/manual/03_client-site-builder/global-english-footer-design-guide.md`: 글로벌 푸터 디자인 & 법적 규격 가이드 신규 수록 완료
 
 ---
 
@@ -475,7 +475,7 @@
 - **수정 위치 및 내역**:
   - `src/components/layout/Sidebar.tsx`: 메뉴명을 `기존 블로그 통째 이관 📦`으로 수정
   - `src/app/studio/blog-migration/page.tsx`: 헤더 타이틀 및 섹션 안내문에서 "타 블로그" 문구를 "기존 블로그"로 전면 변경
-  - `docs/project/manual/external-blog-migration-manual.md` & `todo-roadmap.md`: 관련 가이드 문서 제목 100% 동기화 완료
+  - `docs/project/manual/03_client-site-builder/external-blog-migration-manual.md` & `todo-roadmap.md`: 관련 가이드 문서 제목 100% 동기화 완료
 
 ---
 
@@ -496,8 +496,8 @@
   - 기존 하드코딩된 Mock 데이터(`INITIAL_ADMIN_REQUESTS`)를 철거하고, 실제 회원들이 1:1 제작 신청을 하면 적재되는 `client_site_requests` 테이블을 생성하여 연동.
   - 관리자 대시보드에서 `supabase.from('client_site_requests').select('*')` 쿼리로 실시간으로 신청 현황을 파악하고 AI 에이전트 구축 버튼을 구동할 수 있도록 데이터베이스 통합 완료.
 - **관련 기술서 및 매뉴얼 100% 최신화 완료**:
-  - `docs/arch/client-site-builder-design-spec.md` (기술 명세서)
-  - `docs/project/manual/custom-client-site-guide.md` (실무 매뉴얼)
+  - `docs/arch/03_client-site-builder/client-site-builder-design-spec.md` (기술 명세서)
+  - `docs/project/manual/03_client-site-builder/custom-client-site-guide.md` (실무 매뉴얼)
   - `implementation_plan.md` (리팩토링 계획서 산출물 기록)
 
 ---
@@ -538,7 +538,7 @@
 - **도입 배경**: '1초 홈페이지 이관' 기능 사용 시 원본 사이트의 이미지를 핫링킹(직접 링크)할 경우 발생하는 엑박(Broken Image) 현상 방지 및, 무거운 원본 이미지 서빙으로 인한 Vercel 대역폭 한도 초과(요금 폭탄) 방어.
 - **아키텍처 설계 (규칙 #15: Zero Egress Architecture 준수)**:
   - Supabase/Vercel 프록시 캐싱 대신 **Cloudflare R2 다이렉트 서빙** 방식을 채택하여 Vercel 트래픽 비용과 R2 Egress 비용을 모두 0원으로 완벽 통제함.
-  - 관련 기술 가이드(`docs/project/manual/cloudflare-r2-guide.md`)에 "아키텍처 스터디: Supabase Egress 제로 프록시 vs R2 다이렉트 서빙" 문단 작성 및 R2 시크릿 키 마스킹 완벽 적용.
+  - 관련 기술 가이드(`docs/project/manual/01_core-and-infra/cloudflare-r2-guide.md`)에 "아키텍처 스터디: Supabase Egress 제로 프록시 vs R2 다이렉트 서빙" 문단 작성 및 R2 시크릿 키 마스킹 완벽 적용.
 - **구현 상세 (`src/app/api/studio/site-migration/route.ts`)**:
   - AI가 파싱한 HTML(헤더, 푸터, 메인 섹션, 서브페이지) 텍스트 내부의 외부 이미지 주소(`http...`)를 정규식으로 추출.
   - Vercel 서버리스 타임아웃 10초 룰 회피를 위해, 수십 장의 이미지를 `Promise.all()`을 통해 병렬(Multi-thread 급)로 다운로드.
@@ -1109,8 +1109,54 @@
 
 **해결 방안 및 적용**
 1. **무한 캐시 전환**: `blog/page.tsx`, `blog/[slug]/page.tsx`, `brand/[brand_id]/page.tsx`, `brand/[brand_id]/[slug]/page.tsx` 파일의 `revalidate` 옵션을 `60`에서 `false`(무한)로 변경.
-2. **Supabase Webhook 도입**: 소스 코드를 복잡하게 오염시키지 않기 위해 `docs/database/webhook_revalidate_blog.sql` 파일을 작성. 이를 Supabase에서 실행하면 글이 추가/수정/삭제될 때마다 자동으로 Vercel의 `revalidate-blog` API를 호출하여 해당 캐시만 즉시 폭파함.
+2. **Supabase Webhook 도입**: 소스 코드를 복잡하게 오염시키지 않기 위해 `docs/database/sql/webhook-revalidate-blog.sql` 파일을 작성. 이를 Supabase에서 실행하면 글이 추가/수정/삭제될 때마다 자동으로 Vercel의 `revalidate-blog` API를 호출하여 해당 캐시만 즉시 폭파함.
 
 **결과**
 - 캐시 미스는 오직 "새 글이 발행된 직후" 또는 "글이 수정된 직후"에만 딱 1번 발생하며, 그 이후로는 평생(무한대로) 캐시 히트(0.01초)가 발생함.
 - 수백만 페이지뷰가 발생해도 DB 쿼리 수는 글 작성/수정 횟수와 동일하게 획기적으로 줄어듦.
+
+## 2026-08-17 (추가): 4대/2대 마스터 문서 작성 의무 규칙 (Agent Rules) 확립
+
+**작업 내용**
+- 메뉴 및 기능 개발 시 문서 파편화와 기술 부채를 방지하기 위해 Diátaxis 프레임워크를 기반으로 한 **4대/2대 마스터 문서 패키지 작성 규칙**을 프로젝트 에이전트 룰에 공식 등록 완료.
+- **적용 규칙 파일**:
+  - `AGENTS.md`
+  - `.agents/AGENTS.md`
+  - `docs/rules/ai-agent-rules.md`
+  - `docs/rules/document-role-separation-diataxis-rules.md`
+- 앞으로 모든 AI 에이전트는 신규 메뉴 개발 시 DB 연동 여부에 따라 4대(DB 있음) 또는 2대(DB 없음) 문서 세트를 100% 필수 작성하고 상호 교차 링크를 연결함.
+
+## 2026-08-17 (추가): 기존 메뉴 수정보완 시 4대/2대 마스터 문서 동시 최신화 의무화 확장
+
+**작업 내용**
+- 신규 개발 시뿐만 아니라, **기존 메뉴/코드의 수정, 기능 보완, 리팩토링, 업데이트 작업 시에도 연관된 4대/2대 마스터 문서를 반드시 찾아내어 100% 동시 업데이트(최신화)**하도록 에이전트 룰을 확장 개정함.
+- **업데이트된 규칙 파일**:
+  - `AGENTS.md`
+  - `.agents/AGENTS.md`
+  - `docs/rules/ai-agent-rules.md`
+  - `docs/rules/document-role-separation-diataxis-rules.md`
+
+## 2026-08-17 (완료): CreaiBox 전역 4대/2대 마스터 문서 전수 감사 및 총정리 완료
+
+**작업 배경 및 목표**
+- 개정된 `Mandatory 4-Pillar / 2-Pillar Feature Documentation & Maintenance Rule`에 맞춰 `docs/` 내 260여 개 전체 문서를 전수 감사하고, 누락된 문서 생성 및 삼각/사각 상호 교차 참조(Cross-Linking)를 완벽하게 연결함.
+
+**작업 내용**
+1. **누락 마스터 문서 5종 신규 생성 및 파일명 정렬**:
+   - `docs/project/manual/01_core-and-infra/ai-assistant-user-guide.md` (AI 어시스턴트 실무 매뉴얼)
+   - `docs/arch/01_core-and-infra/research-studio-architecture.md` (자료 분석 스튜디오 아키텍처)
+   - `docs/project/manual/01_core-and-infra/research-studio-guide.md` (자료 분석 스튜디오 실무 매뉴얼)
+   - `docs/project/manual/06_trend-and-marketing/infocenter-guide.md` (인포센터 실무 매뉴얼)
+   - `docs/database/keyword-trending-history-schema.md` (키워드 트렌드 DB 스키마 명세서)
+   - `docs/database/video-studio.md` ➜ `docs/database/video-studio-schema.md` 파일명 표준화
+2. **사이드바 16개 대분류 1:1 매핑 및 상호 교차 참조(Cross-Linking) 전수 주입**:
+   - 아키텍처(53종), 실무 매뉴얼(59종), DB 스키마(25종), SQL DDL(37종) 전역 파일에 표준 Diátaxis 메타 헤더 및 상호 링크 주입 완료.
+3. **전역 마스터 인덱스 구축**:
+   - `docs/README.md` 신규 생성 (사이드바 16개 클러스터 4대/2대 마스터 매핑 테이블 제공)
+   - `docs/database/README.md` 최신 스키마 및 SQL 매핑 최신화
+4. **품질 및 링크 검증**:
+   - 전수 링크 스캔을 통해 깨진 링크(Dead Links) 100% 정상화
+   - `npx tsc --noEmit` 빌드 검증 0 에러 확인
+
+**결과**
+- CreaiBox 프로젝트의 모든 문서가 목적별로 완벽히 분리되면서도, 어느 문서를 열어도 0.1초 만에 전체 4대 세트를 상호 탐색할 수 있는 엔터프라이즈급 문서 시스템 확립 완료.

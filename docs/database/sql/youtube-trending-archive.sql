@@ -1,3 +1,8 @@
+-- [CreaiBox Database DDL]
+-- 연관 아키텍처: docs/arch/06_trend-and-marketing/youtube-trend-studio.md
+-- 연관 실무 매뉴얼: docs/project/manual/06_trend-and-marketing/youtube-ai-trending-analysis-guide.md
+-- 연관 DB 스키마: docs/database/youtube-trending-archive-schema.md
+--
 -- Table Definition for YouTube Trending Archive
 CREATE TABLE IF NOT EXISTS public.youtube_trending_archive (
     id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

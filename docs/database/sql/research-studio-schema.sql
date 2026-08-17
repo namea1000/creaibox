@@ -1,3 +1,8 @@
+-- [CreaiBox Database DDL]
+-- 연관 아키텍처: docs/arch/01_core-and-infra/research-studio-architecture.md
+-- 연관 실무 매뉴얼: docs/project/manual/01_core-and-infra/research-studio-guide.md
+-- 연관 DB 스키마: docs/database/research-studio-schema.md
+--
 -- ==================================================
 -- CreAIbox Research Studio Schema
 -- ==================================================

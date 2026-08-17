@@ -1,3 +1,8 @@
+-- [CreaiBox Database DDL]
+-- 연관 아키텍처: docs/arch/02_auth-and-domain/blog-subdomains.md
+-- 연관 실무 매뉴얼: docs/project/manual/02_auth-and-domain/domain-transfer-guide.md
+-- 연관 DB 스키마: docs/database/blog-subdomains-schema.md
+--
 -- =====================================================
 -- Brand Subdomain Blog System DB Migration
 -- =====================================================

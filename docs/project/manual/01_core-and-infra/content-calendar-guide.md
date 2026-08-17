@@ -1,5 +1,12 @@
 # 크리에이박스(CreaiBox) AI 콘텐츠 캘린더 마케팅 및 기능 명세서
 
+> **문서 분류**: 서비스 실무 매뉴얼 (How-To Manual)
+> **연관 아키텍처 명세서**: `docs/arch/01_core-and-infra/content-planner-development-status.md`
+> **연관 DB 스키마**: `docs/database/content-planner-schema-v1.md`
+> **연관 실행 SQL**: `docs/database/sql/content-planner-schema-v1.sql`
+
+---
+
 이 문서는 크리에이박스(CreaiBox) 플랫폼 내 **"AI 콘텐츠 캘린더"** 기능의 홍보 자료 제작, 마케팅 가치 제안(Value Proposition), 그리고 시스템 상세 스펙을 정리한 문서입니다.
 
 ---

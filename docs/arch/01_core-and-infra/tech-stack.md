@@ -1,5 +1,12 @@
 # 기술 스택 정의 (Tech Stack & Architecture)
 
+> **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)
+> **연관 실무 매뉴얼**: `docs/project/manual/01_core-and-infra/environment-variables-and-api-vault-guide.md`
+> **연관 DB 스키마**: `docs/database/profiles-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/profiles.sql`
+
+---
+
 `CreaiBox` 웹 워크스페이스에서 채택한 프레임워크, 라이브러리 및 주요 디자인 시스템 명세입니다.
 
 ---

@@ -1,5 +1,10 @@
 # 🤖 CreaiBox 백그라운드 무인 자동 실행 5종 방식 및 SEO 핑 / 서비스 로드맵 매뉴얼
 
+> **문서 분류**: 서비스 실무 매뉴얼 (How-To Manual)
+> **연관 아키텍처 명세서**: `docs/arch/01_core-and-infra/background-automation-architecture.md`
+
+---
+
 이 문서는 CreaiBox 플랫폼의 **백그라운드 무인 자동 실행(Background Scheduler) 5가지 아키텍처**, **4개 도메인 유형별 SEO 자동 색인 핑(Ping) 동작 원리**, **현재 즉시 구동 중인 무인 서비스**, 그리고 **향후 장기적으로 확장할 5대 핵심 무인 자동화 로드맵**을 총망라한 운용 매뉴얼입니다.
 
 ---
@@ -81,7 +86,7 @@ CreaiBox의 SEO 자동 색인 엔진은 어떤 형태의 도메인이든 **전�
 ### ⑤ 🟢 GCP Vertex AI ($300 / 448,756원 무료 크레딧) AI 글쓰기 및 실시간 구글 검색 자동화 엔진 (현재 100% 구동 중)
 - **상태**: **🟢 현재 100% 실시간 자동 구동 중** ([`vertex-ai-gemini.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/vertex-ai-gemini.ts), [`ai/generate/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/ai/generate/route.ts))
 - 일반 사용자의 AI 원고 작성 및 글쓰기 요청 시, GCP 서비스 계정 OAuth2를 기반으로 구글 클라우드 계정의 $300 무료 크레딧을 소비하며 `gemini-2.5-flash` 모델과 실시간 구글 검색 그라운딩(`googleSearch`)을 무제한 1순위로 무상 자동 가동.
-- 상세 구축/운용 및 IAM 권한 트러블슈팅 매뉴얼: [`docs/project/manual/gcp-vertex-ai-service-setup-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/gcp-vertex-ai-service-setup-guide.md)
+- 상세 구축/운용 및 IAM 권한 트러블슈팅 매뉴얼: [`docs/project/manual/01_core-and-infra/gcp-vertex-ai-service-setup-guide.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/01_core-and-infra/gcp-vertex-ai-service-setup-guide.md)
 
 ### ⑥ 🟢 👑 인기 영상 조회수 랭킹 매일 밤 자정 직전 무인 자동 아카이빙 (Daily Final Popular Ranking Archive - 현재 100% 구동 중)
 - **상태**: **🟢 현재 100% 실시간 자동 구동 중** ([`/api/cron/sync-popular`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/cron/sync-popular/route.ts))

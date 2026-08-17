@@ -6,9 +6,9 @@ This is the fast handoff document for agents continuing CreaiBox Video Studio ex
 
 The detailed source documents remain:
 
-- `docs/arch/video-studio.md`
-- `docs/arch/video-studio-design-spec.md`
-- `docs/database/video-studio.md`
+- `docs/arch/05_image-and-video/video-studio.md`
+- `docs/arch/05_image-and-video/video-studio-design-spec.md`
+- `docs/database/video-studio-schema.md`
 
 ## Current Product State
 
@@ -283,4 +283,4 @@ Before reporting completion for export/render changes:
   - Text over image.
   - Visualizer over image.
   - Queue cancel/failure fallback if touched.
-- Update `docs/arch/video-studio.md` and `docs/arch/video-studio-design-spec.md` when behavior changes.
+- Update `docs/arch/05_image-and-video/video-studio.md` and `docs/arch/05_image-and-video/video-studio-design-spec.md` when behavior changes.

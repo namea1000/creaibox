@@ -1,5 +1,12 @@
 # AI Assistant Database Schema
 
+> **문서 분류**: 데이터베이스 스키마 명세서 (Database Schema Spec)
+> **연관 아키텍처 명세서**: `docs/arch/01_core-and-infra/ai-assistant-multi-agent-hub.md`
+> **연관 실무 매뉴얼**: `docs/project/manual/01_core-and-infra/ai-assistant-user-guide.md`
+> **연관 실행 SQL**: `docs/database/sql/ai-assistant.sql`
+
+---
+
 ## 1. Purpose
 
 AI Assistant 데이터베이스는 CreaiBox의 전역 AI 작업 비서와 Multi Agent Hub 기능을 저장하기 위한 구조이다.

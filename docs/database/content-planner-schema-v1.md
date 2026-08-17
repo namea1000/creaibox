@@ -1,5 +1,12 @@
 # Content Planner Database Schema v1
 
+> **문서 분류**: 데이터베이스 스키마 명세서 (Database Schema Spec)
+> **연관 아키텍처 명세서**: `docs/arch/01_core-and-infra/content-planner-development-status.md`
+> **연관 실무 매뉴얼**: `docs/project/manual/01_core-and-infra/content-calendar-guide.md`
+> **연관 실행 SQL**: `docs/database/sql/content-planner-schema-v1.sql`
+
+---
+
 ## 개요
 
 Content Planner는 CreaiBox 전체 콘텐츠 생산 시스템의 출발점 역할을 담당한다.

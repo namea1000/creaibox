@@ -1,3 +1,8 @@
+-- [CreaiBox Database DDL]
+-- 연관 아키텍처: docs/arch/01_core-and-infra/content-planner-development-status.md
+-- 연관 실무 매뉴얼: docs/project/manual/01_core-and-infra/content-calendar-guide.md
+-- 연관 DB 스키마: docs/database/content-planner-schema-v1.md
+--
 -- =========================================================
 -- CreAIbox AI Content Planner Schema v1
 -- 콘텐츠 플래너 최종 DB + RLS

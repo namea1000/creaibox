@@ -1,5 +1,12 @@
 # Brand Subdomain Blog Database Schema
 
+> **문서 분류**: 데이터베이스 스키마 명세서 (Database Schema Spec)
+> **연관 아키텍처 명세서**: `docs/arch/02_auth-and-domain/blog-subdomains.md`
+> **연관 실무 매뉴얼**: `docs/project/manual/02_auth-and-domain/domain-transfer-guide.md`
+> **연관 실행 SQL**: `docs/database/sql/blog-subdomains.sql`
+
+---
+
 ## 1. Purpose
 This database schema extension supports user-specific subdomain blogs (e.g. `car.creaibox.com`), category classification, sitemaps, analytics keys, and administrative reservation/blacklist controls.
 

@@ -1,5 +1,12 @@
 # AI 홈페이지 빌더 & CMS 데이터베이스 설계서
 
+> **문서 분류**: 데이터베이스 스키마 명세서 (Database Schema Spec)
+> **연관 아키텍처 명세서**: `docs/arch/03_client-site-builder/client-site-builder.md`
+> **연관 실무 매뉴얼**: `docs/project/manual/03_client-site-builder/custom-client-site-guide.md`
+> **연관 실행 SQL**: `docs/database/sql/client-site-builder.sql`
+
+---
+
 본 문서는 CreaiBox AI 홈페이지 빌더 및 기업 전용 CMS 서비스를 위한 데이터베이스 테이블 구조와 RLS(Row Level Security) 정책을 상세히 설명합니다.
 
 ---

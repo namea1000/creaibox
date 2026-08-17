@@ -1,3 +1,8 @@
+-- [CreaiBox Database DDL]
+-- 연관 아키텍처: docs/arch/01_core-and-infra/ai-assistant-multi-agent-hub.md
+-- 연관 실무 매뉴얼: docs/project/manual/01_core-and-infra/ai-assistant-user-guide.md
+-- 연관 DB 스키마: docs/database/ai-assistant-schema.md
+--
 -- =====================================================
 -- CreAIbox AI Assistant / Multi Agent Hub DB Final
 -- =====================================================

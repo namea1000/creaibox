@@ -1,3 +1,8 @@
+-- [CreaiBox Database DDL]
+-- 연관 아키텍처: docs/arch/07_music-and-community/free-assets-requests.md
+-- 연관 실무 매뉴얼: docs/project/manual/05_image-and-video/creassetbox-guide.md
+-- 연관 DB 스키마: docs/database/free-assets-schema.md
+--
 -- =====================================================
 -- CreaiBox Free Assets DB Final
 -- =====================================================

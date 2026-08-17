@@ -77,4 +77,4 @@
   * 메인 대시보드 컴포넌트: [PublishDashboard.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/publish/components/PublishDashboard.tsx)
   * 라우터 페이지: [studio/publish/page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/publish/page.tsx)
   * DB 스키마 쿼리: [docs/database/sql/ai-shorts-generator.sql](file:///Users/a1234/Local%20Sites/creaibox/docs/database/sql/ai-shorts-generator.sql)
-  * 소셜 인증 검수 가이드: [docs/arch/sns-oauth-api-verification-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/sns-oauth-api-verification-guide.md)
+  * 소셜 인증 검수 가이드: [docs/project/manual/02_auth-and-domain/sns-oauth-api-verification-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/02_auth-and-domain/sns-oauth-api-verification-guide.md)

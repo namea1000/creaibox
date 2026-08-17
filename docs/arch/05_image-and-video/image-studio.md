@@ -1,5 +1,12 @@
 # Image Studio - Operational Architecture
 
+> **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)
+> **연관 실무 매뉴얼**: `docs/project/manual/05_image-and-video/image-background-remover-guide.md`
+> **연관 DB 스키마**: `docs/database/generated-images-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/generated-images.sql`
+
+---
+
 Purpose: This document describes the Canva/MiriCanvas-themed Image Studio architecture, page hierarchy, and component relationships in the CreaiBox project.
 
 ---

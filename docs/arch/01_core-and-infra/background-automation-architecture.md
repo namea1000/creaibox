@@ -1,5 +1,10 @@
 # [Architecture Specification] Background Automation & Scheduler Pipeline
 
+> **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)
+> **연관 실무 매뉴얼**: `docs/project/manual/01_core-and-infra/background-automation-execution-5-methods-guide.md`
+
+---
+
 > **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)  
 > **관련 모듈**: `vercel.json`, `.github/workflows/sync-trending.yml`, `src/app/api/cron/sync-keywords/route.ts`, `src/lib/server/google-indexing.ts`  
 > **시스템 레이어**: GitHub Actions / Vercel Edge / Supabase pg_cron ↔ Background API Routes ↔ Search Engine Indexing Endpoints

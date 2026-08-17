@@ -1,5 +1,12 @@
 # 🖼️ 크리에이박스 썸네일 이미지 비율 가이드 (16:9 vs 4:3 심층 분석 및 표준 가이드)
 
+> **문서 분류**: 서비스 실무 매뉴얼 (How-To Manual)
+> **연관 아키텍처 명세서**: `docs/arch/05_image-and-video/video-studio.md`
+> **연관 DB 스키마**: `docs/database/video-studio-schema.md`
+> **연관 실행 SQL**: `docs/database/sql/video-studio-schema.sql`
+
+---
+
 이 문서는 크리에이박스(CreaiBox) 블로그, 유튜브, SNS 등 멀티 플랫폼 썸네일 생성 시 사용되는 대표 비율 규격(`16:9` vs `4:3`)의 특징, 심층 비교 분석 및 UI 프레임 최적화 권장안을 정리한 표준 운용 매뉴얼입니다.
 
 ---

@@ -105,7 +105,7 @@
 #### 16. 구글 및 네이버 통합 검색 노출(SEO) 상세 가이드 문서 완성
 * **구현 요약**: 구글과 네이버 검색창에 "크리에이박스" 브랜드 키워드 검색 시 공식 홈페이지가 최상단에 올바르게 분류/노출될 수 있도록 돕는 실무 전략 문서를 통합 보존했습니다.
 * **작업 상세**:
-  - **구글 서치 콘솔 가이드 보강 및 문서 통합**: 기존 네이버 가이드를 통합 개편한 [search-engine-seo-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/search-engine-seo-guide.md) 가이드라인 문서를 `docs/project/`에 신설(기존 naver 단독 문서는 폐기)했습니다.
+  - **구글 서치 콘솔 가이드 보강 및 문서 통합**: 기존 네이버 가이드를 통합 개편한 [search-engine-seo-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/04_writing-and-blog/search-engine-seo-guide.md) 가이드라인 문서를 `docs/project/`에 신설(기존 naver 단독 문서는 폐기)했습니다.
   - **구글 전용 연동 전략 추가**: 구글 서치 콘솔 등록 방법, 소유권 인증용 HTML 파일 업로드 기법, 구글 비즈니스 프로필(구글 맵 노출) 연동 가이드를 문헌에 공식 탑재했습니다.
 
 #### 17. 공식 브랜드 크리에이박스 검색 최적화를 위한 JSON-LD 구조화 데이터 이식
@@ -117,7 +117,7 @@
 #### 18. 온라인 서비스/SaaS 브랜드의 로컬 지도 검색 노출 당위성 가이드 보강
 * **구현 요약**: 무형의 비즈니스 플랫폼 모델이라도 네이버 스마트플레이스 및 구글 비즈니스 프로필 등록이 가지는 압도적인 노출 독점과 비즈니스 신뢰 유도 효과를 분석하여 문서에 수록했습니다.
 * **작업 상세**:
-  - **가이드 보강**: [search-engine-seo-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/search-engine-seo-guide.md#L110-L117)의 5.3 섹션에 상단 비주얼 영역 독점, 사업자 검증을 통한 고객 안심 전환율 향상, 로컬 B2B 통로 확보 등의 실무 필요성을 기술하여 문서 최적화를 완수했습니다.
+  - **가이드 보강**: [search-engine-seo-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/04_writing-and-blog/search-engine-seo-guide.md#L110-L117)의 5.3 섹션에 상단 비주얼 영역 독점, 사업자 검증을 통한 고객 안심 전환율 향상, 로컬 B2B 통로 확보 등의 실무 필요성을 기술하여 문서 최적화를 완수했습니다.
 
 #### 19. 네이버 웹마스터 도구 경고 진단에 따른 SEO 메타 설명문 80자 최적화
 * **구현 요약**: 네이버 서치어드바이저 URL 검사 과정에서 감지된 "페이지 설명 및 오픈그래프 설명문 80자 초과 느낌표 경고"를 완벽히 해결하기 위해 메타 문구를 정밀 압축했습니다.
@@ -128,7 +128,7 @@
 #### 20. 향후 마케팅 콘텐츠 수집 최적화를 위한 RSS 피드 API 구축 계획 수립
 * **구현 요약**: 신규 블로그 및 뉴스 콘텐츠 발행 시 검색 포털 수집 속도를 극대화할 수 있도록 RSS 피드 API 구축 전략을 가이드 문서에 추가 반영했습니다.
 * **작업 상세**:
-  - **로드맵 명세 추가**: [search-engine-seo-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/search-engine-seo-guide.md#L119-L131)의 6번 섹션에 `/feed.xml` 또는 `/api/rss` API 구축 사양 및 Supabase `posts` 데이터 연계 계획을 기술하여 마케팅 로드맵을 구축했습니다.
+  - **로드맵 명세 추가**: [search-engine-seo-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/04_writing-and-blog/search-engine-seo-guide.md#L119-L131)의 6번 섹션에 `/feed.xml` 또는 `/api/rss` API 구축 사양 및 Supabase `posts` 데이터 연계 계획을 기술하여 마케팅 로드맵을 구축했습니다.
 
 #### 21. 블로그 상세 본문 페이지 레이아웃 2열 구조 개편 및 스티키 사이드바 연동
 * **구현 요약**: 글 가독성을 극대화하기 위해 넓었던 상세 본문 영역을 축소하고, 우측에 화면을 따라 움직이는 베스트 글 스티키 사이드바를 장착하여 블로그 홈과 일관된 비주얼을 제공했습니다.
@@ -210,7 +210,7 @@
 * **구현 요약**: 크리에이박스 유입 극대화 및 검색 노출 장악을 목표로 하는 100개 포스팅 기획 주제를 담은 구글 시트 "Creaibox blog post plan"을 자사 Google Drive OAuth 권한 연동을 활용해 API로 자동 생성하고 누구나 조회 가능하도록 권한을 매핑했습니다.
 * **작업 상세**:
   - **시트 생성 및 권한 위임 스크립트 작성**: `googleapis`를 이용해 구글 스프레드시트를 생성하고, 카테고리별(가이드, 이미지/저작권, 음악/오디오, 노코드 웹빌더/SEO, 마케팅/자동화글쓰기, AI동향) 100선 주제와 각 요약/타겟 키워드를 기록했습니다. 드라이브 API를 연동하여 링크가 있는 모든 사용자(뷰어 권한)가 공유 조회할 수 있도록 권한을 자동 추가했습니다.
-  - **문서화 통합**: [search-engine-seo-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/search-engine-seo-guide.md#L131-L149) 가이드에 기획 시트 영구 연결 단락을 생성해, 향후 콘텐츠 제작자들이 한눈에 레퍼런스를 참조할 수 있게 조율했습니다.
+  - **문서화 통합**: [search-engine-seo-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/04_writing-and-blog/search-engine-seo-guide.md#L131-L149) 가이드에 기획 시트 영구 연결 단락을 생성해, 향후 콘텐츠 제작자들이 한눈에 레퍼런스를 참조할 수 있게 조율했습니다.
 
 #### 35. 블로그 가이드 포스팅 1편 자율 작성 및 드래프트(Draft) 등록 완료
 * **구현 요약**: 크리에이박스 가이드 1탄인 "크리에이박스 소개 및 시작하기 가이드"의 초안을 자율 작성하고, 실서버 캡처 이미지 5건을 확보해 본문에 삽입한 뒤 데이터베이스에 드래프트(임시저장) 상태로 적재했습니다.
@@ -233,7 +233,7 @@
 #### 38. 해외 뉴스 번역 및 가공 기사 작성 마크다운 가이드북 수립
 * **구현 요약**: 해외 미디어 뉴스 수집을 통한 크리에이박스 뉴스 기사 작성 시, 저작권 리스크를 차단하고 전문성을 높이기 위한 전략 명세 가이드북을 구축했습니다.
 * **작업 상세**:
-  - **가이드북 신설**: [overseas-news-translation-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/overseas-news-translation-guide.md) 가이드를 신설하여 5대 해외 미디어(TechCrunch, VentureBeat 등) 바로가기 링크 주소 목록과 저작권 복제 침해 회피 요령(팩트 수집 및 재작성 기법), 크리에이박스 AI 에디터 활용 4단계 프로세스, 그리고 E-E-A-T 확보용 출처 표기/캐노니컬 URL 설정 표준을 완벽히 수록했습니다.
+  - **가이드북 신설**: [overseas-news-translation-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/04_writing-and-blog/overseas-news-translation-guide.md) 가이드를 신설하여 5대 해외 미디어(TechCrunch, VentureBeat 등) 바로가기 링크 주소 목록과 저작권 복제 침해 회피 요령(팩트 수집 및 재작성 기법), 크리에이박스 AI 에디터 활용 4단계 프로세스, 그리고 E-E-A-T 확보용 출처 표기/캐노니컬 URL 설정 표준을 완벽히 수록했습니다.
 
 #### 39. 브랜드 블로그 로딩 속도 튜닝 및 진입 깜빡임(Flicker) 제거 최적화
 * **구현 요약**: 브랜드 블로그 상세페이지 진입 시 발생하는 DB 대기 병목(TTFB)을 최소화하고, 초기 로딩 시 레이아웃 뚝 끊김 및 깜빡임 현상을 완치했습니다.
@@ -250,14 +250,14 @@
 #### 41. 이미지 배경 제거(Remove Bg) 기능 정의서 및 작동 가이드북 구축
 * **구현 요약**: 배경 제거 도구의 픽셀 연산 수학적 공식, 모드별 작동 세부 사양, 그리고 차후 홍보 및 마케팅 소스로 활용할 핵심 셀링 포인트를 수록한 마스터 가이드북을 개설했습니다.
 * **작업 상세**:
-  - **가이드북 신설**: [image-background-remover-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/image-background-remover-guide.md) 가이드를 제작하여 페이지 접근 경로 및 AI 자동/크로마키 모드 세부 동작 원리(유클리드 RGB 차이 거리 판별식, 페더링 알파 가중치 감쇄 공식), 그리고 외부 딥러닝 API 대비 강점(무비용, 보안 기밀성, 딜레이 제로)과 SNS 카드뉴스 마케팅 가이드라인을 상세하게 수록했습니다.
+  - **가이드북 신설**: [image-background-remover-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/05_image-and-video/image-background-remover-guide.md) 가이드를 제작하여 페이지 접근 경로 및 AI 자동/크로마키 모드 세부 동작 원리(유클리드 RGB 차이 거리 판별식, 페더링 알파 가중치 감쇄 공식), 그리고 외부 딥러닝 API 대비 강점(무비용, 보안 기밀성, 딜레이 제로)과 SNS 카드뉴스 마케팅 가이드라인을 상세하게 수록했습니다.
 
 #### 42. 이미지 배경 제거 스튜디오 수동 편집 브러시 도구 업그레이드
 * **구현 요약**: 배경 제거 작업의 정밀도를 향상하기 위해, 마우스로 지우거나 원본을 복원하고 색을 칠할 수 있는 고급 브러시 시스템을 완성했습니다.
 * **작업 상세**:
   - **3대 브러시 필터링 구현**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/image/bg-remover/page.tsx)에서 `destination-out` 합성을 적용한 지우개(Erase), 드래그 궤적 클리핑(`ctx.clip()`) 후 원본 드로잉을 통한 픽셀 복원(Restore), 지정 색상을 칠하는 스트로크(Color) 엔진을 코딩했습니다.
   - **오버레이 가이드 및 조절판 탑재**: 프리뷰 캔버스 위에 마우스가 지나갈 때 지우개/복원 반경을 실시간 서클 모양 링으로 노출하는 UI를 구현하고, 브러시 두께(2px~100px) 및 드로잉 색상 선택 제어판을 컨트롤러에 이식했습니다.
-  - **명세 문서 고도화**: [image-background-remover-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/image-background-remover-guide.md#L61-L67) 기술 문서에 수동 브러시 3종의 Canvas 픽셀 클리핑 및 합성 기술 사양 단락(3.4)을 추가 기록했습니다.
+  - **명세 문서 고도화**: [image-background-remover-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/05_image-and-video/image-background-remover-guide.md#L61-L67) 기술 문서에 수동 브러시 3종의 Canvas 픽셀 클리핑 및 합성 기술 사양 단락(3.4)을 추가 기록했습니다.
   - **메뉴 명칭 간결화**: 최종 사이드바 메뉴 이름을 "이미지 배경 제거기"로 보다 간결하고 직관적으로 개편했습니다.
 
 #### 43. 이미지 배경 제거기 실행 취소(Undo) 히스토리 도입 및 원본 복구 패턴 브러시 결함 수정
@@ -272,7 +272,7 @@
 * **작업 상세**:
   - **상단 가로형 탐색 탭 설계**: [page.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/image/resizer/page.tsx) 스튜디오 페이지를 신설하고 크기, 자르기(3x3 눈금 드래그 오버레이), 반전, 회전, 압축(타겟 KB 도달형 퀄리티 이진 탐색 계산), 변환, 픽셀화, 흑백 등 8대 도구의 가로 탭 바 네비게이션을 상단에 아름답게 매핑했습니다.
   - **사이드바 메뉴 이식**: [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx)에 `Maximize` 아이콘 임포트 선언을 엮고 "이미지 배경 제거기" 바로 하위에 "이미지 크기 조절기" 메뉴 항목을 연계 이식했습니다.
-  - **히스토리 및 가이드북 수립**: Ctrl+Z / Ctrl+Y 가 작동하는 25단계 Undo/Redo 편집 스택을 탑재하고, 필터링 기술 공식 및 SNS 마케팅 홍보 소스를 수록한 가이드북 문서([image-resizer-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/image-resizer-guide.md))를 제작했습니다.
+  - **히스토리 및 가이드북 수립**: Ctrl+Z / Ctrl+Y 가 작동하는 25단계 Undo/Redo 편집 스택을 탑재하고, 필터링 기술 공식 및 SNS 마케팅 홍보 소스를 수록한 가이드북 문서([image-resizer-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/05_image-and-video/image-resizer-guide.md))를 제작했습니다.
 
 #### 45. 이미지 크기 조절기 레이아웃 노출 및 전역 메모리 상태 보존 기능 고도화
 * **구현 요약**: 이미지 업로드 전에도 스튜디오 조작판 뼈대를 상시 노출하여 디자인 안정성을 높이고, 메뉴 전환 라우팅 이동 시 가공 상태를 유지하는 인메모리 캐시를 장착했습니다.
@@ -378,13 +378,13 @@
 #### 62. 콘텐츠 캘린더 및 자동화 워크플로우 마케팅 홍보 가이드라인 신규 구축
 * **구현 요약**: 신규 개발 완료된 콘텐츠 캘린더와 자동화 워크플로우에 대한 마케팅 핵심 셀링 포인트 및 홍보 카피 문구를 별도 가이드라인 문서로 작성하여 적재했습니다.
 * **작업 상세**:
-  - **캘린더 가이드 개설**: [content-calendar-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/content-calendar-guide.md)를 신설하여 캘린더의 다채널 관리 효율성, Supabase 연동성, 1클릭 추적 이동성 분석 및 마케팅 소구 카피 템플릿을 내장했습니다.
-  - **워크플로우 가이드 개설**: [automation-workflow-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/automation-workflow-guide.md)를 신설하여 24시간 작동 무인 공장의 비즈니스적 혜택, 노드 맵의 조작 편의성, 시뮬레이터 애니메이션 가치 및 소구 카피 템플릿을 구비했습니다.
+  - **캘린더 가이드 개설**: [content-calendar-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/01_core-and-infra/content-calendar-guide.md)를 신설하여 캘린더의 다채널 관리 효율성, Supabase 연동성, 1클릭 추적 이동성 분석 및 마케팅 소구 카피 템플릿을 내장했습니다.
+  - **워크플로우 가이드 개설**: [automation-workflow-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/01_core-and-infra/automation-workflow-guide.md)를 신설하여 24시간 작동 무인 공장의 비즈니스적 혜택, 노드 맵의 조작 편의성, 시뮬레이터 애니메이션 가치 및 소구 카피 템플릿을 구비했습니다.
 
 #### 63. 콘텐츠 캘린더 및 자동화 워크플로우 개발 설계 계획서 백업 보관 문서 신설
 * **구현 요약**: 신규 개발 작업 진행에 앞서 수립했던 설계 계획 명세를 보관용 마크다운 파일로 개설하여 백업을 수립했습니다.
 * **작업 상세**:
-  - **계획서 파일 저장**: [calendar-workflow-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/calendar-workflow-implementation-plan.md)를 신설하고, 캘린더/워크플로우의 기능 아키텍처 상세 사양, 노드 파이프라인 애니메이션 작동 가이드, 변경 파일 경로, TypeScript 무결성 빌드 검증 이력 사양들을 온전히 영구 아카이빙했습니다.
+  - **계획서 파일 저장**: [calendar-workflow-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/calendar-workflow-implementation-plan.md)를 신설하고, 캘린더/워크플로우의 기능 아키텍처 상세 사양, 노드 파이프라인 애니메이션 작동 가이드, 변경 파일 경로, TypeScript 무결성 빌드 검증 이력 사양들을 온전히 영구 아카이빙했습니다.
 
 #### 64. 크리에이박스 글쓰기 사이드바 서브 메뉴 정리 및 동적 라우터 소거
 * **구현 요약**: 사용성이 모호한 글쓰기 서브 메뉴 6종을 삭제해 사이드바를 슬림화하고 충돌 가능성이 있는 동적 라우터를 정리했습니다.
@@ -402,7 +402,7 @@
 #### 66. 크리에이박스 글쓰기 메뉴 정리 및 지식 베이스 설계 계획서 백업 신설
 * **구현 요약**: 글쓰기 하위 서브메뉴 정리 및 지식 베이스 설계 사양을 담은 개발 설계 계획 마일리지를 docs 폴더에 보관했습니다.
 * **작업 상세**:
-  - **계획서 마크다운 저장**: [knowledge-base-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/knowledge-base-implementation-plan.md)를 신설하고, 글쓰기 서브메뉴 철거 내역, 지식 베이스 페이지의 CRUD 데이터 흐름 설계 사양을 온전히 보존했습니다.
+  - **계획서 마크다운 저장**: [knowledge-base-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/knowledge-base-implementation-plan.md)를 신설하고, 글쓰기 서브메뉴 철거 내역, 지식 베이스 페이지의 CRUD 데이터 흐름 설계 사양을 온전히 보존했습니다.
 
 #### 67. 사이드바 메뉴 활성 경로 판정 접두사 충돌 예외 조치
 * **구현 요약**: 독립 메뉴인 크리에셋박스 클릭 시 접두사가 겹치는 콘텐츠 라이브러리 메뉴까지 동시에 활성 색상으로 변하는 매칭 충돌 버그를 수정했습니다.
@@ -420,7 +420,7 @@
 * **구현 요약**: 사이드바 레이블을 기합의 명칭으로 동기화하고 변경된 기획안 백업 명세서를 docs 폴더에 업데이트했습니다.
 * **작업 상세**:
   - **사이드바 명칭 개명**: [Sidebar.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/components/layout/Sidebar.tsx) 내에서 기존의 `지식 베이스` 레이블을 `지식 & 페르소나` 로 동기화 갱신했습니다.
-  - **계획서 리비전 백업**: [knowledge-base-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/knowledge-base-implementation-plan.md) 파일에 탭 구조 및 페르소나 데이터 바인딩 폼의 리팩토링 설계 사항을 동기화하여 아카이빙했습니다.
+  - **계획서 리비전 백업**: [knowledge-base-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/knowledge-base-implementation-plan.md) 파일에 탭 구조 및 페르소나 데이터 바인딩 폼의 리팩토링 설계 사항을 동기화하여 아카이빙했습니다.
 
 #### 70. 다중 작가 페르소나 CRUD 및 로컬 스토리지 동기화 시스템 구축
 * **구현 요약**: 사용자가 다양한 어조로 다중 블로그 채널을 운영할 수 있게 페르소나를 복수로 등록, 관리하는 CRUD 카드 대시보드를 론칭했습니다.
@@ -432,7 +432,7 @@
 #### 71. 지식 & 페르소나 다중화 설계 계획서 백업 갱신
 * **구현 요약**: 고도화된 다중 페르소나 설계 내용을 이력 보존용 마크다운 파일에 갱신 수립했습니다.
 * **작업 상세**:
-  - **계획서 최종 업데이트**: [knowledge-base-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/knowledge-base-implementation-plan.md) 파일에 다중 페르소나 동적 배열 처리 및 슬라이드인 CRUD 폼 구조를 갱신 적용했습니다.
+  - **계획서 최종 업데이트**: [knowledge-base-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/knowledge-base-implementation-plan.md) 파일에 다중 페르소나 동적 배열 처리 및 슬라이드인 CRUD 폼 구조를 갱신 적용했습니다.
 
 #### 72. 작가 페르소나 세부 인격 지침 20선 템플릿 로더 모듈 탑재
 * **구현 요약**: 페르소나 프로필 작성 시 가이드를 제공하기 위해 5대 카테고리별 20종의 고품질 문체 템플릿을 신설하고 원클릭 자동 바인딩을 구현했습니다.
@@ -443,7 +443,7 @@
 #### 73. 템플릿 로더 사양 설계 계획서 백업 갱신
 * **구현 요약**: 20선 인격 지침 템플릿 데이터를 저장하고 상태 동기화 처리하는 기획안을 이력 보존용 마크다운 계획서에 적용했습니다.
 * **작업 상세**:
-  - **계획서 최종 업데이트**: [knowledge-base-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/knowledge-base-implementation-plan.md) 파일에 템플릿 로더 모듈 및 선택 데이터 주입 연동 스키마를 동기화했습니다.
+  - **계획서 최종 업데이트**: [knowledge-base-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/knowledge-base-implementation-plan.md) 파일에 템플릿 로더 모듈 및 선택 데이터 주입 연동 스키마를 동기화했습니다.
 
 #### 74. 콘텐츠 플래너 7대 포스트 타입 카테고리 연동 및 35종 작가 페르소나 샘플 적재
 * **구현 요약**: "AI 콘텐츠 플래너"의 핵심 장르 사양과 연계하여 7대 포스트 타입 카테고리별 5개씩 총 35종의 고품질 작가 페르소나 상수 데이터를 구축했습니다.
@@ -459,7 +459,7 @@
 #### 76. 7대 포스트 타입 및 35선 스튜디오 설계 계획서 백업 갱신
 * **구현 요약**: 분할 레이아웃 및 35종 페르소나 동적 수렴 기획안을 이력 보존용 계획서에 최종 동기화했습니다.
 * **작업 상세**:
-  - **계획서 리비전**: [knowledge-base-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/knowledge-base-implementation-plan.md) 파일에 7대 장르 탭 매칭 사양과 가져오기 데이터 흐름 아키텍처를 최종 수립했습니다.
+  - **계획서 리비전**: [knowledge-base-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/knowledge-base-implementation-plan.md) 파일에 7대 장르 탭 매칭 사양과 가져오기 데이터 흐름 아키텍처를 최종 수립했습니다.
 
 #### 77. 작가 페르소나 설정 좌측 스크롤 제거 및 폰트 시인성 쇄신
 * **구현 요약**: 답답하게 가로막혀 있던 좌측 샘플 카드 높이 제한을 풀고, 모바일 및 고해상도 환경에 대응해 모든 텍스트 글꼴 크기를 크게 격상시켰습니다.
@@ -470,7 +470,7 @@
 #### 78. 가독성 고도화 스튜디오 설계 계획서 백업 갱신
 * **구현 요약**: 스크롤 제거 정책 및 글자 크기 증대 세부 내역을 이력 보존용 마크다운 계획서에 적용했습니다.
 * **작업 상세**:
-  - **계획서 최종 업데이트**: [knowledge-base-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/knowledge-base-implementation-plan.md) 파일에 폰트 사이즈 인덱스 격상 사양과 레이아웃 배치 변경점을 아카이빙했습니다.
+  - **계획서 최종 업데이트**: [knowledge-base-implementation-plan.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/plan/knowledge-base-implementation-plan.md) 파일에 폰트 사이즈 인덱스 격상 사양과 레이아웃 배치 변경점을 아카이빙했습니다.
 
 #### 79. Creaibox 발행 원고 관리 AI로 새글 쓰기 버튼 소거
 * **구현 요약**: 중복되거나 모호한 버튼 동선을 제거하여 발행 원고 리스트 뷰를 정돈했습니다.
@@ -579,13 +579,13 @@
 #### 99. 서버 자동 스케줄러(Cron) 3대 대안 분석 및 자동화 로드맵 가이드 작성
 * **구현 요약**: 크리에이박스 플랫폼 내 향후 무인 자동화 파이프라인(AI 블로그 자동 발행, 뉴스레터 발송, 라이벌 채널 트래킹)의 안정적 정착을 위한 기술적 기초 비교 가이드를 정비했습니다.
 * **작업 상세**:
-  - **문서화**: [server-cron-scheduler-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/server-cron-scheduler-guide.md) 가이드를 생성하여 Vercel Cron, Supabase pg_net/pg_cron, Supabase Edge Functions의 아키텍처적 특성을 기술하고, 향후 추진할 수 있는 비즈니스 자동화 확장 시나리오 4종을 구체화했습니다.
+  - **문서화**: [server-cron-scheduler-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/01_core-and-infra/server-cron-scheduler-guide.md) 가이드를 생성하여 Vercel Cron, Supabase pg_net/pg_cron, Supabase Edge Functions의 아키텍처적 특성을 기술하고, 향후 추진할 수 있는 비즈니스 자동화 확장 시나리오 4종을 구체화했습니다.
 
 
 #### 100. 유튜브 급상승 영상 AI 데이터 분석 리포트 시스템 설계서 및 가이드 배포
 * **구현 요약**: 크리에이터들의 시청자 반응 지수 시각화 및 Gemini AI 분석 보고서 연동 기전의 기술적 무결성을 명시한 시스템 설계 가이드를 작성했습니다.
 * **작업 상세**:
-  - **가이드 문서화**: [youtube-ai-trending-analysis-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/youtube-ai-trending-analysis-guide.md) 문서를 생성하여 2중 캐싱 기전(In-Memory + Supabase DB), 좋아요/댓글 반응 지수 연산 공식, Gemini AI 프롬프트 구성 영역, 그리고 브라우저 F12 네트워크 패널을 통한 중복 호출 검증 방식을 정립했습니다.
+  - **가이드 문서화**: [youtube-ai-trending-analysis-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/06_trend-and-marketing/youtube-ai-trending-analysis-guide.md) 문서를 생성하여 2중 캐싱 기전(In-Memory + Supabase DB), 좋아요/댓글 반응 지수 연산 공식, Gemini AI 프롬프트 구성 영역, 그리고 브라우저 F12 네트워크 패널을 통한 중복 호출 검증 방식을 정립했습니다.
 
 
 #### 101. Vercel Cron 스케줄러 통합 관리 대장 신설 및 가이드라인 정립
@@ -748,7 +748,7 @@
 #### 124. 유튜브 공식 API v3 응용 방안 기획 가이드 문서 수립
 * **구현 요약**: 유튜브 API의 명세 분석과 크리에이박스 AI 융합 기능에 대한 Blueprint 기획 문서를 제작하여 시스템 아키텍처 명세를 확정했습니다.
 * **작업 상세**:
-  - **가이드 문서 작성**: [youtube-api-application-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/youtube-api-application-guide.md) 파일을 신규 개설하여 `Search, Videos, CommentThreads, Channels` 등 v3 명세 리소스의 작동 원리와 쿼터 효율화 전략을 서술했습니다. 또한 글로벌 다국가 트렌드(Region 코드) 확장, 시청자 실제 댓글 여론 감지(Gemini 연동), 라이벌 채널 아웃라이어 역설계 등 구체적인 크리에이박스 이식 로드맵을 2중 캐싱 아키텍처 구조도와 함께 수록 보관했습니다.
+  - **가이드 문서 작성**: [youtube-api-application-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/06_trend-and-marketing/youtube-api-application-guide.md) 파일을 신규 개설하여 `Search, Videos, CommentThreads, Channels` 등 v3 명세 리소스의 작동 원리와 쿼터 효율화 전략을 서술했습니다. 또한 글로벌 다국가 트렌드(Region 코드) 확장, 시청자 실제 댓글 여론 감지(Gemini 연동), 라이벌 채널 아웃라이어 역설계 등 구체적인 크리에이박스 이식 로드맵을 2중 캐싱 아키텍처 구조도와 함께 수록 보관했습니다.
 
 
 #### 125. "채널 상세 분석" 페이지 고도화 및 분야별 추천 벤치마킹 카드 탑재
@@ -1023,7 +1023,7 @@
 * **구현 요약**: 무료 공유 에셋 프롬프트 목록 업데이트 시 활용도가 높은 10가지 이미지 스타일 프리셋을 선정하여 구글 시트에 일괄 적재하고, 향후 다른 스튜디오 구축 시 개발 지침이 될 표준 기술 명세 문서를 추가했습니다.
 * **작업 상세**:
   * **구글 시트 10종 확장 적재**: 기존 3종 스타일에 더해 3D Render, Anime, Pixel Art 등 7가지 고수요 스타일을 추가하여 총 10종 스타일에 대해 18개 카테고리 전체(총 126개 영문 프롬프트) 데이터를 생성했고, [expand_prompts_styles.js](file:///Users/a1234/Local%20Sites/creaibox/scratch/expand_prompts_styles.js) 스크립트를 통해 구글 시트(Sheet ID: `1cI6-XYJKAYtaTSL97X8ryOaast7vIGoGR892dx7S59I`)에 A열부터 M열까지 성공적으로 자동 적재 완료했습니다.
-  * **스타일 가이드라인 문서 신설**: [image-prompt-style-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/image-prompt-style-guide.md) 가이드를 `docs/arch` 폴더에 생성하여 각 스타일별 핵심 키워드, 동일 오브젝트(마법의 물약 병) 대조 프롬프트 예시, 향후 신규 스튜디오 개발자를 위한 DB 스키마 설계 및 백엔드 TypeScript API 파이프라인 구조를 체계적으로 문서화했습니다.
+  * **스타일 가이드라인 문서 신설**: [image-prompt-style-guide.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/manual/05_image-and-video/image-prompt-style-guide.md) 가이드를 `docs/arch` 폴더에 생성하여 각 스타일별 핵심 키워드, 동일 오브젝트(마법의 물약 병) 대조 프롬프트 예시, 향후 신규 스튜디오 개발자를 위한 DB 스키마 설계 및 백엔드 TypeScript API 파이프라인 구조를 체계적으로 문서화했습니다.
 
 #### 3. 구글 스프레드시트 외부 전체 공개 권한 제거 및 보안 강화
 * **구현 요약**: 생성 및 동기화된 2개의 구글 스프레드시트 파일의 외부 링크 공개 읽기 권한을 명시적으로 차단하여 본인 및 시스템 권한 소유자만 접근 가능한 비공개(Private) 파일로 전환했습니다.
@@ -1114,7 +1114,7 @@
 * **작업 상세**:
   * **원인 규명**: 데이터베이스에는 브랜드 승인이 정상 저장되었으나, Vercel 환경 변수 `SUPABASE_SERVICE_ROLE_KEY` 등록 시 개행 문자(`\n`)와 함께 다른 환경 변수(`API_VAULT_ENCRYPTION_KEY`)가 합쳐져 오염 등록되어 있던 것을 추적하여 밝혀냈습니다.
   * **방어 코드 적용**: `src/utils/supabase/server.ts`의 `createAdminClient` 함수에 복사-붙여넣기 실수로 인한 줄바꿈 및 환경 변수 유입을 정제해주는 방어 로직(`split("\n")[0].trim()`)을 적용하여, 대시보드 수정 없이도 `git push`만으로 즉시 오류를 복구하도록 조치했습니다.
-  * **문서화 완료**: [blog-subdomains-design-spec.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/blog-subdomains-design-spec.md)에 트러블슈팅 세부 이력 및 Vercel 환경 변수 주의점을 정식으로 문서화해 두었습니다.
+  * **문서화 완료**: [blog-subdomains-design-spec.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/02_auth-and-domain/blog-subdomains-design-spec.md)에 트러블슈팅 세부 이력 및 Vercel 환경 변수 주의점을 정식으로 문서화해 두었습니다.
 
 #### 2. 로컬 개발 환경에서의 미들웨어 경로 조정 및 리라이트 루프 해결
 * **구현 요약**: 로컬 개발 시 `golfgosu.localhost:3000` 접속 시 메인 랜딩 페이지로 이동하거나 무한 루프가 돌던 문제를 `middleware.ts` 위치 재배치 및 무한 리라이트 예외 방지 필터링으로 완벽히 해결했습니다.
@@ -1235,15 +1235,15 @@
   * **데모 폴백 및 동기화**: 연동된 드라이브에 곡이 없거나 연동 장애 시 정상적인 탐색을 위해 3개의 고화질 데모 트랙(`SoundHelix` 소스)으로 대체 렌더링되도록 Fallback을 설계했습니다. 또한 최신 드라이브 업로드 상태를 반영할 수 있는 실시간 "동기화(Refresh)" 및 "드라이브 열기" 단축 버튼을 탑재했습니다.
   * **홈 스튜디오 연동 및 빌드 최적화**: 뮤직 스튜디오 메인 화면(`/studio/music/page.tsx`)에 "Cre Music 플레이어" 카드 및 퀵 메뉴 링크를 탑재했습니다. `lucide-react` 라이브러리의 버전 차이로 인한 `FolderMusic` 아이콘 미탑재 에러를 `Music` 아이콘으로 대체하여 TypeScript 컴파일 검증을 성공적으로 마쳤습니다.
 * **관련 문서**:
-  * [cre-music.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/cre-music.md) (Cre Music 플레이어 - 운영 가이드)
-  * [cre-music-design-spec.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/cre-music-design-spec.md) (Cre Music 플레이어 - 설계 사양서)
+  * [cre-music.md](file:///Users/a1234/Local%20Sites/creaibox/docs/pages/studio/cre-music.md) (Cre Music 플레이어 - 운영 가이드)
+  * [cre-music-design-spec.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/07_music-and-community/cre-music-design-spec.md) (Cre Music 플레이어 - 설계 사양서)
   * [cre-music.md (페이지 명세)](file:///Users/a1234/Local%20Sites/creaibox/docs/pages/studio/cre-music.md) (Cre Music 플레이어 - 페이지 명세서)
   * [endpoints.md](file:///Users/a1234/Local%20Sites/creaibox/docs/api/endpoints.md) (API 엔드포인트 세부 명세)
   * [walkthrough.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/walkthrough.md) (작업 히스토리 상세)되도록 Fallback을 설계했습니다. 또한 최신 드라이브 업로드 상태를 반영할 수 있는 실시간 "동기화(Refresh)" 및 "드라이브 열기" 단축 버튼을 탑재했습니다.
   * **홈 스튜디오 연동 및 빌드 최적화**: 뮤직 스튜디오 메인 화면(`/studio/music/page.tsx`)에 "Cre Music 플레이어" 카드 및 퀵 메뉴 링크를 탑재했습니다. `lucide-react` 라이브러리의 버전 차이로 인한 `FolderMusic` 아이콘 미탑재 에러를 `Music` 아이콘으로 대체하여 TypeScript 컴파일 검증을 성공적으로 마쳤습니다.
 * **관련 문서**:
-  * [cre-music.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/cre-music.md) (Cre Music 플레이어 - 운영 가이드)
-  * [cre-music-design-spec.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/cre-music-design-spec.md) (Cre Music 플레이어 - 설계 사양서)
+  * [cre-music.md](file:///Users/a1234/Local%20Sites/creaibox/docs/pages/studio/cre-music.md) (Cre Music 플레이어 - 운영 가이드)
+  * [cre-music-design-spec.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/07_music-and-community/cre-music-design-spec.md) (Cre Music 플레이어 - 설계 사양서)
   * [cre-music.md (페이지 명세)](file:///Users/a1234/Local%20Sites/creaibox/docs/pages/studio/cre-music.md) (Cre Music 플레이어 - 페이지 명세서)
   * [endpoints.md](file:///Users/a1234/Local%20Sites/creaibox/docs/api/endpoints.md) (API 엔드포인트 세부 명세)
   * [walkthrough.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/walkthrough.md) (작업 히스토리 상세)
@@ -1259,7 +1259,7 @@
   * **GCP 권한 상시 유지 설정**: 구글 클라우드 콘솔의 OAuth 앱 게시 단계를 `프로덕션 단계`로 전환하여 7일 후 리프레시 토큰이 자동 만료되는 이슈를 완벽하게 방지했습니다. (안심하고 상시 무인 업로드가 가능합니다.)
   * **Supabase RLS 조회 권한 수정**: 비로그인 외부 방문자가 블로그 글에 접속했을 때도 썸네일 이미지를 정상적으로 불러올 수 있도록 `generated_images` 테이블 및 `generated-images` 스토리지 객체에 대해 비로그인 및 외부 사용자 공개 조회(SELECT) RLS 정책을 수립했습니다.
 * **관련 문서**:
-  * [google-drive-integration.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/google-drive-integration.md) (구글 드라이브 연동 아키텍처 및 설정 가이드)
+  * [google-drive-integration.md](file:///Users/a1234/Local%20Sites/creaibox/docs/arch/01_core-and-infra/google-drive-integration.md) (구글 드라이브 연동 아키텍처 및 설정 가이드)
   * [walkthrough.md](file:///Users/a1234/Local%20Sites/creaibox/docs/project/walkthrough.md) (작업 히스토리 및 소스 변경점 상세)
 
 #### 2. Google Imagen 3 및 Veo 비디오 생성 API 연동

@@ -1,5 +1,10 @@
 # 📖 [운영 매뉴얼] 0.01초 Instant 블로그 & 커스텀 사이트 링커 개발 가이드
 
+> **문서 분류**: 서비스 실무 매뉴얼 (How-To Manual)
+> **연관 아키텍처 명세서**: `docs/arch/01_core-and-infra/instant-navigation-prefetch-architecture.md`
+
+---
+
 > **매뉴얼 목적**: 개발자 및 기획자가 신규 블로그 템플릿, 비즈니스 홈페이지, 커스텀 사이트 개발 시 네이버 뉴스급 0.01초 가속 성능을 보장하는 방법과 Vercel 비용 0원 유지 규칙 숙지.
 
 ---
