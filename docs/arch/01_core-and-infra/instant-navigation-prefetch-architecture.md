@@ -22,10 +22,11 @@ sequenceDiagram
     alt 0.15s 이전에 마우스 이탈 (onMouseLeave)
         Link->>Link: 타이머 Cancel (Vercel 호출 0회)
     else 0.15s 이상 체류 (확실한 클릭 의도)
-        Link->>Router: router.prefetch(targetUrl) 발동
+        Link->>Router: prefetch 속성을 동적으로 true로 변경
+        Note over Router: Next.js 14 동적 라우트 한계 돌파 (Full Payload Fetch)
         Router->>Edge: GET targetUrl (Prefetch Header)
         Edge-->>Router: 200 OK (0.05s 캐시된 Static HTML/JS)
-        Note over Router: 램(RAM) 메모리에 본문 DOM 사전 구성
+        Note over Router: 램(RAM) 메모리에 본문 DOM 및 데이터 사전 구성 완료
     end
     Note over User, Link: 실제 클릭 발생 (onClick)
     Router-->>User: 0.01초 렌더링 (네트워크 대기시간 0ms)
@@ -40,8 +41,10 @@ sequenceDiagram
 
 - **디바운스 인터벌 (Debounce Interval)**: `150ms` (0.15초)
 - **메모리 이탈 가비지 컬렉션**: `onMouseLeave` 발동 시 즉시 `clearTimeout`을 실행하여 이벤트 메모리 누수 방지.
-- **모바일 터치 이벤트 (`onTouchStart`)**: 모바일 뷰포트의 경우 마우스 호버 개념이 없으므로 `onTouchStart` 시점에 0.05초 즉시 백그라운드 프리패치 트리거.
-- **Next.js 기본 옵션 제어**: `prefetch={false}` 속성을 명시적으로 전달하여 App Router의 기본 맹목적 뷰포트 프리패치(Egress 비용 원인)를 100% 차단.
+- **모바일 터치 이벤트 (`onTouchStart`)**: 모바일 뷰포트의 경우 마우스 호버 개념이 없으므로 `onTouchStart` 시점에 즉시 프리패치 트리거.
+- **Next.js 14 동적 라우트 한계 돌파 (Full Payload Fetch)**: 
+  - 기본적으로 Next.js 14에서 동적 라우트(`[slug]`)에 대해 `router.prefetch()`를 호출하면 데이터(Payload)는 빼고 껍데기(Layout)만 가져오는 반쪽짜리 프리패칭을 수행함.
+  - 이를 우회하기 위해 평소에는 `prefetch={false}`로 맹목적 과금을 방어하다가, 150ms 체류가 확인되는 순간 동적으로 **`<Link prefetch={true}>` 모드로 강제 전환**하여 Vercel로부터 본문 데이터까지 완벽하게 백그라운드 다운로드하도록 재설계.
 - **HTMLAnchorElement 완전 호환**: `title`, `target`, `rel`, `aria-*` 등 모든 표준 앵커 속성을 100% 수용.
 
 ```typescript

@@ -25,22 +25,30 @@ export default function SmartIntentLink({
   ...props
 }: SmartIntentLinkProps) {
   const router = useRouter();
+  const [shouldPrefetch, setShouldPrefetch] = React.useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleMouseEnter = () => {
-    if (typeof href === "string") {
-      router.prefetch(href);
-    } else if (href && href.pathname) {
-      router.prefetch(href.pathname);
-    }
+    if (shouldPrefetch) return;
+    timerRef.current = setTimeout(() => {
+      setShouldPrefetch(true);
+      if (typeof href === "string") {
+        router.prefetch(href);
+      } else if (href && href.pathname) {
+        router.prefetch(href.pathname);
+      }
+    }, hoverDelay);
   };
 
   const handleMouseLeave = () => {
-    // No-op since we don't use timer anymore
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
   };
 
   const handleTouchStart = () => {
-    // 모바일 터치 시 즉시 prefetch
+    setShouldPrefetch(true);
     if (typeof href === "string") {
       router.prefetch(href);
     }
@@ -53,7 +61,7 @@ export default function SmartIntentLink({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onTouchStart={handleTouchStart}
-      prefetch={false} // Next.js 기본 맹목적 prefetch 비활성화 (Vercel 비용 0원 방어)
+      prefetch={shouldPrefetch ? true : false} // 🌟 동적 라우트 완벽 프리패치(데이터까지) 위해 상태 기반 true 전환
       {...props}
     >
       {children}

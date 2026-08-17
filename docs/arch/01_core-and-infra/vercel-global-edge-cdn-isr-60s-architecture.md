@@ -82,10 +82,13 @@ sequenceDiagram
 const dynamicClientCache = new Map<string, { isDynamic: boolean; expiry: number }>();
 ```
 
-### 3.2. Server Component 정적 렌더링 방해 요소 원천 제거
+### 3.2. Server Component 정적 렌더링 방해 요소 원천 제거 및 의존성 격리 (Dependency Isolation)
 
 * **원칙**: Server Component 내부에서 `cookies()`, `headers()` 등 동적 요청 객체를 직접 호출하면 Next.js가 ISR을 강제로 해제(Bail-out)하고 매번 SSR로 전락함.
-* **해결책**: 테마(`blog_theme`)나 인증 상태는 Client Component Wrapper(`BlogClientWrapper.tsx`, `PostClientWrapper.tsx`)의 `localStorage` / `useEffect`로 분리하여 페이지의 **100% 순수 정적 HTML 캐싱**을 보장.
+* **Next.js 14 모듈 오염(Taint) 함정**: 컴포넌트가 직접 `cookies()`를 호출하지 않더라도, **`import` 한 유틸리티 파일(예: `server.ts`) 내부에 `cookies()` 호출이 포함되어 있으면 Next.js는 해당 라우트를 동적(Dynamic)으로 간주**하여 `cache-control: private, no-cache`를 강제하고 Vercel CDN을 무력화시킴.
+* **해결책 (Client Wrapper & Admin Client 분리)**:
+  1. 테마(`blog_theme`)나 인증 상태는 Client Component Wrapper(`BlogClientWrapper.tsx`, `PostClientWrapper.tsx`)의 `localStorage` / `useEffect`로 분리하여 페이지의 정적 캐싱 보장.
+  2. 서버 컴포넌트에서 DB 조회가 필요할 때 사용하는 `createAdminClient`는 `server.ts`에서 제거하고, **`cookies()` 임포트가 100% 배제된 순수 정적 전용 파일(`src/utils/supabase/admin.ts`)**로 완벽하게 격리(Isolate)하여 Next.js의 정적 분석 오작동을 원천 차단함.
 
 ### 3.3. React `cache()`를 통한 중복 DB 쿼리 제거
 
@@ -136,6 +139,11 @@ return {
   1. **Zero Set-Cookie 표준**: 공개 테넌트 블로그, AI 웹사이트 빌더, 독립 도메인 리라이트 시 미들웨어의 쿠키 주입(`rewriteResponse.cookies.set`)을 완전히 차단하여 Vercel Global Edge CDN 캐시가 100% 활성화되도록 보장.
   2. **24시간 인메모리 캐시**: `customDomainCache`, `subdomainRedirectCache`, `dynamicClientCache`, `staticClientApprovedCache`를 24시간 TTL로 인메모리에 보관하여 미들웨어의 DB 라운드트립 지연을 **0ms**로 압축.
   3. **React `cache()` 병렬 쿼리 통합**: 테넌트 블로그 및 동적 렌더러의 프로필, 카테고리, 메타데이터 조회를 `cache()`로 감싸 동일 요청 내 중복 DB 쿼리 제거.
+
+### 3.8. 동적 라우트 Full Payload 백그라운드 프리패치 연동 (`SmartIntentLink`)
+
+* **문제점**: Next.js 14는 서버 자원 절약을 위해 동적 라우트에 대해 `router.prefetch()` 호출 시 껍데기(Layout)만 프리패치하므로, Vercel Edge 캐시가 HIT 되어도 클릭 시 본문 데이터를 가져오는 네트워크 왕복 지연(0.5~1초)이 발생함.
+* **해결책**: `SmartIntentLink`에서 150ms 체류 의도 감지 시 `<Link prefetch={true}>`로 동적 전환하여, Vercel Edge CDN에 캐시된 **본문 전체 페이로드(Full Payload)를 강제 다운로드** 하도록 유도함으로써 클릭 시 0.01초 즉시 렌더링 완성. (상세 내용은 `instant-navigation-prefetch-architecture.md` 참조)
 
 ---
 

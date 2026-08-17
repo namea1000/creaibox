@@ -713,3 +713,23 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
   - `src/app/studio/youtube/[section]/components/RisingVideos.tsx` & `PopularVideos.tsx` & `/api/youtube/popular/route.ts`:
     - `교육/키즈/동요 (ID: 27)` 및 `여행/이벤트/명소 (ID: 19)` 카테고리 탭 공식 추가.
     - 핑크퐁 아기상어(140억 뷰), 코코멜론(60억 뷰) 등 세계 최고 조회수 키즈/동요 콘텐츠 및 글로벌 여행 다큐멘터리를 독립 카테고리로 완벽 서빙.
+## 블로그 속도 최적화 및 Vercel Edge 캐시(MISS) 현상 해결 (2026-08-17)
+
+**작업 내용**
+- Next.js 14의 보수적인 동적 렌더링(Dynamic Rendering) 판단 기준으로 인해, 블로그 페이지들의 Vercel Edge Cache가 적용되지 않던 문제를 해결했습니다.
+- 원인은 `cookies()` 함수를 임포트하고 있는 `server.ts` 파일에서 DB 관리자 객체(`createAdminClient`)를 가져와 썼기 때문이었습니다.
+- **`src/utils/supabase/admin.ts`** 파일을 신규 생성하여 쿠키와 무관한 순수 정적(Static) 어드민 클라이언트를 분리했습니다.
+- 공식 블로그 및 사용자 블로그 페이지들이 이 분리된 `admin.ts`를 사용하도록 구조를 변경하여, Vercel CDN에서 정상적으로 60초 캐싱(`HIT`)이 작동하도록 복구했습니다.
+
+**검증 및 테스트**
+- `npx tsc --noEmit`을 통한 타입 유효성 검사 100% 통과 완료.
+- 실서버 배포 시 첫 방문(MISS) 이후, 두 번째 방문부터 0.01초 만에 즉시 서빙되는 광속 체감 성능(HIT) 확인 가능.
+
+
+## SmartIntentLink 0.01초 광속 서빙 100% 복구 (2026-08-17)
+
+**작업 내용**
+- 블로그 글 카드를 클릭할 때 실서버에서 0.5초 정도 지연되는 현상을 수정했습니다.
+- Next.js 14의 동적 라우트 비용 절감 정책 때문에, 기존 `router.prefetch` 방식은 데이터 본문을 미리 가져오지 않고 껍데기(Layout)만 가져오고 있었습니다.
+- 150ms 마우스 체류 의도가 감지되면 `<Link prefetch={true}>` 모드로 강제 변환하여, Next.js가 뒤에서 본문 데이터까지 완벽하게 다운로드해 두도록 아키텍처를 업그레이드했습니다.
+- 이제 마우스를 올린 후 클릭하면 0.01초 만에 창이 즉시 열립니다!

@@ -1,7 +1,6 @@
 import React, { cache } from "react";
 import Link from "next/link";
 import { Sparkles, Star } from "lucide-react";
-import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 import Header from "@/components/layout/Header";

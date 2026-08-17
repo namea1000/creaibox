@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { CalendarDays, Sparkles, Star, ArrowRight, Rss, ArrowLeft, Tag } from "lucide-react";
-import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import BlogClientWrapper from "./components/BlogClientWrapper";
 
