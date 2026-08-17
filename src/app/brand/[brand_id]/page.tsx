@@ -44,8 +44,9 @@ function formatDate(value: string | null) {
   return `${date.getFullYear()}. ${date.getMonth() + 1}. ${date.getDate()}.`;
 }
 
-async function getProfileByBrandId(supabase: any, brandId: string) {
+const getProfileByBrandId = cache(async (brandId: string) => {
   try {
+    const supabase = await createAdminClient();
     let { data: profile, error } = await supabase
       .from("profiles")
       .select("*")
@@ -79,7 +80,7 @@ async function getProfileByBrandId(supabase: any, brandId: string) {
     console.error("getProfileByBrandId exception in home page:", err);
     return null;
   }
-}
+});
 
 function isPostForBrand(postCanonicalUrl: string | null, targetBrandId: string, profileConfigs: any) {
   if (!postCanonicalUrl) return false;
@@ -118,9 +119,7 @@ function cleanGoogleVerificationKey(rawKey: string): string {
 // 🌟 Dynamically generate page metadata with Naver Site Verification support
 export async function generateMetadata({ params }: BrandPageProps): Promise<Metadata> {
   const { brand_id } = await params;
-  const supabase = await createAdminClient();
-
-  const profile = await getProfileByBrandId(supabase, brand_id);
+  const profile = await getProfileByBrandId(brand_id);
 
   if (!profile) {
     return {
@@ -179,8 +178,8 @@ export default async function BrandBlogHome({ params }: BrandPageProps) {
   const { brand_id } = await params;
   const supabase = await createAdminClient();
 
-  // 1. Fetch Profile
-  const profile = await getProfileByBrandId(supabase, brand_id);
+  // 1. Fetch Profile (React cache() 로 0ms 공유)
+  const profile = await getProfileByBrandId(brand_id);
 
   if (!profile) {
     return (

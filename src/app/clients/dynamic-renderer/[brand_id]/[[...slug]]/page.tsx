@@ -1,4 +1,4 @@
-import React from "react";
+import React, { cache } from "react";
 import type { Metadata } from "next";
 import { createAdminClient } from "@/utils/supabase/server";
 import DynamicSection from "../../components/DynamicSection";
@@ -15,14 +15,20 @@ interface PageProps {
   searchParams?: Promise<{ page?: string }> | { page?: string };
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { brand_id } = await params;
+const fetchSiteData = cache(async (brandId: string) => {
   const supabase = await createAdminClient();
   const { data: site } = await supabase
     .from("client_sites")
-    .select("company_name, status, extra_configs")
-    .eq("brand_id", brand_id.toLowerCase())
+    .select("id, company_name, is_onepage_scroll, status, extra_configs")
+    .eq("brand_id", brandId.toLowerCase())
     .maybeSingle();
+
+  return site;
+});
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { brand_id } = await params;
+  const site = await fetchSiteData(brand_id);
 
   const isPublished = site?.status === "PUBLISHED";
 
@@ -42,12 +48,8 @@ export default async function DynamicRendererPage({ params, searchParams }: Page
 
   const supabase = await createAdminClient();
 
-  // 1. Fetch site settings
-  const { data: site } = await supabase
-    .from("client_sites")
-    .select("id, company_name, is_onepage_scroll, status, extra_configs")
-    .eq("brand_id", brand_id.toLowerCase())
-    .maybeSingle();
+  // 1. Fetch site settings (React cache() 로 0ms 공유)
+  const site = await fetchSiteData(brand_id);
 
   if (!site) {
     return (

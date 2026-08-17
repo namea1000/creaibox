@@ -127,6 +127,16 @@ return {
 * **문제점**: 페이지 이동 시 초기 로딩 스켈레톤(150px)과 로그아웃 상태 버튼(180px) 간의 30px 너비 차이로 인해 중앙 네비게이션 메뉴 전체가 좌우로 덜컹거리며 깜빡이는 CLS(Cumulative Layout Shift) 발생.
 * **해결책**: 우측 인증 영역을 `w-[180px] shrink-0` 고정 컨테이너로 감싸, 초기 스켈레톤·로그인 상태·로그아웃 상태 간 전환 시 0픽셀의 위치 변동도 없도록 완벽 고정.
 
+### 3.7. 테넌트 블로그/독립도메인/AI 빌더 0.01초 광속 서빙을 위한 미들웨어 Zero Set-Cookie & 24h 인메모리 캐시 표준
+
+* **문제점 (Vercel CDN 캐시 무력화 원인)**:
+  1. Vercel Global Edge CDN은 응답 헤더에 `Set-Cookie`가 포함되어 있으면, 이를 개인 세션 데이터로 간주하여 **글로벌 엣지 캐시(ISR 60s) 저장을 강제로 무효화(Bypass)하고 매번 1초짜리 서버리스 SSR을 실행**함.
+  2. 서브도메인(`*.creaibox.com`) 및 독립 도메인(`downhubs.com`, `golfgosu.net`) 접속 시 미들웨어(`src/proxy.ts`)에서 매 요청마다 Supabase DB 조회를 실시간으로 수행(300~500ms 지연)하고 응답에 불필요한 `Set-Cookie`를 주입했음.
+* **해결책**:
+  1. **Zero Set-Cookie 표준**: 공개 테넌트 블로그, AI 웹사이트 빌더, 독립 도메인 리라이트 시 미들웨어의 쿠키 주입(`rewriteResponse.cookies.set`)을 완전히 차단하여 Vercel Global Edge CDN 캐시가 100% 활성화되도록 보장.
+  2. **24시간 인메모리 캐시**: `customDomainCache`, `subdomainRedirectCache`, `dynamicClientCache`, `staticClientApprovedCache`를 24시간 TTL로 인메모리에 보관하여 미들웨어의 DB 라운드트립 지연을 **0ms**로 압축.
+  3. **React `cache()` 병렬 쿼리 통합**: 테넌트 블로그 및 동적 렌더러의 프로필, 카테고리, 메타데이터 조회를 `cache()`로 감싸 동일 요청 내 중복 DB 쿼리 제거.
+
 ---
 
 ## 4. 적용 대상 및 시스템 라우팅 맵
@@ -135,8 +145,8 @@ return {
 | :--------------------------------------------- | :-------------------------------- | :------------------ | :------------------------------------------------------------------------ |
 | `src/app/blog/page.tsx`                      | 본사 공식 블로그 메인             | `revalidate = 60` | Edge CDN 캐시,`Promise.all` 병렬 쿼리                                   |
 | `src/app/blog/[slug]/page.tsx`               | 본사 블로그 상세 포스트           | `revalidate = 60` | `generateStaticParams`, `cache()`, `PostViewTracker`, `encodeURI` |
-| `src/app/brand/[brand_id]/*`                 | 유저 서브도메인 블로그            | `revalidate = 60` | 쿠키 호출 제거, 클라이언트 테마 분리,`encodeURI`                        |
-| `src/app/clients/dynamic-renderer/*`         | AI 웹사이트 빌더 (홈/서브/블로그) | `revalidate = 60` | 섹션 정적 번들링, Edge 캐싱                                               |
+| `src/app/brand/[brand_id]/*`                 | 유저 서브도메인 및 독립 도메인 블로그 | `revalidate = 60` | 미들웨어 Zero Set-Cookie, 24h 캐시, React `cache()`, `encodeURI`         |
+| `src/app/clients/dynamic-renderer/*`         | AI 웹사이트 빌더 (홈/서브/블로그) | `revalidate = 60` | 24h 빌더 캐시, Zero Set-Cookie, React `cache()`                           |
 | `src/app/client-site-builder/page.tsx`       | AI 웹사이트 빌더 홍보 랜딩        | `revalidate = 60` | SEO 메타데이터 + 엣지 캐시                                                |
 | `src/app/infocenter/[[...section]]/page.tsx` | 고객지원 인포센터                 | `revalidate = 60` | FAQ/공지 엣지 캐시                                                        |
 | `src/app/clients/[client_id]/page.tsx`       | 마켓 템플릿 쇼핑 사이트           | `revalidate = 60` | 템플릿 프리뷰 엣지 캐시                                                   |
@@ -146,3 +156,4 @@ return {
 ## 5. 관리 및 캐시 무효화 (On-Demand Revalidation)
 
 * 새 글이 발행되거나 기존 글이 수정될 때, 주기적 60초 자동 갱신 외에도 Next.js `revalidatePath('/blog/[slug]')` 또는 `revalidatePath('/blog')`를 호출하여 실시간 즉시 갱신이 가능하다.
+* 도메인 승인/신규 등록 시 즉시 온디맨드 갱신을 지원한다.

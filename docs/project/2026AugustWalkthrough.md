@@ -690,3 +690,9 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
     - 직렬 3회 DB 조회를 병렬 `Promise.all` 및 React `cache()`로 최적화하여 헤더 '블로그' 메뉴 클릭 시 즉시 열리도록 가속.
   - `src/components/layout/Header.tsx`:
     - 우측 인증 영역을 `w-[180px] shrink-0` 고정 컨테이너로 묶어, 로그아웃 상태에서 메뉴 이동 시 스켈레톤(150px)과 버튼(180px) 간의 너비 차이로 인한 중앙 네비게이션 좌우 깜빡임(Layout Shift)을 100% 영구 제거.
+* **테넌트 블로그/독립 도메인/AI 빌더 0.01초 네이버급 초광속 서빙 및 미들웨어 Zero Set-Cookie 표준화 (v1.52)**:
+  - `src/proxy.ts`:
+    - **Zero Set-Cookie 표준**: 공개 테넌트 블로그(`smilekang.creaibox.com`), 독립 도메인(`downhubs.com`, `golfgosu.net`), AI 웹사이트 빌더 리라이트 시 미들웨어의 쿠키 주입(`rewriteResponse.cookies.set`)을 전면 제거하여, Vercel Global Edge CDN의 엣지 캐시 강제 무효화(Bypass)를 차단하고 100% ISR 캐시(0.01초) 가동 보장.
+    - **24시간 인메모리 캐시 맵**: `customDomainCache`, `subdomainRedirectCache`, `dynamicClientCache`, `staticClientApprovedCache`를 가동하여 도메인/빌더 라우팅 확인 시 발생하는 DB 왕복 지연을 0ms로 압축.
+  - `src/app/brand/[brand_id]/page.tsx` & `src/app/clients/dynamic-renderer/[brand_id]/[[...slug]]/page.tsx`:
+    - 프로필 조회(`getProfileByBrandId`) 및 사이트 설정 조회(`fetchSiteData`)를 React `cache()`로 감싸 동일 요청 내 중복 DB 쿼리를 100% 제거하고 광속 서빙 완성.

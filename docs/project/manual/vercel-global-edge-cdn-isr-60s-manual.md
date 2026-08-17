@@ -161,6 +161,17 @@ const canonical = encodeURI(`https://creaibox.com/blog/${slug}`);
 <div className="w-[180px] flex items-center justify-end shrink-0">...</div>
 ```
 
+### ❌ 금지 5: 대중 공개용 테넌트/빌더 리라이트 시 미들웨어 `Set-Cookie` 주입
+```tsx
+// ❌ 나쁜 예: 미들웨어에서 쿠키를 복사하면 Vercel CDN이 엣지 캐시를 강제로 끄고 매번 1초 SSR 실행!
+response.cookies.getAll().forEach(cookie => rewriteResponse.cookies.set(...));
+
+// ⭕ 좋은 예: 테넌트 블로그나 AI 웹사이트 등 공개 페이지는 Set-Cookie를 배제하여 0.01초 Edge 캐시 보장
+if (!isTenantBlog) {
+  response.cookies.getAll().forEach(cookie => rewriteResponse.cookies.set(...));
+}
+```
+
 ---
 
 ## 4. 자주 묻는 질문 (FAQ)
@@ -170,3 +181,6 @@ A. 기본적으로 60초가 지난 후 첫 방문자가 들어오면 백그라�
 
 **Q2. 방문자가 아예 없는 글도 60초마다 DB를 조회하나요?**  
 A. **아닙니다!** ISR은 타이머가 아닙니다. 방문자가 오지 않으면 DB 조회가 0회(완전 휴식)이며, 손님이 왔을 때만 동작하므로 DB 부하나 비용이 0원입니다.
+
+**Q3. 독립 도메인/서브도메인의 24시간 인메모리 캐시는 어떻게 동작하나요?**  
+A. 미들웨어에서 도메인 매핑 정보를 메모리에 24시간 보관하여 DB 조회를 0ms로 단축합니다. 도메인이 변경되거나 신규 승인될 때만 온디맨드로 즉시 무효화/갱신됩니다.

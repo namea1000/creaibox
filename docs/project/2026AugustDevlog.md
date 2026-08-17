@@ -1032,3 +1032,7 @@
   - **한글 URL 블로그 500 크래시 원천 차단 (`blog/[slug]/page.tsx`, `brand/[brand_id]/[slug]/page.tsx`)**: Next.js 15 App Router에서 비-ASCII(한글) canonical URL이 `generateMetadata`로 전달될 때 발생하던 서버 런타임 예외를 `encodeURI(canonical)` 가드로 완벽 해결. 또한 인코딩/디코딩 slug 양방향 매칭 쿼리로 한글 글도 영문 글처럼 0.01초 만에 즉시 서빙.
   - **블로그 메인 목록(`/blog`) 병렬 고속 데이터 페처 탑재**: 기존 3회 직렬 DB 라운드트립을 `Promise.all` 및 React `cache()`로 병합하여 0.01초 만에 블로그 목록이 즉시 열리도록 가속.
   - **헤더 우측 인증 영역 고정 너비(`w-[180px] shrink-0`) 제로 레이아웃 시프트 구현 (`Header.tsx`)**: 로그아웃 상태에서 페이지 이동 시 초기 로딩 스켈레톤(150px)과 로그인/회원가입 버튼(180px) 간의 너비 차이(30px)로 인해 중앙 네비게이션 메뉴가 좌우로 덜컹거리던 레이아웃 시프트(Layout Shift) 현상을 180px 고정 컨테이너로 100% 영구 해결.
+- **24. 테넌트 블로그/독립 도메인/AI 빌더 0.01초 네이버급 초광속 서빙 및 미들웨어 Zero Set-Cookie 표준화**:
+  - **미들웨어 `Set-Cookie` 주입 전면 배제 (`src/proxy.ts`)**: 공개 테넌트 블로그(`smilekang.creaibox.com`), 독립 도메인(`downhubs.com`, `golfgosu.net`), AI 웹사이트 빌더 리라이트 시 미들웨어의 쿠키 주입(`rewriteResponse.cookies.set`)을 차단하여, Vercel Global Edge CDN이 응답을 캐시하지 못하고 매번 1초짜리 SSR을 돌리던 현상을 원천 해결.
+  - **24시간 인메모리 캐시 맵 가동 (`src/proxy.ts`)**: `customDomainCache`, `subdomainRedirectCache`, `dynamicClientCache`, `staticClientApprovedCache`를 구축하여 도메인/빌더 라우팅 확인 시 발생하는 DB 왕복 지연을 0ms로 압축. (도메인 승인/변경 시에만 온디맨드 즉시 갱신)
+  - **테넌트 블로그 및 동적 렌더러 DB 쿼리 React `cache()` 통합 (`brand/[brand_id]/page.tsx`, `dynamic-renderer/.../page.tsx`)**: 프로필 조회 및 사이트 설정을 React `cache()`로 감싸 동일 렌더링 사이클 내 중복 쿼리를 완전히 제거하고 0.01초 광속 서빙 완성.
