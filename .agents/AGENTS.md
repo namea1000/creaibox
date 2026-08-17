@@ -66,5 +66,8 @@ When creating how-to guides or operation manuals (e.g., "~ 하는 방법", "매�
   2. **DB를 사용하지 않는 순수 프론트엔드/외부 API 기능 (2대 문서 1세트 동시 최신화)**:
      - 🔴 `docs/arch/<feature>-architecture.md` (아키텍처 기술 명세서)
      - 🔵 `docs/project/manual/<feature>-manual.md` (서비스 실무 매뉴얼)
-- **상호 교차 참조(Cross-Linking) 유지**: 기존 문서 수정 또는 신규 문서 생성 시 각 문서 최상단에 연관 문서 링크가 누락되지 않도록 유지한다.
 - **마스터 문서 색인 최신화**: 신규 메뉴/문서 세트가 추가되면 반드시 중앙 사이트맵인 [`docs/README.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/README.md)의 마스터 테이블에도 새 항목을 등록하여 100% 동기화한다.
+
+### Mandatory Mobile Full-Width Blog Layout Rule (모바일 풀-와이드 블로그 레이아웃 영구 표준 규칙)
+- 공식 블로그(`creaibox.com/blog/*`), 서브도메인 블로그(`*.creaibox.com/*`), 커스텀 도메인(`golfgosu.net` 등), AI 웹사이트 빌더(`clients/dynamic-renderer/*`), 및 커스텀 클라이언트 사이트(`clients/*`)의 모든 게시글 상세 뷰는 **모바일(`<sm`) 환경에서 외곽 카드 테두리 및 그림자를 제거(`border-0 rounded-none shadow-none`)하고 패딩을 `px-3.5` ~ `px-4`로 최적화**하여 스마트폰 액정 가로 폭을 100% 시원하게 활용하도록 영구 통일한다. (PC 데스크톱은 품격 있는 카드 박스 `border rounded-xl shadow-sm` 유지)
+

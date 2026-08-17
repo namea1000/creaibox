@@ -31,22 +31,21 @@ export default function PublicStudioLayout({
           setIsMobileOpen={setIsMobileOpen}
         />
 
-        {/* Main */}
+        {/* Main Column */}
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Topbar */}
           <StudioTopbar setIsMobileOpen={setIsMobileOpen} />
 
-          {/* Content + Aside */}
-          <div className="flex min-h-0 min-w-0 flex-1">
-            <main className="min-w-0 flex-1 overflow-y-auto overflow-x-auto custom-scrollbar bg-zinc-100 dark:bg-[#06080d] transition-colors duration-300">
-              {children}
-              <CreNoteWidget />
-              <FaqChatbotWidget />
-            </main>
-
-            <Aside />
-          </div>
+          {/* Content */}
+          <main className="min-w-0 flex-1 overflow-y-auto overflow-x-auto custom-scrollbar bg-zinc-100 dark:bg-[#06080d] transition-colors duration-300">
+            {children}
+            <CreNoteWidget />
+            <FaqChatbotWidget />
+          </main>
         </div>
+
+        {/* Aside */}
+        <Aside />
       </div>
     </div>
   );

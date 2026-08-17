@@ -269,164 +269,162 @@ export default function APIVaultPage() {
           setIsMobileOpen={setIsMobileOpen}
         />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <StudioTopbar setIsMobileOpen={setIsMobileOpen} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <StudioTopbar setIsMobileOpen={setIsMobileOpen} />
 
-        <div className="flex min-h-0 min-w-0 flex-1">
-          <main className="custom-scrollbar min-w-0 flex-1 overflow-y-auto overflow-x-hidden transition-all duration-300">
-            <div className="mx-auto max-w-[1400px] p-6 pb-20 lg:px-12 lg:py-8">
-              <header className="mb-8 border-b border-slate-800/80 pb-6">
-                <div className="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-end">
-                  <div>
-                    <h1 className="flex items-center gap-2 text-3xl font-black uppercase italic tracking-tighter text-white">
-                      🔐 Creaibox{" "}
-                      <span className="text-blue-500 not-italic">
-                        API Vault
-                      </span>
-                    </h1>
+          <div className="flex min-h-0 min-w-0 flex-1">
+            <main className="custom-scrollbar min-w-0 flex-1 overflow-y-auto overflow-x-hidden transition-all duration-300">
+              <div className="mx-auto max-w-[1400px] p-6 pb-20 lg:px-12 lg:py-8">
+                <header className="mb-8 border-b border-slate-800/80 pb-6">
+                  <div className="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-end">
+                    <div>
+                      <h1 className="flex items-center gap-2 text-3xl font-black uppercase italic tracking-tighter text-white">
+                        🔐 Creaibox{" "}
+                        <span className="text-blue-500 not-italic">
+                          API Vault
+                        </span>
+                      </h1>
 
-                    <div className="mt-2 space-y-1">
-                      <p className="text-base font-bold italic text-slate-200 underline decoration-blue-500/50 underline-offset-4">
-                        Your Secure Key Treasury — 개인 AI 연결 설정
-                      </p>
-                      <p className="text-[12px] font-black uppercase tracking-wider text-blue-400">
-                        개인 API Key와 기본 Provider / Model을 저장하는 공간입니다.
-                      </p>
+                      <div className="mt-2 space-y-1">
+                        <p className="text-base font-bold italic text-slate-200 underline decoration-blue-500/50 underline-offset-4">
+                          Your Secure Key Treasury — 개인 AI 연결 설정
+                        </p>
+                        <p className="text-[12px] font-black uppercase tracking-wider text-blue-400">
+                          개인 API Key와 기본 Provider / Model을 저장하는 공간입니다.
+                        </p>
 
-                      <div className="mt-2 rounded-lg border border-slate-700/50 bg-slate-800/30 p-3">
-                        <p className="text-[13px] font-semibold leading-relaxed text-slate-100">
-                          API Key는 모델별이 아니라 플랫폼/과금계정별로 발급받습니다.
-                          Gemini, Groq, OpenAI, Claude 키를 각각 저장하고 기본 AI 생성 엔진을 선택할 수 있습니다.
+                        <div className="mt-2 rounded-lg border border-slate-700/50 bg-slate-800/30 p-3">
+                          <p className="text-[13px] font-semibold leading-relaxed text-slate-100">
+                            API Key는 모델별이 아니라 플랫폼/과금계정별로 발급받습니다.
+                            Gemini, Groq, OpenAI, Claude 키를 각각 저장하고 기본 AI 생성 엔진을 선택할 수 있습니다.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex max-w-md items-start gap-3 rounded-xl border border-blue-500/30 bg-blue-600/10 p-4 shadow-[0_0_25px_rgba(37,99,235,0.15)] backdrop-blur-xl">
+                      <ShieldCheck className="mt-0.5 h-6 w-6 text-blue-500" />
+                      <div className="text-[12px] leading-tight">
+                        <p className="mb-0.5 text-xs font-black uppercase tracking-tight text-white">
+                          사용자 프라이버시 보호
+                        </p>
+                        <p className="font-medium tracking-tight text-slate-200">
+                          현재 개인 키는 사용자의 로컬 브라우저에 저장됩니다. 추후 서버 암호화 저장 방식으로 확장할 수 있습니다.
                         </p>
                       </div>
                     </div>
                   </div>
+                </header>
 
-                  <div className="flex max-w-md items-start gap-3 rounded-xl border border-blue-500/30 bg-blue-600/10 p-4 shadow-[0_0_25px_rgba(37,99,235,0.15)] backdrop-blur-xl">
-                    <ShieldCheck className="mt-0.5 h-6 w-6 text-blue-500" />
-                    <div className="text-[12px] leading-tight">
-                      <p className="mb-0.5 text-xs font-black uppercase tracking-tight text-white">
-                        사용자 프라이버시 보호
-                      </p>
-                      <p className="font-medium tracking-tight text-slate-200">
-                        현재 개인 키는 사용자의 로컬 브라우저에 저장됩니다. 추후 서버 암호화 저장 방식으로 확장할 수 있습니다.
-                      </p>
+                <section className="mb-8 rounded-3xl border border-blue-500/20 bg-blue-500/10 p-6">
+                  <div className="mb-4 flex items-center gap-2 text-lg font-black uppercase italic text-white">
+                    <Settings2 className="text-blue-400" size={20} />
+                    기본 AI 생성 설정
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-blue-300">
+                        기본 Provider
+                      </label>
+                      <select
+                        value={preferredProvider}
+                        onChange={(e) =>
+                          handlePreferredProviderChange(e.target.value)
+                        }
+                        className="w-full rounded-2xl border border-slate-800 bg-black/60 px-4 py-3 text-sm font-bold text-white outline-none focus:border-blue-500"
+                      >
+                        {AI_PROVIDER_ORDER.map((provider) => (
+                          <option key={provider} value={provider}>
+                            {AI_PROVIDER_LABELS[provider]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-blue-300">
+                        기본 Model
+                      </label>
+                      <select
+                        value={preferredModel}
+                        onChange={(e) => handlePreferredModelChange(e.target.value)}
+                        className="w-full rounded-2xl border border-slate-800 bg-black/60 px-4 py-3 text-sm font-bold text-white outline-none focus:border-blue-500"
+                      >
+                        {providerModelOptions.map((model) => (
+                          <option key={model.value} value={model.value}>
+                            {model.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
-                </div>
-              </header>
 
-              <section className="mb-8 rounded-3xl border border-blue-500/20 bg-blue-500/10 p-6">
-                <div className="mb-4 flex items-center gap-2 text-lg font-black uppercase italic text-white">
-                  <Settings2 className="text-blue-400" size={20} />
-                  기본 AI 생성 설정
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div>
-                    <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-blue-300">
-                      기본 Provider
-                    </label>
-                    <select
-                      value={preferredProvider}
-                      onChange={(e) =>
-                        handlePreferredProviderChange(e.target.value)
-                      }
-                      className="w-full rounded-2xl border border-slate-800 bg-black/60 px-4 py-3 text-sm font-bold text-white outline-none focus:border-blue-500"
-                    >
-                      {AI_PROVIDER_ORDER.map((provider) => (
-                        <option key={provider} value={provider}>
-                          {AI_PROVIDER_LABELS[provider]}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-blue-300">
-                      기본 Model
-                    </label>
-                    <select
-                      value={preferredModel}
-                      onChange={(e) => handlePreferredModelChange(e.target.value)}
-                      className="w-full rounded-2xl border border-slate-800 bg-black/60 px-4 py-3 text-sm font-bold text-white outline-none focus:border-blue-500"
-                    >
-                      {providerModelOptions.map((model) => (
-                        <option key={model.value} value={model.value}>
-                          {model.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <p className="mt-3 text-xs font-bold leading-5 text-slate-400">
-                  AI 생성 화면에서 Provider / Model을 직접 선택하지 않으면 이 값이 기본 선택값으로 사용됩니다.
-                </p>
-              </section>
-
-              <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-                <section>
-                  <div className="mb-4 flex items-center gap-2 border-l-4 border-blue-500 pl-3 text-base font-black uppercase tracking-widest text-white">
-                    <Zap className="text-blue-500" size={18} /> AI API Key
-                  </div>
-
-                  {AI_API_VAULT_SERVICES.map((s) => (
-                    <ServiceCard
-                      key={s.id}
-                      service={s}
-                      icon={
-                        s.id.includes("gemini") ? (
-                          <SiGoogle size={18} className="text-blue-400" />
-                        ) : s.id === "groq" ? (
-                          <Zap size={18} className="text-orange-400" />
-                        ) : s.id === "openai" ? (
-                          <SiOpenai size={18} className="text-emerald-400" />
-                        ) : (
-                          <SiClaude size={18} className="text-amber-400" />
-                        )
-                      }
-                    />
-                  ))}
+                  <p className="mt-3 text-xs font-bold leading-5 text-slate-400">
+                    AI 생성 화면에서 Provider / Model을 직접 선택하지 않으면 이 값이 기본 선택값으로 사용됩니다.
+                  </p>
                 </section>
 
-                <section>
-                  <div className="mb-4 flex items-center gap-2 border-l-4 border-purple-500 pl-3 text-base font-black uppercase tracking-widest text-white">
-                    <Video className="text-purple-500" size={18} /> SEARCH & MULTIMEDIA API Key
-                  </div>
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+                  <section>
+                    <div className="mb-4 flex items-center gap-2 border-l-4 border-blue-500 pl-3 text-base font-black uppercase tracking-widest text-white">
+                      <Zap className="text-blue-500" size={18} /> AI API Key
+                    </div>
 
-                  {MULTIMEDIA_API_VAULT_SERVICES.map((s) => (
-                    <ServiceCard
-                      key={s.id}
-                      service={s}
-                      icon={
-                        s.id === "google_search" ? (
-                          <SiGoogle size={18} className="text-blue-400" />
-                        ) : s.id.includes("search") ? (
-                          <Search size={18} className="text-blue-400" />
-                        ) : s.id === "youtube" ? (
-                          <SiYoutube size={20} className="text-red-500" />
-                        ) : s.id === "voice" ? (
-                          <Mic size={18} className="text-indigo-400" />
-                        ) : (
-                          <ImageIcon size={18} className="text-purple-400" />
-                        )
-                      }
-                    />
-                  ))}
-                </section>
+                    {AI_API_VAULT_SERVICES.map((s) => (
+                      <ServiceCard
+                        key={s.id}
+                        service={s}
+                        icon={
+                          s.id.includes("gemini") ? (
+                            <SiGoogle size={18} className="text-blue-400" />
+                          ) : s.id === "groq" ? (
+                            <Zap size={18} className="text-orange-400" />
+                          ) : s.id === "openai" ? (
+                            <SiOpenai size={18} className="text-emerald-400" />
+                          ) : (
+                            <SiClaude size={18} className="text-amber-400" />
+                          )
+                        }
+                      />
+                    ))}
+                  </section>
+
+                  <section>
+                    <div className="mb-4 flex items-center gap-2 border-l-4 border-purple-500 pl-3 text-base font-black uppercase tracking-widest text-white">
+                      <Video className="text-purple-500" size={18} /> SEARCH & MULTIMEDIA API Key
+                    </div>
+
+                    {MULTIMEDIA_API_VAULT_SERVICES.map((s) => (
+                      <ServiceCard
+                        key={s.id}
+                        service={s}
+                        icon={
+                          s.id === "google_search" ? (
+                            <SiGoogle size={18} className="text-blue-400" />
+                          ) : s.id.includes("search") ? (
+                            <Search size={18} className="text-blue-400" />
+                          ) : s.id === "youtube" ? (
+                            <SiYoutube size={20} className="text-red-500" />
+                          ) : s.id === "voice" ? (
+                            <Mic size={18} className="text-indigo-400" />
+                          ) : (
+                            <ImageIcon size={18} className="text-purple-400" />
+                          )
+                        }
+                      />
+                    ))}
+                  </section>
+                </div>
               </div>
-            </div>
-            <CreNoteWidget />
-            <AiAssistantWidget />
-          </main>
-
-          <div className="hidden shrink-0 xl:flex">
-            <Aside />
+              <CreNoteWidget />
+              <AiAssistantWidget />
+            </main>
           </div>
         </div>
+
+        <Aside />
       </div>
-    </div>
     </div>
   );
 }

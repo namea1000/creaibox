@@ -1230,3 +1230,162 @@
 - **커스텀 클라이언트 사이트 (`src/app/clients/sotongcheum/blog/[slug]`, `src/app/clients/commufill/blog/[slug]`)**:
   - 모바일에서는 외곽 카드 테두리(`border-0`, `rounded-none`, `shadow-none`, `p-4 sm:p-12`)를 제거하여 화면 양쪽 전체를 100% 활용하도록 일치화.
 - `npx tsc --noEmit` 0 에러 검증 통과.
+
+## 2026-08-17 (완료): 스튜디오 헤드탑 바(StudioTopbar) 심플화 개편
+
+**작업 내용**
+- `src/components/studio/StudioTopbar.tsx`:
+  - 스튜디오 상단 헤드탑 영역에서 중복되던 브레드크럼(`홈 > Studio > Keyword`), `AI 자동 글쓰기` 인풋 폼 칸, 그리고 퀵 도크 컬러 아이콘 툴바를 깔끔하게 제거.
+  - 우측의 핵심 액션 메뉴 5종(`내 콘텐츠 보관함`, `관리 대시보드`, `스튜디오 Tools`, `FAQ 챗봇`, `Cre Note`) 및 모바일 햄버거 메뉴는 온전히 유지하여 시원하고 정돈된 스튜디오 탑바 레이아웃으로 개편 완료.
+- `npx tsc --noEmit` 0 에러 빌드 검증 통과.
+
+## 2026-08-17 (완료): 스튜디오 헤드탑 5종 바로가기 버튼 좌측 정렬(Left-align) 적용
+
+**작업 내용**
+- `src/components/studio/StudioTopbar.tsx`:
+  - 헤드탑 바의 플렉스 정렬을 `justify-start`로 변경하여 5종 액션 버튼(`내 콘텐츠 보관함`, `관리 대시보드`, `스튜디오 Tools`, `FAQ 챗봇`, `Cre Note`)을 좌측(사이드바 바로 옆)으로 밀착 정렬.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-17 (완료): 사이드바 'AI Studio' 중앙 정렬 및 헤드탑 라인 높이(h-14) 일치화
+
+**작업 내용**
+- `src/components/layout/Sidebar.tsx`:
+  - 사이드바 상단 헤더 높이를 기존 `h-16`(64px)에서 스튜디오 헤드탑과 동일한 `h-14`(56px)로 일치화하여 하단 보더 라인이 1px의 어긋남 없이 수평으로 완벽하게 이어지도록 정렬.
+  - `AI Studio` 텍스트를 사이드바 중앙(Center)으로 배치하고, 사이드바 접기/펼치기 버튼을 우측에 안정적으로 배치.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-17 (완료): 스튜디오 헤드탑 및 사이드바 헤더 높이 콤팩트 축소 (h-12 / 48px)
+
+**작업 내용**
+- `src/components/studio/StudioTopbar.tsx`:
+  - 헤드탑 바 세로 폭을 기존 `h-14`(56px)에서 14% 축소된 `h-12`(48px)로 콤팩트하게 최적화.
+  - 내부 5종 액션 버튼 높이를 `h-8`(32px), 폰트를 `text-[12px]`로 슬림화하여 답답하지 않고 정교한 UI 구현.
+- `src/components/layout/Sidebar.tsx`:
+  - 사이드바 상단 헤더 높이를 동일한 `h-12`(48px)로 일치화하여 하단 보더 라인이 완벽히 수평 일직선을 이루도록 정밀 조정.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-17 (완료): 사이드바 배경 딥 다크 미드나잇 컬러(#05070d) 심화 적용
+
+**작업 내용**
+- `src/components/layout/Sidebar.tsx`:
+  - VisActor 템플릿과 동일한 깊이감 있는 딥 다크 미드나잇 옵시디언 톤(`dark:bg-[#05070d]`)으로 사이드바 배경을 변경.
+  - 메뉴 박스 및 텍스트 스타일은 원형 그대로 유지하여 콘텐츠와의 시각적 대비(Contrast) 극대화.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-17 (완료): 사이드바 배경 퓨어 블랙(dark:bg-black / #000000) 딥 다크 적용
+
+**작업 내용**
+- `src/components/layout/Sidebar.tsx`:
+  - VisActor 템플릿의 깊고 묵직한 대비 효과를 위해 사이드바 전체 및 헤더 영역에 `dark:bg-black`(순수 블랙 `#000000`)을 적용하여 스튜디오 메인 콘텐츠 영역(`#06080d`)과의 명도 대비(Contrast)를 선명하게 구분.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-17 (완료): VisActor 템플릿 원본 다크 네이비 슬레이트(dark:bg-slate-900 / #0f172a) 사이드바 배경 적용
+
+**작업 내용**
+- `src/components/layout/Sidebar.tsx`:
+  - VisActor 템플릿 소스 코드를 정밀 분석하여 실제 사용된 원본 색상인 `dark:bg-slate-900`(`#0f172a`, 딥 네이비 슬레이트) 및 `dark:border-slate-800/80`을 완벽히 이식.
+  - 메뉴 박스는 원형 그대로 유지하고 배경만 VisActor 템플릿 특유의 모던 다크 블루-슬레이트 톤으로 전환.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-17 (완료): 스튜디오 헤드탑 컬러 동기화(slate-900) 및 어사이드(Aside) 라인 상단 끝까지 연장
+
+**작업 내용**
+- `src/components/studio/StudioTopbar.tsx`:
+  - 스튜디오 헤드탑 배경 및 보더를 사이드바와 동일한 VisActor 원본 딥 네이비 슬레이트(`dark:bg-slate-900` / `dark:border-slate-800/80`)로 일치화.
+- `src/components/layout/Aside.tsx`:
+  - 어사이드 상단에 `h-12` 높이의 헤더 영역을 신설하고 `dark:bg-slate-900` 및 보더를 동기화하여 좌-중-우 상단 수평선이 100% 매끄럽게 연결되도록 처리.
+- 레이아웃 파일(`studio/layout.tsx`, `PublicStudioLayout.tsx`, `admin/layout.tsx`, `mypage/page.tsx`, `apivault/page.tsx`):
+  - `<Aside />` 컴포넌트를 `(Topbar + Main)` 컬럼의 형제(Sibling)로 최상위 flex 컨테이너에 배치하여, 오른쪽 어사이드의 좌측 수직선(`border-l`)이 헤드탑 위 최상단 메인 헤더 아래까지 100% 끊김 없이 관통하도록 구조 개편.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-17 (완료): 어사이드(Aside) 접힘 상태 최상단 아이콘 Y축 높이 대칭 일치화
+
+**작업 내용**
+- `src/components/layout/Aside.tsx`:
+  - 접힘 모드(`!isExpanded`) 시 섹션 타이틀(`SectionTitle`)의 불필요한 `mb-2` 공백 태그 렌더링을 완전히 제거(`if (!isExpanded) return null;`).
+  - 접힘 모드에서의 섹션 간 여백을 `space-y-2`로 사이드바와 동일하게 압축하여, 사이드바의 '스튜디오 홈' 아이콘 시작 위치와 어사이드의 첫 번째 아이콘 시작 위치가 수평으로 완벽하게 대칭되도록 정렬.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-17 (완료): 사이드바 '도메인 조회 & 구매' 이모지 제거 및 메뉴명 정돈
+
+**작업 내용**
+- `src/components/layout/Sidebar.tsx`:
+  - `도메인 조회 & 구매 🌐`에서 뒤쪽 `🌐` 이모지를 제거하여 `도메인 조회 & 구매`로 깔끔하게 정돈.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-17 (완료): '쇼핑 키워드 분석' 메뉴명 변경, 사이드바 최하단 이동 및 관리자(Admin) 전용 비공개 전환
+
+**작업 내용**
+- `src/components/layout/Sidebar.tsx`:
+  - 메뉴명을 `쇼핑 키워드 & 아이템 소싱` ➜ `쇼핑 키워드 분석`으로 간결하게 변경.
+  - 일반 공개 사이드바 영역에서 제외하고, 관리자 전용 영역(`isAdmin ? [...]`)의 최하단으로 위치를 이동하여 일반 사용자에게는 노출되지 않는 관리자 전용 비공개 개발 모드로 전환 완료.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-17 (완료): 사이드바 '미디어 라이브러리' 위치를 '유튜브 트렌드 분석' 하단으로 재배치
+
+**작업 내용**
+- `src/components/layout/Sidebar.tsx`:
+  - `미디어 라이브러리`(`creassetbox`) 메뉴의 순서를 `유튜브 트렌드 분석`(`youtube`) 바로 밑, `뮤직 스튜디오`(`music`) 바로 위로 이동하여 영상 및 멀티미디어 도구 흐름에 맞게 정렬.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-17 (완료): 메인 헤더 '미디어 라이브러리' ➜ 'AI 웹사이트 빌더' 메뉴명 및 링크(/studio/custom-client-site) 교체
+
+**작업 내용**
+- `src/components/layout/Header.tsx`:
+  - PC 데스크톱 및 모바일 네비게이션 헤더에서 기존 `미디어 라이브러리` 메뉴를 `AI 웹사이트 빌더`로 변경.
+  - 링크를 `/studio/custom-client-site`(AI 웹사이트 빌더 스튜디오 마켓 및 구축 허브)로 완벽히 연결.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-17 (완료): AI 웹사이트 빌더 스튜디오 홈(/studio/custom-client-site) AIPress.io 스타일 전면 개편
+
+**작업 내용**
+- `src/app/studio/custom-client-site/page.tsx`:
+  - **AIPress.io 디자인 & 성장 엔진 철학 100% 이식**:
+    1. **Hero**: Subtle Grid Background 패턴, 0.01초 글로벌 엣지 뱃지, 실시간 URL 1초 이관 퀵 인풋 바, 4대 핵심 하이라이트 카드 (0.01s 엣지, 콘텐츠 에이전트, SEO+GEO, 포트폴리오 스케일).
+    2. **4대 핵심 진입 트랙 (Choose Your Lane)**:
+       - 🛍️ 트랙 1: 새로운 AI 성장형 사이트 (템플릿 마켓플레이스 & 매직 빌더)
+       - 🔄 트랙 2: 워드프레스/Wix/아임웹 1초 무제한 AI 이관 (Migration)
+       - 📈 트랙 3: 수백 개 검색 상위 랭킹 pSEO & 서브페이지 매직 빌더
+       - 👑 트랙 4: 1:1 맞춤형 엔터프라이즈 커스텀 제작 신청
+    3. **Problem & Solution Matrix (AIPress Red & Green Matrix)**:
+       - Red: 구형 템플릿의 3~5초 로딩 이탈, 콘텐츠 생산 한계로 인한 사이트 방치, AI 검색 미노출 문제 정밀 분석.
+       - Green: Fast by Default 0.01s Vercel CDN, Always-on 브랜드 학습 AI 에이전트, pSEO at Scale 대규모 유기적 트래픽 획득.
+    4. **All-in-One Bento 4-Grid**: 프론트엔드, GEO/AI 가시성, 에이전트 원고 생성, 실시간 도메인 제어.
+    5. **업종별 시그니처 템플릿 쇼케이스**: 카테고리 탭(전체, 테크/SaaS, 비즈니스, 전문직/병원, 커머스)과 16:9 반응형 카드.
+    6. **3단계 무인 구축 파이프라인 (How It Works)** 및 하단 고전환 다크 라운드 CTA 배너.
+- **SmartIntentLink 표준 적용**: 0.01초 즉시 라우팅.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-17 (완료): AI 웹사이트 빌더 홈 메인 헤드라인 폰트 크기 및 단어 줄바꿈(word-break: keep-all) 최적화
+
+**작업 내용**
+- `src/app/studio/custom-client-site/page.tsx`:
+  - Hero 메인 타이틀(`h1`) 폰트 크기를 기존 `text-7xl`에서 최적의 비율인 `text-2xl sm:text-3xl md:text-4xl lg:text-[42px]`로 슬림화 조정.
+  - 한글 단어가 어색하게 쪼개져 줄바꿈되는 현상을 방지하도록 `[word-break:keep-all]` 및 `max-w-4xl mx-auto` 적용.
+  - 하단 CTA 섹션 헤드라인도 균형감 있게 일치화.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-17 (완료): 사이드바 상단 'AI STUDIO' 로고 텍스트 클릭 시 '스튜디오 홈(/studio)' 이동 링크 연결
+
+**작업 내용**
+- `src/components/layout/Sidebar.tsx`:
+  - 사이드바 상단 헤더의 `AI Studio` 텍스트를 `<Link href="/studio">`로 감싸고 `setOptimisticActiveKey("studio-home")`를 연결하여, 텍스트 클릭 시 즉시 스튜디오 홈(`/studio`)으로 쾌속 이동하도록 구현.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-17 (완료): 고객지원 센터(/help) Kimi Platform 스타일 2-Layer 레이아웃 전면 개편
+
+**작업 내용**
+- `src/app/help/page.tsx`:
+  - **Kimi Platform Documentation 스타일 2-Layer 레이아웃 100% 이식**:
+    1. **Left Layer (Sticky Navigation Sidebar - 3 cols)**:
+       - 카테고리별 활성화 알약 버튼(`bg-zinc-800 text-white rounded-xl`) 및 카테고리별 항목 수 카운트 뱃지.
+       - 모바일 화면에서는 상단 반응형 드롭다운(`<select>`)으로 매끄럽게 전환.
+       - 1:1 맞춤 문의 접수(`/help/inquiry`) 및 내 문의 내역 확인(`/help/my-qna`) 퀵 링크.
+    2. **Right Layer (Unified Content & Accordion Q&A Box - 9 cols)**:
+       - 카테고리 헤더 타이틀, 상세 설명 및 우측 상단 `Copy page`(URL 클립보드 복사 피드백) 버튼 탑재.
+       - 7대 FAQ 카테고리(`faqData.ts`) 통합 아코디언 박스(`divide-y divide-zinc-800/80`)와 부드러운 화살표 회전 토글.
+       - 실시간 검색 필터(`searchQuery`)와 전체 카테고리 일치 결과 실시간 하이라이트.
+       - 하단 Kimi 스타일 **"Was this page helpful?"** 유용성 피드백 위젯(`👍 Yes / 👎 No` 인터랙티브 버튼).
+       - 하단 카테고리 이전(`< Previous`) / 다음(`Next >`) 원클릭 네비게이션.
+       - 하단 1:1 고객지원 접수 배너 연동.
+- `npx tsc --noEmit` 0 에러 통과.

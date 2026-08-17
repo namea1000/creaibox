@@ -100,3 +100,12 @@ src/
   * Large seed source and import guidance: `docs/database/reserved-brand-ids.md`.
 * **`writing_creaibox_posts` (Modified)**:
   * `category_id`: Links posts to user blog categories.
+
+---
+
+## 6. Responsive UI & Mobile Full-Width Standard
+
+To maximize reading comfort across mobile and desktop devices:
+* **Mobile (< 640px)**: The article container uses full-width layout without outer border boxing (`border-0`, `rounded-none`, `shadow-none`, `px-3.5`), ensuring zero wasted horizontal space and seamless reading flow.
+* **Desktop (≥ 640px)**: The container maintains an elegant card boundary (`border`, `rounded-xl`, `shadow-sm`, `bg-[#f4f6fa]`, `px-8`) with right-side sticky widgets.
+

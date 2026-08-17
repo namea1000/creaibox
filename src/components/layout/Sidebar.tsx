@@ -219,17 +219,10 @@ export default function Sidebar({
       },
       {
         key: "domain-search",
-        name: "도메인 조회 & 구매 🌐",
+        name: "도메인 조회 & 구매",
         href: "/studio/domain-search",
         icon: Globe,
         color: "text-emerald-400",
-      },
-      {
-        key: "creassetbox",
-        name: "미디어 라이브러리",
-        href: "/library/free-assets",
-        icon: Archive,
-        color: "text-amber-400",
       },
       {
         key: "idea-hub",
@@ -276,19 +269,6 @@ export default function Sidebar({
         ],
       },
       {
-        key: "shopping",
-        name: "쇼핑 키워드 & 아이템 소싱",
-        href: "/studio/shopping/keyword",
-        icon: ShoppingBag,
-        color: "text-emerald-400",
-        badge: "SELLER",
-        children: [
-          { name: "🛍️ 쇼핑 키워드 정밀 분석", href: "/studio/shopping/keyword", icon: ShoppingBag },
-          { name: "📊 네이버 쇼핑 인사이트", href: "/studio/keyword/shopping-insight", icon: BarChart3 },
-          { name: "📦 쇼핑 랭킹 추적 & 소싱 HUB", href: "/studio/shopping/sourcing", icon: Layers },
-        ],
-      },
-      {
         key: "youtube",
         name: "유튜브 트렌드 분석",
         href: "/youtube-trend/rising",
@@ -312,6 +292,13 @@ export default function Sidebar({
           { name: "유튜브 자동 제작 연결", href: "/youtube-trend/workflow", icon: Bot },
           { name: "유튜브 썸네일 다운로더", href: "/utility-tools/youtube-thumbnail", icon: SiYoutube },
         ],
+      },
+      {
+        key: "creassetbox",
+        name: "미디어 라이브러리",
+        href: "/library/free-assets",
+        icon: Archive,
+        color: "text-amber-400",
       },
       {
         key: "music",
@@ -513,6 +500,18 @@ export default function Sidebar({
               { name: "추출 이미지", href: "/research/images", icon: ImageIcon },
               { name: "프로젝트 관리", href: "/research/projects", icon: Folder },
               { name: "설정", href: "/research/settings", icon: Settings },
+            ],
+          },
+          {
+            key: "shopping",
+            name: "쇼핑 키워드 분석",
+            href: "/studio/shopping/keyword",
+            icon: ShoppingBag,
+            color: "text-emerald-400",
+            children: [
+              { name: "🛍️ 쇼핑 키워드 정밀 분석", href: "/studio/shopping/keyword", icon: ShoppingBag },
+              { name: "📊 네이버 쇼핑 인사이트", href: "/studio/keyword/shopping-insight", icon: BarChart3 },
+              { name: "📦 쇼핑 랭킹 추적 & 소싱 HUB", href: "/studio/shopping/sourcing", icon: Layers },
             ],
           },
         ]
@@ -862,20 +861,20 @@ export default function Sidebar({
     <aside
       id="global-studio-sidebar"
       className={`
-        fixed left-0 top-0 z-[110] flex h-screen flex-col border-r border-zinc-200 dark:border-zinc-800/80
-        bg-white dark:bg-[#090e15] transition-all duration-300 ease-in-out lg:relative lg:top-0 lg:h-full lg:z-30
+        fixed left-0 top-0 z-[110] flex h-screen flex-col border-r border-zinc-200 dark:border-slate-800/80
+        bg-white dark:bg-slate-900 transition-all duration-300 ease-in-out lg:relative lg:top-0 lg:h-full lg:z-30
         ${isCollapsed ? "lg:w-14" : "lg:w-[220px]"}
         ${isMobileOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"}
       `}
     >
-      <div className="flex h-16 shrink-0 items-center justify-between border-b border-zinc-200 dark:border-zinc-800/80 px-3.5 bg-white dark:bg-[#090e15] transition-colors duration-300">
+      <div className="flex h-12 shrink-0 items-center justify-between border-b border-zinc-200 dark:border-slate-800/80 px-3.5 bg-white dark:bg-slate-900 transition-colors duration-300">
         {isCollapsed ? (
           <div className="flex w-full justify-center">
             <button
               onClick={() => setIsCollapsed(false)}
-              className="group relative flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+              className="group relative flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
             >
-              <PanelLeftOpen size={16} />
+              <PanelLeftOpen size={14} />
               
               {/* 0ms 실시간 직관 툴팁 */}
               <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2.5 -translate-y-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
@@ -885,15 +884,19 @@ export default function Sidebar({
             </button>
           </div>
         ) : (
-          <div className="flex w-full items-center justify-between">
-            <span className="text-[19px] font-black tracking-tight bg-gradient-to-r from-violet-600 via-indigo-500 to-blue-600 dark:from-cyan-400 dark:via-blue-400 dark:to-violet-400 bg-clip-text text-transparent select-none uppercase truncate mr-2">
+          <div className="relative flex w-full items-center justify-center">
+            <Link
+              href="/studio"
+              onClick={() => setOptimisticActiveKey("studio-home")}
+              className="text-[16px] font-black tracking-tight bg-gradient-to-r from-violet-600 via-indigo-500 to-blue-600 dark:from-cyan-400 dark:via-blue-400 dark:to-violet-400 bg-clip-text text-transparent select-none uppercase truncate text-center hover:opacity-80 transition-opacity"
+            >
               AI Studio
-            </span>
+            </Link>
             <button
               onClick={() => setIsCollapsed(true)}
-              className="group relative flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:border-blue-500/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-blue-500 cursor-pointer"
+              className="absolute right-0 group flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:border-blue-500/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-blue-500 cursor-pointer"
             >
-              <PanelLeftClose size={15} />
+              <PanelLeftClose size={14} />
               
               {/* 0ms 실시간 직관 툴팁 */}
               <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2.5 -translate-y-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
@@ -910,7 +913,7 @@ export default function Sidebar({
       </div>
 
       {!isCollapsed && (
-        <div className="shrink-0 border-t border-zinc-800/80 px-3 py-2.5">
+        <div className="shrink-0 border-t border-zinc-200 dark:border-slate-800/80 px-3 py-2.5">
           <p className="text-center text-[12px] font-bold leading-relaxed text-zinc-500">
             © Creaibox AI Studio
             <br />

@@ -1,213 +1,458 @@
 "use client";
 
-import React, { useState } from "react";
-import { 
-  Search, Mail, FileText, ChevronDown, 
-  HelpCircle, ArrowRight, ClipboardList, ExternalLink
+import React, { useState, useMemo } from "react";
+import {
+  Search,
+  ChevronRight,
+  Copy,
+  Check,
+  HelpCircle,
+  ArrowRight,
+  ArrowLeft,
+  ThumbsUp,
+  ThumbsDown,
+  MessageSquare,
+  Sparkles,
+  ExternalLink,
+  ShieldCheck,
+  CreditCard,
+  LayoutTemplate,
+  PenTool,
+  Video,
+  BarChart3,
+  HardDrive,
+  AlertTriangle,
+  FolderOpen,
 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import Link from "next/link";
+import SmartIntentLink from "@/components/common/SmartIntentLink";
 import { faqData, FAQItem, FAQCategory } from "@/app/chatbot/data/faqData";
 
-// 🌟 FAQ 카테고리 정의 (통합 faqData 기반)
-const CATEGORIES = [
-  { id: "all", label: "전체 FAQ" },
-  ...faqData.map((cat) => ({ id: cat.id, label: cat.title }))
-];
-
-// 🌟 바둑판식 "카테고리별로 찾아보세요" 데이터 정의 (플랫 그리드)
-const QUICK_CATEGORIES = [
-  { label: "시작/회원 관리", targetId: "general", keyword: "가입" },
-  { label: "요금/플랜 구독", targetId: "general", keyword: "결제" },
-  { label: "AI 홈페이지 제작", targetId: "site-builder", keyword: "홈페이지" },
-  { label: "도메인 신청/연결", targetId: "site-builder", keyword: "도메인" },
-  { label: "AI 블로그 원고 작성", targetId: "ai-writer", keyword: "원고" },
-  { label: "네이버 API 연동", targetId: "ai-writer", keyword: "네이버" },
-  { label: "SEO 스키마 / 서치콘솔", targetId: "ai-writer", keyword: "서치콘솔" },
-  { label: "비디오 스튜디오 편집", targetId: "media-studio", keyword: "비디오" },
-  { label: "이미지 누끼(배경)제거", targetId: "media-studio", keyword: "누끼" },
-  { label: "Suno AI 노래/가사", targetId: "media-studio", keyword: "음악" },
-  { label: "키워드 & 유튜브 분석", targetId: "analytics", keyword: "키워드" },
-  { label: "클라우드 저장소 & 캐시", targetId: "storage", keyword: "캐시" },
-  { label: "시스템 및 오류 해결", targetId: "troubleshoot", keyword: "오류" }
-] as const;
+// Icon mapping per category ID
+const CATEGORY_ICONS: Record<string, React.ElementType> = {
+  general: CreditCard,
+  "site-builder": LayoutTemplate,
+  "ai-writer": PenTool,
+  "media-studio": Video,
+  analytics: BarChart3,
+  storage: HardDrive,
+  troubleshoot: AlertTriangle,
+};
 
 export default function HelpCenterPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-
-  // 🌟 통합 FAQ 데이터 리스트 추출
-  const allFaqs: FAQItem[] = faqData.flatMap((cat) => cat.items);
-
-  // 🌟 FAQ 필터링 로직
-  const filteredFaqs = allFaqs.filter((faq) => {
-    const matchesSearch = 
-      faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    if (selectedCategory === "all") return matchesSearch;
-    return faq.category === selectedCategory && matchesSearch;
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("general");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [openItemIds, setOpenItemIds] = useState<Record<string, boolean>>({
+    "gen-1": true, // First item open by default
   });
+  const [copied, setCopied] = useState<boolean>(false);
+  const [feedbackGiven, setFeedbackGiven] = useState<string | null>(null);
+
+  // Active Category Object
+  const activeCategory = useMemo(() => {
+    return faqData.find((cat) => cat.id === selectedCategoryId) || faqData[0];
+  }, [selectedCategoryId]);
+
+  // Current category index for prev/next
+  const currentCategoryIdx = useMemo(() => {
+    return faqData.findIndex((cat) => cat.id === selectedCategoryId);
+  }, [selectedCategoryId]);
+
+  const prevCategory = currentCategoryIdx > 0 ? faqData[currentCategoryIdx - 1] : null;
+  const nextCategory =
+    currentCategoryIdx < faqData.length - 1 ? faqData[currentCategoryIdx + 1] : null;
+
+  // Filter items in current category (or across all if searching)
+  const displayedItems = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return activeCategory.items;
+    }
+    const q = searchQuery.toLowerCase().trim();
+    // When searching, find matching items from all categories
+    return faqData
+      .flatMap((c) => c.items)
+      .filter(
+        (item) =>
+          item.question.toLowerCase().includes(q) ||
+          item.answer.toLowerCase().includes(q)
+      );
+  }, [activeCategory, searchQuery]);
+
+  const toggleAccordion = (id: string) => {
+    setOpenItemIds((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const handleCopyPage = () => {
+    if (typeof window !== "undefined") {
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleFeedback = (type: "yes" | "no") => {
+    setFeedbackGiven(type);
+    setTimeout(() => {
+      // Keep feedback recorded
+    }, 100);
+  };
 
   return (
-    <div className="w-full min-h-screen bg-slate-50 text-slate-800 dark:bg-[#06080d] dark:text-slate-100 overflow-hidden relative transition-colors duration-300">
+    <div className="w-full min-h-screen bg-[#08090d] text-slate-100 font-sans selection:bg-blue-500 selection:text-white flex flex-col justify-between">
       <Header />
 
-      <div className="max-w-4xl mx-auto px-6 py-20 relative z-10">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         
-        {/* 🏢 SECTION 1: HERO HEADER */}
-        <div className="border-b border-slate-200 dark:border-slate-800/80 pb-10 mb-16 space-y-4 text-center md:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs font-black tracking-widest uppercase shadow-sm">
-            <HelpCircle size={12} className="text-blue-600" /> CreaiBox Support Center
+        {/* ─────────────────────────────────────────────────────────────
+            TOP SEARCH BAR & TITLE HEADER (Kimi Style)
+        ───────────────────────────────────────────────────────────── */}
+        <div className="mb-8 pb-6 border-b border-zinc-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-bold text-blue-400">
+              <HelpCircle size={13} />
+              <span>CreaiBox Help Center</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              도움말 &amp; 고객지원 센터
+            </h1>
           </div>
-          <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-slate-950 dark:text-white leading-tight">
-            무엇을 도와드릴까요?
-          </h1>
-          <p className="text-sm md:text-lg text-slate-600 dark:text-slate-400 font-bold max-w-3xl leading-relaxed">
-            자주 접수되는 사용 관련 핵심 질문과 해결책을 검색하고, 답변에 포함된 바로가기 버튼으로 해당 스튜디오 메뉴로 즉시 이동해 보세요. <br className="hidden md:inline" />
-            도움말로 문제가 해결되지 않는 경우 1:1 접수를 진행하실 수 있습니다.
-          </p>
-        </div>
 
-        {/* 🔍 SECTION 2: SEARCH CONSOLE */}
-        <div className="mb-16">
-          <form 
-            onSubmit={(e) => e.preventDefault()}
-            className="max-w-2xl mx-auto flex items-center gap-2.5 bg-white dark:bg-[#0b0f19]/80 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm transition-all focus-within:border-blue-500"
-          >
-            <Search size={20} className="text-slate-400 shrink-0" />
+          {/* Search Bar with ⌘K Look */}
+          <div className="w-full md:w-80 lg:w-96 relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
             <input
               type="text"
-              placeholder="궁금한 기능이나 키워드를 검색하세요..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 bg-transparent text-slate-800 dark:text-white text-xs md:text-sm font-semibold outline-none placeholder-slate-400"
+              placeholder="궁금한 질문 검색... (예: 결제, 도메인, 오류)"
+              className="w-full bg-zinc-900/90 border border-zinc-800 focus:border-blue-500/80 rounded-xl pl-10 pr-12 py-2.5 text-xs sm:text-sm font-semibold text-zinc-100 placeholder:text-zinc-500 outline-none transition-all shadow-inner"
             />
-          </form>
-        </div>
-
-        {/* 📂 SECTION 3: 카테고리별로 찾아보세요 (바둑판식 플랫 그리드) */}
-        <div className="mb-16 space-y-6">
-          <h2 className="text-lg md:text-xl font-black text-slate-950 dark:text-white flex items-center gap-2">
-            <ClipboardList size={18} className="text-blue-600" />
-            카테고리별로 찾아보세요
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {QUICK_CATEGORIES.map((qCat) => (
+            {searchQuery && (
               <button
-                key={qCat.label}
-                onClick={() => {
-                  setSelectedCategory(qCat.targetId);
-                  setSearchQuery(qCat.keyword);
-                  document.getElementById("faq-section")?.scrollIntoView({ behavior: "smooth" });
-                }}
-                className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0b0f19]/40 text-center hover:bg-slate-100/50 dark:hover:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700 transition cursor-pointer shadow-sm text-xs md:text-sm font-black text-slate-800 dark:text-slate-300"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-500 hover:text-zinc-300"
               >
-                {qCat.label}
+                지우기
               </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 🏷️ SECTION 4: CATEGORY TABS */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-12 border-b border-slate-200 dark:border-slate-800 pb-8 shrink-0">
-          {CATEGORIES.map((cat) => {
-            const active = selectedCategory === cat.id;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`px-4 py-2 rounded-full text-xs md:text-sm font-black border transition-all duration-200 outline-none select-none cursor-pointer ${
-                  active
-                    ? "bg-blue-50 dark:bg-blue-500/10 border-blue-500 text-blue-600 dark:text-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.1)]"
-                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/30 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-white shadow-sm"
-                }`}
-              >
-                {cat.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* ❓ SECTION 5: FAQ ACCORDION */}
-        <div id="faq-section" className="space-y-6 scroll-mt-24">
-          <h2 className="text-lg md:text-xl font-black text-slate-950 dark:text-white flex items-center gap-2">
-            <FileText size={18} className="text-blue-500" />
-            {CATEGORIES.find(c => c.id === selectedCategory)?.label || "자주 묻는 질문"} 목록
-          </h2>
-          
-          <div className="space-y-3">
-            {filteredFaqs.length > 0 ? (
-              filteredFaqs.map((faq) => (
-                <details 
-                  key={faq.id || faq.question} 
-                  className="group p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/10 open:bg-slate-50/50 dark:open:bg-slate-950/20 open:border-slate-300/80 dark:open:border-slate-750 transition-all shadow-sm"
-                >
-                  <summary className="list-none flex justify-between items-center font-bold text-xs md:text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none group-open:text-slate-950 dark:group-open:text-white group-hover:text-slate-900 dark:group-hover:text-white">
-                    <span className="flex items-center gap-2">
-                      <span className="text-blue-500 font-black">Q.</span> {faq.question}
-                    </span>
-                    <ChevronDown size={14} className="text-slate-400 transition-transform group-open:rotate-180" />
-                  </summary>
-                  <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 text-xs md:text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-semibold pl-5 relative space-y-3">
-                    <span className="absolute left-0 top-4 text-emerald-500 font-black">A.</span>
-                    {faq.answer.split('\n').map((line, i) => (
-                      <p key={i} className={i > 0 ? "mt-1.5" : ""}>
-                        {line}
-                      </p>
-                    ))}
-
-                    {/* 🚀 바로가기 버튼 제공 */}
-                    {faq.link && (
-                      <div className="pt-3 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-end">
-                        <Link
-                          href={faq.link}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60 text-xs font-extrabold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors shadow-xs group/btn"
-                        >
-                          <span>{faq.linkLabel || "관련 메뉴 바로가기"}</span>
-                          <ArrowRight size={13} className="transition-transform group-hover/btn:translate-x-0.5" />
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-                </details>
-              ))
-            ) : (
-              <div className="text-center py-16 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-slate-450 dark:text-slate-500 bg-white dark:bg-slate-900/10 text-sm font-medium">
-                일치하는 자주 묻는 질문이 없습니다.
-              </div>
             )}
           </div>
         </div>
 
-        {/* 📬 SECTION 5: 카카오스타일 문의/내역 퀵 배너 */}
-        <div className="mt-20 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0b0f19]/80 text-center space-y-4 shadow-sm relative overflow-hidden">
-          <h3 className="text-base md:text-lg font-black text-slate-950 dark:text-white">
-            도움말을 통해 문제를 해결하지 못하셨나요?
-          </h3>
-          <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-bold max-w-2xl mx-auto">
-            1:1 문의 접수 또는 크리에이박스를 위한 기능 개선 및 개발 제안 사항을 등록해 주시면 <br className="hidden md:inline" />
-            담당 AI 지원팀이 신속히 확인하여 자세한 답변 및 업데이트 일정을 피드백해 드립니다.
-          </p>
-          <div className="flex justify-center gap-3 pt-2">
-            <Link 
-              href="/help/inquiry" 
-              className="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs md:text-sm transition-all cursor-pointer shadow-sm flex items-center"
-            >
-              문의 접수하기 ➔
-            </Link>
-            <Link 
-              href="/help/my-qna" 
-              className="px-5 py-3 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-extrabold text-xs md:text-sm transition-all cursor-pointer shadow-sm hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center"
-            >
-              내 문의/답변 확인 ➔
-            </Link>
-          </div>
+        {/* ─────────────────────────────────────────────────────────────
+            2-LAYER (2-COLUMN) LAYOUT
+        ───────────────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+          
+          {/* 📁 LEFT SIDEBAR (Category Navigation - 3 cols) */}
+          <aside className="lg:col-span-4 xl:col-span-3 space-y-4 lg:sticky lg:top-24">
+            
+            {/* Mobile Category Dropdown Selector */}
+            <div className="lg:hidden w-full space-y-1.5 mb-4">
+              <label className="text-xs font-bold text-zinc-400">카테고리 선택</label>
+              <select
+                value={selectedCategoryId}
+                onChange={(e) => {
+                  setSelectedCategoryId(e.target.value);
+                  setSearchQuery("");
+                }}
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-3 text-sm font-bold text-white outline-none focus:border-blue-500"
+              >
+                {faqData.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.title} ({cat.items.length})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Desktop Navigation List */}
+            <div className="hidden lg:block space-y-1">
+              <div className="px-3 pb-2 text-[11px] font-black uppercase tracking-wider text-zinc-500">
+                도움말 카테고리
+              </div>
+
+              {faqData.map((cat) => {
+                const Icon = CATEGORY_ICONS[cat.id] || FolderOpen;
+                const isActive = selectedCategoryId === cat.id && !searchQuery;
+
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      setSelectedCategoryId(cat.id);
+                      setSearchQuery("");
+                    }}
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-between group cursor-pointer ${
+                      isActive
+                        ? "bg-zinc-800 text-white shadow-md border border-zinc-700/60"
+                        : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/60"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 truncate">
+                      <Icon
+                        size={16}
+                        className={`shrink-0 transition-colors ${
+                          isActive ? "text-cyan-400" : "text-zinc-500 group-hover:text-zinc-300"
+                        }`}
+                      />
+                      <span className="truncate">{cat.title}</span>
+                    </div>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                        isActive
+                          ? "bg-zinc-700 text-cyan-300"
+                          : "text-zinc-500 group-hover:text-zinc-400"
+                      }`}
+                    >
+                      {cat.items.length}
+                    </span>
+                  </button>
+                );
+              })}
+
+              {/* 1:1 Contact Hub link */}
+              <div className="pt-4 mt-4 border-t border-zinc-800/80 space-y-1">
+                <div className="px-3 pb-1 text-[11px] font-black uppercase tracking-wider text-zinc-500">
+                  고객 지원 바로가기
+                </div>
+
+                <SmartIntentLink
+                  href="/help/inquiry"
+                  className="w-full text-left px-3.5 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-cyan-400 hover:bg-zinc-900/60 transition-all flex items-center gap-2"
+                >
+                  <MessageSquare size={14} className="text-blue-400" />
+                  <span>1:1 맞춤 문의 접수</span>
+                </SmartIntentLink>
+
+                <SmartIntentLink
+                  href="/help/my-qna"
+                  className="w-full text-left px-3.5 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-cyan-400 hover:bg-zinc-900/60 transition-all flex items-center gap-2"
+                >
+                  <ShieldCheck size={14} className="text-emerald-400" />
+                  <span>내 문의 내역 및 답변 확인</span>
+                </SmartIntentLink>
+              </div>
+            </div>
+          </aside>
+
+          {/* 📄 RIGHT CONTENT (Accordion Q&A List - 9 cols) */}
+          <section className="lg:col-span-8 xl:col-span-9 space-y-6">
+            
+            {/* Category Title & Copy Page Header (Kimi 1:1 Style) */}
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-2">
+              <div className="space-y-2">
+                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                  {searchQuery ? `"${searchQuery}" 검색 결과` : activeCategory.title}
+                </h2>
+                <p className="text-sm text-zinc-400 leading-relaxed max-w-2xl">
+                  {searchQuery
+                    ? `총 ${displayedItems.length}개의 관련 도움말 항목이 발견되었습니다.`
+                    : activeCategory.description}
+                </p>
+              </div>
+
+              {/* Copy Page URL Button */}
+              <button
+                onClick={handleCopyPage}
+                className="self-start inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-zinc-800 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs font-bold transition-all shadow-sm cursor-pointer whitespace-nowrap"
+              >
+                {copied ? (
+                  <>
+                    <Check size={14} className="text-emerald-400" />
+                    <span className="text-emerald-400">링크 복사 완료</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={14} className="text-zinc-400" />
+                    <span>Copy page</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* 📋 Accordion List Box (Kimi Platform Unified Box Style) */}
+            {displayedItems.length > 0 ? (
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 divide-y divide-zinc-800/80 overflow-hidden shadow-2xl backdrop-blur-sm">
+                {displayedItems.map((item) => {
+                  const isOpen = !!openItemIds[item.id];
+
+                  return (
+                    <div key={item.id} className="transition-colors">
+                      {/* Accordion Header Button */}
+                      <button
+                        onClick={() => toggleAccordion(item.id)}
+                        className="w-full text-left px-5 sm:px-6 py-4.5 flex items-start gap-3.5 hover:bg-zinc-800/30 transition-colors group cursor-pointer"
+                        aria-expanded={isOpen}
+                      >
+                        <ChevronRight
+                          size={16}
+                          className={`mt-0.5 shrink-0 transition-transform duration-200 ${
+                            isOpen
+                              ? "rotate-90 text-cyan-400"
+                              : "text-zinc-500 group-hover:text-zinc-300"
+                          }`}
+                        />
+                        <span className="text-sm sm:text-[15px] font-bold text-zinc-200 group-hover:text-white transition-colors leading-snug flex-1">
+                          {item.question}
+                        </span>
+                      </button>
+
+                      {/* Collapsible Answer Body */}
+                      {isOpen && (
+                        <div className="px-5 sm:px-6 pb-6 pt-1 text-sm text-zinc-300 leading-relaxed bg-zinc-900/30 border-t border-zinc-800/40 space-y-4">
+                          <div className="pl-7 space-y-2 whitespace-pre-line leading-relaxed text-zinc-300">
+                            {item.answer}
+                          </div>
+
+                          {/* Quick Studio Link Button if present */}
+                          {item.link && (
+                            <div className="pl-7 pt-2">
+                              <SmartIntentLink
+                                href={item.link}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600/15 border border-blue-500/30 text-blue-400 hover:bg-blue-600 hover:text-white text-xs font-black transition-all shadow-sm"
+                              >
+                                <span>{item.linkLabel || "해당 메뉴로 바로가기"}</span>
+                                <ArrowRight size={13} />
+                              </SmartIntentLink>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-12 text-center rounded-2xl border border-zinc-800 bg-zinc-900/30 space-y-3">
+                <HelpCircle size={32} className="mx-auto text-zinc-600" />
+                <p className="text-sm font-bold text-zinc-300">
+                  검색어와 일치하는 도움말 항목이 없습니다.
+                </p>
+                <p className="text-xs text-zinc-500">
+                  다른 키워드로 검색하시거나 1:1 문의 접수를 통해 실시간 지원을 받아보세요.
+                </p>
+                <div className="pt-2">
+                  <SmartIntentLink
+                    href="/help/inquiry"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all"
+                  >
+                    <span>1:1 고객센터 문의하기</span>
+                    <ArrowRight size={14} />
+                  </SmartIntentLink>
+                </div>
+              </div>
+            )}
+
+            {/* ─────────────────────────────────────────────────────────────
+                WAS THIS PAGE HELPFUL? (Kimi Feedback Widget)
+            ───────────────────────────────────────────────────────────── */}
+            <div className="pt-8 pb-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-zinc-800/80">
+              <span className="text-xs sm:text-sm font-semibold text-zinc-400">
+                이 도움말 페이지가 유용하셨나요?
+              </span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleFeedback("yes")}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+                    feedbackGiven === "yes"
+                      ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
+                      : "border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300"
+                  }`}
+                >
+                  <ThumbsUp size={13} />
+                  <span>네, 도움되었어요</span>
+                </button>
+
+                <button
+                  onClick={() => handleFeedback("no")}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+                    feedbackGiven === "no"
+                      ? "bg-red-500/20 border-red-500/40 text-red-400"
+                      : "border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300"
+                  }`}
+                >
+                  <ThumbsDown size={13} />
+                  <span>아쉬워요</span>
+                </button>
+              </div>
+            </div>
+
+            {/* ─────────────────────────────────────────────────────────────
+                PREV / NEXT CATEGORY NAVIGATION
+            ───────────────────────────────────────────────────────────── */}
+            {!searchQuery && (
+              <div className="pt-4 flex items-center justify-between gap-4">
+                {prevCategory ? (
+                  <button
+                    onClick={() => {
+                      setSelectedCategoryId(prevCategory.id);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <ArrowLeft size={15} />
+                    <span>{prevCategory.title}</span>
+                  </button>
+                ) : (
+                  <div />
+                )}
+
+                {nextCategory && (
+                  <button
+                    onClick={() => {
+                      setSelectedCategoryId(nextCategory.id);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <span>{nextCategory.title}</span>
+                    <ArrowRight size={15} />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* ─────────────────────────────────────────────────────────────
+                1:1 INQUIRY BANNER
+            ───────────────────────────────────────────────────────────── */}
+            <div className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-blue-950/30 via-zinc-900 to-indigo-950/30 border border-blue-500/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="space-y-1 text-center sm:text-left">
+                <h3 className="text-sm font-bold text-white flex items-center justify-center sm:justify-start gap-2">
+                  <Sparkles size={15} className="text-cyan-400" />
+                  원하시는 답변을 찾지 못하셨나요?
+                </h3>
+                <p className="text-xs text-zinc-400">
+                  전담 고객지원팀에 1:1 맞춤 문의를 남겨주시면 신속하게 답변해 드립니다.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2.5 shrink-0">
+                <SmartIntentLink
+                  href="/help/inquiry"
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs transition-all shadow-md"
+                >
+                  1:1 문의 접수
+                </SmartIntentLink>
+                <SmartIntentLink
+                  href="/help/my-qna"
+                  className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold text-xs border border-zinc-700 transition-all"
+                >
+                  답변 확인
+                </SmartIntentLink>
+              </div>
+            </div>
+
+          </section>
+
         </div>
 
-      </div>
+      </main>
+
       <Footer />
     </div>
   );

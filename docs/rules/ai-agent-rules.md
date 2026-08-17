@@ -808,3 +808,11 @@ General UI icons must use lucide-react.
 ### 2. 상호 교차 참조(Cross-Linking) 및 색인 동기화 의무화
 - 생성 또는 수정된 각 문서의 최상단 헤더에는 나머지 연관 문서들의 링크를 반드시 명시하여, 작업자가 어떤 문서를 열더라도 관련 전체 세트를 0.1초 만에 찾아갈 수 있도록 유지해야 합니다.
 - **마스터 문서 색인 최신화**: 신규 메뉴/문서 세트가 추가되거나 변경되면 반드시 프로젝트 전체 사이트맵인 [`docs/README.md`](file:///Users/a1234/Local%20Sites/creaibox/docs/README.md)의 마스터 테이블에도 새 항목을 등록하여 100% 동기화해야 합니다.
+
+---
+
+## 25. Mandatory Mobile Full-Width Blog Layout Rule (모바일 풀-와이드 블로그 레이아웃 표준 규칙)
+
+- **공식 블로그(`creaibox.com/blog/*`)**, **사용자 브랜드 서브도메인 블로그(`*.creaibox.com/*`)**, **AI 웹사이트 빌더로 생성되는 모든 고객사 홈페이지/내장 블로그(`clients/dynamic-renderer/*`)**, 및 **커스텀 클라이언트 사이트(`clients/*`)**의 아티클 상세 뷰는 모바일 화면에서 액정 폭을 100% 활용할 수 있도록 다음 규칙을 필수로 준수해야 합니다:
+  1. **모바일 외곽 카드 테두리 및 그림자 해제**: 모바일(`<sm`) 뷰에서는 `border-0 rounded-none shadow-none`을 적용하여 텍스트 및 이미지가 좌우 테두리 박스에 갇혀 좁아지는 현상을 100% 방지합니다.
+  2. **모바일 좌우 패딩 최적화**: 모바일 본문 및 헤더 패딩은 `px-3.5` ~ `px-4`로 설정하고, PC 데스크톱(`sm:`, `md:`)에서는 `px-7` ~ `px-8`과 함께 품격 있는 카드 박스 스타일(`border rounded-xl shadow-sm`)을 유지합니다.

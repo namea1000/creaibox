@@ -31,22 +31,21 @@ export default function StudioLayout({
           setIsMobileOpen={setIsMobileOpen}
         />
 
-        {/* Main */}
+        {/* Main Column */}
         <div className="flex min-w-0 flex-1 flex-col">
-          {/* Topbar */}
+          {/* Topbar (심플화된 우측 핵심 메뉴 5종 탑바) */}
           <StudioTopbar setIsMobileOpen={setIsMobileOpen} />
 
-          {/* Content + Aside */}
-          <div className="flex min-h-0 min-w-0 flex-1">
-            <main className="min-w-0 flex-1 overflow-y-auto overflow-x-auto custom-scrollbar bg-zinc-100 dark:bg-[#06080d] transition-colors duration-300">
-              {children}
-              <CreNoteWidget />
-              <FaqChatbotWidget />
-            </main>
-
-            <Aside />
-          </div>
+          {/* Content */}
+          <main className="min-w-0 flex-1 overflow-y-auto overflow-x-auto custom-scrollbar bg-zinc-100 dark:bg-[#06080d] transition-colors duration-300">
+            {children}
+            <CreNoteWidget />
+            <FaqChatbotWidget />
+          </main>
         </div>
+
+        {/* Aside - 오른쪽 상단 헤드탑 위까지 수직선이 100% 관통 */}
+        <Aside />
       </div>
     </div>
   );

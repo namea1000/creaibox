@@ -115,30 +115,36 @@ export default function Aside() {
     );
   };
 
-  const SectionTitle = ({ children }: { children: React.ReactNode }) => (
-    <p
-      className={`mb-2 ml-1.5 overflow-hidden whitespace-nowrap text-[9px] font-black uppercase tracking-[0.22em] text-blue-400/90 transition-all duration-200 ${isExpanded ? "max-w-[180px] opacity-100" : "max-w-0 opacity-0"
-        }`}
-    >
-      {children}
-    </p>
-  );
+  const SectionTitle = ({ children }: { children: React.ReactNode }) => {
+    if (!isExpanded) return null;
+    return (
+      <p className="mb-2 ml-1.5 overflow-hidden whitespace-nowrap text-[9px] font-black uppercase tracking-[0.22em] text-blue-400/90 transition-all duration-200">
+        {children}
+      </p>
+    );
+  };
 
   return (
     <aside
       id="global-studio-aside"
       className={`
-        hidden xl:flex h-[calc(100vh-5rem)] shrink-0 flex-col border-l border-zinc-200 dark:border-zinc-800/80
-        bg-zinc-50 dark:bg-[#090e15] transition-all duration-300 ease-in-out
+        hidden xl:flex h-full shrink-0 flex-col border-l border-zinc-200 dark:border-slate-800/80
+        bg-white dark:bg-slate-900 transition-all duration-300 ease-in-out select-none
         ${isExpanded ? "w-56" : "w-14"}
       `}
     >
-      <div className={`flex-1 px-2.5 py-4 ${!isExpanded ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"}`}>
+      {/* 어사이드 상단 헤더 (스튜디오 헤드탑 높이 h-12 및 수평 라인과 완벽 일치) */}
+      <div className={`flex h-12 shrink-0 items-center border-b border-zinc-200 dark:border-slate-800/80 px-3 bg-white dark:bg-slate-900 transition-colors duration-300 ${isExpanded ? "justify-between" : "justify-center"}`}>
+        {isExpanded && (
+          <span className="text-[12px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            Quick Hub
+          </span>
+        )}
         <button
           onClick={() => setIsExpanded((prev) => !prev)}
-          className={`group relative mb-4 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:border-blue-500/50 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-white ${isExpanded ? "" : "mx-auto"}`}
+          className="group relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:border-blue-500/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-white cursor-pointer"
         >
-          {isExpanded ? <PanelRightClose size={15} /> : <PanelRightOpen size={15} />}
+          {isExpanded ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}
           
           {/* 0ms 실시간 직관 툴팁 */}
           <span className="pointer-events-none absolute right-full top-1/2 z-50 mr-2.5 -translate-y-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
@@ -146,9 +152,11 @@ export default function Aside() {
             <span className="absolute left-full top-1/2 -translate-y-1/2 -ml-1 border-4 border-transparent border-l-zinc-900/95 dark:border-l-zinc-800/95" />
           </span>
         </button>
+      </div>
 
-        <div className="space-y-5">
-          <section>
+      <div className={`flex-1 px-2.5 py-4 ${!isExpanded ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"}`}>
+        <div className={isExpanded ? "space-y-5" : "space-y-2"}>
+          <section className={isExpanded ? "" : "space-y-2"}>
             <SectionTitle>Business Hub</SectionTitle>
             <div className="space-y-2">
               {businessLinks.map((item) => (
@@ -157,7 +165,7 @@ export default function Aside() {
             </div>
           </section>
 
-          <section>
+          <section className={isExpanded ? "" : "space-y-2"}>
             <SectionTitle>Support</SectionTitle>
 
             <div className="space-y-2">

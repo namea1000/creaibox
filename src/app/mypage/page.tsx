@@ -115,23 +115,23 @@ export default function MyPage() {
     if (!bId) return { status: "NONE", domain: "", requested: "", reason: "" };
     const configs = profile.extra_configs || {};
     const isPrimary = bId === profile.brand_id;
-    
-    const status = configs[`custom_domain_status_${bId}`] !== undefined 
-      ? configs[`custom_domain_status_${bId}`] 
+
+    const status = configs[`custom_domain_status_${bId}`] !== undefined
+      ? configs[`custom_domain_status_${bId}`]
       : (isPrimary ? (configs.custom_domain_status || "NONE") : "NONE");
-       
-    const domain = configs[`custom_domain_${bId}`] !== undefined 
-      ? configs[`custom_domain_${bId}`] 
+
+    const domain = configs[`custom_domain_${bId}`] !== undefined
+      ? configs[`custom_domain_${bId}`]
       : (isPrimary ? (configs.custom_domain || "") : "");
-       
-    const requested = configs[`requested_custom_domain_${bId}`] !== undefined 
-      ? configs[`requested_custom_domain_${bId}`] 
+
+    const requested = configs[`requested_custom_domain_${bId}`] !== undefined
+      ? configs[`requested_custom_domain_${bId}`]
       : (isPrimary ? (configs.requested_custom_domain || "") : "");
-       
-    const reason = configs[`custom_domain_rejection_reason_${bId}`] !== undefined 
-      ? configs[`custom_domain_rejection_reason_${bId}`] 
+
+    const reason = configs[`custom_domain_rejection_reason_${bId}`] !== undefined
+      ? configs[`custom_domain_rejection_reason_${bId}`]
       : (isPrimary ? (configs.custom_domain_rejection_reason || "") : "");
-       
+
     return { status, domain, requested, reason };
   }, [profile.brand_id, profile.extra_configs]);
 
@@ -228,7 +228,7 @@ export default function MyPage() {
               for (const site of userSites) {
                 if (!site.brand_id) continue;
                 const bIdLower = site.brand_id.toLowerCase();
-                
+
                 const isActive = activeSubdomains.includes(bIdLower);
                 const isArchived = cancelledBrands.some((cb: any) => cb.brandId.toLowerCase() === bIdLower);
 
@@ -239,7 +239,7 @@ export default function MyPage() {
                     cancelledAt: new Date().toISOString(),
                     type: "ALL"
                   });
-                  
+
                   // status를 INACTIVE로 강제 강등하여 미들웨어 접근 차단
                   if (site.status === "ACTIVE") {
                     await supabase
@@ -247,7 +247,7 @@ export default function MyPage() {
                       .update({ status: "INACTIVE" })
                       .eq("brand_id", bIdLower);
                   }
-                  
+
                   hasChange = true;
                 }
               }
@@ -262,7 +262,7 @@ export default function MyPage() {
 
               // 이 유저의 프로필에 해당 brand_id 관련 흔적(예: 설정 접미사 등)이 존재하지만 활성 리스트와 보관함에 둘 다 없는 경우 구출
               const hasConfigTrace = Object.keys(nextExtraConfigs).some(key => key.endsWith(`_${sIdLower}`));
-              
+
               if (!isActive && !isArchived && hasConfigTrace) {
                 cancelledBrands.push({
                   brandId: sIdLower,
@@ -275,7 +275,7 @@ export default function MyPage() {
 
             if (hasChange) {
               nextExtraConfigs.cancelled_brands = cancelledBrands;
-              
+
               // 프로필 테이블 업데이트
               await supabase
                 .from("profiles")
@@ -490,7 +490,7 @@ export default function MyPage() {
       // 🌟 휴면 보관함(cancelled_brands)에 취소 이력 적립
       const cancelledBrands = nextExtraConfigs.cancelled_brands || [];
       const isAlreadyArchived = cancelledBrands.some((cb: any) => cb.brandId.toLowerCase() === brandIdToCancel.toLowerCase());
-      
+
       if (!isAlreadyArchived) {
         cancelledBrands.push({
           brandId: brandIdToCancel,
@@ -522,7 +522,7 @@ export default function MyPage() {
           primaryBrandId = brandIds[0];
           brandIds = brandIds.slice(1);
           brandIdStatus = "APPROVED";
-          
+
           // Copy configs of the new primary brand to the base configs
           const keysToCopy = [
             "blog_title", "blog_description", "blog_template", "blog_accent_color",
@@ -540,7 +540,7 @@ export default function MyPage() {
         } else {
           primaryBrandId = null;
           brandIdStatus = "NONE";
-          
+
           // Clear base configs
           const keysToClear = [
             "blog_title", "blog_description", "blog_template", "blog_accent_color",
@@ -780,7 +780,7 @@ export default function MyPage() {
       alert("연결할 독립 도메인을 입력해 주세요.");
       return;
     }
-    
+
     const domainRegex = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/;
     if (!domainRegex.test(domain)) {
       alert("올바른 도메인 형식(예: blog.mybrand.com 또는 mybrand.com)을 입력해 주세요.");
@@ -995,739 +995,737 @@ export default function MyPage() {
           setIsMobileOpen={setIsMobileOpen}
         />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <StudioTopbar setIsMobileOpen={setIsMobileOpen} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <StudioTopbar setIsMobileOpen={setIsMobileOpen} />
 
-        <div className="flex min-h-0 min-w-0 flex-1">
-          <main className="custom-scrollbar min-w-0 flex-1 overflow-y-auto overflow-x-hidden transition-all duration-300">
-          <div className="mx-auto max-w-[1400px] p-6 pt-4 pb-48 lg:p-12 lg:pt-10">
-            <header className="mb-12 flex flex-col items-start justify-between gap-6 border-b border-zinc-800 pb-10 text-left md:flex-row md:items-end">
-              <div className="space-y-2">
-                <h1 className="text-5xl font-black uppercase italic leading-none tracking-tighter text-white">
-                  My <span className="text-blue-500">Profile</span> Settings
-                </h1>
-                <p className="mt-3 pl-1 text-[10px] font-black uppercase italic tracking-[0.3em] text-zinc-500">
-                  Strategic Personal Environment & Identity Management
-                </p>
-              </div>
-
-              <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="group flex items-center gap-3 rounded-2xl border border-blue-400/30 bg-blue-600 px-10 py-5 text-sm font-black uppercase italic tracking-widest text-white shadow-[0_10px_30px_rgba(37,99,235,0.3)] transition-all hover:bg-blue-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isSaving ? (
-                  <RefreshCw size={18} className="animate-spin text-white" />
-                ) : (
-                  <Save size={18} className="transition-transform group-hover:scale-110" />
-                )}
-                Sync & Save All Settings
-              </button>
-            </header>
-
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-              <section className="space-y-8 rounded-[40px] border border-zinc-800 bg-zinc-900/40 p-10 text-left shadow-2xl transition-all hover:border-zinc-700">
-                <div className="flex items-center gap-3 border-b border-zinc-800/50 pb-6">
-                  <User className="text-blue-500" size={24} />
-                  <h2 className="text-2xl font-black uppercase italic tracking-tight text-white">Identity</h2>
+          <div className="flex min-h-0 min-w-0 flex-1">
+            <main className="custom-scrollbar min-w-0 flex-1 overflow-y-auto overflow-x-hidden transition-all duration-300">
+            <div className="mx-auto max-w-[1400px] p-6 pt-4 pb-48 lg:p-12 lg:pt-10">
+              <header className="mb-12 flex flex-col items-start justify-between gap-6 border-b border-zinc-800 pb-10 text-left md:flex-row md:items-end">
+                <div className="space-y-2">
+                  <h1 className="text-5xl font-black uppercase italic leading-none tracking-tighter text-white">
+                    My <span className="text-blue-500">Profile</span> Settings
+                  </h1>
+                  <p className="mt-3 pl-1 text-[10px] font-black uppercase italic tracking-[0.3em] text-zinc-500">
+                    Strategic Personal Environment & Identity Management
+                  </p>
                 </div>
 
-                <div className="space-y-8">
-                  <div className="space-y-4">
-                    <label className="flex items-center gap-2 pl-1 text-[11px] font-black uppercase tracking-widest text-blue-500">
-                      <Sparkles size={14} /> 활동 닉네임 브랜딩
-                    </label>
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="group flex items-center gap-3 rounded-2xl border border-blue-400/30 bg-blue-600 px-10 py-5 text-sm font-black uppercase italic tracking-widest text-white shadow-[0_10px_30px_rgba(37,99,235,0.3)] transition-all hover:bg-blue-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isSaving ? (
+                    <RefreshCw size={18} className="animate-spin text-white" />
+                  ) : (
+                    <Save size={18} className="transition-transform group-hover:scale-110" />
+                  )}
+                  Sync & Save All Settings
+                </button>
+              </header>
 
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={profile.nickname || ""}
-                        onChange={(e) => setProfile({ ...profile, nickname: e.target.value })}
-                        className="flex-1 rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-5 text-sm font-bold text-white shadow-inner outline-none transition-all placeholder:text-zinc-800 focus:border-blue-500"
-                        placeholder="나만의 닉네임을 입력하세요"
-                      />
-
-                      <button
-                        onClick={() => checkDuplicate("nickname", profile.nickname)}
-                        className="rounded-2xl border border-zinc-700 bg-zinc-800 px-6 text-[11px] font-black uppercase italic tracking-tighter text-zinc-300 transition-all hover:bg-zinc-700"
-                      >
-                        Check
-                      </button>
-                    </div>
-
-                    <div className="space-y-3 rounded-2xl border border-blue-500/10 bg-blue-600/5 p-5">
-                      <p className="flex items-center gap-2 text-xs font-black leading-relaxed text-blue-400">
-                        <CheckCircle size={14} /> 닉네임 설정 가이드
-                      </p>
-                      <p className="text-[11px] font-bold leading-relaxed text-zinc-500">
-                        현재 할당된 닉네임은 계정 생성을 위한 임시 아이디일 수 있습니다.
-                        커뮤니티 활동을 위해 나만의 고유한 닉네임으로 변경해 주세요.
-                      </p>
-                    </div>
+              <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+                <section className="space-y-8 rounded-[40px] border border-zinc-800 bg-zinc-900/40 p-10 text-left shadow-2xl transition-all hover:border-zinc-700">
+                  <div className="flex items-center gap-3 border-b border-zinc-800/50 pb-6">
+                    <User className="text-blue-500" size={24} />
+                    <h2 className="text-2xl font-black uppercase italic tracking-tight text-white">Identity</h2>
                   </div>
 
-                  <div className="space-y-4 pt-4 border-t border-zinc-800/50">
-                    <label className="pl-1 text-[11px] font-black uppercase tracking-widest text-zinc-500 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <Globe size={12} className="text-blue-400" /> 브랜드 ID 보유 현황 ({approvedBrands.length} / {limit}개)
-                      </span>
-                      <span className="text-[10px] text-zinc-600">
-                        Free: 1개 | Creator: 2개 | Pro: 7개 | Premier: 13개
-                      </span>
-                    </label>
+                  <div className="space-y-8">
+                    <div className="space-y-4">
+                      <label className="flex items-center gap-2 pl-1 text-[11px] font-black uppercase tracking-widest text-blue-500">
+                        <Sparkles size={14} /> 활동 닉네임 브랜딩
+                      </label>
 
-                    {/* Approved Brands List */}
-                    {approvedBrands.length > 0 && (
-                      <div className="space-y-2">
-                        {approvedBrands.map((bId) => (
-                          <div key={bId} className="flex items-center justify-between rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-6 py-4">
-                            <div className="flex flex-col text-left">
-                              <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">승인 완료 (LIVE)</span>
-                              <a 
-                                href={`http://${bId}.localhost:3000`} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-sm font-black text-white hover:text-blue-400 transition-colors flex items-center gap-1 mt-0.5 italic tracking-tight"
-                              >
-                                {bId}.creaibox.com
-                              </a>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {(() => {
-                                const { status, domain } = getBrandDomainConfig(bId);
-                                if (status === "APPROVED" && domain) {
-                                  return (
-                                    <a
-                                      href={`https://${domain}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-xs font-bold text-emerald-400 hover:text-emerald-300 mr-2 transition-colors italic tracking-tight"
-                                    >
-                                      ({domain})
-                                    </a>
-                                  );
-                                }
-                                return null;
-                              })()}
-                              <span className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-emerald-400">
-                                LIVE
-                              </span>
-                              <button
-                                onClick={() => handleCancelBrand(bId)}
-                                disabled={isSaving}
-                                className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors"
-                              >
-                                신청 취소
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Pending Request */}
-                    {profile.brand_id_status === "PENDING" && profile.requested_brand_id && (
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between rounded-2xl border border-amber-500/20 bg-amber-500/5 px-6 py-4">
-                          <div className="flex flex-col text-left">
-                            <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">심사 대기 중</span>
-                            <span className="text-sm font-black text-zinc-400 mt-0.5 italic tracking-tight">
-                              {profile.requested_brand_id}.creaibox.com
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className="animate-pulse inline-block w-2 h-2 rounded-full bg-amber-500" />
-                            <span className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-amber-400">
-                              PENDING
-                            </span>
-                            <button
-                              type="button"
-                              onClick={(e) => handleCancelBrand(profile.requested_brand_id, e)}
-                              disabled={isSaving}
-                              className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors font-bold"
-                            >
-                              신청 취소
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Rejected Request */}
-                    {profile.brand_id_status === "REJECTED" && profile.requested_brand_id && (
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between rounded-2xl border border-red-500/20 bg-red-500/5 px-6 py-4">
-                          <div className="flex flex-col text-left">
-                            <span className="text-[10px] font-bold text-red-500 uppercase tracking-wider">반려됨</span>
-                            <span className="text-sm font-black text-zinc-500 line-through mt-0.5 italic tracking-tight">
-                              {profile.requested_brand_id}.creaibox.com
-                            </span>
-                          </div>
-                          <span className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-red-400">
-                            REJECTED
-                          </span>
-                        </div>
-                        {profile.brand_id_rejection_reason && (
-                          <div className="rounded-xl border border-red-500/10 bg-red-600/5 p-4 text-[11px] font-bold text-red-400 leading-relaxed text-left">
-                            💡 반려 사유: {profile.brand_id_rejection_reason}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Apply / Change Form */}
-                    <div className="space-y-4 pt-2">
                       <div className="flex gap-2">
-                        <div className="relative flex-1">
-                          <input
-                            type="text"
-                            value={brandInput}
-                            onChange={(e) => {
-                              setBrandInput(e.target.value);
-                              setBrandAvailable(null);
-                            }}
-                            className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 pl-6 pr-28 py-5 text-sm font-bold text-white shadow-inner outline-none transition-all placeholder:text-zinc-700 focus:border-blue-500"
-                            placeholder={approvedBrands.length >= limit ? "기존 브랜드 ID 변경 입력" : "신규 또는 변경할 브랜드 ID 입력"}
-                          />
-                          <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-600">
-                            .creaibox.com
-                          </span>
-                        </div>
+                        <input
+                          type="text"
+                          value={profile.nickname || ""}
+                          onChange={(e) => setProfile({ ...profile, nickname: e.target.value })}
+                          className="flex-1 rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-5 text-sm font-bold text-white shadow-inner outline-none transition-all placeholder:text-zinc-800 focus:border-blue-500"
+                          placeholder="나만의 닉네임을 입력하세요"
+                        />
 
                         <button
-                          onClick={() => checkBrandIdAvailability(brandInput)}
-                          disabled={isBrandChecking}
-                          className="rounded-2xl border border-zinc-700 bg-zinc-800 px-6 text-[11px] font-black uppercase italic tracking-tighter text-zinc-300 transition-all hover:bg-zinc-700 disabled:opacity-50"
+                          onClick={() => checkDuplicate("nickname", profile.nickname)}
+                          className="rounded-2xl border border-zinc-700 bg-zinc-800 px-6 text-[11px] font-black uppercase italic tracking-tighter text-zinc-300 transition-all hover:bg-zinc-700"
                         >
-                          {isBrandChecking ? "Checking..." : "Check"}
+                          Check
                         </button>
                       </div>
 
-                      {brandAvailable === true && checkingBrandName === brandInput.trim().toLowerCase() && (
-                        <div className="flex items-center justify-between rounded-2xl border border-blue-500/20 bg-blue-600/5 p-5">
-                          <div className="space-y-1 text-left">
-                            <p className="text-xs font-black text-blue-400 flex items-center gap-1.5">
-                              <CheckCircle size={14} /> 사용 가능한 브랜드 ID입니다!
-                            </p>
-                            <p className="text-[11px] font-bold text-zinc-500 leading-relaxed">
-                              {approvedBrands.length >= limit
-                                ? `${checkingBrandName}.creaibox.com 도메인으로 기존 브랜드 ID를 1:1 변경 신청하시겠습니까?`
-                                : `${checkingBrandName}.creaibox.com 도메인을 신규 신청하시겠습니까?`}
-                            </p>
-                          </div>
-                          <button
-                            onClick={requestBrandId}
-                            disabled={isSaving}
-                            className="rounded-xl bg-blue-500 hover:bg-blue-600 px-5 py-2.5 text-[11px] font-black uppercase italic tracking-widest text-white transition-all shadow-[0_4px_12px_rgba(59,130,246,0.2)]"
-                          >
-                            {approvedBrands.length >= limit ? "1:1 변경 신청" : "신청하기"}
-                          </button>
-                        </div>
-                      )}
+                      <div className="space-y-3 rounded-2xl border border-blue-500/10 bg-blue-600/5 p-5">
+                        <p className="flex items-center gap-2 text-xs font-black leading-relaxed text-blue-400">
+                          <CheckCircle size={14} /> 닉네임 설정 가이드
+                        </p>
+                        <p className="text-[11px] font-bold leading-relaxed text-zinc-500">
+                          현재 할당된 닉네임은 계정 생성을 위한 임시 아이디일 수 있습니다.
+                          커뮤니티 활동을 위해 나만의 고유한 닉네임으로 변경해 주세요.
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="space-y-2.5 rounded-2xl border border-blue-500/10 bg-blue-600/5 p-5">
-                      <p className="flex items-center gap-2 text-xs font-black leading-relaxed text-blue-400">
-                        <CheckCircle size={14} /> 브랜드 ID 신청 안내
-                      </p>
-                      <ul className="text-[11px] font-bold leading-relaxed text-zinc-500 list-disc pl-4 space-y-1 text-left">
-                        <li>브랜드 ID는 영문 소문자와 숫자 조합으로 2~15자만 가능합니다.</li>
-                        <li>발급받은 브랜드 ID는 크리에이박스 블로그(<strong className="text-blue-400">blog_id.creaibox.com</strong>) 및 비즈니스 웹사이트(<strong className="text-emerald-400">brand_id.creaibox.com</strong>)의 서브도메인 전용 주소로 각각 연결하여 활용할 수 있습니다.</li>
-                        <li>언제든지 마이페이지에서 <strong className="text-white">1:1 변경 신청</strong>을 통해 임시 또는 기존 브랜드 ID를 원하는 새 주소로 1:1 교체할 수 있습니다. (기존 주소는 휴면 보관함에 안전 보관)</li>
-                        <li>apple, creaibox 등 시스템/유명 브랜드 예약어는 신청이 제한됩니다.</li>
-                      </ul>
-                    </div>
+                    <div className="space-y-4 pt-4 border-t border-zinc-800/50">
+                      <label className="pl-1 text-[11px] font-black uppercase tracking-widest text-zinc-500 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <Globe size={12} className="text-blue-400" /> 브랜드 ID 보유 현황 ({approvedBrands.length} / {limit}개)
+                        </span>
+                        <span className="text-[10px] text-zinc-600">
+                          Free: 1개 | Creator: 2개 | Pro: 7개 | Premier: 13개
+                        </span>
+                      </label>
 
-                    {/* 🌟 📁 휴면/취소된 브랜드 ID 보관함 신설 */}
-                    {profile.extra_configs?.cancelled_brands && profile.extra_configs.cancelled_brands.length > 0 && (
-                      <div className="space-y-4 pt-4 border-t border-zinc-800/50">
-                        <label className="pl-1 text-[11px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1.5">
-                          <FolderClosed size={12} className="text-zinc-500" /> 휴면/취소된 브랜드 ID 보관함 ({profile.extra_configs.cancelled_brands.length}개)
-                        </label>
+                      {/* Approved Brands List */}
+                      {approvedBrands.length > 0 && (
                         <div className="space-y-2">
-                          {profile.extra_configs.cancelled_brands.map((cb: any) => (
-                            <div key={cb.brandId} className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-950/20 px-6 py-4">
+                          {approvedBrands.map((bId) => (
+                            <div key={bId} className="flex items-center justify-between rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-6 py-4">
                               <div className="flex flex-col text-left">
-                                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">휴면 보관 중</span>
-                                <span className="text-sm font-black text-white mt-0.5 italic tracking-tight">
-                                  {cb.brandId}.creaibox.com
-                                </span>
+                                <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">승인 완료 (LIVE)</span>
+                                <a
+                                  href={`http://${bId}.localhost:3000`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm font-black text-white hover:text-blue-400 transition-colors flex items-center gap-1 mt-0.5 italic tracking-tight"
+                                >
+                                  {bId}.creaibox.com
+                                </a>
                               </div>
                               <div className="flex items-center gap-2">
+                                {(() => {
+                                  const { status, domain } = getBrandDomainConfig(bId);
+                                  if (status === "APPROVED" && domain) {
+                                    return (
+                                      <a
+                                        href={`https://${domain}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs font-bold text-emerald-400 hover:text-emerald-300 mr-2 transition-colors italic tracking-tight"
+                                      >
+                                        ({domain})
+                                      </a>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+                                <span className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-emerald-400">
+                                  LIVE
+                                </span>
                                 <button
-                                  type="button"
-                                  onClick={() => handleRestoreBrand(cb.brandId)}
+                                  onClick={() => handleCancelBrand(bId)}
                                   disabled={isSaving}
-                                  className="rounded-xl border border-blue-500/20 bg-blue-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-blue-400 hover:bg-blue-500/20 disabled:opacity-50 transition-colors cursor-pointer"
+                                  className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors"
                                 >
-                                  복원하기
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleHardDeleteBrand(cb.brandId)}
-                                  disabled={isSaving}
-                                  className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors cursor-pointer"
-                                >
-                                  DB 영구 삭제
+                                  신청 취소
                                 </button>
                               </div>
                             </div>
                           ))}
                         </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
 
-                  {/* Custom Domain Section */}
-                  <div className="space-y-4 pt-4 border-t border-zinc-800/50">
-                    <label className="pl-1 text-[11px] font-black uppercase tracking-widest text-zinc-500 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <Globe size={12} className="text-blue-400" /> 독립 도메인 연결 (Custom Domain)
-                      </span>
-                      <span className="text-[10px] text-zinc-600">
-                        Pro 요금제 이상 제공
-                      </span>
-                    </label>
-
-                    {/* Non-Pro User Block */}
-                    {!isProOrAbove ? (
-                      <div className="space-y-3">
-                        <div className="relative">
-                          <input
-                            type="text"
-                            disabled
-                            className="w-full rounded-2xl border border-zinc-900/60 bg-zinc-950/40 px-6 py-5 text-sm font-bold text-zinc-700 outline-none cursor-not-allowed"
-                            placeholder="연결할 도메인 입력 (예: aaa.com)"
-                          />
-                        </div>
-                        <div className="rounded-2xl border border-amber-500/10 bg-amber-500/5 p-5 text-[11px] font-bold text-amber-500 leading-relaxed text-left flex items-start gap-2">
-                          <AlertTriangle className="shrink-0 mt-0.5 text-amber-500" size={14} />
-                          <div>
-                            <p className="font-black">독립 도메인 연결 제한</p>
-                            <p className="text-zinc-500 mt-1">
-                              독립 도메인 연결 기능은 <strong>Pro 멤버십 이상</strong> 회원에게만 제공되는 프리미엄 기능입니다.<br />
-                              나만의 개인 독립 도메인(예: aaa.com)으로 블로그를 브랜딩하려면 멤버십을 업그레이드해 주세요.
-                            </p>
+                      {/* Pending Request */}
+                      {profile.brand_id_status === "PENDING" && profile.requested_brand_id && (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between rounded-2xl border border-amber-500/20 bg-amber-500/5 px-6 py-4">
+                            <div className="flex flex-col text-left">
+                              <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">심사 대기 중</span>
+                              <span className="text-sm font-black text-zinc-400 mt-0.5 italic tracking-tight">
+                                {profile.requested_brand_id}.creaibox.com
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="animate-pulse inline-block w-2 h-2 rounded-full bg-amber-500" />
+                              <span className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-amber-400">
+                                PENDING
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => handleCancelBrand(profile.requested_brand_id, e)}
+                                disabled={isSaving}
+                                className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors font-bold"
+                              >
+                                신청 취소
+                              </button>
+                            </div>
                           </div>
                         </div>
+                      )}
+
+                      {/* Rejected Request */}
+                      {profile.brand_id_status === "REJECTED" && profile.requested_brand_id && (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between rounded-2xl border border-red-500/20 bg-red-500/5 px-6 py-4">
+                            <div className="flex flex-col text-left">
+                              <span className="text-[10px] font-bold text-red-500 uppercase tracking-wider">반려됨</span>
+                              <span className="text-sm font-black text-zinc-500 line-through mt-0.5 italic tracking-tight">
+                                {profile.requested_brand_id}.creaibox.com
+                              </span>
+                            </div>
+                            <span className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-red-400">
+                              REJECTED
+                            </span>
+                          </div>
+                          {profile.brand_id_rejection_reason && (
+                            <div className="rounded-xl border border-red-500/10 bg-red-600/5 p-4 text-[11px] font-bold text-red-400 leading-relaxed text-left">
+                              💡 반려 사유: {profile.brand_id_rejection_reason}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Apply / Change Form */}
+                      <div className="space-y-4 pt-2">
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <input
+                              type="text"
+                              value={brandInput}
+                              onChange={(e) => {
+                                setBrandInput(e.target.value);
+                                setBrandAvailable(null);
+                              }}
+                              className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 pl-6 pr-28 py-5 text-sm font-bold text-white shadow-inner outline-none transition-all placeholder:text-zinc-700 focus:border-blue-500"
+                              placeholder={approvedBrands.length >= limit ? "기존 브랜드 ID 변경 입력" : "신규 또는 변경할 브랜드 ID 입력"}
+                            />
+                            <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-600">
+                              .creaibox.com
+                            </span>
+                          </div>
+
+                          <button
+                            onClick={() => checkBrandIdAvailability(brandInput)}
+                            disabled={isBrandChecking}
+                            className="rounded-2xl border border-zinc-700 bg-zinc-800 px-6 text-[11px] font-black uppercase italic tracking-tighter text-zinc-300 transition-all hover:bg-zinc-700 disabled:opacity-50"
+                          >
+                            {isBrandChecking ? "Checking..." : "Check"}
+                          </button>
+                        </div>
+
+                        {brandAvailable === true && checkingBrandName === brandInput.trim().toLowerCase() && (
+                          <div className="flex items-center justify-between rounded-2xl border border-blue-500/20 bg-blue-600/5 p-5">
+                            <div className="space-y-1 text-left">
+                              <p className="text-xs font-black text-blue-400 flex items-center gap-1.5">
+                                <CheckCircle size={14} /> 사용 가능한 브랜드 ID입니다!
+                              </p>
+                              <p className="text-[11px] font-bold text-zinc-500 leading-relaxed">
+                                {approvedBrands.length >= limit
+                                  ? `${checkingBrandName}.creaibox.com 도메인으로 기존 브랜드 ID를 1:1 변경 신청하시겠습니까?`
+                                  : `${checkingBrandName}.creaibox.com 도메인을 신규 신청하시겠습니까?`}
+                              </p>
+                            </div>
+                            <button
+                              onClick={requestBrandId}
+                              disabled={isSaving}
+                              className="rounded-xl bg-blue-500 hover:bg-blue-600 px-5 py-2.5 text-[11px] font-black uppercase italic tracking-widest text-white transition-all shadow-[0_4px_12px_rgba(59,130,246,0.2)]"
+                            >
+                              {approvedBrands.length >= limit ? "1:1 변경 신청" : "신청하기"}
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {(() => {
-                          if (approvedBrands.length === 0) {
+
+                      <div className="space-y-2.5 rounded-2xl border border-blue-500/10 bg-blue-600/5 p-5">
+                        <p className="flex items-center gap-2 text-xs font-black leading-relaxed text-blue-400">
+                          <CheckCircle size={14} /> 브랜드 ID 신청 안내
+                        </p>
+                        <ul className="text-[11px] font-bold leading-relaxed text-zinc-500 list-disc pl-4 space-y-1 text-left">
+                          <li>브랜드 ID는 영문 소문자와 숫자 조합으로 2~15자만 가능합니다.</li>
+                          <li>발급받은 브랜드 ID는 크리에이박스 블로그(<strong className="text-blue-400">blog_id.creaibox.com</strong>) 및 비즈니스 웹사이트(<strong className="text-emerald-400">brand_id.creaibox.com</strong>)의 서브도메인 전용 주소로 각각 연결하여 활용할 수 있습니다.</li>
+                          <li>언제든지 마이페이지에서 <strong className="text-white">1:1 변경 신청</strong>을 통해 임시 또는 기존 브랜드 ID를 원하는 새 주소로 1:1 교체할 수 있습니다. (기존 주소는 휴면 보관함에 안전 보관)</li>
+                          <li>apple, creaibox 등 시스템/유명 브랜드 예약어는 신청이 제한됩니다.</li>
+                        </ul>
+                      </div>
+
+                      {/* 🌟 📁 휴면/취소된 브랜드 ID 보관함 신설 */}
+                      {profile.extra_configs?.cancelled_brands && profile.extra_configs.cancelled_brands.length > 0 && (
+                        <div className="space-y-4 pt-4 border-t border-zinc-800/50">
+                          <label className="pl-1 text-[11px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1.5">
+                            <FolderClosed size={12} className="text-zinc-500" /> 휴면/취소된 브랜드 ID 보관함 ({profile.extra_configs.cancelled_brands.length}개)
+                          </label>
+                          <div className="space-y-2">
+                            {profile.extra_configs.cancelled_brands.map((cb: any) => (
+                              <div key={cb.brandId} className="flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-950/20 px-6 py-4">
+                                <div className="flex flex-col text-left">
+                                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">휴면 보관 중</span>
+                                  <span className="text-sm font-black text-white mt-0.5 italic tracking-tight">
+                                    {cb.brandId}.creaibox.com
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRestoreBrand(cb.brandId)}
+                                    disabled={isSaving}
+                                    className="rounded-xl border border-blue-500/20 bg-blue-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-blue-400 hover:bg-blue-500/20 disabled:opacity-50 transition-colors cursor-pointer"
+                                  >
+                                    복원하기
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleHardDeleteBrand(cb.brandId)}
+                                    disabled={isSaving}
+                                    className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors cursor-pointer"
+                                  >
+                                    DB 영구 삭제
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Custom Domain Section */}
+                    <div className="space-y-4 pt-4 border-t border-zinc-800/50">
+                      <label className="pl-1 text-[11px] font-black uppercase tracking-widest text-zinc-500 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <Globe size={12} className="text-blue-400" /> 독립 도메인 연결 (Custom Domain)
+                        </span>
+                        <span className="text-[10px] text-zinc-600">
+                          Pro 요금제 이상 제공
+                        </span>
+                      </label>
+
+                      {/* Non-Pro User Block */}
+                      {!isProOrAbove ? (
+                        <div className="space-y-3">
+                          <div className="relative">
+                            <input
+                              type="text"
+                              disabled
+                              className="w-full rounded-2xl border border-zinc-900/60 bg-zinc-950/40 px-6 py-5 text-sm font-bold text-zinc-700 outline-none cursor-not-allowed"
+                              placeholder="연결할 도메인 입력 (예: aaa.com)"
+                            />
+                          </div>
+                          <div className="rounded-2xl border border-amber-500/10 bg-amber-500/5 p-5 text-[11px] font-bold text-amber-500 leading-relaxed text-left flex items-start gap-2">
+                            <AlertTriangle className="shrink-0 mt-0.5 text-amber-500" size={14} />
+                            <div>
+                              <p className="font-black">독립 도메인 연결 제한</p>
+                              <p className="text-zinc-500 mt-1">
+                                독립 도메인 연결 기능은 <strong>Pro 멤버십 이상</strong> 회원에게만 제공되는 프리미엄 기능입니다.<br />
+                                나만의 개인 독립 도메인(예: aaa.com)으로 블로그를 브랜딩하려면 멤버십을 업그레이드해 주세요.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {(() => {
+                            if (approvedBrands.length === 0) {
+                              return (
+                                <div className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-5 text-[11px] font-bold text-zinc-500 leading-relaxed text-left">
+                                  ❌ 독립 도메인을 연결할 승인 완료된 브랜드 ID가 없습니다. 먼저 브랜드 ID를 신청하고 승인받으셔야 합니다.
+                                </div>
+                              );
+                            }
+
+                            const {
+                              status: currentDomainStatus,
+                              domain: currentDomain,
+                              requested: currentRequestedDomain,
+                              reason: currentRejectionReason
+                            } = getBrandDomainConfig(selectedBrandForDomain);
+
                             return (
-                              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-5 text-[11px] font-bold text-zinc-500 leading-relaxed text-left">
-                                ❌ 독립 도메인을 연결할 승인 완료된 브랜드 ID가 없습니다. 먼저 브랜드 ID를 신청하고 승인받으셔야 합니다.
+                              <div className="space-y-4">
+                                {/* Brand selector dropdown */}
+                                <div className="flex flex-col space-y-2 text-left bg-zinc-950/40 p-5 rounded-3xl border border-zinc-900">
+                                  <label className="pl-1 text-[10px] font-black uppercase tracking-wider text-zinc-500">
+                                    설정할 브랜드 ID 선택
+                                  </label>
+                                  <select
+                                    value={selectedBrandForDomain}
+                                    onChange={(e) => setSelectedBrandForDomain(e.target.value)}
+                                    className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4 text-sm font-bold text-white outline-none transition-all focus:border-blue-500"
+                                  >
+                                    {approvedBrands.map((b) => (
+                                      <option key={b} value={b}>
+                                        {b}.creaibox.com
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                {/* Status == NONE */}
+                                {(!currentDomainStatus || currentDomainStatus === "NONE") && (
+                                  <div className="space-y-4">
+                                    <div className="flex gap-2">
+                                      <input
+                                        type="text"
+                                        value={customDomainInput}
+                                        onChange={(e) => setCustomDomainInput(e.target.value)}
+                                        className="flex-1 rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-5 text-sm font-bold text-white shadow-inner outline-none transition-all placeholder:text-zinc-800 focus:border-blue-500"
+                                        placeholder="연결할 독립 도메인 입력 (예: aaa.com)"
+                                      />
+                                      <button
+                                        onClick={requestCustomDomain}
+                                        disabled={isSaving}
+                                        className="rounded-2xl bg-blue-500 hover:bg-blue-600 px-6 text-[11px] font-black uppercase italic tracking-widest text-white transition-all shadow-[0_4px_12px_rgba(59,130,246,0.2)] disabled:opacity-50 font-bold"
+                                      >
+                                        {isSaving ? "신청 중..." : "연결 신청"}
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Status == PENDING */}
+                                {currentDomainStatus === "PENDING" && (
+                                  <div className="space-y-3">
+                                    <div className="flex items-center justify-between rounded-2xl border border-amber-500/20 bg-amber-500/5 px-6 py-4">
+                                      <div className="flex flex-col text-left">
+                                        <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">
+                                          [{selectedBrandForDomain}] 독립 도메인 심사 중
+                                        </span>
+                                        <span className="text-sm font-black text-zinc-400 mt-0.5 italic tracking-tight">
+                                          {currentRequestedDomain}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                        <span className="animate-pulse inline-block w-2 h-2 rounded-full bg-amber-500" />
+                                        <span className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-amber-400">
+                                          PENDING
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => handleOpenDisconnectModal(e)}
+                                          className="rounded-xl bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-zinc-300 transition-colors"
+                                        >
+                                          신청 취소
+                                        </button>
+                                      </div>
+                                    </div>
+                                    <div className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-5 text-[11px] font-bold text-zinc-500 leading-relaxed text-left space-y-1">
+                                      <p className="text-zinc-300 font-black">⏳ 도메인 신청 접수 완료</p>
+                                      <p>관리자가 신청된 독립 도메인을 검토하여 1~2일 내로 등록 및 SSL 인증서를 발급합니다.</p>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Status == APPROVED */}
+                                {currentDomainStatus === "APPROVED" && (
+                                  <div className="space-y-4">
+                                    <div className="flex items-center justify-between rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-6 py-4">
+                                      <div className="flex flex-col text-left">
+                                        <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">
+                                          [{selectedBrandForDomain}] 연결 완료 (LIVE)
+                                        </span>
+                                        <a
+                                          href={`https://${currentDomain}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-sm font-black text-white hover:text-blue-400 transition-colors flex items-center gap-1 mt-0.5 italic tracking-tight"
+                                        >
+                                          {currentDomain}
+                                        </a>
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                        <span className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-emerald-400">
+                                          LIVE
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => handleOpenDisconnectModal(e)}
+                                          className="rounded-xl bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-zinc-300 transition-colors"
+                                        >
+                                          연결 해제
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    {/* DNS Connection Guides */}
+                                    <div className="space-y-2.5 rounded-2xl border border-blue-500/10 bg-blue-600/5 p-5 text-left">
+                                      <p className="flex items-center gap-2 text-xs font-black leading-relaxed text-blue-400">
+                                        <CheckCircle size={14} /> DNS 설정 필수 안내
+                                      </p>
+                                      <p className="text-[11px] font-bold leading-relaxed text-zinc-500">
+                                        독립 도메인 연결을 완료하려면 본인의 DNS 관리자(Cloudflare, GoDaddy 등)에서 아래 레코드를 추가하셔야 합니다.
+                                      </p>
+                                      <div className="p-3 bg-zinc-950 rounded-xl border border-zinc-800 space-y-1.5 font-mono text-[10px] text-zinc-400">
+                                        <div className="flex justify-between border-b border-zinc-900 pb-1.5">
+                                          <span>레코드 타입: <strong className="text-white">CNAME</strong></span>
+                                          <span>이름(호스트): <strong className="text-white">@ 또는 blog</strong></span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span>대상 주소(Value):</span>
+                                          <span className="text-white font-bold">{selectedBrandForDomain}.creaibox.com</span>
+                                        </div>
+                                      </div>
+                                      <p className="text-[9px] font-bold text-zinc-600">
+                                        * DNS 정보 전파는 최대 24-48시간이 소요될 수 있습니다.
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Status == REJECTED */}
+                                {currentDomainStatus === "REJECTED" && (
+                                  <div className="space-y-3">
+                                    <div className="flex items-center justify-between rounded-2xl border border-red-500/20 bg-red-500/5 px-6 py-4">
+                                      <div className="flex flex-col text-left">
+                                        <span className="text-[10px] font-bold text-red-500 uppercase tracking-wider">
+                                          [{selectedBrandForDomain}] 연결 반려됨
+                                        </span>
+                                        <span className="text-sm font-black text-zinc-500 line-through mt-0.5 italic tracking-tight">
+                                          {currentRequestedDomain}
+                                        </span>
+                                      </div>
+                                      <span className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-red-400">
+                                        REJECTED
+                                      </span>
+                                    </div>
+                                    {currentRejectionReason && (
+                                      <div className="rounded-xl border border-red-500/10 bg-red-600/5 p-4 text-[11px] font-bold text-red-400 leading-relaxed text-left">
+                                        💡 반려 사유: {currentRejectionReason}
+                                      </div>
+                                    )}
+                                    {/* Re-apply form */}
+                                    <div className="flex gap-2 pt-2">
+                                      <input
+                                        type="text"
+                                        value={customDomainInput}
+                                        onChange={(e) => setCustomDomainInput(e.target.value)}
+                                        className="flex-1 rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-5 text-sm font-bold text-white shadow-inner outline-none transition-all placeholder:text-zinc-800 focus:border-blue-500"
+                                        placeholder="연결할 독립 도메인 다시 입력 (예: aaa.com)"
+                                      />
+                                      <button
+                                        onClick={requestCustomDomain}
+                                        disabled={isSaving}
+                                        className="rounded-2xl bg-blue-500 hover:bg-blue-600 px-6 text-[11px] font-black uppercase italic tracking-widest text-white transition-all shadow-[0_4px_12px_rgba(59,130,246,0.2)] font-bold"
+                                      >
+                                        다시 신청
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             );
-                          }
+                          })()}
 
-                          const { 
-                            status: currentDomainStatus, 
-                            domain: currentDomain, 
-                            requested: currentRequestedDomain, 
-                            reason: currentRejectionReason 
-                          } = getBrandDomainConfig(selectedBrandForDomain);
+                          {/* Domain Purchase Shortcuts */}
+                          <div className="pt-4 border-t border-zinc-800/40 text-left">
+                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500 mb-2.5 flex items-center gap-1.5">
+                              💡 도메인 등록/구입 바로가기
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              <a
+                                href="https://www.gabia.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 hover:text-white transition-all flex items-center gap-1"
+                              >
+                                가비아 (Gabia) ↗
+                              </a>
 
-                          return (
-                            <div className="space-y-4">
-                              {/* Brand selector dropdown */}
-                              <div className="flex flex-col space-y-2 text-left bg-zinc-950/40 p-5 rounded-3xl border border-zinc-900">
-                                <label className="pl-1 text-[10px] font-black uppercase tracking-wider text-zinc-500">
-                                  설정할 브랜드 ID 선택
-                                </label>
-                                <select
-                                  value={selectedBrandForDomain}
-                                  onChange={(e) => setSelectedBrandForDomain(e.target.value)}
-                                  className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4 text-sm font-bold text-white outline-none transition-all focus:border-blue-500"
-                                >
-                                  {approvedBrands.map((b) => (
-                                    <option key={b} value={b}>
-                                      {b}.creaibox.com
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-
-                              {/* Status == NONE */}
-                              {(!currentDomainStatus || currentDomainStatus === "NONE") && (
-                                <div className="space-y-4">
-                                  <div className="flex gap-2">
-                                    <input
-                                      type="text"
-                                      value={customDomainInput}
-                                      onChange={(e) => setCustomDomainInput(e.target.value)}
-                                      className="flex-1 rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-5 text-sm font-bold text-white shadow-inner outline-none transition-all placeholder:text-zinc-800 focus:border-blue-500"
-                                      placeholder="연결할 독립 도메인 입력 (예: aaa.com)"
-                                    />
-                                    <button
-                                      onClick={requestCustomDomain}
-                                      disabled={isSaving}
-                                      className="rounded-2xl bg-blue-500 hover:bg-blue-600 px-6 text-[11px] font-black uppercase italic tracking-widest text-white transition-all shadow-[0_4px_12px_rgba(59,130,246,0.2)] disabled:opacity-50 font-bold"
-                                    >
-                                      {isSaving ? "신청 중..." : "연결 신청"}
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Status == PENDING */}
-                              {currentDomainStatus === "PENDING" && (
-                                <div className="space-y-3">
-                                  <div className="flex items-center justify-between rounded-2xl border border-amber-500/20 bg-amber-500/5 px-6 py-4">
-                                    <div className="flex flex-col text-left">
-                                      <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">
-                                        [{selectedBrandForDomain}] 독립 도메인 심사 중
-                                      </span>
-                                      <span className="text-sm font-black text-zinc-400 mt-0.5 italic tracking-tight">
-                                        {currentRequestedDomain}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                      <span className="animate-pulse inline-block w-2 h-2 rounded-full bg-amber-500" />
-                                      <span className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-amber-400">
-                                        PENDING
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => handleOpenDisconnectModal(e)}
-                                        className="rounded-xl bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-zinc-300 transition-colors"
-                                      >
-                                        신청 취소
-                                      </button>
-                                    </div>
-                                  </div>
-                                  <div className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-5 text-[11px] font-bold text-zinc-500 leading-relaxed text-left space-y-1">
-                                    <p className="text-zinc-300 font-black">⏳ 도메인 신청 접수 완료</p>
-                                    <p>관리자가 신청된 독립 도메인을 검토하여 1~2일 내로 등록 및 SSL 인증서를 발급합니다.</p>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Status == APPROVED */}
-                              {currentDomainStatus === "APPROVED" && (
-                                <div className="space-y-4">
-                                  <div className="flex items-center justify-between rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-6 py-4">
-                                    <div className="flex flex-col text-left">
-                                      <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">
-                                        [{selectedBrandForDomain}] 연결 완료 (LIVE)
-                                      </span>
-                                      <a
-                                        href={`https://${currentDomain}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-sm font-black text-white hover:text-blue-400 transition-colors flex items-center gap-1 mt-0.5 italic tracking-tight"
-                                      >
-                                        {currentDomain}
-                                      </a>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                      <span className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-emerald-400">
-                                        LIVE
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => handleOpenDisconnectModal(e)}
-                                        className="rounded-xl bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-zinc-300 transition-colors"
-                                      >
-                                        연결 해제
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  {/* DNS Connection Guides */}
-                                  <div className="space-y-2.5 rounded-2xl border border-blue-500/10 bg-blue-600/5 p-5 text-left">
-                                    <p className="flex items-center gap-2 text-xs font-black leading-relaxed text-blue-400">
-                                      <CheckCircle size={14} /> DNS 설정 필수 안내
-                                    </p>
-                                    <p className="text-[11px] font-bold leading-relaxed text-zinc-500">
-                                      독립 도메인 연결을 완료하려면 본인의 DNS 관리자(Cloudflare, GoDaddy 등)에서 아래 레코드를 추가하셔야 합니다.
-                                    </p>
-                                    <div className="p-3 bg-zinc-950 rounded-xl border border-zinc-800 space-y-1.5 font-mono text-[10px] text-zinc-400">
-                                      <div className="flex justify-between border-b border-zinc-900 pb-1.5">
-                                        <span>레코드 타입: <strong className="text-white">CNAME</strong></span>
-                                        <span>이름(호스트): <strong className="text-white">@ 또는 blog</strong></span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span>대상 주소(Value):</span>
-                                        <span className="text-white font-bold">{selectedBrandForDomain}.creaibox.com</span>
-                                      </div>
-                                    </div>
-                                    <p className="text-[9px] font-bold text-zinc-600">
-                                      * DNS 정보 전파는 최대 24-48시간이 소요될 수 있습니다.
-                                    </p>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Status == REJECTED */}
-                              {currentDomainStatus === "REJECTED" && (
-                                <div className="space-y-3">
-                                  <div className="flex items-center justify-between rounded-2xl border border-red-500/20 bg-red-500/5 px-6 py-4">
-                                    <div className="flex flex-col text-left">
-                                      <span className="text-[10px] font-bold text-red-500 uppercase tracking-wider">
-                                        [{selectedBrandForDomain}] 연결 반려됨
-                                      </span>
-                                      <span className="text-sm font-black text-zinc-500 line-through mt-0.5 italic tracking-tight">
-                                        {currentRequestedDomain}
-                                      </span>
-                                    </div>
-                                    <span className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-[9px] font-black uppercase italic tracking-widest text-red-400">
-                                      REJECTED
-                                    </span>
-                                  </div>
-                                  {currentRejectionReason && (
-                                    <div className="rounded-xl border border-red-500/10 bg-red-600/5 p-4 text-[11px] font-bold text-red-400 leading-relaxed text-left">
-                                      💡 반려 사유: {currentRejectionReason}
-                                    </div>
-                                  )}
-                                  {/* Re-apply form */}
-                                  <div className="flex gap-2 pt-2">
-                                    <input
-                                      type="text"
-                                      value={customDomainInput}
-                                      onChange={(e) => setCustomDomainInput(e.target.value)}
-                                      className="flex-1 rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-5 text-sm font-bold text-white shadow-inner outline-none transition-all placeholder:text-zinc-800 focus:border-blue-500"
-                                      placeholder="연결할 독립 도메인 다시 입력 (예: aaa.com)"
-                                    />
-                                    <button
-                                      onClick={requestCustomDomain}
-                                      disabled={isSaving}
-                                      className="rounded-2xl bg-blue-500 hover:bg-blue-600 px-6 text-[11px] font-black uppercase italic tracking-widest text-white transition-all shadow-[0_4px_12px_rgba(59,130,246,0.2)] font-bold"
-                                    >
-                                      다시 신청
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
+                              <a
+                                href="https://vercel.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 hover:text-white transition-all flex items-center gap-1"
+                              >
+                                Vercel ↗
+                              </a>
+                              <a
+                                href="https://www.cafe24.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 hover:text-white transition-all flex items-center gap-1"
+                              >
+                                카페24 (Cafe24) ↗
+                              </a>
                             </div>
-                          );
-                        })()}
-
-                        {/* Domain Purchase Shortcuts */}
-                        <div className="pt-4 border-t border-zinc-800/40 text-left">
-                          <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500 mb-2.5 flex items-center gap-1.5">
-                            💡 도메인 등록/구입 바로가기
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            <a
-                              href="https://www.gabia.com"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 hover:text-white transition-all flex items-center gap-1"
-                            >
-                              가비아 (Gabia) ↗
-                            </a>
-
-                            <a
-                              href="https://vercel.com"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 hover:text-white transition-all flex items-center gap-1"
-                            >
-                              Vercel ↗
-                            </a>
-                            <a
-                              href="https://www.cafe24.com"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="rounded-xl border border-zinc-800 bg-zinc-950/60 hover:bg-zinc-900 px-3.5 py-2 text-xs font-bold text-zinc-300 hover:text-white transition-all flex items-center gap-1"
-                            >
-                              카페24 (Cafe24) ↗
-                            </a>
                           </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </section>
+
+                <section className="h-fit space-y-8 rounded-[40px] border border-zinc-800 bg-zinc-900/40 p-10 shadow-2xl">
+                  <div className="flex items-center gap-3 border-b border-zinc-800/50 pb-6">
+                    <Shield className="text-emerald-500" size={24} />
+                    <h2 className="text-2xl font-black uppercase italic tracking-tight text-white">Security</h2>
+                  </div>
+
+                  <div className="space-y-7">
+                    <div className="flex items-center justify-between border-b border-zinc-800/30 py-2">
+                      <span className="flex items-center gap-2 pl-1 text-[11px] font-black uppercase tracking-widest text-zinc-600">
+                        <Mail size={14} className="text-zinc-700" /> Account ID
+                      </span>
+                      <span className="font-mono text-sm font-black italic tracking-tighter text-zinc-300">
+                        {user?.email}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between border-b border-zinc-800/30 py-2">
+                      <span className="flex items-center gap-2 pl-1 text-[11px] font-black uppercase tracking-widest text-zinc-600">
+                        <LogIn size={14} className="text-zinc-700" /> Auth Provider
+                      </span>
+                      <span className="rounded-xl border border-emerald-500/10 bg-emerald-500/5 px-4 py-2 text-[10px] font-black uppercase italic tracking-widest text-emerald-500">
+                        {user?.user_metadata?.provider || user?.app_metadata?.provider || "email"} AUTHENTICATED
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between border-b border-zinc-800/30 py-2">
+                      <span className="pl-1 text-[11px] font-black uppercase tracking-widest text-zinc-600">
+                        Creation Date
+                      </span>
+                      <span className="text-sm font-black italic text-zinc-400">
+                        {user?.created_at ? new Date(user.created_at).toLocaleDateString() : "-"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between border-b border-zinc-800/30 py-2">
+                      <span className="pl-1 text-[11px] font-black uppercase tracking-widest text-zinc-600">
+                        Plan Level
+                      </span>
+                      <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-6 py-2 text-sm font-black uppercase italic tracking-widest text-blue-500">
+                        {profile.membership_level || "free"}
+                      </span>
+                    </div>
+
+                    {profile.is_manual_grant && (
+                      <div className="mt-4 flex flex-col gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-left shadow-xl shadow-amber-500/5">
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1.5 text-xs font-black uppercase italic tracking-wider text-amber-400">
+                            <Star size={14} className="fill-amber-400 text-amber-400" />
+                            ⭐ VIP SPECIAL MEMBERSHIP
+                          </span>
+                          <span className="rounded-md border border-amber-500/40 bg-amber-500/20 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-amber-300">
+                            무상 혜택 적용 중
+                          </span>
+                        </div>
+
+                        <p className="text-[11px] font-medium leading-relaxed text-zinc-300">
+                          현재 회원님은 <strong className="font-bold text-amber-300">{profile.grant_reason || "VIP 특별 파트너"}</strong> 혜택으로 월 정기 결제 없이 <span className="font-black uppercase text-white">{profile.membership_level}</span> 요금제를 무상 이용 중입니다.
+                        </p>
+
+                        <div className="mt-1 flex items-center justify-between border-t border-amber-500/20 pt-2.5 text-[10px] font-bold text-zinc-400">
+                          <span>무상 이용 혜택 기간</span>
+                          <span className="font-mono font-bold text-amber-300">
+                            {profile.grant_expires_at
+                              ? new Date(profile.grant_expires_at).toLocaleDateString() + " 까지"
+                              : "무제한 (평생 무상 혜택)"}
+                          </span>
                         </div>
                       </div>
                     )}
                   </div>
-                </div>
-              </section>
+                </section>
 
-              <section className="h-fit space-y-8 rounded-[40px] border border-zinc-800 bg-zinc-900/40 p-10 shadow-2xl">
-                <div className="flex items-center gap-3 border-b border-zinc-800/50 pb-6">
-                  <Shield className="text-emerald-500" size={24} />
-                  <h2 className="text-2xl font-black uppercase italic tracking-tight text-white">Security</h2>
-                </div>
-
-                <div className="space-y-7">
-                  <div className="flex items-center justify-between border-b border-zinc-800/30 py-2">
-                    <span className="flex items-center gap-2 pl-1 text-[11px] font-black uppercase tracking-widest text-zinc-600">
-                      <Mail size={14} className="text-zinc-700" /> Account ID
-                    </span>
-                    <span className="font-mono text-sm font-black italic tracking-tighter text-zinc-300">
-                      {user?.email}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between border-b border-zinc-800/30 py-2">
-                    <span className="flex items-center gap-2 pl-1 text-[11px] font-black uppercase tracking-widest text-zinc-600">
-                      <LogIn size={14} className="text-zinc-700" /> Auth Provider
-                    </span>
-                    <span className="rounded-xl border border-emerald-500/10 bg-emerald-500/5 px-4 py-2 text-[10px] font-black uppercase italic tracking-widest text-emerald-500">
-                      {user?.user_metadata?.provider || user?.app_metadata?.provider || "email"} AUTHENTICATED
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between border-b border-zinc-800/30 py-2">
-                    <span className="pl-1 text-[11px] font-black uppercase tracking-widest text-zinc-600">
-                      Creation Date
-                    </span>
-                    <span className="text-sm font-black italic text-zinc-400">
-                      {user?.created_at ? new Date(user.created_at).toLocaleDateString() : "-"}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between border-b border-zinc-800/30 py-2">
-                    <span className="pl-1 text-[11px] font-black uppercase tracking-widest text-zinc-600">
-                      Plan Level
-                    </span>
-                    <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-6 py-2 text-sm font-black uppercase italic tracking-widest text-blue-500">
-                      {profile.membership_level || "free"}
-                    </span>
-                  </div>
-
-                  {profile.is_manual_grant && (
-                    <div className="mt-4 flex flex-col gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-left shadow-xl shadow-amber-500/5">
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-1.5 text-xs font-black uppercase italic tracking-wider text-amber-400">
-                          <Star size={14} className="fill-amber-400 text-amber-400" />
-                          ⭐ VIP SPECIAL MEMBERSHIP
-                        </span>
-                        <span className="rounded-md border border-amber-500/40 bg-amber-500/20 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-amber-300">
-                          무상 혜택 적용 중
-                        </span>
+                <section className="space-y-10 rounded-[40px] border border-zinc-800 bg-zinc-900/40 p-10 shadow-2xl lg:col-span-2">
+                  <div className="flex items-center justify-between border-b border-zinc-800/50 pb-8">
+                    <div className="flex items-center gap-4 text-left">
+                      <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-3 shadow-inner">
+                        <Globe className="text-blue-500" size={24} />
                       </div>
-
-                      <p className="text-[11px] font-medium leading-relaxed text-zinc-300">
-                        현재 회원님은 <strong className="font-bold text-amber-300">{profile.grant_reason || "VIP 특별 파트너"}</strong> 혜택으로 월 정기 결제 없이 <span className="font-black uppercase text-white">{profile.membership_level}</span> 요금제를 무상 이용 중입니다.
-                      </p>
-
-                      <div className="mt-1 flex items-center justify-between border-t border-amber-500/20 pt-2.5 text-[10px] font-bold text-zinc-400">
-                        <span>무상 이용 혜택 기간</span>
-                        <span className="font-mono font-bold text-amber-300">
-                          {profile.grant_expires_at
-                            ? new Date(profile.grant_expires_at).toLocaleDateString() + " 까지"
-                            : "무제한 (평생 무상 혜택)"}
-                        </span>
+                      <div>
+                        <h2 className="text-2xl font-black uppercase italic tracking-tight text-white">
+                          WP Distribution Center
+                        </h2>
+                        <p className="mt-1 text-[10px] font-bold uppercase italic tracking-widest text-zinc-600">
+                          Multi-Site Connectivity Hub
+                        </p>
                       </div>
                     </div>
-                  )}
-                </div>
-              </section>
 
-              <section className="space-y-10 rounded-[40px] border border-zinc-800 bg-zinc-900/40 p-10 shadow-2xl lg:col-span-2">
-                <div className="flex items-center justify-between border-b border-zinc-800/50 pb-8">
-                  <div className="flex items-center gap-4 text-left">
-                    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-3 shadow-inner">
-                      <Globe className="text-blue-500" size={24} />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-black uppercase italic tracking-tight text-white">
-                        WP Distribution Center
-                      </h2>
-                      <p className="mt-1 text-[10px] font-bold uppercase italic tracking-widest text-zinc-600">
-                        Multi-Site Connectivity Hub
-                      </p>
-                    </div>
+                    <button
+                      onClick={addWpSite}
+                      className="rounded-xl border border-blue-500/20 bg-blue-600/10 px-8 py-3 text-[11px] font-black uppercase italic tracking-widest text-blue-500 shadow-lg shadow-blue-900/10 transition-all hover:bg-blue-600 hover:text-white"
+                    >
+                      + Register Site
+                    </button>
                   </div>
 
-                  <button
-                    onClick={addWpSite}
-                    className="rounded-xl border border-blue-500/20 bg-blue-600/10 px-8 py-3 text-[11px] font-black uppercase italic tracking-widest text-blue-500 shadow-lg shadow-blue-900/10 transition-all hover:bg-blue-600 hover:text-white"
-                  >
-                    + Register Site
-                  </button>
-                </div>
+                  <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
+                    <div className="space-y-6">
+                      <h3 className="flex items-center gap-2 px-2 text-xs font-black uppercase italic tracking-widest text-emerald-500">
+                        <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                        Active Multi-Sites
+                      </h3>
 
-                <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
-                  <div className="space-y-6">
-                    <h3 className="flex items-center gap-2 px-2 text-xs font-black uppercase italic tracking-widest text-emerald-500">
-                      <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-                      Active Multi-Sites
-                    </h3>
+                      {wpSites.length === 0 && (
+                        <p className="rounded-[32px] border border-dashed border-zinc-800 px-6 py-10 text-center text-xs italic text-zinc-700">
+                          No active channels found.
+                        </p>
+                      )}
 
-                    {wpSites.length === 0 && (
-                      <p className="rounded-[32px] border border-dashed border-zinc-800 px-6 py-10 text-center text-xs italic text-zinc-700">
-                        No active channels found.
-                      </p>
-                    )}
-
-                    <div className="space-y-4">
-                      {wpSites.map((site, index) => (
-                        <div
-                          key={index}
-                          className="group relative space-y-6 rounded-[32px] border border-zinc-800 bg-black/40 p-10 shadow-inner transition-all hover:border-blue-900/50"
-                        >
-                          <button
-                            onClick={() => removeWpSite(index)}
-                            className="absolute top-8 right-8 rounded-xl p-2 text-zinc-800 transition-colors hover:bg-red-500/10 hover:text-red-500"
+                      <div className="space-y-4">
+                        {wpSites.map((site, index) => (
+                          <div
+                            key={index}
+                            className="group relative space-y-6 rounded-[32px] border border-zinc-800 bg-black/40 p-10 shadow-inner transition-all hover:border-blue-900/50"
                           >
-                            <Trash2 size={20} />
-                          </button>
+                            <button
+                              onClick={() => removeWpSite(index)}
+                              className="absolute top-8 right-8 rounded-xl p-2 text-zinc-800 transition-colors hover:bg-red-500/10 hover:text-red-500"
+                            >
+                              <Trash2 size={20} />
+                            </button>
 
-                          <div className="space-y-4 pt-4 text-left">
-                            <input
-                              type="text"
-                              placeholder="Site Name"
-                              value={site.siteName}
-                              onChange={(e) => updateWpSite(index, "siteName", e.target.value)}
-                              className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-xs font-bold text-zinc-400 shadow-sm outline-none focus:border-blue-500"
-                            />
-                            <input
-                              type="text"
-                              placeholder="URL (https://...)"
-                              value={site.url}
-                              onChange={(e) => updateWpSite(index, "url", e.target.value)}
-                              className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-xs font-bold text-zinc-400 shadow-sm outline-none focus:border-blue-500"
-                            />
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-4 pt-4 text-left">
                               <input
                                 type="text"
-                                placeholder="User ID"
-                                value={site.userId}
-                                onChange={(e) => updateWpSite(index, "userId", e.target.value)}
-                                className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-xs font-bold text-zinc-400 shadow-sm outline-none focus:border-blue-500"
+                                placeholder="Site Name"
+                                value={site.siteName}
+                                onChange={(e) => updateWpSite(index, "siteName", e.target.value)}
+                                className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-xs font-bold text-zinc-400 shadow-sm outline-none focus:border-blue-500"
                               />
                               <input
-                                type="password"
-                                placeholder="Pass"
-                                value={site.appPassword}
-                                onChange={(e) => updateWpSite(index, "appPassword", e.target.value)}
-                                className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-xs font-bold text-zinc-400 shadow-sm outline-none focus:border-blue-500"
+                                type="text"
+                                placeholder="URL (https://...)"
+                                value={site.url}
+                                onChange={(e) => updateWpSite(index, "url", e.target.value)}
+                                className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-xs font-bold text-zinc-400 shadow-sm outline-none focus:border-blue-500"
                               />
+                              <div className="grid grid-cols-2 gap-4">
+                                <input
+                                  type="text"
+                                  placeholder="User ID"
+                                  value={site.userId}
+                                  onChange={(e) => updateWpSite(index, "userId", e.target.value)}
+                                  className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-xs font-bold text-zinc-400 shadow-sm outline-none focus:border-blue-500"
+                                />
+                                <input
+                                  type="password"
+                                  placeholder="Pass"
+                                  value={site.appPassword}
+                                  onChange={(e) => updateWpSite(index, "appPassword", e.target.value)}
+                                  className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-xs font-bold text-zinc-400 shadow-sm outline-none focus:border-blue-500"
+                                />
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="group relative h-fit space-y-8 overflow-hidden rounded-[40px] border border-dashed border-zinc-800 bg-zinc-900/20 p-12 text-left opacity-60">
-                    <Globe className="absolute top-8 right-8 opacity-5 transition-opacity group-hover:opacity-10" size={120} />
-                    <h3 className="flex items-center gap-2 text-xs font-black uppercase italic tracking-widest text-zinc-500">
-                      <Sparkles size={14} /> Personal Blog Status
-                    </h3>
-                    <div className="relative z-10 flex items-center gap-3 rounded-3xl border border-zinc-800/50 bg-black/60 p-6 font-black uppercase italic tracking-tighter text-zinc-600 shadow-inner">
-                      <CheckCircle size={20} className="text-zinc-800" />
-                      <span>Ready to Launch</span>
-                      <span className="ml-auto font-mono text-[10px] opacity-20">.creaibox.com</span>
+                    <div className="group relative h-fit space-y-8 overflow-hidden rounded-[40px] border border-dashed border-zinc-800 bg-zinc-900/20 p-12 text-left opacity-60">
+                      <Globe className="absolute top-8 right-8 opacity-5 transition-opacity group-hover:opacity-10" size={120} />
+                      <h3 className="flex items-center gap-2 text-xs font-black uppercase italic tracking-widest text-zinc-500">
+                        <Sparkles size={14} /> Personal Blog Status
+                      </h3>
+                      <div className="relative z-10 flex items-center gap-3 rounded-3xl border border-zinc-800/50 bg-black/60 p-6 font-black uppercase italic tracking-tighter text-zinc-600 shadow-inner">
+                        <CheckCircle size={20} className="text-zinc-800" />
+                        <span>Ready to Launch</span>
+                        <span className="ml-auto font-mono text-[10px] opacity-20">.creaibox.com</span>
+                      </div>
+                      <p className="relative z-10 pl-1 text-[11px] font-bold uppercase italic leading-relaxed tracking-widest text-zinc-600">
+                        전용 서브도메인이 할당될 준비가 되었습니다. 고유 브랜드 ID 정책 수립 후 공식 오픈 예정입니다.
+                      </p>
                     </div>
-                    <p className="relative z-10 pl-1 text-[11px] font-bold uppercase italic leading-relaxed tracking-widest text-zinc-600">
-                      전용 서브도메인이 할당될 준비가 되었습니다. 고유 브랜드 ID 정책 수립 후 공식 오픈 예정입니다.
-                    </p>
                   </div>
-                </div>
-              </section>
+                </section>
+              </div>
             </div>
-          </div>
 
-        </main>
-
-          <div className="hidden shrink-0 border-l border-zinc-800/50 bg-[#05070a] xl:flex">
-            <Aside />
-          </div>
+          </main>
         </div>
       </div>
+
+      <Aside />
       {/* 🌟 Custom Confirmation Modal */}
       {confirmModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -1764,6 +1762,6 @@ export default function MyPage() {
         </div>
       )}
     </div>
-    </div>
+    </div >
   );
 }
