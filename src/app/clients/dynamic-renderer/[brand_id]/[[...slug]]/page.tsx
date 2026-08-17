@@ -131,14 +131,14 @@ export default async function DynamicRendererPage({ params, searchParams }: Page
         const tags = (snapshot.seo_tags || rawPost.seo_tags || []) as string[];
 
         return (
-          <div className="pt-20 pb-24 bg-white min-h-screen">
+          <div className="pt-16 sm:pt-20 pb-24 bg-white min-h-screen">
             {/* Header Banner */}
-            <div className="bg-[var(--surface)] border-b border-slate-200/50 py-16 px-6">
+            <div className="bg-[var(--surface)] border-b border-slate-200/50 py-10 sm:py-16 px-4 sm:px-6">
               <div className="max-w-4xl mx-auto text-center space-y-4">
                 <a href="/blog" className="inline-flex items-center gap-1 text-xs font-extrabold text-[var(--primary)] hover:underline mb-2">
                   ← {site.company_name} 공식 블로그
                 </a>
-                <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+                <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
                   {title}
                 </h1>
                 <div className="flex items-center justify-center gap-4 text-xs font-bold text-slate-500 pt-2">
@@ -150,7 +150,7 @@ export default async function DynamicRendererPage({ params, searchParams }: Page
             </div>
 
             {/* Main Article Content */}
-            <article className="max-w-3xl mx-auto px-6 py-12">
+            <article className="max-w-3xl mx-auto px-4 py-8 sm:px-6 sm:py-12">
               <div
                 className="prose prose-slate max-w-none text-slate-800 text-base leading-relaxed font-normal prose-headings:font-extrabold prose-headings:text-slate-900 prose-a:text-[var(--primary)] prose-img:rounded-2xl prose-img:shadow-lg"
                 dangerouslySetInnerHTML={{ __html: content }}

@@ -606,7 +606,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white text-zinc-950">
+    <div className="flex flex-col min-h-screen bg-white sm:bg-[#f4f6fa] text-zinc-950">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -689,31 +689,33 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
         }
       `}</style>
 
-      <main className="pt-6 flex-1">
-        <div className="mx-auto max-w-[1536px] px-6 py-4">
-          <Link
-            href="/blog"
-            className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-100 px-4 py-2 text-sm font-black text-zinc-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
-          >
-            <ArrowLeft size={16} />
-            블로그 목록으로 돌아가기
-          </Link>
+      <main className="pt-2 sm:pt-6 flex-1 w-full">
+        <div className="mx-auto max-w-[1536px] px-0 sm:px-6 py-2 sm:py-4">
+          <div className="px-3.5 sm:px-0 mb-3">
+            <Link
+              href="/blog"
+              className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-100 px-4 py-2 text-sm font-black text-zinc-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+            >
+              <ArrowLeft size={16} />
+              블로그 목록으로 돌아가기
+            </Link>
+          </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,2fr)_460px]">
+          <div className="mt-2 sm:mt-4 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,2fr)_460px]">
             {/* 왼쪽 2/3 본문 내용 */}
-            <article className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm h-fit">
-              <header className="border-b border-zinc-200 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.12),transparent_42%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-6 py-4 md:px-7 md:py-5">
+            <article className="overflow-hidden rounded-none sm:rounded-xl border-0 sm:border border-zinc-200 bg-white shadow-none sm:shadow-sm h-fit">
+              <header className="border-b border-zinc-200 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.12),transparent_42%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-3.5 py-4 sm:px-7 sm:py-5">
                 <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-blue-700">
                   <Sparkles size={12} />
                   CreaiBox Insight
                 </div>
 
-                <h1 className="mt-2.5 text-lg font-black leading-[1.35] tracking-[-0.02em] text-zinc-950 md:text-[1.4rem]">
+                <h1 className="mt-2.5 text-xl sm:text-[1.4rem] font-black leading-[1.35] tracking-[-0.02em] text-zinc-950">
                   {post.title}
                 </h1>
               </header>
 
-              <div className="bg-white px-6 py-8 md:px-8">
+              <div className="bg-white px-3.5 py-6 sm:px-8">
                 <div className="w-full">
                   {looksLikeHtml(normalizedContent) ? (
                     <div
@@ -873,51 +875,53 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
             </article>
 
             {/* 오른쪽 1/3 베스트 글 위젯 (Sticky 적용) */}
-            <aside className="lg:sticky lg:top-28 h-fit overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-              {/* 상단 탭 헤더 (음영 적용) */}
-              <div className="bg-zinc-50/90 border-b border-zinc-200 px-6 py-4 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-600">
-                    Best Posts
-                  </p>
-                  <h2 className="mt-0.5 text-xl font-black text-zinc-950">
-                    베스트 글
-                  </h2>
+            <div className="space-y-6 px-3.5 sm:px-0">
+              <aside className="lg:sticky lg:top-28 h-fit overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+                {/* 상단 탭 헤더 (음영 적용) */}
+                <div className="bg-zinc-50/90 border-b border-zinc-200 px-5 py-4 sm:px-6 flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-600">
+                      Best Posts
+                    </p>
+                    <h2 className="mt-0.5 text-lg sm:text-xl font-black text-zinc-950">
+                      베스트 글
+                    </h2>
+                  </div>
+                  <Star className="text-blue-500 fill-blue-500/10" size={20} />
                 </div>
-                <Star className="text-blue-500 fill-blue-500/10" size={20} />
-              </div>
 
-              {/* 하단 리스트 (화이트 바탕 + 콤팩트 세로 균형) */}
-              <div className="bg-white divide-y divide-zinc-200/60">
-                {bestPosts.map((bestPost) => {
-                  return (
-                    <Link
-                      key={bestPost.id}
-                      href={`/blog/${bestPost.slug}`}
-                      className="group flex items-center gap-3.5 px-6 py-3 transition hover:bg-zinc-50/80"
-                    >
-                      <div className="relative w-24 sm:w-28 aspect-[16/9] shrink-0 overflow-hidden rounded-md border border-zinc-200 bg-zinc-50 flex items-center justify-center">
-                        {bestPost.thumbnailUrl ? (
-                          <SafeImage
-                            src={bestPost.thumbnailUrl}
-                            alt={bestPost.title || "thumbnail"}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 via-blue-50 to-cyan-100" />
-                        )}
-                      </div>
+                {/* 하단 리스트 (화이트 바탕 + 콤팩트 세로 균형) */}
+                <div className="bg-white divide-y divide-zinc-200/60">
+                  {bestPosts.map((bestPost) => {
+                    return (
+                      <Link
+                        key={bestPost.id}
+                        href={`/blog/${bestPost.slug}`}
+                        className="group flex items-center gap-3.5 px-4 py-3 sm:px-6 transition hover:bg-zinc-50/80"
+                      >
+                        <div className="relative w-24 sm:w-28 aspect-[16/9] shrink-0 overflow-hidden rounded-md border border-zinc-200 bg-zinc-50 flex items-center justify-center">
+                          {bestPost.thumbnailUrl ? (
+                            <SafeImage
+                              src={bestPost.thumbnailUrl}
+                              alt={bestPost.title || "thumbnail"}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 via-blue-50 to-cyan-100" />
+                          )}
+                        </div>
 
-                      <div className="min-w-0 flex-1 flex flex-col justify-center">
-                        <h3 className="line-clamp-2 text-[0.98rem] font-normal leading-[1.5] text-zinc-800 group-hover:text-blue-600">
-                          {bestPost.title}
-                        </h3>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </aside>
+                        <div className="min-w-0 flex-1 flex flex-col justify-center">
+                          <h3 className="line-clamp-2 text-[0.98rem] font-normal leading-[1.5] text-zinc-800 group-hover:text-blue-600">
+                            {bestPost.title}
+                          </h3>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </aside>
+            </div>
           </div>
         </div>
       </main>

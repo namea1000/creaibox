@@ -109,8 +109,8 @@ export default async function CommufillPostDetailPage(props: PostDetailPageProps
   const isHtml = looksLikeHtml(rawContent);
 
   return (
-    <div className="max-w-4xl w-full mx-auto px-6 py-12">
-      <div className="mb-8">
+    <div className="max-w-4xl w-full mx-auto px-0 sm:px-6 py-4 sm:py-12">
+      <div className="mb-6 px-4 sm:px-0">
         <Link
           href="/blog"
           className="inline-flex items-center gap-2 text-xs font-bold text-zinc-400 hover:text-emerald-400 transition-colors"
@@ -119,7 +119,7 @@ export default async function CommufillPostDetailPage(props: PostDetailPageProps
         </Link>
       </div>
 
-      <article className="rounded-3xl border border-zinc-800 bg-zinc-900/80 p-8 sm:p-12 shadow-sm space-y-8">
+      <article className="rounded-none sm:rounded-3xl border-0 sm:border border-zinc-800 bg-zinc-900/80 p-4 sm:p-12 shadow-none sm:shadow-sm space-y-8">
         <header className="space-y-4 border-b border-zinc-800 pb-8">
           <div className="flex items-center gap-2 text-xs font-bold text-zinc-500">
             <CalendarDays size={14} className="text-emerald-400" />

@@ -841,3 +841,15 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
    - `docs/project/manual/on-demand-revalidation-webhook-manual.md` (실무 매뉴얼 최신화)
 4. **검증**:
    - `npx tsc --noEmit` 빌드 타입체크 0 에러 통과.
+
+## 2026-08-17 (완료): 공식 블로그(creaibox.com/blog/[slug]) 모바일 뷰 풀-와이드 반응형 일치화
+
+**작업 배경**
+- `creaibox.com/blog/[slug]` 공식 블로그 본문이 모바일 환경에서 외곽 카드 테두리 및 과도한 패딩(`px-6`)으로 인해 가로 폭이 좁아지는 현상을 개선하고, 사용자 브랜드 서브도메인(`*.creaibox.com`)과 동일하게 모바일 화면 전체를 100% 시원하게 활용하도록 스타일 통일.
+
+**작업 내용**
+- `src/app/blog/[slug]/page.tsx`:
+  - 모바일(`<sm`)에서는 본문 아티클 카드 테두리(`border-0`), 둥근 모서리(`rounded-none`), 그림자(`shadow-none`)를 제거하여 브라우저 양쪽 여백을 쾌적하게 활용.
+  - 헤더 및 본문 패딩을 `px-3.5 sm:px-8`로 정밀 조정하여 텍스트 및 이미지의 가독성 대폭 향상.
+  - PC 데스크톱(`sm:`) 환경에서는 기존의 미려한 카드 박스 테두리(`border`, `rounded-xl`, `shadow-sm`, `bg-[#f4f6fa]`)가 완벽히 유지되도록 반응형 조건 분기 적용.
+- `npx tsc --noEmit` 0 에러 검증 통과.
