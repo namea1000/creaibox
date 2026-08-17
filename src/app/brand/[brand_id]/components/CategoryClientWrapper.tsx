@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "@/components/common/SmartIntentLink";
+import Script from "next/script";
 import { formatImageUrl, handleImageError } from "@/utils/image-url";
 import { 
   CalendarDays, Sparkles, ArrowRight, Rss, ArrowLeft, Tag,
@@ -156,8 +157,9 @@ export default function CategoryClientWrapper({
     <div className={`flex flex-col min-h-screen transition-colors duration-150 font-sans selection:bg-blue-500/30 selection:text-blue-200 ${bgStyle} ${visibleClass}`}>
       {/* Google AdSense Integration */}
       {adsenseClient && (
-        <script
-          async
+        <Script
+          id="google-adsense"
+          strategy="afterInteractive"
           src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
           crossOrigin="anonymous"
         />
@@ -166,8 +168,10 @@ export default function CategoryClientWrapper({
       {/* Google Analytics Integration */}
       {gaId && (
         <>
-          <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} />
-          <script
+          <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" />
+          <Script
+            id="google-analytics"
+            strategy="afterInteractive"
             dangerouslySetInnerHTML={{
               __html: `
                 window.dataLayer = window.dataLayer || [];

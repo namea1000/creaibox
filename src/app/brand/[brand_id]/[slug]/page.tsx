@@ -1,5 +1,6 @@
 import React, { cache } from "react";
 import Link from "next/link";
+import Script from "next/script";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient, createAdminClient } from "@/utils/supabase/server";
@@ -716,8 +717,10 @@ export default async function BrandPostDetailPage({ params }: PostDetailPageProp
       {/* Google Analytics */}
       {gaId && (
         <>
-          <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} />
-          <script
+          <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" />
+          <Script
+            id="google-analytics"
+            strategy="afterInteractive"
             dangerouslySetInnerHTML={{
               __html: `
                 window.dataLayer = window.dataLayer || [];
