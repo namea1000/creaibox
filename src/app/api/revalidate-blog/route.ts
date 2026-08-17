@@ -1,51 +1,42 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
-
+import { revalidateAndWarmUpPost } from "@/lib/server/cache-warmup";
 import { createAdminClient } from "@/utils/supabase/server";
 
 export async function POST(request: Request) {
   try {
     const { slug, brandId, categoryIds } = await request.json();
 
+    let customDomain: string | null = null;
     if (brandId) {
-      // 1. Revalidate brand home page
-      revalidatePath(`/brand/${brandId}`);
-      revalidatePath("/");
-
-      // 2. Revalidate post detail page
-      if (slug) {
-        revalidatePath(`/brand/${brandId}/${slug}`);
-        revalidatePath(`/${slug}`);
-      }
-
-      // 3. Revalidate category pages
-      if (Array.isArray(categoryIds) && categoryIds.length > 0) {
+      try {
         const supabase = await createAdminClient();
-        const { data: categories } = await supabase
-          .from("blog_categories")
-          .select("slug")
-          .in("id", categoryIds);
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("extra_configs")
+          .eq("brand_id", brandId.toLowerCase())
+          .maybeSingle();
 
-        if (categories) {
-          for (const cat of categories) {
-            if (cat.slug) {
-              revalidatePath(`/brand/${brandId}/category/${cat.slug}`);
-              revalidatePath(`/category/${cat.slug}`);
-            }
-          }
+        const cDom = profile?.extra_configs?.custom_domain || profile?.extra_configs?.[`custom_domain_${brandId.toLowerCase()}`];
+        const cDomStatus = profile?.extra_configs?.custom_domain_status || profile?.extra_configs?.[`custom_domain_status_${brandId.toLowerCase()}`];
+        if (cDom && cDomStatus === "APPROVED") {
+          customDomain = cDom;
         }
-      }
-    } else {
-      // Fallback for legacy calls
-      revalidatePath("/blog");
-      revalidatePath("/sitemap.xml");
-
-      if (slug) {
-        revalidatePath(`/blog/${slug}`);
-      }
+      } catch (e) {}
     }
 
-    return NextResponse.json({ ok: true });
+    const { ok, warmedUrls } = await revalidateAndWarmUpPost({
+      brandId,
+      slug,
+      categoryIds,
+      customDomain,
+    });
+
+    return NextResponse.json({
+      ok,
+      message: "Blog pages successfully revalidated and warmed up in Edge CDN.",
+      warmedCount: warmedUrls.length,
+      warmedUrls,
+    });
   } catch (error) {
     console.error("Revalidation error:", error);
     return NextResponse.json(

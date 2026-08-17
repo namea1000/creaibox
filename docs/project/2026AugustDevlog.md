@@ -1193,3 +1193,19 @@
    - `src/app/clients/dynamic-renderer/[brand_id]/[[...slug]]/page.tsx`: UUID 형식 정규식 검증 및 안전한 `.in("slug", ...)` 분기 처리.
 2. **ISR 60s 및 동적 라우팅 복원**:
    - 모든 동적 블로그/클라이언트 상세 페이지에 `export const revalidate = 60;` 및 `export const dynamicParams = true;`를 정상 적용하여 0.01초 Vercel Global Edge CDN 캐싱과 On-Demand Dynamic Rendering이 완벽히 공존하도록 복구.
+
+## 2026-08-17 (완료): 글 발행/수정 시 백그라운드 자동 웜업 핑(Warm-up Engine) 파이프라인 탑재
+
+**작업 배경**
+- 멀티테넌트 블로그 및 동적 웹사이트에서 글을 발행/수정했을 때, 첫 번째 방문자가 0.1초의 렌더링 대기 시간조차 겪지 않고 곧바로 0.01초 만에 본문을 열람할 수 있도록 Edge CDN에 사전 적재(Warm-up)하는 무인 백그라운드 파이프라인 구축.
+
+**작업 내용**
+1. **공용 Edge CDN 웜업 헬퍼 구축**:
+   - `src/lib/server/cache-warmup.ts`: `revalidateAndWarmUpPost` 함수를 구현하여 `revalidatePath`(구형 캐시 파기) 직후 브랜드 서브도메인, 독립 커스텀 도메인, 플랫폼 블로그, 카테고리 URL로 비동기(Non-blocking) 웜업 핑 전송.
+2. **리밸리데이션 API 라우트 연동**:
+   - `src/app/api/revalidate-blog/route.ts`: `revalidateAndWarmUpPost` 엔진과 연결하여 에디터 [발행/수정] 및 DB 웹훅 트리거 시 자동 웜업 일괄 수행.
+3. **관련 4대 마스터 문서 최신화**:
+   - `docs/arch/01_core-and-infra/on-demand-revalidation-webhook-architecture.md` (웜업 시퀀스 다이어그램 반영)
+   - `docs/project/manual/on-demand-revalidation-webhook-manual.md` (실무 매뉴얼 최신화)
+4. **검증**:
+   - `npx tsc --noEmit` 빌드 타입체크 0 에러 통과.
