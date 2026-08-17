@@ -1,7 +1,8 @@
 import React, { cache } from "react";
 import Link from "next/link";
 import { Sparkles, Star } from "lucide-react";
-import { createClient, createAdminClient } from "@/utils/supabase/server";
+import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -149,7 +150,7 @@ export default async function BlogPage(props: {
     publishedPosts,
   } = await fetchBlogData();
 
-  const bestPosts = publishedPosts.slice(0, 5);
+
 
   const totalPages = Math.ceil(publishedPosts.length / postsPerPage);
   const indexOfLastPost = currentPage * postsPerPage;
@@ -186,12 +187,11 @@ export default async function BlogPage(props: {
               </p>
             </div>
           ) : (
-            <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,2fr)_420px]">
-              {/* 왼쪽 2/3 포스팅 영역 (템플릿에 따라 Card Grid / List Feed / News Flow 동적 렌더링) */}
+            <div className="mt-8">
               <section>
                 {/* 1. Card Grid 템플릿 (이미지 중심 격자 배치) */}
                 {officialTemplate === "card" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {currentPosts.map((post) => {
                       const excerpt = buildExcerpt(post);
 
@@ -350,53 +350,6 @@ export default async function BlogPage(props: {
                   </div>
                 )}
               </section>
-
-              {/* 오른쪽 1/3 베스트 글 위젯 */}
-              <aside className="lg:sticky lg:top-28 h-fit overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm">
-                {/* 상단 탭 헤더 (음영 적용) */}
-                <div className="bg-zinc-50/90 dark:bg-zinc-900/80 border-b border-zinc-200 dark:border-zinc-800 px-6 py-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-600 dark:text-blue-400">
-                      Best Posts
-                    </p>
-                    <h2 className="mt-0.5 text-xl font-black text-zinc-955 dark:text-white">
-                      베스트 글
-                    </h2>
-                  </div>
-                  <Star className="text-blue-500 fill-blue-500/10" size={20} />
-                </div>
-
-                {/* 하단 리스트 (화이트 바탕 + 콤팩트 세로 균형) */}
-                <div className="bg-white dark:bg-zinc-950 divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
-                  {bestPosts.map((post) => {
-                    return (
-                      <SmartIntentLink
-                        key={post.id}
-                        href={`/blog/${post.slug}`}
-                        className="group flex items-center gap-3.5 px-6 py-3 transition hover:bg-zinc-50 dark:hover:bg-zinc-900/60"
-                      >
-                        <div className="relative w-24 sm:w-28 aspect-[16/9] shrink-0 overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
-                          {post.thumbnailUrl ? (
-                            <SafeImage
-                              src={post.thumbnailUrl}
-                              alt={post.title || "thumbnail"}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="absolute inset-0 bg-slate-100 dark:bg-slate-900" />
-                          )}
-                        </div>
-
-                        <div className="min-w-0 flex-1 flex flex-col justify-center">
-                          <h3 className="line-clamp-2 text-[0.98rem] font-normal leading-[1.5] text-zinc-800 dark:text-zinc-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                            {post.title}
-                          </h3>
-                        </div>
-                      </SmartIntentLink>
-                    );
-                  })}
-                </div>
-              </aside>
             </div>
           )}
         </section>

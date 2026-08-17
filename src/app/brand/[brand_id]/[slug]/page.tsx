@@ -3,7 +3,8 @@ import Link from "next/link";
 import Script from "next/script";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient, createAdminClient } from "@/utils/supabase/server";
+import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 import PostClientWrapper from "../components/PostClientWrapper";
 import PostViewTracker from "@/components/blog/PostViewTracker";
 
