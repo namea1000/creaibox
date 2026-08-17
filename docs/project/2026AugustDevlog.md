@@ -1221,3 +1221,12 @@
   - 헤더 및 본문 패딩을 `px-3.5 sm:px-8`로 정밀 조정하여 텍스트 및 이미지의 가독성 대폭 향상.
   - PC 데스크톱(`sm:`) 환경에서는 기존의 미려한 카드 박스 테두리(`border`, `rounded-xl`, `shadow-sm`, `bg-[#f4f6fa]`)가 완벽히 유지되도록 반응형 조건 분기 적용.
 - `npx tsc --noEmit` 0 에러 검증 통과.
+
+## 2026-08-17 (완료): AI 웹사이트 빌더 및 클라이언트 사이트 블로그 모바일 풀-와이드 뷰 동기화
+
+**작업 내용**
+- **AI 웹사이트 빌더 동적 렌더러 (`src/app/clients/dynamic-renderer/[brand_id]/[[...slug]]/page.tsx`)**:
+  - 모바일(`<sm`)에서 배너 및 본문 여백을 `px-4 sm:px-6`, 폰트 크기를 `text-2xl sm:text-4xl`로 반응형 최적화하여 좁은 화면에서도 본문이 시원하게 보이도록 통일.
+- **커스텀 클라이언트 사이트 (`src/app/clients/sotongcheum/blog/[slug]`, `src/app/clients/commufill/blog/[slug]`)**:
+  - 모바일에서는 외곽 카드 테두리(`border-0`, `rounded-none`, `shadow-none`, `p-4 sm:p-12`)를 제거하여 화면 양쪽 전체를 100% 활용하도록 일치화.
+- `npx tsc --noEmit` 0 에러 검증 통과.
