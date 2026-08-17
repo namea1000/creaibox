@@ -6,7 +6,13 @@ import PortfolioSection, { DynamicPortfolioItem } from "./components/PortfolioSe
 import ContactForm from "./components/ContactForm";
 import { createAdminClient } from "@/utils/supabase/server";
 
-export const revalidate = 60;
+export const revalidate = false;
+
+// 🌟 강제 정적(Static) 라우트 변환: 빈 배열 반환으로 자동 Viewport 프리패칭 활성화
+export async function generateStaticParams() {
+  return [];
+}
+
 
 export default async function SotongcheumLandingPage() {
   const supabase = await createAdminClient();

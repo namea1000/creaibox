@@ -5,7 +5,13 @@ import CreativeMediaBlogPage from "../creative-media-blog/page";
 import SotongcheumPage from "../sotongcheum/page";
 
 // 🌟 Vercel Global Edge CDN Incremental Static Regeneration (ISR 60s 광속 캐시)
-export const revalidate = 60;
+export const revalidate = false;
+
+// 🌟 강제 정적(Static) 라우트 변환: 빈 배열 반환으로 자동 Viewport 프리패칭 활성화
+export async function generateStaticParams() {
+  return [];
+}
+
 
 const clientNames: Record<string, string> = {
   "prime-realestate": "프라임 부동산 빌더 템플릿",

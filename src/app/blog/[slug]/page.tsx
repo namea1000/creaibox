@@ -16,7 +16,7 @@ import CodeBlockCopyEnhancer from "@/components/blog/CodeBlockCopyEnhancer";
 import PostViewTracker from "@/components/blog/PostViewTracker";
 
 // 🌟 Vercel Global Edge CDN Incremental Static Regeneration (ISR 60s 광속 캐시)
-export const revalidate = 60;
+export const revalidate = false;
 
 interface BlogDetailPageProps {
   params: Promise<{ slug: string }>;

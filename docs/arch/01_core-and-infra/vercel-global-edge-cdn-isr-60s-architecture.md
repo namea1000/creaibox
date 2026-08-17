@@ -1,5 +1,10 @@
 # CreaiBox Vercel Global Edge CDN 캐시 (ISR 60s) 아키텍처 기술 명세서
 
+> **문서 상태**: [업데이트 됨] 기존 60초 기반 ISR 아키텍처는 무한 캐시 + DB Webhook(Method B) 방식으로 전면 업그레이드(Scale-up) 되었습니다. 상세 내역은 `on-demand-revalidation-webhook-architecture.md` 문서를 참조하십시오.
+> **문서 분류**: 아키텍처 기술 명세서 (Architecture Spec)
+> **관련 모듈**: `src/app/blog/page.tsx`, `src/app/brand/[brand_id]/page.tsx`, `next.config.ts`, `src/proxy.ts`
+> **시스템 레이어**: Vercel Global Edge Network ↔ Next.js App Router ↔ Supabase Database
+
 > **최종 수정일**: 2026-08-16
 > **문서 버전**: v1.0
 > **표준 규격**: Vercel Global Edge CDN, Next.js App Router ISR (Incremental Static Regeneration), Stale-While-Revalidate (SWR), React `cache()` Data Layer Optimization
