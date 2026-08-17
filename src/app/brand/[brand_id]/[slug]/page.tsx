@@ -10,6 +10,12 @@ import PostViewTracker from "@/components/blog/PostViewTracker";
 // 🌟 Vercel Global Edge CDN Incremental Static Regeneration (ISR 60s 광속 캐시)
 export const revalidate = 60;
 
+// 🌟 강제 정적(Static) 라우트 변환: 빈 배열 반환으로 빌드 타임에는 아무것도 생성하지 않되,
+// 런타임에 접속되는 모든 동적 경로를 ISR(Static)로 취급하여 무조건 Edge Cache 및 자동 Viewport 프리패칭 활성화
+export async function generateStaticParams() {
+  return [];
+}
+
 interface PublishedPostDetail {
   id: string;
   title: string | null;
