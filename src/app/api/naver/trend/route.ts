@@ -214,23 +214,29 @@ export async function GET(request: Request) {
 
   const isPastDate = targetDate < todayStr;
   const isPastHourToday = targetDate === todayStr && targetHour < currentHour;
+  const cacheControlHeader = isPastDate || isPastHourToday
+    ? "public, s-maxage=86400, stale-while-revalidate=604800"
+    : "public, s-maxage=300, stale-while-revalidate=3600";
 
   // 1. CreaiBox 클라우드 DB 및 메모리 캐시에 실제 저장된 과거 기록 조회
   const dbRecords = await getHistoricalHourlyKeywords(targetDate, targetHour, "naver");
   if (dbRecords && dbRecords.length > 0) {
-    return NextResponse.json({
-      startDate: targetDate,
-      endDate: targetDate,
-      results: dbRecords.map((r) => ({
-        title: r.keyword,
-        keywords: [r.keyword],
-        ratio: r.trend_ratio || 85,
-        changeBadge: r.rank_change || "NEW",
-        newsTitle: r.news_title,
-        newsUrl: r.news_url,
-        newsSource: r.news_source,
-      })),
-    });
+    return NextResponse.json(
+      {
+        startDate: targetDate,
+        endDate: targetDate,
+        results: dbRecords.map((r) => ({
+          title: r.keyword,
+          keywords: [r.keyword],
+          ratio: r.trend_ratio || 85,
+          changeBadge: r.rank_change || "NEW",
+          newsTitle: r.news_title,
+          newsUrl: r.news_url,
+          newsSource: r.news_source,
+        })),
+      },
+      { headers: { "Cache-Control": cacheControlHeader } }
+    );
   }
 
   // 2. 과거 날짜 요청 시 -> 네이버 실제 해당 과거 날짜의 일간 랭킹 기사제목 수집
@@ -251,30 +257,39 @@ export async function GET(request: Request) {
       }));
       await archiveHourlyKeywords(archiveRecords);
 
-      return NextResponse.json({
-        startDate: targetDate,
-        endDate: targetDate,
-        results: pastResults.slice(0, 20),
-      });
+      return NextResponse.json(
+        {
+          startDate: targetDate,
+          endDate: targetDate,
+          results: pastResults.slice(0, 20),
+        },
+        { headers: { "Cache-Control": cacheControlHeader } }
+      );
     }
 
-    return NextResponse.json({
-      startDate: targetDate,
-      endDate: targetDate,
-      results: [],
-      message: `선택하신 날짜(${targetDate})의 네이버 수집 기록이 존재하지 않습니다.`,
-    });
+    return NextResponse.json(
+      {
+        startDate: targetDate,
+        endDate: targetDate,
+        results: [],
+        message: `선택하신 날짜(${targetDate})의 네이버 수집 기록이 존재하지 않습니다.`,
+      },
+      { headers: { "Cache-Control": cacheControlHeader } }
+    );
   }
 
   // 3. 오늘 지난 시간대(예: 현재 18시일 때 17시) 요청 시:
   // 해당 시각에 실제 수집된 DB 기록이 없으면, 현재 라이브 데이터를 과거 시각 데이터로 위장하지 않고 솔직하게 없음을 알림 (가짜 데이터 전면 금지 룰 준수)
   if (isPastHourToday) {
-    return NextResponse.json({
-      startDate: targetDate,
-      endDate: targetDate,
-      results: [],
-      message: `선택하신 시간대(${targetDate} ${targetHour}시)는 해당 시각에 수집된 CreaiBox DB 기록이 존재하지 않는 시간대입니다.`,
-    });
+    return NextResponse.json(
+      {
+        startDate: targetDate,
+        endDate: targetDate,
+        results: [],
+        message: `선택하신 시간대(${targetDate} ${targetHour}시)는 해당 시각에 수집된 CreaiBox DB 기록이 존재하지 않는 시간대입니다.`,
+      },
+      { headers: { "Cache-Control": cacheControlHeader } }
+    );
   }
 
   // 4. 현재 실시간(현재 날짜 & 현재 시각) 요청 시 -> 네이버 실시간 라이브 20개 진짜 수집 & DB 아카이빙
@@ -310,9 +325,12 @@ export async function GET(request: Request) {
     await archiveHourlyKeywords(archiveRecords);
   }
 
-  return NextResponse.json({
-    startDate: targetDate,
-    endDate: targetDate,
-    results: liveResults.slice(0, 20),
-  });
+  return NextResponse.json(
+    {
+      startDate: targetDate,
+      endDate: targetDate,
+      results: liveResults.slice(0, 20),
+    },
+    { headers: { "Cache-Control": cacheControlHeader } }
+  );
 }

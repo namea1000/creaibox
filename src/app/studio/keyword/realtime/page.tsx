@@ -32,6 +32,9 @@ interface RealtimeKeywordItem {
   newsSource?: string;
 }
 
+// 브라우저 세션 전역 메모리 캐시 (0.01초 광속 서빙)
+const clientRealtimeCache = new Map<string, { naver: RealtimeKeywordItem[]; google: RealtimeKeywordItem[] }>();
+
 export default function RealtimeKeywordPage() {
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     const today = new Date();
@@ -39,56 +42,75 @@ export default function RealtimeKeywordPage() {
   });
   const [selectedHour, setSelectedHour] = useState<number>(() => new Date().getHours());
 
-  const [loading, setLoading] = useState(true);
+  const initialKey = `${new Date().toISOString().split("T")[0]}_${new Date().getHours()}`;
+  const initialCached = clientRealtimeCache.get(initialKey);
+
+  const [loading, setLoading] = useState(!initialCached);
   const [isFetching, setIsFetching] = useState(false);
-  const [naverKeywords, setNaverKeywords] = useState<RealtimeKeywordItem[]>([]);
-  const [googleKeywords, setGoogleKeywords] = useState<RealtimeKeywordItem[]>([]);
+  const [naverKeywords, setNaverKeywords] = useState<RealtimeKeywordItem[]>(initialCached?.naver || []);
+  const [googleKeywords, setGoogleKeywords] = useState<RealtimeKeywordItem[]>(initialCached?.google || []);
   const [copiedKeyword, setCopiedKeyword] = useState<string | null>(null);
 
   const fetchRealtimeTrends = async (date: string, hour: number) => {
-    if (naverKeywords.length === 0 && googleKeywords.length === 0) {
+    const cacheKey = `${date}_${hour}`;
+    const cached = clientRealtimeCache.get(cacheKey);
+
+    if (cached) {
+      setNaverKeywords(cached.naver);
+      setGoogleKeywords(cached.google);
+      setLoading(false);
+    } else {
       setLoading(true);
     }
+
     setIsFetching(true);
     try {
-      // Fetch Google Trends
-      const googleRes = await fetch(`/api/google/trends?geo=KR&date=${date}&hour=${hour}`);
-      const googleData = await googleRes.json();
+      // Fetch Google Trends & Naver DataLab in parallel
+      const [googleRes, naverRes] = await Promise.all([
+        fetch(`/api/google/trends?geo=KR&date=${date}&hour=${hour}`),
+        fetch(`/api/naver/trend?date=${date}&hour=${hour}`)
+      ]);
+
+      const [googleData, naverData] = await Promise.all([
+        googleRes.json(),
+        naverRes.json()
+      ]);
+
+      let parsedGoogle: RealtimeKeywordItem[] = [];
       if (googleData.items && Array.isArray(googleData.items) && googleData.items.length > 0) {
-        setGoogleKeywords(
-          googleData.items.slice(0, 20).map((g: any, i: number) => ({
-            rank: i + 1,
-            keyword: g.title,
-            traffic: g.traffic || "100K+",
-            changeBadge: "NEW",
-            newsTitle: g.newsTitle,
-            newsUrl: g.newsUrl,
-            newsSource: g.newsSource,
-          }))
-        );
-      } else {
-        setGoogleKeywords([]);
+        parsedGoogle = googleData.items.slice(0, 20).map((g: any, i: number) => ({
+          rank: i + 1,
+          keyword: g.title,
+          traffic: g.traffic || "100K+",
+          changeBadge: "NEW",
+          newsTitle: g.newsTitle,
+          newsUrl: g.newsUrl,
+          newsSource: g.newsSource,
+        }));
       }
 
-      // Fetch Naver Realtime DataLab Trend
-      const naverRes = await fetch(`/api/naver/trend?date=${date}&hour=${hour}`);
-      const naverData = await naverRes.json();
+      let parsedNaver: RealtimeKeywordItem[] = [];
       if (naverData.results && Array.isArray(naverData.results) && naverData.results.length > 0) {
-        setNaverKeywords(
-          naverData.results.slice(0, 20).map((n: any, i: number) => ({
-            rank: i + 1,
-            keyword: n.title,
-            traffic: `지수 ${n.ratio || 90}`,
-            changeBadge: i % 3 === 0 ? "NEW" : i % 2 === 0 ? "▲" : "▼",
-            trendRatio: n.ratio || 85,
-            newsTitle: n.newsTitle || `${n.title} 관련 네이버 실시간 뉴스 이슈`,
-            newsUrl: n.newsUrl || `https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(n.title)}`,
-            newsSource: n.newsSource || "네이버 뉴스",
-          }))
-        );
-      } else {
-        setNaverKeywords([]);
+        parsedNaver = naverData.results.slice(0, 20).map((n: any, i: number) => ({
+          rank: i + 1,
+          keyword: n.title,
+          traffic: `지수 ${n.ratio || 90}`,
+          changeBadge: i % 3 === 0 ? "NEW" : i % 2 === 0 ? "▲" : "▼",
+          trendRatio: n.ratio || 85,
+          newsTitle: n.newsTitle || `${n.title} 관련 네이버 실시간 뉴스 이슈`,
+          newsUrl: n.newsUrl || `https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(n.title)}`,
+          newsSource: n.newsSource || "네이버 뉴스",
+        }));
       }
+
+      setGoogleKeywords(parsedGoogle);
+      setNaverKeywords(parsedNaver);
+
+      // 캐시에 저장
+      clientRealtimeCache.set(cacheKey, {
+        naver: parsedNaver,
+        google: parsedGoogle,
+      });
     } catch (err) {
       console.error("Realtime trends fetch error:", err);
     } finally {

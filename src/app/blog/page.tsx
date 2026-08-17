@@ -10,7 +10,8 @@ import SafeImage from "@/components/common/SafeImage";
 import SmartIntentLink from "@/components/common/SmartIntentLink";
 
 // 🌟 Vercel Global Edge CDN Incremental Static Regeneration (ISR 60s 광속 캐시)
-export const revalidate = false;
+export const revalidate = 60;
+export const dynamicParams = true;
 
 interface PublishedPost {
   id: string;

@@ -4,12 +4,8 @@ import SmartIntentLink from "@/components/common/SmartIntentLink";
 import { createAdminClient } from "@/utils/supabase/server";
 import { CalendarDays, Sparkles, BookOpen, ArrowRight } from "lucide-react";
 
-export const revalidate = false;
-
-// 🌟 강제 정적(Static) 라우트 변환: 빈 배열 반환으로 자동 Viewport 프리패칭 활성화
-export async function generateStaticParams() {
-  return [];
-}
+export const revalidate = 60;
+export const dynamicParams = true;
 
 
 interface PublishedPost {

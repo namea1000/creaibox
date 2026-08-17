@@ -5,12 +5,8 @@ import DynamicSection from "../../components/DynamicSection";
 import BlogListPaginatedView, { BlogItem } from "@/components/blog/BlogListPaginatedView";
 
 // 🌟 Vercel Global Edge CDN Incremental Static Regeneration (ISR 60s 광속 캐시)
-export const revalidate = false;
-
-// 🌟 강제 정적(Static) 라우트 변환: 빈 배열 반환으로 자동 Viewport 프리패칭 활성화
-export async function generateStaticParams() {
-  return [];
-}
+export const revalidate = 60;
+export const dynamicParams = true;
 
 
 interface PageProps {
@@ -95,12 +91,21 @@ export default async function DynamicRendererPage({ params, searchParams }: Page
 
       // 🌟 Single Post Article View (/blog/[slug])
       if (postSlug) {
-        const { data: rawPost } = await supabase
+        const decodedPostSlug = decodeURIComponent(postSlug);
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(postSlug);
+
+        let query = supabase
           .from("writing_creaibox_posts")
           .select("*")
-          .eq("status", "published")
-          .or(`slug.eq.${postSlug},id.eq.${postSlug}`)
-          .maybeSingle();
+          .eq("status", "published");
+
+        if (isUuid) {
+          query = query.or(`slug.eq."${decodedPostSlug}",id.eq.${postSlug}`);
+        } else {
+          query = query.in("slug", [decodedPostSlug, postSlug]);
+        }
+
+        const { data: rawPost } = await query.maybeSingle();
 
         if (!rawPost) {
           return (

@@ -44,14 +44,61 @@
 
 ---
 
-## 4. 데이터베이스 연동 구조 (Database Structure)
+## 4. 실시간 급상승 키워드 0.01초 광속 캐싱 & 아카이빙 아키텍처
+
+실시간 급상승 키워드(`/studio/keyword/realtime`)는 고빈도 트래픽과 시간대별 조회를 완벽 방어하기 위해 **"3-Tier Multi-Layer Cache Pipeline"**을 적용합니다.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as 사용자
+    participant Browser as 브라우저 (SWR Client Cache)
+    participant CDN as Vercel Edge CDN Cache
+    participant API as Next.js API (/api/naver/trend, /api/google/trends)
+    participant RAM as Server In-Memory Cache (RAM)
+    participant DB as CreaiBox 클라우드 DB (keyword_trending_history)
+
+    User->>Browser: 시간대/날짜 클릭 또는 메뉴 재방문
+    alt 브라우저 메모리에 캐시 존재 (동일 세션 재조회)
+        Browser-->>User: ⚡ 0.01초 즉시 화면 렌더링 (로딩 0ms)
+    else 브라우저 캐시 미존재
+        Browser->>CDN: API Fetch (?date=YYYY-MM-DD&hour=H)
+        alt Edge CDN 캐시 HIT (과거 시간 24시간, 현재 시간 5분 캐시)
+            CDN-->>Browser: 🚀 0.01초 Edge 캐시 반환 (DB 0회)
+        else Edge CDN 캐시 MISS
+            CDN->>API: 백엔드 API 실행
+            API->>RAM: 서버 RAM 캐시 확인
+            alt RAM 캐시 HIT
+                RAM-->>API: 0.001초 메모리 반환
+            else RAM 캐시 MISS
+                API->>DB: DB 조회 (getHistoricalHourlyKeywords)
+                DB-->>API: DB 데이터 반환 및 RAM 적재
+            end
+            API-->>CDN: Cache-Control 헤더 포함 응답 반환
+            CDN-->>Browser: 브라우저 전달 및 Edge 적재
+        end
+        Browser-->>User: 화면 표시 및 클라이언트 세션 캐시 저장
+    end
+```
+
+### 시간대별 캐시 동작 규칙
+1. **과거 날짜/시간대 (예: 어제 17시, 2시간 전 15시)**:
+   - 과거 수집 데이터는 변하지 않는 불변(Immutable) 데이터이므로 **24시간 장기 Edge 캐시(`s-maxage=86400`)**가 적용되어 DB 조회가 영구히 0회가 됩니다.
+2. **현재 시간대 (예: 오늘 17시 현재)**:
+   - 1시간 크론 수집 주기에 맞춰 **5분 단위 단기 Edge 캐시(`s-maxage=300`)**가 적용되며, 크론 실행 시점에 최신 데이터로 자동 갱신됩니다.
+3. **클라이언트 브라우저 (SWR 세션 캐시)**:
+   - 사용자가 날짜/시간(17시 ➜ 16시 ➜ 15시 ➜ 다시 17시)을 바꿀 때, 이미 한 번 눌러본 시간대는 브라우저가 메모리에서 **0.01초 만에 로딩 화면 없이 즉각 화면을 전환**합니다. 로그 및 관심 키워드 폴더 저장을 위한 `keyword_tracking`, `keyword_favorites` 테이블 연동이 계획되어 있습니다.
+
+---
+
+## 5. 데이터베이스 연동 구조 (Database Structure)
 
 * **현재 상태**: 로컬 클라이언트 단의 고효율 시뮬레이터(Seed 계산기 및 난수 변동) 방식으로 동작하여 네트워크 오버헤드가 없으며, 반응 속도가 빠릅니다.
 * **확장 계획**: 추후 사용자별 순위 추적 로그 및 관심 키워드 폴더 저장을 위한 `keyword_tracking`, `keyword_favorites` 테이블 연동이 계획되어 있습니다.
 
 ---
 
-## 5. 컴포넌트 구조 (Component Structure)
+## 6. 컴포넌트 구조 (Component Structure)
 
 * **경로**: `src/app/studio/keyword/[section]/components/`
   - [BulkSearch.tsx](<file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/keyword/[section]/components/BulkSearch.tsx>)

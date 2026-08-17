@@ -98,32 +98,41 @@ export async function GET(request: Request) {
 
   const isPastDate = targetDate < todayStr;
   const isPastHourToday = targetDate === todayStr && targetHour < currentHour;
+  const cacheControlHeader = isPastDate || isPastHourToday
+    ? "public, s-maxage=86400, stale-while-revalidate=604800"
+    : "public, s-maxage=300, stale-while-revalidate=3600";
 
   // 1. CreaiBox 클라우드 DB 및 메모리 캐시에 실제 보관된 기록 우선 조회
   const dbRecords = await getHistoricalHourlyKeywords(targetDate, targetHour, "google");
   if (dbRecords && dbRecords.length > 0) {
-    return NextResponse.json({
-      geo,
-      total: dbRecords.length,
-      items: dbRecords.map((r) => ({
-        title: r.keyword,
-        traffic: r.search_volume || "1K+",
-        pubDate: `${targetDate} ${targetHour}:00 DB 아카이빙`,
-        newsTitle: r.news_title,
-        newsUrl: r.news_url,
-        newsSource: r.news_source,
-      })),
-    });
+    return NextResponse.json(
+      {
+        geo,
+        total: dbRecords.length,
+        items: dbRecords.map((r) => ({
+          title: r.keyword,
+          traffic: r.search_volume || "1K+",
+          pubDate: `${targetDate} ${targetHour}:00 DB 아카이빙`,
+          newsTitle: r.news_title,
+          newsUrl: r.news_url,
+          newsSource: r.news_source,
+        })),
+      },
+      { headers: { "Cache-Control": cacheControlHeader } }
+    );
   }
 
   // 2. 과거 날짜 또는 오늘 지나간 시간대 요청 시 DB 기록이 없으면 100% 솔직하게 없음을 알림 (Strict Zero Fake Data Rule 준수)
   if (isPastDate || isPastHourToday) {
-    return NextResponse.json({
-      geo,
-      total: 0,
-      items: [],
-      message: `선택하신 일시(${targetDate} ${targetHour}시)는 구글 포털 API의 과거 시간대 실시간 미제공 범위이거나 CreaiBox DB 자동 수집 구축 이전 시점의 데이터입니다.`,
-    });
+    return NextResponse.json(
+      {
+        geo,
+        total: 0,
+        items: [],
+        message: `선택하신 일시(${targetDate} ${targetHour}시)는 구글 포털 API의 과거 시간대 실시간 미제공 범위이거나 CreaiBox DB 자동 수집 구축 이전 시점의 데이터입니다.`,
+      },
+      { headers: { "Cache-Control": cacheControlHeader } }
+    );
   }
 
   // 3. 현재 실시간(현재 날짜 & 현재 시각) 요청 시 -> 구글 트렌드 100% 라이브 수집 & DB 아카이빙
@@ -144,9 +153,12 @@ export async function GET(request: Request) {
     await archiveHourlyKeywords(archiveRecords);
   }
 
-  return NextResponse.json({
-    geo,
-    total: liveItems.slice(0, 20).length,
-    items: liveItems.slice(0, 20),
-  });
+  return NextResponse.json(
+    {
+      geo,
+      total: liveItems.slice(0, 20).length,
+      items: liveItems.slice(0, 20),
+    },
+    { headers: { "Cache-Control": cacheControlHeader } }
+  );
 }

@@ -16,7 +16,8 @@ import CodeBlockCopyEnhancer from "@/components/blog/CodeBlockCopyEnhancer";
 import PostViewTracker from "@/components/blog/PostViewTracker";
 
 // 🌟 Vercel Global Edge CDN Incremental Static Regeneration (ISR 60s 광속 캐시)
-export const revalidate = false;
+export const revalidate = 60;
+export const dynamicParams = true;
 
 interface BlogDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -238,7 +239,7 @@ const fetchPublishedPost = cache(async (slug: string) => {
   if (decodedSlug === slug) {
     query = query.eq("slug", decodedSlug);
   } else {
-    query = query.or(`slug.eq."${decodedSlug}",slug.eq."${slug}"`);
+    query = query.in("slug", [decodedSlug, slug]);
   }
 
   const { data: posts, error } = await query;

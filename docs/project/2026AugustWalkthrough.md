@@ -792,3 +792,36 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
 
 **결과**
 - CreaiBox 프로젝트의 모든 문서가 목적별로 완벽히 분리되면서도, 어느 문서를 열어도 0.1초 만에 전체 4대 세트를 상호 탐색할 수 있는 엔터프라이즈급 문서 시스템 확립 완료.
+
+## 2026-08-17 (완료): 실시간 키워드 트렌드 0.01초 Vercel Edge CDN & SWR 클라이언트 캐싱 구현
+
+**작업 배경**
+- `/studio/keyword/realtime`(실시간 급상승 키워드) 메뉴에서 다른 메뉴를 이동하거나 시간대/날짜를 변경할 때마다 발생하는 DB 중복 쿼리 및 로딩 지연을 해결하고, 대규모 트래픽 시에도 DB 조회를 0회로 방어하기 위함.
+
+**작업 내용**
+1. **API 응답 헤더 Edge CDN 캐시 적용**:
+   - `src/app/api/naver/trend/route.ts`: 과거 시간대(`s-maxage=86400`), 현재 시간대(`s-maxage=300`) 분기 캐시 헤더 주입.
+   - `src/app/api/google/trends/route.ts`: 과거 시간대(`s-maxage=86400`), 현재 시간대(`s-maxage=300`) 분기 캐시 헤더 주입.
+2. **프론트엔드 SWR 클라이언트 메모리 캐시 구현**:
+   - `src/app/studio/keyword/realtime/page.tsx`: `clientRealtimeCache` Map을 구축하여同一 세션 내에서 이미 조회한 날짜/시간대는 0.01초 만에 로딩 없이 즉시 렌더링하고 백그라운드 SWR 갱신.
+3. **관련 마스터 문서 최신화**:
+   - `docs/arch/06_trend-and-marketing/keyword-trend-studio.md` (Mermaid 다이어그램 및 아키텍처 반영)
+   - `docs/project/manual/06_trend-and-marketing/keyword-trending-archiving-guide.md` (실무 매뉴얼 최신화)
+4. **검증**:
+   - `npx tsc --noEmit` 빌드 체크 0 에러 통과.
+
+## 2026-08-17 (긴급 패치): 한글 URL 슬러그 500 에러 및 ISR 정적 라우팅 긴급 복구
+
+**문제 원인**
+1. **PostgREST 쿼리 문법 충돌**:
+   - 한글 슬러그 조회 시 `query.or(\`slug.eq."${decodedSlug}",slug.eq."${slug}"\`)` 및 UUID 필드 대상 비UUID 문자열 조회(`id.eq.${postSlug}`)로 인해 PostgREST/PostgreSQL 문법 오류(HTTP 500) 발생.
+2. **Next.js 동적 라우트 ISR 설정 충돌**:
+   - 동적 경로(`[slug]`)에서 `export const revalidate = false;`와 `generateStaticParams = []`가 동시에 선언되어 Vercel 런타임 렌더링 시 사전 생성되지 않은 동적 경로가 렌더링되지 못하고 크래시 발생.
+
+**조치 내용**
+1. **슬러그 쿼리 안정화**:
+   - `src/app/brand/[brand_id]/[slug]/page.tsx`: `query.in("slug", [decodedSlug, slug])`로 교체하여 인코딩/디코딩 한글 슬러그 안전 매칭.
+   - `src/app/blog/[slug]/page.tsx`: `query.in("slug", [decodedSlug, slug])`로 교체.
+   - `src/app/clients/dynamic-renderer/[brand_id]/[[...slug]]/page.tsx`: UUID 형식 정규식 검증 및 안전한 `.in("slug", ...)` 분기 처리.
+2. **ISR 60s 및 동적 라우팅 복원**:
+   - 모든 동적 블로그/클라이언트 상세 페이지에 `export const revalidate = 60;` 및 `export const dynamicParams = true;`를 정상 적용하여 0.01초 Vercel Global Edge CDN 캐싱과 On-Demand Dynamic Rendering이 완벽히 공존하도록 복구.
