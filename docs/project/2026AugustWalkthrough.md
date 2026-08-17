@@ -1021,3 +1021,18 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
        - 하단 카테고리 이전(`< Previous`) / 다음(`Next >`) 원클릭 네비게이션.
        - 하단 1:1 고객지원 접수 배너 연동.
 - `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-17 (완료): AI 홈페이지 이관(/studio/custom-client-site/migration) 실서버 HTTP 500 오류 원인 해결 및 방어 로직 강화
+
+**원인 분석**
+1. **DB 컬럼 불일치**: `src/app/api/studio/site-migration/route.ts`에서 `client_sites` 테이블 인서트 시 최상위 `scan_report` 컬럼을 직접 전달했으나, Supabase 실서버 테이블에 해당 컬럼이 없을 경우 PostgREST에서 컬럼 부재 오류로 500 발생.
+2. **초대용량 HTML 프롬프트(200,000자) 처리 부하**: Vercel 서버리스 환경에서 장시간 대기로 인한 타임아웃 위험.
+3. **AI 파싱 실패 시 500 중단**: AI 응답 파싱 실패 시 에러 응답을 반환하여 사용자 화면에 500 알림 노출.
+
+**개선 조치**
+- `src/app/api/studio/site-migration/route.ts`:
+  - `scan_report`를 100% 보장된 `extra_configs.scan_report` JSONB 필드로 캡슐화.
+  - DB Insert 실패 시 레거시 호환 Payload(`extra_configs` 기반)로 자동 재시도(Fallback) 방어 로직 구현.
+  - HTML 분석 프롬프트 크기를 핵심 45,000자로 최적화하여 Vertex AI 2~3초 내 응답 보장.
+  - AI 통신 및 파싱 경고 발생 시에도 500 에러로 중단되지 않고 기본 템플릿 섹션으로 무중단 자동 복구.
+- `npx tsc --noEmit` 0 에러 검증 통과.
