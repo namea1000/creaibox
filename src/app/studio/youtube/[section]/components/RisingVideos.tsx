@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { Flame, Loader2, Play, Eye, ThumbsUp, Calendar, ArrowRight, Copy, Check, ChevronLeft, ChevronRight, BarChart2, ExternalLink, Globe, ChevronDown, PlaySquare } from "lucide-react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { Flame, Loader2, Play, Eye, ThumbsUp, Calendar, ArrowRight, Copy, Check, ChevronLeft, ChevronRight, BarChart2, ExternalLink, Globe, ChevronDown, PlaySquare, Film, Sparkles } from "lucide-react";
 import VideoAnalysisModal from "./VideoAnalysisModal";
 
-// ISO 8601 duration parser e.g., PT1M15S -> {formatted: "1:15", seconds: 75, isShorts: false}
-function parseDuration(durationStr?: string | null): { formatted: string; seconds: number; isShorts: boolean } {
+// ISO 8601 duration parser with Smart Shorts (최대 3분 및 해시태그/화면비율/가로예고편 예외 처리)
+function parseDuration(durationStr?: string | null, videoObj?: any): { formatted: string; seconds: number; isShorts: boolean } {
   if (!durationStr) {
     return { formatted: "0:00", seconds: 0, isShorts: false };
   }
@@ -20,7 +20,6 @@ function parseDuration(durationStr?: string | null): { formatted: string; second
   const seconds = parseInt(match[3] || "0", 10);
   
   const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-  const isShorts = totalSeconds > 0 && totalSeconds <= 60;
   
   let formatted = "";
   if (hours > 0) {
@@ -30,6 +29,106 @@ function parseDuration(durationStr?: string | null): { formatted: string; second
   }
   formatted += String(seconds).padStart(2, "0");
   
+  // 🌟 [핵심] 스마트 3분 쇼츠 & 가로 기획물(MV, 공식 음원, 라이브 무대, 예고편) 정밀 화이트리스트 판별
+  let isShorts = false;
+
+  if (totalSeconds > 0 && totalSeconds <= 180) { // 유튜브 공식 최대 3분(180초) 쇼츠 범위
+    const title = (videoObj?.snippet?.title || videoObj?.title || "").toLowerCase();
+    const description = (videoObj?.snippet?.description || videoObj?.description || "").toLowerCase();
+    const channel = (videoObj?.snippet?.channelTitle || videoObj?.channelTitle || "").toLowerCase();
+
+    // 1. 명시적인 쇼츠 키워드가 있는 경우 무조건 쇼츠!
+    const hasShortsKeyword = 
+      title.includes("#shorts") || 
+      title.includes("#short") || 
+      title.includes("shorts") || 
+      title.includes("쇼츠") || 
+      title.includes("#숏") ||
+      title.includes("#shortvideo") ||
+      title.includes("#shortsfeed") ||
+      description.includes("#shorts") || 
+      description.includes("#short") || 
+      description.includes("쇼츠");
+
+    // 2. 가로 16:9 기획 영상 정밀 예외 판별 (글로벌 화이트리스트)
+    const isTopicChannel = channel.includes("- topic") || channel.includes("- 주제") || channel.endsWith("topic") || channel.endsWith("주제");
+    const isOfficialArtist = (channel.includes("official") || channel.includes("공식")) && (title.includes(" - ") || title.includes(" – "));
+    
+    const isMv = 
+      title.includes("music video") ||
+      title.includes("official video") ||
+      title.includes("video oficial") ||
+      title.includes("clip oficial") ||
+      title.includes("lyric video") ||
+      title.includes("official audio") ||
+      title.includes("official song") ||
+      title.includes("official track") ||
+      title.includes("song") ||
+      title.includes(" mv") || 
+      title.includes("mv ") || 
+      title.includes("[mv]") || 
+      title.includes("(mv)") || 
+      title.includes("'mv'") || 
+      title.includes('"mv"') || 
+      title.endsWith("mv") ||
+      title.includes("m/v") || 
+      title.includes("뮤직비디오") || 
+      title.includes("뮤비") || 
+      title.includes("visualizer") || 
+      title.includes("audio") || 
+      title.includes("음원");
+
+    const isAnimationOrCinematic = 
+      title.includes("animation") || 
+      title.includes("animated") || 
+      title.includes("cinematic") || 
+      title.includes("애니메이션") || 
+      title.includes("origin story") || 
+      title.includes("short film") || 
+      title.includes("단편영화");
+
+    const isNewsOrBroadcast = 
+      title.includes("news") || 
+      title.includes("뉴스") || 
+      title.includes("interview") || 
+      title.includes("인터뷰") || 
+      channel.includes("news") || 
+      channel.includes("뉴스") || 
+      title.includes("episode") || 
+      title.includes("ep.") || 
+      title.includes("에피소드");
+
+    const isLiveOrStage = 
+      title.includes("live clip") || 
+      title.includes("라이브") || 
+      title.includes("on the spot") || 
+      title.includes("온더스팟") || 
+      title.includes("stage") || 
+      title.includes("스페셜") || 
+      title.includes("special clip") || 
+      title.includes("performance video") || 
+      title.includes("퍼포먼스");
+
+    const isTeaserOrTrailer = 
+      title.includes("예고편") || 
+      title.includes("teaser") || 
+      title.includes("trailer") || 
+      title.includes("풀버전") || 
+      title.includes("full ver") || 
+      title.includes("풀영상") || 
+      title.includes("하이라이트") || 
+      title.includes("highlight");
+
+    const isExplicitLongform = (isTopicChannel || isOfficialArtist || isMv || isAnimationOrCinematic || isNewsOrBroadcast || isLiveOrStage || isTeaserOrTrailer) && !hasShortsKeyword;
+
+    if (isExplicitLongform) {
+      isShorts = false;
+    } else {
+      // 🚀 3분 이하 중 위 가로 기획물이 아닌 것은 100% 쇼츠로 분류!
+      isShorts = true;
+    }
+  }
+
   return { formatted, seconds: totalSeconds, isShorts };
 }
 
@@ -108,6 +207,9 @@ export default function RisingVideos() {
   const [selectedDate, setSelectedDate] = useState(() => getKstTodayDateStr());
   const [selectedCountry, setSelectedCountry] = useState("KR");
   const [selectedRegionGroup, setSelectedRegionGroup] = useState("top");
+
+  // 🌟 [신규] 영상 포맷 필터: 'all' (전체) | 'video' (일반 동영상) | 'shorts' (유튜브 쇼츠)
+  const [videoFormatFilter, setVideoFormatFilter] = useState<"all" | "video" | "shorts">("all");
 
   const getFilteredCountries = () => {
     if (selectedRegionGroup === "top") return COUNTRIES;
@@ -487,12 +589,47 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
     return num.toLocaleString();
   };
 
-  const filteredVideos = videos;
+  // 🌟 영상 통계 집계 (전체 / 일반 동영상 / 유튜브 쇼츠)
+  const videoStats = useMemo(() => {
+    let videoCount = 0;
+    let shortsCount = 0;
+    videos.forEach((v) => {
+      const durationInfo = parseDuration(v.contentDetails?.duration || v.duration, v);
+      if (durationInfo.isShorts) {
+        shortsCount++;
+      } else {
+        videoCount++;
+      }
+    });
+    return {
+      all: videos.length,
+      video: videoCount,
+      shorts: shortsCount,
+    };
+  }, [videos]);
+
+  // 🌟 포맷 필터링 적용된 영상 목록
+  const filteredVideos = useMemo(() => {
+    if (videoFormatFilter === "video") {
+      return videos.filter((v) => {
+        const durationInfo = parseDuration(v.contentDetails?.duration || v.duration, v);
+        return !durationInfo.isShorts;
+      });
+    }
+    if (videoFormatFilter === "shorts") {
+      return videos.filter((v) => {
+        const durationInfo = parseDuration(v.contentDetails?.duration || v.duration, v);
+        return durationInfo.isShorts;
+      });
+    }
+    return videos;
+  }, [videos, videoFormatFilter]);
+
   const displayedVideos = filteredVideos.slice(0, visibleCount);
   const isTodaySelected = selectedDate === getKstTodayDateStr();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header Panel */}
       <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 backdrop-blur-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -510,85 +647,151 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
           </div>
         </div>
 
-    <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
-      <button
-        onClick={handleBulkSync}
-        disabled={loading || isBulkLoading || !isTodaySelected}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 disabled:opacity-30 disabled:hover:from-orange-600 px-5 text-xs font-black text-white transition shadow-lg shadow-orange-950/20"
-      >
-        {isBulkLoading ? <Loader2 size={14} className="animate-spin" /> : <Flame size={14} />}
-        {isTodaySelected ? "전체 12개국 일괄수집" : "일괄수집 불가"}
-      </button>
+        <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+          <button
+            onClick={handleBulkSync}
+            disabled={loading || isBulkLoading || !isTodaySelected}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 disabled:opacity-30 disabled:hover:from-orange-600 px-5 text-xs font-black text-white transition shadow-lg shadow-orange-950/20"
+          >
+            {isBulkLoading ? <Loader2 size={14} className="animate-spin" /> : <Flame size={14} />}
+            {isTodaySelected ? "전체 12개국 일괄수집" : "일괄수집 불가"}
+          </button>
 
-      <button
-        onClick={() => fetchTrending(activeCategory, selectedDate, selectedCountry, true)}
-        disabled={loading || isBulkLoading || !isTodaySelected}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 disabled:opacity-30 disabled:hover:bg-zinc-800 px-5 text-xs font-black text-white transition shadow-md"
-      >
-        {loading ? <Loader2 size={14} className="animate-spin" /> : <Flame size={14} />}
-        {isTodaySelected ? "새로고침" : "새로고침 불가"}
-      </button>
-    </div>
-  </div>
-
-  {isBulkLoading && (
-    <div className="rounded-2xl border border-orange-500/20 bg-zinc-950/40 p-5 shadow-2xl backdrop-blur-md space-y-3 animate-pulse">
-      <div className="flex justify-between items-center text-xs font-black text-zinc-300">
-        <span className="flex items-center gap-2">
-          <Loader2 size={14} className="animate-spin text-orange-500" />
-          {bulkCurrentInfo}
-        </span>
-        <span className="bg-orange-500/10 text-orange-400 px-2 py-0.5 rounded-md border border-orange-500/20">
-          {bulkProgress} / {bulkTotal} ({(bulkProgress / bulkTotal * 100).toFixed(0)}%)
-        </span>
+          <button
+            onClick={() => fetchTrending(activeCategory, selectedDate, selectedCountry, true)}
+            disabled={loading || isBulkLoading || !isTodaySelected}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 disabled:opacity-30 disabled:hover:bg-zinc-800 px-5 text-xs font-black text-white transition shadow-md"
+          >
+            {loading ? <Loader2 size={14} className="animate-spin" /> : <Flame size={14} />}
+            {isTodaySelected ? "새로고침" : "새로고침 불가"}
+          </button>
+        </div>
       </div>
-      <div className="w-full bg-zinc-900 h-2.5 rounded-full overflow-hidden border border-zinc-800">
-        <div 
-          className="bg-gradient-to-r from-orange-600 to-amber-400 h-full transition-all duration-300 rounded-full"
-          style={{ width: `${(bulkProgress / bulkTotal * 100)}%` }}
-        />
-      </div>
-    </div>
-  )}
 
-      {/* 🌐 Central Filter Hub (Global Country + Category Selectors) */}
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-950/20 p-6 backdrop-blur-md space-y-3.5 shadow-2xl shadow-black/25 flex flex-col items-center w-full">
-        {/* 주요 12개국 단일 탭 목록 */}
-        <div className="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 w-full max-w-full">
-          {ALL_COUNTRIES.map((ct) => (
-            <button
-              key={ct.code}
-              onClick={() => handleCountryChange(ct.code)}
-              className={`px-3 sm:px-3.5 py-1.5 text-xs font-black rounded-xl transition flex items-center gap-1.5 shrink-0 whitespace-nowrap border-2 cursor-pointer ${
-                selectedCountry === ct.code
-                  ? "bg-orange-950/40 border-orange-500 text-white shadow-lg shadow-orange-950/40 transform scale-105"
-                  : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white"
-              }`}
-            >
-              <span className="text-base sm:text-lg leading-none">{ct.flag}</span>
-              <span>{ct.name}</span>
-            </button>
-          ))}
+      {isBulkLoading && (
+        <div className="rounded-xl border border-orange-500/20 bg-zinc-950/40 p-2.5 shadow-xl backdrop-blur-md space-y-1.5 animate-pulse">
+          <div className="flex justify-between items-center text-[10px] font-black text-zinc-300">
+            <span className="flex items-center gap-1.5">
+              <Loader2 size={11} className="animate-spin text-orange-500" />
+              {bulkCurrentInfo}
+            </span>
+            <span className="bg-orange-500/10 text-orange-400 px-1.5 py-0.5 rounded border border-orange-500/20">
+              {bulkProgress} / {bulkTotal} ({(bulkProgress / bulkTotal * 100).toFixed(0)}%)
+            </span>
+          </div>
+          <div className="w-full bg-zinc-900 h-1.5 rounded-full overflow-hidden border border-zinc-800">
+            <div 
+              className="bg-gradient-to-r from-orange-600 to-amber-400 h-full transition-all duration-300 rounded-full"
+              style={{ width: `${(bulkProgress / bulkTotal * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 🌐 2-Column Split Filter Hub (Left: Format Selector [전체 | 일반 동영상 | 유튜브 쇼츠], Right: Country + Category Selectors) */}
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-950/40 p-3 sm:p-3.5 backdrop-blur-md shadow-2xl shadow-black/25 flex flex-col sm:flex-row items-stretch gap-3 sm:gap-4 w-full">
+        {/* 🌟 Left Column: Video Format Selector Tabs (가로폭 축소 & 글자-숫자 공백 밀착 정렬) */}
+        <div className="w-full sm:w-[150px] shrink-0 flex flex-col justify-center gap-1.5 py-0.5">
+          {/* 전체 보기 */}
+          <button
+            onClick={() => setVideoFormatFilter("all")}
+            className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border ${
+              videoFormatFilter === "all"
+                ? "bg-gradient-to-r from-orange-600 to-amber-600 border-orange-400 text-white shadow-md shadow-orange-950/30"
+                : "bg-zinc-900/80 border-zinc-800/80 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+            }`}
+          >
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">🌟</span>
+              <span className="whitespace-nowrap">전체 보기</span>
+            </div>
+            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+              videoFormatFilter === "all" ? "bg-black/40 text-amber-200" : "bg-zinc-800 text-zinc-400"
+            }`}>
+              {videoStats.all}
+            </span>
+          </button>
+
+          {/* 일반 동영상 */}
+          <button
+            onClick={() => setVideoFormatFilter("video")}
+            className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border ${
+              videoFormatFilter === "video"
+                ? "bg-gradient-to-r from-blue-600 to-cyan-600 border-blue-400 text-white shadow-md shadow-blue-950/30"
+                : "bg-zinc-900/80 border-zinc-800/80 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+            }`}
+          >
+            <div className="flex items-center gap-1.5">
+              <Film size={13} className={videoFormatFilter === "video" ? "text-cyan-200" : "text-blue-400"} />
+              <span className="whitespace-nowrap">일반 동영상</span>
+            </div>
+            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+              videoFormatFilter === "video" ? "bg-black/40 text-cyan-200" : "bg-zinc-800 text-zinc-400"
+            }`}>
+              {videoStats.video}
+            </span>
+          </button>
+
+          {/* 유튜브 쇼츠 */}
+          <button
+            onClick={() => setVideoFormatFilter("shorts")}
+            className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border ${
+              videoFormatFilter === "shorts"
+                ? "bg-gradient-to-r from-red-600 to-rose-600 border-red-400 text-white shadow-md shadow-red-950/30"
+                : "bg-zinc-900/80 border-zinc-800/80 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+            }`}
+          >
+            <div className="flex items-center gap-1.5">
+              <Play size={11} fill="currentColor" className={videoFormatFilter === "shorts" ? "text-rose-200" : "text-red-500"} />
+              <span className="whitespace-nowrap">유튜브 쇼츠</span>
+            </div>
+            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+              videoFormatFilter === "shorts" ? "bg-black/40 text-rose-200" : "bg-zinc-800 text-zinc-400"
+            }`}>
+              {videoStats.shorts}
+            </span>
+          </button>
         </div>
 
-        {/* Separator Divider */}
-        <div className="h-[1px] w-full bg-zinc-850/60" />
+        {/* Vertical Divider */}
+        <div className="hidden sm:block w-[1px] self-stretch bg-zinc-800/80 my-0.5" />
 
-        {/* 2. Category Selector & Tabs (Centered) */}
-        <div className="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 w-full max-w-full">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => handleCategoryChange(cat.id)}
-              className={`px-3 sm:px-3.5 py-1.5 text-xs font-black rounded-lg transition shrink-0 whitespace-nowrap border-2 ${
-                activeCategory === cat.id
-                  ? "bg-orange-650 border-orange-500 text-white shadow-md shadow-orange-650/15"
-                  : "bg-zinc-900 border-zinc-850 text-zinc-400 hover:bg-zinc-800 hover:text-white"
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
+        {/* 🌐 Right Column: Country + Category Selectors (구분선 없이 깔끔한 2열 수직 정중앙 정렬) */}
+        <div className="flex-1 min-w-0 flex flex-col justify-center gap-2 py-0.5">
+          {/* 1. Country Selector */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {ALL_COUNTRIES.map((ct) => (
+              <button
+                key={ct.code}
+                onClick={() => handleCountryChange(ct.code)}
+                className={`px-2.5 py-1 text-xs font-black rounded-lg transition flex items-center gap-1.5 shrink-0 whitespace-nowrap border cursor-pointer ${
+                  selectedCountry === ct.code
+                    ? "bg-orange-950/60 border-orange-500 text-white shadow-sm"
+                    : "bg-zinc-900/80 border-zinc-800/80 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                }`}
+              >
+                <span className="text-sm leading-none">{ct.flag}</span>
+                <span>{ct.name}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* 2. Topic Category Selector */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => handleCategoryChange(cat.id)}
+                className={`px-2.5 py-1 text-xs font-black rounded-md transition shrink-0 whitespace-nowrap border cursor-pointer ${
+                  activeCategory === cat.id
+                    ? "bg-orange-600 border-orange-400 text-white shadow-sm"
+                    : "bg-zinc-900/80 border-zinc-850/80 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -644,8 +847,8 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
                 const viewCount = video.statistics?.viewCount || video.viewCount || "0";
                 const likeCount = video.statistics?.likeCount || video.likeCount || "0";
                 
-                const durationInfo = parseDuration(video.contentDetails?.duration || video.duration);
-                const isShorts = video.isRealShorts !== undefined ? video.isRealShorts : durationInfo.isShorts;
+                const durationInfo = parseDuration(video.contentDetails?.duration || video.duration, video);
+                const isShorts = durationInfo.isShorts;
 
                 return (
                   <div key={idx} className="group rounded-2xl border border-zinc-800 bg-zinc-900/20 hover:border-orange-500/40 transition flex flex-col justify-between hover:bg-zinc-900/50 backdrop-blur-sm overflow-hidden">

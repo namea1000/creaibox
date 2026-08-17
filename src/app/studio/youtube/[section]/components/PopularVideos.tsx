@@ -97,7 +97,7 @@ export default function PopularVideos() {
   const [selectedAnalysisVideo, setSelectedAnalysisVideo] = useState<any>(null);
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
 
-  const parseDuration = (durationStr?: string) => {
+  const parseDuration = (durationStr?: string, videoObj?: any) => {
     if (!durationStr) return { formatted: "", isShorts: false };
     const match = durationStr.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
     if (!match) return { formatted: "", isShorts: false };
@@ -105,7 +105,101 @@ export default function PopularVideos() {
     const minutes = parseInt(match[2] || "0", 10);
     const seconds = parseInt(match[3] || "0", 10);
     const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-    const isShorts = totalSeconds > 0 && totalSeconds <= 60;
+
+    let isShorts = false;
+    if (totalSeconds > 0 && totalSeconds <= 180) {
+      const title = (videoObj?.snippet?.title || videoObj?.title || "").toLowerCase();
+      const description = (videoObj?.snippet?.description || videoObj?.description || "").toLowerCase();
+      const channel = (videoObj?.snippet?.channelTitle || videoObj?.channelTitle || "").toLowerCase();
+
+      const hasShortsKeyword = 
+        title.includes("#shorts") || 
+        title.includes("#short") || 
+        title.includes("shorts") || 
+        title.includes("쇼츠") || 
+        title.includes("#숏") ||
+        title.includes("#shortvideo") ||
+        title.includes("#shortsfeed") ||
+        description.includes("#shorts") || 
+        description.includes("#short") || 
+        description.includes("쇼츠");
+
+      const isTopicChannel = channel.includes("- topic") || channel.includes("- 주제") || channel.endsWith("topic") || channel.endsWith("주제");
+      const isOfficialArtist = (channel.includes("official") || channel.includes("공식")) && (title.includes(" - ") || title.includes(" – "));
+      
+      const isMv = 
+        title.includes("music video") ||
+        title.includes("official video") ||
+        title.includes("video oficial") ||
+        title.includes("clip oficial") ||
+        title.includes("lyric video") ||
+        title.includes("official audio") ||
+        title.includes("official song") ||
+        title.includes("official track") ||
+        title.includes("song") ||
+        title.includes(" mv") || 
+        title.includes("mv ") || 
+        title.includes("[mv]") || 
+        title.includes("(mv)") || 
+        title.includes("'mv'") || 
+        title.includes('"mv"') || 
+        title.endsWith("mv") ||
+        title.includes("m/v") || 
+        title.includes("뮤직비디오") || 
+        title.includes("뮤비") || 
+        title.includes("visualizer") || 
+        title.includes("audio") || 
+        title.includes("음원");
+
+      const isAnimationOrCinematic = 
+        title.includes("animation") || 
+        title.includes("animated") || 
+        title.includes("cinematic") || 
+        title.includes("애니메이션") || 
+        title.includes("origin story") || 
+        title.includes("short film") || 
+        title.includes("단편영화");
+
+      const isNewsOrBroadcast = 
+        title.includes("news") || 
+        title.includes("뉴스") || 
+        title.includes("interview") || 
+        title.includes("인터뷰") || 
+        channel.includes("news") || 
+        channel.includes("뉴스") || 
+        title.includes("episode") || 
+        title.includes("ep.") || 
+        title.includes("에피소드");
+
+      const isLiveOrStage = 
+        title.includes("live clip") || 
+        title.includes("라이브") || 
+        title.includes("on the spot") || 
+        title.includes("온더스팟") || 
+        title.includes("stage") || 
+        title.includes("스페셜") || 
+        title.includes("special clip") || 
+        title.includes("performance video") || 
+        title.includes("퍼포먼스");
+
+      const isTeaserOrTrailer = 
+        title.includes("예고편") || 
+        title.includes("teaser") || 
+        title.includes("trailer") || 
+        title.includes("풀버전") || 
+        title.includes("full ver") || 
+        title.includes("풀영상") || 
+        title.includes("하이라이트") || 
+        title.includes("highlight");
+
+      const isExplicitLongform = (isTopicChannel || isOfficialArtist || isMv || isAnimationOrCinematic || isNewsOrBroadcast || isLiveOrStage || isTeaserOrTrailer) && !hasShortsKeyword;
+
+      if (isExplicitLongform) {
+        isShorts = false;
+      } else {
+        isShorts = true;
+      }
+    }
 
     let formatted = "";
     if (hours > 0) {
@@ -497,8 +591,8 @@ export default function PopularVideos() {
               const viewCount = video.statistics?.viewCount || video.viewCount || "0";
               const likeCount = video.statistics?.likeCount || video.likeCount || "0";
               const publishedAt = video.snippet?.publishedAt ? video.snippet.publishedAt.split("T")[0] : "";
-              const durationInfo = parseDuration(video.contentDetails?.duration || video.duration);
-              const isShorts = video.isRealShorts !== undefined ? video.isRealShorts : durationInfo.isShorts;
+              const durationInfo = parseDuration(video.contentDetails?.duration || video.duration, video);
+              const isShorts = durationInfo.isShorts;
 
               return (
                 <div

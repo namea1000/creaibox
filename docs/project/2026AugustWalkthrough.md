@@ -696,3 +696,10 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
     - **24시간 인메모리 캐시 맵**: `customDomainCache`, `subdomainRedirectCache`, `dynamicClientCache`, `staticClientApprovedCache`를 가동하여 도메인/빌더 라우팅 확인 시 발생하는 DB 왕복 지연을 0ms로 압축.
   - `src/app/brand/[brand_id]/page.tsx` & `src/app/clients/dynamic-renderer/[brand_id]/[[...slug]]/page.tsx`:
     - 프로필 조회(`getProfileByBrandId`) 및 사이트 설정 조회(`fetchSiteData`)를 React `cache()`로 감싸 동일 요청 내 중복 DB 쿼리를 100% 제거하고 광속 서빙 완성.
+* **유튜브 급상승 트렌드 2단 필터 허브 & 3분 쇼츠/가로 예고편 스마트 분리 엔진 (v1.53)**:
+  - `src/app/studio/youtube/[section]/components/RisingVideos.tsx` & `PopularVideos.tsx` & `/api/youtube/route.ts`:
+    - **상단 원본 헤더 보존 & 2단 컴팩트 필터 허브**: "AI 급상승 영상 트렌드 분석 리포트" 고유 헤더 박스를 100% 온전히 유지하고, 좌측 3단 포맷 선택 탭(150px)과 우측 2줄 탭(국가 + 카테고리)의 상하 간격을 정중앙으로 완벽 정렬.
+    - **스마트 3분 쇼츠 & 역발상 화이트리스트 판별 엔진 탑재**:
+      - **3분 이하(≤180초) 기본 100% 쇼츠 판정**: 해시태그 없는 1분~3분 쇼츠(예: `이게 차냐 (1:48)`, `엄청 기발한 수건?! (1:01)`, `박재범 (1:02)`, `폴드8 (1:13)`)를 ⚡ 쇼츠 탭으로 100% 자동 분리.
+      - **글로벌 16:9 가로 기획물 화이트리스트 정밀 예외 처리**: `Official Music Video`, `Official Video`, `Video Oficial`, `Official Song`, `Song`, 단독 `MV`, 공식 아티스트 신곡(`King Gnu - GO GHOST`), 공식 음원(`- Topic` / `- 주제`), 게임/브랜드 공식 애니메이션(`Animation`, `Origin Story`), 뉴스/인터뷰(`E! News`, `News`, `Interview`), 무대/라이브(`Live Clip`, `On the Spot`), 영화 예고편/티저 등 명시적 16:9 가로 기획물만 🎬 일반 동영상으로 완벽하게 보존.
+    - **실시간 포맷별 수량 카운트 뱃지 & 0ms 인스턴트 필터링**: 수집된 영상의 지능형 판별 결과를 기반으로 `전체`, `일반 동영상`, `유튜브 쇼츠` 수량을 실시간 뱃지로 표기하고 0초 만에 분리 서빙.

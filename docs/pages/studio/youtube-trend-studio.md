@@ -20,7 +20,7 @@
 
 ### 2-2. 급상승 영상 트렌드
 * **세그먼트**: `/studio/youtube/rising` -> [RisingVideos.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/RisingVideos.tsx)
-* **기능**: 대한민국 유튜브 인기 급상승 차트 수집 썸네일 노출.
+* **기능**: 글로벌 12개국 급상승 차트 수집 및 [전체 | 일반 동영상 | 유튜브 쇼츠] 3단 스마트 포맷 분리 필터 허브 탑재. (3분 쇼츠 지원 및 가로 예고편 오분류 방지)
 
 ### 2-3. 경쟁 채널 비교
 * **세그먼트**: `/studio/youtube/compare` -> [ChannelCompare.tsx](file:///Users/a1234/Local%20Sites/creaibox/src/app/studio/youtube/%5Bsection%5D/components/ChannelCompare.tsx)

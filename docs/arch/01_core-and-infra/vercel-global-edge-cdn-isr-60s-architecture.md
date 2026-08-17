@@ -141,15 +141,15 @@ return {
 
 ## 4. 적용 대상 및 시스템 라우팅 맵
 
-| 라우트 경로                                    | 대상 서비스                       | ISR 설정값          | 최적화 기법                                                               |
-| :--------------------------------------------- | :-------------------------------- | :------------------ | :------------------------------------------------------------------------ |
-| `src/app/blog/page.tsx`                      | 본사 공식 블로그 메인             | `revalidate = 60` | Edge CDN 캐시,`Promise.all` 병렬 쿼리                                   |
-| `src/app/blog/[slug]/page.tsx`               | 본사 블로그 상세 포스트           | `revalidate = 60` | `generateStaticParams`, `cache()`, `PostViewTracker`, `encodeURI` |
-| `src/app/brand/[brand_id]/*`                 | 유저 서브도메인 및 독립 도메인 블로그 | `revalidate = 60` | 미들웨어 Zero Set-Cookie, 24h 캐시, React `cache()`, `encodeURI`         |
-| `src/app/clients/dynamic-renderer/*`         | AI 웹사이트 빌더 (홈/서브/블로그) | `revalidate = 60` | 24h 빌더 캐시, Zero Set-Cookie, React `cache()`                           |
-| `src/app/client-site-builder/page.tsx`       | AI 웹사이트 빌더 홍보 랜딩        | `revalidate = 60` | SEO 메타데이터 + 엣지 캐시                                                |
-| `src/app/infocenter/[[...section]]/page.tsx` | 고객지원 인포센터                 | `revalidate = 60` | FAQ/공지 엣지 캐시                                                        |
-| `src/app/clients/[client_id]/page.tsx`       | 마켓 템플릿 쇼핑 사이트           | `revalidate = 60` | 템플릿 프리뷰 엣지 캐시                                                   |
+| 라우트 경로                                    | 대상 서비스                           | ISR 설정값          | 최적화 기법                                                               |
+| :--------------------------------------------- | :------------------------------------ | :------------------ | :------------------------------------------------------------------------ |
+| `src/app/blog/page.tsx`                      | 본사 공식 블로그 메인                 | `revalidate = 60` | Edge CDN 캐시,`Promise.all` 병렬 쿼리                                   |
+| `src/app/blog/[slug]/page.tsx`               | 본사 블로그 상세 포스트               | `revalidate = 60` | `generateStaticParams`, `cache()`, `PostViewTracker`, `encodeURI` |
+| `src/app/brand/[brand_id]/*`                 | 유저 서브도메인 및 독립 도메인 블로그 | `revalidate = 60` | 미들웨어 Zero Set-Cookie, 24h 캐시, React`cache()`, `encodeURI`       |
+| `src/app/clients/dynamic-renderer/*`         | AI 웹사이트 빌더 (홈/서브/블로그)     | `revalidate = 60` | 24h 빌더 캐시, Zero Set-Cookie, React`cache()`                          |
+| `src/app/client-site-builder/page.tsx`       | AI 웹사이트 빌더 홍보 랜딩            | `revalidate = 60` | SEO 메타데이터 + 엣지 캐시                                                |
+| `src/app/infocenter/[[...section]]/page.tsx` | 고객지원 인포센터                     | `revalidate = 60` | FAQ/공지 엣지 캐시                                                        |
+| `src/app/clients/[client_id]/page.tsx`       | 마켓 템플릿 쇼핑 사이트               | `revalidate = 60` | 템플릿 프리뷰 엣지 캐시                                                   |
 
 ---
 

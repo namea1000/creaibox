@@ -22,7 +22,7 @@ export function getKstTodayDate(): string {
   return kstDate.toISOString().split("T")[0]; // YYYY-MM-DD
 }
 
-export function isShortsDuration(durationStr?: string | null): boolean {
+export function isShortsDuration(durationStr?: string | null, item?: any): boolean {
   if (!durationStr) return false;
   const match = durationStr.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
   if (!match) return false;
@@ -30,7 +30,97 @@ export function isShortsDuration(durationStr?: string | null): boolean {
   const minutes = parseInt(match[2] || "0", 10);
   const seconds = parseInt(match[3] || "0", 10);
   const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-  return totalSeconds > 0 && totalSeconds <= 60;
+  
+  if (totalSeconds <= 0 || totalSeconds > 180) return false;
+
+  const title = (item?.snippet?.title || item?.title || "").toLowerCase();
+  const description = (item?.snippet?.description || item?.description || "").toLowerCase();
+  const channel = (item?.snippet?.channelTitle || item?.channelTitle || "").toLowerCase();
+
+  const hasShortsKeyword = 
+    title.includes("#shorts") || 
+    title.includes("#short") || 
+    title.includes("shorts") || 
+    title.includes("쇼츠") || 
+    title.includes("#숏") ||
+    title.includes("#shortvideo") ||
+    title.includes("#shortsfeed") ||
+    description.includes("#shorts") || 
+    description.includes("#short") || 
+    description.includes("쇼츠");
+
+  const isTopicChannel = channel.includes("- topic") || channel.includes("- 주제") || channel.endsWith("topic") || channel.endsWith("주제");
+  const isOfficialArtist = (channel.includes("official") || channel.includes("공식")) && (title.includes(" - ") || title.includes(" – "));
+  
+  const isMv = 
+    title.includes("music video") ||
+    title.includes("official video") ||
+    title.includes("video oficial") ||
+    title.includes("clip oficial") ||
+    title.includes("lyric video") ||
+    title.includes("official audio") ||
+    title.includes("official song") ||
+    title.includes("official track") ||
+    title.includes("song") ||
+    title.includes(" mv") || 
+    title.includes("mv ") || 
+    title.includes("[mv]") || 
+    title.includes("(mv)") || 
+    title.includes("'mv'") || 
+    title.includes('"mv"') || 
+    title.endsWith("mv") ||
+    title.includes("m/v") || 
+    title.includes("뮤직비디오") || 
+    title.includes("뮤비") || 
+    title.includes("visualizer") || 
+    title.includes("audio") || 
+    title.includes("음원");
+
+  const isAnimationOrCinematic = 
+    title.includes("animation") || 
+    title.includes("animated") || 
+    title.includes("cinematic") || 
+    title.includes("애니메이션") || 
+    title.includes("origin story") || 
+    title.includes("short film") || 
+    title.includes("단편영화");
+
+  const isNewsOrBroadcast = 
+    title.includes("news") || 
+    title.includes("뉴스") || 
+    title.includes("interview") || 
+    title.includes("인터뷰") || 
+    channel.includes("news") || 
+    channel.includes("뉴스") || 
+    title.includes("episode") || 
+    title.includes("ep.") || 
+    title.includes("에피소드");
+
+  const isLiveOrStage = 
+    title.includes("live clip") || 
+    title.includes("라이브") || 
+    title.includes("on the spot") || 
+    title.includes("온더스팟") || 
+    title.includes("stage") || 
+    title.includes("스페셜") || 
+    title.includes("special clip") || 
+    title.includes("performance video") || 
+    title.includes("퍼포먼스");
+
+  const isTeaserOrTrailer = 
+    title.includes("예고편") || 
+    title.includes("teaser") || 
+    title.includes("trailer") || 
+    title.includes("풀버전") || 
+    title.includes("full ver") || 
+    title.includes("풀영상") || 
+    title.includes("하이라이트") || 
+    title.includes("highlight");
+
+  const isExplicitLongform = (isTopicChannel || isOfficialArtist || isMv || isAnimationOrCinematic || isNewsOrBroadcast || isLiveOrStage || isTeaserOrTrailer) && !hasShortsKeyword;
+
+  if (isExplicitLongform) return false;
+  return true; // 🚀 3분 이하는 기본 100% 쇼츠 판정 (가로 예고편/MV/공식음원/애니/라이브 제외)
 }
 
 /**
@@ -140,7 +230,7 @@ export async function fetchAndCacheTrending(categoryId: string, date: string = g
   }
 
   const enrichedItems = items.map((item: any) => {
-    const isRealShorts = isShortsDuration(item.contentDetails?.duration);
+    const isRealShorts = isShortsDuration(item.contentDetails?.duration, item);
     return {
       ...item,
       isRealShorts,

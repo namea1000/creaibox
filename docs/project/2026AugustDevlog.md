@@ -1036,3 +1036,9 @@
   - **미들웨어 `Set-Cookie` 주입 전면 배제 (`src/proxy.ts`)**: 공개 테넌트 블로그(`smilekang.creaibox.com`), 독립 도메인(`downhubs.com`, `golfgosu.net`), AI 웹사이트 빌더 리라이트 시 미들웨어의 쿠키 주입(`rewriteResponse.cookies.set`)을 차단하여, Vercel Global Edge CDN이 응답을 캐시하지 못하고 매번 1초짜리 SSR을 돌리던 현상을 원천 해결.
   - **24시간 인메모리 캐시 맵 가동 (`src/proxy.ts`)**: `customDomainCache`, `subdomainRedirectCache`, `dynamicClientCache`, `staticClientApprovedCache`를 구축하여 도메인/빌더 라우팅 확인 시 발생하는 DB 왕복 지연을 0ms로 압축. (도메인 승인/변경 시에만 온디맨드 즉시 갱신)
   - **테넌트 블로그 및 동적 렌더러 DB 쿼리 React `cache()` 통합 (`brand/[brand_id]/page.tsx`, `dynamic-renderer/.../page.tsx`)**: 프로필 조회 및 사이트 설정을 React `cache()`로 감싸 동일 렌더링 사이클 내 중복 쿼리를 완전히 제거하고 0.01초 광속 서빙 완성.
+- **25. 유튜브 급상승 영상 트렌드 2단 필터 허브 & 3분 쇼츠/가로 예고편 스마트 분리 엔진 (`RisingVideos.tsx`, `PopularVideos.tsx`, `/api/youtube`)**:
+  - **상단 원본 헤더 박스 보존 & 2단 컴팩트 필터 허브**: "AI 급상승 영상 트렌드 분석 리포트" 고유 헤더를 온전히 유지하고, 좌측 3단 포맷 탭(150px)과 우측 2줄(12개국 국가 + 13개 카테고리) 탭의 상하 여백을 완벽한 정중앙으로 밀착 정렬.
+  - **스마트 3분 쇼츠 & 역발상 화이트리스트 판별 엔진 탑재**:
+    - **3분 이하(≤180초) 기본 100% 쇼츠 판정**: 크리에이터가 제목에 `#Shorts` 해시태그를 기재하지 않는 실제 업로드 패턴(예: `이게 차냐 (1:48)`, `엄청 기발한 수건?! (1:01)`, `박재범 몸 만드는데 (1:02)`, `폴드8 (1:13)`)을 완벽 수용하여 3분 이하는 해시태그 유무와 무관하게 ⚡ 쇼츠 탭으로 100% 자동 분류.
+    - **글로벌 가로 기획물 화이트리스트 정밀 예외 처리 (Global White-list)**: 3분 이하 중에서도 글로벌 풀네임 `Official Music Video`, `Official Video`, `Video Oficial (스페인/남미)`, `Official Song`, `Song`, 단독 `MV`, 공식 아티스트 신곡(예: `King Gnu - GO GHOST`), 공식 음원(`- Topic` / `- 주제`), 게임/브랜드 공식 애니메이션(`Animation`, `Origin Story`), 뉴스/인터뷰(`E! News`, `News`, `Interview`), 무대/라이브(`Live Clip`, `On the Spot`), 영화 예고편/티저 등의 명시적 16:9 가로 기획물만 🎬 일반 동영상으로 완벽하게 보존.
+  - **실시간 포맷별 수량 카운트 뱃지 & 0ms 인스턴트 필터링**: 수집된 영상의 지능형 판별 결과를 기반으로 `전체`, `일반 동영상`, `유튜브 쇼츠` 수량을 실시간 뱃지로 표기하고 0초 만에 분리 서빙.
