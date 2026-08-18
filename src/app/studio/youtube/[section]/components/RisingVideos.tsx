@@ -167,6 +167,7 @@ export interface CountryItem {
 }
 
 export const ALL_COUNTRIES: CountryItem[] = [
+  { code: "GL", name: "전세계", flag: "🌐", region: "top", isTop: true },
   { code: "KR", name: "대한민국", flag: "🇰🇷", region: "top", isTop: true },
   { code: "US", name: "미국", flag: "🇺🇸", region: "top", isTop: true },
   { code: "JP", name: "일본", flag: "🇯🇵", region: "top", isTop: true },
@@ -208,7 +209,7 @@ export default function RisingVideos() {
   const [error, setError] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState("all");
   const [selectedDate, setSelectedDate] = useState(() => getKstTodayDateStr());
-  const [selectedCountry, setSelectedCountry] = useState("KR");
+  const [selectedCountry, setSelectedCountry] = useState("GL");
   const [selectedRegionGroup, setSelectedRegionGroup] = useState("top");
 
   // 🌟 [신규] 영상 포맷 필터: 'all' (전체) | 'video' (일반 동영상) | 'shorts' (유튜브 쇼츠)
@@ -438,29 +439,99 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
     try {
       let result: any = null;
 
-      // 1-Step: Check Supabase DB Cache first
-      if (!force) {
-        try {
-          const cacheCheckRes = await fetch(`/api/youtube?type=trending&categoryId=${catId}&date=${targetDate}&country=${country}&cacheOnly=true`);
-          if (cacheCheckRes.ok) {
-            const cacheJson = await cacheCheckRes.json();
-            if (cacheJson && cacheJson.data && Array.isArray(cacheJson.data) && cacheJson.data.length > 0) {
-              result = cacheJson;
-            }
-          }
-        } catch (cacheErr) {
-          console.warn("DB Cache check error:", cacheErr);
-        }
-      }
+      if (country === "GL") {
+        setLoadingStatus("db");
+        const res = await fetch(`/api/youtube?type=trending-bundle&date=${targetDate}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.bundle && typeof json.bundle === "object") {
+            const bundleObj = json.bundle;
+            
+            let allVideos: any[] = [];
+            Object.keys(bundleObj).forEach(key => {
+              const parts = key.split("_");
+              if (parts.length >= 2) {
+                const cCode = parts[0];
+                const cCat = key.slice(cCode.length + 1);
+                if (cCat === catId && Array.isArray(bundleObj[key])) {
+                  allVideos = allVideos.concat(bundleObj[key]);
+                }
+              }
+            });
 
-      // 2-Step: If DB Cache Miss (or force refresh), switch status to YouTube API live fetch!
-      if (!result) {
-        setLoadingStatus("youtube");
-        const res = await fetch(`/api/youtube?type=trending&categoryId=${catId}&date=${targetDate}&country=${country}${force ? '&force=true' : ''}`);
-        if (!res.ok) throw new Error("급상승 비디오 리스트를 가져오는데 실패했습니다.");
-        result = await res.json();
-        if (result.error) {
-          throw new Error(result.error);
+            if (allVideos.length === 0 && catId !== "all") {
+              Object.keys(bundleObj).forEach(key => {
+                const parts = key.split("_");
+                if (parts.length >= 2) {
+                  const cCode = parts[0];
+                  const cCat = key.slice(cCode.length + 1);
+                  if (cCat === "all" && Array.isArray(bundleObj[key])) {
+                    const filtered = bundleObj[key].filter(v => v.categoryId === catId || v?.snippet?.categoryId === catId);
+                    allVideos = allVideos.concat(filtered);
+                  }
+                }
+              });
+            }
+
+            const uniqueVideosMap = new Map();
+            allVideos.forEach(v => {
+              if (v && v.id) {
+                if (!uniqueVideosMap.has(v.id)) {
+                  uniqueVideosMap.set(v.id, { ...v, globalCount: 1 });
+                } else {
+                  uniqueVideosMap.get(v.id).globalCount += 1;
+                }
+              }
+            });
+            
+            let uniqueVideos = Array.from(uniqueVideosMap.values());
+            
+            uniqueVideos.sort((a, b) => {
+               if (b.globalCount !== a.globalCount) {
+                  return b.globalCount - a.globalCount;
+               }
+               const viewA = parseInt(a.statistics?.viewCount || a.viewCount || "0", 10);
+               const viewB = parseInt(b.statistics?.viewCount || b.viewCount || "0", 10);
+               return viewB - viewA;
+            });
+
+            uniqueVideos = uniqueVideos.slice(0, 100);
+
+            result = {
+              source: "Global Merge",
+              data: uniqueVideos,
+              analyzedVideoIds: json.analyzedVideoIds || []
+            };
+          }
+        }
+        if (!result || !result.data || result.data.length === 0) {
+           throw new Error("글로벌 통합 데이터를 생성할 수 없습니다. (아직 12개국 수집 전이거나 트렌드 데이터가 없습니다)");
+        }
+      } else {
+        // 1-Step: Check Supabase DB Cache first
+        if (!force) {
+          try {
+            const cacheCheckRes = await fetch(`/api/youtube?type=trending&categoryId=${catId}&date=${targetDate}&country=${country}&cacheOnly=true`);
+            if (cacheCheckRes.ok) {
+              const cacheJson = await cacheCheckRes.json();
+              if (cacheJson && cacheJson.data && Array.isArray(cacheJson.data) && cacheJson.data.length > 0) {
+                result = cacheJson;
+              }
+            }
+          } catch (cacheErr) {
+            console.warn("DB Cache check error:", cacheErr);
+          }
+        }
+
+        // 2-Step: If DB Cache Miss (or force refresh), switch status to YouTube API live fetch!
+        if (!result) {
+          setLoadingStatus("youtube");
+          const res = await fetch(`/api/youtube?type=trending&categoryId=${catId}&date=${targetDate}&country=${country}${force ? '&force=true' : ''}`);
+          if (!res.ok) throw new Error("급상승 비디오 리스트를 가져오는데 실패했습니다.");
+          result = await res.json();
+          if (result.error) {
+            throw new Error(result.error);
+          }
         }
       }
 
@@ -518,7 +589,7 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
 
 
   useEffect(() => {
-    fetchTrending("all", getKstTodayDateStr(), "KR");
+    fetchTrending("all", getKstTodayDateStr(), "GL");
   }, []);
 
   const handleBulkSync = async () => {
@@ -571,7 +642,7 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
 
   const getCountryName = (code: string) => {
     const c = ALL_COUNTRIES.find((x) => x.code === code);
-    return c ? `${c.name}(${c.code})` : "대한민국(KR)";
+    return c ? (c.code === "GL" ? "글로벌 통합(Global)" : `${c.name}(${c.code})`) : "글로벌 통합(Global)";
   };
 
   // Timeline navigation shift helper
