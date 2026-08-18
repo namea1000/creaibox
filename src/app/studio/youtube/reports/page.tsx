@@ -23,7 +23,7 @@ import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import VideoAnalysisModal from "../[section]/components/VideoAnalysisModal";
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 30;
 
 type ReportRow = {
   id: string;
@@ -225,7 +225,7 @@ export default function YoutubeReportsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#060608] px-6 py-8 text-zinc-100 space-y-6">
+    <div className="space-y-6">
       {/* 🚀 상단 헤더 */}
       <div className="flex flex-col gap-2">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
@@ -339,17 +339,17 @@ export default function YoutubeReportsPage() {
         <table className="w-full border-collapse text-[14px]">
           <thead>
             <tr className="border-b border-amber-300/30 bg-amber-400/15 text-left text-[14px] font-black uppercase tracking-wider text-amber-100">
-              <th className="w-14 px-3 py-3.5 text-center">번호</th>
-              <th className="w-20 px-3 py-3.5 text-center">썸네일</th>
-              <th className="min-w-[240px] px-4 py-3.5">영상 제목</th>
-              <th className="w-28 px-3 py-3.5 text-center">구분</th>
-              <th className="w-28 px-3 py-3.5 text-center">카테고리</th>
-              <th className="w-40 px-3 py-3.5 text-center">채널명</th>
-              <th className="w-24 px-3 py-3.5 text-center">조회수</th>
-              <th className="w-24 px-3 py-3.5 text-center">좋아요수</th>
-              <th className="w-24 px-3 py-3.5 text-center">댓글수</th>
-              <th className="w-28 px-3 py-3.5 text-center">상태</th>
-              <th className="w-36 px-3 py-3.5 text-center">분석일</th>
+              <th className="whitespace-nowrap w-14 px-3 py-3.5 text-center">번호</th>
+              <th className="whitespace-nowrap w-20 px-3 py-3.5 text-center">썸네일</th>
+              <th className="whitespace-nowrap min-w-[240px] px-4 py-3.5">영상 제목</th>
+              <th className="whitespace-nowrap w-28 px-3 py-3.5 text-center">구분</th>
+              <th className="whitespace-nowrap w-28 px-3 py-3.5 text-center">카테고리</th>
+              <th className="whitespace-nowrap w-40 px-3 py-3.5 text-center">채널명</th>
+              <th className="whitespace-nowrap w-24 px-3 py-3.5 text-center">조회수</th>
+              <th className="whitespace-nowrap w-24 px-3 py-3.5 text-center">좋아요수</th>
+              <th className="whitespace-nowrap w-24 px-3 py-3.5 text-center">댓글수</th>
+              <th className="whitespace-nowrap w-28 px-3 py-3.5 text-center">상태</th>
+              <th className="whitespace-nowrap w-36 px-3 py-3.5 text-center">분석일</th>
             </tr>
           </thead>
 
@@ -395,9 +395,9 @@ export default function YoutubeReportsPage() {
                   onClick={() => handleOpenReport(report)}
                   className="group cursor-pointer border-b border-white/5 align-middle transition odd:bg-white/[0.01] even:bg-white/[0.02] hover:bg-orange-500/10"
                 >
-                  <td className="px-3 py-3.5 text-center text-zinc-400 font-bold">{rowNumber}</td>
+                  <td className="whitespace-nowrap px-3 py-3.5 text-center text-zinc-400 font-bold">{rowNumber}</td>
 
-                  <td className="px-3 py-3.5 text-center align-middle">
+                  <td className="whitespace-nowrap px-3 py-3.5 text-center align-middle">
                     <div className="relative inline-block h-12 w-20 overflow-hidden rounded bg-zinc-950 border border-zinc-800">
                       <Image
                         src={thumbnail}
@@ -423,7 +423,7 @@ export default function YoutubeReportsPage() {
                     </button>
                   </td>
 
-                  <td className="px-3 py-3.5 text-center align-middle">
+                  <td className="whitespace-nowrap px-3 py-3.5 text-center align-middle">
                     {isPopular ? (
                       <span className="inline-flex items-center justify-center gap-1 rounded-md border border-yellow-500/40 bg-yellow-500/20 px-2.5 py-1 text-xs font-black text-yellow-300 shadow">
                         <Trophy size={11} className="text-yellow-400" />
@@ -437,31 +437,31 @@ export default function YoutubeReportsPage() {
                     )}
                   </td>
 
-                  <td className="px-3 py-3.5 text-center align-middle">
+                  <td className="whitespace-nowrap px-3 py-3.5 text-center align-middle">
                     <span className="inline-flex border border-zinc-800 bg-zinc-900 px-2 py-0.5 text-xs font-bold text-zinc-300 rounded">
                       {categoryName}
                     </span>
                   </td>
 
                   {/* Channel Title */}
-                  <td className="px-4 py-3.5 text-center text-zinc-300 font-bold align-middle">
+                  <td className="whitespace-nowrap px-4 py-3.5 text-center text-zinc-300 font-bold align-middle">
                     {channel}
                   </td>
 
                   {/* Stats */}
-                  <td className="px-4 py-3.5 text-center text-zinc-400 font-bold align-middle">
+                  <td className="whitespace-nowrap px-4 py-3.5 text-center text-zinc-400 font-bold align-middle">
                     <span className="flex items-center justify-center gap-1">
                       <Eye size={12} className="text-zinc-500" />
                       {formatNumber(viewCount)}
                     </span>
                   </td>
-                  <td className="px-4 py-3.5 text-center text-zinc-400 font-bold align-middle">
+                  <td className="whitespace-nowrap px-4 py-3.5 text-center text-zinc-400 font-bold align-middle">
                     <span className="flex items-center justify-center gap-1">
                       <ThumbsUp size={12} className="text-zinc-500" />
                       {formatNumber(likeCount)}
                     </span>
                   </td>
-                  <td className="px-4 py-3.5 text-center text-zinc-400 font-bold align-middle">
+                  <td className="whitespace-nowrap px-4 py-3.5 text-center text-zinc-400 font-bold align-middle">
                     <span className="flex items-center justify-center gap-1">
                       <MessageSquare size={12} className="text-zinc-500" />
                       {formatNumber(commentCount)}
@@ -469,14 +469,14 @@ export default function YoutubeReportsPage() {
                   </td>
 
                   {/* Status Badge */}
-                  <td className="px-4 py-3.5 text-center align-middle">
+                  <td className="whitespace-nowrap px-4 py-3.5 text-center align-middle">
                     <span className="inline-flex border border-orange-500/30 bg-orange-500/10 px-2.5 py-1 text-xs font-black text-orange-300 rounded">
                       AI 분석 완료
                     </span>
                   </td>
 
                   {/* Creation Date */}
-                  <td className="px-4 py-3.5 text-center text-zinc-400 font-bold align-middle">
+                  <td className="whitespace-nowrap px-4 py-3.5 text-center text-zinc-400 font-bold align-middle">
                     {formatDisplayDate(report.created_at)}
                   </td>
                 </tr>

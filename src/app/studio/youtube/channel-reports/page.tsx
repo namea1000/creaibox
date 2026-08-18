@@ -23,7 +23,7 @@ import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import VideoAnalysisModal from "../[section]/components/VideoAnalysisModal";
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 30;
 
 type ReportRow = {
   id: string;
@@ -262,7 +262,7 @@ export default function YoutubeChannelReportsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#060608] px-6 py-8 text-zinc-100 space-y-6">
+    <div className="space-y-6">
       {/* 🚀 상단 헤더 */}
       <div className="flex flex-col gap-2">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
@@ -401,17 +401,17 @@ export default function YoutubeChannelReportsPage() {
         <table className="w-full border-collapse text-[14px]">
           <thead>
             <tr className="border-b border-cyan-300/30 bg-cyan-400/15 text-left text-[14px] font-black uppercase tracking-wider text-cyan-100">
-              <th className="w-16 px-4 py-3.5 text-center">번호</th>
-              <th className="w-24 px-4 py-3.5 text-center">썸네일</th>
-              <th className="min-w-[280px] px-4 py-3.5">영상 제목</th>
-              <th className="w-28 px-4 py-3.5 text-center">국가</th>
-              <th className="w-32 px-4 py-3.5 text-center">카테고리</th>
-              <th className="w-44 px-4 py-3.5 text-center">채널명</th>
-              <th className="w-28 px-4 py-3.5 text-center">조회수</th>
-              <th className="w-28 px-4 py-3.5 text-center">좋아요수</th>
-              <th className="w-28 px-4 py-3.5 text-center">댓글수</th>
-              <th className="w-32 px-4 py-3.5 text-center">상태</th>
-              <th className="w-44 px-4 py-3.5 text-center">분석일</th>
+              <th className="whitespace-nowrap w-16 px-4 py-3.5 text-center">번호</th>
+              <th className="whitespace-nowrap w-24 px-4 py-3.5 text-center">썸네일</th>
+              <th className="whitespace-nowrap min-w-[280px] px-4 py-3.5">영상 제목</th>
+              <th className="whitespace-nowrap w-28 px-4 py-3.5 text-center">국가</th>
+              <th className="whitespace-nowrap w-32 px-4 py-3.5 text-center">카테고리</th>
+              <th className="whitespace-nowrap w-44 px-4 py-3.5 text-center">채널명</th>
+              <th className="whitespace-nowrap w-28 px-4 py-3.5 text-center">조회수</th>
+              <th className="whitespace-nowrap w-28 px-4 py-3.5 text-center">좋아요수</th>
+              <th className="whitespace-nowrap w-28 px-4 py-3.5 text-center">댓글수</th>
+              <th className="whitespace-nowrap w-32 px-4 py-3.5 text-center">상태</th>
+              <th className="whitespace-nowrap w-44 px-4 py-3.5 text-center">분석일</th>
             </tr>
           </thead>
 
@@ -454,8 +454,8 @@ export default function YoutubeChannelReportsPage() {
                   onClick={() => handleOpenReport(report)}
                   className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition"
                 >
-                  <td className="px-4 py-3 text-center text-zinc-500 font-bold">{rowNumber}</td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="whitespace-nowrap px-4 py-3 text-center text-zinc-500 font-bold">{rowNumber}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-center">
                     <div className="relative mx-auto h-10 w-16 overflow-hidden rounded border border-white/15 bg-zinc-900">
                       <Image
                         src={thumbnail}
@@ -470,29 +470,29 @@ export default function YoutubeChannelReportsPage() {
                   <td className="px-4 py-3 font-semibold text-zinc-100 max-w-[340px] truncate" title={title}>
                     {title}
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="whitespace-nowrap px-4 py-3 text-center">
                     <span className="inline-flex rounded-full bg-zinc-800 border border-zinc-700/60 px-2 py-0.5 text-[11px] font-black text-zinc-300 gap-1 items-center">
                       <span className="text-xs leading-none">{COUNTRY_MAP[report.country || "KR"]?.flag || "🇰🇷"}</span>
                       <span>{COUNTRY_MAP[report.country || "KR"]?.name || "대한민국"}</span>
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="whitespace-nowrap px-4 py-3 text-center">
                     <span className="inline-flex rounded-full bg-cyan-950/40 border border-cyan-900/40 px-2.5 py-0.5 text-[11px] font-black text-cyan-400">
                       {categoryName}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center font-bold text-zinc-300 max-w-[150px] truncate" title={channel}>
+                  <td className="whitespace-nowrap px-4 py-3 text-center font-bold text-zinc-300 max-w-[150px] truncate" title={channel}>
                     {channel}
                   </td>
-                  <td className="px-4 py-3 text-center text-zinc-300 font-bold">{formatNumber(viewCount)}</td>
-                  <td className="px-4 py-3 text-center text-zinc-300 font-bold">{formatNumber(likeCount)}</td>
-                  <td className="px-4 py-3 text-center text-zinc-300 font-bold">{formatNumber(commentCount)}</td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="whitespace-nowrap px-4 py-3 text-center text-zinc-300 font-bold">{formatNumber(viewCount)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-center text-zinc-300 font-bold">{formatNumber(likeCount)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-center text-zinc-300 font-bold">{formatNumber(commentCount)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-center">
                     <span className="inline-flex rounded bg-[#20202d] px-2 py-0.5 text-[10px] font-black text-[#58ad7a] border border-[#2b2b3d]">
                       AI 분석 완료
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center text-zinc-400 font-bold text-xs">
+                  <td className="whitespace-nowrap px-4 py-3 text-center text-zinc-400 font-bold text-xs">
                     {formatDisplayDate(report.created_at)}
                   </td>
                 </tr>
