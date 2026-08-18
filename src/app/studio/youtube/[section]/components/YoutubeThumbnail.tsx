@@ -7,6 +7,24 @@ export default function YoutubeThumbnail() {
   const [url, setUrl] = useState("");
   const [videoId, setVideoId] = useState<string | null>("W4LhfsQTi5E");
 
+  const downloadImage = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download failed", error);
+      alert("다운로드에 실패했습니다. '열기' 버튼을 눌러 새 탭에서 이미지를 우클릭으로 저장해주세요.");
+    }
+  };
+
   const handleExtract = (e: React.FormEvent) => {
     e.preventDefault();
     if (!url.trim()) return;
@@ -75,15 +93,12 @@ export default function YoutubeThumbnail() {
                 <h3 className="text-xs font-black text-slate-900 dark:text-zinc-100 mt-0.5">최대 해상도 (HD 1080p)</h3>
               </div>
               <div className="flex gap-2">
-                <a
-                  href={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
-                  download={`thumbnail_${videoId}_max.jpg`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex h-8 items-center gap-1 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800/50 px-3 text-[10px] font-bold text-slate-600 dark:text-zinc-300 transition"
+                <button
+                  onClick={() => downloadImage(`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`, `thumbnail_${videoId}_max.jpg`)}
+                  className="inline-flex h-8 items-center gap-1 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800/50 px-3 text-[10px] font-bold text-slate-600 dark:text-zinc-300 transition cursor-pointer"
                 >
                   이미지 저장 <Download size={10} />
-                </a>
+                </button>
                 <a
                   href={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
                   target="_blank"
@@ -116,15 +131,12 @@ export default function YoutubeThumbnail() {
                 <h3 className="text-xs font-black text-slate-900 dark:text-zinc-100 mt-0.5">표준 해상도 (SD 720p)</h3>
               </div>
               <div className="flex gap-2">
-                <a
-                  href={`https://img.youtube.com/vi/${videoId}/sddefault.jpg`}
-                  download={`thumbnail_${videoId}_sd.jpg`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex h-8 items-center gap-1 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800/50 px-3 text-[10px] font-bold text-slate-600 dark:text-zinc-300 transition"
+                <button
+                  onClick={() => downloadImage(`https://img.youtube.com/vi/${videoId}/sddefault.jpg`, `thumbnail_${videoId}_sd.jpg`)}
+                  className="inline-flex h-8 items-center gap-1 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800/50 px-3 text-[10px] font-bold text-slate-600 dark:text-zinc-300 transition cursor-pointer"
                 >
                   이미지 저장 <Download size={10} />
-                </a>
+                </button>
                 <a
                   href={`https://img.youtube.com/vi/${videoId}/sddefault.jpg`}
                   target="_blank"
