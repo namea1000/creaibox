@@ -61,8 +61,11 @@ export default function YoutubeVideoSearch() {
         <h1 className="text-[26px] font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
           유튜브 영상 검색
         </h1>
-        <p className="text-[15px] text-slate-500 dark:text-zinc-400">
-          유튜브 내 키워드, 채널명, 인기 해시태그를 대조하여 트렌드 파괴력이 높은 최적의 인기 영상을 추적합니다.
+        <p className="text-[15px] text-slate-500 dark:text-zinc-400 mt-1 leading-relaxed">
+          유튜브 내 키워드, 채널명, 인기 해시태그를 대조하여 트렌드 파괴력이 높은 최적의 인기 영상을 추적합니다.<br />
+          <span className="text-xs text-slate-400 dark:text-zinc-500 mt-1 inline-block">
+            * 1차로 검색 키워드 기반 비디오 ID 24개를 추출한 뒤, 2차로 통계 API(조회수, 좋아요, 영상 길이 등)를 호출하여 실제 데이터를 조립합니다.
+          </span>
         </p>
       </div>
 
