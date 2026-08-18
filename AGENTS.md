@@ -8,6 +8,7 @@ always review:
 Additional references:
 
 @docs/rules/*
+@docs/rules/studio-ui-design-standard-rules.md
 @docs/arch/*
 @docs/api/*
 @docs/pages/*
@@ -46,6 +47,7 @@ When creating how-to guides or operation manuals (e.g., "~ 하는 방법", "매�
 - 아키텍처 기술 명세서 (`docs/arch/`)와 서비스 실무 매뉴얼 (`docs/project/manual/`)을 절대 동일한 내용으로 중복 작성하지 않고 역할과 목적을 100% 명확히 분리하여 작성한다.
 - 아키텍처 문서 (`docs/arch/`)는 시스템 설계자/개발자 관점의 Mermaid 다이어그램, 시퀀스/데이터 파이프라인, 내부 알고리즘, 응답 헤더 스펙 등 **심도 깊은 기술 명세서**로 작성한다.
 - 실무 매뉴얼 (`docs/project/manual/`)은 기획자/실무 개발자 관점의 HOW-TO 실전 가이드, 바로 복사 가능한 추천 코드 예시, 금지 패턴(Anti-Patterns), FAQ 등 **실전 운용 가이드**로 차별화 작성한다.
+- **매뉴얼 작성 디테일 룰**: 매뉴얼 작성 시 내용을 단순히 요약하거나 생략하지 말고, 사용자 인터페이스, **표(Table)** 등 필요한 서식을 적극적으로 활용하여 **최대한 디테일하고 자세하게** 기록해야 한다.
 
 ### Mandatory Secret Key Masking Rule in Documentation (문서 내 실제 보안키 및 시크릿 노출 100% 절대 금지 규칙)
 - 공용 문서(`.md`), 아키텍처 명세서, 가이드 및 매뉴얼 파일 작성 시 실제 운영/테스트용 보안키(API Secret, Service Account Private Key, OAuth Secret 등)를 절대로 원문 그대로 노출해 작성하지 않는다.

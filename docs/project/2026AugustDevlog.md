@@ -1620,3 +1620,16 @@
   - 버튼 클릭(선택) 시 외곽 링(ring)과 폰트 굵기 차이로 인해 해당 줄(Row) 전체의 세로 높이가 미세하게 늘어나던 레이아웃 시프트 버그 수정.
   - 전 버튼에 고정 높이 `h-[50px]`, `leading-none`, 1px 고정 테두리, 일관된 flex 정렬을 적용하여 어떤 버튼을 선택하더라도 줄 높이가 0.1px도 변하지 않고 견고하게 고정되도록 개선.
 - `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-18 (완료): 스튜디오 도메인 메뉴 Vercel 와이드 UI/UX 전면 개편 및 실서버 이메일 연동 에러 수정
+
+**작업 내용**
+- `src/app/studio/domain-search/*`:
+  - 기존 도메인 관련 메뉴를 6개의 독립 서브페이지(도메인 검색 & 구매, 타사 도메인 이관, 커스텀 이메일 연동, 도메인 가격 비교표, 도메인 정책 & 혜택, 자주 묻는 질문)로 분리.
+  - Vercel, Supabase 스타일의 쾌적한 와이드 표준(`max-w-[1680px]`) 및 패딩 최적화(`px-5 sm:px-8 lg:px-12`), 모노톤(블랙&화이트) 디자인 시스템 적용.
+- `src/app/studio/domain-search/components/EmailForwardingManager.tsx`:
+  - 이메일 포워딩 UI 고도화. 빠른 별칭(Alias) 프리셋 제공, SPF/DKIM/MX 레코드 확인용 모달 추가.
+- `src/app/api/email-forwarding/route.ts`:
+  - 실서버(Vercel) 배포 시 빌드 타임 정적 캐싱으로 인한 인증 에러(401)를 방지하기 위해 `export const dynamic = "force-dynamic";` 추가.
+- 연관 2대 문서 동시 최신화 완료 (`domain-search-and-management-architecture.md`, `domain-search-and-management-manual.md` 신규 작성).
+- `npx tsc --noEmit` 0 에러 통과 및 Vercel 배포 완료.
