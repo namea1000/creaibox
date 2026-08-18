@@ -4,7 +4,29 @@
 
 ---
 
-## 1. 🌐 기존 홈페이지 이관 '영상/이미지/언어' 초정밀 복제 고도화
+## 1. 🎨 블로그 카드 박스 스타일 커스텀 (Card Box Styler) & 3열 그리드 맞춤 노출 개수 설정
+
+### 주요 구현 결과
+- **블로그 카드 박스 스타일러 탑재 (`src/app/studio/writing/creaibox/blog-management/page.tsx`)**:
+  - **테두리 굵기 (Border Width)**: 0px(없음) ~ 4px(볼드) 5단계 선택
+  - **모서리 둥글기 (Corner Radius)**: 0px(직각) ~ 24px(알약) 6단계 선택
+  - **테두리 라인 컬러 (Border Color)**: 기본 자동, 연회색, 슬레이트, 다크그레이, 블랙, 블루, 퍼플, 에메랄드, 앰버 프리셋 + 커스텀 컬러피커 및 HEX 입력기
+  - **안쪽 배경색 (Card Background Color)**: 라이트 모드(화이트, 크림, 슬레이트라이트) 및 다크 모드(네이비, 차콜, 블랙, 슬레이트) 전용 팔레트
+  - **썸네일 배치 스타일 (Thumbnail Layout)**: 상단/좌우 꽉 찬형(**Full Bleed**) vs 카드 내부 여백 및 둥근 전용 박스형(**Inset Pad**) 선택 지원
+  - **실시간 라이브 프리뷰**: Light/Dark 테마 토글과 함께 굵기, 각도, 색상, 썸네일 배치 스타일이 100% 즉시 반영되는 반응형 미니 프리뷰 카드
+- **3열 그리드 맞춤 노출 개수 설정**:
+  - 3개 단위(3, 6, 9, ... 최대 60개)로 카드 목록의 표시 개수를 선택할 수 있는 20개 셀렉터 버튼 그리드
+  - 선택 시 레이아웃 흔들림 없는 고정 높이(`h-[50px]`) 및 모던 하이라이트 UI
+- **전역 블로그 뷰 실시간 바인딩 (`BlogClientWrapper.tsx`, `CategoryClientWrapper.tsx`, `src/app/blog/page.tsx`)**:
+  - 사용자 브랜드 블로그 및 공식 메인 블로그의 List / Card 템플릿에 `style={customCardStyle}` 실시간 렌더링
+  - `SmartIntentLink` 0.01초 가속 네비게이션 표준 유지 및 모바일 풀와이드 반응형 완벽 호환
+  - **하단 푸터 세로 중앙 정렬 최적화**: 날짜 및 "글 더보기 →"가 상단 구분선(`border-t`)과 하단 카드 박스 테두리선 사이에서 위로 치우치지 않고 정중앙(`border-t px-6 py-4`)에 완벽 배치되도록 구조 개편
+  - **썸네일 배치 모드(Full Bleed / Inset Pad) 완벽 분기 렌더링**
+- **검증**: `npx tsc --noEmit` 전체 컴파일 0 에러 완료.
+
+---
+
+## 2. 🌐 기존 홈페이지 이관 '영상/이미지/언어' 초정밀 복제 고도화
 
 ### 주요 구현 결과
 - **프롬프트 룰 전면 강화**: `src/app/api/studio/site-migration/route.ts`의 PRO-CLONING 룰 개편으로 원본 동영상, 지연 로딩(Lazy-loading) 고화질 이미지, 원본 영어 메뉴 이름 100% 보존.
@@ -1036,3 +1058,114 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
   - HTML 분석 프롬프트 크기를 핵심 45,000자로 최적화하여 Vertex AI 2~3초 내 응답 보장.
   - AI 통신 및 파싱 경고 발생 시에도 500 에러로 중단되지 않고 기본 템플릿 섹션으로 무중단 자동 복구.
 - `npx tsc --noEmit` 0 에러 검증 통과.
+
+## 2026-08-18 (완료): 스튜디오 헤드탑(StudioTopbar) 스크롤바 100% 제거 및 일체형 프리미엄 버튼 바 개선
+
+**작업 내용**
+- `src/components/studio/StudioTopbar.tsx`:
+  - **스크롤바 트랙 원천 차단**: `custom-scrollbar` 클래스를 제거하고 크로스 브라우징(`[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden`)을 적용하여 상하(`▲`/`▼`), 좌우(`◀`/`▶`) 회색 스크롤바 트랙과 외곽선이 브라우저에 노출되지 않도록 영구 차단.
+  - **헤드탑 일체형 탭 디자인 적용**: 투박한 이중 회색 박스 테두리를 걷어내고, 스튜디오 헤더 배경(`bg-white/95 dark:bg-[#090b10]/95`)과 자연스럽게 녹아드는 미니멀 알약 탭(`rounded-lg px-3 text-xs font-semibold`)으로 전면 정돈.
+  - **현재 페이지 활성 상태 하이라이트**: `pathname`과 일치하는 메뉴는 은은한 컬러 틴트(`bg-sky-500/10 text-sky-400 border-sky-500/30`)로 활성화되어 직관적인 네비게이션 경험 제공.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-18 (완료): 스튜디오 헤드탑(StudioTopbar) 배경 컬러 차별화 및 고대비 선명한 텍스트 탭 개선
+
+**작업 내용**
+- `src/components/studio/StudioTopbar.tsx`:
+  - **사이드바와 차별화된 딥슬레이트 바 배경 적용**: `bg-zinc-100/90 dark:bg-[#0c101a] border-b border-zinc-200 dark:border-slate-800/80`로 사이드바(`#06080d`) 및 메인 캔버스와 명확하게 구분되는 품격 있는 헤드탑 영역 구축.
+  - **초고대비 선명한 텍스트 & 탭 버튼**: 회색이 흐릿하게 묻히던 탭을 `dark:bg-[#161d2d] dark:text-zinc-100 hover:text-white border-slate-700 text-[13px] font-bold`로 강화하여 글자가 선명하고 뚜렷하게 보이도록 개선.
+  - **활성 탭 및 비비드 아이콘 강화**: 15px 선명한 비비드 컬러 아이콘(Cyan, Blue, Amber, Emerald, Purple) 적용.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-18 (완료): 스튜디오 헤드탑(StudioTopbar) 배경 컬러를 사이드바와 100% 동일하게 통일
+
+**작업 내용**
+- `src/components/studio/StudioTopbar.tsx`:
+  - **사이드바와 일치하는 배경 컬러 적용**: `bg-white dark:bg-slate-900 border-b border-zinc-200 dark:border-slate-800/80`로 사이드바 헤더 및 바디 배경과 100% 동일하게 통일.
+  - **사이드바 메뉴 스타일과 조화로운 탭 버튼**: `dark:bg-[#0c0d12]/70 dark:border-white/15 dark:text-zinc-100` 고대비 카드 버튼 스타일 적용.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-18 (완료): 스튜디오 헤드탑(StudioTopbar) 메뉴 버튼을 사이드바와 동일한 각진 박스(rounded-md) 형태로 전면 전환
+
+**작업 내용**
+- `src/components/studio/StudioTopbar.tsx`:
+  - 둥근 알약형 모서리(`rounded-lg`)를 전면 제거하고, **사이드바 메뉴 박스와 100% 동일한 직각/각진 모서리 박스 스타일(`rounded-md`)**로 통일.
+  - 사이드바와 완벽한 조화를 이루는 고대비 텍스트 및 비비드 아이콘 유지.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-18 (완료): 스튜디오 헤드탑(StudioTopbar) 메뉴 버튼을 사이드바 메뉴 규격과 100% 동일하게 통일 (세로 h-9 높이 및 border-white/15 테두리)
+
+**작업 내용**
+- `src/components/studio/StudioTopbar.tsx`:
+  - **사이드바 메뉴와 100% 동일한 세로 높이(`h-9` / 36px) 적용**: `h-8`에서 사이드바의 `py-2`(`h-9`) 규격과 정확히 일치시켜 수평 라인 통일.
+  - **사이드바와 동일한 테두리 및 배경 디자인**: `dark:border-white/15 dark:bg-[#0c0d12]/45 dark:text-zinc-100 rounded-md` 클래스를 부여하여 테두리 선의 두께, 투명도, 배경 음영까지 사이드바와 100% 동일하게 매칭.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-18 (완료): 스튜디오 헤드탑(StudioTopbar) 메뉴 버튼의 테두리 라인 굵기 및 컬러를 사이드바와 100% 동일하게 일치
+
+**작업 내용**
+- `src/components/studio/StudioTopbar.tsx`:
+  - 테두리 1px 라인 렌더링(`border`)을 명시하여 라이트 모드(`border-slate-300`) 및 다크 모드(`dark:border-white/15`) 테두리 라인이 사이드바 메뉴 박스와 100% 동일한 컬러/투명도로 선명하게 렌더링되도록 수정.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-18 (완료): 스튜디오 헤드탑(StudioTopbar) 글자 잘림 방지 및 폰트 행간/패딩 최적화
+
+**작업 내용**
+- `src/components/studio/StudioTopbar.tsx`:
+  - 고정 높이(`h-9`) 대신 사이드바와 동일한 자연스러운 인라인 플렉스 및 여유로운 내부 패딩(`px-3.5 py-2`) 적용.
+  - `leading-none` 및 `whitespace-nowrap`을 부여하여 글자 위아래 잘림이나 행간 찌그러짐 현상을 100% 원천 해결.
+  - 사이드바 메뉴 박스와 100% 일치하는 `text-[13px] font-bold` 타이포그래피 정돈.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-18 (완료): 스튜디오 헤드탑 메뉴 순서 변경 ("관리 대시보드" ↔ "내 콘텐츠 보관함")
+
+**작업 내용**
+- `src/components/studio/StudioTopbar.tsx`:
+  - 1번 위치: **관리 대시보드** (`/studio/dashboard`)
+  - 2번 위치: **내 콘텐츠 보관함** (`/library`)
+  - 좌우 위치를 서로 맞바꾸어 대시보드 우선 진입 흐름으로 정렬.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-18 (완료): /chatbot (FAQ 도우미) 페이지에 스튜디오 상단 헤드탑(StudioTopbar) 통합 탑재
+
+**작업 내용**
+- `src/app/chatbot/page.tsx`:
+  - 누락되어 있던 `<StudioTopbar setIsMobileOpen={setIsMobileOpen} />`를 Header 바로 아래 상단에 삽입하여, 챗봇 페이지에서도 사이드바 및 스튜디오 5대 핵심 메뉴가 통일되게 노출되도록 개선.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-18 (완료): /chatbot (도우미 챗봇) 페이지 스튜디오 표준 레이아웃 아키텍처 전면 동기화
+
+**작업 내용**
+- `src/app/chatbot/page.tsx`:
+  - **헤더와 사이드바 배치 버그 수정**: 이전 레거시 구조(사이드바가 헤더와 수평 배치되어 최상단 로고까지 밀려 올라가고 하단이 짤리던 문제)를 스튜디오 표준 아키텍처(`Header` 최상단 전체 폭 고정 ➜ 아래 `Sidebar` 및 메인 `StudioTopbar` + `main` 구조)로 전면 리팩토링.
+  - **헤더 아래 빈 검은색 공간 제거 및 하단 챗봇 인풋 바 클리핑 100% 해결**: `h-screen overflow-hidden` 및 `min-h-0 flex-1` 정석 높이 할당을 통해 입력창 및 카테고리 패널이 시원하고 자연스럽게 렌더링되도록 개선.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-18 (완료): 브랜드 블로그 및 공식 블로그 페이지네이션 규격 21개(7줄 * 3개)로 최적화
+
+**작업 내용**
+- `src/app/brand/[brand_id]/components/BlogClientWrapper.tsx`:
+  - `postsPerPage = 21` (7줄 * 3개 = 21개)로 설정하여 3열 카드 그리드가 항상 빈칸 없이 꽉 채워지도록 개선.
+- `src/app/brand/[brand_id]/components/CategoryClientWrapper.tsx`:
+  - 카테고리 뷰에도 동일하게 `postsPerPage = 21` 및 페이지네이션 컨트롤러를 적용하여 일관된 21개 규격 유지.
+- `src/app/blog/page.tsx`:
+  - 공식 블로그 페이지네이션도 `postsPerPage = 21`로 통일.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-18 (완료): 공식 블로그 관리 메뉴 내 '페이지당 포스팅 노출 개수 설정(3~60개)' 기능 개발
+
+**작업 내용**
+- `src/app/studio/writing/creaibox/blog-management/page.tsx`:
+  - **3개 단위 노출 개수 선택기 추가**: '블로그 레이아웃 템플릿 선택' 바로 아래에 3열 카드 그리드에 딱 맞는 3개 단위(3, 6, 9, 12, ..., 최대 60개) 포스팅 노출 개수 선택 UI(`3개 ~ 60개`, 각 1줄~20줄 표시) 구현.
+  - **설정 저장 및 불러오기 연동**: 브랜드별 `blog_posts_per_page_${activeBrandId}` 및 기본 `blog_posts_per_page` 설정 저장/동기화 지원.
+- `src/app/brand/[brand_id]/components/BlogClientWrapper.tsx` & `CategoryClientWrapper.tsx`:
+  - 사용자가 설정한 `blog_posts_per_page` 값을 동적으로 읽어와 1페이지당 노출 개수를 실시간 반영.
+- `npx tsc --noEmit` 0 에러 통과.
+
+## 2026-08-18 (완료): 블로그 박스 목록 개수 선택 버튼 고정 높이(50px) 및 흔들림 방지 CSS 최적화
+
+**작업 내용**
+- `src/app/studio/writing/creaibox/blog-management/page.tsx`:
+  - 버튼 클릭(선택) 시 외곽 링(ring)과 폰트 굵기 차이로 인해 해당 줄(Row) 전체의 세로 높이가 미세하게 늘어나던 레이아웃 시프트 버그 수정.
+  - 전 버튼에 고정 높이 `h-[50px]`, `leading-none`, 1px 고정 테두리, 일관된 flex 정렬을 적용하여 어떤 버튼을 선택하더라도 줄 높이가 0.1px도 변하지 않고 견고하게 고정되도록 개선.
+- `npx tsc --noEmit` 0 에러 통과.

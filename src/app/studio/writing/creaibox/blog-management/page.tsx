@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { 
   Settings, Layers, Palette, Shield, LineChart, Globe, HelpCircle, 
   Plus, Trash2, Save, FileText, CheckCircle2, TrendingUp, Users, Eye, RefreshCw,
-  Sparkles, Zap, GitCommit, Upload, Image as ImageIcon, Loader2, X, ChevronLeft, ChevronRight
+  Sparkles, Zap, GitCommit, Upload, Image as ImageIcon, Loader2, X, ChevronLeft, ChevronRight,
+  LayoutGrid, Square, Maximize2, Sun, Moon, Check
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -96,7 +97,17 @@ export default function BlogManagementPage() {
   const [blogTitle, setBlogTitle] = useState("");
   const [blogDesc, setBlogDesc] = useState("");
   const [blogTemplate, setBlogTemplate] = useState("card");
+  const [blogPostsPerPage, setBlogPostsPerPage] = useState<number>(21);
   const [blogAccentColor, setBlogAccentColor] = useState("#3b82f6");
+
+  // Card Box Styler states
+  const [blogCardBorderWidth, setBlogCardBorderWidth] = useState<number>(1);
+  const [blogCardBorderRadius, setBlogCardBorderRadius] = useState<number>(6);
+  const [blogCardBorderColor, setBlogCardBorderColor] = useState<string>("");
+  const [blogCardBgLight, setBlogCardBgLight] = useState<string>("#ffffff");
+  const [blogCardBgDark, setBlogCardBgDark] = useState<string>("#1e222b");
+  const [blogCardThumbStyle, setBlogCardThumbStyle] = useState<"full" | "inset">("full");
+  const [previewCardTheme, setPreviewCardTheme] = useState<"light" | "dark">("light");
   const [gaId, setGaId] = useState("");
   const [naverKey, setNaverKey] = useState("");
   const [googleSearchConsoleKey, setGoogleSearchConsoleKey] = useState("");
@@ -365,7 +376,14 @@ export default function BlogManagementPage() {
     setBlogTitle(getConfigValue("blog_title", `${profile.nickname || "My AI"} 블로그`));
     setBlogDesc(getConfigValue("blog_description", ""));
     setBlogTemplate(getConfigValue("blog_template", "card"));
+    setBlogPostsPerPage(Number(getConfigValue("blog_posts_per_page", "21")) || 21);
     setBlogAccentColor(getConfigValue("blog_accent_color", "#3b82f6"));
+    setBlogCardBorderWidth(Number(getConfigValue("blog_card_border_width", "1")) ?? 1);
+    setBlogCardBorderRadius(Number(getConfigValue("blog_card_border_radius", "6")) ?? 6);
+    setBlogCardBorderColor(getConfigValue("blog_card_border_color", ""));
+    setBlogCardBgLight(getConfigValue("blog_card_bg_light", "#ffffff"));
+    setBlogCardBgDark(getConfigValue("blog_card_bg_dark", "#1e222b"));
+    setBlogCardThumbStyle((getConfigValue("blog_card_thumb_style", activeBrandId === "creaibox" ? "inset" : "full") as "full" | "inset") || "full");
     setGaId(getConfigValue("ga_id", ""));
     setNaverKey(getConfigValue("naver_advisor_key", ""));
     setGoogleSearchConsoleKey(getConfigValue("google_search_console_key", ""));
@@ -543,7 +561,14 @@ export default function BlogManagementPage() {
         [`blog_title_${activeBrandId}`]: blogTitle.trim(),
         [`blog_description_${activeBrandId}`]: blogDesc.trim(),
         [`blog_template_${activeBrandId}`]: blogTemplate,
+        [`blog_posts_per_page_${activeBrandId}`]: blogPostsPerPage,
         [`blog_accent_color_${activeBrandId}`]: blogAccentColor,
+        [`blog_card_border_width_${activeBrandId}`]: blogCardBorderWidth,
+        [`blog_card_border_radius_${activeBrandId}`]: blogCardBorderRadius,
+        [`blog_card_border_color_${activeBrandId}`]: blogCardBorderColor.trim(),
+        [`blog_card_bg_light_${activeBrandId}`]: blogCardBgLight.trim(),
+        [`blog_card_bg_dark_${activeBrandId}`]: blogCardBgDark.trim(),
+        [`blog_card_thumb_style_${activeBrandId}`]: blogCardThumbStyle,
         [`ga_id_${activeBrandId}`]: gaId.trim(),
         [`naver_advisor_key_${activeBrandId}`]: naverKey.trim(),
         [`google_search_console_key_${activeBrandId}`]: googleSearchConsoleKey.trim(),
@@ -563,7 +588,14 @@ export default function BlogManagementPage() {
         mergedConfigs.blog_title = blogTitle.trim();
         mergedConfigs.blog_description = blogDesc.trim();
         mergedConfigs.blog_template = blogTemplate;
+        mergedConfigs.blog_posts_per_page = blogPostsPerPage;
         mergedConfigs.blog_accent_color = blogAccentColor;
+        mergedConfigs.blog_card_border_width = blogCardBorderWidth;
+        mergedConfigs.blog_card_border_radius = blogCardBorderRadius;
+        mergedConfigs.blog_card_border_color = blogCardBorderColor.trim();
+        mergedConfigs.blog_card_bg_light = blogCardBgLight.trim();
+        mergedConfigs.blog_card_bg_dark = blogCardBgDark.trim();
+        mergedConfigs.blog_card_thumb_style = blogCardThumbStyle;
         mergedConfigs.ga_id = gaId.trim();
         mergedConfigs.naver_advisor_key = naverKey.trim();
         mergedConfigs.google_search_console_key = googleSearchConsoleKey.trim();
@@ -1120,9 +1152,9 @@ export default function BlogManagementPage() {
                             key={tpl.key}
                             type="button"
                             onClick={() => setBlogTemplate(tpl.key)}
-                            className={`rounded-2xl border p-5 text-left transition-all ${
+                            className={`rounded-2xl border p-5 text-left transition-all cursor-pointer ${
                               blogTemplate === tpl.key
-                                ? "border-blue-500 bg-blue-500/5 shadow-[0_4px_12px_rgba(59,130,246,0.1)]"
+                                ? "border-blue-500 bg-blue-500/5 shadow-[0_4px_12px_rgba(59,130,246,0.1)] ring-1 ring-blue-500"
                                 : "border-zinc-800 bg-zinc-950 hover:border-zinc-700"
                             }`}
                           >
@@ -1130,6 +1162,430 @@ export default function BlogManagementPage() {
                             <p className="text-[10px] font-bold text-zinc-500 mt-1">{tpl.desc}</p>
                           </button>
                         ))}
+                      </div>
+                    </div>
+
+                    {/* 🌟 1페이지당 블로그 박스 목록 노출 개수 설정 (3개 단위: 3, 6, 9, ... 최대 60개) */}
+                    <div className="space-y-3 pt-4 border-t border-zinc-900/80">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <label className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
+                            <LayoutGrid size={14} className="text-blue-400" />
+                            페이지당 블로그 박스 목록 개수 설정 (3열 그리드 맞춤)
+                          </label>
+                          <p className="text-[10px] text-zinc-500 font-bold mt-0.5">
+                            3열 카드 그리드에 빈칸 없이 딱 맞도록 3개 단위로 설정됩니다. (3개 ~ 최대 60개)
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-blue-400 bg-blue-500/10 border border-blue-500/30 px-3 py-1.5 rounded-xl whitespace-nowrap">
+                            현재: {blogPostsPerPage}개 ({Math.floor(blogPostsPerPage / 3)}줄 × 3개)
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 3개 단위 선택 버튼 그리드 (3 ~ 60개) */}
+                      <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-10 gap-2 pt-1">
+                        {Array.from({ length: 20 }, (_, i) => (i + 1) * 3).map((count) => {
+                          const isSelected = blogPostsPerPage === count;
+                          return (
+                            <button
+                              key={count}
+                              type="button"
+                              onClick={() => setBlogPostsPerPage(count)}
+                              className={`h-[50px] flex flex-col items-center justify-center rounded-xl border px-1 text-center transition-all cursor-pointer select-none ${
+                                isSelected
+                                  ? "border-blue-500 bg-blue-500/20 text-white font-black shadow-[0_0_12px_rgba(59,130,246,0.25)]"
+                                  : "border-zinc-800 bg-zinc-950 text-zinc-400 hover:border-zinc-700 hover:text-white font-bold"
+                              }`}
+                            >
+                              <span className={`text-xs leading-none ${isSelected ? "text-white font-black" : "text-zinc-300 font-bold"}`}>
+                                {count}개
+                              </span>
+                              <span className={`text-[9px] leading-none mt-1.5 ${isSelected ? "text-blue-300 font-bold" : "text-zinc-500 font-semibold"}`}>
+                                {count / 3}줄
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* 🌟 블로그 카드 박스 스타일 커스텀 (테두리 굵기, 둥글기, 테두리 색, 배경색) */}
+                    <div className="space-y-6 pt-5 border-t border-zinc-900/80">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
+                            <Palette size={14} className="text-blue-400" />
+                            블로그 카드 박스 스타일 커스텀 (Card Box Styler)
+                          </h4>
+                          <p className="text-[10px] text-zinc-500 font-bold mt-0.5">
+                            포스팅 목록 카드의 테두리 굵기, 모서리 둥글기(각지게/둥글게), 테두리 선 색상, 안쪽 배경색을 자유롭게 디자인합니다.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* 2열 그리드: 스타일 옵션 컨트롤러 & 실시간 라이브 프리뷰 */}
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                        {/* 좌측: 세부 스타일 옵션 (8 cols) */}
+                        <div className="lg:col-span-7 space-y-5">
+                          {/* 1. 테두리 라인 굵기 */}
+                          <div className="space-y-2">
+                            <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 flex items-center justify-between">
+                              <span>1. 박스 테두리 라인 굵기 (Border Width)</span>
+                              <span className="text-blue-400 font-black text-[10px]">{blogCardBorderWidth}px</span>
+                            </label>
+                            <div className="grid grid-cols-5 gap-2">
+                              {[
+                                { width: 0, label: "0px (없음)" },
+                                { width: 1, label: "1px (기본)" },
+                                { width: 2, label: "2px (선명)" },
+                                { width: 3, label: "3px (강조)" },
+                                { width: 4, label: "4px (볼드)" },
+                              ].map((item) => (
+                                <button
+                                  key={item.width}
+                                  type="button"
+                                  onClick={() => setBlogCardBorderWidth(item.width)}
+                                  className={`h-9 rounded-xl border text-center transition-all cursor-pointer text-xs font-bold ${
+                                    blogCardBorderWidth === item.width
+                                      ? "border-blue-500 bg-blue-500/20 text-white font-black ring-1 ring-blue-500"
+                                      : "border-zinc-800 bg-zinc-950 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                                  }`}
+                                >
+                                  {item.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* 2. 모서리 둥글기 (각지게 vs 둥글게) */}
+                          <div className="space-y-2">
+                            <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 flex items-center justify-between">
+                              <span>2. 모서리 둥글기 (Corner Radius)</span>
+                              <span className="text-blue-400 font-black text-[10px]">{blogCardBorderRadius}px</span>
+                            </label>
+                            <div className="grid grid-cols-6 gap-2">
+                              {[
+                                { radius: 0, label: "0px (직각)" },
+                                { radius: 4, label: "4px (미세)" },
+                                { radius: 6, label: "6px (표준)" },
+                                { radius: 10, label: "10px (라운드)" },
+                                { radius: 16, label: "16px (곡선)" },
+                                { radius: 24, label: "24px (알약)" },
+                              ].map((item) => (
+                                <button
+                                  key={item.radius}
+                                  type="button"
+                                  onClick={() => setBlogCardBorderRadius(item.radius)}
+                                  className={`h-9 rounded-xl border text-center transition-all cursor-pointer text-xs font-bold ${
+                                    blogCardBorderRadius === item.radius
+                                      ? "border-blue-500 bg-blue-500/20 text-white font-black ring-1 ring-blue-500"
+                                      : "border-zinc-800 bg-zinc-950 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                                  }`}
+                                >
+                                  {item.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* 3. 테두리 라인 컬러 */}
+                          <div className="space-y-2">
+                            <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 flex items-center justify-between">
+                              <span>3. 테두리 라인 컬러 (Border Color)</span>
+                              <span className="text-zinc-500 font-semibold text-[10px]">
+                                {blogCardBorderColor ? blogCardBorderColor : "기본 (테마 자동)"}
+                              </span>
+                            </label>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setBlogCardBorderColor("")}
+                                className={`h-8 px-3 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+                                  !blogCardBorderColor
+                                    ? "border-blue-500 bg-blue-500/20 text-white font-black ring-1 ring-blue-500"
+                                    : "border-zinc-800 bg-zinc-950 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                                }`}
+                              >
+                                자동 (기본 테마)
+                              </button>
+                              {[
+                                { color: "#e2e8f0", label: "연회색" },
+                                { color: "#94a3b8", label: "슬레이트" },
+                                { color: "#334155", label: "다크그레이" },
+                                { color: "#000000", label: "블랙" },
+                                { color: "#3b82f6", label: "블루" },
+                                { color: "#8b5cf6", label: "퍼플" },
+                                { color: "#10b981", label: "에메랄드" },
+                                { color: "#f59e0b", label: "앰버" },
+                              ].map((p) => (
+                                <button
+                                  key={p.color}
+                                  type="button"
+                                  onClick={() => setBlogCardBorderColor(p.color)}
+                                  className={`h-8 px-2.5 rounded-lg border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${
+                                    blogCardBorderColor.toLowerCase() === p.color.toLowerCase()
+                                      ? "border-blue-500 bg-blue-500/20 text-white font-black ring-1 ring-blue-500"
+                                      : "border-zinc-800 bg-zinc-950 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                                  }`}
+                                >
+                                  <span className="w-3 h-3 rounded-full border border-white/20 shrink-0" style={{ backgroundColor: p.color }} />
+                                  <span>{p.label}</span>
+                                </button>
+                              ))}
+
+                              {/* 직접 컬러 피커 */}
+                              <div className="flex items-center gap-1.5 ml-auto">
+                                <input
+                                  type="color"
+                                  value={blogCardBorderColor || "#e2e8f0"}
+                                  onChange={(e) => setBlogCardBorderColor(e.target.value)}
+                                  className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border border-zinc-700"
+                                  title="직접 색상 선택"
+                                />
+                                <input
+                                  type="text"
+                                  value={blogCardBorderColor}
+                                  onChange={(e) => setBlogCardBorderColor(e.target.value)}
+                                  placeholder="#HEX"
+                                  className="w-20 h-8 rounded-lg border border-zinc-800 bg-zinc-950 px-2 text-xs font-bold text-white text-center outline-none focus:border-blue-500"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 4. 카드 안쪽 배경 컬러 (라이트 & 다크) */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                            {/* 라이트 모드 배경색 */}
+                            <div className="p-3.5 rounded-2xl border border-zinc-900 bg-zinc-950/60 space-y-2.5">
+                              <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
+                                <Sun size={13} className="text-amber-400" />
+                                라이트 모드 카드 배경색
+                              </label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  value={blogCardBgLight || "#ffffff"}
+                                  onChange={(e) => setBlogCardBgLight(e.target.value)}
+                                  className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border border-zinc-700 shrink-0"
+                                />
+                                <input
+                                  type="text"
+                                  value={blogCardBgLight}
+                                  onChange={(e) => setBlogCardBgLight(e.target.value)}
+                                  placeholder="#ffffff"
+                                  className="flex-1 h-8 rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 text-xs font-bold text-white outline-none focus:border-blue-500"
+                                />
+                              </div>
+                              <div className="flex items-center gap-1.5 pt-1">
+                                {[
+                                  { color: "#ffffff", label: "순백색" },
+                                  { color: "#f8fafc", label: "소프트" },
+                                  { color: "#f1f5f9", label: "쿨그레이" },
+                                  { color: "#fafaf9", label: "아이보리" },
+                                ].map((bg) => (
+                                  <button
+                                    key={bg.color}
+                                    type="button"
+                                    onClick={() => setBlogCardBgLight(bg.color)}
+                                    className={`px-2 py-1 rounded-md text-[10px] font-bold border transition-all cursor-pointer ${
+                                      blogCardBgLight.toLowerCase() === bg.color.toLowerCase()
+                                        ? "border-blue-500 bg-blue-500/20 text-white font-black"
+                                        : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white"
+                                    }`}
+                                  >
+                                    {bg.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* 다크 모드 배경색 */}
+                            <div className="p-3.5 rounded-2xl border border-zinc-900 bg-zinc-950/60 space-y-2.5">
+                              <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
+                                <Moon size={13} className="text-blue-400" />
+                                다크 모드 카드 배경색
+                              </label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  value={blogCardBgDark || "#1e222b"}
+                                  onChange={(e) => setBlogCardBgDark(e.target.value)}
+                                  className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border border-zinc-700 shrink-0"
+                                />
+                                <input
+                                  type="text"
+                                  value={blogCardBgDark}
+                                  onChange={(e) => setBlogCardBgDark(e.target.value)}
+                                  placeholder="#1e222b"
+                                  className="flex-1 h-8 rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 text-xs font-bold text-white outline-none focus:border-blue-500"
+                                />
+                              </div>
+                              <div className="flex items-center gap-1.5 pt-1">
+                                {[
+                                  { color: "#1e222b", label: "네이비" },
+                                  { color: "#181a20", label: "차콜" },
+                                  { color: "#0c0d12", label: "블랙" },
+                                  { color: "#0f172a", label: "슬레이트" },
+                                ].map((bg) => (
+                                  <button
+                                    key={bg.color}
+                                    type="button"
+                                    onClick={() => setBlogCardBgDark(bg.color)}
+                                    className={`px-2 py-1 rounded-md text-[10px] font-bold border transition-all cursor-pointer ${
+                                      blogCardBgDark.toLowerCase() === bg.color.toLowerCase()
+                                        ? "border-blue-500 bg-blue-500/20 text-white font-black"
+                                        : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white"
+                                    }`}
+                                  >
+                                    {bg.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 4. 썸네일 이미지 배치 스타일 (풀 블리드 vs 안쪽 박스형) */}
+                          <div className="space-y-2 pt-3 border-t border-zinc-900/80">
+                            <label className="text-[11px] font-black uppercase tracking-wider text-zinc-300 flex items-center justify-between">
+                              <span>4. 썸네일 이미지 배치 스타일 (Thumbnail Layout)</span>
+                              <span className="text-blue-400 font-black text-[10px]">
+                                {blogCardThumbStyle === "inset" ? "안쪽 박스형 (Inset Pad)" : "꽉 찬형 (Full Bleed)"}
+                              </span>
+                            </label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <button
+                                type="button"
+                                onClick={() => setBlogCardThumbStyle("full")}
+                                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                                  blogCardThumbStyle === "full"
+                                    ? "border-blue-500 bg-blue-500/20 text-white ring-1 ring-blue-500"
+                                    : "border-zinc-800 bg-zinc-950 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                                }`}
+                              >
+                                <p className="text-xs font-black flex items-center gap-1.5">
+                                  <span>🖼️ 꽉 찬형 (Full Bleed)</span>
+                                  {blogCardThumbStyle === "full" && <Check size={12} className="text-blue-400 ml-auto" />}
+                                </p>
+                                <p className="text-[10px] text-zinc-400 mt-1 leading-relaxed">
+                                  썸네일 이미지가 카드 상단과 좌우 모서리에 여백 없이 시원하게 꽉 차는 모던 스타일입니다.
+                                </p>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => setBlogCardThumbStyle("inset")}
+                                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                                  blogCardThumbStyle === "inset"
+                                    ? "border-blue-500 bg-blue-500/20 text-white ring-1 ring-blue-500"
+                                    : "border-zinc-800 bg-zinc-950 text-zinc-400 hover:border-zinc-700 hover:text-white"
+                                }`}
+                              >
+                                <p className="text-xs font-black flex items-center gap-1.5">
+                                  <span>📦 안쪽 박스형 (Inset Pad)</span>
+                                  {blogCardThumbStyle === "inset" && <Check size={12} className="text-blue-400 ml-auto" />}
+                                </p>
+                                <p className="text-[10px] text-zinc-400 mt-1 leading-relaxed">
+                                  카드 내부에 일정한 여백을 두고 썸네일이 별도의 둥근 박스 형태로 배치되는 단정한 스타일입니다.
+                                </p>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 우측: 실시간 라이브 미니 프리뷰 (5 cols) */}
+                        <div className="lg:col-span-5 p-5 rounded-2xl border border-zinc-900 bg-zinc-950/80 space-y-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-black uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                              <Eye size={13} className="text-blue-400" />
+                              실시간 스타일 미리보기
+                            </span>
+                            {/* 라이트 / 다크 미리보기 토글 */}
+                            <div className="flex items-center gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800">
+                              <button
+                                type="button"
+                                onClick={() => setPreviewCardTheme("light")}
+                                className={`px-2 py-1 rounded text-[10px] font-black flex items-center gap-1 transition-all cursor-pointer ${
+                                  previewCardTheme === "light"
+                                    ? "bg-amber-400/20 text-amber-300 border border-amber-400/40"
+                                    : "text-zinc-500 hover:text-zinc-300"
+                                }`}
+                              >
+                                <Sun size={11} /> Light
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setPreviewCardTheme("dark")}
+                                className={`px-2 py-1 rounded text-[10px] font-black flex items-center gap-1 transition-all cursor-pointer ${
+                                  previewCardTheme === "dark"
+                                    ? "bg-blue-500/20 text-blue-300 border border-blue-400/40"
+                                    : "text-zinc-500 hover:text-zinc-300"
+                                }`}
+                              >
+                                <Moon size={11} /> Dark
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* 프리뷰 카드 렌더링 */}
+                          <div className={`p-4 rounded-xl transition-colors ${previewCardTheme === "dark" ? "bg-[#181a20]" : "bg-[#f4f6fa]"}`}>
+                            <div
+                              style={{
+                                borderWidth: `${blogCardBorderWidth}px`,
+                                borderStyle: blogCardBorderWidth > 0 ? "solid" : "none",
+                                borderColor: blogCardBorderColor || (previewCardTheme === "dark" ? "rgba(255,255,255,0.12)" : "#e2e8f0"),
+                                borderRadius: `${blogCardBorderRadius}px`,
+                                backgroundColor: previewCardTheme === "dark" ? (blogCardBgDark || "#1e222b") : (blogCardBgLight || "#ffffff"),
+                              }}
+                              className={`overflow-hidden shadow-sm transition-all ${blogCardThumbStyle === "inset" ? "p-4 flex flex-col justify-between" : ""}`}
+                            >
+                              {/* 썸네일 영역 */}
+                              <div
+                                className={`relative aspect-[16/9] w-full bg-cover bg-center flex items-center justify-center ${
+                                  blogCardThumbStyle === "inset" ? "rounded-[6px] border shrink-0" : ""
+                                }`}
+                                style={{
+                                  backgroundColor: previewCardTheme === "dark" ? "#0c0d12" : "#f1f5f9",
+                                  borderColor: previewCardTheme === "dark" ? "rgba(255,255,255,0.1)" : "#e2e8f0",
+                                  ...(blogCardThumbStyle === "full" ? {
+                                    borderTopLeftRadius: `${Math.max(0, blogCardBorderRadius - blogCardBorderWidth)}px`,
+                                    borderTopRightRadius: `${Math.max(0, blogCardBorderRadius - blogCardBorderWidth)}px`,
+                                  } : {}),
+                                }}
+                              >
+                                <div className="text-center p-3">
+                                  <Sparkles size={20} className="mx-auto text-blue-400 mb-1" />
+                                  <span className="text-[10px] font-bold text-zinc-500">16:9 썸네일 이미지</span>
+                                </div>
+                              </div>
+
+                              {/* 텍스트 영역 */}
+                              <div className="flex flex-col justify-between">
+                                <div className={`${blogCardThumbStyle === "inset" ? "pt-3.5 pb-2.5 px-0 space-y-1.5" : "p-4 pb-3 space-y-2"}`}>
+                                  <h3 className={`text-sm font-black line-clamp-1 ${previewCardTheme === "dark" ? "text-white" : "text-slate-900"}`}>
+                                    사주 만세력 보는 법: 나만의 일간 확인하기
+                                  </h3>
+                                  <p className={`text-[11px] font-bold line-clamp-2 leading-relaxed ${previewCardTheme === "dark" ? "text-zinc-400" : "text-slate-600"}`}>
+                                    사주 명리학의 핵심 원리를 현대적 관점에서 분석하고 삶의 전략을 설계하는 가이드입니다.
+                                  </p>
+                                </div>
+                                <div className={`border-t flex items-center justify-between text-[10px] font-bold ${
+                                  blogCardThumbStyle === "inset" ? "pt-2.5 px-0 mt-1" : "px-4 py-3"
+                                } ${
+                                  previewCardTheme === "dark" ? "border-white/10 text-zinc-500" : "border-slate-100 text-slate-400"
+                                }`}>
+                                  <span>2026. 8. 18.</span>
+                                  <span className="text-blue-500 font-black">글 더보기 &rarr;</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <p className="text-[9px] text-zinc-500 font-semibold text-center">
+                            * 위 미리보기 박스는 현재 설정된 굵기, 각도, 색상, 썸네일 스타일이 100% 반영된 모습입니다.
+                          </p>
+                        </div>
                       </div>
                     </div>
 

@@ -207,7 +207,7 @@ export default function BlogListPaginatedView({
                 </div>
 
               {/* Text Content */}
-              <div className="p-6 space-y-2">
+              <div className="p-6 pb-4 space-y-2">
                 <h3 className="text-base font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
                   {post.title}
                 </h3>
@@ -217,18 +217,16 @@ export default function BlogListPaginatedView({
               </div>
             </div>
 
-            <div className="p-6 pt-0">
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
-                  <CalendarDays size={14} className="text-slate-400" />
-                  <span>{post.dateStr}</span>
-                </div>
-
-                <span className="text-xs font-bold text-blue-600 group-hover:text-blue-700 flex items-center gap-1 transition-colors">
-                  <span>글 더보기</span>
-                  <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
-                </span>
+            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
+                <CalendarDays size={14} className="text-slate-400" />
+                <span>{post.dateStr}</span>
               </div>
+
+              <span className="text-xs font-bold text-blue-600 group-hover:text-blue-700 flex items-center gap-1 transition-colors">
+                <span>글 더보기</span>
+                <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
+              </span>
             </div>
           </SmartIntentLink>
         ))}

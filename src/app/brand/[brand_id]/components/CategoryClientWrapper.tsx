@@ -49,9 +49,25 @@ export default function CategoryClientWrapper({
   const [theme, setTheme] = useState<"light" | "dark">(initialTheme || "light");
   const [isThemeLoaded, setIsThemeLoaded] = useState(false);
 
-  // 2. Search States
+  // 2. Search & Pagination States
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const configs = profile.extra_configs || {};
+  const isPrimary = brand_id.toLowerCase() === (profile.brand_id || "").toLowerCase();
+
+  const getConf = (key: string, fallback: string = ""): string => {
+    if (isPrimary) return configs[key] || fallback;
+    return configs[`${key}_${brand_id.toLowerCase()}`] || configs[key] || fallback;
+  };
+
+  const postsPerPage = Math.max(3, Number(getConf("blog_posts_per_page", "21")) || 21);
+
+  // Reset pagination on search query change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   // Load theme preference on mount
   useEffect(() => {
@@ -92,17 +108,21 @@ export default function CategoryClientWrapper({
     return titleMatch || descMatch || tagMatch;
   });
 
-  const configs = profile.extra_configs || {};
-  const isPrimary = brand_id.toLowerCase() === (profile.brand_id || "").toLowerCase();
-
-  const getConf = (key: string, fallback: string = ""): string => {
-    if (isPrimary) return configs[key] || fallback;
-    return configs[`${key}_${brand_id.toLowerCase()}`] || configs[key] || fallback;
-  };
+  const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
+  const indexOfLastPost = currentPage * postsPerPage;
+  const indexOfFirstPost = indexOfLastPost - postsPerPage;
+  const currentPosts = filteredPosts.slice(indexOfFirstPost, indexOfLastPost);
 
   const blogTitle = getConf("blog_title", `${profile.nickname || brand_id} 블로그`);
   const template = getConf("blog_template", "card");
   const accentColor = getConf("blog_accent_color", "#3b82f6");
+  const cardBorderWidth = getConf("blog_card_border_width", "1");
+  const cardBorderRadius = getConf("blog_card_border_radius", "6");
+  const cardBorderColor = getConf("blog_card_border_color", "");
+  const cardBgLight = getConf("blog_card_bg_light", "#ffffff");
+  const cardBgDark = getConf("blog_card_bg_dark", "#1e222b");
+  const cardThumbStyle = getConf("blog_card_thumb_style", brand_id === "creaibox" ? "inset" : "full") as "full" | "inset";
+
   const gaId = getConf("ga_id");
   const primaryId = profile.brand_id || "";
   let adsensePubId = "";
@@ -121,9 +141,13 @@ export default function CategoryClientWrapper({
     ? "bg-[#1e222b] border-[#2a2f3a]"
     : "bg-white border-[#e2e8f0]";
 
-  const cardBg = theme === "dark"
-    ? "border-[#2a2f3a] bg-[#1e222b]/40 hover:bg-[#1e222b]/70 hover:border-[#383e4c]"
-    : "border-[#e2e8f0] bg-white hover:bg-zinc-50/50 hover:border-zinc-300/60";
+  const customCardStyle: React.CSSProperties = {
+    borderWidth: `${cardBorderWidth}px`,
+    borderStyle: Number(cardBorderWidth) > 0 ? "solid" : "none",
+    borderRadius: `${cardBorderRadius}px`,
+    borderColor: cardBorderColor || (theme === "dark" ? "#2a2f3a" : "#e2e8f0"),
+    backgroundColor: theme === "dark" ? (cardBgDark || "#1e222b") : (cardBgLight || "#ffffff"),
+  };
 
   const cardText = theme === "dark" ? "text-white" : "text-[#1e293b]";
   const cardDesc = theme === "dark" ? "text-zinc-400" : "text-[#475569]";
@@ -301,7 +325,7 @@ export default function CategoryClientWrapper({
       {/* Main content body */}
       <main className="mx-auto max-w-7xl px-6 py-16 flex-1">
         {filteredPosts.length === 0 ? (
-          <div className={`rounded-[32px] border px-8 py-24 text-center space-y-4 ${cardBg}`}>
+          <div className={`border px-8 py-24 text-center space-y-4 rounded-2xl ${theme === "dark" ? "border-zinc-900 bg-zinc-900/10" : "border-zinc-200 bg-white"}`}>
             <p className={`text-lg font-black ${cardText}`}>검색 결과 혹은 이 카테고리에 발행된 글이 없습니다.</p>
             <p className={`text-sm font-bold ${cardDesc}`}>
               다른 키워드로 검색을 시도해 보세요.
@@ -314,7 +338,7 @@ export default function CategoryClientWrapper({
             {/* 1. NEWS Template */}
             {template === "news" && (
               <div className="space-y-6 max-w-4xl mx-auto">
-                {filteredPosts.map((post) => {
+                {currentPosts.map((post) => {
                   const excerpt = buildExcerpt(post);
                   return (
                     <Link
@@ -340,13 +364,14 @@ export default function CategoryClientWrapper({
             {/* 2. LIST Template */}
             {template === "list" && (
               <div className="space-y-6 max-w-5xl mx-auto">
-                {filteredPosts.map((post) => {
+                {currentPosts.map((post) => {
                   const excerpt = buildExcerpt(post);
                   return (
                     <Link
                       key={post.id}
                       href={`/${post.slug}`}
-                      className={`group flex flex-col md:flex-row gap-6 rounded-[6px] border p-5 transition-all hover:-translate-y-0.5 ${cardBg}`}
+                      style={customCardStyle}
+                      className="group flex flex-col md:flex-row gap-6 p-5 transition-all hover:-translate-y-0.5"
                     >
                       <div className="relative aspect-[16/9] md:w-[260px] shrink-0 overflow-hidden rounded-[4px] bg-zinc-950">
                         {post.thumbnailUrl ? (
@@ -387,32 +412,54 @@ export default function CategoryClientWrapper({
             {/* 3. CARD Template (Default) */}
             {template === "card" && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredPosts.map((post) => {
+                {currentPosts.map((post) => {
                   const excerpt = buildExcerpt(post);
                   return (
                     <Link
                       key={post.id}
                       href={`/${post.slug}`}
-                      className={`group flex flex-col overflow-hidden rounded-[6px] border transition-all duration-300 hover:-translate-y-1 ${cardBg}`}
+                      style={customCardStyle}
+                      className={`group flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 ${
+                        cardThumbStyle === "inset" ? "p-5 justify-between" : ""
+                      }`}
                     >
-                      <div className="relative aspect-[16/9] overflow-hidden bg-zinc-950">
-                        {post.thumbnailUrl ? (
-                          <img
-                            src={formatImageUrl(post.thumbnailUrl)}
-                            alt={post.title || "thumbnail"}
-                            onError={handleImageError}
-                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className={`absolute inset-0 flex items-center justify-center ${theme === "dark" ? "bg-zinc-900 text-zinc-700" : "bg-zinc-100 text-zinc-400"}`}>
-                            <Sparkles size={24} />
-                          </div>
-                        )}
-                      </div>
+                      {/* Inset 모드 썸네일 */}
+                      {cardThumbStyle === "inset" ? (
+                        <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden rounded-[4px] border border-zinc-200 dark:border-zinc-800 bg-zinc-950 flex items-center justify-center">
+                          {post.thumbnailUrl ? (
+                            <img
+                              src={formatImageUrl(post.thumbnailUrl)}
+                              alt={post.title || "thumbnail"}
+                              onError={handleImageError}
+                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className={`absolute inset-0 flex items-center justify-center ${theme === "dark" ? "bg-zinc-900 text-zinc-700" : "bg-zinc-100 text-zinc-400"}`}>
+                              <Sparkles size={24} />
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        /* Full Bleed 모드 썸네일 */
+                        <div className="relative aspect-[16/9] overflow-hidden bg-zinc-950">
+                          {post.thumbnailUrl ? (
+                            <img
+                              src={formatImageUrl(post.thumbnailUrl)}
+                              alt={post.title || "thumbnail"}
+                              onError={handleImageError}
+                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className={`absolute inset-0 flex items-center justify-center ${theme === "dark" ? "bg-zinc-900 text-zinc-700" : "bg-zinc-100 text-zinc-400"}`}>
+                              <Sparkles size={24} />
+                            </div>
+                          )}
+                        </div>
+                      )}
                       
-                      <div className="flex flex-1 flex-col p-6 justify-between">
+                      <div className="flex flex-1 flex-col justify-between">
                         {/* 상단: 제목 & 설명 */}
-                        <div className="space-y-3">
+                        <div className={cardThumbStyle === "inset" ? "pt-4 pb-3 space-y-2.5" : "p-6 pb-4 space-y-3"}>
                           <h2 className={`line-clamp-2 text-lg font-black leading-tight transition-colors group-hover:text-blue-400 ${cardText}`}>
                             {post.title}
                           </h2>
@@ -421,8 +468,10 @@ export default function CategoryClientWrapper({
                           </p>
                         </div>
                         
-                        {/* 하단: 날짜 | 카테고리 (가운데) | 글 더보기 -> (우측) */}
-                        <div className={`mt-3.5 pt-3 border-t flex items-center justify-between text-xs font-bold ${
+                        {/* 하단: 날짜 | 카테고리 (가운데) | 글 더보기 -> (우측) - 위쪽 라인과 아래쪽 박스 라인 사이 세로 중앙 맞춤 */}
+                        <div className={`border-t flex items-center justify-between text-xs font-bold ${
+                          cardThumbStyle === "inset" ? "pt-3.5 px-0" : "px-6 py-4"
+                        } ${
                           theme === "dark" ? "border-zinc-800/80 text-zinc-500" : "border-zinc-100 text-zinc-500"
                         }`}>
                           {/* 날짜 */}
@@ -452,6 +501,41 @@ export default function CategoryClientWrapper({
                     </Link>
                   );
                 })}
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-12 flex items-center justify-center gap-4">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className={`flex items-center gap-1 rounded-full border px-4 py-2 text-xs font-black transition-colors ${
+                    currentPage === 1
+                      ? "cursor-not-allowed border-zinc-200/40 text-zinc-400/50"
+                      : theme === "dark"
+                      ? "border-zinc-800 bg-[#1e222b] text-zinc-300 hover:border-blue-400 hover:text-white"
+                      : "border-zinc-200 bg-white text-zinc-600 hover:border-blue-400 hover:text-blue-700"
+                  }`}
+                >
+                  <ArrowLeft size={12} /> 이전
+                </button>
+                <span className={`text-xs font-bold ${theme === "dark" ? "text-zinc-400" : "text-zinc-500"}`}>
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className={`flex items-center gap-1 rounded-full border px-4 py-2 text-xs font-black transition-colors ${
+                    currentPage === totalPages
+                      ? "cursor-not-allowed border-zinc-200/40 text-zinc-400/50"
+                      : theme === "dark"
+                      ? "border-zinc-800 bg-[#1e222b] text-zinc-300 hover:border-blue-400 hover:text-white"
+                      : "border-zinc-200 bg-white text-zinc-600 hover:border-blue-400 hover:text-blue-700"
+                  }`}
+                >
+                  다음 <ArrowRight size={12} />
+                </button>
               </div>
             )}
 

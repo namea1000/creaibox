@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
+import StudioTopbar from "@/components/studio/StudioTopbar";
 import { faqData, FAQItem, FAQCategory } from "./data/faqData";
 import { createClient } from "@/utils/supabase/client";
 
@@ -336,151 +337,167 @@ export default function ChatbotHelperPage() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-slate-50 text-slate-800 dark:bg-[#06080d] dark:text-slate-100 flex overflow-hidden transition-colors duration-300">
-      {/* 🚀 SIDEBAR NAVIGATION */}
-      <Sidebar
-        isCollapsed={isCollapsed}
-        setIsCollapsed={setIsCollapsed}
-        isMobileOpen={isMobileOpen}
-        setIsMobileOpen={setIsMobileOpen}
-      />
+    <div className="flex flex-col h-screen overflow-hidden bg-zinc-50 dark:bg-[#06080d] text-zinc-800 dark:text-zinc-100 transition-colors duration-300">
+      {/* 최상단 메인 헤더 */}
+      <Header />
 
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden bg-slate-100/50 dark:bg-slate-950/60 relative transition-colors duration-300">
-        <Header />
+      {/* 메인 헤더 아래 스튜디오 작업 영역 */}
+      <div className="flex flex-1 min-h-0">
+        {/* 🚀 SIDEBAR NAVIGATION */}
+        <Sidebar
+          isCollapsed={isCollapsed}
+          setIsCollapsed={setIsCollapsed}
+          isMobileOpen={isMobileOpen}
+          setIsMobileOpen={setIsMobileOpen}
+        />
 
-        <div className="flex-1 flex flex-col lg:flex-row pt-16 overflow-hidden">
-          
-          {/* 📂 LEFT PANEL: FAQ CATEGORY MAP & TOPICS */}
-          <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800 flex flex-col bg-white dark:bg-slate-950/40 shrink-0">
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-blue-50/50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20">
-                  <Sparkles size={14} className="animate-pulse" />
+        {/* Main Column */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          {/* Topbar (스튜디오 상단 헤드탑) */}
+          <StudioTopbar setIsMobileOpen={setIsMobileOpen} />
+
+          {/* Content (챗봇 본문 영역) */}
+          <main className="min-w-0 flex-1 overflow-hidden flex flex-col lg:flex-row bg-slate-100/50 dark:bg-slate-950/60 transition-colors duration-300">
+            {/* 📂 LEFT PANEL: FAQ CATEGORY MAP & TOPICS */}
+            <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800 flex flex-col bg-white dark:bg-slate-950/40 shrink-0">
+              <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-blue-50/50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20">
+                    <Sparkles size={14} className="animate-pulse" />
+                  </div>
+                  <span className="text-xs font-black tracking-tight text-slate-900 dark:text-white uppercase">
+                    가이드 지식 맵
+                  </span>
                 </div>
-                <span className="text-xs font-black tracking-tight text-slate-900 dark:text-white uppercase">
-                  가이드 지식 맵
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold">FAQ Categories</span>
+              </div>
+
+              {/* Category tabs */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+                {faqData.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveCategory(cat.id)}
+                    className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer ${
+                      activeCategory === cat.id
+                        ? "bg-white dark:bg-slate-900/90 border-blue-500/50 dark:border-blue-500/50 shadow-md ring-1 ring-blue-500/20"
+                        : "bg-slate-50/40 dark:bg-slate-950/20 border-slate-200 dark:border-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-900/40 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-lg shrink-0">{cat.icon}</span>
+                      <div className="min-w-0">
+                        <h3 className={`text-xs font-black ${activeCategory === cat.id ? "text-blue-600 dark:text-white" : "text-slate-700 dark:text-slate-300"}`}>
+                          {cat.title}
+                        </h3>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate font-semibold mt-0.5">
+                          {cat.description}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Platform Help Note */}
+              <div className="p-4 bg-slate-50/50 dark:bg-slate-900/20 border-t border-slate-200 dark:border-slate-800 text-[10px] text-slate-450 dark:text-slate-500 font-bold space-y-1.5">
+                <p>💡 챗봇은 일반적인 기술 기밀 사양이나 구현 구조를 답변하지 않으며 오직 사용 가이드만 다룹니다.</p>
+              </div>
+            </div>
+
+            {/* 💬 RIGHT PANEL: LIVE CHAT INTERACTION CONSOLE */}
+            <div className="flex-1 flex flex-col min-w-0 bg-transparent overflow-hidden">
+              {/* Top Banner Header */}
+              <div className="px-6 py-3.5 border-b border-slate-200 dark:border-slate-800/80 bg-white/70 dark:bg-slate-950/20 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+                  <span className="text-xs font-black text-slate-800 dark:text-slate-200">
+                    {currentCategory?.title} ➜ <span className="text-blue-600 dark:text-blue-400">공식 지식 도우미</span>
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-600">
+                  CreaiBox Helper V1.0
                 </span>
               </div>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold">FAQ Categories</span>
-            </div>
 
-            {/* Category tabs */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              {faqData.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer ${
-                    activeCategory === cat.id
-                      ? "bg-white dark:bg-slate-900/90 border-blue-500/50 dark:border-blue-500/50 shadow-md ring-1 ring-blue-500/20"
-                      : "bg-slate-50/40 dark:bg-slate-950/20 border-slate-200 dark:border-slate-800/80 hover:bg-slate-100/80 dark:hover:bg-slate-900/40 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-lg shrink-0">{cat.icon}</span>
-                    <div className="min-w-0">
-                      <h3 className={`text-xs font-black ${activeCategory === cat.id ? "text-blue-600 dark:text-white" : "text-slate-700 dark:text-slate-300"}`}>
-                        {cat.title}
-                      </h3>
-                      <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate font-semibold mt-0.5">
-                        {cat.description}
-                      </p>
+              {/* Chat messages viewport */}
+              <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 custom-scrollbar">
+                
+                {/* 📌 추천 질문 칩 목록 */}
+                {currentCategory?.items && currentCategory.items.length > 0 && (
+                  <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-850 shadow-sm space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-black text-slate-700 dark:text-slate-300">
+                      <span>💡 추천 자주 묻는 질문</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {currentCategory.items.map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => handleQuestionClick(item)}
+                          className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 hover:border-blue-500/50 hover:bg-blue-50/30 dark:hover:bg-blue-900/10 text-left transition-all group cursor-pointer"
+                        >
+                          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 line-clamp-1">
+                            ➜ {item.question}
+                          </span>
+                          <ChevronRight size={13} className="text-slate-400 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+                        </button>
+                      ))}
                     </div>
                   </div>
-                </button>
-              ))}
-            </div>
+                )}
 
-            {/* Platform Help Note */}
-            <div className="p-4 bg-slate-50/50 dark:bg-slate-900/20 border-t border-slate-200 dark:border-slate-800 text-[10px] text-slate-450 dark:text-slate-500 font-bold space-y-1.5">
-              <p>💡 챗봇은 일반적인 기술 기밀 사양이나 구현 구조를 답변하지 않으며 오직 사용 가이드만 다룹니다.</p>
-            </div>
-          </div>
-
-          {/* 💬 RIGHT PANEL: LIVELY CHAT STAGE */}
-          <div className="flex-1 flex flex-col min-w-0 bg-slate-50/40 dark:bg-slate-900/10 overflow-hidden">
-            
-            {/* Chat stage header */}
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/20 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-                <h2 className="text-xs font-black text-slate-850 dark:text-slate-200">
-                  {currentCategory.title} ➔ 공식 AI 도우미
-                </h2>
-              </div>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold">CreaiBox Helper v1.0</span>
-            </div>
-
-            {/* Chat message flow container */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
-              
-              {/* FAQ items recommendations on top */}
-              <div className="bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 mb-6 space-y-2.5 shadow-sm">
-                <div className="flex items-center gap-2 text-[10px] text-slate-450 dark:text-slate-400 font-black tracking-wider uppercase mb-1">
-                  <HelpCircle size={12} className="text-blue-500" />
-                  추천 검색 가이드 토픽
-                </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {currentCategory.items.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => handleQuestionClick(item)}
-                      className="text-left p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/50 text-[11px] font-semibold text-slate-650 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-900/60 hover:text-slate-900 dark:hover:text-white hover:border-slate-350 dark:hover:border-slate-700 transition cursor-pointer flex items-start gap-1.5 group shadow-sm"
-                    >
-                      <span className="text-blue-500 group-hover:translate-x-0.5 transition-transform shrink-0">➔</span>
-                      <span className="truncate">{item.question}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Chat bubbles list */}
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <div className="flex items-start gap-2.5 max-w-[85%]">
-                    {msg.role === "assistant" && (
-                      <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-600/10 border border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs shrink-0 select-none shadow-sm">
-                        🤖
+                {/* Message stream */}
+                {messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div className={`flex items-start gap-2.5 max-w-[85%] md:max-w-[75%] ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 select-none ${
+                        msg.role === "user"
+                          ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm"
+                          : "bg-blue-50 dark:bg-blue-600/10 border border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400"
+                      }`}>
+                        {msg.role === "user" ? "ME" : "🤖"}
                       </div>
-                    )}
-                    
-                    <div className="space-y-2">
-                      <div
-                        className={`p-3.5 rounded-2xl text-xs md:text-sm font-semibold border ${
-                          msg.role === "user"
-                            ? "bg-blue-600 border-blue-500 text-white rounded-tr-none"
-                            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-300 rounded-tl-none shadow-md"
-                        }`}
-                      >
-                        <div className="space-y-1">
+
+                      <div className={`p-4 rounded-2xl text-xs md:text-[13px] leading-relaxed shadow-sm ${
+                        msg.role === "user"
+                          ? "bg-blue-600 text-white rounded-tr-none font-semibold"
+                          : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 rounded-tl-none"
+                      }`}>
+                        <div className="whitespace-pre-wrap font-sans break-words">
                           {parseMarkdown(msg.content)}
                         </div>
 
-                        {/* Unresolved Telemetry Option */}
+                        {/* Unresolved Request button */}
                         {msg.isUnresolvedAction && msg.unresolvedQuery && (
-                          <div className="mt-3.5 pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-2">
+                          <div className="mt-3.5 pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
                             <button
-                               onClick={() => handleRequestGuide(msg.unresolvedQuery!, msg.id, msg.dbId)}
-                              disabled={sendingRequest !== null}
-                              className="w-full py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-[10px] md:text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                              onClick={() => handleRequestGuide(msg.unresolvedQuery!, msg.id, msg.dbId)}
+                              disabled={sendingRequest === msg.id || msg.isSuccessAction}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition cursor-pointer ${
+                                msg.isSuccessAction
+                                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                                  : "bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                              }`}
                             >
-                              {sendingRequest === msg.id ? (
+                              {msg.isSuccessAction ? (
+                                <ThumbsUp size={11} />
+                              ) : sendingRequest === msg.id ? (
                                 <span className="animate-spin text-xs">🌀</span>
                               ) : (
                                 <Database size={11} />
                               )}
-                              가이드 제작 요청 접수하기
+                              {msg.isSuccessAction ? "제작 요청 접수 완료" : "가이드 제작 요청 접수하기"}
                             </button>
                             <p className="text-[9px] text-slate-450 dark:text-slate-500 leading-relaxed font-medium">
                               * 가이드 제작 요청을 하시면 해당 건의 사항이 관리자 분석 관제 센터로 자동 연계 전송됩니다.
                             </p>
                           </div>
                         )}
-
-                        {/* Direct action link if faq data has a route shortcut */}
+                        
+                        {/* Direct action link */}
                         {msg.link && msg.linkLabel && (
                           <div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-800/80">
                             <Link
@@ -495,56 +512,54 @@ export default function ChatbotHelperPage() {
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
 
-              {/* Typing indicator placeholder */}
-              {isTyping && (
-                <div className="flex justify-start">
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-600/10 border border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs shrink-0 select-none">
-                      🤖
-                    </div>
-                    <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 rounded-tl-none flex items-center gap-1 shadow-sm">
-                      <span className="h-1.5 w-1.5 rounded-full bg-slate-350 dark:bg-slate-650 animate-bounce" style={{ animationDelay: "0ms" }} />
-                      <span className="h-1.5 w-1.5 rounded-full bg-slate-350 dark:bg-slate-650 animate-bounce" style={{ animationDelay: "150ms" }} />
-                      <span className="h-1.5 w-1.5 rounded-full bg-slate-350 dark:bg-slate-650 animate-bounce" style={{ animationDelay: "300ms" }} />
+                {/* Typing indicator placeholder */}
+                {isTyping && (
+                  <div className="flex justify-start">
+                    <div className="flex items-start gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-600/10 border border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs shrink-0 select-none">
+                        🤖
+                      </div>
+                      <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 rounded-tl-none flex items-center gap-1 shadow-sm">
+                        <span className="h-1.5 w-1.5 rounded-full bg-slate-350 dark:bg-slate-650 animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <span className="h-1.5 w-1.5 rounded-full bg-slate-350 dark:bg-slate-650 animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <span className="h-1.5 w-1.5 rounded-full bg-slate-350 dark:bg-slate-650 animate-bounce" style={{ animationDelay: "300ms" }} />
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              <div ref={messagesEndRef} />
-            </div>
+                <div ref={messagesEndRef} />
+              </div>
 
-            {/* Chat live input console */}
-            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/40">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSendMessage(inputValue);
-                }}
-                className="flex items-center gap-2 max-w-4xl mx-auto"
-              >
-                <input
-                  type="text"
-                  placeholder="예: '도메인 어떻게 신청하나요?', '네이버 연동은 어떻게 해요?'..."
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  className="flex-1 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-850 rounded-xl px-4 py-3 text-xs md:text-sm font-semibold outline-none focus:border-blue-500/60 focus:bg-white dark:focus:bg-slate-900/90 transition shadow-inner placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-white"
-                />
-                <button
-                  type="submit"
-                  disabled={!inputValue.trim()}
-                  className="p-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-600 text-white font-bold transition shrink-0 cursor-pointer shadow-md disabled:cursor-not-allowed"
+              {/* Chat live input console */}
+              <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/40 shrink-0">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSendMessage(inputValue);
+                  }}
+                  className="flex items-center gap-2 max-w-4xl mx-auto"
                 >
-                  <Send size={14} />
-                </button>
-              </form>
+                  <input
+                    type="text"
+                    placeholder="예: '도메인 어떻게 신청하나요?', '네이버 연동은 어떻게 해요?'..."
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    className="flex-1 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-850 rounded-xl px-4 py-3 text-xs md:text-sm font-semibold outline-none focus:border-blue-500/60 focus:bg-white dark:focus:bg-slate-900/90 transition shadow-inner placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-white"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!inputValue.trim()}
+                    className="p-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-600 text-white font-bold transition shrink-0 cursor-pointer shadow-md disabled:cursor-not-allowed"
+                  >
+                    <Send size={14} />
+                  </button>
+                </form>
+              </div>
             </div>
-
-          </div>
-
+          </main>
         </div>
       </div>
     </div>

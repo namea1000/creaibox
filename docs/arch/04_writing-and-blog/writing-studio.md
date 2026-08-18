@@ -19,10 +19,16 @@ The Writing Studio is designed to empower content creators with advanced, AI-dri
 * **AI Auto Correction & Polishing**: Enhances existing content structure, extends content volume, auto-generates Tables of Contents (TOC), and formats text layout.
 * **SEO Optimizer & Schema Markups**: Auto-analyzes focus keywords, builds titles/meta descriptions, suggests SEO tags, and generates JSON-LD Schema markup.
 * **Thumbnail & Image Management**: Manages generated blog thumbnails, edits captions, and handles image source optimization (WebP conversion).
+* **Blog Card Box Styler & 3-Column Grid Manager**: Allows customizing card borders (width 0-4px, radius 0-24px, color picker), card background colors (light/dark palettes), thumbnail layout (Full Bleed vs Inset Pad), and page pagination in increments of 3 (3 to 60 posts) with a live preview.
 
 ## 3. UI Structure
 * **Sidebar Navigation**: Quick links to AI Posting Drafts, Asset Libraries, and Blog Settings.
 * **Main Tiptap Editor**: A visual rich text editor built on TipTap with markdown support.
+* **Blog Management Hub (`/writing/creaibox/blog-management`)**:
+  - **Layout & Template Selector**: Card Grid, List Feed, and News Flow options.
+  - **Posts Per Page Selector**: 3-item incremental grid buttons (3, 6, 9, ..., 60).
+  - **Card Box Styler & Live Preview**: Real-time interactive preview with light/dark toggles and fine-grained controls for border width, corner radius, border color, background colors, and thumbnail layout modes (Full Bleed / Inset Pad).
+  - **Source Badge & Author Profile Customization**: Controls custom footer credentials and author cards.
 * **Tab-based AI Interface**:
   - **AI 포스팅 글쓰기 (Smart Writer)**: Input topics and settings to draft new posts.
   - **AI 포스팅 재창조 (Recreator)**: Copy-paste URL to fetch and recreate.
