@@ -392,34 +392,28 @@ export default function YoutubeTop300() {
 
   return (
     <div className="space-y-6">
-      {/* Header Board */}
-      <div className="relative overflow-hidden rounded-[20px] border border-red-500/10 bg-[#0e0a0a]/50 px-5 py-4 dark:border-red-500/20 dark:bg-zinc-950/20">
-        <div className="absolute right-0 top-0 -mr-16 -mt-16 h-48 w-48 rounded-full bg-red-600/10 blur-3xl" />
-        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-2.5 py-0.5 text-[10px] font-black text-red-500 border border-red-500/10">
-              <Flame size={11} className="animate-pulse" />
-              REAL INFLUENCER RANKING
-            </div>
-            <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+      {/* 🚀 상단 헤더 */}
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-[26px] font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
               유튜브 실제 인기 채널 랭킹 TOP 300
-            </h2>
-            <p className="text-[11px] font-bold text-slate-500 dark:text-zinc-400">
+            </h1>
+            <p className="text-[15px] text-slate-500 dark:text-zinc-400 mt-1">
               국내외 검증된 실제 유튜버 통계를 파싱하여 정렬합니다. 채널 카드를 누르면 상세 아웃라이어 영상 분석으로 즉시 연동됩니다.
             </p>
           </div>
-          
-          {/* 수동 전체 300개 동기화 쿨다운 버튼 */}
+
           <div className="shrink-0">
             <button
               onClick={handleManualSyncAll}
               disabled={isSyncing || cooldownSeconds > 0}
-              className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-black shadow-sm transition border ${
+              className={`inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-semibold shadow-sm transition border cursor-pointer ${
                 isSyncing
-                  ? "bg-zinc-850 border-zinc-750 text-zinc-400 cursor-not-allowed"
+                  ? "bg-zinc-800 border-zinc-700 text-zinc-400 cursor-not-allowed"
                   : cooldownSeconds > 0
-                  ? "bg-zinc-900 border-zinc-850 text-zinc-500 cursor-not-allowed"
-                  : "bg-red-500 border-red-500 text-white hover:bg-red-600 hover:border-red-600 active:scale-98"
+                  ? "bg-zinc-900 border-zinc-800 text-zinc-500 cursor-not-allowed"
+                  : "bg-red-600 border-red-600 text-white hover:bg-red-500"
               }`}
             >
               <RotateCw size={13} className={isSyncing ? "animate-spin" : ""} />
@@ -436,7 +430,7 @@ export default function YoutubeTop300() {
       </div>
 
       {/* ℹ️ 랭킹 업데이트 작동 방식 안내 배너 */}
-      <div className="rounded-2xl border border-blue-500/10 bg-blue-500/5 p-4.5 space-y-2 dark:border-blue-500/20 dark:bg-[#0c1220]/40 text-left">
+      <div className="rounded-md border border-blue-500/10 bg-blue-500/5 p-4.5 space-y-2 dark:border-blue-500/20 dark:bg-[#0c1220]/40 text-left">
         <h4 className="text-xs font-black text-blue-500 flex items-center gap-1.5">
           ℹ️ 유튜브 랭킹 실시간 수동 업데이트 가이드
         </h4>
@@ -459,7 +453,7 @@ export default function YoutubeTop300() {
       </div>
 
       {/* 🌟 세로폭 대폭 다이어트 및 통합 필터 툴바 영역 (국가 선택 셀렉터 + 카테고리 가로 스크롤 단일 배치) */}
-      <div className="flex flex-col lg:flex-row lg:items-center gap-3 bg-slate-50 dark:bg-[#0c0d12]/30 border border-slate-200 dark:border-zinc-800/80 rounded-2xl p-2.5">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-3 bg-slate-50 dark:bg-[#0c0d12]/30 border border-slate-200 dark:border-zinc-800/80 rounded-md p-2.5">
         
         {/* 13개국 선택 드롭다운 셀렉터 */}
         <div className="flex items-center gap-2 shrink-0 border-r border-slate-200 dark:border-zinc-800 pr-3.5">
@@ -467,7 +461,7 @@ export default function YoutubeTop300() {
           <select
             value={selectedCountry}
             onChange={(e) => setSelectedCountry(e.target.value)}
-            className="bg-white dark:bg-[#0c0d12] border border-slate-300 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs font-black text-slate-800 dark:text-zinc-200 outline-none cursor-pointer focus:ring-1 focus:ring-red-500"
+            className="bg-white dark:bg-[#0c0d12] border border-slate-300 dark:border-white/10 rounded-md px-2.5 py-1.5 text-xs font-black text-slate-800 dark:text-zinc-200 outline-none cursor-pointer focus:ring-1 focus:ring-red-500"
           >
             {countries.map((c) => (
               <option key={c.code} value={c.code}>
@@ -484,7 +478,7 @@ export default function YoutubeTop300() {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`rounded-lg px-3 py-1.5 text-[11px] font-extrabold border transition-all duration-200 shrink-0 ${
+                className={`rounded-md px-3 py-1.5 text-[11px] font-extrabold border transition-all duration-200 shrink-0 ${
                   selectedCategory === cat
                     ? "bg-red-500 text-white border-red-500 shadow-md"
                     : "bg-white dark:bg-[#0c0d12]/40 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5"
@@ -546,7 +540,7 @@ export default function YoutubeTop300() {
           <div
             key={`${channel.handle}-${channel.rank}`}
             onClick={() => handleChannelClick(channel.handle)}
-            className="group relative flex items-center gap-3.5 rounded-xl border border-slate-200 bg-white/70 p-3.5 transition-all duration-300 cursor-pointer hover:-translate-y-0.5 hover:border-red-500 hover:bg-white dark:border-white/5 dark:bg-[#0c0d12]/30 dark:hover:border-red-500/50 dark:hover:bg-[#12131a]/60 hover:shadow-lg"
+            className="group relative flex items-center gap-3.5 rounded-md border border-slate-200 bg-white/70 p-3.5 transition-all duration-300 cursor-pointer hover:-translate-y-0.5 hover:border-red-500 hover:bg-white dark:border-white/5 dark:bg-[#0c0d12]/30 dark:hover:border-red-500/50 dark:hover:bg-[#12131a]/60 hover:shadow-lg"
           >
             {/* Rank badge */}
             <div className="absolute right-3.5 top-3.5 flex h-6.5 w-6.5 items-center justify-center rounded-full font-black text-[10px] border bg-slate-50 dark:bg-[#1a1b26]/50 border-slate-200 dark:border-zinc-800">
@@ -562,7 +556,7 @@ export default function YoutubeTop300() {
             </div>
 
             {/* Profile Avatar */}
-            <div className="relative h-14.5 w-14.5 shrink-0 overflow-hidden rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-100">
+            <div className="relative h-14.5 w-14.5 shrink-0 overflow-hidden rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-100">
               <img
                 src={channel.imageUrl}
                 alt={channel.name}

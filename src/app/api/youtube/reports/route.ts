@@ -42,29 +42,36 @@ async function getCachedReports(type: string): Promise<any> {
         return [];
       }
 
-      // 2. Load latest archive records to map full video metadata
-      const { data: archives } = await supabaseAdmin
-        .from("youtube_trending_archive")
-        .select("videos_data")
-        .order("target_date", { ascending: false })
-        .limit(100);
+      // 2. Load latest archive records ONLY if there are missing metadata
+      const missingMetadataIds = analyses
+        .filter((a) => !(a as any).video_metadata)
+        .map((a) => a.video_id);
 
       const videoMap = new Map<string, any>();
-      if (archives) {
-        for (const archive of archives) {
-          const vData = archive.videos_data;
-          if (Array.isArray(vData)) {
-            for (const v of vData) {
-              if (v && v.id) videoMap.set(v.id, v);
-            }
-          } else if (vData && typeof vData === "object") {
-            Object.values(vData).forEach((list: any) => {
-              if (Array.isArray(list)) {
-                for (const v of list) {
-                  if (v && v.id) videoMap.set(v.id, v);
-                }
+
+      if (missingMetadataIds.length > 0) {
+        const { data: archives } = await supabaseAdmin
+          .from("youtube_trending_archive")
+          .select("videos_data")
+          .order("target_date", { ascending: false })
+          .limit(10);
+
+        if (archives) {
+          for (const archive of archives) {
+            const vData = archive.videos_data;
+            if (Array.isArray(vData)) {
+              for (const v of vData) {
+                if (v && v.id) videoMap.set(v.id, v);
               }
-            });
+            } else if (vData && typeof vData === "object") {
+              Object.values(vData).forEach((list: any) => {
+                if (Array.isArray(list)) {
+                  for (const v of list) {
+                    if (v && v.id) videoMap.set(v.id, v);
+                  }
+                }
+              });
+            }
           }
         }
       }

@@ -807,16 +807,27 @@ export default function Sidebar({
             }
           `}
         >
-          {/* Main Parent Menu Link: 처음 클릭 시 해당 페이지로 이동만 진행(서브메뉴 안 펼쳐짐), 이미 해당 페이지에 있을 때 다시 클릭하면 토글(펼침/접힘) */}
+          {/* Main Parent Menu Link: 
+              1) 첫 번째 클릭 (다른 페이지나 서브메뉴에서 클릭): 홈으로 '이동만' 수행 (서브메뉴 안 펼쳐짐)
+              2) 두 번째 클릭 (이미 홈에 머무를 때 클릭): 서브메뉴 펼쳐짐
+              3) 세 번째 클릭 (서브메뉴 펼쳐진 상태에서 다시 클릭): 서브메뉴 접힘
+          */}
           <Link
             href={group.href}
             onClick={(e) => {
-              if (isGroupActiveState) {
+              const isExactHome = normalizePath(pathname) === normalizePath(group.href);
+              if (isExactHome) {
+                // 이미 정확히 해당 홈 페이지에 있을 때만 토글 (2번째 클릭 펼침 -> 3번째 클릭 접힘)
                 e.preventDefault();
                 toggleGroup(group.key);
               } else {
+                // 첫 번째 클릭: 홈으로 이동만 진행 (서브메뉴 자동 펼침 절대 안 함)
                 setOptimisticActiveKey(group.key);
                 setIsMobileOpen(false);
+                // 서브메뉴에서 대메뉴 홈으로 빠져나올 때는 펼쳐져 있던 서브메뉴를 닫아줌
+                if (isExpanded) {
+                  toggleGroup(group.key);
+                }
               }
             }}
             className="flex flex-1 items-center gap-2.5 min-w-0 cursor-pointer select-none"

@@ -25,18 +25,19 @@ export default function ThumbnailCtr() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 backdrop-blur-md">
-        <h2 className="flex items-center gap-2 text-lg font-black text-white mb-2">
-          <ImageIcon className="text-amber-400" size={20} />
-          썸네일 CTR 연구소 (Thumbnail stand-out simulator)
-        </h2>
-        <p className="text-xs text-zinc-555 mb-6 leading-relaxed">
-          업로드할 썸네일의 시각 구조와 인물 표정 배치, 텍스트 가독성을 점검하고 유튜브 홈 화면 피드 경쟁사 썸네일 틈에서 클릭 효율(CTR)을 예측 시뮬레이션합니다.
+      {/* 🚀 상단 헤더 */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-[26px] font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+          썸네일 CTR 연구소
+        </h1>
+        <p className="text-[15px] text-slate-500 dark:text-zinc-400">
+          업로드할 썸네일의 시각 구조와 인물 표정 배치, 텍스트 가독성을 점검하고 유튜브 홈 화면 피드 속 클릭 효율(CTR)을 시뮬레이션합니다.
         </p>
+      </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3">
           {/* Controls column */}
-          <div className="space-y-5 rounded-2xl border border-zinc-850 bg-zinc-950/20 p-5">
+          <div className="space-y-5 rounded-md border border-zinc-850 bg-zinc-950/20 p-5">
             <h3 className="text-xs font-black text-white">썸네일 스타일링 조절</h3>
 
             {/* Title text input */}
@@ -46,7 +47,7 @@ export default function ThumbnailCtr() {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full h-10 rounded-xl border border-zinc-800 bg-zinc-950 px-3.5 text-xs font-semibold text-white outline-none focus:border-amber-500/50 transition"
+                className="w-full h-10 rounded-md border border-zinc-800 bg-zinc-950 px-3.5 text-xs font-semibold text-white outline-none focus:border-amber-500/50 transition"
               />
             </div>
 
@@ -58,7 +59,7 @@ export default function ThumbnailCtr() {
                   <button
                     key={i}
                     onClick={() => setBgColor(c.value)}
-                    className={`w-full h-9 rounded-lg border text-[10px] font-bold transition flex items-center justify-between px-3 ${
+                    className={`w-full h-9 rounded-md border text-[10px] font-bold transition flex items-center justify-between px-3 ${
                       bgColor === c.value
                         ? "border-amber-500 bg-amber-500/10 text-amber-400"
                         : "border-zinc-850 bg-zinc-950/40 text-zinc-400 hover:text-white"
@@ -98,7 +99,7 @@ export default function ThumbnailCtr() {
                   <button
                     key={tc.id}
                     onClick={() => setTextCount(tc.id)}
-                    className={`h-9 rounded-lg border text-[10px] font-bold transition ${
+                    className={`h-9 rounded-md border text-[10px] font-bold transition ${
                       textCount === tc.id
                         ? "border-amber-500 bg-amber-500/10 text-amber-400"
                         : "border-zinc-850 bg-zinc-950/40 text-zinc-400 hover:text-white"
@@ -113,12 +114,12 @@ export default function ThumbnailCtr() {
 
           {/* Simulation Preview cards */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="rounded-2xl border border-zinc-850 bg-zinc-950/20 p-5 space-y-3">
+            <div className="rounded-md border border-zinc-850 bg-zinc-950/20 p-5 space-y-3">
               <span className="text-[9px] font-black text-amber-400 uppercase tracking-wider block">YOUTUBE HOME FEED SIMULATION</span>
               
               <div className="grid gap-4 sm:grid-cols-2">
                 {/* Competitor Card */}
-                <div className="rounded-xl border border-zinc-850 bg-zinc-950 overflow-hidden space-y-2 pb-3.5">
+                <div className="rounded-md border border-zinc-850 bg-zinc-950 overflow-hidden space-y-2 pb-3.5">
                   <div className="aspect-video w-full bg-zinc-900 relative">
                     <img src="https://images.unsplash.com/photo-1546074177-ffedd79d494d?w=320&q=80" alt="" className="h-full w-full object-cover" />
                     <span className="absolute bottom-1 right-1.5 rounded bg-black/80 px-1 py-0.5 text-[8px] text-white font-bold">12:35</span>
@@ -130,7 +131,7 @@ export default function ThumbnailCtr() {
                 </div>
 
                 {/* Simulated Custom Card */}
-                <div className="rounded-xl border border-amber-500/40 bg-zinc-950 overflow-hidden space-y-2 pb-3.5 ring-1 ring-amber-500/10">
+                <div className="rounded-md border border-amber-500/40 bg-zinc-950 overflow-hidden space-y-2 pb-3.5 ring-1 ring-amber-500/10">
                   <div className={`aspect-video w-full bg-gradient-to-br ${bgColor} relative flex flex-col justify-between p-3`}>
                     <div className="flex justify-between items-start">
                       <span className="rounded bg-black/40 text-[8px] px-1 text-white font-bold">PREVIEW</span>
@@ -152,9 +153,9 @@ export default function ThumbnailCtr() {
             </div>
 
             {/* Standout Rating card */}
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/15 p-5 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="rounded-md border border-zinc-800 bg-zinc-900/15 p-5 flex flex-col sm:flex-row justify-between items-center gap-4">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                <div className="h-10 w-10 rounded-md bg-amber-500/10 text-amber-400 flex items-center justify-center">
                   <Eye size={20} />
                 </div>
                 <div>
@@ -170,17 +171,16 @@ export default function ThumbnailCtr() {
             </div>
           </div>
         </div>
-      </div>
 
       {/* Standout criteria rules checklist */}
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-4">
+      <div className="rounded-md border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-4">
         <h3 className="text-sm font-black text-white flex items-center gap-1.5">
           <Sparkles size={16} className="text-amber-400" />
           썸네일 시각성 극대화 꿀팁
         </h3>
 
         <div className="grid gap-3 sm:grid-cols-3 text-xs font-bold text-zinc-350">
-          <div className="rounded-xl bg-zinc-950/50 p-4 border border-zinc-850 flex gap-2.5 items-start">
+          <div className="rounded-md bg-zinc-950/50 p-4 border border-zinc-850 flex gap-2.5 items-start">
             <CheckCircle size={15} className="text-amber-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-white">우측 하단 안전 구역 준수</p>
@@ -188,7 +188,7 @@ export default function ThumbnailCtr() {
             </div>
           </div>
 
-          <div className="rounded-xl bg-zinc-950/50 p-4 border border-zinc-850 flex gap-2.5 items-start">
+          <div className="rounded-md bg-zinc-950/50 p-4 border border-zinc-850 flex gap-2.5 items-start">
             <CheckCircle size={15} className="text-amber-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-white">고대비 단색 배경</p>
@@ -196,7 +196,7 @@ export default function ThumbnailCtr() {
             </div>
           </div>
 
-          <div className="rounded-xl bg-zinc-950/50 p-4 border border-zinc-850 flex gap-2.5 items-start">
+          <div className="rounded-md bg-zinc-950/50 p-4 border border-zinc-850 flex gap-2.5 items-start">
             <CheckCircle size={15} className="text-amber-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-white">감정 표현 극대화</p>

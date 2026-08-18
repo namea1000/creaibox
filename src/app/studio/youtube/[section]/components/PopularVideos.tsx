@@ -349,21 +349,18 @@ export default function PopularVideos() {
 
   return (
     <div className="space-y-6">
-      {/* Header Panel */}
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 backdrop-blur-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="flex items-center gap-2 text-xl sm:text-3xl font-black text-white mb-2">
-            <Trophy className="text-yellow-400" size={28} />
-            인기 영상 조회수 랭킹 (Most-Viewed)
-          </h2>
-          <p className="text-sm text-zinc-300 font-medium leading-relaxed">
-            👑 <span className="font-bold text-yellow-300">인기 영상 조회수 랭킹</span>: 전 세계 12개국 & 13개 카테고리별 <span className="text-white font-bold">실제 총 누적 조회수(Total View Count) 최상위 1위~50위 매머드급 대박 영상</span>을 분석합니다. (💡 <span className="text-zinc-400">실시간 유행 핫이슈는 '🔥 급상승 영상 트렌드' 메뉴에서 확인하실 수 있습니다.</span>)
-          </p>
-        </div>
+      {/* 🚀 상단 헤더 */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-[26px] font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+          인기 영상 조회수 랭킹
+        </h1>
+        <p className="text-[15px] text-slate-500 dark:text-zinc-400">
+          전 세계 12개국 및 카테고리별 실제 총 누적 조회수 최상위 1위~50위 매머드급 대박 영상을 분석합니다.
+        </p>
       </div>
 
       {/* 🌟 Top Control Bar: Period Filter + Search + Refresh */}
-      <div className="flex flex-wrap justify-between items-center gap-3 bg-zinc-950/40 border border-zinc-850 p-3.5 rounded-2xl w-full">
+      <div className="flex flex-wrap justify-between items-center gap-3 bg-zinc-950/40 border border-zinc-850 p-3.5 rounded-md w-full">
         {/* Left: Period Tabs */}
         <div className="flex items-center gap-2">
           <span className="text-xs font-black text-zinc-400 mr-1 flex items-center gap-1">
@@ -377,7 +374,7 @@ export default function PopularVideos() {
                 onClick={() => {
                   setSelectedPeriod(p.id);
                 }}
-                className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition flex items-center gap-1.5 border-2 ${
+                className={`px-3.5 py-1.5 text-xs font-black rounded-md transition flex items-center gap-1.5 border-2 ${
                   isActive
                     ? "bg-yellow-500/20 border-yellow-400 text-yellow-300 shadow-md shadow-yellow-500/20 scale-105"
                     : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white"
@@ -398,7 +395,7 @@ export default function PopularVideos() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="영상 제목 또는 채널명 검색..."
-              className="pl-8 pr-7 py-1.5 bg-zinc-900 border border-zinc-750 text-white placeholder-zinc-500 text-xs font-medium rounded-xl focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition w-44 sm:w-60"
+              className="pl-8 pr-7 py-1.5 bg-zinc-900 border border-zinc-750 text-white placeholder-zinc-500 text-xs font-medium rounded-md focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition w-44 sm:w-60"
             />
             {searchQuery && (
               <button
@@ -415,7 +412,7 @@ export default function PopularVideos() {
             onClick={handleForceRefresh}
             disabled={loading}
             title="실시간 인기 랭킹 즉시 갱신"
-            className="px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 border-2 bg-yellow-500/10 border-yellow-500/50 text-yellow-300 hover:bg-yellow-500/20 hover:border-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            className="px-3 py-1.5 rounded-md text-xs font-black transition flex items-center gap-1.5 border-2 bg-yellow-500/10 border-yellow-500/50 text-yellow-300 hover:bg-yellow-500/20 hover:border-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
           >
             <RotateCw size={13} className={loading ? "animate-spin text-yellow-400" : "text-yellow-400"} />
             <span>새로고침</span>
@@ -424,12 +421,12 @@ export default function PopularVideos() {
       </div>
 
       {/* 2-Column Ultra-Slim Filter Hub */}
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-950/20 p-4 backdrop-blur-md flex flex-col md:flex-row items-center gap-4 w-full shadow-2xl shadow-black/25">
+      <div className="rounded-md border border-zinc-800 bg-zinc-950/20 p-4 backdrop-blur-md flex flex-col md:flex-row items-center gap-4 w-full shadow-2xl shadow-black/25">
         {/* Left Column: Format Selector (150px) */}
         <div className="w-full md:w-[150px] shrink-0 flex flex-row md:flex-col justify-center gap-1.5">
           <button
             onClick={() => setActiveFormat("all")}
-            className={`w-full py-1.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-between border-2 ${
+            className={`w-full py-1.5 px-3 rounded-md text-xs font-black transition flex items-center justify-between border-2 ${
               activeFormat === "all"
                 ? "bg-amber-500/20 border-amber-400 text-amber-300 shadow-md shadow-amber-500/20 scale-[1.02]"
                 : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-850 hover:text-zinc-200"
@@ -443,7 +440,7 @@ export default function PopularVideos() {
 
           <button
             onClick={() => setActiveFormat("video")}
-            className={`w-full py-1.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-between border-2 ${
+            className={`w-full py-1.5 px-3 rounded-md text-xs font-black transition flex items-center justify-between border-2 ${
               activeFormat === "video"
                 ? "bg-sky-500/20 border-sky-400 text-sky-300 shadow-md shadow-sky-500/20 scale-[1.02]"
                 : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-850 hover:text-zinc-200"
@@ -457,7 +454,7 @@ export default function PopularVideos() {
 
           <button
             onClick={() => setActiveFormat("shorts")}
-            className={`w-full py-1.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-between border-2 ${
+            className={`w-full py-1.5 px-3 rounded-md text-xs font-black transition flex items-center justify-between border-2 ${
               activeFormat === "shorts"
                 ? "bg-red-500/20 border-red-500 text-red-300 shadow-md shadow-red-500/20 scale-[1.02]"
                 : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-850 hover:text-zinc-200"
@@ -478,7 +475,7 @@ export default function PopularVideos() {
               <button
                 key={ct.code}
                 onClick={() => setSelectedCountry(ct.code)}
-                className={`px-3 py-1 text-xs font-black rounded-xl transition flex items-center gap-1.5 shrink-0 whitespace-nowrap border-2 ${
+                className={`px-3 py-1 text-xs font-black rounded-md transition flex items-center gap-1.5 shrink-0 whitespace-nowrap border-2 ${
                   selectedCountry === ct.code
                     ? "bg-yellow-950/30 border-yellow-500/70 text-white shadow-lg shadow-yellow-950/40 transform scale-105"
                     : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white"
@@ -496,7 +493,7 @@ export default function PopularVideos() {
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`px-3 py-1 text-xs font-black rounded-lg transition shrink-0 whitespace-nowrap border-2 ${
+                className={`px-3 py-1 text-xs font-black rounded-md transition shrink-0 whitespace-nowrap border-2 ${
                   activeCategory === cat.id
                     ? "bg-yellow-600 border-yellow-500 text-zinc-950 font-black shadow-md shadow-yellow-600/20"
                     : "bg-zinc-900 border-zinc-850 text-zinc-400 hover:bg-zinc-800 hover:text-white"
@@ -512,13 +509,13 @@ export default function PopularVideos() {
       {/* Video Grid & Content Area */}
       <div className="space-y-4">
         {error && (
-          <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-xs font-bold text-red-400">
+          <div className="rounded-md border border-red-500/20 bg-red-500/5 p-4 text-xs font-bold text-red-400">
             ⚠️ {error}
           </div>
         )}
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3.5 bg-zinc-900/40 rounded-2xl border border-zinc-800/80 p-8 shadow-inner">
+          <div className="flex flex-col items-center justify-center py-20 gap-3.5 bg-zinc-900/40 rounded-md border border-zinc-800/80 p-8 shadow-inner">
             <Loader2 className="animate-spin text-yellow-400" size={36} />
             {loadingStatus === "youtube" ? (
               <div className="text-center space-y-1">
@@ -540,7 +537,7 @@ export default function PopularVideos() {
             )}
           </div>
         ) : filteredVideos.length === 0 ? (
-          <div className="text-center py-20 border border-zinc-850 rounded-2xl bg-zinc-950/20 space-y-3 p-6">
+          <div className="text-center py-20 border border-zinc-850 rounded-md bg-zinc-950/20 space-y-3 p-6">
             {searchQuery ? (
               <>
                 <p className="text-sm text-yellow-300 font-black">
@@ -582,11 +579,11 @@ export default function PopularVideos() {
               return (
                 <div
                   key={videoId || idx}
-                  className="group relative flex flex-col justify-between rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 transition-all duration-300 hover:border-yellow-500/50 hover:bg-zinc-900/90 hover:shadow-xl hover:shadow-yellow-950/10 overflow-hidden"
+                  className="group relative flex flex-col justify-between rounded-md border border-zinc-800 bg-zinc-900/60 p-4 transition-all duration-300 hover:border-yellow-500/50 hover:bg-zinc-900/90 hover:shadow-xl hover:shadow-yellow-950/10 overflow-hidden"
                 >
                   <div>
                     {/* Rank Badge */}
-                    <div className="absolute top-6 left-6 z-10 flex items-center gap-1 rounded-lg bg-zinc-950/80 backdrop-blur-md px-2.5 py-1 border border-yellow-500/30 text-xs font-black text-yellow-400">
+                    <div className="absolute top-6 left-6 z-10 flex items-center gap-1 rounded-md bg-zinc-950/80 backdrop-blur-md px-2.5 py-1 border border-yellow-500/30 text-xs font-black text-yellow-400">
                       <Trophy size={12} className="text-yellow-400" /> #{idx + 1}
                     </div>
 
@@ -602,7 +599,7 @@ export default function PopularVideos() {
 
                     {/* Thumbnail or Inline YouTube Player */}
                     {videoId && videoId === playingVideoId ? (
-                      <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black mb-3">
+                      <div className="relative aspect-video w-full overflow-hidden rounded-md bg-black mb-3">
                         <iframe
                           src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
                           title={title}
@@ -614,7 +611,7 @@ export default function PopularVideos() {
                     ) : (
                       <div
                         onClick={() => videoId && setPlayingVideoId(videoId)}
-                        className="relative aspect-video w-full overflow-hidden rounded-xl bg-zinc-950 mb-3 cursor-pointer group"
+                        className="relative aspect-video w-full overflow-hidden rounded-md bg-zinc-950 mb-3 cursor-pointer group"
                       >
                         <img
                           src={thumbnail}
@@ -623,7 +620,7 @@ export default function PopularVideos() {
                         />
                         {/* Play Button Overlay */}
                         <div className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity duration-250">
-                          <div className="flex h-11 w-16 items-center justify-center rounded-2xl bg-red-600 text-white shadow-2xl transform scale-90 group-hover:scale-100 transition-all duration-300">
+                          <div className="flex h-11 w-16 items-center justify-center rounded-md bg-red-600 text-white shadow-2xl transform scale-90 group-hover:scale-100 transition-all duration-300">
                             <Play size={18} fill="currentColor" className="ml-1" />
                           </div>
                         </div>

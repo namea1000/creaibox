@@ -62,44 +62,35 @@ export default function YoutubeVideoSearch() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Search Bar Header */}
-      <div className="relative overflow-hidden rounded-[24px] border border-red-500/10 bg-[#0e0a0a]/50 p-8 dark:border-red-500/20 dark:bg-zinc-950/20">
-        <div className="absolute right-0 top-0 -mr-16 -mt-16 h-48 w-48 rounded-full bg-red-600/10 blur-3xl" />
-        <div className="relative max-w-2xl mx-auto text-center space-y-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1 text-xs font-black text-red-500 border border-red-500/10">
-              <Compass size={12} className="animate-spin-slow" />
-              VIDEO INTELLIGENCE SEARCH
-            </div>
-            <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              유튜브 인기 영상 입체 검색
-            </h2>
-            <p className="text-xs font-bold text-slate-500 dark:text-zinc-400">
-              유튜브 내 키워드, 채널명, 인기 해시태그를 대조하여 트렌드 파괴력이 높은 최적의 인기 영상을 추적합니다.
-            </p>
-          </div>
-
-          <form onSubmit={handleSearchSubmit} className="relative flex items-center">
-            <div className="flex w-full items-center gap-2 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#0c0d12]/45 p-1.5 focus-within:ring-2 focus-within:ring-red-500/40">
-              <Search className="ml-2 text-slate-400 dark:text-zinc-500 shrink-0" size={18} />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="검색어 또는 관심 키워드를 입력해 보세요 (예: 아이브, 먹방, 스위스)"
-                className="w-full bg-transparent py-2 pl-1 pr-3 text-sm font-bold text-slate-800 outline-none placeholder:text-slate-400 dark:text-zinc-200 dark:placeholder:text-zinc-500"
-              />
-              <button
-                type="submit"
-                className="h-9 shrink-0 rounded-lg bg-red-500 px-4 text-xs font-extrabold text-white transition hover:bg-red-600 active:scale-[0.98] shadow-md shadow-red-500/25"
-              >
-                검색하기
-              </button>
-            </div>
-          </form>
-        </div>
+    <div className="space-y-6">
+      {/* 🚀 상단 헤더 */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-[26px] font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+          유튜브 영상 검색
+        </h1>
+        <p className="text-[15px] text-slate-500 dark:text-zinc-400">
+          유튜브 내 키워드, 채널명, 인기 해시태그를 대조하여 트렌드 파괴력이 높은 최적의 인기 영상을 추적합니다.
+        </p>
       </div>
+
+      <form onSubmit={handleSearchSubmit} className="max-w-2xl">
+        <div className="flex w-full items-center gap-2 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-1.5 focus-within:ring-2 focus-within:ring-red-500/40 shadow-xs">
+          <Search className="ml-2 text-slate-400 dark:text-zinc-500 shrink-0" size={18} />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="검색어 또는 관심 키워드를 입력해 보세요 (예: 아이브, 먹방, 스위스)"
+            className="w-full bg-transparent py-1.5 pl-1 pr-3 text-xs font-semibold text-slate-900 outline-none placeholder:text-slate-400 dark:text-zinc-200 dark:placeholder:text-zinc-600"
+          />
+          <button
+            type="submit"
+            className="h-8 shrink-0 rounded-md bg-red-600 px-4 text-xs font-semibold text-white transition hover:bg-red-500 cursor-pointer shadow-xs"
+          >
+            검색하기
+          </button>
+        </div>
+      </form>
 
       {/* Grid Results Content */}
       <div className="space-y-4">
@@ -114,7 +105,7 @@ export default function YoutubeVideoSearch() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="space-y-3 animate-pulse">
-                <div className="aspect-video w-full rounded-2xl bg-slate-200 dark:bg-zinc-800" />
+                <div className="aspect-video w-full rounded-md bg-slate-200 dark:bg-zinc-800" />
                 <div className="h-4 w-3/4 rounded bg-slate-200 dark:bg-zinc-800" />
                 <div className="h-3 w-1/2 rounded bg-slate-200 dark:bg-zinc-800" />
               </div>
@@ -122,7 +113,7 @@ export default function YoutubeVideoSearch() {
           </div>
         ) : filteredVideos.length === 0 ? (
           /* Empty State */
-          <div className="rounded-2xl border border-dashed border-slate-300 dark:border-zinc-800 p-16 text-center">
+          <div className="rounded-md border border-dashed border-slate-300 dark:border-zinc-800 p-16 text-center">
             <span className="text-sm font-bold text-slate-400 dark:text-zinc-600">
               입력하신 검색어에 해당하는 인기 유튜브 영상이 존재하지 않습니다. 다른 단어로 검색해 보세요.
             </span>
@@ -133,7 +124,7 @@ export default function YoutubeVideoSearch() {
             {filteredVideos.map((video) => (
               <div
                 key={video.id}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white/70 transition-all duration-300 hover:-translate-y-1 hover:border-red-500/20 hover:bg-white dark:border-white/5 dark:bg-[#0c0d12]/30 dark:hover:border-red-500/30 dark:hover:bg-[#12131a]/60 hover:shadow-xl"
+                className="group flex flex-col overflow-hidden rounded-md border border-slate-200 bg-white/70 transition-all duration-300 hover:-translate-y-1 hover:border-red-500/20 hover:bg-white dark:border-white/5 dark:bg-[#0c0d12]/30 dark:hover:border-red-500/30 dark:hover:bg-[#12131a]/60 hover:shadow-xl"
               >
                 {/* Thumbnail and duration */}
                 <div className="relative aspect-video w-full overflow-hidden bg-slate-100 dark:bg-zinc-800">

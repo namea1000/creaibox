@@ -336,12 +336,6 @@ async function getGlobalBundle(date: string): Promise<Record<string, any[]> | nu
 
 // Unified proxy endpoint for YouTube Data API v3
 export async function GET(req: NextRequest) {
-  // 0. Optional user session check
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type");
 

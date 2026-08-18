@@ -98,39 +98,39 @@ function YoutubeSeoContent() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 backdrop-blur-md">
-        <h2 className="flex items-center gap-2 text-lg font-black text-white mb-2">
-          <Search className="text-emerald-400" size={20} />
-          유튜브 SEO 분석기
-        </h2>
-        <p className="text-xs text-zinc-550 mb-4 leading-relaxed">
-          분석하려는 유튜브 동영상의 URL 주소 또는 비디오 ID를 입력하여 상위 노출에 필요한 제목 구조, 태그 구성, 본문 매치도를 감사(Audit)합니다.
+      {/* 🚀 상단 헤더 */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-[26px] font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+          유튜브 SEO 분석
+        </h1>
+        <p className="text-[15px] text-slate-500 dark:text-zinc-400">
+          분석하려는 유튜브 영상 URL을 입력하여 상위 노출에 필요한 제목 구조, 태그 구성, 본문 매치도를 진단합니다.
         </p>
-
-        <form onSubmit={handleAudit} className="flex gap-2">
-          <input
-            type="text"
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
-            placeholder="유튜브 동영상 링크 입력 (예: https://www.youtube.com/watch?v=dQw4w9WgXcQ)"
-            className="flex-1 h-11 rounded-xl border border-zinc-800 bg-zinc-950 px-4 text-xs font-semibold text-white outline-none placeholder:text-zinc-650 focus:border-emerald-500/50 transition-all"
-          />
-          <button
-            type="submit"
-            disabled={loading || !videoUrl.trim()}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 text-xs font-black text-white hover:bg-emerald-500 disabled:opacity-50 transition-all shadow-lg shadow-emerald-600/10 shrink-0"
-          >
-            {loading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
-            SEO 진단 시작
-          </button>
-        </form>
-
-        {error && (
-          <p className="text-xs text-red-400 font-bold mt-2">
-            ⚠️ {error}
-          </p>
-        )}
       </div>
+
+      <form onSubmit={handleAudit} className="flex gap-2.5 max-w-2xl">
+        <input
+          type="text"
+          value={videoUrl}
+          onChange={(e) => setVideoUrl(e.target.value)}
+          placeholder="유튜브 동영상 링크 입력 (예: https://www.youtube.com/watch?v=dQw4w9WgXcQ)"
+          className="flex-1 h-10 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 text-xs font-semibold text-slate-900 dark:text-white outline-none placeholder:text-slate-400 dark:placeholder:text-zinc-600 focus:border-emerald-500 transition shadow-xs"
+        />
+        <button
+          type="submit"
+          disabled={loading || !videoUrl.trim()}
+          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-md bg-emerald-600 px-5 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-50 transition shadow-xs shrink-0 cursor-pointer"
+        >
+          {loading ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />}
+          SEO 진단 시작
+        </button>
+      </form>
+
+      {error && (
+        <p className="text-xs text-red-400 font-bold mt-2">
+          ⚠️ {error}
+        </p>
+      )}
 
       {loading && (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -142,10 +142,10 @@ function YoutubeSeoContent() {
       {data && data.video && (
         <div className="grid gap-6 md:grid-cols-3">
           {/* Main audit lists */}
-          <div className="md:col-span-2 rounded-2xl border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-5">
+          <div className="md:col-span-2 rounded-md border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-5">
             <div>
               <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest block mb-1">AUDIT SUMMARY</span>
-              <h3 className="text-xs font-black text-white leading-snug line-clamp-2 bg-zinc-950/40 p-3 rounded-lg border border-zinc-850">
+              <h3 className="text-xs font-black text-white leading-snug line-clamp-2 bg-zinc-950/40 p-3 rounded-md border border-zinc-850">
                 {data.video.snippet.title}
               </h3>
             </div>
@@ -154,7 +154,7 @@ function YoutubeSeoContent() {
               <h4 className="text-xs font-black text-white">상세 진단 내역</h4>
               <div className="space-y-2">
                 {data.audits.map((aud: any, i: number) => (
-                  <div key={i} className="flex items-start gap-3 rounded-xl bg-zinc-950/40 p-3.5 border border-zinc-850">
+                  <div key={i} className="flex items-start gap-3 rounded-md bg-zinc-950/40 p-3.5 border border-zinc-850">
                     {aud.status === "pass" ? (
                       <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
                     ) : (
@@ -178,7 +178,7 @@ function YoutubeSeoContent() {
                     <button
                       key={i}
                       onClick={() => handleCopyTag(tag)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-[11px] font-bold text-zinc-350 hover:border-emerald-500/40 hover:text-white transition"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-[11px] font-bold text-zinc-350 hover:border-emerald-500/40 hover:text-white transition"
                     >
                       <span>#{tag}</span>
                       {copiedTag === tag ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} className="text-zinc-600" />}
@@ -190,7 +190,7 @@ function YoutubeSeoContent() {
           </div>
 
           {/* SEO Score card */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-6">
+          <div className="rounded-md border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-6">
             <div className="text-center">
               <h3 className="text-sm font-black text-white">종합 SEO 지수</h3>
               

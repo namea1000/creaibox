@@ -117,43 +117,37 @@ export default function YoutubeTrendHomePage() {
   return (
     <div className="min-h-full w-full bg-zinc-50 dark:bg-[#06080d] px-5 py-8 text-zinc-800 dark:text-zinc-100 lg:px-8 transition-colors duration-300">
       <div className="mx-auto max-w-7xl space-y-8">
-        <section className="rounded-2xl border border-zinc-800 bg-white dark:bg-gradient-to-br dark:from-zinc-900 dark:to-[#1a0909] p-7 shadow-sm dark:shadow-2xl transition-colors duration-300">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        {/* 🚀 상단 헤더 */}
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-red-400">
-                <SiYoutube size={15} />
-                YouTube Trend Studio
-              </div>
-
-              <h1 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white md:text-5xl">
+              <h1 className="text-[26px] font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
                 유튜브 트렌드 분석
               </h1>
-
-              <p className="mt-4 max-w-2xl text-sm font-medium leading-relaxed text-zinc-400 md:text-base">
-                채널 분석, 급상승 영상, 경쟁 채널 비교, SEO, 쇼츠 바이럴,
-                썸네일 CTR, 제목 생성까지 유튜브 성장 전략을 한 곳에서 분석합니다.
+              <p className="text-[15px] text-slate-500 dark:text-zinc-400 mt-1">
+                채널 분석, 급상승 영상, 경쟁 채널 비교, SEO, 쇼츠 바이럴, 썸네일 CTR, 제목 생성까지 유튜브 성장 전략을 분석합니다.
               </p>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 shrink-0">
               <Link
                 href="/studio/youtube/rising"
-                className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 text-sm font-black text-zinc-700 dark:text-zinc-200 transition hover:border-red-500/50 hover:text-zinc-900 dark:hover:text-white"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3.5 text-xs font-semibold text-slate-700 dark:text-zinc-200 transition hover:bg-slate-50 dark:hover:bg-zinc-700 shadow-xs"
               >
-                <Flame size={17} />
+                <Flame size={14} className="text-orange-500" />
                 급상승 보기
               </Link>
 
               <Link
                 href="/studio/youtube/channel"
-                className="inline-flex h-11 items-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-black text-white transition hover:bg-red-500"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-red-600 px-3.5 text-xs font-semibold text-white transition hover:bg-red-500 shadow-xs"
               >
-                <Plus size={17} />
+                <Plus size={14} />
                 채널 분석
               </Link>
             </div>
           </div>
-        </section>
+        </div>
 
         <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {stats.map((item) => {

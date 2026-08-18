@@ -88,15 +88,17 @@ export default function StrategyReport() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 backdrop-blur-md">
-        <h2 className="flex items-center gap-2 text-lg font-black text-white mb-2">
-          <FileText className="text-indigo-400" size={20} />
-          콘텐츠 전략 리포트 생성기
-        </h2>
-        <p className="text-xs text-zinc-555 mb-4 leading-relaxed">
-          채널이 속할 틈새 분야(Niche)와 타겟 업로드 템포를 설정하면, 채널 포지셔닝 지침서, 3대 주력 영상 시리즈 개념, 4주차 스케줄을 자동으로 빌드합니다.
+      {/* 🚀 상단 헤더 */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-[26px] font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+          콘텐츠 전략 리포트
+        </h1>
+        <p className="text-[15px] text-slate-500 dark:text-zinc-400">
+          채널 분야(Niche)와 타겟 업로드 템포를 설정하면, 포지셔닝 지침서, 3대 주력 영상 시리즈 개념, 4주차 스케줄을 자동으로 수립합니다.
         </p>
+      </div>
 
+      <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 p-6 shadow-sm">
         <form onSubmit={handleGenerate} className="grid gap-3 sm:grid-cols-3 items-end">
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-zinc-400">채널 분야 (Niche)</label>
@@ -106,7 +108,7 @@ export default function StrategyReport() {
               value={niche}
               onChange={(e) => setNiche(e.target.value)}
               placeholder="예: AI 코딩 부업, 캠핑 요리 레시피"
-              className="w-full h-11 rounded-xl border border-zinc-800 bg-zinc-950 px-4 text-xs font-semibold text-white outline-none placeholder:text-zinc-650 focus:border-indigo-500/50 transition"
+              className="w-full h-11 rounded-md border border-zinc-800 bg-zinc-950 px-4 text-xs font-semibold text-white outline-none placeholder:text-zinc-650 focus:border-indigo-500/50 transition"
             />
           </div>
 
@@ -115,7 +117,7 @@ export default function StrategyReport() {
             <select
               value={frequency}
               onChange={(e) => setFrequency(e.target.value)}
-              className="w-full h-11 rounded-xl border border-zinc-800 bg-zinc-950 px-3 text-xs font-bold text-zinc-350 outline-none focus:border-indigo-500/50 transition cursor-pointer"
+              className="w-full h-11 rounded-md border border-zinc-800 bg-zinc-950 px-3 text-xs font-bold text-zinc-350 outline-none focus:border-indigo-500/50 transition cursor-pointer"
             >
               <option value="week-2">주 2회 업로드 (일반 동영상)</option>
               <option value="shorts-daily">매일 1편 업로드 (Shorts 쇼츠 전용)</option>
@@ -125,7 +127,7 @@ export default function StrategyReport() {
           <button
             type="submit"
             disabled={loading || !niche.trim()}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-indigo-650 px-6 text-xs font-black text-white hover:bg-indigo-600 disabled:opacity-50 transition shadow-lg shadow-indigo-650/10 shrink-0"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-indigo-650 px-6 text-xs font-black text-white hover:bg-indigo-600 disabled:opacity-50 transition shadow-lg shadow-indigo-650/10 shrink-0"
           >
             {loading ? (
               <>
@@ -147,7 +149,7 @@ export default function StrategyReport() {
           {/* Strategy Details columns */}
           <div className="md:col-span-2 space-y-6">
             {/* Position */}
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-3">
+            <div className="rounded-md border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-3">
               <div className="flex justify-between items-center">
                 <h3 className="text-xs font-black text-white">채널 포지셔닝 설계안</h3>
                 <button
@@ -157,13 +159,13 @@ export default function StrategyReport() {
                   {copiedSection === "pos" ? "복사완료" : "복사"}
                 </button>
               </div>
-              <p className="text-xs text-zinc-350 leading-relaxed font-semibold bg-zinc-950/40 p-4 rounded-xl border border-zinc-850">
+              <p className="text-xs text-zinc-350 leading-relaxed font-semibold bg-zinc-950/40 p-4 rounded-md border border-zinc-850">
                 {report.positioning}
               </p>
             </div>
 
             {/* Video series ideas */}
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-4">
+            <div className="rounded-md border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-4">
               <h3 className="text-xs font-black text-white">추천 3대 주요 영상 시리즈</h3>
               <div className="space-y-3">
                 {report.series.map((ser: any, idx: number) => (
@@ -177,11 +179,11 @@ export default function StrategyReport() {
           </div>
 
           {/* Calendar 4-Week Schedule */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-4">
+          <div className="rounded-md border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-4">
             <h3 className="text-sm font-black text-white">4주차 권장 업로드 일정표</h3>
             <div className="space-y-3.5">
               {report.schedule.map((sch: any, idx: number) => (
-                <div key={idx} className="rounded-xl bg-zinc-950/60 p-3.5 border border-zinc-850 flex flex-col justify-between gap-2">
+                <div key={idx} className="rounded-md bg-zinc-950/60 p-3.5 border border-zinc-850 flex flex-col justify-between gap-2">
                   <div className="flex justify-between items-center">
                     <span className="text-[9px] font-black text-indigo-450 uppercase">{sch.week}</span>
                     <span className="rounded bg-indigo-500/10 px-1.5 py-0.5 text-[8px] font-bold text-indigo-450">{sch.tag}</span>
@@ -191,7 +193,7 @@ export default function StrategyReport() {
               ))}
             </div>
 
-            <div className="rounded-xl border border-zinc-850 bg-zinc-900/25 p-3 flex gap-2 items-start text-[9px] leading-relaxed text-zinc-555">
+            <div className="rounded-md border border-zinc-850 bg-zinc-900/25 p-3 flex gap-2 items-start text-[9px] leading-relaxed text-zinc-555">
               <AlertCircle size={13} className="text-cyan-400 shrink-0 mt-0.5" />
               스케줄의 대중성 콘텐츠로 초기 구독자를 모은 뒤, 2주차에 노하우성 유료 전환 가치를 체감시키는 구조입니다.
             </div>

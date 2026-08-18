@@ -225,39 +225,37 @@ export default function YoutubeReportsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#060608] px-6 py-8 text-zinc-100">
-      <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-        <div>
-          <span className="inline-flex items-center gap-1.5 border border-orange-500/30 bg-orange-500/10 px-2.5 py-1 text-xs font-black uppercase tracking-wider text-orange-400 rounded-full mb-3">
-            <Sparkles size={11} className="text-orange-500 animate-pulse" />
-            YOUTUBE TREND REPORTS
-          </span>
-          <h1 className="text-3xl font-black text-white flex items-center gap-2">
-            <FileText className="text-orange-500" size={28} />
-            영상분석 리포트
-          </h1>
-          <p className="mt-2 text-sm text-zinc-400 max-w-2xl font-medium leading-relaxed">
-            Gemini AI가 정밀 분석한 대한민국 유튜브 급상승 영상 및 인기 영상의 흥행 코드와 Remix 기획안 히스토리를 제공합니다.
-          </p>
-        </div>
+    <div className="min-h-screen bg-[#060608] px-6 py-8 text-zinc-100 space-y-6">
+      {/* 🚀 상단 헤더 */}
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <h1 className="text-[26px] font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+              영상분석 리포트
+            </h1>
+            <p className="text-[15px] text-slate-500 dark:text-zinc-400 mt-1">
+              Gemini AI가 정밀 분석한 대한민국 유튜브 급상승 영상 및 인기 영상의 흥행 코드와 Remix 기획안 히스토리를 제공합니다.
+            </p>
+          </div>
 
-        <div className="relative w-full max-w-xs shrink-0">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-          <input
-            type="text"
-            placeholder="영상 제목, 채널명 검색..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full h-10 pl-9 pr-4 rounded-xl border border-white/10 bg-[#0d0d12] text-[13px] text-zinc-200 placeholder-zinc-500 focus:border-orange-500/40 focus:outline-none transition font-bold"
-          />
+          <div className="relative w-full max-w-xs shrink-0">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+            <input
+              type="text"
+              placeholder="영상 제목, 채널명 검색..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full h-10 pl-9 pr-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-[13px] text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-600 focus:border-orange-500 focus:outline-none transition font-semibold shadow-xs"
+            />
+          </div>
         </div>
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2 text-[14px]">
-        <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-350 font-bold rounded-lg">
+        <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-350 font-bold rounded-md">
           <Layers className="h-4 w-4 text-orange-500 animate-pulse" />
           <span>카테고리</span>
           <select
@@ -277,7 +275,7 @@ export default function YoutubeReportsPage() {
           </select>
         </label>
 
-        <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-355 font-bold rounded-lg">
+        <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-355 font-bold rounded-md">
           <Eye className="h-4 w-4 text-orange-500" />
           <span>조회수</span>
           <select
@@ -294,7 +292,7 @@ export default function YoutubeReportsPage() {
           </select>
         </label>
 
-        <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-355 font-bold rounded-lg">
+        <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-355 font-bold rounded-md">
           <ThumbsUp className="h-4 w-4 text-orange-500" />
           <span>좋아요수</span>
           <select
@@ -311,7 +309,7 @@ export default function YoutubeReportsPage() {
           </select>
         </label>
 
-        <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-355 font-bold rounded-lg">
+        <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-355 font-bold rounded-md">
           <Clock className="h-4 w-4 text-orange-500" />
           <span>분석 기간</span>
           <select
@@ -337,7 +335,7 @@ export default function YoutubeReportsPage() {
         {paginationControls}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0d0d12] shadow-2xl shadow-black/30">
+      <div className="overflow-hidden rounded-md border border-white/10 bg-[#0d0d12] shadow-2xl shadow-black/30">
         <table className="w-full border-collapse text-[14px]">
           <thead>
             <tr className="border-b border-amber-300/30 bg-amber-400/15 text-left text-[14px] font-black uppercase tracking-wider text-amber-100">
@@ -427,12 +425,12 @@ export default function YoutubeReportsPage() {
 
                   <td className="px-3 py-3.5 text-center align-middle">
                     {isPopular ? (
-                      <span className="inline-flex items-center justify-center gap-1 rounded-lg border border-yellow-500/40 bg-yellow-500/20 px-2.5 py-1 text-xs font-black text-yellow-300 shadow">
+                      <span className="inline-flex items-center justify-center gap-1 rounded-md border border-yellow-500/40 bg-yellow-500/20 px-2.5 py-1 text-xs font-black text-yellow-300 shadow">
                         <Trophy size={11} className="text-yellow-400" />
                         <span>인기</span>
                       </span>
                     ) : (
-                      <span className="inline-flex items-center justify-center gap-1 rounded-lg border border-orange-500/40 bg-orange-500/20 px-2.5 py-1 text-xs font-black text-orange-300 shadow">
+                      <span className="inline-flex items-center justify-center gap-1 rounded-md border border-orange-500/40 bg-orange-500/20 px-2.5 py-1 text-xs font-black text-orange-300 shadow">
                         <TrendingUp size={11} className="text-orange-400" />
                         <span>급상승</span>
                       </span>

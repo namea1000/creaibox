@@ -63,56 +63,56 @@ export default function ChannelCompare() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 backdrop-blur-md">
-        <h2 className="flex items-center gap-2 text-lg font-black text-white mb-2">
-          <BarChart3 className="text-blue-400" size={20} />
+      {/* 🚀 상단 헤더 */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-[26px] font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
           경쟁 채널 비교
-        </h2>
-        <p className="text-xs text-zinc-550 mb-4 leading-relaxed">
-          두 개의 유튜브 채널 이름을 각각 입력하여 구독자 수, 누적 조회수, 평균 영상 당 노출 등 핵심 지표를 1:1로 스캔 비교합니다.
+        </h1>
+        <p className="text-[15px] text-slate-500 dark:text-zinc-400">
+          두 개의 유튜브 채널을 입력하여 구독자 수, 누적 조회수, 평균 영상 당 노출 등 핵심 지표를 1:1로 비교 분석합니다.
         </p>
-
-        <form onSubmit={handleCompare} className="grid gap-3 sm:grid-cols-5 items-end">
-          <div className="sm:col-span-2 space-y-1">
-            <label className="text-[10px] font-bold text-zinc-400">비교 채널 A</label>
-            <input
-              type="text"
-              required
-              value={handleA}
-              onChange={(e) => setHandleA(e.target.value)}
-              placeholder="예: @suno"
-              className="w-full h-11 rounded-xl border border-zinc-800 bg-zinc-950 px-4 text-xs font-semibold text-white outline-none placeholder:text-zinc-650 focus:border-blue-500/50 transition"
-            />
-          </div>
-
-          <div className="sm:col-span-2 space-y-1">
-            <label className="text-[10px] font-bold text-zinc-400">비교 채널 B (경쟁사)</label>
-            <input
-              type="text"
-              required
-              value={handleB}
-              onChange={(e) => setHandleB(e.target.value)}
-              placeholder="예: @udio"
-              className="w-full h-11 rounded-xl border border-zinc-800 bg-zinc-950 px-4 text-xs font-semibold text-white outline-none placeholder:text-zinc-650 focus:border-blue-500/50 transition"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading || !handleA.trim() || !handleB.trim()}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 text-xs font-black text-white hover:bg-blue-500 disabled:opacity-50 transition shadow-lg shadow-blue-600/10 shrink-0"
-          >
-            {loading ? <Loader2 size={14} className="animate-spin" /> : <Scale size={14} />}
-            두 채널 분석 비교
-          </button>
-        </form>
-
-        {error && (
-          <p className="text-xs text-red-400 font-bold mt-2 flex items-center gap-1">
-            ⚠️ {error}
-          </p>
-        )}
       </div>
+
+      <form onSubmit={handleCompare} className="grid gap-3 sm:grid-cols-5 items-end max-w-2xl">
+        <div className="sm:col-span-2 space-y-1">
+          <label className="text-[11px] font-semibold text-slate-600 dark:text-zinc-400">비교 채널 A</label>
+          <input
+            type="text"
+            required
+            value={handleA}
+            onChange={(e) => setHandleA(e.target.value)}
+            placeholder="예: @suno"
+            className="w-full h-10 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 text-xs font-semibold text-slate-900 dark:text-white outline-none placeholder:text-slate-400 dark:placeholder:text-zinc-600 focus:border-blue-500 transition shadow-xs"
+          />
+        </div>
+
+        <div className="sm:col-span-2 space-y-1">
+          <label className="text-[11px] font-semibold text-slate-600 dark:text-zinc-400">비교 채널 B (경쟁사)</label>
+          <input
+            type="text"
+            required
+            value={handleB}
+            onChange={(e) => setHandleB(e.target.value)}
+            placeholder="예: @udio"
+            className="w-full h-10 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 text-xs font-semibold text-slate-900 dark:text-white outline-none placeholder:text-slate-400 dark:placeholder:text-zinc-600 focus:border-blue-500 transition shadow-xs"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading || !handleA.trim() || !handleB.trim()}
+          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-md bg-blue-600 px-4 text-xs font-semibold text-white hover:bg-blue-500 disabled:opacity-50 transition shadow-xs shrink-0 cursor-pointer"
+        >
+          {loading ? <Loader2 size={13} className="animate-spin" /> : <Scale size={13} />}
+          두 채널 분석 비교
+        </button>
+      </form>
+
+      {error && (
+        <p className="text-xs text-red-400 font-bold mt-2 flex items-center gap-1">
+          ⚠️ {error}
+        </p>
+      )}
 
       {loading && (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -125,7 +125,7 @@ export default function ChannelCompare() {
         <div className="space-y-6">
           {/* Header profiles */}
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-5 flex items-center gap-4">
+            <div className="rounded-md border border-blue-500/20 bg-blue-500/5 p-5 flex items-center gap-4">
               <div className="h-14 w-14 overflow-hidden rounded-full border border-zinc-800 shrink-0">
                 <img src={channelA.snippet.thumbnails.medium.url} alt="" className="h-full w-full object-cover" />
               </div>
@@ -136,7 +136,7 @@ export default function ChannelCompare() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/10 p-5 flex items-center gap-4">
+            <div className="rounded-md border border-zinc-800 bg-zinc-900/10 p-5 flex items-center gap-4">
               <div className="h-14 w-14 overflow-hidden rounded-full border border-zinc-800 shrink-0">
                 <img src={channelB.snippet.thumbnails.medium.url} alt="" className="h-full w-full object-cover" />
               </div>
@@ -149,7 +149,7 @@ export default function ChannelCompare() {
           </div>
 
           {/* Comparative metrics */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-6">
+          <div className="rounded-md border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-6">
             <h3 className="text-sm font-black text-white">채널 파워 매트릭스 비교</h3>
 
             {/* Subscriber comparison */}

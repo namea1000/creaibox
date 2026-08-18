@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import Link from "next/link";
 import { Flame, Loader2, Play, Eye, ThumbsUp, Calendar, ArrowRight, Copy, Check, ChevronLeft, ChevronRight, BarChart2, ExternalLink, Globe, ChevronDown, PlaySquare, Film, Sparkles } from "lucide-react";
 import VideoAnalysisModal from "./VideoAnalysisModal";
 
@@ -458,6 +459,9 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
         const res = await fetch(`/api/youtube?type=trending&categoryId=${catId}&date=${targetDate}&country=${country}${force ? '&force=true' : ''}`);
         if (!res.ok) throw new Error("급상승 비디오 리스트를 가져오는데 실패했습니다.");
         result = await res.json();
+        if (result.error) {
+          throw new Error(result.error);
+        }
       }
 
 
@@ -631,145 +635,138 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
   const isTodaySelected = selectedDate === getKstTodayDateStr();
 
   return (
-    <div className="space-y-4">
-      {/* Header Panel */}
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 backdrop-blur-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="flex items-center gap-2 text-xl sm:text-3xl font-black text-white mb-2">
-            <Flame className="text-orange-500 animate-pulse" size={26} />
-            AI 급상승 영상 트렌드 분석 리포트
-          </h2>
-          <div className="space-y-1.5">
-            <p className="text-sm text-zinc-200 leading-relaxed font-black">
-              🔥 <span className="text-orange-400 font-bold">급상승 영상 트렌드</span>: 유튜브 실시간 알고리즘이 선정한 <span className="text-white font-bold">지금 이 시각 유행/시청 유입 반응이 가장 폭발적인 급상승 이슈 랭킹</span>을 제공합니다. (💡 <span className="text-zinc-400 font-medium">누적 총 조회수 1위~50위 매머드급 랭킹은 '👑 인기 영상 조회수 랭킹' 메뉴에서 확인하세요.</span>)
-            </p>
-            <p className="text-xs text-zinc-400 leading-relaxed font-bold" suppressHydrationWarning>
-              각 영상 하단의 <span className="text-orange-500 font-black">&quot;AI 데이터 분석 리포트&quot;</span> 버튼을 클릭하면 최신 <span className="text-orange-500 font-black">&quot;Google Gemini AI&quot;</span>가 시청자 반응 지표와 핵심 바이럴 요인, 내 채널용 변형 기획안을 포함한 정밀 보고서를 작성해 팝업합니다.
+    <div className="space-y-6">
+      {/* 🚀 상단 헤더 */}
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-[26px] font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+              급상승 영상 트렌드
+            </h1>
+            <p className="text-[15px] text-slate-500 dark:text-zinc-400 mt-1">
+              유튜브 실시간 알고리즘이 선정한 지금 이 시각 시청 유입 반응이 가장 폭발적인 급상승 이슈 랭킹을 제공합니다.
             </p>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
-          <button
-            onClick={handleBulkSync}
-            disabled={loading || isBulkLoading || !isTodaySelected}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 disabled:opacity-30 disabled:hover:from-orange-600 px-5 text-xs font-black text-white transition shadow-lg shadow-orange-950/20"
-          >
-            {isBulkLoading ? <Loader2 size={14} className="animate-spin" /> : <Flame size={14} />}
-            {isTodaySelected ? "전체 12개국 일괄수집" : "일괄수집 불가"}
-          </button>
+          <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+            <button
+              onClick={handleBulkSync}
+              disabled={loading || isBulkLoading || !isTodaySelected}
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded bg-orange-600 hover:bg-orange-500 disabled:opacity-30 px-3.5 text-xs font-semibold text-white transition shadow-xs cursor-pointer"
+            >
+              {isBulkLoading ? <Loader2 size={13} className="animate-spin" /> : <Flame size={13} />}
+              {isTodaySelected ? "전체 12개국 일괄수집" : "일괄수집 불가"}
+            </button>
 
-          <button
-            onClick={() => fetchTrending(activeCategory, selectedDate, selectedCountry, true)}
-            disabled={loading || isBulkLoading || !isTodaySelected}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 disabled:opacity-30 disabled:hover:bg-zinc-800 px-5 text-xs font-black text-white transition shadow-md"
-          >
-            {loading ? <Loader2 size={14} className="animate-spin" /> : <Flame size={14} />}
-            {isTodaySelected ? "새로고침" : "새로고침 불가"}
-          </button>
+            <button
+              onClick={() => fetchTrending(activeCategory, selectedDate, selectedCountry, true)}
+              disabled={loading || isBulkLoading || !isTodaySelected}
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-700 disabled:opacity-30 px-3.5 text-xs font-semibold text-slate-700 dark:text-zinc-200 transition shadow-xs cursor-pointer"
+            >
+              {loading ? <Loader2 size={13} className="animate-spin text-orange-500" /> : <Flame size={13} className="text-orange-500" />}
+              {isTodaySelected ? "새로고침" : "새로고침 불가"}
+            </button>
+          </div>
         </div>
       </div>
 
       {isBulkLoading && (
-        <div className="rounded-xl border border-orange-500/20 bg-zinc-950/40 p-2.5 shadow-xl backdrop-blur-md space-y-1.5 animate-pulse">
-          <div className="flex justify-between items-center text-[10px] font-black text-zinc-300">
+        <div className="rounded-md border border-orange-500/20 bg-zinc-950/40 p-3 shadow-xs space-y-1.5 animate-pulse">
+          <div className="flex justify-between items-center text-[11px] font-semibold text-zinc-300">
             <span className="flex items-center gap-1.5">
-              <Loader2 size={11} className="animate-spin text-orange-500" />
+              <Loader2 size={12} className="animate-spin text-orange-500" />
               {bulkCurrentInfo}
             </span>
-            <span className="bg-orange-500/10 text-orange-400 px-1.5 py-0.5 rounded border border-orange-500/20">
+            <span className="bg-orange-500/10 text-orange-400 px-2 py-0.5 rounded-sm border border-orange-500/20 text-[10px]">
               {bulkProgress} / {bulkTotal} ({(bulkProgress / bulkTotal * 100).toFixed(0)}%)
             </span>
           </div>
-          <div className="w-full bg-zinc-900 h-1.5 rounded-full overflow-hidden border border-zinc-800">
+          <div className="w-full bg-zinc-900 h-1.5 rounded-sm overflow-hidden border border-zinc-800">
             <div 
-              className="bg-gradient-to-r from-orange-600 to-amber-400 h-full transition-all duration-300 rounded-full"
+              className="bg-gradient-to-r from-orange-600 to-amber-400 h-full transition-all duration-300 rounded-sm"
               style={{ width: `${(bulkProgress / bulkTotal * 100)}%` }}
             />
           </div>
         </div>
       )}
 
-      {/* 🌐 2-Column Split Filter Hub (Left: Format Selector [전체 | 일반 동영상 | 유튜브 쇼츠], Right: Country + Category Selectors) */}
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-950/40 p-3 sm:p-3.5 backdrop-blur-md shadow-2xl shadow-black/25 flex flex-col sm:flex-row items-stretch gap-3 sm:gap-4 w-full">
-        {/* 🌟 Left Column: Video Format Selector Tabs (가로폭 축소 & 글자-숫자 공백 밀착 정렬) */}
-        <div className="w-full sm:w-[150px] shrink-0 flex flex-col justify-center gap-1.5 py-0.5">
-          {/* 전체 보기 */}
+      {/* 🌐 필터 허브 */}
+      <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/40 p-3.5 shadow-xs flex flex-col sm:flex-row items-stretch gap-3.5 w-full">
+        {/* 포맷 선택 */}
+        <div className="w-full sm:w-[155px] shrink-0 flex flex-col justify-center gap-1.5">
           <button
             onClick={() => setVideoFormatFilter("all")}
-            className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border ${
+            className={`flex items-center justify-between px-3 py-1.5 rounded text-xs font-semibold transition cursor-pointer border ${
               videoFormatFilter === "all"
-                ? "bg-gradient-to-r from-orange-600 to-amber-600 border-orange-400 text-white shadow-md shadow-orange-950/30"
-                : "bg-zinc-900/80 border-zinc-800/80 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                ? "bg-slate-900 dark:bg-white text-white dark:text-zinc-900 border-transparent shadow-xs"
+                : "bg-white dark:bg-zinc-800/80 border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:border-slate-300 dark:hover:border-zinc-600"
             }`}
           >
             <div className="flex items-center gap-1.5">
-              <span className="text-sm">🌟</span>
+              <span>🌟</span>
               <span className="whitespace-nowrap">전체 보기</span>
             </div>
-            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
-              videoFormatFilter === "all" ? "bg-black/40 text-amber-200" : "bg-zinc-800 text-zinc-400"
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm ${
+              videoFormatFilter === "all" ? "bg-white/20 dark:bg-black/20 text-white dark:text-zinc-900" : "bg-slate-100 dark:bg-zinc-700 text-slate-500 dark:text-zinc-400"
             }`}>
               {videoStats.all}
             </span>
           </button>
 
-          {/* 일반 동영상 */}
           <button
             onClick={() => setVideoFormatFilter("video")}
-            className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border ${
+            className={`flex items-center justify-between px-3 py-1.5 rounded text-xs font-semibold transition cursor-pointer border ${
               videoFormatFilter === "video"
-                ? "bg-gradient-to-r from-blue-600 to-cyan-600 border-blue-400 text-white shadow-md shadow-blue-950/30"
-                : "bg-zinc-900/80 border-zinc-800/80 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                ? "bg-blue-600 text-white border-blue-500 shadow-xs"
+                : "bg-white dark:bg-zinc-800/80 border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:border-slate-300 dark:hover:border-zinc-600"
             }`}
           >
             <div className="flex items-center gap-1.5">
-              <Film size={13} className={videoFormatFilter === "video" ? "text-cyan-200" : "text-blue-400"} />
+              <Film size={13} className={videoFormatFilter === "video" ? "text-white" : "text-blue-500"} />
               <span className="whitespace-nowrap">일반 동영상</span>
             </div>
-            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
-              videoFormatFilter === "video" ? "bg-black/40 text-cyan-200" : "bg-zinc-800 text-zinc-400"
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm ${
+              videoFormatFilter === "video" ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-zinc-700 text-slate-500 dark:text-zinc-400"
             }`}>
               {videoStats.video}
             </span>
           </button>
 
-          {/* 유튜브 쇼츠 */}
           <button
             onClick={() => setVideoFormatFilter("shorts")}
-            className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border ${
+            className={`flex items-center justify-between px-3 py-1.5 rounded text-xs font-semibold transition cursor-pointer border ${
               videoFormatFilter === "shorts"
-                ? "bg-gradient-to-r from-red-600 to-rose-600 border-red-400 text-white shadow-md shadow-red-950/30"
-                : "bg-zinc-900/80 border-zinc-800/80 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                ? "bg-red-600 text-white border-red-500 shadow-xs"
+                : "bg-white dark:bg-zinc-800/80 border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:border-slate-300 dark:hover:border-zinc-600"
             }`}
           >
             <div className="flex items-center gap-1.5">
-              <Play size={11} fill="currentColor" className={videoFormatFilter === "shorts" ? "text-rose-200" : "text-red-500"} />
+              <Play size={11} fill="currentColor" className={videoFormatFilter === "shorts" ? "text-white" : "text-red-500"} />
               <span className="whitespace-nowrap">유튜브 쇼츠</span>
             </div>
-            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
-              videoFormatFilter === "shorts" ? "bg-black/40 text-rose-200" : "bg-zinc-800 text-zinc-400"
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm ${
+              videoFormatFilter === "shorts" ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-zinc-700 text-slate-500 dark:text-zinc-400"
             }`}>
               {videoStats.shorts}
             </span>
           </button>
         </div>
 
-        {/* Vertical Divider */}
-        <div className="hidden sm:block w-[1px] self-stretch bg-zinc-800/80 my-0.5" />
+        {/* 구분선 */}
+        <div className="hidden sm:block w-[1px] self-stretch bg-zinc-200 dark:bg-zinc-800" />
 
-        {/* 🌐 Right Column: Country + Category Selectors (구분선 없이 깔끔한 2열 수직 정중앙 정렬) */}
-        <div className="flex-1 min-w-0 flex flex-col justify-center gap-2 py-0.5">
-          {/* 1. Country Selector */}
+        {/* 국가 + 카테고리 선택 */}
+        <div className="flex-1 min-w-0 flex flex-col justify-center gap-2">
+          {/* 국가 선택 */}
           <div className="flex flex-wrap items-center gap-1.5">
             {ALL_COUNTRIES.map((ct) => (
               <button
                 key={ct.code}
                 onClick={() => handleCountryChange(ct.code)}
-                className={`px-2.5 py-1 text-xs font-black rounded-lg transition flex items-center gap-1.5 shrink-0 whitespace-nowrap border cursor-pointer ${
+                className={`px-2.5 py-1 text-xs font-semibold rounded transition flex items-center gap-1.5 shrink-0 whitespace-nowrap border cursor-pointer ${
                   selectedCountry === ct.code
-                    ? "bg-orange-950/60 border-orange-500 text-white shadow-sm"
-                    : "bg-zinc-900/80 border-zinc-800/80 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                    ? "bg-orange-500/10 border-orange-500 text-orange-600 dark:text-orange-400 font-bold shadow-xs"
+                    : "bg-white dark:bg-zinc-800/60 border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
                 <span className="text-sm leading-none">{ct.flag}</span>
@@ -778,16 +775,16 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
             ))}
           </div>
 
-          {/* 2. Topic Category Selector */}
+          {/* 카테고리 선택 */}
           <div className="flex flex-wrap items-center gap-1.5">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => handleCategoryChange(cat.id)}
-                className={`px-2.5 py-1 text-xs font-black rounded-md transition shrink-0 whitespace-nowrap border cursor-pointer ${
+                className={`px-2.5 py-1 text-xs font-semibold rounded transition shrink-0 whitespace-nowrap border cursor-pointer ${
                   activeCategory === cat.id
-                    ? "bg-orange-600 border-orange-400 text-white shadow-sm"
-                    : "bg-zinc-900/80 border-zinc-850/80 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                    ? "bg-slate-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-transparent font-bold"
+                    : "bg-white dark:bg-zinc-800/60 border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
                 {cat.label}
@@ -802,13 +799,13 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
         {/* Left Column: Video List & Status Messages */}
         <div className="space-y-4">
           {error && (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-xs font-bold text-red-400">
+            <div className="rounded-md border border-red-500/20 bg-red-500/5 p-4 text-xs font-bold text-red-400">
               ⚠️ {error}
             </div>
           )}
 
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3.5 bg-zinc-900/40 rounded-2xl border border-zinc-800/80 p-8 shadow-inner">
+            <div className="flex flex-col items-center justify-center py-20 gap-3.5 bg-zinc-900/40 rounded-md border border-zinc-800/80 p-8 shadow-inner">
               <Loader2 className="animate-spin text-orange-500" size={36} />
               {loadingStatus === "youtube" ? (
                 <div className="text-center space-y-1">
@@ -830,7 +827,7 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
               )}
             </div>
           ) : filteredVideos.length === 0 ? (
-            <div className="text-center py-20 border border-zinc-800/80 rounded-2xl bg-zinc-950/60 p-8 space-y-3 shadow-inner">
+            <div className="text-center py-20 border border-zinc-800/80 rounded-md bg-zinc-950/60 p-8 space-y-3 shadow-inner">
               <div className="text-4xl">🌐</div>
               <p className="text-sm text-zinc-100 font-extrabold">
                 [{getCountryName(selectedCountry)}] 해당 국가의 급상승 트렌드 수집 데이터가 없습니다.
@@ -853,7 +850,7 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
                 const isShorts = durationInfo.isShorts;
 
                 return (
-                  <div key={idx} className="group rounded-2xl border border-zinc-800 bg-zinc-900/20 hover:border-orange-500/40 transition flex flex-col justify-between hover:bg-zinc-900/50 backdrop-blur-sm overflow-hidden">
+                  <div key={idx} className="group rounded-md border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/40 hover:border-slate-300 dark:hover:border-zinc-700 transition flex flex-col justify-between shadow-xs overflow-hidden">
                     <div>
                       {/* Thumbnail wrapped with YouTube Link or In-page Player */}
                       {videoId && videoId === playingVideoId ? (
@@ -876,28 +873,28 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
                             alt={title}
                             className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
                           />
-                          {/* Play Button Overlay (YouTube Style Red Rectangular Play Badge) */}
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity duration-250">
-                            <div className="flex h-11 w-16 items-center justify-center rounded-2xl bg-red-600 text-white shadow-2xl transform scale-90 group-hover:scale-100 transition-all duration-300">
-                              <Play size={18} fill="currentColor" className="ml-1" />
+                          {/* Play Button Overlay */}
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-250">
+                            <div className="flex h-9 w-13 items-center justify-center rounded bg-red-600 text-white shadow-lg transform scale-90 group-hover:scale-100 transition-all duration-300">
+                              <Play size={15} fill="currentColor" className="ml-0.5" />
                             </div>
                           </div>
                           
                           {/* Index badge */}
-                          <div className="absolute top-2 left-2 flex h-6 w-6 items-center justify-center rounded-lg bg-black/60 text-xs font-black text-white">
+                          <div className="absolute top-2 left-2 flex h-5 w-5 items-center justify-center rounded-sm bg-black/75 text-[11px] font-bold text-white">
                             {idx + 1}
                           </div>
      
                           {/* Format/Shorts Label */}
                           {isShorts && (
-                            <div className="absolute top-2 right-2 flex items-center gap-1 rounded bg-red-600 px-1.5 py-0.5 text-[9px] font-black text-white shadow">
+                            <div className="absolute top-2 right-2 flex items-center gap-1 rounded-sm bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-xs">
                               <Play size={9} fill="currentColor" className="ml-0.5" />
                               SHORTS
                             </div>
                           )}
      
                           {/* Playtime duration overlay */}
-                          <div className="absolute bottom-2 right-2 rounded bg-black/85 px-1.5 py-0.5 text-[9px] font-black text-white tracking-wider">
+                          <div className="absolute bottom-2 right-2 rounded-sm bg-black/85 px-1.5 py-0.5 text-[9px] font-bold text-white tracking-wider">
                             {durationInfo.formatted}
                           </div>
                         </div>
@@ -908,59 +905,57 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
                             alt={title}
                             className="h-full w-full object-cover"
                           />
-                          <div className="absolute top-2 left-2 flex h-6 w-6 items-center justify-center rounded-lg bg-black/60 text-xs font-black text-white">
+                          <div className="absolute top-2 left-2 flex h-5 w-5 items-center justify-center rounded-sm bg-black/75 text-[11px] font-bold text-white">
                             {idx + 1}
                           </div>
                         </div>
                       )}
      
-                      {/* Title & Channel padded container (Line 1 & 2) */}
-                      <div className="px-4 pt-4">
-                        {/* Line 1: Title Link to YouTube */}
+                      {/* Title & Channel padded container */}
+                      <div className="px-4 pt-3">
                         {videoId ? (
                           <button
                             onClick={() => setPlayingVideoId(videoId)}
-                            className="block text-left w-full text-sm font-black text-white line-clamp-1 truncate leading-normal hover:text-orange-400 transition cursor-pointer"
+                            className="block text-left w-full text-sm font-bold text-slate-900 dark:text-white line-clamp-1 truncate leading-normal hover:text-orange-500 transition cursor-pointer"
                           >
                             {title}
                           </button>
                         ) : (
-                          <h3 className="text-sm font-black text-white line-clamp-1 truncate leading-normal">
+                          <h3 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1 truncate leading-normal">
                             {title}
                           </h3>
                         )}
                         
-                        {/* Line 2: Channel & Stats metadata strip */}
-                        <div className="mt-1.5 flex items-center flex-wrap gap-1.5 text-[11px] text-zinc-500 font-bold">
-                          <span className="truncate max-w-[120px] text-zinc-400">{channel}</span>
-                          <span className="text-zinc-700 font-normal">·</span>
+                        <div className="mt-1 flex items-center flex-wrap gap-1.5 text-[11px] text-slate-500 dark:text-zinc-400 font-medium">
+                          <span className="truncate max-w-[140px] text-slate-700 dark:text-zinc-300 font-semibold">{channel}</span>
+                          <span className="text-slate-300 dark:text-zinc-700">·</span>
                           <span>조회수 {formatNumber(viewCount)}</span>
-                          <span className="text-zinc-700 font-normal">·</span>
+                          <span className="text-slate-300 dark:text-zinc-700">·</span>
                           <span>좋아요 {formatNumber(likeCount)}</span>
                         </div>
                       </div>
                     </div>
      
-                    {/* Line 3: Horizontal Action Button bar */}
-                    <div className="mt-4 border-t border-zinc-800/40 pt-3.5 mx-4 mb-4 flex items-center justify-between gap-2 text-[11px] font-black text-zinc-400">
+                    {/* Action Button Bar */}
+                    <div className="mt-3 border-t border-slate-100 dark:border-zinc-800/60 pt-2.5 mx-4 mb-2.5 flex items-center justify-between gap-2 text-[11px] font-semibold text-slate-600 dark:text-zinc-400">
                       {videoId && typeof videoId === "string" && (
                         <button
                           onClick={() => handleTriggerAnalysis(video)}
-                          className="inline-flex items-center gap-1 text-orange-400 hover:text-orange-300 transition"
+                          className="inline-flex items-center gap-1 text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition font-bold cursor-pointer"
                         >
-                          <BarChart2 size={11} />
-                          <span>AI 분석 리포트</span>
+                          <BarChart2 size={12} />
+                          <span>AI 분석</span>
                         </button>
                       )}
                       {videoId && typeof videoId === "string" && (
                         <button
                           onClick={() => handleCopyLink(videoId)}
-                          className="inline-flex items-center gap-1 hover:text-white transition"
+                          className="inline-flex items-center gap-1 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
                         >
                           {copiedVideoId === videoId ? (
                             <>
-                              <Check size={11} className="text-emerald-400" />
-                              <span className="text-emerald-400">복사 완료</span>
+                              <Check size={11} className="text-emerald-500" />
+                              <span className="text-emerald-500">복사 완료</span>
                             </>
                           ) : (
                             <>
@@ -975,10 +970,10 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
                           href={`https://www.youtube.com/watch?v=${videoId}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-red-400 hover:text-red-300 transition font-medium"
+                          className="inline-flex items-center gap-1 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition font-medium"
                         >
                           <PlaySquare size={11} />
-                          <span>YouTube에서 직접 보기</span>
+                          <span>YouTube</span>
                         </a>
                       )}
                       {video.snippet?.channelId && (
@@ -986,18 +981,18 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
                           href={`https://youtube.com/channel/${video.snippet.channelId}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 hover:text-white transition"
+                          className="inline-flex items-center gap-1 hover:text-slate-900 dark:hover:text-white transition"
                         >
                           <ExternalLink size={11} />
-                          <span>채널 바로가기</span>
+                          <span>채널</span>
                         </a>
                       )}
                       {videoId && typeof videoId === "string" && (
                         <a
                           href={`/studio/youtube/seo?url=https://youtube.com/watch?v=${videoId}`}
-                          className="inline-flex items-center gap-0.5 hover:text-white transition"
+                          className="inline-flex items-center gap-0.5 hover:text-slate-900 dark:hover:text-white transition"
                         >
-                          SEO 분석
+                          SEO
                           <ArrowRight size={10} />
                         </a>
                       )}
@@ -1009,84 +1004,81 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
           )}
 
           {!loading && videos.length > 0 && (
-            <div className="text-[10px] text-zinc-650 font-bold text-right mt-4">
+            <div className="text-[10px] text-slate-400 dark:text-zinc-500 font-medium text-right mt-4">
               데이터 피드: {source === "youtube-api" ? "YouTube Live Data API" : source.startsWith("supabase-db") ? "Supabase Table Cache" : "Vault Fallback System"}
             </div>
           )}
         </div>
 
-        {/* Right Column: Sticky Aside AI Report News Feed (Always Rendered) */}
-        <aside className="lg:sticky lg:top-6 rounded-2xl border border-zinc-800 bg-zinc-900/10 p-5 space-y-5 max-h-[89vh] overflow-y-auto backdrop-blur-sm self-start w-full">
-          {/* 📅 Date Selector Control Row (Moved from Filters) */}
-          <div className="flex flex-col gap-2 pb-3.5 border-b border-zinc-800/80">
-            <span className="text-[10px] text-zinc-500 font-bold tracking-wider">분석 기준일 선택</span>
+        {/* Right Column: Sticky Aside AI Report News Feed */}
+        <aside className="lg:sticky lg:top-6 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 p-4 space-y-4 max-h-[89vh] overflow-y-auto shadow-xs self-start w-full">
+          {/* 📅 Date Selector Control Row */}
+          <div className="flex flex-col gap-2 pb-3 border-b border-slate-100 dark:border-zinc-800/80">
+            <span className="text-[11px] text-slate-500 dark:text-zinc-400 font-semibold">분석 기준일 선택</span>
             <div className="flex items-center justify-between w-full">
               {/* Archive Mode Status */}
               <div className="min-h-8 flex items-center">
                 {!isTodaySelected ? (
-                  <span className="inline-flex h-8 items-center rounded-xl bg-cyan-950/40 border border-cyan-850 px-3 text-[9px] font-black text-cyan-400 tracking-wider">
+                  <span className="inline-flex h-6.5 items-center rounded-sm bg-cyan-500/10 border border-cyan-500/30 px-2 text-[10px] font-bold text-cyan-600 dark:text-cyan-400">
                     아카이브 모드
                   </span>
                 ) : (
-                  <span className="inline-flex h-8 items-center rounded-xl bg-emerald-950/40 border border-emerald-850 px-3 text-[9px] font-black text-emerald-400 tracking-wider animate-pulse">
+                  <span className="inline-flex h-6.5 items-center rounded-sm bg-emerald-500/10 border border-emerald-500/30 px-2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 animate-pulse">
                     실시간 트렌드
                   </span>
                 )}
               </div>
               
               {/* Timeline shift and date selector container */}
-              <div className="flex items-center bg-zinc-950/45 p-1 rounded-xl border border-zinc-900">
-                {/* Shift Day Back */}
+              <div className="flex items-center bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 p-0.5 rounded shadow-xs">
                 <button
                   onClick={() => shiftDate(-1)}
                   disabled={loading}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/60 disabled:opacity-20 transition"
+                  className="flex h-6 w-6 items-center justify-center rounded-sm text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800 disabled:opacity-20 transition cursor-pointer"
                   title="하루 전"
                 >
-                  <ChevronLeft size={15} />
+                  <ChevronLeft size={14} />
                 </button>
 
-                {/* Input Calendar Picker */}
                 <div className="relative flex items-center">
-                  <Calendar size={12} className="absolute left-2.5 text-zinc-500 pointer-events-none" />
+                  <Calendar size={12} className="absolute left-2 text-slate-400 dark:text-zinc-500 pointer-events-none" />
                   <input
                     type="date"
                     value={selectedDate}
                     onChange={(e) => handleDateChange(e.target.value)}
                     max={getKstTodayDateStr()}
-                    className="h-7 w-32 rounded-lg border-0 bg-transparent pl-8 pr-1 text-[10px] font-black text-zinc-300 outline-none cursor-pointer"
+                    className="h-6 w-28 border-0 bg-transparent pl-7 pr-1 text-[11px] font-semibold text-slate-800 dark:text-zinc-200 outline-none cursor-pointer"
                   />
                 </div>
 
-                {/* Shift Day Forward */}
                 <button
                   onClick={() => shiftDate(1)}
                   disabled={loading || isTodaySelected}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/60 disabled:opacity-20 transition"
+                  className="flex h-6 w-6 items-center justify-center rounded-sm text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800 disabled:opacity-20 transition cursor-pointer"
                   title="하루 후"
                 >
-                  <ChevronRight size={15} />
+                  <ChevronRight size={14} />
                 </button>
               </div>
             </div>
           </div>
 
           <div>
-            <h2 className="text-sm font-black text-white italic flex items-center gap-2">
-              <BarChart2 className="text-orange-400" size={15} />
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+              <BarChart2 className="text-orange-500" size={15} />
               최근 분석된 AI 리포트
             </h2>
-            <p className="text-[10px] text-zinc-500 font-bold mt-1 leading-normal">
-              참여 비율과 기획 Blueprint가 생성 완료된 뉴스 피드입니다. 클릭 시 상세 보고서가 팝업됩니다.
+            <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5 leading-relaxed">
+              참여 비율과 기획 Blueprint 생성이 완료된 리포트입니다. 클릭 시 상세 보고서가 팝업됩니다.
             </p>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {analyzedVideos.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-zinc-800/80 p-8 text-center bg-zinc-950/10">
-                <p className="text-[10px] text-zinc-500 font-bold leading-relaxed">
+              <div className="rounded-md border border-dashed border-slate-200 dark:border-zinc-800 p-5 text-center bg-slate-50/50 dark:bg-zinc-950/20">
+                <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
                   아직 분석 완료된 AI 리포트가 없습니다. <br />
-                  좌측 영상 카드의 <span className="text-orange-400 font-black">"AI 분석 리포트"</span>를 클릭하여 리포트를 발행해 보세요.
+                  좌측 카드의 <span className="text-orange-600 dark:text-orange-400 font-bold">"AI 분석"</span>을 클릭하여 리포트를 발행해 보세요.
                 </p>
               </div>
             ) : (
@@ -1106,10 +1098,10 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
                   <div
                     key={`news-${video.id || index}`}
                     onClick={() => handleTriggerAnalysis(video)}
-                    className="group flex items-center gap-3 rounded-xl border border-zinc-800/80 bg-zinc-950/20 p-2.5 hover:bg-zinc-900/40 hover:border-orange-500/30 transition cursor-pointer overflow-hidden"
+                    className="group flex items-center gap-2.5 rounded-md border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-950/40 p-2 hover:bg-slate-50 dark:hover:bg-zinc-900/60 hover:border-slate-300 dark:hover:border-zinc-700 transition cursor-pointer overflow-hidden shadow-xs"
                   >
                     {/* News Thumbnail */}
-                    <div className="relative h-11 w-20 overflow-hidden rounded bg-zinc-950 shrink-0">
+                    <div className="relative h-10 w-18 overflow-hidden rounded-sm bg-zinc-950 shrink-0">
                       <img
                         src={thumbnail}
                         alt={title}
@@ -1127,21 +1119,21 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
 
                     {/* News Title & Metas */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 text-[9px] text-zinc-500 font-bold">
-                        <span className="text-zinc-400 truncate max-w-[80px]">{channel}</span>
+                      <div className="flex items-center gap-1.5 text-[9px] text-slate-500 dark:text-zinc-500 font-medium">
+                        <span className="text-slate-700 dark:text-zinc-400 truncate max-w-[80px] font-semibold">{channel}</span>
                         <span>·</span>
                         <span>조회 {formatNumber(viewCount)}</span>
                       </div>
-                      <h3 className="mt-0.5 text-[11px] font-black text-white line-clamp-1 group-hover:text-orange-400 transition leading-normal">
+                      <h3 className="mt-0.5 text-[11px] font-bold text-slate-900 dark:text-white line-clamp-1 group-hover:text-orange-500 transition leading-normal">
                         {title}
                       </h3>
-                      <span className="mt-0.5 inline-flex items-center gap-0.5 text-[9px] text-orange-400/90 font-bold">
+                      <span className="mt-0.5 inline-flex items-center gap-0.5 text-[9px] text-orange-600 dark:text-orange-400 font-semibold">
                         ● AI 분석 완료
                       </span>
                     </div>
 
                     {/* Arrow icon */}
-                    <div className="text-zinc-650 group-hover:text-orange-400 transition shrink-0">
+                    <div className="text-slate-400 dark:text-zinc-600 group-hover:text-orange-500 transition shrink-0">
                       <ArrowRight size={11} />
                     </div>
                   </div>

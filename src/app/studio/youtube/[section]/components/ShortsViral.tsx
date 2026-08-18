@@ -30,15 +30,17 @@ export default function ShortsViral() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 backdrop-blur-md">
-        <h2 className="flex items-center gap-2 text-lg font-black text-white mb-2">
-          <Video className="text-rose-500 animate-pulse" size={20} />
-          쇼츠 바이럴 분석기 (Shorts Retention Optimizer)
-        </h2>
-        <p className="text-xs text-zinc-550 mb-6 leading-relaxed">
-          유튜브 쇼츠(Shorts) 영상의 핵심 성공 척도인 시청 지속률(Retention Rate)과 무한 루프 반복 시청 가능성을 시뮬레이션하고 필수 후킹 요소를 진단합니다.
+      {/* 🚀 상단 헤더 */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-[26px] font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+          쇼츠 바이럴 분석
+        </h1>
+        <p className="text-[15px] text-slate-500 dark:text-zinc-400">
+          유튜브 쇼츠 영상의 핵심 성공 척도인 시청 지속률과 무한 루프 반복 시청 가능성을 시뮬레이션하고 후킹 요소를 진단합니다.
         </p>
+      </div>
 
+      <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 p-6 shadow-sm">
         <div className="grid gap-6 md:grid-cols-2">
           {/* Controls Panel */}
           <div className="space-y-5">
@@ -51,7 +53,7 @@ export default function ShortsViral() {
                     key={sec}
                     type="button"
                     onClick={() => setDuration(sec)}
-                    className={`h-10 rounded-xl border text-xs font-bold transition ${
+                    className={`h-10 rounded-md border text-xs font-bold transition ${
                       duration === sec
                         ? "border-rose-500 bg-rose-500/10 text-rose-400"
                         : "border-zinc-850 bg-zinc-950/60 text-zinc-450 hover:text-white"
@@ -76,7 +78,7 @@ export default function ShortsViral() {
                     key={hk.id}
                     type="button"
                     onClick={() => setHookType(hk.id)}
-                    className={`h-12 px-2.5 rounded-xl border text-[10px] font-bold leading-tight transition ${
+                    className={`h-12 px-2.5 rounded-md border text-[10px] font-bold leading-tight transition ${
                       hookType === hk.id
                         ? "border-rose-500 bg-rose-500/10 text-rose-400"
                         : "border-zinc-850 bg-zinc-950/60 text-zinc-450 hover:text-white"
@@ -90,7 +92,7 @@ export default function ShortsViral() {
           </div>
 
           {/* Retention graph simulation */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/40 p-6 flex flex-col justify-between gap-4">
+          <div className="rounded-md border border-zinc-800 bg-zinc-950/40 p-6 flex flex-col justify-between gap-4">
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-[10px] font-bold text-zinc-550">예상 시청 유지력 (Retention Curve)</span>
@@ -127,7 +129,7 @@ export default function ShortsViral() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-zinc-850 bg-zinc-900/25 p-3 flex gap-2 items-start text-[10px] leading-relaxed text-zinc-550">
+            <div className="rounded-md border border-zinc-850 bg-zinc-900/25 p-3 flex gap-2 items-start text-[10px] leading-relaxed text-zinc-550">
               <HelpCircle size={14} className="text-cyan-400 shrink-0 mt-0.5" />
               {duration === 15 ? (
                 <span>15초 쇼츠는 100% 이상의 시청 지속률(무한루프 중복시청)을 받기 가장 이상적인 조건입니다.</span>
@@ -140,14 +142,14 @@ export default function ShortsViral() {
       </div>
 
       {/* Recommended Viral checklist */}
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-4">
+      <div className="rounded-md border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-4">
         <h3 className="text-sm font-black text-white flex items-center gap-1.5">
           <Flame size={16} className="text-rose-500" />
           쇼츠 바이럴 릴리즈 체크표
         </h3>
 
         <div className="grid gap-3 sm:grid-cols-3 text-xs font-bold text-zinc-350">
-          <div className="rounded-xl bg-zinc-950/50 p-4 border border-zinc-850 flex items-start gap-2.5">
+          <div className="rounded-md bg-zinc-950/50 p-4 border border-zinc-850 flex items-start gap-2.5">
             <CheckCircle size={15} className="text-rose-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-white">무한 루프 엔딩 (Seamless Ending)</p>
@@ -155,7 +157,7 @@ export default function ShortsViral() {
             </div>
           </div>
 
-          <div className="rounded-xl bg-zinc-950/50 p-4 border border-zinc-850 flex items-start gap-2.5">
+          <div className="rounded-md bg-zinc-950/50 p-4 border border-zinc-850 flex items-start gap-2.5">
             <CheckCircle size={15} className="text-rose-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-white">더블 스피드 연출 (Fast Pacing)</p>
@@ -163,7 +165,7 @@ export default function ShortsViral() {
             </div>
           </div>
 
-          <div className="rounded-xl bg-zinc-950/50 p-4 border border-zinc-850 flex items-start gap-2.5">
+          <div className="rounded-md bg-zinc-950/50 p-4 border border-zinc-850 flex items-start gap-2.5">
             <CheckCircle size={15} className="text-rose-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-white">마이크로 자막 애니메이션</p>

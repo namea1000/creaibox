@@ -262,43 +262,40 @@ export default function YoutubeChannelReportsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#060608] px-6 py-8 text-zinc-100">
-      {/* Page Header */}
-      <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-        <div>
-          <span className="inline-flex items-center gap-1.5 border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-xs font-black uppercase tracking-wider text-cyan-400 rounded-full mb-3">
-            <Sparkles size={11} className="text-cyan-500 animate-pulse" />
-            YOUTUBE CHANNEL REPORTS
-          </span>
-          <h1 className="text-3xl font-black text-white flex items-center gap-2">
-            <FileText className="text-cyan-500" size={28} />
-            인기 채널 영상분석 리포트
-          </h1>
-          <p className="mt-2 text-sm text-zinc-400 max-w-2xl font-medium leading-relaxed">
-            인기 채널 분석 레이더를 기동하여 정밀 AI 데이터 분석을 완료한 라이벌 영상들의 리포트 보관함입니다.
-          </p>
-        </div>
+    <div className="min-h-screen bg-[#060608] px-6 py-8 text-zinc-100 space-y-6">
+      {/* 🚀 상단 헤더 */}
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <h1 className="text-[26px] font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+              인기채널 영상분석 리포트
+            </h1>
+            <p className="text-[15px] text-slate-500 dark:text-zinc-400 mt-1">
+              인기 채널 분석 레이더를 기동하여 정밀 AI 데이터 분석을 완료한 라이벌 영상들의 리포트 보관함입니다.
+            </p>
+          </div>
 
-        {/* Search Bar */}
-        <div className="relative w-full max-w-xs shrink-0">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-          <input
-            type="text"
-            placeholder="영상 제목, 채널명 검색..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full h-10 pl-9 pr-4 rounded-xl border border-white/10 bg-[#0d0d12] text-[13px] text-zinc-200 placeholder-zinc-500 focus:border-cyan-500/40 focus:outline-none transition font-bold"
-          />
+          {/* Search Bar */}
+          <div className="relative w-full max-w-xs shrink-0">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+            <input
+              type="text"
+              placeholder="영상 제목, 채널명 검색..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full h-10 pl-9 pr-4 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-[13px] text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-600 focus:border-cyan-500 focus:outline-none transition font-semibold shadow-xs"
+            />
+          </div>
         </div>
       </div>
 
       {/* Filter Options Area - Matched with Music Library Page */}
       <div className="mb-4 flex flex-wrap items-center gap-2 text-[14px]">
         {/* Country Option */}
-        <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-355 font-bold rounded-lg">
+        <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-355 font-bold rounded-md">
           <Globe className="h-4 w-4 text-cyan-500" />
           <span>국가</span>
           <select
@@ -316,7 +313,7 @@ export default function YoutubeChannelReportsPage() {
         </label>
 
         {/* Category Option */}
-        <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-355 font-bold rounded-lg">
+        <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-355 font-bold rounded-md">
           <Layers className="h-4 w-4 text-cyan-500" />
           <span>카테고리</span>
           <select
@@ -337,7 +334,7 @@ export default function YoutubeChannelReportsPage() {
         </label>
 
         {/* Views Option */}
-        <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-355 font-bold rounded-lg">
+        <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-355 font-bold rounded-md">
           <Eye className="h-4 w-4 text-cyan-500" />
           <span>조회수</span>
           <select
@@ -355,7 +352,7 @@ export default function YoutubeChannelReportsPage() {
         </label>
 
         {/* Likes Option */}
-        <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-355 font-bold rounded-lg">
+        <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-355 font-bold rounded-md">
           <ThumbsUp className="h-4 w-4 text-cyan-500" />
           <span>좋아요수</span>
           <select
@@ -373,7 +370,7 @@ export default function YoutubeChannelReportsPage() {
         </label>
 
         {/* Date Range Option */}
-        <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-355 font-bold rounded-lg">
+        <label className="flex items-center gap-2 border border-white/10 bg-[#0d0d12] px-3 py-2 text-zinc-355 font-bold rounded-md">
           <Clock className="h-4 w-4 text-cyan-500" />
           <span>분석 기간</span>
           <select
@@ -400,7 +397,7 @@ export default function YoutubeChannelReportsPage() {
       </div>
 
       {/* Main Table Layout */}
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0d0d12] shadow-2xl shadow-black/30">
+      <div className="overflow-hidden rounded-md border border-white/10 bg-[#0d0d12] shadow-2xl shadow-black/30">
         <table className="w-full border-collapse text-[14px]">
           <thead>
             <tr className="border-b border-cyan-300/30 bg-cyan-400/15 text-left text-[14px] font-black uppercase tracking-wider text-cyan-100">

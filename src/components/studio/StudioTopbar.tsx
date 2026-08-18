@@ -80,7 +80,13 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
   };
 
   const getDisplayName = useCallback(() => {
-    if (nickname.trim()) return nickname.trim();
+    if (nickname && nickname.trim()) return nickname.trim();
+    if (user?.user_metadata?.nickname && String(user.user_metadata.nickname).trim()) {
+      return String(user.user_metadata.nickname).trim();
+    }
+    if (user?.user_metadata?.full_name && String(user.user_metadata.full_name).trim()) {
+      return String(user.user_metadata.full_name).trim();
+    }
     if (user?.email) return user.email.split("@")[0];
     return "User";
   }, [nickname, user]);
@@ -102,55 +108,130 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
   }, [getDisplayName]);
 
   const fetchProfile = useCallback(
-    async (userId: string) => {
+    async (userId: string, email?: string, userMetaNickname?: string) => {
       try {
         const { data } = await supabase
           .from("profiles")
-          .select("nickname, membership_level")
+          .select("nickname, membership_level, role, extra_configs")
           .eq("id", userId)
           .maybeSingle();
 
+        let isWhitelistedAdmin = false;
+        if (email) {
+          const cleanEmail = email.toLowerCase().trim();
+          if (cleanEmail === "creaiboxofficial@gmail.com" || cleanEmail === "jenam7720@gmail.com") {
+            isWhitelistedAdmin = true;
+          } else {
+            const { data: whitelistData } = await supabase
+              .from("admin_whitelist")
+              .select("email")
+              .eq("email", cleanEmail)
+              .maybeSingle();
+            if (whitelistData) {
+              isWhitelistedAdmin = true;
+            }
+          }
+        }
+
+        const isManual = data?.extra_configs?.is_manual_grant ?? data?.is_manual_grant ?? false;
+        const resolvedNickname = (data?.nickname && data.nickname.trim()) || userMetaNickname || "";
+
         return {
-          nickname: data?.nickname ?? "",
+          nickname: resolvedNickname,
           membershipLevel: data?.membership_level ?? "free",
+          role: data?.role ?? "",
+          isManualGrant: Boolean(isManual),
+          isAdminWhitelist: isWhitelistedAdmin,
         };
       } catch {
-        return { nickname: "", membershipLevel: "free" };
+        const cleanEmail = (email || "").toLowerCase().trim();
+        const fallbackAdmin = cleanEmail === "creaiboxofficial@gmail.com" || cleanEmail === "jenam7720@gmail.com";
+        return { nickname: userMetaNickname || "", membershipLevel: "free", role: "", isManualGrant: false, isAdminWhitelist: fallbackAdmin };
       }
     },
     [supabase]
   );
 
   useEffect(() => {
+    // ⚡ 0ms Instant LocalStorage Cache Hydration on mount
+    if (typeof window !== "undefined") {
+      try {
+        const cachedUser = localStorage.getItem("creaibox_cached_user");
+        const cachedNickname = localStorage.getItem("creaibox_cached_nickname");
+        const cachedPlanName = localStorage.getItem("creaibox_cached_planname");
+
+        if (cachedUser) {
+          setUser(JSON.parse(cachedUser));
+          if (cachedNickname) setNickname(cachedNickname);
+          if (cachedPlanName) setPlanName(cachedPlanName);
+          setIsAuthReady(true);
+        }
+      } catch (e) {
+        console.warn("Failed to restore cached auth in StudioTopbar:", e);
+      }
+    }
+
     let cancelled = false;
 
     const applyUser = async (nextUser: User | null) => {
       if (cancelled) return;
 
-      setUser(nextUser);
-
       if (nextUser?.id) {
-        const profileData = await fetchProfile(nextUser.id);
+        // Apply cached profile first
+        let cachedNickname = "";
+        let cachedPlanName = "Free";
+        if (typeof window !== "undefined") {
+          cachedNickname = localStorage.getItem("creaibox_cached_nickname") || "";
+          cachedPlanName = localStorage.getItem("creaibox_cached_planname") || "Free";
+        }
+
+        setUser(nextUser);
+        if (cachedNickname) setNickname(cachedNickname);
+        if (cachedPlanName) setPlanName(cachedPlanName);
+
+        // Fetch fresh profile
+        const userMetaNickname = nextUser.user_metadata?.nickname || nextUser.user_metadata?.full_name || "";
+        const profileData = await fetchProfile(nextUser.id, nextUser.email, userMetaNickname);
         if (!cancelled) {
-          setNickname(profileData.nickname);
-          
+          setNickname(profileData.nickname || userMetaNickname);
+
+          const roleUpper = String(profileData.role || "").toUpperCase();
           const rawLevel = String(profileData.membershipLevel || "free").toLowerCase();
-          const mappedLevel = rawLevel === "admin"
+          const isAdminUser = profileData.isAdminWhitelist || roleUpper === "ADMIN" || roleUpper === "SUPER_ADMIN" || rawLevel === "admin";
+
+          const mappedLevel = isAdminUser
             ? "Admin"
-            : rawLevel === "creator"
-            ? "Creator"
+            : rawLevel === "premier"
+            ? "Premier"
             : rawLevel === "pro"
             ? "Pro"
             : rawLevel === "business"
             ? "Business"
+            : rawLevel === "creator"
+            ? "Creator"
             : "Free";
-            
+
           setPlanName(mappedLevel);
+
+          // Save to localStorage for instant 0ms restoration next time
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem("creaibox_cached_user", JSON.stringify(nextUser));
+              localStorage.setItem("creaibox_cached_nickname", profileData.nickname || "");
+              localStorage.setItem("creaibox_cached_planname", mappedLevel);
+            } catch {}
+          }
         }
       } else {
+        setUser(null);
         setNickname("");
         setPlanName("Free");
         setIsProfileOpen(false);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("creaibox_cached_user");
+          localStorage.removeItem("creaibox_cached_nickname");
+          localStorage.removeItem("creaibox_cached_planname");
+        }
       }
 
       if (!cancelled) setIsAuthReady(true);
@@ -163,7 +244,8 @@ export default function StudioTopbar({ setIsMobileOpen }: StudioTopbarProps) {
         } = await supabase.auth.getSession();
 
         await applyUser(session?.user ?? null);
-      } catch {
+      } catch (err) {
+        console.warn("StudioTopbar auth session load fallback:", err);
         await applyUser(null);
       }
     };

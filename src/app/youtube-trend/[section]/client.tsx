@@ -68,7 +68,7 @@ export default function PublicYoutubeSectionClient() {
 
   return (
     <PublicStudioLayout>
-      <div className="w-full">
+      <div className="w-full px-5 sm:px-8 lg:px-10 py-8 space-y-8">
         {renderContent()}
       </div>
     </PublicStudioLayout>

@@ -327,33 +327,26 @@ export default function ChannelDetail() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 backdrop-blur-md">
-        <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="text-red-500" size={20} />
-          <span className="text-[10px] font-black tracking-widest text-red-500 uppercase bg-red-950/40 border border-red-900/40 px-2 py-0.5 rounded-full">
-            BENCHMARK RADAR
-          </span>
-        </div>
-        <h2 className="flex items-center gap-2 text-2xl font-black text-white mb-2">
-          <Users className="text-red-500 animate-pulse" size={24} />
-          채널 상세 및 아웃라이어 분석
-        </h2>
-        <p className="text-sm text-zinc-400 mb-6 leading-relaxed font-semibold">
-          유튜브 채널 명칭이나 핸들(@이름)을 입력하여 구독자 대비 조회수가 비정상적으로 높게 터진 <strong className="text-red-400">"숨은 꿀 영상(Outperformer)"</strong>을 선별하고 기획 요인을 파헤칩니다.
+      {/* 🚀 상단 헤더 */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-[26px] font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+          인기채널 영상분석
+        </h1>
+        <p className="text-[15px] text-slate-500 dark:text-zinc-400">
+          유튜브 채널 명칭이나 핸들(@이름)을 입력하여 구독자 대비 조회수가 비정상적으로 높게 터진 숨은 아웃라이어 영상을 선별하고 기획 요인을 분석합니다.
         </p>
-
         <form onSubmit={handleFormSubmit} className="flex gap-2.5">
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="분석할 유튜브 채널의 핸들 또는 이름 입력 (예: @itsub, 잇섭)"
-            className="flex-1 h-11 rounded-xl border border-zinc-800 bg-zinc-950 px-4 text-xs font-semibold text-white outline-none placeholder:text-zinc-650 focus:border-red-500/50 transition"
+            className="flex-1 h-11 rounded-md border border-zinc-800 bg-zinc-950 px-4 text-xs font-semibold text-white outline-none placeholder:text-zinc-650 focus:border-red-500/50 transition"
           />
           <button
             type="submit"
             disabled={loading || !query.trim()}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-650 px-6 text-xs font-black text-white hover:bg-red-600 disabled:opacity-50 transition shadow-lg shadow-red-650/10 shrink-0"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-red-650 px-6 text-xs font-black text-white hover:bg-red-600 disabled:opacity-50 transition shadow-lg shadow-red-650/10 shrink-0"
           >
             {loading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
             채널 심층 분석
@@ -371,7 +364,7 @@ export default function ChannelDetail() {
       {!data && !loading && (
         <div className="space-y-6">
           {/* 🌐 Central Filter Hub (Global Country + Category Selectors) */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/20 p-6 backdrop-blur-md space-y-5.5 shadow-2xl shadow-black/25 flex flex-col items-center">
+          <div className="rounded-md border border-zinc-800 bg-zinc-950/20 p-6 backdrop-blur-md space-y-5.5 shadow-2xl shadow-black/25 flex flex-col items-center">
             
             {/* 1. Header Title & Description (Now at the top) */}
             <div className="text-center space-y-1.5 pt-1">
@@ -400,7 +393,7 @@ export default function ChannelDetail() {
                     key={ct.code}
                     disabled={isMyChannelSelected}
                     onClick={() => setSelectedCountry(ct.code)}
-                    className={`px-3 sm:px-3.5 py-2 text-xs font-black rounded-xl transition flex items-center gap-1.5 shrink-0 whitespace-nowrap border-2 ${
+                    className={`px-3 sm:px-3.5 py-2 text-xs font-black rounded-md transition flex items-center gap-1.5 shrink-0 whitespace-nowrap border-2 ${
                       isMyChannelSelected
                         ? "opacity-30 cursor-not-allowed bg-zinc-900/50 border-zinc-850 text-zinc-650"
                         : selectedCountry === ct.code
@@ -423,7 +416,7 @@ export default function ChannelDetail() {
                   <button
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
-                    className={`px-3 sm:px-3.5 py-1.5 text-xs font-black rounded-lg transition shrink-0 whitespace-nowrap border-2 ${
+                    className={`px-3 sm:px-3.5 py-1.5 text-xs font-black rounded-md transition shrink-0 whitespace-nowrap border-2 ${
                       activeCategory === cat
                         ? "bg-red-650 border-red-500 text-white shadow-md shadow-red-650/15"
                         : "bg-zinc-900 border-zinc-850 text-zinc-400 hover:bg-zinc-800 hover:text-white"
@@ -438,7 +431,7 @@ export default function ChannelDetail() {
 
           {/* Empty placeholders for custom channels */}
           {isMyChannelSelected && sortedBenchmarks.length === 0 ? (
-            <div className="rounded-2xl border-2 border-dashed border-zinc-800 p-12 text-center max-w-lg mx-auto space-y-3.5 my-6 bg-zinc-900/5">
+            <div className="rounded-md border-2 border-dashed border-zinc-800 p-12 text-center max-w-lg mx-auto space-y-3.5 my-6 bg-zinc-900/5">
               <div className="mx-auto h-12 w-12 rounded-full border border-zinc-800 bg-zinc-950 flex items-center justify-center text-zinc-650">
                 <Users size={20} />
               </div>
@@ -454,7 +447,7 @@ export default function ChannelDetail() {
                 <div
                   key={idx}
                   onClick={() => handleRecommendClick(ch.handle)}
-                  className="group relative flex flex-col justify-between rounded-2xl border border-zinc-800 bg-zinc-900/20 p-5 hover:border-red-500/30 hover:bg-zinc-900/40 transition cursor-pointer overflow-hidden text-left"
+                  className="group relative flex flex-col justify-between rounded-md border border-zinc-800 bg-zinc-900/20 p-5 hover:border-red-500/30 hover:bg-zinc-900/40 transition cursor-pointer overflow-hidden text-left"
                 >
                   {/* Delete button display for user custom channels */}
                   {isMyChannelSelected && (
@@ -501,7 +494,7 @@ export default function ChannelDetail() {
                     </div>
 
                     {/* 3-Metric Statistics Grid */}
-                    <div className="grid grid-cols-3 gap-1 bg-zinc-950/65 p-2 rounded-xl text-center border border-zinc-850/60 shadow-inner">
+                    <div className="grid grid-cols-3 gap-1 bg-zinc-950/65 p-2 rounded-md text-center border border-zinc-850/60 shadow-inner">
                       <div>
                         <p className="text-[9px] text-zinc-500 font-black uppercase tracking-wider">구독자</p>
                         <p className="text-xs text-red-400 font-black mt-0.5">{ch.subscribers}</p>
@@ -516,7 +509,7 @@ export default function ChannelDetail() {
                       </div>
                     </div>
 
-                    <p className="text-xs text-zinc-350 leading-relaxed font-bold line-clamp-2 bg-zinc-950/20 p-2.5 rounded-lg border border-zinc-850">
+                    <p className="text-xs text-zinc-350 leading-relaxed font-bold line-clamp-2 bg-zinc-950/20 p-2.5 rounded-md border border-zinc-850">
                       {ch.desc}
                     </p>
                   </div>
@@ -547,7 +540,7 @@ export default function ChannelDetail() {
         <div className="flex flex-col space-y-4">
           {/* ⚠️ 유튜브 API 쿼터 초과 시 솔직/투명 안내 배너 노출 */}
           {data.source === "mock-fallback" && (
-            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4.5 text-left space-y-2">
+            <div className="rounded-md border border-amber-500/20 bg-amber-500/5 p-4.5 text-left space-y-2">
               <h4 className="text-xs font-black text-amber-500 flex items-center gap-1.5">
                 ⚠️ 유튜브 라이브 통계 제한 안내 (API 할당량 초과)
               </h4>
@@ -564,7 +557,7 @@ export default function ChannelDetail() {
           {/* Back to list button */}
           <button
             onClick={() => router.push("/studio/youtube/channel")}
-            className="flex items-center gap-2 text-xs font-black text-zinc-400 hover:text-white transition bg-zinc-950/60 border border-zinc-850 px-4 py-2.5 rounded-xl self-start"
+            className="flex items-center gap-2 text-xs font-black text-zinc-400 hover:text-white transition bg-zinc-950/60 border border-zinc-850 px-4 py-2.5 rounded-md self-start"
           >
             <ArrowLeft size={14} /> 추천 목록으로 돌아가기
           </button>
@@ -572,7 +565,7 @@ export default function ChannelDetail() {
           <div className="grid gap-6 md:grid-cols-3">
             {/* Left Column: Channel Overview Card & Meta Data Details */}
             <div className="md:col-span-1 space-y-6">
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/20 overflow-hidden backdrop-blur-md">
+              <div className="rounded-md border border-zinc-800 bg-zinc-900/20 overflow-hidden backdrop-blur-md">
                 {/* Channel Banner Image */}
                 <div className="relative w-full h-24 sm:h-28 bg-zinc-950 overflow-hidden">
                   {data.channel.brandingSettings?.image?.bannerExternalUrl ? (
@@ -606,7 +599,7 @@ export default function ChannelDetail() {
                   </div>
 
                   {/* Scrollable full description */}
-                  <div className="text-left bg-zinc-950/40 p-3.5 rounded-xl border border-zinc-850">
+                  <div className="text-left bg-zinc-950/40 p-3.5 rounded-md border border-zinc-850">
                     <p className="text-[10px] font-black text-zinc-400 mb-1">채널 소개</p>
                     <div className="text-[11px] leading-relaxed text-zinc-350 font-bold max-h-36 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-800">
                       {data.channel.snippet.description || "채널 설명이 없습니다."}
@@ -615,7 +608,7 @@ export default function ChannelDetail() {
 
                   {/* 3-Metric stats labels and values */}
                   <div className="grid grid-cols-3 gap-2 text-left">
-                    <div className="rounded-xl border border-zinc-850 bg-zinc-950/20 p-2.5 text-center flex flex-col justify-between min-h-[76px]">
+                    <div className="rounded-md border border-zinc-850 bg-zinc-950/20 p-2.5 text-center flex flex-col justify-between min-h-[76px]">
                       <div>
                         <p className="text-[10px] font-black text-zinc-400">구독자</p>
                         <p className="text-sm font-black text-red-400 mt-0.5">{formatNumber(data.channel.statistics.subscriberCount)}</p>
@@ -624,7 +617,7 @@ export default function ChannelDetail() {
                         업데이트: {data.updatedAt ? new Date(data.updatedAt).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }) : "오늘 실시간"}
                       </p>
                     </div>
-                    <div className="rounded-xl border border-zinc-850 bg-zinc-950/20 p-2.5 text-center flex flex-col justify-between min-h-[76px]">
+                    <div className="rounded-md border border-zinc-850 bg-zinc-950/20 p-2.5 text-center flex flex-col justify-between min-h-[76px]">
                       <div>
                         <p className="text-[10px] font-black text-zinc-400">총조회수</p>
                         <p className="text-sm font-black text-white mt-0.5">{formatNumber(data.channel.statistics.viewCount)}</p>
@@ -633,7 +626,7 @@ export default function ChannelDetail() {
                         조회기준일: 오늘
                       </p>
                     </div>
-                    <div className="rounded-xl border border-zinc-850 bg-zinc-950/20 p-2.5 text-center flex flex-col justify-between min-h-[76px]">
+                    <div className="rounded-md border border-zinc-850 bg-zinc-950/20 p-2.5 text-center flex flex-col justify-between min-h-[76px]">
                       <div>
                         <p className="text-[10px] font-black text-zinc-400">동영상수</p>
                         <p className="text-sm font-black text-white mt-0.5">{data.channel.statistics.videoCount}개</p>
@@ -645,7 +638,7 @@ export default function ChannelDetail() {
                   </div>
 
                   {/* 100일 주기 실시간 동기화 정보 알림 문구 배너 */}
-                  <div className="rounded-xl border border-zinc-850 bg-red-950/5 p-3 text-center">
+                  <div className="rounded-md border border-zinc-850 bg-red-950/5 p-3 text-center">
                     <p className="text-[10px] font-extrabold text-red-400 flex items-center justify-center gap-1.5">
                       <span>⚠️</span>
                       <span>채널 정보는 100일에 1번씩 유튜브 API를 통해 실시간 업데이트됩니다.</span>
@@ -656,7 +649,7 @@ export default function ChannelDetail() {
                   <button
                     type="button"
                     onClick={handleToggleRadar}
-                    className={`w-full flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-black transition border shadow-sm ${
+                    className={`w-full flex items-center justify-center gap-2 rounded-md py-3 text-xs font-black transition border shadow-sm ${
                       isCurrentInRadar
                         ? "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-white"
                         : "bg-red-950/30 border-red-900/40 text-red-400 hover:bg-red-950/50 hover:border-red-800"
@@ -676,7 +669,7 @@ export default function ChannelDetail() {
               </div>
 
               {/* NEW: Channel Detailed Metadata Section */}
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/20 p-5 backdrop-blur-md space-y-4">
+              <div className="rounded-md border border-zinc-800 bg-zinc-900/20 p-5 backdrop-blur-md space-y-4">
                 <h4 className="text-xs font-black text-white flex items-center gap-1.5 border-b border-zinc-850 pb-2">
                   ℹ️ 채널 상세 프로필 명세
                 </h4>
@@ -713,7 +706,7 @@ export default function ChannelDetail() {
 
               {/* NEW: Channel Tags/Keywords Cloud */}
               {data.channel.brandingSettings?.channel?.keywords && (
-                <div className="rounded-2xl border border-zinc-800 bg-zinc-900/20 p-5 backdrop-blur-md space-y-3">
+                <div className="rounded-md border border-zinc-800 bg-zinc-900/20 p-5 backdrop-blur-md space-y-3">
                   <h4 className="text-xs font-black text-white flex items-center gap-1.5">
                     💡 채널 공식 관심 키워드
                   </h4>
@@ -721,7 +714,7 @@ export default function ChannelDetail() {
                     {parseKeywords(data.channel.brandingSettings.channel.keywords).map((kw: string, i: number) => (
                       <span
                         key={i}
-                        className="border border-zinc-850 bg-zinc-950/60 text-zinc-400 text-[10px] font-black px-2.5 py-1 rounded-lg hover:border-zinc-700 transition"
+                        className="border border-zinc-850 bg-zinc-950/60 text-zinc-400 text-[10px] font-black px-2.5 py-1 rounded-md hover:border-zinc-700 transition"
                       >
                         #{kw}
                       </span>
@@ -731,12 +724,12 @@ export default function ChannelDetail() {
               )}
 
               {/* Quick links to other options */}
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-3">
+              <div className="rounded-md border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-3">
                 <h4 className="text-xs font-black text-white">관련 연동 메뉴</h4>
                 <div className="flex flex-col gap-2">
                   <a
                     href={`/studio/youtube/cpm?views=${data.channel.statistics.viewCount}`}
-                    className="flex justify-between items-center rounded-lg bg-zinc-950/50 p-2.5 text-[11px] font-bold text-zinc-300 hover:border-red-500/30 hover:bg-zinc-900 transition border border-zinc-850"
+                    className="flex justify-between items-center rounded-md bg-zinc-950/50 p-2.5 text-[11px] font-bold text-zinc-300 hover:border-red-500/30 hover:bg-zinc-900 transition border border-zinc-850"
                   >
                     <span className="flex items-center gap-1.5"><Database size={13} className="text-violet-400" /> 수익 및 CPM 계산</span>
                     <span>→</span>
@@ -746,7 +739,7 @@ export default function ChannelDetail() {
             </div>
 
             {/* Right Column: Outperformer Radar Videos list */}
-            <div className="md:col-span-2 rounded-2xl border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-4">
+            <div className="md:col-span-2 rounded-md border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-black text-white flex items-center gap-2">
                   <PlayCircle className="text-red-500" size={16} />
@@ -755,7 +748,7 @@ export default function ChannelDetail() {
                 
                 <div className="flex items-center gap-2">
                   {/* Sorting Buttons */}
-                  <div className="flex items-center gap-1 bg-zinc-950 p-0.5 rounded-lg border border-zinc-850 text-[10px] font-bold text-zinc-400">
+                  <div className="flex items-center gap-1 bg-zinc-950 p-0.5 rounded-md border border-zinc-850 text-[10px] font-bold text-zinc-400">
                     <button
                       onClick={() => setVideoSortKey("default")}
                       className={`px-2 py-0.5 rounded transition ${
@@ -835,12 +828,12 @@ export default function ChannelDetail() {
                       <div
                         key={videoId || idx}
                         onClick={() => handleOpenReport({ ...video, id: videoId })}
-                        className={`flex flex-col sm:flex-row gap-4 rounded-xl bg-zinc-950/40 p-4 border transition cursor-pointer hover:bg-zinc-900/40 ${
+                        className={`flex flex-col sm:flex-row gap-4 rounded-md bg-zinc-950/40 p-4 border transition cursor-pointer hover:bg-zinc-900/40 ${
                           isOutlier ? "border-orange-500/30 hover:border-orange-500/50" : "border-zinc-850 hover:border-red-500/20"
                         }`}
                       >
                         {/* Video Thumbnail */}
-                        <div className="h-20 w-36 overflow-hidden rounded-lg border border-zinc-850 shrink-0 bg-zinc-900 relative group/thumb cursor-pointer">
+                        <div className="h-20 w-36 overflow-hidden rounded-md border border-zinc-850 shrink-0 bg-zinc-900 relative group/thumb cursor-pointer">
                           {videoId && videoId === playingVideoId ? (
                             <iframe
                               src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}

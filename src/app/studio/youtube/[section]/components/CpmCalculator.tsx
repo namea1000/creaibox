@@ -30,15 +30,17 @@ export default function CpmCalculator() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 backdrop-blur-md">
-        <h2 className="flex items-center gap-2 text-lg font-black text-white mb-2">
-          <Calculator className="text-violet-400" size={20} />
-          유튜브 광고 단가 계산기 (CPM/RPM)
-        </h2>
-        <p className="text-xs text-zinc-550 mb-6 leading-relaxed">
-          조회수와 타겟 카테고리 광고 단가(CPM), 그리고 영상 내 실제 광고 게재 비율을 조절하여 크리에이터의 예상 실수령 수익과 RPM을 즉석에서 계산합니다.
+      {/* 🚀 상단 헤더 */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-[26px] font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+          광고 단가 계산기
+        </h1>
+        <p className="text-[15px] text-slate-500 dark:text-zinc-400">
+          조회수와 타겟 카테고리 광고 단가(CPM), 실제 광고 게재 비율을 조절하여 크리에이터의 예상 실수령 수익과 RPM을 계산합니다.
         </p>
+      </div>
 
+      <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 p-6 shadow-sm">
         <div className="grid gap-6 md:grid-cols-2">
           {/* Sliders panel */}
           <div className="space-y-5">
@@ -55,7 +57,7 @@ export default function CpmCalculator() {
                 step={5000}
                 value={views}
                 onChange={(e) => setViews(Number(e.target.value))}
-                className="w-full h-1.5 rounded-lg bg-zinc-800 appearance-none cursor-pointer accent-violet-500"
+                className="w-full h-1.5 rounded-md bg-zinc-800 appearance-none cursor-pointer accent-violet-500"
               />
             </div>
 
@@ -72,7 +74,7 @@ export default function CpmCalculator() {
                 step={100}
                 value={cpm}
                 onChange={(e) => setCpm(Number(e.target.value))}
-                className="w-full h-1.5 rounded-lg bg-zinc-800 appearance-none cursor-pointer accent-violet-500"
+                className="w-full h-1.5 rounded-md bg-zinc-800 appearance-none cursor-pointer accent-violet-500"
               />
               <span className="text-[9px] text-zinc-600 block">한국 평균 단가: ₩2,500 ~ ₩4,500 내외</span>
             </div>
@@ -90,14 +92,14 @@ export default function CpmCalculator() {
                 step={5}
                 value={impressionsPct}
                 onChange={(e) => setImpressionsPct(Number(e.target.value))}
-                className="w-full h-1.5 rounded-lg bg-zinc-800 appearance-none cursor-pointer accent-violet-500"
+                className="w-full h-1.5 rounded-md bg-zinc-800 appearance-none cursor-pointer accent-violet-500"
               />
               <span className="text-[9px] text-zinc-600 block">조회수 중 실제 광고가 로드되어 노출된 평균 비율</span>
             </div>
           </div>
 
           {/* Metrics Displays */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/40 p-6 flex flex-col justify-between gap-4">
+          <div className="rounded-md border border-zinc-800 bg-zinc-950/40 p-6 flex flex-col justify-between gap-4">
             <div className="space-y-4">
               <div>
                 <p className="text-[10px] font-bold text-zinc-550">크리에이터 예상 실수령액 (수수료 45% 제외)</p>
@@ -116,7 +118,7 @@ export default function CpmCalculator() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/20 p-3 flex gap-2 items-start text-[10px] leading-relaxed text-zinc-500 font-medium">
+            <div className="rounded-md border border-zinc-800 bg-zinc-900/20 p-3 flex gap-2 items-start text-[10px] leading-relaxed text-zinc-500 font-medium">
               <HelpCircle size={14} className="text-cyan-400 shrink-0 mt-0.5" />
               크리에이터 배분율(55%)을 기준으로 자동 연산되었습니다. 실제 수익은 시청 국가, 조회 타겟 연령대 및 동영상 길이에 따라 상이할 수 있습니다.
             </div>
@@ -125,7 +127,7 @@ export default function CpmCalculator() {
       </div>
 
       {/* Views tiers projections table */}
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-4">
+      <div className="rounded-md border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-4">
         <h3 className="text-sm font-black text-white flex items-center gap-1.5">
           <TrendingUp size={16} className="text-violet-400" />
           누적 조회수별 수익 전망 테이블

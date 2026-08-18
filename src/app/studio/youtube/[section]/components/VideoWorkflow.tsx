@@ -40,15 +40,17 @@ export default function VideoWorkflow() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 backdrop-blur-md">
-        <h2 className="flex items-center gap-2 text-lg font-black text-white mb-2">
-          <Sparkles className="text-cyan-400" size={20} />
+      {/* 🚀 상단 헤더 */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-[26px] font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
           유튜브 자동 제작 워크플로우
-        </h2>
-        <p className="text-xs text-zinc-550 mb-6 leading-relaxed">
-          유튜브 검색에 최적화된 메인 키워드 정보를 바탕으로 시나리오 스크립트 대본 초안을 빌드하고, 영상 타임라인이나 오디오 비주얼라이저 스튜디오로 즉시 바인딩하여 렌더링 작업을 수행합니다.
+        </h1>
+        <p className="text-[15px] text-slate-500 dark:text-zinc-400">
+          키워드 정보를 바탕으로 시나리오 스크립트 대본 초안을 빌드하고, 영상 에디터나 스튜디오로 바인딩하여 렌더링을 수행합니다.
         </p>
+      </div>
 
+      <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 p-6 shadow-sm">
         <div className="grid gap-6 md:grid-cols-3">
           {/* Inputs */}
           <div className="md:col-span-2 space-y-4">
@@ -60,7 +62,7 @@ export default function VideoWorkflow() {
                 disabled={loading}
                 onChange={(e) => setKeyword(e.target.value)}
                 placeholder="자동화 제작을 구상할 주제... (예: 5분 완성 AI 작사 작곡 꿀팁)"
-                className="w-full h-11 rounded-xl border border-zinc-800 bg-zinc-950 px-4 text-xs font-semibold text-white outline-none placeholder:text-zinc-650 focus:border-cyan-500/50 transition"
+                className="w-full h-11 rounded-md border border-zinc-800 bg-zinc-950 px-4 text-xs font-semibold text-white outline-none placeholder:text-zinc-650 focus:border-cyan-500/50 transition"
               />
             </div>
 
@@ -71,7 +73,7 @@ export default function VideoWorkflow() {
                   type="button"
                   disabled={loading}
                   onClick={() => setSelectedFlow("video")}
-                  className={`flex flex-col items-center justify-center p-3 rounded-xl border transition cursor-pointer text-center ${
+                  className={`flex flex-col items-center justify-center p-3 rounded-md border transition cursor-pointer text-center ${
                     selectedFlow === "video"
                       ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-455"
                       : "border-zinc-850 bg-zinc-950/60 text-zinc-400 hover:text-white"
@@ -85,7 +87,7 @@ export default function VideoWorkflow() {
                   type="button"
                   disabled={loading}
                   onClick={() => setSelectedFlow("writing")}
-                  className={`flex flex-col items-center justify-center p-3 rounded-xl border transition cursor-pointer text-center ${
+                  className={`flex flex-col items-center justify-center p-3 rounded-md border transition cursor-pointer text-center ${
                     selectedFlow === "writing"
                       ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-455"
                       : "border-zinc-850 bg-zinc-950/60 text-zinc-400 hover:text-white"
@@ -99,7 +101,7 @@ export default function VideoWorkflow() {
                   type="button"
                   disabled={loading}
                   onClick={() => setSelectedFlow("music")}
-                  className={`flex flex-col items-center justify-center p-3 rounded-xl border transition cursor-pointer text-center ${
+                  className={`flex flex-col items-center justify-center p-3 rounded-md border transition cursor-pointer text-center ${
                     selectedFlow === "music"
                       ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-455"
                       : "border-zinc-850 bg-zinc-950/60 text-zinc-400 hover:text-white"
@@ -116,7 +118,7 @@ export default function VideoWorkflow() {
                 type="button"
                 onClick={handleStartFlow}
                 disabled={loading || !keyword.trim()}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 px-8 text-xs font-black text-white transition shadow-lg shadow-cyan-600/10 shrink-0"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 px-8 text-xs font-black text-white transition shadow-lg shadow-cyan-600/10 shrink-0"
               >
                 {loading ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
                 연동 파이프라인 일괄 기획
@@ -125,7 +127,7 @@ export default function VideoWorkflow() {
           </div>
 
           {/* Map */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-4">
+          <div className="rounded-md border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-4">
             <h3 className="text-sm font-black text-white">동작 파이프라인</h3>
             
             <div className="space-y-4 relative">
@@ -161,7 +163,7 @@ export default function VideoWorkflow() {
 
       {/* Progress */}
       {currentStep > 0 && (
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md">
+        <div className="rounded-md border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md">
           <h3 className="text-sm font-black text-white mb-4">파이프라인 실행 현황</h3>
           
           <div className="grid gap-4 md:grid-cols-3">
@@ -173,7 +175,7 @@ export default function VideoWorkflow() {
               return (
                 <div
                   key={idx}
-                  className={`rounded-xl border p-4 transition ${
+                  className={`rounded-md border p-4 transition ${
                     isDone
                       ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-400"
                       : isActive
@@ -195,7 +197,7 @@ export default function VideoWorkflow() {
           </div>
 
           {currentStep === 3 && !loading && (
-            <div className="mt-6 p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="mt-6 p-4 rounded-md border border-emerald-500/20 bg-emerald-500/5 flex flex-col md:flex-row justify-between items-center gap-4">
               <div>
                 <p className="text-xs font-bold text-white">유튜브 제작 파이프라인 자동화 맵핑 완료</p>
                 <p className="text-[10px] text-zinc-400 mt-1">
@@ -204,7 +206,7 @@ export default function VideoWorkflow() {
               </div>
               <a
                 href={getRedirectUrl()}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 text-xs font-black text-white transition shrink-0"
+                className="inline-flex h-9 items-center gap-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 px-4 text-xs font-black text-white transition shrink-0"
               >
                 비디오 편집기 스튜디오로 이동
                 <ArrowRight size={14} />

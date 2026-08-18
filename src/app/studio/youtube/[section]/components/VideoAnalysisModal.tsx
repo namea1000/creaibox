@@ -263,7 +263,7 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-fade-in">
-      <div className="relative flex flex-col w-full max-w-3xl max-h-[85vh] rounded-3xl border border-zinc-800 bg-zinc-900/90 text-white shadow-2xl overflow-hidden">
+      <div className="relative flex flex-col w-full max-w-3xl max-h-[85vh] rounded-md border border-zinc-800 bg-zinc-900/90 text-white shadow-2xl overflow-hidden">
         
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4 bg-zinc-950/20">
@@ -277,7 +277,7 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
             <button
               onClick={handlePrevVideo}
               disabled={prevDisabled}
-              className="rounded-xl border border-zinc-850 bg-zinc-950/40 p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 disabled:opacity-20 transition"
+              className="rounded-md border border-zinc-850 bg-zinc-950/40 p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 disabled:opacity-20 transition"
               title="이전 영상 분석 (ArrowLeft)"
             >
               <ChevronLeft size={16} />
@@ -287,7 +287,7 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
             <button
               onClick={handleNextVideo}
               disabled={nextDisabled}
-              className="rounded-xl border border-zinc-850 bg-zinc-950/40 p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 disabled:opacity-20 transition"
+              className="rounded-md border border-zinc-850 bg-zinc-950/40 p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 disabled:opacity-20 transition"
               title="다음 영상 분석 (ArrowRight)"
             >
               <ChevronRight size={16} />
@@ -298,7 +298,7 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="rounded-xl border border-zinc-850 bg-zinc-950/40 p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
+              className="rounded-md border border-zinc-850 bg-zinc-950/40 p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
               title="닫기 (ESC)"
             >
               <X size={16} />
@@ -310,11 +310,11 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
         <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin">
           
           {/* Section 1: Video Title Header */}
-          <div className="flex gap-4 p-4 rounded-2xl border border-zinc-800/80 bg-zinc-950/25">
+          <div className="flex gap-4 p-4 rounded-md border border-zinc-800/80 bg-zinc-950/25">
             <img
               src={modalThumbnail}
               alt={modalTitle}
-              className="h-20 aspect-video rounded-xl object-cover border border-zinc-800"
+              className="h-20 aspect-video rounded-md object-cover border border-zinc-800"
               onError={(e) => {
                 const target = e.currentTarget;
                 if (target.src !== "/placeholder.jpg") {
@@ -343,7 +343,7 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
             
             <div className="grid gap-4 sm:grid-cols-2">
               {/* Like Rate Meter */}
-              <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/15 p-4 space-y-2">
+              <div className="rounded-md border border-zinc-800/60 bg-zinc-950/15 p-4 space-y-2">
                 <div className="flex justify-between items-center text-[10px]">
                   <span className="text-zinc-500 font-bold flex items-center gap-1">
                     <ThumbsUp size={11} />
@@ -366,7 +366,7 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
               </div>
 
               {/* Comment Rate Meter */}
-              <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/15 p-4 space-y-2">
+              <div className="rounded-md border border-zinc-800/60 bg-zinc-950/15 p-4 space-y-2">
                 <div className="flex justify-between items-center text-[10px]">
                   <span className="text-zinc-500 font-bold flex items-center gap-1">
                     <MessageSquare size={11} />
@@ -401,7 +401,7 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
                 {video.snippet.tags.map((tag: string, tid: number) => (
                   <span
                     key={tid}
-                    className="inline-flex items-center rounded-lg bg-zinc-950 px-2.5 py-1 text-[9px] font-black text-zinc-400 border border-zinc-850 hover:text-white transition cursor-default"
+                    className="inline-flex items-center rounded-md bg-zinc-950 px-2.5 py-1 text-[9px] font-black text-zinc-400 border border-zinc-850 hover:text-white transition cursor-default"
                   >
                     #{tag}
                   </span>
@@ -411,7 +411,7 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
           )}
 
           {/* Section 4: AI Analysis Output Report */}
-          <div className="rounded-2xl border border-zinc-800/80 bg-zinc-950/15 p-5 space-y-4">
+          <div className="rounded-md border border-zinc-800/80 bg-zinc-950/15 p-5 space-y-4">
             <div className="flex items-center justify-between gap-4 border-b border-zinc-900 pb-2.5">
               <h3 className="text-xs font-black text-zinc-300 flex items-center gap-2">
                 <Sparkles size={13} className="text-orange-500 animate-pulse" />
@@ -422,7 +422,7 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-[10px] font-black text-zinc-400 hover:text-white px-2.5 py-1.5 transition shrink-0 select-none shadow-sm"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-[10px] font-black text-zinc-400 hover:text-white px-2.5 py-1.5 transition shrink-0 select-none shadow-sm"
                 >
                   {copied ? (
                     <>
@@ -445,7 +445,7 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
                 <p className="text-[10px] font-bold text-zinc-555">Gemini AI가 알고리즘 바이럴 지표를 작성하는 중...</p>
               </div>
             ) : error ? (
-              <div className="flex flex-col items-center gap-3 text-xs font-bold text-red-400 py-8 justify-center bg-red-950/10 rounded-xl border border-red-500/20 my-2">
+              <div className="flex flex-col items-center gap-3 text-xs font-bold text-red-400 py-8 justify-center bg-red-950/10 rounded-md border border-red-500/20 my-2">
                 <div className="flex items-center gap-2">
                   <AlertCircle size={16} />
                   <span>{error}</span>
@@ -453,7 +453,7 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
                 {error.includes("로그인") && (
                   <a
                     href="/login"
-                    className="mt-1 flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-xs font-black text-black hover:bg-orange-400 transition shadow-lg"
+                    className="mt-1 flex items-center gap-1.5 rounded-md bg-orange-500 px-4 py-2 text-xs font-black text-black hover:bg-orange-400 transition shadow-lg"
                   >
                     🔑 로그인 하러 가기
                   </a>

@@ -77,15 +77,17 @@ export default function AiTitleGenerator() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 backdrop-blur-md">
-        <h2 className="flex items-center gap-2 text-lg font-black text-white mb-2">
-          <Sparkles className="text-yellow-400" size={20} />
-          AI 유튜브 제목 생성기
-        </h2>
-        <p className="text-xs text-zinc-550 mb-4 leading-relaxed">
-          메인 키워드를 입력하고 노출 목적에 맞는 어투 및 카테고리를 설정하면, Gemini AI가 시청자의 시선을 끄는 고효율 유튜브 타이틀 5종을 자동 구성합니다.
+      {/* 🚀 상단 헤더 */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-[26px] font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
+          AI 제목 생성기
+        </h1>
+        <p className="text-[15px] text-slate-500 dark:text-zinc-400">
+          핵심 키워드를 입력하고 목적에 맞는 톤을 설정하면, AI가 시청자의 시선을 사로잡는 고효율 유튜브 타이틀 5종을 추천합니다.
         </p>
+      </div>
 
+      <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 p-6 shadow-sm">
         <form onSubmit={handleGenerate} className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-1">
@@ -96,7 +98,7 @@ export default function AiTitleGenerator() {
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 placeholder="예: Suno AI, 유튜브 쇼츠"
-                className="w-full h-11 rounded-xl border border-zinc-800 bg-zinc-950 px-4 text-xs font-semibold text-white outline-none placeholder:text-zinc-650 focus:border-yellow-500/50 transition"
+                className="w-full h-11 rounded-md border border-zinc-800 bg-zinc-950 px-4 text-xs font-semibold text-white outline-none placeholder:text-zinc-650 focus:border-yellow-500/50 transition"
               />
             </div>
 
@@ -105,7 +107,7 @@ export default function AiTitleGenerator() {
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full h-11 rounded-xl border border-zinc-800 bg-zinc-950 px-3 text-xs font-bold text-zinc-350 outline-none focus:border-yellow-500/50 transition cursor-pointer"
+                className="w-full h-11 rounded-md border border-zinc-800 bg-zinc-950 px-3 text-xs font-bold text-zinc-350 outline-none focus:border-yellow-500/50 transition cursor-pointer"
               >
                 <option value="money">수익화 / 창업 / 부업</option>
                 <option value="guide">튜토리얼 / 기초 가이드</option>
@@ -118,7 +120,7 @@ export default function AiTitleGenerator() {
               <select
                 value={style}
                 onChange={(e) => setStyle(e.target.value)}
-                className="w-full h-11 rounded-xl border border-zinc-800 bg-zinc-950 px-3 text-xs font-bold text-zinc-355 outline-none focus:border-yellow-500/50 transition cursor-pointer"
+                className="w-full h-11 rounded-md border border-zinc-800 bg-zinc-950 px-3 text-xs font-bold text-zinc-355 outline-none focus:border-yellow-500/50 transition cursor-pointer"
               >
                 <option value="clickbait">어그로 (CTR 극대화형)</option>
                 <option value="list">리스트형 (숫자 강조)</option>
@@ -131,7 +133,7 @@ export default function AiTitleGenerator() {
             <button
               type="submit"
               disabled={loading || !keyword.trim()}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 px-8 text-xs font-black text-black transition shadow-lg shadow-yellow-500/10 shrink-0"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 px-8 text-xs font-black text-black transition shadow-lg shadow-yellow-500/10 shrink-0"
             >
               {loading ? (
                 <>
@@ -150,7 +152,7 @@ export default function AiTitleGenerator() {
       </div>
 
       {titles.length > 0 && (
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-4">
+        <div className="rounded-md border border-zinc-800 bg-zinc-900/20 p-6 backdrop-blur-md space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-sm font-black text-white">추천 타이틀 리스트</h3>
             <span className="text-[10px] text-zinc-550 flex items-center gap-1"><Info size={12} /> 클릭하면 복사됩니다.</span>
@@ -161,7 +163,7 @@ export default function AiTitleGenerator() {
               <div
                 key={idx}
                 onClick={() => handleCopy(title, idx)}
-                className="flex justify-between items-center rounded-xl bg-zinc-950/40 p-4 border border-zinc-850 hover:border-yellow-500/30 hover:bg-zinc-900 cursor-pointer select-none transition group"
+                className="flex justify-between items-center rounded-md bg-zinc-950/40 p-4 border border-zinc-850 hover:border-yellow-500/30 hover:bg-zinc-900 cursor-pointer select-none transition group"
               >
                 <div className="flex items-center gap-3">
                   <span className="h-5 w-5 rounded bg-zinc-800 text-[10px] font-black text-zinc-400 flex items-center justify-center group-hover:bg-yellow-500/10 group-hover:text-yellow-400 transition">
