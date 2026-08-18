@@ -31,6 +31,80 @@
   5. **카드 썸네일 이미지 배치 스타일 (Full Bleed vs Inset Pad) 커스텀 선택 기능 탑재**:
      - `blog-management/page.tsx`, `BlogClientWrapper.tsx`, `CategoryClientWrapper.tsx`, `src/app/blog/page.tsx`
      - 썸네일 이미지가 카드 상단/좌우에 꽉 차는 **"꽉 찬형 (Full Bleed)"** 모드와 카드 내부에 여백 패딩을 두고 둥근 전용 박스로 배치되는 **"안쪽 박스형 (Inset Pad)"** 모드를 사용자가 스튜디오에서 직접 선택할 수 있도록 옵션 추가 및 실시간 프리뷰/블로그 뷰 연동 완료.
+  6. **사이드바 및 어사이드(Quick Hub) 펼치기/접기 버튼 호버 툴팁 제거**:
+     - `src/components/layout/Sidebar.tsx`, `src/components/layout/Aside.tsx`
+     - 사용자 UI 시인성 및 쾌적한 화면 전환을 위해 토글 버튼 마우스 오버 시 뜨던 불필요한 호버 툴팁 span 요소를 깔끔하게 제거.
+  7. **어사이드(Quick Hub) 펼침 상태 영구 보존 & Quick Hub 타이틀 및 접기 버튼 본문 상단 우측 재배치**:
+     - `src/components/layout/Aside.tsx`
+     - **펼침/접힘 상태 영구 기억 (LocalStorage Persistence)**: 사용자가 버튼으로 한 번 펼쳐두면 왼쪽 사이드바의 어떤 메뉴를 클릭하거나 라우팅을 이동하더라도 자동으로 접히지 않고 사용자가 다시 접기 버튼을 누를 때까지 펼쳐진 상태 유지.
+     - **Quick Hub 타이틀 & 접기 버튼 본문 우측 끝 재배치**: 상단 헤더 대신 본문 목록 상단으로 타이틀과 접기 버튼을 이동시켜, 사이드바와 대칭을 이루며 깔끔한 우측 정렬 레이아웃 완성.
+  8. **사이드바 상단 "AI STUDIO" ➔ 공식 브랜드 로고 교체 & 접기 버튼 "스튜디오 홈" 내부 우측 재배치**:
+     - `src/components/layout/Sidebar.tsx`
+     - 사이드바 상단 헤더의 텍스트("AI STUDIO")를 제거하고 공식 `CreaiBox` 브랜드 로고(다크/라이트 테마 자동 지원)로 단일화 배치.
+     - 상단 헤더에 있던 접기 버튼을 아래쪽 **"스튜디오 홈" 메뉴 버튼 안쪽 오른쪽(`PanelLeftClose`)**으로 이동 배치하여 시각적 정돈감 및 접근성 극대화.
+     - 우측 어사이드(Quick Hub)의 토글 버튼과 100% 동일한 **모던 다크/라이트 테마 컬러 (`border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-blue-500/60 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-blue-500 dark:hover:text-white`)**로 일체화 적용.
+  9. **스튜디오 최상단 헤더 제거 & 스튜디오 헤드탑(StudioTopbar) 단일 탑바 통합 (Figma/SaaS 표준)**:
+     - `src/app/studio/layout.tsx`, `src/components/studio/StudioTopbar.tsx`, `src/components/layout/Aside.tsx`
+     - 스튜디오 최상단의 불필요한 일반 네비게이션 헤더(`<Header />`)를 완전히 제거하여 세로 작업 공간을 즉시 50~60px 확보.
+     - `StudioTopbar`가 어사이드 상단 구분선 없이 **화면 맨 오른쪽 끝까지 100% 가로로 시원하게 확장**되도록 레이아웃 재구성.
+     - `StudioTopbar` 맨 우측 끝에 **다크/라이트 테마 토글 버튼** 및 **로그인 사용자 세션 프로필 카드(아바타/닉네임/등급/드롭다운/로그아웃)** 완벽 통합.
+     - `Aside`는 `StudioTopbar`의 바로 아래로 배치되어 본문 상단에서 접기/펼치기가 자연스럽게 동작하도록 정리.
+     - `Aside` 내부의 모든 버튼 및 카드 모서리를 사이드바와 동일하게 **각진 사각 스타일(`rounded-md`)**로 일체화하여 완벽한 좌우 시각적 대칭 완성.
+  10. **스튜디오/마이페이지/관리자 전 영역 최상단 헤더 전면 제거 & 단일 탑바 통일**:
+     - `src/components/layout/PublicStudioLayout.tsx`, `src/app/mypage/page.tsx`, `src/app/apivault/page.tsx`, `src/app/admin/layout.tsx`, `src/app/admin/inquiry/page.tsx`
+     - 스튜디오와 연관된 모든 페이지(콘텐츠 아이디어 허브, 마이페이지, API 볼트, 관리자 대시보드 및 1:1 문의 등)에서 구형 상단 `<Header />`를 완전히 제거하고 단일 `StudioTopbar` 체제로 100% 통일.
+  11. **사이드바 메뉴 클릭 시 즉시 페이지 라우팅 및 자동 서브메뉴 펼침 복구**:
+     - `src/components/layout/Sidebar.tsx`
+     - 상위 메뉴 아이템을 `<Link>`로 복원하여 클릭 시 해당 주소로 즉시 페이지 이동 및 해당 카테고리 하위 메뉴가 자동으로 열리도록 수정.
+  12. **스튜디오 탑바 및 사이드바 헤더 세로 폭 메인 헤더와 100% 일치 (`h-16 (64px)`, 로고 `h-8 (32px)`)**:
+     - `src/components/studio/StudioTopbar.tsx`, `src/components/layout/Sidebar.tsx`
+     - 메인 페이지 최상단 헤더(`Header.tsx`) 규격과 100% 동일하게 세로 높이 `h-16 (64px)` 및 로고 `h-8 (32px)`로 일치화하여 완벽한 시각적 안정감과 프리미엄 밸런스 달성.
+  13. **스튜디오 로고 메인화면 실측 규격과 100% 동일한 크기(`h-5 (20px)`) 보정 및 사이드바 배경 일체화(`dark:bg-slate-900`)**:
+     - `src/components/layout/Sidebar.tsx`, `src/components/studio/StudioTopbar.tsx`, `src/components/layout/Aside.tsx`
+     - 로고 영역 배경의 블랙을 제거하고 사이드바 본체와 100% 동일한 **`dark:bg-slate-900`**으로 일체화.
+     - 메인화면 헤더에서 체감되는 실측 로고 크기인 **`h-5 (20px) w-auto`**를 적용하여 사이드바에서 거대하게 튀어나오지 않고 메인과 완전히 동일한 아담하고 세련된 크기로 렌더링되도록 정밀 보정.
+     - 스튜디오 탑바 및 어사이드 배경도 원래의 프리미엄 슬레이트 톤앤매너로 복구하고 알약 박스들을 각진 사각(`rounded-md`)으로 완성.
+  14. **사이드바 서브메뉴 좌측 세로선 제거 및 좌측 라인 정렬 (글자 잘림 방지)**:
+     - `src/components/layout/Sidebar.tsx`
+     - 서브메뉴 좌측의 불필요한 세로선(`border-l`) 및 과도한 들여쓰기를 제거하고, 상위 메뉴와 세로 수직 라인을 단정하게 일치화하여 긴 메뉴명도 우측 잘림 없이 온전히 표시되도록 개선.
+  15. **사이드바 메뉴 클릭 이동 시 깜빡임 및 레이아웃 들썩임(Layout Shift) 완벽 제거**:
+     - `src/components/layout/Sidebar.tsx`
+     - 페이지 라우팅 시 `useEffect`가 재실행되며 펼쳐진 메뉴들이 순간적으로 닫혔다 다시 열리던 상태 동기화 병목을 제거.
+     - `useState` Lazy Initializer를 적용하여 브라우저 로딩 즉시 펼침 상태를 동기화하고, 페이지 이동 시에도 기존 펼친 메뉴들을 흔들림 없이 온전히 유지하도록 개선.
+  16. **사이드바 대메뉴 처음 클릭 시 자동 펼침 제거 & 명시적 토글 제어(펼침/접힘) 적용**:
+     - `src/components/layout/Sidebar.tsx`
+     - 서브메뉴가 있는 대메뉴를 처음 클릭할 때는 서브메뉴를 자동으로 펼치지 않고 해당 페이지로만 깔끔하게 이동.
+     - 이미 해당 페이지에 있는 상태에서 대메뉴(또는 우측 화살표)를 다시 클릭하면 서브메뉴가 펼쳐지고, 한 번 더 클릭하면 접히도록 사용자 주도형 토글 UX 구축.
+  17. **사이드바 하단 카피라이트 텍스트 정돈 및 폰트 개선**:
+     - `src/components/layout/Sidebar.tsx`
+     - 하단 불필요한 보조 문구("Strategic Systems")를 제거하고, 공식 명칭 **`© CreaiBox AI Studio`** (대문자 B)로 단일화 및 가독성 높은 `text-[13px] font-bold`로 최적화.
+  18. **사이드바 대메뉴 활성화(Active) 시 우측 토글 화살표(`>`) 선명한 화이트 대비 적용**:
+     - `src/components/layout/Sidebar.tsx`
+     - 대메뉴가 활성화되어 컬러 그라데이션 배경이 켜졌을 때 어두운 회색으로 묻히던 우측 화살표(`Chevron`) 색상을 또렷한 **순백색(`text-white/90 stroke-[2.5]`)**으로 개선하여 언제든 펼침/접힘 버튼이 선명하게 보이도록 최적화.
+  19. **스튜디오 내부 페이지 2차 대공사 1호: 도메인 관리(`/studio/domain-search`) Vercel/Supabase 정통 모노톤 리디자인**:
+     - `src/app/studio/domain-search/page.tsx`, `src/app/studio/domain-search/components/EmailForwardingManager.tsx`
+     - **Vercel 표준 와이드 규격 적용**: `max-w-[1680px] mx-auto w-full px-5 sm:px-8 lg:px-12 py-7`로 Vercel 대시보드와 완전히 동일한 시원하고 광활한 와이드 뷰 구축.
+     - **모노톤 블랙/화이트 미니멀리즘**: 불필요한 무지개 그라데이션 및 색상 폰트를 전면 제거하고, Vercel/Supabase 스타일의 정갈한 보더(`border-slate-200 dark:border-zinc-800`), 모노톤 카드/테이블, 언더라인 서브 탭 메뉴로 전면 쇄신.
+     - **라이트/다크 모드 100% 완벽 호환**: 라이트 모드(순백색 카드 + 딥블랙 텍스트), 다크 모드(미세 투명 블랙 카드 + 순백색 텍스트)에서 완벽한 가독성 확보.
+  20. **도메인 관리 6개 서브페이지 완전 분리 & 사이드바 서브메뉴 연동**:
+     - `src/app/studio/domain-search/components/DomainTabHeader.tsx` (공통 서브 탭 네비게이션)
+     - `src/app/studio/domain-search/transfer/page.tsx` (타사 도메인 이관)
+     - `src/app/studio/domain-search/email/page.tsx` (커스텀 이메일 연동)
+     - `src/app/studio/domain-search/comparison/page.tsx` (도메인 가격 비교표)
+     - `src/app/studio/domain-search/perks/page.tsx` (도메인 정책 & 혜택)
+     - `src/app/studio/domain-search/faq/page.tsx` (자주 묻는 질문 FAQ)
+     - `src/components/layout/Sidebar.tsx`: 도메인 메뉴에 6종 서브메뉴 트리 연동 완료.
+  21. **도메인 관리 6대 서브페이지 프로급 기능 및 기술 스펙 전면 고도화**:
+     - **검색 & 구매**: TLD 카테고리 필터 칩스, 주요 확장자 실시간 도매가 요약 카드, 3단계 Edge 바인딩 인포배너 추가.
+     - **타사 이관**: 국내 4대 등록기관(가비아/후이즈/카페24/GoDaddy) EPP 발급 인터랙티브 탭, 4단계 실시간 상태 트래커, ICANN 60일 전제조건 체크리스트 구축.
+     - **이메일 연동**: `ceo@`, `contact@` 등 원클릭 빠른 별칭 생성 칩스, SPF/DKIM/DMARC 보안 레코드 모달 추가.
+     - **가격 비교표**: 주요 10대 TLD 원가 비교 테이블, 3개년 숨은 비용(Hidden Cost) 실시간 절감액 시뮬레이터 구축.
+     - **정책 & 혜택**: 도메인 5단계 수명주기(Lifecycle) 인포그래픽, Anycast 300+ Edge 네트워크 스펙, 낙장 방지 안심 알림 정책 구축.
+     - **FAQ**: 카테고리별 아코디언 필터링 및 1:1 도메인 엔지니어 직통 지원 연동.
+  22. **이메일 포워딩 API 라우트 연동 및 비로그인 예외 처리 정상화**:
+     - `src/app/studio/domain-search/components/EmailForwardingManager.tsx`, `src/app/api/domains/email-forwarding/route.ts`
+     - `/api/email-forwarding` 정규 엔드포인트 바인딩 및 `/api/domains/email-forwarding` 프록시 라우트 신설.
+     - 비로그인 둘러보기 상태에서 401 JSON 파싱 에러 없이 정갈한 빈 목록 및 추가 유도 뷰로 정상 처리.
 - **검증**: `npx tsc --noEmit` 무결점 0 에러 통과 확인.
 
 ---

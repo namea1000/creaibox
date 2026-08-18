@@ -71,6 +71,7 @@ import {
   Save,
   Store,
   MonitorSmartphone,
+  Crown,
   type LucideIcon,
 } from "lucide-react";
 
@@ -223,6 +224,14 @@ export default function Sidebar({
         href: "/studio/domain-search",
         icon: Globe,
         color: "text-emerald-400",
+        children: [
+          { name: "도메인 검색 & 구매", href: "/studio/domain-search", icon: Search },
+          { name: "타사 도메인 이관", href: "/studio/domain-search/transfer", icon: RefreshCw },
+          { name: "커스텀 이메일 연동", href: "/studio/domain-search/email", icon: Mail },
+          { name: "도메인 가격 비교표", href: "/studio/domain-search/comparison", icon: Award },
+          { name: "도메인 정책 & 혜택", href: "/studio/domain-search/perks", icon: Crown },
+          { name: "자주 묻는 질문 (FAQ)", href: "/studio/domain-search/faq", icon: HelpCircle },
+        ],
       },
       {
         key: "idea-hub",
@@ -641,29 +650,28 @@ export default function Sidebar({
 
   const [optimisticActiveKey, setOptimisticActiveKey] = useState<string | null>(null);
 
-  const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
-  const [isSidebarMounted, setIsSidebarMounted] = useState(false);
-
-  useEffect(() => {
-    setIsSidebarMounted(true);
-    const stored = sessionStorage.getItem("sidebar_expanded");
-    if (stored) {
+  // 🌟 Lazy Initializer로 세션스토리지에 저장된 사용자의 펼침 상태만 동기화 (기본은 접힘 유지)
+  const [expandedGroups, setExpandedGroups] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
       try {
-        setExpandedGroups(JSON.parse(stored));
-      } catch (e) {
-        // ignore
-      }
-    } else {
-      const activeKeys = menuGroups.filter((g) => isGroupActive(g)).map((g) => g.key);
-      setExpandedGroups(activeKeys);
+        const stored = sessionStorage.getItem("sidebar_expanded");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (e) {}
     }
-  }, [menuGroups, isGroupActive]);
+    return [];
+  });
 
+  // 🌟 펼침 상태 변경 시 세션스토리지에 안전하게 보존
   useEffect(() => {
-    if (isSidebarMounted) {
-      sessionStorage.setItem("sidebar_expanded", JSON.stringify(expandedGroups));
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem("sidebar_expanded", JSON.stringify(expandedGroups));
+      } catch (e) {}
     }
-  }, [expandedGroups, isSidebarMounted]);
+  }, [expandedGroups]);
 
   // Automatically clear optimistic active key when pathname changes
   useEffect(() => {
@@ -716,6 +724,7 @@ export default function Sidebar({
       ? optimisticActiveKey === itemKey
       : isPathActive(item.href);
     const activeStyles = getActiveStyles(item.key);
+    const isWorkspace = item.key === "workspace";
 
     const baseClass = isCollapsed
       ? "h-9 w-9 justify-center items-center px-0 py-0 mx-auto"
@@ -738,8 +747,27 @@ export default function Sidebar({
           ${baseClass}
         `}
       >
-        <Icon size={15} className={`shrink-0 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-white" : color}`} />
-        {!isCollapsed && <span className="truncate">{item.name}</span>}
+        <div className={`flex items-center gap-2.5 min-w-0 ${!isCollapsed ? "flex-1" : ""}`}>
+          <Icon size={15} className={`shrink-0 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-white" : color}`} />
+          {!isCollapsed && <span className="truncate">{item.name}</span>}
+        </div>
+
+        {/* 🌟 스튜디오 홈 버튼 안쪽 오른쪽에 접기 버튼 (어사이드 버튼과 100% 동일한 다크/라이트 컬러) */}
+        {!isCollapsed && isWorkspace && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsCollapsed(true);
+            }}
+            className="flex h-6.5 w-6.5 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 transition hover:border-blue-500/60 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-blue-500 dark:hover:text-white shadow-xs ml-auto shrink-0 cursor-pointer"
+            title="사이드바 접기"
+            aria-label="사이드바 접기"
+          >
+            <PanelLeftClose size={14} />
+          </button>
+        )}
 
         {/* 0ms 실시간 직관 툴팁 (접힘 모드용) */}
         {isCollapsed && (
@@ -779,74 +807,64 @@ export default function Sidebar({
             }
           `}
         >
-          {/* Main Parent Menu Header Link */}
+          {/* Main Parent Menu Link: 처음 클릭 시 해당 페이지로 이동만 진행(서브메뉴 안 펼쳐짐), 이미 해당 페이지에 있을 때 다시 클릭하면 토글(펼침/접힘) */}
           <Link
             href={group.href}
             onClick={(e) => {
               if (isGroupActiveState) {
-                e.preventDefault(); // Prevent navigating if we're already active, just toggle
+                e.preventDefault();
                 toggleGroup(group.key);
               } else {
                 setOptimisticActiveKey(group.key);
                 setIsMobileOpen(false);
-                // First click: navigate but do NOT toggle expansion
               }
             }}
-            className="flex min-w-0 flex-1 items-center cursor-pointer"
+            className="flex flex-1 items-center gap-2.5 min-w-0 cursor-pointer select-none"
           >
             <Icon size={15} className={`shrink-0 transition-transform duration-300 group-hover:scale-110 ${isGroupActiveState ? "text-white" : group.color}`} />
-            <span className="ml-2.5 truncate">{group.name}</span>
+            <span className="truncate">{group.name}</span>
           </Link>
 
-          {/* Dedicated Expand/Collapse Chevron Button */}
+          {/* 서브메뉴 순수 토글 버튼: 활성화 상태일 때 또렷한 화이트 컬러 표시 */}
           <button
             type="button"
             onClick={(e) => {
-              e.preventDefault();
               e.stopPropagation();
               toggleGroup(group.key);
             }}
-            className={`
-              group/chev ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-all duration-300 cursor-pointer relative
-              ${isGroupActiveState
-                ? "text-white/80 hover:bg-white/15 hover:text-white"
-                : "text-zinc-400 hover:bg-zinc-150 dark:hover:bg-zinc-800 hover:text-zinc-750 dark:hover:text-zinc-300"
-              }
-            `}
+            className={`flex h-5.5 w-5.5 items-center justify-center rounded transition-colors ml-auto shrink-0 cursor-pointer ${
+              isGroupActiveState
+                ? "text-white/90 hover:text-white hover:bg-white/20"
+                : "text-zinc-400 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-zinc-800"
+            }`}
+            aria-label={isExpanded ? "하위 메뉴 접기" : "하위 메뉴 펼치기"}
           >
-            {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+            {isExpanded ? <ChevronDown size={14} className="stroke-[2.5]" /> : <ChevronRight size={14} className="stroke-[2.5]" />}
           </button>
         </div>
 
-        {/* Submenu Item List - STAYS 100% EXPANDED ON CLICK */}
-        {isExpanded && (
-          <div className="ml-2.5 mt-1.5 p-1.5 space-y-1 rounded-md bg-zinc-50/40 dark:bg-zinc-950/30 border border-zinc-200/40 dark:border-zinc-900/30">
-            {group.children?.map((child) => {
+        {isExpanded && group.children && (
+          <div className="space-y-1 py-0.5">
+            {group.children.map((child) => {
               const ChildIcon = child.icon || FileText;
-              const childActive = isPathActive(child.href, group.children);
-
+              const isChildActive = isPathActive(child.href);
               return (
                 <Link
-                  key={`${child.href}_${child.name}`}
+                  key={child.name}
                   href={child.href}
                   onClick={() => {
                     setOptimisticActiveKey(group.key);
-                    // Explicitly preserve parent group in expandedGroups array!
-                    setExpandedGroups((prev) => (prev.includes(group.key) ? prev : [...prev, group.key]));
                     setIsMobileOpen(false);
                   }}
                   className={`
-                    relative flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-[12px] font-bold transition duration-250
-                    ${childActive
-                      ? "border-blue-400/20 bg-blue-500/10 text-blue-600 dark:text-cyan-400 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.05)]"
-                      : "border-transparent text-slate-700 dark:text-zinc-200 hover:border-zinc-300/40 dark:hover:border-zinc-800/40 hover:bg-zinc-100/40 dark:hover:bg-zinc-900/40 hover:text-slate-900 dark:hover:text-white"
+                    group flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[12px] font-bold transition-all duration-200
+                    ${isChildActive
+                      ? "bg-blue-500/15 text-blue-500 dark:text-blue-400 font-extrabold"
+                      : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/70 hover:text-zinc-900 dark:hover:text-white"
                     }
                   `}
                 >
-                  <ChildIcon
-                    size={13}
-                    className={`shrink-0 ${childActive ? "text-blue-500 dark:text-cyan-400" : "text-slate-400 dark:text-zinc-300"}`}
-                  />
+                  <ChildIcon size={14} className={`shrink-0 transition-transform duration-200 group-hover:scale-110 ${isChildActive ? "text-blue-500 dark:text-blue-400" : "text-zinc-400"}`} />
                   <span className="truncate">{child.name}</span>
                 </Link>
               );
@@ -861,49 +879,42 @@ export default function Sidebar({
     <aside
       id="global-studio-sidebar"
       className={`
-        fixed left-0 top-0 z-[110] flex h-screen flex-col border-r border-zinc-200 dark:border-slate-800/80
+        fixed left-0 top-0 z-[110] flex h-screen min-h-screen rounded-none flex-col border-r border-zinc-200 dark:border-slate-800/80
         bg-white dark:bg-slate-900 transition-all duration-300 ease-in-out lg:relative lg:top-0 lg:h-full lg:z-30
         ${isCollapsed ? "lg:w-14" : "lg:w-[220px]"}
         ${isMobileOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"}
       `}
     >
-      <div className="flex h-12 shrink-0 items-center justify-between border-b border-zinc-200 dark:border-slate-800/80 px-3.5 bg-white dark:bg-slate-900 transition-colors duration-300">
+      {/* 🌟 사이드바 상단 헤더: 메인페이지와 100% 동일한 로고 크기(h-8) 및 사이드바 배경 일체화 */}
+      <div className="flex h-16 shrink-0 items-center justify-center border-b border-zinc-200 dark:border-slate-800/80 px-4 bg-white dark:bg-slate-900 transition-colors duration-300">
         {isCollapsed ? (
-          <div className="flex w-full justify-center">
+          <div className="flex w-full items-center justify-center">
             <button
+              type="button"
               onClick={() => setIsCollapsed(false)}
-              className="group relative flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:border-blue-500/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-white cursor-pointer"
+              title="사이드바 펼치기"
             >
-              <PanelLeftOpen size={14} />
-              
-              {/* 0ms 실시간 직관 툴팁 */}
-              <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2.5 -translate-y-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
-                사이드바 펼치기
-                <span className="absolute right-full top-1/2 -translate-y-1/2 -mr-1 border-4 border-transparent border-r-zinc-900/95 dark:border-r-zinc-800/95" />
-              </span>
+              <PanelLeftOpen size={15} />
             </button>
           </div>
         ) : (
-          <div className="relative flex w-full items-center justify-center">
+          <div className="flex w-full items-center justify-center">
             <Link
-              href="/studio"
-              onClick={() => setOptimisticActiveKey("studio-home")}
-              className="text-[16px] font-black tracking-tight bg-gradient-to-r from-violet-600 via-indigo-500 to-blue-600 dark:from-cyan-400 dark:via-blue-400 dark:to-violet-400 bg-clip-text text-transparent select-none uppercase truncate text-center hover:opacity-80 transition-opacity"
+              href="/"
+              className="flex h-10 items-center justify-center transition hover:opacity-85"
             >
-              AI Studio
+              <img
+                src="/logo.png"
+                alt="CreaiBox"
+                className="h-5 w-auto object-contain dark:hidden"
+              />
+              <img
+                src="/logo_dark.png"
+                alt="CreaiBox"
+                className="h-5 w-auto object-contain hidden dark:block"
+              />
             </Link>
-            <button
-              onClick={() => setIsCollapsed(true)}
-              className="absolute right-0 group flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:border-blue-500/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-blue-500 cursor-pointer"
-            >
-              <PanelLeftClose size={14} />
-              
-              {/* 0ms 실시간 직관 툴팁 */}
-              <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2.5 -translate-y-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
-                사이드바 접기
-                <span className="absolute right-full top-1/2 -translate-y-1/2 -mr-1 border-4 border-transparent border-r-zinc-900/95 dark:border-r-zinc-800/95" />
-              </span>
-            </button>
           </div>
         )}
       </div>
@@ -913,13 +924,9 @@ export default function Sidebar({
       </div>
 
       {!isCollapsed && (
-        <div className="shrink-0 border-t border-zinc-200 dark:border-slate-800/80 px-3 py-2.5">
-          <p className="text-center text-[12px] font-bold leading-relaxed text-zinc-500">
-            © Creaibox AI Studio
-            <br />
-            <span className="uppercase tracking-widest text-zinc-600">
-              Strategic Systems
-            </span>
+        <div className="shrink-0 border-t border-zinc-200 dark:border-slate-800/80 px-3 py-3.5 bg-white dark:bg-slate-900 rounded-none">
+          <p className="text-center text-[13px] font-bold tracking-tight text-zinc-500 dark:text-zinc-400 select-none">
+            © CreaiBox AI Studio
           </p>
         </div>
       )}

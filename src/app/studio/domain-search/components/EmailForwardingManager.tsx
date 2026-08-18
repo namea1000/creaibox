@@ -2,22 +2,17 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Mail,
   Plus,
   Trash2,
-  Edit2,
   CheckCircle2,
-  Globe,
-  Zap,
-  ShieldCheck,
-  ArrowRight,
   RefreshCw,
-  Sparkles,
   AlertCircle,
-  HelpCircle,
-  Check,
   X,
-  Key,
+  ShieldCheck,
+  Mail,
+  Zap,
+  HelpCircle,
+  ExternalLink,
 } from "lucide-react";
 
 interface EmailRule {
@@ -26,64 +21,69 @@ interface EmailRule {
   alias_prefix: string;
   forward_to: string;
   is_active: boolean;
-  created_at?: string;
+  created_at: string;
 }
 
-interface Props {
-  currentUser: any;
-  onRequireAuth: (action?: () => void) => boolean;
+interface EmailForwardingManagerProps {
+  currentUser?: any;
+  onRequireAuth?: (action?: () => void) => boolean;
 }
 
-export default function EmailForwardingManager({ currentUser, onRequireAuth }: Props) {
-  // Domain selection state
-  const [selectedDomain, setSelectedDomain] = useState("creaibox.com");
-  const userDomains = ["creaibox.com", "downhubs.com"]; // Default available domains
+const ALIAS_PRESETS = ["ceo", "contact", "cs", "support", "admin", "billing"];
 
-  // Rules list state
+export default function EmailForwardingManager({
+  currentUser,
+  onRequireAuth,
+}: EmailForwardingManagerProps) {
+  const [selectedDomain, setSelectedDomain] = useState<string>("creaibox.com");
   const [rules, setRules] = useState<EmailRule[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Form / Modal state
+  // Form state
   const [showForm, setShowForm] = useState(false);
   const [newAlias, setNewAlias] = useState("");
   const [newForwardTo, setNewForwardTo] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDnsModal, setShowDnsModal] = useState(false);
 
   // Fetch rules from API
   const fetchRules = async () => {
-    setIsLoading(true);
+    if (!selectedDomain) return;
+    setLoading(true);
     setErrorMsg(null);
     try {
       const res = await fetch(`/api/email-forwarding?domain=${encodeURIComponent(selectedDomain)}`);
-      const json = await res.json();
-
-      if (res.ok && json.data && Array.isArray(json.data)) {
-        setRules(json.data);
-      } else {
-        setRules([]);
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 401) {
+          // 비로그인 상태는 에러가 아닌 빈 목록으로 정상 처리
+          setRules([]);
+          return;
+        }
+        throw new Error(data.error || "규칙 목록 조회 실패");
       }
+      setRules(data.data || data.rules || []);
     } catch (err: any) {
-      console.error("Failed to fetch email rules:", err);
+      // JSON 파싱 실패나 네트워크 이슈 시 조용히 빈 배열 처리
       setRules([]);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     void fetchRules();
-  }, [selectedDomain, currentUser]);
+  }, [selectedDomain]);
 
-  // Handle Add Rule
-  const handleAddRule = async (e: React.FormEvent) => {
+  // Create new forwarding rule
+  const handleCreateRule = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!onRequireAuth()) return;
+    if (onRequireAuth && !onRequireAuth()) return;
 
     if (!newAlias.trim() || !newForwardTo.trim()) {
-      setErrorMsg("메일 아이디와 전달받을 담당자 메일 주소를 모두 입력해 주세요.");
+      setErrorMsg("수신 주소와 전달받을 이메일을 모두 입력해주세요.");
       return;
     }
 
@@ -97,51 +97,48 @@ export default function EmailForwardingManager({ currentUser, onRequireAuth }: P
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           domain_name: selectedDomain,
-          alias_prefix: newAlias.trim(),
-          forward_to: newForwardTo.trim(),
+          alias_prefix: newAlias.trim().toLowerCase(),
+          forward_to: newForwardTo.trim().toLowerCase(),
         }),
       });
-
-      const json = await res.json();
+      const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(json.error || "규칙 등록에 실패했습니다.");
+        throw new Error(data.error || "규칙 추가 실패");
       }
 
-      setSuccessMsg(`✅ ${newAlias}@${selectedDomain} -> ${newForwardTo} 포워딩 설정 완료!`);
+      setSuccessMsg(`✅ ${newAlias.trim().toLowerCase()}@${selectedDomain} 포워딩 주소가 생성되었습니다.`);
       setNewAlias("");
       setNewForwardTo("");
       setShowForm(false);
       await fetchRules();
     } catch (err: any) {
-      setErrorMsg(err.message || "오류가 발생했습니다.");
+      setErrorMsg(err.message || "규칙 추가 중 오류가 발생했습니다.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Handle Delete Rule
-  const handleDeleteRule = async (id: string, alias: string) => {
-    if (!onRequireAuth()) return;
-
-    if (!confirm(`${alias}@${selectedDomain} 이메일 포워딩 규칙을 삭제하시겠습니까?`)) return;
+  // Delete forwarding rule
+  const handleDeleteRule = async (ruleId: string, alias: string) => {
+    if (onRequireAuth && !onRequireAuth()) return;
+    if (!confirm(`정말로 ${alias}@${selectedDomain} 포워딩 규칙을 삭제하시겠습니까?`)) {
+      return;
+    }
 
     try {
-      if (id.startsWith("sample-")) {
-        // Sample rule removal locally
-        setRules((prev) => prev.filter((r) => r.id !== id));
-        setSuccessMsg("규칙이 삭제되었습니다.");
-        return;
-      }
-
-      const res = await fetch(`/api/email-forwarding?id=${encodeURIComponent(id)}`, {
+      const res = await fetch("/api/email-forwarding", {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: ruleId,
+          domain_name: selectedDomain,
+        }),
       });
-
-      const json = await res.json();
+      const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(json.error || "삭제에 실패했습니다.");
+        throw new Error(data.error || "규칙 삭제 실패");
       }
 
       setSuccessMsg("규칙이 삭제되었습니다.");
@@ -152,289 +149,186 @@ export default function EmailForwardingManager({ currentUser, onRequireAuth }: P
   };
 
   return (
-    <div className="w-full space-y-6">
-      {/* Top Banner & Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-900/60 via-indigo-900/60 to-blue-900/60 p-6 md:p-8 border border-purple-500/20 backdrop-blur-xl shadow-2xl">
-        <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-purple-500/10 blur-3xl" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full bg-purple-500/10 px-3 py-1 text-xs font-semibold text-purple-300 border border-purple-500/30">
-              <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-              <span>무제한 커스텀 도메인 이메일 서버 (Resend Engine)</span>
+    <div className="space-y-6">
+      {/* Main Forwarding Manager Card */}
+      <div className="rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/30 overflow-hidden shadow-2xs">
+        {/* Header */}
+        <div className="p-5 sm:p-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-white">
+                브랜드 독립 이메일 무제한 포워딩 연동
+              </h2>
+              <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                0원 무료
+              </span>
             </div>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
-              ✉️ 커스텀 이메일 간편 연결 <span className="text-lg text-purple-300 font-medium ml-2">(수신 전용 / 포워딩)</span>
-            </h2>
-            <div className="text-sm text-gray-300 max-w-2xl leading-relaxed space-y-2">
-              <p>
-                본 서비스는 <code className="text-purple-300 bg-purple-950/60 px-1.5 py-0.5 rounded font-mono">contact@</code>, <code className="text-purple-300 bg-purple-950/60 px-1.5 py-0.5 rounded font-mono">ceo@</code> 등 도메인으로 들어오는 메일을 평소 사용하시는 개인 메일(Gmail, Naver 등)로 전달(포워딩)해 드리는 <strong>무료 수신 전용 서비스</strong>입니다.
-              </p>
-              <p className="text-xs text-purple-300/80 bg-purple-900/20 p-2 rounded-lg border border-purple-500/20">
-                💡 <strong>Tip:</strong> 비즈니스 명함이나 웹사이트 연락처에 프로페셔널하게 기재하는 용도로 추천합니다. (※ 해당 주소로 직접 발신을 원하실 경우, Google Workspace 등 별도 호스팅 가입이 필요합니다.)
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={() => onRequireAuth(() => setShowForm(true))}
-            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-purple-600/30 transition-all hover:scale-105 active:scale-95"
-          >
-            <Plus className="h-5 w-5" />
-            <span>새 메일 주소 추가</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Alert Messages */}
-      {errorMsg && (
-        <div className="flex items-center justify-between rounded-xl bg-red-950/60 border border-red-500/30 p-4 text-red-300 text-sm">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 text-red-400 shrink-0" />
-            <span>{errorMsg}</span>
-          </div>
-          <button onClick={() => setErrorMsg(null)} className="text-red-400 hover:text-white">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
-
-      {successMsg && (
-        <div className="flex items-center justify-between rounded-xl bg-emerald-950/60 border border-emerald-500/30 p-4 text-emerald-300 text-sm">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
-            <span>{successMsg}</span>
-          </div>
-          <button onClick={() => setSuccessMsg(null)} className="text-emerald-400 hover:text-white">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
-
-      {/* Domain Selection & Status Card */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Selector */}
-        <div className="md:col-span-2 rounded-xl bg-gray-900/80 border border-gray-800 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-              <Globe className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="text-xs font-medium text-gray-400">도메인 선택</div>
-              <select
-                value={selectedDomain}
-                onChange={(e) => setSelectedDomain(e.target.value)}
-                className="bg-transparent text-lg font-bold text-white focus:outline-none cursor-pointer"
-              >
-                {userDomains.map((d) => (
-                  <option key={d} value={d} className="bg-gray-900 text-white">
-                    {d}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 leading-relaxed">
+              <code className="text-slate-900 dark:text-white font-mono font-semibold">contact@{selectedDomain}</code>, <code className="text-slate-900 dark:text-white font-mono font-semibold">ceo@{selectedDomain}</code> 등으로 수신되는 메일을 개인 이메일(Gmail, Naver 등)로 0.01초 만에 즉시 전달합니다.
+            </p>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-xs font-semibold text-emerald-400">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              <span>Resend DNS Verified ✅</span>
+            <button
+              onClick={() => setShowDnsModal(true)}
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-medium text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              <ShieldCheck size={13} className="text-emerald-500" />
+              <span>SPF·DKIM 레코드</span>
+            </button>
+
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className="inline-flex items-center justify-center gap-1.5 rounded-md bg-black dark:bg-white text-white dark:text-black px-3.5 py-2 text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer shadow-xs shrink-0"
+            >
+              {showForm ? <X size={14} /> : <Plus size={14} />}
+              <span>{showForm ? "닫기" : "새 메일 주소 추가"}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Status Alerts */}
+        {errorMsg && (
+          <div className="p-4 bg-rose-50 dark:bg-rose-950/20 border-b border-rose-200 dark:border-rose-900/30 flex items-center justify-between text-xs text-rose-600 dark:text-rose-400">
+            <span className="flex items-center gap-1.5">
+              <AlertCircle size={14} />
+              {errorMsg}
             </span>
-            <button
-              onClick={fetchRules}
-              disabled={isLoading}
-              className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors"
-              title="새로고침"
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            <button onClick={() => setErrorMsg(null)} className="cursor-pointer">
+              <X size={14} />
             </button>
           </div>
-        </div>
-
-        {/* Feature badge */}
-        <div className="rounded-xl bg-gray-900/80 border border-gray-800 p-5 flex items-center gap-4">
-          <div className="h-10 w-10 rounded-lg bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
-            <ShieldCheck className="h-5 w-5" />
+        )}
+        {successMsg && (
+          <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border-b border-emerald-200 dark:border-emerald-900/30 flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 size={14} />
+              {successMsg}
+            </span>
+            <button onClick={() => setSuccessMsg(null)} className="cursor-pointer">
+              <X size={14} />
+            </button>
           </div>
-          <div>
-            <div className="text-xs font-semibold text-purple-300">100% DB-Zero 무상태 통과</div>
-            <div className="text-xs text-gray-400 mt-0.5 leading-snug">
-              메일 본문을 DB에 저장하지 않아 용량 낭비 0% 및 개인정보 보호 완전 보장
+        )}
+
+        {/* Create Rule Form */}
+        {showForm && (
+          <form onSubmit={handleCreateRule} className="p-5 sm:p-6 bg-slate-50/70 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800 space-y-4">
+            <div className="space-y-2">
+              <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
+                추천 빠른 별칭 선택:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {ALIAS_PRESETS.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setNewAlias(preset)}
+                    className="px-2.5 py-1 rounded bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs font-mono text-slate-700 dark:text-zinc-300 hover:border-black dark:hover:border-white transition-colors cursor-pointer"
+                  >
+                    {preset}@{selectedDomain}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Add New Rule Form / Modal */}
-      {showForm && (
-        <div className="rounded-2xl bg-gray-900 border border-purple-500/40 p-6 shadow-2xl space-y-4 animate-in fade-in duration-200">
-          <div className="flex items-center justify-between border-b border-gray-800 pb-3">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Mail className="h-5 w-5 text-purple-400" />
-              <span>새 이메일 포워딩 주소 등록</span>
-            </h3>
-            <button
-              onClick={() => setShowForm(false)}
-              className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
-          <form onSubmit={handleAddRule} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Alias Prefix */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-                  1. 메일 아이디 (Alias)
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+              <div className="sm:col-span-5 space-y-1.5">
+                <label className="text-xs font-medium text-slate-700 dark:text-zinc-300">
+                  수신 이메일 별칭
                 </label>
-                <div className="flex items-center rounded-xl bg-gray-950 border border-gray-800 focus-within:border-purple-500 px-3 py-2.5">
+                <div className="flex items-center">
                   <input
                     type="text"
                     value={newAlias}
                     onChange={(e) => setNewAlias(e.target.value)}
-                    placeholder="ceo, contact, cs 등"
-                    className="w-full bg-transparent text-sm text-white placeholder-gray-500 focus:outline-none"
-                    required
+                    placeholder="ceo 또는 contact"
+                    className="w-full rounded-l-md border border-r-0 border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white font-mono"
                   />
-                  <span className="text-sm font-semibold text-purple-400 ml-2">@{selectedDomain}</span>
+                  <span className="inline-flex items-center px-3 py-2 border border-slate-300 dark:border-zinc-700 bg-slate-100 dark:bg-zinc-800 text-xs text-slate-500 dark:text-zinc-400 rounded-r-md font-mono shrink-0">
+                    @{selectedDomain}
+                  </span>
                 </div>
               </div>
 
-              {/* Forward To */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-                  2. 전달받을 담당자 개인 메일 주소
+              <div className="sm:col-span-5 space-y-1.5">
+                <label className="text-xs font-medium text-slate-700 dark:text-zinc-300">
+                  전달받을 실제 개인 이메일 (Gmail/Naver 등)
                 </label>
-                <div className="flex items-center rounded-xl bg-gray-950 border border-gray-800 focus-within:border-purple-500 px-3 py-2.5">
-                  <input
-                    type="email"
-                    value={newForwardTo}
-                    onChange={(e) => setNewForwardTo(e.target.value)}
-                    placeholder="담당자명@gmail.com 또는 @naver.com"
-                    className="w-full bg-transparent text-sm text-white placeholder-gray-500 focus:outline-none"
-                    required
-                  />
-                </div>
+                <input
+                  type="email"
+                  value={newForwardTo}
+                  onChange={(e) => setNewForwardTo(e.target.value)}
+                  placeholder="myname@gmail.com"
+                  className="w-full rounded-md border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white font-mono"
+                />
               </div>
-            </div>
 
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold text-sm transition-colors"
-              >
-                취소
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm shadow-lg shadow-purple-600/30 transition-all"
-              >
-                {isSubmitting ? "등록 중..." : "🚀 1초 이메일 주소 등록하기"}
-              </button>
+              <div className="sm:col-span-2">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-md bg-black dark:bg-white text-white dark:text-black py-2 text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmitting ? <RefreshCw size={13} className="animate-spin" /> : <Plus size={13} />}
+                  <span>등록</span>
+                </button>
+              </div>
             </div>
           </form>
-        </div>
-      )}
+        )}
 
-      {/* Rules Table */}
-      <div className="rounded-2xl bg-gray-900/90 border border-gray-800 overflow-hidden shadow-xl">
-        <div className="px-6 py-4 border-b border-gray-800/80 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-purple-400" />
-            <h3 className="font-bold text-white text-base">
-              [{selectedDomain}] 등록된 이메일 포워딩 목록 ({rules.length}개)
-            </h3>
-          </div>
-
-          <div className="flex items-center gap-3">
+        {/* Rules Table */}
+        <div className="p-0">
+          <div className="px-5 py-3 bg-slate-50/70 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-zinc-400">
+            <span>활성 포워딩 규칙 ({rules.length}개)</span>
             <button
-              onClick={() => onRequireAuth(() => setShowForm(true))}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              onClick={fetchRules}
+              className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
             >
-              <Plus className="h-4 w-4" />
-              <span>새 메일 주소 추가</span>
+              <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
+              <span>새로고침</span>
             </button>
-
-            {!currentUser && (
-              <span className="text-xs text-amber-400 bg-amber-950/60 border border-amber-500/30 px-2.5 py-1 rounded-full flex items-center gap-1">
-                <HelpCircle className="h-3.5 w-3.5" />
-                <span>미로그인 상태</span>
-              </span>
-            )}
           </div>
-        </div>
 
-        <div className="overflow-x-auto">
           {rules.length === 0 ? (
-            <div className="p-12 text-center space-y-4">
-              <div className="mx-auto h-12 w-12 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
-                <Mail className="h-6 w-6" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="text-base font-bold text-white">등록된 이메일 포워딩 주소가 없습니다</h4>
-                <p className="text-xs text-gray-400 max-w-md mx-auto leading-relaxed">
-                  우측 상단의 <strong className="text-purple-300">+ 새 메일 주소 추가</strong> 버튼을 눌러 대표님/담당자의
-                  이메일 포워딩 주소(<code className="text-purple-300">ceo@{selectedDomain}</code>, <code className="text-purple-300">contact@{selectedDomain}</code> 등)를
-                  직접 첫 번째로 등록해 주세요!
-                </p>
-              </div>
-              <button
-                onClick={() => onRequireAuth(() => setShowForm(true))}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all shadow-lg shadow-purple-600/30"
-              >
-                <Plus className="h-4 w-4" />
-                <span>첫 번째 이메일 포워딩 주소 추가하기</span>
-              </button>
+            <div className="p-10 text-center text-xs text-slate-400 dark:text-zinc-500 space-y-2">
+              <Mail className="mx-auto text-slate-300 dark:text-zinc-700" size={28} />
+              <p>아직 등록된 이메일 포워딩 주소가 없습니다.</p>
+              <p className="text-[11px]">우측 상단 <strong>[새 메일 주소 추가]</strong> 버튼을 눌러 대표님만의 비즈니스 이메일을 만드세요.</p>
             </div>
           ) : (
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left text-xs font-normal border-collapse">
               <thead>
-                <tr className="border-b border-gray-800 bg-gray-950/50 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                  <th className="px-6 py-3.5">대표 이메일 주소</th>
-                  <th className="px-6 py-3.5">연결할 담당자 이메일</th>
-                  <th className="px-6 py-3.5">구동 상태</th>
-                  <th className="px-6 py-3.5 text-right">관리</th>
+                <tr className="border-b border-slate-200 dark:border-zinc-800 bg-slate-50/40 dark:bg-zinc-900/30 text-slate-500 dark:text-zinc-400 font-semibold">
+                  <th className="p-4 sm:px-6">수신 브랜드 이메일</th>
+                  <th className="p-4 sm:px-6">실시간 전달 대상 (포워딩)</th>
+                  <th className="p-4 sm:px-6">상태</th>
+                  <th className="p-4 sm:px-6 text-right">관리</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800/60 text-sm">
+              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60">
                 {rules.map((rule) => (
-                  <tr key={rule.id} className="hover:bg-gray-800/40 transition-colors">
-                    {/* Alias Address */}
-                    <td className="px-6 py-4 font-bold text-white font-mono flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
-                      <span>
-                        {rule.alias_prefix}@{rule.domain_name}
+                  <tr key={rule.id} className="hover:bg-slate-50/50 dark:hover:bg-zinc-800/20 transition-colors">
+                    <td className="p-4 sm:px-6 font-mono font-bold text-slate-900 dark:text-white">
+                      {rule.alias_prefix}@{rule.domain_name}
+                    </td>
+                    <td className="p-4 sm:px-6 font-mono text-slate-600 dark:text-zinc-300">
+                      ➔ {rule.forward_to}
+                    </td>
+                    <td className="p-4 sm:px-6">
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        수신 대기 중 (Active)
                       </span>
                     </td>
-
-                    {/* Forward To */}
-                    <td className="px-6 py-4 text-gray-300 font-mono">
-                      <div className="flex items-center gap-2">
-                        <ArrowRight className="h-3.5 w-3.5 text-gray-500" />
-                        <span className="text-purple-300 bg-purple-950/40 px-2.5 py-1 rounded-lg border border-purple-500/20">
-                          {rule.forward_to}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Status Tag */}
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-medium">
-                        <Check className="h-3.5 w-3.5" />
-                        <span>포워딩 수신 중</span>
-                      </span>
-                    </td>
-
-                    {/* Actions */}
-                    <td className="px-6 py-4 text-right">
+                    <td className="p-4 sm:px-6 text-right">
                       <button
                         onClick={() => handleDeleteRule(rule.id, rule.alias_prefix)}
-                        className="p-2 rounded-lg bg-gray-800 hover:bg-red-950/80 hover:text-red-400 text-gray-400 transition-colors border border-transparent hover:border-red-500/30"
-                        title="삭제"
+                        className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer p-1"
+                        title="규칙 삭제"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 size={14} />
                       </button>
                     </td>
                   </tr>
@@ -444,6 +338,56 @@ export default function EmailForwardingManager({ currentUser, onRequireAuth }: P
           )}
         </div>
       </div>
+
+      {/* SPF/DKIM DNS Modal */}
+      {showDnsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="bg-white dark:bg-[#0c0d12] border border-slate-200 dark:border-zinc-800 rounded-lg p-6 max-w-lg w-full text-left space-y-4 shadow-xl relative">
+            <button
+              onClick={() => setShowDnsModal(false)}
+              className="absolute top-3.5 right-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded transition-colors cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <ShieldCheck size={18} className="text-emerald-500" />
+                이메일 보안 레코드 (SPF / DKIM / MX)
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed">
+                CreaiBox 도메인은 이메일 스팸 방지 및 안전한 수신을 위해 아래 레코드가 자동 구성됩니다.
+              </p>
+            </div>
+
+            <div className="space-y-2 text-xs font-mono">
+              <div className="p-3 rounded-md bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 space-y-1">
+                <span className="text-slate-500 font-sans font-bold block text-[11px]">1. MX Record (수신 라우팅)</span>
+                <p className="text-slate-900 dark:text-white">Priority 10: inbound-smtp.creaibox.com</p>
+              </div>
+
+              <div className="p-3 rounded-md bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 space-y-1">
+                <span className="text-slate-500 font-sans font-bold block text-[11px]">2. TXT SPF Record (스팸 차단)</span>
+                <p className="text-slate-900 dark:text-white">v=spf1 include:_spf.creaibox.com ~all</p>
+              </div>
+
+              <div className="p-3 rounded-md bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 space-y-1">
+                <span className="text-slate-500 font-sans font-bold block text-[11px]">3. DMARC Policy (도용 방지)</span>
+                <p className="text-slate-900 dark:text-white">v=DMARC1; p=none; sp=none</p>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => setShowDnsModal(false)}
+                className="w-full inline-flex items-center justify-center rounded-md bg-black dark:bg-white text-white dark:text-black py-2.5 text-xs font-semibold hover:opacity-90 transition-opacity"
+              >
+                확인 완료
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,7 +6,6 @@ import {
   ArrowLeft, Search, Clock, CheckCircle, 
   HelpCircle, AlertCircle, Send, MessageSquare 
 } from "lucide-react";
-import Header from "@/components/layout/Header";
 
 interface InquiryItem {
   id: string;
@@ -123,10 +122,8 @@ export default function AdminInquiryPage() {
   });
 
   return (
-    <div className="w-full min-h-screen bg-slate-50 text-slate-800 dark:bg-[#06080d] dark:text-slate-100 pt-20 overflow-hidden relative transition-colors duration-300">
-      <Header />
-
-      <div className="max-w-7xl mx-auto px-6 pt-12 pb-24 relative z-10 space-y-6">
+    <div className="w-full min-h-screen bg-slate-50 text-slate-800 dark:bg-[#06080d] dark:text-slate-100 overflow-hidden relative transition-colors duration-300">
+      <div className="max-w-7xl mx-auto px-6 pt-6 pb-24 relative z-10 space-y-6">
         
         {/* 헤더 & 뒤로가기 */}
         <div className="space-y-4">

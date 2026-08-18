@@ -1,17 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   PanelRightClose,
   PanelRightOpen,
   Handshake,
   Building2,
-  LayoutTemplate,
   AlertTriangle,
   ArrowRight,
   MessageCircle,
-  HelpCircle,
   LifeBuoy,
   BookOpen,
   ShieldCheck,
@@ -22,7 +20,31 @@ import {
 } from "lucide-react";
 
 export default function Aside() {
+  // 🌟 사용자가 버튼으로 설정한 어사이드 펼침/접힘 상태를 로컬 스토리지에 영구 기억
   const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("creaibox_aside_expanded");
+      if (saved !== null) {
+        setIsExpanded(saved === "true");
+      }
+    } catch (e) {
+      console.error("Failed to read aside state from localStorage:", e);
+    }
+  }, []);
+
+  const toggleExpanded = () => {
+    setIsExpanded((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("creaibox_aside_expanded", String(next));
+      } catch (e) {
+        console.error("Failed to save aside state to localStorage:", e);
+      }
+      return next;
+    });
+  };
 
   const businessLinks = [
     { label: "비즈니스 홈", href: "/business", icon: Briefcase, color: "from-blue-700 to-indigo-800", iconColor: "text-blue-350" },
@@ -60,13 +82,13 @@ export default function Aside() {
           href={item.href}
           target="_blank"
           rel="noopener noreferrer"
-          className={`group relative flex items-center rounded-lg bg-[#FEE500] text-[#191919] transition-all duration-300 hover:scale-[1.02] ${baseClass}`}
+          className={`group relative flex items-center rounded-md bg-[#FEE500] text-[#191919] transition-all duration-300 hover:scale-[1.02] ${baseClass}`}
         >
           {isExpanded ? (
-            <div className="flex min-w-0 items-center gap-2.5 w-full justify-between">
+            <div className="flex min-w-0 items-center gap-2.5 w-full justify-between overflow-hidden">
               <div className="flex min-w-0 items-center gap-2.5">
                 <Icon size={16} className="shrink-0 fill-[#191919]" />
-                <span className="truncate text-[12px] font-black max-w-[150px] opacity-100 transition-all duration-200">
+                <span className="truncate text-[12px] font-black max-w-[150px] opacity-100 transition-all duration-200 whitespace-nowrap">
                   {item.label}
                 </span>
               </div>
@@ -76,7 +98,7 @@ export default function Aside() {
             <>
               <Icon size={16} className="shrink-0 fill-[#191919]" />
               {/* 0ms 실시간 직관 툴팁 */}
-              <span className="pointer-events-none absolute right-full top-1/2 z-50 mr-2.5 -translate-y-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
+              <span className="pointer-events-none absolute right-full top-1/2 z-50 mr-2.5 -translate-y-1/2 rounded-md bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
                 {item.label}
                 <span className="absolute left-full top-1/2 -translate-y-1/2 -ml-1 border-4 border-transparent border-l-zinc-900/95 dark:border-l-zinc-800/95" />
               </span>
@@ -89,13 +111,13 @@ export default function Aside() {
     return (
       <Link
         href={item.href}
-        className={`group relative flex items-center rounded-lg bg-gradient-to-br ${item.color} text-white transition-all duration-300 hover:scale-[1.02] ${baseClass}`}
+        className={`group relative flex items-center rounded-md bg-gradient-to-br ${item.color} text-white transition-all duration-300 hover:scale-[1.02] ${baseClass}`}
       >
         {isExpanded ? (
-          <div className="flex min-w-0 items-center gap-2.5 w-full justify-between">
+          <div className="flex min-w-0 items-center gap-2.5 w-full justify-between overflow-hidden">
             <div className="flex min-w-0 items-center gap-2.5">
               <Icon size={16} className="shrink-0" />
-              <span className="truncate text-[12px] font-bold max-w-[150px] opacity-100 transition-all duration-200">
+              <span className="truncate text-[12px] font-bold max-w-[150px] opacity-100 transition-all duration-200 whitespace-nowrap">
                 {item.label}
               </span>
             </div>
@@ -105,7 +127,7 @@ export default function Aside() {
           <>
             <Icon size={16} className="shrink-0" />
             {/* 0ms 실시간 직관 툴팁 */}
-            <span className="pointer-events-none absolute right-full top-1/2 z-50 mr-2.5 -translate-y-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
+            <span className="pointer-events-none absolute right-full top-1/2 z-50 mr-2.5 -translate-y-1/2 rounded-md bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
               {item.label}
               <span className="absolute left-full top-1/2 -translate-y-1/2 -ml-1 border-4 border-transparent border-l-zinc-900/95 dark:border-l-zinc-800/95" />
             </span>
@@ -133,28 +155,37 @@ export default function Aside() {
         ${isExpanded ? "w-56" : "w-14"}
       `}
     >
-      {/* 어사이드 상단 헤더 (스튜디오 헤드탑 높이 h-12 및 수평 라인과 완벽 일치) */}
-      <div className={`flex h-12 shrink-0 items-center border-b border-zinc-200 dark:border-slate-800/80 px-3 bg-white dark:bg-slate-900 transition-colors duration-300 ${isExpanded ? "justify-between" : "justify-center"}`}>
-        {isExpanded && (
-          <span className="text-[12px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            Quick Hub
-          </span>
+      <div className={`flex-1 px-2.5 py-3 ${!isExpanded ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"}`}>
+        {/* 🌟 최상단: 펼쳐진 상태(Quick Hub 타이틀 + 우측 끝 접기 버튼) vs 접힌 상태(중앙 펼치기 버튼) */}
+        {isExpanded ? (
+          <div className="flex items-center justify-between px-1 pb-3 mb-2 border-b border-zinc-200 dark:border-slate-800/80">
+            <span className="text-[12px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Quick Hub
+            </span>
+            <button
+              type="button"
+              onClick={toggleExpanded}
+              className="flex h-6.5 w-6.5 items-center justify-center rounded-md border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:border-blue-500/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-white cursor-pointer ml-auto"
+              title="패널 접기"
+              aria-label="패널 접기"
+            >
+              <PanelRightClose size={14} />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center pb-3 mb-2 border-b border-zinc-200 dark:border-slate-800/80">
+            <button
+              type="button"
+              onClick={toggleExpanded}
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:border-blue-500/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-white cursor-pointer"
+              title="패널 펼치기"
+              aria-label="패널 펼치기"
+            >
+              <PanelRightOpen size={14} />
+            </button>
+          </div>
         )}
-        <button
-          onClick={() => setIsExpanded((prev) => !prev)}
-          className="group relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-zinc-650 dark:text-zinc-300 transition hover:border-blue-500/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-white cursor-pointer"
-        >
-          {isExpanded ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}
-          
-          {/* 0ms 실시간 직관 툴팁 */}
-          <span className="pointer-events-none absolute right-full top-1/2 z-50 mr-2.5 -translate-y-1/2 rounded-lg bg-zinc-900/95 dark:bg-zinc-800/95 px-2.5 py-1.5 text-[11px] font-black text-white opacity-0 shadow-xl transition-all duration-75 group-hover:opacity-100 whitespace-nowrap border border-zinc-700/40">
-            {isExpanded ? "오른쪽 패널 접기" : "오른쪽 패널 펼치기"}
-            <span className="absolute left-full top-1/2 -translate-y-1/2 -ml-1 border-4 border-transparent border-l-zinc-900/95 dark:border-l-zinc-800/95" />
-          </span>
-        </button>
-      </div>
 
-      <div className={`flex-1 px-2.5 py-4 ${!isExpanded ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"}`}>
         <div className={isExpanded ? "space-y-5" : "space-y-2"}>
           <section className={isExpanded ? "" : "space-y-2"}>
             <SectionTitle>Business Hub</SectionTitle>

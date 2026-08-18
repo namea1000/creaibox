@@ -6,7 +6,6 @@ import Aside from "@/components/layout/Aside";
 import StudioTopbar from "@/components/studio/StudioTopbar";
 import CreNoteWidget from "@/components/studio/widgets/CreNoteWidget";
 import AiAssistantWidget from "@/components/studio/widgets/AiAssistantWidget";
-import Header from "@/components/layout/Header";
 
 export default function StudioLayout({
   children,
@@ -17,31 +16,31 @@ export default function StudioLayout({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#06080d] text-zinc-100">
-      <Header />
-      <div className="flex flex-1 min-h-0">
-        <Sidebar
-          isCollapsed={isCollapsed}
-          setIsCollapsed={setIsCollapsed}
-          isMobileOpen={isMobileOpen}
-          setIsMobileOpen={setIsMobileOpen}
-        />
+    <div className="flex h-screen overflow-hidden bg-[#06080d] text-zinc-100">
+      {/* Sidebar */}
+      <Sidebar
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
+        isMobileOpen={isMobileOpen}
+        setIsMobileOpen={setIsMobileOpen}
+      />
 
-        {/* Main Column */}
-        <div className="flex min-w-0 flex-1 flex-col">
-          {/* Topbar */}
-          <StudioTopbar setIsMobileOpen={setIsMobileOpen} />
+      {/* Main Column */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Topbar */}
+        <StudioTopbar setIsMobileOpen={setIsMobileOpen} />
 
-          {/* Content */}
+        {/* Content Area (Main + Aside) */}
+        <div className="flex flex-1 min-h-0 min-w-0">
           <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden bg-[#06080d]">
             {children}
             <CreNoteWidget />
             <AiAssistantWidget />
           </main>
-        </div>
 
-        {/* Aside */}
-        <Aside />
+          {/* Aside */}
+          <Aside />
+        </div>
       </div>
     </div>
   );

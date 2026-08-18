@@ -258,22 +258,20 @@ export default function APIVaultPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#06080d] text-zinc-100">
-      <Header />
-      <div className="flex flex-1 min-h-0">
-        <Sidebar
-          activeMenu="APIVault"
-          isCollapsed={isCollapsed}
-          setIsCollapsed={setIsCollapsed}
-          isMobileOpen={isMobileOpen}
-          setIsMobileOpen={setIsMobileOpen}
-        />
+    <div className="flex h-screen overflow-hidden bg-[#06080d] text-zinc-100">
+      <Sidebar
+        activeMenu="APIVault"
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
+        isMobileOpen={isMobileOpen}
+        setIsMobileOpen={setIsMobileOpen}
+      />
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <StudioTopbar setIsMobileOpen={setIsMobileOpen} />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <StudioTopbar setIsMobileOpen={setIsMobileOpen} />
 
-          <div className="flex min-h-0 min-w-0 flex-1">
-            <main className="custom-scrollbar min-w-0 flex-1 overflow-y-auto overflow-x-hidden transition-all duration-300">
+        <div className="flex min-h-0 min-w-0 flex-1">
+          <main className="custom-scrollbar min-w-0 flex-1 overflow-y-auto overflow-x-hidden transition-all duration-300">
               <div className="mx-auto max-w-[1400px] p-6 pb-20 lg:px-12 lg:py-8">
                 <header className="mb-8 border-b border-slate-800/80 pb-6">
                   <div className="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-end">
@@ -420,11 +418,10 @@ export default function APIVaultPage() {
               <CreNoteWidget />
               <AiAssistantWidget />
             </main>
+
+            <Aside />
           </div>
         </div>
-
-        <Aside />
       </div>
-    </div>
   );
 }
