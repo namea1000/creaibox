@@ -284,7 +284,7 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                   onClick={() => setMigrationMode("recreate")}
                   className={`flex-1 py-3 text-sm font-black rounded-xl transition-all cursor-pointer ${migrationMode === "recreate" ? "bg-emerald-600 text-white shadow-md" : "text-slate-400 hover:text-slate-200"}`}
                 >
-                  ✨ AI 벤치마킹 창조 (저작권 회피)
+                  ✨ AI 벤치마킹 창조 (저작권 프리)
                 </button>
               </div>
 
