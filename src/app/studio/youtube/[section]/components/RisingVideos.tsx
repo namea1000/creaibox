@@ -648,6 +648,54 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
             </p>
           </div>
 
+          
+          <div className="flex items-center gap-3">
+            {/* Archive Mode Status */}
+            <div className="min-h-8 flex items-center">
+              {!isTodaySelected ? (
+                <span className="inline-flex h-8 items-center rounded bg-cyan-500/10 border border-cyan-500/30 px-3 text-xs font-bold text-cyan-600 dark:text-cyan-400 shadow-xs">
+                  아카이브 모드
+                </span>
+              ) : (
+                <span className="inline-flex h-8 items-center rounded bg-emerald-500/10 border border-emerald-500/30 px-3 text-xs font-bold text-emerald-600 dark:text-emerald-400 animate-pulse shadow-xs">
+                  실시간 트렌드
+                </span>
+              )}
+            </div>
+            
+            {/* Timeline shift and date selector container */}
+            <div className="flex items-center bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 p-0.5 rounded shadow-xs h-9">
+              <button
+                onClick={() => shiftDate(-1)}
+                disabled={loading}
+                className="flex h-7 w-7 items-center justify-center rounded-sm text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 disabled:opacity-20 transition cursor-pointer"
+                title="하루 전"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              <div className="relative flex items-center h-full">
+                <Calendar size={14} className="absolute left-2.5 text-slate-400 dark:text-zinc-500 pointer-events-none" />
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => handleDateChange(e.target.value)}
+                  max={getKstTodayDateStr()}
+                  className="h-full w-[130px] border-0 bg-transparent pl-8 pr-1 text-xs font-bold text-slate-800 dark:text-zinc-200 outline-none cursor-pointer"
+                />
+              </div>
+
+              <button
+                onClick={() => shiftDate(1)}
+                disabled={loading || isTodaySelected}
+                className="flex h-7 w-7 items-center justify-center rounded-sm text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 disabled:opacity-20 transition cursor-pointer"
+                title="하루 후"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+
           <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
             <button
               onClick={handleBulkSync}
@@ -1012,58 +1060,7 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
 
         {/* Right Column: Sticky Aside AI Report News Feed */}
         <aside className="lg:sticky lg:top-6 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/40 p-4 space-y-4 max-h-[89vh] overflow-y-auto shadow-xs self-start w-full">
-          {/* 📅 Date Selector Control Row */}
-          <div className="flex flex-col gap-2 pb-3 border-b border-slate-100 dark:border-zinc-800/80">
-            <span className="text-[11px] text-slate-500 dark:text-zinc-400 font-semibold">분석 기준일 선택</span>
-            <div className="flex items-center justify-between w-full">
-              {/* Archive Mode Status */}
-              <div className="min-h-8 flex items-center">
-                {!isTodaySelected ? (
-                  <span className="inline-flex h-6.5 items-center rounded-sm bg-cyan-500/10 border border-cyan-500/30 px-2 text-[10px] font-bold text-cyan-600 dark:text-cyan-400">
-                    아카이브 모드
-                  </span>
-                ) : (
-                  <span className="inline-flex h-6.5 items-center rounded-sm bg-emerald-500/10 border border-emerald-500/30 px-2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 animate-pulse">
-                    실시간 트렌드
-                  </span>
-                )}
-              </div>
-              
-              {/* Timeline shift and date selector container */}
-              <div className="flex items-center bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 p-0.5 rounded shadow-xs">
-                <button
-                  onClick={() => shiftDate(-1)}
-                  disabled={loading}
-                  className="flex h-6 w-6 items-center justify-center rounded-sm text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800 disabled:opacity-20 transition cursor-pointer"
-                  title="하루 전"
-                >
-                  <ChevronLeft size={14} />
-                </button>
-
-                <div className="relative flex items-center">
-                  <Calendar size={12} className="absolute left-2 text-slate-400 dark:text-zinc-500 pointer-events-none" />
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => handleDateChange(e.target.value)}
-                    max={getKstTodayDateStr()}
-                    className="h-6 w-28 border-0 bg-transparent pl-7 pr-1 text-[11px] font-semibold text-slate-800 dark:text-zinc-200 outline-none cursor-pointer"
-                  />
-                </div>
-
-                <button
-                  onClick={() => shiftDate(1)}
-                  disabled={loading || isTodaySelected}
-                  className="flex h-6 w-6 items-center justify-center rounded-sm text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-zinc-800 disabled:opacity-20 transition cursor-pointer"
-                  title="하루 후"
-                >
-                  <ChevronRight size={14} />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div>
+                    <div>
             <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
               <BarChart2 className="text-orange-500" size={15} />
               최근 분석된 AI 리포트
