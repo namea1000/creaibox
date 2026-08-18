@@ -17,6 +17,7 @@ import StrategyReport from "@/app/studio/youtube/[section]/components/StrategyRe
 import VideoWorkflow from "@/app/studio/youtube/[section]/components/VideoWorkflow";
 import YoutubeTop300 from "@/app/studio/youtube/[section]/components/YoutubeTop300";
 import YoutubeVideoSearch from "@/app/studio/youtube/[section]/components/YoutubeVideoSearch";
+import YoutubeThumbnail from "@/app/studio/youtube/[section]/components/YoutubeThumbnail";
 
 // Import original page components for reports and channel-reports mapping
 import YoutubeReportsPage from "@/app/studio/youtube/reports/page";
@@ -57,6 +58,8 @@ export default function PublicYoutubeSectionClient() {
         return <YoutubeTop300 />;
       case "search":
         return <YoutubeVideoSearch />;
+      case "youtube-thumbnail":
+        return <YoutubeThumbnail />;
       default:
         return (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-10 text-center text-zinc-400">
