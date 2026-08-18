@@ -15,41 +15,34 @@ interface YoutubeVideo {
   tags: string[];
 }
 
-const mockVideos: YoutubeVideo[] = [
-  { id: "v1", title: "[MV] IVE (아이브) - Accendio", channelName: "IVE", thumbnail: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=360&auto=format&fit=crop&q=60", duration: "3:42", views: 24500000, likes: 980000, uploadDate: "2026-05-15", tags: ["IVE", "아이브", "KPOP", "음악"] },
-  { id: "v2", title: "BTS (방탄소년단) - Dynamite Official MV", channelName: "BANGTANTV", thumbnail: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=360&auto=format&fit=crop&q=60", duration: "3:43", views: 1890000000, likes: 36000000, uploadDate: "2020-08-21", tags: ["BTS", "방탄소년단", "Dynamite", "KPOP"] },
-  { id: "v3", title: "역대급 불닭볶음면 먹방! 치즈돈까스 조합 최고", channelName: "떵개떵", thumbnail: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=360&auto=format&fit=crop&q=60", duration: "12:15", views: 1250000, likes: 34000, uploadDate: "2026-07-01", tags: ["먹방", "불닭볶음면", "치즈돈까스", "음식"] },
-  { id: "v4", title: "[여행] 스위스 그린델발트 기차 여행 10일 풀코스 가이드", channelName: "빠니보틀", thumbnail: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=360&auto=format&fit=crop&q=60", duration: "24:30", views: 890000, likes: 21000, uploadDate: "2026-06-20", tags: ["여행", "스위스", "그린델발트", "유럽"] },
-  { id: "v5", title: "Faker가 보여주는 미드 아리 하이라이트 플레이", channelName: "T1 Faker", thumbnail: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=360&auto=format&fit=crop&q=60", duration: "10:45", views: 3200000, likes: 89000, uploadDate: "2026-07-05", tags: ["리그오브레전드", "롤", "Faker", "아리"] },
-  { id: "v6", title: "삼성 갤럭시 S26 Ultra 심층 분석 리뷰! 진짜 달라졌나?", channelName: "잇섭 ITSub", thumbnail: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=360&auto=format&fit=crop&q=60", duration: "18:20", views: 1450000, likes: 42000, uploadDate: "2026-07-06", tags: ["삼성", "갤럭시", "S26Ultra", "IT"] },
-  { id: "v7", title: "세계에서 가장 아름다운 휴양지 TOP 5 코스 추천", channelName: "곽튜브", thumbnail: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=360&auto=format&fit=crop&q=60", duration: "15:40", views: 920000, likes: 18000, uploadDate: "2026-06-28", tags: ["여행", "휴양지", "세계여행", "추천"] },
-  { id: "v8", title: "AI 음악 생태계가 뒤바뀐다? Suno AI v4 최초 리뷰", channelName: "크리에이박스", thumbnail: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=360&auto=format&fit=crop&q=60", duration: "8:50", views: 560000, likes: 12000, uploadDate: "2026-07-02", tags: ["SunoAI", "인공지능", "작곡", "음악"] }
-];
-
 export default function YoutubeVideoSearch() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [videos, setVideos] = useState<YoutubeVideo[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setTimeout(() => {
-      setActiveQuery(searchQuery);
-      setIsLoading(false);
-    }, 600); // 0.6초 실시간 로딩 효과 모킹
-  };
+    if (!searchQuery.trim()) return;
 
-  const filteredVideos = useMemo(() => {
-    if (!activeQuery.trim()) return mockVideos;
-    const lowerQ = activeQuery.toLowerCase();
-    return mockVideos.filter(
-      (vid) =>
-        vid.title.toLowerCase().includes(lowerQ) ||
-        vid.channelName.toLowerCase().includes(lowerQ) ||
-        vid.tags.some((tag) => tag.toLowerCase().includes(lowerQ))
-    );
-  }, [activeQuery]);
+    setIsLoading(true);
+    setActiveQuery(searchQuery);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/youtube/search?query=${encodeURIComponent(searchQuery)}`);
+      if (!res.ok) {
+        throw new Error("검색 중 오류가 발생했습니다.");
+      }
+      const data = await res.json();
+      setVideos(data.items || []);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const formatNumber = (num: number) => {
     if (num >= 100000000) {
@@ -96,7 +89,7 @@ export default function YoutubeVideoSearch() {
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-3">
           <span className="text-xs font-black text-slate-400 dark:text-zinc-500">
-            {activeQuery ? `"${activeQuery}" 검색 결과` : "실시간 인기 동영상 추천"} • {filteredVideos.length}개 비디오 매핑됨
+            {activeQuery ? `"${activeQuery}" 검색 결과` : "실시간 인기 동영상 추천"} • {videos.length}개 비디오 매핑됨
           </span>
         </div>
 
@@ -111,17 +104,17 @@ export default function YoutubeVideoSearch() {
               </div>
             ))}
           </div>
-        ) : filteredVideos.length === 0 ? (
+        ) : videos.length === 0 ? (
           /* Empty State */
           <div className="rounded-md border border-dashed border-slate-300 dark:border-zinc-800 p-16 text-center">
             <span className="text-sm font-bold text-slate-400 dark:text-zinc-600">
-              입력하신 검색어에 해당하는 인기 유튜브 영상이 존재하지 않습니다. 다른 단어로 검색해 보세요.
+              입력하신 검색어에 해당하는 유튜브 영상이 존재하지 않습니다. 다른 단어로 검색해 보세요.
             </span>
           </div>
         ) : (
           /* Grid Video Cards */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredVideos.map((video) => (
+            {videos.map((video) => (
               <div
                 key={video.id}
                 className="group flex flex-col overflow-hidden rounded-md border border-slate-200 bg-white/70 transition-all duration-300 hover:-translate-y-1 hover:border-red-500/20 hover:bg-white dark:border-white/5 dark:bg-[#0c0d12]/30 dark:hover:border-red-500/30 dark:hover:bg-[#12131a]/60 hover:shadow-xl"
