@@ -69,7 +69,7 @@ export default function StudioToolsHomePage() {
     {
       title: "유튜브 썸네일 다운로더",
       desc: "유튜브 URL에서 썸네일 이미지 추출",
-      href: "/studio/tools/youtube-thumbnail",
+      href: "/youtube-trend/youtube-thumbnail",
       icon: PlayCircle,
       color: "from-red-600 to-orange-600",
     },

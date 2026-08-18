@@ -299,7 +299,7 @@ export default function Sidebar({
           { name: "AI 제목 생성기", href: "/youtube-trend/title", icon: Sparkles },
           { name: "콘텐츠 전략 리포트", href: "/youtube-trend/report", icon: FileText },
           { name: "유튜브 자동 제작 연결", href: "/youtube-trend/workflow", icon: Bot },
-          { name: "유튜브 썸네일 다운로더", href: "/utility-tools/youtube-thumbnail", icon: SiYoutube },
+          { name: "유튜브 썸네일 다운로더", href: "/youtube-trend/youtube-thumbnail", icon: SiYoutube },
         ],
       },
       {

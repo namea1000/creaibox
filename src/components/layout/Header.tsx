@@ -666,7 +666,7 @@ export default function Header() {
                           <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 mt-0.5">썸네일 클릭률 및 디자인 분석</p>
                         </div>
                       </Link>
-                      <Link href="/utility-tools/youtube-thumbnail" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
+                      <Link href="/youtube-trend/youtube-thumbnail" className="flex items-start gap-3 rounded-2xl p-2.5 hover:bg-slate-50 dark:hover:bg-zinc-800/50 group">
                         <div className="p-2 bg-red-500/10 rounded-xl text-red-500 border border-red-500/10 shrink-0">
                           <SiYoutube size={14} />
                         </div>

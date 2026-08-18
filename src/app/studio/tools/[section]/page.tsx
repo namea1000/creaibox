@@ -10,7 +10,6 @@ import PdfAnalyzer from "./components/PdfAnalyzer";
 import OcrExtractor from "./components/OcrExtractor";
 import PromptStudio from "./components/PromptStudio";
 import HashtagGenerator from "./components/HashtagGenerator";
-import YoutubeThumbnail from "./components/YoutubeThumbnail";
 import ColorPicker from "./components/ColorPicker";
 import QrGenerator from "./components/QrGenerator";
 import FormatConverter from "./components/FormatConverter";
@@ -25,7 +24,6 @@ const sectionNames: Record<string, string> = {
   "prompt-translator": "AI 프롬프트 스튜디오",
   "prompt-studio": "AI 프롬프트 스튜디오",
   hashtag: "해시태그 생성기",
-  "youtube-thumbnail": "유튜브 썸네일 다운로더",
   "color-picker": "색상 추출기",
   qr: "QR 생성기",
   converter: "포맷 변환기",
@@ -53,8 +51,6 @@ export default function ToolsSectionPage() {
         return <PromptStudio defaultTab="enhancer" />;
       case "hashtag":
         return <HashtagGenerator />;
-      case "youtube-thumbnail":
-        return <YoutubeThumbnail />;
       case "color-picker":
         return <ColorPicker />;
       case "qr":

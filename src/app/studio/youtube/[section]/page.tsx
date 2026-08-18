@@ -18,6 +18,7 @@ import StrategyReport from "./components/StrategyReport";
 import VideoWorkflow from "./components/VideoWorkflow";
 import YoutubeTop300 from "./components/YoutubeTop300";
 import YoutubeVideoSearch from "./components/YoutubeVideoSearch";
+import YoutubeThumbnail from "./components/YoutubeThumbnail";
 
 const sectionNames: Record<string, string> = {
   channel: "채널 상세 분석",
@@ -33,6 +34,7 @@ const sectionNames: Record<string, string> = {
   workflow: "유튜브 자동 제작 연결",
   top300: "유튜브 랭킹 TOP 300",
   search: "유튜브 영상 검색",
+  "youtube-thumbnail": "유튜브 썸네일 다운로더",
 };
 
 export default function YoutubeSectionPage() {
@@ -67,6 +69,8 @@ export default function YoutubeSectionPage() {
         return <YoutubeTop300 />;
       case "search":
         return <YoutubeVideoSearch />;
+      case "youtube-thumbnail":
+        return <YoutubeThumbnail />;
       default:
         return (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-10 text-center text-zinc-400">
