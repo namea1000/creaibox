@@ -1643,3 +1643,14 @@
   - 실서버(Vercel) 배포 시 빌드 타임 정적 캐싱으로 인한 인증 에러(401)를 방지하기 위해 `export const dynamic = "force-dynamic";` 추가.
 - 연관 2대 문서 동시 최신화 완료 (`domain-search-and-management-architecture.md`, `domain-search-and-management-manual.md` 신규 작성).
 - `npx tsc --noEmit` 0 에러 통과 및 Vercel 배포 완료.
+
+### 2026-08-18 (유튜브 영상 검색 기능 및 썸네일 다운로더 메뉴 정리)
+- **유튜브 썸네일 다운로더 이동 및 리팩토링**
+  - 기존 `/utility-tools/`에 있던 메뉴를 `/youtube-trend/youtube-thumbnail`로 위치 이동.
+  - UI 둥근 모서리(`rounded-2xl`)를 절제된 각진 스타일(`rounded-md`)로 통일.
+  - CORS 회피를 위해 프론트엔드 Blob 기반 강제 다운로드 로직 적용 (`downloadImage` helper).
+- **유튜브 영상 검색 기능 (Mock -> Real API 전환)**
+  - 기존의 100% Mock 데이터로 동작하던 `/youtube-trend/search` 메뉴에 실제 유튜브 데이터를 연동.
+  - 신규 백엔드 API 라우트 신설 (`/api/youtube/search/route.ts`).
+  - `admin_api_vault`에서 활성 유튜브 API 키를 획득하여, `youtube/v3/search`로 비디오 ID를 추출한 뒤, `youtube/v3/videos`로 통계(조회수, 좋아요, 재생시간 등)를 병렬 수집하는 2-step 파이프라인 구축.
+  - 프론트엔드 `YoutubeVideoSearch.tsx`에 Skeleton UI 로딩 및 데이터 바인딩 연동, 헤더 설명 문구 업데이트 완료.

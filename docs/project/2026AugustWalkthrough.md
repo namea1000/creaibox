@@ -1210,3 +1210,15 @@ Google의 최신 플래그십 모델 **`Gemini 3.7 Flash`** 출시 및 적용에
   - 실서버(Vercel) 배포 시 빌드 타임 정적 캐싱으로 인한 인증 에러(401)를 방지하기 위해 `export const dynamic = "force-dynamic";` 추가.
 - 연관 2대 문서 동시 최신화 완료 (`domain-search-and-management-architecture.md`, `domain-search-and-management-manual.md` 신규 작성).
 - `npx tsc --noEmit` 0 에러 통과 및 Vercel 배포 완료.
+
+### 유튜브 영상 검색 API 연동 및 썸네일 다운로더 마이그레이션 (2026-08-18)
+- **유튜브 썸네일 다운로더 이전 및 리팩토링**
+  - 메뉴 위치를 `/utility-tools/youtube-thumbnail`에서 `/youtube-trend/youtube-thumbnail`로 이전하고 사이드바를 "인기채널 영상분석 리포트" 아래로 재배치.
+  - 전반적인 디자인 둥근 모서리를 `rounded-md` 스타일로 통일.
+  - CORS 문제를 피하기 위해 프론트엔드에서 Blob으로 변환 후 강제 다운로드(새 창 열림 방지)를 수행하는 `downloadImage` 로직 적용.
+- **유튜브 영상 검색 메뉴 완성 (`/youtube-trend/search`)**
+  - 기존의 하드코딩된 목업 데이터를 걷어내고, 백엔드 신규 라우트 `/api/youtube/search/route.ts` 구축.
+  - CreaiBox 관리자 DB (`admin_api_vault`)에서 안전하게 API 키를 획득하는 구조 차용.
+  - 1차: `youtube/v3/search`로 검색어 연관 영상 24개 추출
+  - 2차: `youtube/v3/videos`로 조회수, 좋아요, 영상길이 등의 디테일한 통계 데이터를 병렬 수집하여 프론트엔드로 전달.
+  - 프론트엔드 상태 처리(로딩 스켈레톤, 에러 UI, Empty State) 완벽 바인딩.
