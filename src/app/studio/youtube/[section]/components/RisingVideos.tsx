@@ -675,13 +675,13 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
               </button>
 
               <div className="relative flex items-center h-full">
-                <Calendar size={14} className="absolute left-2.5 text-slate-400 dark:text-zinc-500 pointer-events-none" />
+                <Calendar size={14} className="absolute left-2.5 text-orange-500 pointer-events-none" />
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => handleDateChange(e.target.value)}
                   max={getKstTodayDateStr()}
-                  className="h-full w-[130px] border-0 bg-transparent pl-8 pr-1 text-xs font-bold text-slate-800 dark:text-zinc-200 outline-none cursor-pointer"
+                  className="h-full w-[130px] border-0 bg-transparent pl-8 pr-1 text-xs font-bold text-slate-800 dark:text-zinc-200 outline-none cursor-pointer dark:[color-scheme:dark]"
                 />
               </div>
 
