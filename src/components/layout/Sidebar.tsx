@@ -652,18 +652,21 @@ export default function Sidebar({
   const [optimisticActiveKey, setOptimisticActiveKey] = useState<string | null>(null);
 
   // 🌟 Lazy Initializer로 세션스토리지에 저장된 사용자의 펼침 상태만 동기화 (기본은 접힘 유지)
-  const [expandedGroups, setExpandedGroups] = useState<string[]>(() => {
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
     if (typeof window !== "undefined") {
       try {
         const stored = sessionStorage.getItem("sidebar_expanded");
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) return parsed;
+          if (Array.isArray(parsed)) setExpandedGroups(parsed);
         }
       } catch (e) {}
     }
-    return [];
-  });
+  }, []);
 
   // 🌟 펼침 상태 변경 시 세션스토리지에 안전하게 보존
   useEffect(() => {
