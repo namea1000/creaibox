@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 /**
  * 1. GET /api/email-forwarding
  * 로그인 유저의 이메일 포워딩 규칙 목록 조회
