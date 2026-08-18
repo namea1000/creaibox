@@ -8,6 +8,10 @@ interface MigrationTabProps {
 export default function MigrationTab({ requireAuth }: MigrationTabProps) {
   const [migrationUrl, setMigrationUrl] = useState("");
   const [migrationDepth, setMigrationDepth] = useState<"main" | "full" | "massive">("main");
+  const [migrationMode, setMigrationMode] = useState<"clone" | "recreate">("clone");
+  const [isAiAutoMode, setIsAiAutoMode] = useState(true);
+  const [newBrandName, setNewBrandName] = useState("");
+  const [businessTone, setBusinessTone] = useState("");
   const [isMigrating, setIsMigrating] = useState(false);
   const [massiveProgress, setMassiveProgress] = useState<{ total: number; current: number } | null>(null);
   const [progressText, setProgressText] = useState("");
@@ -185,7 +189,15 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
       const res = await fetch("/api/studio/site-migration", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUrl: migrationUrl, depth: migrationDepth, scanReport: scanReport }),
+        body: JSON.stringify({ 
+          targetUrl: migrationUrl, 
+          depth: migrationDepth, 
+          scanReport: scanReport,
+          mode: migrationMode,
+          isAiAutoMode: migrationMode === "recreate" ? isAiAutoMode : undefined,
+          newBrandName: migrationMode === "recreate" && !isAiAutoMode ? newBrandName : undefined,
+          businessTone: migrationMode === "recreate" && !isAiAutoMode ? businessTone : undefined
+        }),
       });
       const data = await res.json().catch(() => ({ error: `서버 응답 오류 (HTTP ${res.status})` }));
 
@@ -247,17 +259,35 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
 
             <div className="space-y-2">
               <span className="text-[10px] font-black tracking-wider text-indigo-400 uppercase bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-500/20">
-                AI Full-Automated Site Migration Engine
+                AI Full-Automated Site Migration & Recreation Engine
               </span>
               <h2 className="text-xl font-black text-white flex items-center gap-2">
-                <Globe className="text-indigo-400" /> 기존 타사 홈페이지 URL 입력 시 AI 통째 정밀 이관
+                <Globe className="text-indigo-400" /> 타겟 홈페이지 URL 기반 AI 정밀 이관 및 벤치마킹 창조
               </h2>
               <p className="text-xs font-medium text-slate-300 max-w-3xl leading-relaxed">
-                기존 홈페이지 주소를 입력하시면 Gemini 3.7 Flash 엔진이 사이트 구조, 텍스트, 브랜드 이미지 등을 심층 분석하여 새로운 웹사이트로 완벽하게 자동 이관(복제)합니다. (약 15~45초 소요)
+                URL을 입력하면 Gemini 3.7 Flash 엔진이 사이트 구조를 심층 분석하여 원본 그대로 자동 이관하거나(마이그레이션), 텍스트/이미지를 새로 창작하여 저작권 걱정 없는 새로운 웹사이트를 창조(벤치마킹 창조)합니다.
               </p>
             </div>
 
             <form onSubmit={handleSiteMigration} className="space-y-4">
+              {/* Mode Selection */}
+              <div className="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setMigrationMode("clone")}
+                  className={`flex-1 py-3 text-sm font-black rounded-xl transition-all cursor-pointer ${migrationMode === "clone" ? "bg-indigo-600 text-white shadow-md" : "text-slate-400 hover:text-slate-200"}`}
+                >
+                  🔄 원본 그대로 이관 (마이그레이션)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMigrationMode("recreate")}
+                  className={`flex-1 py-3 text-sm font-black rounded-xl transition-all cursor-pointer ${migrationMode === "recreate" ? "bg-emerald-600 text-white shadow-md" : "text-slate-400 hover:text-slate-200"}`}
+                >
+                  ✨ AI 벤치마킹 창조 (저작권 회피)
+                </button>
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
                   <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
@@ -297,13 +327,55 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                   <button
                     type="submit"
                     disabled={isMigrating}
-                    className="rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4 text-sm font-black text-white hover:brightness-110 transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 whitespace-nowrap min-w-[200px]"
+                    className={`rounded-2xl px-6 py-4 text-sm font-black text-white hover:brightness-110 transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 whitespace-nowrap min-w-[200px] ${migrationMode === "recreate" ? "bg-gradient-to-r from-emerald-500 to-teal-600 shadow-emerald-600/30" : "bg-gradient-to-r from-indigo-500 to-purple-600 shadow-indigo-600/30"}`}
                   >
                     {isMigrating ? <RefreshCw size={18} className="animate-spin" /> : <Zap size={18} />}
-                    <span>{massiveProgress ? `서브페이지 이관 중... ${massiveProgress.current} / ${massiveProgress.total}` : (isMigrating ? progressText : "AI 에이전트 정밀 이관 시작")}</span>
+                    <span>{massiveProgress ? `서브페이지 이관 중... ${massiveProgress.current} / ${massiveProgress.total}` : (isMigrating ? progressText : (migrationMode === "recreate" ? "✨ AI 벤치마킹 창조 시작" : "AI 에이전트 정밀 이관 시작"))}</span>
                   </button>
                 </div>
               </div>
+
+              {/* Recreate Mode Inputs */}
+              {migrationMode === "recreate" && (
+                <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 space-y-4 animate-fade-in-up mt-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-500/10 pb-3">
+                    <h4 className="text-sm font-black text-emerald-400 flex items-center gap-2">
+                      <Sparkles size={16} /> 벤치마킹 기반 새 웹사이트 창조
+                    </h4>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={isAiAutoMode} 
+                        onChange={(e) => setIsAiAutoMode(e.target.checked)}
+                        className="rounded border-slate-700 bg-slate-900 text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-slate-300">AI 알아서 자동 창조 (Auto)</span>
+                    </label>
+                  </div>
+                  
+                  {!isAiAutoMode && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <input
+                        type="text"
+                        value={newBrandName}
+                        onChange={(e) => setNewBrandName(e.target.value)}
+                        placeholder="새로 런칭할 브랜드/회사명"
+                        className="w-full rounded-xl bg-slate-900 border border-slate-800 px-4 py-3 text-sm font-bold text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        value={businessTone}
+                        onChange={(e) => setBusinessTone(e.target.value)}
+                        placeholder="업종 및 원하는 톤앤매너 (예: 모던한 치과)"
+                        className="w-full rounded-xl bg-slate-900 border border-slate-800 px-4 py-3 text-sm font-bold text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
+                      />
+                    </div>
+                  )}
+                  <p className="text-xs text-slate-400 font-medium">
+                    타겟 사이트의 레이아웃 구조와 Vibe만 추출하며, 원본 텍스트 및 이미지는 전혀 복사되지 않고 AI가 100% 새롭게 창작합니다. 저작권 면책 동의가 필요 없는 완전한 신규 창조 모드입니다.
+                  </p>
+                </div>
+              )}
 
               {/* Scan Report Dashboard */}
               {scanReport && (
@@ -348,8 +420,10 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                 </div>
               )}
 
-              <div className="space-y-2 pt-2 border-t border-slate-800/60 mt-4">
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+              {/* Copyright & Safe Draft Info */}
+              {migrationMode === "clone" && (
+                <div className="space-y-2 pt-2 border-t border-slate-800/60 mt-4 animate-fade-in-up">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
                   <input
                     type="checkbox"
                     id="site-terms-check"
@@ -377,8 +451,9 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                       미리보기로 디자인과 구조를 충분히 검토하신 후, 언제든 <span className="font-bold text-emerald-400">'정식 배포 / 도메인 지정'</span> 버튼을 통해 내 소유의 커스텀 도메인(예: mysite.com)을 연결하고 정식 라이브(검색 노출)로 전환하실 수 있습니다.
                     </div>
                   </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </form>
 
             {/* Migration History List Display */}
