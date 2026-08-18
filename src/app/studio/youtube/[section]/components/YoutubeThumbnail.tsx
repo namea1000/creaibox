@@ -4,8 +4,8 @@ import React, { useState } from "react";
 import { PlayCircle, Search, Download, ExternalLink, AlertCircle } from "lucide-react";
 
 export default function YoutubeThumbnail() {
-  const [url, setUrl] = useState("");
-  const [videoId, setVideoId] = useState<string | null>(null);
+  const [url, setUrl] = useState("https://youtube.com/watch?v=W4LhfsQTi5E");
+  const [videoId, setVideoId] = useState<string | null>("W4LhfsQTi5E");
 
   const handleExtract = (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,14 +74,25 @@ export default function YoutubeThumbnail() {
                 <p className="text-[9px] font-black text-red-400 uppercase">HIGH QUALITY</p>
                 <h3 className="text-xs font-black text-slate-900 dark:text-zinc-100 mt-0.5">최대 해상도 (HD 1080p)</h3>
               </div>
-              <a
-                href={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex h-8 items-center gap-1 rounded bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 px-3 text-[10px] font-bold text-slate-600 dark:text-zinc-300 transition"
-              >
-                열기 <ExternalLink size={10} />
-              </a>
+              <div className="flex gap-2">
+                <a
+                  href={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
+                  download={`thumbnail_${videoId}_max.jpg`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-8 items-center gap-1 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800/50 px-3 text-[10px] font-bold text-slate-600 dark:text-zinc-300 transition"
+                >
+                  이미지 저장 <Download size={10} />
+                </a>
+                <a
+                  href={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-8 items-center gap-1 rounded bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 px-3 text-[10px] font-bold text-slate-600 dark:text-zinc-300 transition"
+                >
+                  열기 <ExternalLink size={10} />
+                </a>
+              </div>
             </div>
             
             <div className="aspect-video w-full overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-800/60 bg-slate-50 dark:bg-zinc-950/50">
@@ -104,14 +115,25 @@ export default function YoutubeThumbnail() {
                 <p className="text-[9px] font-black text-slate-500 dark:text-zinc-400 uppercase">STANDARD QUALITY</p>
                 <h3 className="text-xs font-black text-slate-900 dark:text-zinc-100 mt-0.5">표준 해상도 (SD 720p)</h3>
               </div>
-              <a
-                href={`https://img.youtube.com/vi/${videoId}/sddefault.jpg`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex h-8 items-center gap-1 rounded bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 px-3 text-[10px] font-bold text-slate-600 dark:text-zinc-300 transition"
-              >
-                열기 <ExternalLink size={10} />
-              </a>
+              <div className="flex gap-2">
+                <a
+                  href={`https://img.youtube.com/vi/${videoId}/sddefault.jpg`}
+                  download={`thumbnail_${videoId}_sd.jpg`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-8 items-center gap-1 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800/50 px-3 text-[10px] font-bold text-slate-600 dark:text-zinc-300 transition"
+                >
+                  이미지 저장 <Download size={10} />
+                </a>
+                <a
+                  href={`https://img.youtube.com/vi/${videoId}/sddefault.jpg`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-8 items-center gap-1 rounded bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 px-3 text-[10px] font-bold text-slate-600 dark:text-zinc-300 transition"
+                >
+                  열기 <ExternalLink size={10} />
+                </a>
+              </div>
             </div>
             
             <div className="aspect-video w-full overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-800/60 bg-slate-50 dark:bg-zinc-950/50">
