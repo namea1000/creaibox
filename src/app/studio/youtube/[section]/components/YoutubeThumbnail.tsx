@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { PlayCircle, Search, Download, ExternalLink, AlertCircle } from "lucide-react";
 
 export default function YoutubeThumbnail() {
-  const [url, setUrl] = useState("https://youtube.com/watch?v=W4LhfsQTi5E");
+  const [url, setUrl] = useState("");
   const [videoId, setVideoId] = useState<string | null>("W4LhfsQTi5E");
 
   const handleExtract = (e: React.FormEvent) => {
