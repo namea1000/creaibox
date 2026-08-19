@@ -127,18 +127,41 @@
     - 고객 배포용 1장 요약 출력 체크리스트(Cheatsheet) 수록
   - 🗺️ `docs/README.md`: 3번 행 [도메인 조회 & 브랜딩] 마스터 인덱스 테이블에 등록 완료.
 
-### 15. 🚀 블로그 마이그레이션 이중 WebP(본문 1200px + 16:9 640px 썸네일) Google Cloud DB 영구 보관 파이프라인 구축 및 120개 원고 일괄 이관 (v1.46)
+### 14. 🖼️ 소통과 채움 포트폴리오 이미지 네이버 CDN Referer 차단 해제 및 에셋 저장소 분석 (v1.45)
+- **개발 배경 및 요구사항**:
+  - `sotongcheum.com` 포트폴리오(블로그 현장 실적) 6개 카드에 동일한 캠핑 텐트 기본 이미지가 노출되던 원인 분석 및 해결.
+  - 랜딩 페이지 및 블로그 에셋 저장소 위치(Vercel Edge vs Cloudflare R2 vs Google Cloud) 검증 및 안내.
+- **주요 구현 내역**:
+  - `PortfolioSection.tsx`: 마이그레이션된 네이버 블로그 이미지(`postfiles.pstatic.net`) 호출 시 네이버의 외부 도메인 Referer 차단(403 Forbidden)으로 `onError`가 발생하여 텐트 이미지로 강제 전환되던 문제를 `referrerPolicy="no-referrer"` 추가로 원천 해결.
+  - 렌탈/비즈니스 에셋은 Vercel Global Edge CDN(`public/images/clients/sotongcheum/`), 블로그 업로드 이미지는 Google Cloud DB(`lh3.googleusercontent.com`) 및 R2에 저장되어 있음을 확인.
+
+### 15. 🚀 블로그 마이그레이션 이중 WebP(본문 1200px + 16:9 640px 썸네일) Google Cloud DB 영구 보관 파이프라인 구축 및 100여개 원고 443장 일괄 이관 완료 (v1.46)
 - **개발 배경 및 요구사항**:
   - 네이버 블로그 마이그레이션 시 외부 이미지 링크(`pstatic.net`)를 그대로 참조할 경우, 사용자가 네이버에서 글을 삭제하면 자사 사이트에서도 이미지가 깨지는 의존성 원천 해결.
   - 마이그레이션되는 모든 이미지를 Sharp로 고화질 WebP로 압축하여 CreaiBox Google Cloud DB(`lh3.googleusercontent.com`)에 영구 저장.
   - 목록/카드 뷰의 0.01초 광속 로딩을 위해 본문용 고해상도 WebP(1200px)와 별도로 **전용 16:9 경량 썸네일 WebP(640x360, ~20KB)**를 동시 생성하여 `generated_images`에 자동 등록.
-### 16. 📂 Google Cloud DB 사용자 및 연월별 계층 격리 폴더(`/userId/writing-creaibox-posts/YYYYMM/`) 구조화 및 자동 정리 (v1.47)
-- **개발 배경 및 요구사항**:
-  - 마이그레이션된 이미지들이 Google Drive 최상위 루트(`creaibox-blog-images`)에 직접 저장되어 사용자 증가 시 관리가 난잡해지는 문제를 방지하고, CreaiBox 클라우드 DB 정석 규칙인 `creaibox-blog-images / [userId] / [sourceType] / [YYYYMM]` 3단 계층 폴더로 자동 분류 저장되도록 개선.
 - **주요 구현 내역**:
-  - `src/lib/google-drive.ts`: `getDriveClient` 및 `getOrCreateFolder` 헬퍼 export.
-  - `src/app/api/studio/blog-migration/route.ts` & `scripts/migrate_blog_images.ts`: `uploadToGoogleDrive()` 호출 시 `userId` 및 `sourceType: "writing-creaibox-posts"`를 필수 전달하여 해당 사용자 전용 폴더(`/${userId}/writing-creaibox-posts/${YYYYMM}/`)에만 자동 생성/저장되도록 업그레이드.
-  - `scripts/organize_drive_files.ts`: 루트 폴더에 생성되었던 기존 마이그레이션 이미지 파일들을 소통과 채움 사용자 고유 폴더(`/454dfd4e-2b64-4309-afbe-e54f34666eb4/writing-creaibox-posts/202608/`)로 100% 자동 이동 정리 완료.
+  - `src/app/api/studio/blog-migration/route.ts`: 네이버 포스트 파싱 시 본문 이미지들을 백엔드에서 실시간 다운로드 ➔ Sharp 기반 이중 WebP 압축 ➔ `uploadToGoogleDrive()`를 통해 Google Cloud DB 업로드 ➔ 본문 `<img src="...">`를 `lh3.googleusercontent.com` 영구 URL로 자동 치환.
+  - `scripts/migrate_blog_images.ts`: 소통과 채움의 기존 100여 개 발행 글(총 443장 사진)을 스캔하여 이중 WebP 변환 및 Google Cloud DB 영구 보관함으로 일괄 치환(443/443건 100% 성공) 완료.
+
+### 17. 🚀 커스텀 클라이언트 사이트 에셋 용도별 차등 WebP 변환 및 Cloudflare R2(`sites/custom-clients/`) 영구 CDN 전환 (v1.48)
+- **개발 배경 및 요구사항**:
+  - `sotongcheum.com` 등 커스텀 클라이언트 사이트의 고정 이미지 15개(총 14.3MB PNG)가 로컬 `public/images/clients/sotongcheum/`에 저장되어 있어 Vercel Git 배포 번들 용량을 가중시키던 문제를 원천 해결.
+  - **CreaiBox 용도별 맞춤 퀄리티 표준 규칙**에 따라 화질 저하 없이 용량을 대폭 감량하고, 트래픽 전송료 평생 무료($0 Egress)인 Cloudflare R2 스토리지로 완전 이전.
+- **주요 구현 내역**:
+  - `src/lib/r2-client-assets.ts`: `getR2Client`, `getR2CdnUrl`, `getCustomClientAssetUrl`, `uploadCustomClientAsset` 등 클라이언트 사이트 공용 R2 CDN 헬퍼 모듈 신설.
+  - **용도별 맞춤 차등 압축 및 업로드 (`scripts/migrate_client_assets_to_r2.ts`)**:
+    - 대형 히어로/비전 배경: `품질 Q92 WebP (1920px, 4K/레티나 초고화질, 원본과 육안 100% 동일)`
+    - 오시는 길 약도: `품질 Q90 WebP (1200px, 92KB, 83.1% 감량)`
+    - 렌탈 장비 6종 & 비즈니스 6종 카드: `품질 Q88 WebP (1000px, 175~340KB, 70~80% 감량)`
+    - R2 저장 경로: `creaibox-assets / sites / custom-clients / sotongcheum /`
+    - 결과: 원본 14.27 MB ➔ WebP 3.71 MB로 **총 74.0% 대폭 감량 성공**.
+  - **소스 코드 CDN URL 전면 교체**:
+    - `src/app/clients/sotongcheum/lib/constants.ts` (렌탈 6종, 비즈니스 6종)
+    - `src/app/clients/sotongcheum/components/HeroSection.tsx` (히어로 배경)
+    - `src/app/clients/sotongcheum/about/page.tsx` (약도, 비전, 실적 3종)
+    - `src/app/clients/sotongcheum/layout.tsx` (OG 및 메타데이터 이미지)
+  - **Vercel 번들 다이어트**: 로컬 `public/images/clients/sotongcheum/` 내 무거운 15MB PNG 파일들을 전면 삭제하여 Vercel 배포 번들 0MB 실현.
 
 ---
 

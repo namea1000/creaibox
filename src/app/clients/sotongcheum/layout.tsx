@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 
+import { getCustomClientAssetUrl } from "@/lib/r2-client-assets";
+
 export const metadata: Metadata = {
   title: "소통과채움 | 교육, 행사기획 & 렌탈 전문 기업",
   description:
@@ -15,7 +17,7 @@ export const metadata: Metadata = {
     siteName: "소통과채움",
     images: [
       {
-        url: "https://sotongcheum.creaibox.com/images/clients/sotongcheum/sotongcheum_hero_bg.png",
+        url: getCustomClientAssetUrl("sotongcheum", "hero-bg.webp"),
         width: 1200,
         height: 630,
         alt: "소통과채움 대표 축제 행사 비주얼",
@@ -29,7 +31,7 @@ export const metadata: Metadata = {
     title: "소통과채움 | 교육, 행사기획 & 렌탈 전문 기업",
     description:
       "공공행사부터 마을축제까지, 처음부터 끝까지 깔끔하게! 소통과채움 협동조합",
-    images: ["https://sotongcheum.creaibox.com/images/clients/sotongcheum/sotongcheum_hero_bg.png"],
+    images: [getCustomClientAssetUrl("sotongcheum", "hero-bg.webp")],
   },
 };
 

@@ -3,13 +3,14 @@
 import React from "react";
 import { Heart, MapPin, Phone, Printer, Mail, Sparkles, Target, MessageSquare, Award, Users, ShieldCheck, Navigation } from "lucide-react";
 import { COMPANY_INFO, CLIENT_PARTNERS } from "../lib/constants";
+import { getCustomClientAssetUrl } from "@/lib/r2-client-assets";
 
 function BongdamMapGraphic() {
   return (
     <div className="relative w-full h-full min-h-[420px] bg-slate-100 rounded-3xl overflow-hidden border border-slate-200 shadow-md select-none font-sans group">
       {/* Exact Real Naver Map Image uploaded by user */}
       <img
-        src="/images/clients/sotongcheum/sotongcheum_map_real.png"
+        src={getCustomClientAssetUrl("sotongcheum", "map-real.webp")}
         alt="소통과채움 동화길 51 지도 위치"
         className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
       />
@@ -211,7 +212,7 @@ export default function AboutPage() {
               {/* Background Photo Inside Vision Card */}
               <div className="absolute inset-0 z-0 w-full h-full overflow-hidden">
                 <img
-                  src="/images/clients/sotongcheum/sotongcheum_vision_bg.png"
+                  src={getCustomClientAssetUrl("sotongcheum", "vision-bg.webp")}
                   alt="소통과채움 비전 배경"
                   className="w-full h-full object-cover object-center"
                 />
@@ -285,7 +286,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
             <div className="group relative aspect-[16/9] overflow-hidden rounded-2xl border border-white/15 shadow-lg">
               <img
-                src="/images/clients/sotongcheum/biz_cultural_event.png"
+                src={getCustomClientAssetUrl("sotongcheum", "biz-cultural-event.webp")}
                 alt="공공행사 및 마을 축제 기획/운영"
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
               />
@@ -298,7 +299,7 @@ export default function AboutPage() {
 
             <div className="group relative aspect-[16/9] overflow-hidden rounded-2xl border border-white/15 shadow-lg">
               <img
-                src="/images/clients/sotongcheum/biz_local_autonomy.png"
+                src={getCustomClientAssetUrl("sotongcheum", "biz-local-autonomy.webp")}
                 alt="주민 참여형 소통 축제 현장"
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
               />
@@ -311,7 +312,7 @@ export default function AboutPage() {
 
             <div className="group relative aspect-[16/9] overflow-hidden rounded-2xl border border-white/15 shadow-lg">
               <img
-                src="/images/clients/sotongcheum/biz_workshop.png"
+                src={getCustomClientAssetUrl("sotongcheum", "biz-workshop.webp")}
                 alt="감성 힐링 & 체험 교육 워크숍"
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
               />

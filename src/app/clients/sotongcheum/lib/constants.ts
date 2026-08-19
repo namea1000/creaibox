@@ -13,13 +13,15 @@ export const COMPANY_INFO = {
   greetings: `안녕하십니까?\n소통과채움을 찾아주셔서 진심으로 감사드립니다.\n\n소통과채움은 화성특례시를 기반으로 지역사회와 함께 성장하는 행사 전문기업입니다.\n\n우리는 행사를 단순한 이벤트가 아닌 사람과 사람을 연결하는 '소통'의 장이자, 지역과 공동체에 새로운 가치와 행복을 '채우는' 과정이라고 생각합니다. 주민과 지역사회가 함께 참여하고 공감하며 성장할 수 있는 공동체 문화를 만들어가는 것이 소통과채움의 가장 중요한 가치입니다.\n\n기념식, 주민자치 사업, 문화축제, 체육대회, 성과공유회, 워크숍 등 다양한 현장 경험을 바탕으로 기획부터 운영, 홍보까지 체계적인 서비스를 제공합니다. 행사 하나하나에 지역의 이야기와 사람들의 참여를 담아 모두가 함께 즐기고 기억할 수 있는 특별한 순간을 만들어가고 있습니다.\n\n앞으로도 소통과채움은 사람과 지역을 잇는 소통의 가교가 되고, 공동체의 가치와 문화를 채워가는 든든한 파트너로서 함께 성장해 나가겠습니다.\n\n감사합니다.`,
 };
 
+import { getCustomClientAssetUrl } from "@/lib/r2-client-assets";
+
 export const RENTAL_ITEMS: RentalItem[] = [
   {
     id: "sound-system",
     name: "음향 시스템",
     engName: "Sound System",
     description: "행사의 규모와 장소에 최적화된 고출력 앰프, 스피커, 무선 마이크, 콘솔 일체형 패키지 렌탈",
-    imageUrl: "/images/clients/sotongcheum/rental_sound_system.png",
+    imageUrl: getCustomClientAssetUrl("sotongcheum", "rental-sound-system.webp"),
     category: "sound",
   },
   {
@@ -27,7 +29,7 @@ export const RENTAL_ITEMS: RentalItem[] = [
     name: "조명 & 특수효과",
     engName: "Lighting & Effects",
     description: "무대를 화려하게 연출해 줄 LED 무대 조명, 핀조명, 스모그 머신 및 에어샷 특수효과 렌탈",
-    imageUrl: "/images/clients/sotongcheum/rental_lighting_effects.png",
+    imageUrl: getCustomClientAssetUrl("sotongcheum", "rental-lighting-effects.webp"),
     category: "lighting",
   },
   {
@@ -35,7 +37,7 @@ export const RENTAL_ITEMS: RentalItem[] = [
     name: "무대 제작 & 대형 트러스",
     engName: "Stage & Truss",
     description: "행사장 규모에 맞춘 안전하고 견고한 조립식 무대 단상, 백드롭 트러스 아치 구조물 렌탈",
-    imageUrl: "/images/clients/sotongcheum/rental_stage_truss.png",
+    imageUrl: getCustomClientAssetUrl("sotongcheum", "rental-stage-truss.webp"),
     category: "stage",
   },
   {
@@ -43,7 +45,7 @@ export const RENTAL_ITEMS: RentalItem[] = [
     name: "영상 & LED 전광판",
     engName: "Video & LED Screen",
     description: "대형 야외 행사용 고휘도 LED 전광판 스크린, 중계 카메라 촬영 및 빔 프로젝터 대여",
-    imageUrl: "/images/clients/sotongcheum/rental_video_led.png",
+    imageUrl: getCustomClientAssetUrl("sotongcheum", "rental-video-led.webp"),
     category: "video",
   },
   {
@@ -51,7 +53,7 @@ export const RENTAL_ITEMS: RentalItem[] = [
     name: "캐노피 & 몽골천막",
     engName: "Tents & Canopies",
     description: "야외 축제와 행사에서 필수적인 방수 캐노피 천막, 고급 몽골천막 설치 및 철수 일체 대행",
-    imageUrl: "/images/clients/sotongcheum/rental_canopy_tents.png",
+    imageUrl: getCustomClientAssetUrl("sotongcheum", "rental-canopy-tents.webp"),
     category: "tent",
   },
   {
@@ -59,7 +61,7 @@ export const RENTAL_ITEMS: RentalItem[] = [
     name: "테이블 & 의자 렌탈",
     engName: "Tables & Chairs",
     description: "듀라테이블, 플라스틱 의자, 오리의자, 파라솔 세트 등 행사의 성격에 맞춘 다양한 편의 집기 렌탈",
-    imageUrl: "/images/clients/sotongcheum/rental_tables_chairs.png",
+    imageUrl: getCustomClientAssetUrl("sotongcheum", "rental-tables-chairs.webp"),
     category: "furniture",
   },
 ];
@@ -77,7 +79,7 @@ export const BUSINESS_ITEMS: BusinessItem[] = [
       "문화예술 전문 강사 및 공연단 섭외",
       "온·오프라인 홍보 콘텐츠 제작 지원",
     ],
-    imageUrl: "/images/clients/sotongcheum/biz_cultural_event.png",
+    imageUrl: getCustomClientAssetUrl("sotongcheum", "biz-cultural-event.webp"),
   },
   {
     id: "ceremonies",
@@ -91,7 +93,7 @@ export const BUSINESS_ITEMS: BusinessItem[] = [
       "현수막, 홍보물 및 관련 영상 제작 지원",
       "안전관리 및 현장 운영 전반 총괄 지원",
     ],
-    imageUrl: "/images/clients/sotongcheum/biz_ceremony.png",
+    imageUrl: getCustomClientAssetUrl("sotongcheum", "biz-ceremony.webp"),
   },
   {
     id: "local-autonomy",
@@ -105,7 +107,7 @@ export const BUSINESS_ITEMS: BusinessItem[] = [
       "성과공유 및 주민자치 활성화 행사 운영",
       "홍보물 제작 및 사업 성과 기록 지원",
     ],
-    imageUrl: "/images/clients/sotongcheum/biz_local_autonomy.png",
+    imageUrl: getCustomClientAssetUrl("sotongcheum", "biz-local-autonomy.webp"),
   },
   {
     id: "sports-festival",
@@ -119,7 +121,7 @@ export const BUSINESS_ITEMS: BusinessItem[] = [
       "무대·음향·진행 인력 및 안전관리 지원",
       "시상식 및 맞춤형 부대행사 운영",
     ],
-    imageUrl: "/images/clients/sotongcheum/biz_sports_day.png",
+    imageUrl: getCustomClientAssetUrl("sotongcheum", "biz-sports-day.webp"),
   },
   {
     id: "performance-sharing",
@@ -133,7 +135,7 @@ export const BUSINESS_ITEMS: BusinessItem[] = [
       "홍보 영상 및 사업 기록물 제작 지원",
       "행사 운영 전반 및 참여자 관리 지원",
     ],
-    imageUrl: "/images/clients/sotongcheum/biz_performance_sharing.png",
+    imageUrl: getCustomClientAssetUrl("sotongcheum", "biz-performance-sharing.webp"),
   },
   {
     id: "workshop",
@@ -147,7 +149,7 @@ export const BUSINESS_ITEMS: BusinessItem[] = [
       "전문 강사 및 교육 콘텐츠 섭외",
       "숙박, 식사, 차량 등 행사진행 전반 지원",
     ],
-    imageUrl: "/images/clients/sotongcheum/biz_workshop.png",
+    imageUrl: getCustomClientAssetUrl("sotongcheum", "biz-workshop.webp"),
   },
 ];
 

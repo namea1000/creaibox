@@ -4,6 +4,8 @@ import React from "react";
 import Link from "next/link";
 import { ArrowRight, Calendar, Sparkles } from "lucide-react";
 
+import { getCustomClientAssetUrl } from "@/lib/r2-client-assets";
+
 export default function HeroSection() {
   const handleScrollTo = (id: string) => {
     const element = document.getElementById(id);
@@ -17,7 +19,7 @@ export default function HeroSection() {
       {/* Full-Bleed Background Photo (Bright Natural Visual without dark overlay) */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <img
-          src="/images/clients/sotongcheum/sotongcheum_hero_bg.png"
+          src={getCustomClientAssetUrl("sotongcheum", "hero-bg.webp")}
           alt="소통과 채움 축제 행사 배경"
           className="w-full h-full object-cover object-center scale-105 animate-fade-in"
         />
