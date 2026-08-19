@@ -88,20 +88,44 @@ export async function fetchFramerSearchIndex(html: string): Promise<{
     const imageUrls: string[] = [];
     const colorTokens: Record<string, string> = {};
 
-    const pages: any[] = json.pages || json.documents || json.items || (Array.isArray(json) ? json : [json]);
-    for (const page of pages) {
-      const extractTexts = (obj: any) => {
-        if (!obj) return;
-        if (typeof obj === "string" && obj.trim().length > 2) texts.push(obj.trim());
-        else if (Array.isArray(obj)) obj.forEach(extractTexts);
-        else if (typeof obj === "object") Object.values(obj).forEach(extractTexts);
-      };
-      if (page.text) extractTexts(page.text);
-      if (page.texts) extractTexts(page.texts);
-      if (page.content) extractTexts(page.content);
-      if (page.sections) extractTexts(page.sections);
+    // 1. Framer searchIndex is an Object dictionary keyed by route path: { "/": { h1: [...], h2: [...], p: [...] } }
+    // Or an array of pages in older versions
+    const pageEntries: Array<[string, any]> = Array.isArray(json)
+      ? json.map((p, i) => [`page_${i}`, p])
+      : Object.entries(json);
 
-      const jsonStr = JSON.stringify(page);
+    // Prioritize root page "/" first, then others
+    pageEntries.sort(([pathA], [pathB]) => {
+      if (pathA === "/") return -1;
+      if (pathB === "/") return 1;
+      return 0;
+    });
+
+    for (const [path, pageData] of pageEntries) {
+      if (!pageData || typeof pageData !== "object") continue;
+
+      if (pageData.title) texts.push(`[PAGE TITLE - ${path}] ${pageData.title}`);
+      if (pageData.description) texts.push(`[META DESCRIPTION] ${pageData.description}`);
+
+      const tagKeys = ["h1", "h2", "h3", "h4", "h5", "h6", "p"];
+      for (const tag of tagKeys) {
+        if (Array.isArray(pageData[tag])) {
+          pageData[tag].forEach((item: any) => {
+            if (typeof item === "string" && item.trim().length > 0) {
+              texts.push(`[${tag.toUpperCase()}] ${item.trim()}`);
+            }
+          });
+        }
+      }
+
+      // Legacy/Alternative fields
+      if (typeof pageData.text === "string" && pageData.text.trim()) texts.push(pageData.text.trim());
+      if (Array.isArray(pageData.texts)) {
+        pageData.texts.forEach((t: any) => { if (typeof t === "string" && t.trim()) texts.push(t.trim()); });
+      }
+
+      // Extract framerusercontent images from JSON string dump
+      const jsonStr = JSON.stringify(pageData);
       const framerImgRegex = /https:\/\/framerusercontent\.com\/images\/[A-Za-z0-9_./-]+/gi;
       const found = jsonStr.match(framerImgRegex) || [];
       found.forEach(u => imageUrls.push(u.replace(/['")\s>]+$/, "")));
@@ -114,7 +138,7 @@ export async function fetchFramerSearchIndex(html: string): Promise<{
     }
 
     const uniqueImages = [...new Set(imageUrls)].filter(u => u.length > 20);
-    console.log(`[HeadlessScraper] SearchIndex: ${texts.length} texts, ${uniqueImages.length} imgs, ${Object.keys(colorTokens).length} tokens`);
+    console.log(`[HeadlessScraper] SearchIndex parsed: ${texts.length} structured texts, ${uniqueImages.length} imgs, ${Object.keys(colorTokens).length} tokens`);
     return { texts, imageUrls: uniqueImages, colorTokens };
   } catch (err) {
     console.warn("[HeadlessScraper] Framer Search Index failed:", err);
@@ -173,7 +197,7 @@ export function extractAllImageUrls(html: string, origin: string): string[] {
   const r7 = /(?:og:image|twitter:image)[^>]+content=["']([^"']+)["']/gi;
   while ((m = r7.exec(html)) !== null) { const u = resolve(m[1]); if (u) urls.add(u); }
 
-  return [...urls].filter(u => u.length > 10).slice(0, 50);
+  return [...urls].filter(u => u.length > 10).slice(0, 100);
 }
 
 /**

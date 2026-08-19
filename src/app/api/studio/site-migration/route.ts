@@ -32,6 +32,74 @@ export async function POST(request: Request) {
     return newHtml;
   }
 
+  /**
+   * 🛡️ Intelligent JSON Auto-Repair & Stream Rescuer
+   * Protects against minor syntax errors, unescaped characters, or truncations.
+   */
+  function safeParseAiJson(rawText: string): any {
+    if (!rawText || typeof rawText !== "string") return null;
+
+    let text = rawText.trim();
+    if (text.startsWith("```json")) text = text.slice(7);
+    else if (text.startsWith("```")) text = text.slice(3);
+    if (text.endsWith("```")) text = text.slice(0, -3);
+    text = text.trim();
+
+    const match = text.match(/\{[\s\S]*\}/);
+    if (match) text = match[0];
+
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      try {
+        let rep = text;
+        const q = (rep.match(/(?<!\\)"/g) || []).length;
+        if (q % 2 !== 0) rep += '"';
+        const ob = (rep.match(/\{/g) || []).length;
+        const cb = (rep.match(/\}/g) || []).length;
+        const obr = (rep.match(/\[/g) || []).length;
+        const cbr = (rep.match(/\]/g) || []).length;
+        if (obr > cbr) rep += "]".repeat(obr - cbr);
+        if (ob > cb) rep += "}".repeat(ob - cb);
+        const parsed = JSON.parse(rep);
+        if (parsed && Array.isArray(parsed.main_sections) && parsed.main_sections.length > 0) {
+          console.log(`[JSON Auto-Repair 🛠️] Rescued ${parsed.main_sections.length} sections!`);
+          return parsed;
+        }
+      } catch {}
+
+      // Regex rescue
+      try {
+        const templateMatch = text.match(/"template_id"\s*:\s*"([^"]+)"/);
+        const headerMatch = text.match(/"header_html"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+        const footerMatch = text.match(/"footer_html"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+
+        const sections: any[] = [];
+        const sectionPattern = /\{\s*"section_type"\s*:\s*"([^"]+)"\s*,\s*"html"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+        let m;
+        while ((m = sectionPattern.exec(text)) !== null) {
+          try {
+            const html = JSON.parse(`"${m[2]}"`);
+            sections.push({ section_type: m[1], html });
+          } catch {
+            sections.push({ section_type: m[1], html: m[2].replace(/\\"/g, '"').replace(/\\n/g, "\n") });
+          }
+        }
+
+        if (sections.length > 0) {
+          return {
+            template_id: templateMatch?.[1] || "service_1",
+            header_html: headerMatch?.[1] || "",
+            footer_html: footerMatch?.[1] || "",
+            main_sections: sections,
+          };
+        }
+      } catch {}
+    }
+
+    return null;
+  }
+
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -82,7 +150,7 @@ export async function POST(request: Request) {
 
       isFramer = isFramerSite(htmlText);
 
-      // 🎯 Framer Fast Path: Fetch Search Index JSON (no headless Chrome needed for content!)
+      // 🎯 Framer Fast Path: Fetch Search Index JSON
       if (isFramer) {
         console.log(`[Site Migration] 🎨 Framer site detected! Fetching Search Index JSON...`);
         framerSearchData = await fetchFramerSearchIndex(htmlText);
@@ -106,7 +174,7 @@ export async function POST(request: Request) {
           const renderedImages = extractAllImageUrls(renderedDom, urlObj.origin);
           // Merge: rendered DOM images take priority, then pre-render images
           const merged = new Set([...renderedImages, ...allExtractedImageUrls]);
-          allExtractedImageUrls = [...merged].slice(0, 50);
+          allExtractedImageUrls = [...merged].slice(0, 100);
           console.log(`[Site Migration] 🟢 Headless DOM captured (${htmlText.length} bytes), ${allExtractedImageUrls.length} total images`);
         }
       }
@@ -196,7 +264,7 @@ export async function POST(request: Request) {
     } catch {}
 
     console.log(`[Site Migration] 🎨 Total unique media assets: ${detectedCssImages.size}`);
-    const cssImageListStr = Array.from(detectedCssImages).slice(0, 30).join("\n- ");
+    const cssImageListStr = Array.from(detectedCssImages).slice(0, 100).join("\n- ");
     // ----------------------------------------------------------------------
 
     // Extract basic meta tags as fallback
@@ -262,19 +330,10 @@ export async function POST(request: Request) {
       .select("id")
       .single();
 
-    // Fallback if legacy DB check constraint restricts status to ACTIVE/INACTIVE or column mismatch
-    if (insertError) {
-      console.warn("[Site Migration] First DB insert failed, retrying with robust legacy fallback:", insertError.message);
-      const fallbackPayload: any = {
-        profile_id: user.id,
-        brand_id: finalSubdomain,
-        company_name: pageTitle,
-        phone: phoneNumber,
-        address: address,
-        status: 'INACTIVE', // Safe legacy status with is_draft: true
-        template_id: 'service_1',
-        extra_configs: sitePayload.extra_configs,
-      };
+    // Fallback: If DB schema does not have creation_source column yet
+    if (insertError && insertError.message?.includes("creation_source")) {
+      console.warn("[Site Migration] 'creation_source' column not found in client_sites table. Falling back without it.");
+      const { creation_source, ...fallbackPayload } = sitePayload;
       const retryRes = await adminSupabase
         .from("client_sites")
         .insert(fallbackPayload)
@@ -299,60 +358,54 @@ export async function POST(request: Request) {
       const availableTemplateIds = Object.keys(TEMPLATE_REGISTRY).join(", ");
         
         const prompt = `
-          You are an expert Frontend Developer and Designer. Your task is to perfectly clone the layout, design, header, footer, and sections of the provided target website using beautifully crafted, modern Tailwind CSS HTML.
-          Analyze the following cleaned HTML content of the website and generate an EXACT replica of its visual structure.
-          
-          You MUST output a strict JSON object with the following schema:
+          You are an expert Frontend Developer and Designer. Your task is to perfectly clone the layout, design, header, footer, and main sections of the target website using clean, modern Tailwind CSS HTML.
+          Analyze the following website content and generate an exact replica of its visual structure.
+
+          You MUST output a strict, valid JSON object with the following schema:
           {
             "template_id": "Choose the BEST matching template ID from the list below",
-            ${!hasMain ? `"header_html": "<header class='...'></header>",
-            "footer_html": "<footer class='...'></footer>",
+            ${!hasMain ? `"header_html": "<header class='sticky top-0 z-50 bg-neutral-900/90 backdrop-blur text-white px-6 py-4 flex justify-between items-center'><div class='text-xl font-bold'>...</div><nav class='hidden md:flex gap-6 text-sm text-neutral-300'>...</nav><a href='#contact' class='px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold'>...</a></header>",
+            "footer_html": "<footer class='bg-neutral-950 text-neutral-400 py-12 px-6 border-t border-neutral-800'><div class='max-w-7xl mx-auto flex justify-between'><div><div class='text-xl font-bold text-white mb-2'>...</div><p class='text-sm'>...</p></div></div></footer>",
             "main_sections": [
               {
-                "section_type": "custom_html | advanced_content_carousel | advanced_media_carousel | hero_image_slider",
-                "html": "<section class='...'></section>",
-                "media_urls": ["url1", "url2", "..."],
-                "slides": ["<div class='...'>slide 1 HTML</div>", "<div class='...'>slide 2 HTML</div>"],
-                "desktop_aspect_ratio": "21/9 (or 16/9, 4/3, 100vh etc)"
+                "section_type": "custom_html | advanced_content_carousel | hero_image_slider",
+                "html": "<section class='py-20 px-6 ...'>...</section>",
+                "media_urls": ["url1", "url2"],
+                "slides": ["<div class='...'>slide 1</div>"]
               }
             ]` : ""}
           }
 
           Guidelines:
-          - PRO-CLONING RULE 1 (Colors & Solid Background Preservation): Extract the EXACT HEX color codes. NEVER replace solid brand backgrounds with generic white or arbitrary gradients! Apply exact HEX color codes directly using \`bg-[#HEX]\` or \`text-[#HEX]\`.
-          - PRO-CLONING RULE 2 (Data Preservation & NO OMISSION): DO NOT summarize, omit, or hallucinate text. Copy ALL specific statistics, detailed numbers, and exact copywriting VERBATIM. DO NOT omit any images!
-          - PRO-CLONING RULE 3 (Images, Logos & Videos): Preserve all \`<img>\`, \`<video>\`, and \`<source>\` tags. Do not replace videos with solid colors.
-            1. For multi-slide hero carousels, use \`section_type: "hero_image_slider"\` or \`"advanced_media_carousel"\`.
-            2. For full-width single brand video banners, use \`section_type: "interactive_video_banner"\`.
-          - PRO-CLONING RULE 4 (Lazy-Loaded Media): Always prioritize \`data-src\`, \`data-lazy\`, or \`srcset\` attributes over a simple \`src\`. Use the highest resolution media URL available.
-          - PRO-CLONING RULE 5 (Navigation & Language Exact Match): Preserve the EXACT language and casing of header navigation menus.
-          - PRO-CLONING RULE 6 (CSS BACKGROUND IMAGES): The target site may use CSS background images. Incorporate real image URLs from [DETECTED MEDIA ASSETS].
-          - PRO-CLONING RULE 7 (Framer Design Tokens): If brand colors are provided in [FRAMER COLOR TOKENS], use them EXACTLY for background-color, text-color, and border-color.
-          - PRO-CLONING RULE 8 (Framer Scroll Animations): Replicate scroll-reveal animations using Tailwind \`transition\`, \`duration-700\`, \`translate-y-0\` classes or simple CSS fade-in animations.
-          - CRITICAL RULE: All image URLs (src attributes or style="background-image: ...") MUST be ABSOLUTE URLs.
-          - Use modern Tailwind CSS classes for styling.
-          - From the following list of templates, choose the MOST appropriate 'template_id': [${availableTemplateIds}].
-          - Output ONLY valid JSON. No other text.
-          - MINIFY all HTML strings to keep the response compact.
+          1. Extract and recreate 5 to 8 rich, distinct visual sections in \`main_sections\` covering the complete landing page flow (Hero with headline/CTA/image, Core Features/Services Grid, Product Details/Showcase, Social Proof/Testimonials/Stats, Pricing/FAQ Accordion, Consultation CTA Banner).
+          2. Extract exact copywriting, brand colors (\`bg-[#HEX]\`), statistics, and numbers VERBATIM.
+          3. Use real absolute image URLs from [DETECTED MEDIA ASSETS].
+          4. From the following list of templates, choose the MOST appropriate 'template_id': [${availableTemplateIds}].
+          5. Keep Tailwind CSS concise, semantic, and clean. Output ONLY valid JSON.
+          ${depth === "main_submenu" ? `
+          6. [HEADER & 2-TIER SUBMENU DROPDOWN CLONING MANDATE]:
+             - Extract both 1st-level nav items AND all 2nd-level submenus / dropdown lists / mega-menus from the original website.
+             - Recreate interactive hover dropdowns using Tailwind CSS:
+               <div class='relative group'>
+                 <button class='flex items-center gap-1 hover:text-white'>Menu <svg class='w-4 h-4 inline'>...</svg></button>
+                 <div class='absolute top-full left-0 mt-2 min-w-[200px] bg-neutral-900/95 border border-white/10 rounded-xl p-2 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50'>
+                   <a href='#sub1' class='block px-3 py-2 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-white/10'>Submenu 1</a>
+                   <a href='#sub2' class='block px-3 py-2 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-white/10'>Submenu 2</a>
+                 </div>
+               </div>
+          ` : `
+          6. [1-PAGE SMOOTH SCROLLING ANCHOR & UPGRADE MANDATE]:
+             - Build a clean 1-page sticky header where top navigation links (e.g. href='#features', href='#services', href='#pricing', href='#faq', href='#contact') connect directly to body sections.
+             - Ensure each <section> in main_sections has matching id attributes (e.g. id='features', id='services', id='pricing', id='faq', id='contact') for smooth scrolling.
+             - If the target website had broken navigation or incomplete scrolling, automatically UPGRADE it into a world-class, seamless 1-page smooth-scrolling landing page.
+          `}
 
-          ${cssImageListStr ? `
-          [REAL DETECTED MEDIA ASSETS — USE THESE EXACT URLs]:
-          - ${cssImageListStr}
-          ` : ""}
+          ${cssImageListStr ? `[DETECTED MEDIA ASSETS]:\n- ${cssImageListStr}` : ""}
+          ${isFramer && framerSearchData?.colorTokens && Object.keys(framerSearchData.colorTokens).length > 0 ? `[FRAMER COLOR TOKENS]:\n${Object.entries(framerSearchData.colorTokens).slice(0, 20).map(([k, v]) => `${k}: ${v}`).join("\n")}` : ""}
+          ${isFramer && framerSearchData?.texts && framerSearchData.texts.length > 0 ? `[KEY TEXT CONTENT]:\n${framerSearchData.texts.slice(0, 80).join("\n")}` : ""}
 
-          ${isFramer && framerSearchData?.colorTokens && Object.keys(framerSearchData.colorTokens).length > 0 ? `
-          [FRAMER COLOR TOKENS — Brand Design System]:
-          ${Object.entries(framerSearchData.colorTokens).slice(0, 20).map(([k, v]) => `${k}: ${v}`).join("\n")}
-          ` : ""}
-
-          ${isFramer && framerSearchData?.texts && framerSearchData.texts.length > 0 ? `
-          [FRAMER SEARCH INDEX — EXACT PAGE CONTENT (USE THIS FOR ALL TEXT)]:
-          ${framerSearchData.texts.slice(0, 100).join("\n")}
-          ` : ""}
-
-          HTML content to analyze:
-          --- MAIN PAGE ---
-          ${cleanHtml.substring(0, 40000)}
+          HTML Content:
+          ${cleanHtml.substring(0, 50000)}
         `;
 
         let aiText = "";
@@ -373,7 +426,9 @@ export async function POST(request: Request) {
               const genAI = new GoogleGenerativeAI(apiKey);
               const model = genAI.getGenerativeModel({ 
                 model: "gemini-1.5-flash",
-                generationConfig: { responseMimeType: "application/json" }
+                generationConfig: { 
+                  responseMimeType: "application/json"
+                }
               });
               const res = await model.generateContent([{ text: prompt }]);
               aiText = res.response.text().trim();
@@ -384,17 +439,7 @@ export async function POST(request: Request) {
         }
 
         if (aiText) {
-          const jsonMatch = aiText.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            aiText = jsonMatch[0];
-          }
-          
-          let parsedAi;
-          try {
-            parsedAi = JSON.parse(aiText);
-          } catch (parseError) {
-            console.warn("AI JSON Parse Error, continuing with fallback sections:", parseError);
-          }
+          const parsedAi = safeParseAiJson(aiText);
           
           if (parsedAi) {
             // 0. Update template_id based on AI's choice

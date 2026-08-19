@@ -7,7 +7,7 @@ interface MigrationTabProps {
 
 export default function MigrationTab({ requireAuth }: MigrationTabProps) {
   const [migrationUrl, setMigrationUrl] = useState("");
-  const [migrationDepth, setMigrationDepth] = useState<"main" | "full" | "massive">("main");
+  const [migrationDepth, setMigrationDepth] = useState<"main" | "main_submenu" | "full" | "massive">("main");
   const [migrationMode, setMigrationMode] = useState<"clone" | "recreate">("clone");
   const [isAiAutoMode, setIsAiAutoMode] = useState(true);
   const [newBrandName, setNewBrandName] = useState("");
@@ -303,10 +303,11 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                 <div className="relative flex items-center bg-slate-950 border border-slate-800 rounded-2xl px-2 h-[54px]">
                   <select
                     value={migrationDepth}
-                    onChange={(e) => setMigrationDepth(e.target.value as "main" | "full" | "massive")}
+                    onChange={(e) => setMigrationDepth(e.target.value as "main" | "main_submenu" | "full" | "massive")}
                     className="bg-transparent text-sm font-bold text-white pl-2 pr-8 py-2 focus:outline-none appearance-none cursor-pointer"
                   >
-                    <option value="main">1. 메인 페이지 이관(원페이지(1-Page) 스크롤링 웹사이트)</option>
+                    <option value="main">0. 메인 페이지 이관 (원페이지(1-Page) 스크롤링 웹사이트)</option>
+                    <option value="main_submenu">1. 메인 페이지 스크롤링 웹사이트 (헤더메뉴 + 서브 2차 메뉴 복제)</option>
                     <option value="full">2. 전체 페이지 이관 (메인+서브페이지 총 15페이지 미만)</option>
                     <option value="massive">3. 전체 페이지 이관 (메인+서브페이지 총 100개 미만)</option>
                   </select>

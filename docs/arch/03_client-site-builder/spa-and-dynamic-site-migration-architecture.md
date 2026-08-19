@@ -90,8 +90,10 @@ graph TD
 1. **[1단계: 0.001초 인메모리 절대경로 정규화 (`normalizeHtmlImageUrls`)]**:
    - AI가 추출한 HTML 내 모든 상대경로 이미지(`src="/..."`, `url("/...")`)를 타겟 오리진(`origin`)과 즉시 결합하여 유효한 절대경로로 0.001초 만에 치환.
    - 메인 요청 파이프라인에서 수십 개 이미지를 동기식으로 다운로드/변환하던 병목을 분리하여 **사용자가 40초 내에 이관 완료 화면을 즉시 확인**할 수 있도록 보장.
-2. **[2단계: Google Cloud Vertex AI Global 엔드포인트 & `gemini-flash-latest` 영구 자동 최신화 표준화]**:
-   - `GOOGLE_INDEXING_CREDENTIALS` 기반 GCP $300 무료 크레딧을 최우선으로 차감하며, Vertex AI Global 통합 엔드포인트(`aiplatform.googleapis.com`)를 통해 구글 공식 영구 별칭 `gemini-flash-latest` (현재 `gemini-3.7-flash` 자동 포인팅)를 1순위로 다이렉트 호출하여 대규모 HTML 구조를 초고속(15~30초) 복제. 향후 신규 모델 출시 시에도 무관리 자동 판올림 보장.
+2. **[2단계: Google Cloud Vertex AI Global 엔드포인트 & 25만자 대용량 전수 복제]**:
+   - `GOOGLE_INDEXING_CREDENTIALS` 기반 GCP $300 무료 크레딧을 최우선으로 차감하며, Vertex AI Global 통합 엔드포인트를 통해 `gemini-flash-latest` (1M+ 토큰 컨텍스트 지원)를 1순위로 다이렉트 호출.
+   - **250,000자 대용량 HTML 컨텍스트**: 기존 4만 자 절단 병목을 제거하고 25만 자 전체 랜딩페이지 HTML을 온전히 주입하여 최하단 섹션까지 100% 무손실 복제.
+   - **16,384 Output Tokens 지원**: 7~15개 전체 섹션의 완성형 Tailwind CSS HTML 및 JSON 구조를 잘림 없이 초고속(15~30초) 스트리밍 생성.
 3. **[3단계: DNS 오류/404 발생 시 Fallback]**:
    - 해당 섹션 키워드 기반 실제 고화질 에셋과 매칭하여 화면 깨짐 및 엑박을 100% 방어.
 
@@ -166,10 +168,35 @@ flowchart TD
 └── 📁 branding/                               🎨 [공식 브랜드 에셋]
 ```
 
-### 6.1. 용도별 차등 퀄리티(Tiered Quality) 세팅 기준
-1. **대형 히어로 배경 / 풀스크린 비주얼 (1920px)**: `품질 Q92 WebP (150~250KB)` — 4K/레티나에서도 무손실 100% 선명도 보장.
-2. **오시는 길 약도 / 지도 가이드 (1200px)**: `품질 Q90 WebP (80~100KB)` — 텍스트/경로 판독성 100% 유지.
-3. **서비스 / 렌탈 / 비즈니스 카드 (1000px)**: `품질 Q88 WebP (60~90KB)` — 골든 밸런스로 75% 이상 용량 절감.
-4. **목록용 16:9 썸네일 (640x360)**: `품질 Q80 WebP (20~30KB)` — 0.01초 광속 서빙.
+---
+
+## 🧭 7. 홈페이지 이관 4대 옵션 체계 & 서브 2차 드롭다운 메뉴 아키텍처
+
+```mermaid
+graph TD
+    UserOption["사용자 이관 옵션 선택 (migrationDepth)"] --> Mode0["0. 메인 페이지 이관 (원페이지(1-Page) 스크롤링 웹사이트)"]
+    UserOption --> Mode1["1. 메인 페이지 스크롤링 웹사이트 (헤더메뉴 + 서브 2차 메뉴 복제)"]
+    UserOption --> Mode2["2. 전체 페이지 이관 (15페이지 미만)"]
+    UserOption --> Mode3["3. 전체 페이지 이관 (100개 미만)"]
+
+    Mode0 --> Engine0["1-Page Smooth Scrolling Anchor Upgrade Engine"]
+    Mode1 --> Engine1["2-Tier Submenu Dropdown & Mega-Menu Clone Engine"]
+
+    Engine0 --> ScrollResult["상단 헤더(#features, #pricing...) 클릭 시 본문 섹션으로 즉시 부드럽게 스크롤<br/>+ 원본 사이트가 부실해도 1-Page 스크롤링 랜딩페이지로 지능형 자동 완성 업그레이드"]
+    Engine1 --> DropdownResult["1-Page 스크롤링 기반 + Tailwind relative group 호버 2차 드롭다운 및 메가메뉴 완벽 렌더링"]
+```
+
+### 7.1. 옵션별 기술 스펙 및 프롬프트 분기
+
+| 옵션 ID (`depth`) | 옵션 명칭 | 헤더 네비게이션 동작 방식 | AI 프롬프트 지침 |
+|---|---|---|---|
+| `main` (0번) | **0. 메인 페이지 이관 (원페이지(1-Page) 스크롤링 웹사이트)** | 1차 대표 메뉴 + 본문 섹션 앵커(`id='features'`, `id='services'`) 부드러운 스크롤 이동 | 원본 사이트 스크롤 기능이 부실하거나 다중 페이지로 분산되어 있어도 **완성도 높은 1-Page 스크롤링 랜딩페이지로 자동 업그레이드** |
+| `main_submenu` (1번) | **1. 메인 페이지 스크롤링 웹사이트 (헤더메뉴 + 서브 2차 메뉴 복제)** | 1-Page 스크롤링 + **2차 서브메뉴(호버 드롭다운/메가메뉴)** | Tailwind `group relative` + `group-hover:opacity-100 group-hover:visible` 드롭다운 박스로 2차 서브메뉴 링크까지 완벽 복제 |
+| `full` (2번) | **2. 전체 페이지 이관 (15페이지 미만)** | 메인 1-Page + 서브페이지 큐(`migration_queue`) 15개 적재 | 비동기 백그라운드 워커가 15개 서브페이지를 순차 크롤링 및 DB 적재 |
+| `massive` (3번) | **3. 전체 페이지 이관 (100개 미만)** | 메인 1-Page + 서브페이지 큐 100개 적재 | 대규모 서브페이지 비동기 일괄 파싱 및 병합 |
+
+### 7.2. 모바일 드로어 연동 (`CustomHeaderWrapper.tsx`)
+* 모바일 환경에서는 `doc.querySelectorAll('a')`를 통해 1차 메뉴뿐만 아니라 2차 드롭다운 서브메뉴 링크까지 자동으로 수집하여 슬라이드 아웃 드로어로 렌더링하며, 앵커 링크 클릭 시 드로어가 닫히면서 해당 섹션으로 부드럽게 스크롤 이동합니다.
+
 
 

@@ -6,6 +6,7 @@ interface VertexGeminiOptions {
   location?: string;
   systemInstruction?: string;
   temperature?: number;
+  maxOutputTokens?: number;
   useSearch?: boolean;
   responseMimeType?: string;
   imageParts?: Array<{ inlineData: { mimeType: string; data: string } }>;
@@ -69,6 +70,7 @@ export async function generateContentWithVertexAI({
   location = "global",
   systemInstruction,
   temperature = 0.7,
+  maxOutputTokens,
   useSearch,
   responseMimeType,
   imageParts,
@@ -169,6 +171,7 @@ export async function generateContentWithVertexAI({
         contents,
         generationConfig: {
           temperature,
+          ...(maxOutputTokens ? { maxOutputTokens } : {}),
           ...(responseMimeType && !useSearch ? { responseMimeType } : {}),
         },
       };
