@@ -2,7 +2,7 @@ import { google } from "googleapis";
 import { Readable } from "stream";
 
 // Initialize the Google Drive Client
-function getDriveClient() {
+export function getDriveClient() {
   const clientId = process.env.GCP_OAUTH_CLIENT_ID;
   const clientSecret = process.env.GCP_OAUTH_CLIENT_SECRET;
   const refreshToken = process.env.GCP_OAUTH_REFRESH_TOKEN;
@@ -20,7 +20,7 @@ function getDriveClient() {
 /**
  * 지정된 부모 폴더 내에서 하위 폴더의 존재를 확인하고, 없으면 생성하여 그 폴더 ID를 리턴합니다.
  */
-async function getOrCreateFolder(
+export async function getOrCreateFolder(
   drive: any,
   folderName: string,
   parentFolderId: string

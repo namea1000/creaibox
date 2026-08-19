@@ -56,3 +56,6 @@
 ## 4. FAQ
 **Q. 새로운 커스텀 템플릿(AI 웹사이트 빌더)을 만들면 트리거를 또 달아야 하나요?**
 A. 아닙니다! 데이터를 읽어가는 프론트엔드 화면(껍데기)이 1,000개가 추가되더라도, 글이 저장되는 원본 DB 테이블(`writing_creaibox_posts`)은 1개이므로 트리거는 영구적으로 1번만 셋업해두면 모든 템플릿이 자동으로 캐시 무효화 혜택을 받습니다.
+
+**Q. 블로그 발행 시 `record "new" has no field "brand_id"` 에러가 발생하면 어떻게 하나요?**
+A. `writing_creaibox_posts` 테이블에는 `brand_id`가 없고 `user_id`가 존재합니다. `docs/database/sql/webhook-revalidate-blog.sql`의 최신 스크립트로 Supabase SQL Editor에서 재실행해주시면 `profiles` 테이블과 결합하여 100% 정상 작동합니다.

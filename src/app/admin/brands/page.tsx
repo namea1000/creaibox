@@ -8,6 +8,7 @@ import {
   Sparkles, ExternalLink, Bot, ShieldAlert, X
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { useAdminAuth } from "@/app/admin/AdminAuthContext";
 
 const ADMIN_EMAILS = [
   "creaiboxofficial@gmail.com",
@@ -54,9 +55,10 @@ interface ReservedBrand {
 export default function AdminBrandsPage() {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
+  const { isAdmin: contextIsAdmin, isCheckingAuth } = useAdminAuth();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(contextIsAdmin || false);
   const [activeTab, setActiveTab] = useState<"requests" | "blacklist">("requests");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
 
@@ -113,39 +115,18 @@ export default function AdminBrandsPage() {
 
   // 1. Authenticate user & load data via server API
   useEffect(() => {
-    let mounted = true;
-    const checkUser = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!mounted) return;
-        if (!user) {
-          router.replace("/login");
-          return;
-        }
-
-        if (ADMIN_EMAILS.includes(user.email || "")) {
-          setIsAdmin(true);
-          await fetchAdminData();
-        } else {
-          setIsAdmin(false);
-          alert("❌ 관리자 권한이 없습니다.");
-          router.replace("/studio");
-        }
-      } catch (e) {
-        console.error("Auth check failed:", e);
-      } finally {
-        if (mounted) setIsLoading(false);
-      }
-    };
-    void checkUser();
-    return () => {
-      mounted = false;
-    };
-  }, [supabase, router]);
+    if (contextIsAdmin) {
+      setIsAdmin(true);
+      void fetchAdminData();
+    } else if (!isCheckingAuth) {
+      setIsLoading(false);
+    }
+  }, [contextIsAdmin, isCheckingAuth]);
 
   // 2. Fetch subdomain & domain requests and blacklist via Server Admin API (bypassing client RLS)
   const fetchAdminData = async () => {
     try {
+      setIsLoading(true);
       const res = await fetch("/api/admin/brands");
       if (!res.ok) {
         const json = await res.json();
@@ -161,6 +142,8 @@ export default function AdminBrandsPage() {
       }
     } catch (e) {
       console.error("Fetch admin data failed:", e);
+    } finally {
+      setIsLoading(false);
     }
   };
 

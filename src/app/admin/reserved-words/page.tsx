@@ -26,6 +26,7 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { getMatchedEnglishBrandTerms } from "@/lib/constants/knownEntityMap";
 import { useRouter } from "next/navigation";
+import { useAdminAuth } from "@/app/admin/AdminAuthContext";
 
 // 22개 카테고리 정의 및 한글명 매핑
 const CATEGORIES = [
@@ -74,10 +75,11 @@ type UserProfile = {
 export default function ReservedWordsAdminPage() {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
+  const { isAdmin: contextIsAdmin } = useAdminAuth();
 
   // 1. 인증 및 상태 관리
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(contextIsAdmin || false);
+  const [isAuthChecking, setIsAuthChecking] = useState(!contextIsAdmin);
 
   const [words, setWords] = useState<ReservedWord[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(false);
@@ -120,42 +122,11 @@ export default function ReservedWordsAdminPage() {
 
   // 2. 권한 검사
   useEffect(() => {
-    let mounted = true;
-    const checkAdmin = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          router.replace("/login");
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .single();
-
-        if (error || !data || data.role !== "ADMIN") {
-          alert("❌ 관리자 권한이 필요합니다.");
-          router.replace("/studio");
-          return;
-        }
-
-        if (mounted) {
-          setIsAdmin(true);
-          setIsAuthChecking(false);
-        }
-      } catch (err) {
-        console.error(err);
-        router.replace("/studio");
-      }
-    };
-
-    void checkAdmin();
-    return () => {
-      mounted = false;
-    };
-  }, [supabase, router]);
+    if (contextIsAdmin) {
+      setIsAdmin(true);
+      setIsAuthChecking(false);
+    }
+  }, [contextIsAdmin]);
 
   // 3. 예약어 목록 데이터 로드
   const fetchReservedWords = useCallback(async () => {

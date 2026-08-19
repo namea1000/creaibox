@@ -73,18 +73,103 @@ function parseNaverDate(rawDateStr: string | null | undefined, title?: string): 
   return new Date().toISOString();
 }
 
-function parseNaverFullPost(html: string, postUrl: string) {
+import sharp from "sharp";
+import { uploadToGoogleDrive, isGoogleDriveConfigured } from "@/lib/google-drive";
+
+interface ProcessResult {
+  fullUrl: string;
+  thumbUrl: string;
+}
+
+async function downloadAndProcessImage(imageUrl: string, blogId: string, userId?: string): Promise<ProcessResult | null> {
+  try {
+    if (!isGoogleDriveConfigured()) return null;
+    const res = await fetch(imageUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Referer": `https://blog.naver.com/${blogId}`,
+      },
+    });
+
+    if (!res.ok) return null;
+
+    const arrayBuffer = await res.arrayBuffer();
+    const inputBuffer = Buffer.from(arrayBuffer);
+
+    // 1. Full Content Image (Max width 1200px, WebP Q82)
+    let fullCompressedBuffer: Buffer;
+    try {
+      fullCompressedBuffer = await sharp(inputBuffer)
+        .rotate()
+        .resize({ width: 1200, withoutEnlargement: true })
+        .webp({ quality: 82, effort: 4 })
+        .toBuffer();
+    } catch {
+      fullCompressedBuffer = inputBuffer;
+    }
+
+    // 2. Dedicated 16:9 Lightweight Thumbnail (640x360, WebP Q78, ~20KB) for 0.01s instant card loading
+    let thumbCompressedBuffer: Buffer;
+    try {
+      thumbCompressedBuffer = await sharp(inputBuffer)
+        .rotate()
+        .resize(640, 360, { fit: "cover", position: "center" })
+        .webp({ quality: 78, effort: 4 })
+        .toBuffer();
+    } catch {
+      thumbCompressedBuffer = fullCompressedBuffer;
+    }
+
+    const fileSuffix = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const fullFileName = `migrated-${blogId}-full-${fileSuffix}.webp`;
+    const thumbFileName = `migrated-${blogId}-thumb-${fileSuffix}.webp`;
+
+    const targetUserId = userId || "454dfd4e-2b64-4309-afbe-e54f34666eb4";
+    const sourceType = "writing_creaibox_posts";
+
+    const [fullUrl, thumbUrl] = await Promise.all([
+      uploadToGoogleDrive(fullCompressedBuffer, fullFileName, "image/webp", targetUserId, sourceType),
+      uploadToGoogleDrive(thumbCompressedBuffer, thumbFileName, "image/webp", targetUserId, sourceType),
+    ]);
+
+    if (!fullUrl) return null;
+
+    return {
+      fullUrl,
+      thumbUrl: thumbUrl || fullUrl,
+    };
+  } catch (err) {
+    return null;
+  }
+}
+
+async function parseNaverFullPost(html: string, postUrl: string, blogId: string = "sotongcheum", userId?: string) {
   // 1. Extract ALL images from full html (both postfiles and blogfiles, data-lazy-src, src, data-src)
   const imgUrlMatches = [...html.matchAll(/(?:src|data-lazy-src|data-src)=["'](https?:\/\/(?:postfiles|blogfiles)\.pstatic\.net\/[^"']+)["']/gi)];
 
-  const images: string[] = [];
+  const rawImages: string[] = [];
   imgUrlMatches.forEach((m) => {
     let cleanUrl = m[1].replace(/&amp;/g, "&");
     cleanUrl = cleanUrl.replace(/type=w\d+(_blur)?/gi, "type=w966");
-    if (!images.includes(cleanUrl) && !cleanUrl.includes("stat.naver.com") && !cleanUrl.includes("blogimgs") && !cleanUrl.includes("phinf.naver.net")) {
-      images.push(cleanUrl);
+    if (!rawImages.includes(cleanUrl) && !cleanUrl.includes("stat.naver.com") && !cleanUrl.includes("blogimgs") && !cleanUrl.includes("phinf.naver.net")) {
+      rawImages.push(cleanUrl);
     }
   });
+
+  // Download, WebP compress, and upload all images to Google Cloud DB concurrently
+  const processedImages: { raw: string; full: string; thumb: string }[] = [];
+  for (let i = 0; i < rawImages.length; i++) {
+    const rawUrl = rawImages[i];
+    const res = await downloadAndProcessImage(rawUrl, blogId, userId);
+    if (res) {
+      processedImages.push({ raw: rawUrl, full: res.fullUrl, thumb: res.thumbUrl });
+    } else {
+      processedImages.push({ raw: rawUrl, full: rawUrl, thumb: rawUrl });
+    }
+  }
+
+  const images = processedImages.map((p) => p.full);
+  const primaryThumb = processedImages[0]?.thumb || null;
 
   // 2. Extract Text (SE3 text paragraphs or SE2 inner text)
   let paragraphs: string[] = [];
@@ -134,7 +219,7 @@ function parseNaverFullPost(html: string, postUrl: string) {
 
   const topImages = images.slice(0, Math.min(3, images.length));
   topImages.forEach((imgUrl) => {
-    fullHtml += `<p><img src="${imgUrl}" referrerpolicy="no-referrer" alt="네이버 블로그 사진" style="max-width:100%; border-radius:12px; margin: 12px 0;" /></p>\n`;
+    fullHtml += `<p><img src="${imgUrl}" alt="블로그 사진" style="max-width:100%; border-radius:12px; margin: 12px 0;" /></p>\n`;
   });
 
   const remainingImages = images.slice(topImages.length);
@@ -143,18 +228,18 @@ function parseNaverFullPost(html: string, postUrl: string) {
     paragraphs.forEach((p, idx) => {
       fullHtml += `<p style="line-height: 1.8; margin-bottom: 12px; font-size: 16px;">${p}</p>\n`;
       if (idx < remainingImages.length) {
-        fullHtml += `<p><img src="${remainingImages[idx]}" referrerpolicy="no-referrer" alt="네이버 블로그 사진" style="max-width:100%; border-radius:12px; margin: 12px 0;" /></p>\n`;
+        fullHtml += `<p><img src="${remainingImages[idx]}" alt="블로그 사진" style="max-width:100%; border-radius:12px; margin: 12px 0;" /></p>\n`;
       }
     });
 
     if (remainingImages.length > paragraphs.length) {
       remainingImages.slice(paragraphs.length).forEach((imgUrl) => {
-        fullHtml += `<p><img src="${imgUrl}" referrerpolicy="no-referrer" alt="네이버 블로그 사진" style="max-width:100%; border-radius:12px; margin: 12px 0;" /></p>\n`;
+        fullHtml += `<p><img src="${imgUrl}" alt="블로그 사진" style="max-width:100%; border-radius:12px; margin: 12px 0;" /></p>\n`;
       });
     }
   } else if (remainingImages.length > 0) {
     remainingImages.forEach((imgUrl) => {
-      fullHtml += `<p><img src="${imgUrl}" referrerpolicy="no-referrer" alt="네이버 블로그 사진" style="max-width:100%; border-radius:12px; margin: 12px 0;" /></p>\n`;
+      fullHtml += `<p><img src="${imgUrl}" alt="블로그 사진" style="max-width:100%; border-radius:12px; margin: 12px 0;" /></p>\n`;
     });
   }
 
@@ -165,11 +250,11 @@ function parseNaverFullPost(html: string, postUrl: string) {
     imagesCount: images.length,
     paragraphsCount: paragraphs.length,
     contentSnippet: paragraphs.join(" ").slice(0, 200),
-    thumbnailUrl: images[0] || null,
+    thumbnailUrl: primaryThumb || images[0] || null,
   };
 }
 
-async function fetchNaverPostFullContent(blogId: string, logNo: string) {
+async function fetchNaverPostFullContent(blogId: string, logNo: string, userId?: string) {
   const postUrl = `https://blog.naver.com/PostView.naver?blogId=${blogId}&logNo=${logNo}`;
   try {
     const res = await fetch(postUrl, {
@@ -183,7 +268,7 @@ async function fetchNaverPostFullContent(blogId: string, logNo: string) {
 
     if (!res.ok) return null;
     const html = await res.text();
-    return parseNaverFullPost(html, postUrl);
+    return parseNaverFullPost(html, postUrl, blogId, userId);
   } catch (err) {
     return null;
   }
@@ -336,7 +421,7 @@ export async function POST(request: Request) {
           let postThumbnail: string | null = null;
 
           if (cleanPlatform === "naver" && p.logNo) {
-            const sc = await fetchNaverPostFullContent(blogId, p.logNo);
+            const sc = await fetchNaverPostFullContent(blogId, p.logNo, userId);
             if (sc && sc.fullHtml) {
               fullHtml = sc.fullHtml;
               snippet = sc.contentSnippet || snippet;

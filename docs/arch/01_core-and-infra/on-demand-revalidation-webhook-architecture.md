@@ -61,10 +61,12 @@ sequenceDiagram
 ### 3.3. Supabase Webhook DDL (`docs/database/sql/webhook-revalidate-blog.sql`)
 - **역할**: 애플리케이션 소스 코드를 수정하지 않고도, DB 레이어에서 100% 누락 없이 갱신 이벤트를 포착.
 - **pg_net 확장**: 비동기 HTTP POST 요청을 보내어 데이터베이스 트랜잭션 지연(Lock)을 방지.
+- **안전한 brand_id 매핑**: `writing_creaibox_posts` 테이블에는 `user_id`가 존재하므로, 트리거 함수 내부에서 `profiles` 테이블을 조회하여 해당 작성자의 `brand_id`를 안전하게 결합 전송합니다.
+- **Fault-Tolerant 방어**: `begin ... exception` 블록을 내장하여 외부 네트워크 이슈로 HTTP 호출이 실패하더라도 원고 저장은 100% 정상 완료되도록 안전 보호.
 
 ## 4. 백엔드 유지보수 주의사항
 1. **로컬 테스트 시**: 트리거에 하드코딩된 API 주소(`https://creaibox.com/api/revalidate-blog`)를 `https://로컬ngrok주소/api/revalidate-blog` 로 임시 변경해야 로컬에서도 캐시 무효화 테스트가 가능합니다.
-2. **테이블 스키마 변경 시**: `brand_id` 또는 `slug` 컬럼명이 변경되면 Webhook 함수의 JSON Payload 구성 부분도 반드시 함께 수정해야 합니다.
+2. **트리거 함수 갱신 시**: `docs/database/sql/webhook-revalidate-blog.sql`의 최신 DDL을 복사하여 Supabase SQL Editor에서 실행하면 즉시 안전 모드로 업데이트됩니다.
 
 ## 5. 글로벌 적용 범위 (Global Application Scope)
 이 아키텍처(Method B: 무한 캐시 + 0.01초 광속 서빙)는 애플리케이션 내 다음 5가지 영역에 **100% 동일하게 영구 적용**되어 있습니다.

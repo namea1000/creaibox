@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import { useAdminAuth } from "@/app/admin/AdminAuthContext";
 
 type UserRole = "ADMIN" | "MANAGER" | "PAID" | "FREE";
 type UserStatus = "ACTIVE" | "BANNED";
@@ -48,13 +49,14 @@ interface UserProfile {
 export default function UserManagementPage() {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
+  const { adminEmail: contextAdminEmail, isAdmin: contextIsAdmin } = useAdminAuth();
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterTab, setFilterTab] = useState<"ALL" | "PAID" | "VIP" | "PREMIER" | "PRO" | "BUSINESS" | "CREATOR" | "FREE" | "ADMIN">("ALL");
-  const [adminEmail, setAdminEmail] = useState("");
+  const [adminEmail, setAdminEmail] = useState(contextAdminEmail || "");
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
 
@@ -77,8 +79,8 @@ export default function UserManagementPage() {
       try {
         setLoading(true);
 
-        const targetEmail = email || adminEmail;
-        if (!targetEmail) throw new Error("관리자 이메일 확인 실패");
+        const targetEmail = email || adminEmail || contextAdminEmail;
+        if (!targetEmail) return;
 
         const res = await fetch("/api/admin/users", {
           headers: {
@@ -94,56 +96,21 @@ export default function UserManagementPage() {
 
         setUsers(data || []);
       } catch (err: any) {
-        alert(err.message);
+        console.error(err.message);
         setUsers([]);
       } finally {
         setLoading(false);
       }
     },
-    [adminEmail]
+    [adminEmail, contextAdminEmail]
   );
 
   useEffect(() => {
-    let mounted = true;
-
-    const checkAdmin = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!mounted) return;
-
-      if (!user) {
-        alert("⚠️ 로그인이 필요합니다.");
-        router.replace("/");
-        return;
-      }
-
-      const { data: profile, error } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-      if (!mounted) return;
-
-      if (error || !profile || profile.role !== "ADMIN") {
-        alert("⚠️ 슈퍼 어드민 전용 구역입니다.");
-        router.replace("/");
-        return;
-      }
-
-      const email = user.email || "";
-      setAdminEmail(email);
-      await fetchUsers(email);
-    };
-
-    void checkAdmin();
-
-    return () => {
-      mounted = false;
-    };
-  }, [supabase, router, fetchUsers]);
+    if (contextIsAdmin && contextAdminEmail) {
+      setAdminEmail(contextAdminEmail);
+      void fetchUsers(contextAdminEmail);
+    }
+  }, [contextIsAdmin, contextAdminEmail, fetchUsers]);
 
   const filteredUsers = useMemo(() => {
     let result = users;

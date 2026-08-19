@@ -33,6 +33,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { useAdminAuth } from "@/app/admin/AdminAuthContext";
 
 type AdminMenu = {
   title: string;
@@ -180,6 +181,8 @@ function formatDate(dateString?: string | null) {
 }
 
 export default function AdminDashboardPage() {
+  const { adminEmail: contextAdminEmail, isAdmin: contextIsAdmin } = useAdminAuth();
+
   const [stats, setStats] = useState({
     totalUsers: "-",
     paidUsers: "-",
@@ -192,30 +195,27 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!contextIsAdmin || !contextAdminEmail) return;
+
     const fetchAllData = async () => {
       try {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        setLoading(true);
+        // Parallel fetch of Users & Vault Keys (2x Faster)
+        const [usersRes, vaultRes] = await Promise.all([
+          fetch("/api/admin/users", {
+            headers: { "x-admin-email": contextAdminEmail },
+          }),
+          fetch("/api/admin/vault", {
+            headers: { "x-admin-email": contextAdminEmail },
+          }),
+        ]);
 
-        // 1. Fetch Users Data
-        const usersRes = await fetch("/api/admin/users", {
-          headers: {
-            "x-admin-email": user.email || "",
-          },
-        });
         let fetchedUsers: any[] = [];
         if (usersRes.ok) {
           fetchedUsers = await usersRes.json();
           setUsers(fetchedUsers);
         }
 
-        // 2. Fetch Vault Keys Data
-        const vaultRes = await fetch("/api/admin/vault", {
-          headers: {
-            "x-admin-email": user.email || "",
-          },
-        });
         if (vaultRes.ok) {
           const keys = await vaultRes.json();
           setVaultKeys(keys);
@@ -258,8 +258,8 @@ export default function AdminDashboardPage() {
       }
     };
 
-    fetchAllData();
-  }, []);
+    void fetchAllData();
+  }, [contextIsAdmin, contextAdminEmail]);
 
   const statCards = [
     { label: "Total Users", value: stats.totalUsers, tone: "text-blue-400" },

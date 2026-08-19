@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import { useAdminAuth } from "@/app/admin/AdminAuthContext";
 
 const ADMIN_EMAILS = ["creaiboxofficial@gmail.com", "jenam7720@gmail.com", "namjjang7720@gmail.com"];
 
@@ -177,12 +178,14 @@ export default function APIVaultAdminPage() {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
 
+  const { adminEmail: contextAdminEmail, isAdmin: contextIsAdmin } = useAdminAuth();
+
   const [apiKeys, setApiKeys] = useState<ApiVaultItem[]>([]);
-  const [adminEmail, setAdminEmail] = useState("");
+  const [adminEmail, setAdminEmail] = useState(contextAdminEmail || "");
   const [activeType, setActiveType] = useState("ai");
   const [loading, setLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(contextIsAdmin || false);
   const [isAdding, setIsAdding] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -202,8 +205,8 @@ export default function APIVaultAdminPage() {
     async (email?: string) => {
       try {
         setLoading(true);
-        const targetEmail = email || adminEmail;
-        if (!targetEmail) throw new Error("관리자 이메일을 확인하지 못했습니다.");
+        const targetEmail = email || adminEmail || contextAdminEmail;
+        if (!targetEmail) return;
 
         const response = await fetch("/api/admin/vault", {
           method: "GET",
@@ -221,7 +224,7 @@ export default function APIVaultAdminPage() {
         setLoading(false);
       }
     },
-    [adminEmail]
+    [adminEmail, contextAdminEmail]
   );
 
   const [planLimits, setPlanLimits] = useState<Record<string, number | string>>({
@@ -344,35 +347,14 @@ export default function APIVaultAdminPage() {
   }, [supabase]);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const checkAdmin = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!isMounted) return;
-
-      if (!user || !ADMIN_EMAILS.includes(user.email || "")) {
-        alert("⚠️ 슈퍼 어드민 전용 구역입니다.");
-        router.push("/");
-        return;
-      }
-
-      const email = user.email || "";
+    if (contextIsAdmin && contextAdminEmail) {
       setIsAdmin(true);
-      setAdminEmail(email);
-      await fetchKeys(email);
-      await fetchPlanLimits(email);
-      await fetchUsageAnalytics();
-    };
-
-    void checkAdmin();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [supabase, router, fetchKeys, fetchPlanLimits]);
+      setAdminEmail(contextAdminEmail);
+      void fetchKeys(contextAdminEmail);
+      void fetchPlanLimits(contextAdminEmail);
+      void fetchUsageAnalytics();
+    }
+  }, [contextIsAdmin, contextAdminEmail, fetchKeys, fetchPlanLimits, fetchUsageAnalytics]);
 
   const filteredKeys = useMemo(
     () => apiKeys.filter((key) => (key.provider_type || "ai") === activeType),

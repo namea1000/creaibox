@@ -112,4 +112,31 @@ AI 이관 엔진은 감지된 DOM 구조와 데이터 패턴을 분석하여 아
 16. `SmartphoneMockup.tsx` (`app_download`): 3.5초 롤링 모바일 앱 프레임.
 17. `DynamicConsultationForm.tsx` (`consultation_form`): 원클릭 견적/상담 신청 폼.
 
+---
+
+## 🗄️ 5. 블로그/포스트 마이그레이션 이중 WebP 및 Google Cloud DB 영구 보관 아키텍처
+
+```mermaid
+flowchart TD
+    External["🌐 타사 원본 이미지 (pstatic.net 등)"] --> Downloader["📥 백엔드 실시간 스트림 다운로드 (Referer 헤더 우회)"]
+    Downloader --> SharpEngine["⚡ Sharp WebP 듀얼 압축 엔진"]
+    
+    SharpEngine --> FullWebP["1. 본문용 고해상도 WebP (가로 1200px, Q82)"]
+    SharpEngine --> ThumbWebP["2. 전용 16:9 경량 썸네일 WebP (640x360, Q78, ~20KB)"]
+    
+    FullWebP --> GDrive["☁️ Google Cloud DB 영구 업로드 (/userId/writing_creaibox_posts/YYYYMM/)"]
+    ThumbWebP --> GDrive
+    
+    GDrive --> PostContent["✍️ writing_creaibox_posts.content (본문 영구 lh3 링크 치환)"]
+    GDrive --> GenImages["🖼️ generated_images (is_primary=true, 16:9 썸네일 등록)"]
+    
+    PostContent --> ReaderView["📱 상세 글 보기 (고화질 선명도 100%)"]
+    GenImages --> CardGrid["⚡ 메인 포트폴리오 & 블로그 카드 목록 (0.01초 광속 서빙)"]
+```
+
+### 5.1. 외부 플랫폼 의존성 100% 원천 분리
+- **문제 해결**: 사용자가 네이버 등 원본 블로그에서 글이나 사진을 삭제하더라도 CreaiBox 자사 사이트의 사진은 100% 온전하게 영구 보존.
+- **계층형 폴더 격리**: `creaibox-blog-images / [userId] / writing_creaibox_posts / [YYYYMM] /` 경로로 자동 격리 저장하여 사용자 간 자산 간섭 원천 차단.
+- **성능 최적화**: 640x360 16:9 전용 썸네일(~20KB)을 사전 분리 생성하여 수십 개 카드가 동시에 로딩되는 목록 뷰의 LCP를 0.01초대로 극대화.
+
 

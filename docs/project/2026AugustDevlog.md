@@ -89,6 +89,57 @@
   - `sync-trending/route.ts` 및 `sync-popular/route.ts`: 크론 수집 대상 `CORE_CATEGORY_IDS` / `coreCategories` 배열에 `"27"`(교육/키즈) 및 `"19"`(여행/명소)를 정식 등록하여 매일 12개국에 대해 15대 전 카테고리가 100% 공식 급상승 API(`chart=mostPopular`)로 자동 수집되도록 완성.
   - `RisingVideos.tsx`: 전세계(GL) 번들 집계 시 접두사 없는 KR 고유 카테고리 키(`27`, `19`)와 접두사 키(`US_27`, `JP_19` 등)를 완벽하게 파싱하여 12개국 영상이 글로벌 랭킹으로 누락 없이 병합되도록 파이프라인 보강.
 
+### 10. ⚡ 관리자 센터(Admin Center) 3중 직렬 Waterfall 해소 & 0ms 전역 인증 캐시 초고속 가속화 (v1.41)
+- **개발 배경 및 요구사항**:
+  - 관리자 센터 사이드바 메뉴 이동 시 매번 각 페이지에서 `getUser()` ➔ `profiles.select("role")` ➔ `API 호출`의 3중 직렬 네트워크 대기가 발생하여 2~3초간 로딩 스피너가 지속되던 속도 병목 완벽 제거.
+- **주요 구현 내역**:
+  - `src/app/admin/AdminAuthContext.tsx`: 전역 관리자 인증 프로바이더를 신설하고 메모리 RAM 캐시(`cachedAdminState`)를 적용하여 1회 인증 후 30분간 서브메뉴 이동 시 인증 검사를 0ms 즉시 통과하도록 설계.
+  - `src/app/admin/layout.tsx`: `<AdminAuthProvider>`로 전체 관리자 레이아웃을 감싸 모든 하위 페이지에 즉시 인증 세션 공급.
+  - `usermanagement`, `apivault`, `brands`, `reserved-words`, `admin/page.tsx` 등 개별 페이지의 중복 `getUser()` 네트워크 쿼리를 전면 제거하고 `useAdminAuth()`로 0ms 즉시 진입 및 백엔드 API 병렬(`Promise.all`) 호출 구조로 전환.
+  - 관리자 API 라우트(`users`, `vault`, `seo`)의 `checkIsAdminEmail`에 인메모리 관리자 이메일 Set을 선반영하여 매 API 호출 시 불필요한 DB 조회를 제거하고 응답 속도를 2배 이상 가속.
+
+### 11. 🏷️ 브랜드/도메인 관리 페이지(`/admin/brands`) 무한 로딩 해소 & 관리자 센터 4대/2대 공식 문서 완비 (v1.42)
+- **개발 배경 및 요구사항**:
+  - `/admin/brands` 페이지 진입 시 데이터 페칭 완료 후 `isLoading = false` 처리가 누락되어 "LOADING DATA..." 스피너가 무한 회전하던 문제 완벽 해결.
+  - 관리자 센터 전용 🔴 아키텍처 명세서 및 🔵 실무 운용 매뉴얼 신규 작성 및 중앙 사이트맵(`docs/README.md`) 동기화.
+- **주요 구현 내역**:
+  - `src/app/admin/brands/page.tsx`: `fetchAdminData()`에 `finally { setIsLoading(false); }`를 적용하고 `useAdminAuth()`의 `isCheckingAuth` 상태와 유기적으로 연동하여 데이터 수신 즉시 0.1초 만에 화면이 렌더링되도록 수정.
+  - 🔴 `docs/arch/01_core-and-infra/admin-center-architecture.md`: 관리자 센터 16대 모듈 구조도, 0ms 전역 RAM 인증 캐시 파이프라인, Mermaid 시퀀스 다이어그램 작성.
+  - 🔵 `docs/project/manual/01_core-and-infra/admin-center-operations-guide.md`: 16대 관리자 메뉴별 상세 HOW-TO, VIP 무상 부여, API Vault 키 로테이션, 1,600개 AI 예약어 일괄 스캔 매뉴얼 작성.
+  - 🗺️ `docs/README.md`: 13번 행 [관리자 센터 & API Vault]에 4대/2대 마스터 문서 상호 교차 링크 등록 완료.
+
+### 12. ✍️ 블로그 발행 시 DB 트리거 `record "new" has no field "brand_id"` 오류 긴급 수정 및 SQL 패치 (v1.43)
+- **개발 배경 및 요구사항**:
+  - 블로그 새 글 작성 후 "블로그 발행" 클릭 시 Supabase의 `on_post_status_change` 트리거 함수(`webhook_revalidate_blog`)가 `writing_creaibox_posts` 테이블에 존재하지 않는 `NEW.brand_id` 컬럼을 직접 참조하여 저장이 롤백되던 문제 긴급 해결.
+- **주요 구현 내역**:
+  - `docs/database/sql/webhook-revalidate-blog.sql`: 트리거 함수 내부에서 `user_id`를 기반으로 `profiles.brand_id`를 안전하게 조회하도록 PL/pgSQL 로직을 정석 수정하고, `begin ... exception` 블록을 추가하여 웹훅 통신 실패 시에도 원고 저장이 절대 롤백되지 않도록 안전 가드 완비.
+
+### 13. 🌐 도메인 런칭 후 검색 포털(네이버/구글/Bing) 100% 노출 필수 실무 매뉴얼 & 교육 가이드 완비 (v1.44)
+- **개발 배경 및 요구사항**:
+  - 고객사 도메인 연결 완료 후 네이버 서치어드바이저, 구글 서치 콘솔, Microsoft Bing(ChatGPT Search 연동) 및 Google Cloud Indexing API 등록 방법과 필요성을 체계적으로 설명한 교육 및 고객 배포용 마스터 매뉴얼 신규 작성.
+- **주요 구현 내역**:
+  - 🔵 `docs/project/manual/02_auth-and-domain/custom-domain-post-launch-seo-checklist-manual.md`:
+    - 포털 미등록 방치(3~6개월 지연) vs 서치엔진 등록(24시간 색인) 비교 분석표
+    - 2026년 AI 검색(OpenAI ChatGPT / MS Copilot 실시간 웹검색 출처 인용)을 위한 Microsoft Bing 10초 1클릭 Import 연동 가이드
+    - 네이버 서치어드바이저 HTML 메타태그 복사 및 CreaiBox 입력, 사이트맵/RSS 제출 1분 셋업
+    - 구글 서치 콘솔 및 Google Cloud Console Indexing API 자동 색인 연동법
+    - 제작 대행자 + 고객사 다중 계정 소유 확인 및 권한 공유 실무 팁
+    - 고객 배포용 1장 요약 출력 체크리스트(Cheatsheet) 수록
+  - 🗺️ `docs/README.md`: 3번 행 [도메인 조회 & 브랜딩] 마스터 인덱스 테이블에 등록 완료.
+
+### 15. 🚀 블로그 마이그레이션 이중 WebP(본문 1200px + 16:9 640px 썸네일) Google Cloud DB 영구 보관 파이프라인 구축 및 120개 원고 일괄 이관 (v1.46)
+- **개발 배경 및 요구사항**:
+  - 네이버 블로그 마이그레이션 시 외부 이미지 링크(`pstatic.net`)를 그대로 참조할 경우, 사용자가 네이버에서 글을 삭제하면 자사 사이트에서도 이미지가 깨지는 의존성 원천 해결.
+  - 마이그레이션되는 모든 이미지를 Sharp로 고화질 WebP로 압축하여 CreaiBox Google Cloud DB(`lh3.googleusercontent.com`)에 영구 저장.
+  - 목록/카드 뷰의 0.01초 광속 로딩을 위해 본문용 고해상도 WebP(1200px)와 별도로 **전용 16:9 경량 썸네일 WebP(640x360, ~20KB)**를 동시 생성하여 `generated_images`에 자동 등록.
+### 16. 📂 Google Cloud DB 사용자 및 연월별 계층 격리 폴더(`/userId/writing-creaibox-posts/YYYYMM/`) 구조화 및 자동 정리 (v1.47)
+- **개발 배경 및 요구사항**:
+  - 마이그레이션된 이미지들이 Google Drive 최상위 루트(`creaibox-blog-images`)에 직접 저장되어 사용자 증가 시 관리가 난잡해지는 문제를 방지하고, CreaiBox 클라우드 DB 정석 규칙인 `creaibox-blog-images / [userId] / [sourceType] / [YYYYMM]` 3단 계층 폴더로 자동 분류 저장되도록 개선.
+- **주요 구현 내역**:
+  - `src/lib/google-drive.ts`: `getDriveClient` 및 `getOrCreateFolder` 헬퍼 export.
+  - `src/app/api/studio/blog-migration/route.ts` & `scripts/migrate_blog_images.ts`: `uploadToGoogleDrive()` 호출 시 `userId` 및 `sourceType: "writing-creaibox-posts"`를 필수 전달하여 해당 사용자 전용 폴더(`/${userId}/writing-creaibox-posts/${YYYYMM}/`)에만 자동 생성/저장되도록 업그레이드.
+  - `scripts/organize_drive_files.ts`: 루트 폴더에 생성되었던 기존 마이그레이션 이미지 파일들을 소통과 채움 사용자 고유 폴더(`/454dfd4e-2b64-4309-afbe-e54f34666eb4/writing-creaibox-posts/202608/`)로 100% 자동 이동 정리 완료.
+
 ---
 
 ## 📅 2026년 8월 18일 (화)

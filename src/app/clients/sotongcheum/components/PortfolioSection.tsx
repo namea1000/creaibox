@@ -102,8 +102,9 @@ export default function PortfolioSection({
                   alt={item.title}
                   className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                   loading="lazy"
+                  referrerPolicy="no-referrer"
                   onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80";
+                    (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80";
                   }}
                 />
               </div>

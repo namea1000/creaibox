@@ -2,12 +2,21 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { supabaseAdmin } from "@/lib/server/get-free-gemini-key";
 
+const ADMIN_EMAILS = new Set([
+  "creaiboxofficial@gmail.com",
+  "jenam7720@gmail.com",
+  "namjjang7720@gmail.com",
+  "namjang7720@gmail.com",
+]);
+
 async function checkIsAdminEmail(email?: string | null) {
   if (!email) return false;
+  const clean = email.toLowerCase().trim();
+  if (ADMIN_EMAILS.has(clean)) return true;
   const { data, error } = await supabaseAdmin
     .from("admin_whitelist")
     .select("email")
-    .eq("email", email)
+    .eq("email", clean)
     .maybeSingle();
   return !error && !!data;
 }
