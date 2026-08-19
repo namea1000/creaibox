@@ -58,29 +58,60 @@ export async function POST(request: Request) {
     try {
       const res = await fetch(urlObj.href, {
         headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
         },
+        signal: AbortSignal.timeout(10000),
       });
-
-      if (res.ok) {
-        htmlText = await res.text();
-      }
+      if (res.ok) htmlText = await res.text();
     } catch {}
 
-    // 🌟 Check if target is a JavaScript SPA (e.g. Burger King, Starbucks, Vue/React CSR)
-    // Dynamic import: avoids crashing route module on Vercel where puppeteer-core is not bundled
+    // v2.0: Framer / SPA / Scroll-Animation site detection & rendering pipeline
+    // Dynamic import to avoid Vercel bundle crash (puppeteer-core/lib/** excluded)
+    let framerSearchData: { texts: string[]; imageUrls: string[]; colorTokens: Record<string, string> } | null = null;
+    let allExtractedImageUrls: string[] = [];
+    let isFramer = false;
+
     try {
-      const { isSpaWebsite, fetchRenderedHtmlWithHeadless } = await import("@/lib/server/headlessScraper");
-      if (!htmlText || isSpaWebsite(htmlText)) {
-        console.log(`[Site Migration] 🔍 SPA detected on ${urlObj.href}. Invoking Headless Chrome DOM rendering...`);
+      const {
+        isSpaWebsite,
+        isFramerSite,
+        fetchFramerSearchIndex,
+        extractAllImageUrls,
+        fetchRenderedHtmlWithHeadless,
+      } = await import("@/lib/server/headlessScraper");
+
+      isFramer = isFramerSite(htmlText);
+
+      // 🎯 Framer Fast Path: Fetch Search Index JSON (no headless Chrome needed for content!)
+      if (isFramer) {
+        console.log(`[Site Migration] 🎨 Framer site detected! Fetching Search Index JSON...`);
+        framerSearchData = await fetchFramerSearchIndex(htmlText);
+        if (framerSearchData) {
+          console.log(`[Site Migration] ✅ Framer Search Index loaded: ${framerSearchData.texts.length} texts, ${framerSearchData.imageUrls.length} images`);
+        }
+      }
+
+      // Extract all image URLs from initial fetch (before headless)
+      if (htmlText) {
+        allExtractedImageUrls = extractAllImageUrls(htmlText, urlObj.origin);
+      }
+
+      // Headless Chrome for SPA / Framer (to capture full DOM for AI analysis)
+      if (!htmlText || isSpaWebsite(htmlText) || isFramer) {
+        console.log(`[Site Migration] 🔍 ${isFramer ? "Framer" : "SPA"} detected — Invoking Headless Chrome v2.0...`);
         const renderedDom = await fetchRenderedHtmlWithHeadless(urlObj.href);
         if (renderedDom && renderedDom.length > 500) {
           htmlText = renderedDom;
-          console.log(`[Site Migration] 🟢 Headless Chrome successfully rendered SPA DOM (${htmlText.length} bytes).`);
+          // Re-extract images from fully-rendered DOM (captures lazy-loaded images)
+          const renderedImages = extractAllImageUrls(renderedDom, urlObj.origin);
+          // Merge: rendered DOM images take priority, then pre-render images
+          const merged = new Set([...renderedImages, ...allExtractedImageUrls]);
+          allExtractedImageUrls = [...merged].slice(0, 50);
+          console.log(`[Site Migration] 🟢 Headless DOM captured (${htmlText.length} bytes), ${allExtractedImageUrls.length} total images`);
         }
       }
     } catch (scraperErr) {
-      console.warn("[Site Migration] Headless scraper not available, proceeding with fetched HTML:", scraperErr);
+      console.warn("[Site Migration] Scraper pipeline error, proceeding with fetched HTML:", scraperErr);
     }
 
     if (!htmlText) {
@@ -114,31 +145,34 @@ export async function POST(request: Request) {
     }
     // ----------------------------------------------------------------------
 
-    // --- NEW: CSS Background Image Deep Harvester ---
-    // Extract hidden background images from external linked stylesheets (e.g. layout.css, default.css)
+    // --- v2.0: CSS Background Image & External Stylesheet Deep Harvester ---
     const detectedCssImages = new Set<string>();
+
+    // Add all images extracted by extractAllImageUrls (inline styles, data-src, framerusercontent, etc.)
+    allExtractedImageUrls.forEach(u => detectedCssImages.add(u));
+
+    // Also add Framer Search Index images (highest quality, directly from Framer CDN)
+    if (framerSearchData?.imageUrls) {
+      framerSearchData.imageUrls.forEach(u => detectedCssImages.add(u));
+    }
+
+    // Parse external linked stylesheets for additional background images
     try {
       const cssLinkRegex = /<link[^>]+rel=["']stylesheet["'][^>]+href=["']([^"']+)["']/gi;
       let cssMatch;
       const cssUrls: string[] = [];
       while ((cssMatch = cssLinkRegex.exec(htmlText)) !== null) {
         let cssHref = cssMatch[1].trim();
-        if (cssHref.startsWith("//")) {
-          cssHref = `${urlObj.protocol}${cssHref}`;
-        } else if (cssHref.startsWith("/")) {
-          cssHref = `${urlObj.origin}${cssHref}`;
-        } else if (!cssHref.startsWith("http")) {
-          cssHref = `${urlObj.origin}/${cssHref}`;
-        }
-        cssUrls.push(cssHref);
+        if (cssHref.startsWith("//")) cssHref = `${urlObj.protocol}${cssHref}`;
+        else if (cssHref.startsWith("/")) cssHref = `${urlObj.origin}${cssHref}`;
+        else if (!cssHref.startsWith("http")) cssHref = `${urlObj.origin}/${cssHref}`;
+        if (!cssHref.includes("framerusercontent")) cssUrls.push(cssHref); // Skip Framer CDN CSS (too large)
       }
-
-      // Fetch top 5 stylesheets in parallel
       const cssPromises = cssUrls.slice(0, 5).map(async (cUrl) => {
         try {
           const cRes = await fetch(cUrl, {
             headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
-            signal: AbortSignal.timeout(4000)
+            signal: AbortSignal.timeout(4000),
           });
           if (!cRes.ok) return;
           const cssCode = await cRes.text();
@@ -149,34 +183,20 @@ export async function POST(request: Request) {
             let imgPath = bgMatch[1].trim();
             if (imgPath.startsWith("data:") || imgPath.includes("#")) continue;
             if (!imgPath.match(/\.(jpeg|jpg|png|webp|gif|svg)/i)) continue;
-
             let absImgUrl = "";
-            if (imgPath.startsWith("http")) {
-              absImgUrl = imgPath;
-            } else if (imgPath.startsWith("//")) {
-              absImgUrl = `${urlObj.protocol}${imgPath}`;
-            } else if (imgPath.startsWith("/")) {
-              absImgUrl = `${urlObj.origin}${imgPath}`;
-            } else {
-              // Resolve relative to css file path (handles ../images/...)
-              try {
-                absImgUrl = new URL(imgPath, cssBase).href;
-              } catch {
-                absImgUrl = `${urlObj.origin}/${imgPath.replace(/^\.\.\//, "")}`;
-              }
-            }
+            if (imgPath.startsWith("http")) absImgUrl = imgPath;
+            else if (imgPath.startsWith("//")) absImgUrl = `${urlObj.protocol}${imgPath}`;
+            else if (imgPath.startsWith("/")) absImgUrl = `${urlObj.origin}${imgPath}`;
+            else { try { absImgUrl = new URL(imgPath, cssBase).href; } catch { absImgUrl = `${urlObj.origin}/${imgPath.replace(/^\.\.\//, "")}`; } }
             if (absImgUrl) detectedCssImages.add(absImgUrl);
           }
         } catch {}
       });
-
       await Promise.all(cssPromises);
-      console.log(`[Site Migration 🎨] Extracted ${detectedCssImages.size} hidden CSS background images.`);
-    } catch (cssErr) {
-      console.warn("[Site Migration] Failed to parse external CSS:", cssErr);
-    }
+    } catch {}
 
-    const cssImageListStr = Array.from(detectedCssImages).slice(0, 15).join("\n- ");
+    console.log(`[Site Migration] 🎨 Total unique media assets: ${detectedCssImages.size}`);
+    const cssImageListStr = Array.from(detectedCssImages).slice(0, 30).join("\n- ");
     // ----------------------------------------------------------------------
 
     // Extract basic meta tags as fallback
@@ -285,12 +305,12 @@ export async function POST(request: Request) {
           You MUST output a strict JSON object with the following schema:
           {
             "template_id": "Choose the BEST matching template ID from the list below",
-            ${!hasMain ? `"header_html": "<header class='...'>...</header>",
-            "footer_html": "<footer class='...'>...</footer>",
+            ${!hasMain ? `"header_html": "<header class='...'></header>",
+            "footer_html": "<footer class='...'></footer>",
             "main_sections": [
               {
                 "section_type": "custom_html | advanced_content_carousel | advanced_media_carousel | hero_image_slider",
-                "html": "<section class='...'>...</section>",
+                "html": "<section class='...'></section>",
                 "media_urls": ["url1", "url2", "..."],
                 "slides": ["<div class='...'>slide 1 HTML</div>", "<div class='...'>slide 2 HTML</div>"],
                 "desktop_aspect_ratio": "21/9 (or 16/9, 4/3, 100vh etc)"
@@ -299,28 +319,40 @@ export async function POST(request: Request) {
           }
 
           Guidelines:
-          - PRO-CLONING RULE 1 (Colors & Solid Background Preservation): Extract the EXACT HEX color codes (e.g., Spreadshop vibrant brand coral-orange \`bg-[#FF7E4F]\`, Burger King deep brown \`bg-[#502314]\`, Samsung Navy \`bg-[#005aab]\`). NEVER replace solid brand backgrounds with generic white or arbitrary gradients! If the original hero/section has a solid color background, apply the exact HEX color code directly using \`bg-[#HEX]\`.
-          - PRO-CLONING RULE 2 (Data Preservation & NO OMISSION): DO NOT summarize, omit, or hallucinate text. You MUST extract EVERY SINGLE section from the body. Copy ALL specific statistics, detailed numbers, and exact copywriting VERBATIM. CRITICAL: DO NOT omit any images! If a slide or section contains multiple images (e.g., a background image AND a product image below the text), you MUST preserve all <img> tags.
-          - PRO-CLONING RULE 3 (Images, Logos, VIDEOS & INTERACTIVE VIDEO BANNERS): Preserve all \`<img>\`, \`<video>\`, and \`<source>\` tags. Do not replace videos with solid colors.
-            1. For multi-slide image/video hero carousels, use \`section_type: "hero_image_slider"\` or \`"advanced_media_carousel"\`.
+          - PRO-CLONING RULE 1 (Colors & Solid Background Preservation): Extract the EXACT HEX color codes. NEVER replace solid brand backgrounds with generic white or arbitrary gradients! Apply exact HEX color codes directly using \`bg-[#HEX]\` or \`text-[#HEX]\`.
+          - PRO-CLONING RULE 2 (Data Preservation & NO OMISSION): DO NOT summarize, omit, or hallucinate text. Copy ALL specific statistics, detailed numbers, and exact copywriting VERBATIM. DO NOT omit any images!
+          - PRO-CLONING RULE 3 (Images, Logos & Videos): Preserve all \`<img>\`, \`<video>\`, and \`<source>\` tags. Do not replace videos with solid colors.
+            1. For multi-slide hero carousels, use \`section_type: "hero_image_slider"\` or \`"advanced_media_carousel"\`.
             2. For full-width single brand video banners, use \`section_type: "interactive_video_banner"\`.
-          - PRO-CLONING RULE 4 (Lazy-Loaded Media): Always prioritize \`data-src\`, \`data-lazy\`, or \`srcset\` attributes over a simple \`src\` if they exist. Use the highest resolution media URL available in the raw HTML.
+          - PRO-CLONING RULE 4 (Lazy-Loaded Media): Always prioritize \`data-src\`, \`data-lazy\`, or \`srcset\` attributes over a simple \`src\`. Use the highest resolution media URL available.
           - PRO-CLONING RULE 5 (Navigation & Language Exact Match): Preserve the EXACT language and casing of header navigation menus.
-          - PRO-CLONING RULE 6 (CSS BACKGROUND IMAGES FOR HERO/SECTIONS): The target site may use CSS background images. Incorporate real image URLs from [DETECTED CSS ASSETS].
-          - CRITICAL RULE: All image URLs (\`src\` attributes or \`style="background-image: ..."\`) MUST be ABSOLUTE URLs.
+          - PRO-CLONING RULE 6 (CSS BACKGROUND IMAGES): The target site may use CSS background images. Incorporate real image URLs from [DETECTED MEDIA ASSETS].
+          - PRO-CLONING RULE 7 (Framer Design Tokens): If brand colors are provided in [FRAMER COLOR TOKENS], use them EXACTLY for background-color, text-color, and border-color.
+          - PRO-CLONING RULE 8 (Framer Scroll Animations): Replicate scroll-reveal animations using Tailwind \`transition\`, \`duration-700\`, \`translate-y-0\` classes or simple CSS fade-in animations.
+          - CRITICAL RULE: All image URLs (src attributes or style="background-image: ...") MUST be ABSOLUTE URLs.
           - Use modern Tailwind CSS classes for styling.
           - From the following list of templates, choose the MOST appropriate 'template_id': [${availableTemplateIds}].
           - Output ONLY valid JSON. No other text.
           - MINIFY all HTML strings to keep the response compact.
 
           ${cssImageListStr ? `
-          [REAL DETECTED CSS BACKGROUND MEDIA ASSETS]:
+          [REAL DETECTED MEDIA ASSETS — USE THESE EXACT URLs]:
           - ${cssImageListStr}
+          ` : ""}
+
+          ${isFramer && framerSearchData?.colorTokens && Object.keys(framerSearchData.colorTokens).length > 0 ? `
+          [FRAMER COLOR TOKENS — Brand Design System]:
+          ${Object.entries(framerSearchData.colorTokens).slice(0, 20).map(([k, v]) => `${k}: ${v}`).join("\n")}
+          ` : ""}
+
+          ${isFramer && framerSearchData?.texts && framerSearchData.texts.length > 0 ? `
+          [FRAMER SEARCH INDEX — EXACT PAGE CONTENT (USE THIS FOR ALL TEXT)]:
+          ${framerSearchData.texts.slice(0, 100).join("\n")}
           ` : ""}
 
           HTML content to analyze:
           --- MAIN PAGE ---
-          ${cleanHtml.substring(0, 45000)}
+          ${cleanHtml.substring(0, 40000)}
         `;
 
         let aiText = "";

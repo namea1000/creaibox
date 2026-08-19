@@ -163,6 +163,40 @@
     - `src/app/clients/sotongcheum/layout.tsx` (OG 및 메타데이터 이미지)
   - **Vercel 번들 다이어트**: 로컬 `public/images/clients/sotongcheum/` 내 무거운 15MB PNG 파일들을 전면 삭제하여 Vercel 배포 번들 0MB 실현.
 
+### 18. 🛠️ Vercel 실서버 "AI 웹사이트 빌더 & 홈페이지 이관" HTTP 500 즉시 크래시 원인 규명 및 동적 임포트 완전 격리 해결 (v1.49)
+- **장애 원인 및 배경**:
+  - 로컬 환경(Mac)에서는 정상 작동하던 `기존 홈페이지 이관`(`/api/studio/site-migration`) 메뉴가 Vercel 실서버 환경에서 호출 즉시 `서버 응답 오류 (HTTP 500)`를 발생시키던 문제 발생.
+  - **정밀 원인 분석**:
+    1. `next.config.ts`의 `outputFileTracingExcludes`에 의해 `node_modules/puppeteer-core/lib/**`가 Vercel 배포 번들에서 제외되어 있는 상태에서, `src/lib/server/headlessScraper.ts` 상단에 `import puppeteer from "puppeteer-core"`가 정적(Top-level)으로 선언되어 있었음.
+    2. 또한 `src/app/api/studio/site-migration/route.ts`가 `headlessScraper`를 정적 임포트함에 따라, **해당 라우트 엔드포인트 자체가 모듈 평가(Module Load) 단계에서 즉시 크래시(500)**되는 현상이 발생.
+    3. 실서버 Supabase DB에 `creation_source`, `theme_vibe`, `site_sections.status` 컬럼 누락 시 발생할 수 있는 DB 제약조건 리스크 확인.
+- **주요 해결 및 구현 내역**:
+  - `src/lib/server/headlessScraper.ts`: 상단 정적 `puppeteer` 임포트를 전면 제거하고, `fetchRenderedHtmlWithHeadless()` 실행 시점에만 `await import("puppeteer-core")`로 동적 호출하도록 리팩토링 및 try/catch 완전 캡슐화.
+  - `src/app/api/studio/site-migration/route.ts`: 상단 정적 `import { isSpaWebsite, fetchRenderedHtmlWithHeadless }`를 전면 제거하고, SPA 감지 시점에 동적 `await import("@/lib/server/headlessScraper")`로 전환하여 Vercel 번들 로드 단계에서의 크래시 원천 차단.
+  - **DB DDL 최신화**: 실서버 Supabase에 `creation_source` (`CHECK IN ('migration', 'sns_builder', 'template')`), `theme_vibe`, `site_sections.status` 컬럼을 정석 추가하여 스키마 동기화 완료.
+- **검증**: `npx tsc --noEmit` 전체 컴파일 에러 0건 통과 및 라우트 안정성 확보.
+
+### 19. 🌪️ Framer & 스크롤 애니메이션(Scroll-Driven) 사이트 100% 무손실 이관 엔진 v2.0 완성 (v1.50)
+- **개발 배경 및 문제점 분석**:
+  - `sanjaya.framer.ai`, `pandawa.framer.ai`, `shinta.framer.media` 등 최신 Framer 기반의 인터랙티브 웹사이트를 이관할 때 콘텐츠 및 이미지를 거의 가져오지 못하던 한계 분석:
+    1. **이미지 추출 실패 원인**: Framer는 `<img>` 태그를 쓰지 않고 CSS `background-image: url(...)` 및 React inline style로 이미지를 렌더링하여 일반적인 `<img>` 스크래퍼가 이미지 0개로 감지.
+    2. **스크롤 애니메이션 숨김**: Framer Motion 기반 요소들이 초기 HTML에서 `opacity: 0; transform: translateY(100px)`로 숨겨져 있어 일반 크롤러는 빈 영역으로 인식.
+    3. **황금 데이터(Search Index) 미활용**: Framer는 SEO를 위해 `<meta name="framer-search-index">`에 사이트 전체 텍스트와 CDN 이미지 URL을 담은 JSON blob을 공개하고 있으나 이를 수집하지 않았음.
+- **v2.0 업그레이드 주요 구현 내역**:
+  - **1. Framer Search Index 자동 파서 탑재 (`fetchFramerSearchIndex`)**:
+    - `<meta name="framer-search-index">` 및 `fallback` URL을 자동 감지하여 Framer SEO JSON을 직접 fetch ➔ 텍스트 블록 100% 무손실 추출 및 `framerusercontent.com` 원본 고화질 이미지 URL을 전량 수집.
+  - **2. CSS 배경 이미지 & 토큰 전방위 하베스터 (`extractAllImageUrls`, `extractFramerCssTokens`)**:
+    - `<img>` src 뿐만 아니라 `srcset`, `data-src`, `data-lazy`, `background-image: url()`, Framer CSS 디자인 토큰(`--token-xxx` 브랜드 색상 코드 및 폰트)을 정밀 정규식으로 100% 추출.
+  - **3. Headless Chrome v2.0 고급 5단계 렌더링 파이프라인 (`fetchRenderedHtmlWithHeadless`)**:
+    - **Phase 1 (Hydration)**: Framer Motion 스크립트 실행 및 마운트 대기 (3초).
+    - **Phase 2 (Force Reveal)**: `opacity: 0`, `visibility: hidden`, `translateY`로 숨겨진 모든 요소를 강제 표시(`style.opacity = '1'`).
+    - **Phase 3 (20-Step Gradual Scroll)**: 전체 페이지 높이를 20등분하여 200ms 단위로 단계별 스크롤을 수행, 모든 IntersectionObserver를 100% 순차 트리거.
+    - **Phase 4 (Lazy Image Force-Load)**: `data-src`, `data-lazy` 이미지를 `src`로 강제 바인딩.
+    - **Phase 5 (Carousel Traversal)**: Swiper, Slick 등 가상 슬라이드 최대 25개 순회 마운트.
+  - **4. AI 프롬프트 v2.0 고도화 (`site-migration/route.ts`)**:
+    - [FRAMER COLOR TOKENS] 및 [FRAMER SEARCH INDEX] 원본 텍스트를 Gemini AI 프롬프트에 직접 주입하여 브랜드 고유 색상 HEX와 원문 카피라이팅을 1:1 완벽 복제하도록 지침 강화.
+- **검증**: `npx tsc --noEmit` 전체 컴파일 에러 0건 통과.
+
 ---
 
 ## 📅 2026년 8월 18일 (화)

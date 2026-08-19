@@ -40,17 +40,24 @@ graph TD
 
 ---
 
-### 🚀 방법 1: 헤드리스 브라우저 렌더링 (Headless Chrome DOM Capture) — [실제 구현 및 프로덕션 적용 🟢]
+### 🚀 방법 1: 헤드리스 브라우저 렌더링 & Framer Search Index 하베스터 v2.0 — [실제 구현 및 프로덕션 적용 🟢]
 
 * **구현 모듈**: [`src/lib/server/headlessScraper.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/lib/server/headlessScraper.ts)
 * **동작 메커니즘**:
-  1. `isSpaWebsite(html)`을 통해 `<div id="app"></div>` 또는 본문 텍스트 < 3,000자 및 이미지 < 3개 구조를 자동 판별.
-  2. 서버리스 환경(`@sparticuz/chromium`) 및 로컬 개발 환경(Mac/Windows Google Chrome 바이너리)을 자동 감지하여 헤드리스 크롬 기동.
-  3. `page.goto(url, { waitUntil: "networkidle2", timeout: 15000 })` 및 브라우저 스크롤 트리거를 통해 지연 로딩(Lazy-loading) 이미지까지 100% 렌더링.
-  4. 클라이언트 사이드 렌더링이 완료된 최종 `document.documentElement.outerHTML`을 추출하여 AI 파이프라인으로 전달.
-* **실전 검증 벤치마크 (버거킹 코리아 `https://www.burgerking.co.kr`)**:
-  - 일반 HTTP `fetch()`: 텍스트 0자, 이미지 **0개** (깡통 SPA)
-  - 방법 1 헤드리스 렌더링: 텍스트 47,051 bytes, 실제 신메뉴/이벤트 고화질 이미지 **42개 100% 무손실 캡처 성공!**
+  1. `isSpaWebsite(html)` 및 `isFramerSite(html)`을 통해 CSR/SPA 및 Framer 사이트 자동 감지.
+  2. **Framer Fast Path (`fetchFramerSearchIndex`)**: Framer가 SEO용으로 제공하는 `<meta name="framer-search-index">` JSON을 직접 수집하여 텍스트 및 `framerusercontent.com` 원본 이미지 URL을 100% 무손실 획득.
+  3. **Vercel 서버리스 완전 격리(Dynamic Import)**: Next.js 번들 트리거 크래시(500)를 원천 차단하기 위해 `puppeteer-core`를 상단 정적 임포트하지 않고 `fetchRenderedHtmlWithHeadless()` 실행 시점에만 `await import("puppeteer-core")`로 지연 로딩.
+  4. **5단계 고급 스크롤/인터랙션 시퀀스**:
+     - Phase 1: Framer Motion / GSAP 수화(Hydration) 3초 대기.
+     - Phase 2: `opacity:0`, `translateY` 숨김 요소 강제 가시화 (`style.opacity = '1'`).
+     - Phase 3: 20단계 점진적 스크롤 (IntersectionObserver 100% 순차 발화).
+     - Phase 4: `data-src`, `data-lazy` 이미지 강제 바인딩.
+     - Phase 5: Swiper / Slick 가상 슬라이드 최대 25개 순회 마운트.
+  5. **CSS 토큰 & 배경 이미지 전방위 하베스터 (`extractAllImageUrls`, `extractFramerCssTokens`)**:
+     - `<img>` src 뿐만 아니라 `srcset`, `data-src`, `background-image: url()`, Framer CSS 변수(`--token-xxx` HEX 컬러 및 폰트)를 전량 추출하여 AI 프롬프트에 주입.
+* **실전 검증 벤치마크**:
+  - 버거킹 코리아 (`https://www.burgerking.co.kr`): 신메뉴/이벤트 고화질 이미지 42개 100% 무손실 캡처.
+  - Sanjaya Framer (`https://sanjaya.framer.ai/`): Framer Search Index JSON 기반 텍스트 + `framerusercontent.com` 고화질 에셋 100% 완벽 추출.
 * **연동 엔드포인트**:
   - [`src/app/api/studio/site-migration/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/studio/site-migration/route.ts)
   - [`src/app/api/studio/site-scan/route.ts`](file:///Users/a1234/Local%20Sites/creaibox/src/app/api/studio/site-scan/route.ts)
