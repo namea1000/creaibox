@@ -1,4 +1,3 @@
-import puppeteer from "puppeteer-core";
 import fs from "fs";
 
 /**
@@ -77,6 +76,16 @@ export async function fetchRenderedHtmlWithHeadless(url: string): Promise<string
     }
 
     console.log(`[HeadlessScraper 🚀] Launching Headless Chrome for SPA rendering: ${url}`);
+
+    // 🔑 Dynamic import to avoid crashing the route module at load time on Vercel
+    // (puppeteer-core/lib/** is excluded from Vercel deployment bundle)
+    let puppeteer: any;
+    try {
+      puppeteer = (await import("puppeteer-core")).default;
+    } catch (importErr) {
+      console.warn("[HeadlessScraper] puppeteer-core not available in this environment:", importErr);
+      return null;
+    }
 
     browser = await puppeteer.launch({
       executablePath,

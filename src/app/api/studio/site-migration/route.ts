@@ -3,8 +3,6 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { TEMPLATE_REGISTRY } from "@/lib/templates/registry";
 
-import { isSpaWebsite, fetchRenderedHtmlWithHeadless } from "@/lib/server/headlessScraper";
-
 export const maxDuration = 300;
 
 /**
@@ -70,13 +68,19 @@ export async function POST(request: Request) {
     } catch {}
 
     // 🌟 Check if target is a JavaScript SPA (e.g. Burger King, Starbucks, Vue/React CSR)
-    if (!htmlText || isSpaWebsite(htmlText)) {
-      console.log(`[Site Migration] 🔍 SPA detected on ${urlObj.href}. Invoking Headless Chrome DOM rendering...`);
-      const renderedDom = await fetchRenderedHtmlWithHeadless(urlObj.href);
-      if (renderedDom && renderedDom.length > 500) {
-        htmlText = renderedDom;
-        console.log(`[Site Migration] 🟢 Headless Chrome successfully rendered SPA DOM (${htmlText.length} bytes).`);
+    // Dynamic import: avoids crashing route module on Vercel where puppeteer-core is not bundled
+    try {
+      const { isSpaWebsite, fetchRenderedHtmlWithHeadless } = await import("@/lib/server/headlessScraper");
+      if (!htmlText || isSpaWebsite(htmlText)) {
+        console.log(`[Site Migration] 🔍 SPA detected on ${urlObj.href}. Invoking Headless Chrome DOM rendering...`);
+        const renderedDom = await fetchRenderedHtmlWithHeadless(urlObj.href);
+        if (renderedDom && renderedDom.length > 500) {
+          htmlText = renderedDom;
+          console.log(`[Site Migration] 🟢 Headless Chrome successfully rendered SPA DOM (${htmlText.length} bytes).`);
+        }
       }
+    } catch (scraperErr) {
+      console.warn("[Site Migration] Headless scraper not available, proceeding with fetched HTML:", scraperErr);
     }
 
     if (!htmlText) {
