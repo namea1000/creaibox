@@ -26,7 +26,7 @@ function SiteBuilderLayoutContent({ children }: { children: React.ReactNode }) {
   // 1. Loading State (No Full-Screen Spinner, renders interactive shell skeleton)
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto p-6 md:p-8 space-y-8 animate-pulse">
+      <div className="w-full max-w-[1720px] mx-auto p-4 sm:p-6 md:p-8 space-y-8 animate-pulse">
         {/* Master Header Skeleton */}
         <div className="bg-white dark:bg-[#0b0f19] border border-slate-200 dark:border-slate-850 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
           <div className="space-y-3 flex-grow">
@@ -80,7 +80,7 @@ function SiteBuilderLayoutContent({ children }: { children: React.ReactNode }) {
 
     if (!isAllowed) {
       return (
-        <div className="max-w-7xl mx-auto p-6 md:p-8">
+        <div className="w-full max-w-[1720px] mx-auto p-6 md:p-8">
           <UpgradeModal />
         </div>
       );
@@ -88,7 +88,10 @@ function SiteBuilderLayoutContent({ children }: { children: React.ReactNode }) {
   }
 
   // Build live link URL
-  const liveUrl = selectedSite ? `http://${selectedSite.brand_id}.localhost:3000` : "";
+  const isLocal = typeof window !== "undefined" && (window.location.hostname.includes("localhost") || window.location.hostname.includes("127.0.0.1"));
+  const liveUrl = selectedSite 
+    ? (isLocal ? `http://${selectedSite.brand_id}.localhost:3000` : `https://${selectedSite.brand_id}.creaibox.com`)
+    : "";
 
   // Switcher Handler
   const handleSiteSwitch = (siteId: string) => {
@@ -123,7 +126,7 @@ function SiteBuilderLayoutContent({ children }: { children: React.ReactNode }) {
   // 3. Render clean full-screen wizard/opening card when user has no website yet or is not logged in
   if (!hasSites) {
     return (
-      <div className="max-w-7xl mx-auto p-6 md:p-8 space-y-8 animate-fade-in">
+      <div className="w-full max-w-[1720px] mx-auto p-4 sm:p-6 md:p-8 space-y-8 animate-fade-in">
         {/* WordPress-style Tabs GNB Sub-Navigation */}
         <div className="border-b border-slate-200 dark:border-slate-800 pb-px flex gap-2 overflow-x-auto select-none">
           {tabs.map((tab) => {
@@ -158,21 +161,20 @@ function SiteBuilderLayoutContent({ children }: { children: React.ReactNode }) {
                 <X size={18} />
               </button>
 
-              <div className="mx-auto w-14 h-14 bg-blue-500/10 dark:bg-blue-500/20 rounded-2xl flex items-center justify-center text-blue-500">
-                <Globe size={28} />
+              <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto border border-blue-100 dark:border-blue-800/50 shadow-inner">
+                <Globe size={32} />
               </div>
 
-              <div className="space-y-2">
-                <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">
+              <div>
+                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                   로그인이 필요한 서비스입니다
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed">
-                  AI 홈페이지 개설 및 맞춤 테마 적용을 위해 로그인이 필요합니다. <br />
-                  로그인 후 1초 만에 나만의 비즈니스 웹사이트를 만들어 보세요!
+                </h3>
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                  홈페이지 신규 제작, 디자인 테마 변경 및 설정 저장을 진행하시려면 CreaiBox 계정으로 로그인해 주세요.
                 </p>
               </div>
 
-              <div className="pt-2 flex flex-col gap-2.5">
+              <div className="space-y-3 pt-2">
                 <Link
                   href={`/login?redirect=${encodeURIComponent(pathname)}`}
                   className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-extrabold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-lg shadow-blue-500/25 transition-all active:scale-95 cursor-pointer"
@@ -194,7 +196,7 @@ function SiteBuilderLayoutContent({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6 md:p-8 space-y-8 animate-fade-in">
+    <div className="w-full max-w-[1720px] mx-auto p-4 sm:p-6 md:p-8 space-y-8 animate-fade-in">
       {/* Site Master GNB Header */}
       <div className="bg-white dark:bg-[#0b0f19] border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
         <div>

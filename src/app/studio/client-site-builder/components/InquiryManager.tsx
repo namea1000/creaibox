@@ -98,17 +98,17 @@ export default function InquiryManager({ siteId }: InquiryManagerProps) {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in">
-      {/* Inquiry List Table */}
-      <div className="lg:col-span-8 bg-white dark:bg-[#0b0f19] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fade-in">
+      {/* Inquiry List Table (50% Width) */}
+      <div className="lg:col-span-6 bg-white dark:bg-[#0b0f19] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
             <MessageSquare className="text-emerald-500" size={20} />
             <span>고객 문의 및 상담 관리</span>
           </h2>
           <button
             onClick={fetchInquiries}
-            className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             title="새로고침"
           >
             <RefreshCw size={16} />
@@ -131,18 +131,22 @@ export default function InquiryManager({ siteId }: InquiryManagerProps) {
             <table className="w-full text-left text-sm border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 dark:border-slate-800/80 text-xs font-bold text-slate-400 uppercase">
-                  <th className="py-3 px-4">작성일</th>
-                  <th className="py-3 px-4">신청자</th>
-                  <th className="py-3 px-4">연락처</th>
-                  <th className="py-3 px-4">상태</th>
-                  <th className="py-3 px-4 text-right">상세</th>
+                  <th className="py-3 px-3 whitespace-nowrap">작성일</th>
+                  <th className="py-3 px-3 whitespace-nowrap">신청자</th>
+                  <th className="py-3 px-3 whitespace-nowrap">연락처</th>
+                  <th className="py-3 px-3 whitespace-nowrap">이메일</th>
+                  <th className="py-3 px-3 whitespace-nowrap">문의 유형</th>
+                  <th className="py-3 px-3 whitespace-nowrap">예산 범위</th>
+                  <th className="py-3 px-3 whitespace-nowrap">행사 희망일</th>
+                  <th className="py-3 px-3 whitespace-nowrap">상태</th>
+                  <th className="py-3 px-2 text-right whitespace-nowrap">상세</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300 font-bold">
                 {inquiries.map((inq) => {
                   const itemStatus = inq.extra_data?.status || "접수";
                   const dateStr = new Date(inq.created_at).toLocaleDateString("ko-KR", {
-                    month: "short",
+                    month: "numeric",
                     day: "numeric",
                     hour: "2-digit",
                     minute: "2-digit"
@@ -156,19 +160,29 @@ export default function InquiryManager({ siteId }: InquiryManagerProps) {
                         selectedInquiry?.id === inq.id ? "bg-slate-50 dark:bg-slate-800/50" : ""
                       }`}
                     >
-                      <td className="py-3.5 px-4 text-xs font-semibold text-slate-400 flex items-center gap-1.5 mt-1 border-0">
-                        <Calendar size={12} />
-                        <span>{dateStr}</span>
+                      <td className="py-3.5 px-3 text-xs font-semibold text-slate-400 border-0 whitespace-nowrap">
+                        <span className="flex items-center gap-1">
+                          <Calendar size={11} />
+                          {dateStr}
+                        </span>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-900 dark:text-white border-0">{inq.author_name}</td>
-                      <td className="py-3.5 px-4 text-slate-500 border-0">{inq.extra_data?.phone || "연락처 없음"}</td>
-                      <td className="py-3.5 px-4 border-0">
+                      <td className="py-3.5 px-3 text-slate-900 dark:text-white border-0 font-extrabold whitespace-nowrap">{inq.author_name}</td>
+                      <td className="py-3.5 px-3 text-slate-500 dark:text-slate-400 border-0 text-xs whitespace-nowrap">{inq.extra_data?.phone || "-"}</td>
+                      <td className="py-3.5 px-3 text-slate-500 dark:text-slate-400 border-0 text-xs whitespace-nowrap">{inq.extra_data?.email || "-"}</td>
+                      <td className="py-3.5 px-3 text-slate-800 dark:text-slate-200 border-0 text-xs whitespace-nowrap">
+                        <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-[11px] font-bold">
+                          {inq.extra_data?.type || "일반문의"}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3 text-slate-700 dark:text-slate-300 border-0 text-xs whitespace-nowrap">{inq.extra_data?.budget || "-"}</td>
+                      <td className="py-3.5 px-3 text-slate-600 dark:text-slate-400 border-0 text-xs whitespace-nowrap">{inq.extra_data?.event_date || inq.extra_data?.date || "-"}</td>
+                      <td className="py-3.5 px-3 border-0 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${getStatusBadgeClass(itemStatus)}`}>
                           {itemStatus}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-right border-0">
-                        <ChevronRight className="inline-block text-slate-300 dark:text-slate-700" size={16} />
+                      <td className="py-3.5 px-2 text-right border-0 whitespace-nowrap">
+                        <ChevronRight className="inline-block text-slate-300 dark:text-slate-700" size={15} />
                       </td>
                     </tr>
                   );
@@ -179,60 +193,85 @@ export default function InquiryManager({ siteId }: InquiryManagerProps) {
         )}
       </div>
 
-      {/* Inquiry Detail Panel */}
-      <div className="lg:col-span-4 bg-white dark:bg-[#0b0f19] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm flex flex-col">
+      {/* Inquiry Detail Panel (50% Width) */}
+      <div className="lg:col-span-6 bg-white dark:bg-[#0b0f19] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm flex flex-col">
         {selectedInquiry ? (
           <div className="flex-grow flex flex-col justify-between animate-fade-in">
             <div>
-              <div className="border-b border-slate-100 dark:border-slate-800 pb-4 mb-6">
-                <span className="text-[10px] font-black tracking-wider uppercase text-slate-400 block">상담 문의 상세</span>
-                <h3 className="text-lg font-extrabold text-slate-900 dark:text-white mt-1">
-                  {selectedInquiry.author_name} 님
-                </h3>
+              <div className="border-b border-slate-100 dark:border-slate-800 pb-4 mb-4 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-black tracking-wider uppercase text-slate-400 block">상담 문의 상세</span>
+                  <h3 className="text-lg font-extrabold text-slate-900 dark:text-white mt-0.5">
+                    {selectedInquiry.author_name} 님
+                  </h3>
+                </div>
+                <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold ${getStatusBadgeClass(selectedInquiry.extra_data?.status || "접수")}`}>
+                  {selectedInquiry.extra_data?.status || "접수"}
+                </span>
               </div>
 
-              {/* Lead details list */}
-              <div className="space-y-4 text-xs font-bold text-slate-600 dark:text-slate-300 mb-6">
+              {/* 1-Line Key-Value Details List */}
+              <div className="divide-y divide-slate-100 dark:divide-slate-800/50 text-xs mb-5">
                 {Object.entries(selectedInquiry.extra_data || {}).map(([key, val]) => {
-                  if (["status", "manager_memo"].includes(key)) return null;
+                  if (["status", "manager_memo", "agree", "startDate", "endDate"].includes(key)) return null;
+                  if (!val) return null;
 
                   const labels: Record<string, string> = {
-                    name: "성함",
+                    name: "성함 / 단체명",
                     phone: "연락처",
                     email: "이메일",
+                    type: "문의 유형",
+                    event_date: "행사 희망일",
+                    budget: "예산 범위",
+                    message: "세부 의뢰 내용",
                     grade: "학년/대상",
                     subject: "희망 과목",
                     guests: "인원",
-                    date: "예약일시",
-                    message: "문의사항"
+                    date: "예약일시"
                   };
 
+                  const isMessage = key === "message";
+
                   return (
-                    <div key={key} className="border-b border-slate-50 dark:border-slate-800/40 pb-2">
-                      <span className="block text-[10px] text-slate-400 font-semibold mb-0.5">{labels[key] || key}</span>
-                      <span className="text-slate-900 dark:text-white whitespace-pre-wrap">{String(val)}</span>
+                    <div key={key} className={`py-2.5 flex ${isMessage ? "flex-col gap-1.5" : "items-center justify-between gap-4"}`}>
+                      <span className="text-slate-400 font-bold shrink-0 min-w-[90px] text-xs">
+                        {labels[key] || key}
+                      </span>
+                      <span className={`font-extrabold text-slate-900 dark:text-white ${isMessage ? "bg-slate-50 dark:bg-slate-900 p-3 rounded-xl whitespace-pre-wrap font-medium leading-relaxed border border-slate-100 dark:border-slate-800" : "text-right break-all"}`}>
+                        {String(val)}
+                      </span>
                     </div>
                   );
                 })}
               </div>
 
               {/* Status Update */}
-              <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
-                <label className="block text-xs font-bold text-slate-400 mb-2">처리 상태 변경</label>
-                <div className="flex gap-2 mb-4">
-                  {["접수", "상담중", "완료"].map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => setStatus(s)}
-                      className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-all ${
-                        status === s
-                          ? "bg-[var(--primary)] text-white border-transparent"
-                          : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
-                      }`}
-                    >
-                      {s}
-                    </button>
-                  ))}
+              <div className="border-t border-slate-100 dark:border-slate-800 pt-5">
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-200 mb-2.5">
+                  처리 상태 변경
+                </label>
+                <div className="grid grid-cols-3 gap-2 mb-5">
+                  {[
+                    { key: "접수", label: "접수", activeClass: "bg-blue-600 text-white border-blue-500 font-black shadow-md shadow-blue-600/30 ring-2 ring-blue-500/30" },
+                    { key: "상담중", label: "상담중", activeClass: "bg-amber-500 text-slate-950 border-amber-400 font-black shadow-md shadow-amber-500/30 ring-2 ring-amber-400/40" },
+                    { key: "완료", label: "완료", activeClass: "bg-emerald-600 text-white border-emerald-500 font-black shadow-md shadow-emerald-600/30 ring-2 ring-emerald-500/30" },
+                  ].map(({ key: s, label, activeClass }) => {
+                    const isSelected = status === s;
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setStatus(s)}
+                        className={`py-2.5 text-xs rounded-xl border transition-all cursor-pointer text-center ${
+                          isSelected
+                            ? activeClass
+                            : "bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* Manager Comments */}

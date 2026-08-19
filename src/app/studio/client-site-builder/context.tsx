@@ -58,22 +58,74 @@ export function SiteBuilderProvider({ children }: { children: React.ReactNode })
 
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("id, membership_level, role")
+        .select("id, membership_level, role, brand_id, extra_configs")
         .eq("id", user.id)
         .maybeSingle();
 
       setProfile(profileData);
 
       if (profileData) {
-        const { data: sitesData, error: sitesError } = await supabase
+        let { data: sitesData, error: sitesError } = await supabase
           .from("client_sites")
           .select("*")
           .eq("profile_id", profileData.id)
           .order("created_at", { ascending: false });
 
         if (sitesError) throw sitesError;
+        sitesData = sitesData ? [...sitesData] : [];
 
-        setSites(sitesData || []);
+        // Auto-bridge & sync: If profile has a brand_id (e.g. 'sotongcheum') that is not yet in client_sites
+        if (profileData.brand_id) {
+          const cleanBrandId = profileData.brand_id.toLowerCase().trim();
+          const existingSite = sitesData.find((s: any) => s.brand_id?.toLowerCase() === cleanBrandId);
+
+          if (!existingSite) {
+            // 1) Check if a client_sites record exists for this brand_id under any profile_id
+            const { data: brandSite } = await supabase
+              .from("client_sites")
+              .select("*")
+              .eq("brand_id", cleanBrandId)
+              .maybeSingle();
+
+            if (brandSite) {
+              if (brandSite.profile_id !== profileData.id) {
+                await supabase
+                  .from("client_sites")
+                  .update({ profile_id: profileData.id })
+                  .eq("id", brandSite.id);
+                brandSite.profile_id = profileData.id;
+              }
+              sitesData.unshift(brandSite);
+            } else {
+              // 2) Auto-register client_sites record for this brand_id
+              const defaultCompany = cleanBrandId === "sotongcheum" ? "소통과 채움" : (profileData.extra_configs?.company_name || cleanBrandId);
+              const defaultPhone = cleanBrandId === "sotongcheum" ? "031-292-3806" : (profileData.extra_configs?.phone || "");
+              const defaultAddress = cleanBrandId === "sotongcheum" ? "경기도 화성시 봉담읍 동화길 51, 401호" : (profileData.extra_configs?.address || "");
+
+              const { data: newSite, error: insertErr } = await supabase
+                .from("client_sites")
+                .insert({
+                  profile_id: profileData.id,
+                  brand_id: cleanBrandId,
+                  company_name: defaultCompany,
+                  phone: defaultPhone,
+                  address: defaultAddress,
+                  status: "ACTIVE",
+                  template_id: "custom",
+                  theme_vibe: "MODERN",
+                  extra_configs: profileData.extra_configs || {}
+                })
+                .select()
+                .maybeSingle();
+
+              if (!insertErr && newSite) {
+                sitesData.unshift(newSite);
+              }
+            }
+          }
+        }
+
+        setSites(sitesData);
 
         if (sitesData && sitesData.length > 0) {
           setSelectedSite((prev: any) => {

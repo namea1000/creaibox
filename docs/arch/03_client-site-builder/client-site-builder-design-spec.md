@@ -119,6 +119,40 @@
 
 AI 이관(Migration) 엔진이 다중 미디어(비디오, 이미지)를 포함하는 히어로 섹션을 발견할 시, 불안정한 인라인 자바스크립트를 삽입하는 대신 을 반환하도록 설계되었습니다.
 
+---
+
+## 9. 통합 고객 문의 접수 및 관리 파이프라인 (Unified Inquiry Pipeline Architecture)
+
+동적 빌더 사이트(`dynamic-renderer`) 및 100% 맞춤형 커스텀 사이트(`clients/[client_id]`)에서 발생하는 모든 고객 상담/견적 문의는 단일화된 백엔드 파이프라인과 관리자 스튜디오로 통합 라우팅됩니다:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor V as 방문자 (고객)
+    participant CF as ContactForm (Client Site)
+    participant API as /api/client-site-builder/inquiry
+    participant DB as Supabase (site_posts)
+    participant ST as Studio InquiryManager (/inquiries)
+
+    V->>CF: 견적 문의 제출 (성함, 연락처, 일정, 예산, 내용)
+    CF->>API: POST { brandId: "sotongcheum", formData }
+    API->>DB: client_sites 조회 (brandId 매핑) -> site_posts INSERT (post_type='inquiry')
+    DB-->>API: inserted inquiryId
+    API-->>CF: 200 OK (success: true)
+    CF-->>V: "견적 문의가 정상 접수되었습니다" 알림
+    ST->>DB: site_posts SELECT (site_id, post_type='inquiry')
+    DB-->>ST: 50:50 와이드 뷰 & 9개 컬럼 실시간 렌더링
+```
+
+### 9.1 핵심 아키텍처 원칙
+1. **듀얼 식별자 역조회 (UUID `siteId` & Slug `brandId`)**:
+   - 커스텀 풀코드 사이트는 내부 UUID를 몰라도 고유 슬러그인 `brandId`만 전달하면 백엔드가 `client_sites`를 역조회하여 대상 사이트에 정확하게 매핑합니다.
+2. **단일 테이블 정규화 (`site_posts`)**:
+   - 공지사항, FAQ, 블로그 글과 함께 `post_type: 'inquiry'`로 다형성(Polymorphic)을 유지하며 `extra_data(JSONB)`에 상세 상담 필드를 안전하게 직렬화 보관합니다.
+3. **풀-와이드 반응형 관리 뷰 (`w-full max-w-[1720px]`)**:
+   - `InquiryManager`는 50:50 좌우 균형과 9개 핵심 컬럼 테이블, 1줄 컴팩트 상세 뷰를 통해 대량의 상담 건도 한눈에 직관적으로 처리할 수 있습니다.
+
+
 - **DynamicSection 분기 처리**: 일 경우,  컴포넌트를 마운트.
 - **비디오 진행률 동기화**: 를 이용해 비디오 엘리먼트에 직접 접근하고,  이벤트를 통해 각 슬라이드별 하단 Progress 바 길이를 동기화합니다.
 - **이벤트 델리게이션**: 비디오  이벤트 발생 시 자동으로 를 업데이트하여 자연스러운 다음 슬라이드로의 페이드(Fade) 전환을 구현합니다.

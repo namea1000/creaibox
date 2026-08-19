@@ -10,8 +10,9 @@ export default function ContactForm() {
     phone: "",
     email: "",
     type: "행사기획",
-    date: "",
-    budget: "",
+    startDate: "",
+    endDate: "",
+    budget: "예산 협의/미정",
     message: "",
     agree: false,
   });
@@ -31,7 +32,7 @@ export default function ContactForm() {
     setFormData((prev) => ({ ...prev, agree: e.target.checked }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
 
@@ -53,28 +54,72 @@ export default function ContactForm() {
       return;
     }
 
-    // Submit Action Simulation
+    // Format event date (Single vs Period)
+    let formattedEventDate = "";
+    if (formData.startDate && formData.endDate) {
+      formattedEventDate = formData.startDate === formData.endDate 
+        ? `${formData.startDate} (당일)` 
+        : `${formData.startDate} ~ ${formData.endDate}`;
+    } else if (formData.startDate) {
+      formattedEventDate = `${formData.startDate} (당일)`;
+    } else if (formData.endDate) {
+      formattedEventDate = `${formData.endDate} 까지`;
+    } else {
+      formattedEventDate = "일정 미정 (상담 시 협의)";
+    }
+
+    // Submit to real database API
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const res = await fetch("/api/client-site-builder/inquiry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          brandId: "sotongcheum",
+          formData: {
+            name: formData.name.trim(),
+            phone: formData.phone.trim(),
+            email: formData.email.trim(),
+            type: formData.type,
+            event_date: formattedEventDate,
+            startDate: formData.startDate,
+            endDate: formData.endDate,
+            budget: formData.budget,
+            message: formData.message.trim(),
+            agree: formData.agree,
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "문의 접수에 실패했습니다.");
+      }
+
       setIsSuccess(true);
       setFormData({
         name: "",
         phone: "",
         email: "",
         type: "행사기획",
-        date: "",
-        budget: "",
+        startDate: "",
+        endDate: "",
+        budget: "예산 협의/미정",
         message: "",
         agree: false,
       });
-    }, 1500);
+    } catch (err: any) {
+      console.error("ContactForm submission error:", err);
+      setErrorMsg(err.message || "서버 통신 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-12">
       {/* Contact Card Info (Left) */}
-      <div className="lg:col-span-6 bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-8 sm:p-12 flex flex-col justify-between relative overflow-hidden">
+      <div className="lg:col-span-5 bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-8 sm:p-12 flex flex-col justify-between relative overflow-hidden">
         <div className="absolute top-0 right-0 -translate-y-8 translate-x-8 h-40 w-40 rounded-full bg-white/5 blur-xl" />
         
         <div>
@@ -132,7 +177,7 @@ export default function ContactForm() {
       </div>
 
       {/* Form Area (Right) */}
-      <form onSubmit={handleSubmit} className="lg:col-span-6 p-8 sm:p-12 flex flex-col justify-between relative bg-white">
+      <form onSubmit={handleSubmit} className="lg:col-span-7 p-8 sm:p-12 flex flex-col justify-between relative bg-white">
         {isSuccess ? (
           <div className="flex flex-col items-center justify-center text-center py-16 flex-grow animate-fade-in">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-blue-600 border border-blue-100 shadow-sm mb-6">
@@ -230,19 +275,35 @@ export default function ContactForm() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {/* Date */}
+              {/* Date Period (Start ~ End) */}
               <div className="space-y-1.5">
-                <label htmlFor="date" className="text-xs font-black text-slate-700 tracking-wide">
-                  행사 희망 일자
-                </label>
-                <input
-                  type="date"
-                  id="date"
-                  name="date"
-                  value={formData.date}
-                  onChange={handleChange}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-semibold text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
-                />
+                <div className="flex items-center justify-between">
+                  <label htmlFor="startDate" className="text-xs font-black text-slate-700 tracking-wide">
+                    행사 희망 일자
+                  </label>
+                  <span className="text-[10px] text-blue-500 font-extrabold bg-blue-50 px-1.5 py-0.5 rounded">시작일 ~ 종료일</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="date"
+                    id="startDate"
+                    name="startDate"
+                    value={formData.startDate}
+                    onChange={handleChange}
+                    title="시작일 (필수)"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-2.5 py-3 text-xs font-semibold text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all cursor-pointer"
+                  />
+                  <input
+                    type="date"
+                    id="endDate"
+                    name="endDate"
+                    min={formData.startDate || undefined}
+                    value={formData.endDate}
+                    onChange={handleChange}
+                    title="종료일 (선택: 2일 이상 시)"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-2.5 py-3 text-xs font-semibold text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all cursor-pointer"
+                  />
+                </div>
               </div>
 
               {/* Budget */}
@@ -250,15 +311,20 @@ export default function ContactForm() {
                 <label htmlFor="budget" className="text-xs font-black text-slate-700 tracking-wide">
                   대략적인 예산 범위
                 </label>
-                <input
-                  type="text"
+                <select
                   id="budget"
                   name="budget"
                   value={formData.budget}
                   onChange={handleChange}
-                  placeholder="예: 500만원 내외 (또는 미정)"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-semibold text-slate-800 placeholder-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
-                />
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm font-semibold text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all cursor-pointer"
+                >
+                  <option value="예산 협의/미정">예산 범위 선택 (상담 시 협의 가능)</option>
+                  <option value="100만원 이하">100만원 이하</option>
+                  <option value="100만원~300만원 이하">100만원 ~ 300만원 이하</option>
+                  <option value="300만원~500만원 이하">300만원 ~ 500만원 이하</option>
+                  <option value="500만원~1000만원 이하">500만원 ~ 1,000만원 이하</option>
+                  <option value="1000만원 이상">1,000만원 이상</option>
+                </select>
               </div>
             </div>
 

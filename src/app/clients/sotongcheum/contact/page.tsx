@@ -22,7 +22,7 @@ export default function ContactPage() {
         </div>
 
         {/* Contact Form Container */}
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-6xl">
           <ContactForm />
         </div>
       </div>

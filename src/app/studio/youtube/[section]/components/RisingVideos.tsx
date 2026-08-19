@@ -449,26 +449,30 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
             
             let allVideos: any[] = [];
             Object.keys(bundleObj).forEach(key => {
-              const parts = key.split("_");
-              if (parts.length >= 2) {
-                const cCode = parts[0];
-                const cCat = key.slice(cCode.length + 1);
-                if (cCat === catId && Array.isArray(bundleObj[key])) {
-                  allVideos = allVideos.concat(bundleObj[key]);
-                }
+              let cCode = "KR";
+              let cCat = key;
+              if (key.includes("_")) {
+                const parts = key.split("_");
+                cCode = parts[0];
+                cCat = key.slice(cCode.length + 1);
+              }
+              if (cCat === catId && Array.isArray(bundleObj[key])) {
+                allVideos = allVideos.concat(bundleObj[key]);
               }
             });
 
             if (allVideos.length === 0 && catId !== "all") {
               Object.keys(bundleObj).forEach(key => {
-                const parts = key.split("_");
-                if (parts.length >= 2) {
-                  const cCode = parts[0];
-                  const cCat = key.slice(cCode.length + 1);
-                  if (cCat === "all" && Array.isArray(bundleObj[key])) {
-                    const filtered = bundleObj[key].filter(v => v.categoryId === catId || v?.snippet?.categoryId === catId);
-                    allVideos = allVideos.concat(filtered);
-                  }
+                let cCode = "KR";
+                let cCat = key;
+                if (key.includes("_")) {
+                  const parts = key.split("_");
+                  cCode = parts[0];
+                  cCat = key.slice(cCode.length + 1);
+                }
+                if (cCat === "all" && Array.isArray(bundleObj[key])) {
+                  const filtered = bundleObj[key].filter(v => v.categoryId === catId || v?.snippet?.categoryId === catId);
+                  allVideos = allVideos.concat(filtered);
                 }
               });
             }

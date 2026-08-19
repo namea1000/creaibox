@@ -127,7 +127,7 @@ export default async function SotongcheumLandingPage() {
       {/* 5. Contact Section */}
       <section id="contact" className="py-24 bg-slate-50/50 scroll-mt-20 border-t border-slate-100/60">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mx-auto max-w-4xl">
+          <div className="mx-auto max-w-6xl">
             <ContactForm />
           </div>
         </div>

@@ -117,6 +117,29 @@ export default function SettingsPage() {
         .eq("id", selectedSite.id);
 
       if (error) throw error;
+
+      // Also sync to custom client site config API for custom sites (e.g. sotongcheum)
+      if (selectedSite.brand_id) {
+        try {
+          await fetch("/api/clients/config", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              brandId: selectedSite.brand_id,
+              config: {
+                companyName: companyName.trim(),
+                phone: phone.trim(),
+                address: address.trim(),
+                bizNumber: businessNum.trim(),
+                ...updatedExtraConfigs,
+              },
+            }),
+          });
+        } catch (e) {
+          console.warn("Sync to clients config API warn:", e);
+        }
+      }
+
       alert("홈페이지 설정 정보가 성공적으로 저장되었습니다.");
       await refreshData();
     } catch (err) {

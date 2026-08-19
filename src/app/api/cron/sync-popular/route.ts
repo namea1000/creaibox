@@ -120,7 +120,7 @@ export async function GET(req: NextRequest) {
   if (!targetCountryCodes.includes("GLOBAL")) {
     targetCountryCodes.unshift("GLOBAL");
   }
-  const coreCategories = ["all", "10", "20", "24", "23", "1", "26", "25", "22", "28", "15", "17", "2"];
+  const coreCategories = ["all", "10", "27", "20", "24", "23", "1", "26", "19", "25", "22", "28", "15", "17", "2"];
   const periods = ["all_time", "7d", "30d", "1d"];
 
   for (const countryCode of targetCountryCodes) {

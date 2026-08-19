@@ -18,15 +18,17 @@ const TARGET_COUNTRIES = [
   { code: "TH", name: "태국" },
 ];
 
-// Exact 13 UI categories: all + 12 categories
+// Exact 15 UI categories: all + 14 categories
 const CORE_CATEGORY_IDS = [
   "all", // 전체
   "10",  // 음악/댄스/가수
+  "27",  // 교육/키즈/동요
   "20",  // 게임
   "24",  // 엔터테인먼트/방송
   "23",  // 코미디/유머
   "1",   // 영화/만화/애니
   "26",  // 음식/요리/뷰티
+  "19",  // 여행/이벤트/명소
   "25",  // 뉴스/정치/경제
   "22",  // 취미/일상
   "28",  // IT/기술/컴퓨터
