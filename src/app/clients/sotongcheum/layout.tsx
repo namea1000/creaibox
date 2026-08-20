@@ -2,53 +2,11 @@ import React from "react";
 import type { Metadata } from "next";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-
 import { getCustomClientAssetUrl } from "@/lib/r2-client-assets";
-
-import { createAdminClient } from "@/utils/supabase/server";
-import { cache } from "react";
-
-function cleanVerificationKey(rawKey: string): string {
-  if (!rawKey) return "";
-  const clean = rawKey.trim();
-  const metaMatch = /content=["']([^"']+)["']/i.exec(clean);
-  if (metaMatch && metaMatch[1]) {
-    return metaMatch[1].trim();
-  }
-  if (clean.startsWith("naver-site-verification=")) {
-    return clean.replace("naver-site-verification=", "").replace(/["']/g, "").trim();
-  }
-  if (clean.startsWith("google-site-verification=")) {
-    return clean.replace("google-site-verification=", "").replace(/["']/g, "").trim();
-  }
-  return clean;
-}
-
-const getSotongcheumVerificationKeys = cache(async () => {
-  try {
-    const supabase = await createAdminClient();
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("extra_configs")
-      .eq("brand_id", "sotongcheum")
-      .maybeSingle();
-
-    const configs = profile?.extra_configs || {};
-    const naverKey = configs.naver_advisor_key_sotongcheum || configs.naver_advisor_key || "";
-    const googleKey = configs.google_search_console_key_sotongcheum || configs.google_search_console_key || "";
-
-    return {
-      naverKey: cleanVerificationKey(naverKey),
-      googleKey: cleanVerificationKey(googleKey),
-    };
-  } catch (err) {
-    console.error("Error fetching sotongcheum verification keys:", err);
-    return { naverKey: "", googleKey: "" };
-  }
-});
+import { getClientSiteVerificationKeys } from "@/lib/server/client-site-metadata";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { naverKey, googleKey } = await getSotongcheumVerificationKeys();
+  const { naverKey, googleKey } = await getClientSiteVerificationKeys("sotongcheum");
 
   const meta: Metadata = {
     title: "소통과채움 | 교육, 행사기획 & 렌탈 전문 기업",

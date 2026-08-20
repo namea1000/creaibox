@@ -52,6 +52,16 @@
      - `write-7`, `write-8` 답변 1단계에 `https://` 등록 필수 꿀팁 주입.
   4. **커스텀 클라이언트 레이아웃 동적 인증 메타데이터 탑재 (`src/app/clients/sotongcheum/layout.tsx`)**:
      - 정적 `metadata`를 동적 `generateMetadata()`로 승격하여 DB(`profiles.extra_configs`)에 저장된 `naver_advisor_key` 및 `google_search_console_key`를 0ms로 렌더링.
+### 4. 📡 커스텀 독립 도메인 & AI 웹사이트 RSS 피드(`/feed`) 및 동적 `sitemap.xml` 라우팅 파이프라인 완성 (v1.56)
+- **개발 배경 및 문제 현상**:
+  - 네이버 서치어드바이저에 커스텀 독립 도메인(`https://sotongcheum.com/feed`)으로 RSS 제출 시, 미들웨어 프록시가 맞춤형 폴더(`/clients/sotongcheum/feed`)로 라우팅을 시도하여 `404 Not Found (정상적으로 데이터를 수신하지 못했습니다)` 에러 발생.
+- **주요 구현 및 해결 내역**:
+  1. **미들웨어 프록시 특수 SEO 라우팅 파이프라인 탑재 (`src/proxy.ts`)**:
+     - `path === "/feed"`, `path === "/feed.xml"`, `path === "/rss"` 요청 시 독립 도메인/서브도메인 구분 없이 `/brand/${brandKey}/feed`로 0ms 정밀 리라이트.
+     - `path === "/sitemap.xml"` 요청 시 `/brand/${brandKey}/sitemap.xml`로 자동 라우팅.
+     - `path === "/ads.txt"` 요청 시 `/brand/${brandKey}/ads.txt`로 자동 라우팅.
+  2. **브랜드/클라이언트 전용 동적 Sitemap 라우트 신설 (`src/app/brand/[brand_id]/sitemap.xml/route.ts`)**:
+     - 메인 랜딩 URL(`baseUrl`), 서브페이지 목록, 블로그 목록 및 발행된 모든 포스팅 URL을 수집하여 표준 XML 사이트맵으로 동적 생성 및 캐싱 서빙.
 - **검증**: `npx tsc --noEmit` 전체 컴파일 에러 0건 통과.
 
 ---

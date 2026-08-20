@@ -254,6 +254,28 @@ export async function proxy(request: NextRequest) {
         }
       }
 
+      // 🌟 특수 SEO 엔드포인트 라우팅 (/feed, /sitemap.xml, /ads.txt)
+      if (path === "/feed" || path === "/feed.xml" || path === "/rss") {
+        const rewriteUrl = new URL(`/brand/${brandKey}/feed`, request.url);
+        return NextResponse.rewrite(rewriteUrl, {
+          request: { headers: new Headers(request.headers) },
+        });
+      }
+
+      if (path === "/sitemap.xml" || path === "/sitemap") {
+        const rewriteUrl = new URL(`/brand/${brandKey}/sitemap.xml`, request.url);
+        return NextResponse.rewrite(rewriteUrl, {
+          request: { headers: new Headers(request.headers) },
+        });
+      }
+
+      if (path === "/ads.txt") {
+        const rewriteUrl = new URL(`/brand/${brandKey}/ads.txt`, request.url);
+        return NextResponse.rewrite(rewriteUrl, {
+          request: { headers: new Headers(request.headers) },
+        });
+      }
+
       const isCustomClient = CUSTOM_CLIENT_SITES.includes(brandKey);
       
       let rewritePath = "";

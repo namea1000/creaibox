@@ -19,13 +19,48 @@ interface PageProps {
 
 const fetchSiteData = cache(async (brandId: string) => {
   const supabase = await createAdminClient();
+  const bKey = brandId.toLowerCase();
   const { data: site } = await supabase
     .from("client_sites")
-    .select("id, company_name, is_onepage_scroll, status, extra_configs")
-    .eq("brand_id", brandId.toLowerCase())
+    .select("id, company_name, is_onepage_scroll, status, extra_configs, user_id")
+    .eq("brand_id", bKey)
     .maybeSingle();
 
-  return site;
+  // If profile has verification keys, blend them
+  let profileConfigs: any = {};
+  if (site?.user_id) {
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("extra_configs")
+      .eq("id", site.user_id)
+      .maybeSingle();
+    profileConfigs = prof?.extra_configs || {};
+  } else {
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("extra_configs")
+      .eq("brand_id", bKey)
+      .maybeSingle();
+    profileConfigs = prof?.extra_configs || {};
+  }
+
+  const naverKey = 
+    site?.extra_configs?.naver_advisor_key || 
+    profileConfigs[`naver_advisor_key_${bKey}`] || 
+    profileConfigs.naver_advisor_key || "";
+
+  const googleKey = 
+    site?.extra_configs?.google_search_console_key || 
+    profileConfigs[`google_search_console_key_${bKey}`] || 
+    profileConfigs.google_search_console_key || "";
+
+  if (!site) return null;
+
+  return {
+    ...site,
+    resolvedNaverKey: naverKey,
+    resolvedGoogleKey: googleKey,
+  };
 });
 
 function extractFirstImageFromHtml(html: string): string | null {
@@ -170,8 +205,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       canonical: canonicalUrl,
     },
     other: {
-      ...(site.extra_configs?.naver_advisor_key ? { "naver-site-verification": cleanVerificationKey(site.extra_configs.naver_advisor_key) } : {}),
-      ...(site.extra_configs?.google_search_console_key ? { "google-site-verification": cleanVerificationKey(site.extra_configs.google_search_console_key) } : {}),
+      ...(site.resolvedNaverKey ? { "naver-site-verification": cleanVerificationKey(site.resolvedNaverKey) } : {}),
+      ...(site.resolvedGoogleKey ? { "google-site-verification": cleanVerificationKey(site.resolvedGoogleKey) } : {}),
     },
   };
 }
