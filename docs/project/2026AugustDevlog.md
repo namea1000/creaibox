@@ -89,6 +89,19 @@
      - `title: { absolute: blogTitle }` (블로그 고유 이름).
      - `description`: 블로그 소개문 (80자 이내 슬림화).
      - `openGraph` & `twitter`: 1200x630 규격의 최신 글 대표 썸네일 및 고유 블로그 타이틀 자동 주입.
+### 7. 📁 Cloudflare R2 버킷 `sites/` 마스터 폴더 아키텍처 일괄 이전 통합 및 DB 섹션 이미지 URL 100% 무중단 자동 치환 완료 (v1.59)
+- **개발 배경 및 통합 목적**:
+  - Cloudflare R2 마스터 버킷(`creaibox-assets`) 내 루트에 흩어져 있던 `migrated-sites/` 및 `templates/` 폴더를 프로젝트 표준 아키텍처 명세서(`docs/arch/03_client-site-builder/spa-and-dynamic-site-migration-architecture.md`)에 정의된 **`sites/` 마스터 폴더 하위 4대 체계(`sites/custom-clients/`, `sites/migrated-sites/`, `sites/templates/`, `sites/ai-builder-sites/`)**로 일괄 통일.
+- **주요 구현 및 마이그레이션 실행 내역**:
+  1. **R2 버킷 1,000여 개 파일 안전 복사/이전**:
+     - 기존 `migrated-sites/*` 파일 987건 ➔ `sites/migrated-sites/*`로 완벽 복사 완료.
+     - 기존 `templates/*` 파일 4건 ➔ `sites/templates/*`로 동기화 완료.
+  2. **Supabase DB 내 이미지 URL 일괄 무중단 자동 치환**:
+     - `site_sections` 176개 레코드의 `content_data` 내 `/migrated-sites/` 이미지 URL을 `/sites/migrated-sites/`로 100% 일괄 업데이트 완료.
+     - `client_sites` 4개 레코드의 `extra_configs` 내 이미지 URL 치환 완료.
+  3. **소스 코드 업로드 기본 경로 영구 통일**:
+     - `src/app/api/cron/site-migration-worker/route.ts` (S3 Key: `sites/migrated-sites/${siteId}/...`)
+     - `src/app/api/studio/ai-magic-builder/route.ts` (S3 Key: `sites/migrated-sites/${siteId}/...`)
 - **검증**: `npx tsc --noEmit` 전체 컴파일 에러 0건 통과.
 
 ---

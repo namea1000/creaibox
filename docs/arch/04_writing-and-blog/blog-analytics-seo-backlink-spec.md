@@ -98,7 +98,34 @@ graph TD
     Proxy -->|일반 페이지 요청| SiteRoute["맞춤형 기업 사이트 (/clients/[id]) 또는 AI 빌더 (/clients/dynamic-renderer)"]
 ```
 - **미들웨어 프록시 분기 (`src/proxy.ts`)**:
-  - 커스텀 도메인(`https://sotongcheum.com`) 또는 서브도메인 요청 시 특수 SEO 경로(`/feed`, `/sitemap.xml`, `/ads.txt`)는 폴더 구조와 무관하게 브랜드 전용 라우터로 0.01초 만에 다이렉트 리라이트(Rewrite).
+  - 커스텀 도메인(`https://sotongcheum.com`) 또는 서브도메인 요청 시 특수 SEO 경로(`/feed`, `/sitemap.xml`, `/ads.txt`, `/robots.txt`)는 폴더 구조와 무관하게 브랜드 전용 라우터로 0.01초 만에 다이렉트 리라이트(Rewrite).
 - **동적 사이트맵 규격 (`src/app/brand/[brand_id]/sitemap.xml/route.ts`)**:
   - 메인 랜딩 URL, 서브페이지 목록, 블로그 목록, 발행 포스트 전체 URL을 `lastmod`, `changefreq`, `priority`와 함께 W3C 표준 XML로 실시간 생성.
+- **동적 robots.txt 규격 (`src/app/brand/[brand_id]/robots.txt/route.ts`)**:
+  - 각 도메인 전용 `Sitemap: https://${customDomain || brand_id.creaibox.com}/sitemap.xml`을 자동으로 출력하여 네이버/구글 로봇의 도메인 일치성 100% 보장.
+
+---
+
+## 9. 사용자 블로그 홈(`brand/[brand_id]`) 카카오톡/SNS 공유 카드 동적 렌더링 아키텍처
+```mermaid
+sequenceDiagram
+    participant SNS as 카카오톡 / 페이스북 / 트위터 스크래퍼
+    participant Page as src/app/brand/[brand_id]/page.tsx (generateMetadata)
+    participant DB as Supabase (writing_creaibox_posts & generated_images)
+    
+    SNS->>Page: GET https://smilekang.creaibox.com/ (메인 주소 공유)
+    Page->>DB: 최신 발행 포스트 및 16:9 대표 썸네일 조회
+    DB-->>Page: 최신 글 썸네일 URL ("일지 겁재: ...")
+    Page-->>SNS: <meta property="og:image" content="사주브런치 최신 썸네일"> + <meta property="og:title" content="사주브런치">
+    SNS-->>SNS: CreaiBox 메인 다크 이미지 완전 배제, 사주브런치 전용 카드 렌더링!
+```
+- **개선 배경**:
+  - 서브도메인 블로그 메인 주소(`https://smilekang.creaibox.com/`)를 카카오톡에 공유할 때 `openGraph` 메타데이터가 누락되어 상위 루트 레이아웃의 CreaiBox 메인 다크 이미지(`og-image.png`)와 사이트명이 노출되던 문제를 원천 해결.
+- **동적 썸네일 수집 우선순위**:
+  1. `configs.blog_og_image` 또는 `configs.blog_logo`: 사용자가 등록한 커스텀 블로그 OG 이미지/로고.
+  2. `writing_creaibox_posts` + `generated_images`: 해당 브랜드의 **최신 발행 포스트의 16:9 대표 썸네일**.
+  3. `profile.avatar_url`: 사용자 프로필 사진.
+- **결과**:
+  - 메인 주소(`https://brand.creaibox.com/`) 공유 시에도 CreaiBox 메인 이미지가 침범하지 않고, 해당 블로그의 고유 브랜드명과 신선한 최신 글 비주얼 카드가 독립적으로 노출됨.
+
 

@@ -51,7 +51,7 @@ async function processHtmlImagesWithR2(html: string, siteId: string, origin: str
         }
       }
       
-      const s3Key = `migrated-sites/${siteId}/${Date.now()}_${finalFileName}`;
+      const s3Key = `sites/migrated-sites/${siteId}/${Date.now()}_${finalFileName}`;
 
       await s3Client.send(new PutObjectCommand({
         Bucket: process.env.R2_BUCKET_NAME || 'creaibox-assets',
