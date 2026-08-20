@@ -145,8 +145,10 @@ export async function generateMetadata({ params }: BrandPageProps): Promise<Meta
     return fallback;
   };
 
-  const blogTitle = getConf("blog_title", `${profile.nickname || brand_id} 블로그`);
-  const blogDesc = getConf("blog_description", "");
+  const rawBlogTitle = getConf("blog_title", `${profile.nickname || brand_id} 블로그`);
+  const blogTitle = rawBlogTitle.length > 35 ? rawBlogTitle.slice(0, 32) + "..." : rawBlogTitle;
+  const rawBlogDesc = getConf("blog_description", `${rawBlogTitle} 공식 블로그입니다.`);
+  const blogDesc = rawBlogDesc.length > 80 ? rawBlogDesc.slice(0, 77) + "..." : rawBlogDesc;
 
   const customDomain = configs[`custom_domain_${brand_id}`] || 
     (brand_id === profile.brand_id ? configs.custom_domain : "");
@@ -157,9 +159,84 @@ export async function generateMetadata({ params }: BrandPageProps): Promise<Meta
     ? `https://${customDomain}`
     : `https://${brand_id.toLowerCase()}.creaibox.com`;
 
+  // 🌟 Resolve Dynamic OpenGraph Image for User's Blog Home (Latest post thumbnail or custom blog logo)
+  let ogImageUrl = getConf("blog_og_image") || getConf("blog_logo") || "";
+
+  if (!ogImageUrl) {
+    try {
+      const supabase = await createAdminClient();
+      const { data: latestPosts } = await supabase
+        .from("writing_creaibox_posts")
+        .select("id, canonical_url, published_snapshot")
+        .eq("user_id", profile.id)
+        .eq("status", "published")
+        .not("slug", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (latestPosts && latestPosts.length > 0) {
+        const matchedPost = latestPosts.find((p) => {
+          if (!p.canonical_url) return isPrimary;
+          return isPostForBrand(p.canonical_url, brand_id, profile.extra_configs);
+        }) || latestPosts[0];
+
+        if (matchedPost) {
+          const { data: postImg } = await supabase
+            .from("generated_images")
+            .select("image_url")
+            .eq("source_type", "writing_creaibox_posts")
+            .eq("source_id", matchedPost.id)
+            .order("is_primary", { ascending: false })
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (postImg?.image_url) {
+            ogImageUrl = postImg.image_url;
+          } else if (matchedPost.published_snapshot?.thumbnailUrl) {
+            ogImageUrl = matchedPost.published_snapshot.thumbnailUrl;
+          }
+        }
+      }
+    } catch (imgErr) {
+      console.error("Error fetching dynamic blog home OG image:", imgErr);
+    }
+  }
+
+  if (!ogImageUrl && profile.avatar_url) {
+    ogImageUrl = profile.avatar_url;
+  }
+  if (!ogImageUrl) {
+    ogImageUrl = "https://creaibox.com/og-image.png";
+  }
+
   const meta: Metadata = {
-    title: blogTitle,
+    title: {
+      absolute: blogTitle,
+    },
     description: blogDesc,
+    openGraph: {
+      title: blogTitle,
+      description: blogDesc,
+      url: canonicalUrl,
+      siteName: rawBlogTitle,
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: `${blogTitle} 대표 이미지`,
+        },
+      ],
+      locale: "ko_KR",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: blogTitle,
+      description: blogDesc,
+      images: [ogImageUrl],
+    },
     alternates: {
       canonical: canonicalUrl,
     },
