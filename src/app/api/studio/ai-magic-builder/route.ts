@@ -355,6 +355,9 @@ export async function POST(request: Request) {
       extra_configs: {
         target_slug: cleanSubdomain,
         is_draft: true,
+        site_title: pageTitle,
+        site_description: metaDesc,
+        og_image: heroImage,
       }
     };
 

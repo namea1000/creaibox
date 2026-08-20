@@ -104,15 +104,18 @@ function isPostForBrand(postCanonicalUrl: string | null, targetBrandId: string, 
   return false;
 }
 
-function cleanGoogleVerificationKey(rawKey: string): string {
+function cleanVerificationKey(rawKey: string): string {
   if (!rawKey) return "";
   const clean = rawKey.trim();
   const metaMatch = /content=["']([^"']+)["']/i.exec(clean);
   if (metaMatch && metaMatch[1]) {
     return metaMatch[1].trim();
   }
+  if (clean.startsWith("naver-site-verification=")) {
+    return clean.replace("naver-site-verification=", "").replace(/["']/g, "").trim();
+  }
   if (clean.startsWith("google-site-verification=")) {
-    return clean.replace("google-site-verification=", "").trim();
+    return clean.replace("google-site-verification=", "").replace(/["']/g, "").trim();
   }
   return clean;
 }
@@ -162,13 +165,12 @@ export async function generateMetadata({ params }: BrandPageProps): Promise<Meta
     },
   };
 
-  const naverKey = getConf("naver_advisor_key");
-  const googleKey = getConf("google_search_console_key");
-  const cleanGoogleKey = cleanGoogleVerificationKey(googleKey);
-  if (naverKey || cleanGoogleKey) {
+  const naverKey = cleanVerificationKey(getConf("naver_advisor_key"));
+  const googleKey = cleanVerificationKey(getConf("google_search_console_key"));
+  if (naverKey || googleKey) {
     meta.other = {
       ...(naverKey ? { "naver-site-verification": naverKey } : {}),
-      ...(cleanGoogleKey ? { "google-site-verification": cleanGoogleKey } : {}),
+      ...(googleKey ? { "google-site-verification": googleKey } : {}),
     };
   }
 

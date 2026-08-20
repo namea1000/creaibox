@@ -317,6 +317,9 @@ export async function POST(request: Request) {
         original_url: urlObj.origin,
         target_slug: cleanSubdomain, // Preferred brand slug for later 1-click promotion
         is_draft: true,
+        site_title: pageTitle,
+        site_description: metaDesc,
+        og_image: heroImage,
         migration_queue: pendingSubpages,
         migration_total_count: pendingSubpages.length,
         migration_status: pendingSubpages.length > 0 ? "migrating" : "completed",

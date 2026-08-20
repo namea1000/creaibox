@@ -195,8 +195,39 @@ graph TD
 | `full` (2번) | **2. 전체 페이지 이관 (15페이지 미만)** | 메인 1-Page + 서브페이지 큐(`migration_queue`) 15개 적재 | 비동기 백그라운드 워커가 15개 서브페이지를 순차 크롤링 및 DB 적재 |
 | `massive` (3번) | **3. 전체 페이지 이관 (100개 미만)** | 메인 1-Page + 서브페이지 큐 100개 적재 | 대규모 서브페이지 비동기 일괄 파싱 및 병합 |
 
-### 7.2. 모바일 드로어 연동 (`CustomHeaderWrapper.tsx`)
-* 모바일 환경에서는 `doc.querySelectorAll('a')`를 통해 1차 메뉴뿐만 아니라 2차 드롭다운 서브메뉴 링크까지 자동으로 수집하여 슬라이드 아웃 드로어로 렌더링하며, 앵커 링크 클릭 시 드로어가 닫히면서 해당 섹션으로 부드럽게 스크롤 이동합니다.
+---
+
+## 📱 8. AI 웹사이트 빌더 독립 OpenGraph / SNS(카카오톡·페이스북) 카드 메타데이터 아키텍처
+
+```mermaid
+graph TD
+    Request["SNS 봇 요청 (카카오톡, 페이스북, 트위터, 슬랙)"] --> DynamicRenderer["dynamic-renderer/[brand_id]/[[...slug]]/page.tsx"]
+    
+    DynamicRenderer --> FetchDB["1. client_sites & site_sections (React cache()) 0ms 병렬 조회"]
+    
+    FetchDB --> TitleProc["2. Title: extra_configs.site_title || site.company_name"]
+    FetchDB --> DescProc["3. Description: extra_configs.site_description || scan_report.description || 본문 <p> 태그 텍스트 (160자)"]
+    FetchDB --> ImageProc["4. OG Image: extra_configs.og_image || hero_image || 첫 섹션 이미지/미디어 || Unsplash Fallback"]
+    
+    TitleProc --> MetaAssemble["5. OpenGraph & Twitter Card 객체 합성"]
+    DescProc --> MetaAssemble
+    ImageProc --> MetaAssemble
+    
+    MetaAssemble --> HTMLTags["6. HTML <meta property='og:image'> & <meta name='twitter:card'> 출력"]
+    HTMLTags --> ClientCard["📱 카카오톡 링크 카드: 고유 브랜드 썸네일, 상호명, 1줄 설명문 100% 독립 렌더링"]
+```
+
+### 8.1. 메타데이터 4단계 우선순위 추출 엔진
+1. **타이틀 (`title`)**: `site.extra_configs?.site_title` ➔ `site.company_name` ➔ `${brand_id} 공식 홈페이지`
+2. **설명문 (`description`)**: `site.extra_configs?.site_description` ➔ `site.extra_configs?.scan_report?.description` ➔ 본문 첫 섹션 문단(`<p>`) 태그 텍스트 지능형 추출 (160자) ➔ `${siteTitle} 공식 홈페이지에 오신 것을 환영합니다.`
+3. **대표 이미지 (`og:image`)**: `site.extra_configs?.og_image` ➔ `site.extra_configs?.hero_image` ➔ 첫 섹션 `content_data.image` / `media_urls[0]` / `slides[0]` / 인라인 `<img src>` ➔ 고화질 비즈니스 이미지.
+4. **소셜 카드 스펙**:
+   - `openGraph.siteName`: `site.company_name`
+   - `openGraph.url`: `https://${brand_id}.creaibox.com`
+   - `openGraph.locale`: `ko_KR`
+   - `twitter.card`: `summary_large_image`
+   - `robots`: 배포 상태(`PUBLISHED`) 시 `index, follow`, 초안(`DRAFT`) 시 `noindex, nofollow`.
+
 
 
 

@@ -5,6 +5,28 @@ import { MessageSquare, ChevronRight } from "lucide-react";
 export const metadata = {
   title: "Commufill | AI-Powered Community Engagement Platform",
   description: "Automate and scale your community content, engagement, and management with Commufill's advanced AI services.",
+  openGraph: {
+    title: "Commufill | AI-Powered Community Engagement Platform",
+    description: "Automate and scale your community content, engagement, and management with Commufill's advanced AI services.",
+    url: "https://commufill.creaibox.com",
+    siteName: "Commufill",
+    images: [
+      {
+        url: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&auto=format&fit=crop&q=80",
+        width: 1200,
+        height: 630,
+        alt: "Commufill Community Platform",
+      },
+    ],
+    locale: "ko_KR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Commufill | AI-Powered Community Platform",
+    description: "Automate and scale your community content and engagement.",
+    images: ["https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&auto=format&fit=crop&q=80"],
+  },
 };
 
 export default function CommufillLayout({

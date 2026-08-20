@@ -19,12 +19,32 @@ export async function generateMetadata({ params }: { params: Promise<{ brand_id:
 
   const { data: site } = await supabase
     .from("client_sites")
-    .select("company_name")
+    .select("company_name, extra_configs")
     .eq("brand_id", brand_id.toLowerCase())
     .maybeSingle();
 
+  const title = site?.extra_configs?.site_title || site?.company_name || `${brand_id} 공식 홈페이지`;
+  const description = site?.extra_configs?.site_description || `${title} 공식 홈페이지에 오신 것을 환영합니다.`;
+  const ogImageUrl = site?.extra_configs?.og_image || site?.extra_configs?.hero_image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&auto=format&fit=crop&q=80";
+
   return {
-    title: site ? `${site.company_name} - 공식 홈페이지` : "홈페이지 준비 중",
+    title: `${title} - 공식 홈페이지`,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `https://${brand_id}.creaibox.com`,
+      siteName: title,
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: title }],
+      locale: "ko_KR",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImageUrl],
+    },
   };
 }
 

@@ -28,17 +28,151 @@ const fetchSiteData = cache(async (brandId: string) => {
   return site;
 });
 
+function extractFirstImageFromHtml(html: string): string | null {
+  if (!html) return null;
+  const imgMatch = html.match(/<img[^>]+src=["'](https?:\/\/[^"']+)["']/i);
+  if (imgMatch && imgMatch[1]) return imgMatch[1];
+  const bgMatch = html.match(/background-image:\s*url\(["']?(https?:\/\/[^"')]+)["']?\)/i);
+  if (bgMatch && bgMatch[1]) return bgMatch[1];
+  return null;
+}
+
+function cleanVerificationKey(rawKey: string): string {
+  if (!rawKey) return "";
+  const clean = rawKey.trim();
+  const metaMatch = /content=["']([^"']+)["']/i.exec(clean);
+  if (metaMatch && metaMatch[1]) {
+    return metaMatch[1].trim();
+  }
+  if (clean.startsWith("naver-site-verification=")) {
+    return clean.replace("naver-site-verification=", "").replace(/["']/g, "").trim();
+  }
+  if (clean.startsWith("google-site-verification=")) {
+    return clean.replace("google-site-verification=", "").replace(/["']/g, "").trim();
+  }
+  return clean;
+}
+
+function extractFirstDescriptionFromHtml(html: string): string | null {
+  if (!html) return null;
+  const pMatches = html.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi);
+  for (const m of pMatches) {
+    const clean = m[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    if (clean.length >= 15 && !clean.toLowerCase().includes("trusted by") && !clean.toLowerCase().includes("copyright")) {
+      return clean.length > 160 ? clean.substring(0, 157) + "..." : clean;
+    }
+  }
+  return null;
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { brand_id } = await params;
+  const { brand_id, slug = [] } = await params;
   const site = await fetchSiteData(brand_id);
 
-  const isPublished = site?.status === "PUBLISHED";
+  if (!site) {
+    return {
+      title: "홈페이지 준비 중 | CreaiBox",
+      description: "요청하신 웹사이트는 준비 중입니다.",
+      robots: { index: false, follow: false, nocache: true },
+    };
+  }
+
+  const supabase = await createAdminClient();
+  const isPublished = site.status === "PUBLISHED";
+  const rawSiteTitle = site.extra_configs?.site_title || site.company_name || `${brand_id} 공식 홈페이지`;
+  
+  // Query first section for OG image and description fallback
+  const { data: firstSection } = await supabase
+    .from("site_sections")
+    .select("title, subtitle, content_data")
+    .eq("site_id", site.id)
+    .order("sort_order", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  // If subpage (e.g. /about, /services, /blog)
+  let pageTitle = rawSiteTitle;
+  let pageDesc = "";
+  let subpageSection: any = null;
+
+  if (slug.length > 0) {
+    const subRoute = slug[0].toLowerCase();
+    const { data: subSection } = await supabase
+      .from("site_sections")
+      .select("title, subtitle, content_data")
+      .eq("site_id", site.id)
+      .eq("section_type", `subpage_${subRoute}`)
+      .maybeSingle();
+      
+    if (subSection) {
+      subpageSection = subSection;
+      pageTitle = `${subSection.title || subRoute.toUpperCase()} | ${rawSiteTitle}`;
+      pageDesc = subSection.subtitle || extractFirstDescriptionFromHtml(subSection.content_data?.html || "") || "";
+    } else if (subRoute === "blog") {
+      pageTitle = `블로그 / 소식 | ${rawSiteTitle}`;
+      pageDesc = `${rawSiteTitle} 공식 블로그 및 최신 소식 목록입니다.`;
+    } else {
+      pageTitle = `${subRoute.toUpperCase()} | ${rawSiteTitle}`;
+    }
+  }
+
+  if (!pageDesc) {
+    pageDesc = 
+      site.extra_configs?.site_description || 
+      site.extra_configs?.scan_report?.description ||
+      (firstSection?.subtitle && firstSection.subtitle.length >= 15 ? firstSection.subtitle : null) ||
+      extractFirstDescriptionFromHtml(firstSection?.content_data?.html || "") ||
+      `${rawSiteTitle} 공식 홈페이지에 오신 것을 환영합니다. 비즈니스 소개, 서비스 및 주요 소식을 확인해 보세요.`;
+  }
+
+  const ogImageUrl = 
+    (subpageSection?.content_data?.image && subpageSection.content_data.image.startsWith("http") ? subpageSection.content_data.image : null) ||
+    extractFirstImageFromHtml(subpageSection?.content_data?.html || "") ||
+    (site.extra_configs?.og_image && site.extra_configs.og_image.startsWith("http") ? site.extra_configs.og_image : null) ||
+    (site.extra_configs?.hero_image && site.extra_configs.hero_image.startsWith("http") ? site.extra_configs.hero_image : null) ||
+    (firstSection?.content_data?.image && firstSection.content_data.image.startsWith("http") ? firstSection.content_data.image : null) ||
+    (firstSection?.content_data?.media_urls?.[0] && firstSection.content_data.media_urls[0].startsWith("http") ? firstSection.content_data.media_urls[0] : null) ||
+    extractFirstImageFromHtml(firstSection?.content_data?.html || "") ||
+    (site.extra_configs?.scan_report?.ogImage && site.extra_configs.scan_report.ogImage.startsWith("http") ? site.extra_configs.scan_report.ogImage : null) ||
+    "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&auto=format&fit=crop&q=80";
+
+  const canonicalUrl = `https://${brand_id}.creaibox.com${slug.length > 0 ? `/${slug.join("/")}` : ""}`;
 
   return {
-    title: site?.company_name ? `${site.company_name}` : "웹사이트",
+    title: pageTitle,
+    description: pageDesc,
+    openGraph: {
+      title: pageTitle,
+      description: pageDesc,
+      url: canonicalUrl,
+      siteName: rawSiteTitle,
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: `${pageTitle} 대표 이미지`,
+        },
+      ],
+      locale: "ko_KR",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: pageTitle,
+      description: pageDesc,
+      images: [ogImageUrl],
+    },
     robots: isPublished
       ? { index: true, follow: true }
-      : { index: false, follow: false, nocache: true }, // 🛡️ Zero SEO Risk for Draft Sites (100% noindex)
+      : { index: false, follow: false, nocache: true },
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    other: {
+      ...(site.extra_configs?.naver_advisor_key ? { "naver-site-verification": cleanVerificationKey(site.extra_configs.naver_advisor_key) } : {}),
+      ...(site.extra_configs?.google_search_console_key ? { "google-site-verification": cleanVerificationKey(site.extra_configs.google_search_console_key) } : {}),
+    },
   };
 }
 

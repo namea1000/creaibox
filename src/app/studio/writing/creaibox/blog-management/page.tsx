@@ -2124,6 +2124,14 @@ export default function BlogManagementPage() {
                     </button>
                   </div>
 
+                  {/* 🔒 SSL Registration Tip Box */}
+                  <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-start gap-3 text-xs text-emerald-300 font-bold leading-relaxed">
+                    <span className="text-base flex-shrink-0">🔒</span>
+                    <div>
+                      <b className="text-white">네이버/구글 서치콘솔 등록 필수 팁:</b> 서치어드바이저 및 구글 서치콘솔에 사이트 주소를 추가하실 때는 <code className="text-rose-400 bg-zinc-950 px-1 py-0.5 rounded">http://</code> 대신 보안 인증서(SSL)가 기본 적용된 <b><code className="text-emerald-400 bg-zinc-950 px-1.5 py-0.5 rounded">https://{customDomain && customDomainStatus === "APPROVED" ? customDomain : `${activeBrandId}.creaibox.com`}</code></b> 로 등록하셔야 검색 품질 지수 및 상위 노출에 훨씬 유리합니다!
+                    </div>
+                  </div>
+
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-1.5">
@@ -2150,9 +2158,12 @@ export default function BlogManagementPage() {
                           type="text"
                           value={naverKey}
                           onChange={(e) => setNaverKey(e.target.value)}
-                          placeholder="예: 3e7c8d92..."
+                          placeholder="예: 685ef958f7736... 또는 <meta ... /> 전체"
                           className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4 text-xs font-bold font-mono text-white outline-none focus:border-blue-500 transition-colors"
                         />
+                        <p className="text-[11px] text-zinc-400 pl-1 leading-relaxed mt-1">
+                          💡 <b>둘 다 입력 가능:</b> 영숫자 키 값만 넣으셔도 되고, <code className="text-emerald-400">&lt;meta name=&quot;naver-site-verification&quot; content=&quot;...&quot; /&gt;</code> 태그 전체를 그대로 붙여넣으셔도 시스템이 알아서 키를 자동 추출하여 100% 정상 연동됩니다.
+                        </p>
                       </div>
 
                       <div className="space-y-1.5">
@@ -2163,9 +2174,12 @@ export default function BlogManagementPage() {
                           type="text"
                           value={googleSearchConsoleKey}
                           onChange={(e) => setGoogleSearchConsoleKey(e.target.value)}
-                          placeholder="google-site-verification 값"
+                          placeholder="예: google-site-verification 값 또는 <meta ... /> 전체"
                           className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-5 py-4 text-xs font-bold font-mono text-white outline-none focus:border-blue-500 transition-colors"
                         />
+                        <p className="text-[11px] text-zinc-400 pl-1 leading-relaxed mt-1">
+                          💡 <b>둘 다 입력 가능:</b> 키 값만 넣으셔도 되고, <code className="text-blue-400">&lt;meta name=&quot;google-site-verification&quot; content=&quot;...&quot; /&gt;</code> 태그 전체를 그대로 붙여넣으셔도 시스템이 알아서 키를 자동 추출하여 100% 정상 연동됩니다.
+                        </p>
                       </div>
 
                       <div className="space-y-1.5 md:col-span-3 border-t border-zinc-900/50 pt-4">
@@ -3269,21 +3283,22 @@ export default function BlogManagementPage() {
                   <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-850 space-y-2">
                     <span className="text-[10px] font-black uppercase text-emerald-400 tracking-wider">Step 1. 서치어드바이저 로그인 및 사이트 추가</span>
                     <p className="text-zinc-300">
-                      <a href="https://searchadvisor.naver.com" target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline font-black">네이버 서치어드바이저(searchadvisor.naver.com)</a> 접속 ➡️ [웹마스터 도구] 진입 ➡️ 사이트 등록란에 내 블로그 주소(<code className="text-white font-mono bg-zinc-950 px-1.5 py-0.5 rounded">https://{activeBrandId}.creaibox.com</code>)를 입력합니다.
+                      <a href="https://searchadvisor.naver.com" target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline font-black">네이버 서치어드바이저(searchadvisor.naver.com)</a> 접속 ➡️ [웹마스터 도구] 진입 ➡️ 사이트 등록란에 내 블로그 주소(<code className="text-white font-mono bg-zinc-950 px-1.5 py-0.5 rounded">https://{customDomain && customDomainStatus === "APPROVED" ? customDomain : `${activeBrandId}.creaibox.com`}</code>)를 입력합니다.<br />
+                      <span className="text-emerald-300 font-bold">💡 필수 팁: http:// 대신 보안 인증서(SSL)가 기본 적용된 <b>https://</b> 로 등록하셔야 네이버 검색 품질 지수 및 상위 노출에 훨씬 유리합니다!</span>
                     </p>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-850 space-y-2">
                     <span className="text-[10px] font-black uppercase text-emerald-400 tracking-wider">Step 2. HTML 태그 방식 메타태그 복사</span>
                     <p className="text-zinc-300">
-                      사이트 소유 확인 방법 중 <b>[HTML 태그]</b>를 선택한 후, 제공되는 코드 중 <code className="text-emerald-300 font-mono bg-zinc-950 px-1.5 py-0.5 rounded">content=&quot;...&quot;</code> 안의 고유 키값을 복사합니다.
+                      사이트 소유 확인 방법 중 <b>[HTML 태그]</b>를 선택한 후, 제공되는 메타태그 전체(<code className="text-emerald-300 font-mono bg-zinc-950 px-1.5 py-0.5 rounded">&lt;meta name=&quot;naver-site-verification&quot; content=&quot;...&quot; /&gt;</code>) 또는 <code className="text-emerald-300 font-mono bg-zinc-950 px-1.5 py-0.5 rounded">content=&quot;...&quot;</code> 안의 고유 키값을 복사합니다.
                     </p>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-850 space-y-2">
                     <span className="text-[10px] font-black uppercase text-emerald-400 tracking-wider">Step 3. 크리에이박스 스튜디오에 입력 및 저장</span>
                     <p className="text-zinc-300">
-                      현재 보시는 <b>[SEO 및 연동 관리]</b> 탭의 <b>&apos;네이버 서치어드바이저 연동 키&apos;</b> 입력칸에 복사한 값을 붙여넣고 [설정 저장하기]를 클릭합니다.
+                      현재 보시는 <b>[SEO 및 연동 관리]</b> 탭의 <b>&apos;네이버 서치어드바이저 연동 키&apos;</b> 입력칸에 복사한 값을 붙여넣고 [설정 저장하기]를 클릭합니다. (💡 <b>키 값만 넣으셔도 되고 태그 전체를 그대로 붙여넣으셔도 시스템이 알아서 키를 자동 추출하여 둘 다 100% 정상 연동됩니다!</b>)
                     </p>
                   </div>
 
@@ -3292,7 +3307,7 @@ export default function BlogManagementPage() {
                     <p className="text-zinc-300">
                       네이버 서치어드바이저 화면으로 돌아와 <b>[소유확인]</b> 버튼을 누르면 승인이 완료됩니다!<br />
                       ① <b>[요청 ➡️ 사이트맵 제출]</b>: <code className="text-emerald-400 font-mono">sitemap.xml</code> 입력 후 제출<br />
-                      ② <b>[요청 ➡️ RSS 제출]</b>: 전체 피드 주소(<code className="text-emerald-400 font-mono">https://{activeBrandId}.creaibox.com/feed</code>)를 입력 후 제출해 주세요.
+                      ② <b>[요청 ➡️ RSS 제출]</b>: 전체 피드 주소(<code className="text-emerald-400 font-mono">https://{customDomain && customDomainStatus === "APPROVED" ? customDomain : `${activeBrandId}.creaibox.com`}/feed</code>)를 입력 후 제출해 주세요.
                     </p>
                   </div>
                 </div>
@@ -3303,21 +3318,22 @@ export default function BlogManagementPage() {
                   <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-850 space-y-2">
                     <span className="text-[10px] font-black uppercase text-blue-400 tracking-wider">Step 1. 구글 서치콘솔 접속 및 속성 추가</span>
                     <p className="text-zinc-300">
-                      <a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline font-black">구글 서치콘솔(search.google.com/search-console)</a> 로그인 ➡️ 좌측 상단 [속성 추가] ➡️ <b>&apos;URL 접두사&apos;</b> 항목에 내 블로그 주소(<code className="text-white font-mono bg-zinc-950 px-1.5 py-0.5 rounded">https://{activeBrandId}.creaibox.com</code>)를 입력합니다.
+                      <a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline font-black">구글 서치콘솔(search.google.com/search-console)</a> 로그인 ➡️ 좌측 상단 [속성 추가] ➡️ <b>&apos;URL 접두사&apos;</b> 항목에 내 블로그 주소(<code className="text-white font-mono bg-zinc-950 px-1.5 py-0.5 rounded">https://{customDomain && customDomainStatus === "APPROVED" ? customDomain : `${activeBrandId}.creaibox.com`}</code>)를 입력합니다.<br />
+                      <span className="text-blue-300 font-bold">💡 필수 팁: http:// 대신 보안 인증서(SSL)가 기본 적용된 <b>https://</b> 로 등록하셔야 구글 검색 랭킹에 훨씬 유리합니다!</span>
                     </p>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-850 space-y-2">
                     <span className="text-[10px] font-black uppercase text-blue-400 tracking-wider">Step 2. HTML 태그 소유권 인증 코드 복사</span>
                     <p className="text-zinc-300">
-                      다른 인증 방법 중 <b>[HTML 태그]</b>를 클릭하고 발급된 <code className="text-blue-300 font-mono bg-zinc-950 px-1.5 py-0.5 rounded">google-site-verification</code> 메타태그 키값을 복사합니다.
+                      다른 인증 방법 중 <b>[HTML 태그]</b>를 클릭하고 발급된 메타태그 전체(<code className="text-blue-300 font-mono bg-zinc-950 px-1.5 py-0.5 rounded">&lt;meta name=&quot;google-site-verification&quot; content=&quot;...&quot; /&gt;</code>) 또는 <code className="text-blue-300 font-mono bg-zinc-950 px-1.5 py-0.5 rounded">content=&quot;...&quot;</code> 키값을 복사합니다.
                     </p>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-850 space-y-2">
                     <span className="text-[10px] font-black uppercase text-blue-400 tracking-wider">Step 3. 스튜디오 붙여넣기 & 사이트맵 / RSS 제출</span>
                     <p className="text-zinc-300">
-                      스튜디오 <b>[SEO 및 연동 관리]</b>의 <b>&apos;구글 서치콘솔 연동 키&apos;</b>에 복사한 키를 넣고 [설정 저장하기]를 누른 뒤, 구글 서치콘솔에서 [확인] 클릭!<br />
+                      스튜디오 <b>[SEO 및 연동 관리]</b>의 <b>&apos;구글 서치콘솔 연동 키&apos;</b>에 복사한 값을 넣고 [설정 저장하기]를 누른 뒤, 구글 서치콘솔에서 [확인] 클릭! (💡 <b>키 값만 넣으셔도 되고 태그 전체를 그대로 붙여넣으셔도 둘 다 100% 정상 연동됩니다!</b>)<br />
                       그 후 <b>[Sitemaps]</b> 메뉴에서 <code className="text-blue-400 font-mono">sitemap.xml</code> 과 <code className="text-blue-400 font-mono">feed</code> (또는 RSS 피드 주소)를 각각 1회씩 입력하여 제출해 주세요.
                     </p>
                   </div>

@@ -4,6 +4,58 @@
 
 ---
 
+## 📅 2026년 8월 20일 (목)
+
+### 1. 🌐 AI 웹사이트 빌더 독립 OpenGraph / SNS(카카오톡·페이스북) 공유 카드 메타데이터 동적 생성 엔진 완성 (v1.53)
+- **개발 배경 및 문제 현상**:
+  - `기존 홈페이지 이관` 및 `AI 홈페이지 매직 빌더`로 제작된 AI 서브도메인 웹사이트(예: `mandala-ensj.creaibox.com`, `bima-ydnt.creaibox.com`)를 카카오톡이나 SNS로 공유했을 때, 사이트 고유의 정보 대신 부모 루트 레이아웃의 CreaiBox 메인 사진("AI 콘텐츠 제작을 하나의 포털 스튜디오에서")과 설명문이 노출되던 현상 발생.
+  - 소통과채움(`sotongcheum.com`)처럼 모든 AI 생성 클라이언트 사이트도 **자체 브랜드명, 본문 대표 이미지(Hero Image / WebP 에셋), 1줄 요약 설명문**이 담긴 독립된 OpenGraph 카드가 100% 뜨도록 엔진 전면 개편.
+- **원인 규명**:
+  - `src/app/clients/dynamic-renderer/[brand_id]/[[...slug]]/page.tsx`의 `generateMetadata`가 `title`과 `robots`만 반환하고 `openGraph`, `description`, `twitter`를 정의하지 않아, Next.js App Router 메타데이터 상속 규칙에 의해 루트 `layout.tsx`의 CreaiBox 메타데이터가 덮어씌워졌음.
+- **주요 구현 및 해결 내역**:
+  1. **동적 렌더러 지능형 OpenGraph 추출 파이프라인 (`page.tsx`, `layout.tsx`)**:
+     - **Title**: `extra_configs.site_title` || `site.company_name` || `${brand_id} 공식 홈페이지`
+     - **Description**: `extra_configs.site_description` ➔ `scan_report.description` ➔ 본문 첫 섹션 문단(`<p>`) 태그 텍스트 지능형 추출 ➔ `${siteTitle} 공식 홈페이지에 오신 것을 환영합니다.`
+     - **OG Image**: `extra_configs.og_image` ➔ `extra_configs.hero_image` ➔ 첫 섹션 `content_data.image` / `media_urls[0]` / `slides[0]` / 인라인 `<img src>` 정규식 추출 ➔ Unsplash 고화질 비즈니스 이미지.
+     - **URL / SiteName / Type**: `https://${brand_id}.creaibox.com`, `siteName: site.company_name`, `locale: "ko_KR"`, `type: "website"`.
+     - **Twitter Cards**: `card: "summary_large_image"` 동시 지원.
+  2. **서브페이지(`/about`, `/services`, `/blog`) 맞춤형 메타데이터 지원**:
+     - `slug` 파라미터 감지 시 해당 서브페이지 섹션(`subpage_${slug}`)의 제목과 이미지를 결합하여 `${subpageTitle} | ${siteTitle}`로 동적 브랜딩.
+  3. **모든 커스텀 클라이언트 레이아웃 일괄 보강**:
+     - `aura-merino`, `woolcraft`, `commufill`, `creative-media-blog`의 레이아웃에도 `openGraph` 및 `twitter` 메타데이터를 전수 탑재하여 전 사이트 독립 SNS 카드 렌더링 보장.
+  4. **생성 API 페이로드 연동 (`site-migration`, `ai-magic-builder`)**:
+     - 사이트 최초 생성 시 `extra_configs`에 `site_title`, `site_description`, `og_image`를 정석 저장하도록 보강.
+### 2. 🔍 네이버 서치어드바이저 & 구글 서치콘솔 소유권 인증키 2중 입력(키값 / HTML 전체태그) 자동 정제 및 FAQ/UI 전면 개편 (v1.54)
+- **개발 배경 및 요구사항**:
+  - 네이버 서치어드바이저 및 구글 서치콘솔 소유권 확인 시 사용자가 영숫자 키값만 넣어야 하는지, `<meta name="..." content="..." />` HTML 태그 전체를 넣어야 하는지 헷갈리는 문제를 원천 해결.
+  - 사용자가 둘 중 어떤 방식으로 복사/붙여넣기 하더라도 시스템이 자동으로 정제하여 100% 인식하도록 개선하고, FAQ 챗봇 및 스튜디오 UI 가이드라인을 보강.
+- **주요 구현 내역**:
+  1. **지능형 자동 정제 엔진 (`cleanVerificationKey`) 전수 탑재**:
+     - `brand/[brand_id]/page.tsx`, `brand/[brand_id]/[slug]/page.tsx`, `dynamic-renderer/[brand_id]/[[...slug]]/page.tsx`에 `cleanVerificationKey` 탑재.
+     - `<meta ... content="KEY" />` 또는 `naver-site-verification=KEY` 등 어떤 형태로 들어와도 순수 KEY 값만 0ms로 정제하여 `<meta name="naver-site-verification" content="KEY">`로 완벽 렌더링.
+  2. **스튜디오 UI 입력창 가이드 캡션 신설 (`blog-management/page.tsx`)**:
+     - "네이버 서치어드바이저 연동 키" 및 "구글 서치콘솔 연동 키" 하단에 *"💡 둘 다 입력 가능: 영숫자 키 값만 넣으셔도 되고, `<meta ... />` 태그 전체를 그대로 붙여넣으셔도 시스템이 알아서 키를 자동 추출하여 100% 정상 연동됩니다."* 안내 문구 추가.
+  3. **FAQ 데이터셋 및 챗봇 지식베이스 동기화 (`faqData.ts`)**:
+     - `write-7` (네이버 서치어드바이저) 및 `write-8` (구글 서치콘솔) FAQ 항목에 둘 다 입력 가능하다는 상세 꿀팁 보강.
+  4. **서치콘솔 가이드 모달 튜토리얼 최신화**:
+     - 스튜디오 상단 `[구글/네이버 소유권 1분 연동 가이드]` 모달의 Step 2/3 설명문 업데이트.
+### 3. 🔒 네이버/구글 서치콘솔 HTTPS(SSL) 등록 권장 가이드 보강 & 커스텀 클라이언트(`sotongcheum`) 동적 인증키 연동 완료 (v1.55)
+- **개발 배경 및 요구사항**:
+  - 서치어드바이저 등록 시 `http://` 대신 보안 인증서(SSL)가 적용된 `https://`로 등록해야 검색 품질 지수 및 상위 노출에 유리하다는 안내를 "SEO 및 애널리틱스 연동" 탭 및 FAQ/챗봇에 반영 요청.
+  - 소통과채움(`sotongcheum/layout.tsx`) 등 커스텀 클라이언트 레이아웃에도 DB의 네이버/구글 인증키를 실시간으로 주입하는 동적 `generateMetadata` 연동 완료.
+- **주요 구현 내역**:
+  1. **스튜디오 "SEO 및 애널리틱스 연동" 탭에 SSL 등록 권장 배너 신설**:
+     - *"🔒 네이버/구글 서치콘솔 등록 필수 팁: `http://` 대신 보안 인증서(SSL)가 기본 적용된 `https://[도메인]`으로 등록하셔야 검색 품질 지수 및 상위 노출에 훨씬 유리합니다!"* 상단 강조 카드 탑재.
+  2. **서치콘솔 1분 가이드 모달 Step 1 설명 보강**:
+     - 네이버 및 구글 Step 1 항목에 `https://` 등록 권장 팁 문구 추가.
+  3. **FAQ & 챗봇 지식베이스 동기화 (`faqData.ts`)**:
+     - `write-7`, `write-8` 답변 1단계에 `https://` 등록 필수 꿀팁 주입.
+  4. **커스텀 클라이언트 레이아웃 동적 인증 메타데이터 탑재 (`src/app/clients/sotongcheum/layout.tsx`)**:
+     - 정적 `metadata`를 동적 `generateMetadata()`로 승격하여 DB(`profiles.extra_configs`)에 저장된 `naver_advisor_key` 및 `google_search_console_key`를 0ms로 렌더링.
+- **검증**: `npx tsc --noEmit` 전체 컴파일 에러 0건 통과.
+
+---
+
 ## 📅 2026년 8월 19일 (수)
 
 ### 1. 🏢 커스텀 클라이언트 사이트(`clients/[brand_id]`)와 `client_sites` 마스터 DB 자동 매핑 & [내 웹사이트 관리] 실시간 연동 (v1.32)
