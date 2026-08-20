@@ -102,7 +102,15 @@
   3. **소스 코드 업로드 기본 경로 영구 통일**:
      - `src/app/api/cron/site-migration-worker/route.ts` (S3 Key: `sites/migrated-sites/${siteId}/...`)
      - `src/app/api/studio/ai-magic-builder/route.ts` (S3 Key: `sites/migrated-sites/${siteId}/...`)
-- **검증**: `npx tsc --noEmit` 전체 컴파일 에러 0건 통과.
+### 8. 🩹 AI 동적 웹사이트 렌더러(`dynamic-renderer`) DB 스키마 컬럼명 교정(`user_id` ➔ `profile_id`) 및 본문 섹션 정상 출력 복구 (v1.60)
+- **개발 배경 및 문제 현상**:
+  - `dream-catchers-1r87.creaibox.com`, `bima-ydnt.creaibox.com` 등 AI 웹사이트 빌더로 제작된 동적 사이트 접속 시, 헤더/푸터는 나오나 본문 영역에 "홈페이지가 준비 중입니다." 안내문만 뜨는 문제 발생.
+- **원인 분석**:
+  - `src/app/clients/dynamic-renderer/[brand_id]/[[...slug]]/page.tsx` 및 `src/lib/server/client-site-metadata.ts`에서 서치콘솔 키 및 사이트 설정을 조회할 때, `client_sites` 테이블의 소유자 컬럼명이 `profile_id`인데 `user_id`로 잘못 `select()`되어 Postgres 컬럼 에러(`column client_sites.user_id does not exist`)로 인해 사이트 객체 조회가 `null`로 폴백되었음.
+- **조치 내역**:
+  - `client_sites` 쿼리의 `user_id` 참조를 정석 컬럼인 `profile_id`로 전면 교정.
+  - 드림캐쳐스(10개 섹션), Bima(9개 섹션) 등 전체 AI 동적 웹사이트의 본문 섹션 및 이미지가 100% 정상 렌더링되도록 복구 완료.
+- **검증**: `npx tsc --noEmit` 0 Errors 및 실제 DB 연동 테스트 통과.
 
 ---
 

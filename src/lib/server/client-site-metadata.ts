@@ -23,16 +23,16 @@ export const getClientSiteVerificationKeys = cache(async (brandId: string) => {
     const bKey = brandId.toLowerCase();
     const { data: site } = await supabase
       .from("client_sites")
-      .select("extra_configs, user_id")
+      .select("extra_configs, profile_id")
       .eq("brand_id", bKey)
       .maybeSingle();
 
     let profileConfigs: any = {};
-    if (site?.user_id) {
+    if (site?.profile_id) {
       const { data: prof } = await supabase
         .from("profiles")
         .select("extra_configs")
-        .eq("id", site.user_id)
+        .eq("id", site.profile_id)
         .maybeSingle();
       profileConfigs = prof?.extra_configs || {};
     } else {

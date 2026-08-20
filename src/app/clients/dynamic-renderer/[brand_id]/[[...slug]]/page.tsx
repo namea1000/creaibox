@@ -20,19 +20,23 @@ interface PageProps {
 const fetchSiteData = cache(async (brandId: string) => {
   const supabase = await createAdminClient();
   const bKey = brandId.toLowerCase();
-  const { data: site } = await supabase
+  const { data: site, error } = await supabase
     .from("client_sites")
-    .select("id, company_name, is_onepage_scroll, status, extra_configs, user_id")
+    .select("id, company_name, is_onepage_scroll, status, extra_configs, profile_id")
     .eq("brand_id", bKey)
     .maybeSingle();
 
+  if (error) {
+    console.error("fetchSiteData client_sites query error:", error);
+  }
+
   // If profile has verification keys, blend them
   let profileConfigs: any = {};
-  if (site?.user_id) {
+  if (site?.profile_id) {
     const { data: prof } = await supabase
       .from("profiles")
       .select("extra_configs")
-      .eq("id", site.user_id)
+      .eq("id", site.profile_id)
       .maybeSingle();
     profileConfigs = prof?.extra_configs || {};
   } else {
