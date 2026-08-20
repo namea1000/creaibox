@@ -173,12 +173,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const canonicalUrl = `https://${brand_id}.creaibox.com${slug.length > 0 ? `/${slug.join("/")}` : ""}`;
 
+  const safeDesc = pageDesc.length > 80 ? pageDesc.slice(0, 77) + "..." : pageDesc;
+
   return {
-    title: pageTitle,
-    description: pageDesc,
+    title: {
+      absolute: pageTitle,
+    },
+    description: safeDesc,
     openGraph: {
       title: pageTitle,
-      description: pageDesc,
+      description: safeDesc,
       url: canonicalUrl,
       siteName: rawSiteTitle,
       images: [

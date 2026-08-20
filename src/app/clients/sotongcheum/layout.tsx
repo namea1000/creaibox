@@ -9,15 +9,17 @@ export async function generateMetadata(): Promise<Metadata> {
   const { naverKey, googleKey } = await getClientSiteVerificationKeys("sotongcheum");
 
   const meta: Metadata = {
-    title: "소통과채움 | 교육, 행사기획 & 렌탈 전문 기업",
+    title: {
+      absolute: "소통과 채움 | 교육, 행사기획 & 렌탈 전문",
+    },
     description:
-      "공공행사부터 마을축제까지, 처음부터 끝까지 깔끔하게! 소통과채움 협동조합은 힐링, 소통, 공감을 가치로 한 감성 교육 프로그램 및 행사기획, 전문 장비 렌탈 서비스를 제공합니다.",
+      "공공행사부터 마을축제까지 깔끔하게! 소통과채움 협동조합의 감성 교육 프로그램 및 전문 장비 렌탈 서비스를 만나보세요.",
     openGraph: {
-      title: "소통과채움 | 교육, 행사기획 & 렌탈 전문 기업",
+      title: "소통과 채움 | 교육, 행사기획 & 렌탈 전문",
       description:
-        "공공행사부터 마을축제까지, 처음부터 끝까지 깔끔하게! 소통과채움 협동조합은 힐링, 소통, 공감을 가치로 한 감성 교육 프로그램 및 행사기획, 전문 장비 렌탈 서비스를 제공합니다.",
+        "공공행사부터 마을축제까지 깔끔하게! 소통과채움 협동조합의 감성 교육 프로그램 및 전문 장비 렌탈 서비스를 만나보세요.",
       url: "https://sotongcheum.com",
-      siteName: "소통과채움",
+      siteName: "소통과 채움",
       images: [
         {
           url: getCustomClientAssetUrl("sotongcheum", "hero-bg.webp"),
@@ -31,9 +33,9 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: "소통과채움 | 교육, 행사기획 & 렌탈 전문 기업",
+      title: "소통과 채움 | 교육, 행사기획 & 렌탈 전문",
       description:
-        "공공행사부터 마을축제까지, 처음부터 끝까지 깔끔하게! 소통과채움 협동조합",
+        "공공행사부터 마을축제까지 깔끔하게! 소통과채움 협동조합",
       images: [getCustomClientAssetUrl("sotongcheum", "hero-bg.webp")],
     },
   };

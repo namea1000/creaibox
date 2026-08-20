@@ -8,13 +8,15 @@ export async function generateMetadata(): Promise<Metadata> {
   const { naverKey, googleKey } = await getClientSiteVerificationKeys("woolcraft");
 
   const meta: Metadata = {
-    title: "WoolCraft (울크래프트) - 프리미엄 양모 핸드메이드 라이프스타일",
+    title: {
+      absolute: "WoolCraft | 프리미엄 양모 라이프스타일",
+    },
     description:
-      "호주산 프리미엄 천연 양모로 빚어낸 핸드메이드 라이프스타일 브랜드 울크래프트. 따뜻함과 편안함을 선사하는 감성 인테리어 & 패션 아이템을 만나보세요.",
+      "호주산 프리미엄 천연 양모로 빚어낸 핸드메이드 라이프스타일 브랜드 울크래프트를 만나보세요.",
     openGraph: {
-      title: "WoolCraft (울크래프트) - 프리미엄 양모 핸드메이드 라이프스타일",
+      title: "WoolCraft | 프리미엄 양모 라이프스타일",
       description:
-        "호주산 프리미엄 천연 양모로 빚어낸 핸드메이드 라이프스타일 브랜드 울크래프트. 따뜻함과 편안함을 선사하는 감성 인테리어 & 패션 아이템을 만나보세요.",
+        "호주산 프리미엄 천연 양모로 빚어낸 핸드메이드 라이프스타일 브랜드 울크래프트를 만나보세요.",
       url: "https://woolcraft.creaibox.com",
       siteName: "WoolCraft",
       images: [

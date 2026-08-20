@@ -276,6 +276,13 @@ export async function proxy(request: NextRequest) {
         });
       }
 
+      if (path === "/robots.txt") {
+        const rewriteUrl = new URL(`/brand/${brandKey}/robots.txt`, request.url);
+        return NextResponse.rewrite(rewriteUrl, {
+          request: { headers: new Headers(request.headers) },
+        });
+      }
+
       const isCustomClient = CUSTOM_CLIENT_SITES.includes(brandKey);
       
       let rewritePath = "";

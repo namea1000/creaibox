@@ -62,6 +62,20 @@
      - `path === "/ads.txt"` 요청 시 `/brand/${brandKey}/ads.txt`로 자동 라우팅.
   2. **브랜드/클라이언트 전용 동적 Sitemap 라우트 신설 (`src/app/brand/[brand_id]/sitemap.xml/route.ts`)**:
      - 메인 랜딩 URL(`baseUrl`), 서브페이지 목록, 블로그 목록 및 발행된 모든 포스팅 URL을 수집하여 표준 XML 사이트맵으로 동적 생성 및 캐싱 서빙.
+### 5. 🎯 네이버 서치어드바이저 SEO 진단 최적화 (제목 40자 / 설명 80자 슬림화 & 브랜드별 동적 `robots.txt` 라우팅 탑재) (v1.57)
+- **개발 배경 및 진단 결과**:
+  - 네이버 서치어드바이저 [검증 -> URL 검사 / robots.txt] 진단 시:
+    1. `robots.txt`: 사이트맵이 `creaibox.com/sitemap.xml`로 잡히던 문제.
+    2. `페이지 제목`: 루트 레이아웃 접미사(`| 크리에이박스 CreaiBox`) 결합으로 40자를 초과하여 노란색 경고 발생.
+    3. `페이지 설명 & OpenGraph 설명`: 설명문이 95자로 80자를 초과하여 경고 발생.
+- **주요 구현 및 해결 내역**:
+  1. **브랜드/도메인별 동적 `robots.txt` 라우트 신설 (`src/app/brand/[brand_id]/robots.txt/route.ts`)**:
+     - `https://sotongcheum.com/robots.txt` 호출 시 해당 도메인 전용 `Sitemap: https://sotongcheum.com/sitemap.xml`을 자동으로 출력하도록 동적화.
+     - 미들웨어 프록시(`src/proxy.ts`)에서 `/robots.txt` 요청을 `/brand/${brandKey}/robots.txt`로 다이렉트 리라이트.
+  2. **페이지 제목 절대값(`absolute`) 적용 및 40자 이내 최적화**:
+     - `title: { absolute: "소통과채움 | 교육, 행사기획 & 렌탈 전문" }` (23자)로 세팅하여 루트 템플릿 접미사 중복 방지.
+  3. **페이지 설명문 80자 이내 슬림화**:
+     - `"공공행사부터 마을축제까지 깔끔하게! 소통과채움 협동조합의 감성 교육 프로그램 및 전문 장비 렌탈 서비스를 만나보세요."` (58자)로 최적화하여 네이버 로봇 진단 기준(80자 이내) 완벽 충족.
 - **검증**: `npx tsc --noEmit` 전체 컴파일 에러 0건 통과.
 
 ---

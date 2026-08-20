@@ -9,11 +9,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const { naverKey, googleKey } = await getClientSiteVerificationKeys("commufill");
 
   const meta: Metadata = {
-    title: "Commufill | AI-Powered Community Engagement Platform",
-    description: "Automate and scale your community content, engagement, and management with Commufill's advanced AI services.",
+    title: {
+      absolute: "Commufill | AI 커뮤니티 플랫폼",
+    },
+    description: "Commufill의 고급 AI 서비스로 커뮤니티 콘텐츠와 참여도를 자동화하고 확장하세요.",
     openGraph: {
-      title: "Commufill | AI-Powered Community Engagement Platform",
-      description: "Automate and scale your community content, engagement, and management with Commufill's advanced AI services.",
+      title: "Commufill | AI 커뮤니티 플랫폼",
+      description: "Commufill의 고급 AI 서비스로 커뮤니티 콘텐츠와 참여도를 자동화하고 확장하세요.",
       url: "https://commufill.creaibox.com",
       siteName: "Commufill",
       images: [

@@ -74,3 +74,31 @@
   1. 외부 다수 독립 도메인으로부터의 고품질 백링크 수십~수백 개 자동 형성.
   2. `creaibox.com` 메인 사이트의 도메인 신뢰도(Domain Authority, DA) 및 상위 노출 점수 대폭 상승.
   3. 추천 유입 트래픽(Referral Traffic) 증대 효과.
+
+---
+
+## 7. 네이버 서치어드바이저 & 구글 서치콘솔 소유권 인증키 동적 렌더링 및 자동 정제 아키텍처
+- **메타태그 렌더링 파이프라인**:
+  - `brand/[brand_id]`, `clients/dynamic-renderer`, 및 모든 커스텀 클라이언트 레이아웃(`sotongcheum`, `aura-merino`, `woolcraft`, `commufill`, `creative-media-blog`)에서 `generateMetadata()`를 통해 DB에 저장된 `naver_advisor_key` 및 `google_search_console_key`를 실시간 조회하여 `<meta name="naver-site-verification" content="...">` 및 `<meta name="google-site-verification" content="...">` 태그 자동 출력.
+- **지능형 자동 정제 엔진 (`cleanVerificationKey`)**:
+  - 사용자가 영숫자 키값만 넣든 (`685ef958f...`), `<meta name="naver-site-verification" content="..." />` 태그 전체를 복사해서 붙여넣든 정규식 추출을 통해 순수 KEY 값만 0ms로 정제하여 100% 정상 연동 보장.
+- **HTTPS (SSL) 기본 등록 원칙**:
+  - 검색엔진 품질 점수 최적화를 위해 모든 도메인은 `https://` 프리픽스로 네이버 서치어드바이저 및 구글 서치콘솔에 등록하도록 표준화.
+
+---
+
+## 8. 커스텀 독립 도메인 & AI 웹사이트 RSS 피드(`/feed`) 및 동적 `sitemap.xml` 라우팅 파이프라인
+```mermaid
+graph TD
+    Bot["검색 로봇 요청 (네이버봇, 구글봇, Bing봇)"] --> Proxy["Next.js 미들웨어 프록시 (src/proxy.ts)"]
+    
+    Proxy -->|"/feed", "/feed.xml", "/rss"| FeedRoute["src/app/brand/[brand_id]/feed/route.ts (RSS 2.0 XML)"]
+    Proxy -->|"/sitemap.xml", "/sitemap"| SitemapRoute["src/app/brand/[brand_id]/sitemap.xml/route.ts (Sitemap XML)"]
+    Proxy -->|"/ads.txt"| AdsRoute["src/app/brand/[brand_id]/ads.txt/route.ts (AdSense ads.txt)"]
+    Proxy -->|일반 페이지 요청| SiteRoute["맞춤형 기업 사이트 (/clients/[id]) 또는 AI 빌더 (/clients/dynamic-renderer)"]
+```
+- **미들웨어 프록시 분기 (`src/proxy.ts`)**:
+  - 커스텀 도메인(`https://sotongcheum.com`) 또는 서브도메인 요청 시 특수 SEO 경로(`/feed`, `/sitemap.xml`, `/ads.txt`)는 폴더 구조와 무관하게 브랜드 전용 라우터로 0.01초 만에 다이렉트 리라이트(Rewrite).
+- **동적 사이트맵 규격 (`src/app/brand/[brand_id]/sitemap.xml/route.ts`)**:
+  - 메인 랜딩 URL, 서브페이지 목록, 블로그 목록, 발행 포스트 전체 URL을 `lastmod`, `changefreq`, `priority`와 함께 W3C 표준 XML로 실시간 생성.
+

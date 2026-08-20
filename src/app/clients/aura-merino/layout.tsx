@@ -8,13 +8,15 @@ export async function generateMetadata(): Promise<Metadata> {
   const { naverKey, googleKey } = await getClientSiteVerificationKeys("aura-merino");
 
   const meta: Metadata = {
-    title: "Aura Merino (아우라 메리노) - Natural Wool Sneakers | Eco Luxury",
+    title: {
+      absolute: "Aura Merino | Natural Wool Sneakers",
+    },
     description:
-      "100% 천연 메리노 울과 캐시미어를 담은 아우라 메리노 스니커즈. 타협 없는 편안함과 모던한 이커머스 스토어를 만나보세요.",
+      "100% 천연 메리노 울과 캐시미어를 담은 아우라 메리노 스니커즈. 타협 없는 편안함을 만나보세요.",
     openGraph: {
-      title: "Aura Merino (아우라 메리노) - Natural Wool Sneakers | Eco Luxury",
+      title: "Aura Merino | Natural Wool Sneakers",
       description:
-        "100% 천연 메리노 울과 캐시미어를 담은 아우라 메리노 스니커즈. 타협 없는 편안함과 모던한 이커머스 스토어를 만나보세요.",
+        "100% 천연 메리노 울과 캐시미어를 담은 아우라 메리노 스니커즈. 타협 없는 편안함을 만나보세요.",
       url: "https://aura-merino.creaibox.com",
       siteName: "Aura Merino",
       images: [

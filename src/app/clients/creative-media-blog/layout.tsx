@@ -9,13 +9,15 @@ export async function generateMetadata(): Promise<Metadata> {
   const { naverKey, googleKey } = await getClientSiteVerificationKeys("creative-media-blog");
 
   const meta: Metadata = {
-    title: "크리에이티브 미디어 블로그 V1 | IT, 테크, 마케팅 전문 트렌드 포털",
+    title: {
+      absolute: "Creative Media Blog | 테크 트렌드 포털",
+    },
     description:
-      "AI, 테크, 디지털 디자인 및 마케팅 인사이트를 전하는 1등 트렌드 미디어 블로그입니다. 매일 업데이트되는 신규 뉴스레터와 독창적인 지식 콘텐츠를 만나보세요.",
+      "AI, 테크, 디지털 디자인 및 마케팅 인사이트를 전하는 1등 트렌드 미디어 블로그입니다.",
     openGraph: {
-      title: "크리에이티브 미디어 블로그 V1 | IT, 테크, 마케팅 전문 트렌드 포털",
+      title: "Creative Media Blog | 테크 트렌드 포털",
       description:
-        "AI, 테크, 디지털 디자인 및 마케팅 인사이트를 전하는 1등 트렌드 미디어 블로그입니다. 매일 업데이트되는 신규 뉴스레터와 독창적인 지식 콘텐츠를 만나보세요.",
+        "AI, 테크, 디지털 디자인 및 마케팅 인사이트를 전하는 1등 트렌드 미디어 블로그입니다.",
       url: "https://creative-media-blog.creaibox.com",
       siteName: "Creative Media Blog",
       images: [
