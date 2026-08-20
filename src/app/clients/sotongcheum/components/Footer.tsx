@@ -4,8 +4,10 @@ import React from "react";
 import Link from "next/link";
 import { HeartHandshake } from "lucide-react";
 import { COMPANY_INFO } from "../lib/constants";
+import { useCompanyInfo } from "../lib/useCompanyInfo";
 
 export default function Footer() {
+  const companyInfo = useCompanyInfo();
   return (
     <footer className="bg-slate-50 border-t border-slate-100 py-16 mt-24">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -17,7 +19,7 @@ export default function Footer() {
                 <HeartHandshake className="h-4.5 w-4.5" />
               </div>
               <span className="text-md font-black tracking-tight text-slate-900">
-                {COMPANY_INFO.name}
+                {companyInfo.name}
               </span>
             </Link>
             <p className="text-xs font-bold text-slate-500 max-w-sm leading-relaxed">
@@ -42,23 +44,23 @@ export default function Footer() {
               <ul className="space-y-2 text-slate-500 leading-relaxed font-semibold">
                 <li>
                   <span className="font-bold text-slate-700">전화번호: </span>
-                  <a href={`tel:${COMPANY_INFO.phone}`} className="hover:text-blue-600 transition-colors">{COMPANY_INFO.phone}</a>
+                  <a href={`tel:${companyInfo.phone}`} className="hover:text-blue-600 transition-colors">{companyInfo.phone}</a>
                 </li>
                 <li>
                   <span className="font-bold text-slate-700">팩스번호: </span>
-                  {COMPANY_INFO.fax}
+                  {companyInfo.fax}
                 </li>
                 <li>
                   <span className="font-bold text-slate-700">이메일: </span>
-                  <a href={`mailto:${COMPANY_INFO.email}`} className="hover:text-blue-600 transition-colors">{COMPANY_INFO.email}</a>
+                  <a href={`mailto:${companyInfo.email}`} className="hover:text-blue-600 transition-colors">{companyInfo.email}</a>
                 </li>
                 <li>
                   <span className="font-bold text-slate-700">사업자등록번호: </span>
-                  {COMPANY_INFO.licenseNumber}
+                  {companyInfo.licenseNumber}
                 </li>
                 <li>
                   <span className="font-bold text-slate-700">주소: </span>
-                  {COMPANY_INFO.address}
+                  {companyInfo.address}
                 </li>
               </ul>
             </div>
@@ -67,7 +69,7 @@ export default function Footer() {
 
         {/* copyright and legal */}
         <div className="mt-16 border-t border-slate-200/60 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
-          <p>&copy; {new Date().getFullYear()} {COMPANY_INFO.name}. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} {companyInfo.name}. All rights reserved.</p>
           <p>
             Powered by{" "}
             <a

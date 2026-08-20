@@ -3,8 +3,10 @@
 import React, { useState } from "react";
 import { Mail, Phone, MapPin, Send, CheckCircle } from "lucide-react";
 import { COMPANY_INFO } from "../lib/constants";
+import { useCompanyInfo } from "../lib/useCompanyInfo";
 
 export default function ContactForm() {
+  const companyInfo = useCompanyInfo();
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -142,8 +144,8 @@ export default function ContactForm() {
             </div>
             <div>
               <p className="text-blue-200 text-[10px] uppercase font-black tracking-widest">대표전화</p>
-              <a href={`tel:${COMPANY_INFO.phone}`} className="hover:text-blue-100 transition-colors text-sm font-extrabold">
-                {COMPANY_INFO.phone}
+              <a href={`tel:${companyInfo.phone}`} className="hover:text-blue-100 transition-colors text-sm font-extrabold">
+                {companyInfo.phone}
               </a>
             </div>
           </li>
@@ -153,8 +155,8 @@ export default function ContactForm() {
             </div>
             <div>
               <p className="text-blue-200 text-[10px] uppercase font-black tracking-widest">이메일</p>
-              <a href={`mailto:${COMPANY_INFO.email}`} className="hover:text-blue-100 transition-colors text-sm font-extrabold">
-                {COMPANY_INFO.email}
+              <a href={`mailto:${companyInfo.email}`} className="hover:text-blue-100 transition-colors text-sm font-extrabold">
+                {companyInfo.email}
               </a>
             </div>
           </li>
@@ -165,14 +167,14 @@ export default function ContactForm() {
             <div>
               <p className="text-blue-200 text-[10px] uppercase font-black tracking-widest">본사 주소</p>
               <span className="text-sm font-extrabold leading-tight">
-                {COMPANY_INFO.address}
+                {companyInfo.address}
               </span>
             </div>
           </li>
         </ul>
 
         <div className="text-[10px] font-black text-blue-200/60 tracking-wider">
-          {COMPANY_INFO.name}
+          {companyInfo.name}
         </div>
       </div>
 

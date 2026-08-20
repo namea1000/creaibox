@@ -110,7 +110,19 @@
 - **조치 내역**:
   - `client_sites` 쿼리의 `user_id` 참조를 정석 컬럼인 `profile_id`로 전면 교정.
   - 드림캐쳐스(10개 섹션), Bima(9개 섹션) 등 전체 AI 동적 웹사이트의 본문 섹션 및 이미지가 100% 정상 렌더링되도록 복구 완료.
-- **검증**: `npx tsc --noEmit` 0 Errors 및 실제 DB 연동 테스트 통과.
+### 9. 🔄 커스텀 클라이언트 사이트(`sotongcheum`) 스튜디오 [홈페이지 설정] DB 실시간 동적 브릿지 탑재 (v1.61)
+- **개발 배경 및 요구사항**:
+  - 소통과채움(`sotongcheum`)의 대표자명, 회사명, 연락처, 주소, 인사말 등이 초기 상수 파일(`constants.ts`)의 고정값으로 렌더링되어, 스튜디오의 **[홈페이지 설정] (`/studio/client-site-builder/settings`)**에서 대표자명을 수정해도 실제 웹사이트(`/about` 및 메인/푸터)에 즉각 반영되지 않던 문제 해결.
+- **주요 구현 내역**:
+  1. **동적 기업 정보 훅 신설 (`src/app/clients/sotongcheum/lib/useCompanyInfo.ts`)**:
+     - 초기 렌더링 시 기존 `COMPANY_INFO` 상수를 기본값으로 하여 0ms SSR/Hydration 레이아웃 시프트 없이 즉시 렌더링.
+     - 클라이언트 단에서 Supabase `client_sites`의 `company_name`, `phone`, `address`, `extra_configs.representative_name`, `business_number`, `fax`, `email`, `greetings`를 실시간 조회하여 즉각 상태 갱신.
+  2. **모든 하위 컴포넌트 실시간 연동 완료**:
+     - `src/app/clients/sotongcheum/about/page.tsx` (인사말 본문, 대표이사 이름, 네이버 지도 좌표, 주소/연락처)
+     - `src/app/clients/sotongcheum/components/Header.tsx` (상단 브랜드 로고명, 대표 전화번호)
+     - `src/app/clients/sotongcheum/components/Footer.tsx` (하단 고객센터 정보, 사업자등록번호, 카피라이트 상호)
+     - `src/app/clients/sotongcheum/components/ContactForm.tsx` (온라인 문의 좌측 공식 안내 정보)
+- **검증**: `npx tsc --noEmit` 전체 컴파일 에러 0건 통과.
 
 ---
 

@@ -3,9 +3,10 @@
 import React from "react";
 import { Heart, MapPin, Phone, Printer, Mail, Sparkles, Target, MessageSquare, Award, Users, ShieldCheck, Navigation } from "lucide-react";
 import { COMPANY_INFO, CLIENT_PARTNERS } from "../lib/constants";
+import { useCompanyInfo } from "../lib/useCompanyInfo";
 import { getCustomClientAssetUrl } from "@/lib/r2-client-assets";
 
-function BongdamMapGraphic() {
+function BongdamMapGraphic({ companyInfo }: { companyInfo: typeof COMPANY_INFO }) {
   return (
     <div className="relative w-full h-full min-h-[420px] bg-slate-100 rounded-3xl overflow-hidden border border-slate-200 shadow-md select-none font-sans group">
       {/* Exact Real Naver Map Image uploaded by user */}
@@ -28,8 +29,8 @@ function BongdamMapGraphic() {
         <div className="bg-slate-900/95 text-white px-4 py-2.5 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2.5 mb-2 backdrop-blur-md">
           <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse shrink-0" />
           <div>
-            <p className="text-xs font-black text-white leading-none">{COMPANY_INFO.name}</p>
-            <p className="text-[10px] font-bold text-red-400 mt-1 leading-none">경기도 화성시 봉담읍 동화길 51, 401호</p>
+            <p className="text-xs font-black text-white leading-none">{companyInfo.name}</p>
+            <p className="text-[10px] font-bold text-red-400 mt-1 leading-none">{companyInfo.address}</p>
           </div>
         </div>
 
@@ -61,6 +62,8 @@ function BongdamMapGraphic() {
 }
 
 export default function AboutPage() {
+  const companyInfo = useCompanyInfo();
+
   const coreValues = [
     {
       title: "소통",
@@ -89,8 +92,8 @@ export default function AboutPage() {
     {
       title: "신뢰",
       engTitle: "Trust",
-      desc: "안전하고 책임감 있게 운영합니다.",
-      color: "bg-amber-50/90 text-amber-600 border-amber-100",
+      desc: "투명하고 책임감 있게 운영합니다.",
+      color: "bg-purple-50/90 text-purple-600 border-purple-100",
       icon: <ShieldCheck className="h-5 w-5" />,
       image: "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=800&q=80",
     },
@@ -98,45 +101,52 @@ export default function AboutPage() {
 
   return (
     <div className="bg-white">
-      {/* Visual Header */}
-      <section className="bg-gradient-to-b from-blue-50/30 to-white py-16 sm:py-20 border-b border-slate-50">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8 text-center animate-fade-in">
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-            회사 소개
+      {/* Hero Section */}
+      <section className="relative py-24 bg-gradient-to-b from-slate-900 via-blue-950 to-slate-900 text-white overflow-hidden select-none">
+        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:16px_16px]" />
+
+        <div className="mx-auto max-w-7xl px-6 lg:px-8 relative z-10 text-center">
+          <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-blue-500/20 text-blue-300 text-xs font-black uppercase tracking-widest border border-blue-400/30 backdrop-blur-md mb-6">
+            <Heart size={14} className="text-red-400 fill-red-400" />
+            ABOUT SOTONG & CHEUM
+          </span>
+          <h1 className="text-4xl font-black tracking-tight sm:text-6xl text-white">
+            소통으로 연결하고, <br className="sm:hidden" />
+            <span className="text-blue-400">가치로 채우는 공간</span>
           </h1>
-          <p className="mt-4 text-xs font-black uppercase tracking-widest text-blue-600">
-            About Sotong & Cheum
+          <p className="mt-6 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto font-medium leading-relaxed">
+            소통과채움 협동조합은 화성특례시를 거점으로 주민과 지역사회가 함께 어우러지는 
+            품격 있는 행사와 따뜻한 공동체 문화를 만들어갑니다.
           </p>
         </div>
       </section>
 
-      {/* CEO Greetings */}
-      <section className="py-20">
+      {/* Greetings & CEO Message Section */}
+      <section className="py-20 bg-white">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Corporate Brand Emblem Visual (Left) */}
+            {/* Brand Visual Card (Left) */}
             <div className="lg:col-span-5 relative">
-              <div className="aspect-[4/5] rounded-3xl bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 border border-slate-800 shadow-2xl p-8 sm:p-10 flex flex-col justify-between items-center text-center relative overflow-hidden select-none">
-                {/* Background Glow & Pattern */}
-                <div className="absolute -top-20 -right-20 w-56 h-56 bg-blue-600/20 rounded-full blur-3xl" />
-                <div className="absolute -bottom-20 -left-20 w-56 h-56 bg-cyan-600/20 rounded-full blur-3xl" />
-                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:16px_16px]" />
+              <div className="rounded-3xl bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 p-8 sm:p-10 text-white shadow-2xl border border-slate-800 flex flex-col justify-between items-center text-center space-y-8 min-h-[440px] relative overflow-hidden select-none">
+                <div className="absolute -right-16 -top-16 w-52 h-52 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute -left-16 -bottom-16 w-52 h-52 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none" />
 
-                {/* Top Badge */}
+                {/* Top Official Emblem Label */}
                 <div className="relative z-10 w-full flex items-center justify-between border-b border-white/10 pb-4">
-                  <span className="text-[10px] font-black tracking-widest text-blue-400 uppercase">OFFICIAL BRAND EMBLEM</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    OFFICIAL BRAND EMBLEM
+                  </span>
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 </div>
 
-                {/* Center Brand Emblem & Logo */}
-                <div className="relative z-10 my-auto flex flex-col items-center space-y-4">
-                  {/* Official Speech-Bubble Heart Logo Icon Badge */}
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr from-blue-600 to-cyan-500 p-0.5 shadow-2xl shadow-blue-500/30">
-                    <div className="w-full h-full bg-slate-950 rounded-[22px] flex items-center justify-center relative overflow-hidden">
-                      <div className="absolute inset-0 bg-blue-600/20 blur-md" />
-                      <div className="relative flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-2xl bg-blue-600/90 text-white flex items-center justify-center shadow-lg">
-                          <Heart className="w-7 h-7 fill-white text-white" />
+                {/* Center Big Logo Emblem */}
+                <div className="relative z-10 flex flex-col items-center justify-center space-y-4 py-2">
+                  <div className="relative group">
+                    <div className="absolute -inset-2 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-3xl blur opacity-30 group-hover:opacity-60 transition duration-500" />
+                    <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 p-0.5 shadow-2xl flex items-center justify-center">
+                      <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center p-3">
+                        <div className="w-14 h-14 rounded-full bg-blue-600/30 flex items-center justify-center border border-blue-400/40">
+                          <Heart className="w-8 h-8 text-blue-400 fill-blue-400" />
                         </div>
                       </div>
                     </div>
@@ -144,16 +154,11 @@ export default function AboutPage() {
 
                   <div>
                     <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                      소통과 채움
+                      {companyInfo.name}
                     </h3>
                     <p className="text-xs font-black tracking-widest text-cyan-400 uppercase mt-1">
                       SOTONG & CHEUM
                     </p>
-                  </div>
-
-                  <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md text-slate-200 text-xs font-bold border border-white/15 shadow-inner">
-                    <Sparkles size={12} className="text-cyan-400" />
-                    사람과 지역을 잇는 공동체 문화 플랫폼
                   </div>
                 </div>
 
@@ -177,23 +182,23 @@ export default function AboutPage() {
                   <span className="text-blue-600">공동체 문화를 채우다</span>
                 </h2>
                 <p className="mt-3 text-sm font-bold text-slate-600">
-                  지역과 사람을 연결하고 공동체 문화를 채우는 행사 전문기업, 소통과채움
+                  지역과 사람을 연결하고 공동체 문화를 채우는 행사 전문기업, {companyInfo.name}
                 </p>
               </div>
 
               <div className="text-sm font-medium leading-relaxed text-slate-600 space-y-4 whitespace-pre-line border-t border-slate-100 pt-6">
-                {COMPANY_INFO.greetings}
+                {companyInfo.greetings}
               </div>
 
               {/* CEO Info at the Very Bottom of Greetings Area */}
               <div className="pt-6 border-t border-slate-200 flex items-center justify-between flex-wrap gap-4">
                 <div>
                   <p className="text-[11px] font-black text-blue-600 uppercase tracking-widest">SOTONG & CHEUM CEO</p>
-                  <p className="text-lg font-extrabold text-slate-900 mt-0.5">대표이사 {COMPANY_INFO.ceo}</p>
+                  <p className="text-lg font-extrabold text-slate-900 mt-0.5">대표이사 {companyInfo.ceo}</p>
                   <p className="text-xs text-slate-500 font-bold mt-0.5">화성특례시 기반 지역 공동체 행사 전문기업</p>
                 </div>
                 <div className="px-4 py-2 bg-slate-50 rounded-xl border border-slate-200/80 text-xs font-black text-slate-700">
-                  소통과채움 협동조합
+                  {companyInfo.name}
                 </div>
               </div>
             </div>
@@ -439,7 +444,7 @@ export default function AboutPage() {
                   <MapPin className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-extrabold text-slate-800 text-sm">사무소 주소</p>
-                    <p className="mt-1 leading-relaxed">{COMPANY_INFO.address}</p>
+                    <p className="mt-1 leading-relaxed">{companyInfo.address}</p>
                   </div>
                 </div>
 
@@ -447,8 +452,8 @@ export default function AboutPage() {
                   <Phone className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-extrabold text-slate-800 text-sm">대표전화</p>
-                    <a href={`tel:${COMPANY_INFO.phone}`} className="mt-1 block hover:text-blue-600 transition-colors">
-                      {COMPANY_INFO.phone}
+                    <a href={`tel:${companyInfo.phone}`} className="mt-1 block hover:text-blue-600 transition-colors">
+                      {companyInfo.phone}
                     </a>
                   </div>
                 </div>
@@ -457,7 +462,7 @@ export default function AboutPage() {
                   <Printer className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-extrabold text-slate-800 text-sm">팩스번호</p>
-                    <p className="mt-1">{COMPANY_INFO.fax}</p>
+                    <p className="mt-1">{companyInfo.fax}</p>
                   </div>
                 </div>
 
@@ -465,8 +470,8 @@ export default function AboutPage() {
                   <Mail className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-extrabold text-slate-800 text-sm">이메일</p>
-                    <a href={`mailto:${COMPANY_INFO.email}`} className="mt-1 block hover:text-blue-600 transition-colors">
-                      {COMPANY_INFO.email}
+                    <a href={`mailto:${companyInfo.email}`} className="mt-1 block hover:text-blue-600 transition-colors">
+                      {companyInfo.email}
                     </a>
                   </div>
                 </div>
@@ -474,7 +479,7 @@ export default function AboutPage() {
 
               <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
                 <a
-                  href={COMPANY_INFO.naverMapUrl}
+                  href={companyInfo.naverMapUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#03C75A] hover:bg-[#02b351] py-3 px-4 text-xs font-black text-white transition-all shadow-md shadow-emerald-500/20 active:scale-95 duration-200"
@@ -485,8 +490,8 @@ export default function AboutPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    navigator.clipboard.writeText(COMPANY_INFO.address);
-                    alert("사무소 주소가 복사되었습니다!\n" + COMPANY_INFO.address);
+                    navigator.clipboard.writeText(companyInfo.address);
+                    alert("사무소 주소가 복사되었습니다!\n" + companyInfo.address);
                   }}
                   className="rounded-xl bg-slate-100 hover:bg-slate-200 py-3 px-4 text-xs font-black text-slate-700 transition-colors border border-slate-200"
                 >
@@ -498,12 +503,12 @@ export default function AboutPage() {
             {/* Map Interactive Banner Card (Right) */}
             <div className="lg:col-span-8">
               <a
-                href={COMPANY_INFO.naverMapUrl}
+                href={companyInfo.naverMapUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="group w-full block rounded-3xl overflow-hidden hover:shadow-2xl transition-all duration-300"
               >
-                <BongdamMapGraphic />
+                <BongdamMapGraphic companyInfo={companyInfo} />
               </a>
             </div>
           </div>

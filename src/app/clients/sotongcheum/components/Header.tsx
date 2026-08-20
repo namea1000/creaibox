@@ -5,8 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, HeartHandshake, ArrowRight } from "lucide-react";
 import { COMPANY_INFO } from "../lib/constants";
+import { useCompanyInfo } from "../lib/useCompanyInfo";
 
 export default function Header() {
+  const companyInfo = useCompanyInfo();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
@@ -99,7 +101,7 @@ export default function Header() {
           </div>
           <div className="flex flex-col">
             <span className="text-xl font-extrabold tracking-tight text-slate-900 leading-none">
-              {COMPANY_INFO.brandName}
+              {companyInfo.brandName}
             </span>
             <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest leading-none">
               Sotong &amp; Cheum
@@ -129,10 +131,10 @@ export default function Header() {
         {/* CTA Call button & Contact button */}
         <div className="hidden sm:flex items-center gap-4">
           <a
-            href={`tel:${COMPANY_INFO.phone}`}
+            href={`tel:${companyInfo.phone}`}
             className="text-xs font-black text-slate-500 hover:text-slate-800 transition-colors hidden lg:block"
           >
-            Tel. {COMPANY_INFO.phone}
+            Tel. {companyInfo.phone}
           </a>
           <Link
             href="/contact"
