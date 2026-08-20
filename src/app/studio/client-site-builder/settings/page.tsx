@@ -14,6 +14,8 @@ export default function SettingsPage() {
   const [companyName, setCompanyName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [email, setEmail] = useState("");
+  const [fax, setFax] = useState("");
   const [repName, setRepName] = useState("");
   const [businessNum, setBusinessNum] = useState("");
   const [gaId, setGaId] = useState("");
@@ -39,6 +41,8 @@ export default function SettingsPage() {
       setCompanyName(selectedSite.company_name || "");
       setPhone(selectedSite.phone || "");
       setAddress(selectedSite.address || "");
+      setEmail(selectedSite.extra_configs?.email || "");
+      setFax(selectedSite.extra_configs?.fax || "");
       setRepName(selectedSite.extra_configs?.representative_name || "");
       setBusinessNum(selectedSite.extra_configs?.business_number || "");
       setGaId(selectedSite.extra_configs?.ga4_measurement_id || "");
@@ -88,6 +92,8 @@ export default function SettingsPage() {
 
     const updatedExtraConfigs = {
       ...(selectedSite.extra_configs || {}),
+      email: email.trim(),
+      fax: fax.trim(),
       representative_name: repName.trim(),
       business_number: businessNum.trim(),
       ga4_measurement_id: gaId.trim(),
@@ -195,6 +201,29 @@ export default function SettingsPage() {
             onChange={(e) => setAddress(e.target.value)}
             className="text-sm text-slate-955 dark:text-white border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 rounded-xl px-4 py-3 focus:outline-none"
           />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">공식 이메일</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="sotongcheum@naver.com"
+              className="text-sm text-slate-955 dark:text-white border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 rounded-xl px-4 py-3 focus:outline-none"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">대표 팩스번호</label>
+            <input
+              type="text"
+              value={fax}
+              onChange={(e) => setFax(e.target.value)}
+              placeholder="031-292-3994"
+              className="text-sm text-slate-955 dark:text-white border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 rounded-xl px-4 py-3 focus:outline-none"
+            />
+          </div>
         </div>
 
         {/* Corporate business specs */}
