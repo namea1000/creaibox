@@ -122,7 +122,16 @@
      - `src/app/clients/sotongcheum/components/Header.tsx` (상단 브랜드 로고명, 대표 전화번호)
      - `src/app/clients/sotongcheum/components/Footer.tsx` (하단 고객센터 정보, 사업자등록번호, 카피라이트 상호)
      - `src/app/clients/sotongcheum/components/ContactForm.tsx` (온라인 문의 좌측 공식 안내 정보)
-- **검증**: `npx tsc --noEmit` 전체 컴파일 에러 0건 통과.
+### 10. ⛳ 블로그(`brand/golfgosu`)와 AI 웹사이트 빌더 템플릿 초안 간 라우팅 간섭 방지 및 `golfgosu.net` 정상 복구 (v1.62)
+- **개발 배경 및 문제 현상**:
+  - `https://golfgosu.net` 및 `golfgosu.creaibox.com` 접속 시, 205개의 발행 글이 있는 정상 블로그 대신 "새로운 홈페이지가 준비되었습니다 (설정된 섹션이 없습니다)" 빈 화면이 출력되는 현상 발생.
+- **원인 분석**:
+  - 스튜디오 AI 웹사이트 빌더에서 템플릿 탐색/테스트 중 `client_sites` 테이블에 섹션이 0개인 `golfgosu` 템플릿 초안(`status: DRAFT`) 레코드가 등록됨.
+  - 미들웨어 프록시(`src/proxy.ts`)가 `client_sites`에 레코드만 존재하면 무조건 AI 동적 렌더러(`/clients/dynamic-renderer/golfgosu`)로 라우팅을 우선 가로채어, 기존 205개 포스트의 정상 블로그(`/brand/golfgosu`)가 가려졌음.
+- **조치 내역**:
+  1. `client_sites`의 비어있는 0섹션 `golfgosu` 초안 레코드 안전 제거.
+  2. 미들웨어 프록시(`src/proxy.ts`)의 라우팅 분기 조건을 정밀 강화하여, 템플릿 초안(`DRAFT`) 상태로 섹션이 없는 경우는 기존 브랜드 블로그로 정상 서빙되도록 영구 보완.
+- **검증**: `npx tsc --noEmit` 0 Errors 및 `golfgosu.net` 블로그 100% 정상 로드 복구.
 
 ---
 

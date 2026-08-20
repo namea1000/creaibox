@@ -367,12 +367,15 @@ export async function proxy(request: NextRequest) {
             
             const { data: siteData } = await adminSupabase
               .from("client_sites")
-              .select("id, status")
+              .select("id, status, creation_source")
               .eq("brand_id", brandKey)
               .maybeSingle();
               
-            if (siteData?.id) {
-              isDynamicClient = true;
+            if (siteData?.id && siteData.status !== "INACTIVE") {
+              // 템플릿 초안(DRAFT) 상태로 아직 섹션이 없는 경우는 기존 블로그로 서빙 유지
+              if (siteData.status === "PUBLISHED" || siteData.status === "ACTIVE" || siteData.creation_source === "migration" || siteData.creation_source === "sns_builder") {
+                isDynamicClient = true;
+              }
             }
 
             // Cache for 24 hours
