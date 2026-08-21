@@ -5,6 +5,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Aside from "@/components/layout/Aside";
 import StudioTopbar from "@/components/studio/StudioTopbar";
 import CreNoteWidget from "@/components/studio/widgets/CreNoteWidget";
+import FaqChatbotWidget from "@/components/studio/widgets/FaqChatbotWidget";
 import AiAssistantWidget from "@/components/studio/widgets/AiAssistantWidget";
 import { AdminAuthProvider } from "@/app/admin/AdminAuthContext";
 
@@ -37,6 +38,7 @@ export default function StudioLayout({
             <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden bg-[#06080d]">
               {children}
               <CreNoteWidget />
+              <FaqChatbotWidget />
               <AiAssistantWidget />
             </main>
 

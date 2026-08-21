@@ -18,6 +18,7 @@ import {
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
 import StudioTopbar from "@/components/studio/StudioTopbar";
+import CreNoteWidget from "@/components/studio/widgets/CreNoteWidget";
 import { faqData, FAQItem, FAQCategory } from "./data/faqData";
 import { createClient } from "@/utils/supabase/client";
 
@@ -559,6 +560,7 @@ export default function ChatbotHelperPage() {
                 </form>
               </div>
             </div>
+            <CreNoteWidget />
           </main>
         </div>
       </div>

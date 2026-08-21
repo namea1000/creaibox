@@ -83,19 +83,25 @@ graph TD
 
 ---
 
-## 🛡️ 3. 초고속 인메모리 정규화 및 엑박(Broken Image) 방지 파이프라인
+## 🛡️ 3. 초고속 인메모리 정규화 및 Cloudflare R2 영구 이미지 이관 파이프라인
 
-메인 이관 시 Vercel 60초 타임아웃(504 Gateway Timeout)을 원천 방어하고 무손실 이미지를 즉시 서빙하기 위해 최적화된 2단계 파이프라인을 운영합니다:
+메인 이관 시 Vercel 60초 타임아웃(504 Gateway Timeout)을 원천 방어하고 원본 사이트 폐쇄 후에도 엑박(Broken Image)이 영구히 발생하지 않도록 **지능형 Cloudflare R2 이미지 백업 & WebP 변환 엔진**을 운영합니다:
 
 1. **[1단계: 0.001초 인메모리 절대경로 정규화 (`normalizeHtmlImageUrls`)]**:
    - AI가 추출한 HTML 내 모든 상대경로 이미지(`src="/..."`, `url("/...")`)를 타겟 오리진(`origin`)과 즉시 결합하여 유효한 절대경로로 0.001초 만에 치환.
-   - 메인 요청 파이프라인에서 수십 개 이미지를 동기식으로 다운로드/변환하던 병목을 분리하여 **사용자가 40초 내에 이관 완료 화면을 즉시 확인**할 수 있도록 보장.
 2. **[2단계: Google Cloud Vertex AI Global 엔드포인트 & 25만자 대용량 전수 복제]**:
    - `GOOGLE_INDEXING_CREDENTIALS` 기반 GCP $300 무료 크레딧을 최우선으로 차감하며, Vertex AI Global 통합 엔드포인트를 통해 `gemini-flash-latest` (1M+ 토큰 컨텍스트 지원)를 1순위로 다이렉트 호출.
-   - **250,000자 대용량 HTML 컨텍스트**: 기존 4만 자 절단 병목을 제거하고 25만 자 전체 랜딩페이지 HTML을 온전히 주입하여 최하단 섹션까지 100% 무손실 복제.
+   - **250,000자 대용량 HTML 컨텍스트**: 25만 자 전체 랜딩페이지 HTML을 온전히 주입하여 최하단 섹션까지 100% 무손실 복제.
    - **16,384 Output Tokens 지원**: 7~15개 전체 섹션의 완성형 Tailwind CSS HTML 및 JSON 구조를 잘림 없이 초고속(15~30초) 스트리밍 생성.
-3. **[3단계: DNS 오류/404 발생 시 Fallback]**:
-   - 해당 섹션 키워드 기반 실제 고화질 에셋과 매칭하여 화면 깨짐 및 엑박을 100% 방어.
+3. **[3단계: Cloudflare R2 지능형 WebP 변환 & 영구 보존 (`migration-image-uploader.ts`)]**:
+   - 추출된 모든 외부 이미지 URL을 병렬 다운로드하여 **Sharp 기반 목적별 WebP 최적화** 후 Cloudflare R2 버킷(`migrated-sites/{brand_id}/{hash}.webp`)에 업로드.
+   - **목적별 리사이징 & 압축 사양**:
+     - **히어로/풀 배너 (`hero`)**: 최대 너비 `1920px`, WebP 품질 `85%`, `effort: 4`
+     - **콘텐츠 카드/그리드 (`card`)**: 최대 너비 `1200px`, WebP 품질 `80%`, `effort: 4`
+     - **로고/아이콘 (`icon`)**: 최대 너비 `512px`, WebP 품질 `90%`, `effort: 4`
+     - **SVG 벡터**: SVG 그대로 무손실 R2 업로드 (`image/svg+xml`)
+     - **대용량 동영상 (MP4/WEBM/YouTube)**: 스토리지 낭비 방지를 위해 **원본 스트리밍/임베드 링크를 100% 그대로 유지**하여 제자리 재생.
+   - HTML 및 `site_sections`, `extra_configs` 내의 모든 이미지 URL을 R2 CDN 경로(`https://assets.creaibox.com/migrated-sites/...`)로 100% 자동 치환.
 
 ---
 

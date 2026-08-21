@@ -22,6 +22,9 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import Aside from "@/components/layout/Aside";
 import StudioTopbar from "@/components/studio/StudioTopbar";
+import CreNoteWidget from "@/components/studio/widgets/CreNoteWidget";
+import FaqChatbotWidget from "@/components/studio/widgets/FaqChatbotWidget";
+import AiAssistantWidget from "@/components/studio/widgets/AiAssistantWidget";
 import Header from "@/components/layout/Header";
 import { isReservedBrandId } from "@/lib/constants/reservedWords";
 
@@ -1718,6 +1721,9 @@ export default function MyPage() {
                 </section>
               </div>
             </div>
+            <CreNoteWidget />
+            <FaqChatbotWidget />
+            <AiAssistantWidget />
           </main>
 
           <Aside />

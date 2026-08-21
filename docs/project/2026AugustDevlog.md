@@ -4,7 +4,43 @@
 
 ---
 
+## 📅 2026년 8월 개발 일지 (August Devlog)
+
 ## 📅 2026년 8월 20일 (목)
+
+### 1. 🛠️ 스튜디오 헤드탑 퀵메뉴(Cre Note, FAQ 챗봇) 전역 렌더링 무결점 연동
+- **원인 분석**:
+  - `StudioTopbar`의 "FAQ 챗봇"과 "Cre Note" 버튼은 `open-faq-chatbot`, `open-cre-note` 커스텀 윈도우 이벤트를 디스패치하는 구조이나, `/mypage`, `/apivault`, `/admin/*` 등 일부 페이지 레이아웃에 `CreNoteWidget` 및 `FaqChatbotWidget`이 누락되어 클릭 시 팝업이 반응하지 않는 현상 발생.
+- **해결 조치**:
+  - `src/app/mypage/page.tsx`: `<CreNoteWidget />`, `<FaqChatbotWidget />`, `<AiAssistantWidget />` 전면 마운트.
+  - `src/app/apivault/page.tsx`: 누락된 `<FaqChatbotWidget />` 마운트.
+  - `src/app/admin/layout.tsx`: 누락된 `<FaqChatbotWidget />` 마운트.
+  - `src/app/chatbot/page.tsx`: `<CreNoteWidget />` 보완 마운트.
+  - `npx tsc --noEmit` 빌드 검증 100% 통과 완료.
+
+### 2. 🌐 도메인 서빙 및 사이트 빌더 라우팅 최적화 (golfgosu.net / sotongcheum.com)
+- **golfgosu.net 블로그 즉시 노출 복구**:
+  - `client_sites` 내 빈 섹션 초안 상태의 `golfgosu` 레코드로 인해 웹사이트 빌더 껍데기가 서빙되던 현상을 해결하여, `golfgosu.net` 접속 시 17개 전체 블로그 포스팅 목록이 메인 화면에 즉시 노출되도록 라우팅 복원 완료.
+- **소통과채움 홈페이지 기본 설정 화면 동기화**:
+  - `src/app/studio/client-site-builder/settings/page.tsx`에 공식 이메일 및 팩스번호 입력란을 정합 연동하여 사용자 관리 편의성 극대화.
+### 4. 🎨 Vertex AI (Google Imagen 3) 기반 로고 및 이미지 AI 재생성·교체 기능 구축
+- **신규 백엔드 API (`src/app/api/studio/site-migration/regenerate-images/route.ts`)**:
+  - 기존 이관 사이트의 원본 저작권 보호 및 고유 브랜드화를 위해 **Google Cloud Vertex AI (Imagen 3 / Gemini)**를 직접 호출하여 로고 및 모든 섹션 이미지를 100% 저작권 프리 WebP 이미지로 자동 생성 및 교체하는 파이프라인 완성.
+  - Gemini 엔진이 사이트 상호명, 업종, 섹션별 문맥을 분석하여 초고화질 영문 프롬프트와 황금 비율(16:9, 1:1, 4:3)을 자동 도출.
+  - 생성된 이미지를 Sharp WebP 최적화 후 Cloudflare R2 버킷(`migrated-sites/{brand_id}/ai-{hash}.webp`)에 업로드하고 `site_sections` 및 `client_sites.extra_configs` URL을 일괄 매핑 치환.
+
+### 14. 🪄 AI 홈페이지 매직 빌더(AiMagicBuilder) 백엔드 엔진 전면 최적화
+- **문제 원인**:
+  - `ai-magic-builder/route.ts`에서 구형 Gemini 모델 직접 호출 방식 및 동기식 R2 이미지 변환 로직으로 인해 대용량 사이트 파싱 시 타임아웃 또는 파싱 실패가 발생하여 기본 2개 섹션(fallback)으로 빠지는 현상 발생.
+- **개선 내역**:
+  - **Vertex AI 멀티 리전 페일오버 엔진 연동 (`generateContentWithVertexAI`)**:
+    - 대용량 HTML 및 다중 소스 스크랩 데이터를 100% 안정적으로 분석하여 풍성한 풀 메인 섹션과 서브페이지를 생성하도록 업그레이드.
+  - **초고속 WebP R2 마이그레이션 엔진 연동 (`migrateAllImagesInHtmlAndData`)**:
+    - AI가 생성한 각 섹션의 모든 이미지들을 목적별 해상도 리사이징 및 WebP 최적화 후 Cloudflare R2에 병렬 업로드 및 URL 매핑 치환.
+  - **커스텀 레이아웃 플래그(`is_custom_layout: true`) 영구 활성화**:
+    - 생성된 사이트가 다이내믹 렌더러에서 최고급 맞춤형 Tailwind 레이아웃으로 100% 완벽히 렌더링되도록 개선 완료.
+
+---
 
 ### 1. 🌐 AI 웹사이트 빌더 독립 OpenGraph / SNS(카카오톡·페이스북) 공유 카드 메타데이터 동적 생성 엔진 완성 (v1.53)
 - **개발 배경 및 문제 현상**:

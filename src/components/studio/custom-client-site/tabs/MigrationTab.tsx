@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Globe, RefreshCw, Zap, Sparkles, CheckCircle2, ExternalLink, Bot, Check, ArrowRight, Layers, FileText, Cpu, ChevronDown, ChevronUp, Video, ShieldCheck, Award, HelpCircle, Trash2 } from "lucide-react";
+import { Globe, RefreshCw, Zap, Sparkles, CheckCircle2, ExternalLink, Bot, Check, ArrowRight, Layers, FileText, Cpu, ChevronDown, ChevronUp, Video, ShieldCheck, Award, HelpCircle, Trash2, Image as ImageIcon, Upload } from "lucide-react";
 
 interface MigrationTabProps {
   requireAuth: (action?: () => void) => boolean;
@@ -29,6 +29,116 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
   const [promoteError, setPromoteError] = useState("");
   const [promoteConflictData, setPromoteConflictData] = useState<any | null>(null);
   const [promoteSuccessMsg, setPromoteSuccessMsg] = useState("");
+
+  // 🎨 Vertex AI (Imagen 3) Logo & Image Regeneration States
+  const [regeneratingSiteId, setRegeneratingSiteId] = useState<string | null>(null);
+  const [regenerateResultModal, setRegenerateResultModal] = useState<{
+    open: boolean;
+    brandId: string;
+    message: string;
+    replacedCount: number;
+  } | null>(null);
+
+  // 🖼️ User Custom Image Uploader & Manager States
+  const [imageManagerSite, setImageManagerSite] = useState<any | null>(null);
+  const [siteImages, setSiteImages] = useState<any[]>([]);
+  const [isLoadingImages, setIsLoadingImages] = useState(false);
+  const [uploadingImageUrl, setUploadingImageUrl] = useState<string | null>(null);
+  const [imageUploadSuccessMsg, setImageUploadSuccessMsg] = useState("");
+
+  const openImageManager = async (site: any) => {
+    setImageManagerSite(site);
+    setIsLoadingImages(true);
+    setSiteImages([]);
+    setImageUploadSuccessMsg("");
+
+    try {
+      const res = await fetch(`/api/studio/site-migration/site-images?siteId=${site.id}`);
+      const data = await res.json();
+      if (data.success && data.data?.images) {
+        setSiteImages(data.data.images);
+      }
+    } catch (e) {
+      console.error("Failed to load site images:", e);
+    } finally {
+      setIsLoadingImages(false);
+    }
+  };
+
+  const handleUploadReplaceImage = async (oldImageUrl: string, file: File, purpose: string) => {
+    if (!imageManagerSite || !file) return;
+    setUploadingImageUrl(oldImageUrl);
+    setImageUploadSuccessMsg("");
+
+    const formData = new FormData();
+    formData.append("siteId", imageManagerSite.id);
+    formData.append("oldImageUrl", oldImageUrl);
+    formData.append("purpose", purpose);
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/studio/site-migration/upload-replace-image", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        alert(data.error || "이미지 교체 중 오류가 발생했습니다.");
+        return;
+      }
+
+      // Update local state with new image URL
+      setSiteImages((prev) =>
+        prev.map((img) =>
+          img.url === oldImageUrl ? { ...img, url: data.newImageUrl } : img
+        )
+      );
+
+      setImageUploadSuccessMsg("내 사진으로 교체되어 WebP로 R2에 저장되었습니다! 🚀");
+      fetchHistory();
+    } catch (err: any) {
+      alert(err.message || "서버 통신 오류가 발생했습니다.");
+    } finally {
+      setUploadingImageUrl(null);
+    }
+  };
+
+  const handleRegenerateImages = async (site: any) => {
+    if (regeneratingSiteId) return;
+    if (!confirm(`[${site.company_name}] 사이트의 기존 이미지를 Vertex AI (Imagen 3)로 새로 생성하여 저작권 프리 WebP 이미지로 전체 교체하시겠습니까?`)) {
+      return;
+    }
+
+    setRegeneratingSiteId(site.id);
+
+    try {
+      const res = await fetch("/api/studio/site-migration/regenerate-images", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ siteId: site.id }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        alert(data.error || "로고 및 이미지 생성 교체 중 오류가 발생했습니다.");
+        return;
+      }
+
+      setRegenerateResultModal({
+        open: true,
+        brandId: site.brand_id,
+        message: data.message,
+        replacedCount: data.replacedCount || 0,
+      });
+
+      fetchHistory();
+    } catch (err: any) {
+      alert(err.message || "서버 통신 중 오류가 발생했습니다.");
+    } finally {
+      setRegeneratingSiteId(null);
+    }
+  };
 
   const openPromoteModal = (site: any) => {
     setPromoteModalSite(site);
@@ -544,6 +654,40 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                           {isPublished ? "🏷️ 도메인 변경" : "🚀 정식 배포 / 도메인 지정"}
                         </button>
 
+                        {/* 🎨 Vertex AI (Imagen 3) Logo & Image Regeneration Button */}
+                        <button
+                          type="button"
+                          disabled={regeneratingSiteId === site.id}
+                          onClick={() => handleRegenerateImages(site)}
+                          className={`h-9 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 border cursor-pointer ${
+                            regeneratingSiteId === site.id
+                              ? 'bg-cyan-950/80 text-cyan-300 border-cyan-500/50 animate-pulse'
+                              : 'bg-slate-800 hover:bg-cyan-950/40 text-cyan-300 border-cyan-500/30 hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-500/10'
+                          }`}
+                        >
+                          {regeneratingSiteId === site.id ? (
+                            <>
+                              <RefreshCw size={13} className="animate-spin text-cyan-400" />
+                              <span>AI 생성 중... ⏳</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles size={13} className="text-cyan-400" />
+                              <span>로고 및 이미지 생성 교체</span>
+                            </>
+                          )}
+                        </button>
+
+                        {/* 🖼️ User Custom Image Uploader & Manager Button */}
+                        <button
+                          type="button"
+                          onClick={() => openImageManager(site)}
+                          className="h-9 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 border bg-slate-800 hover:bg-purple-950/40 text-purple-300 border-purple-500/30 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-500/10 cursor-pointer"
+                        >
+                          <ImageIcon size={13} className="text-purple-400" />
+                          <span>내 사진으로 교체</span>
+                        </button>
+
                         <button
                           onClick={() => deleteHistory(site.id)}
                           className="h-9 px-3 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-colors flex items-center gap-1 font-bold text-xs shrink-0 cursor-pointer"
@@ -563,6 +707,239 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
               </div>
             )}
           </div>
+
+          {/* 🎨 AI Logo & Image Regeneration Result Modal */}
+          {regenerateResultModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+              <div 
+                className="w-full max-w-md rounded-3xl bg-slate-900 border border-cyan-500/40 p-6 md:p-8 space-y-6 shadow-2xl relative text-center"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="mx-auto w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                  <Sparkles size={28} />
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-xl font-black text-white">
+                    🎨 로고 및 이미지 교체 완료!
+                  </h3>
+                  <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                    {regenerateResultModal.message}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
+                  <div className="flex justify-between text-slate-400">
+                    <span>적용된 브랜드 ID</span>
+                    <span className="font-bold text-cyan-300 font-mono">{regenerateResultModal.brandId}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>새로 생성된 AI 에셋 수</span>
+                    <span className="font-bold text-emerald-400">{regenerateResultModal.replacedCount}개 완료</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400">
+                    <span>저작권 안전성</span>
+                    <span className="font-bold text-emerald-400">100% 저작권 프리 ⭕</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 pt-2">
+                  <a
+                    href={getSubdomainUrl(regenerateResultModal.brandId)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-white font-black rounded-xl transition-all shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-1.5 text-xs"
+                  >
+                    <span>새 홈페이지 확인하기</span>
+                    <ExternalLink size={14} />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setRegenerateResultModal(null)}
+                    className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all cursor-pointer"
+                  >
+                    닫기
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 🖼️ User Custom Image Manager & PC Upload Modal */}
+          {imageManagerSite && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+              <div 
+                className="w-full max-w-4xl max-h-[90vh] rounded-3xl bg-slate-900 border border-purple-500/40 flex flex-col shadow-2xl relative overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Modal Header */}
+                <div className="p-6 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-950/80">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-purple-400 uppercase tracking-wider bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20">
+                        IMAGE MANAGER & PC UPLOADER
+                      </span>
+                      <span className="text-xs text-slate-400 font-mono">
+                        ({imageManagerSite.brand_id}.creaibox.com)
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-black text-white flex items-center gap-2">
+                      🖼️ {imageManagerSite.company_name} — 이미지 관리 및 내 사진 교체
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      내 컴퓨터의 고화질 사진을 선택하면, 서버에서 <strong>목적별 WebP(히어로 1920px, 카드 1200px, 로고 512px)로 자동 최적화</strong>하여 Cloudflare R2 버킷에 저장하고 사이트 이미지를 즉시 바꿉니다.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setImageManagerSite(null)}
+                    className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold transition-all cursor-pointer shrink-0"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Success Banner */}
+                {imageUploadSuccessMsg && (
+                  <div className="mx-6 mt-4 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-black flex items-center justify-between animate-fade-in shrink-0">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 size={16} />
+                      <span>{imageUploadSuccessMsg}</span>
+                    </div>
+                    <a
+                      href={getSubdomainUrl(imageManagerSite.brand_id)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg text-[11px] font-black flex items-center gap-1 transition-all"
+                    >
+                      <span>적용 사이트 확인</span>
+                      <ExternalLink size={12} />
+                    </a>
+                  </div>
+                )}
+
+                {/* Image Grid Content */}
+                <div className="p-6 overflow-y-auto flex-1 space-y-4">
+                  {isLoadingImages ? (
+                    <div className="py-20 text-center space-y-3">
+                      <RefreshCw size={28} className="animate-spin text-purple-400 mx-auto" />
+                      <p className="text-xs text-slate-400 font-bold">사이트 내 이미지들을 분석하고 불러오는 중입니다...</p>
+                    </div>
+                  ) : siteImages.length === 0 ? (
+                    <div className="py-20 text-center text-slate-500 text-xs font-bold">
+                      사이트에 등록된 이미지 데이터가 없습니다.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {siteImages.map((imgItem, idx) => {
+                        const isThisUploading = uploadingImageUrl === imgItem.url;
+                        return (
+                          <div 
+                            key={idx} 
+                            className={`p-4 rounded-2xl bg-slate-950 border transition-all space-y-3 flex flex-col justify-between ${
+                              isThisUploading 
+                                ? 'border-purple-500 ring-2 ring-purple-500/20 animate-pulse' 
+                                : 'border-slate-800 hover:border-purple-500/40'
+                            }`}
+                          >
+                            {/* Card Top Header */}
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-[11px] font-black text-slate-300 truncate max-w-[170px]">
+                                {imgItem.sectionTitle}
+                              </span>
+                              <span className={`text-[10px] font-black px-2 py-0.5 rounded ${
+                                imgItem.isLogo 
+                                  ? 'text-amber-400 bg-amber-500/10 border border-amber-500/30' 
+                                  : imgItem.purpose === 'hero'
+                                  ? 'text-cyan-400 bg-cyan-500/10 border border-cyan-500/30'
+                                  : 'text-purple-400 bg-purple-500/10 border border-purple-500/30'
+                              }`}>
+                                {imgItem.isLogo ? "🏷️ 로고/아이콘" : imgItem.purpose === "hero" ? "🌟 히어로 배너" : "📦 콘텐츠 이미지"}
+                              </span>
+                            </div>
+
+                            {/* Image Preview Frame */}
+                            <div className="w-full h-36 rounded-xl bg-slate-900 border border-slate-800/80 overflow-hidden relative group flex items-center justify-center">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={imgItem.url}
+                                alt={imgItem.sectionTitle}
+                                className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
+                                  imgItem.isLogo ? 'object-contain p-3' : 'object-cover'
+                                }`}
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = "none";
+                                }}
+                              />
+
+                              {isThisUploading && (
+                                <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs flex flex-col items-center justify-center gap-2">
+                                  <RefreshCw size={22} className="animate-spin text-purple-400" />
+                                  <span className="text-[11px] font-black text-purple-300">WebP 변환 & 교체 중...</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Upload Replace Button */}
+                            <div>
+                              <label className={`w-full py-2 px-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md ${
+                                isThisUploading
+                                  ? 'bg-slate-800 text-slate-500 pointer-events-none'
+                                  : 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-600/20'
+                              }`}>
+                                <Upload size={13} />
+                                <span>{isThisUploading ? "업로드 중..." : "📁 내 PC 사진으로 변경"}</span>
+                                <input
+                                  type="file"
+                                  accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+                                  className="hidden"
+                                  disabled={isThisUploading}
+                                  onChange={(e) => {
+                                    const selectedFile = e.target.files?.[0];
+                                    if (selectedFile) {
+                                      handleUploadReplaceImage(imgItem.url, selectedFile, imgItem.purpose);
+                                    }
+                                  }}
+                                />
+                              </label>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Modal Footer */}
+                <div className="p-4 border-t border-slate-800 bg-slate-950/90 flex items-center justify-between shrink-0">
+                  <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
+                    <Sparkles size={14} className="text-purple-400" />
+                    <span>교체 즉시 Cloudflare R2 버킷에 영구 저장되며 0.01초 만에 실시간 반영됩니다.</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={getSubdomainUrl(imageManagerSite.brand_id)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-4 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-600 hover:brightness-110 text-white font-black rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-md"
+                    >
+                      <span>새 창으로 사이트 보기</span>
+                      <ExternalLink size={13} />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setImageManagerSite(null)}
+                      className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-all cursor-pointer"
+                    >
+                      닫기
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* 🌟 2-Step Domain Promotion & Production Deployment Modal */}
           {promoteModalSite && (

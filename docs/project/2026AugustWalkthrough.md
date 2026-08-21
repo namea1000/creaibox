@@ -4,6 +4,31 @@
 
 ---
 
+## 1. 🛠️ 스튜디오 헤드탑 퀵메뉴(Cre Note, FAQ 챗봇) 전역 렌더링 정상화 및 라우팅 복구 (2026-08-20)
+
+### 📌 문제점 및 원인
+1. **헤드탑 퀵메뉴 미작동 현상**:
+   - `StudioTopbar`의 "Cre Note" 및 "FAQ 챗봇" 버튼은 전역 이벤트(`open-cre-note`, `open-faq-chatbot`)로 동작합니다.
+   - `/mypage` 페이지에는 두 위젯(`CreNoteWidget`, `FaqChatbotWidget`)이 모두 누락되어 있어 클릭해도 창이 열리지 않았습니다.
+   - `/apivault` 및 `/admin/*` 페이지에는 `CreNoteWidget`만 존재하고 `FaqChatbotWidget`이 누락되어 FAQ 챗봇이 열리지 않았습니다.
+2. **도메인 라우팅 오작동**:
+   - `golfgosu.net` 접속 시 메인에 17개 블로그 글 대신 섹션이 없는 AI 웹사이트 빌더 초안 화면이 노출되었습니다.
+
+### ✅ 조치 및 해결 내역
+- [x] **`src/app/mypage/page.tsx`**: `<CreNoteWidget />`, `<FaqChatbotWidget />`, `<AiAssistantWidget />` 3종 위젯 마운트 완료.
+- [x] **`src/app/apivault/page.tsx`**: `<FaqChatbotWidget />` 보완 마운트 완료.
+- [x] **`src/app/admin/layout.tsx`**: `<FaqChatbotWidget />` 보완 마운트 완료.
+- [x] **`src/app/chatbot/page.tsx`**: `<CreNoteWidget />` 보완 마운트 완료.
+- [x] **`client_sites` DB**: `golfgosu` 상태를 `INACTIVE`로 조정하여 17개 블로그 메인 화면 즉각 복원 완료.
+- [x] **메인 퀵 메뉴 개편**: 메인 홈 상단 퀵 메뉴의 "블로그 글쓰기"를 **"크리에이박스 블로그"**(`/writing/creaibox`)로 변경 완료.
+- [x] **Cloudflare R2 지능형 이미지 이관 파이프라인 신설 (`src/lib/server/migration-image-uploader.ts`)**:
+  - 기존 홈페이지 이관 시 모든 외부 이미지를 Cloudflare R2 버킷(`migrated-sites/{brand_id}/{hash}.webp`)으로 자동 다운로드 & 목적별(히어로 1920px, 카드 1200px, 로고 512px) WebP 최적화 업로드 및 URL 치환 탑재.
+  - 영상(MP4/유튜브 등)은 원본 스트리밍 링크를 그대로 유지하여 대용량 트래픽 및 딜레이 방어.
+  - 기존 이관 사이트(`bima-fgrz`, `bima-ydnt`, `platform-jqed`, `sylven-r6dx` 등) 이미지 전체를 R2로 일괄 복사 및 DB 갱신 100% 완료.
+- [x] **빌드 검증**: `npx tsc --noEmit` 무결점 100% 통과 확인.
+
+---
+
 ## 1. 🎨 블로그 카드 박스 스타일 커스텀 (Card Box Styler) & 3열 그리드 맞춤 노출 개수 설정
 
 ### 주요 구현 결과

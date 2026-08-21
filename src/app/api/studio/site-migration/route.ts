@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { createClient, createAdminClient } from "@/utils/supabase/server";
 import { TEMPLATE_REGISTRY } from "@/lib/templates/registry";
+import { migrateAllImagesInHtmlAndData, downloadAndUploadImageToR2 } from "@/lib/server/migration-image-uploader";
 
 export const maxDuration = 300;
 
@@ -469,9 +470,33 @@ export async function POST(request: Request) {
                 }
               }
             }
+
+            // 🚀 [Cloudflare R2 영구 이미지 이관 파이프라인]
+            // 원본 사이트 이미지들을 Cloudflare R2 버킷으로 WebP 최적화 업로드 및 URL 자동 치환
+            let migratedHeaderHtml = headerHtml;
+            let migratedFooterHtml = footerHtml;
+            let finalAiSections = aiSections;
+            let totalMigratedImages = 0;
+
+            try {
+              console.log(`[Site Migration] 🚀 Starting Cloudflare R2 Image Backup for ${finalSubdomain}...`);
+              const r2Result = await migrateAllImagesInHtmlAndData(
+                finalSubdomain,
+                aiSections,
+                headerHtml,
+                footerHtml
+              );
+              finalAiSections = r2Result.sections;
+              migratedHeaderHtml = r2Result.headerHtml;
+              migratedFooterHtml = r2Result.footerHtml;
+              totalMigratedImages = r2Result.migratedCount;
+              console.log(`[Site Migration] ✅ Successfully backed up ${totalMigratedImages} images to Cloudflare R2!`);
+            } catch (r2Err) {
+              console.warn("[Site Migration] R2 image migration warning, continuing with normalized URLs:", r2Err);
+            }
             
             // 1. Update site extra_configs with custom header and footer
-            if (headerHtml || footerHtml) {
+            if (migratedHeaderHtml || migratedFooterHtml) {
               const { data: currentSite } = await adminSupabase
                 .from("client_sites")
                 .select("extra_configs")
@@ -482,15 +507,16 @@ export async function POST(request: Request) {
               await adminSupabase.from("client_sites").update({
                 extra_configs: {
                   ...currentConfigs,
-                  ...(headerHtml ? { header_html: headerHtml } : {}),
-                  ...(footerHtml ? { footer_html: footerHtml } : {}),
-                  is_custom_layout: true
+                  ...(migratedHeaderHtml ? { header_html: migratedHeaderHtml } : {}),
+                  ...(migratedFooterHtml ? { footer_html: migratedFooterHtml } : {}),
+                  is_custom_layout: true,
+                  migrated_images_count: totalMigratedImages,
                 }
               }).eq("id", siteId);
             }
 
-            // 2. Map main sections
-            const mainGen = aiSections.map((sec: any, index: number) => ({
+            // 2. Map main sections with R2 URLs
+            const mainGen = finalAiSections.map((sec: any, index: number) => ({
               site_id: siteId,
               section_type: sec.section_type || "custom_html",
               sort_order: index + 1,
@@ -536,7 +562,7 @@ export async function POST(request: Request) {
 
     await adminSupabase.from("site_sections").insert(generatedSections);
 
-    const mainPageCdnStorage = "CreaiBox 초고속 클라우드 CDN (Supabase Storage / Vercel Blob)";
+    const mainPageCdnStorage = "CreaiBox Cloudflare R2 버킷 초고속 영구 스토리지";
     const blogArticlesStorage = "크리에이박스 블로그 > 블로그 원고 관리 & CreaiBox 클라우드 DB";
 
     // 5. Construct CreaiBox Migration Result Payload

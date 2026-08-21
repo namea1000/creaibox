@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 260" width="1000" height="260">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&amp;family=Inter:wght@400;500&amp;display=swap');
+      .brand-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 88px;
+        font-weight: 900;
+        fill: #222222;
+        letter-spacing: 6px;
+      }
+      .brand-sub {
+        font-family: 'Inter', sans-serif;
+        font-size: 26px;
+        font-weight: 500;
+        fill: #2c2c2c;
+        letter-spacing: 0.5px;
+      }
+    </style>
+  </defs>
+
+  <!-- Left Geometric Symbol -->
+  <g transform="translate(20, 20)">
+    <!-- Top Layer (Light Pink/Coral) -->
+    <rect x="80" y="10" width="70" height="70" transform="rotate(-15 115 45)" fill="#f58e8e" rx="4" />
+    <!-- Middle Layer (Medium Coral) -->
+    <rect x="55" y="45" width="70" height="70" transform="rotate(-15 90 80)" fill="#e84545" rx="4" />
+    <!-- Bottom Layer (Deep Red T/Block) -->
+    <rect x="30" y="80" width="70" height="70" transform="rotate(-15 65 115)" fill="#c91818" rx="4" />
+    <!-- Red T base extension -->
+    <rect x="25" y="135" width="38" height="55" transform="rotate(-15 44 162)" fill="#c91818" rx="4" />
+  </g>
+
+  <!-- Right Text Area -->
+  <g transform="translate(260, 115)">
+    <text x="0" y="0" class="brand-title">PHICOT</text>
+    
+    <!-- Red Brush Stroke across the H -->
+    <path d="M 85,-18 C 110,-32 145,-38 175,-30 C 182,-28 178,-16 168,-18 C 140,-24 105,-18 85,-6 Z" fill="#e52525" />
+  </g>
+
+  <!-- Slogan Subtitle -->
+  <g transform="translate(262, 175)">
+    <text x="0" y="0" class="brand-sub">Promise High Commission &amp; Transparency</text>
+  </g>
+</svg>

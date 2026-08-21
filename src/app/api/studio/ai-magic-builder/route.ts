@@ -390,15 +390,11 @@ export async function POST(request: Request) {
     
     const siteId = newSite.id;
 
-    // 5. Deep Migration with Gemini 3.5 Flash Lite
+    // 5. Deep Generation with Gemini (Vertex AI Multi-Region Failover)
     let generatedSections: any[] = [];
     try {
-      const { GoogleGenerativeAI } = await import("@google/generative-ai");
-      const apiKey = process.env.GEMINI_API_KEY_1 || process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-      if (apiKey) {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-        const availableTemplateIds = Object.keys(TEMPLATE_REGISTRY).join(", ");
+      const { generateContentWithVertexAI } = await import("@/lib/server/vertex-ai-gemini");
+      const availableTemplateIds = Object.keys(TEMPLATE_REGISTRY).join(", ");
         
         // 분위기(Vibe)에 따른 구체적인 디자인/레이아웃 지시사항 생성
         let vibeDesignInstructions = "";
@@ -515,10 +511,14 @@ ${vibeDesignInstructions}
 위에서 제공한 다중 출처 스크랩 데이터를 기반으로 합니다.
         `;
 
-        const response = await model.generateContent([
-          { text: prompt }
-        ]);
-        let aiText = response.response.text().trim();
+        const vertexRes = await generateContentWithVertexAI({
+          prompt,
+          temperature: 0.2,
+          maxOutputTokens: 8192,
+          responseMimeType: "application/json",
+        });
+
+        let aiText = (typeof vertexRes === "string" ? vertexRes : (vertexRes as any).text || "").trim();
         const jsonMatch = aiText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           aiText = jsonMatch[0];
@@ -548,73 +548,81 @@ ${vibeDesignInstructions}
         
         const aiMenus = parsedAi.menus || [];
         const aiSections = parsedAi.main_sections || [];
-        for (let i = 0; i < aiSections.length; i++) {
-          if (aiSections[i].html) {
-            aiSections[i].html = await processHtmlImagesWithR2(aiSections[i].html, siteId, urlObjs[0]?.origin || "https://example.com");
-          }
-        }
-        
-
-        // ------------------------------------------------------------------
-
-        // 1. Update site extra_configs with custom header and footer
-        // 1. Update site extra_configs with custom menus
-        if (aiMenus.length > 0) {
-          const { data: currentSite } = await adminSupabase
-            .from("client_sites")
-            .select("extra_configs")
-            .eq("id", siteId)
-            .single();
-            
-          const currentConfigs = currentSite?.extra_configs || {};
-          await adminSupabase.from("client_sites").update({
-            extra_configs: {
-              ...currentConfigs,
-              menus: aiMenus,
-              is_custom_layout: true
-            }
-          }).eq("id", siteId);
-        }
-
-        // 2. Map main sections
-        const mainGen = aiSections.map((sec: any, index: number) => ({
-          site_id: siteId,
-          section_type: "custom_html",
-          sort_order: index + 1,
-          title: sec.section_title || `섹션 ${index + 1}`,
-          subtitle: "",
-          content_data: { html: sec.html || "" }
-        }));
-        
-        generatedSections = [...mainGen];
-
-        // 3. Map subpages (NEW)
         const aiSubpages = parsedAi.subpages || [];
-        for (let i = 0; i < aiSubpages.length; i++) {
-          const sub = aiSubpages[i];
+
+        // 1. Prepare initial raw sections
+        const rawSections: any[] = [];
+
+        // Main sections
+        aiSections.forEach((sec: any, index: number) => {
+          rawSections.push({
+            site_id: siteId,
+            section_type: "custom_html",
+            sort_order: index + 1,
+            title: sec.section_title || `섹션 ${index + 1}`,
+            subtitle: "",
+            html: sec.html || "",
+            content_data: { html: sec.html || "" }
+          });
+        });
+
+        // Subpages
+        aiSubpages.forEach((sub: any, index: number) => {
           if (sub.html && sub.path) {
-            let processedHtml = await processHtmlImagesWithR2(sub.html, siteId, urlObjs[0]?.origin || "https://example.com");
             const cleanPath = sub.path.replace(/^\/+/, "").toLowerCase();
             const subTitle = sub.title || cleanPath;
-            generatedSections.push({
+            rawSections.push({
               site_id: siteId,
               section_type: `subpage_${cleanPath}`,
-              sort_order: mainGen.length + i + 1,
+              sort_order: aiSections.length + index + 1,
               title: subTitle,
               subtitle: "",
-              content_data: { html: processedHtml }
+              html: sub.html || "",
+              content_data: { html: sub.html || "" }
             });
           }
-        }
+        });
 
+        // 2. Migrate all images to Cloudflare R2 with WebP optimization
+        const { migrateAllImagesInHtmlAndData } = await import("@/lib/server/migration-image-uploader");
+        const migratedResult = await migrateAllImagesInHtmlAndData(
+          finalSubdomain,
+          rawSections
+        );
 
+        generatedSections = migratedResult.sections.map((s: any, idx: number) => ({
+          site_id: siteId,
+          section_type: s.section_type,
+          sort_order: idx + 1,
+          title: s.title || rawSections[idx]?.title || `섹션 ${idx + 1}`,
+          subtitle: s.subtitle || rawSections[idx]?.subtitle || "",
+          content_data: {
+            html: s.content_data?.html || s.html || ""
+          }
+        }));
 
-      }
+        // 3. Update site extra_configs with custom layout and menus
+        const { data: currentSite } = await adminSupabase
+          .from("client_sites")
+          .select("extra_configs")
+          .eq("id", siteId)
+          .single();
+          
+        const currentConfigs = currentSite?.extra_configs || {};
+        await adminSupabase.from("client_sites").update({
+          extra_configs: {
+            ...currentConfigs,
+            menus: aiMenus,
+            is_custom_layout: true,
+            migrated_images_count: migratedResult.migratedCount
+          }
+        }).eq("id", siteId);
+
     } catch (e) {
-      console.error("Gemini Parsing Error:", e);
+      console.error("AI Magic Builder Error:", e);
     }
 
-    // Fallback if Gemini fails or returns empty
+    // Fallback only if Gemini fails completely
     if (!generatedSections || generatedSections.length === 0) {
       generatedSections = [
         {

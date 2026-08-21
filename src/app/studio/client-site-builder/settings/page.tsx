@@ -5,6 +5,7 @@ import { useSiteBuilder } from "../context";
 import { createClient } from "@/utils/supabase/client";
 import { Settings, CheckCircle, Loader2, ArrowRight, CreditCard, HelpCircle, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { syncSiteInfoIntoHtml } from "@/utils/htmlSiteInfoInjector";
 
 export default function SettingsPage() {
   const { sites, selectedSite, refreshData } = useSiteBuilder();
@@ -90,8 +91,23 @@ export default function SettingsPage() {
     e.preventDefault();
     setSaving(true);
 
+    const siteInfoObj = {
+      companyName: companyName.trim(),
+      phone: phone.trim(),
+      address: address.trim(),
+      email: email.trim(),
+      fax: fax.trim(),
+      repName: repName.trim(),
+      bizNumber: businessNum.trim(),
+    };
+
+    const currentHeaderHtml = selectedSite.extra_configs?.header_html;
+    const currentFooterHtml = selectedSite.extra_configs?.footer_html;
+
     const updatedExtraConfigs = {
       ...(selectedSite.extra_configs || {}),
+      ...(currentHeaderHtml ? { header_html: syncSiteInfoIntoHtml(currentHeaderHtml, siteInfoObj) } : {}),
+      ...(currentFooterHtml ? { footer_html: syncSiteInfoIntoHtml(currentFooterHtml, siteInfoObj) } : {}),
       email: email.trim(),
       fax: fax.trim(),
       representative_name: repName.trim(),

@@ -7,6 +7,7 @@ import Footer from "../../components/Footer";
 import CustomHeaderWrapper from "../../components/CustomHeaderWrapper";
 import UniversalVideoModal from "../../components/UniversalVideoModal";
 import { injectMenusIntoHtml } from "@/utils/htmlInjector";
+import { syncSiteInfoIntoHtml } from "@/utils/htmlSiteInfoInjector";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -147,7 +148,18 @@ export default async function DynamicRendererLayout({ children, params }: Layout
           2. Otherwise, we fallback to the standard <Header> component. */}
       {site.extra_configs?.is_custom_layout && site.extra_configs?.header_html ? (
         <CustomHeaderWrapper 
-          html={injectMenusIntoHtml(site.extra_configs.header_html, menusToInject)}
+          html={syncSiteInfoIntoHtml(
+            injectMenusIntoHtml(site.extra_configs.header_html, menusToInject),
+            {
+              companyName: site.company_name,
+              phone: site.phone,
+              address: site.address,
+              email: site.extra_configs?.email,
+              fax: site.extra_configs?.fax,
+              repName: site.extra_configs?.representative_name,
+              bizNumber: site.extra_configs?.business_number,
+            }
+          )}
           menus={menusToInject}
         />
       ) : (
@@ -163,7 +175,20 @@ export default async function DynamicRendererLayout({ children, params }: Layout
         {children}
       </main>
       {site.extra_configs?.is_custom_layout && site.extra_configs?.footer_html ? (
-        <div dangerouslySetInnerHTML={{ __html: site.extra_configs.footer_html }} suppressHydrationWarning={true} />
+        <div 
+          dangerouslySetInnerHTML={{ 
+            __html: syncSiteInfoIntoHtml(site.extra_configs.footer_html, {
+              companyName: site.company_name,
+              phone: site.phone,
+              address: site.address,
+              email: site.extra_configs?.email,
+              fax: site.extra_configs?.fax,
+              repName: site.extra_configs?.representative_name,
+              bizNumber: site.extra_configs?.business_number,
+            }) 
+          }} 
+          suppressHydrationWarning={true} 
+        />
       ) : (
         <Footer
           companyName={site.company_name}
