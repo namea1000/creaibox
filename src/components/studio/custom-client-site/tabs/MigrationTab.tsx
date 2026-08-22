@@ -611,14 +611,36 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                           </span>
                           <h4 className="text-sm font-black text-white">{site.company_name}</h4>
                         </div>
-                        <a
-                          href={getSubdomainUrl(site.brand_id)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-indigo-400 font-bold text-sm underline flex items-center gap-1 hover:text-indigo-300 w-fit"
-                        >
-                          https://{site.brand_id}.creaibox.com <ExternalLink size={12} />
-                        </a>
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <a
+                            href={getSubdomainUrl(site.brand_id)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-indigo-400 font-bold text-sm underline flex items-center gap-1 hover:text-indigo-300 w-fit"
+                          >
+                            https://{site.brand_id}.creaibox.com <ExternalLink size={12} />
+                          </a>
+
+                          {/* 🌐 이관 원본 사이트 출처 표시 & 바로가기 */}
+                          {(site.extra_configs?.original_url || site.extra_configs?.source_url || site.extra_configs?.scan_report?.targetUrl) && (() => {
+                            const rawUrl = site.extra_configs?.original_url || site.extra_configs?.source_url || site.extra_configs?.scan_report?.targetUrl;
+                            const fullUrl = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
+                            return (
+                              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-slate-800/80 border border-slate-700/80 text-xs">
+                                <span className="text-[11px] font-bold text-slate-400">원본 출처:</span>
+                                <a
+                                  href={fullUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-emerald-400 hover:text-emerald-300 font-bold underline inline-flex items-center gap-1 transition-colors"
+                                  title="이관해왔던 원본 사이트 바로가기 (새 창)"
+                                >
+                                  {rawUrl} <ExternalLink size={11} className="text-emerald-400/80" />
+                                </a>
+                              </div>
+                            );
+                          })()}
+                        </div>
                         
                         {isSiteMigrating && (
                           <div className="mt-3 pt-3 border-t border-slate-800/60">
@@ -1170,10 +1192,10 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
                 {
-                  company: "소통층의원",
-                  oldDomain: "sotongcheum.co.kr",
-                  newSubdomain: "sotongcheum.creaibox.com",
-                  category: "병원 / 의원",
+                  company: "소통과 채움",
+                  oldDomain: "sotongchaeum.co.kr",
+                  newSubdomain: "sotongchaeum.creaibox.com",
+                  category: "행사기획 / 교육",
                   parsedPages: 6,
                   speed: "0.74초",
                   images: 14,

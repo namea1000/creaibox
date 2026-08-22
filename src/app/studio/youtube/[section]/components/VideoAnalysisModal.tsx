@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Loader2, Sparkles, AlertCircle, Eye, ThumbsUp, MessageSquare, Tag, ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
+import { X, Loader2, Sparkles, AlertCircle, Eye, ThumbsUp, MessageSquare, Tag, ChevronLeft, ChevronRight, Copy, Check, PlaySquare, ExternalLink, Play } from "lucide-react";
 
 interface VideoAnalysisModalProps {
   isOpen: boolean;
@@ -260,6 +260,8 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
   const modalThumbnail = getThumbnailUrl(video);
   const modalTitle = getVideoTitle(video);
   const modalChannel = getVideoChannel(video);
+  const modalVideoId = typeof video.id === "string" ? video.id : video.videoId;
+  const youtubeUrl = modalVideoId ? `https://www.youtube.com/watch?v=${modalVideoId}` : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-fade-in">
@@ -273,6 +275,21 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
           </h2>
           
           <div className="flex items-center gap-2">
+            {/* Direct YouTube Link in Header */}
+            {youtubeUrl && (
+              <a
+                href={youtubeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-red-500/30 bg-red-600/15 hover:bg-red-600 text-red-400 hover:text-white px-2.5 py-1.5 text-xs font-bold transition shadow-xs"
+                title="YouTube에서 원본 영상 시청하기"
+              >
+                <PlaySquare size={13} />
+                <span>영상 바로보기</span>
+                <ExternalLink size={11} className="opacity-70" />
+              </a>
+            )}
+
             {/* Shift Previous Video */}
             <button
               onClick={handlePrevVideo}
@@ -309,31 +326,76 @@ export default function VideoAnalysisModal({ isOpen, onClose, video, videos, onV
         {/* Modal Body Container */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin">
           
-          {/* Section 1: Video Title Header */}
-          <div className="flex gap-4 p-4 rounded-md border border-zinc-800/80 bg-zinc-950/25">
-            <img
-              src={modalThumbnail}
-              alt={modalTitle}
-              className="h-20 aspect-video rounded-md object-cover border border-zinc-800"
-              onError={(e) => {
-                const target = e.currentTarget;
-                if (target.src !== "/placeholder.jpg") {
-                  const videoId = typeof video.id === "string" ? video.id : video.videoId;
-                  if (videoId && !target.src.includes("hqdefault.jpg")) {
-                    target.src = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
-                  } else {
-                    target.src = "/placeholder.jpg";
-                  }
-                }
-              }}
-            />
-            <div className="flex flex-col justify-center">
-              <h3 className="text-xs font-black text-zinc-100 line-clamp-2 leading-snug">
-                {modalTitle}
-              </h3>
-              <p className="text-[10px] text-zinc-500 font-bold mt-1.5">{modalChannel}</p>
+          {/* Section 1: Video Title Header (Clickable Link to YouTube with Play overlay) */}
+          {youtubeUrl ? (
+            <a
+              href={youtubeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-md border border-zinc-800/80 bg-zinc-950/35 hover:bg-zinc-950/70 hover:border-red-500/40 transition duration-200 cursor-pointer shadow-xs"
+              title="클릭하여 YouTube에서 원본 영상 보기"
+            >
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="relative h-20 aspect-video rounded-md overflow-hidden bg-black shrink-0 border border-zinc-800 group-hover:border-red-500/50 transition">
+                  <img
+                    src={modalThumbnail}
+                    alt={modalTitle}
+                    className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (target.src !== "/placeholder.jpg") {
+                        if (modalVideoId && !target.src.includes("hqdefault.jpg")) {
+                          target.src = `https://i.ytimg.com/vi/${modalVideoId}/hqdefault.jpg`;
+                        } else {
+                          target.src = "/placeholder.jpg";
+                        }
+                      }
+                    }}
+                  />
+                  {/* Play Overlay */}
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 flex items-center justify-center transition">
+                    <div className="w-8 h-8 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+                      <Play size={14} className="fill-white ml-0.5" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col justify-center min-w-0">
+                  <h3 className="text-xs font-black text-zinc-100 group-hover:text-orange-400 line-clamp-2 leading-snug transition">
+                    {modalTitle}
+                  </h3>
+                  <p className="text-[10px] text-zinc-400 font-semibold mt-1.5 flex items-center gap-1.5">
+                    <span>{modalChannel}</span>
+                    <span className="text-zinc-600">·</span>
+                    <span className="text-red-400 font-bold flex items-center gap-0.5">
+                      <PlaySquare size={10} /> 클릭 시 영상 재생
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Button on the Right */}
+              <div className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-md bg-red-600/10 border border-red-500/20 text-red-400 group-hover:bg-red-600 group-hover:text-white transition text-xs font-bold">
+                <PlaySquare size={14} />
+                <span>영상 보기</span>
+                <ExternalLink size={11} className="opacity-80" />
+              </div>
+            </a>
+          ) : (
+            <div className="flex gap-4 p-4 rounded-md border border-zinc-800/80 bg-zinc-950/25">
+              <img
+                src={modalThumbnail}
+                alt={modalTitle}
+                className="h-20 aspect-video rounded-md object-cover border border-zinc-800"
+              />
+              <div className="flex flex-col justify-center">
+                <h3 className="text-xs font-black text-zinc-100 line-clamp-2 leading-snug">
+                  {modalTitle}
+                </h3>
+                <p className="text-[10px] text-zinc-500 font-bold mt-1.5">{modalChannel}</p>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Section 2: Engagement Indicators */}
           <div>

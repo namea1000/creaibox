@@ -6,7 +6,7 @@ export const revalidate = 0;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const brandId = searchParams.get("brandId") || searchParams.get("domain") || "sotongcheum";
+  const brandId = searchParams.get("brandId") || searchParams.get("domain") || "sotongchaeum";
   const config = await getClientSiteConfig(brandId);
   return NextResponse.json({ success: true, brandId, config });
 }
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const brandId = body.brandId || "sotongcheum";
+    const brandId = body.brandId || "sotongchaeum";
     const config = body.config || body;
 
     await saveClientSiteConfig(brandId, config);

@@ -59,7 +59,8 @@ export default function LoginPage() {
               name: "아우라 메리노 (Aura Merino)",
               slogan: "100% 천연 메리노 울 스니커즈 회원 혜택 & 전용 로그인",
             });
-          } else if (normalizedId === "sotongcheum") {
+          } else if (normalizedId === "sotongchaeum" || normalizedId === "sotongcheum") {
+            router.push("/clients/sotongchaeum");
             setBrandConfig({
               name: "소통과 채움",
               slogan: "공공행사 & 지역 축제 렌탈 전용 브랜드 회원 로그인",

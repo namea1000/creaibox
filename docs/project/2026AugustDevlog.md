@@ -29,16 +29,14 @@
   - Gemini 엔진이 사이트 상호명, 업종, 섹션별 문맥을 분석하여 초고화질 영문 프롬프트와 황금 비율(16:9, 1:1, 4:3)을 자동 도출.
   - 생성된 이미지를 Sharp WebP 최적화 후 Cloudflare R2 버킷(`migrated-sites/{brand_id}/ai-{hash}.webp`)에 업로드하고 `site_sections` 및 `client_sites.extra_configs` URL을 일괄 매핑 치환.
 
-### 14. 🪄 AI 홈페이지 매직 빌더(AiMagicBuilder) 백엔드 엔진 전면 최적화
-- **문제 원인**:
-  - `ai-magic-builder/route.ts`에서 구형 Gemini 모델 직접 호출 방식 및 동기식 R2 이미지 변환 로직으로 인해 대용량 사이트 파싱 시 타임아웃 또는 파싱 실패가 발생하여 기본 2개 섹션(fallback)으로 빠지는 현상 발생.
-- **개선 내역**:
-  - **Vertex AI 멀티 리전 페일오버 엔진 연동 (`generateContentWithVertexAI`)**:
-    - 대용량 HTML 및 다중 소스 스크랩 데이터를 100% 안정적으로 분석하여 풍성한 풀 메인 섹션과 서브페이지를 생성하도록 업그레이드.
-  - **초고속 WebP R2 마이그레이션 엔진 연동 (`migrateAllImagesInHtmlAndData`)**:
-    - AI가 생성한 각 섹션의 모든 이미지들을 목적별 해상도 리사이징 및 WebP 최적화 후 Cloudflare R2에 병렬 업로드 및 URL 매핑 치환.
-  - **커스텀 레이아웃 플래그(`is_custom_layout: true`) 영구 활성화**:
-    - 생성된 사이트가 다이내믹 렌더러에서 최고급 맞춤형 Tailwind 레이아웃으로 100% 완벽히 렌더링되도록 개선 완료.
+### 20. 🏢 '소통과 채움' 서브도메인 정정 (`sotongcheum` ➔ `sotongchaeum`) 및 신규 독립 도메인 `sotongchaeum.com` 연결 완료
+- **수행 내용**:
+  - **서브도메인 명칭 정정**: 오타가 포함되어 있던 구형 `sotongcheum.creaibox.com`을 정석 표기인 **`sotongchaeum.creaibox.com`**으로 소스 코드 및 DB 테이블 전체 일괄 치환.
+  - **신규 독립 도메인 연결**: 신규 구매된 **`sotongchaeum.com`**을 `client_sites` 및 `profiles` 테이블에 정식 독립 도메인(`custom_domain`)으로 즉시 연결 및 활성화(`status: PUBLISHED`).
+  - **클라이언트 전용 앱 구조 동기화**:
+    - `src/app/clients/sotongchaeum/` 전용 앱 구축 및 메타데이터, 캐노니컬 URL, OpenGraph 세팅 완료.
+    - 기존 구형 `sotongcheum` 요청 유입 시에도 `sotongchaeum`으로 자연스럽게 호환 서빙되도록 래퍼 및 R2 에셋 폴백 로직 적용.
+    - 미들웨어(`proxy.ts`), `CUSTOM_CLIENT_SITES`, `client-site-config.ts` 등 전역 라우팅 레지스트리 100% 동기화.
 
 ---
 

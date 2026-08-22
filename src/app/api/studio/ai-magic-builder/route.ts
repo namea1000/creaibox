@@ -486,6 +486,10 @@ ${vibeDesignInstructions}
 {
   "template_id": "가장 적합한 템플릿 ID 선택",
   "brand_name": "핵심 브랜드명 (짧게, 예: 헬로우워크)",
+  "phone": "추출된 대표 연락처 (없으면 빈 문자열)",
+  "address": "추출된 대표 주소 (없으면 빈 문자열)",
+  "header_html": "<header class='sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100 text-slate-800 px-6 py-4'><div class='max-w-7xl mx-auto flex justify-between items-center'><div class='text-xl font-black text-slate-900 tracking-tight'><a href='#hero'>[브랜드명]</a></div><nav class='hidden md:flex gap-8 text-sm font-bold text-slate-600'>[메뉴링크들]</nav><a href='#contact' class='px-5 py-2.5 bg-slate-950 text-white rounded-xl text-xs font-black hover:bg-slate-800 transition-all'>문의하기</a></div></header>",
+  "footer_html": "<footer class='bg-slate-950 text-slate-400 py-16 px-6 border-t border-slate-900'><div class='max-w-7xl mx-auto space-y-8'><div class='flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-8 border-b border-slate-800/80'><div class='text-2xl font-black text-white'>[브랜드명]</div><div class='text-sm'>[연락처/이메일]</div></div><div class='text-xs text-slate-500'>&copy; 2026 [브랜드명]. All rights reserved.</div></div></footer>",
   "menus": [
     { "label": "한국어 짧은 메뉴명", "path": "url-slug" }
   ],
@@ -540,15 +544,23 @@ ${vibeDesignInstructions}
           await adminSupabase.from("client_sites").update({ template_id: aiTemplateId }).eq("id", siteId);
         }
         
-        // AI가 정제한 브랜드명이 있으면 company_name 업데이트
+        // AI가 정제한 브랜드명, 전화번호, 주소 업데이트
         const aiBrandName = parsedAi.brand_name;
-        if (aiBrandName && aiBrandName.trim()) {
-          await adminSupabase.from("client_sites").update({ company_name: aiBrandName.trim() }).eq("id", siteId);
+        const aiPhone = parsedAi.phone;
+        const aiAddress = parsedAi.address;
+        const updateFields: any = {};
+        if (aiBrandName && aiBrandName.trim()) updateFields.company_name = aiBrandName.trim();
+        if (aiPhone && aiPhone.trim()) updateFields.phone = aiPhone.trim();
+        if (aiAddress && aiAddress.trim()) updateFields.address = aiAddress.trim();
+        if (Object.keys(updateFields).length > 0) {
+          await adminSupabase.from("client_sites").update(updateFields).eq("id", siteId);
         }
         
         const aiMenus = parsedAi.menus || [];
         const aiSections = parsedAi.main_sections || [];
         const aiSubpages = parsedAi.subpages || [];
+        const aiHeaderHtml = parsedAi.header_html || "";
+        const aiFooterHtml = parsedAi.footer_html || "";
 
         // 1. Prepare initial raw sections
         const rawSections: any[] = [];
@@ -587,7 +599,9 @@ ${vibeDesignInstructions}
         const { migrateAllImagesInHtmlAndData } = await import("@/lib/server/migration-image-uploader");
         const migratedResult = await migrateAllImagesInHtmlAndData(
           finalSubdomain,
-          rawSections
+          rawSections,
+          aiHeaderHtml,
+          aiFooterHtml
         );
 
         generatedSections = migratedResult.sections.map((s: any, idx: number) => ({
@@ -601,7 +615,7 @@ ${vibeDesignInstructions}
           }
         }));
 
-        // 3. Update site extra_configs with custom layout and menus
+        // 3. Update site extra_configs with custom layout, header, footer and menus
         const { data: currentSite } = await adminSupabase
           .from("client_sites")
           .select("extra_configs")
@@ -612,6 +626,8 @@ ${vibeDesignInstructions}
         await adminSupabase.from("client_sites").update({
           extra_configs: {
             ...currentConfigs,
+            header_html: migratedResult.headerHtml || aiHeaderHtml,
+            footer_html: migratedResult.footerHtml || aiFooterHtml,
             menus: aiMenus,
             is_custom_layout: true,
             migrated_images_count: migratedResult.migratedCount

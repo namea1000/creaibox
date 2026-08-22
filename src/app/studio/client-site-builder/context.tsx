@@ -98,9 +98,10 @@ export function SiteBuilderProvider({ children }: { children: React.ReactNode })
               sitesData.unshift(brandSite);
             } else {
               // 2) Auto-register client_sites record for this brand_id
-              const defaultCompany = cleanBrandId === "sotongcheum" ? "소통과 채움" : (profileData.extra_configs?.company_name || cleanBrandId);
-              const defaultPhone = cleanBrandId === "sotongcheum" ? "031-292-3806" : (profileData.extra_configs?.phone || "");
-              const defaultAddress = cleanBrandId === "sotongcheum" ? "경기도 화성시 봉담읍 동화길 51, 401호" : (profileData.extra_configs?.address || "");
+              const isSotong = cleanBrandId === "sotongchaeum" || cleanBrandId === "sotongcheum";
+              const defaultCompany = isSotong ? "소통과 채움" : (profileData.extra_configs?.company_name || cleanBrandId);
+              const defaultPhone = isSotong ? "031-292-3806" : (profileData.extra_configs?.phone || "");
+              const defaultAddress = isSotong ? "경기도 화성시 봉담읍 동화길 51, 401호" : (profileData.extra_configs?.address || "");
 
               const { data: newSite, error: insertErr } = await supabase
                 .from("client_sites")

@@ -43,7 +43,9 @@ export function getR2CdnUrl(pathKey: string): string {
  * @param fileName e.g. "hero-bg.webp"
  */
 export function getCustomClientAssetUrl(clientSlug: string, fileName: string): string {
-  return getR2CdnUrl(`sites/custom-clients/${clientSlug}/${fileName}`);
+  // Legacy asset compatibility: Map sotongchaeum to sotongcheum for existing R2 images
+  const effectiveSlug = clientSlug === "sotongchaeum" ? "sotongcheum" : clientSlug;
+  return getR2CdnUrl(`sites/custom-clients/${effectiveSlug}/${fileName}`);
 }
 
 /**

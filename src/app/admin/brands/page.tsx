@@ -842,9 +842,18 @@ export default function AdminBrandsPage() {
                                     <span className="text-zinc-600 italic">미신청</span>
                                   ) : (
                                     <div className="space-y-2 text-left">
-                                      <div className="flex items-center gap-2 font-mono text-white font-black italic">
-                                        <Globe size={13} className="text-blue-400" />
-                                        {brandId}.creaibox.com
+                                      <div className="flex items-center gap-2 font-mono font-black italic">
+                                        <a
+                                          href={`https://${brandId}.creaibox.com`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="group inline-flex items-center gap-1.5 text-blue-400 hover:text-blue-300 hover:underline transition-all"
+                                          title={`${brandId}.creaibox.com 실서버 사이트 바로가기 (새 창)`}
+                                        >
+                                          <Globe size={13} className="text-blue-400 group-hover:scale-110 transition-transform" />
+                                          <span className="text-white group-hover:text-blue-200">{brandId}.creaibox.com</span>
+                                          <ExternalLink size={11} className="text-blue-400/70 group-hover:text-blue-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                                        </a>
                                         <button
                                           type="button"
                                           onClick={() => handleRunAiAudit(req.id, brandId, req.nickname)}
@@ -930,9 +939,18 @@ export default function AdminBrandsPage() {
                                     <span className="text-zinc-600 italic">미신청</span>
                                   ) : (
                                     <div className="space-y-2 text-left">
-                                      <div className="flex items-center gap-1.5 font-mono text-white font-black italic">
-                                        <Globe size={13} className="text-emerald-400" />
-                                        {customDomain}
+                                      <div className="flex items-center gap-1.5 font-mono font-black italic">
+                                        <a
+                                          href={`https://${customDomain}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="group inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 hover:underline transition-all"
+                                          title={`${customDomain} 사이트 바로가기 (새 창)`}
+                                        >
+                                          <Globe size={13} className="text-emerald-400 group-hover:scale-110 transition-transform" />
+                                          <span className="text-white group-hover:text-emerald-200">{customDomain}</span>
+                                          <ExternalLink size={11} className="text-emerald-400/70 group-hover:text-emerald-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                                        </a>
                                       </div>
                                       
                                       <div className="flex items-center gap-2">

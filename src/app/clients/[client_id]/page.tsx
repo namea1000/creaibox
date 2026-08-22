@@ -2,7 +2,7 @@ import React from "react";
 import { Metadata } from "next";
 import { createAdminClient } from "@/utils/supabase/server";
 import CreativeMediaBlogPage from "../creative-media-blog/page";
-import SotongcheumPage from "../sotongcheum/page";
+import SotongchaeumPage from "../sotongchaeum/page";
 
 // 🌟 Vercel Global Edge CDN Incremental Static Regeneration (ISR 60s 광속 캐시)
 export const revalidate = 60;
@@ -91,6 +91,6 @@ export default async function GenericClientSiteFallbackPage({
     return <CreativeMediaBlogPage />;
   }
 
-  // Default fallback to Sotongcheum template for any un-built templates
-  return <SotongcheumPage />;
+  // Default fallback to Sotongchaeum template for any un-built templates
+  return <SotongchaeumPage />;
 }

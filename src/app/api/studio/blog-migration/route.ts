@@ -36,7 +36,7 @@ function extractNaverBlogId(url: string): string {
   }
 
   const simpleId = clean.replace(/^https?:\/\//i, "").replace(/\/.*$/, "").replace(/@/g, "").trim();
-  return simpleId || "sotongcheum";
+  return simpleId || "sotongchaeum";
 }
 
 function extractNaverCategoryNo(url: string): string {
@@ -143,7 +143,7 @@ async function downloadAndProcessImage(imageUrl: string, blogId: string, userId?
   }
 }
 
-async function parseNaverFullPost(html: string, postUrl: string, blogId: string = "sotongcheum", userId?: string) {
+async function parseNaverFullPost(html: string, postUrl: string, blogId: string = "sotongchaeum", userId?: string) {
   // 1. Extract ALL images from full html (both postfiles and blogfiles, data-lazy-src, src, data-src)
   const imgUrlMatches = [...html.matchAll(/(?:src|data-lazy-src|data-src)=["'](https?:\/\/(?:postfiles|blogfiles)\.pstatic\.net\/[^"']+)["']/gi)];
 
@@ -291,7 +291,7 @@ export async function POST(request: Request) {
       cleanUrl = `https://${cleanUrl}`;
     }
 
-    let blogId = "sotongcheum";
+    let blogId = "sotongchaeum";
     let targetCategoryNo = "31";
 
     if (cleanPlatform === "naver") {
@@ -461,7 +461,7 @@ export async function POST(request: Request) {
             selected_tone: "전문적이고 통찰력 있는 분석",
             slug: postSlug,
             meta_description: snippet,
-            canonical_url: `https://sotongcheum.creaibox.com/blog/${postSlug}`,
+            canonical_url: `https://sotongchaeum.creaibox.com/blog/${postSlug}`,
             seo_tags: ["소통과채움", "현장스케치"],
             created_at: postDateIso,
             updated_at: postDateIso,

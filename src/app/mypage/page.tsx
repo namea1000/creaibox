@@ -257,7 +257,7 @@ export default function MyPage() {
             }
 
             // 2) CUSTOM_CLIENT_SITES (하드코딩 정적 커스텀 사이트) 감지 및 휴면 보관함 이식
-            const staticClientList = ["ugnamumath", "sotongcheum", "commufill"];
+            const staticClientList = ["ugnamumath", "sotongchaeum", "sotongcheum", "commufill"];
             for (const sId of staticClientList) {
               const sIdLower = sId.toLowerCase();
               const isActive = activeSubdomains.includes(sIdLower);

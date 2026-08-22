@@ -1199,9 +1199,25 @@ const COUNTRY_CODES = new Set(ALL_COUNTRIES.map((c) => c.code));
                       <h3 className="mt-0.5 text-[11px] font-bold text-slate-900 dark:text-white line-clamp-1 group-hover:text-orange-500 transition leading-normal">
                         {title}
                       </h3>
-                      <span className="mt-0.5 inline-flex items-center gap-0.5 text-[9px] text-orange-600 dark:text-orange-400 font-semibold">
-                        ● AI 분석 완료
-                      </span>
+                      <div className="mt-1 flex items-center justify-between gap-1">
+                        <span className="inline-flex items-center gap-0.5 text-[9px] text-orange-600 dark:text-orange-400 font-semibold">
+                          ● AI 분석 완료
+                        </span>
+                        {videoId && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(`https://www.youtube.com/watch?v=${videoId}`, "_blank", "noopener,noreferrer");
+                            }}
+                            className="inline-flex items-center gap-1 text-[9px] font-bold text-red-500 hover:text-white bg-red-500/10 hover:bg-red-600 border border-red-500/20 hover:border-red-600 px-1.5 py-0.5 rounded transition shadow-xs shrink-0"
+                            title="YouTube에서 영상 보기"
+                          >
+                            <PlaySquare size={10} />
+                            <span>영상 보기</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     {/* Arrow icon */}

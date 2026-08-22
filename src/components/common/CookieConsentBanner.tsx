@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Cookie, X } from 'lucide-react';
+import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 
 export default function CookieConsentBanner() {
@@ -112,46 +112,55 @@ export default function CookieConsentBanner() {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 max-w-md w-[calc(100vw-3rem)] rounded-2xl bg-[#000B30]/95 border border-blue-900/40 p-5 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom duration-300">
-      <div className="flex items-start gap-4">
-        <div className="p-3 rounded-xl bg-blue-950/80 border border-blue-800/40 text-blue-400">
-          <Cookie className="w-6 h-6 animate-pulse" />
-        </div>
+    <aside 
+      aria-label="쿠키 동의 설정"
+      className="fixed bottom-5 left-5 sm:bottom-6 sm:left-6 z-50 w-[calc(100vw-2.5rem)] sm:w-[440px] max-w-[calc(100vw-2.5rem)] rounded-3xl bg-white text-slate-900 p-6 sm:p-7 shadow-[0_20px_60px_rgba(0,0,0,0.18)] border border-slate-100/80 animate-in fade-in slide-in-from-bottom-5 duration-300"
+    >
+      <div className="space-y-3.5">
+        {/* Title */}
+        <h3 className="text-base sm:text-[17px] font-bold text-slate-900 tracking-tight leading-snug">
+          크리에이박스는 여러분의 개인 정보를 소중히 여깁니다
+        </h3>
         
-        <div className="flex-1">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-white">쿠키 동의 설정 안내 🍪</h4>
-            <button 
-              onClick={() => setIsVisible(false)}
-              className="text-slate-400 hover:text-white transition-colors"
-              aria-label="닫기"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          
-          <p className="mt-2 text-xs text-slate-300 leading-relaxed">
-            CreaiBox는 서비스 최적화, 기능 로딩, 개인화 경험 및 사이트 분석을 위해 쿠키를 사용합니다. 
-            동의 여부에 따라 유해하지 않은 필수 분석 쿠키의 수집 상태가 제어됩니다. 
-            회원님의 선택은 계정 프로필에 동기화되어 안전하게 유지됩니다.
-          </p>
+        {/* Description */}
+        <p className="text-xs sm:text-[13px] text-slate-600 leading-relaxed font-normal">
+          당사의 웹사이트는 사이트의 원활한 작동과 사용자의 상호작용 데이터 수집, 그리고 마케팅 목적을 위해 필요한 쿠키를 사용합니다. 허용 시,{" "}
+          <Link 
+            href="/cookie-policy" 
+            className="text-indigo-600 hover:text-indigo-700 font-bold underline decoration-indigo-300 underline-offset-2 transition-colors"
+          >
+            쿠키 정책
+          </Link>
+          에 명시된 대로 광고와 분석을 위한 쿠키 사용에 동의하게 됩니다.
+        </p>
 
-          <div className="mt-4 flex gap-2 justify-end">
-            <button
-              onClick={() => void handleConsentChoice('rejected')}
-              className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/40 transition-all border border-transparent hover:border-slate-800"
-            >
-              선택 거부
-            </button>
-            <button
-              onClick={() => void handleConsentChoice('accepted')}
-              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 shadow-md shadow-blue-900/40 transition-all active:scale-[0.98]"
-            >
-              모든 쿠키 허용
-            </button>
-          </div>
+        {/* Buttons (3 actions: 모두 허용 / 모두 거부 / 쿠키 설정) */}
+        <div className="pt-2 flex items-center gap-2 sm:gap-2.5">
+          <button
+            type="button"
+            onClick={() => void handleConsentChoice('accepted')}
+            className="flex-1 py-2.5 sm:py-3 px-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white text-xs sm:text-sm font-bold transition shadow-sm shadow-indigo-200 text-center cursor-pointer"
+          >
+            모두 허용
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => void handleConsentChoice('rejected')}
+            className="flex-1 py-2.5 sm:py-3 px-3 rounded-2xl bg-white hover:bg-slate-50 active:scale-[0.98] text-indigo-600 border border-slate-200 hover:border-slate-300 text-xs sm:text-sm font-bold transition text-center cursor-pointer"
+          >
+            모두 거부
+          </button>
+
+          <Link
+            href="/cookie-policy"
+            className="py-2.5 sm:py-3 px-3 rounded-2xl text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50/60 text-xs sm:text-sm font-bold transition text-center cursor-pointer shrink-0"
+          >
+            쿠키 설정
+          </Link>
         </div>
       </div>
-    </div>
+    </aside>
   );
 }
+

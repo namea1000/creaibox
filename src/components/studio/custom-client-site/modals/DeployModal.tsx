@@ -69,7 +69,7 @@ export default function DeployModal({
 
                 <div className="pt-4 flex items-center justify-center gap-3">
                   <a
-                    href="http://sotongcheum.localhost:3000"
+                    href="https://sotongchaeum.creaibox.com"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1.5 rounded-2xl bg-cyan-500 px-6 py-3 text-xs font-black text-slate-950 hover:bg-cyan-400 transition-all"

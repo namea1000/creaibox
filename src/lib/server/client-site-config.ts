@@ -32,12 +32,12 @@ export interface ClientSiteConfig {
 // In-Memory Shared Cache
 const clientConfigCache = new Map<string, ClientSiteConfig>();
 
-// Default fallback configuration for sotongcheum
-const DEFAULT_SOTONGCHEUM_CONFIG: ClientSiteConfig = {
+// Default fallback configuration for sotongchaeum
+const DEFAULT_SOTONGCHAEUM_CONFIG: ClientSiteConfig = {
   companyName: "소통과 채움",
   phone: "031-292-3806",
   address: "경기도 화성시 봉담읍 동화길 51, 401호",
-  email: "sotongcheum@naver.com",
+  email: "sotongchaeum@naver.com",
   bizNumber: "693-88-00815",
   description: "공공행사부터 마을축제까지, 처음부터 끝까지 깔끔하게! 소통과 채움 협동조합입니다.",
   customMenus: [
@@ -111,5 +111,5 @@ export async function getClientSiteConfig(brandId: string): Promise<ClientSiteCo
     console.error("getClientSiteConfig error:", err);
   }
 
-  return cleanBrand === "sotongcheum" ? DEFAULT_SOTONGCHEUM_CONFIG : {};
+  return (cleanBrand === "sotongchaeum" || cleanBrand === "sotongcheum") ? DEFAULT_SOTONGCHAEUM_CONFIG : {};
 }

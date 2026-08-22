@@ -236,7 +236,7 @@ export default function AdminDashboardTab({ requireAuth, setActiveTab }: { requi
 
                     {req.status === "completed" && (
                       <a
-                        href={req.refUrl || "https://sotongcheum.creaibox.com"}
+                        href={req.refUrl || "https://sotongchaeum.creaibox.com"}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1 rounded-2xl bg-cyan-500/10 border border-cyan-400/30 px-4 py-3 text-xs font-black text-cyan-300 hover:bg-cyan-500/20 transition-all shrink-0"
@@ -304,7 +304,7 @@ export default function AdminDashboardTab({ requireAuth, setActiveTab }: { requi
 
             <div className="pt-4 border-t border-slate-800 flex items-center justify-end gap-3">
               <a
-                href={selectedPromptModal.refUrl || "https://sotongcheum.creaibox.com"}
+                href={selectedPromptModal.refUrl || "https://sotongchaeum.creaibox.com"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 rounded-2xl bg-cyan-500 px-6 py-3.5 text-xs font-black text-slate-950 hover:bg-cyan-400 transition-all"
