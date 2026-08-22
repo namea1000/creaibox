@@ -122,23 +122,105 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "유효하지 않은 URL 형식입니다." }, { status: 400 });
     }
 
-    // 1. Fetch Target Website Content
+    // 1. Fetch Target Website Content (with Automatic Frameset Resolution)
     let htmlText = "";
     try {
       const res = await fetch(urlObj.href, {
         headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         },
+        redirect: "follow",
         signal: AbortSignal.timeout(10000),
       });
       if (res.ok) htmlText = await res.text();
     } catch {}
 
+    // 🟢 [NEW: Automatic Frameset / Forwarding Resolver]
+    // If the target site is wrapped in a legacy frameset (e.g. futuremind.kr), extract the real frame src and re-fetch!
+    const isFrameset = /<frameset[\s\S]*?>/i.test(htmlText);
+    if (isFrameset) {
+      const frameMatch = htmlText.match(/<frame[^>]+src=["']([^"']+)["']/i);
+      if (frameMatch && frameMatch[1]) {
+        const rawFrameSrc = frameMatch[1].trim();
+        const resolvedFrameUrl = rawFrameSrc.startsWith("http")
+          ? rawFrameSrc
+          : new URL(rawFrameSrc, urlObj.href).href;
+        console.log(`[Site Migration] 🔄 Frameset detected! Auto-resolving to inner frame: ${resolvedFrameUrl}`);
+        try {
+          urlObj = new URL(resolvedFrameUrl);
+          const frameRes = await fetch(resolvedFrameUrl, {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+              "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            },
+            redirect: "follow",
+            signal: AbortSignal.timeout(10000),
+          });
+          if (frameRes.ok) {
+            htmlText = await frameRes.text();
+            console.log(`[Site Migration] 🟢 Resolved inner frame HTML loaded (${htmlText.length} bytes)`);
+          }
+        } catch (frameErr) {
+          console.warn("[Site Migration] Frame resolution error:", frameErr);
+        }
+      }
+    }
+
+    // 🟢 [NEW: Figma Site Native Bundle & Unicode Decoder]
+    let figmaData: { texts: string[]; imageUrls: string[] } | null = null;
+    const isFigmaSite = urlObj.hostname.includes("figma.site") || htmlText.includes("figma.site") || htmlText.includes("_components/v2/");
+    if (isFigmaSite && htmlText) {
+      try {
+        console.log(`[Site Migration] 🎨 Figma Site detected! Extracting component JS bundles and decoding unicode text...`);
+        const jsMatch = htmlText.match(/src=["'](\/_components\/v2\/[^"']+\.js)["']/i) ||
+                        htmlText.match(/href=["'](\/_components\/v2\/[^"']+\.js)["']/i) ||
+                        htmlText.match(/(\/_components\/v2\/[a-zA-Z0-9_-]+\.js)/i);
+        if (jsMatch && jsMatch[1]) {
+          const jsUrl = new URL(jsMatch[1], urlObj.origin).href;
+          const jsRes = await fetch(jsUrl, {
+            headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)" },
+            signal: AbortSignal.timeout(10000),
+          });
+          if (jsRes.ok) {
+            const rawJs = await jsRes.text();
+            // Decode unicode escape sequences (\uXXXX) into readable Korean/UTF-8
+            const decodedJs = rawJs.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+            
+            // Extract Korean sentences and key English headlines
+            const extractedKorean = decodedJs.match(/[가-힣0-9A-Za-z\s,.\-·()]{3,}/g) || [];
+            const cleanKoreanTexts = Array.from(new Set(
+              extractedKorean
+                .map((t) => t.trim())
+                .filter((t) => t.length >= 2 && !t.startsWith("css-") && !t.includes("function") && !t.includes("return"))
+            )).slice(0, 120);
+
+            // Extract image URLs (Imgur, Cloudflare, S3, Figma CDN)
+            const extractedImages = Array.from(new Set(
+              (decodedJs.match(/https?:\/\/[^"'\s)]+\.(?:png|jpg|jpeg|webp|svg)/gi) || [])
+            )).slice(0, 50);
+
+            figmaData = {
+              texts: cleanKoreanTexts,
+              imageUrls: extractedImages,
+            };
+            console.log(`[Site Migration] 🟢 Figma Site bundle decoded: ${cleanKoreanTexts.length} texts, ${extractedImages.length} images`);
+          }
+        }
+      } catch (figmaErr) {
+        console.warn("[Site Migration] Figma bundle decode error:", figmaErr);
+      }
+    }
+
     // v2.0: Framer / SPA / Scroll-Animation site detection & rendering pipeline
-    // Dynamic import to avoid Vercel bundle crash (puppeteer-core/lib/** excluded)
     let framerSearchData: { texts: string[]; imageUrls: string[]; colorTokens: Record<string, string> } | null = null;
     let allExtractedImageUrls: string[] = [];
     let isFramer = false;
+
+    // Merge figma images if found
+    if (figmaData?.imageUrls) {
+      figmaData.imageUrls.forEach((u) => allExtractedImageUrls.push(u));
+    }
 
     try {
       const {
@@ -162,7 +244,8 @@ export async function POST(request: Request) {
 
       // Extract all image URLs from initial fetch (before headless)
       if (htmlText) {
-        allExtractedImageUrls = extractAllImageUrls(htmlText, urlObj.origin);
+        const initialImgs = extractAllImageUrls(htmlText, urlObj.origin);
+        allExtractedImageUrls = Array.from(new Set([...allExtractedImageUrls, ...initialImgs]));
       }
 
       // Headless Chrome for SPA / Framer (to capture full DOM for AI analysis)
@@ -405,6 +488,7 @@ export async function POST(request: Request) {
           `}
 
           ${cssImageListStr ? `[DETECTED MEDIA ASSETS]:\n- ${cssImageListStr}` : ""}
+          ${figmaData && figmaData.texts.length > 0 ? `[FIGMA SITE EXTRACTED TEXTS & HEADLINES]:\n${figmaData.texts.slice(0, 100).join("\n")}` : ""}
           ${isFramer && framerSearchData?.colorTokens && Object.keys(framerSearchData.colorTokens).length > 0 ? `[FRAMER COLOR TOKENS]:\n${Object.entries(framerSearchData.colorTokens).slice(0, 20).map(([k, v]) => `${k}: ${v}`).join("\n")}` : ""}
           ${isFramer && framerSearchData?.texts && framerSearchData.texts.length > 0 ? `[KEY TEXT CONTENT]:\n${framerSearchData.texts.slice(0, 80).join("\n")}` : ""}
 

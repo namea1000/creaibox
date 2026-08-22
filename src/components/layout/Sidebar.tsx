@@ -43,6 +43,7 @@ import {
   Eraser,
   Gauge,
   DownloadCloud,
+  Activity,
   BadgeDollarSign,
   Trophy,
   LineChart,
@@ -211,6 +212,7 @@ export default function Sidebar({
         children: [
           { name: "템플릿 쇼핑 & 1초 구축", href: "/studio/custom-client-site/marketplace", icon: Store },
           { name: "기존 홈페이지 이관", href: "/studio/custom-client-site/migration", icon: Globe },
+          { name: "AI 웹사이트 정밀 진단 🔍", href: "/studio/site-audit", icon: Activity },
           { name: "AI 홈페이지 매직 빌더 🪄", href: "/studio/custom-client-site/ai-magic-builder", icon: MonitorSmartphone },
           { name: "서브 페이지 AI 추가 제작", href: "/studio/custom-client-site/subpage-builder", icon: Layers },
           { name: "내 웹사이트 관리", href: "/studio/client-site-builder", icon: Settings },

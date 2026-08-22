@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { Search, CheckCircle2, ShieldCheck, Eye, Zap, Lock, ExternalLink, Maximize2, Camera } from "lucide-react";
+import { Search, CheckCircle2, ShieldCheck, Eye, Zap, Lock, ExternalLink, Maximize2, Camera, BookmarkPlus, Box } from "lucide-react";
 import { CustomTemplate, CUSTOM_TEMPLATES } from "@/constants/custom-client-site";
 
 interface MarketplaceTabProps {
@@ -22,14 +22,52 @@ export default function MarketplaceTab({
 }: MarketplaceTabProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("전체 테마");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [userCustomTemplates, setUserCustomTemplates] = useState<CustomTemplate[]>([]);
+  const [isLoadingCustom, setIsLoadingCustom] = useState(false);
+
+  useEffect(() => {
+    async function loadCustomTemplates() {
+      setIsLoadingCustom(true);
+      try {
+        const res = await fetch("/api/studio/custom-client-site/save-template");
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          const formatted: CustomTemplate[] = json.data.map((item: any) => ({
+            id: item.template_key || item.id,
+            name: item.name,
+            category: "나만의 템플릿",
+            badge: "내 맞춤 템플릿 📦",
+            description: item.description || "이관 사이트에서 추출된 고품질 맞춤 템플릿입니다.",
+            thumbnail: item.thumbnail_url || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=60",
+            features: ["맞춤 헤더/푸터 구조", "0.01초 초고속 렌더링", "모바일 반응형 완벽 대응"],
+            score: "100점",
+            speed: "0.01s",
+            previewUrl: item.source_url || `https://${item.source_brand_id}.creaibox.com`,
+          }));
+          setUserCustomTemplates(formatted);
+        }
+      } catch (e) {
+        console.warn("loadCustomTemplates error:", e);
+      } finally {
+        setIsLoadingCustom(false);
+      }
+    }
+    void loadCustomTemplates();
+  }, []);
+
+  const allCombinedTemplates = [...userCustomTemplates, ...CUSTOM_TEMPLATES];
 
   const categories = [
     "전체 테마",
+    ...(userCustomTemplates.length > 0 ? [`나만의 템플릿 (${userCustomTemplates.length})`] : []),
     ...Array.from(new Set(CUSTOM_TEMPLATES.map((t: any) => t.category))),
   ];
 
-  const filteredTemplates = CUSTOM_TEMPLATES.filter((tpl: any) => {
-    const matchCat = selectedCategory === "전체 테마" || tpl.category === selectedCategory;
+  const filteredTemplates = allCombinedTemplates.filter((tpl: any) => {
+    const isMyTemplateCategory = selectedCategory.startsWith("나만의 템플릿");
+    const matchCat =
+      selectedCategory === "전체 테마" ||
+      (isMyTemplateCategory ? tpl.category === "나만의 템플릿" : tpl.category === selectedCategory);
     const matchSearch =
       tpl.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tpl.features.some((f: any) => f.toLowerCase().includes(searchQuery.toLowerCase())) ||

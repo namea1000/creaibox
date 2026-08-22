@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Globe, RefreshCw, Zap, Sparkles, CheckCircle2, ExternalLink, Bot, Check, ArrowRight, Layers, FileText, Cpu, ChevronDown, ChevronUp, Video, ShieldCheck, Award, HelpCircle, Trash2, Image as ImageIcon, Upload } from "lucide-react";
+import { Globe, RefreshCw, Zap, Sparkles, CheckCircle2, ExternalLink, Bot, Check, ArrowRight, Layers, FileText, Cpu, ChevronDown, ChevronUp, Video, ShieldCheck, Award, HelpCircle, Trash2, Image as ImageIcon, Upload, BookmarkPlus, Box, Store } from "lucide-react";
 
 interface MigrationTabProps {
   requireAuth: (action?: () => void) => boolean;
@@ -45,6 +45,38 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [uploadingImageUrl, setUploadingImageUrl] = useState<string | null>(null);
   const [imageUploadSuccessMsg, setImageUploadSuccessMsg] = useState("");
+
+  // 📦 Custom Template Saver States
+  const [saveTemplateSite, setSaveTemplateSite] = useState<any | null>(null);
+  const [templateCustomName, setTemplateCustomName] = useState("");
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+  const [templateSaveSuccess, setTemplateSaveSuccess] = useState<any | null>(null);
+
+  const handleSaveAsTemplate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!saveTemplateSite) return;
+    setIsSavingTemplate(true);
+    try {
+      const res = await fetch("/api/studio/custom-client-site/save-template", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          siteId: saveTemplateSite.id,
+          templateName: templateCustomName,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setTemplateSaveSuccess(json.data);
+      } else {
+        alert(json.error || "템플릿 등록 실패");
+      }
+    } catch (err: any) {
+      alert("오류 발생: " + err.message);
+    } finally {
+      setIsSavingTemplate(false);
+    }
+  };
 
   const openImageManager = async (site: any) => {
     setImageManagerSite(site);
@@ -710,6 +742,21 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                           <span>내 사진으로 교체</span>
                         </button>
 
+                        {/* 📦 Save as Reusable Custom Template Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSaveTemplateSite(site);
+                            setTemplateCustomName(`${site.company_name || site.brand_id} 스타일 템플릿`);
+                            setTemplateSaveSuccess(null);
+                          }}
+                          className="h-9 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 border bg-slate-800 hover:bg-emerald-950/40 text-emerald-300 border-emerald-500/30 hover:border-emerald-400 hover:shadow-lg hover:shadow-emerald-500/10 cursor-pointer"
+                          title="이 사이트 디자인을 템플릿 마켓플레이스에 보관하여 새 사이트 제작 시 재사용합니다."
+                        >
+                          <BookmarkPlus size={13} className="text-emerald-400" />
+                          <span>📦 템플릿으로 보관</span>
+                        </button>
+
                         <button
                           onClick={() => deleteHistory(site.id)}
                           className="h-9 px-3 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-colors flex items-center gap-1 font-bold text-xs shrink-0 cursor-pointer"
@@ -1077,6 +1124,111 @@ export default function MigrationTab({ requireAuth }: MigrationTabProps) {
                     <span>{promoteModalSite.status === "PUBLISHED" ? "도메인 변경 적용" : "정식 라이브 배포하기"}</span>
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* 📦 Save As Custom Template Modal */}
+          {saveTemplateSite && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+              <div
+                className="w-full max-w-lg rounded-3xl bg-slate-900 border border-emerald-500/40 p-6 md:p-8 space-y-6 shadow-2xl relative"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <BookmarkPlus size={24} />
+                  </div>
+                  <div>
+                    <span className="text-xs font-black text-emerald-400 tracking-wider uppercase block">
+                      CUSTOM TEMPLATE REGISTRY
+                    </span>
+                    <h3 className="text-xl font-black text-white">
+                      📦 나만의 템플릿으로 보관하기
+                    </h3>
+                  </div>
+                </div>
+
+                {templateSaveSuccess ? (
+                  <div className="space-y-6 text-center py-4">
+                    <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center">
+                      <Check size={32} />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-lg font-bold text-white">템플릿 보관함에 등록 완료!</h4>
+                      <p className="text-xs text-slate-300">
+                        <strong>[{templateSaveSuccess.name}]</strong>이(가) '나만의 템플릿'으로 저장되었습니다.<br />
+                        템플릿 쇼핑 및 AI 빌더에서 언제든지 1초 만에 새 사이트로 배포하실 수 있습니다.
+                      </p>
+                    </div>
+                    <div className="flex gap-3 pt-2">
+                      <a
+                        href="/studio/custom-client-site/marketplace"
+                        className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-2 hover:brightness-110 shadow-lg shadow-emerald-600/20"
+                      >
+                        <Store size={15} />
+                        <span>🛍️ 템플릿 쇼핑에서 확인하기</span>
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSaveTemplateSite(null);
+                          setTemplateSaveSuccess(null);
+                        }}
+                        className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
+                      >
+                        닫기
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSaveAsTemplate} className="space-y-4">
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      이 사이트(<strong>{saveTemplateSite.company_name || saveTemplateSite.brand_id}</strong>)의 헤더, 푸터, 레이아웃 그리드, 컬러 테마를 스냅샷으로 보관하여 다른 고객사나 브랜드의 새 사이트를 만들 때 템플릿으로 재사용합니다.
+                    </p>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-300 block">템플릿 이름</label>
+                      <input
+                        type="text"
+                        required
+                        value={templateCustomName}
+                        onChange={(e) => setTemplateCustomName(e.target.value)}
+                        placeholder="예: 퓨처마인드 AI 테크 템플릿"
+                        className="w-full rounded-xl bg-slate-950 border border-slate-800 px-4 py-3 text-xs sm:text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
+                      />
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1 text-[11px] text-slate-400">
+                      <div className="flex justify-between">
+                        <span>출처 사이트:</span>
+                        <span className="text-slate-200 font-mono font-bold">{saveTemplateSite.brand_id}.creaibox.com</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>보관 대상:</span>
+                        <span className="text-emerald-400 font-bold">헤더/푸터 + 본문 레이아웃 구조</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        type="submit"
+                        disabled={isSavingTemplate}
+                        className="flex-1 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 hover:brightness-110 shadow-lg shadow-emerald-600/20 cursor-pointer disabled:opacity-50"
+                      >
+                        {isSavingTemplate ? <RefreshCw size={15} className="animate-spin" /> : <Box size={15} />}
+                        <span>{isSavingTemplate ? "템플릿으로 등록 중..." : "📦 나만의 템플릿 보관함에 등록"}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSaveTemplateSite(null)}
+                        className="px-5 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs cursor-pointer"
+                      >
+                        취소
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
             </div>
           )}

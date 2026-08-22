@@ -13,6 +13,8 @@ import {
   Zap,
   HelpCircle,
   ExternalLink,
+  Globe,
+  Check,
 } from "lucide-react";
 
 interface EmailRule {
@@ -22,6 +24,13 @@ interface EmailRule {
   forward_to: string;
   is_active: boolean;
   created_at: string;
+}
+
+interface UserDomainOption {
+  domain: string;
+  type: "custom" | "subdomain";
+  source: "purchased" | "connected" | "subdomain";
+  isPrimary?: boolean;
 }
 
 interface EmailForwardingManagerProps {
@@ -35,9 +44,11 @@ export default function EmailForwardingManager({
   currentUser,
   onRequireAuth,
 }: EmailForwardingManagerProps) {
-  const [selectedDomain, setSelectedDomain] = useState<string>("creaibox.com");
+  const [userDomains, setUserDomains] = useState<UserDomainOption[]>([]);
+  const [selectedDomain, setSelectedDomain] = useState<string>("sotongchaeum.com");
   const [rules, setRules] = useState<EmailRule[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [domainsLoading, setDomainsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -48,7 +59,47 @@ export default function EmailForwardingManager({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDnsModal, setShowDnsModal] = useState(false);
 
-  // Fetch rules from API
+  // 1. Fetch user's connected and purchased domains
+  useEffect(() => {
+    async function loadUserDomains() {
+      setDomainsLoading(true);
+      try {
+        const res = await fetch("/api/domains/my-domains");
+        const json = await res.json();
+        if (json.success && Array.isArray(json.domains) && json.domains.length > 0) {
+          setUserDomains(json.domains);
+          // Set primary custom domain as initial selected domain if available
+          const primaryCustom = json.domains.find((d: UserDomainOption) => d.type === "custom");
+          if (primaryCustom) {
+            setSelectedDomain(primaryCustom.domain);
+          } else {
+            setSelectedDomain(json.domains[0].domain);
+          }
+        } else {
+          // Fallback preset list
+          const defaults: UserDomainOption[] = [
+            { domain: "sotongchaeum.com", type: "custom", source: "connected", isPrimary: true },
+            { domain: "sotongchaeum.creaibox.com", type: "subdomain", source: "subdomain" },
+            { domain: "creaibox.com", type: "custom", source: "connected" },
+          ];
+          setUserDomains(defaults);
+          setSelectedDomain("sotongchaeum.com");
+        }
+      } catch (e) {
+        setUserDomains([
+          { domain: "sotongchaeum.com", type: "custom", source: "connected" },
+          { domain: "creaibox.com", type: "custom", source: "connected" },
+        ]);
+        setSelectedDomain("sotongchaeum.com");
+      } finally {
+        setDomainsLoading(false);
+      }
+    }
+
+    void loadUserDomains();
+  }, [currentUser]);
+
+  // 2. Fetch rules from API for selected domain
   const fetchRules = async () => {
     if (!selectedDomain) return;
     setLoading(true);
@@ -58,7 +109,7 @@ export default function EmailForwardingManager({
       const data = await res.json();
       if (!res.ok) {
         if (res.status === 401) {
-          // 비로그인 상태는 에러가 아닌 빈 목록으로 정상 처리
+          // 비로그인 상태는 빈 목록으로 정상 처리
           setRules([]);
           return;
         }
@@ -66,7 +117,6 @@ export default function EmailForwardingManager({
       }
       setRules(data.data || data.rules || []);
     } catch (err: any) {
-      // JSON 파싱 실패나 네트워크 이슈 시 조용히 빈 배열 처리
       setRules([]);
     } finally {
       setLoading(false);
@@ -76,6 +126,13 @@ export default function EmailForwardingManager({
   useEffect(() => {
     void fetchRules();
   }, [selectedDomain]);
+
+  // 🌟 사용자가 회원가입/등록한 실제 로그인 이메일로 자동 기본값 세팅
+  useEffect(() => {
+    if (currentUser?.email && !newForwardTo) {
+      setNewForwardTo(currentUser.email);
+    }
+  }, [currentUser]);
 
   // Create new forwarding rule
   const handleCreateRule = async (e: React.FormEvent) => {
@@ -107,9 +164,8 @@ export default function EmailForwardingManager({
         throw new Error(data.error || "규칙 추가 실패");
       }
 
-      setSuccessMsg(`✅ ${newAlias.trim().toLowerCase()}@${selectedDomain} 포워딩 주소가 생성되었습니다.`);
+      setSuccessMsg(`✅ ${newAlias.trim().toLowerCase()}@${selectedDomain} 포워딩 주소가 성공적으로 연동되었습니다.`);
       setNewAlias("");
-      setNewForwardTo("");
       setShowForm(false);
       await fetchRules();
     } catch (err: any) {
@@ -150,28 +206,69 @@ export default function EmailForwardingManager({
 
   return (
     <div className="space-y-6">
-      {/* Main Forwarding Manager Card */}
-      <div className="rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/30 overflow-hidden shadow-2xs">
+      {/* 🌟 1. Domain Selector & Info Card */}
+      <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Globe className="text-cyan-500" size={16} />
+            <span className="text-xs font-bold text-slate-900 dark:text-white">
+              연동 대상 내 보유 도메인 선택
+            </span>
+            <span className="text-[10px] font-semibold text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+              {userDomains.length}개 보유 중
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-zinc-400">
+            선택한 도메인으로 수신되는 모든 비즈니스 메일을 대표님 개인 메일함으로 0.01초 만에 자동 전달합니다.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <select
+            value={selectedDomain}
+            onChange={(e) => setSelectedDomain(e.target.value)}
+            className="rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3.5 py-2 text-xs font-bold font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white shadow-xs cursor-pointer min-w-[220px]"
+          >
+            {userDomains.map((item) => (
+              <option key={item.domain} value={item.domain}>
+                {item.domain} {item.type === "custom" ? "👑 (독립 도메인)" : "⚡ (서브도메인)"}
+              </option>
+            ))}
+          </select>
+
+          <button
+            onClick={() => void fetchRules()}
+            className="p-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+            title="도메인 상태 새로고침"
+          >
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+          </button>
+        </div>
+      </div>
+
+      {/* 🌟 2. Main Forwarding Manager Card */}
+      <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/30 overflow-hidden shadow-2xs">
         {/* Header */}
         <div className="p-5 sm:p-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-white">
-                브랜드 독립 이메일 무제한 포워딩 연동
+              <h2 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                <Mail className="text-cyan-500" size={18} />
+                <span>[{selectedDomain}] 비즈니스 이메일 무제한 포워딩</span>
               </h2>
               <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
                 0원 무료
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 leading-relaxed">
-              <code className="text-slate-900 dark:text-white font-mono font-semibold">contact@{selectedDomain}</code>, <code className="text-slate-900 dark:text-white font-mono font-semibold">ceo@{selectedDomain}</code> 등으로 수신되는 메일을 개인 이메일(Gmail, Naver 등)로 0.01초 만에 즉시 전달합니다.
+              <code className="text-slate-900 dark:text-white font-mono font-semibold">contact@{selectedDomain}</code>, <code className="text-slate-900 dark:text-white font-mono font-semibold">ceo@{selectedDomain}</code> 등으로 수신되는 메일을 개인 이메일(Gmail, Naver 등)로 즉시 전달합니다.
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowDnsModal(true)}
-              className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-medium text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-medium text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             >
               <ShieldCheck size={13} className="text-emerald-500" />
               <span>SPF·DKIM 레코드</span>
@@ -179,7 +276,7 @@ export default function EmailForwardingManager({
 
             <button
               onClick={() => setShowForm(!showForm)}
-              className="inline-flex items-center justify-center gap-1.5 rounded-md bg-black dark:bg-white text-white dark:text-black px-3.5 py-2 text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer shadow-xs shrink-0"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-black dark:bg-white text-white dark:text-black px-3.5 py-2 text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer shadow-xs shrink-0"
             >
               {showForm ? <X size={14} /> : <Plus size={14} />}
               <span>{showForm ? "닫기" : "새 메일 주소 추가"}</span>
@@ -190,7 +287,7 @@ export default function EmailForwardingManager({
         {/* Status Alerts */}
         {errorMsg && (
           <div className="p-4 bg-rose-50 dark:bg-rose-950/20 border-b border-rose-200 dark:border-rose-900/30 flex items-center justify-between text-xs text-rose-600 dark:text-rose-400">
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5 font-medium">
               <AlertCircle size={14} />
               {errorMsg}
             </span>
@@ -201,7 +298,7 @@ export default function EmailForwardingManager({
         )}
         {successMsg && (
           <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border-b border-emerald-200 dark:border-emerald-900/30 flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400">
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5 font-medium">
               <CheckCircle2 size={14} />
               {successMsg}
             </span>
@@ -224,7 +321,7 @@ export default function EmailForwardingManager({
                     key={preset}
                     type="button"
                     onClick={() => setNewAlias(preset)}
-                    className="px-2.5 py-1 rounded bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs font-mono text-slate-700 dark:text-zinc-300 hover:border-black dark:hover:border-white transition-colors cursor-pointer"
+                    className="px-2.5 py-1 rounded bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs font-mono text-slate-700 dark:text-zinc-300 hover:border-cyan-500 dark:hover:border-cyan-400 transition-colors cursor-pointer"
                   >
                     {preset}@{selectedDomain}
                   </button>
@@ -235,7 +332,7 @@ export default function EmailForwardingManager({
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
               <div className="sm:col-span-5 space-y-1.5">
                 <label className="text-xs font-medium text-slate-700 dark:text-zinc-300">
-                  수신 이메일 별칭
+                  수신 이메일 별칭 아이디
                 </label>
                 <div className="flex items-center">
                   <input
@@ -253,13 +350,13 @@ export default function EmailForwardingManager({
 
               <div className="sm:col-span-5 space-y-1.5">
                 <label className="text-xs font-medium text-slate-700 dark:text-zinc-300">
-                  전달받을 실제 개인 이메일 (Gmail/Naver 등)
+                  전달받을 실제 개인 이메일 (Gmail / Naver 등)
                 </label>
                 <input
                   type="email"
                   value={newForwardTo}
                   onChange={(e) => setNewForwardTo(e.target.value)}
-                  placeholder="myname@gmail.com"
+                  placeholder={currentUser?.email || "전달받을 대표님 등록 이메일"}
                   className="w-full rounded-md border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white font-mono"
                 />
               </div>
@@ -281,7 +378,7 @@ export default function EmailForwardingManager({
         {/* Rules Table */}
         <div className="p-0">
           <div className="px-5 py-3 bg-slate-50/70 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-zinc-400">
-            <span>활성 포워딩 규칙 ({rules.length}개)</span>
+            <span>[{selectedDomain}] 활성 포워딩 규칙 ({rules.length}개)</span>
             <button
               onClick={fetchRules}
               className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
@@ -294,8 +391,8 @@ export default function EmailForwardingManager({
           {rules.length === 0 ? (
             <div className="p-10 text-center text-xs text-slate-400 dark:text-zinc-500 space-y-2">
               <Mail className="mx-auto text-slate-300 dark:text-zinc-700" size={28} />
-              <p>아직 등록된 이메일 포워딩 주소가 없습니다.</p>
-              <p className="text-[11px]">우측 상단 <strong>[새 메일 주소 추가]</strong> 버튼을 눌러 대표님만의 비즈니스 이메일을 만드세요.</p>
+              <p><strong>{selectedDomain}</strong>에 등록된 이메일 포워딩 주소가 아직 없습니다.</p>
+              <p className="text-[11px]">우측 상단 <strong>[새 메일 주소 추가]</strong> 버튼을 눌러 대표님만의 비즈니스 이메일을 만들어보세요.</p>
             </div>
           ) : (
             <table className="w-full text-left text-xs font-normal border-collapse">

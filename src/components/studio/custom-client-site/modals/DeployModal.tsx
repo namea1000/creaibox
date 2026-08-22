@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Zap, CheckCircle2, Globe, RefreshCw } from "lucide-react";
 import { CustomTemplate } from "@/constants/custom-client-site";
 
@@ -26,6 +26,16 @@ export default function DeployModal({
   setActiveTab,
 }: DeployModalProps) {
   const [isDeploying, setIsDeploying] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setDeployModalTemplate(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [setDeployModalTemplate]);
 
   if (!deployModalTemplate) return null;
 

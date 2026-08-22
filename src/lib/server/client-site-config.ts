@@ -51,6 +51,23 @@ const DEFAULT_SOTONGCHAEUM_CONFIG: ClientSiteConfig = {
   ],
 };
 
+// Default configuration for futuremind
+const DEFAULT_FUTUREMIND_CONFIG: ClientSiteConfig = {
+  companyName: "미래교육문화협회 (퓨처마인드)",
+  phone: "02-1588-0000",
+  email: "contact@futuremind.kr",
+  description: "AI라는 경계 없는 마음 하나로, 시간과 공간을 넘어 모든 것을 연결시킵니다. 미래교육문화협회(퓨처마인드)",
+  customMenus: [
+    { id: "1", label: "미래를 보는 마음", url: "/" },
+    { id: "2", label: "WE WORK", url: "/work" },
+    { id: "3", label: "교육", url: "/education" },
+    { id: "4", label: "기획", url: "/planning" },
+    { id: "5", label: "개발", url: "/development" },
+    { id: "6", label: "홍보", url: "/marketing" },
+    { id: "7", label: "상담 신청하기", url: "/#contact", isRightAligned: true },
+  ],
+};
+
 export async function saveClientSiteConfig(brandId: string, config: ClientSiteConfig) {
   const cleanBrand = brandId.toLowerCase().trim();
   clientConfigCache.set(cleanBrand, config);
@@ -90,26 +107,14 @@ export async function getClientSiteConfig(brandId: string): Promise<ClientSiteCo
       clientConfigCache.set(cleanBrand, cfg);
       return cfg;
     }
-
-    // Try finding any profile with extra_configs containing companyName
-    const { data: profiles } = await supabaseAdmin
-      .from("profiles")
-      .select("extra_configs")
-      .not("extra_configs", "is", null)
-      .limit(10);
-
-    if (profiles && profiles.length > 0) {
-      for (const p of profiles) {
-        const cfg = p.extra_configs as ClientSiteConfig;
-        if (cfg && (cfg.companyName || cfg.customMenus)) {
-          clientConfigCache.set(cleanBrand, cfg);
-          return cfg;
-        }
-      }
-    }
   } catch (err) {
     console.error("getClientSiteConfig error:", err);
   }
 
-  return (cleanBrand === "sotongchaeum" || cleanBrand === "sotongcheum") ? DEFAULT_SOTONGCHAEUM_CONFIG : {};
+  if (cleanBrand === "futuremind" || cleanBrand === "futuremind2" || cleanBrand === "futuremind-2z3u") return DEFAULT_FUTUREMIND_CONFIG;
+  if (cleanBrand === "sotongchaeum" || cleanBrand === "sotongcheum" || cleanBrand === "commufill") {
+    return DEFAULT_SOTONGCHAEUM_CONFIG;
+  }
+  
+  return {};
 }

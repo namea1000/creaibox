@@ -62,9 +62,9 @@ export async function checkDomainStatus(domainName: string) {
   } else if (cleanDomain.endsWith(".tech")) {
     priceUSD = 7.99;
     originalPriceKRW = 25000;
-  } else if (cleanDomain.endsWith(".xyz")) {
-    priceUSD = 1.99;
-    originalPriceKRW = 18000;
+  } else if (cleanDomain.endsWith(".ai")) {
+    priceUSD = 79.00;
+    originalPriceKRW = 140000;
   } else if (cleanDomain.endsWith(".kr") || cleanDomain.endsWith(".co.kr") || cleanDomain.endsWith(".net")) {
     priceUSD = 13.50;
     originalPriceKRW = 28600;

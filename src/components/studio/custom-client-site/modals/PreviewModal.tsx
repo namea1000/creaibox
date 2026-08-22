@@ -1,14 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Smartphone, Tablet, Monitor, X, ExternalLink, RefreshCw, Eye, CheckCircle2, Zap, ArrowRight } from "lucide-react";
 import { CustomTemplate } from "@/constants/custom-client-site";
-
-interface PreviewModalProps {
-  previewModalTemplate: CustomTemplate | null;
-  setPreviewModalTemplate: (tpl: CustomTemplate | null) => void;
-  previewDeviceMode: "desktop" | "tablet" | "mobile";
-  setPreviewDeviceMode: (mode: "desktop" | "tablet" | "mobile") => void;
-  onDeploy: (tpl: CustomTemplate) => void;
-}
 
 interface PreviewModalProps {
   previewModalTemplate: CustomTemplate | null;
@@ -35,7 +27,21 @@ export default function PreviewModal({
   setDeploySuccess,
   requireAuth
 }: PreviewModalProps) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setPreviewModalTemplate(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [setPreviewModalTemplate]);
+
   if (!previewModalTemplate) return null;
+
+  const targetIframeSrc = previewModalTemplate.previewUrl?.startsWith("http")
+    ? previewModalTemplate.previewUrl
+    : `/clients/${previewModalTemplate.id}`;
 
   return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-6 animate-in fade-in duration-200">
@@ -133,7 +139,7 @@ export default function PreviewModal({
                 }`}
               >
                 <iframe
-                  src={`/clients/${previewModalTemplate.id}`}
+                  src={targetIframeSrc}
                   title={`${previewModalTemplate.name} ${previewDeviceMode} Preview`}
                   className={`w-full border-0 ${
                     previewDeviceMode === "mobile" ? "h-[620px]" : "h-[660px]"

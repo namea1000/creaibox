@@ -1,0 +1,35 @@
+{
+  "site": {
+    "id": "555d698a-a800-4578-bc42-cb715a6cfd5f",
+    "profile_id": "454dfd4e-2b64-4309-afbe-e54f34666eb4",
+    "brand_id": "blazity-mett",
+    "custom_domain": null,
+    "template_id": "business_tech_dark",
+    "company_name": "Enterprise AI Agents &amp; Agentic Workflows on Vercel AI Cloud | Blazity",
+    "phone": "0000743458",
+    "address": "서울특별시 강남구 테헤란로 123",
+    "status": "DRAFT",
+    "extra_configs": {
+      "is_draft": true,
+      "og_image": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&auto=format&fit=crop&q=80",
+      "site_title": "Enterprise AI Agents &amp; Agentic Workflows on Vercel AI Cloud | Blazity",
+      "footer_html": "<footer class='bg-neutral-950 text-neutral-400 py-12 px-6 border-t border-neutral-800'>\n    <div class='max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-8'>\n        <div class='col-span-2 md:col-span-1'>\n            <img src='https://pub-4d5e9d40c2ef4eeb93a533aee9f1862d.r2.dev/migrated-sites/blazity-mett/a44ce8e8bbf04963.svg' alt='Blazity Logo' class='h-6 mb-4'/>\n            <p class='text-sm'>Enterprise AI Agents & Workflows on Vercel AI Cloud.</p>\n        </div>\n        <div>\n            <h5 class='text-white font-semibold mb-3'>Platform</h5>\n            <ul class='space-y-2 text-sm'>\n                <li><a href='#atlas' class='hover:text-orange-500'>Atlas</a></li>\n                <li><a href='#solutions' class='hover:text-orange-500'>Solutions</a></li>\n                <li><a href='#services' class='hover:text-orange-500'>Services</a></li>\n            </ul>\n        </div>\n        <div>\n            <h5 class='text-white font-semibold mb-3'>Company</h5>\n            <ul class='space-y-2 text-sm'>\n                <li><a href='#case_studies' class='hover:text-orange-500'>Case Studies</a></li>\n                <li><a href='#resources' class='hover:text-orange-500'>Resources</a></li>\n                <li><a href='#contact' class='hover:text-orange-500'>Contact</a></li>\n            </ul>\n        </div>\n        <div class='md:col-span-2'>\n            <h5 class='text-white font-semibold mb-3'>Contact</h5>\n            <p class='text-sm mb-4'>Ready to build production-grade AI systems?</p>\n            <a href='#contact' class='px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-semibold hover:bg-orange-700 transition duration-200'>TALK TO AN ARCHITECT</a>\n        </div>\n    </div>\n    <div class='max-w-7xl mx-auto mt-10 text-center text-xs border-t border-neutral-800 pt-6'>\n        &copy; 2024 Blazity. All rights reserved. Vercel Certified Gold Partner.\n    </div>\n</footer>",
+      "header_html": "<header class='sticky top-0 z-50 bg-neutral-950/95 backdrop-blur-sm border-b border-neutral-800 text-white px-6 py-4 flex justify-between items-center'>\n    <a href='/' class='flex items-center space-x-2'>\n        <img src='https://pub-4d5e9d40c2ef4eeb93a533aee9f1862d.r2.dev/migrated-sites/blazity-mett/a44ce8e8bbf04963.svg' alt='Blazity Logo' class='h-6'/>\n    </a>\n    <nav class='hidden lg:flex gap-6 text-sm font-medium text-neutral-300'>\n        <a href='#atlas' class='hover:text-orange-500 transition duration-200'>Atlas</a>\n        <a href='#services' class='hover:text-orange-500 transition duration-200'>Services</a>\n        <a href='#solutions' class='hover:text-orange-500 transition duration-200'>Solutions</a>\n        <a href='#case_studies' class='hover:text-orange-500 transition duration-200'>Case Studies</a>\n        <a href='#resources' class='hover:text-orange-500 transition duration-200'>Resources</a>\n    </nav>\n    <a href='#contact' class='hidden md:block px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-semibold hover:bg-orange-700 transition duration-200'>TALK TO AN ARCHITECT</a>\n    <button class='lg:hidden text-white'>\n        <svg class='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 6h16M4 12h16m-7 6h7'></path></svg>\n    </button>\n</header>",
+      "scan_report": {},
+      "target_slug": "blazity",
+      "original_url": "https://www.blazity.com",
+      "migration_queue": [],
+      "is_custom_layout": true,
+      "migration_status": "completed",
+      "site_description": "Enterprise AI Agents &amp; Agentic Workflows on Vercel AI Cloud | Blazity 공식 홈페이지",
+      "migrated_images_count": 28,
+      "migration_total_count": 0
+    },
+    "created_at": "2026-08-22T01:57:33.402702+00:00",
+    "creation_source": "migration",
+    "is_onepage_scroll": false,
+    "scan_report": {},
+    "theme_vibe": null
+  },
+  "sections": null
+}

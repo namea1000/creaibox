@@ -3,13 +3,15 @@ import { Metadata } from "next";
 import { createAdminClient } from "@/utils/supabase/server";
 import CreativeMediaBlogPage from "../creative-media-blog/page";
 import SotongchaeumPage from "../sotongchaeum/page";
+import FuturemindHomePage from "../futuremind/page";
+import DynamicRendererPage from "../dynamic-renderer/[brand_id]/[[...slug]]/page";
 
 // 🌟 Vercel Global Edge CDN Incremental Static Regeneration (ISR 60s 광속 캐시)
 export const revalidate = 60;
 export const dynamicParams = true;
 
-
 const clientNames: Record<string, string> = {
+  "futuremind": "미래교육문화협회 (퓨처마인드)",
   "prime-realestate": "프라임 부동산 빌더 템플릿",
   "fashion-beauty-lookbook": "패션 & 뷰티 룩북 시그니처 템플릿",
   "travel-stay": "트래블 & 감성 스테이 템플릿",
@@ -28,6 +30,7 @@ interface ClientPageProps {
   params: Promise<{
     client_id: string;
   }>;
+  searchParams?: Promise<{ page?: string }> | { page?: string };
 }
 
 export async function generateMetadata({ params }: ClientPageProps): Promise<Metadata> {
@@ -53,7 +56,7 @@ export async function generateMetadata({ params }: ClientPageProps): Promise<Met
     } catch (e) {}
   }
 
-  // 3. Fallback: Automatically format hyphenated client_id (e.g. 'luxury-hotel' -> 'Luxury Hotel 템플릿')
+  // 3. Fallback: Automatically format hyphenated client_id
   if (!clientName) {
     const formattedWords = clientId
       .split(/[-_]+/)
@@ -64,8 +67,8 @@ export async function generateMetadata({ params }: ClientPageProps): Promise<Met
     clientName = formattedWords ? `${formattedWords} 비즈니스 템플릿` : "맞춤 브랜드 비즈니스 웹사이트";
   }
 
-  const title = `${clientName} | 크리에이박스 CreAiBox`;
-  const description = `크리에이박스 CreAiBox에서 제공하는 ${clientName} 라이브 시연 페이지입니다. AI 기반 맞춤 디자인 템플릿과 블로그/포트폴리오 구성을 확인해 보세요.`;
+  const title = `${clientName} | CreaiBox`;
+  const description = `CreaiBox에서 제공하는 ${clientName} 라이브 시연 페이지입니다.`;
 
   return {
     title,
@@ -74,7 +77,7 @@ export async function generateMetadata({ params }: ClientPageProps): Promise<Met
       title,
       description,
       url: `https://creaibox.com/clients/${clientId}`,
-      siteName: "CreAiBox",
+      siteName: "CreaiBox",
       locale: "ko_KR",
       type: "website",
     },
@@ -83,14 +86,24 @@ export async function generateMetadata({ params }: ClientPageProps): Promise<Met
 
 export default async function GenericClientSiteFallbackPage({
   params,
+  searchParams,
 }: ClientPageProps) {
   const resolvedParams = await params;
   const clientId = resolvedParams.client_id?.toLowerCase() || "";
+
+  if (clientId === "futuremind") {
+    return <FuturemindHomePage />;
+  }
 
   if (clientId === "creative-media-blog") {
     return <CreativeMediaBlogPage />;
   }
 
-  // Default fallback to Sotongchaeum template for any un-built templates
-  return <SotongchaeumPage />;
+  if (clientId === "sotongchaeum" || clientId === "sotongcheum" || clientId === "commufill") {
+    return <SotongchaeumPage />;
+  }
+
+  // Delegate all other templates & migrated client sites to DynamicRendererPage
+  return <DynamicRendererPage params={Promise.resolve({ brand_id: clientId })} searchParams={searchParams} />;
 }
+
