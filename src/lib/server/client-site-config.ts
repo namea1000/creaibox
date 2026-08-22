@@ -13,6 +13,8 @@ export interface ClientSiteConfig {
   address?: string;
   email?: string;
   bizNumber?: string;
+  ceoName?: string;
+  fax?: string;
   description?: string;
   kakaoLink?: string;
   themeColor?: string;
@@ -94,7 +96,47 @@ export async function getClientSiteConfig(brandId: string): Promise<ClientSiteCo
     return clientConfigCache.get(cleanBrand)!;
   }
 
-  // 2. Query Supabase DB by brand_id or profiles extra_configs
+  // 2. Query Supabase DB: client_sites table first (where studio settings are saved)
+  try {
+    const { data: site } = await supabaseAdmin
+      .from("client_sites")
+      .select("company_name, phone, address, extra_configs")
+      .eq("brand_id", cleanBrand)
+      .maybeSingle();
+
+    if (site) {
+      const extra = (site.extra_configs || {}) as any;
+      const cfg: ClientSiteConfig = {
+        companyName: site.company_name || extra.companyName,
+        phone: site.phone || extra.phone,
+        address: site.address || extra.address,
+        email: extra.email,
+        bizNumber: extra.business_number || extra.bizNumber,
+        ceoName: extra.representative_name || extra.ceoName,
+        fax: extra.fax,
+        description: extra.description,
+        kakaoLink: extra.kakaoLink,
+        themeColor: extra.themeColor,
+        headerBlogTitle: extra.headerBlogTitle,
+        headerContactTitle: extra.headerContactTitle,
+        heroSlogan: extra.heroSlogan,
+        logoUrl: extra.logoUrl,
+        customMenus: extra.customMenus,
+        pgProvider: extra.pgProvider,
+        pgMid: extra.pgMid,
+        pgApiKey: extra.pgApiKey,
+        enableBankTransfer: extra.enableBankTransfer,
+        bankAccountInfo: extra.bankAccountInfo,
+        enableInquiryPayment: extra.enableInquiryPayment,
+      };
+      clientConfigCache.set(cleanBrand, cfg);
+      return cfg;
+    }
+  } catch (err) {
+    console.error("getClientSiteConfig client_sites error:", err);
+  }
+
+  // 3. Query profiles table as fallback
   try {
     const { data: profile } = await supabaseAdmin
       .from("profiles")
@@ -108,7 +150,7 @@ export async function getClientSiteConfig(brandId: string): Promise<ClientSiteCo
       return cfg;
     }
   } catch (err) {
-    console.error("getClientSiteConfig error:", err);
+    console.error("getClientSiteConfig profiles error:", err);
   }
 
   if (cleanBrand === "futuremind" || cleanBrand === "futuremind2" || cleanBrand === "futuremind-2z3u") return DEFAULT_FUTUREMIND_CONFIG;

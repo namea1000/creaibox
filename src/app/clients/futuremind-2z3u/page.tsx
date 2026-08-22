@@ -9,9 +9,6 @@ import {
   Lightbulb,
   CheckCircle2,
   Send,
-  Building2,
-  Rocket,
-  HeartHandshake,
   Check,
   BookOpen,
   Users,
@@ -21,6 +18,9 @@ import {
   Layers,
   LayoutGrid,
   MapPin,
+  Building2,
+  Rocket,
+  HeartHandshake,
 } from "lucide-react";
 
 const R2_VIDEO_URL = "https://pub-4d5e9d40c2ef4eeb93a533aee9f1862d.r2.dev/client-sites/futuremind/hero-video.mp4";
@@ -278,348 +278,260 @@ export default function FuturemindCyanHomePage() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 3. CORE SERVICE PILLARS (01 AI 개발 / 02 AI컨설팅 / 03 AI교육 - 원본 1:1 포토 카드) */}
+      {/* 3. WE WORK (OUR MISSION & SEGMENTS - 3대 통합 마스터 포토 카드) */}
       {/* ========================================================================= */}
-      <section className="max-w-7xl mx-auto px-6 sm:px-8 space-y-12">
-        <div className="text-center space-y-3 max-w-2xl mx-auto">
-          <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-            핵심 서비스 영역
+      <section id="work" className="max-w-7xl mx-auto px-6 sm:px-8 space-y-12">
+        
+        {/* Section Header */}
+        <div className="text-center space-y-3 max-w-4xl mx-auto">
+          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+            WE WORK <span className="text-cyan-400 font-extrabold">- 핵심 서비스 영역</span>
           </h2>
-          <p className="text-xs sm:text-sm text-neutral-400">
-            기업의 AI 전환을 위한 3가지 축, 퓨처마인드가 완벽하게 지원합니다.
+          <p className="text-sm sm:text-base text-cyan-300 font-medium max-w-4xl mx-auto leading-relaxed">
+            비즈니스의 모든 분야에 걸친 어제의 지혜와 내일의 가능성을 잇습니다.<br className="hidden sm:inline" />
+            대기업·관공서의 AI 개발 혁신부터 예비·초기 창업자의 컨설팅 도약, 전 세대를 위한 AI 교육까지 완벽하게 지원합니다.
           </p>
         </div>
-        
+
+        {/* 3 Unified Master Cards with Photos, Checklists, Tags & CTA */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          {/* Card 1: 01 AI 개발 (대기업/관공서) */}
-          <Link
-            href="/development"
-            className="p-7 sm:p-8 rounded-lg bg-[#111622] border border-[#1e293b] hover:border-cyan-400/60 transition-all duration-300 space-y-6 flex flex-col justify-between group shadow-2xl"
-          >
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">01</span>
-                <span className="text-2xl sm:text-3xl font-black text-cyan-400 tracking-tight group-hover:text-cyan-300 transition-colors">AI 개발</span>
+          {/* Card 01: 대기업 · 관공서 (AI 개발) */}
+          <div className="p-7 sm:p-8 rounded-lg bg-gradient-to-b from-[#0f172a] via-[#0b1120] to-[#070b14] border border-cyan-500/30 hover:border-cyan-400/80 transition-all duration-300 space-y-6 shadow-2xl flex flex-col justify-between group relative overflow-hidden">
+            {/* Ambient Corner Glow */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-cyan-400/20 transition-colors" />
+
+            <div className="space-y-5 relative z-10">
+              {/* Header: Number + Service Title */}
+              <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl sm:text-3xl font-mono font-black text-white tracking-tight">01</span>
+                  <div className="w-10 h-10 rounded-md bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
+                    <Building2 size={20} />
+                  </div>
+                </div>
+                <span className="text-xl sm:text-2xl font-black text-cyan-400 tracking-tight group-hover:text-cyan-300 transition-colors">
+                  AI 개발
+                </span>
               </div>
-              <div className="space-y-1.5 pt-1">
-                <h4 className="text-sm font-bold text-cyan-400">대기업/관공서</h4>
+
+              {/* Target Segment Title */}
+              <div className="space-y-1">
+                <span className="text-[11px] font-mono font-extrabold text-cyan-400 block">SEGMENT 01</span>
+                <h3 className="text-lg sm:text-xl font-black text-white group-hover:text-cyan-400 transition-colors">
+                  대기업 · 관공서
+                </h3>
                 <p className="text-xs text-neutral-400 leading-relaxed">기관과 기업을 위한 AI 솔루션</p>
               </div>
-            </div>
 
-            {/* Photo Box (각진 스퀘어) */}
-            <div className="rounded-md overflow-hidden border border-neutral-800 bg-neutral-950 aspect-[16/10] w-full mt-2 group-hover:scale-[1.02] transition-transform">
-              <img
-                src="https://pub-4d5e9d40c2ef4eeb93a533aee9f1862d.r2.dev/client-sites/futuremind/core-01-development.jpg"
-                alt="01 AI 개발 - 대기업/관공서 솔루션"
-                className="w-full h-full object-cover brightness-105"
-              />
-            </div>
-          </Link>
-
-          {/* Card 2: 02 AI 컨설팅 (예비/초기 창업자) */}
-          <Link
-            href="/planning"
-            className="p-7 sm:p-8 rounded-lg bg-[#111622] border border-[#1e293b] hover:border-cyan-400/60 transition-all duration-300 space-y-6 flex flex-col justify-between group shadow-2xl"
-          >
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">02</span>
-                <span className="text-2xl sm:text-3xl font-black text-cyan-400 tracking-tight group-hover:text-cyan-300 transition-colors">AI 컨설팅</span>
+              {/* Photo Box */}
+              <div className="rounded-md overflow-hidden border border-neutral-800 bg-neutral-950 aspect-[16/10] w-full shadow-lg group-hover:scale-[1.02] transition-transform">
+                <img
+                  src="https://pub-4d5e9d40c2ef4eeb93a533aee9f1862d.r2.dev/client-sites/futuremind/core-01-development.jpg"
+                  alt="01 AI 개발 - 대기업/관공서 솔루션"
+                  className="w-full h-full object-cover brightness-105"
+                />
               </div>
-              <div className="space-y-1.5 pt-1">
-                <h4 className="text-sm font-bold text-cyan-400">예비/초기 창업자</h4>
-                <p className="text-xs text-neutral-400 leading-relaxed">
-                  브랜드부터 블렌딩까지<br />
-                  창업자를 위한 AI 원스톱 바우처
-                </p>
-              </div>
-            </div>
 
-            {/* Photo Box (각진 스퀘어) */}
-            <div className="rounded-md overflow-hidden border border-neutral-800 bg-neutral-950 aspect-[16/10] w-full mt-2 group-hover:scale-[1.02] transition-transform">
-              <img
-                src="https://pub-4d5e9d40c2ef4eeb93a533aee9f1862d.r2.dev/client-sites/futuremind/core-02-consulting.jpg"
-                alt="02 AI 컨설팅 - 예비/초기 창업자 바우처"
-                className="w-full h-full object-cover brightness-105"
-              />
-            </div>
-          </Link>
+              {/* Description */}
+              <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-normal">
+                조직의 혁신은 지나온 길의 축적입니다. 기관과 기업의 업무 효율을 극대화하는 AI 솔루션, 디지털 전환 플랫폼 및 경영 자동화 시스템을 제공합니다.
+              </p>
 
-          {/* Card 3: 03 AI 교육 (대학/청소년/노인 학생/초중고/주민을 위한) */}
-          <Link
-            href="/education"
-            className="p-7 sm:p-8 rounded-lg bg-[#111622] border border-[#1e293b] hover:border-cyan-400/60 transition-all duration-300 space-y-6 flex flex-col justify-between group shadow-2xl"
-          >
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">03</span>
-                <span className="text-2xl sm:text-3xl font-black text-cyan-400 tracking-tight group-hover:text-cyan-300 transition-colors">AI 교육</span>
+              {/* 4 Checkpoints */}
+              <div className="space-y-2 pt-3 border-t border-neutral-800/80">
+                {[
+                  "기관 맞춤형 AI 솔루션 및 SW 기능 구현",
+                  "정부·공공기관 입찰 100% 전문 제안 기획",
+                  "임직원 생성형 AI 실무 역량 강화 워크숍",
+                  "사내 데이터 보안 RAG 챗봇 구축",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs text-neutral-300">
+                    <Check size={14} className="text-cyan-400 flex-shrink-0" />
+                    <span>{item}</span>
+                  </div>
+                ))}
               </div>
-              <div className="space-y-1.5 pt-1">
-                <h4 className="text-sm font-bold text-cyan-400">대학/청소년/노인 학생/초중고/주민을 위한</h4>
-                <p className="text-xs text-neutral-400 leading-relaxed">생애전주기 AI 교육</p>
+
+              {/* Tags */}
+              <div className="flex flex-wrap gap-1.5 pt-2">
+                {["웹·앱 구축", "AI 챗봇 엔진", "맞춤형 ERP", "스마트팩토리"].map((tag, i) => (
+                  <span key={i} className="px-2.5 py-1 rounded-sm bg-neutral-900/90 border border-neutral-800 text-[11px] font-medium text-neutral-300 group-hover:border-cyan-500/30 transition-colors">
+                    {tag}
+                  </span>
+                ))}
               </div>
             </div>
 
-            {/* Photo Box (각진 스퀘어) */}
-            <div className="rounded-md overflow-hidden border border-neutral-800 bg-neutral-950 aspect-[16/10] w-full mt-2 group-hover:scale-[1.02] transition-transform">
-              <img
-                src="https://pub-4d5e9d40c2ef4eeb93a533aee9f1862d.r2.dev/client-sites/futuremind/core-03-education.jpg"
-                alt="03 AI 교육 - 생애전주기 AI 교육"
-                className="w-full h-full object-cover brightness-105"
-              />
+            {/* CTA Button */}
+            <div className="pt-4 border-t border-neutral-800/80 relative z-10">
+              <Link
+                href="/development"
+                className="w-full py-2.5 px-4 rounded-md bg-cyan-500/10 group-hover:bg-cyan-500/20 border border-cyan-500/20 group-hover:border-cyan-500/40 text-cyan-400 text-xs font-bold flex items-center justify-between transition-all"
+              >
+                <span>기업 맞춤 개발 솔루션 보기</span>
+                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
             </div>
-          </Link>
+          </div>
 
-        </div>
-
-        {/* 3 Detailed Category Identity Cyan-Line Cards (로고 우측 대형 타이틀 인라인 레이아웃) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-          
-          {/* 1. 개발 */}
-          <Link
-            href="/development"
-            className="p-8 rounded-lg bg-gradient-to-b from-[#0f172a] via-[#0b1120] to-[#070b14] border border-cyan-500/30 hover:border-cyan-400/80 transition-all duration-300 space-y-6 shadow-2xl flex flex-col justify-between group relative overflow-hidden"
-          >
+          {/* Card 02: 예비 · 초기 창업자 (AI 컨설팅) */}
+          <div className="p-7 sm:p-8 rounded-lg bg-gradient-to-b from-[#0f172a] via-[#0b1120] to-[#070b14] border border-cyan-500/30 hover:border-cyan-400/80 transition-all duration-300 space-y-6 shadow-2xl flex flex-col justify-between group relative overflow-hidden">
             {/* Ambient Corner Glow */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-cyan-400/20 transition-colors" />
 
-            <div className="space-y-6 relative z-10">
-              {/* Header: Icon + Title Inline (로고 오른쪽 대형 폰트 배치) */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-md bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform shadow-lg shadow-cyan-500/10 flex-shrink-0">
-                    <Code2 size={28} />
+            <div className="space-y-5 relative z-10">
+              {/* Header: Number + Service Title */}
+              <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl sm:text-3xl font-mono font-black text-white tracking-tight">02</span>
+                  <div className="w-10 h-10 rounded-md bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
+                    <Rocket size={20} />
                   </div>
-                  <h3 className="text-3xl sm:text-4xl font-black text-white group-hover:text-cyan-400 transition-colors tracking-tight">
-                    개발
-                  </h3>
                 </div>
-                <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
-                  기관과 기업을 위한 맞춤형 AI 시스템 솔루션
-                </p>
+                <span className="text-xl sm:text-2xl font-black text-cyan-400 tracking-tight group-hover:text-cyan-300 transition-colors">
+                  AI 컨설팅
+                </span>
               </div>
 
-              {/* Rich Tech Chips Grid (순수 한글 칩 구조) */}
-              <div className="space-y-4 pt-2">
-                
-                {/* 플랫폼 구축 */}
-                <div className="space-y-2">
-                  <div className="text-xs font-bold text-neutral-200 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span> 플랫폼 구축
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {["웹·앱 디자인", "AI 챗봇 엔진", "AR 키오스크"].map((tag, i) => (
-                      <span key={i} className="px-2.5 py-1 rounded-sm bg-neutral-900/90 border border-neutral-800 text-[11px] font-medium text-neutral-300 group-hover:border-cyan-500/30 transition-colors">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+              {/* Target Segment Title */}
+              <div className="space-y-1">
+                <span className="text-[11px] font-mono font-extrabold text-cyan-400 block">SEGMENT 02</span>
+                <h3 className="text-lg sm:text-xl font-black text-white group-hover:text-cyan-400 transition-colors">
+                  예비 · 초기 창업자
+                </h3>
+                <p className="text-xs text-neutral-400 leading-relaxed">창업자를 위한 AI 원스톱 바우처</p>
+              </div>
 
-                {/* 스마트 시스템 */}
-                <div className="space-y-2 pt-3 border-t border-neutral-800/80">
-                  <div className="text-xs font-bold text-neutral-200 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span> 스마트 시스템
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {["맞춤형 ERP", "통합 CMS", "스마트팩토리"].map((tag, i) => (
-                      <span key={i} className="px-2.5 py-1 rounded-sm bg-neutral-900/90 border border-neutral-800 text-[11px] font-medium text-neutral-300 group-hover:border-cyan-500/30 transition-colors">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+              {/* Photo Box */}
+              <div className="rounded-md overflow-hidden border border-neutral-800 bg-neutral-950 aspect-[16/10] w-full shadow-lg group-hover:scale-[1.02] transition-transform">
+                <img
+                  src="https://pub-4d5e9d40c2ef4eeb93a533aee9f1862d.r2.dev/client-sites/futuremind/core-02-consulting.jpg"
+                  alt="02 AI 컨설팅 - 예비/초기 창업자 바우처"
+                  className="w-full h-full object-cover brightness-105"
+                />
+              </div>
 
-                {/* 콘텐츠 솔루션 */}
-                <div className="space-y-2 pt-3 border-t border-neutral-800/80">
-                  <div className="text-xs font-bold text-neutral-200 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span> 콘텐츠 솔루션
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {["AR 게임 엔진", "AI 비전 솔루션", "미디어 파사드"].map((tag, i) => (
-                      <span key={i} className="px-2.5 py-1 rounded-sm bg-neutral-900/90 border border-neutral-800 text-[11px] font-medium text-neutral-300 group-hover:border-cyan-500/30 transition-colors">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+              {/* Description */}
+              <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-normal">
+                도약은 새로운 시작의 설렘입니다. 브랜드 기획부터 IP 로드맵, 특허 출원, 정부 바우처 지원사업 획득 및 인플루언서 제휴 마케팅까지 원스톱으로 지원합니다.
+              </p>
 
+              {/* 4 Checkpoints */}
+              <div className="space-y-2 pt-3 border-t border-neutral-800/80">
+                {[
+                  "IP 디딤돌 지원사업 & 특허 출원 컨설팅",
+                  "창업자를 위한 원스톱 바우처 제안서 작성",
+                  "90일 실전 매출 전환 인플루언서 제휴",
+                  "전환율 3.2배 고효율 랜딩/퍼널 설계",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs text-neutral-300">
+                    <Check size={14} className="text-cyan-400 flex-shrink-0" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Tags */}
+              <div className="flex flex-wrap gap-1.5 pt-2">
+                {["비즈니스 모델링", "IP 바우처 제안", "인플루언서 제휴", "전환 퍼널 구축"].map((tag, i) => (
+                  <span key={i} className="px-2.5 py-1 rounded-sm bg-neutral-900/90 border border-neutral-800 text-[11px] font-medium text-neutral-300 group-hover:border-cyan-500/30 transition-colors">
+                    {tag}
+                  </span>
+                ))}
               </div>
             </div>
 
-            {/* Bottom Action Button */}
+            {/* CTA Button */}
             <div className="pt-4 border-t border-neutral-800/80 relative z-10">
-              <div className="w-full py-2.5 px-4 rounded-md bg-cyan-500/10 group-hover:bg-cyan-500/20 border border-cyan-500/20 group-hover:border-cyan-500/40 text-cyan-400 text-xs font-bold flex items-center justify-between transition-all">
-                <span>10대 개발 영역 상세 가이드</span>
+              <Link
+                href="/planning"
+                className="w-full py-2.5 px-4 rounded-md bg-cyan-500/10 group-hover:bg-cyan-500/20 border border-cyan-500/20 group-hover:border-cyan-500/40 text-cyan-400 text-xs font-bold flex items-center justify-between transition-all"
+              >
+                <span>창업 바우처 기획 보기</span>
                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-              </div>
+              </Link>
             </div>
-          </Link>
+          </div>
 
-          {/* 2. 컨설팅 */}
-          <Link
-            href="/planning"
-            className="p-8 rounded-lg bg-gradient-to-b from-[#0f172a] via-[#0b1120] to-[#070b14] border border-cyan-500/30 hover:border-cyan-400/80 transition-all duration-300 space-y-6 shadow-2xl flex flex-col justify-between group relative overflow-hidden"
-          >
+          {/* Card 03: 대학 · 청소년 · 신중년 (AI 교육) */}
+          <div className="p-7 sm:p-8 rounded-lg bg-gradient-to-b from-[#0f172a] via-[#0b1120] to-[#070b14] border border-cyan-500/30 hover:border-cyan-400/80 transition-all duration-300 space-y-6 shadow-2xl flex flex-col justify-between group relative overflow-hidden">
             {/* Ambient Corner Glow */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-cyan-400/20 transition-colors" />
 
-            <div className="space-y-6 relative z-10">
-              {/* Header: Icon + Title Inline (로고 오른쪽 대형 폰트 배치) */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-md bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform shadow-lg shadow-cyan-500/10 flex-shrink-0">
-                    <Lightbulb size={28} />
+            <div className="space-y-5 relative z-10">
+              {/* Header: Number + Service Title */}
+              <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl sm:text-3xl font-mono font-black text-white tracking-tight">03</span>
+                  <div className="w-10 h-10 rounded-md bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
+                    <HeartHandshake size={20} />
                   </div>
-                  <h3 className="text-3xl sm:text-4xl font-black text-white group-hover:text-cyan-400 transition-colors tracking-tight">
-                    컨설팅
-                  </h3>
                 </div>
-                <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
-                  브랜드부터 블렌딩까지, 창업자를 위한 AI 원스톱 바우처
-                </p>
+                <span className="text-xl sm:text-2xl font-black text-cyan-400 tracking-tight group-hover:text-cyan-300 transition-colors">
+                  AI 교육
+                </span>
               </div>
 
-              {/* Rich Tech Chips Grid (순수 한글 칩 구조) */}
-              <div className="space-y-4 pt-2">
-                
-                {/* 홍보 & 마케팅 제휴 */}
-                <div className="space-y-2">
-                  <div className="text-xs font-bold text-neutral-200 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span> 홍보 & 마케팅 제휴
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {["실전 퍼포먼스 마케팅", "인플루언서 제휴", "90일 매출 퍼널"].map((tag, i) => (
-                      <span key={i} className="px-2.5 py-1 rounded-sm bg-neutral-900/90 border border-neutral-800 text-[11px] font-medium text-neutral-300 group-hover:border-cyan-500/30 transition-colors">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+              {/* Target Segment Title */}
+              <div className="space-y-1">
+                <span className="text-[11px] font-mono font-extrabold text-cyan-400 block">SEGMENT 03</span>
+                <h3 className="text-lg sm:text-xl font-black text-white group-hover:text-cyan-400 transition-colors">
+                  대학 · 청소년 · 신중년
+                </h3>
+                <p className="text-xs text-neutral-400 leading-relaxed">생애전주기 맞춤형 AI 교육</p>
+              </div>
 
-                {/* 브랜딩 & 디자인 */}
-                <div className="space-y-2 pt-3 border-t border-neutral-800/80">
-                  <div className="text-xs font-bold text-neutral-200 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span> 브랜딩 & 디자인
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {["전문 디자이너 설계", "전환율 UI/UX 최적화", "브랜드 아이덴티티"].map((tag, i) => (
-                      <span key={i} className="px-2.5 py-1 rounded-sm bg-neutral-900/90 border border-neutral-800 text-[11px] font-medium text-neutral-300 group-hover:border-cyan-500/30 transition-colors">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+              {/* Photo Box */}
+              <div className="rounded-md overflow-hidden border border-neutral-800 bg-neutral-950 aspect-[16/10] w-full shadow-lg group-hover:scale-[1.02] transition-transform">
+                <img
+                  src="https://pub-4d5e9d40c2ef4eeb93a533aee9f1862d.r2.dev/client-sites/futuremind/core-03-education.jpg"
+                  alt="03 AI 교육 - 생애전주기 AI 교육"
+                  className="w-full h-full object-cover brightness-105"
+                />
+              </div>
 
-                {/* 자금 유치 & 지식재산권 판로 */}
-                <div className="space-y-2 pt-3 border-t border-neutral-800/80">
-                  <div className="text-xs font-bold text-neutral-200 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span> 자금 유치 & 판로 지원
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {["R&D 바우처 기획", "공공조달 입찰", "변리사 매칭 지원"].map((tag, i) => (
-                      <span key={i} className="px-2.5 py-1 rounded-sm bg-neutral-900/90 border border-neutral-800 text-[11px] font-medium text-neutral-300 group-hover:border-cyan-500/30 transition-colors">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+              {/* Description */}
+              <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-normal">
+                모든 여정은 삶을 위해 존재합니다. 대학생의 취업 역량, 청소년의 창의 융합 체험, 신중년의 인생 2막 디지털 리터러시까지 미래 사회를 위한 교육을 펼칩니다.
+              </p>
 
+              {/* 4 Checkpoints */}
+              <div className="space-y-2 pt-3 border-t border-neutral-800/80">
+                {[
+                  "대학생 AI 포트폴리오 & 취업 부트캠프",
+                  "청소년 창의 융합 및 미래 기술 체험",
+                  "신중년 맞춤형 노코드 & 매장 자동화",
+                  "4차산업 실감 체험 힐링캠프 운영",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs text-neutral-300">
+                    <Check size={14} className="text-cyan-400 flex-shrink-0" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Tags */}
+              <div className="flex flex-wrap gap-1.5 pt-2">
+                {["초중고 미래 캠프", "대학 산학 프로젝트", "시니어 디지털", "AI 실무 인증"].map((tag, i) => (
+                  <span key={i} className="px-2.5 py-1 rounded-sm bg-neutral-900/90 border border-neutral-800 text-[11px] font-medium text-neutral-300 group-hover:border-cyan-500/30 transition-colors">
+                    {tag}
+                  </span>
+                ))}
               </div>
             </div>
 
-            {/* Bottom Action Button */}
+            {/* CTA Button */}
             <div className="pt-4 border-t border-neutral-800/80 relative z-10">
-              <div className="w-full py-2.5 px-4 rounded-md bg-cyan-500/10 group-hover:bg-cyan-500/20 border border-cyan-500/20 group-hover:border-cyan-500/40 text-cyan-400 text-xs font-bold flex items-center justify-between transition-all">
-                <span>정부지원사업 기획 보기</span>
+              <Link
+                href="/education"
+                className="w-full py-2.5 px-4 rounded-md bg-cyan-500/10 group-hover:bg-cyan-500/20 border border-cyan-500/20 group-hover:border-cyan-500/40 text-cyan-400 text-xs font-bold flex items-center justify-between transition-all"
+              >
+                <span>생애전주기 교육과정 보기</span>
                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-              </div>
+              </Link>
             </div>
-          </Link>
-
-          {/* 3. 교육 */}
-          <Link
-            href="/education"
-            className="p-8 rounded-lg bg-gradient-to-b from-[#0f172a] via-[#0b1120] to-[#070b14] border border-cyan-500/30 hover:border-cyan-400/80 transition-all duration-300 space-y-6 shadow-2xl flex flex-col justify-between group relative overflow-hidden"
-          >
-            {/* Ambient Corner Glow */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-cyan-400/20 transition-colors" />
-
-            <div className="space-y-6 relative z-10">
-              {/* Header: Icon + Title Inline (로고 오른쪽 대형 폰트 배치) */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-md bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform shadow-lg shadow-cyan-500/10 flex-shrink-0">
-                    <GraduationCap size={28} />
-                  </div>
-                  <h3 className="text-3xl sm:text-4xl font-black text-white group-hover:text-cyan-400 transition-colors tracking-tight">
-                    교육
-                  </h3>
-                </div>
-                <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
-                  생애전주기 맞춤형 AI 실전교육 및 4차산업 체험
-                </p>
-              </div>
-
-              {/* Rich Tech Chips Grid (순수 한글 칩 구조) */}
-              <div className="space-y-4 pt-2">
-                
-                {/* 창업 & 대학 맞춤 */}
-                <div className="space-y-2">
-                  <div className="text-xs font-bold text-neutral-200 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span> 창업 & 대학 교육
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {["AI 평생교육원 운영", "대학 맞춤형 캠프", "임직원 역량강화"].map((tag, i) => (
-                      <span key={i} className="px-2.5 py-1 rounded-sm bg-neutral-900/90 border border-neutral-800 text-[11px] font-medium text-neutral-300 group-hover:border-cyan-500/30 transition-colors">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 체험 & 메이커스 */}
-                <div className="space-y-2 pt-3 border-t border-neutral-800/80">
-                  <div className="text-xs font-bold text-neutral-200 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span> 체험 & 메이커스
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {["어울림 메이커스", "전국 이동형 캠프", "생성형 AI 실습"].map((tag, i) => (
-                      <span key={i} className="px-2.5 py-1 rounded-sm bg-neutral-900/90 border border-neutral-800 text-[11px] font-medium text-neutral-300 group-hover:border-cyan-500/30 transition-colors">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 전세대 생애주기 */}
-                <div className="space-y-2 pt-3 border-t border-neutral-800/80">
-                  <div className="text-xs font-bold text-neutral-200 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span> 전 세대 맞춤 케어
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {["초중고 미래 캠프", "시니어 디지털 교육", "AI 실무 역량 인증"].map((tag, i) => (
-                      <span key={i} className="px-2.5 py-1 rounded-sm bg-neutral-900/90 border border-neutral-800 text-[11px] font-medium text-neutral-300 group-hover:border-cyan-500/30 transition-colors">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
-            {/* Bottom Action Button */}
-            <div className="pt-4 border-t border-neutral-800/80 relative z-10">
-              <div className="w-full py-2.5 px-4 rounded-md bg-cyan-500/10 group-hover:bg-cyan-500/20 border border-cyan-500/20 group-hover:border-cyan-500/40 text-cyan-400 text-xs font-bold flex items-center justify-between transition-all">
-                <span>생애전주기 교육 커리큘럼 보기</span>
-                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
-          </Link>
+          </div>
 
         </div>
       </section>
@@ -630,19 +542,15 @@ export default function FuturemindCyanHomePage() {
       <section id="association" className="max-w-7xl mx-auto px-6 sm:px-8 space-y-12">
         
         {/* Section Header */}
-        <div className="text-center space-y-4 max-w-4xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-sm bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-mono font-bold tracking-wider uppercase">
-            <Sparkles size={13} />
-            <span>ASSOCIATION ROLES & MISSION</span>
-          </div>
+        <div className="text-center space-y-3 max-w-4xl mx-auto">
           <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
-            미래교육문화협회
+            미래교육문화협회 <span className="text-cyan-400">주요 역할 및 기능</span>
           </h2>
-          <p className="text-sm sm:text-base text-cyan-300 font-medium max-w-3xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base text-cyan-300 font-medium max-w-4xl mx-auto leading-relaxed">
             4차 산업 혁명 시대에 맞춰 교육과 문화의 융합을 통해 미래 인재를 양성하고,<br className="hidden sm:inline" />
             기술과 창의성을 결합한 다양한 프로그램을 운영하는 비영리 단체입니다.
           </p>
-          <p className="text-xs sm:text-sm text-neutral-400 max-w-2xl mx-auto leading-relaxed pt-1">
+          <p className="text-xs sm:text-sm text-neutral-400 max-w-3xl mx-auto leading-relaxed pt-1">
             지역사회와 전국적으로 혁신적인 교육 경험을 제공하며, 미래세대를 위한 체험형 교육을 통해 창의력과 기술적 역량을 키우는 것을 목표로 합니다.
           </p>
 
@@ -915,15 +823,11 @@ export default function FuturemindCyanHomePage() {
       <section id="visiting-edu" className="max-w-7xl mx-auto px-6 sm:px-8 space-y-12">
         
         {/* Section Header */}
-        <div className="text-center space-y-4 max-w-4xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-sm bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-mono font-bold tracking-wider uppercase">
-            <MapPin size={13} />
-            <span>OUTREACH & VISITING EDUCATION</span>
-          </div>
+        <div className="text-center space-y-3 max-w-4xl mx-auto">
           <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
             미래교육문화협회 <span className="text-cyan-400">방문 교육</span>
           </h2>
-          <p className="text-sm sm:text-base text-cyan-300 font-medium max-w-3xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base text-cyan-300 font-medium max-w-4xl mx-auto leading-relaxed">
             미래교육문화협회와 제휴하여 지역 주민들을 위한 이동형 4차산업 체험 교육프로그램을 제공합니다.<br className="hidden sm:inline" />
             지역 내 다양한 공간에서 일상생활과 가까운 곳에서 4차 산업 기술을 실감형으로 체험할 수 있는 특별한 기회를 선사합니다.
           </p>
@@ -1029,96 +933,6 @@ export default function FuturemindCyanHomePage() {
             </div>
           </div>
 
-        </div>
-      </section>
-
-
-
-      {/* ========================================================================= */}
-      {/* 4. WE WORK & MISSION */}
-      {/* ========================================================================= */}
-      <section className="max-w-7xl mx-auto px-6 sm:px-8 space-y-12">
-        <div className="text-center space-y-3 max-w-3xl mx-auto">
-          <span className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider bg-cyan-500/10 px-3.5 py-1.5 rounded-sm border border-cyan-500/20">
-            WE WORK & MISSION
-          </span>
-          <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-            비즈니스의 모든 분야에 걸친<br />
-            어제의 지혜와 내일의 가능성을 잇습니다
-          </h2>
-          <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
-            대기업과 관공서의 축적된 혁신부터 예비·초기 창업자의 설렘, 모든 세대의 미래를 위해 존재합니다.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-8 rounded-lg bg-[#141414] border border-neutral-800 space-y-4 shadow-xl">
-            <div className="w-12 h-12 rounded-md bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-              <Building2 size={24} />
-            </div>
-            <h3 className="text-lg font-bold text-white">대기업 · 관공서</h3>
-            <p className="text-xs text-neutral-400 leading-relaxed">
-              조직의 혁신은 지나온 길의 축적입니다. 기관 맞춤형 AI 솔루션 및 경영 자동화 시스템을 구축합니다.
-            </p>
-          </div>
-
-          <div className="p-8 rounded-lg bg-[#141414] border border-neutral-800 space-y-4 shadow-xl">
-            <div className="w-12 h-12 rounded-md bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-              <Rocket size={24} />
-            </div>
-            <h3 className="text-lg font-bold text-white">예비 · 초기 창업자</h3>
-            <p className="text-xs text-neutral-400 leading-relaxed">
-              도약은 새로운 시작의 설렘입니다. 브랜드부터 블렌딩까지 정부지원 바우처 및 IP 로드맵을 제공합니다.
-            </p>
-          </div>
-
-          <div className="p-8 rounded-lg bg-[#141414] border border-neutral-800 space-y-4 shadow-xl">
-            <div className="w-12 h-12 rounded-md bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-              <HeartHandshake size={24} />
-            </div>
-            <h3 className="text-lg font-bold text-white">대학 · 청소년 · 신중년</h3>
-            <p className="text-xs text-neutral-400 leading-relaxed">
-              모든 여정은 삶을 위해 존재합니다. 전 생애주기 맞춤형 AI 역량 강화 교육과 미래 일자리 체험을 운영합니다.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* 5. EXPERIENTIAL CAMP (어울림 메이커스 & 4차산업 실감체험) */}
-      {/* ========================================================================= */}
-      <section className="max-w-7xl mx-auto px-6 sm:px-8">
-        <div className="rounded-lg bg-gradient-to-r from-neutral-900 via-neutral-950 to-neutral-900 border border-cyan-900/30 p-8 sm:p-12 shadow-2xl space-y-8">
-          <div className="max-w-3xl space-y-2">
-            <span className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-widest">
-              EXPERIENTIAL INNOVATION
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-white">
-              4차산업 실감 체험 힐링캠프 & 어울림 메이커스
-            </h2>
-            <p className="text-xs sm:text-sm text-neutral-400">
-              드론, VR/AR, 로봇을 직접 조종하며 배우는 미래 기술 놀이터! 학교 운동장과 마을 축제까지 찾아가는 이동형 버스 가동.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-            <div className="p-4 rounded-md bg-black/60 border border-neutral-800 space-y-1">
-              <span className="font-bold text-cyan-400">🛸 드론 경기장</span>
-              <p className="text-neutral-400 text-[11px]">드론 조종 및 물류 배송 코딩</p>
-            </div>
-            <div className="p-4 rounded-md bg-black/60 border border-neutral-800 space-y-1">
-              <span className="font-bold text-cyan-400">👓 VR/AR 존</span>
-              <p className="text-neutral-400 text-[11px]">AR 서바이벌 및 몰입 체험</p>
-            </div>
-            <div className="p-4 rounded-md bg-black/60 border border-neutral-800 space-y-1">
-              <span className="font-bold text-cyan-400">🤖 로봇 풋살장</span>
-              <p className="text-neutral-400 text-[11px]">로봇 코딩 및 자율주행 제어</p>
-            </div>
-            <div className="p-4 rounded-md bg-black/60 border border-neutral-800 space-y-1">
-              <span className="font-bold text-cyan-400">🚌 이동형 버스</span>
-              <p className="text-neutral-400 text-[11px]">전국 어디든 찾아가는 체험</p>
-            </div>
-          </div>
         </div>
       </section>
 

@@ -7,8 +7,9 @@ import { Menu, X, ArrowRight, Sparkles } from "lucide-react";
 
 const NAV_ITEMS = [
   { label: "미래를 보는 마음", href: "/" },
-  { label: "WE WORK", href: "/work" },
+  { label: "WE WORK", href: "/#work" },
   { label: "협회 소개", href: "/#association" },
+  { label: "방문 교육", href: "/#visiting-edu" },
   { label: "교육", href: "/education" },
   { label: "기획", href: "/planning" },
   { label: "개발", href: "/development" },
