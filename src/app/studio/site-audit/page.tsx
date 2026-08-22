@@ -58,6 +58,7 @@ interface AuditReport {
   title: string;
   description: string;
   detectedEngine: string;
+  isCreaiBoxSite?: boolean;
   isFrameset: boolean;
   frameSrc?: string;
   hasSsl: boolean;
@@ -508,14 +509,25 @@ export default function SiteAuditPage() {
                   </p>
                 </div>
 
-                <Link
-                  href={`/studio/custom-client-site/migration?url=${encodeURIComponent(currentReport.targetUrl)}`}
-                  className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-5 py-2.5 text-xs font-black text-slate-950 hover:bg-cyan-400 transition-all shadow-md shrink-0"
-                >
-                  <Sparkles size={14} />
-                  <span>이 사이트 0.01초 CreaiBox로 이관하기</span>
-                  <ArrowRight size={14} />
-                </Link>
+                {currentReport.isCreaiBoxSite ? (
+                  <Link
+                    href="/studio/client-site-builder/settings"
+                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-black text-slate-950 hover:bg-emerald-400 transition-all shadow-md shrink-0"
+                  >
+                    <CheckCircle2 size={14} />
+                    <span>CreaiBox 정식 라이브 사이트 관리하기</span>
+                    <ArrowRight size={14} />
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/studio/custom-client-site/migration?url=${encodeURIComponent(currentReport.targetUrl)}`}
+                    className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-5 py-2.5 text-xs font-black text-slate-950 hover:bg-cyan-400 transition-all shadow-md shrink-0"
+                  >
+                    <Sparkles size={14} />
+                    <span>이 사이트 0.01초 CreaiBox로 이관하기</span>
+                    <ArrowRight size={14} />
+                  </Link>
+                )}
               </div>
 
               <div className="overflow-x-auto">
